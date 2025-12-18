@@ -1,10 +1,30 @@
-$( ".openModal" ).click(function(e) {
-        // URL, который нужно открыть
-        var linkUrl = 'https://pay.fondy.eu/s/BL5M1hkSJdnSF8z4?_gl=1*130awg9*_gcl_au*NDIxMzIzMTkxLjE3MTc1Nzg3MDI.*_ga*MTU3MzUyNDY3OS4xNzE3NTc4NzAy*_ga_Z2KY5VSWGZ*MTcxNzU3ODcwMi4xLjEuMTcxNzU3OTcyNC42MC4wLjA.';
+$(".openModal").click(function(e) {
+  e.preventDefault();
 
-        // Открыть ссылку в новом окне или вкладке
-        window.open(linkUrl, '_blank');
+  // 1) достаем атрибуцию
+  let attrib = {};
+  try { attrib = JSON.parse(localStorage.getItem('cw_attrib') || '{}'); } catch(_) {}
+
+  // 2) шлем InitiateCheckout ДО ухода
+  if (typeof fbq === 'function') {
+    fbq('track', 'InitiateCheckout', {
+      value: 350,
+      currency: 'UAH',
+      content_name: 'Short Reboot',
+      ...attrib
     });
+  }
+
+  // 3) открываем оплату
+  const basePayUrl = 'https://pay.fondy.eu/s/PASTE_FINAL_LINK_HERE';
+
+  // 3.1 (опционально) проброс UTM/cr/lv в оплату (если Fondy разрешает)
+  const a = new URLSearchParams(attrib).toString();
+  const payUrl = a ? (basePayUrl + (basePayUrl.includes('?') ? '&' : '?') + a) : basePayUrl;
+
+  window.open(payUrl, '_blank');
+});
+
 
 
 $( ".openModal1" ).click(function(e) {
