@@ -780,13 +780,17 @@ background: #EE877C;
   flex: 0 0 auto;
   align-items: center;
   gap: 16px;
+  min-width: 260px;
 }
 
 #footer-center {
-text-align:center;
-.a {
-  color:inherit;
-  }
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  text-align:center;
+  .a {
+    color:inherit;
+     }
 }
 
 #footer-center a{
