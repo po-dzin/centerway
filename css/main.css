@@ -740,7 +740,7 @@ background: #EE877C;
 
 .footer-section {
     width: auto;
-    margin-bottom: 0;
+    margin-bottom: 20;
 }
 
 .footer-section h4 {
@@ -786,6 +786,17 @@ background: #EE877C;
 
 #footer-center a:hover {
   text-decoration: underline;
+}
+
+.footer-left{
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.footer-logo{
+  height: 44px;
+  width: auto;
 }
 
 #footer-right {
