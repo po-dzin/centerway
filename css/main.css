@@ -777,6 +777,7 @@ background: #EE877C;
 
 .footer-left {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 16px;
 }
@@ -800,11 +801,11 @@ text-align:center;
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-top: 0;
+  margin-left: 20px;
 }
 
 .footer-logo-payments img {
-  height: 28px;
+  height: 80px;
   width: auto;
   margin: 0px;
 }
