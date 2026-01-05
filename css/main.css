@@ -811,38 +811,42 @@ background: #EE877C;
 }
 
 @media (max-width: 768px) {
-  .footer-content {
-	display: flex;
-    flex-direction: column;     /* було не задано -> тому лишався ряд */
-    align-items: center;        /* центруємо секції */
-    text-align: center;
-  }
+	.footer-content {
+		display: flex;
+   		flex-direction: column;     /* було не задано -> тому лишався ряд */
+    	align-items: center;        /* центруємо секції */
+    	text-align: center;
+  	}
 
- .footer-left {
-    flex-direction: column;
-	align-items: center;
-    min-width: 0;
-  }
+ 	.footer-left {
+    	flex-direction: column;
+		align-items: center;
+    	min-width: 0;
+  	}
 
- #footer-center {
-    text-align: center;
-  }
+ 	#footer-center {
+    	text-align: center;
+  	}
 
-  .footer-logo-payments {
-    justify-content: center;
-  }
+ 	#footer-right {
+		text-align: center;
+ 	}	
+	
+  	.footer-logo-payments {
+    	justify-content: center;
+  	}
 
-  .footer #footer-right .item a {
-    display: inline-flex;
-    align-items: center;
-  }
+  	.footer #footer-right .item a {
+    	display: inline-flex;
+    	align-items: center;
+  	}
 
-  .footer #footer-right .item img {
-    width: 24px;      /* подбери: 24–32px */
-    height: 24px;
-    object-fit: contain;
-    display: block;
-  }
+  	.footer #footer-right .item img {
+    	width: 24px;      /* подбери: 24–32px */
+    	height: 24px;
+    	object-fit: contain;
+    	display: block;
+  	}
 }
 
 .box-modal iframe{
