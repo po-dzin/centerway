@@ -789,21 +789,21 @@ text-align: center;
 
 }
 #footer-right {
+  margin-left: auto;
   text-align: right;
 }
 
 .footer-logo-payments {
-  display: flex;
+  display: inline-block;
   align-items: center;
   gap: 16px;
 }
 
-.footer-logo-payments .pay img {
-  height: 28px;
+.footer-logo-payments img {
+  height: 36px;
   width: auto;
-  margin: 0;
+  margin-top: 20px;
 }
-
 
 .box-modal iframe{
   width: 100%;
@@ -815,7 +815,7 @@ text-align: center;
   .grid-item {
     
     background-color: #fff;
-   padding: 20px;
+    padding: 20px;
     text-align: center;
     border-radius: 8px;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
@@ -845,7 +845,6 @@ text-align: center;
   }
 
   .my_row{
-  
     text-align: center;
   font-weight: lighter;
   font-size: 24px;
@@ -876,7 +875,6 @@ margin-bottom: 20px;
   margin-bottom: 20px;
 
 }
-
 
 #gridcon img {
     width: 100%; /* Заполнить всю ширину контейнера */
