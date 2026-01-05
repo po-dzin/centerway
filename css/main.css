@@ -777,16 +777,12 @@ background: #EE877C;
 
 .footer-left {
   display: flex;
-  flex: 0 0 auto;
   align-items: center;
   gap: 16px;
   min-width: 260px;
 }
 
 #footer-center {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
   text-align:center;
   .a {
     color:inherit;
