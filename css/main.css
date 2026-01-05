@@ -729,13 +729,13 @@ background: #EE877C;
     background-color: #fff;
     color: black;
     padding: 50px 0;
+	margin-bottom: 110px;
 }
 
 .footer-content {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: 32px;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
 }
 
 .footer-section {
@@ -809,6 +809,7 @@ background: #EE877C;
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-top: 0;
 }
 
 .footer-logo-payments img {
@@ -823,7 +824,11 @@ background: #EE877C;
     text-align: center;
   }
 
-  #footer-right {
+ .footer-left {
+    flex-direction: column;
+  }	
+
+  .footer-right {
     text-align: center;
   }
 
