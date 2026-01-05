@@ -740,7 +740,7 @@ background: #EE877C;
 
 .footer-section {
     width: auto;
-    margin-bottom: 20px;
+    margin-bottom: 0;
 }
 
 .footer-section h4 {
@@ -766,30 +766,28 @@ background: #EE877C;
     text-decoration: none;
 }
 
-.footer-section ul li a: hover {
+.footer-section ul li a:hover {
     text-decoration: underline;
 }
-.footer .item img    {
-  	width: 32px;      /* фиксированный размер */
-  	height: 32px;
+
+.footer .item img {
+  	width: 24px;      /* фиксированный размер */
+  	height: 24px;
   	margin-bottom: 0;
 }
 
 #footer-center {
 	text-align: center;
-	flex: 0 1 auto;
 }
 
 #footer-center a {
 	color: inherit;	
 }
 
-
 #footer-center a:hover {
   text-decoration: underline;
 }
 
-}
 #footer-right {
   text-align: right;
   min-width: 220px;
@@ -852,10 +850,11 @@ background: #EE877C;
     margin-bottom: 10px;     
     //*border-radius: 50%; *//
   }
-  .my_list{
 
+  .my_list{
     margin : 0 auto;
   }
+
   .myul{
    display: flex;
   flex-direction: row;
@@ -885,13 +884,14 @@ background: #EE877C;
   width: 24px; /* Установите размеры иконки по вашему усмотрению */
   height: 24px;
 }
-#mynewdiv{
+
+#mynewdiv {
 font-size: 20px;
 margin-bottom: 20px;
 }
-#gridcon{
-  margin-bottom: 20px;
 
+#gridcon {
+  margin-bottom: 20px;
 }
 
 #gridcon img {
@@ -903,20 +903,22 @@ margin-bottom: 20px;
 #gridcon img:hover {
     transform: scale(1.2); /* Увеличить картинку в 1.2 раза при наведении */
 }
-#logohead{
+
+#logohead {
 left: 1%;
 position: absolute;
 width: 7%;
-
-
 }
- #divprice{
+
+ #divprice {
   width: 63%;
  }
-#iframe{
+
+#iframe {
  width :371px;
  height: 300px;
 }
+
  #divs55 p {
   font-size: 1.100em;
  }
