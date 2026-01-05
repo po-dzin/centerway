@@ -732,16 +732,14 @@ background: #EE877C;
 }
 
 .footer-content {
-    display: flex;
-    /* flex-wrap: wrap;*/
-	align-items: center;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
     gap: 32px;
 }
 
 .footer-section {
     width: auto;
-    flex: 1 1 0;
     margin-bottom: 20px;
 }
 
@@ -777,13 +775,16 @@ background: #EE877C;
 }
 
 #footer-center {
-text-align: center;
-.a {
-	color: inherit;	
-   }
+	text-align: center;
+	flex: 0 1 auto;
 }
 
-#footercenter a:hover {
+#footer-center a {
+	color: inherit;	
+}
+
+
+#footer-center a:hover {
   text-decoration: underline;
 }
 
@@ -791,6 +792,7 @@ text-align: center;
 #footer-right {
   margin-left: auto;
   text-align: right;
+  min-width: 220px;
 }
 
 .footer-logo-payments {
