@@ -831,6 +831,18 @@ background: #EE877C;
   .footer-logo-payments {
     justify-content: center;
   }
+
+  .footer #footer-right .item a {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .footer #footer-right .item img {
+    width: 24px;      /* подбери: 24–32px */
+    height: 24px;
+    object-fit: contain;
+    display: block;
+  }
 }
 
 .box-modal iframe{
