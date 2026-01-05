@@ -842,8 +842,8 @@ background: #EE877C;
   	}
 
   	.footer #footer-right .item img {
-    	width: 24px;      /* подбери: 24–32px */
-    	height: 24px;
+    	width: 28px;      /* подбери: 24–32px */
+    	height: 28px;
     	object-fit: contain;
     	display: block;
   	}
