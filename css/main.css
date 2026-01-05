@@ -770,8 +770,9 @@ background: #EE877C;
     text-decoration: underline;
 }
 .footer .item img    {
-  width: 6%;
-   margin-bottom: 30px;
+  	width: 32px;      /* фиксированный размер */
+  	height: 32px;
+  	margin-bottom: 0;
 }
 
 #footer-center {
@@ -790,21 +791,36 @@ background: #EE877C;
 
 }
 #footer-right {
-  margin-left: auto;
   text-align: right;
   min-width: 220px;
+  margin-left: 0;
 }
 
 .footer-logo-payments {
-  display: inline-block;
+  display: flex;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
 }
 
 .footer-logo-payments img {
-  height: 36px;
+  height: 28px;
   width: auto;
-  margin-top: 20px;
+  margin: 0px;
+}
+
+@media (max-width: 768px) {
+  .footer-content {
+    grid-template-columns: 1fr;
+    text-align: center;
+  }
+
+  #footer-right {
+    text-align: center;
+  }
+
+  .footer-logo-payments {
+    justify-content: center;
+  }
 }
 
 .box-modal iframe{
