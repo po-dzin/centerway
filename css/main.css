@@ -736,6 +736,7 @@ background: #EE877C;
     /* flex-wrap: wrap;*/
     justify-content: space-between;
     margin-bottom: 23px;
+	align-items: center;
 }
 
 .footer-section {
