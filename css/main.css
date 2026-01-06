@@ -775,7 +775,7 @@ background: #EE877C;
    margin-bottom: 30px;
 }
 
-.footer-left {
+#footer-left {
   display: flex;
   align-items: center;
   gap: 16px;
