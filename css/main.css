@@ -845,7 +845,7 @@ background: #EE877C;
  	}	
 	
   	.footer-logo-payments {
-    	justify-content: column;
+    	flex-direction: column;
 		align-items: center;
 		gap: 8px;
   	}
