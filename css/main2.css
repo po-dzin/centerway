@@ -13,6 +13,10 @@ p {
    line-height: 1.6;
 }
 
+ul li, ol li {
+  font-weight: normal;
+}
+
 #public-offer a:hover {
    text-decoration: underline;
 }
