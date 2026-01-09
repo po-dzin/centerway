@@ -16,13 +16,9 @@ $(".openModal").click(function(e) {
   }
 
   // 3) открываем оплату
-  const basePayUrl = 'https://www.liqpay.ua/api/3/checkout?data=eyJ2ZXJzaW9uIjozLCJhY3Rpb24iOiJwYXkiLCJhbW91bnQiOiIzNTAiLCJjdXJyZW5jeSI6IlVBSCIsImRlc2NyaXB0aW9uIjoi0J7Qv9C70LDRgtCwINC60YPRgNGB0YMgU2hvcnQgUmVib290INCy0ZbQtCBDZW50ZXJ3YXkiLCJwdWJsaWNfa2V5Ijoic2FuZGJveF9pMjM2MjQ4NTk3OTciLCJsYW5ndWFnZSI6InVrIiwicmVzdWx0X3VybCI6Imh0dHBzOi8vcmVib290LmNlbnRlcndheS5uZXQudWEvdGhhbmtzIn0=&signature=w/oBFIjZX8EDf5+mn4yaiEPpe5A=';
+  const payUrl = 'https://www.liqpay.ua/api/3/checkout?data=eyJ2ZXJzaW9uIjozLCJhY3Rpb24iOiJwYXkiLCJhbW91bnQiOiIzNTAiLCJjdXJyZW5jeSI6IlVBSCIsImRlc2NyaXB0aW9uIjoi0J7Qv9C70LDRgtCwINC60YPRgNGB0YMgU2hvcnQgUmVib290INCy0ZbQtCBDZW50ZXJ3YXkiLCJwdWJsaWNfa2V5Ijoic2FuZGJveF9pMjM2MjQ4NTk3OTciLCJsYW5ndWFnZSI6InVrIiwicmVzdWx0X3VybCI6Imh0dHBzOi8vcmVib290LmNlbnRlcndheS5uZXQudWEvdGhhbmtzIn0=&signature=w/oBFIjZX8EDf5+mn4yaiEPpe5A=';
 
-  // 3.1 (опционально) проброс UTM/cr/lv в оплату
-  const a = new URLSearchParams(attrib).toString();
-  const payUrl = a ? (basePayUrl + (basePayUrl.includes('?') ? '&' : '?') + a) : basePayUrl;
-
-  window.open(payUrl, '_blank');
+  window.open(payUrl);
 });
 
 
