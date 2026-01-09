@@ -47,7 +47,7 @@
 
       <div class="btns">
         <!-- (опционально) замени ссылку на своего TG-бота -->
-        <a class="btn primary" href="https://t.me/YOUR_BOT_USERNAME" target="_blank" rel="noopener">Відкрити бот</a>
+        <a class="btn primary" href="https://t.me/ShortRebootBot?start=paid_short" target="_blank" rel="noopener">Відкрити бот</a>
         <a class="btn" href="https://reboot.centerway.net.ua/">Повернутися на сайт</a>
       </div>
 
@@ -64,7 +64,7 @@
 
     const qs = new URLSearchParams(location.search);
 
-    // Подстрой под то, что реально прилетит от Fondy:
+    // Подстрой под то, что реально прилетит от Liqpay:
     // пример: ?order_id=123 или ?payment_id=abc
     const tid = qs.get('order_id') || qs.get('payment_id') || qs.get('id') || '';
 
@@ -98,5 +98,13 @@
     }
   })();
   </script>
+  
+  <script>
+  // автопереход в бот через 1.2 сек (кнопка остаётся как запасной вариант)
+  setTimeout(() => {
+    window.location.href = "https://t.me/ShortRebootBot?start=paid_short";
+  }, 1200);
+</script>
+  
 </body>
 </html>
