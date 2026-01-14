@@ -1,0 +1,435 @@
+/*==========  Desktop First Method  ==========*/
+
+/* Large Devices, Wide Screens Ipad */
+
+@media only screen and (max-width : 1400px) {
+
+	
+}
+@media only screen and (max-width : 1200px) {
+	 .s55 img {
+position: absolute;
+  width: 33%;
+  top: 26%;
+  right: -1%;
+  
+}
+.s55 #divs55 {
+    width: 100%;
+}
+#divprice {
+	width: 100%;
+}
+#iframe{
+ width :371px;
+ height: 300px;
+}
+}
+@media screen and (min-width: 810px) and (max-width: 1080px) {
+  /* ваш стиль CSS здесь */
+  	 .s55 img {
+position: absolute;
+  width: 33%;
+  top: 26%;
+  right: -1%;
+  
+}
+.s55 #divs55 {
+    width: 74%;
+}
+#divprice {
+	width: 100%;
+}
+#iframe{
+ width :371px;
+ height: 300px;
+}
+
+}
+
+
+
+
+
+/* Medium Devices, Desktops */
+@media only screen and (max-width : 992px) {
+	
+}
+
+/* Small Devices, Tablets */
+@media only screen and (max-width : 768px) {
+
+
+}
+@media only screen and (max-width : 600px) {
+	.container{
+		padding-left: 22px;
+		padding-right: 22px;
+	}
+	.s1 .content, .box-modal,.s1 .head,.s1 h1+p,.s3 .item,.s3 .bluebg,.s4 .item,.s5 img,.s55 img,.s6 .item,.s7 .it,.s8 .items,.s9 .item,.accordion,.s1 ul,.reason-card{
+		width: 100%;
+	}
+	.hero{
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 16px;
+	}
+	.desk{
+		display: none !important;
+	}
+	.hero-content{
+		width: 100%;
+		padding: 12px 0 20px;
+		gap: 12px;
+	}
+	.hero-media{
+		width: 100%;
+	}
+	.hero-offer{
+		flex-direction: column;
+		align-items: stretch;
+		gap: 10px;
+	}
+	.hero-offer .openModal{
+		width: 100%;
+		padding: 16px 32px;
+	}
+	.hero-secondary{
+		width: 100%;
+		justify-content: flex-start;
+	}
+	.s1 .img.mob{
+		position: relative;
+		width: 100%;
+		height: 320px;
+		max-height: 320px;
+		object-fit: contain;
+		border-radius: 24px;
+		margin-top: 16px;
+		background: transparent;
+	}
+	.s1 h1{
+		font-size: 30px;
+		line-height: 1.08;
+	}
+	.s1 .subheadline{
+		font-size: 18px;
+		line-height: 1.35;
+	}
+	section{
+		padding: 24px 0;
+	}
+	.s1{
+		margin-top: 0;
+		padding-top: 8px;
+	}
+	.s1 .subheadline, .s1 .price, h1,.s3 h2,.s3 .bluebg{
+		text-align: left;
+	}
+	.s1 .head{
+		padding: 5px 10px;
+		margin-bottom: 15px;
+	}
+	.s1 .img{
+		position: relative;
+		width: 100%;
+		top: 0;
+		left: 0;
+		right: 0;
+	}
+	.s1 ul{
+		font-size: 14px;
+		margin: 10px auto;
+		margin-bottom: 5px;
+		line-height: 1.5;
+	}
+	.s1 .price{
+		margin-bottom: 0;
+		text-align: center;
+	}
+	.s1 .price span{
+		display: inline-block;
+	}
+	.s1 #divprice p{
+		font-size: 10px !important;
+		white-space: nowrap;
+		text-align: center;
+		margin-top: 8px;
+		display: block;
+		width: 100%;
+	}
+	.s1 .container{
+		padding-left: 22px;
+		padding-right: 22px;
+	}
+	.s4 .container{
+		padding-left: 22px;
+		padding-right: 22px;
+	}
+	.help-cards{
+		flex-direction: column;
+		gap: 16px;
+	}
+	.help-card{
+		padding: 18px 18px 20px;
+	}
+	.help-card img{
+		width: 96px;
+		height: 96px;
+	}
+	.help-why{
+		margin-top: 20px;
+	}
+	.help-why h3{
+		font-size: 18px;
+	}
+	.help-why ul{
+		font-size: 14px;
+	}
+	.s-help .container{
+		padding-left: 22px;
+		padding-right: 22px;
+	}
+	.s1 .content{
+		padding-left: 0;
+		padding-right: 0;
+		gap: 10px;
+	}
+	#divprice{
+		gap: 8px;
+	}
+	.s1 button{
+		display: block;
+		margin: 0 auto;
+	}
+	.bonus{
+		width: 95%;
+		margin: 0 auto;
+		margin-top: 15px;
+	}
+	.bonus p{
+		width: 84%;
+	}
+	.s4 .item img{
+		width: 21%;
+	}
+	.s4 .items{
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+	.s4 .item{
+		width: 100%;
+	}
+	.s2 .bluebg{
+		margin-top: 21px;
+	}
+	h2{
+		font-size: 25px;
+	}
+	.s3 .bluebg{
+		padding: 18px;
+	}
+	.s4 {
+    background-size: 215% 100%;
+    background-position: center;
+}
+.s4 .item p{
+	width: 75%;
+}
+.s5 img{
+	position: relative;
+	right: 0;
+}
+	.s55 img{
+		position: relative;
+		right: 0;
+		top: auto;
+		transform: none;
+		display: block;
+		margin: 12px auto 0;
+	}
+	.s55 h2,
+	.s55 p strong{
+		text-align: center;
+		display: block;
+	}
+	.s55{
+		padding-bottom: 40px;
+	}
+.s5 .descr {
+    bottom: 25%;
+    right: 0;
+    left: 0;
+    margin: 0 auto;
+    font-size: 12px;
+    width: max-content;
+}
+.s5{
+	background: linear-gradient(#FFFCBB, #FFDFDC); 
+}
+.s6{
+	background: url('../img/mob_bg.png') no-repeat;
+	background-size: 100%;
+	background-position: top;
+	margin-top: -215px;
+	padding-top: 50px;
+}
+.mob{
+	display: block !important;
+}
+.s1 .head{
+	font-size: 12px;
+}
+.s6 p:not(.items p){
+	text-align: left;
+}
+.s6 .item{
+	margin-bottom: 10px;
+}
+.s7 .it:last-child{
+	margin-top: -75px;
+}
+.s7 .it{
+	background: transparent;
+	backdrop-filter: none;
+}
+.s7 .items{
+background: rgba(255, 255, 255, 0.50);
+backdrop-filter: blur(0.5px);
+border-radius: 20px;
+}
+.s8 .lesson {
+    padding: 5px 10px;
+    font-size: 14px;
+}
+	.s8 .items{
+		padding: 18px;
+	}
+	.s3 h2{
+		text-align: center;
+		width: 100%;
+	}
+.s10 .bonus,.s11 p{
+	width: 90%;
+}
+.s11 img{
+	width: 35%;
+}
+.footer-content {
+	display: block;
+	text-align: center;
+}
+
+#footerright {
+text-align: center;
+
+}
+#divprice {
+	width: 100%;
+}
+
+#iframe{
+ width :371px;
+ height: 300px;
+}
+}
+
+
+/* Extra Small Devices, Phones */
+@media only screen and (max-width : 430px) {
+	.s1 .head{
+		font-size: 11px;
+	}
+	h1 {
+    font-size: 42px;
+}
+}
+
+/* Custom, iPhone Retina */
+@media only screen and (max-width : 380px) {
+	
+}
+@media only screen and (max-width : 320px) {
+
+}
+
+
+/*==========  Mobile First Method  ==========*/
+
+/* Custom, iPhone Retina */
+@media only screen and (min-width : 320px) {
+
+}
+
+/* Extra Small Devices, Phones */
+@media only screen and (min-width : 480px) {
+
+}
+
+
+/* Small Devices, Tablets */
+@media only screen and (min-width : 768px) {
+
+}
+
+@media only screen and (min-width: 320px) and (max-width: 768px) {
+    /* Ваши стили */
+
+}
+
+/* Medium Devices, Desktops */
+@media only screen and (min-width : 992px) {
+
+
+}
+@media only screen and (max-height : 412px) {
+    .s55 img {
+position: absolute;
+  width: 33%;
+  top: 26%;
+  right: -1%;
+  
+}
+.s55 #divs55 {
+    width: 76%;
+}
+.footer-content {
+	display: block;
+	text-align: center;
+}
+
+#footerright {
+text-align: center;
+
+}
+.accordion {
+width: 100%;
+}
+#divprice {
+	width: 100%;
+}
+
+
+
+}
+
+ /* Large Devices, Wide Screens */
+@media only screen and (min-width : 1920px) {
+
+}
+
+@media only screen and (max-width : 1920px) {
+
+}
+ 
+
+/*@media only screen and (max-device-width: 767px) {
+
+  @media (prefers-color-scheme: dark) {
+ #divs55 h2 {
+   background-color: white;
+}
+}
+}
+/*
