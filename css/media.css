@@ -11,8 +11,8 @@
   }
 
   .s1 {
-    padding-top: 128px;
-    padding-bottom: 96px;
+    padding-top: 80px;
+    padding-bottom: 64px;
   }
 
   .s1 h3 {
@@ -59,6 +59,11 @@
   .s1 .container {
     padding-left: 24px;
     padding-right: 24px;
+    gap: 0;
+  }
+
+  .s1 .img {
+    margin-top: 48px;
   }
 
   .s4 .items {
@@ -379,8 +384,8 @@
   }
 
   .footer #footer-right .item img {
-    width: 28px;
-    height: 28px;
+    width: 32px;
+    height: 32px;
     display: block;
   }
 }

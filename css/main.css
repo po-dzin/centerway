@@ -671,6 +671,12 @@ img {
   font-weight: 300;
 }
 
+.s8 .items .card3 {
+  align-items: flex-start;
+  text-align: left;
+  width: 100%;
+}
+
 .s8 .items ul li::marker {
   color: #ffabab;
 }
@@ -969,12 +975,17 @@ img {
   width: 320px;
   max-width: 80vw;
   scroll-snap-align: center;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: var(--radius-media);
+  background: #ffffff;
 }
 
 .reviews-item img {
   width: 100%;
+  height: 100%;
+  object-fit: contain;
   display: block;
-  border-radius: var(--radius-media);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
@@ -1009,15 +1020,17 @@ img {
 .carousel-btn::before {
   content: "";
   position: absolute;
+  left: 50%;
+  top: 50%;
   width: 8px;
   height: 8px;
   border-right: 2px solid currentColor;
   border-bottom: 2px solid currentColor;
-  transform: rotate(-45deg);
+  transform: translate(-50%, -50%) rotate(-45deg);
 }
 
 .carousel-btn.prev::before {
-  transform: rotate(135deg);
+  transform: translate(-50%, -50%) rotate(135deg);
 }
 
 .reviews-video {
@@ -1078,8 +1091,22 @@ img {
   text-decoration: underline;
 }
 
-.footer .item img {
-  width: 6%;
+.footer #footer-right .item {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 12px;
+}
+
+.footer #footer-right .item a {
+  display: inline-flex;
+  align-items: center;
+}
+
+.footer #footer-right .item img {
+  width: 32px;
+  height: 32px;
+  display: block;
 }
 
 #footer-left {
@@ -1099,6 +1126,9 @@ img {
 
 #footer-right {
   text-align: end;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
 }
 
 .footer-logo-payments {

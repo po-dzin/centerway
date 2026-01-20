@@ -104,20 +104,21 @@ $(document).ready(function(){
     var $menu = $("#menu");
     var $topCta = $(".s1 .openModal");
     var $bottomCta = $(".s11 .openModal");
-    var gap = 120;
-
     function isInViewport($el) {
         if (!$el.length) {
             return false;
         }
         var rect = $el[0].getBoundingClientRect();
-        return rect.top < (window.innerHeight - gap) && rect.bottom > gap;
+        return rect.bottom > 0 && rect.top < window.innerHeight;
     }
 
     function shouldShowMenu() {
+        var isTablet = window.matchMedia("(min-width: 601px) and (max-width: 1023px)").matches;
+        var firstScreenHeight = isTablet ? ($(".s1").outerHeight() || window.innerHeight) : window.innerHeight;
+        var pastFirstScreen = window.scrollY > firstScreenHeight;
         var topVisible = isInViewport($topCta);
         var bottomVisible = isInViewport($bottomCta);
-        return !topVisible && !bottomVisible;
+        return pastFirstScreen && !topVisible && !bottomVisible;
     }
 
     function updateMenu() {
