@@ -102,15 +102,52 @@ var date = new Date($.cookie("time-timer1"));
 
 $(document).ready(function(){
     var $menu = $("#menu");
-    $(window).scroll(function(){
-        if ( $(this).scrollTop() > 100 && $menu.hasClass("default") ){
+    var $topCta = $(".s1 .openModal");
+    var $bottomCta = $(".s11 .openModal");
+    var gap = 120;
+
+    function isInViewport($el) {
+        if (!$el.length) {
+            return false;
+        }
+        var rect = $el[0].getBoundingClientRect();
+        return rect.top < (window.innerHeight - gap) && rect.bottom > gap;
+    }
+
+    function shouldShowMenu() {
+        var topVisible = isInViewport($topCta);
+        var bottomVisible = isInViewport($bottomCta);
+        return !topVisible && !bottomVisible;
+    }
+
+    function updateMenu() {
+        if (shouldShowMenu() && $menu.hasClass("default")) {
             $menu.removeClass("default").addClass("fixed");
-        } else if($(this).scrollTop() <= 100 && $menu.hasClass("fixed")) {
+        } else if (!shouldShowMenu() && $menu.hasClass("fixed")) {
             $menu.removeClass("fixed").addClass("default");
         }
-    });//scroll
+    }
+
+    $(window).on("scroll resize", updateMenu);
+    updateMenu();
 });
 
+$(document).ready(function(){
+    $(".reviews-carousel").each(function(){
+        var $carousel = $(this);
+        var $track = $carousel.find(".reviews-track");
+        var $items = $track.find(".reviews-item");
+        var scrollAmount = $items.first().outerWidth(true) || 320;
+
+        $carousel.find(".carousel-btn.prev").on("click", function(){
+            $track[0].scrollBy({ left: -scrollAmount, behavior: "smooth" });
+        });
+
+        $carousel.find(".carousel-btn.next").on("click", function(){
+            $track[0].scrollBy({ left: scrollAmount, behavior: "smooth" });
+        });
+    });
+});
 $( ".showmore" ).click(function() {
     $(this).hide();
     $('.hidd').slideDown('slow');
