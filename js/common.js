@@ -20,42 +20,6 @@ $(".openModal").click(function(e) {
 
   window.location.href = payUrl;
 });
-
-
-
-$( ".openModal1" ).click(function(e) {
-    e.preventDefault();
-    $('#modal1').arcticmodal();
-});
-$( ".openModal2" ).click(function(e) {
-    e.preventDefault();
-    $('#modal2').arcticmodal();
-});
-$( ".openModal3" ).click(function(e) {
-    e.preventDefault();
-    $('#modal3').arcticmodal();
-});
-$( ".openModal4" ).click(function(e) {
-    e.preventDefault();
-    $('#modal4').arcticmodal();
-});
-$( ".openModal5" ).click(function(e) {
-    e.preventDefault();
-    $('#modal5').arcticmodal();
-});
-$( ".openModal6" ).click(function(e) {
-    e.preventDefault();
-    $('#modal6').arcticmodal();
-});
-$( ".openModal7" ).click(function(e) {
-    e.preventDefault();
-    $('#modal7').arcticmodal();
-});
-$( ".openModal8" ).click(function(e) {
-    e.preventDefault();
-    $('#modal8').arcticmodal();
-});
-
 function newDate() {
   var time = new Date();
   var date_now =  new Date();
