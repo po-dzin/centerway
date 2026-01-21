@@ -1,18 +1,8 @@
 /* Desktop */
 @media (min-width: 1024px) {
-  section:not(.s1) {
-    padding-top: 32px;
-    padding-bottom: 32px;
-  }
-
   .container {
     padding-left: 48px;
     padding-right: 48px;
-  }
-
-  .s1 {
-    padding-top: 32px;
-    padding-bottom: 32px;
   }
 
   .s1 h3 {
@@ -38,28 +28,12 @@
     grid-column: 2;
   }
 
-  .s4 .container {
-    max-width: 1170px;
-    margin: 0 auto;
-    padding-left: 48px;
-    padding-right: 48px;
-  }
-
 }
 
 /* Tablet */
 @media (min-width: 601px) and (max-width: 1023px) {
-  section:not(.s1) {
-    padding-top: 32px;
-    padding-bottom: 32px;
-  }
   section:not(.s1) h2 {
     font-size: 32px;
-  }
-
-  .s1 {
-    padding-top: 32px;
-    padding-bottom: 32px;
   }
 
   .s1 h3 {
@@ -76,18 +50,7 @@
     gap: 0;
   }
 
-  .s4 .container {
-    max-width: 750px;
-    margin: 0 auto;
-    padding-left: 24px;
-    padding-right: 24px;
-  }
-
   .s1 .img {
-    margin-top: 32px;
-  }
-
-  .s1 .img.desk {
     margin-top: 32px;
   }
 
@@ -103,15 +66,6 @@
 
 /* Mobile */
 @media (max-width: 600px) {
-  section {
-    padding-top: 32px;
-    padding-bottom: 32px;
-  }
-
-  .s1 {
-    padding-top: 32px;
-    padding-bottom: 32px;
-  }
   section:not(.s1) h2 {
     font-size: 30px;
     text-align: center;
@@ -157,7 +111,7 @@
   }
 
   .s1 h1 {
-    font-size: 34px;
+    font-size: 32px;
     line-height: 1.06;
     margin-top: 24px;
   }
@@ -231,10 +185,6 @@
   #menu {
     padding-left: 16px;
     padding-right: 16px;
-  }
-
-  .s1 #divprice .cta-note {
-    font-size: 12px;
   }
 
   .s1::after {

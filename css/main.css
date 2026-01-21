@@ -330,7 +330,7 @@ img {
 }
 
 .s1 #divprice .cta-note {
-  font-size: 12px;
+  font-size: 14px;
   color: #333333;
   margin-top: 12px;
 }
@@ -558,10 +558,6 @@ img {
 }
 
 .s4 .container {
-  max-width: 1170px;
-  margin: 0 auto;
-  padding-left: 48px;
-  padding-right: 48px;
 }
 
 .s4 h2 {
@@ -571,8 +567,8 @@ img {
 
 .s4 .items {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 24px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 16px;
   max-width: none;
   width: 100%;
   margin: 0;
@@ -581,10 +577,14 @@ img {
 .s4 .item {
   background: #ffffff;
   border-radius: var(--radius-card);
-  padding: 28px 20px;
+  padding: 20px 16px;
   text-align: center;
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
   transition: transform 0.2s ease;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
 }
 
 .s4 .item:hover {
@@ -592,9 +592,9 @@ img {
 }
 
 .s4 .item .icon {
-  width: 64px;
-  height: 64px;
-  margin: 0 auto 16px;
+  width: 56px;
+  height: 56px;
+  margin: 0;
   background: #fff3ec;
   border-radius: 50%;
   display: flex;
@@ -603,7 +603,7 @@ img {
 }
 
 .s4 .item p {
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.4;
   color: #111827;
   margin: 0;
@@ -861,6 +861,7 @@ img {
   display: flex;
   align-items: center;
   padding: 15px 20px;
+  gap: 12px;
   cursor: pointer;
   margin: 0;
   font-size: 16px;
@@ -907,7 +908,7 @@ img {
 
 .accordion .arrow {
   margin-left: auto;
-  width: 16px;
+  width: 24px;
   height: 16px;
   position: relative;
   color: #9A9A9A;
