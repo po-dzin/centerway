@@ -115,7 +115,7 @@ button::before {
 }
 
 section {
-  padding: 64px 0;
+  padding: 32px 0;
   position: relative;
 }
 
@@ -181,8 +181,6 @@ img {
   display: grid;
   grid-template-columns: 1fr;
   gap: 48px;
-  width: 100%;
-  max-width: 1280px;
   margin: 0 auto;
   padding-left: 48px;
   padding-right: 48px;
@@ -211,7 +209,7 @@ img {
 
 .s1 h1 {
   font-size: 56px;
-  margin: 32px 0 0;
+  margin: 24px 0 0;
   text-transform: none;
   font-weight: 600;
   line-height: 1.05;
@@ -225,7 +223,7 @@ img {
 }
 
 .s1 h3 {
-  margin-top: 32px;
+  margin-top: 24px;
   font-size: 20px;
   font-weight: 500;
   color: #333333;
@@ -233,7 +231,7 @@ img {
 }
 
 .s1 .benefits-block {
-  margin-top: 32px;
+  margin-top: 24px;
   display: flex;
   flex-direction: column;
   gap: 16px;
@@ -296,10 +294,15 @@ img {
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 24px;
-  padding-top: 32px;
+  gap: 0;
+  padding-top: 0;
   width: auto;
-  margin-top: 32px;
+  margin-top: 12px;
+}
+
+.s1 .s1-preprice {
+  margin-top: 24px;
+  text-align: left;
 }
 
 .s1 #divprice p {
@@ -310,7 +313,7 @@ img {
 .s1 #divprice .price {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 0;
 }
 
 .s1 #divprice .price-note {
@@ -329,6 +332,7 @@ img {
 .s1 #divprice .cta-note {
   font-size: 12px;
   color: #333333;
+  margin-top: 12px;
 }
 
 .s1 #divprice .openModal {
@@ -341,7 +345,7 @@ img {
   text-transform: none;
   border-radius: 14px;
   box-shadow: 0 10px 24px rgba(201, 0, 8, 0.2);
-  margin-top: 0;
+  margin-top: 12px;
   min-height: 40px;
   white-space: nowrap;
 }
@@ -458,15 +462,15 @@ img {
 .help-why {
   background-color: #FEF8EF;
   border-radius: 12px;
-  padding: 40px;
+  padding: 32px;
   max-width: 780px;
-  margin: 40px auto 0;
+  margin: 32px auto 0;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .help-why h3 {
   text-align: center;
-  font-size: 22px;
+  font-size: 24px;
   font-weight: 500;
   color: #333333;
   margin-bottom: 20px;
@@ -554,8 +558,10 @@ img {
 }
 
 .s4 .container {
-  width: 100%;
-  max-width: 1536px;
+  max-width: 1170px;
+  margin: 0 auto;
+  padding-left: 48px;
+  padding-right: 48px;
 }
 
 .s4 h2 {
@@ -1055,7 +1061,7 @@ img {
 .footer {
   background: #FFFDF7;
   color: #000000;
-  padding-top: 64px;
+  padding-top: 32px;
   padding-bottom: 32px;
 }
 
