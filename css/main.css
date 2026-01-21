@@ -297,7 +297,7 @@ img {
   gap: 0;
   padding-top: 0;
   width: auto;
-  margin-top: 12px;
+  margin-top: 0px;
 }
 
 .s1 .s1-preprice {
@@ -317,7 +317,7 @@ img {
 }
 
 .s1 #divprice .price-note {
-  font-size: 14px;
+  font-size: 12px;
   color: #333333;
   font-weight: 400;
   line-height: 1.4;
@@ -325,7 +325,7 @@ img {
 
 .s1 .price span {
   color: #E87D73;
-  font-size: 30px;
+  font-size: 32px;
   font-weight: 700;
 }
 
@@ -340,7 +340,7 @@ img {
   width: 100%;
   max-width: 360px;
   padding: 10px 32px;
-  font-size: 18px;
+  font-size: 22px;
   font-weight: 700;
   text-transform: none;
   border-radius: 14px;
