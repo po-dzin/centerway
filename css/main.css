@@ -621,6 +621,16 @@ img {
   align-items: center;
 }
 
+.s55 .s55-text {
+  text-align: left;
+  padding-right: 48px;
+  box-sizing: border-box;
+}
+
+.s55 .s55-text p {
+  text-align: left;
+}
+
 .s55 h2 {
   margin-bottom: 22px;
 }
