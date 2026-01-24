@@ -17,6 +17,7 @@ body {
   overflow-x: hidden;
   overflow: visible !important;
   color: #000000;
+  margin: 0;
 }
 
 ul {
@@ -237,7 +238,7 @@ img {
   gap: 16px;
 }
 
-.s1 .benefits-block > p {
+.s1 .benefits-block>p {
   font-size: 18px;
   line-height: 1.6;
   color: #000000;
@@ -375,6 +376,7 @@ img {
     opacity: 0;
     transform: translateX(-32px);
   }
+
   to {
     opacity: 1;
     transform: translateX(0);
@@ -386,6 +388,7 @@ img {
     opacity: 0;
     transform: scale(0.96);
   }
+
   to {
     opacity: 1;
     transform: scale(1);
@@ -649,20 +652,23 @@ img {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 24px;
+  align-items: stretch;
 }
 
 .s8 .items {
+  box-sizing: border-box;
   margin: 0 auto;
   width: 100%;
   max-width: none;
   border-radius: var(--radius-card);
   background: #FFF8F5;
-  margin-bottom: 8px;
+  margin-bottom: 0;
   padding: 26px;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
   gap: 14px;
+  height: 100%;
 }
 
 .s8 .items div {
@@ -700,13 +706,15 @@ img {
 }
 
 .s8 .lesson {
-  border-radius: 10px;
+  border-radius: 999px;
+  display: block;
+  width: 100%;
+  box-sizing: border-box;
   background: #FFDFDC;
   padding: 5px 20px;
   text-align: center;
   color: #000000;
   font-weight: 700;
-  width: 100% !important;
 }
 
 .itemsli {
@@ -898,7 +906,7 @@ img {
   display: none;
 }
 
-.accordion input:checked ~ .info {
+.accordion input:checked~.info {
   max-height: 300px;
   padding: 0 40px 25px 40px;
 }
@@ -915,7 +923,7 @@ img {
   justify-content: center;
 }
 
-.accordion input:checked ~ .title_block .arrow {
+.accordion input:checked~.title_block .arrow {
   transform: rotate(180deg);
 }
 
@@ -959,9 +967,12 @@ img {
 }
 
 #iframe {
-  width: 371px;
-  height: 300px;
+  width: 100%;
+  max-width: 640px;
+  aspect-ratio: 16 / 9;
+  height: auto;
   border-radius: var(--radius-media);
+  display: block;
 }
 
 .reviews-carousel {
@@ -973,7 +984,7 @@ img {
   gap: 24px;
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  padding: 0 48px;
+  padding: 0;
   scrollbar-width: none;
 }
 
@@ -1050,6 +1061,7 @@ img {
   justify-content: center;
   border-radius: var(--radius-media);
   overflow: hidden;
+  width: 100%;
 }
 
 .mobile-break {
