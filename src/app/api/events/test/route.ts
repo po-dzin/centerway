@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req: NextRequest) {
-  const supabase = supabaseServer();
+  const supabase = supabaseAdmin();
   const body = await req.json().catch(() => ({}));
 
   const { error } = await supabase.from("events").insert({

@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { supabaseServer } from "@/lib/supabaseServer";
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 type Body = { token: string };
 
 export async function POST(req: NextRequest) {
-  const supabase = supabaseServer();
+  const supabase = supabaseAdmin();
   const body = (await req.json().catch(() => null)) as Body | null;
 
   if (!body?.token) {
