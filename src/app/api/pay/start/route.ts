@@ -12,7 +12,7 @@ const PRODUCTS = {
     returnUrl: "https://reboot.centerway.net/thanks",
   },
   irem: {
-    amount: 4000,
+    amount: 2,
     currency: "UAH",
     name: "IREM",
     returnUrl: "https://irem.centerway.net/thanks",
