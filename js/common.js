@@ -16,13 +16,11 @@ $(".openModal").click(function(e) {
   }
 
   // 3) открываем оплату
-  const basePayUrl = 'https://pay.fondy.eu/s/PASTE_FINAL_LINK_HERE';
+  const API_BASE = "https://centerway-backend.vercel.app"; // твой vercel backend
+  const PRODUCT_CODE = "irem";
 
-  // 3.1 (опционально) проброс UTM/cr/lv в оплату (если Fondy разрешает)
-  const a = new URLSearchParams(attrib).toString();
-  const payUrl = a ? (basePayUrl + (basePayUrl.includes('?') ? '&' : '?') + a) : basePayUrl;
-
-  window.open(payUrl, '_blank');
+  const payUrl = `${API_BASE}/api/pay/start?product=${encodeURIComponent(PRODUCT_CODE)}`;
+  window.location.href = payUrl;
 });
 
 $( ".openModal1" ).click(function(e) {
@@ -117,3 +115,30 @@ $( ".showmore" ).click(function() {
     $(this).hide();
     $('.hidd').slideDown('slow');
 });
+
+function initReviewsCarousel() {
+    var carousels = document.querySelectorAll(".reviews-carousel");
+    carousels.forEach(function(carousel) {
+        var track = carousel.querySelector(".reviews-track");
+        var prev = carousel.querySelector(".carousel-btn.prev");
+        var next = carousel.querySelector(".carousel-btn.next");
+        if (!track || !prev || !next) {
+            return;
+        }
+        var scrollByAmount = function() {
+            return Math.max(240, Math.floor(track.clientWidth * 0.8));
+        };
+        prev.addEventListener("click", function() {
+            track.scrollBy({ left: -scrollByAmount(), behavior: "smooth" });
+        });
+        next.addEventListener("click", function() {
+            track.scrollBy({ left: scrollByAmount(), behavior: "smooth" });
+        });
+    });
+}
+
+if (document.readyState === "loading") {
+    document.addEventListener("DOMContentLoaded", initReviewsCarousel);
+} else {
+    initReviewsCarousel();
+}
