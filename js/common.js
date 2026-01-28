@@ -8,7 +8,7 @@ $(".openModal").click(function(e) {
   // 2) шлем InitiateCheckout ДО ухода
   if (typeof fbq === 'function') {
     fbq('track', 'InitiateCheckout', {
-      value: 350,
+      value: 359,
       currency: 'UAH',
       content_name: 'Short Reboot',
       ...attrib
@@ -16,7 +16,10 @@ $(".openModal").click(function(e) {
   }
 
   // 3) открываем оплату
-  const payUrl = 'https://secure.wayforpay.com/button/b9904492f03d4';
+  onst API_BASE = "https://centerway-backend.vercel.app"; // твой vercel backend
+  const PRODUCT_CODE = "short"; // на short-лендинге будет "short"
+
+  const payUrl = `${API_BASE}/api/pay/start?product=${encodeURIComponent(PRODUCT_CODE)}`;
   window.location.href = payUrl;
 });
 function newDate() {
