@@ -1,26 +1,16 @@
+// src/app/api/orders/create/route.ts
+
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
-import { supabaseAdmin } from "@/lib/supabaseAdmin"; // если у тебя другой файл — поправь путь/имя
+import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { PRODUCTS, normalizeProduct, type ProductCode } from "@/lib/products";
 
 export const runtime = "nodejs";
 
-const PRODUCTS = {
-  short: { amount: 359, currency: "UAH", title: "Short Reboot" },
-  irem: { amount: 4000, currency: "UAH", title: "IREM" },
-} as const;
-
-type ProductCode = keyof typeof PRODUCTS;
-
 type Body = {
-  product_code: ProductCode;
-  tg_user_id?: string | null;
-  email?: string | null;
-  phone?: string | null;
-  name?: string | null;
-  attrib?: any; // utm/fbclid/etc
-  page_url?: string | null;
-  referer?: string | null;
-  user_agent?: string | null;
+  product_code?: unknown; // "short" | "irem"
+  // любые доп-поля можно присылать — мы запишем их в events.payload
+  [k: string]: unknown;
 };
 
 function cors(res: NextResponse) {
@@ -34,139 +24,73 @@ export async function OPTIONS() {
   return cors(new NextResponse(null, { status: 204 }));
 }
 
-function dayStampUTC() {
-  const d = new Date();
-  const yyyy = d.getUTCFullYear();
-  const mm = String(d.getUTCMonth() + 1).padStart(2, "0");
-  const dd = String(d.getUTCDate()).padStart(2, "0");
-  return `${yyyy}${mm}${dd}`;
+function pad2(n: number) {
+  return String(n).padStart(2, "0");
 }
 
-function rand8() {
-  return crypto.randomBytes(4).toString("hex");
+function makeOrderRef(product: ProductCode) {
+  const d = new Date();
+  const y = d.getFullYear();
+  const m = pad2(d.getMonth() + 1);
+  const day = pad2(d.getDate());
+  const rand = crypto.randomBytes(4).toString("hex");
+  return `${product}_${y}${m}${day}_${rand}`;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as Body;
 
-    const product_code = body.product_code;
-    if (!product_code || !(product_code in PRODUCTS)) {
+    const product: ProductCode = normalizeProduct(body.product_code) ?? "short";
+    const cfg = PRODUCTS[product];
+
+    const order_ref = makeOrderRef(product);
+    const customer_id = crypto.randomUUID();
+
+    const sb = supabaseAdmin();
+
+    // orders: вставляем только те колонки, которые точно есть (чтобы не падать от schema cache)
+    const { error: ordErr } = await sb.from("orders").insert({
+      order_ref,
+      product_code: product,
+      amount: cfg.amount,
+      currency: cfg.currency,
+      status: "created",
+      customer_id,
+    });
+
+    if (ordErr) {
       return cors(
         NextResponse.json(
-          { ok: false, error: "bad_product_code" },
-          { status: 400 }
+          { ok: false, error: "db_order_insert_failed", details: ordErr.message },
+          { status: 500 }
         )
       );
     }
 
-    const cfg = PRODUCTS[product_code];
-    const sb = supabaseAdmin();
-
-    // 1) customer: ищем/создаем
-    let customerId: string | null = null;
-
-    if (body.tg_user_id) {
-      const { data: existing, error: selErr } = await sb
-        .from("customers")
-        .select("id")
-        .eq("tg_user_id", String(body.tg_user_id))
-        .maybeSingle();
-
-      if (selErr) throw selErr;
-
-      if (existing?.id) {
-        customerId = existing.id;
-      } else {
-        const { data: created, error: insErr } = await sb
-          .from("customers")
-          .insert({
-            tg_user_id: String(body.tg_user_id),
-            email: body.email ?? null,
-            phone: body.phone ?? null,
-            meta: {
-              name: body.name ?? null,
-              attrib: body.attrib ?? null,
-              first_seen_url: body.page_url ?? null,
-              first_seen_referer: body.referer ?? null,
-              first_seen_ua: body.user_agent ?? null,
-            },
-          })
-          .select("id")
-          .single();
-
-        if (insErr) throw insErr;
-        customerId = created.id;
-      }
-    } else if (body.email || body.phone) {
-      // fallback: если tg_user_id нет, всё равно создадим customer, чтобы не терять контакты
-      const { data: created, error: insErr } = await sb
-        .from("customers")
-        .insert({
-          tg_user_id: null,
-          email: body.email ?? null,
-          phone: body.phone ?? null,
-          meta: {
-            name: body.name ?? null,
-            attrib: body.attrib ?? null,
-            first_seen_url: body.page_url ?? null,
-            first_seen_referer: body.referer ?? null,
-            first_seen_ua: body.user_agent ?? null,
-          },
-        })
-        .select("id")
-        .single();
-
-      if (insErr) throw insErr;
-      customerId = created.id;
-    }
-
-    // если customer нашли — аккуратно дополним email/phone/meta (не затирая)
-    if (customerId && (body.email || body.phone || body.attrib || body.name)) {
-      await sb
-        .from("customers")
-        .update({
-          email: body.email ?? undefined,
-          phone: body.phone ?? undefined,
-          meta: {
-            name: body.name ?? null,
-            attrib: body.attrib ?? null,
-            last_seen_url: body.page_url ?? null,
-            last_seen_referer: body.referer ?? null,
-            last_seen_ua: body.user_agent ?? null,
-          },
-        })
-        .eq("id", customerId);
-    }
-
-    // 2) order
-    const order_ref = `${product_code}_${dayStampUTC()}_${rand8()}`;
-
-    const { error: orderErr } = await sb.from("orders").insert({
+    // events: сюда кладём любые доп-данные (utm, tg_user_id, page_url и т.д.)
+    await sb.from("events").insert({
+      type: "order_created",
       order_ref,
-      product_code,
-      amount: cfg.amount,
-      currency: cfg.currency,
-      status: "created",
-      customer_id: customerId,
-      meta: {
-        attrib: body.attrib ?? null,
-        page_url: body.page_url ?? null,
-        referer: body.referer ?? null,
-        user_agent: body.user_agent ?? null,
-      },
+      customer_id,
+      payload: body,
     });
 
-    if (orderErr) throw orderErr;
-
     return cors(
-      NextResponse.json({ ok: true, order_ref, customer_id: customerId })
+      NextResponse.json({
+        ok: true,
+        order_ref,
+        product_code: product,
+        amount: cfg.amount,
+        currency: cfg.currency,
+        customer_id,
+      })
     );
   } catch (e: any) {
     return cors(
       NextResponse.json(
-        { ok: false, error: "server_error", detail: String(e?.message ?? e) },
-        { status: 500 }
+        { ok: false, error: "bad_request", details: String(e?.message ?? e) },
+        { status: 400 }
       )
     );
   }
