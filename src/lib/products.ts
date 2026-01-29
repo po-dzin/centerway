@@ -3,14 +3,14 @@ export type SearchParams = Record<string, string | string[] | undefined>;
 export const PRODUCTS = {
   short: {
     title: "Short Reboot",
-    amount: 359,
+    amount: 1,
     currency: "UAH",
     approvedUrl: "https://reboot.centerway.net.ua/thanks",
     declinedUrl: "https://reboot.centerway.net.ua/pay-failed",
   },
   irem: {
     title: "IREM",
-    amount: 4000,
+    amount: 2,
     currency: "UAH",
     approvedUrl: "https://irem.centerway.net.ua/thanks",
     declinedUrl: "https://irem.centerway.net.ua/pay-failed",
