@@ -16,27 +16,27 @@ function inferProductFromOrderRef(orderRef: string | null): ProductCode {
   return "short";
 }
 
-async function readBodyParams(req: NextRequest): Promise<Record<string, string>> {
-  if (req.method !== "POST") return {};
-  const ct = req.headers.get("content-type") || "";
-
+async function readBodyParams(req: NextRequest) {
   try {
-    if (ct.includes("application/json")) {
-      const j = await req.json();
+    const text = await req.text();
+    if (!text) return {};
+
+    // 1) JSON?
+    try {
+      const j = JSON.parse(text);
       const out: Record<string, string> = {};
       for (const [k, v] of Object.entries(j ?? {})) out[k] = String(v);
       return out;
-    }
-  } catch {}
+    } catch {}
 
-  try {
-    // WFP часто шлет form-urlen const fd = await req.formData();
+    // 2) form-urlencoded?
+    const params = new URLSearchParams(text);
     const out: Record<string, string> = {};
-    for (const [k, v] of fd.entries()) out[k] = String(v);
+    for (const [k, v] of params.entries()) out[k] = v;
     return out;
-  } catch {}
-
-  return {};
+  } catch {
+    return {};
+  }
 }
 
 async function handler(req: NextRequest) {
@@ -57,7 +57,7 @@ async function handler(req: NextRequest) {
     null;
 
   const product: ProductCode =
-    (productRaw && (productRaw === "sho "irem") ? productRaw : null) ??
+    (productRaw && (productRaw === "short" || productRaw === "irem") ? productRaw : null) ??
     inferProductFromOrderRef(orderRef);
 
   // финальный редирект (куда "после оплаты")
