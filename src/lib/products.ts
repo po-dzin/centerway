@@ -1,18 +1,16 @@
-// src/lib/products.ts
+export type SearchParams = Record<string, string | string[] | undefined>;
 
 export const PRODUCTS = {
   short: {
-    code: "short",
     title: "Short Reboot",
-    amount: 1,
+    amount: 359,
     currency: "UAH",
     approvedUrl: "https://reboot.centerway.net.ua/thanks",
     declinedUrl: "https://reboot.centerway.net.ua/pay-failed",
   },
   irem: {
-    code: "irem",
     title: "IREM",
-    amount: 2,
+    amount: 4000,
     currency: "UAH",
     approvedUrl: "https://irem.centerway.net.ua/thanks",
     declinedUrl: "https://irem.centerway.net.ua/pay-failed",
@@ -20,45 +18,55 @@ export const PRODUCTS = {
 } as const;
 
 export type ProductCode = keyof typeof PRODUCTS;
-export type ProductConfig = (typeof PRODUCTS)[ProductCode];
 
-export function normalizeProduct(input: unknown): ProductCode | null {
-  if (typeof input !== "string") return null;
-  const s = input.trim().toLowerCase();
-  if (s === "short") return "short";
-  if (s === "irem") return "irem";
-  return null;
+function first(v: string | string[] | undefined): string | undefined {
+  return Array.isArray(v) ? v[0] : v;
 }
 
-export type SearchParams = Record<string, string | string[] | undefined>;
+/**
+ * Нормализуем продукт из любого входа:
+ * - "short" / "irem"
+ * - { product: "irem" } / { product_code: "short" }
+ * - Promise<searchParams>
+ */
+export function normalizeProduct(input: unknown): ProductCode | null {
+  if (!input) return null;
 
-export function pick(sp: SearchParams, keys: string[]): string | null {
-  for (const k of keys) {
-    const v = sp[k];
-    if (typeof v === "string" && v.trim()) return v.trim();
-    if (Array.isArray(v) && typeof v[0] === "string" && v[0].trim()) return v[0].trim();
+  // строка
+  if (typeof input === "string") {
+    const s = input.trim().toLowerCase();
+    if (s === "short" || s === "irem") return s;
+    return null;
   }
+
+  // объект searchParams
+  if (typeof input === "object") {
+    const sp = input as SearchParams;
+    const raw =
+      first(sp.product) ??
+      first(sp.product_code) ??
+      first(sp.p);
+
+    if (typeof raw === "string") return normalizeProduct(raw);
+    return null;
+  }
+
   return null;
 }
 
 /**
- * Достаём продукт из query:
- * - product / code / p
- * - или из order_ref префикса: "irem_20260128_..." => "irem"
- * Фоллбек: "short"
+ * Всегда возвращает валидный продукт (дефолт short)
  */
-export function resolveProduct(sp: SearchParams): ProductCode {
-  const qp = pick(sp, ["product", "code", "p"]);
-  const orderRef = pick(sp, ["order_ref", "orderReference", "order", "oref"]);
-  const fromRef = orderRef ? normalizeProduct(orderRef.split("_")[0]) : null;
-
-  return fromRef ?? normalizeProduct(qp) ?? "short";
+export function resolveProduct(input: unknown): ProductCode {
+  return normalizeProduct(input) ?? "short";
 }
 
-export function withQuery(baseUrl: string, params: Record<string, string | null | undefined>) {
-  const u = new URL(baseUrl);
-  for (const [k, v] of Object.entries(params)) {
-    if (v) u.searchParams.set(k, v);
-  }
-  return u.toString();
+/**
+ * Достаём order_ref из searchParams, если есть
+ */
+export function resolveOrderRef(input: unknown): string | null {
+  if (!input || typeof input !== "object") return null;
+  const sp = input as SearchParams;
+  const raw = first(sp.order_ref) ?? first(sp.orderReference);
+  return typeof raw === "string" && raw.trim() ? raw.trim() : null;
 }

@@ -1,18 +1,19 @@
 import { redirect } from "next/navigation";
-import { PRODUCTS, resolveProduct, pick, withQuery, type SearchParams } from "@/lib/products";
+import { PRODUCTS, resolveProduct, resolveOrderRef, type SearchParams } from "@/lib/products";
 
-export default async function DeclinedPage(props: {
-  searchParams: Promise<SearchParams> | SearchParams;
+// Next.js 16: searchParams приходит как Promise
+export default async function DeclinedPage({
+  searchParams,
+}: {
+  searchParams: Promise<SearchParams>;
 }) {
-  const sp = await Promise.resolve(props.searchParams as any);
-
+  const sp = (await searchParams) ?? {};
   const product = resolveProduct(sp);
-  const order_ref = pick(sp, ["order_ref", "orderReference", "order", "oref"]);
+  const orderRef = resolveOrderRef(sp);
 
-  const target = withQuery(PRODUCTS[product].declinedUrl, {
-    product,
-    order_ref: order_ref ?? undefined,
-  });
+  const url = new URL(PRODUCTS[product].declinedUrl);
+  if (orderRef) url.searchParams.set("order_ref", orderRef);
+  url.searchParams.set("product", product);
 
-  redirect(target);
+  redirect(url.toString());
 }
