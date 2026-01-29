@@ -73,6 +73,7 @@ export async function GET(req: NextRequest) {
   const returnUrl = `${appBaseUrl}/pay/approved?product=${encodeURIComponent(product)}&order_ref=${encodeURIComponent(order_ref)}`;
 
   const wfpPayload: any = {
+    apiVersion: 1,
     transactionType: "CREATE_INVOICE",
     merchantAccount,
     merchantDomainName,
@@ -85,7 +86,7 @@ export async function GET(req: NextRequest) {
     productCount: [1],
     serviceUrl,
     returnUrl,
-  };
+  };  
 
   // signature по WayForPay: merchantAccount;merchantDomainName;orderReference;orderDate;amount;currency;productName;productCount;productPrice
   const signStr = [
