@@ -144,6 +144,7 @@ export async function POST(req: NextRequest) {
       order_ref: orderRef,
       status,
       raw_payload: payload,
+      provider: "wfp",
     });
     pErr = error;
   }
