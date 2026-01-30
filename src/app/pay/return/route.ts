@@ -127,7 +127,19 @@ async function handler(req: NextRequest) {
   const finalStatus = byParams ?? (await statusFromDb(orderRef));
 
   // мета платежа (rrn/amount/currency) — берём из payments.raw_payload если есть
-  const meta = await latestPaymentMeta(orderRef);
+  const metaFromParams = pickMeta(body, sp);
+  const metaFromDb = await latestPaymentMeta(orderRef);
+
+  const meta = metaFromParams.rrn || metaFromParams.amount
+  ? metaFromParams
+  : metaFromDb;
+
+  function pickMeta(body: Record<string,string>, sp: URLSearchParams) {
+    const rrn = body.rrn || sp.get("rrn") || body.payment_id || sp.get("payment_id") || "";
+    const amount = body.amount || sp.get("amount") || "";
+    const currency = body.currency || sp.get("currency") || "";
+    return { rrn: rrn || null, amount: amount || null, currency: currency || null };
+  }
 
   const destBase = finalStatus === "paid" ? PRODUCTS[product].approvedUrl : PRODUCTS[product].declinedUrl;
   const dest = new URL(destBase);
@@ -135,7 +147,10 @@ async function handler(req: NextRequest) {
   dest.searchParams.set("order_ref", orderRef);
   dest.searchParams.set("product", String(product));
 
-  if (meta.rrn) dest.searchParams.set("rrn", meta.rrn);
+  if (meta.rrn) {
+    dest.searchParams.set("rrn", meta.rrn);
+    dest.searchParams.set("payment_id", meta.rrn); // ✅ совместимость
+  }
   if (meta.amount) dest.searchParams.set("amount", meta.amount);
   if (meta.currency) dest.searchParams.set("currency", meta.currency);
 
