@@ -50,35 +50,57 @@
   </div>
 
   <script>
-    (function () {
-      const qs = new URLSearchParams(location.search);
+  (function () {
+  const qs = new URLSearchParams(location.search);
 
-      // WayForPay/платёжные системы могут передавать разные имена параметров — ловим самые частые
-      const orderRef =
-        qs.get('orderReference') ||
-        qs.get('order_id') ||
-        qs.get('payment_id') ||
-        qs.get('id') ||
-        '';
+  const product = (qs.get('product') || '').toLowerCase();
+  const orderRef = qs.get('order_ref') || qs.get('orderReference') || '';
+  const rrn = qs.get('payment_id') || qs.get('rrn') || '';
+  const amountRaw = qs.get('amount') || '';
+  const currency = (qs.get('currency') || 'UAH').toUpperCase();
 
-      const reason =
-        qs.get('reason') ||
-        qs.get('error') ||
-        qs.get('message') ||
-        '';
+  const amount = amountRaw ? Number(String(amountRaw).replace(',', '.')) : NaN;
 
-      const orderLine = document.getElementById('orderLine');
-      if (orderRef && reason) {
-        orderLine.textContent = `Платіж: ${orderRef} • Причина: ${reason}`;
-      } else if (orderRef) {
-        orderLine.textContent = `Платіж: ${orderRef}`;
-      } else {
-        orderLine.textContent = `Дані платежу: (не передано в URL)`;
-      }
+  const contentByProduct = {
+    short: 'Short Reboot',
+    irem: 'IREM'
+  };
+  const content_name = contentByProduct[product] || (product ? product.toUpperCase() : 'Payment');
 
-      // Опционально: можно отправить кастом-событие в Meta Pixel (если он подключен на сайте)
-      // if (typeof fbq === 'function') fbq('trackCustom', 'PaymentFailed', { order_reference: orderRef || undefined });
-    })();
-  </script>
+  const tid = rrn || orderRef || '';
+
+  // UI
+  const orderLine = document.getElementById('orderLine');
+  if (orderLine) {
+    const meta = [
+      tid ? `Номер спроби: ${tid}` : `Номер спроби: (не передано в URL)`,
+      (!Number.isNaN(amount) && amount > 0) ? `${amount} ${currency}` : null,
+      content_name ? content_name : null
+    ].filter(Boolean).join(' • ');
+    orderLine.textContent = meta;
+  }
+
+  // защита от дублей
+  const firedKey = 'cw_failed_fired:' + (orderRef || tid || 'noid');
+  if (sessionStorage.getItem(firedKey) === '1') return;
+
+  let attrib = {};
+  try { attrib = JSON.parse(localStorage.getItem('cw_attrib') || '{}'); } catch (_) {}
+
+  const payload = {
+    value: (!Number.isNaN(amount) && amount > 0) ? amount : 0,
+    currency: currency,
+    content_name: content_name
+  };
+  if (tid) payload.transaction_id = tid;
+  Object.assign(payload, attrib);
+
+  if (typeof fbq === 'function') {
+    fbq('trackCustom', 'PurchaseFailed', payload);
+    sessionStorage.setItem(firedKey, '1');
+  }
+})();
+</script>
+
 </body>
 </html>
