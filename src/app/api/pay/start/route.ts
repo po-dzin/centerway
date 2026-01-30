@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
   const serviceUrl = `${appBaseUrl}/api/wfp/webhook`;
 
   // returnUrl используем как fallback (даже если в кабинете есть approve/decline)
-  const returnUrl = `${appBaseUrl}/pay/approved?product=${encodeURIComponent(product)}&order_ref=${encodeURIComponent(order_ref)}`;
+  const returnUrl = `${appBaseUrl}/pay/return?product=${product}&order_ref=${order_ref}`;
 
   const wfpPayload: any = {
     apiVersion: 1,
