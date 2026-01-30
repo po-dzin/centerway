@@ -67,10 +67,8 @@ export async function GET(req: NextRequest) {
   }
 
   // 2) создаём invoice в WayForPay
-  const serviceUrl = `${appBaseUrl}/api/wfp/webhook`;
-
   // returnUrl используем как fallback (даже если в кабинете есть approve/decline)
-  const returnUrl = `${appBaseUrl}/pay/return?product=${product}&order_ref=${order_ref}`;
+  const returnUrl = `${appBaseUrl}/pay/return?product=${encodeURIComponent(product)}&order_ref=${encodeURIComponent(order_ref)}`;
 
   const wfpPayload: any = {
     apiVersion: 1,
@@ -84,7 +82,7 @@ export async function GET(req: NextRequest) {
     productName: [cfg.title],
     productPrice: [cfg.amount],
     productCount: [1],
-    serviceUrl,
+    serviceUrl: `${appBaseUrl}/api/wfp/webhook`,
     returnUrl,
   };  
 

@@ -1,101 +1,101 @@
 import { NextRequest, NextResponse } from "next/server";
-import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { extractPaymentMeta } from "@/lib/paymentMeta";
 
-// Важно: crypto -> nodejs runtime
 export const runtime = "nodejs";
 
-function hmacMd5Hex(secret: string, data: string) {
-  return crypto.createHmac("md5", secret).update(data, "utf8").digest("hex");
+async function readBodyParams(req: NextRequest): Promise<Record<string, string>> {
+  try {
+    const j = (await req.json()) as any;
+    if (j && typeof j === "object") {
+      const out: Record<string, string> = {};
+      for (const [k, v] of Object.entries(j)) {
+        if (typeof v === "string" || typeof v === "number" || typeof v === "boolean") {
+          out[k] = String(v);
+        }
+      }
+      return out;
+    }
+  } catch {}
+
+  try {
+    const fd = await req.formData();
+    const out: Record<string, string> = {};
+    for (const [k, v] of fd.entries()) out[k] = String(v);
+    return out;
+  } catch {}
+
+  return {};
 }
 
-/**
- * WayForPay serviceUrl webhook
- * Проверка подписи:
- * merchantAccount;orderReference;amount;currency;authCode;cardPan;transactionStatus;reasonCode
- */
+function norm(v: unknown): string | null {
+  return typeof v === "string" && v.trim() ? v.trim() : null;
+}
+
+function isApproved(payload: Record<string, string>): boolean {
+  const ts = norm(payload["transactionStatus"] ?? payload["status"])?.toLowerCase();
+  if (ts === "approved" || ts === "success" || ts === "paid") return true;
+  return false;
+}
+
+async function upsertCustomer(email: string | null, phone: string | null) {
+  if (!email && !phone) return;
+
+  const sb = supabaseAdmin();
+
+  // ищем по email или phone
+  let foundId: string | null = null;
+
+  if (email) {
+    const { data } = await sb.from("customers").select("id").eq("email", email).maybeSingle();
+    if (data?.id) foundId = data.id;
+  }
+
+  if (!foundId && phone) {
+    const { data } = await sb.from("customers").select("id").eq("phone", phone).maybeSingle();
+    if (data?.id) foundId = data.id;
+  }
+
+  if (foundId) {
+    await sb.from("customers").update({ email, phone }).eq("id", foundId);
+  } else {
+    await sb.from("customers").insert({ email, phone });
+  }
+}
+
 export async function POST(req: NextRequest) {
-  const body = await req.json();
-  
-  const supabase = supabaseAdmin();
+  const payload = await readBodyParams(req);
 
-  const secret = process.env.WFP_SECRET_KEY;
-  if (!secret) {
-    return NextResponse.json({ ok: false, error: "missing_WFP_SECRET_KEY" }, { status: 500 });
+  const orderRef = norm(payload["orderReference"] ?? payload["order_ref"]);
+  if (!orderRef) {
+    return NextResponse.json({ ok: false, error: "missing_order_ref" }, { status: 400 });
   }
 
-  const order_ref = String(body.orderReference ?? "");
-  const transactionStatus = String(body.transactionStatus ?? "");
-  const amount = String(body.amount ?? "");
-  const currency = String(body.currency ?? "");
-  const merchantAccount = String(body.merchantAccount ?? "");
-  const authCode = String(body.authCode ?? "");
-  const cardPan = String(body.cardPan ?? "");
-  const reasonCode = String(body.reasonCode ?? "");
-  const incomingSig = String(body.merchantSignature ?? "");
+  const paid = isApproved(payload);
+  const status = paid ? "paid" : "created"; // у тебя бинарная модель — ок
 
-  // 1) Лог сырого вебхука (полезно всегда)
-  await supabase.from("events").insert({
-    type: "wfp_webhook_raw",
-    order_ref,
-    payload: body,
+  const sb = supabaseAdmin();
+
+  // 1) сохраняем payments (raw_payload — источник правды)
+  const { error: pErr } = await sb.from("payments").insert({
+    order_ref: orderRef,
+    status,
+    raw_payload: payload,
   });
 
-  // 2) Проверка подписи (по докам WFP)
-  const sigStr = [
-    merchantAccount,
-    order_ref,
-    amount,
-    currency,
-    authCode,
-    cardPan,
-    transactionStatus,
-    reasonCode,
-  ].join(";");
+  // 2) обновляем orders.status
+  const { error: oErr } = await sb.from("orders").update({ status }).eq("order_ref", orderRef);
 
-  const expected = hmacMd5Hex(secret, sigStr);
+  // 3) (опционально) наполняем customers из payload
+  const meta = extractPaymentMeta(payload);
+  await upsertCustomer(meta.email, meta.phone);
 
-  if (!incomingSig || incomingSig !== expected) {
-    await supabase.from("events").insert({
-      type: "wfp_bad_signature",
-      order_ref,
-      payload: { incomingSig, expected, sigStr },
-    });
-
-    return NextResponse.json({ ok: false, error: "bad_signature" }, { status: 401 });
+  if (pErr || oErr) {
+    return NextResponse.json(
+      { ok: false, error: "db_write_failed", details: String(pErr?.message || oErr?.message || "") },
+      { status: 500 }
+    );
   }
 
-  // 3) Сохраняем платеж
-  const provider_tx_id = body.transactionId ? String(body.transactionId) : null;
-
-  await supabase.from("payments").insert({
-    provider: "wayforpay",
-    order_ref,
-    provider_tx_id,
-    status: transactionStatus,
-    raw_payload: body,
-  });
-
-  // 4) Если Approved -> помечаем заказ как paid
-  if (transactionStatus === "Approved") {
-    await supabase.from("orders").update({ status: "paid" }).eq("order_ref", order_ref);
-
-    await supabase.from("events").insert({
-      type: "order_paid",
-      order_ref,
-      payload: { provider: "wayforpay", provider_tx_id },
-    });
-  }
-
-  // 5) Отвечаем WayForPay "accept" (по докам)
-  const time = Math.floor(Date.now() / 1000);
-  const respStr = [order_ref, "accept", String(time)].join(";");
-  const signature = hmacMd5Hex(secret, respStr);
-
-  return NextResponse.json({
-    orderReference: order_ref,
-    status: "accept",
-    time,
-    signature,
-  });
+  return NextResponse.json({ ok: true });
 }
