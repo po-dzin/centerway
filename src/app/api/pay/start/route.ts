@@ -8,9 +8,10 @@ import {
   ProductCode,
   Locale,
   normalizeLocale,
-  productTitle,
+  productHeading,
   resolveProduct,
 } from "@/lib/products";
+import { buildReturnUrl, sanitizeWfpProductName } from "@/lib/pay";
 
 export const runtime = "nodejs";
 
@@ -77,12 +78,6 @@ function resolveLocale(req: NextRequest, url: URL): Locale {
   return "en";
 }
 
-function sanitizeTitle(input: string): string {
-  const noTags = input.replace(/<br\s*\/?>/gi, " ").replace(/\s+/g, " ").trim();
-  if (noTags.length <= 255) return noTags;
-  return `${noTags.slice(0, 252)}...`;
-}
-
 export async function GET(req: NextRequest) {
   const { missing } = requiredEnv();
   if (missing.length) {
@@ -99,7 +94,7 @@ export async function GET(req: NextRequest) {
 
   const cfg = PRODUCTS[product];
   const locale = resolveLocale(req, url);
-  const title = sanitizeTitle(productTitle(product, locale));
+  const title = sanitizeWfpProductName(productHeading(product, locale));
 
   const merchantAccount = process.env.WFP_MERCHANT_ACCOUNT!;
   const secretKey = process.env.WFP_SECRET_KEY!;
@@ -127,7 +122,7 @@ export async function GET(req: NextRequest) {
 
   // 2) создаём invoice в WayForPay
   // returnUrl используем как fallback (даже если в кабинете есть approve/decline)
-  const returnUrl = `${appBaseUrl}/pay/return?product=${encodeURIComponent(product)}&order_ref=${encodeURIComponent(order_ref)}`;
+  const returnUrl = buildReturnUrl(appBaseUrl, product, order_ref);
 
   const wfpPayload: any = {
     apiVersion: 1,

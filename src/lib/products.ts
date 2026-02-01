@@ -2,10 +2,15 @@ export type SearchParams = Record<string, string | string[] | undefined>;
 
 export const PRODUCTS = {
   short: {
-    titles: {
+    heading: {
+      ua: "Short Reboot — онлайн-курс",
+      en: "Short Reboot — online course",
+    },
+    description: {
       ua:
-        "Оплата онлайн-курсу \"Short Reboot\" від Centerway.<br>Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції.<br>Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
-      en: "Short Reboot",
+        "Оплата онлайн-курсу \"Short Reboot\" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
+      en:
+        "Online course payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     amount: 359,
     currency: "UAH",
@@ -13,10 +18,15 @@ export const PRODUCTS = {
     declinedUrl: "https://reboot.centerway.net.ua/pay-failed",
   },
   irem: {
-    titles: {
+    heading: {
+      ua: "IREM gymnastics — онлайн-система",
+      en: "IREM gymnastics — online system",
+    },
+    description: {
       ua:
-        "Оплата онлайн-системи \"IREM gymnastics\" від Centerway.<br>Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції.<br>Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
-      en: "IREM",
+        "Оплата онлайн-системи \"IREM gymnastics\" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
+      en:
+        "Online system payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     amount: 4000,
     currency: "UAH",
@@ -80,9 +90,14 @@ export function normalizeLocale(input: string | null | undefined): Locale | null
   return null;
 }
 
-export function productTitle(product: ProductCode, locale: Locale): string {
-  const titles = PRODUCTS[product].titles;
-  return titles[locale] ?? titles[DEFAULT_LOCALE];
+export function productHeading(product: ProductCode, locale: Locale): string {
+  const headings = PRODUCTS[product].heading;
+  return headings[locale] ?? headings[DEFAULT_LOCALE];
+}
+
+export function productDescription(product: ProductCode, locale: Locale): string {
+  const descriptions = PRODUCTS[product].description;
+  return descriptions[locale] ?? descriptions[DEFAULT_LOCALE];
 }
 
 /**

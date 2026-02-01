@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build --webpack",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "smoke": "tsx scripts/smoke.ts",
+    "ci:smoke": "npm run lint && npm run build && npm run smoke"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.93.1",
@@ -21,6 +23,7 @@
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",
     "eslint-config-next": "16.1.5",
+    "tsx": "^4.20.5",
     "typescript": "^5"
   }
 }
