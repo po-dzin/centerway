@@ -77,6 +77,12 @@ function resolveLocale(req: NextRequest, url: URL): Locale {
   return "en";
 }
 
+function sanitizeTitle(input: string): string {
+  const noTags = input.replace(/<br\s*\/?>/gi, " ").replace(/\s+/g, " ").trim();
+  if (noTags.length <= 255) return noTags;
+  return `${noTags.slice(0, 252)}...`;
+}
+
 export async function GET(req: NextRequest) {
   const { missing } = requiredEnv();
   if (missing.length) {
@@ -93,7 +99,7 @@ export async function GET(req: NextRequest) {
 
   const cfg = PRODUCTS[product];
   const locale = resolveLocale(req, url);
-  const title = productTitle(product, locale);
+  const title = sanitizeTitle(productTitle(product, locale));
 
   const merchantAccount = process.env.WFP_MERCHANT_ACCOUNT!;
   const secretKey = process.env.WFP_SECRET_KEY!;
