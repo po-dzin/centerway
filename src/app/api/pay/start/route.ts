@@ -3,7 +3,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { PRODUCTS, ProductCode, resolveProduct } from "@/lib/products";
+import {
+  PRODUCTS,
+  ProductCode,
+  Locale,
+  normalizeLocale,
+  productTitle,
+  resolveProduct,
+} from "@/lib/products";
 
 export const runtime = "nodejs";
 
@@ -26,6 +33,50 @@ function makeOrderRef(product: ProductCode) {
   return `${product}_${y}${m}${day}_${rand}`;
 }
 
+function countryFromHeaders(headers: Headers): string | null {
+  const candidates = [
+    "x-vercel-ip-country",
+    "cf-ipcountry",
+    "x-country",
+    "x-geo-country",
+    "fastly-client-country",
+    "x-appengine-country",
+  ];
+  for (const name of candidates) {
+    const v = headers.get(name);
+    if (v && v.trim()) return v.trim().toUpperCase();
+  }
+  return null;
+}
+
+function localeFromAcceptLanguage(headers: Headers): Locale | null {
+  const raw = headers.get("accept-language");
+  if (!raw) return null;
+  for (const part of raw.split(",")) {
+    const tag = part.trim().split(";")[0];
+    const loc = normalizeLocale(tag);
+    if (loc) return loc;
+  }
+  return null;
+}
+
+function resolveLocale(req: NextRequest, url: URL): Locale {
+  const override = normalizeLocale(
+    url.searchParams.get("lang") ??
+      url.searchParams.get("locale") ??
+      url.searchParams.get("language")
+  );
+  if (override) return override;
+
+  const country = countryFromHeaders(req.headers);
+  if (country === "UA") return "ua";
+
+  const byAcceptLanguage = localeFromAcceptLanguage(req.headers);
+  if (byAcceptLanguage) return byAcceptLanguage;
+
+  return "en";
+}
+
 export async function GET(req: NextRequest) {
   const { missing } = requiredEnv();
   if (missing.length) {
@@ -41,6 +92,8 @@ export async function GET(req: NextRequest) {
   const format = url.searchParams.get("format"); // json | null
 
   const cfg = PRODUCTS[product];
+  const locale = resolveLocale(req, url);
+  const title = productTitle(product, locale);
 
   const merchantAccount = process.env.WFP_MERCHANT_ACCOUNT!;
   const secretKey = process.env.WFP_SECRET_KEY!;
@@ -79,7 +132,7 @@ export async function GET(req: NextRequest) {
     orderDate: Math.floor(Date.now() / 1000),
     amount: cfg.amount,
     currency: cfg.currency,
-    productName: [cfg.title],
+    productName: [title],
     productPrice: [cfg.amount],
     productCount: [1],
     serviceUrl: `${appBaseUrl}/api/wfp/webhook`,

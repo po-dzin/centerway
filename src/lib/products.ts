@@ -2,15 +2,23 @@ export type SearchParams = Record<string, string | string[] | undefined>;
 
 export const PRODUCTS = {
   short: {
-    title: "Short Reboot",
-    amount: 1,
+    titles: {
+      ua:
+        "Оплата онлайн-курсу \"Short Reboot\" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
+      en: "Short Reboot",
+    },
+    amount: 359,
     currency: "UAH",
     approvedUrl: "https://reboot.centerway.net.ua/thanks",
     declinedUrl: "https://reboot.centerway.net.ua/pay-failed",
   },
   irem: {
-    title: "IREM",
-    amount: 2,
+    titles: {
+      ua:
+        "Оплата онлайн-системи \"IREM gymnastics\" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
+      en: "IREM",
+    },
+    amount: 4000,
     currency: "UAH",
     approvedUrl: "https://irem.centerway.net.ua/thanks",
     declinedUrl: "https://irem.centerway.net.ua/pay-failed",
@@ -18,6 +26,9 @@ export const PRODUCTS = {
 } as const;
 
 export type ProductCode = keyof typeof PRODUCTS;
+export type Locale = "ua" | "en";
+
+const DEFAULT_LOCALE: Locale = "en";
 
 function first(v: string | string[] | undefined): string | undefined {
   return Array.isArray(v) ? v[0] : v;
@@ -59,6 +70,19 @@ export function normalizeProduct(input: unknown): ProductCode | null {
  */
 export function resolveProduct(input: unknown): ProductCode {
   return normalizeProduct(input) ?? "short";
+}
+
+export function normalizeLocale(input: string | null | undefined): Locale | null {
+  if (!input) return null;
+  const s = input.trim().toLowerCase();
+  if (s === "ua" || s === "uk" || s === "uk-ua" || s === "ua-ua") return "ua";
+  if (s === "en" || s.startsWith("en-")) return "en";
+  return null;
+}
+
+export function productTitle(product: ProductCode, locale: Locale): string {
+  const titles = PRODUCTS[product].titles;
+  return titles[locale] ?? titles[DEFAULT_LOCALE];
 }
 
 /**
