@@ -9,9 +9,10 @@ import {
   Locale,
   normalizeLocale,
   productHeading,
+  productDescription,
   resolveProduct,
 } from "@/lib/products";
-import { buildReturnUrl, sanitizeWfpProductName } from "@/lib/pay";
+import { buildReturnUrl, buildWfpProductName } from "@/lib/pay";
 
 export const runtime = "nodejs";
 
@@ -94,7 +95,10 @@ export async function GET(req: NextRequest) {
 
   const cfg = PRODUCTS[product];
   const locale = resolveLocale(req, url);
-  const title = sanitizeWfpProductName(productHeading(product, locale));
+  const title = buildWfpProductName(
+    productHeading(product, locale),
+    productDescription(product, locale)
+  );
 
   const merchantAccount = process.env.WFP_MERCHANT_ACCOUNT!;
   const secretKey = process.env.WFP_SECRET_KEY!;

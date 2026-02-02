@@ -1,6 +1,6 @@
 import { strict as assert } from "node:assert";
 import { productHeading, productDescription, normalizeLocale } from "../src/lib/products";
-import { buildReturnUrl, sanitizeWfpProductName } from "../src/lib/pay";
+import { buildReturnUrl, buildWfpProductName, sanitizeWfpProductName } from "../src/lib/pay";
 
 function run() {
   // Locale normalization
@@ -25,6 +25,9 @@ function run() {
   const sanitized = sanitizeWfpProductName(longWithTags);
   assert.ok(sanitized.length <= 255);
   assert.equal(sanitized.includes("<br>"), false);
+
+  const combined = buildWfpProductName(shortUa, shortDescUa);
+  assert.ok(combined.length <= 255);
 
   // Return URL flow
   const returnUrl = buildReturnUrl("https://example.com/", "short", "short_20260201_abcdef");

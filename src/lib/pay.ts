@@ -10,3 +10,8 @@ export function sanitizeWfpProductName(input: string): string {
   if (noTags.length <= 255) return noTags;
   return `${noTags.slice(0, 252)}...`;
 }
+
+export function buildWfpProductName(heading: string, description: string): string {
+  const joined = `${heading} — ${description}`;
+  return sanitizeWfpProductName(joined);
+}
