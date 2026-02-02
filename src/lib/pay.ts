@@ -12,6 +12,6 @@ export function sanitizeWfpProductName(input: string): string {
 }
 
 export function buildWfpProductName(heading: string, description: string): string {
-  const joined = `${heading} — ${description}`;
+  const joined = description.trim() ? description : heading;
   return sanitizeWfpProductName(joined);
 }

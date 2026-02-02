@@ -28,6 +28,7 @@ function run() {
 
   const combined = buildWfpProductName(shortUa, shortDescUa);
   assert.ok(combined.length <= 255);
+  assert.ok(combined.startsWith(shortDescUa.slice(0, 5)));
 
   // Return URL flow
   const returnUrl = buildReturnUrl("https://example.com/", "short", "short_20260201_abcdef");
