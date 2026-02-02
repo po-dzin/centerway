@@ -102,6 +102,7 @@ export async function POST(req: NextRequest) {
     norm(payload["transactionId"]) ??
     norm(payload["payment_id"]) ??
     norm(payload["id"]);
+  const safeProviderTxId = providerTxId ?? `order:${orderRef}`;
 
   try {
     // 1) payments: сохраняем как источник правды
@@ -110,7 +111,7 @@ export async function POST(req: NextRequest) {
     const { error: pErr } = await sb.from("payments").insert({
       provider: "wfp",
       order_ref: orderRef,
-      provider_tx_id: providerTxId,
+      provider_tx_id: safeProviderTxId,
       status,
       raw_payload: payload,
     });
@@ -119,13 +120,29 @@ export async function POST(req: NextRequest) {
     const { error: oErr } = await sb.from("orders").update({ status }).eq("order_ref", orderRef);
 
     // 3) customers: материализуем email/phone из платежа
-    await upsertCustomer(sb, meta.email ?? null, meta.phone ?? null);
+    const errors: string[] = [];
 
-    if (pErr || oErr) {
-      return NextResponse.json(
-        { ok: false, error: "db_write_failed", details: String(pErr?.message || oErr?.message || "") },
-        { status: 500 }
-      );
+    if (pErr) {
+      const code = (pErr as any)?.code;
+      if (code !== "23505") {
+        errors.push(`payments: ${pErr.message ?? "unknown"}`);
+      }
+    }
+
+    if (oErr) {
+      errors.push(`orders: ${oErr.message ?? "unknown"}`);
+    }
+
+    try {
+      await upsertCustomer(sb, meta.email ?? null, meta.phone ?? null);
+    } catch (e: any) {
+      errors.push(`customers: ${String(e?.message || e)}`);
+    }
+
+    if (errors.length) {
+      console.error("wfp_webhook_nonfatal", { orderRef, errors });
+      // Возвращаем 200, чтобы платёжка не ретраила бесконечно.
+      return NextResponse.json({ ok: false, error: "db_write_failed", details: errors.join("; ") }, { status: 200 });
     }
 
     return NextResponse.json({ ok: true });
