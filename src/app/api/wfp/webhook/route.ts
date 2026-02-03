@@ -53,10 +53,14 @@ function normPhone(phone: string | null): string | null {
   return p ? p : null;
 }
 
-async function upsertCustomer(sb: ReturnType<typeof supabaseAdmin>, email: string | null, phone: string | null) {
+async function upsertCustomer(
+  sb: ReturnType<typeof supabaseAdmin>,
+  email: string | null,
+  phone: string | null
+): Promise<string | null> {
   const e = normEmail(email);
   const p = normPhone(phone);
-  if (!e && !p) return;
+  if (!e && !p) return null;
 
   // 1) пробуем найти по email, 2) потом по phone
   let foundId: string | null = null;
@@ -74,11 +78,21 @@ async function upsertCustomer(sb: ReturnType<typeof supabaseAdmin>, email: strin
   if (foundId) {
     const { error } = await sb.from("customers").update({ email: e, phone: p }).eq("id", foundId);
     if (error) throw error;
-    return;
+    return foundId;
   }
 
   const { error } = await sb.from("customers").insert({ email: e, phone: p });
   if (error) throw error;
+  // fetch id of the just-created customer
+  if (e) {
+    const { data } = await sb.from("customers").select("id").eq("email", e).maybeSingle();
+    return data?.id ?? null;
+  }
+  if (p) {
+    const { data } = await sb.from("customers").select("id").eq("phone", p).maybeSingle();
+    return data?.id ?? null;
+  }
+  return null;
 }
 
 export async function POST(req: NextRequest) {
@@ -117,7 +131,19 @@ export async function POST(req: NextRequest) {
     });
 
     // 2) orders.status
-    const { error: oErr } = await sb.from("orders").update({ status }).eq("order_ref", orderRef);
+    const { data: order, error: oGetErr } = await sb
+      .from("orders")
+      .select("customer_id, product_code")
+      .eq("order_ref", orderRef)
+      .maybeSingle();
+
+    const { error: oErr } = await sb
+      .from("orders")
+      .update({
+        status,
+        customer_id: order?.customer_id ?? null,
+      })
+      .eq("order_ref", orderRef);
 
     // 3) customers: материализуем email/phone из платежа
     const errors: string[] = [];
@@ -129,12 +155,40 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    if (oGetErr) {
+      errors.push(`orders_get: ${oGetErr.message ?? "unknown"}`);
+    }
+
     if (oErr) {
       errors.push(`orders: ${oErr.message ?? "unknown"}`);
     }
 
     try {
-      await upsertCustomer(sb, meta.email ?? null, meta.phone ?? null);
+      const customerId = await upsertCustomer(sb, meta.email ?? null, meta.phone ?? null);
+      if (customerId && !order?.customer_id) {
+        const { error: ocErr } = await sb
+          .from("orders")
+          .update({ customer_id: customerId })
+          .eq("order_ref", orderRef)
+          .is("customer_id", null);
+        if (ocErr) errors.push(`orders_customer: ${ocErr.message ?? "unknown"}`);
+      }
+
+      const eventType = paid ? "payment_paid" : "payment_failed";
+      const { error: eErr } = await sb.from("events").insert({
+        type: eventType,
+        order_ref: orderRef,
+        customer_id: order?.customer_id ?? customerId ?? null,
+        payload: {
+          status,
+          provider: "wfp",
+          provider_tx_id: safeProviderTxId,
+          amount: meta.amount ?? null,
+          currency: meta.currency ?? null,
+          product_code: order?.product_code ?? null,
+        },
+      });
+      if (eErr) errors.push(`events: ${eErr.message ?? "unknown"}`);
     } catch (e: any) {
       errors.push(`customers: ${String(e?.message || e)}`);
     }
