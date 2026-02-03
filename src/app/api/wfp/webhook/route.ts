@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { extractPaymentMeta } from "@/lib/paymentMeta";
+import { isWfpApproved, wfpEventTypeFromStatus } from "@/lib/wfp";
 
 export const runtime = "nodejs";
 
@@ -34,11 +35,6 @@ async function readBodyParams(req: NextRequest): Promise<Payload> {
 
 function norm(v: unknown): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
-}
-
-function isApproved(payload: Payload): boolean {
-  const ts = norm(payload["transactionStatus"] ?? payload["status"])?.toLowerCase();
-  return ts === "approved" || ts === "success" || ts === "paid";
 }
 
 function normEmail(email: string | null): string | null {
@@ -103,8 +99,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "missing_order_ref" }, { status: 400 });
   }
 
-  const paid = isApproved(payload);
+  const paid = isWfpApproved(payload);
   const status = paid ? "paid" : "created"; // твоя бинарная модель
+  const eventType = wfpEventTypeFromStatus(payload);
 
   const sb = supabaseAdmin();
 
@@ -174,21 +171,32 @@ export async function POST(req: NextRequest) {
         if (ocErr) errors.push(`orders_customer: ${ocErr.message ?? "unknown"}`);
       }
 
-      const eventType = paid ? "payment_paid" : "payment_failed";
-      const { error: eErr } = await sb.from("events").insert({
-        type: eventType,
-        order_ref: orderRef,
-        customer_id: order?.customer_id ?? customerId ?? null,
-        payload: {
-          status,
-          provider: "wfp",
-          provider_tx_id: safeProviderTxId,
-          amount: meta.amount ?? null,
-          currency: meta.currency ?? null,
-          product_code: order?.product_code ?? null,
-        },
-      });
-      if (eErr) errors.push(`events: ${eErr.message ?? "unknown"}`);
+      if (eventType) {
+        const { data: existing } = await sb
+          .from("events")
+          .select("id")
+          .eq("order_ref", orderRef)
+          .eq("type", eventType)
+          .contains("payload", { provider_tx_id: safeProviderTxId, status });
+
+        if (!existing || existing.length === 0) {
+          const { error: eErr } = await sb.from("events").insert({
+            type: eventType,
+            order_ref: orderRef,
+            customer_id: order?.customer_id ?? customerId ?? null,
+            payload: {
+              status,
+              provider: "wfp",
+              provider_tx_id: safeProviderTxId,
+              amount: meta.amount ?? null,
+              currency: meta.currency ?? null,
+              product_code: order?.product_code ?? null,
+              raw_status: norm(payload["transactionStatus"] ?? payload["status"]) ?? null,
+            },
+          });
+          if (eErr) errors.push(`events: ${eErr.message ?? "unknown"}`);
+        }
+      }
     } catch (e: any) {
       errors.push(`customers: ${String(e?.message || e)}`);
     }
