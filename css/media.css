@@ -207,7 +207,8 @@
   }
 
   .s55 h2,
-  .s55 p {
+  .s55 .s55-lead,
+  .s55 ul {
     text-align: center;
     display: block;
   }

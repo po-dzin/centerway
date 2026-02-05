@@ -429,6 +429,25 @@ img {
   grid-area: s55-text;
 }
 
+.s55 h2 {
+  margin-bottom: 22px;
+}
+
+.s55 ul {
+  list-style: disc;
+  margin-top: 20px;
+  padding-left: 15px;
+}
+
+.s55 .s55-lead {
+  margin: 0;
+  text-align: left;
+}
+
+.s55 ul li {
+  margin-top: 12px;
+}
+
 .s55-image {
   position: relative;
   width: 96%;
@@ -443,7 +462,7 @@ img {
 }
 
 .s55 h2,
-.s55 p {
+.s55 ul {
   text-align: left;
 }
 
