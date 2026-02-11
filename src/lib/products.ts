@@ -28,7 +28,7 @@ export const PRODUCTS = {
       en:
         "Online system payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
     },
-    amount: 4000,
+    amount: 4100,
     currency: "UAH",
     approvedUrl: "https://irem.centerway.net.ua/thanks",
     declinedUrl: "https://irem.centerway.net.ua/pay-failed",
