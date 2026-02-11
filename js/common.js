@@ -8,7 +8,7 @@ $(".openModal").click(function(e) {
   // 2) шлем InitiateCheckout ДО ухода
   if (typeof fbq === 'function') {
     fbq('track', 'InitiateCheckout', {
-      value: 4000,
+      value: 4100,
       currency: 'UAH',
       content_name: 'IREM',
       ...attrib
