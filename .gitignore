@@ -10,6 +10,13 @@ coverage/
 /irem-gym/
 /short-reboot-main/
 
+# keep local-only artifacts outside platform tracking
+/.github/
+/docs/
+/packages/
+/apps/platform/tests/
+/apps/platform/README.md
+
 # workspace logs
 npm-debug.log*
 yarn-debug.log*

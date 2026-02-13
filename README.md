@@ -1,4 +1,4 @@
-# CenterWay Monorepo
+# CenterWay Platform
 
 CenterWay is a wellness education brand with two independent product funnels:
 - `reboot.centerway.net.ua` — **Short Reboot** (quick daily reset program)
@@ -9,6 +9,3 @@ The two landings share one backend platform and brand standards, but remain sepa
 ## Layout
 
 - `apps/platform` — Next.js runtime (API + host routing + landing/static hosting)
-- `packages/shared` — shared platform types/interfaces
-- `docs/migration` — migration and cutover runbooks
-- `docs/BRAND.md` — brand architecture, voice, and messaging rules
