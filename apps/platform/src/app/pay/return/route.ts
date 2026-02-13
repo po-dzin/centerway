@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { buildReturnDestination } from "@/lib/payReturn";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { PRODUCTS } from "@/lib/products";
 
@@ -141,23 +142,15 @@ async function handler(req: NextRequest) {
     return { rrn: rrn || null, amount: amount || null, currency: currency || null };
   }
 
-  const destBase = finalStatus === "paid" ? PRODUCTS[product].approvedUrl : PRODUCTS[product].declinedUrl;
-  const dest = new URL(destBase);
+  const destination = buildReturnDestination(
+    finalStatus,
+    product,
+    orderRef,
+    { rrn: meta.rrn ?? null, amount: meta.amount ?? null, currency: meta.currency ?? null },
+    Date.now()
+  );
 
-  dest.searchParams.set("order_ref", orderRef);
-  dest.searchParams.set("product", String(product));
-
-  if (meta.rrn) {
-    dest.searchParams.set("rrn", meta.rrn);
-    dest.searchParams.set("payment_id", meta.rrn); // ✅ совместимость
-  }
-  if (meta.amount) dest.searchParams.set("amount", meta.amount);
-  if (meta.currency) dest.searchParams.set("currency", meta.currency);
-
-  // cache-buster, чтобы страница не залипала
-  dest.searchParams.set("ts", String(Date.now()));
-
-  return NextResponse.redirect(dest.toString(), { status: 302 });
+  return NextResponse.redirect(destination, { status: 302 });
 }
 
 export async function GET(req: NextRequest) {

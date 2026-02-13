@@ -6,6 +6,7 @@
     "packages/*"
   ],
   "scripts": {
+    "dev": "npm run -w apps/platform dev",
     "lint": "npm run -w apps/platform lint",
     "build": "npm run -w apps/platform build",
     "smoke": "npm run -w apps/platform smoke",

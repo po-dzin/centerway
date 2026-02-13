@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint .",
     "smoke": "tsx tests/smoke.ts",
-    "ci:smoke": "npm run lint && npm run build && npm run smoke"
+    "userflows": "tsx tests/userflows.ts",
+    "ci:smoke": "npm run lint && npm run build && npm run smoke && npm run userflows"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.93.1",
