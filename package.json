@@ -1,0 +1,14 @@
+{
+  "name": "centerway-monorepo",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "lint": "npm run -w apps/platform lint",
+    "build": "npm run -w apps/platform build",
+    "smoke": "npm run -w apps/platform smoke",
+    "ci:smoke": "npm run -w apps/platform ci:smoke"
+  }
+}

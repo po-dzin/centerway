@@ -1,0 +1,17 @@
+.DS_Store
+node_modules/
+.next/
+out/
+dist/
+coverage/
+
+# keep original source repos outside monorepo tracking
+/centerway-backend/
+/irem-gym/
+/short-reboot-main/
+
+# workspace logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
