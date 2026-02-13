@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>❌ Оплату не завершено</title>
+
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; }
+    .wrap { max-width: 760px; margin: 0 auto; padding: 48px 18px; }
+    .card { border: 1px solid #e7e7e7; border-radius: 16px; padding: 22px; }
+    h1 { font-size: 28px; margin: 0 0 8px; }
+    p { margin: 10px 0; line-height: 1.5; color: #222; }
+    .muted { color: #666; font-size: 14px; }
+    .btns { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 16px; }
+    a.btn { display: inline-block; padding: 12px 16px; border-radius: 12px; text-decoration: none; border: 1px solid #111; color: #111; }
+    a.btn.primary { background: #111; color: #fff; }
+    code { background: #f6f6f6; padding: 2px 6px; border-radius: 8px; }
+    .hint { margin-top: 14px; padding: 12px 14px; border-radius: 12px; background: #f7f7f7; }
+  </style>
+</head>
+
+<body>
+  <div class="wrap">
+    <div class="card">
+      <h1>❌ Оплату не завершено</h1>
+      <p>Схоже, платіж не пройшов або був скасований.
+      <br> Це буває — давайте просто спробуємо ще раз.</p>
+
+      <div class="btns">
+        <!-- ВАРИАНТ 1: просто вернуть на главную -->
+        <a class="btn primary" href="https://reboot.centerway.net.ua/">Спробувати ще раз</a>
+      </div>
+
+      <p class="muted" id="orderLine">Дані платежу: завантаження…</p>
+
+      <div class="hint">
+        <p class="muted" style="margin:0;">
+          Поради 🛠️<br/>
+          • Перевірте баланс / ліміт на карті<br/>
+          • Спробуйте Apple Pay / Google Pay або іншу картку<br/>
+          • Якщо відкривали оплату в Telegram — натисніть ⋮ → <b>Відкрити в браузері</b>
+        </p>
+      </div>
+
+      <p class="muted" style="margin-top:14px;">
+        Якщо проблема повторюється — напишіть у підтримку і надішліть скрін/час спроби оплати.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const qs = new URLSearchParams(location.search);
+
+      // WayForPay/платёжные системы могут передавать разные имена параметров — ловим самые частые
+      const orderRef =
+        qs.get('orderReference') ||
+        qs.get('order_id') ||
+        qs.get('payment_id') ||
+        qs.get('id') ||
+        '';
+
+      const reason =
+        qs.get('reason') ||
+        qs.get('error') ||
+        qs.get('message') ||
+        '';
+
+      const orderLine = document.getElementById('orderLine');
+      if (orderRef && reason) {
+        orderLine.textContent = `Платіж: ${orderRef} • Причина: ${reason}`;
+      } else if (orderRef) {
+        orderLine.textContent = `Платіж: ${orderRef}`;
+      } else {
+        orderLine.textContent = `Дані платежу: (не передано в URL)`;
+      }
+
+      // Опционально: можно отправить кастом-событие в Meta Pixel (если он подключен на сайте)
+      // if (typeof fbq === 'function') fbq('trackCustom', 'PaymentFailed', { order_reference: orderRef || undefined });
+    })();
+  </script>
+</body>
+</html>
