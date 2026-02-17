@@ -1,11 +1,24 @@
 # CenterWay Platform
 
-CenterWay is a wellness education brand with two independent product funnels:
-- `reboot.centerway.net.ua` — **Short Reboot** (quick daily reset program)
-- `irem.centerway.net.ua` — **IREM Gymnastics** (integral recovery training system)
+Unified runtime for both CenterWay product funnels:
+- `reboot.centerway.net.ua` -> **Short Reboot**
+- `irem.centerway.net.ua` -> **IREM Gymnastics**
 
-The two landings share one backend platform and brand standards, but remain separate product journeys (no cross-navigation between product landings).
+Both funnels share API/runtime and keep isolated landing journeys (no cross-navigation).
 
-## Layout
+## Repo layout
 
-- `apps/platform` — Next.js runtime (API + host routing + landing/static hosting)
+- `platform` - Next.js app (API, host-based routing, static landing hosting)
+- `docs/migration` - cutover notes and checks
+
+Legacy source repos can stay locally as snapshots (`centerway-backend`, `irem-gym`, `short-reboot-main`), but they are excluded from git in this monorepo.
+
+## Commands
+
+```bash
+npm run dev
+npm run lint
+npm run build
+npm run smoke
+npm run userflows
+```

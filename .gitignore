@@ -4,18 +4,12 @@ node_modules/
 out/
 dist/
 coverage/
+.env*
 
-# keep original source repos outside monorepo tracking
+# local snapshots of legacy repos (kept outside monorepo tracking)
 /centerway-backend/
 /irem-gym/
 /short-reboot-main/
-
-# keep local-only artifacts outside platform tracking
-/.github/
-/docs/
-/packages/
-/apps/platform/tests/
-/apps/platform/README.md
 
 # workspace logs
 npm-debug.log*
