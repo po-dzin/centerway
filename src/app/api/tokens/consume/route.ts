@@ -17,19 +17,25 @@ export async function POST(req: NextRequest) {
     .eq("token", body.token)
     .maybeSingle();
 
-  if (tErr) return NextResponse.json({ ok: false, error: tErr }, { status: 500 });
+  if (tErr) return NextResponse.json({ ok: false, error: tErr.message ?? "token_lookup_failed" }, { status: 500 });
   if (!t) return NextResponse.json({ ok: false, error: "token_not_found" }, { status: 404 });
 
   const exp = new Date(t.expires_at).getTime();
   if (t.used) return NextResponse.json({ ok: false, error: "token_used" }, { status: 409 });
   if (Date.now() > exp) return NextResponse.json({ ok: false, error: "token_expired" }, { status: 410 });
 
-  const { error: uErr } = await supabase
+  const { data: consumeRows, error: uErr } = await supabase
     .from("access_tokens")
     .update({ used: true })
-    .eq("token", body.token);
+    .eq("token", body.token)
+    .eq("used", false)
+    .select("token")
+    .limit(1);
 
-  if (uErr) return NextResponse.json({ ok: false, error: uErr }, { status: 500 });
+  if (uErr) return NextResponse.json({ ok: false, error: uErr.message ?? "token_update_failed" }, { status: 500 });
+  if (!consumeRows?.length) {
+    return NextResponse.json({ ok: false, error: "token_used" }, { status: 409 });
+  }
 
   const { data: order, error: oErr } = await supabase
     .from("orders")
@@ -37,7 +43,7 @@ export async function POST(req: NextRequest) {
     .eq("order_ref", t.order_ref)
     .maybeSingle();
 
-  if (oErr) return NextResponse.json({ ok: false, error: oErr }, { status: 500 });
+  if (oErr) return NextResponse.json({ ok: false, error: oErr.message ?? "order_lookup_failed" }, { status: 500 });
 
   await supabase.from("events").insert({
     type: "token_consumed",

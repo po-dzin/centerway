@@ -58,8 +58,8 @@ async function upsertCustomer(
   const p = normPhone(phone);
   if (!e && !p) return null;
 
-  // 1) find by both keys (if present), prefer the earliest id.
-  const candidateIds: string[] = [];
+  // 1) find by both keys (if present), prefer earliest created record.
+  const candidates: Array<{ id: string; created_at: string | null }> = [];
 
   if (e) {
     const { data, error } = await sb
@@ -68,7 +68,12 @@ async function upsertCustomer(
       .eq("email", e)
       .order("created_at", { ascending: true })
       .limit(1);
-    if (!error && data?.[0]?.id) candidateIds.push(data[0].id);
+    if (!error && data?.[0]?.id) {
+      candidates.push({
+        id: data[0].id,
+        created_at: typeof data[0].created_at === "string" ? data[0].created_at : null,
+      });
+    }
   }
 
   if (p) {
@@ -78,10 +83,18 @@ async function upsertCustomer(
       .eq("phone", p)
       .order("created_at", { ascending: true })
       .limit(1);
-    if (!error && data?.[0]?.id) candidateIds.push(data[0].id);
+    if (!error && data?.[0]?.id) {
+      candidates.push({
+        id: data[0].id,
+        created_at: typeof data[0].created_at === "string" ? data[0].created_at : null,
+      });
+    }
   }
 
-  const foundId = candidateIds[0] ?? null;
+  const foundId =
+    candidates
+      .sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""))
+      .map((x) => x.id)[0] ?? null;
   if (foundId) {
     const { error } = await sb.from("customers").update({ email: e, phone: p }).eq("id", foundId);
     if (error) throw error;

@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
   });
 
   if (tokenErr) {
-    return NextResponse.json({ ok: false, error: tokenErr }, { status: 500 });
+    return NextResponse.json({ ok: false, error: tokenErr.message ?? "token_insert_failed" }, { status: 500 });
   }
 
   const { error: eventErr } = await supabase.from("events").insert({

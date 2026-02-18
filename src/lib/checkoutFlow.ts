@@ -49,23 +49,34 @@ function hasRecentLead(
 }
 
 async function findRecentDuplicateLead(sb: SupabaseLike, lead: LeadRecord): Promise<boolean> {
-  const conditions: string[] = [];
-  if (lead.email) conditions.push(`email.eq.${lead.email}`);
-  if (lead.phone) conditions.push(`phone.eq.${lead.phone}`);
-  if (!conditions.length) return false;
+  const nowMs = Date.now();
+  const matches: Array<{ created_at?: string | null }> = [];
 
-  const { data, error } = await sb
-    .from("leads")
-    .select("id,created_at")
-    .eq("product_code", lead.product_code)
-    .eq("source", lead.source)
-    .or(conditions.join(","))
-    .order("created_at", { ascending: false })
-    .limit(1);
+  if (lead.email) {
+    const { data, error } = await sb
+      .from("leads")
+      .select("created_at")
+      .eq("product_code", lead.product_code)
+      .eq("source", lead.source)
+      .eq("email", lead.email)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (!error && data?.[0]) matches.push(data[0]);
+  }
 
-  if (error || !data?.length) return false;
-  const row = data[0] as { created_at?: string | null };
-  return hasRecentLead(row.created_at ?? null, Date.now());
+  if (lead.phone) {
+    const { data, error } = await sb
+      .from("leads")
+      .select("created_at")
+      .eq("product_code", lead.product_code)
+      .eq("source", lead.source)
+      .eq("phone", lead.phone)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    if (!error && data?.[0]) matches.push(data[0]);
+  }
+
+  return matches.some((row) => hasRecentLead(row.created_at ?? null, nowMs));
 }
 
 export async function persistLeadBestEffort(
