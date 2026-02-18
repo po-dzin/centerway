@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  // Separate lead list (non-blocking for payment).
+  // Separate lead list (blocking by requirement for reliability).
   const leadWrite = await persistLeadBestEffort(
     supabaseAdmin(),
     buildLeadRecord(body, started.product, started.order_ref)

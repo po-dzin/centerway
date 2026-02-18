@@ -58,19 +58,30 @@ async function upsertCustomer(
   const p = normPhone(phone);
   if (!e && !p) return null;
 
-  // 1) пробуем найти по email, 2) потом по phone
-  let foundId: string | null = null;
+  // 1) find by both keys (if present), prefer the earliest id.
+  const candidateIds: string[] = [];
 
   if (e) {
-    const { data, error } = await sb.from("customers").select("id").eq("email", e).maybeSingle();
-    if (!error && data?.id) foundId = data.id;
+    const { data, error } = await sb
+      .from("customers")
+      .select("id,created_at")
+      .eq("email", e)
+      .order("created_at", { ascending: true })
+      .limit(1);
+    if (!error && data?.[0]?.id) candidateIds.push(data[0].id);
   }
 
-  if (!foundId && p) {
-    const { data, error } = await sb.from("customers").select("id").eq("phone", p).maybeSingle();
-    if (!error && data?.id) foundId = data.id;
+  if (p) {
+    const { data, error } = await sb
+      .from("customers")
+      .select("id,created_at")
+      .eq("phone", p)
+      .order("created_at", { ascending: true })
+      .limit(1);
+    if (!error && data?.[0]?.id) candidateIds.push(data[0].id);
   }
 
+  const foundId = candidateIds[0] ?? null;
   if (foundId) {
     const { error } = await sb.from("customers").update({ email: e, phone: p }).eq("id", foundId);
     if (error) throw error;
@@ -78,15 +89,30 @@ async function upsertCustomer(
   }
 
   const { error } = await sb.from("customers").insert({ email: e, phone: p });
-  if (error) throw error;
+  if (error) {
+    // In race conditions with unique indexes, another request may create the same customer first.
+    const code = (error as { code?: string }).code;
+    if (code !== "23505") throw error;
+  }
+
   // fetch id of the just-created customer
   if (e) {
-    const { data } = await sb.from("customers").select("id").eq("email", e).maybeSingle();
-    return data?.id ?? null;
+    const { data } = await sb
+      .from("customers")
+      .select("id")
+      .eq("email", e)
+      .order("created_at", { ascending: true })
+      .limit(1);
+    if (data?.[0]?.id) return data[0].id;
   }
   if (p) {
-    const { data } = await sb.from("customers").select("id").eq("phone", p).maybeSingle();
-    return data?.id ?? null;
+    const { data } = await sb
+      .from("customers")
+      .select("id")
+      .eq("phone", p)
+      .order("created_at", { ascending: true })
+      .limit(1);
+    if (data?.[0]?.id) return data[0].id;
   }
   return null;
 }

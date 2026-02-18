@@ -53,7 +53,7 @@ export function checkoutLeadId(orderRef: string): string {
 }
 
 export function buildCheckoutEventPayload(body: CheckoutStartRequest) {
-  return {
+  const raw = {
     name: asCleanString(body.name),
     site: asCleanString(body.site),
     offer_id: asCleanString(body.offer_id),
@@ -74,4 +74,8 @@ export function buildCheckoutEventPayload(body: CheckoutStartRequest) {
     page_url: asCleanString(body.page_url),
     user_agent: asCleanString(body.user_agent),
   };
+
+  return Object.fromEntries(
+    Object.entries(raw).filter(([, value]) => value !== null && value !== "")
+  );
 }

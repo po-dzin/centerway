@@ -160,7 +160,7 @@ export async function createPaymentInvoiceWithDeps(
   }
 
   // Non-blocking analytics event.
-  await sb.from("events").insert({
+  void sb.from("events").insert({
     event_type: "checkout_started",
     order_ref,
     payload: {

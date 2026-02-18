@@ -36,7 +36,46 @@ export function buildLeadRecord(
 
 type SupabaseLike = ReturnType<typeof supabaseAdmin>;
 
-export async function persistLeadBestEffort(sb: SupabaseLike, lead: LeadRecord): Promise<"leads" | "events_fallback" | "skipped"> {
+const LEAD_DEDUP_WINDOW_MS = 2 * 60 * 1000;
+
+function hasRecentLead(
+  createdAt: string | null | undefined,
+  nowMs: number
+): boolean {
+  if (!createdAt) return false;
+  const ts = Date.parse(createdAt);
+  if (Number.isNaN(ts)) return false;
+  return nowMs - ts <= LEAD_DEDUP_WINDOW_MS;
+}
+
+async function findRecentDuplicateLead(sb: SupabaseLike, lead: LeadRecord): Promise<boolean> {
+  const conditions: string[] = [];
+  if (lead.email) conditions.push(`email.eq.${lead.email}`);
+  if (lead.phone) conditions.push(`phone.eq.${lead.phone}`);
+  if (!conditions.length) return false;
+
+  const { data, error } = await sb
+    .from("leads")
+    .select("id,created_at")
+    .eq("product_code", lead.product_code)
+    .eq("source", lead.source)
+    .or(conditions.join(","))
+    .order("created_at", { ascending: false })
+    .limit(1);
+
+  if (error || !data?.length) return false;
+  const row = data[0] as { created_at?: string | null };
+  return hasRecentLead(row.created_at ?? null, Date.now());
+}
+
+export async function persistLeadBestEffort(
+  sb: SupabaseLike,
+  lead: LeadRecord
+): Promise<"leads" | "leads_deduped" | "events_fallback" | "skipped"> {
+  if (await findRecentDuplicateLead(sb, lead)) {
+    return "leads_deduped";
+  }
+
   // Primary storage: separate leads list.
   const { error } = await sb.from("leads").insert(lead);
   if (!error) return "leads";
