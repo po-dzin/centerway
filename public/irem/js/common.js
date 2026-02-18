@@ -310,7 +310,10 @@
 
     var hasError = false;
 
-    if (name.length > 120) {
+    if (!name) {
+      setFieldError(nameInput, nameError, "Вкажіть ім'я");
+      hasError = true;
+    } else if (name.length > 120) {
       setFieldError(nameInput, nameError, "Ім'я занадто довге");
       hasError = true;
     } else {
