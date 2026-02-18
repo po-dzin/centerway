@@ -17,7 +17,13 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
-    "public/lps/**",
+    "public/**",
+    "centerway-backend/**",
+    "irem-gym/**",
+    "short-reboot-main/**",
+    "platform/**",
+    ".github/**",
+    "docs/**",
   ]),
 ]);
 

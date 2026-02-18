@@ -20,7 +20,7 @@ function rewriteLanding(req: NextRequest, landingPath: string) {
   const brand = hostBrandFromHost(host);
   if (!brand) return NextResponse.next();
   const url = req.nextUrl.clone();
-  url.pathname = `/lps/${brand}${landingPath}`;
+  url.pathname = `/${brand}${landingPath}`;
   return NextResponse.rewrite(url);
 }
 
@@ -32,7 +32,8 @@ export function proxy(req: NextRequest) {
     pathname.startsWith("/api/") ||
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/pay/return") ||
-    pathname.startsWith("/lps/") ||
+    pathname.startsWith("/short/") ||
+    pathname.startsWith("/irem/") ||
     pathname === "/favicon.ico"
   ) {
     return NextResponse.next();

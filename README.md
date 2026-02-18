@@ -3,7 +3,7 @@
 Next.js runtime for:
 - host-based landing routing (`reboot.*` and `irem.*`)
 - payment API endpoints
-- static landing assets under `public/lps/*`
+- static landing assets under `public/*`
 
 ## Run
 
