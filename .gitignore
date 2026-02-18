@@ -1,18 +1,13 @@
-.DS_Store
-node_modules/
-.next/
-out/
-dist/
-coverage/
-.env*
+*
+!/.gitignore
+!/platform/
+!/platform/**
 
-# local snapshots of legacy repos (kept outside monorepo tracking)
-/centerway-backend/
-/irem-gym/
-/short-reboot-main/
-
-# workspace logs
-npm-debug.log*
-yarn-debug.log*
-yarn-error.log*
-pnpm-debug.log*
+# exclude non-deployable and local artifacts inside platform
+/platform/tests/
+/platform/.next/
+/platform/node_modules/
+/platform/coverage/
+/platform/out/
+/platform/dist/
+/platform/.env*
