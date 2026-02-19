@@ -169,7 +169,7 @@
       submitButton.classList.toggle("is-loading", loading);
     }
     if (submitText) {
-      submitText.textContent = loading ? "Зачекайте..." : "Оплатити";
+      submitText.textContent = loading ? "Зачекайте..." : "Отримати курс";
     }
   }
 

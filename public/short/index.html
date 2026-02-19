@@ -398,17 +398,19 @@
   <div class="precheckout-modal__overlay" data-modal-close></div>
   <div class="precheckout-modal__panel" role="dialog" aria-modal="true" aria-labelledby="precheckoutTitle">
     <button type="button" class="precheckout-modal__close" data-modal-close aria-label="Закрити">×</button>
-    <h3 id="precheckoutTitle">Залишайтесь на зв'язку</h3>
-    <p class="precheckout-modal__subtitle">Залиште контакт, щоб отримати доступ та додаткову інформацію</p>
+    <h3 id="precheckoutTitle">Заповніть форму та отримайте доступ до курсу</h3>
+    <p class="precheckout-modal__subtitle">Short-Reboot</p>
+    <p class="precheckout-modal__subtitle">Почни перезавантаження вже сьогодні</p>
+    <p class="precheckout-modal__course-price">359 грн</p>
     <div class="precheckout-modal__server-error" id="precheckoutServerError" role="alert" aria-live="polite"></div>
     <form id="precheckoutForm" novalidate>
       <div class="precheckout-modal__field">
-        <label for="precheckoutName">Ім'я</label>
+        <label for="precheckoutName">Імʼя</label>
         <input id="precheckoutName" name="name" type="text" placeholder="Ваше ім'я" autocomplete="name" required>
         <div class="precheckout-modal__error" id="precheckoutNameError" aria-live="polite"></div>
       </div>
       <div class="precheckout-modal__field">
-        <label for="precheckoutEmail">Email</label>
+        <label for="precheckoutEmail">Почта</label>
         <input id="precheckoutEmail" name="email" type="email" placeholder="you@example.com" autocomplete="email">
         <div class="precheckout-modal__error" id="precheckoutEmailError" aria-live="polite"></div>
       </div>
@@ -418,8 +420,9 @@
         <div class="precheckout-modal__error" id="precheckoutPhoneError" aria-live="polite"></div>
       </div>
       <button id="precheckoutSubmit" type="submit" class="precheckout-modal__submit">
-        <span class="precheckout-modal__submit-text">Оплатити</span>
+        <span class="precheckout-modal__submit-text">Отримати курс</span>
       </button>
+      <p class="precheckout-modal__submit-note">Ви нічим не ризикуєте! Гарантія повернення коштів - 14 днів, з моменту покупки</p>
     </form>
   </div>
 </div>

@@ -1249,7 +1249,16 @@ img {
   text-align: left;
   font-size: 15px;
   line-height: 1.45;
-  margin-bottom: 12px;
+  margin-bottom: 4px;
+}
+
+.precheckout-modal__course-price {
+  text-align: left;
+  color: #E87D73;
+  font-weight: 700;
+  font-size: 24px;
+  line-height: 1.2;
+  margin: 6px 0 12px;
 }
 
 .precheckout-modal__server-error {
@@ -1347,6 +1356,14 @@ img {
 
 .precheckout-modal__submit::before {
   display: none;
+}
+
+.precheckout-modal__submit-note {
+  margin: 10px 0 0;
+  text-align: center;
+  font-size: 13px;
+  line-height: 1.4;
+  color: #555555;
 }
 
 .precheckout-modal__submit[disabled] {
