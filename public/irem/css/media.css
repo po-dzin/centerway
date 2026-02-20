@@ -24,6 +24,7 @@
 
   .s1 .img.desk {
     grid-column: 2;
+    width: 92%;
   }
 }
 

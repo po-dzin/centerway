@@ -211,9 +211,6 @@
     setFieldError(nameInput, nameError, "");
     setFieldError(emailInput, emailError, "");
     setFieldError(phoneInput, phoneError, "");
-    if (nameInput) {
-      nameInput.focus();
-    }
   }
 
   function closeModal() {
