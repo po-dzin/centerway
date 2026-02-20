@@ -169,7 +169,7 @@
       submitButton.classList.toggle("is-loading", loading);
     }
     if (submitText) {
-      submitText.textContent = loading ? "Зачекайте..." : "Отримати курс";
+      submitText.textContent = loading ? "Зачекайте..." : "Отримати доступ";
     }
   }
 
@@ -211,9 +211,6 @@
     setFieldError(nameInput, nameError, "");
     setFieldError(emailInput, emailError, "");
     setFieldError(phoneInput, phoneError, "");
-    if (nameInput) {
-      nameInput.focus();
-    }
   }
 
   if (phoneInput) {
@@ -425,71 +422,6 @@
   });
 })();
 
-$( ".openModal1" ).click(function(e) {
-    e.preventDefault();
-    $('#modal1').arcticmodal();
-});
-$( ".openModal2" ).click(function(e) {
-    e.preventDefault();
-    $('#modal2').arcticmodal();
-});
-$( ".openModal3" ).click(function(e) {
-    e.preventDefault();
-    $('#modal3').arcticmodal();
-});
-$( ".openModal4" ).click(function(e) {
-    e.preventDefault();
-    $('#modal4').arcticmodal();
-});
-$( ".openModal5" ).click(function(e) {
-    e.preventDefault();
-    $('#modal5').arcticmodal();
-});
-$( ".openModal6" ).click(function(e) {
-    e.preventDefault();
-    $('#modal6').arcticmodal();
-});
-$( ".openModal7" ).click(function(e) {
-    e.preventDefault();
-    $('#modal7').arcticmodal();
-});
-$( ".openModal8" ).click(function(e) {
-    e.preventDefault();
-    $('#modal8').arcticmodal();
-});
-
-function newDate() {
-  var time = new Date();
-  var date_now =  new Date();
-  date_now.setDate(date_now.getDate() + 1);
-  $(".date-block").text(date_now.toLocaleString('uk-ua', {
-    day: 'numeric',
-    month: 'long' 
-  }));
-}
-setTimeout(newDate, 100);
-
-var myDate = new Date();
-function returnEndDate(d,h,m){
-  myDate.setDate(myDate.getDate()+d);
-  myDate.setHours(myDate.getHours()+h);
-  myDate.setMinutes(myDate.getMinutes()+m);
-  return myDate;
-}
-if($.cookie("time-timer1")){
-  var dateEnd = $.cookie("time-timer1");
-}else{
-  var dateEnd = returnEndDate(0,3,0); 
-  $.cookie("time-timer1", dateEnd, {expires: 7});
-}
-var date = new Date($.cookie("time-timer1"));
-    $(".getting-started").countdown(date, function(event) {
-  $(this).html(
-  event.strftime(''
-  +'<div class="hr"><div class="dial">%H</div>годин</div>'
-  +'<div class="min"><div class="dial">%M</div>хвилин</div>'
-  +'<div class="sec"><div class="dial">%S</div>секунд</div>'));
-});
 
 ! function(i) {
   var o, n;
@@ -504,18 +436,42 @@ var date = new Date($.cookie("time-timer1"));
 
 $(document).ready(function(){
     var $menu = $("#menu");
-    $(window).scroll(function(){
-        if ( $(this).scrollTop() > 100 && $menu.hasClass("default") ){
+    var $topCta = $(".s1 .openModal");
+    var $bottomCta = $(".s10 .openModal");
+
+    function isInViewport($el) {
+        if (!$el.length) {
+            return false;
+        }
+        var rect = $el[0].getBoundingClientRect();
+        return rect.bottom > 0 && rect.top < window.innerHeight;
+    }
+
+    function shouldShowMenu() {
+        var topVisible = isInViewport($topCta);
+        var bottomVisible = isInViewport($bottomCta);
+        var topPassed = false;
+
+        if ($topCta.length) {
+            var topRect = $topCta[0].getBoundingClientRect();
+            topPassed = topRect.bottom <= 0;
+        } else {
+            topPassed = window.scrollY > 120;
+        }
+
+        return topPassed && !topVisible && !bottomVisible;
+    }
+
+    function updateMenu() {
+        if (shouldShowMenu() && $menu.hasClass("default")) {
             $menu.removeClass("default").addClass("fixed");
-        } else if($(this).scrollTop() <= 100 && $menu.hasClass("fixed")) {
+        } else if (!shouldShowMenu() && $menu.hasClass("fixed")) {
             $menu.removeClass("fixed").addClass("default");
         }
-    });//scroll
-});
+    }
 
-$( ".showmore" ).click(function() {
-    $(this).hide();
-    $('.hidd').slideDown('slow');
+    $(window).on("scroll resize", updateMenu);
+    updateMenu();
 });
 
 function initReviewsCarousel() {
