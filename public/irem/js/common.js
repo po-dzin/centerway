@@ -1,121 +1,13 @@
 (function() {
   var API_BASE = window.CW_API_BASE || window.location.origin;
-  var CHECKOUT_ENDPOINT = API_BASE + "/api/checkout/start";
-  var SITE_KEY = "irem";
+  var DIRECT_PAY_ENDPOINT = API_BASE + "/api/pay/start";
+  var PRODUCT = "irem";
   var OFFER_ID = "irem_main_4100";
   var PRICE_VALUE = 4100;
   var CURRENCY = "UAH";
   var CONTENT_NAME = "IREM";
-  var PHONE_PREFIX = "+380";
-  var PHONE_BODY_DIGITS = 9;
-  var modal = document.getElementById("precheckoutModal");
-  var form = document.getElementById("precheckoutForm");
-
-  if (!modal || !form) {
-    return;
-  }
-
-  var nameInput = document.getElementById("precheckoutName");
-  var emailInput = document.getElementById("precheckoutEmail");
-  var phoneInput = document.getElementById("precheckoutPhone");
-  var submitButton = document.getElementById("precheckoutSubmit");
-  var submitText = submitButton ? submitButton.querySelector(".precheckout-modal__submit-text") : null;
-  var nameError = document.getElementById("precheckoutNameError");
-  var emailError = document.getElementById("precheckoutEmailError");
-  var phoneError = document.getElementById("precheckoutPhoneError");
-  var serverError = document.getElementById("precheckoutServerError");
-  var lastFocusedTrigger = null;
-  var isSubmitting = false;
-
-  function getEventId() {
-    if (window.crypto && typeof window.crypto.randomUUID === "function") {
-      return window.crypto.randomUUID();
-    }
-    return "xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx".replace(/[xy]/g, function(c) {
-      var r = Math.random() * 16 | 0;
-      var v = c === "x" ? r : (r & 0x3 | 0x8);
-      return v.toString(16);
-    });
-  }
-
-  function normalizeName(value) {
-    return (value || "").trim();
-  }
-
-  function normalizeEmail(value) {
-    return (value || "").trim().toLowerCase();
-  }
-
-  function validateEmail(value) {
-    return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
-  }
-
-  function extractPhoneBodyDigits(value) {
-    var digits = String(value || "").replace(/\D/g, "");
-    if (!digits) {
-      return "";
-    }
-    if (digits.indexOf("380") === 0) {
-      return digits.slice(3);
-    }
-    if (digits.charAt(0) === "0") {
-      return digits.slice(1);
-    }
-    return digits;
-  }
-
-  function formatPhoneForInput(value) {
-    var body = extractPhoneBodyDigits(value).slice(0, PHONE_BODY_DIGITS);
-    if (!body) {
-      return "";
-    }
-    return PHONE_PREFIX + body;
-  }
-
-  function normalizePhone(value) {
-    var body = extractPhoneBodyDigits(value).slice(0, PHONE_BODY_DIGITS);
-    if (body.length === 0) {
-      return "";
-    }
-    return PHONE_PREFIX + body;
-  }
-
-  function isValidNormalizedPhone(value) {
-    return /^\+380\d{9}$/.test(value);
-  }
-
-  function setFieldError(input, errorNode, message) {
-    if (!input || !errorNode) {
-      return;
-    }
-    var fieldWrap = input.parentElement;
-    if (fieldWrap && fieldWrap.classList) {
-      fieldWrap.classList.toggle("is-error", !!message);
-    }
-    errorNode.textContent = message || "";
-  }
-
-  function setServerError(message) {
-    if (!serverError) {
-      return;
-    }
-    serverError.textContent = message || "";
-    serverError.classList.toggle("is-visible", !!message);
-  }
-
-  function trackInitialCheckout() {
-    if (typeof fbq !== "function") {
-      return;
-    }
-    var attrib = collectAttrib();
-    fbq("track", "InitiateCheckout", {
-      value: PRICE_VALUE,
-      currency: CURRENCY,
-      content_name: CONTENT_NAME,
-      offer_id: OFFER_ID,
-      ...attrib
-    });
-  }
+  var REDIRECT_RESET_MS = 5000;
+  var isRedirecting = false;
 
   function collectAttrib() {
     var keys = [
@@ -153,272 +45,66 @@
     return out;
   }
 
-  function setLoading(loading) {
-    isSubmitting = loading;
-    if (nameInput) {
-      nameInput.disabled = loading;
-    }
-    if (emailInput) {
-      emailInput.disabled = loading;
-    }
-    if (phoneInput) {
-      phoneInput.disabled = loading;
-    }
-    if (submitButton) {
-      submitButton.disabled = loading;
-      submitButton.classList.toggle("is-loading", loading);
-    }
-    if (submitText) {
-      submitText.textContent = loading ? "Зачекайте..." : "Отримати доступ";
-    }
-  }
-
-  function getFocusableEls() {
-    return modal.querySelectorAll('button:not([disabled]), input:not([disabled]), [tabindex]:not([tabindex="-1"])');
-  }
-
-  function trapFocus(event) {
-    if (event.key !== "Tab" || !modal.classList.contains("is-open")) {
-      return;
-    }
-
-    var focusables = getFocusableEls();
-    if (!focusables.length) {
-      return;
-    }
-
-    var first = focusables[0];
-    var last = focusables[focusables.length - 1];
-
-    if (event.shiftKey && document.activeElement === first) {
-      event.preventDefault();
-      last.focus();
-      return;
-    }
-
-    if (!event.shiftKey && document.activeElement === last) {
-      event.preventDefault();
-      first.focus();
-    }
-  }
-
-  function openModal(trigger) {
-    lastFocusedTrigger = trigger || null;
-    modal.classList.add("is-open");
-    modal.setAttribute("aria-hidden", "false");
-    document.body.classList.add("modal-open");
-    setServerError("");
-    setFieldError(nameInput, nameError, "");
-    setFieldError(emailInput, emailError, "");
-    setFieldError(phoneInput, phoneError, "");
-  }
-
-  if (phoneInput) {
-    phoneInput.maxLength = PHONE_PREFIX.length + PHONE_BODY_DIGITS;
-
-    phoneInput.addEventListener("focus", function() {
-      phoneInput.value = formatPhoneForInput(phoneInput.value || PHONE_PREFIX) || PHONE_PREFIX;
-      var end = phoneInput.value.length;
-      phoneInput.setSelectionRange(end, end);
+  function setButtonsLoading(loading) {
+    var buttons = document.querySelectorAll(".openModal");
+    buttons.forEach(function(btn) {
+      if (btn instanceof HTMLButtonElement) {
+        btn.disabled = loading;
+      }
+      btn.classList.toggle("is-loading", loading);
     });
+  }
 
-    phoneInput.addEventListener("click", function() {
-      if ((phoneInput.selectionStart || 0) < PHONE_PREFIX.length) {
-        var end = phoneInput.value.length;
-        phoneInput.setSelectionRange(end, end);
+  function trackInitialCheckout(attrib) {
+    if (typeof fbq !== "function") {
+      return;
+    }
+    fbq("track", "InitiateCheckout", {
+      value: PRICE_VALUE,
+      currency: CURRENCY,
+      content_name: CONTENT_NAME,
+      offer_id: OFFER_ID,
+      ...attrib
+    });
+  }
+
+  function buildPayUrl(attrib) {
+    var url = new URL(DIRECT_PAY_ENDPOINT, window.location.origin);
+    url.searchParams.set("product", PRODUCT);
+    url.searchParams.set("site", PRODUCT);
+    url.searchParams.set("offer_id", OFFER_ID);
+    url.searchParams.set("value", String(PRICE_VALUE));
+    url.searchParams.set("currency", CURRENCY);
+
+    var queryKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid", "cr", "lv"];
+    queryKeys.forEach(function(key) {
+      var value = attrib[key];
+      if (value) {
+        url.searchParams.set(key, String(value));
       }
     });
 
-    phoneInput.addEventListener("keydown", function(event) {
-      var start = phoneInput.selectionStart || 0;
-      var end = phoneInput.selectionEnd || 0;
-      var isDelete = event.key === "Backspace" || event.key === "Delete";
-      var isMeta = event.ctrlKey || event.metaKey || event.altKey;
-
-      if (isDelete && start <= PHONE_PREFIX.length && end <= PHONE_PREFIX.length) {
-        event.preventDefault();
-        return;
-      }
-
-      if (event.key.length === 1 && !/\d/.test(event.key) && !isMeta) {
-        event.preventDefault();
-      }
-    });
-
-    phoneInput.addEventListener("input", function() {
-      var formatted = formatPhoneForInput(phoneInput.value);
-      phoneInput.value = formatted;
-      var caret = phoneInput.value.length;
-      phoneInput.setSelectionRange(caret, caret);
-    });
-
-    if (phoneInput.value) {
-      phoneInput.value = formatPhoneForInput(phoneInput.value);
-    }
-  }
-
-  function closeModal() {
-    if (isSubmitting) {
-      return;
-    }
-    modal.classList.remove("is-open");
-    modal.setAttribute("aria-hidden", "true");
-    document.body.classList.remove("modal-open");
-    if (lastFocusedTrigger && typeof lastFocusedTrigger.focus === "function") {
-      lastFocusedTrigger.focus();
-    }
+    return url.toString();
   }
 
   document.addEventListener("click", function(event) {
     var trigger = event.target.closest(".openModal");
     if (trigger) {
       event.preventDefault();
-      trackInitialCheckout();
-      openModal(trigger);
-      return;
-    }
-
-    if (event.target.closest("[data-modal-close]") && modal.classList.contains("is-open")) {
-      event.preventDefault();
-      closeModal();
-    }
-  });
-
-  document.addEventListener("keydown", function(event) {
-    if (event.key === "Escape" && modal.classList.contains("is-open")) {
-      closeModal();
-      return;
-    }
-    trapFocus(event);
-  });
-
-  form.addEventListener("submit", function(event) {
-    event.preventDefault();
-    if (isSubmitting) {
-      return;
-    }
-
-    setServerError("");
-
-    var name = normalizeName(nameInput ? nameInput.value : "");
-    var email = normalizeEmail(emailInput ? emailInput.value : "");
-    var normalizedPhone = normalizePhone(phoneInput ? phoneInput.value : "");
-    var phoneBodyDigits = extractPhoneBodyDigits(phoneInput ? phoneInput.value : "");
-
-    var hasError = false;
-
-    if (!name) {
-      setFieldError(nameInput, nameError, "Вкажіть ім'я");
-      hasError = true;
-    } else if (name.length > 120) {
-      setFieldError(nameInput, nameError, "Ім'я занадто довге");
-      hasError = true;
-    } else {
-      setFieldError(nameInput, nameError, "");
-      if (nameInput) {
-        nameInput.value = name;
+      if (isRedirecting) {
+        return;
       }
-    }
-
-    if (!email && !phoneBodyDigits) {
-      setServerError("Вкажіть email або телефон");
-      setFieldError(emailInput, emailError, "Вкажіть email або телефон");
-      setFieldError(phoneInput, phoneError, "Вкажіть email або телефон");
+      isRedirecting = true;
+      setButtonsLoading(true);
+      var attrib = collectAttrib();
+      trackInitialCheckout(attrib);
+      window.location.assign(buildPayUrl(attrib));
+      window.setTimeout(function() {
+        isRedirecting = false;
+        setButtonsLoading(false);
+      }, REDIRECT_RESET_MS);
       return;
     }
-
-    if (email && !validateEmail(email)) {
-      setFieldError(emailInput, emailError, "Введіть коректний email");
-      hasError = true;
-    } else {
-      setFieldError(emailInput, emailError, "");
-      if (emailInput) {
-        emailInput.value = email;
-      }
-    }
-
-    if (phoneBodyDigits && !isValidNormalizedPhone(normalizedPhone)) {
-      setFieldError(phoneInput, phoneError, "Введіть телефон у форматі +380XXXXXXXXX");
-      hasError = true;
-    } else {
-      setFieldError(phoneInput, phoneError, "");
-      if (phoneInput) {
-        phoneInput.value = normalizedPhone;
-      }
-    }
-
-    if (hasError) {
-      return;
-    }
-
-    var eventId = getEventId();
-    var attrib = collectAttrib();
-
-    if (typeof fbq === "function") {
-      fbq("track", "Lead", {
-        value: PRICE_VALUE,
-        currency: CURRENCY,
-        content_name: CONTENT_NAME,
-        offer_id: OFFER_ID,
-        name: name || "",
-        email: email || "",
-        phone: normalizedPhone || ""
-      }, { eventID: eventId });
-    }
-
-    var payload = {
-      name: name,
-      site: SITE_KEY,
-      offer_id: OFFER_ID,
-      email: email,
-      phone: normalizedPhone,
-      event_id: eventId,
-      value: PRICE_VALUE,
-      currency: CURRENCY,
-      utm_source: attrib.utm_source || "",
-      utm_medium: attrib.utm_medium || "",
-      utm_campaign: attrib.utm_campaign || "",
-      utm_content: attrib.utm_content || "",
-      utm_term: attrib.utm_term || "",
-      fbclid: attrib.fbclid || "",
-      cr: attrib.cr || "",
-      lv: attrib.lv || "",
-      referrer: attrib.referrer || "",
-      page_url: attrib.page_url || "",
-      user_agent: attrib.user_agent || ""
-    };
-
-    setLoading(true);
-
-    fetch(CHECKOUT_ENDPOINT, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(payload)
-    })
-      .then(function(response) {
-        return response.json().catch(function() {
-          return { ok: false, code: "INVALID_JSON", message: "Некоректна відповідь сервера" };
-        }).then(function(data) {
-          return { status: response.status, data: data };
-        });
-      })
-      .then(function(result) {
-        var data = result.data || {};
-        if (!data.paymentUrl) {
-          throw data;
-        }
-
-        window.location.href = data.paymentUrl;
-      })
-      .catch(function(err) {
-        var message = (err && err.message) ? err.message : "Не вдалося перейти до оплати. Спробуйте ще раз.";
-        setServerError(message);
-      })
-      .finally(function() {
-        setLoading(false);
-      });
   });
 })();
 

@@ -15,7 +15,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
 
-    <link rel="stylesheet" href="js/jquery.arcticmodal-0.3.css" defer="">
     <link rel="stylesheet" href="js/themes/simple.css" defer="">
     <link rel="stylesheet" href="css/fonts.css">
     <link rel="stylesheet" href="css/main.css">
@@ -394,40 +393,7 @@
     </div>
 </footer>
 
-<div id="precheckoutModal" class="precheckout-modal" aria-hidden="true">
-  <div class="precheckout-modal__overlay" data-modal-close></div>
-  <div class="precheckout-modal__panel" role="dialog" aria-modal="true" aria-labelledby="precheckoutTitle">
-    <button type="button" class="precheckout-modal__close" data-modal-close aria-label="Закрити">×</button>
-    <h3 id="precheckoutTitle">Short-Reboot</h3>
-    <p class="precheckout-modal__subtitle">Почни перезавантаження вже сьогодні</p>
-    <p class="precheckout-modal__course-price">359 грн</p>
-    <div class="precheckout-modal__server-error" id="precheckoutServerError" role="alert" aria-live="polite"></div>
-    <form id="precheckoutForm" novalidate>
-      <div class="precheckout-modal__field">
-        <label for="precheckoutName">Імʼя</label>
-        <input id="precheckoutName" name="name" type="text" placeholder="Ваше ім'я" autocomplete="name" required>
-        <div class="precheckout-modal__error" id="precheckoutNameError" aria-live="polite"></div>
-      </div>
-      <div class="precheckout-modal__field">
-        <label for="precheckoutEmail">Почта</label>
-        <input id="precheckoutEmail" name="email" type="email" placeholder="you@example.com" autocomplete="email">
-        <div class="precheckout-modal__error" id="precheckoutEmailError" aria-live="polite"></div>
-      </div>
-      <div class="precheckout-modal__field">
-        <label for="precheckoutPhone">Телефон</label>
-        <input id="precheckoutPhone" name="phone" type="tel" placeholder="+380XXXXXXXXX" autocomplete="tel" inputmode="numeric" maxlength="13">
-        <div class="precheckout-modal__error" id="precheckoutPhoneError" aria-live="polite"></div>
-      </div>
-      <button id="precheckoutSubmit" type="submit" class="precheckout-modal__submit">
-        <span class="precheckout-modal__submit-text">Отримати курс</span>
-      </button>
-      <p class="precheckout-modal__submit-note">Ви нічим не ризикуєте! Гарантія повернення коштів - 14 днів з моменту покупки</p>
-    </form>
-  </div>
-</div>
-    
     <script type="text/javascript" src="js/jquery-1.11.0.min.js"></script>
-    <script src="js/jquery.arcticmodal-0.3.min.js"></script>
     <script type="text/javascript" src="js/jquery-migrate-1.2.1.min.js"></script>
     <script src="js/lazysizes.min.js" async=""></script>
     <script src="js/jquery.countdown.min.js"></script>
