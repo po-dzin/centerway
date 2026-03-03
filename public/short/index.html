@@ -20,7 +20,7 @@
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/media.css">
 
-    <!-- Meta Pixel Code (BASE) -->
+    <!-- Meta Pixel Code (BASE + Advanced Matching) -->
     <script>
     !function(f,b,e,v,n,t,s)
     {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -30,8 +30,18 @@
     t.src=v;s=b.getElementsByTagName(e)[0];
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
-    
-    fbq('init', '885125430564169');
+
+    // Advanced Matching: pass known user data if available (from previous checkout)
+    (function(){
+      var ud = {};
+      try {
+        var stored = JSON.parse(localStorage.getItem('cw_user') || '{}');
+        if (stored.em) ud.em = stored.em;
+        if (stored.ph) ud.ph = stored.ph;
+      } catch(e) {}
+      fbq('init', '885125430564169', ud);
+    })();
+
     fbq('track', 'PageView');
     fbq('track', 'ViewContent', {
       content_name: 'Short Reboot',
