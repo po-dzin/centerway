@@ -10,6 +10,9 @@ type LeadRecord = {
   email: string | null;
   phone: string | null;
   payload: Record<string, unknown>;
+  fbp?: string | null;
+  fbclid?: string | null;
+  campaign?: string | null;
 };
 
 function asString(v: unknown): string | null {
@@ -31,6 +34,9 @@ export function buildLeadRecord(
     email: asString(body.email)?.toLowerCase() ?? null,
     phone: asString(body.phone),
     payload: buildCheckoutEventPayload(body),
+    fbp: asString(body.fbp),
+    fbclid: asString(body.fbclid),
+    campaign: asString(body.utm_campaign),
   };
 }
 

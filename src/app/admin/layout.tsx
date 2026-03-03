@@ -1,0 +1,140 @@
+"use client";
+
+import Link from "next/link";
+import { ReactNode, useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { ThemeSwitcher } from "@/components/ThemeSwitcher";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { I18nProvider, useI18n } from "@/components/I18nProvider";
+import { UserMenu } from "@/components/UserMenu";
+import { supabaseClient } from "@/lib/supabaseClient";
+import { Session } from "@supabase/supabase-js";
+
+const icons = {
+    dashboard: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" /></svg>,
+    audit: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" /></svg>,
+    customers: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></svg>,
+    orders: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>,
+    analytics: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>,
+    jobs: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" /></svg>,
+};
+
+function AdminShell({ children }: { children: ReactNode }) {
+    const { t } = useI18n();
+    const pathname = usePathname();
+    const [expanded, setExpanded] = useState(false);
+    const [session, setSession] = useState<Session | null>(null);
+
+    useEffect(() => {
+        supabaseClient.auth.getSession().then(({ data: { session } }) => {
+            setSession(session);
+        });
+
+        const {
+            data: { subscription },
+        } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+            setSession(session);
+        });
+
+        return () => subscription.unsubscribe();
+    }, []);
+
+    const navItems = [
+        { key: "nav_dashboard" as const, href: "/admin", icon: icons.dashboard, active: true },
+        { key: "nav_audit" as const, href: "/admin/audit", icon: icons.audit, active: true },
+        { key: "nav_customers" as const, href: "/admin/customers", icon: icons.customers, active: true },
+        { key: "nav_orders" as const, href: "/admin/orders", icon: icons.orders, active: true },
+        { key: "nav_analytics" as const, href: "/admin/analytics", icon: icons.analytics, active: true },
+        { key: "nav_jobs" as const, href: "/admin/jobs", icon: icons.jobs, active: true },
+    ];
+
+    return (
+        <div className="flex min-h-screen bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 font-sans transition-colors duration-300">
+            {/* Sidebar */}
+            <aside
+                className={`${expanded ? "w-56" : "w-16"} shrink-0 border-r border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950 flex flex-col transition-all duration-300 ease-in-out overflow-hidden`}
+            >
+                {/* Logo + Toggle */}
+                <div className="h-16 flex items-center justify-between px-3 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
+                    {expanded && (
+                        <div className="overflow-hidden">
+                            <p className="text-sm font-bold text-neutral-900 dark:text-white whitespace-nowrap">CenterWay</p>
+                            <p className="text-[9px] text-neutral-500 uppercase font-semibold tracking-widest whitespace-nowrap">Control Panel</p>
+                        </div>
+                    )}
+                    <button
+                        onClick={() => setExpanded(v => !v)}
+                        title={expanded ? "Свернуть" : "Развернуть"}
+                        className={`${expanded ? "" : "mx-auto"} p-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400 transition-colors shrink-0`}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
+                            className={`transition-transform duration-300 ${expanded ? "" : "rotate-180"}`}>
+                            <polyline points="15 18 9 12 15 6" />
+                        </svg>
+                    </button>
+                </div>
+
+                {/* Nav */}
+                <nav className="flex flex-col gap-0.5 p-2 mt-1 flex-1">
+                    {navItems.map(({ key, href, icon, active }) => {
+                        const isSelected = href === "/admin" ? pathname === "/admin" : pathname?.startsWith(href);
+
+                        return (
+                            <Link
+                                key={key}
+                                href={href}
+                                title={t(key)}
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors group relative
+                                    ${active
+                                        ? isSelected
+                                            ? "text-neutral-900 dark:text-white bg-neutral-200 dark:bg-neutral-800"
+                                            : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-neutral-800"
+                                        : "text-neutral-400 dark:text-neutral-600 opacity-40 cursor-not-allowed pointer-events-none"
+                                    }
+                                    ${!expanded ? "justify-center" : ""}
+                                `}
+                            >
+                                <span className="shrink-0">{icon}</span>
+                                {expanded && (
+                                    <span className="truncate whitespace-nowrap text-sm">{t(key)}</span>
+                                )}
+                                {/* Tooltip when collapsed */}
+                                {!expanded && (
+                                    <span className="pointer-events-none absolute left-full ml-3 z-50 whitespace-nowrap rounded-md bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-xs font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-lg">
+                                        {t(key)}
+                                    </span>
+                                )}
+                            </Link>
+                        );
+                    })}
+                </nav>
+            </aside>
+
+            {/* Main */}
+            <main className="flex-1 flex flex-col min-w-0">
+                <header className="h-16 border-b border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm flex items-center justify-end px-8 sticky top-0 z-10 transition-colors duration-300">
+                    <div className="flex items-center gap-4">
+                        <LanguageSwitcher />
+                        <ThemeSwitcher />
+                        <UserMenu
+                            email={session?.user?.email}
+                            initial={session?.user?.email ? session.user.email.charAt(0).toUpperCase() : "?"}
+                            avatarUrl={session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture}
+                        />
+                    </div>
+                </header>
+                <div className="p-8 overflow-y-auto w-full">
+                    {children}
+                </div>
+            </main>
+        </div>
+    );
+}
+
+export default function AdminLayout({ children }: { children: ReactNode }) {
+    return (
+        <I18nProvider>
+            <AdminShell>{children}</AdminShell>
+        </I18nProvider>
+    );
+}

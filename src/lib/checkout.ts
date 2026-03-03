@@ -17,6 +17,7 @@ export type CheckoutStartRequest = {
   utm_content?: unknown;
   utm_term?: unknown;
   fbclid?: unknown;
+  fbp?: unknown;
   cr?: unknown;
   lv?: unknown;
   referrer?: unknown;

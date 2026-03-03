@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { extractPaymentMeta } from "@/lib/paymentMeta";
 import { isWfpApproved, wfpEventTypeFromStatus } from "@/lib/wfp";
+import type { CapiEventPayload } from "@/lib/tracking/capi";
 
 export const runtime = "nodejs";
 
@@ -20,7 +21,7 @@ async function readBodyParams(req: NextRequest): Promise<Payload> {
       }
       return out;
     }
-  } catch {}
+  } catch { }
 
   // form-data (WFP иногда шлёт form-url-encoded)
   try {
@@ -28,7 +29,7 @@ async function readBodyParams(req: NextRequest): Promise<Payload> {
     const out: Payload = {};
     for (const [k, v] of fd.entries()) out[k] = String(v);
     return out;
-  } catch {}
+  } catch { }
 
   return {};
 }
@@ -244,6 +245,44 @@ export async function POST(req: NextRequest) {
       console.error("wfp_webhook_nonfatal", { orderRef, errors });
       // Возвращаем 200, чтобы платёжка не ретраила бесконечно.
       return NextResponse.json({ ok: false, error: "db_write_failed", details: errors.join("; ") }, { status: 200 });
+    }
+
+    // ── CAPI: schedule background Purchase event when payment succeeds ──
+    if (paid) {
+      try {
+        // Fetch fbp/fbclid from the order so we can pass to Meta
+        const { data: orderTracking } = await sb
+          .from("orders")
+          .select("fbp, fbclid, amount, currency, client_ip, client_ua, page_url")
+          .eq("order_ref", orderRef)
+          .maybeSingle();
+
+        const capiPayload: CapiEventPayload = {
+          event_name: "Purchase",
+          event_id: `purchase_${orderRef}`,
+          event_time: Math.floor(Date.now() / 1000),
+          value: orderTracking?.amount ?? meta.amount ?? undefined,
+          currency: orderTracking?.currency ?? meta.currency ?? "UAH",
+          order_ref: orderRef,
+          email: meta.email ?? null,
+          phone: meta.phone ?? null,
+          fbp: orderTracking?.fbp ?? null,
+          fbclid: orderTracking?.fbclid ?? null,
+          ip_address: orderTracking?.client_ip ?? null,
+          user_agent: orderTracking?.client_ua ?? null,
+          event_source_url: orderTracking?.page_url ?? null,
+          action_source: "website",
+        };
+
+        await sb.from("jobs").insert({
+          type: "meta:capi",
+          payload: capiPayload,
+          status: "pending",
+        });
+      } catch (capiErr) {
+        // Non-fatal: don't fail the webhook for CAPI errors
+        console.warn("[wfp webhook] Failed to queue CAPI job:", capiErr);
+      }
     }
 
     return NextResponse.json({ ok: true });

@@ -44,6 +44,16 @@ export async function POST(req: NextRequest) {
       ...buildCheckoutEventPayload(body),
       subdomain: host,
     },
+    fbp: typeof body.fbp === "string" ? body.fbp : (req.cookies.get("_fbp")?.value ?? undefined),
+    fbclid: typeof body.fbclid === "string" ? body.fbclid : undefined,
+    campaign: typeof body.utm_campaign === "string" ? body.utm_campaign : undefined,
+    client_ip:
+      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+      req.headers.get("cf-connecting-ip") ??
+      req.headers.get("x-real-ip") ??
+      undefined,
+    client_ua: req.headers.get("user-agent") ?? undefined,
+    page_url: typeof body.page_url === "string" ? body.page_url : (req.headers.get("referer") ?? undefined),
   });
 
   if (!started.ok) {

@@ -35,6 +35,12 @@ export type PaymentStartInput = {
   source: "pay_start" | "checkout_start";
   host?: string | null;
   payload?: Record<string, unknown>;
+  fbp?: string | null;
+  fbclid?: string | null;
+  campaign?: string | null;
+  client_ip?: string | null;   // IP пользователя в момент клика на оплату
+  client_ua?: string | null;   // User-Agent браузера
+  page_url?: string | null;    // URL лендинга (event_source_url для CAPI)
 };
 
 type PaymentDb = {
@@ -99,8 +105,8 @@ function localeFromAcceptLanguage(headers: Headers): Locale | null {
 export function resolveLocaleFromRequest(headers: Headers, search: URLSearchParams): Locale {
   const override = normalizeLocale(
     search.get("lang") ??
-      search.get("locale") ??
-      search.get("language")
+    search.get("locale") ??
+    search.get("language")
   );
   if (override) return override;
 
@@ -148,6 +154,12 @@ export async function createPaymentInvoiceWithDeps(
     amount: cfg.amount,
     currency: cfg.currency,
     status: "created",
+    fbp: input.fbp,
+    fbclid: input.fbclid,
+    campaign: input.campaign,
+    client_ip: input.client_ip,
+    client_ua: input.client_ua,
+    page_url: input.page_url,
   });
 
   if (orderErr) {

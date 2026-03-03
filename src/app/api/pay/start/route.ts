@@ -26,6 +26,16 @@ export async function GET(req: NextRequest) {
     payload: {
       query: Object.fromEntries(url.searchParams.entries()),
     },
+    fbp: req.cookies.get("_fbp")?.value ?? url.searchParams.get("fbp") ?? undefined,
+    fbclid: url.searchParams.get("fbclid") ?? undefined,
+    campaign: url.searchParams.get("utm_campaign") ?? undefined,
+    client_ip:
+      req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+      req.headers.get("cf-connecting-ip") ??
+      req.headers.get("x-real-ip") ??
+      undefined,
+    client_ua: req.headers.get("user-agent") ?? undefined,
+    page_url: req.headers.get("referer") ?? undefined,
   });
 
   if (!started.ok) {
