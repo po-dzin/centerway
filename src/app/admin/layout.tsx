@@ -112,7 +112,7 @@ function AdminShell({ children }: { children: ReactNode }) {
 
             {/* Main */}
             <main className="flex-1 flex flex-col min-w-0 min-h-0">
-                <header className="h-16 shrink-0 border-b cw-border bg-[var(--cw-surface)]/80 backdrop-blur-sm flex items-center justify-end px-8 sticky top-0 z-10 transition-colors duration-300">
+                <header className="h-16 shrink-0 border-b cw-border cw-surface-2 flex items-center justify-end px-8 sticky top-0 z-10 transition-colors duration-300">
                     <div className="flex items-center gap-4">
                         <LanguageSwitcher />
                         <ThemeSwitcher />
