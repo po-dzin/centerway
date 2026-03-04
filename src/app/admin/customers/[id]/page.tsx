@@ -89,7 +89,7 @@ function Avatar({ name, url, size = 12 }: { name?: string | null; url?: string |
         />
     ) : (
         <div
-            className="rounded-2xl bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-xl font-bold text-neutral-600 dark:text-neutral-300 shrink-0"
+            className="rounded-2xl cw-surface-2 flex items-center justify-center text-xl font-bold cw-muted shrink-0"
             style={{ width: pixelSize, height: pixelSize }}
         >
             {initial}
@@ -100,17 +100,17 @@ function Avatar({ name, url, size = 12 }: { name?: string | null; url?: string |
 const orderStatusColor: Record<string, string> = {
     paid: "cw-status-success-text",
     pending: "cw-status-pending-text",
-    created: "text-neutral-500",
+    created: "cw-muted",
     refunded: "cw-status-failed-text",
 };
 
 function ContactRow({ label, value, badge }: { label: string; value: string; badge?: boolean }) {
     return (
         <div className="flex items-center gap-3 p-3 rounded-xl cw-panel">
-            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 uppercase tracking-wide shrink-0">
+            <span className="text-[10px] font-medium px-1.5 py-0.5 rounded cw-surface-2 cw-muted uppercase tracking-wide shrink-0">
                 {label}
             </span>
-            <p className="text-xs font-medium text-neutral-900 dark:text-white truncate flex-1">{value}</p>
+            <p className="text-xs font-medium cw-text truncate flex-1">{value}</p>
             {badge && (
                 <svg xmlns="http://www.w3.org/2000/svg" width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="cw-status-success-text shrink-0">
                     <polyline points="20 6 9 17 4 12" />
@@ -153,9 +153,9 @@ export default function CustomerProfilePage() {
     if (loading) {
         return (
             <div className="space-y-4 animate-pulse">
-                <div className="h-5 w-36 bg-neutral-100 dark:bg-neutral-800 rounded" />
-                <div className="h-32 bg-neutral-100 dark:bg-neutral-800 rounded-2xl" />
-                <div className="h-72 bg-neutral-100 dark:bg-neutral-800 rounded-2xl" />
+                <div className="h-5 w-36 cw-skeleton-row" />
+                <div className="h-32 rounded-2xl cw-skeleton-row" />
+                <div className="h-72 rounded-2xl cw-skeleton-row" />
             </div>
         );
     }
@@ -175,6 +175,12 @@ export default function CustomerProfilePage() {
         if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${value} ${t("orders_count_few")}`;
         return `${value} ${t("orders_count_many")}`;
     })();
+    const orderStatusLabel: Record<string, string> = {
+        paid: t("orders_status_paid"),
+        created: t("orders_status_created"),
+        pending: t("orders_status_pending"),
+        refunded: t("orders_status_refunded"),
+    };
 
     // Check if we have any contacts to show
     const hasContacts = customer.email || customer.phone || customer.tg_id || customer.google_id || customer.auth_user_id;
@@ -182,12 +188,12 @@ export default function CustomerProfilePage() {
     return (
         <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl">
             {/* Breadcrumb */}
-            <nav className="flex items-center gap-2 text-xs text-neutral-400 dark:text-neutral-600">
-                <Link href="/admin/customers" className="hover:text-neutral-700 dark:hover:text-neutral-300 transition-colors">
+            <nav className="flex items-center gap-2 text-xs cw-muted">
+                <Link href="/admin/customers" className="hover:text-[var(--cw-text)] transition-colors">
                     {t("customers_title")}
                 </Link>
                 <span>/</span>
-                <span className="text-neutral-600 dark:text-neutral-400 truncate max-w-[240px]">{displayName}</span>
+                <span className="cw-muted truncate max-w-[240px]">{displayName}</span>
             </nav>
 
             {/* Profile card */}
@@ -195,13 +201,13 @@ export default function CustomerProfilePage() {
                 <div className="flex items-start gap-5">
                     <Avatar name={displayName} url={customer.avatar_url} size={14} />
                     <div className="flex-1 min-w-0">
-                        <h2 className="text-2xl font-bold text-neutral-900 dark:text-white truncate">{displayName}</h2>
-                        <p className="text-xs text-neutral-400 mt-0.5 font-mono">{customer.id}</p>
+                        <h2 className="text-2xl font-bold cw-text truncate">{displayName}</h2>
+                        <p className="text-xs cw-muted mt-0.5 font-mono">{customer.id}</p>
 
                         {customer.tags?.length > 0 && (
                             <div className="flex flex-wrap gap-1.5 mt-3">
                                 {customer.tags.map((tag) => (
-                                    <span key={tag} className="text-xs px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
+                                    <span key={tag} className="text-xs px-2 py-0.5 rounded-full cw-surface-2 cw-muted">
                                         {tag}
                                     </span>
                                 ))}
@@ -212,11 +218,11 @@ export default function CustomerProfilePage() {
                         )}
                     </div>
                     <div className="text-right shrink-0">
-                        <p className="text-xs text-neutral-400">{t("customers_profile_created")}</p>
-                        <p className="text-xs font-medium text-neutral-600 dark:text-neutral-300 mt-0.5">
+                        <p className="text-xs cw-muted">{t("customers_profile_created")}</p>
+                        <p className="text-xs font-medium cw-muted mt-0.5">
                             {new Date(customer.created_at).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })}
                         </p>
-                        <p className="text-xs text-neutral-400 mt-2">
+                        <p className="text-xs cw-muted mt-2">
                             {ordersCountLabel}
                         </p>
                     </div>
@@ -228,16 +234,16 @@ export default function CustomerProfilePage() {
                 <div className="lg:col-span-1 space-y-5">
                     {/* Contacts */}
                     <div className="space-y-2">
-                        <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">{t("customers_profile_contacts")}</h3>
+                        <h3 className="text-sm font-semibold cw-text">{t("customers_profile_contacts")}</h3>
                         {!hasContacts ? (
-                            <p className="text-xs text-neutral-400">{t("customers_profile_contacts_empty")}</p>
+                            <p className="text-xs cw-muted">{t("customers_profile_contacts_empty")}</p>
                         ) : (
                             <div className="space-y-2">
-                                {customer.email && <ContactRow label="Email" value={customer.email} badge={true} />}
-                                {customer.phone && <ContactRow label="Phone" value={customer.phone} badge={true} />}
-                                {customer.tg_id && <ContactRow label="Telegram" value={customer.tg_id} />}
-                                {customer.google_id && <ContactRow label="Google" value={customer.google_id} />}
-                                {customer.auth_user_id && <ContactRow label="Auth User" value={customer.auth_user_id} />}
+                                {customer.email && <ContactRow label={t("customers_contact_email")} value={customer.email} badge={true} />}
+                                {customer.phone && <ContactRow label={t("customers_contact_phone")} value={customer.phone} badge={true} />}
+                                {customer.tg_id && <ContactRow label={t("customers_contact_telegram")} value={customer.tg_id} />}
+                                {customer.google_id && <ContactRow label={t("customers_contact_google")} value={customer.google_id} />}
+                                {customer.auth_user_id && <ContactRow label={t("customers_contact_auth_user")} value={customer.auth_user_id} />}
                             </div>
                         )}
                     </div>
@@ -245,19 +251,21 @@ export default function CustomerProfilePage() {
                     {/* Orders summary */}
                     {orders.length > 0 && (
                         <div className="space-y-2">
-                            <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">{t("orders_title")}</h3>
+                            <h3 className="text-sm font-semibold cw-text">{t("orders_title")}</h3>
                             {orders.map((o) => (
                                 <div key={o.id} className="p-3 rounded-xl cw-panel">
                                     <div className="flex items-center justify-between gap-2">
-                                        <span className="text-xs font-mono text-neutral-500 dark:text-neutral-400 truncate">{o.order_ref}</span>
-                                        <span className={`text-xs font-semibold ${orderStatusColor[o.status] ?? "text-neutral-500"}`}>{o.status}</span>
+                                        <span className="text-xs font-mono cw-muted truncate">{o.order_ref}</span>
+                                        <span className={`text-xs font-semibold ${orderStatusColor[o.status] ?? "cw-muted"}`}>
+                                            {orderStatusLabel[o.status] ?? o.status}
+                                        </span>
                                     </div>
                                     {o.amount && (
-                                        <p className="text-sm font-bold text-neutral-900 dark:text-white mt-1">
-                                            {o.amount} <span className="text-xs font-normal text-neutral-500">{o.currency}</span>
+                                        <p className="text-sm font-bold cw-text mt-1">
+                                            {o.amount} <span className="text-xs font-normal cw-muted">{o.currency}</span>
                                         </p>
                                     )}
-                                    <p className="text-[10px] text-neutral-400 mt-1">{o.product_code}</p>
+                                    <p className="text-[10px] cw-muted mt-1">{o.product_code}</p>
                                 </div>
                             ))}
                         </div>
@@ -266,12 +274,12 @@ export default function CustomerProfilePage() {
 
                 {/* Timeline */}
                 <div className="lg:col-span-2 space-y-4">
-                    <h3 className="text-sm font-semibold text-neutral-700 dark:text-neutral-300">
-                        {t("customers_profile_timeline")} <span className="font-normal text-neutral-400">({timeline.length})</span>
+                    <h3 className="text-sm font-semibold cw-text">
+                        {t("customers_profile_timeline")} <span className="font-normal cw-muted">({timeline.length})</span>
                     </h3>
 
                     {timeline.length === 0 ? (
-                        <p className="text-xs text-neutral-400 py-4">{t("customers_profile_no_events")}</p>
+                        <p className="text-xs cw-muted py-4">{t("customers_profile_no_events")}</p>
                     ) : (
                         <div className="space-y-3">
                             {timeline.map((item, i) => (
@@ -281,10 +289,10 @@ export default function CustomerProfilePage() {
                                             {typeIcons[item.type]}
                                         </div>
                                         <div className="flex-1 min-w-0 pt-0.5">
-                                            <p className="text-sm font-medium text-neutral-900 dark:text-white leading-tight">{item.label}</p>
+                                            <p className="text-sm font-medium cw-text leading-tight">{item.label}</p>
                                             <div className="flex items-center gap-2 mt-1">
-                                                {item.sub && <span className="text-xs text-neutral-500 dark:text-neutral-400">{item.sub}</span>}
-                                                <span className="text-[10px] text-neutral-400 dark:text-neutral-600">
+                                                {item.sub && <span className="text-xs cw-muted">{item.sub}</span>}
+                                                <span className="text-[10px] cw-muted">
                                                     {new Date(item.ts).toLocaleString(locale, {
                                                         day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit"
                                                     })}
@@ -293,7 +301,7 @@ export default function CustomerProfilePage() {
                                         </div>
                                     </div>
                                     {i < timeline.length - 1 && (
-                                        <div className="ml-[18px] mt-1 h-3 w-px bg-neutral-200 dark:bg-neutral-800" />
+                                        <div className="ml-[18px] mt-1 h-3 w-px border-l cw-border" />
                                     )}
                                 </div>
                             ))}

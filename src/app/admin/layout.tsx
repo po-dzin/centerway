@@ -58,8 +58,8 @@ function AdminShell({ children }: { children: ReactNode }) {
                 <div className="h-16 flex items-center justify-between px-3 border-b cw-border shrink-0">
                     {expanded && (
                         <div className="overflow-hidden">
-                            <p className="text-sm font-bold cw-text whitespace-nowrap">CenterWay</p>
-                            <p className="text-[9px] cw-muted uppercase font-semibold tracking-widest whitespace-nowrap">Control Panel</p>
+                            <p className="text-sm font-bold cw-text whitespace-nowrap">{t("sidebar_title")}</p>
+                            <p className="text-[9px] cw-muted uppercase font-semibold tracking-widest whitespace-nowrap">{t("sidebar_subtitle")}</p>
                         </div>
                     )}
                     <button
@@ -87,9 +87,9 @@ function AdminShell({ children }: { children: ReactNode }) {
                                 className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors group relative
                                     ${active
                                         ? isSelected
-                                            ? "text-neutral-900 dark:text-white bg-neutral-200 dark:bg-neutral-800"
-                                            : "text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200 dark:hover:bg-neutral-800"
-                                        : "text-neutral-400 dark:text-neutral-600 opacity-40 cursor-not-allowed pointer-events-none"
+                                            ? "cw-text cw-surface-2"
+                                            : "cw-muted hover:text-[var(--cw-text)] hover:bg-[var(--cw-surface-2)]"
+                                        : "cw-muted opacity-40 cursor-not-allowed pointer-events-none"
                                     }
                                     ${!expanded ? "justify-center" : ""}
                                 `}
@@ -100,7 +100,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                                 )}
                                 {/* Tooltip when collapsed */}
                                 {!expanded && (
-                                    <span className="pointer-events-none absolute left-full ml-3 z-50 whitespace-nowrap rounded-md bg-neutral-900 dark:bg-neutral-100 text-white dark:text-neutral-900 text-xs font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 shadow-lg">
+                                    <span className="pointer-events-none absolute left-full ml-3 z-50 whitespace-nowrap rounded-md cw-surface border cw-border cw-text text-xs font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 cw-shadow">
                                         {t(key)}
                                     </span>
                                 )}

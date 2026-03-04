@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
+import { AdminTabs } from "@/components/admin/AdminTabs";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { getErrorMessage } from "@/lib/errors";
 
 interface Order {
@@ -91,24 +93,24 @@ function ReconcileModal({
                 className="cw-surface border cw-border rounded-2xl cw-shadow p-6 w-full max-w-md mx-4"
                 onClick={(e) => e.stopPropagation()}
             >
-                <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1">{labels.title}</h3>
+                <h3 className="text-lg font-semibold cw-text mb-1">{labels.title}</h3>
                 <p className="cw-page-subtitle mb-4">
-                    {labels.order} <span className="font-mono text-xs bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded">{order.order_ref}</span>
+                    {labels.order} <span className="font-mono text-xs cw-surface-2 px-1.5 py-0.5 rounded">{order.order_ref}</span>
                 </p>
 
                 <div className="space-y-3 mb-4">
-                    <div className="p-3 rounded-xl bg-neutral-50 dark:bg-neutral-800/50 text-sm">
+                    <div className="p-3 rounded-xl cw-surface-2 text-sm">
                         <div className="flex justify-between">
-                            <span className="text-neutral-500">{labels.product}</span>
-                            <span className="font-medium text-neutral-900 dark:text-white">{order.product_code}</span>
+                            <span className="cw-muted">{labels.product}</span>
+                            <span className="font-medium cw-text">{order.product_code}</span>
                         </div>
                         <div className="flex justify-between mt-1">
-                            <span className="text-neutral-500">{labels.amount}</span>
-                            <span className="font-medium text-neutral-900 dark:text-white">{order.amount} {order.currency}</span>
+                            <span className="cw-muted">{labels.amount}</span>
+                            <span className="font-medium cw-text">{order.amount} {order.currency}</span>
                         </div>
                         <div className="flex justify-between mt-1">
-                            <span className="text-neutral-500">{labels.status}</span>
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusBadge[order.status] ?? "bg-neutral-100 text-neutral-500"}`}>
+                            <span className="cw-muted">{labels.status}</span>
+                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusBadge[order.status] ?? "cw-surface-2 cw-muted"}`}>
                                 {statusLabels[order.status] ?? order.status}
                             </span>
                         </div>
@@ -154,7 +156,7 @@ function ReconcileModal({
 
 function ResendAccessButton({ orderRef, labels }: {
     orderRef: string;
-    labels: { copied: string; copyLink: string; createError: string; networkError: string; };
+    labels: { copied: string; copyLink: string; createError: string; networkError: string; unknown: string; };
 }) {
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -178,7 +180,7 @@ function ResendAccessButton({ orderRef, labels }: {
                 setCopied(true);
                 setTimeout(() => setCopied(false), 2000);
             } else {
-                alert(labels.createError + ": " + (data.error || "unknown"));
+                alert(labels.createError + ": " + (data.error || labels.unknown));
             }
         } catch {
             alert(labels.networkError);
@@ -191,7 +193,7 @@ function ResendAccessButton({ orderRef, labels }: {
         <button
             onClick={handle}
             title={copied ? labels.copied : labels.copyLink}
-            className="shrink-0 p-2 rounded-lg text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors opacity-0 group-hover:opacity-100"
+            className="shrink-0 cw-icon-btn opacity-0 group-hover:opacity-100"
         >
             {copied ? (
                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="cw-status-success-text">
@@ -229,6 +231,7 @@ export default function OrdersPage() {
         copyLink: t("orders_copy_link"),
         createError: t("orders_copy_error"),
         networkError: t("orders_network_error"),
+        unknown: t("common_unknown"),
     };
 
     const reconcileLabels = {
@@ -322,33 +325,20 @@ export default function OrdersPage() {
                 </div>
                 {!loading && data.length > 0 && activeStatus !== "created" && (
                     <div className="text-right">
-                        <p className="text-xs text-neutral-400">{t("orders_total_paid")}</p>
-                        <p className="text-xl font-bold text-neutral-900 dark:text-white mt-0.5">
-                            {totalPaid.toLocaleString(locale)} <span className="text-sm font-normal text-neutral-500">UAH</span>
+                        <p className="text-xs cw-muted">{t("orders_total_paid")}</p>
+                        <p className="text-xl font-bold cw-text mt-0.5">
+                            {totalPaid.toLocaleString(locale)} <span className="text-sm font-normal cw-muted">{t("common_currency_uah")}</span>
                         </p>
                     </div>
                 )}
             </div>
 
             {/* Status tabs */}
-            <div className="flex gap-1 border-b border-neutral-200 dark:border-neutral-800">
-                {STATUS_TABS.map((tab) => (
-                    <button
-                        key={tab.key}
-                        onClick={() => handleStatusChange(tab.key)}
-                        className={`px-4 py-2 text-sm font-medium transition-colors border-b-2 -mb-px ${activeStatus === tab.key
-                            ? "border-neutral-900 dark:border-white text-neutral-900 dark:text-white"
-                            : "border-transparent text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-300"
-                            }`}
-                    >
-                        {tab.label}
-                    </button>
-                ))}
-            </div>
+            <AdminTabs items={STATUS_TABS} activeKey={activeStatus} onChange={handleStatusChange} />
 
             {/* Search */}
             <div className="relative">
-                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-neutral-400">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none cw-muted">
                     <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
                     </svg>
@@ -364,7 +354,7 @@ export default function OrdersPage() {
 
             {/* Count */}
             {!loading && (
-                <p className="text-xs text-neutral-400">
+                <p className="text-xs cw-muted">
                     {getOrdersCountLabel(count)}
                 </p>
             )}
@@ -373,7 +363,7 @@ export default function OrdersPage() {
             {loading && (
                 <div className="space-y-2">
                     {[...Array(6)].map((_, i) => (
-                        <div key={i} className="h-[72px] rounded-xl bg-neutral-100 dark:bg-neutral-800/50 animate-pulse" />
+                        <div key={i} className="h-[72px] cw-skeleton-row" />
                     ))}
                 </div>
             )}
@@ -387,14 +377,14 @@ export default function OrdersPage() {
 
             {/* Empty */}
             {!loading && !error && data.length === 0 && (
-                <div className="py-16 text-center">
-                    <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-neutral-400">
+                <div className="py-16 text-center cw-empty-state">
+                    <div className="w-12 h-12 rounded-2xl cw-empty-icon flex items-center justify-center mx-auto mb-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="cw-muted">
                             <rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
                             <circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
                         </svg>
                     </div>
-                    <p className="text-neutral-500 dark:text-neutral-400 text-sm">{t("orders_empty")}</p>
+                    <p className="cw-muted text-sm">{t("orders_empty")}</p>
                 </div>
             )}
 
@@ -418,25 +408,25 @@ export default function OrdersPage() {
                                 {/* Main info */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-sm font-mono font-medium text-neutral-900 dark:text-white">
+                                        <span className="text-sm font-mono font-medium cw-text">
                                             {order.order_ref}
                                         </span>
-                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusBadge[order.status] ?? "bg-neutral-100 dark:bg-neutral-800 text-neutral-500"}`}>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusBadge[order.status] ?? "cw-surface-2 cw-muted"}`}>
                                             {statusLabel[order.status] ?? order.status}
                                         </span>
                                     </div>
                                     <div className="flex items-center gap-3 mt-0.5">
-                                        <span className="text-xs text-neutral-400">{order.product_code}</span>
+                                        <span className="text-xs cw-muted">{order.product_code}</span>
                                         {customerLabel && (
                                             <>
-                                                <span className="text-neutral-300 dark:text-neutral-700">·</span>
+                                                <span className="cw-muted">·</span>
                                                 {order.customer_id ? (
                                                     <Link href={`/admin/customers/${order.customer_id}`}
-                                                        className="text-xs text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors truncate max-w-[180px]">
+                                                        className="text-xs cw-muted hover:text-[var(--cw-text)] transition-colors truncate max-w-[180px]">
                                                         {customerLabel}
                                                     </Link>
                                                 ) : (
-                                                    <span className="text-xs text-neutral-400 truncate max-w-[180px]">{customerLabel}</span>
+                                                    <span className="text-xs cw-muted truncate max-w-[180px]">{customerLabel}</span>
                                                 )}
                                             </>
                                         )}
@@ -446,11 +436,11 @@ export default function OrdersPage() {
                                 {/* Amount */}
                                 <div className="text-right shrink-0">
                                     {order.amount != null && (
-                                        <p className="text-sm font-semibold text-neutral-900 dark:text-white">
-                                            {order.amount.toLocaleString(locale)} <span className="text-xs font-normal text-neutral-400">{order.currency}</span>
+                                        <p className="text-sm font-semibold cw-text">
+                                            {order.amount.toLocaleString(locale)} <span className="text-xs font-normal cw-muted">{order.currency}</span>
                                         </p>
                                     )}
-                                    <p className="text-[10px] text-neutral-400 mt-0.5">
+                                    <p className="text-[10px] cw-muted mt-0.5">
                                         {new Date(order.created_at).toLocaleDateString(locale, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                                     </p>
                                 </div>
@@ -476,34 +466,13 @@ export default function OrdersPage() {
             )}
 
             {/* Pagination */}
-            {!loading && !error && count > 0 && totalPages > 1 && (
-                <div className="flex items-center justify-center gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-800">
-                    <button
-                        onClick={() => setPage((p) => Math.max(0, p - 1))}
-                        disabled={page === 0}
-                        className="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 transition-colors"
-                        title={t("common_prev")}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="15 18 9 12 15 6" />
-                        </svg>
-                    </button>
-
-                    <div className="cw-page-subtitle">
-                        {t("common_page")} <span className="font-medium text-neutral-900 dark:text-white">{page + 1}</span> {t("common_of")} <span className="font-medium text-neutral-900 dark:text-white">{totalPages}</span>
-                    </div>
-
-                    <button
-                        onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                        disabled={page >= totalPages - 1}
-                        className="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 transition-colors"
-                        title={t("common_next")}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="9 18 15 12 9 6" />
-                        </svg>
-                    </button>
-                </div>
+            {!loading && !error && count > 0 && (
+                <AdminPagination
+                    page={page}
+                    totalPages={totalPages}
+                    onPrev={() => setPage((p) => Math.max(0, p - 1))}
+                    onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                />
             )}
 
             {/* Reconcile modal */}

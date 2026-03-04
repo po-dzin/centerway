@@ -62,7 +62,7 @@ export default function AdminDashboardPage() {
     };
 
     if (loading) {
-        return <div className="p-8 text-neutral-400 animate-pulse">{t("loading")}</div>;
+        return <div className="p-8 cw-muted animate-pulse">{t("loading")}</div>;
     }
 
     if (!session) {
@@ -76,8 +76,8 @@ export default function AdminDashboardPage() {
                 <div className="w-full cw-surface border cw-border rounded-2xl cw-shadow p-8 transition-colors duration-300">
                     <div className="space-y-6">
                         <div className="space-y-1">
-                            <h3 className="text-lg font-medium text-neutral-900 dark:text-white">{t("login_card_title")}</h3>
-                            <p className="text-xs text-neutral-500">{t("login_card_subtitle")}</p>
+                            <h3 className="text-lg font-medium cw-text">{t("login_card_title")}</h3>
+                            <p className="text-xs cw-muted">{t("login_card_subtitle")}</p>
                         </div>
 
                         <button
@@ -110,18 +110,18 @@ export default function AdminDashboardPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="p-5 cw-panel transition-colors duration-300">
-                    <h3 className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">{t("dashboard_role_label")}</h3>
-                    <div className="text-2xl font-semibold text-neutral-900 dark:text-white capitalize">{role || (t("dashboard_role_unknown") as string)}</div>
+                    <h3 className="cw-muted text-sm font-medium mb-1">{t("dashboard_role_label")}</h3>
+                    <div className="text-2xl font-semibold cw-text capitalize">{role || (t("dashboard_role_unknown") as string)}</div>
                 </div>
                 <div className="p-5 cw-panel transition-colors duration-300">
-                    <h3 className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">{t("dashboard_email_label")}</h3>
-                    <div className="text-lg font-semibold text-neutral-900 dark:text-white truncate" title={session.user.email}>{session.user.email}</div>
+                    <h3 className="cw-muted text-sm font-medium mb-1">{t("dashboard_email_label")}</h3>
+                    <div className="text-lg font-semibold cw-text truncate" title={session.user.email}>{session.user.email}</div>
                 </div>
                 <div className="p-5 cw-panel transition-colors duration-300">
-                    <h3 className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">{t("dashboard_audit_label")}</h3>
+                    <h3 className="cw-muted text-sm font-medium mb-1">{t("dashboard_audit_label")}</h3>
                     <div className="flex items-center gap-2 mt-1">
                         <div className="w-2 h-2 rounded-full cw-status-success-dot"></div>
-                        <span className="text-neutral-900 dark:text-white text-sm font-medium">{t("dashboard_audit_status")}</span>
+                        <span className="cw-text text-sm font-medium">{t("dashboard_audit_status")}</span>
                     </div>
                 </div>
             </div>

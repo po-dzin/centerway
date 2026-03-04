@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useI18n } from "@/components/I18nProvider";
+import { AdminPagination } from "@/components/admin/AdminPagination";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
 
@@ -36,7 +37,7 @@ function Avatar({ name, url }: { name?: string | null; url?: string | null }) {
             referrerPolicy="no-referrer"
         />
     ) : (
-        <div className="w-9 h-9 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-sm font-semibold text-neutral-600 dark:text-neutral-300">
+        <div className="w-9 h-9 rounded-full cw-surface-2 flex items-center justify-center text-sm font-semibold cw-muted">
             {initial}
         </div>
     );
@@ -106,7 +107,7 @@ export default function CustomersPage() {
     const querySuffix = (() => {
         if (!debouncedQ) return "";
         if (isRu) return ` ${t("customers_results_query_prefix")}«${debouncedQ}»`;
-        return ` ${t("customers_results_query_prefix_en")}"${debouncedQ}"`;
+        return ` ${t("customers_results_query_prefix")}"${debouncedQ}"`;
     })();
 
     const totalPages = Math.ceil(count / LIMIT);
@@ -125,7 +126,7 @@ export default function CustomersPage() {
 
             {/* Search bar */}
             <div className="relative">
-                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none text-neutral-400">
+                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none cw-muted">
                     <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
                         stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
@@ -141,7 +142,7 @@ export default function CustomersPage() {
                 {q && (
                     <button
                         onClick={() => setQ("")}
-                        className="absolute inset-y-0 right-3 flex items-center text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
+                        className="absolute inset-y-0 right-3 flex items-center cw-muted hover:text-[var(--cw-text)]"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
@@ -153,7 +154,7 @@ export default function CustomersPage() {
 
             {/* Results header */}
             {!loading && (
-                <p className="text-xs text-neutral-400 dark:text-neutral-600">
+                <p className="text-xs cw-muted">
                     {getResultsLabel(count)}
                     {querySuffix}
                 </p>
@@ -163,7 +164,7 @@ export default function CustomersPage() {
             {loading && (
                 <div className="space-y-2">
                     {[...Array(5)].map((_, i) => (
-                        <div key={i} className="h-16 rounded-xl bg-neutral-100 dark:bg-neutral-800/50 animate-pulse" />
+                        <div key={i} className="h-16 cw-skeleton-row" />
                     ))}
                 </div>
             )}
@@ -177,17 +178,17 @@ export default function CustomersPage() {
 
             {/* State: empty */}
             {!loading && !error && data.length === 0 && (
-                <div className="py-16 text-center">
-                    <div className="w-12 h-12 rounded-2xl bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center mx-auto mb-4">
+                <div className="py-16 text-center cw-empty-state">
+                    <div className="w-12 h-12 rounded-2xl cw-empty-icon flex items-center justify-center mx-auto mb-4">
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
-                            className="text-neutral-400">
+                            className="cw-muted">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                             <circle cx="9" cy="7" r="4" />
                             <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
                         </svg>
                     </div>
-                    <p className="text-neutral-500 dark:text-neutral-400 text-sm">
+                    <p className="cw-muted text-sm">
                         {debouncedQ ? t("customers_not_found") : t("customers_empty")}
                     </p>
                 </div>
@@ -205,18 +206,18 @@ export default function CustomersPage() {
                             <Avatar name={identity.display_name ?? identity.email ?? identity.phone} url={identity.avatar_url} />
 
                             <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">
-                                    {identity.display_name ?? identity.email ?? identity.phone ?? <span className="text-neutral-400 italic">{t("customers_no_name")}</span>}
+                                <p className="text-sm font-medium cw-text truncate">
+                                    {identity.display_name ?? identity.email ?? identity.phone ?? <span className="cw-muted italic">{t("customers_no_name")}</span>}
                                 </p>
                                 {identity.matched_link ? (
-                                    <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
-                                        <span className="font-mono bg-neutral-100 dark:bg-neutral-800 px-1 py-0.5 rounded text-[10px] mr-1">
+                                    <p className="text-xs cw-muted truncate">
+                                        <span className="font-mono cw-surface-2 px-1 py-0.5 rounded text-[10px] mr-1">
                                             {identity.matched_link.type}
                                         </span>
                                         {identity.matched_link.value}
                                     </p>
                                 ) : (
-                                    <p className="text-xs text-neutral-400 dark:text-neutral-500">
+                                    <p className="text-xs cw-muted">
                                         {new Date(identity.created_at).toLocaleDateString(locale, {
                                             day: "2-digit", month: "short", year: "numeric"
                                         })}
@@ -227,7 +228,7 @@ export default function CustomersPage() {
                             {identity.tags?.length > 0 && (
                                 <div className="hidden sm:flex gap-1 flex-wrap justify-end max-w-[200px]">
                                     {identity.tags.slice(0, 3).map((tag) => (
-                                        <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400">
+                                        <span key={tag} className="text-[10px] px-2 py-0.5 rounded-full cw-surface-2 cw-muted">
                                             {tag}
                                         </span>
                                     ))}
@@ -236,7 +237,7 @@ export default function CustomersPage() {
 
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                                className="text-neutral-300 dark:text-neutral-700 group-hover:text-neutral-500 dark:group-hover:text-neutral-500 transition-colors flex-shrink-0">
+                                className="cw-muted group-hover:text-[var(--cw-text)] transition-colors flex-shrink-0">
                                 <polyline points="9 18 15 12 9 6" />
                             </svg>
                         </Link>
@@ -245,34 +246,13 @@ export default function CustomersPage() {
             )}
 
             {/* Pagination */}
-            {!loading && !error && count > 0 && totalPages > 1 && (
-                <div className="flex items-center justify-center gap-4 pt-4 border-t border-neutral-200 dark:border-neutral-800">
-                    <button
-                        onClick={() => setPage((p) => Math.max(0, p - 1))}
-                        disabled={page === 0}
-                        className="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 transition-colors"
-                        title={t("common_prev")}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="15 18 9 12 15 6" />
-                        </svg>
-                    </button>
-
-                    <div className="cw-page-subtitle">
-                        {t("common_page")} <span className="font-medium text-neutral-900 dark:text-white">{page + 1}</span> {t("common_of")} <span className="font-medium text-neutral-900 dark:text-white">{totalPages}</span>
-                    </div>
-
-                    <button
-                        onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                        disabled={page >= totalPages - 1}
-                        className="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 transition-colors"
-                        title={t("common_next")}
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                            <polyline points="9 18 15 12 9 6" />
-                        </svg>
-                    </button>
-                </div>
+            {!loading && !error && count > 0 && (
+                <AdminPagination
+                    page={page}
+                    totalPages={totalPages}
+                    onPrev={() => setPage((p) => Math.max(0, p - 1))}
+                    onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                />
             )}
         </div>
     );

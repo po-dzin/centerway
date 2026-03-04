@@ -210,10 +210,7 @@ export default function AnalyticsPage() {
                                             }}
                                             onMouseLeave={() => setHovered(null)}
                                         >
-                                            <div
-                                                className="w-full bg-neutral-500/45 hover:bg-neutral-600/60 dark:bg-neutral-300/55 dark:hover:bg-neutral-200/70 transition-all rounded-t-sm"
-                                                style={{ height: `${barHeight}px` }}
-                                            ></div>
+                                            <div className="w-full cw-chart-bar rounded-t-sm" style={{ height: `${barHeight}px` }} />
                                         </div>
                                     );
                                 })}

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { supabaseClient } from "@/lib/supabaseClient";
+import { useI18n } from "@/components/I18nProvider";
 
 interface UserMenuProps {
     email?: string | null;
@@ -11,6 +12,7 @@ interface UserMenuProps {
 }
 
 export function UserMenu({ email, initial = "?", avatarUrl }: UserMenuProps) {
+    const { t } = useI18n();
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
 
@@ -64,7 +66,7 @@ export function UserMenu({ email, initial = "?", avatarUrl }: UserMenuProps) {
                         className="w-full flex items-center gap-2 px-4 py-3 text-sm cw-text hover:bg-[var(--cw-surface-2)] transition-colors"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
-                        Выйти
+                        {t("dashboard_signout")}
                     </button>
                 </div>
             )}
