@@ -49,10 +49,10 @@ function AdminShell({ children }: { children: ReactNode }) {
     ];
 
     return (
-        <div className="cw-admin-theme flex min-h-screen font-sans transition-colors duration-300">
+        <div className="cw-admin-theme flex h-screen overflow-hidden font-sans transition-colors duration-300">
             {/* Sidebar */}
             <aside
-                className={`${expanded ? "w-56" : "w-16"} shrink-0 border-r cw-border cw-surface-2 flex flex-col transition-all duration-300 ease-in-out overflow-hidden`}
+                className={`${expanded ? "w-56" : "w-16"} shrink-0 h-full border-r cw-border cw-surface-2 flex flex-col min-h-0 transition-all duration-300 ease-in-out overflow-hidden`}
             >
                 {/* Logo + Toggle */}
                 <div className="h-16 flex items-center justify-between px-3 border-b cw-border shrink-0">
@@ -75,7 +75,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                 </div>
 
                 {/* Nav */}
-                <nav className="flex flex-col gap-0.5 p-2 mt-1 flex-1">
+                <nav className="flex flex-col gap-0.5 p-2 mt-1 flex-1 min-h-0 overflow-y-auto">
                     {navItems.map(({ key, href, icon, active }) => {
                         const isSelected = href === "/admin" ? pathname === "/admin" : pathname?.startsWith(href);
 
@@ -111,8 +111,8 @@ function AdminShell({ children }: { children: ReactNode }) {
             </aside>
 
             {/* Main */}
-            <main className="flex-1 flex flex-col min-w-0">
-                <header className="h-16 border-b cw-border bg-[var(--cw-surface)]/80 backdrop-blur-sm flex items-center justify-end px-8 sticky top-0 z-10 transition-colors duration-300">
+            <main className="flex-1 flex flex-col min-w-0 min-h-0">
+                <header className="h-16 shrink-0 border-b cw-border bg-[var(--cw-surface)]/80 backdrop-blur-sm flex items-center justify-end px-8 sticky top-0 z-10 transition-colors duration-300">
                     <div className="flex items-center gap-4">
                         <LanguageSwitcher />
                         <ThemeSwitcher />
@@ -123,7 +123,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                         />
                     </div>
                 </header>
-                <div className="p-8 overflow-y-auto w-full">
+                <div className="flex-1 p-8 overflow-y-auto w-full min-h-0">
                     {children}
                 </div>
             </main>
