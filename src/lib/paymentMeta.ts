@@ -7,11 +7,11 @@ export type PaymentMeta = {
     card: string | null; // masked / pan (если прилетит)
   };
   
-  function asObj(x: unknown): Record<string, any> | null {
-    return x && typeof x === "object" ? (x as any) : null;
+  function asObj(x: unknown): Record<string, unknown> | null {
+    return x && typeof x === "object" ? (x as Record<string, unknown>) : null;
   }
   
-  function pickStr(obj: Record<string, any> | null, keys: string[]): string | null {
+  function pickStr(obj: Record<string, unknown> | null, keys: string[]): string | null {
     if (!obj) return null;
     for (const k of keys) {
       const v = obj[k];

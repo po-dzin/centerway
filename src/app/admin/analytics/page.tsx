@@ -3,6 +3,7 @@
 import { useEffect, useState, useMemo, useRef } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
+import { getErrorMessage } from "@/lib/errors";
 
 type FunnelData = {
     date: string;
@@ -55,8 +56,8 @@ export default function AnalyticsPage() {
             setFunnel(data.funnel);
             setCampaigns(data.campaigns);
             setSummary(data.summary);
-        } catch (err: any) {
-            setError(err.message);
+        } catch (err: unknown) {
+            setError(getErrorMessage(err));
         } finally {
             setLoading(false);
         }

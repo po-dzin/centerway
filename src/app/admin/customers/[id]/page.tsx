@@ -7,6 +7,7 @@ import Image from "next/image";
 import type { ReactNode } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
+import { getErrorMessage } from "@/lib/errors";
 
 interface Customer {
     id: string;
@@ -32,10 +33,28 @@ interface TimelineItem {
     ref?: string;
 }
 
+interface CustomerOrder {
+    id: string;
+    order_ref: string;
+    product_code: string | null;
+    amount: number | null;
+    currency: string | null;
+    status: string;
+    created_at: string;
+}
+
+interface CustomerEvent {
+    id: string;
+    type: string;
+    order_ref: string | null;
+    payload: unknown;
+    created_at: string;
+}
+
 interface ProfileData {
     customer: Customer;
-    orders: any[];
-    events: any[];
+    orders: CustomerOrder[];
+    events: CustomerEvent[];
     timeline: TimelineItem[];
 }
 
@@ -123,8 +142,8 @@ export default function CustomerProfilePage() {
                 if (res.status === 404) { router.replace("/admin/customers"); return; }
                 if (!res.ok) throw new Error(`${res.status}`);
                 setProfile(await res.json());
-            } catch (e: any) {
-                setError(e.message);
+            } catch (e: unknown) {
+                setError(getErrorMessage(e));
             } finally {
                 setLoading(false);
             }

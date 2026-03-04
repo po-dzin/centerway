@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
+import { getErrorMessage } from "@/lib/errors";
 
 interface Order {
     id: string;
@@ -77,8 +78,8 @@ function ReconcileModal({
             });
             if (!res.ok) throw new Error((await res.json()).error);
             onDone();
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e: unknown) {
+            setError(getErrorMessage(e));
         } finally {
             setLoading(false);
         }
@@ -283,8 +284,8 @@ export default function OrdersPage() {
             setData(json.data ?? []);
             setCount(json.count ?? 0);
             setTotalPaid(json.totalPaid ?? 0);
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e: unknown) {
+            setError(getErrorMessage(e));
         } finally {
             setLoading(false);
         }

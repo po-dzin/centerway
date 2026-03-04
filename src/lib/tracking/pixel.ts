@@ -6,9 +6,11 @@
 // Extend window object for Typescript
 declare global {
     interface Window {
-        fbq?: (...args: any[]) => void;
+        fbq?: (...args: unknown[]) => void;
     }
 }
+
+type PixelParams = Record<string, unknown>;
 
 /**
  * Initializes the connection to the pixel if not already done.
@@ -26,7 +28,7 @@ export const initPixel = (pixelId: string) => {
  */
 export const trackEvent = (
     eventName: "Lead" | "Purchase" | "ViewContent" | "InitiateCheckout" | "CompleteRegistration" | string,
-    parameters?: Record<string, any>,
+    parameters?: PixelParams,
     eventId?: string // Deduplication ID 
 ) => {
     if (typeof window !== "undefined" && window.fbq) {
@@ -45,7 +47,7 @@ export const trackEvent = (
  */
 export const trackCustomEvent = (
     eventName: string,
-    parameters?: Record<string, any>
+    parameters?: PixelParams
 ) => {
     if (typeof window !== "undefined" && window.fbq) {
         window.fbq("trackCustom", eventName, parameters);

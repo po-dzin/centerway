@@ -10,7 +10,7 @@ interface AuditLogEntry {
     action: string;
     entity_type: string;
     entity_id: string;
-    metadata: any;
+    metadata: unknown;
     created_at: string;
     actor_email?: string; // We'll try to fetch this if possible, or just show ID
 }

@@ -1,11 +1,26 @@
 import { adminClient } from "@/lib/auth/adminClient";
 import { sendCapiEvent } from "@/lib/tracking/capi";
+import type { CapiEventPayload } from "@/lib/tracking/capi";
+import { getErrorMessage } from "@/lib/errors";
 
 // Simple job registry
-type JobHandler = (payload: any) => Promise<void>;
+type JobHandler = (payload: unknown) => Promise<void>;
+
+function isCapiEventPayload(payload: unknown): payload is CapiEventPayload {
+    if (!payload || typeof payload !== "object") return false;
+    const p = payload as Partial<CapiEventPayload>;
+    return (
+        typeof p.event_name === "string" &&
+        typeof p.event_id === "string" &&
+        typeof p.event_time === "number"
+    );
+}
 
 const handlers: Record<string, JobHandler> = {
     "meta:capi": async (payload) => {
+        if (!isCapiEventPayload(payload)) {
+            throw new Error("Invalid payload for meta:capi job");
+        }
         await sendCapiEvent(payload);
     },
 };
@@ -54,7 +69,7 @@ export async function processPendingJobs(limit = 10) {
             }).eq("id", job.id);
             processed++;
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(`Job [${job.id}] failed:`, err);
 
             // Calculate next attempt (exponential backoff)
@@ -65,7 +80,7 @@ export async function processPendingJobs(limit = 10) {
             await db.from("jobs").update({
                 status: attempts >= 3 ? "failed" : "pending",
                 attempts: attempts,
-                error_text: err.message || String(err),
+                error_text: getErrorMessage(err),
                 run_at: nextRunAt.toISOString()
             }).eq("id", job.id);
         }

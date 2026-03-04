@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useI18n } from "@/components/I18nProvider";
 import { supabaseClient } from "@/lib/supabaseClient";
+import { getErrorMessage } from "@/lib/errors";
 
 interface Identity {
     id: string;
@@ -82,8 +83,8 @@ export default function CustomersPage() {
             const json = await res.json();
             setData(json.data ?? []);
             setCount(json.count ?? 0);
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e: unknown) {
+            setError(getErrorMessage(e));
         } finally {
             setLoading(false);
         }

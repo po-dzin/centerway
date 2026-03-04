@@ -3,11 +3,12 @@
 import { useEffect, useState, useCallback } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
+import { getErrorMessage } from "@/lib/errors";
 
 interface Job {
     id: string;
     type: string;
-    payload: any;
+    payload: unknown;
     status: "pending" | "running" | "success" | "failed";
     error_text: string | null;
     attempts: number;
@@ -203,8 +204,8 @@ export default function JobsPage() {
 
             setData(json.data ?? []);
             setCount(json.count ?? 0);
-        } catch (e: any) {
-            setError(e.message);
+        } catch (e: unknown) {
+            setError(getErrorMessage(e));
         } finally {
             setLoading(false);
         }
