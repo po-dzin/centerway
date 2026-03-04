@@ -29,6 +29,7 @@ export async function GET(req: NextRequest) {
     fbp: req.cookies.get("_fbp")?.value ?? url.searchParams.get("fbp") ?? undefined,
     fbclid: url.searchParams.get("fbclid") ?? undefined,
     campaign: url.searchParams.get("utm_campaign") ?? undefined,
+    event_id: url.searchParams.get("event_id") ?? undefined,
     client_ip:
       req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
       req.headers.get("cf-connecting-ip") ??

@@ -47,6 +47,7 @@ export async function POST(req: NextRequest) {
     fbp: typeof body.fbp === "string" ? body.fbp : (req.cookies.get("_fbp")?.value ?? undefined),
     fbclid: typeof body.fbclid === "string" ? body.fbclid : undefined,
     campaign: typeof body.utm_campaign === "string" ? body.utm_campaign : undefined,
+    event_id: typeof body.event_id === "string" ? body.event_id : undefined,
     client_ip:
       req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
       req.headers.get("cf-connecting-ip") ??

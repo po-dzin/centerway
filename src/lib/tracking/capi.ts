@@ -1,3 +1,5 @@
+import crypto from "crypto";
+
 /**
  * Meta Conversions API (CAPI) server-side event sender.
  * Called from job queue (type: 'meta:capi') for reliable, deduplicated reporting.
@@ -14,6 +16,9 @@ export type CapiEventPayload = {
     value?: number;
     currency?: string;
     order_ref?: string;
+    content_name?: string;
+    content_type?: string;
+    content_ids?: string[];
     email?: string | null;
     phone?: string | null;
     fbp?: string | null;
@@ -25,8 +30,7 @@ export type CapiEventPayload = {
 };
 
 function sha256(text: string): string {
-    const { createHash } = require("crypto");
-    return createHash("sha256").update(text.trim().toLowerCase()).digest("hex");
+    return crypto.createHash("sha256").update(text.trim().toLowerCase()).digest("hex");
 }
 
 function buildUserData(payload: CapiEventPayload) {
@@ -37,7 +41,12 @@ function buildUserData(payload: CapiEventPayload) {
         ud.ph = sha256(digits);
     }
     if (payload.fbp) ud.fbp = payload.fbp;
-    if (payload.fbclid) ud.fbc = payload.fbclid;
+    if (payload.fbclid) {
+        // Accept raw fbclid and convert it to fbc format expected by Meta.
+        ud.fbc = payload.fbclid.startsWith("fb.1.")
+            ? payload.fbclid
+            : `fb.1.${payload.event_time}.${payload.fbclid}`;
+    }
     // IP and UA are sent plain (Meta hashes internally)
     if (payload.ip_address) ud.client_ip_address = payload.ip_address;
     if (payload.user_agent) ud.client_user_agent = payload.user_agent;
@@ -61,13 +70,14 @@ export async function sendCapiEvent(payload: CapiEventPayload): Promise<void> {
         event_time: payload.event_time,
         action_source: payload.action_source ?? "website",
         user_data: buildUserData(payload),
-        custom_data: payload.value
-            ? {
-                currency: payload.currency ?? "UAH",
-                value: payload.value,
-                order_id: payload.order_ref,
-            }
-            : {},
+        custom_data: {
+            ...(payload.value !== undefined ? { value: payload.value } : {}),
+            ...(payload.currency ? { currency: payload.currency } : {}),
+            ...(payload.order_ref ? { order_id: payload.order_ref } : {}),
+            ...(payload.content_name ? { content_name: payload.content_name } : {}),
+            ...(payload.content_type ? { content_type: payload.content_type } : {}),
+            ...(payload.content_ids?.length ? { content_ids: payload.content_ids } : {}),
+        },
     };
 
     // event_source_url — обязательное поле для action_source=website

@@ -110,7 +110,12 @@
   Object.assign(payload, attrib);
 
   if (typeof fbq === 'function') {
-    fbq('track', 'Purchase', payload);
+    const eventId = orderRef ? ('purchase_' + orderRef) : '';
+    if (eventId) {
+      fbq('track', 'Purchase', payload, { eventID: eventId });
+    } else {
+      fbq('track', 'Purchase', payload);
+    }
     sessionStorage.setItem(firedKey, '1');
   }
   })();

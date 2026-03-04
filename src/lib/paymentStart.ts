@@ -9,6 +9,7 @@ import {
   productHeading,
 } from "@/lib/products";
 import { buildReturnUrl, buildWfpProductName } from "@/lib/pay";
+import type { CapiEventPayload } from "@/lib/tracking/capi";
 
 export type PaymentStartSuccess = {
   ok: true;
@@ -41,6 +42,7 @@ export type PaymentStartInput = {
   client_ip?: string | null;   // IP пользователя в момент клика на оплату
   client_ua?: string | null;   // User-Agent браузера
   page_url?: string | null;    // URL лендинга (event_source_url для CAPI)
+  event_id?: string | null;    // event_id для dedupe Pixel + CAPI (InitiateCheckout)
 };
 
 type PaymentDb = {
@@ -170,6 +172,30 @@ export async function createPaymentInvoiceWithDeps(
       details: orderErr.message,
     };
   }
+
+  // Queue CAPI InitiateCheckout as soon as checkout starts.
+  const capiPayload: CapiEventPayload = {
+    event_name: "InitiateCheckout",
+    event_id: input.event_id || `checkout_${order_ref}`,
+    event_time: Math.floor(deps.nowMs() / 1000),
+    value: cfg.amount,
+    currency: cfg.currency,
+    order_ref,
+    fbp: input.fbp ?? null,
+    fbclid: input.fbclid ?? null,
+    ip_address: input.client_ip ?? null,
+    user_agent: input.client_ua ?? null,
+    event_source_url: input.page_url ?? null,
+    action_source: "website",
+    content_name: productHeading(input.product, input.locale),
+    content_type: "product",
+    content_ids: [input.product],
+  };
+  void sb.from("jobs").insert({
+    type: "meta:capi",
+    payload: capiPayload,
+    status: "pending",
+  });
 
   // Non-blocking analytics event.
   void sb.from("events").insert({

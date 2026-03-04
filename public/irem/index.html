@@ -38,12 +38,61 @@
       fbq('init', '885125430564169', ud);
     })();
 
-    fbq('track', 'PageView');
-    fbq('track', 'ViewContent', {
-      content_name: 'IREM',
-      value: 4100,
-      currency: 'UAH'
-    });
+    (function () {
+      function makeEventId(prefix) {
+        return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
+      }
+      function readCookie(name) {
+        var match = document.cookie.match(new RegExp('(^|;\\s*)' + name + '=([^;]+)'));
+        return match ? decodeURIComponent(match[2]) : '';
+      }
+      function pickFbclid() {
+        var qs = new URLSearchParams(location.search);
+        var direct = qs.get('fbclid');
+        if (direct) return direct;
+        try {
+          var stored = JSON.parse(localStorage.getItem('cw_attrib') || '{}');
+          return stored.fbclid || '';
+        } catch (_) {
+          return '';
+        }
+      }
+
+      var eventId = makeEventId('viewcontent_irem');
+      var pageUrl = location.href;
+      var fbclid = pickFbclid();
+      var fbp = readCookie('_fbp');
+
+      fbq('track', 'PageView');
+      fbq('track', 'ViewContent', {
+        content_name: 'IREM',
+        content_type: 'product',
+        content_ids: ['irem'],
+        value: 4100,
+        currency: 'UAH'
+      }, { eventID: eventId });
+
+      try {
+        fetch('/api/events', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          keepalive: true,
+          body: JSON.stringify({
+            event_name: 'ViewContent',
+            event_id: eventId,
+            value: 4100,
+            currency: 'UAH',
+            content_name: 'IREM',
+            content_type: 'product',
+            content_ids: ['irem'],
+            page_url: pageUrl,
+            fbclid: fbclid,
+            fbp: fbp
+          })
+        });
+      } catch (_) {}
+    })();
     </script>
      <!-- End Meta Pixel Code -->
 

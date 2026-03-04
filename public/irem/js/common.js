@@ -1,6 +1,7 @@
 (function() {
   var API_BASE = window.CW_API_BASE || window.location.origin;
   var DIRECT_PAY_ENDPOINT = API_BASE + "/api/pay/start";
+  var EVENTS_ENDPOINT = API_BASE + "/api/events";
   var PRODUCT = "irem";
   var OFFER_ID = "irem_main_4100";
   var PRICE_VALUE = 4100;
@@ -8,6 +9,27 @@
   var CONTENT_NAME = "IREM";
   var REDIRECT_RESET_MS = 5000;
   var isRedirecting = false;
+
+  function readCookie(name) {
+    var match = document.cookie.match(new RegExp("(^|;\\s*)" + name + "=([^;]+)"));
+    return match ? decodeURIComponent(match[2]) : "";
+  }
+
+  function makeEventId(prefix) {
+    return prefix + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
+  }
+
+  function sendCapiEvent(payload) {
+    try {
+      fetch(EVENTS_ENDPOINT, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        keepalive: true,
+        body: JSON.stringify(payload)
+      });
+    } catch (_) {}
+  }
 
   function collectAttrib() {
     var keys = [
@@ -42,6 +64,7 @@
     out.referrer = document.referrer || "";
     out.page_url = window.location.href;
     out.user_agent = navigator.userAgent || "";
+    out.fbp = readCookie("_fbp");
     return out;
   }
 
@@ -55,7 +78,7 @@
     });
   }
 
-  function trackInitialCheckout(attrib) {
+  function trackInitialCheckout(attrib, eventId) {
     if (typeof fbq !== "function") {
       return;
     }
@@ -65,18 +88,19 @@
       content_name: CONTENT_NAME,
       offer_id: OFFER_ID,
       ...attrib
-    });
+    }, { eventID: eventId });
   }
 
-  function buildPayUrl(attrib) {
+  function buildPayUrl(attrib, eventId) {
     var url = new URL(DIRECT_PAY_ENDPOINT, window.location.origin);
     url.searchParams.set("product", PRODUCT);
     url.searchParams.set("site", PRODUCT);
     url.searchParams.set("offer_id", OFFER_ID);
     url.searchParams.set("value", String(PRICE_VALUE));
     url.searchParams.set("currency", CURRENCY);
+    url.searchParams.set("event_id", eventId);
 
-    var queryKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid", "cr", "lv"];
+    var queryKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid", "cr", "lv", "fbp"];
     queryKeys.forEach(function(key) {
       var value = attrib[key];
       if (value) {
@@ -97,8 +121,9 @@
       isRedirecting = true;
       setButtonsLoading(true);
       var attrib = collectAttrib();
-      trackInitialCheckout(attrib);
-      window.location.assign(buildPayUrl(attrib));
+      var eventId = makeEventId("checkout_" + PRODUCT);
+      trackInitialCheckout(attrib, eventId);
+      window.location.assign(buildPayUrl(attrib, eventId));
       window.setTimeout(function() {
         isRedirecting = false;
         setButtonsLoading(false);
@@ -106,6 +131,27 @@
       return;
     }
   });
+
+  // Future hook: lead form is disabled now, but this keeps Lead event integration ready.
+  window.CW_trackLead = function(leadPayload) {
+    var eventId = makeEventId("lead_" + PRODUCT);
+    var attrib = collectAttrib();
+    if (typeof fbq === "function") {
+      fbq("track", "Lead", {
+        ...attrib,
+        ...(leadPayload || {})
+      }, { eventID: eventId });
+    }
+    sendCapiEvent({
+      event_name: "Lead",
+      event_id: eventId,
+      page_url: attrib.page_url,
+      fbclid: attrib.fbclid,
+      fbp: attrib.fbp,
+      email: leadPayload && leadPayload.email,
+      phone: leadPayload && leadPayload.phone
+    });
+  };
 })();
 
 
