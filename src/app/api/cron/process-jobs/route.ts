@@ -1,15 +1,11 @@
 import { NextResponse } from "next/server";
 import { processPendingJobs } from "@/lib/jobs/worker";
-
-// Secret check so random people can't trigger cron
-const CRON_SECRET = process.env.CRON_SECRET || "local-cron-secret";
+import { requireCronAuth } from "@/lib/cron/auth";
 
 export async function GET(req: Request) {
-    const authHeader = req.headers.get("authorization");
-    const token = authHeader?.split(" ")[1];
-
-    if (token !== CRON_SECRET) {
-        return new NextResponse("Unauthorized", { status: 401 });
+    const authError = requireCronAuth(req);
+    if (authError) {
+        return authError;
     }
 
     try {
