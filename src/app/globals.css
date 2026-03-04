@@ -92,6 +92,10 @@ body {
     background-color: var(--cw-surface-2);
   }
 
+  .cw-surface-solid {
+    background-color: var(--cw-surface-solid);
+  }
+
   .cw-border {
     border-color: var(--cw-border);
   }

@@ -5,6 +5,9 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminPagination } from "@/components/admin/AdminPagination";
+import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
+import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
+import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { getErrorMessage } from "@/lib/errors";
 
 interface Job {
@@ -45,7 +48,6 @@ function JobDetailsModal({
         attempts: string;
         payload: string;
         error: string;
-        close: string;
         retry: string;
     };
     statusLabels: Record<Job["status"], string>;
@@ -71,15 +73,29 @@ function JobDetailsModal({
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200">
-            <div className="cw-surface rounded-2xl cw-shadow w-full max-w-2xl overflow-hidden border cw-border">
+            <div className="cw-surface-solid rounded-2xl cw-shadow w-full max-w-2xl overflow-hidden border cw-border">
                 <div className="flex items-center justify-between p-4 border-b cw-border">
                     <div>
                         <h3 className="text-lg font-semibold cw-text">{labels.details}</h3>
                         <p className="text-xs cw-muted font-mono mt-1">{job.id}</p>
                     </div>
-                    <button onClick={onClose} className="p-2 rounded-xl cw-muted hover:text-[var(--cw-text)] hover:bg-[var(--cw-accent-soft)]">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                    </button>
+                    <div className="flex items-center gap-2">
+                        {job.status === "failed" && (
+                            <button
+                                onClick={handleRetry}
+                                disabled={retrying}
+                                className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 cw-btn-status-running"
+                            >
+                                {retrying && (
+                                    <svg className="animate-spin h-3.5 w-3.5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                )}
+                                {labels.retry}
+                            </button>
+                        )}
+                        <button onClick={onClose} className="p-2 rounded-xl cw-muted hover:text-[var(--cw-text)] hover:bg-[var(--cw-accent-soft)]">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div className="p-4 space-y-4 max-h-[70vh] overflow-auto">
@@ -119,23 +135,6 @@ function JobDetailsModal({
                     )}
                 </div>
 
-                <div className="p-4 border-t cw-border flex justify-end gap-3 cw-surface-2">
-                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium cw-muted hover:bg-[var(--cw-accent-soft)] rounded-xl transition-colors">
-                        {labels.close}
-                    </button>
-                    {job.status === "failed" && (
-                        <button
-                            onClick={handleRetry}
-                            disabled={retrying}
-                            className="px-4 py-2 text-sm font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 cw-btn-status-running"
-                        >
-                            {retrying && (
-                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                            )}
-                            {labels.retry}
-                        </button>
-                    )}
-                </div>
             </div>
         </div>
     );
@@ -165,7 +164,6 @@ export default function JobsPage() {
         attempts: t("jobs_attempts"),
         payload: t("jobs_payload"),
         error: t("jobs_error"),
-        close: t("jobs_close"),
         retry: t("jobs_retry"),
     };
 
@@ -248,43 +246,32 @@ export default function JobsPage() {
                 className="overflow-x-auto no-scrollbar"
             />
 
-            <div className="relative">
-                <svg className="absolute left-3 top-1/2 -translate-y-1/2 cw-muted w-5 h-5 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="8" /><path d="m21 21-4.3-4.3" /></svg>
-                <input
-                    type="text"
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    className="cw-input pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-shadow"
-                    placeholder={t("jobs_search_placeholder")}
-                />
-            </div>
+            <AdminSearchInput
+                value={q}
+                onChange={setQ}
+                placeholder={t("jobs_search_placeholder")}
+                onClear={q ? () => setQ("") : undefined}
+            />
 
             {loading && data.length === 0 ? (
-                <div className="py-20 flex flex-col items-center justify-center space-y-4">
-                    <svg className="animate-spin cw-muted w-8 h-8" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    <span className="text-sm font-medium cw-muted">{t("jobs_loading")}</span>
-                </div>
+                <AdminLoadingState variant="spinner" text={t("jobs_loading")} />
             ) : error ? (
                 <div className="p-4 rounded-xl text-sm cw-alert-failed">
                     {error}
                 </div>
             ) : data.length === 0 ? (
-                <div className="py-20 flex flex-col items-center justify-center cw-empty-state">
-                    <div className="w-12 h-12 cw-empty-icon rounded-full flex items-center justify-center mb-3">
+                <AdminEmptyState
+                    className="py-20"
+                    iconWrapperClassName="w-12 h-12 rounded-full"
+                    icon={(
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="cw-muted">
-                            <circle cx="12" cy="12" r="10" /><path d="m4.93 4.93 14.14 14.14" />
+                            <circle cx="12" cy="12" r="10" />
+                            <path d="m4.93 4.93 14.14 14.14" />
                         </svg>
-                    </div>
-                    <h3 className="text-sm font-medium cw-text">{t("jobs_not_found")}</h3>
-                    <p className="text-xs cw-muted mt-1 max-w-xs text-center">
-                        {q || activeStatus
-                            ? t("jobs_try_filters")
-                            : t("jobs_queue_empty")}
-                    </p>
-                </div>
+                    )}
+                    title={t("jobs_not_found")}
+                    description={q || activeStatus ? t("jobs_try_filters") : t("jobs_queue_empty")}
+                />
             ) : (
                 <div className="space-y-1.5">
                     {data.map((job) => (

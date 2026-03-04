@@ -5,6 +5,9 @@ import Link from "next/link";
 import Image from "next/image";
 import { useI18n } from "@/components/I18nProvider";
 import { AdminPagination } from "@/components/admin/AdminPagination";
+import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
+import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
+import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
 
@@ -125,32 +128,12 @@ export default function CustomersPage() {
             </div>
 
             {/* Search bar */}
-            <div className="relative">
-                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none cw-muted">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none"
-                        stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                </div>
-                <input
-                    type="text"
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    placeholder={t("customers_search_placeholder")}
-                    className="cw-input pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-all"
-                />
-                {q && (
-                    <button
-                        onClick={() => setQ("")}
-                        className="absolute inset-y-0 right-3 flex items-center cw-muted hover:text-[var(--cw-text)]"
-                    >
-                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
-                            stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
-                        </svg>
-                    </button>
-                )}
-            </div>
+            <AdminSearchInput
+                value={q}
+                onChange={setQ}
+                placeholder={t("customers_search_placeholder")}
+                onClear={q ? () => setQ("") : undefined}
+            />
 
             {/* Results header */}
             {!loading && (
@@ -162,11 +145,7 @@ export default function CustomersPage() {
 
             {/* State: loading */}
             {loading && (
-                <div className="space-y-2">
-                    {[...Array(5)].map((_, i) => (
-                        <div key={i} className="h-16 cw-skeleton-row" />
-                    ))}
-                </div>
+                <AdminLoadingState variant="skeleton" rows={5} rowClassName="h-16" />
             )}
 
             {/* State: error */}
@@ -178,20 +157,20 @@ export default function CustomersPage() {
 
             {/* State: empty */}
             {!loading && !error && data.length === 0 && (
-                <div className="py-16 text-center cw-empty-state">
-                    <div className="w-12 h-12 rounded-2xl cw-empty-icon flex items-center justify-center mx-auto mb-4">
+                <AdminEmptyState
+                    className="py-16"
+                    icon={(
                         <svg xmlns="http://www.w3.org/2000/svg" width="22" height="22" viewBox="0 0 24 24" fill="none"
                             stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"
                             className="cw-muted">
                             <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
                             <circle cx="9" cy="7" r="4" />
-                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" />
+                            <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                            <path d="M16 3.13a4 4 0 0 1 0 7.75" />
                         </svg>
-                    </div>
-                    <p className="cw-muted text-sm">
-                        {debouncedQ ? t("customers_not_found") : t("customers_empty")}
-                    </p>
-                </div>
+                    )}
+                    description={debouncedQ ? t("customers_not_found") : t("customers_empty")}
+                />
             )}
 
             {/* Customer list */}

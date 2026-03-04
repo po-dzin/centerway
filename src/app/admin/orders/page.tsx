@@ -6,6 +6,9 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminPagination } from "@/components/admin/AdminPagination";
+import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
+import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
+import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { getErrorMessage } from "@/lib/errors";
 
 interface Order {
@@ -88,9 +91,9 @@ function ReconcileModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45" onClick={onClose}>
             <div
-                className="cw-surface border cw-border rounded-2xl cw-shadow p-6 w-full max-w-md mx-4"
+                className="cw-surface-solid border cw-border rounded-2xl cw-shadow p-6 w-full max-w-md mx-4"
                 onClick={(e) => e.stopPropagation()}
             >
                 <h3 className="text-lg font-semibold cw-text mb-1">{labels.title}</h3>
@@ -337,20 +340,12 @@ export default function OrdersPage() {
             <AdminTabs items={STATUS_TABS} activeKey={activeStatus} onChange={handleStatusChange} />
 
             {/* Search */}
-            <div className="relative">
-                <div className="absolute inset-y-0 left-3 flex items-center pointer-events-none cw-muted">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                    </svg>
-                </div>
-                <input
-                    type="text"
-                    value={q}
-                    onChange={(e) => setQ(e.target.value)}
-                    placeholder={t("orders_search_placeholder")}
-                    className="cw-input pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-all"
-                />
-            </div>
+            <AdminSearchInput
+                value={q}
+                onChange={setQ}
+                placeholder={t("orders_search_placeholder")}
+                onClear={q ? () => setQ("") : undefined}
+            />
 
             {/* Count */}
             {!loading && (
@@ -361,11 +356,7 @@ export default function OrdersPage() {
 
             {/* Loading skeletons */}
             {loading && (
-                <div className="space-y-2">
-                    {[...Array(6)].map((_, i) => (
-                        <div key={i} className="h-[72px] cw-skeleton-row" />
-                    ))}
-                </div>
+                <AdminLoadingState variant="skeleton" rows={6} rowClassName="h-[72px]" />
             )}
 
             {/* Error */}
@@ -377,15 +368,18 @@ export default function OrdersPage() {
 
             {/* Empty */}
             {!loading && !error && data.length === 0 && (
-                <div className="py-16 text-center cw-empty-state">
-                    <div className="w-12 h-12 rounded-2xl cw-empty-icon flex items-center justify-center mx-auto mb-4">
+                <AdminEmptyState
+                    className="py-16"
+                    icon={(
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="cw-muted">
-                            <rect x="1" y="3" width="15" height="13" /><polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
-                            <circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
+                            <rect x="1" y="3" width="15" height="13" />
+                            <polygon points="16 8 20 8 23 11 23 16 16 16 16 8" />
+                            <circle cx="5.5" cy="18.5" r="2.5" />
+                            <circle cx="18.5" cy="18.5" r="2.5" />
                         </svg>
-                    </div>
-                    <p className="cw-muted text-sm">{t("orders_empty")}</p>
-                </div>
+                    )}
+                    description={t("orders_empty")}
+                />
             )}
 
             {/* Orders table */}
