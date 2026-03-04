@@ -22,18 +22,16 @@ interface Order {
     } | null;
 }
 
-const statusBadge: Record<string, string> = {
-    paid: "bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-400",
-    created: "bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-400",
-    pending: "bg-yellow-100 dark:bg-yellow-950/50 text-yellow-700 dark:text-yellow-400",
-    refunded: "bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-400",
-};
+const LOCALE_BY_LANG = {
+    ru: "ru-RU",
+    en: "en-US",
+} as const;
 
-const statusLabelRu: Record<string, string> = {
-    paid: "Оплачен", created: "Создан", pending: "В обработке", refunded: "Возврат",
-};
-const statusLabelEn: Record<string, string> = {
-    paid: "Paid", created: "Created", pending: "Pending", refunded: "Refunded",
+const statusBadge: Record<string, string> = {
+    paid: "cw-status-success-badge",
+    created: "cw-status-pending-badge",
+    pending: "cw-status-pending-badge",
+    refunded: "cw-status-failed-badge",
 };
 
 // Reconcile modal
@@ -89,11 +87,11 @@ function ReconcileModal({
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm" onClick={onClose}>
             <div
-                className="bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-2xl p-6 w-full max-w-md mx-4"
+                className="cw-surface border cw-border rounded-2xl cw-shadow p-6 w-full max-w-md mx-4"
                 onClick={(e) => e.stopPropagation()}
             >
                 <h3 className="text-lg font-semibold text-neutral-900 dark:text-white mb-1">{labels.title}</h3>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
+                <p className="cw-page-subtitle mb-4">
                     {labels.order} <span className="font-mono text-xs bg-neutral-100 dark:bg-neutral-800 px-1.5 py-0.5 rounded">{order.order_ref}</span>
                 </p>
 
@@ -120,30 +118,30 @@ function ReconcileModal({
                         onChange={(e) => setNote(e.target.value)}
                         placeholder={labels.notePlaceholder}
                         rows={2}
-                        className="w-full text-sm px-3 py-2 rounded-xl border border-neutral-200 dark:border-neutral-700 bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white placeholder-neutral-400 focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600 resize-none"
+                        className="w-full text-sm px-3 py-2 rounded-xl border cw-border cw-surface cw-text placeholder:text-[var(--cw-muted)] focus:outline-none resize-none"
                     />
                 </div>
 
-                {error && <p className="text-xs text-red-500 mb-3">{error}</p>}
+                {error && <p className="text-xs cw-status-failed-text mb-3">{error}</p>}
 
                 <div className="flex gap-2">
                     <button
                         onClick={() => handle("paid")}
                         disabled={loading || order.status === "paid"}
-                        className="flex-1 py-2.5 px-4 rounded-xl bg-green-600 hover:bg-green-700 disabled:opacity-40 text-white text-sm font-semibold transition-colors"
+                        className="flex-1 py-2.5 px-4 rounded-xl cw-btn-status-success disabled:opacity-40 text-sm font-semibold transition-colors"
                     >
                         {labels.confirmPaid}
                     </button>
                     <button
                         onClick={() => handle("refunded")}
                         disabled={loading}
-                        className="py-2.5 px-3 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-sm transition-colors"
+                        className="py-2.5 px-3 rounded-xl border cw-border hover:bg-[var(--cw-accent-soft)] cw-muted text-sm transition-colors"
                     >
                         {labels.refund}
                     </button>
                     <button
                         onClick={onClose}
-                        className="py-2.5 px-3 rounded-xl border border-neutral-200 dark:border-neutral-700 hover:bg-neutral-50 dark:hover:bg-neutral-800 text-neutral-600 dark:text-neutral-400 text-sm transition-colors"
+                        className="py-2.5 px-3 rounded-xl border cw-border hover:bg-[var(--cw-accent-soft)] cw-muted text-sm transition-colors"
                     >
                         {labels.cancel}
                     </button>
@@ -181,7 +179,7 @@ function ResendAccessButton({ orderRef, labels }: {
             } else {
                 alert(labels.createError + ": " + (data.error || "unknown"));
             }
-        } catch (e: any) {
+        } catch {
             alert(labels.networkError);
         } finally {
             setLoading(false);
@@ -195,7 +193,7 @@ function ResendAccessButton({ orderRef, labels }: {
             className="shrink-0 p-2 rounded-lg text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors opacity-0 group-hover:opacity-100"
         >
             {copied ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-green-500">
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="cw-status-success-text">
                     <polyline points="20 6 9 17 4 12" />
                 </svg>
             ) : (
@@ -209,40 +207,39 @@ function ResendAccessButton({ orderRef, labels }: {
 }
 
 export default function OrdersPage() {
-    const { lang } = useI18n();
+    const { lang, t } = useI18n();
     const isRu = lang === "ru";
-    const statusLabel = isRu ? statusLabelRu : statusLabelEn;
-    const STATUS_TABS = isRu
-        ? [
-            { key: "", label: "Все" },
-            { key: "paid", label: "Оплачено" },
-            { key: "created", label: "Ожидают" },
-            { key: "refunded", label: "Возврат" },
-        ]
-        : [
-            { key: "", label: "All" },
-            { key: "paid", label: "Paid" },
-            { key: "created", label: "Waiting" },
-            { key: "refunded", label: "Refunds" },
-        ];
+    const locale = LOCALE_BY_LANG[lang];
+    const statusLabel: Record<string, string> = {
+        paid: t("orders_status_paid"),
+        created: t("orders_status_created"),
+        pending: t("orders_status_pending"),
+        refunded: t("orders_status_refunded"),
+    };
+    const STATUS_TABS = [
+        { key: "", label: t("orders_tab_all") },
+        { key: "paid", label: t("orders_tab_paid") },
+        { key: "created", label: t("orders_tab_waiting") },
+        { key: "refunded", label: t("orders_tab_refunds") },
+    ];
 
     const copyLabels = {
-        copied: isRu ? "Ссылка скопирована!" : "Link copied!",
-        copyLink: isRu ? "Сгенерировать и скопировать ссылку доступа" : "Generate and copy access link",
-        createError: isRu ? "Ошибка генерации" : "Generation error",
-        networkError: isRu ? "Ошибка сети" : "Network error",
+        copied: t("orders_copy_copied"),
+        copyLink: t("orders_copy_link"),
+        createError: t("orders_copy_error"),
+        networkError: t("orders_network_error"),
     };
 
     const reconcileLabels = {
-        title: isRu ? "Ручная сверка" : "Manual Reconcile",
-        order: isRu ? "Заказ" : "Order",
-        product: isRu ? "Product" : "Product",
-        amount: isRu ? "Сумма" : "Amount",
-        status: isRu ? "Статус" : "Status",
-        notePlaceholder: isRu ? "Комментарий (необязательно)" : "Comment (optional)",
-        confirmPaid: isRu ? "✓ Подтвердить оплату" : "✓ Confirm Payment",
-        refund: isRu ? "Возврат" : "Refund",
-        cancel: isRu ? "Отмена" : "Cancel",
+        title: t("orders_reconcile_title"),
+        order: t("orders_reconcile_order"),
+        product: t("orders_reconcile_product"),
+        amount: t("orders_reconcile_amount"),
+        status: t("orders_reconcile_status"),
+        notePlaceholder: t("orders_reconcile_note"),
+        confirmPaid: t("orders_reconcile_confirm_paid"),
+        refund: t("orders_reconcile_refund"),
+        cancel: t("orders_reconcile_cancel"),
     };
 
     const [q, setQ] = useState("");
@@ -302,6 +299,16 @@ export default function OrdersPage() {
         setPage(0);
     };
 
+    const getOrdersCountLabel = (value: number) => {
+        if (value === 0) return t("orders_count_zero");
+        if (!isRu) return `${value} ${t("orders_count_en")}`;
+        const mod10 = value % 10;
+        const mod100 = value % 100;
+        if (mod10 === 1 && mod100 !== 11) return `${value} ${t("orders_count_one")}`;
+        if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${value} ${t("orders_count_few")}`;
+        return `${value} ${t("orders_count_many")}`;
+    };
+
     const totalPages = Math.ceil(count / LIMIT);
 
     return (
@@ -309,14 +316,14 @@ export default function OrdersPage() {
             {/* Header */}
             <div className="flex items-start justify-between">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white mb-1">{isRu ? "Заказы" : "Orders"}</h2>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">{isRu ? "Управление оплатами и ручная сверка" : "Payments management and manual reconcile"}</p>
+                    <h2 className="cw-page-title mb-1">{t("orders_title")}</h2>
+                    <p className="cw-page-subtitle">{t("orders_subtitle")}</p>
                 </div>
                 {!loading && data.length > 0 && activeStatus !== "created" && (
                     <div className="text-right">
-                        <p className="text-xs text-neutral-400">{isRu ? "Сумма (оплачено)" : "Total (paid)"}</p>
+                        <p className="text-xs text-neutral-400">{t("orders_total_paid")}</p>
                         <p className="text-xl font-bold text-neutral-900 dark:text-white mt-0.5">
-                            {totalPaid.toLocaleString(isRu ? "ru-RU" : "en-US")} <span className="text-sm font-normal text-neutral-500">UAH</span>
+                            {totalPaid.toLocaleString(locale)} <span className="text-sm font-normal text-neutral-500">UAH</span>
                         </p>
                     </div>
                 )}
@@ -349,17 +356,15 @@ export default function OrdersPage() {
                     type="text"
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder={isRu ? "Поиск по order_ref или продукту..." : "Search by order_ref or product..."}
-                    className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-sm text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600 transition-all"
+                    placeholder={t("orders_search_placeholder")}
+                    className="cw-input pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-all"
                 />
             </div>
 
             {/* Count */}
             {!loading && (
                 <p className="text-xs text-neutral-400">
-                    {count === 0
-                        ? (isRu ? "Нет заказов" : "No orders")
-                        : (isRu ? `${count} заказ${count === 1 ? "" : count < 5 ? "а" : "ов"}` : `${count} orders`)}
+                    {getOrdersCountLabel(count)}
                 </p>
             )}
 
@@ -374,8 +379,8 @@ export default function OrdersPage() {
 
             {/* Error */}
             {error && !loading && (
-                <div className="p-4 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20 text-sm text-red-600 dark:text-red-400">
-                    {isRu ? "Ошибка" : "Error"}: {error}
+                <div className="p-4 rounded-xl text-sm cw-alert-failed">
+                    {t("common_error")}: {error}
                 </div>
             )}
 
@@ -388,7 +393,7 @@ export default function OrdersPage() {
                             <circle cx="5.5" cy="18.5" r="2.5" /><circle cx="18.5" cy="18.5" r="2.5" />
                         </svg>
                     </div>
-                    <p className="text-neutral-500 dark:text-neutral-400 text-sm">{isRu ? "Заказов нет" : "No orders yet"}</p>
+                    <p className="text-neutral-500 dark:text-neutral-400 text-sm">{t("orders_empty")}</p>
                 </div>
             )}
 
@@ -402,11 +407,11 @@ export default function OrdersPage() {
                         return (
                             <div
                                 key={order.id}
-                                className="flex items-center gap-4 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/40 transition-colors group"
+                                className="cw-list-item flex items-center gap-4 p-4 group"
                             >
                                 {/* Status dot */}
-                                <div className={`shrink-0 w-2 h-2 rounded-full mt-0.5 ${order.status === "paid" ? "bg-green-500" :
-                                    order.status === "refunded" ? "bg-red-500" : "bg-yellow-400"
+                                <div className={`shrink-0 w-2 h-2 rounded-full mt-0.5 ${order.status === "paid" ? "cw-status-success-dot" :
+                                    order.status === "refunded" ? "cw-status-failed-dot" : "cw-status-pending-dot"
                                     }`} />
 
                                 {/* Main info */}
@@ -441,11 +446,11 @@ export default function OrdersPage() {
                                 <div className="text-right shrink-0">
                                     {order.amount != null && (
                                         <p className="text-sm font-semibold text-neutral-900 dark:text-white">
-                                            {order.amount.toLocaleString(isRu ? "ru-RU" : "en-US")} <span className="text-xs font-normal text-neutral-400">{order.currency}</span>
+                                            {order.amount.toLocaleString(locale)} <span className="text-xs font-normal text-neutral-400">{order.currency}</span>
                                         </p>
                                     )}
                                     <p className="text-[10px] text-neutral-400 mt-0.5">
-                                        {new Date(order.created_at).toLocaleDateString(isRu ? "ru-RU" : "en-US", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
+                                        {new Date(order.created_at).toLocaleDateString(locale, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                                     </p>
                                 </div>
 
@@ -453,8 +458,8 @@ export default function OrdersPage() {
                                 {order.status !== "paid" ? (
                                     <button
                                         onClick={() => setReconcileOrder(order)}
-                                        title={isRu ? "Ручная сверка" : "Manual reconcile"}
-                                        className="shrink-0 p-2 rounded-lg text-neutral-400 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors opacity-0 group-hover:opacity-100"
+                                        title={t("orders_manual_reconcile")}
+                                        className="shrink-0 cw-icon-btn opacity-0 group-hover:opacity-100"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <polyline points="20 6 9 17 4 12" />
@@ -476,22 +481,22 @@ export default function OrdersPage() {
                         onClick={() => setPage((p) => Math.max(0, p - 1))}
                         disabled={page === 0}
                         className="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 transition-colors"
-                        title={isRu ? "Предыдущая" : "Previous"}
+                        title={t("common_prev")}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="15 18 9 12 15 6" />
                         </svg>
                     </button>
 
-                    <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                        {isRu ? "Страница" : "Page"} <span className="font-medium text-neutral-900 dark:text-white">{page + 1}</span> {isRu ? "из" : "of"} <span className="font-medium text-neutral-900 dark:text-white">{totalPages}</span>
+                    <div className="cw-page-subtitle">
+                        {t("common_page")} <span className="font-medium text-neutral-900 dark:text-white">{page + 1}</span> {t("common_of")} <span className="font-medium text-neutral-900 dark:text-white">{totalPages}</span>
                     </div>
 
                     <button
                         onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                         disabled={page >= totalPages - 1}
                         className="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 transition-colors"
-                        title={isRu ? "Следующая" : "Next"}
+                        title={t("common_next")}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="9 18 15 12 9 6" />

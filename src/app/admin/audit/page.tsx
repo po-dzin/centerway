@@ -55,11 +55,11 @@ export default function AuditLogPage() {
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div>
-                <h2 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white mb-2">{t("audit_title")}</h2>
-                <p className="text-neutral-500 dark:text-neutral-400 text-sm">{t("audit_subtitle")}</p>
+                <h2 className="cw-page-title text-2xl mb-2">{t("audit_title")}</h2>
+                <p className="cw-page-subtitle">{t("audit_subtitle")}</p>
             </div>
 
-            <div className="border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 rounded-xl overflow-hidden transition-colors duration-300">
+            <div className="cw-panel overflow-hidden transition-colors duration-300">
                 <div className="overflow-x-auto">
                     <table className="w-full text-sm text-left text-neutral-600 dark:text-neutral-300">
                         <thead className="text-xs uppercase bg-neutral-50 dark:bg-neutral-950/50 text-neutral-500 dark:text-neutral-400 border-b border-neutral-200 dark:border-neutral-800 transition-colors duration-300">
@@ -117,23 +117,23 @@ export default function AuditLogPage() {
                     <button
                         onClick={() => setPage((p) => Math.max(0, p - 1))}
                         disabled={page === 0}
-                        className="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 transition-colors"
-                        title="Предыдущая"
+                        className="cw-icon-btn disabled:opacity-30"
+                        title={t("common_prev")}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="15 18 9 12 15 6" />
                         </svg>
                     </button>
 
-                    <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Страница <span className="font-medium text-neutral-900 dark:text-white">{page + 1}</span> из <span className="font-medium text-neutral-900 dark:text-white">{totalPages}</span>
+                    <div className="cw-page-subtitle">
+                        {t("common_page")} <span className="font-medium text-neutral-900 dark:text-white">{page + 1}</span> {t("common_of")} <span className="font-medium text-neutral-900 dark:text-white">{totalPages}</span>
                     </div>
 
                     <button
                         onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                         disabled={page >= totalPages - 1}
-                        className="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 transition-colors"
-                        title="Следующая"
+                        className="cw-icon-btn disabled:opacity-30"
+                        title={t("common_next")}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="9 18 15 12 9 6" />

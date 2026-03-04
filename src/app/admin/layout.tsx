@@ -49,23 +49,23 @@ function AdminShell({ children }: { children: ReactNode }) {
     ];
 
     return (
-        <div className="flex min-h-screen bg-white text-neutral-900 dark:bg-neutral-900 dark:text-neutral-100 font-sans transition-colors duration-300">
+        <div className="cw-admin-theme flex min-h-screen font-sans transition-colors duration-300">
             {/* Sidebar */}
             <aside
-                className={`${expanded ? "w-56" : "w-16"} shrink-0 border-r border-neutral-200 bg-neutral-50 dark:border-neutral-800 dark:bg-neutral-950 flex flex-col transition-all duration-300 ease-in-out overflow-hidden`}
+                className={`${expanded ? "w-56" : "w-16"} shrink-0 border-r cw-border cw-surface-2 flex flex-col transition-all duration-300 ease-in-out overflow-hidden`}
             >
                 {/* Logo + Toggle */}
-                <div className="h-16 flex items-center justify-between px-3 border-b border-neutral-200 dark:border-neutral-800 shrink-0">
+                <div className="h-16 flex items-center justify-between px-3 border-b cw-border shrink-0">
                     {expanded && (
                         <div className="overflow-hidden">
-                            <p className="text-sm font-bold text-neutral-900 dark:text-white whitespace-nowrap">CenterWay</p>
-                            <p className="text-[9px] text-neutral-500 uppercase font-semibold tracking-widest whitespace-nowrap">Control Panel</p>
+                            <p className="text-sm font-bold cw-text whitespace-nowrap">CenterWay</p>
+                            <p className="text-[9px] cw-muted uppercase font-semibold tracking-widest whitespace-nowrap">Control Panel</p>
                         </div>
                     )}
                     <button
                         onClick={() => setExpanded(v => !v)}
-                        title={expanded ? "Свернуть" : "Развернуть"}
-                        className={`${expanded ? "" : "mx-auto"} p-2 rounded-lg hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-500 dark:text-neutral-400 transition-colors shrink-0`}
+                        title={expanded ? t("common_collapse") : t("common_expand")}
+                        className={`${expanded ? "" : "mx-auto"} p-2 rounded-lg hover:bg-[var(--cw-accent-soft)] cw-muted transition-colors shrink-0`}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
                             className={`transition-transform duration-300 ${expanded ? "" : "rotate-180"}`}>
@@ -112,7 +112,7 @@ function AdminShell({ children }: { children: ReactNode }) {
 
             {/* Main */}
             <main className="flex-1 flex flex-col min-w-0">
-                <header className="h-16 border-b border-neutral-200 dark:border-neutral-800 bg-white/50 dark:bg-neutral-900/50 backdrop-blur-sm flex items-center justify-end px-8 sticky top-0 z-10 transition-colors duration-300">
+                <header className="h-16 border-b cw-border bg-[var(--cw-surface)]/80 backdrop-blur-sm flex items-center justify-end px-8 sticky top-0 z-10 transition-colors duration-300">
                     <div className="flex items-center gap-4">
                         <LanguageSwitcher />
                         <ThemeSwitcher />

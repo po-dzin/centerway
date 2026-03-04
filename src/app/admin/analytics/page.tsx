@@ -1,6 +1,8 @@
 "use client";
 
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
+import { supabaseClient } from "@/lib/supabaseClient";
+import { useI18n } from "@/components/I18nProvider";
 
 type FunnelData = {
     date: string;
@@ -27,11 +29,14 @@ type AnalyticsSummary = {
 };
 
 export default function AnalyticsPage() {
+    const { t } = useI18n();
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [funnel, setFunnel] = useState<FunnelData[]>([]);
     const [campaigns, setCampaigns] = useState<CampaignData[]>([]);
     const [summary, setSummary] = useState<AnalyticsSummary | null>(null);
+    const [hovered, setHovered] = useState<{ day: FunnelData; x: number } | null>(null);
+    const chartWrapRef = useRef<HTMLDivElement | null>(null);
 
     const [adSpend, setAdSpend] = useState<number>(0);
 
@@ -39,9 +44,14 @@ export default function AnalyticsPage() {
         setLoading(true);
         setError(null);
         try {
-            const res = await fetch("/api/admin/analytics");
-            if (!res.ok) throw new Error("Failed to load analytics");
-            const data = await res.json();
+            const { data: { session } } = await supabaseClient.auth.getSession();
+            const res = await fetch("/api/admin/analytics", {
+                headers: session ? { "Authorization": `Bearer ${session.access_token}` } : {}
+            });
+            const data = await res.json().catch(() => ({}));
+            if (!res.ok) {
+                throw new Error(data?.error || `Failed to load analytics (${res.status})`);
+            }
             setFunnel(data.funnel);
             setCampaigns(data.campaigns);
             setSummary(data.summary);
@@ -68,20 +78,20 @@ export default function AnalyticsPage() {
 
     if (error) {
         return (
-            <div className="p-8 text-center text-red-500">
-                <p>Failed to load analytics: {error}</p>
-                <div className="mt-4 text-sm text-gray-500">
-                    Напоминание: вы выполнили SQL скрипт "2026-03-02_analytics_views.sql"?
+            <div className="p-8 text-center cw-status-failed-text">
+                <p>{t("analytics_load_error")}: {error}</p>
+                <div className="mt-4 text-sm cw-muted">
+                    <>{t("analytics_sql_reminder")}</>
                 </div>
-                <button onClick={fetchAnalytics} className="mt-4 px-4 py-2 bg-gray-200 rounded">
-                    Повторить загрузку
+                <button onClick={fetchAnalytics} className="mt-4 px-4 py-2 rounded border cw-border cw-surface-2 cw-text hover:bg-[var(--cw-accent-soft)] transition-colors">
+                    {t("analytics_retry")}
                 </button>
             </div>
         );
     }
 
     if (loading || !summary) {
-        return <div className="p-8 text-center text-gray-500 animate-pulse">Загрузка дашборда...</div>;
+        return <div className="p-8 text-center cw-muted animate-pulse">{t("analytics_loading")}</div>;
     }
 
     // Chart dimensions
@@ -90,68 +100,68 @@ export default function AnalyticsPage() {
 
     return (
         <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
-            <div className="flex justify-between items-center bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
+            <div className="flex justify-between items-center cw-surface p-6 rounded-2xl border cw-border cw-shadow">
                 <div>
-                    <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">Сквозная Аналитика</h1>
-                    <p className="text-gray-500 text-sm mt-1">Основано на данных из Materialized Views (БД обновляет их раз в период)</p>
+                    <h1 className="text-2xl font-bold cw-text">{t("analytics_title")}</h1>
+                    <p className="cw-muted text-sm mt-1">{t("analytics_subtitle")}</p>
                 </div>
-                <button onClick={fetchAnalytics} className="px-4 py-2 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-sm font-medium">
-                    Обновить данные
+                <button onClick={fetchAnalytics} className="px-4 py-2 border cw-border rounded-lg hover:bg-[var(--cw-accent-soft)] transition-colors text-sm font-medium cw-text">
+                    {t("analytics_refresh")}
                 </button>
             </div>
 
             {/* Quick Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                    <div className="text-sm font-medium text-gray-500">Лиды (Leads)</div>
-                    <div className="text-3xl font-bold mt-2 text-gray-900">{summary.totalLeads}</div>
+                <div className="cw-surface p-6 rounded-2xl border cw-border cw-shadow">
+                    <div className="text-sm font-medium cw-muted">{t("analytics_leads")}</div>
+                    <div className="text-3xl font-bold mt-2 cw-text">{summary.totalLeads}</div>
                 </div>
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                    <div className="text-sm font-medium text-gray-500">Оплаты (Purchases)</div>
-                    <div className="text-3xl font-bold mt-2 text-indigo-600">{summary.totalPaidOrders}</div>
+                <div className="cw-surface p-6 rounded-2xl border cw-border cw-shadow">
+                    <div className="text-sm font-medium cw-muted">{t("analytics_purchases")}</div>
+                    <div className="text-3xl font-bold mt-2 cw-text">{summary.totalPaidOrders}</div>
                 </div>
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                    <div className="text-sm font-medium text-gray-500">Конверсия воронки</div>
-                    <div className="text-3xl font-bold mt-2 text-emerald-600">{summary.avgConversionRate}%</div>
+                <div className="cw-surface p-6 rounded-2xl border cw-border cw-shadow">
+                    <div className="text-sm font-medium cw-muted">{t("analytics_funnel_conversion")}</div>
+                    <div className="text-3xl font-bold mt-2 cw-text">{summary.avgConversionRate}%</div>
                 </div>
-                <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm relative overflow-hidden">
-                    <div className="text-sm font-medium text-gray-500">Выручка (All Time)</div>
-                    <div className="text-3xl font-bold mt-2 text-purple-600 border-b border-purple-100 pb-1">{summary.totalRevenue.toLocaleString()} ₴</div>
+                <div className="cw-surface p-6 rounded-2xl border cw-border cw-shadow relative overflow-hidden">
+                    <div className="text-sm font-medium cw-muted">{t("analytics_revenue_all_time")}</div>
+                    <div className="text-3xl font-bold mt-2 cw-text">{summary.totalRevenue.toLocaleString()} ₴</div>
                 </div>
             </div>
 
             {/* ROI / CPA Calculator Sandbox */}
-            <div className="bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 p-6 rounded-2xl shadow-sm">
-                <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-                    <svg className="w-5 h-5 text-indigo-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    Калькулятор ROI & CPA
+            <div className="cw-surface border cw-border p-6 rounded-2xl cw-shadow">
+                <h2 className="text-lg font-semibold cw-text mb-4 flex items-center gap-2">
+                    <svg className="w-5 h-5 cw-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    {t("analytics_roi_cpa")}
                 </h2>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6 items-center">
                     <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Затраты на рекламу (Ad Spend), ₴</label>
+                        <label className="block text-sm font-medium cw-muted mb-1">{t("analytics_ad_spend")}</label>
                         <div className="relative">
-                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">₴</span>
+                            <span className="absolute inset-y-0 left-0 flex items-center pl-3 cw-muted">₴</span>
                             <input
                                 type="number"
                                 value={adSpend || ""}
                                 onChange={(e) => setAdSpend(parseFloat(e.target.value))}
-                                className="pl-8 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm py-2 px-3 focus:outline-none border bg-white"
-                                placeholder="Например, 15000"
+                                className="pl-8 block w-full rounded-md border cw-border cw-surface sm:text-sm py-2 px-3 focus:outline-none cw-text placeholder:text-[var(--cw-muted)]"
+                                placeholder={t("analytics_ad_spend_placeholder")}
                             />
                         </div>
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <span className="text-sm text-gray-500">Стоимость клиента (CPA)</span>
-                        <span className={`text-2xl font-bold ${adSpend > 0 ? "text-gray-900" : "text-gray-300"}`}>
+                        <span className="text-sm cw-muted">{t("analytics_cpa")}</span>
+                        <span className={`text-2xl font-bold ${adSpend > 0 ? "cw-text" : "cw-muted"}`}>
                             {adSpend > 0 ? `${cpa} ₴` : "— ₴"}
                         </span>
                     </div>
 
                     <div className="flex flex-col gap-1">
-                        <span className="text-sm text-gray-500">Окупаемость (ROI)</span>
-                        <span className={`text-2xl font-bold ${adSpend > 0 ? (Number(roi) > 0 ? "text-emerald-500" : "text-red-500") : "text-gray-300"}`}>
+                        <span className="text-sm cw-muted">{t("analytics_roi")}</span>
+                        <span className={`text-2xl font-bold ${adSpend > 0 ? "cw-text" : "cw-muted"}`}>
                             {adSpend > 0 ? `${roi}%` : "— %"}
                         </span>
                     </div>
@@ -159,65 +169,89 @@ export default function AnalyticsPage() {
             </div>
 
             {/* Daily Revenue Chart (Simple CSS implementation) */}
-            <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm">
-                <h2 className="text-lg font-medium mb-6 text-gray-800">Ежедневная Выручка (Daily Revenue)</h2>
+            <div className="cw-surface p-6 rounded-2xl border cw-border cw-shadow">
+                <h2 className="text-lg font-medium mb-6 cw-text">{t("analytics_daily_revenue")}</h2>
                 {funnel.length === 0 ? (
-                    <div className="text-center text-sm text-gray-400 py-10">Нет данных для графика</div>
+                    <div className="text-center text-sm cw-muted py-10">{t("analytics_no_chart_data")}</div>
                 ) : (
-                    <div className="flex items-end gap-1 h-[150px] overflow-x-auto pb-2 custom-scrollbar">
-                        {funnel.map((day, idx) => {
-                            const barHeight = Math.max((day.total_revenue / maxRevenue) * chartHeight, 2);
-                            return (
-                                <div key={idx} className="flex flex-col items-center flex-1 min-w-[20px] group relative">
-                                    <div
-                                        className="w-full bg-indigo-100 hover:bg-indigo-300 transition-all rounded-t-sm"
-                                        style={{ height: `${barHeight}px` }}
-                                    ></div>
-
-                                    {/* Tooltip */}
-                                    <div className="opacity-0 group-hover:opacity-100 absolute bottom-full mb-2 bg-gray-900 text-white text-xs rounded py-1 px-2 whitespace-nowrap pointer-events-none z-10 transition-opacity">
-                                        <div className="font-semibold">{day.date}</div>
-                                        <div>Выручка: {day.total_revenue} ₴</div>
-                                        <div>Лидов: {day.leads_count}</div>
-                                        <div>Оплат: {day.orders_paid}</div>
-                                    </div>
-                                </div>
-                            );
-                        })}
+                    <div ref={chartWrapRef} className="relative overflow-visible">
+                        {hovered && (
+                            <div
+                                className="absolute z-40 -top-2 -translate-x-1/2 -translate-y-full border cw-border cw-shadow cw-text text-xs rounded-md py-1.5 px-2.5 whitespace-nowrap pointer-events-none"
+                                style={{
+                                    left: `${Math.max(64, Math.min(hovered.x, (chartWrapRef.current?.clientWidth ?? hovered.x) - 64))}px`,
+                                    backgroundColor: "var(--cw-surface-solid)",
+                                }}
+                            >
+                                <div className="font-semibold">{hovered.day.date}</div>
+                                <div className="cw-muted">{t("analytics_tooltip_revenue")}: <span className="cw-text">{hovered.day.total_revenue} ₴</span></div>
+                                <div className="cw-muted">{t("analytics_tooltip_leads")}: <span className="cw-text">{hovered.day.leads_count}</span></div>
+                                <div className="cw-muted">{t("analytics_tooltip_paid")}: <span className="cw-text">{hovered.day.orders_paid}</span></div>
+                            </div>
+                        )}
+                        <div className="overflow-x-auto pb-2 custom-scrollbar">
+                            <div className="flex items-end gap-1 h-[150px] min-w-max">
+                                {funnel.map((day, idx) => {
+                                    const barHeight = Math.max((day.total_revenue / maxRevenue) * chartHeight, 2);
+                                    return (
+                                        <div
+                                            key={idx}
+                                            className="flex flex-col items-center flex-1 min-w-[20px] relative"
+                                            onMouseEnter={(e) => {
+                                                const wrapRect = chartWrapRef.current?.getBoundingClientRect();
+                                                const x = wrapRect ? e.clientX - wrapRect.left : 0;
+                                                setHovered({ day, x });
+                                            }}
+                                            onMouseMove={(e) => {
+                                                const wrapRect = chartWrapRef.current?.getBoundingClientRect();
+                                                const x = wrapRect ? e.clientX - wrapRect.left : 0;
+                                                setHovered({ day, x });
+                                            }}
+                                            onMouseLeave={() => setHovered(null)}
+                                        >
+                                            <div
+                                                className="w-full bg-neutral-500/45 hover:bg-neutral-600/60 dark:bg-neutral-300/55 dark:hover:bg-neutral-200/70 transition-all rounded-t-sm"
+                                                style={{ height: `${barHeight}px` }}
+                                            ></div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        </div>
                     </div>
                 )}
             </div>
-
+            
             {/* Campaign Breakdown Table */}
-            <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-                <div className="px-6 py-5 border-b border-gray-100">
-                    <h2 className="text-lg font-medium text-gray-800">Разбивка по кампаниям / креативам</h2>
-                    <p className="text-sm text-gray-500 mt-1">Основано на utm_campaign/fbp</p>
+            <div className="cw-surface rounded-2xl border cw-border cw-shadow overflow-hidden">
+                <div className="px-6 py-5 border-b cw-border">
+                    <h2 className="text-lg font-medium cw-text">{t("analytics_campaign_breakdown")}</h2>
+                    <p className="text-sm cw-muted mt-1">{t("analytics_campaign_breakdown_subtitle")}</p>
                 </div>
                 <div className="overflow-x-auto">
-                    <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
+                    <table className="min-w-full divide-y" style={{ borderColor: "var(--cw-border)" }}>
+                        <thead className="cw-surface-2">
                             <tr>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Источник (Campaign)</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Заказы</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Оплаты</th>
-                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Выручка</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">{t("analytics_col_source_campaign")}</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">{t("analytics_col_orders")}</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">{t("analytics_col_paid")}</th>
+                                <th scope="col" className="px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">{t("analytics_col_revenue")}</th>
                             </tr>
                         </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
+                        <tbody className="cw-surface divide-y" style={{ borderColor: "var(--cw-border)" }}>
                             {campaigns.length === 0 ? (
                                 <tr>
-                                    <td colSpan={4} className="px-6 py-4 text-center text-sm text-gray-500">Пока нет данных по кампаниям</td>
+                                    <td colSpan={4} className="px-6 py-4 text-center text-sm cw-muted">{t("analytics_no_campaign_data")}</td>
                                 </tr>
                             ) : (
                                 campaigns.map((camp, idx) => (
-                                    <tr key={idx} className="hover:bg-gray-50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                                            {camp.source_campaign || "organic (прямой заход)"}
+                                    <tr key={idx} className="hover:bg-[var(--cw-accent-soft)] transition-colors">
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">
+                                            {camp.source_campaign || t("analytics_organic_direct")}
                                         </td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{camp.total_orders}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{camp.paid_orders}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-green-600">{camp.total_revenue} ₴</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.total_orders}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.paid_orders}</td>
+                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">{camp.total_revenue} ₴</td>
                                     </tr>
                                 ))
                             )}

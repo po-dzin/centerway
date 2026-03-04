@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
+import Image from "next/image";
 import { useI18n } from "@/components/I18nProvider";
 import { supabaseClient } from "@/lib/supabaseClient";
 
@@ -16,10 +17,23 @@ interface Identity {
     matched_link?: { type: string; value: string };
 }
 
+const LOCALE_BY_LANG = {
+    ru: "ru-RU",
+    en: "en-US",
+} as const;
+
 function Avatar({ name, url }: { name?: string | null; url?: string | null }) {
     const initial = name?.charAt(0)?.toUpperCase() ?? "?";
     return url ? (
-        <img src={url} alt={name ?? "avatar"} className="w-9 h-9 rounded-full object-cover" referrerPolicy="no-referrer" />
+        <Image
+            src={url}
+            alt={name ?? "avatar"}
+            width={36}
+            height={36}
+            unoptimized
+            className="w-9 h-9 rounded-full object-cover"
+            referrerPolicy="no-referrer"
+        />
     ) : (
         <div className="w-9 h-9 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-sm font-semibold text-neutral-600 dark:text-neutral-300">
             {initial}
@@ -28,7 +42,9 @@ function Avatar({ name, url }: { name?: string | null; url?: string | null }) {
 }
 
 export default function CustomersPage() {
-    const { t } = useI18n();
+    const { lang, t } = useI18n();
+    const isRu = lang === "ru";
+    const locale = LOCALE_BY_LANG[lang];
     const [q, setQ] = useState("");
     const [debouncedQ, setDebouncedQ] = useState("");
     const [data, setData] = useState<Identity[]>([]);
@@ -37,7 +53,6 @@ export default function CustomersPage() {
     const LIMIT = 50;
 
     const [loading, setLoading] = useState(true);
-    const [loadingMore, setLoadingMore] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     // Debounce search query
@@ -78,17 +93,32 @@ export default function CustomersPage() {
         fetchCustomers(debouncedQ, page);
     }, [debouncedQ, page, fetchCustomers]);
 
+    const getResultsLabel = (value: number) => {
+        if (value === 0) return t("customers_results_none");
+        if (!isRu) return `${value} ${value === 1 ? t("customers_results_record_one") : t("customers_results_record_many")}`;
+        const mod10 = value % 10;
+        const mod100 = value % 100;
+        if (mod10 === 1 && mod100 !== 11) return `${value} ${t("customers_results_record_one")}`;
+        if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return `${value} ${t("customers_results_record_few")}`;
+        return `${value} ${t("customers_results_record_many")}`;
+    };
+    const querySuffix = (() => {
+        if (!debouncedQ) return "";
+        if (isRu) return ` ${t("customers_results_query_prefix")}«${debouncedQ}»`;
+        return ` ${t("customers_results_query_prefix_en")}"${debouncedQ}"`;
+    })();
+
     const totalPages = Math.ceil(count / LIMIT);
 
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             {/* Header */}
             <div>
-                <h2 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white mb-1">
-                    Клиенты
+                <h2 className="cw-page-title mb-1">
+                    {t("customers_title")}
                 </h2>
-                <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                    Customer 360 — единая правда о каждом человеке
+                <p className="cw-page-subtitle">
+                    {t("customers_subtitle")}
                 </p>
             </div>
 
@@ -104,8 +134,8 @@ export default function CustomersPage() {
                     type="text"
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    placeholder="Поиск по email, телефону, ID..."
-                    className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl text-sm text-neutral-900 dark:text-white placeholder-neutral-400 dark:placeholder-neutral-600 focus:outline-none focus:ring-2 focus:ring-neutral-400 dark:focus:ring-neutral-600 transition-all"
+                    placeholder={t("customers_search_placeholder")}
+                    className="cw-input pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-all"
                 />
                 {q && (
                     <button
@@ -123,8 +153,8 @@ export default function CustomersPage() {
             {/* Results header */}
             {!loading && (
                 <p className="text-xs text-neutral-400 dark:text-neutral-600">
-                    {count === 0 ? "Нет результатов" : `${count} ${count === 1 ? "запись" : count < 5 ? "записи" : "записей"}`}
-                    {debouncedQ ? ` по запросу «${debouncedQ}»` : ""}
+                    {getResultsLabel(count)}
+                    {querySuffix}
                 </p>
             )}
 
@@ -139,8 +169,8 @@ export default function CustomersPage() {
 
             {/* State: error */}
             {error && !loading && (
-                <div className="p-4 rounded-xl border border-red-200 dark:border-red-900 bg-red-50 dark:bg-red-950/20 text-sm text-red-600 dark:text-red-400">
-                    Ошибка загрузки: {error}
+                <div className="p-4 rounded-xl text-sm cw-alert-failed">
+                    {t("customers_loading_error")}: {error}
                 </div>
             )}
 
@@ -157,7 +187,7 @@ export default function CustomersPage() {
                         </svg>
                     </div>
                     <p className="text-neutral-500 dark:text-neutral-400 text-sm">
-                        {debouncedQ ? "Клиент не найден" : "Клиентов пока нет"}
+                        {debouncedQ ? t("customers_not_found") : t("customers_empty")}
                     </p>
                 </div>
             )}
@@ -169,13 +199,13 @@ export default function CustomersPage() {
                         <Link
                             key={identity.id}
                             href={`/admin/customers/${identity.id}`}
-                            className="flex items-center gap-4 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 transition-colors group"
+                            className="cw-list-item flex items-center gap-4 p-4 group"
                         >
                             <Avatar name={identity.display_name ?? identity.email ?? identity.phone} url={identity.avatar_url} />
 
                             <div className="flex-1 min-w-0">
                                 <p className="text-sm font-medium text-neutral-900 dark:text-white truncate">
-                                    {identity.display_name ?? identity.email ?? identity.phone ?? <span className="text-neutral-400 italic">Без имени</span>}
+                                    {identity.display_name ?? identity.email ?? identity.phone ?? <span className="text-neutral-400 italic">{t("customers_no_name")}</span>}
                                 </p>
                                 {identity.matched_link ? (
                                     <p className="text-xs text-neutral-500 dark:text-neutral-400 truncate">
@@ -186,7 +216,7 @@ export default function CustomersPage() {
                                     </p>
                                 ) : (
                                     <p className="text-xs text-neutral-400 dark:text-neutral-500">
-                                        {new Date(identity.created_at).toLocaleDateString("ru-RU", {
+                                        {new Date(identity.created_at).toLocaleDateString(locale, {
                                             day: "2-digit", month: "short", year: "numeric"
                                         })}
                                     </p>
@@ -220,22 +250,22 @@ export default function CustomersPage() {
                         onClick={() => setPage((p) => Math.max(0, p - 1))}
                         disabled={page === 0}
                         className="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 transition-colors"
-                        title="Предыдущая"
+                        title={t("common_prev")}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="15 18 9 12 15 6" />
                         </svg>
                     </button>
 
-                    <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Страница <span className="font-medium text-neutral-900 dark:text-white">{page + 1}</span> из <span className="font-medium text-neutral-900 dark:text-white">{totalPages}</span>
+                    <div className="cw-page-subtitle">
+                        {t("common_page")} <span className="font-medium text-neutral-900 dark:text-white">{page + 1}</span> {t("common_of")} <span className="font-medium text-neutral-900 dark:text-white">{totalPages}</span>
                     </div>
 
                     <button
                         onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                         disabled={page >= totalPages - 1}
                         className="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 transition-colors"
-                        title="Следующая"
+                        title={t("common_next")}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="9 18 15 12 9 6" />

@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
+import { useI18n } from "@/components/I18nProvider";
 
 interface Job {
     id: string;
@@ -15,29 +16,36 @@ interface Job {
     updated_at: string;
 }
 
+const LOCALE_BY_LANG = {
+    ru: "ru-RU",
+    en: "en-US",
+} as const;
+
 const STATUS_COLORS = {
-    pending: "bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400",
-    running: "bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400",
-    success: "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400",
-    failed: "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400",
+    pending: "cw-status-pending-badge",
+    running: "cw-status-running-badge",
+    success: "cw-status-success-badge",
+    failed: "cw-status-failed-badge",
 };
 
-const STATUS_LABELS = {
-    pending: "Ожидает",
-    running: "Выполняется",
-    success: "Успешно",
-    failed: "Ошибка",
-};
-
-const STATUS_TABS = [
-    { key: "", label: "Все" },
-    { key: "pending", label: "Ожидают" },
-    { key: "running", label: "В работе" },
-    { key: "success", label: "Успешные" },
-    { key: "failed", label: "Ошибки" },
-];
-
-function JobDetailsModal({ job, onClose, onRetry }: { job: Job, onClose: () => void, onRetry: () => void }) {
+function JobDetailsModal({
+    job, onClose, onRetry, labels, statusLabels
+}: {
+    job: Job;
+    onClose: () => void;
+    onRetry: () => void;
+    labels: {
+        retryError: string;
+        details: string;
+        type: string;
+        status: string;
+        attempts: string;
+        error: string;
+        close: string;
+        retry: string;
+    };
+    statusLabels: Record<Job["status"], string>;
+}) {
     const [retrying, setRetrying] = useState(false);
 
     const handleRetry = async () => {
@@ -48,7 +56,7 @@ function JobDetailsModal({ job, onClose, onRetry }: { job: Job, onClose: () => v
                 method: "POST",
                 headers: session ? { "Authorization": `Bearer ${session.access_token}` } : {}
             });
-            if (!res.ok) throw new Error("Failed to retry job");
+            if (!res.ok) throw new Error(labels.retryError);
             onRetry();
         } catch (err) {
             console.error(err);
@@ -59,10 +67,10 @@ function JobDetailsModal({ job, onClose, onRetry }: { job: Job, onClose: () => v
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 animate-in fade-in duration-200">
-            <div className="bg-white dark:bg-neutral-900 rounded-2xl shadow-xl w-full max-w-2xl overflow-hidden border border-neutral-200 dark:border-neutral-800">
-                <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-800">
+            <div className="cw-surface rounded-2xl cw-shadow w-full max-w-2xl overflow-hidden border cw-border">
+                <div className="flex items-center justify-between p-4 border-b cw-border">
                     <div>
-                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">Детали задачи</h3>
+                        <h3 className="text-lg font-semibold text-neutral-900 dark:text-white">{labels.details}</h3>
                         <p className="text-xs text-neutral-500 font-mono mt-1">{job.id}</p>
                     </div>
                     <button onClick={onClose} className="p-2 rounded-xl text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 dark:hover:bg-neutral-800 dark:hover:text-neutral-300">
@@ -73,18 +81,18 @@ function JobDetailsModal({ job, onClose, onRetry }: { job: Job, onClose: () => v
                 <div className="p-4 space-y-4 max-h-[70vh] overflow-auto">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl">
-                            <span className="text-xs text-neutral-500 uppercase">Тип:</span>
+                            <span className="text-xs text-neutral-500 uppercase">{labels.type}:</span>
                             <div className="font-mono text-sm font-medium mt-1">{job.type}</div>
                         </div>
                         <div className="p-3 bg-neutral-50 dark:bg-neutral-800/50 rounded-xl flex justify-between items-center">
                             <div>
-                                <span className="text-xs text-neutral-500 uppercase">Статус:</span>
+                                <span className="text-xs text-neutral-500 uppercase">{labels.status}:</span>
                                 <div className={`text-sm font-medium mt-1 px-2 py-0.5 rounded-md inline-block ${STATUS_COLORS[job.status]}`}>
-                                    {STATUS_LABELS[job.status]}
+                                    {statusLabels[job.status]}
                                 </div>
                             </div>
                             <div className="text-right">
-                                <span className="text-xs text-neutral-500 uppercase">Попыток:</span>
+                                <span className="text-xs text-neutral-500 uppercase">{labels.attempts}:</span>
                                 <div className="text-sm font-medium mt-1">{job.attempts}</div>
                             </div>
                         </div>
@@ -92,35 +100,35 @@ function JobDetailsModal({ job, onClose, onRetry }: { job: Job, onClose: () => v
 
                     <div>
                         <span className="text-xs text-neutral-500 uppercase mb-2 block">Payload:</span>
-                        <pre className="p-3 bg-neutral-50 dark:bg-neutral-800/80 rounded-xl text-xs font-mono overflow-auto border border-neutral-200 dark:border-neutral-800">
+                        <pre className="p-3 cw-surface-2 rounded-xl text-xs font-mono overflow-auto border cw-border">
                             {JSON.stringify(job.payload, null, 2)}
                         </pre>
                     </div>
 
                     {job.error_text && (
                         <div>
-                            <span className="text-xs text-neutral-500 uppercase mb-2 block">Ошибка:</span>
-                            <pre className="p-3 bg-red-50 dark:bg-red-900/10 text-red-800 dark:text-red-300 rounded-xl text-xs font-mono overflow-auto border border-red-200 dark:border-red-900/30 whitespace-pre-wrap">
+                            <span className="text-xs text-neutral-500 uppercase mb-2 block">{labels.error}:</span>
+                            <pre className="p-3 rounded-xl text-xs font-mono overflow-auto whitespace-pre-wrap cw-alert-failed">
                                 {job.error_text}
                             </pre>
                         </div>
                     )}
                 </div>
 
-                <div className="p-4 border-t border-neutral-200 dark:border-neutral-800 flex justify-end gap-3 bg-neutral-50 dark:bg-neutral-900/50">
-                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium text-neutral-600 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-xl transition-colors">
-                        Закрыть
+                <div className="p-4 border-t cw-border flex justify-end gap-3 cw-surface-2">
+                    <button onClick={onClose} className="px-4 py-2 text-sm font-medium cw-muted hover:bg-[var(--cw-accent-soft)] rounded-xl transition-colors">
+                        {labels.close}
                     </button>
                     {job.status === "failed" && (
                         <button
                             onClick={handleRetry}
                             disabled={retrying}
-                            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2"
+                            className="px-4 py-2 text-sm font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center gap-2 cw-btn-status-running"
                         >
                             {retrying && (
-                                <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                                <svg className="animate-spin h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                             )}
-                            Повторить задачу
+                            {labels.retry}
                         </button>
                     )}
                 </div>
@@ -130,6 +138,32 @@ function JobDetailsModal({ job, onClose, onRetry }: { job: Job, onClose: () => v
 }
 
 export default function JobsPage() {
+    const { lang, t } = useI18n();
+    const locale = LOCALE_BY_LANG[lang];
+    const statusLabels: Record<Job["status"], string> = {
+        pending: t("jobs_status_pending"),
+        running: t("jobs_status_running"),
+        success: t("jobs_status_success"),
+        failed: t("jobs_status_failed"),
+    };
+    const STATUS_TABS = [
+        { key: "", label: t("jobs_tab_all") },
+        { key: "pending", label: t("jobs_tab_pending") },
+        { key: "running", label: t("jobs_tab_running") },
+        { key: "success", label: t("jobs_tab_success") },
+        { key: "failed", label: t("jobs_tab_failed") },
+    ];
+    const modalLabels = {
+        retryError: t("jobs_retry_error"),
+        details: t("jobs_details"),
+        type: t("jobs_type"),
+        status: t("jobs_status"),
+        attempts: t("jobs_attempts"),
+        error: t("jobs_error"),
+        close: t("jobs_close"),
+        retry: t("jobs_retry"),
+    };
+
     const [q, setQ] = useState("");
     const [debouncedQ, setDQ] = useState("");
     const [activeStatus, setStatus] = useState("");
@@ -192,11 +226,11 @@ export default function JobsPage() {
             {/* Header */}
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white mb-1">
-                        Фоновые задачи
+                    <h2 className="cw-page-title mb-1">
+                        {t("jobs_title")}
                     </h2>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Мониторинг рассылок, интеграций и отложенных процессов
+                    <p className="cw-page-subtitle">
+                        {t("jobs_subtitle")}
                     </p>
                 </div>
             </div>
@@ -223,8 +257,8 @@ export default function JobsPage() {
                     type="text"
                     value={q}
                     onChange={(e) => setQ(e.target.value)}
-                    className="w-full bg-white dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl pl-10 pr-4 py-2.5 text-sm text-neutral-900 dark:text-white placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-neutral-900/10 dark:focus:ring-white/10 transition-shadow"
-                    placeholder="Поиск по payload или ошибке..."
+                    className="cw-input pl-10 pr-4 py-2.5 text-sm focus:outline-none transition-shadow"
+                    placeholder={t("jobs_search_placeholder")}
                 />
             </div>
 
@@ -234,10 +268,10 @@ export default function JobsPage() {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                     </svg>
-                    <span className="text-sm font-medium text-neutral-500">Загрузка задач...</span>
+                    <span className="text-sm font-medium text-neutral-500">{t("jobs_loading")}</span>
                 </div>
             ) : error ? (
-                <div className="p-4 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-xl text-sm border border-red-200 dark:border-red-900/30">
+                <div className="p-4 rounded-xl text-sm cw-alert-failed">
                     {error}
                 </div>
             ) : data.length === 0 ? (
@@ -247,9 +281,11 @@ export default function JobsPage() {
                             <circle cx="12" cy="12" r="10" /><path d="m4.93 4.93 14.14 14.14" />
                         </svg>
                     </div>
-                    <h3 className="text-sm font-medium text-neutral-900 dark:text-white">Задач не найдено</h3>
+                    <h3 className="text-sm font-medium text-neutral-900 dark:text-white">{t("jobs_not_found")}</h3>
                     <p className="text-xs text-neutral-500 mt-1 max-w-xs text-center">
-                        {q || activeStatus ? "Попробуйте изменить параметры поиска или фильтры." : "Очередь задач пуста."}
+                        {q || activeStatus
+                            ? t("jobs_try_filters")
+                            : t("jobs_queue_empty")}
                     </p>
                 </div>
             ) : (
@@ -258,10 +294,10 @@ export default function JobsPage() {
                         <div
                             key={job.id}
                             onClick={() => setSelectedJob(job)}
-                            className="flex items-center gap-4 p-4 rounded-xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-neutral-900/50 hover:bg-neutral-50 dark:hover:bg-neutral-800/60 transition-colors cursor-pointer group"
+                            className="cw-list-item flex items-center gap-4 p-4 cursor-pointer group"
                         >
                             <div className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-800 flex items-center justify-center shrink-0 group-hover:bg-white dark:group-hover:bg-neutral-700 transition-colors border border-transparent group-hover:border-neutral-200 dark:group-hover:border-neutral-600">
-                                <span className={`w-2.5 h-2.5 rounded-full ${job.status === 'success' ? 'bg-green-500' : job.status === 'failed' ? 'bg-red-500' : job.status === 'running' ? 'bg-blue-500 animate-pulse' : 'bg-yellow-500'}`} />
+                                <span className={`w-2.5 h-2.5 rounded-full ${job.status === 'success' ? 'cw-status-success-dot' : job.status === 'failed' ? 'cw-status-failed-dot' : job.status === 'running' ? 'cw-status-running-dot animate-pulse' : 'cw-status-pending-dot'}`} />
                             </div>
 
                             <div className="flex-1 min-w-0">
@@ -270,13 +306,13 @@ export default function JobsPage() {
                                         {job.type}
                                     </p>
                                     <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${STATUS_COLORS[job.status]}`}>
-                                        {STATUS_LABELS[job.status]}
+                                        {statusLabels[job.status]}
                                     </span>
                                 </div>
                                 <div className="text-xs text-neutral-500 dark:text-neutral-400 flex items-center gap-3">
                                     <span className="truncate max-w-[200px] font-mono opacity-60">{job.id}</span>
                                     {job.status === "failed" && job.error_text && (
-                                        <span className="text-red-500 dark:text-red-400 truncate hidden sm:inline-block max-w-[200px]">
+                                        <span className="cw-status-failed-text truncate hidden sm:inline-block max-w-[200px]">
                                             {job.error_text}
                                         </span>
                                     )}
@@ -285,10 +321,10 @@ export default function JobsPage() {
 
                             <div className="text-right shrink-0">
                                 <p className="text-sm font-medium text-neutral-900 dark:text-white tabular-nums">
-                                    {new Date(job.created_at).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}
+                                    {new Date(job.created_at).toLocaleTimeString(locale, { hour: "2-digit", minute: "2-digit" })}
                                 </p>
                                 <p className="text-xs text-neutral-400 mt-0.5">
-                                    {new Date(job.created_at).toLocaleDateString("ru-RU", { day: '2-digit', month: 'short' })}
+                                    {new Date(job.created_at).toLocaleDateString(locale, { day: '2-digit', month: 'short' })}
                                 </p>
                             </div>
                         </div>
@@ -303,22 +339,22 @@ export default function JobsPage() {
                         onClick={() => setPage((p) => Math.max(0, p - 1))}
                         disabled={page === 0}
                         className="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 transition-colors"
-                        title="Предыдущая"
+                        title={t("common_prev")}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="15 18 9 12 15 6" />
                         </svg>
                     </button>
 
-                    <div className="text-sm text-neutral-500 dark:text-neutral-400">
-                        Страница <span className="font-medium text-neutral-900 dark:text-white">{page + 1}</span> из <span className="font-medium text-neutral-900 dark:text-white">{totalPages}</span>
+                    <div className="cw-page-subtitle">
+                        {t("common_page")} <span className="font-medium text-neutral-900 dark:text-white">{page + 1}</span> {t("common_of")} <span className="font-medium text-neutral-900 dark:text-white">{totalPages}</span>
                     </div>
 
                     <button
                         onClick={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
                         disabled={page >= totalPages - 1}
                         className="p-2 rounded-xl text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 disabled:opacity-30 transition-colors"
-                        title="Следующая"
+                        title={t("common_next")}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <polyline points="9 18 15 12 9 6" />
@@ -331,6 +367,8 @@ export default function JobsPage() {
             {selectedJob && (
                 <JobDetailsModal
                     job={selectedJob}
+                    labels={modalLabels}
+                    statusLabels={statusLabels}
                     onClose={() => setSelectedJob(null)}
                     onRetry={() => {
                         setSelectedJob(null);

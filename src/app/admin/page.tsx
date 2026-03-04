@@ -67,19 +67,13 @@ export default function AdminDashboardPage() {
 
     if (!session) {
         return (
-            <div className="flex flex-col items-center justify-center min-h-[70vh] w-full max-w-sm mx-auto animate-in fade-in duration-700 zoom-in-95">
+            <div className="flex flex-col items-center justify-center min-h-[70vh] w-full max-w-sm mx-auto">
                 <div className="w-full text-center mb-8">
-                    <h2 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white mb-2">{t("login_title")}</h2>
-                    <p className="text-sm text-neutral-500 dark:text-neutral-400">{t("login_subtitle")}</p>
+                    <h2 className="cw-page-title mb-2">{t("login_title")}</h2>
+                    <p className="cw-page-subtitle">{t("login_subtitle")}</p>
                 </div>
 
-                <div className="w-full bg-white/80 dark:bg-neutral-900/80 border border-neutral-200 dark:border-neutral-800 rounded-2xl shadow-xl dark:shadow-2xl backdrop-blur-xl p-8 relative overflow-hidden group transition-colors duration-300">
-                    {/* Subtle aesthetic glow */}
-                    <div className="absolute top-0 flex justify-center w-full mt-[-2px] inset-x-0 mx-auto hidden dark:flex">
-                        <div className="h-[2px] w-1/2 bg-gradient-to-r from-transparent via-white/50 to-transparent"></div>
-                    </div>
-                    <div className="absolute inset-x-0 -top-8 -z-10 h-[200px] w-full opacity-0 dark:opacity-10 blur-3xl bg-white/20 transition-opacity"></div>
-
+                <div className="w-full cw-surface border cw-border rounded-2xl cw-shadow p-8 transition-colors duration-300">
                     <div className="space-y-6">
                         <div className="space-y-1">
                             <h3 className="text-lg font-medium text-neutral-900 dark:text-white">{t("login_card_title")}</h3>
@@ -88,7 +82,7 @@ export default function AdminDashboardPage() {
 
                         <button
                             onClick={handleSignIn}
-                            className="w-full bg-neutral-900 text-white dark:bg-white dark:text-black font-semibold py-3 px-4 rounded-xl hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-all active:scale-[0.98] flex items-center justify-center gap-3 dark:group-hover:shadow-[0_0_20px_rgba(255,255,255,0.1)]"
+                            className="w-full cw-surface-2 border cw-border cw-text font-semibold py-3 px-4 rounded-xl hover:bg-[var(--cw-accent-soft)] transition-colors flex items-center justify-center gap-3"
                         >
                             {/* Google Logo */}
                             <svg width="18" height="18" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
@@ -106,27 +100,27 @@ export default function AdminDashboardPage() {
     }
 
     return (
-        <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="space-y-8">
             <div className="flex justify-between items-start">
                 <div>
-                    <h2 className="text-3xl font-bold tracking-tight text-neutral-900 dark:text-white mb-2">{t("dashboard_title")}</h2>
-                    <p className="text-neutral-500 dark:text-neutral-400 text-sm">{t("dashboard_subtitle")}</p>
+                    <h2 className="cw-page-title mb-2">{t("dashboard_title")}</h2>
+                    <p className="cw-page-subtitle">{t("dashboard_subtitle")}</p>
                 </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <div className="p-5 border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 rounded-xl transition-colors duration-300">
+                <div className="p-5 cw-panel transition-colors duration-300">
                     <h3 className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">{t("dashboard_role_label")}</h3>
-                    <div className="text-2xl font-semibold text-neutral-900 dark:text-white capitalize">{role || "Unknown"}</div>
+                    <div className="text-2xl font-semibold text-neutral-900 dark:text-white capitalize">{role || (t("dashboard_role_unknown") as string)}</div>
                 </div>
-                <div className="p-5 border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 rounded-xl transition-colors duration-300">
+                <div className="p-5 cw-panel transition-colors duration-300">
                     <h3 className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">{t("dashboard_email_label")}</h3>
                     <div className="text-lg font-semibold text-neutral-900 dark:text-white truncate" title={session.user.email}>{session.user.email}</div>
                 </div>
-                <div className="p-5 border border-neutral-200 dark:border-neutral-800 bg-neutral-50 dark:bg-neutral-900/50 rounded-xl transition-colors duration-300">
+                <div className="p-5 cw-panel transition-colors duration-300">
                     <h3 className="text-neutral-500 dark:text-neutral-400 text-sm font-medium mb-1">{t("dashboard_audit_label")}</h3>
                     <div className="flex items-center gap-2 mt-1">
-                        <div className="w-2 h-2 rounded-full bg-green-500"></div>
+                        <div className="w-2 h-2 rounded-full cw-status-success-dot"></div>
                         <span className="text-neutral-900 dark:text-white text-sm font-medium">{t("dashboard_audit_status")}</span>
                     </div>
                 </div>
