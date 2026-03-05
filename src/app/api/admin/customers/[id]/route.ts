@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
-import { requireAdmin } from "@/lib/auth/requireAdmin";
+import { requireAdminSession, serverErrorResponse, unauthorizedResponse } from "@/lib/api/adminRoute";
 
 // GET /api/admin/customers/[id]
 export async function GET(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const session = await requireAdmin(req);
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await requireAdminSession(req);
+    if (!session) return unauthorizedResponse();
 
     const { id } = await params;
     const db = adminClient();
@@ -71,8 +71,8 @@ export async function PATCH(
     req: NextRequest,
     { params }: { params: Promise<{ id: string }> }
 ) {
-    const session = await requireAdmin(req);
-    if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const session = await requireAdminSession(req);
+    if (!session) return unauthorizedResponse();
 
     const { id } = await params;
     const body = await req.json();
@@ -89,6 +89,6 @@ export async function PATCH(
         .select()
         .single();
 
-    if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+    if (error) return serverErrorResponse(error.message);
     return NextResponse.json({ data });
 }
