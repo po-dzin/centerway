@@ -19,6 +19,7 @@
     return prefix + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
   }
 
+
   function sendCapiEvent(payload) {
     try {
       fetch(EVENTS_ENDPOINT, {
@@ -91,6 +92,7 @@
     }, { eventID: eventId });
   }
 
+
   function buildPayUrl(attrib, eventId) {
     var url = new URL(DIRECT_PAY_ENDPOINT, window.location.origin);
     url.searchParams.set("product", PRODUCT);
@@ -131,6 +133,7 @@
       return;
     }
   });
+
 
   // Future hook: lead form is disabled now, but this keeps Lead event integration ready.
   window.CW_trackLead = function(leadPayload) {

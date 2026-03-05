@@ -40,6 +40,50 @@ function AdminShell({ children }: { children: ReactNode }) {
         return () => subscription.unsubscribe();
     }, []);
 
+    useEffect(() => {
+        if (!session?.access_token) return;
+        if (!pathname?.startsWith("/admin")) return;
+
+        const now = Date.now();
+        const JOBS_PULSE_MS = 60 * 1000;
+        const ANALYTICS_PULSE_MS = 15 * 60 * 1000;
+        const jobsKey = "cw_admin_jobs_pulse_at";
+        const analyticsKey = "cw_admin_analytics_pulse_at";
+
+        const getLastTs = (key: string) => {
+            try {
+                return Number(sessionStorage.getItem(key) || "0");
+            } catch {
+                return 0;
+            }
+        };
+
+        const setLastTs = (key: string, value: number) => {
+            try {
+                sessionStorage.setItem(key, String(value));
+            } catch {
+                // ignore storage write errors
+            }
+        };
+
+        const shouldRefreshAnalytics = pathname.startsWith("/admin/analytics");
+        const jobsDue = now - getLastTs(jobsKey) >= JOBS_PULSE_MS;
+        const analyticsDue = shouldRefreshAnalytics && (now - getLastTs(analyticsKey) >= ANALYTICS_PULSE_MS);
+
+        if (!jobsDue && !analyticsDue) return;
+
+        const url = `/api/admin/system/pulse${analyticsDue ? "?refreshAnalytics=1" : ""}`;
+        fetch(url, {
+            method: "POST",
+            headers: { Authorization: `Bearer ${session.access_token}` },
+        }).catch(() => {
+            // best-effort background pulse
+        });
+
+        if (jobsDue) setLastTs(jobsKey, now);
+        if (analyticsDue) setLastTs(analyticsKey, now);
+    }, [pathname, session?.access_token]);
+
     const navItems = [
         { key: "nav_dashboard" as const, href: "/admin", icon: icons.dashboard, active: true },
         { key: "nav_audit" as const, href: "/admin/audit", icon: icons.audit, active: true },

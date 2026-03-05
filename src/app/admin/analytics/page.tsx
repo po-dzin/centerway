@@ -77,6 +77,17 @@ export default function AnalyticsPage() {
         return (adSpend / summary.totalPaidOrders).toFixed(2);
     }, [summary, adSpend]);
 
+    const campaignLabel = (sourceCampaign: string | null | undefined) => {
+        const normalized = (sourceCampaign ?? "").trim().toLowerCase();
+        if (!normalized || normalized === "organic" || normalized === "organic/direct") {
+            return t("analytics_organic_direct");
+        }
+        if (normalized === "meta (no utm_campaign)") {
+            return t("analytics_meta_no_utm");
+        }
+        return sourceCampaign;
+    };
+
     if (error) {
         return (
             <div className="p-8 text-center cw-status-failed-text">
@@ -245,7 +256,7 @@ export default function AnalyticsPage() {
                                 campaigns.map((camp, idx) => (
                                     <tr key={idx} className="hover:bg-[var(--cw-accent-soft)] transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">
-                                            {camp.source_campaign || t("analytics_organic_direct")}
+                                            {campaignLabel(camp.source_campaign)}
                                         </td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.total_orders}</td>
                                         <td className="px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.paid_orders}</td>

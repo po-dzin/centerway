@@ -80,6 +80,7 @@ export const translations = {
         analytics_col_revenue: "Выручка",
         analytics_no_campaign_data: "Пока нет данных по кампаниям",
         analytics_organic_direct: "organic (прямой заход)",
+        analytics_meta_no_utm: "meta (без utm_campaign)",
 
         // Orders
         orders_title: "Заказы",
@@ -245,6 +246,7 @@ export const translations = {
         analytics_col_revenue: "Revenue",
         analytics_no_campaign_data: "No campaign data yet",
         analytics_organic_direct: "organic (direct)",
+        analytics_meta_no_utm: "meta (no utm_campaign)",
 
         // Orders
         orders_title: "Orders",
