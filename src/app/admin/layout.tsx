@@ -7,6 +7,7 @@ import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { I18nProvider, useI18n } from "@/components/I18nProvider";
 import { UserMenu } from "@/components/UserMenu";
+import { ToastProvider } from "@/components/ToastProvider";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { Session } from "@supabase/supabase-js";
 
@@ -134,7 +135,9 @@ function AdminShell({ children }: { children: ReactNode }) {
 export default function AdminLayout({ children }: { children: ReactNode }) {
     return (
         <I18nProvider>
-            <AdminShell>{children}</AdminShell>
+            <ToastProvider>
+                <AdminShell>{children}</AdminShell>
+            </ToastProvider>
         </I18nProvider>
     );
 }

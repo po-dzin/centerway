@@ -43,6 +43,7 @@ export default function JobsPage() {
     ];
     const modalLabels = {
         retryError: t("jobs_retry_error"),
+        retrySuccess: t("jobs_retry_success"),
         details: t("jobs_details"),
         type: t("jobs_type"),
         status: t("jobs_status"),

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { JOB_STATUS_BADGE_CLASS } from "@/lib/adminStatusStyles";
+import { useToast } from "@/components/ToastProvider";
 
 interface Job {
     id: string;
@@ -25,6 +26,7 @@ export function JobDetailsModal({
     onRetry: () => void;
     labels: {
         retryError: string;
+        retrySuccess: string;
         details: string;
         type: string;
         status: string;
@@ -36,6 +38,7 @@ export function JobDetailsModal({
     statusLabels: Record<Job["status"], string>;
 }) {
     const [retrying, setRetrying] = useState(false);
+    const toast = useToast();
 
     const handleRetry = async () => {
         setRetrying(true);
@@ -48,9 +51,11 @@ export function JobDetailsModal({
                 headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
             });
             if (!res.ok) throw new Error(labels.retryError);
+            toast.success(labels.retrySuccess);
             onRetry();
         } catch (err) {
             console.error(err);
+            toast.error(labels.retryError);
         } finally {
             setRetrying(false);
         }

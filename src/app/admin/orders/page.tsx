@@ -10,6 +10,7 @@ import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { ReconcileModal } from "@/components/admin/modals/ReconcileModal";
+import { useToast } from "@/components/ToastProvider";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/adminLocale";
 import { ORDER_STATUS_BADGE_CLASS } from "@/lib/adminStatusStyles";
@@ -37,6 +38,7 @@ function ResendAccessButton({ orderRef, labels }: {
 }) {
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
+    const toast = useToast();
 
     const handle = async () => {
         if (loading) return;
@@ -55,12 +57,13 @@ function ResendAccessButton({ orderRef, labels }: {
                 const link = `${baseUrl}/pay/return?token=${data.token}`;
                 await navigator.clipboard.writeText(link);
                 setCopied(true);
+                toast.success(labels.copied);
                 setTimeout(() => setCopied(false), 2000);
             } else {
-                alert(labels.createError + ": " + (data.error || labels.unknown));
+                toast.error(`${labels.createError}: ${data.error || labels.unknown}`);
             }
         } catch {
-            alert(labels.networkError);
+            toast.error(labels.networkError);
         } finally {
             setLoading(false);
         }
