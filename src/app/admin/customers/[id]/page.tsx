@@ -8,6 +8,7 @@ import type { ReactNode } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 import { getErrorMessage } from "@/lib/errors";
+import { getAdminLocale } from "@/lib/adminLocale";
 
 interface Customer {
     id: string;
@@ -57,11 +58,6 @@ interface ProfileData {
     events: CustomerEvent[];
     timeline: TimelineItem[];
 }
-
-const LOCALE_BY_LANG = {
-    ru: "ru-RU",
-    en: "en-US",
-} as const;
 
 const typeColors: Record<string, string> = {
     order: "cw-status-success-badge",
@@ -123,7 +119,7 @@ function ContactRow({ label, value, badge }: { label: string; value: string; bad
 export default function CustomerProfilePage() {
     const { lang, t } = useI18n();
     const isRu = lang === "ru";
-    const locale = LOCALE_BY_LANG[lang];
+    const locale = getAdminLocale(lang);
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
     const [profile, setProfile] = useState<ProfileData | null>(null);

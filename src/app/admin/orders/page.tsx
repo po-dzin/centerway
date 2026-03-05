@@ -9,7 +9,10 @@ import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
+import { ReconcileModal } from "@/components/admin/modals/ReconcileModal";
 import { getErrorMessage } from "@/lib/errors";
+import { getAdminLocale } from "@/lib/adminLocale";
+import { ORDER_STATUS_BADGE_CLASS } from "@/lib/adminStatusStyles";
 
 interface Order {
     id: string;
@@ -26,135 +29,6 @@ interface Order {
         phone: string | null;
         display_name: string | null;
     } | null;
-}
-
-const LOCALE_BY_LANG = {
-    ru: "ru-RU",
-    en: "en-US",
-} as const;
-
-const statusBadge: Record<string, string> = {
-    paid: "cw-status-success-badge",
-    created: "cw-status-pending-badge",
-    pending: "cw-status-pending-badge",
-    refunded: "cw-status-failed-badge",
-};
-
-// Reconcile modal
-function ReconcileModal({
-    order,
-    onClose,
-    onDone,
-    labels,
-    statusLabels,
-}: {
-    order: Order;
-    onClose: () => void;
-    onDone: () => void;
-    labels: {
-        title: string;
-        order: string;
-        product: string;
-        amount: string;
-        status: string;
-        notePlaceholder: string;
-        confirmPaid: string;
-        refund: string;
-        cancel: string;
-    };
-    statusLabels: Record<string, string>;
-}) {
-    const [note, setNote] = useState("");
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-
-    const handle = async (newStatus: string) => {
-        setLoading(true);
-        setError(null);
-        try {
-            const { data: { session } } = await supabaseClient.auth.getSession();
-            const res = await fetch("/api/admin/orders", {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                    ...(session ? { "Authorization": `Bearer ${session.access_token}` } : {})
-                },
-                body: JSON.stringify({ order_ref: order.order_ref, status: newStatus, note }),
-            });
-            if (!res.ok) throw new Error((await res.json()).error);
-            onDone();
-        } catch (e: unknown) {
-            setError(getErrorMessage(e));
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/45" onClick={onClose}>
-            <div
-                className="cw-surface-solid border cw-border rounded-2xl cw-shadow p-6 w-full max-w-md mx-4"
-                onClick={(e) => e.stopPropagation()}
-            >
-                <h3 className="text-lg font-semibold cw-text mb-1">{labels.title}</h3>
-                <p className="cw-page-subtitle mb-4">
-                    {labels.order} <span className="font-mono text-xs cw-surface-2 px-1.5 py-0.5 rounded">{order.order_ref}</span>
-                </p>
-
-                <div className="space-y-3 mb-4">
-                    <div className="p-3 rounded-xl cw-surface-2 text-sm">
-                        <div className="flex justify-between">
-                            <span className="cw-muted">{labels.product}</span>
-                            <span className="font-medium cw-text">{order.product_code}</span>
-                        </div>
-                        <div className="flex justify-between mt-1">
-                            <span className="cw-muted">{labels.amount}</span>
-                            <span className="font-medium cw-text">{order.amount} {order.currency}</span>
-                        </div>
-                        <div className="flex justify-between mt-1">
-                            <span className="cw-muted">{labels.status}</span>
-                            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${statusBadge[order.status] ?? "cw-surface-2 cw-muted"}`}>
-                                {statusLabels[order.status] ?? order.status}
-                            </span>
-                        </div>
-                    </div>
-
-                    <textarea
-                        value={note}
-                        onChange={(e) => setNote(e.target.value)}
-                        placeholder={labels.notePlaceholder}
-                        rows={2}
-                        className="w-full text-sm px-3 py-2 rounded-xl border cw-border cw-surface cw-text placeholder:text-[var(--cw-muted)] focus:outline-none resize-none"
-                    />
-                </div>
-
-                {error && <p className="text-xs cw-status-failed-text mb-3">{error}</p>}
-
-                <div className="flex gap-2">
-                    <button
-                        onClick={() => handle("paid")}
-                        disabled={loading || order.status === "paid"}
-                        className="flex-1 py-2.5 px-4 rounded-xl cw-btn-status-success disabled:opacity-40 text-sm font-semibold transition-colors"
-                    >
-                        {labels.confirmPaid}
-                    </button>
-                    <button
-                        onClick={() => handle("refunded")}
-                        disabled={loading}
-                        className="py-2.5 px-3 rounded-xl border cw-border hover:bg-[var(--cw-accent-soft)] cw-muted text-sm transition-colors"
-                    >
-                        {labels.refund}
-                    </button>
-                    <button
-                        onClick={onClose}
-                        className="py-2.5 px-3 rounded-xl border cw-border hover:bg-[var(--cw-accent-soft)] cw-muted text-sm transition-colors"
-                    >
-                        {labels.cancel}
-                    </button>
-                </div>
-            </div>
-        </div>
-    );
 }
 
 function ResendAccessButton({ orderRef, labels }: {
@@ -215,7 +89,7 @@ function ResendAccessButton({ orderRef, labels }: {
 export default function OrdersPage() {
     const { lang, t } = useI18n();
     const isRu = lang === "ru";
-    const locale = LOCALE_BY_LANG[lang];
+    const locale = getAdminLocale(lang);
     const statusLabel: Record<string, string> = {
         paid: t("orders_status_paid"),
         created: t("orders_status_created"),
@@ -405,7 +279,7 @@ export default function OrdersPage() {
                                         <span className="text-sm font-mono font-medium cw-text">
                                             {order.order_ref}
                                         </span>
-                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${statusBadge[order.status] ?? "cw-surface-2 cw-muted"}`}>
+                                        <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${ORDER_STATUS_BADGE_CLASS[order.status] ?? "cw-surface-2 cw-muted"}`}>
                                             {statusLabel[order.status] ?? order.status}
                                         </span>
                                     </div>

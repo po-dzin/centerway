@@ -10,6 +10,7 @@ import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
+import { getAdminLocale } from "@/lib/adminLocale";
 
 interface Identity {
     id: string;
@@ -21,11 +22,6 @@ interface Identity {
     created_at: string;
     matched_link?: { type: string; value: string };
 }
-
-const LOCALE_BY_LANG = {
-    ru: "ru-RU",
-    en: "en-US",
-} as const;
 
 function Avatar({ name, url }: { name?: string | null; url?: string | null }) {
     const initial = name?.charAt(0)?.toUpperCase() ?? "?";
@@ -49,7 +45,7 @@ function Avatar({ name, url }: { name?: string | null; url?: string | null }) {
 export default function CustomersPage() {
     const { lang, t } = useI18n();
     const isRu = lang === "ru";
-    const locale = LOCALE_BY_LANG[lang];
+    const locale = getAdminLocale(lang);
     const [q, setQ] = useState("");
     const [debouncedQ, setDebouncedQ] = useState("");
     const [data, setData] = useState<Identity[]>([]);

@@ -28,6 +28,7 @@
     --cw-status-failed: #cf4e62;
     --cw-status-failed-soft: rgba(207, 78, 98, 0.12);
     --cw-shadow: 0 10px 22px rgba(16, 16, 16, 0.08);
+    --cw-overlay: rgba(20, 20, 20, 0.36);
     --cw-glass-blur: 12px;
     --cw-glass-stroke: rgba(255, 255, 255, 0.2);
     --cw-glass-glow: transparent;
@@ -59,6 +60,7 @@
     --cw-status-failed: #ff8ea1;
     --cw-status-failed-soft: rgba(255, 142, 161, 0.16);
     --cw-shadow: 0 12px 28px rgba(0, 0, 0, 0.34);
+    --cw-overlay: rgba(8, 8, 8, 0.58);
     --cw-glass-blur: 12px;
     --cw-glass-stroke: rgba(255, 255, 255, 0.08);
     --cw-glass-glow: transparent;
@@ -92,9 +94,13 @@ body {
     background-color: var(--cw-surface-2);
   }
 
-  .cw-surface-solid {
+.cw-surface-solid {
     background-color: var(--cw-surface-solid);
-  }
+}
+
+.cw-overlay {
+    background-color: var(--cw-overlay);
+}
 
   .cw-border {
     border-color: var(--cw-border);

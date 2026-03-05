@@ -11,8 +11,6 @@ export const translations = {
         nav_orders: "Заказы/Доступ (L2-L3)",
         nav_analytics: "Аналитика (L6)",
         nav_jobs: "Мониторинг задач (L7)",
-        topbar_title: "Control Panel v0.1",
-        topbar_role: "Админ",
 
         // Auth / Dashboard
         login_title: "Control Panel",
@@ -141,7 +139,6 @@ export const translations = {
         jobs_attempts: "Попыток",
         jobs_payload: "Payload",
         jobs_error: "Ошибка",
-        jobs_close: "Закрыть",
         jobs_retry: "Повторить задачу",
 
         // Customers
@@ -178,8 +175,6 @@ export const translations = {
         nav_orders: "Orders/Access (L2-L3)",
         nav_analytics: "Analytics (L6)",
         nav_jobs: "Job Monitor (L7)",
-        topbar_title: "Control Panel v0.1",
-        topbar_role: "Admin",
 
         // Auth / Dashboard
         login_title: "Control Panel",
@@ -308,7 +303,6 @@ export const translations = {
         jobs_attempts: "Attempts",
         jobs_payload: "Payload",
         jobs_error: "Error",
-        jobs_close: "Close",
         jobs_retry: "Retry Job",
 
         // Customers
