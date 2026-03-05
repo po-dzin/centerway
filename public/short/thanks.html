@@ -16,7 +16,15 @@
   s.parentNode.insertBefore(t,s)}(window, document,'script',
   'https://connect.facebook.net/en_US/fbevents.js');
 
-  fbq('init', '885125430564169');      /* <-- ЗАМЕНИ на свой Pixel ID */
+  (function(){
+    var ud = {};
+    try {
+      var stored = JSON.parse(localStorage.getItem('cw_user') || '{}');
+      if (stored.em) ud.em = stored.em;
+      if (stored.ph) ud.ph = stored.ph;
+    } catch(e) {}
+    fbq('init', '885125430564169', ud);      /* <-- ЗАМЕНИ на свой Pixel ID */
+  })();
   fbq('track', 'PageView');
   </script>
   <noscript>

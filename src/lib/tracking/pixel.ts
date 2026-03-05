@@ -18,7 +18,15 @@ type PixelParams = Record<string, unknown>;
  */
 export const initPixel = (pixelId: string) => {
     if (typeof window !== "undefined" && window.fbq) {
-        window.fbq("init", pixelId);
+        let ud: Record<string, string> = {};
+        try {
+            const stored = JSON.parse(localStorage.getItem("cw_user") || "{}");
+            if (typeof stored?.em === "string" && stored.em.trim()) ud.em = stored.em.trim();
+            if (typeof stored?.ph === "string" && stored.ph.trim()) ud.ph = stored.ph.trim();
+        } catch {
+            ud = {};
+        }
+        window.fbq("init", pixelId, ud);
         window.fbq("track", "PageView");
     }
 };

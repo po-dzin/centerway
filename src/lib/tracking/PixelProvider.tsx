@@ -41,7 +41,15 @@ export function PixelProvider({ pixelId, children }: PixelProviderProps) {
             t.src=v;s=b.getElementsByTagName(e)[0];
             s.parentNode.insertBefore(t,s)}(window, document,'script',
             'https://connect.facebook.net/en_US/fbevents.js');
-            fbq('init', '${pixelId}');
+            (function(){
+              var ud = {};
+              try {
+                var stored = JSON.parse(localStorage.getItem('cw_user') || '{}');
+                if (stored.em) ud.em = stored.em;
+                if (stored.ph) ud.ph = stored.ph;
+              } catch(e) {}
+              fbq('init', '${pixelId}', ud);
+            })();
             fbq('track', 'PageView');
           `,
                 }}
