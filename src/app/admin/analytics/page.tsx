@@ -247,14 +247,14 @@ export default function AnalyticsPage() {
                                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">{t("analytics_col_revenue")}</th>
                             </tr>
                         </thead>
-                        <tbody className="cw-surface divide-y" style={{ borderColor: "var(--cw-border)" }}>
+                        <tbody className="cw-surface" style={{ borderColor: "var(--cw-border)" }}>
                             {campaigns.length === 0 ? (
                                 <tr>
                                     <td colSpan={4} className="px-6 py-4 text-center text-sm cw-muted">{t("analytics_no_campaign_data")}</td>
                                 </tr>
                             ) : (
                                 campaigns.map((camp, idx) => (
-                                    <tr key={idx} className="hover:bg-[var(--cw-accent-soft)] transition-colors">
+                                    <tr key={idx} className="border-t cw-border hover:bg-[var(--cw-accent-soft)] transition-colors">
                                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">
                                             {campaignLabel(camp.source_campaign)}
                                         </td>
