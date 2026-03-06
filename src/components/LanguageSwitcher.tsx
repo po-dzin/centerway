@@ -10,7 +10,7 @@ export function LanguageSwitcher() {
     return (
         <button
             onClick={toggle}
-            className="px-2 py-1 text-xs font-semibold rounded-md border cw-border hover:bg-[var(--cw-accent-soft)] cw-muted transition-colors uppercase"
+            className="cw-btn cw-btn-sm cw-btn-muted font-semibold uppercase"
             title={t("common_switch_language")}
         >
             {lang}

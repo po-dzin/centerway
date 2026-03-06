@@ -185,7 +185,7 @@ export default function CustomerProfilePage() {
         <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl">
             {/* Breadcrumb */}
             <nav className="flex items-center gap-2 text-xs cw-muted">
-                <Link href="/admin/customers" className="hover:text-[var(--cw-text)] transition-colors">
+                <Link href="/admin/customers" className="cw-link-hover">
                     {t("customers_title")}
                 </Link>
                 <span>/</span>

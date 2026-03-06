@@ -730,7 +730,7 @@ export default function AnalyticsPage() {
         ) : null}
         <button
           onClick={() => fetchAnalytics()}
-          className="mt-4 px-4 py-2 rounded border cw-border cw-surface-2 cw-text hover:bg-[var(--cw-accent-soft)] transition-colors"
+          className="mt-4 px-4 py-2 cw-btn cw-surface-2"
         >
           {t("analytics_retry")}
         </button>
@@ -800,28 +800,28 @@ export default function AnalyticsPage() {
               <button
                 type="button"
                 onClick={() => applyPreset(7)}
-                className="px-2 py-1 border cw-border rounded-md text-xs cw-muted hover:bg-[var(--cw-accent-soft)] transition-colors"
+                className="cw-btn cw-btn-sm cw-btn-muted"
               >
                 7d
               </button>
               <button
                 type="button"
                 onClick={() => applyPreset(30)}
-                className="px-2 py-1 border cw-border rounded-md text-xs cw-muted hover:bg-[var(--cw-accent-soft)] transition-colors"
+                className="cw-btn cw-btn-sm cw-btn-muted"
               >
                 30d
               </button>
               <button
                 type="button"
                 onClick={applyMonthToDate}
-                className="px-2 py-1 border cw-border rounded-md text-xs cw-muted hover:bg-[var(--cw-accent-soft)] transition-colors"
+                className="cw-btn cw-btn-sm cw-btn-muted"
               >
                 MTD
               </button>
               <button
                 type="button"
                 onClick={() => applyPreset(90)}
-                className="px-2 py-1 border cw-border rounded-md text-xs cw-muted hover:bg-[var(--cw-accent-soft)] transition-colors"
+                className="cw-btn cw-btn-sm cw-btn-muted"
               >
                 90d
               </button>
@@ -830,20 +830,20 @@ export default function AnalyticsPage() {
           <div className="flex flex-wrap gap-2">
             <button
               onClick={applyPeriod}
-              className="w-full sm:w-auto px-3 py-2 border cw-border rounded-lg hover:bg-[var(--cw-accent-soft)] transition-colors text-sm font-medium cw-text"
+              className="w-full sm:w-auto px-3 py-2 text-sm font-medium cw-btn"
             >
               {t("analytics_apply_period")}
             </button>
             <button
               onClick={syncMetaInsights}
               disabled={syncingMeta}
-              className="w-full sm:w-auto px-3 py-2 border cw-border rounded-lg hover:bg-[var(--cw-accent-soft)] transition-colors text-sm font-medium cw-text disabled:opacity-50"
+              className="w-full sm:w-auto px-3 py-2 text-sm font-medium cw-btn disabled:opacity-50"
             >
               {syncingMeta ? t("analytics_meta_syncing") : t("analytics_meta_sync")}
             </button>
             <button
               onClick={() => fetchAnalytics()}
-              className="w-full sm:w-auto px-4 py-2 border cw-border rounded-lg hover:bg-[var(--cw-accent-soft)] transition-colors text-sm font-medium cw-text"
+              className="w-full sm:w-auto px-4 py-2 text-sm font-medium cw-btn"
             >
               {t("analytics_refresh")}
             </button>
@@ -909,7 +909,7 @@ export default function AnalyticsPage() {
                   className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                     funnelUiSettings.mode === "payment"
                       ? "cw-border cw-surface-2 cw-text"
-                      : "cw-border cw-muted hover:bg-[var(--cw-accent-soft)]"
+                      : "cw-btn cw-btn-muted"
                   }`}
                   onClick={() =>
                     setFunnelUiSettings((prev) => ({
@@ -925,7 +925,7 @@ export default function AnalyticsPage() {
                   className={`px-3 py-2 text-sm rounded-lg border transition-colors ${
                     funnelUiSettings.mode === "access"
                       ? "cw-border cw-surface-2 cw-text"
-                      : "cw-border cw-muted hover:bg-[var(--cw-accent-soft)]"
+                      : "cw-btn cw-btn-muted"
                   }`}
                   onClick={() =>
                     setFunnelUiSettings((prev) => ({
@@ -1030,7 +1030,7 @@ export default function AnalyticsPage() {
             <button
               disabled={savingMarketing}
               onClick={saveMarketingInputs}
-              className="px-4 py-2 border cw-border rounded-lg hover:bg-[var(--cw-accent-soft)] transition-colors text-sm font-medium cw-text disabled:opacity-50"
+              className="px-4 py-2 text-sm font-medium cw-btn disabled:opacity-50"
             >
               {savingMarketing ? t("analytics_saving") : t("analytics_save")}
             </button>
@@ -1322,7 +1322,7 @@ export default function AnalyticsPage() {
                 </tr>
               ) : (
                 campaigns.map((camp, idx) => (
-                  <tr key={idx} className="border-t cw-border hover:bg-[var(--cw-accent-soft)] transition-colors">
+                  <tr key={idx} className="border-t cw-border cw-row-hover">
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">
                       {campaignLabel(camp.source_campaign)}
                     </td>

@@ -230,7 +230,7 @@ export default function CustomersPage() {
 
                             <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none"
                                 stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"
-                                className="cw-muted group-hover:text-[var(--cw-text)] transition-colors flex-shrink-0">
+                                className="cw-link-hover flex-shrink-0">
                                 <polyline points="9 18 15 12 9 6" />
                             </svg>
                         </Link>

@@ -310,7 +310,7 @@ export default function OrdersPage() {
                                                 <span className="cw-muted">·</span>
                                                 {order.customer_id ? (
                                                     <Link href={`/admin/customers/${order.customer_id}`}
-                                                        className="text-xs cw-muted hover:text-[var(--cw-text)] transition-colors truncate max-w-[180px]">
+                                                        className="text-xs cw-link-hover truncate max-w-[180px]">
                                                         {customerLabel}
                                                     </Link>
                                                 ) : (

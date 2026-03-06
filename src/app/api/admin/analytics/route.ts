@@ -358,38 +358,21 @@ export async function GET(req: NextRequest) {
     }
 
     // 7.5 Business-fact event totals (not CAPI transport totals)
-    const [{ count: initiateCheckoutCount, error: checkoutErr }, { count: paidOrdersCount, error: paidErr }] =
-        await Promise.all([
-            db
-                .from("orders")
-                .select("id", { count: "exact", head: true })
-                .gte("created_at", range.fromTs)
-                .lt("created_at", range.toExclusiveTs),
-            db
-                .from("orders")
-                .select("id", { count: "exact", head: true })
-                .gte("created_at", range.fromTs)
-                .lt("created_at", range.toExclusiveTs)
-                .in("status", ["paid", "completed"]),
-        ]);
-    if (checkoutErr) {
-        console.error("Analytics checkout count error:", checkoutErr);
-        return serverErrorResponse(checkoutErr.message);
-    }
+    const { count: paidOrdersCount, error: paidErr } = await db
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", range.fromTs)
+        .lt("created_at", range.toExclusiveTs)
+        .in("status", ["paid", "completed"]);
     if (paidErr) {
         console.error("Analytics paid count error:", paidErr);
         return serverErrorResponse(paidErr.message);
     }
 
     const businessTotals: BusinessEventTotals = {
-        // Prefer Meta sync for ad-side top funnel, fallback to CAPI stream.
-        view_content: hasMetaAggregate && metaAggregate.view_content > 0
-            ? metaAggregate.view_content
-            : viewContentStats.total,
-        // Prefer Meta sync for checkout pressure, fallback to local orders.
-        initiate_checkout: hasMetaAggregate && metaAggregate.initiate_checkout > 0
-            ? metaAggregate.initiate_checkout
-            : (initiateCheckoutCount ?? 0),
+        // Use event stream totals (CAPI jobs) for top/mid funnel to avoid Ads-attribution skew.
+        view_content: viewContentStats.total,
+        initiate_checkout: initiateCheckoutStats.total,
         // Purchase remains business-fact from paid/completed orders.
         purchase: paidOrdersCount ?? 0,
         access_granted: accessGrantedCount ?? 0,

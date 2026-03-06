@@ -26,7 +26,7 @@ export function ThemeSwitcher() {
     return (
         <button
             onClick={toggleTheme}
-            className="p-2 rounded-full hover:bg-[var(--cw-accent-soft)] cw-muted transition-colors"
+            className="cw-icon-btn rounded-full"
             title={t("common_switch_theme")}
             aria-label={t("common_switch_theme")}
         >

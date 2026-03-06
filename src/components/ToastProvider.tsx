@@ -62,7 +62,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                             <p className={`text-sm leading-snug ${tone.tone}`}>{toast.message}</p>
                             <button
                                 onClick={() => removeToast(toast.id)}
-                                className="ml-auto p-1 rounded-md cw-muted hover:text-[var(--cw-text)] hover:bg-[var(--cw-accent-soft)] transition-colors"
+                                className="ml-auto cw-icon-btn p-1 rounded-md"
                                 aria-label="Close"
                                 title="Close"
                             >

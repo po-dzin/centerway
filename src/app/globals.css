@@ -257,6 +257,35 @@ body {
     color: var(--cw-muted);
   }
 
+  .cw-btn {
+    border: 1px solid var(--cw-border);
+    border-radius: 0.75rem;
+    color: var(--cw-text);
+    background-color: transparent;
+    transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+  }
+
+  .cw-btn:hover {
+    background-color: var(--cw-interactive-hover-bg);
+    border-color: var(--cw-interactive-hover-border);
+  }
+
+  .cw-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--cw-focus-ring);
+  }
+
+  .cw-btn-sm {
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.5rem;
+    font-size: 0.75rem;
+    line-height: 1rem;
+  }
+
+  .cw-btn-muted {
+    color: var(--cw-muted);
+  }
+
   .cw-icon-btn {
     padding: 0.5rem;
     border-radius: 0.75rem;
@@ -285,6 +314,23 @@ body {
 
   .cw-list-item:hover {
     background-color: var(--cw-accent-soft);
+  }
+
+  .cw-row-hover {
+    transition: background-color 0.16s ease;
+  }
+
+  .cw-row-hover:hover {
+    background-color: var(--cw-accent-soft);
+  }
+
+  .cw-link-hover {
+    color: var(--cw-muted);
+    transition: color 0.16s ease;
+  }
+
+  .cw-link-hover:hover {
+    color: var(--cw-text);
   }
 
   .cw-tabbar {

@@ -115,13 +115,13 @@ export function ReconcileModal({
                     <button
                         onClick={() => handle("refunded")}
                         disabled={loading}
-                        className="py-2.5 px-3 rounded-xl border cw-border hover:bg-[var(--cw-accent-soft)] cw-muted text-sm transition-colors"
+                        className="py-2.5 px-3 text-sm cw-btn cw-btn-muted"
                     >
                         {labels.refund}
                     </button>
                     <button
                         onClick={onClose}
-                        className="py-2.5 px-3 rounded-xl border cw-border hover:bg-[var(--cw-accent-soft)] cw-muted text-sm transition-colors"
+                        className="py-2.5 px-3 text-sm cw-btn cw-btn-muted"
                     >
                         {labels.cancel}
                     </button>
