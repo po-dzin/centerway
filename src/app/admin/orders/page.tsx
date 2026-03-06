@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import Link from "next/link";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
@@ -138,6 +138,8 @@ export default function OrdersPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [reconcileOrder, setReconcileOrder] = useState<Order | null>(null);
+    const requestSeq = useRef(0);
+    const abortRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
         const t = setTimeout(() => {
@@ -148,8 +150,15 @@ export default function OrdersPage() {
     }, [q]);
 
     const fetchOrders = useCallback(async (query: string, status: string, pageIndex: number) => {
+        requestSeq.current += 1;
+        const reqId = requestSeq.current;
+        abortRef.current?.abort();
+        const ctrl = new AbortController();
+        abortRef.current = ctrl;
+
         setLoading(true);
         setError(null);
+        setData([]);
         try {
             const params = new URLSearchParams();
             if (query) params.set("q", query);
@@ -159,17 +168,22 @@ export default function OrdersPage() {
 
             const { data: { session } } = await supabaseClient.auth.getSession();
             const res = await fetch(`/api/admin/orders?${params}`, {
+                signal: ctrl.signal,
                 headers: session ? { "Authorization": `Bearer ${session.access_token}` } : {}
             });
             if (!res.ok) throw new Error(`${res.status}`);
             const json = await res.json();
+            if (reqId !== requestSeq.current) return;
 
             setData(json.data ?? []);
             setCount(json.count ?? 0);
             setTotalPaid(json.totalPaid ?? 0);
         } catch (e: unknown) {
+            if (ctrl.signal.aborted) return;
+            if (reqId !== requestSeq.current) return;
             setError(getErrorMessage(e));
         } finally {
+            if (reqId !== requestSeq.current) return;
             setLoading(false);
         }
     }, [LIMIT]);
@@ -177,6 +191,10 @@ export default function OrdersPage() {
     useEffect(() => {
         fetchOrders(debouncedQ, activeStatus, page);
     }, [debouncedQ, activeStatus, page, fetchOrders]);
+
+    useEffect(() => {
+        return () => abortRef.current?.abort();
+    }, []);
 
     const handleStatusChange = (status: string) => {
         setStatus(status);

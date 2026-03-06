@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 import { AdminTabs } from "@/components/admin/AdminTabs";
@@ -64,6 +64,8 @@ export default function JobsPage() {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [selectedJob, setSelectedJob] = useState<Job | null>(null);
+    const requestSeq = useRef(0);
+    const abortRef = useRef<AbortController | null>(null);
 
     useEffect(() => {
         const t = setTimeout(() => {
@@ -74,8 +76,15 @@ export default function JobsPage() {
     }, [q]);
 
     const fetchJobs = useCallback(async (query: string, status: string, pageIndex: number) => {
+        requestSeq.current += 1;
+        const reqId = requestSeq.current;
+        abortRef.current?.abort();
+        const ctrl = new AbortController();
+        abortRef.current = ctrl;
+
         setLoading(true);
         setError(null);
+        setData([]);
         try {
             const params = new URLSearchParams();
             if (query) params.set("q", query);
@@ -85,16 +94,21 @@ export default function JobsPage() {
 
             const { data: { session } } = await supabaseClient.auth.getSession();
             const res = await fetch(`/api/admin/jobs?${params}`, {
+                signal: ctrl.signal,
                 headers: session ? { "Authorization": `Bearer ${session.access_token}` } : {}
             });
             if (!res.ok) throw new Error(`${res.status}`);
             const json = await res.json();
+            if (reqId !== requestSeq.current) return;
 
             setData(json.data ?? []);
             setCount(json.count ?? 0);
         } catch (e: unknown) {
+            if (ctrl.signal.aborted) return;
+            if (reqId !== requestSeq.current) return;
             setError(getErrorMessage(e));
         } finally {
+            if (reqId !== requestSeq.current) return;
             setLoading(false);
         }
     }, []);
@@ -102,6 +116,10 @@ export default function JobsPage() {
     useEffect(() => {
         fetchJobs(debouncedQ, activeStatus, page);
     }, [debouncedQ, activeStatus, page, fetchJobs]);
+
+    useEffect(() => {
+        return () => abortRef.current?.abort();
+    }, []);
 
     const handleStatusChange = (status: string) => {
         setStatus(status);
@@ -139,7 +157,7 @@ export default function JobsPage() {
                 onClear={q ? () => setQ("") : undefined}
             />
 
-            {loading && data.length === 0 ? (
+            {loading ? (
                 <AdminLoadingState variant="spinner" text={t("jobs_loading")} />
             ) : error ? (
                 <div className="p-4 rounded-xl text-sm cw-alert-failed">

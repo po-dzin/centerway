@@ -7,11 +7,12 @@ import { useI18n } from "@/components/I18nProvider";
 
 interface UserMenuProps {
     email?: string | null;
+    role?: string | null;
     initial?: string;
     avatarUrl?: string | null;
 }
 
-export function UserMenu({ email, initial = "?", avatarUrl }: UserMenuProps) {
+export function UserMenu({ email, role, initial = "?", avatarUrl }: UserMenuProps) {
     const { t } = useI18n();
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -55,10 +56,15 @@ export function UserMenu({ email, initial = "?", avatarUrl }: UserMenuProps) {
             </button>
 
             {open && (
-                <div className="absolute right-0 mt-2 w-52 cw-surface border cw-border rounded-xl cw-shadow overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="absolute right-0 mt-2 w-52 cw-surface-solid border cw-border rounded-xl cw-shadow overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                     {email && (
-                        <div className="px-4 py-3 border-b cw-border">
+                        <div className="px-4 py-3 border-b cw-border space-y-1">
                             <p className="text-xs cw-muted truncate">{email}</p>
+                            {role ? (
+                                <p className="text-[11px] cw-text font-medium">
+                                    {t("menu_profile_role")}: <span className="capitalize">{role}</span>
+                                </p>
+                            ) : null}
                         </div>
                     )}
                     <button
@@ -66,7 +72,7 @@ export function UserMenu({ email, initial = "?", avatarUrl }: UserMenuProps) {
                         className="w-full flex items-center gap-2 px-4 py-3 text-sm cw-text hover:bg-[var(--cw-surface-2)] transition-colors"
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><polyline points="16 17 21 12 16 7" /><line x1="21" y1="12" x2="9" y2="12" /></svg>
-                        {t("dashboard_signout")}
+                        {t("menu_signout")}
                     </button>
                 </div>
             )}

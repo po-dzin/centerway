@@ -14,10 +14,29 @@ export function AdminPagination({ page, totalPages, onPrev, onNext }: AdminPagin
 
     if (totalPages <= 1) return null;
 
+    const scrollAdminViewportToTop = () => {
+        if (typeof document === "undefined") return;
+        const viewport = document.querySelector<HTMLElement>("[data-admin-scroll]");
+        if (viewport) {
+            viewport.scrollTo({ top: 0, behavior: "smooth" });
+        }
+    };
+
+    const handlePrev = () => {
+        onPrev();
+        scrollAdminViewportToTop();
+    };
+
+    const handleNext = () => {
+        onNext();
+        scrollAdminViewportToTop();
+    };
+
     return (
         <div className="cw-pagination">
             <button
-                onClick={onPrev}
+                type="button"
+                onClick={handlePrev}
                 disabled={page === 0}
                 className="cw-page-btn"
                 title={t("common_prev")}
@@ -32,7 +51,8 @@ export function AdminPagination({ page, totalPages, onPrev, onNext }: AdminPagin
             </div>
 
             <button
-                onClick={onNext}
+                type="button"
+                onClick={handleNext}
                 disabled={page >= totalPages - 1}
                 className="cw-page-btn"
                 title={t("common_next")}

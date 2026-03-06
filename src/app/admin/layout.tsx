@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ReactNode, useState, useEffect } from "react";
+import { ReactNode, useState, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
@@ -18,6 +18,7 @@ const icons = {
     orders: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>,
     analytics: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>,
     jobs: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" /></svg>,
+    system: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none" /><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none" /><circle cx="11" cy="18" r="2" fill="currentColor" stroke="none" /></svg>,
 };
 
 function AdminShell({ children }: { children: ReactNode }) {
@@ -25,20 +26,40 @@ function AdminShell({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const [expanded, setExpanded] = useState(false);
     const [session, setSession] = useState<Session | null>(null);
+    const [role, setRole] = useState<string | null>(null);
+
+    const loadRole = useCallback(async (userId: string) => {
+        const { data } = await supabaseClient
+            .from("user_roles")
+            .select("role")
+            .eq("user_id", userId)
+            .maybeSingle();
+        setRole(typeof data?.role === "string" ? data.role : null);
+    }, []);
 
     useEffect(() => {
         supabaseClient.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
+            if (session?.user?.id) {
+                void loadRole(session.user.id);
+            } else {
+                setRole(null);
+            }
         });
 
         const {
             data: { subscription },
         } = supabaseClient.auth.onAuthStateChange((_event, session) => {
             setSession(session);
+            if (session?.user?.id) {
+                void loadRole(session.user.id);
+            } else {
+                setRole(null);
+            }
         });
 
         return () => subscription.unsubscribe();
-    }, []);
+    }, [loadRole]);
 
     useEffect(() => {
         if (!session?.access_token) return;
@@ -85,12 +106,11 @@ function AdminShell({ children }: { children: ReactNode }) {
     }, [pathname, session?.access_token]);
 
     const navItems = [
-        { key: "nav_dashboard" as const, href: "/admin", icon: icons.dashboard, active: true },
-        { key: "nav_audit" as const, href: "/admin/audit", icon: icons.audit, active: true },
-        { key: "nav_customers" as const, href: "/admin/customers", icon: icons.customers, active: true },
-        { key: "nav_orders" as const, href: "/admin/orders", icon: icons.orders, active: true },
         { key: "nav_analytics" as const, href: "/admin/analytics", icon: icons.analytics, active: true },
-        { key: "nav_jobs" as const, href: "/admin/jobs", icon: icons.jobs, active: true },
+        { key: "nav_orders" as const, href: "/admin/orders", icon: icons.orders, active: true },
+        { key: "nav_customers" as const, href: "/admin/customers", icon: icons.customers, active: true },
+        { key: "nav_operations" as const, href: "/admin/jobs", icon: icons.jobs, active: true },
+        { key: "nav_system" as const, href: "/admin/system", icon: icons.system, active: true },
     ];
 
     return (
@@ -110,7 +130,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                     <button
                         onClick={() => setExpanded(v => !v)}
                         title={expanded ? t("common_collapse") : t("common_expand")}
-                        className={`${expanded ? "" : "mx-auto"} p-2 rounded-lg hover:bg-[var(--cw-accent-soft)] cw-muted transition-colors shrink-0`}
+                        className={`${expanded ? "" : "mx-auto"} cw-icon-btn shrink-0`}
                     >
                         <svg xmlns="http://www.w3.org/2000/svg" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"
                             className={`transition-transform duration-300 ${expanded ? "" : "rotate-180"}`}>
@@ -129,11 +149,11 @@ function AdminShell({ children }: { children: ReactNode }) {
                                 key={key}
                                 href={href}
                                 title={t(key)}
-                                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors group relative
+                                className={`cw-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm group relative
                                     ${active
                                         ? isSelected
-                                            ? "cw-text cw-surface-2"
-                                            : "cw-muted hover:text-[var(--cw-text)] hover:bg-[var(--cw-surface-2)]"
+                                            ? "cw-nav-link-active"
+                                            : ""
                                         : "cw-muted opacity-40 cursor-not-allowed pointer-events-none"
                                     }
                                     ${!expanded ? "justify-center" : ""}
@@ -163,12 +183,13 @@ function AdminShell({ children }: { children: ReactNode }) {
                         <ThemeSwitcher />
                         <UserMenu
                             email={session?.user?.email}
+                            role={role}
                             initial={session?.user?.email ? session.user.email.charAt(0).toUpperCase() : "?"}
                             avatarUrl={session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture}
                         />
                     </div>
                 </header>
-                <div className="flex-1 p-8 overflow-y-auto w-full min-h-0">
+                <div data-admin-scroll className="flex-1 p-8 overflow-y-auto w-full min-h-0">
                     {children}
                 </div>
             </main>
