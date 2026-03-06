@@ -289,8 +289,11 @@ body {
 
   .cw-tabbar {
     display: flex;
+    align-items: flex-end;
     gap: 0.25rem;
+    padding-top: 2px;
     border-bottom: 1px solid var(--cw-border);
+    overflow-y: visible;
   }
 
   .cw-tab {

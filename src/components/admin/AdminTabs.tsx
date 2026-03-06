@@ -14,7 +14,7 @@ interface AdminTabsProps {
 
 export function AdminTabs({ items, activeKey, onChange, className = "" }: AdminTabsProps) {
     return (
-        <div className={`cw-tabbar ${className}`.trim()}>
+        <div className={`cw-tabbar overflow-x-auto ${className}`.trim()}>
             {items.map((tab) => (
                 <button
                     key={tab.key}

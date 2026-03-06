@@ -8,6 +8,7 @@ import crypto from "crypto";
  */
 
 const CAPI_ENDPOINT = "https://graph.facebook.com/v19.0/{PIXEL_ID}/events";
+let hasWarnedMissingCapiEnv = false;
 
 export type CapiEventPayload = {
     event_name: "Purchase" | "Lead" | "InitiateCheckout" | "ViewContent" | "CompleteRegistration";
@@ -54,11 +55,22 @@ function buildUserData(payload: CapiEventPayload) {
 }
 
 export async function sendCapiEvent(payload: CapiEventPayload): Promise<void> {
-    const pixelId = process.env.META_PIXEL_ID;
-    const accessToken = process.env.META_ACCESS_TOKEN;
+    const pixelId =
+        process.env.META_PIXEL_ID ||
+        process.env.META_AD_PIXEL_ID ||
+        process.env.META_PIXEL;
+    const accessToken =
+        process.env.META_ACCESS_TOKEN ||
+        process.env.META_CAPI_TOKEN;
 
     if (!pixelId || !accessToken) {
-        console.warn("[CAPI] META_PIXEL_ID or META_ACCESS_TOKEN not set; skipping.");
+        if (!hasWarnedMissingCapiEnv) {
+            hasWarnedMissingCapiEnv = true;
+            const missing: string[] = [];
+            if (!pixelId) missing.push("META_PIXEL_ID|META_AD_PIXEL_ID|META_PIXEL");
+            if (!accessToken) missing.push("META_ACCESS_TOKEN|META_CAPI_TOKEN");
+            console.warn(`[CAPI] Missing env: ${missing.join(", ")}. CAPI send disabled; skipping jobs.`);
+        }
         return;
     }
 

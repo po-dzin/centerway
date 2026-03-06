@@ -5,6 +5,7 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 import { getErrorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ToastProvider";
+import { AdminTabs } from "@/components/admin/AdminTabs";
 
 type FunnelData = {
   date: string;
@@ -752,6 +753,13 @@ export default function AnalyticsPage() {
       ? t("analytics_primary_conversion_payment")
       : t("analytics_primary_conversion_access");
   const dateLocale = lang === "en" ? "en-US" : "ru-RU";
+  const analyticsTabs = [
+    { key: "overview", label: t("analytics_subtab_overview") },
+    { key: "funnel", label: t("analytics_subtab_funnel") },
+    { key: "campaigns", label: t("analytics_subtab_campaigns") },
+    { key: "capi", label: t("analytics_subtab_capi") },
+    { key: "inputs_quality", label: t("analytics_subtab_inputs_quality") },
+  ] as const;
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
@@ -843,43 +851,15 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <div className="cw-tabbar overflow-x-auto">
-        <button
-          type="button"
-          className={`cw-tab ${analyticsSection === "overview" ? "cw-tab-active" : ""}`}
-          onClick={() => setAnalyticsSection("overview")}
-        >
-          {t("analytics_subtab_overview")}
-        </button>
-        <button
-          type="button"
-          className={`cw-tab ${analyticsSection === "funnel" ? "cw-tab-active" : ""}`}
-          onClick={() => setAnalyticsSection("funnel")}
-        >
-          {t("analytics_subtab_funnel")}
-        </button>
-        <button
-          type="button"
-          className={`cw-tab ${analyticsSection === "campaigns" ? "cw-tab-active" : ""}`}
-          onClick={() => setAnalyticsSection("campaigns")}
-        >
-          {t("analytics_subtab_campaigns")}
-        </button>
-        <button
-          type="button"
-          className={`cw-tab ${analyticsSection === "capi" ? "cw-tab-active" : ""}`}
-          onClick={() => setAnalyticsSection("capi")}
-        >
-          {t("analytics_subtab_capi")}
-        </button>
-        <button
-          type="button"
-          className={`cw-tab ${analyticsSection === "inputs_quality" ? "cw-tab-active" : ""}`}
-          onClick={() => setAnalyticsSection("inputs_quality")}
-        >
-          {t("analytics_subtab_inputs_quality")}
-        </button>
-      </div>
+      <AdminTabs
+        items={[...analyticsTabs]}
+        activeKey={analyticsSection}
+        onChange={(key) =>
+          setAnalyticsSection(
+            key as "overview" | "funnel" | "campaigns" | "capi" | "inputs_quality"
+          )
+        }
+      />
 
       {analyticsSection === "inputs_quality" && (
         <div className="space-y-1">

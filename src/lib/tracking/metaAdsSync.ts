@@ -41,30 +41,48 @@ function normalizeAccountId(raw: string): string {
   return clean.startsWith("act_") ? clean : `act_${clean}`;
 }
 
-function actionValue(actions: MetaInsightsAction[] | undefined, predicates: Array<(type: string) => boolean>): number {
-  if (!actions?.length) return 0;
-  let total = 0;
+function actionTypeTotals(actions: MetaInsightsAction[] | undefined): Map<string, number> {
+  const totals = new Map<string, number>();
+  if (!actions?.length) return totals;
   for (const action of actions) {
-    const type = (action.action_type ?? "").toLowerCase();
+    const type = (action.action_type ?? "").trim().toLowerCase();
     if (!type) continue;
-    if (predicates.some((predicate) => predicate(type))) {
-      total += toNumber(action.value);
+    totals.set(type, (totals.get(type) ?? 0) + toNumber(action.value));
+  }
+  return totals;
+}
+
+function pickActionValue(totals: Map<string, number>, candidateTypes: string[]): number {
+  let max = 0;
+  for (const actionType of candidateTypes) {
+    const value = totals.get(actionType);
+    if (value !== undefined && value > max) {
+      max = value;
     }
   }
-  return total;
+  return max;
 }
 
 function extractEventCounts(actions: MetaInsightsAction[] | undefined) {
+  const totals = actionTypeTotals(actions);
   return {
-    view_content: actionValue(actions, [
-      (type) => type.includes("view_content"),
+    // Use explicit, prioritized action types to avoid over-counting from broad includes(...)
+    // and to align closer with Ads Manager event columns.
+    view_content: pickActionValue(totals, [
+      "offsite_conversion.fb_pixel_view_content",
+      "omni_view_content",
+      "view_content",
     ]),
-    initiate_checkout: actionValue(actions, [
-      (type) => type.includes("initiate_checkout"),
-      (type) => type.includes("initiated_checkout"),
+    initiate_checkout: pickActionValue(totals, [
+      "offsite_conversion.fb_pixel_initiate_checkout",
+      "omni_initiated_checkout",
+      "omni_initiate_checkout",
+      "initiate_checkout",
     ]),
-    purchase: actionValue(actions, [
-      (type) => type.includes("purchase"),
+    purchase: pickActionValue(totals, [
+      "offsite_conversion.fb_pixel_purchase",
+      "omni_purchase",
+      "purchase",
     ]),
   };
 }
