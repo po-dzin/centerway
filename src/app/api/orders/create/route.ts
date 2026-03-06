@@ -4,14 +4,27 @@ import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { PRODUCTS, ProductCode, resolveProduct } from "@/lib/products";
+import type { CapiEventPayload } from "@/lib/tracking/capi";
 
 export const runtime = "nodejs";
 
 type Body = {
   product_code?: unknown; // может прилететь что угодно
-  // опционально: можно потом расширять
-  attrib?: any;
+  // optional attribution payload for CAPI matching quality
+  attrib?: {
+    fbp?: unknown;
+    fbclid?: unknown;
+    utm_campaign?: unknown;
+    event_id?: unknown;
+    page_url?: unknown;
+    client_ip?: unknown;
+    client_ua?: unknown;
+  } | null;
 };
+
+function asOptionalString(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value.trim() : null;
+}
 
 function cors(res: NextResponse) {
   res.headers.set("Access-Control-Allow-Origin", "*");
@@ -39,6 +52,7 @@ export async function POST(req: NextRequest) {
 
     const product = resolveProduct(body.product_code);
     const cfg = PRODUCTS[product];
+    const attrib = body.attrib ?? null;
 
     const order_ref = makeOrderRef(product);
 
@@ -51,6 +65,12 @@ export async function POST(req: NextRequest) {
       amount: cfg.amount,
       currency: cfg.currency,
       status: "created",
+      fbp: asOptionalString(attrib?.fbp),
+      fbclid: asOptionalString(attrib?.fbclid),
+      campaign: asOptionalString(attrib?.utm_campaign),
+      client_ip: asOptionalString(attrib?.client_ip),
+      client_ua: asOptionalString(attrib?.client_ua),
+      page_url: asOptionalString(attrib?.page_url),
     });
 
     if (error) {
@@ -61,6 +81,30 @@ export async function POST(req: NextRequest) {
         )
       );
     }
+
+    // Queue CAPI InitiateCheckout for flows that still use /api/orders/create.
+    const capiPayload: CapiEventPayload = {
+      event_name: "InitiateCheckout",
+      event_id: asOptionalString(attrib?.event_id) ?? `checkout_${order_ref}`,
+      event_time: Math.floor(Date.now() / 1000),
+      value: cfg.amount,
+      currency: cfg.currency,
+      order_ref,
+      fbp: asOptionalString(attrib?.fbp),
+      fbclid: asOptionalString(attrib?.fbclid),
+      ip_address: asOptionalString(attrib?.client_ip),
+      user_agent: asOptionalString(attrib?.client_ua),
+      event_source_url: asOptionalString(attrib?.page_url),
+      action_source: "website",
+      content_name: product,
+      content_type: "product",
+      content_ids: [product],
+    };
+    void sb.from("jobs").insert({
+      type: "meta:capi",
+      payload: capiPayload,
+      status: "pending",
+    });
 
     return cors(
       NextResponse.json({

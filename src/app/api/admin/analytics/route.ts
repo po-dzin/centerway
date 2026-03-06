@@ -76,7 +76,8 @@ function isIsoDate(value: string): boolean {
 
 function toDateRange(searchParams: URLSearchParams): DateRange {
     const today = new Date();
-    const defaultTo = today.toISOString().slice(0, 10);
+    const todayIso = today.toISOString().slice(0, 10);
+    const defaultTo = todayIso;
     const defaultFromDate = new Date(today);
     defaultFromDate.setDate(defaultFromDate.getDate() - 29);
     const defaultFrom = defaultFromDate.toISOString().slice(0, 10);
@@ -88,14 +89,16 @@ function toDateRange(searchParams: URLSearchParams): DateRange {
     const to = rawTo && isIsoDate(rawTo) ? rawTo : defaultTo;
     const normalizedFrom = from <= to ? from : to;
     const normalizedTo = to >= from ? to : from;
+    const clampedTo = normalizedTo > todayIso ? todayIso : normalizedTo;
+    const clampedFrom = normalizedFrom > clampedTo ? clampedTo : normalizedFrom;
 
-    const toDate = new Date(`${normalizedTo}T00:00:00.000Z`);
+    const toDate = new Date(`${clampedTo}T00:00:00.000Z`);
     toDate.setUTCDate(toDate.getUTCDate() + 1);
 
     return {
-        from: normalizedFrom,
-        to: normalizedTo,
-        fromTs: `${normalizedFrom}T00:00:00.000Z`,
+        from: clampedFrom,
+        to: clampedTo,
+        fromTs: `${clampedFrom}T00:00:00.000Z`,
         toExclusiveTs: toDate.toISOString(),
     };
 }
@@ -214,6 +217,7 @@ export async function GET(req: NextRequest) {
         string,
         { source_campaign: string; total_orders: number; paid_orders: number; total_revenue: number }
     >();
+    let paidRevenueFact = 0;
     for (const row of revenueOrders ?? []) {
         const source = typeof row.campaign === "string" && row.campaign.trim() ? row.campaign.trim() : "organic";
         const existing = revenueMap.get(source) ?? {
@@ -225,7 +229,9 @@ export async function GET(req: NextRequest) {
         existing.total_orders += 1;
         if (row.status === "paid" || row.status === "completed") {
             existing.paid_orders += 1;
-            existing.total_revenue += asFiniteNumber(row.amount);
+            const paidAmount = asFiniteNumber(row.amount);
+            existing.total_revenue += paidAmount;
+            paidRevenueFact += paidAmount;
         }
         revenueMap.set(source, existing);
     }
@@ -235,8 +241,6 @@ export async function GET(req: NextRequest) {
 
     // 3. Overall stats from funnel
     const totalLeads = funnelData.reduce((acc, row) => acc + (row.leads_count || 0), 0);
-    const totalPaidOrders = funnelData.reduce((acc, row) => acc + (row.orders_paid || 0), 0);
-    const totalRevenue = funnelData.reduce((acc, row) => acc + (row.total_revenue || 0), 0);
 
     // 4. Meta daily aggregates (preferred source for ad-side metrics/events)
     const { data: metaRows, error: metaErr } = await db
@@ -390,6 +394,8 @@ export async function GET(req: NextRequest) {
         purchase: paidOrdersCount ?? 0,
         access_granted: accessGrantedCount ?? 0,
     };
+    const totalPaidOrders = businessTotals.purchase;
+    const totalRevenue = paidRevenueFact;
 
     const { data: qualityRow, error: qualityErr } = await db
         .from("mv_quality_gaps")

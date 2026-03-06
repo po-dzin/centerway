@@ -181,6 +181,11 @@ function shiftedDate(daysBack: number): string {
   return formatDateLocal(d);
 }
 
+function clampIsoToToday(value: string): string {
+  const todayIso = formatDateLocal(new Date());
+  return value > todayIso ? todayIso : value;
+}
+
 function isIsoDateInput(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
@@ -317,21 +322,28 @@ function DatePickerField({ value, onChange, locale, className = "" }: DatePicker
               const isCurrentMonth = day.getMonth() === viewMonth.getMonth();
               const isSelected = value === iso;
               const isToday = iso === todayIso;
+              const isFuture = iso > todayIso;
               return (
                 <button
                   key={iso}
                   type="button"
+                  disabled={isFuture}
                   onClick={() => {
+                    if (isFuture) return;
                     onChange(iso);
                     setOpen(false);
                   }}
                   className={`h-8 rounded-md border text-xs transition-colors ${
+                    isFuture
+                      ? "border-transparent cw-muted opacity-35 cursor-not-allowed"
+                      : ""
+                  } ${
                     isSelected
                       ? "cw-text border-[var(--cw-interactive-active-border)] bg-[var(--cw-interactive-active-bg)] shadow-[var(--cw-interactive-active-shadow)]"
                       : isCurrentMonth
                         ? "border-transparent cw-text hover:bg-[var(--cw-interactive-hover-bg)]"
                         : "border-transparent cw-muted opacity-65 hover:bg-[var(--cw-interactive-hover-bg)]"
-                  } ${isToday && !isSelected ? "border cw-border" : ""}`}
+                  } ${isToday && !isSelected && !isFuture ? "border cw-border" : ""}`}
                 >
                   {day.getDate()}
                 </button>
@@ -525,8 +537,10 @@ export default function AnalyticsPage() {
       toast.error(t("analytics_invalid_period_format"));
       return;
     }
-    const from = fromDate <= toDate ? fromDate : toDate;
-    const to = toDate >= fromDate ? toDate : fromDate;
+    const clampedFromDate = clampIsoToToday(fromDate);
+    const clampedToDate = clampIsoToToday(toDate);
+    const from = clampedFromDate <= clampedToDate ? clampedFromDate : clampedToDate;
+    const to = clampedToDate >= clampedFromDate ? clampedToDate : clampedFromDate;
     setFromDate(from);
     setToDate(to);
     await fetchAnalytics({ from, to });
