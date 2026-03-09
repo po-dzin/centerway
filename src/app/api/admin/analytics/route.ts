@@ -42,6 +42,7 @@ type MetaAggregate = {
     purchase: number;
     currency: string;
     latest_day: string | null;
+    latest_synced_at: string | null;
 };
 
 type QualityGaps = {
@@ -60,6 +61,20 @@ type DateRange = {
     toExclusiveTs: string;
 };
 
+type PixelTotals = {
+    view_content: number;
+    initiate_checkout: number;
+    purchase: number;
+};
+
+type PixelTotalsResult = {
+    source: "pixel_stats" | "capi_fallback";
+    totals: PixelTotals | null;
+    reason?: string;
+    preview?: unknown;
+    requested_range?: { from: string; to: string };
+};
+
 function asFiniteNumber(value: unknown): number {
     const n = Number(value);
     return Number.isFinite(n) ? n : 0;
@@ -72,6 +87,158 @@ function safeDivide(numerator: number, denominator: number): number {
 
 function isIsoDate(value: string): boolean {
     return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function normalizePixelEventName(raw: string): "view_content" | "initiate_checkout" | "purchase" | null {
+    const value = raw.trim().toLowerCase();
+    if (!value) return null;
+    if (
+        value === "viewcontent" ||
+        value === "view_content" ||
+        value.includes("fb_pixel_view_content") ||
+        value.includes("view_content")
+    ) {
+        return "view_content";
+    }
+    if (
+        value === "initiatecheckout" ||
+        value === "initiate_checkout" ||
+        value.includes("fb_pixel_initiate_checkout") ||
+        value.includes("initiated_checkout") ||
+        value.includes("initiate_checkout")
+    ) {
+        return "initiate_checkout";
+    }
+    if (value === "purchase" || value.includes("fb_pixel_purchase")) {
+        return "purchase";
+    }
+    return null;
+}
+
+function parsePixelTotals(payload: unknown, range: DateRange): PixelTotals | null {
+    const rows = Array.isArray((payload as { data?: unknown[] } | null)?.data)
+        ? (payload as { data: unknown[] }).data
+        : null;
+    if (!rows || rows.length === 0) return null;
+
+    const totals: PixelTotals = { view_content: 0, initiate_checkout: 0, purchase: 0 };
+
+    for (const row of rows) {
+        if (!row || typeof row !== "object") continue;
+        const r = row as Record<string, unknown>;
+        const rowStart = typeof r.start_time === "string" ? Date.parse(r.start_time) : NaN;
+        const rowEnd = typeof r.end_time === "string" ? Date.parse(r.end_time) : NaN;
+        const rangeStart = Date.parse(range.fromTs);
+        const rangeEnd = Date.parse(range.toExclusiveTs);
+        const hasRowBounds = Number.isFinite(rowStart) || Number.isFinite(rowEnd);
+        if (hasRowBounds) {
+            const startTs = Number.isFinite(rowStart) ? rowStart : rangeStart;
+            const endTs = Number.isFinite(rowEnd) ? rowEnd : startTs + 1;
+            const overlaps = endTs > rangeStart && startTs < rangeEnd;
+            if (!overlaps) continue;
+        }
+
+        // Shape A: flattened event rows
+        const rawName =
+            (typeof r.event === "string" && r.event) ||
+            (typeof r.event_name === "string" && r.event_name) ||
+            (typeof r.action_type === "string" && r.action_type) ||
+            null;
+        if (rawName) {
+            const key = normalizePixelEventName(rawName);
+            if (key) {
+                const valueCandidates = [r.total_count, r.total, r.value, r.count];
+                const value = valueCandidates
+                    .map((candidate) => Number(candidate))
+                    .find((n) => Number.isFinite(n) && n >= 0) ?? 0;
+                totals[key] += value;
+            }
+        }
+
+        // Shape B: bucket rows with nested data [{ value: "ViewContent", count: 1201 }, ...]
+        const nested = Array.isArray(r.data) ? (r.data as unknown[]) : [];
+        for (const item of nested) {
+            if (!item || typeof item !== "object") continue;
+            const entry = item as Record<string, unknown>;
+            const eventName = typeof entry.value === "string" ? entry.value : null;
+            if (!eventName) continue;
+            const key = normalizePixelEventName(eventName);
+            if (!key) continue;
+            const count = Number(entry.count);
+            if (!Number.isFinite(count) || count < 0) continue;
+            totals[key] += count;
+        }
+    }
+
+    if (totals.view_content === 0 && totals.initiate_checkout === 0 && totals.purchase === 0) {
+        return null;
+    }
+    return totals;
+}
+
+async function fetchPixelTotals(range: DateRange): Promise<PixelTotalsResult> {
+    const pixelId =
+        process.env.META_PIXEL_ID ||
+        process.env.META_AD_PIXEL_ID ||
+        process.env.META_PIXEL;
+    const token =
+        process.env.META_ADS_ACCESS_TOKEN ||
+        process.env.META_ACCESS_TOKEN ||
+        process.env.META_CAPI_TOKEN;
+    const apiVersion = process.env.META_GRAPH_API_VERSION || "v21.0";
+
+    if (!pixelId || !token) {
+        return {
+            source: "capi_fallback",
+            totals: null,
+            reason: "missing_pixel_id_or_token",
+            preview: null,
+        };
+    }
+
+    const params = new URLSearchParams({
+        access_token: token,
+        start_time: range.from,
+        end_time: range.to,
+        aggregation: "event_total_counts",
+    });
+
+    const url = `https://graph.facebook.com/${apiVersion}/${pixelId}/stats?${params.toString()}`;
+    const resp = await fetch(url, { method: "GET", headers: { "Content-Type": "application/json" } });
+    const json = (await resp.json().catch(() => ({}))) as Record<string, unknown>;
+    const preview = {
+        top_level_keys: Object.keys(json ?? {}),
+        data_head: Array.isArray(json?.data) ? (json.data as unknown[]).slice(0, 3) : null,
+    };
+    if (!resp.ok) {
+        const errorMessage =
+            typeof json?.error === "object" && json.error && typeof (json.error as { message?: unknown }).message === "string"
+                ? String((json.error as { message: string }).message)
+                : `http_${resp.status}`;
+        return {
+            source: "capi_fallback",
+            totals: null,
+            reason: `pixel_stats_api_error:${errorMessage}`,
+            preview,
+            requested_range: { from: range.from, to: range.to },
+        };
+    }
+    const totals = parsePixelTotals(json, range);
+    if (!totals) {
+        return {
+            source: "capi_fallback",
+            totals: null,
+            reason: "pixel_stats_empty",
+            preview,
+            requested_range: { from: range.from, to: range.to },
+        };
+    }
+    return {
+        source: "pixel_stats",
+        totals,
+        preview,
+        requested_range: { from: range.from, to: range.to },
+    };
 }
 
 function toDateRange(searchParams: URLSearchParams): DateRange {
@@ -245,7 +412,7 @@ export async function GET(req: NextRequest) {
     // 4. Meta daily aggregates (preferred source for ad-side metrics/events)
     const { data: metaRows, error: metaErr } = await db
         .from("analytics_meta_daily")
-        .select("day, reach, impressions, clicks, spend, view_content, initiate_checkout, purchase, currency")
+        .select("day, reach, impressions, clicks, spend, view_content, initiate_checkout, purchase, currency, synced_at")
         .gte("day", range.from)
         .lte("day", range.to)
         .order("day", { ascending: false })
@@ -268,6 +435,11 @@ export async function GET(req: NextRequest) {
             if (typeof row.currency === "string" && row.currency.trim()) {
                 acc.currency = row.currency.trim();
             }
+            if (typeof row.synced_at === "string" && row.synced_at.trim()) {
+                if (!acc.latest_synced_at || row.synced_at > acc.latest_synced_at) {
+                    acc.latest_synced_at = row.synced_at;
+                }
+            }
             return acc;
         },
         {
@@ -280,6 +452,7 @@ export async function GET(req: NextRequest) {
             purchase: 0,
             currency: "UAH",
             latest_day: null,
+            latest_synced_at: null,
         }
     );
 
@@ -333,7 +506,7 @@ export async function GET(req: NextRequest) {
             spend: metaAggregate.spend,
             currency: metaAggregate.currency || marketingInputs.currency,
             period_label: metaAggregate.latest_day ? `meta synced up to ${metaAggregate.latest_day}` : marketingInputs.period_label,
-            updated_at: marketingInputs.updated_at,
+            updated_at: metaAggregate.latest_synced_at || marketingInputs.updated_at,
             source: "meta",
         };
     }
@@ -369,10 +542,19 @@ export async function GET(req: NextRequest) {
         return serverErrorResponse(paidErr.message);
     }
 
+    const pixelResult = await fetchPixelTotals(range).catch((err: unknown) => {
+        console.warn("Analytics Pixel stats warning:", err instanceof Error ? err.message : String(err));
+        return {
+            source: "capi_fallback" as const,
+            totals: null,
+            reason: "pixel_stats_unhandled_error",
+        };
+    });
+
     const businessTotals: BusinessEventTotals = {
         // Use event stream totals (CAPI jobs) for top/mid funnel to avoid Ads-attribution skew.
-        view_content: viewContentStats.total,
-        initiate_checkout: initiateCheckoutStats.total,
+        view_content: pixelResult.totals?.view_content ?? viewContentStats.total,
+        initiate_checkout: pixelResult.totals?.initiate_checkout ?? initiateCheckoutStats.total,
         // Purchase remains business-fact from paid/completed orders.
         purchase: paidOrdersCount ?? 0,
         access_granted: accessGrantedCount ?? 0,
@@ -440,6 +622,20 @@ export async function GET(req: NextRequest) {
         },
         business_events: businessTotals,
         marketing_inputs: marketingInputs,
+        funnel_debug: {
+            requested_period: {
+                from: range.from,
+                to: range.to,
+            },
+            view_content_source: pixelResult.source,
+            pixel_reason: pixelResult.reason ?? null,
+            pixel_view_content: pixelResult.totals?.view_content ?? null,
+            capi_view_content: viewContentStats.total,
+            pixel_initiate_checkout: pixelResult.totals?.initiate_checkout ?? null,
+            capi_initiate_checkout: initiateCheckoutStats.total,
+            pixel_preview: pixelResult.preview ?? null,
+            pixel_requested_range: pixelResult.requested_range ?? null,
+        },
         quality_gaps: (qualityRow ?? null) as QualityGaps | null,
         kpis: {
             cpa: toFixed2(cpa),

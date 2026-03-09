@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 import { getErrorMessage } from "@/lib/errors";
@@ -359,6 +360,7 @@ function DatePickerField({ value, onChange, locale, className = "" }: DatePicker
 
 export default function AnalyticsPage() {
   const { t, lang } = useI18n();
+  const router = useRouter();
   const toast = useToast();
 
   const [loading, setLoading] = useState(true);
@@ -477,7 +479,8 @@ export default function AnalyticsPage() {
       if (!res.ok) {
         if (res.status === 401) {
           setErrorType("auth");
-          throw new Error(t("analytics_error_auth"));
+          router.replace("/admin");
+          return;
         }
         if (res.status === 403) {
           setErrorType("forbidden");

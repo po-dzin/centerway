@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ReactNode, useState, useEffect, useCallback } from "react";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { I18nProvider, useI18n } from "@/components/I18nProvider";
@@ -24,9 +24,11 @@ const icons = {
 function AdminShell({ children }: { children: ReactNode }) {
     const { t } = useI18n();
     const pathname = usePathname();
+    const router = useRouter();
     const [expanded, setExpanded] = useState(false);
     const [session, setSession] = useState<Session | null>(null);
     const [role, setRole] = useState<string | null>(null);
+    const [authInitialized, setAuthInitialized] = useState(false);
 
     const loadRole = useCallback(async (userId: string) => {
         const { data } = await supabaseClient
@@ -45,6 +47,7 @@ function AdminShell({ children }: { children: ReactNode }) {
             } else {
                 setRole(null);
             }
+            setAuthInitialized(true);
         });
 
         const {
@@ -56,10 +59,20 @@ function AdminShell({ children }: { children: ReactNode }) {
             } else {
                 setRole(null);
             }
+            setAuthInitialized(true);
         });
 
         return () => subscription.unsubscribe();
     }, [loadRole]);
+
+    useEffect(() => {
+        if (!authInitialized) return;
+        if (!pathname?.startsWith("/admin")) return;
+        if (pathname === "/admin") return;
+        if (!session) {
+            router.replace("/admin");
+        }
+    }, [authInitialized, pathname, session, router]);
 
     useEffect(() => {
         if (!session?.access_token) return;
