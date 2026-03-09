@@ -107,6 +107,9 @@ type AnalyticsResponse = {
     purchase: number;
     access_granted: number;
   };
+  engagement?: {
+    scroll_depth_50: number;
+  };
   marketing_inputs: MarketingInputs;
   quality_gaps?: QualityGaps | null;
   kpis: UnifiedKpis;
@@ -126,6 +129,7 @@ type MetricFieldKey =
   | "impressions"
   | "frequency"
   | "clicks"
+  | "scroll_depth_50"
   | "spend"
   | "cpa"
   | "cpc"
@@ -150,6 +154,7 @@ const OPTIONAL_METRIC_FIELDS: MetricDef[] = [
   { key: "impressions", labelKey: "analytics_metric_impressions" },
   { key: "frequency", labelKey: "analytics_metric_frequency" },
   { key: "clicks", labelKey: "analytics_metric_clicks" },
+  { key: "scroll_depth_50", labelKey: "analytics_metric_scroll_depth_50" },
   { key: "cpc", labelKey: "analytics_metric_cpc" },
 ];
 
@@ -375,6 +380,7 @@ export default function AnalyticsPage() {
   const [capiOverview, setCapiOverview] = useState<CapiOverview | null>(null);
   const [funnelChain, setFunnelChain] = useState<FunnelChain | null>(null);
   const [kpis, setKpis] = useState<UnifiedKpis | null>(null);
+  const [scrollDepth50, setScrollDepth50] = useState<number>(0);
   const [qualityGaps, setQualityGaps] = useState<QualityGaps | null>(null);
 
   const [marketingInputs, setMarketingInputs] = useState<MarketingInputs | null>(null);
@@ -512,6 +518,7 @@ export default function AnalyticsPage() {
       setCapiOverview(data.capi_overview ?? null);
       setFunnelChain(data.funnel_chain ?? null);
       setKpis(data.kpis ?? null);
+      setScrollDepth50(data.engagement?.scroll_depth_50 ?? 0);
       setQualityGaps(data.quality_gaps ?? null);
 
       const inputs = data.marketing_inputs ?? null;
@@ -591,6 +598,7 @@ export default function AnalyticsPage() {
         impressions,
         frequency,
         clicks,
+        scroll_depth_50: scrollDepth50,
         spend,
         cpa: kpis?.cpa ?? 0,
         cpc: kpis?.cpc ?? 0,
@@ -599,7 +607,7 @@ export default function AnalyticsPage() {
       } as Record<MetricFieldKey, number>,
       currency,
     };
-  }, [marketingInputs, kpis, summary]);
+  }, [marketingInputs, kpis, summary, scrollDepth50]);
 
   const renderMetricValue = (key: MetricFieldKey) => {
     const value = metricValues.values[key];

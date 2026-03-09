@@ -19,6 +19,19 @@
     return prefix + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
   }
 
+  function getSessionId() {
+    try {
+      var key = "cw_session_id";
+      var existing = sessionStorage.getItem(key);
+      if (existing) return existing;
+      var generated = "sess_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
+      sessionStorage.setItem(key, generated);
+      return generated;
+    } catch (_) {
+      return "sess_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
+    }
+  }
+
 
   function sendCapiEvent(payload) {
     try {
@@ -113,6 +126,64 @@
     return url.toString();
   }
 
+  function setupScrollDepth50() {
+    var sent = false;
+    var sentKey = "cw_scroll50_sent::" + window.location.pathname;
+
+    try {
+      if (sessionStorage.getItem(sentKey) === "1") {
+        sent = true;
+      }
+    } catch (_) {}
+
+    function maybeSend() {
+      if (sent) return;
+      var doc = document.documentElement;
+      var body = document.body;
+      var scrollTop = window.scrollY || doc.scrollTop || 0;
+      var viewportHeight = window.innerHeight || doc.clientHeight || 0;
+      var totalHeight = Math.max(
+        doc.scrollHeight || 0,
+        body ? body.scrollHeight : 0,
+        doc.offsetHeight || 0,
+        body ? body.offsetHeight : 0
+      );
+      if (totalHeight <= 0) return;
+
+      var progress = ((scrollTop + viewportHeight) / totalHeight) * 100;
+      if (progress < 50) return;
+
+      sent = true;
+      try {
+        sessionStorage.setItem(sentKey, "1");
+      } catch (_) {}
+
+      var attrib = collectAttrib();
+      sendCapiEvent({
+        event_name: "ScrollDepth50",
+        event_id: makeEventId("scroll50_" + PRODUCT),
+        page_url: attrib.page_url,
+        fbclid: attrib.fbclid,
+        fbp: attrib.fbp,
+        utm_source: attrib.utm_source,
+        utm_medium: attrib.utm_medium,
+        utm_campaign: attrib.utm_campaign,
+        utm_content: attrib.utm_content,
+        utm_term: attrib.utm_term,
+        session_id: getSessionId(),
+        depth_percent: 50,
+        product: PRODUCT
+      });
+
+      window.removeEventListener("scroll", maybeSend);
+      window.removeEventListener("resize", maybeSend);
+    }
+
+    window.addEventListener("scroll", maybeSend, { passive: true });
+    window.addEventListener("resize", maybeSend);
+    setTimeout(maybeSend, 300);
+  }
+
   document.addEventListener("click", function(event) {
     var trigger = event.target.closest(".openModal");
     if (trigger) {
@@ -155,6 +226,8 @@
       phone: leadPayload && leadPayload.phone
     });
   };
+
+  setupScrollDepth50();
 })();
 function newDate() {
   var time = new Date();

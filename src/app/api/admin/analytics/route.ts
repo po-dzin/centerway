@@ -54,6 +54,10 @@ type QualityGaps = {
     paid_missing_client_ua: number;
 };
 
+type EngagementStats = {
+    scroll_depth_50: number;
+};
+
 type DateRange = {
     from: string;
     to: string;
@@ -542,6 +546,21 @@ export async function GET(req: NextRequest) {
         return serverErrorResponse(paidErr.message);
     }
 
+    const { count: scrollDepth50Count, error: scrollErr } = await db
+        .from("events")
+        .select("id", { count: "exact", head: true })
+        .eq("type", "scroll_depth_50")
+        .gte("created_at", range.fromTs)
+        .lt("created_at", range.toExclusiveTs);
+    if (scrollErr) {
+        console.error("Analytics scroll depth count error:", scrollErr);
+        return serverErrorResponse(scrollErr.message);
+    }
+
+    const engagement: EngagementStats = {
+        scroll_depth_50: scrollDepth50Count ?? 0,
+    };
+
     const pixelResult: PixelTotalsResult = await fetchPixelTotals(range).catch((err: unknown): PixelTotalsResult => {
         console.warn("Analytics Pixel stats warning:", err instanceof Error ? err.message : String(err));
         return {
@@ -623,6 +642,7 @@ export async function GET(req: NextRequest) {
             ),
         },
         business_events: businessTotals,
+        engagement,
         marketing_inputs: marketingInputs,
         funnel_debug: {
             requested_period: {

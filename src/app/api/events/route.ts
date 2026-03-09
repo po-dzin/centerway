@@ -12,6 +12,14 @@ type EventsRequestBody = {
   page_url?: unknown;
   fbp?: unknown;
   fbclid?: unknown;
+  utm_source?: unknown;
+  utm_medium?: unknown;
+  utm_campaign?: unknown;
+  utm_content?: unknown;
+  utm_term?: unknown;
+  session_id?: unknown;
+  depth_percent?: unknown;
+  product?: unknown;
   email?: unknown;
   phone?: unknown;
   content_name?: unknown;
@@ -19,11 +27,23 @@ type EventsRequestBody = {
   content_ids?: unknown;
 };
 
-const ALLOWED_EVENT_NAMES = new Set<CapiEventPayload["event_name"]>([
+type LocalOnlyEventName = "ScrollDepth50";
+type AllowedEventName = CapiEventPayload["event_name"] | LocalOnlyEventName;
+
+const CAPI_EVENT_NAMES = new Set<CapiEventPayload["event_name"]>([
   "ViewContent",
   "Lead",
   "InitiateCheckout",
 ]);
+const LOCAL_ONLY_EVENT_NAMES = new Set<LocalOnlyEventName>(["ScrollDepth50"]);
+
+function isCapiEventName(name: string): name is CapiEventPayload["event_name"] {
+  return CAPI_EVENT_NAMES.has(name as CapiEventPayload["event_name"]);
+}
+
+function isLocalOnlyEventName(name: string): name is LocalOnlyEventName {
+  return LOCAL_ONLY_EVENT_NAMES.has(name as LocalOnlyEventName);
+}
 
 function asString(v: unknown): string | null {
   if (typeof v !== "string") return null;
@@ -70,35 +90,79 @@ export async function OPTIONS() {
 
 export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as EventsRequestBody;
-  const eventName = asString(body.event_name) as CapiEventPayload["event_name"] | null;
+  const eventName = asString(body.event_name) as AllowedEventName | null;
   const eventId = asString(body.event_id);
-  if (!eventName || !ALLOWED_EVENT_NAMES.has(eventName)) {
+  if (!eventName || (!isCapiEventName(eventName) && !isLocalOnlyEventName(eventName))) {
     return cors(NextResponse.json({ ok: false, error: "invalid_event_name" }, { status: 400 }));
   }
   if (!eventId) {
     return cors(NextResponse.json({ ok: false, error: "event_id_required" }, { status: 400 }));
   }
 
-  const payload: CapiEventPayload = {
+  const db = supabaseAdmin();
+  const sharedPayload = {
     event_name: eventName,
     event_id: eventId,
     event_time: Math.floor(Date.now() / 1000),
+    session_id: asString(body.session_id),
+    depth_percent: asNumber(body.depth_percent),
+    product: asString(body.product),
     value: asNumber(body.value),
     currency: asString(body.currency) ?? undefined,
     event_source_url: asString(body.page_url) ?? req.headers.get("referer") ?? null,
     fbp: asString(body.fbp) ?? req.cookies.get("_fbp")?.value ?? null,
     fbclid: asString(body.fbclid),
+    utm_source: asString(body.utm_source),
+    utm_medium: asString(body.utm_medium),
+    utm_campaign: asString(body.utm_campaign),
+    utm_content: asString(body.utm_content),
+    utm_term: asString(body.utm_term),
     email: asString(body.email),
     phone: asString(body.phone),
     ip_address: clientIpFromHeaders(req.headers),
     user_agent: req.headers.get("user-agent"),
-    action_source: "website",
+    action_source: "website" as const,
     content_name: asString(body.content_name) ?? undefined,
     content_type: asString(body.content_type) ?? undefined,
     content_ids: asStringArray(body.content_ids),
   };
 
-  const db = supabaseAdmin();
+  if (isLocalOnlyEventName(eventName)) {
+    const { error: insertErr } = await db.from("events").insert({
+      type: "scroll_depth_50",
+      order_ref: null,
+      payload: sharedPayload,
+    });
+    if (insertErr) {
+      return cors(
+        NextResponse.json(
+          { ok: false, error: "event_insert_failed", details: insertErr.message ?? "unknown" },
+          { status: 500 }
+        )
+      );
+    }
+    return cors(NextResponse.json({ ok: true, mode: "local_only" }));
+  }
+
+  const payload: CapiEventPayload = {
+    event_name: eventName,
+    event_id: eventId,
+    event_time: sharedPayload.event_time,
+    value: sharedPayload.value,
+    currency: sharedPayload.currency,
+    event_source_url: sharedPayload.event_source_url,
+    fbp: sharedPayload.fbp,
+    fbclid: sharedPayload.fbclid,
+    email: sharedPayload.email,
+    phone: sharedPayload.phone,
+    ip_address: sharedPayload.ip_address,
+    user_agent: sharedPayload.user_agent,
+    action_source: sharedPayload.action_source,
+    content_name: sharedPayload.content_name,
+    content_type: sharedPayload.content_type,
+    content_ids: sharedPayload.content_ids,
+  };
+
   await db.from("events").insert({
     type: "meta_event_enqueued",
     order_ref: null,
