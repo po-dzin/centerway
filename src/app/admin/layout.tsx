@@ -21,6 +21,10 @@ const icons = {
     system: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none" /><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none" /><circle cx="11" cy="18" r="2" fill="currentColor" stroke="none" /></svg>,
 };
 
+function isAdminRole(role: string | null): boolean {
+    return role === "admin" || role === "support" || role === "Admin" || role === "Support";
+}
+
 function AdminShell({ children }: { children: ReactNode }) {
     const { t } = useI18n();
     const pathname = usePathname();
@@ -29,23 +33,32 @@ function AdminShell({ children }: { children: ReactNode }) {
     const [session, setSession] = useState<Session | null>(null);
     const [role, setRole] = useState<string | null>(null);
     const [authInitialized, setAuthInitialized] = useState(false);
+    const [roleInitialized, setRoleInitialized] = useState(false);
 
-    const loadRole = useCallback(async (userId: string) => {
-        const { data } = await supabaseClient
-            .from("user_roles")
-            .select("role")
-            .eq("user_id", userId)
-            .maybeSingle();
-        setRole(typeof data?.role === "string" ? data.role : null);
+    const loadRole = useCallback(async (accessToken: string) => {
+        setRoleInitialized(false);
+        try {
+            const res = await fetch("/api/admin/bootstrap-role", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
+            const payload = (await res.json().catch(() => ({}))) as { role?: string };
+            setRole(typeof payload.role === "string" ? payload.role : null);
+        } finally {
+            setRoleInitialized(true);
+        }
     }, []);
 
     useEffect(() => {
         supabaseClient.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
-            if (session?.user?.id) {
-                void loadRole(session.user.id);
+            if (session?.access_token) {
+                void loadRole(session.access_token);
             } else {
                 setRole(null);
+                setRoleInitialized(true);
             }
             setAuthInitialized(true);
         });
@@ -54,10 +67,11 @@ function AdminShell({ children }: { children: ReactNode }) {
             data: { subscription },
         } = supabaseClient.auth.onAuthStateChange((_event, session) => {
             setSession(session);
-            if (session?.user?.id) {
-                void loadRole(session.user.id);
+            if (session?.access_token) {
+                void loadRole(session.access_token);
             } else {
                 setRole(null);
+                setRoleInitialized(true);
             }
             setAuthInitialized(true);
         });
@@ -66,13 +80,13 @@ function AdminShell({ children }: { children: ReactNode }) {
     }, [loadRole]);
 
     useEffect(() => {
-        if (!authInitialized) return;
+        if (!authInitialized || !roleInitialized) return;
         if (!pathname?.startsWith("/admin")) return;
         if (pathname === "/admin") return;
-        if (!session) {
+        if (!session || !isAdminRole(role)) {
             router.replace("/admin");
         }
-    }, [authInitialized, pathname, session, router]);
+    }, [authInitialized, roleInitialized, pathname, session, role, router]);
 
     useEffect(() => {
         if (!session?.access_token) return;

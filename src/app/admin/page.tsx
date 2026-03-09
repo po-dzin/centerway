@@ -6,15 +6,42 @@ import { Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 
+function isAdminRole(role: string | null): boolean {
+    return role === "admin" || role === "support" || role === "Admin" || role === "Support";
+}
+
 export default function AdminRootPage() {
     const { t } = useI18n();
     const router = useRouter();
     const [session, setSession] = useState<Session | null>(null);
     const [loading, setLoading] = useState(true);
+    const [role, setRole] = useState<string | null>(null);
+    const [roleLoading, setRoleLoading] = useState(false);
+
+    const loadRole = async (accessToken: string) => {
+        setRoleLoading(true);
+        try {
+            const res = await fetch("/api/admin/bootstrap-role", {
+                method: "POST",
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                },
+            });
+            const payload = (await res.json().catch(() => ({}))) as { role?: string };
+            setRole(typeof payload.role === "string" ? payload.role : null);
+        } finally {
+            setRoleLoading(false);
+        }
+    };
 
     useEffect(() => {
         supabaseClient.auth.getSession().then(({ data: { session } }) => {
             setSession(session);
+            if (session?.access_token) {
+                void loadRole(session.access_token);
+            } else {
+                setRole(null);
+            }
             setLoading(false);
         });
 
@@ -22,6 +49,11 @@ export default function AdminRootPage() {
             data: { subscription },
         } = supabaseClient.auth.onAuthStateChange((_event: AuthChangeEvent, nextSession: Session | null) => {
             setSession(nextSession);
+            if (nextSession?.access_token) {
+                void loadRole(nextSession.access_token);
+            } else {
+                setRole(null);
+            }
             setLoading(false);
         });
 
@@ -29,10 +61,10 @@ export default function AdminRootPage() {
     }, []);
 
     useEffect(() => {
-        if (!loading && session) {
+        if (!loading && !roleLoading && session && isAdminRole(role)) {
             router.replace("/admin/analytics");
         }
-    }, [loading, session, router]);
+    }, [loading, roleLoading, session, role, router]);
 
     const handleSignIn = async () => {
         await supabaseClient.auth.signInWithOAuth({
@@ -43,12 +75,36 @@ export default function AdminRootPage() {
         });
     };
 
-    if (loading) {
+    if (loading || (session && roleLoading)) {
         return <div className="p-8 cw-muted animate-pulse">{t("loading")}</div>;
     }
 
-    if (session) {
+    if (session && isAdminRole(role)) {
         return <div className="p-8 cw-muted animate-pulse">{t("loading")}</div>;
+    }
+
+    if (session && !isAdminRole(role)) {
+        const email = session.user?.email ?? "unknown";
+        const signOut = async () => {
+            await supabaseClient.auth.signOut();
+            setSession(null);
+            setRole(null);
+        };
+        return (
+            <div className="flex flex-col items-center justify-center min-h-[70vh] w-full max-w-md mx-auto">
+                <div className="w-full cw-surface border cw-border rounded-2xl cw-shadow p-8 text-center space-y-4">
+                    <h2 className="cw-page-title">{t("admin_access_denied_title")}</h2>
+                    <p className="cw-page-subtitle">{t("admin_access_denied_subtitle")}</p>
+                    <p className="text-sm cw-muted">{email}</p>
+                    <button
+                        onClick={signOut}
+                        className="w-full cw-btn cw-surface-2 font-semibold py-3 px-4"
+                    >
+                        {t("menu_signout")}
+                    </button>
+                </div>
+            </div>
+        );
     }
 
     return (
