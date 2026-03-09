@@ -542,12 +542,14 @@ export async function GET(req: NextRequest) {
         return serverErrorResponse(paidErr.message);
     }
 
-    const pixelResult = await fetchPixelTotals(range).catch((err: unknown) => {
+    const pixelResult: PixelTotalsResult = await fetchPixelTotals(range).catch((err: unknown): PixelTotalsResult => {
         console.warn("Analytics Pixel stats warning:", err instanceof Error ? err.message : String(err));
         return {
             source: "capi_fallback" as const,
             totals: null,
             reason: "pixel_stats_unhandled_error",
+            preview: null,
+            requested_range: { from: range.from, to: range.to },
         };
     });
 
