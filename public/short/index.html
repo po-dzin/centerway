@@ -15,12 +15,13 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
 
+    <link rel="stylesheet" href="js/jquery.arcticmodal-0.3.css" defer="">
     <link rel="stylesheet" href="js/themes/simple.css" defer="">
     <link rel="stylesheet" href="css/fonts.css">
     <link rel="stylesheet" href="css/main.css">
     <link rel="stylesheet" href="css/media.css">
 
-    <!-- Meta Pixel Code (BASE + Advanced Matching) -->
+    <!-- Meta Pixel Code (BASE) -->
     <script>
     !function(f,b,e,v,n,t,s)
     {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
@@ -30,73 +31,9 @@
     t.src=v;s=b.getElementsByTagName(e)[0];
     s.parentNode.insertBefore(t,s)}(window, document,'script',
     'https://connect.facebook.net/en_US/fbevents.js');
-
-    // Advanced Matching: pass known user data if available (from previous checkout)
-    (function(){
-      var ud = {};
-      try {
-        var stored = JSON.parse(localStorage.getItem('cw_user') || '{}');
-        if (stored.em) ud.em = stored.em;
-        if (stored.ph) ud.ph = stored.ph;
-      } catch(e) {}
-      fbq('init', '885125430564169', ud);
-    })();
-
-    (function () {
-      function makeEventId(prefix) {
-        return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 10);
-      }
-      function readCookie(name) {
-        var match = document.cookie.match(new RegExp('(^|;\\s*)' + name + '=([^;]+)'));
-        return match ? decodeURIComponent(match[2]) : '';
-      }
-      function pickFbclid() {
-        var qs = new URLSearchParams(location.search);
-        var direct = qs.get('fbclid');
-        if (direct) return direct;
-        try {
-          var stored = JSON.parse(localStorage.getItem('cw_attrib') || '{}');
-          return stored.fbclid || '';
-        } catch (_) {
-          return '';
-        }
-      }
-
-      var eventId = makeEventId('viewcontent_short');
-      var pageUrl = location.href;
-      var fbclid = pickFbclid();
-      var fbp = readCookie('_fbp');
-
-      fbq('track', 'PageView');
-      fbq('track', 'ViewContent', {
-        content_name: 'Short Reboot',
-        content_type: 'product',
-        content_ids: ['short'],
-        value: 359,
-        currency: 'UAH'
-      }, { eventID: eventId });
-
-      try {
-        fetch('/api/events', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          credentials: 'include',
-          keepalive: true,
-          body: JSON.stringify({
-            event_name: 'ViewContent',
-            event_id: eventId,
-            value: 359,
-            currency: 'UAH',
-            content_name: 'Short Reboot',
-            content_type: 'product',
-            content_ids: ['short'],
-            page_url: pageUrl,
-            fbclid: fbclid,
-            fbp: fbp
-          })
-        });
-      } catch (_) {}
-    })();
+    
+    fbq('init', '885125430564169');
+    fbq('track', 'PageView');
     </script>
     <noscript>
     <img height="1" width="1" style="display:none"
@@ -248,7 +185,7 @@
     <section class="s55">
         <div class="container">
             <div class="s55-grid">
-                <img data-src="img/L 3.png" class="lazyload s55-image">
+                <img data-src="img/Photoroom.png" class="lazyload s55-image">
                 <div class="s55-text" id="divs55">
                     <h2>Куратор курсу</h2>
                     <p>👋 Давайте знайомитись: я — Євгеній Корякін, дослідник і практик аюрведи, йоги та інших систем вивчення руху</p>
@@ -352,7 +289,7 @@
                 </svg>
             </div>
             <h2>Гарантія</h2>
-            <p class="guarantee-text">Ми впевнені, що за умови регулярного та правильного виконання тренувань, вже за 14 днів ви отримаєте помітні результати, або ми повернемо вам кошти</p>
+            <p class="guarantee-text">Ми впевнені, що за умови регулярного та правильного виконання тренувань, вже за 14 днів ви отримаєте помітні результати, або ми повернемо вам кошти.</p>
             <div class="guarantee-cta">
                 <p>Не зволікайте та приєднуйтесь вже зараз 👇</p>
                 <div class="price"><span>359 грн</span></div>
@@ -372,7 +309,7 @@
                 <span class="arrow" aria-hidden="true"></span>
             </label>
             <div class="info">
-                <p>Ці комплекси вправ підходить абсолютно усім: чоловікам, жінкам, малим, дорослим та навіть людям шанобливого віку</p>
+                <p>Ці комплекси вправ підходить абсолютно усім: чоловікам, жінкам, малим, дорослим та навіть людям шанобливого віку.</p>
             </div>
         </section>
         <section class="accordion_item">
@@ -382,7 +319,7 @@
                 <span class="arrow" aria-hidden="true"></span>
             </label>
             <div class="info">
-                <p>Так, звісно,можете. Це універсальний комплекси, які можна використовувати для економії часу як перезавантаження протягом дня, так і у якості ранкової гімнастики</p>
+                <p>Так, звісно,можете. Це універсальний комплекси, які можна використовувати для економії часу як перезавантаження протягом дня, так і у якості ранкової гімнастики.</p>
             </div>
         </section>
         <section class="accordion_item">
@@ -392,7 +329,7 @@
                 <span class="arrow" aria-hidden="true"></span>
             </label>
             <div class="info">
-                <p>Так, звичайно, за бажанням, Ви можете посилити вправи амплітудою, великою напругою та кількістю підходів. Про все це - про посилення або, навпаки, про полегшення - докладно в уроках з кожної вправі</p>
+                <p>Так, звичайно, за бажанням, Ви можете посилити вправи амплітудою, великою напругою та кількістю підходів. Про все це - про посилення або, навпаки, про полегшення - докладно в уроках з кожної вправі.</p>
             </div>
         </section>
         <section class="accordion_item">
@@ -402,7 +339,7 @@
                 <span class="arrow" aria-hidden="true"></span>
             </label>
             <div class="info">
-                <p>Безумовно, підійде: займаючись на кожному окремому уроці, ви легко підберете собі початкове навантаження, згідно з Вашим фізичним станом і далі, так само легко, його регулюватимете тоді, коли вже самостійно виконуватимете весь міні-комплекс</p>
+                <p>Безумовно, підійде: займаючись на кожному окремому уроці, ви легко підберете собі початкове навантаження, згідно з Вашим фізичним станом і далі, так само легко, його регулюватимете тоді, коли вже самостійно виконуватимете весь міні-комплекс.</p>
             </div>
         </section>
         <section class="accordion_item">
@@ -432,7 +369,7 @@
                 
             <div class="footer-section" id="footer-center">
                 <p><a href="index2.html" >Політика конфіденційності</a></p>
-                <p>© 2026 Всі права захищені</p>
+                <p>© 2026 Всі права захищені.</p>
                
             </div>
             <div class="footer-section"  id="footer-right">
@@ -451,8 +388,9 @@
         </div>
     </div>
 </footer>
-
+    
     <script type="text/javascript" src="js/jquery-1.11.0.min.js"></script>
+    <script src="js/jquery.arcticmodal-0.3.min.js"></script>
     <script type="text/javascript" src="js/jquery-migrate-1.2.1.min.js"></script>
     <script src="js/lazysizes.min.js" async=""></script>
     <script src="js/jquery.countdown.min.js"></script>
@@ -460,10 +398,10 @@
     <script src="js/common.js" async=""></script>
 
     <script>
-    /** Attribution capture v1 (UTM + utm_term + cr + lv + fbclid) */
+    /** Attribution capture v1 (UTM + cr + lv + fbclid) */
     (function(){
       const qs = new URLSearchParams(location.search);
-      const keys = ['utm_source','utm_medium','utm_campaign','utm_content','utm_term','lv','cr','fbclid'];
+      const keys = ['utm_source','utm_medium','utm_campaign','utm_content','lv','cr','fbclid'];
       const attrib = {};
       keys.forEach(k => {
         const v = qs.get(k);
