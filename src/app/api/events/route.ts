@@ -144,6 +144,22 @@ export async function POST(req: NextRequest) {
     return cors(NextResponse.json({ ok: true, mode: "local_only" }));
   }
 
+  if (eventName === "ViewContent") {
+    const { error: insertErr } = await db.from("events").insert({
+      type: "view_content",
+      order_ref: null,
+      payload: sharedPayload,
+    });
+    if (insertErr) {
+      return cors(
+        NextResponse.json(
+          { ok: false, error: "event_insert_failed", details: insertErr.message ?? "unknown" },
+          { status: 500 }
+        )
+      );
+    }
+  }
+
   const payload: CapiEventPayload = {
     event_name: eventName,
     event_id: eventId,
