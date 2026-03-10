@@ -105,6 +105,49 @@
     }, { eventID: eventId });
   }
 
+  function setupViewContent() {
+    var sentKey = "cw_viewcontent_sent::" + window.location.pathname;
+    try {
+      if (sessionStorage.getItem(sentKey) === "1") {
+        return;
+      }
+    } catch (_) {}
+
+    var attrib = collectAttrib();
+    var eventId = makeEventId("viewcontent_" + PRODUCT);
+
+    if (typeof fbq === "function") {
+      fbq("track", "ViewContent", {
+        content_name: CONTENT_NAME,
+        content_type: "product",
+        content_ids: [PRODUCT],
+        ...attrib
+      }, { eventID: eventId });
+    }
+
+    sendCapiEvent({
+      event_name: "ViewContent",
+      event_id: eventId,
+      page_url: attrib.page_url,
+      fbclid: attrib.fbclid,
+      fbp: attrib.fbp,
+      utm_source: attrib.utm_source,
+      utm_medium: attrib.utm_medium,
+      utm_campaign: attrib.utm_campaign,
+      utm_content: attrib.utm_content,
+      utm_term: attrib.utm_term,
+      session_id: getSessionId(),
+      product: PRODUCT,
+      content_name: CONTENT_NAME,
+      content_type: "product",
+      content_ids: [PRODUCT]
+    });
+
+    try {
+      sessionStorage.setItem(sentKey, "1");
+    } catch (_) {}
+  }
+
 
   function buildPayUrl(attrib, eventId) {
     var url = new URL(DIRECT_PAY_ENDPOINT, window.location.origin);
@@ -227,6 +270,7 @@
     });
   };
 
+  setupViewContent();
   setupScrollDepth50();
 })();
 function newDate() {

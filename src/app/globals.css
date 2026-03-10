@@ -337,9 +337,10 @@ body {
     display: flex;
     align-items: flex-end;
     gap: 0.25rem;
-    padding-top: 2px;
+    padding-top: 0;
     border-bottom: 1px solid var(--cw-border);
-    overflow-y: visible;
+    overflow-y: hidden;
+    min-height: 2.75rem;
   }
 
   .cw-tab {

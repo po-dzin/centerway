@@ -129,7 +129,6 @@ type MetricFieldKey =
   | "impressions"
   | "frequency"
   | "clicks"
-  | "scroll_depth_50"
   | "spend"
   | "cpa"
   | "cpc"
@@ -154,7 +153,6 @@ const OPTIONAL_METRIC_FIELDS: MetricDef[] = [
   { key: "impressions", labelKey: "analytics_metric_impressions" },
   { key: "frequency", labelKey: "analytics_metric_frequency" },
   { key: "clicks", labelKey: "analytics_metric_clicks" },
-  { key: "scroll_depth_50", labelKey: "analytics_metric_scroll_depth_50" },
   { key: "cpc", labelKey: "analytics_metric_cpc" },
 ];
 
@@ -598,7 +596,6 @@ export default function AnalyticsPage() {
         impressions,
         frequency,
         clicks,
-        scroll_depth_50: scrollDepth50,
         spend,
         cpa: kpis?.cpa ?? 0,
         cpc: kpis?.cpc ?? 0,
@@ -607,7 +604,7 @@ export default function AnalyticsPage() {
       } as Record<MetricFieldKey, number>,
       currency,
     };
-  }, [marketingInputs, kpis, summary, scrollDepth50]);
+  }, [marketingInputs, kpis, summary]);
 
   const renderMetricValue = (key: MetricFieldKey) => {
     const value = metricValues.values[key];
@@ -771,6 +768,8 @@ export default function AnalyticsPage() {
     { key: "capi", label: t("analytics_subtab_capi") },
     { key: "inputs_quality", label: t("analytics_subtab_inputs_quality") },
   ] as const;
+  const scrollToCheckoutPercent =
+    scrollDepth50 > 0 ? Number(((funnelChain?.initiate_checkout ?? 0) * 100 / scrollDepth50).toFixed(2)) : 0;
 
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
@@ -792,14 +791,13 @@ export default function AnalyticsPage() {
         <div className="w-full xl:w-auto flex flex-col gap-2">
           <div className="flex flex-col lg:flex-row lg:items-end gap-2">
             <div className="flex flex-wrap items-center gap-2">
-              <span className="text-xs cw-muted shrink-0">{t("analytics_period_from")}</span>
               <DatePickerField
                 value={fromDate}
                 onChange={setFromDate}
                 locale={dateLocale}
                 className="sm:w-[150px] md:w-[160px]"
               />
-              <span className="text-xs cw-muted shrink-0">{t("analytics_period_to")}</span>
+              <span className="text-xs cw-muted shrink-0">-</span>
               <DatePickerField
                 value={toDate}
                 onChange={setToDate}
@@ -1099,7 +1097,7 @@ export default function AnalyticsPage() {
           <div className="text-3xl font-bold mt-2 cw-text">{primaryConversion}%</div>
         </div>
         <div className="cw-surface p-6 rounded-2xl border cw-border cw-shadow">
-          <div className="text-sm font-medium cw-muted">{t("analytics_revenue_all_time")}</div>
+          <div className="text-sm font-medium cw-muted">{t("analytics_revenue_period")}</div>
           <div className="text-3xl font-bold mt-2 cw-text">{summary.totalRevenue.toLocaleString()} ₴</div>
         </div>
       </div>
@@ -1126,6 +1124,25 @@ export default function AnalyticsPage() {
               <div className="text-lg font-semibold cw-text mt-1">{renderMetricValue(field.key)}</div>
             </div>
           ))}
+        </div>
+      </div>
+      )}
+
+      {analyticsSection === "overview" && (
+      <div className="cw-panel p-6 space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold cw-text">{t("analytics_engagement_title")}</h2>
+          <p className="text-sm cw-muted">{t("analytics_engagement_subtitle")}</p>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <div className="cw-surface-2 border cw-border rounded-xl p-4">
+            <div className="text-xs cw-muted">{t("analytics_metric_scroll_depth_50")}</div>
+            <div className="text-2xl font-bold cw-text mt-1">{scrollDepth50.toLocaleString()}</div>
+          </div>
+          <div className="cw-surface-2 border cw-border rounded-xl p-4">
+            <div className="text-xs cw-muted">{t("analytics_scroll50_to_checkout_percent")}</div>
+            <div className="text-2xl font-bold cw-text mt-1">{scrollToCheckoutPercent}%</div>
+          </div>
         </div>
       </div>
       )}

@@ -546,6 +546,16 @@ export async function GET(req: NextRequest) {
         return serverErrorResponse(paidErr.message);
     }
 
+    const { count: ordersCreatedCount, error: ordersCreatedErr } = await db
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", range.fromTs)
+        .lt("created_at", range.toExclusiveTs);
+    if (ordersCreatedErr) {
+        console.error("Analytics orders created count error:", ordersCreatedErr);
+        return serverErrorResponse(ordersCreatedErr.message);
+    }
+
     const { count: scrollDepth50Count, error: scrollErr } = await db
         .from("events")
         .select("id", { count: "exact", head: true })
@@ -561,6 +571,17 @@ export async function GET(req: NextRequest) {
         scroll_depth_50: scrollDepth50Count ?? 0,
     };
 
+    const { count: localViewContentCount, error: localViewErr } = await db
+        .from("events")
+        .select("id", { count: "exact", head: true })
+        .eq("type", "view_content")
+        .gte("created_at", range.fromTs)
+        .lt("created_at", range.toExclusiveTs);
+    if (localViewErr) {
+        console.error("Analytics local view content count error:", localViewErr);
+        return serverErrorResponse(localViewErr.message);
+    }
+
     const pixelResult: PixelTotalsResult = await fetchPixelTotals(range).catch((err: unknown): PixelTotalsResult => {
         console.warn("Analytics Pixel stats warning:", err instanceof Error ? err.message : String(err));
         return {
@@ -572,10 +593,20 @@ export async function GET(req: NextRequest) {
         };
     });
 
+    const localViewContent = localViewContentCount ?? 0;
+    const fallbackViewContent = pixelResult.totals?.view_content ?? viewContentStats.total;
+    const viewContentSource =
+        localViewContent > 0
+            ? "local_events"
+            : pixelResult.totals?.view_content !== null
+                ? "pixel_fallback"
+                : "capi_fallback";
+
     const businessTotals: BusinessEventTotals = {
-        // Use event stream totals (CAPI jobs) for top/mid funnel to avoid Ads-attribution skew.
-        view_content: pixelResult.totals?.view_content ?? viewContentStats.total,
-        initiate_checkout: pixelResult.totals?.initiate_checkout ?? initiateCheckoutStats.total,
+        // Preferred source is local events; fallback avoids temporary zeros before backfill.
+        view_content: localViewContent > 0 ? localViewContent : fallbackViewContent,
+        // InitiateCheckout business fact: checkout records created in DB.
+        initiate_checkout: ordersCreatedCount ?? 0,
         // Purchase remains business-fact from paid/completed orders.
         purchase: paidOrdersCount ?? 0,
         access_granted: accessGrantedCount ?? 0,
@@ -649,12 +680,15 @@ export async function GET(req: NextRequest) {
                 from: range.from,
                 to: range.to,
             },
-            view_content_source: pixelResult.source,
+            view_content_source: viewContentSource,
+            business_view_content: localViewContent,
+            resolved_view_content: localViewContent > 0 ? localViewContent : fallbackViewContent,
             pixel_reason: pixelResult.reason ?? null,
-            pixel_view_content: pixelResult.totals?.view_content ?? null,
-            capi_view_content: viewContentStats.total,
-            pixel_initiate_checkout: pixelResult.totals?.initiate_checkout ?? null,
-            capi_initiate_checkout: initiateCheckoutStats.total,
+            reference_pixel_view_content: pixelResult.totals?.view_content ?? null,
+            transport_capi_view_content: viewContentStats.total,
+            reference_pixel_initiate_checkout: pixelResult.totals?.initiate_checkout ?? null,
+            business_initiate_checkout: ordersCreatedCount ?? 0,
+            transport_capi_initiate_checkout: initiateCheckoutStats.total,
             pixel_preview: pixelResult.preview ?? null,
             pixel_requested_range: pixelResult.requested_range ?? null,
         },
