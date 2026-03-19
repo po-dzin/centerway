@@ -7,8 +7,33 @@
   var PRICE_VALUE = 4100;
   var CURRENCY = "UAH";
   var CONTENT_NAME = "IREM";
+  var CLARITY_PROJECT_ID = "vy9u7jygno";
   var REDIRECT_RESET_MS = 5000;
   var isRedirecting = false;
+
+  function ensureClarity() {
+    if (typeof window === "undefined" || typeof document === "undefined") return;
+    if (typeof window.clarity !== "function") {
+      window.clarity = function() {
+        (window.clarity.q = window.clarity.q || []).push(arguments);
+      };
+    }
+    if (document.querySelector('script[data-cw-clarity="1"]')) {
+      return;
+    }
+    var script = document.createElement("script");
+    script.async = true;
+    script.src = "https://www.clarity.ms/tag/" + CLARITY_PROJECT_ID;
+    script.setAttribute("data-cw-clarity", "1");
+    var firstScript = document.getElementsByTagName("script")[0];
+    if (firstScript && firstScript.parentNode) {
+      firstScript.parentNode.insertBefore(script, firstScript);
+    } else {
+      document.head.appendChild(script);
+    }
+  }
+
+  ensureClarity();
 
   function readCookie(name) {
     var match = document.cookie.match(new RegExp("(^|;\\s*)" + name + "=([^;]+)"));
