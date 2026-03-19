@@ -123,6 +123,24 @@
     margin-top: 24px;
   }
 
+  .hero-proof {
+    margin-top: 16px;
+    align-items: center;
+  }
+
+  .hero-proof__badge {
+    font-size: 13px;
+    padding: 6px 10px;
+  }
+
+  .hero-proof__quote {
+    font-size: 15px;
+    line-height: 1.35;
+    max-width: 100%;
+    text-align: left;
+    padding: 10px 12px;
+  }
+
   .s1 .s1-preprice {
     text-align: center;
   }
@@ -153,6 +171,19 @@
 
   .s1 .price span {
     font-size: 30px;
+  }
+
+  .s1 #divprice .price-stack {
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .s1 .price .price-old {
+    font-size: 22px;
+  }
+
+  .s1 .price .price-current {
+    font-size: 32px;
   }
 
   .s1 #divprice .price-note {
@@ -207,6 +238,10 @@
   .s1 #divprice .price-note,
   .s1 #divprice .cta-note {
     text-align: center;
+  }
+
+  .s1 #divprice .price-note-row {
+    justify-content: center;
   }
 
   .s1 #divprice p {
