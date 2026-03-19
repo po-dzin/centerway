@@ -18,7 +18,8 @@
         (window.clarity.q = window.clarity.q || []).push(arguments);
       };
     }
-    if (document.querySelector('script[data-cw-clarity="1"]')) {
+    var existingClarityScript = document.querySelector('script[src*="clarity.ms/tag/"]');
+    if (existingClarityScript || document.querySelector('script[data-cw-clarity="1"]')) {
       return;
     }
     var script = document.createElement("script");
