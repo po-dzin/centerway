@@ -45,6 +45,14 @@ type MetaAggregate = {
     latest_synced_at: string | null;
 };
 
+type PixelDailyAggregate = {
+    view_content: number;
+    initiate_checkout: number;
+    purchase: number;
+    latest_day: string | null;
+    latest_synced_at: string | null;
+};
+
 type QualityGaps = {
     snapshot_date: string;
     paid_missing_fbclid: number;
@@ -54,8 +62,32 @@ type QualityGaps = {
     paid_missing_client_ua: number;
 };
 
+type QualitySeriesRow = {
+    date: string;
+    paid_orders: number;
+    missing_fbclid: number;
+    missing_fbp: number;
+    missing_page_url: number;
+    missing_client_ip: number;
+    missing_client_ua: number;
+};
+
 type EngagementStats = {
     scroll_depth_50: number;
+    initiate_checkout_aligned: number;
+    scroll50_to_checkout_percent: number;
+    aligned_from: string | null;
+};
+
+type AnalyticsFreshness = {
+    local_view_content_last_at: string | null;
+    local_scroll_depth_50_last_at: string | null;
+    orders_created_last_at: string | null;
+    orders_paid_last_at: string | null;
+    capi_last_sent_at: string | null;
+    meta_last_synced_at: string | null;
+    pixel_daily_last_synced_at: string | null;
+    quality_snapshot_date: string | null;
 };
 
 type DateRange = {
@@ -469,6 +501,50 @@ export async function GET(req: NextRequest) {
         metaAggregate.initiate_checkout > 0 ||
         metaAggregate.purchase > 0;
 
+    const { data: pixelRows, error: pixelDailyErr } = await db
+        .from("analytics_pixel_daily")
+        .select("day, view_content, initiate_checkout, purchase, synced_at")
+        .gte("day", range.from)
+        .lte("day", range.to)
+        .order("day", { ascending: false })
+        .limit(366);
+    if (pixelDailyErr) {
+        console.warn("Analytics Pixel daily warning:", pixelDailyErr.message);
+    }
+
+    const pixelDailyAggregate: PixelDailyAggregate = (pixelRows ?? []).reduce<PixelDailyAggregate>(
+        (acc, row) => {
+            const day = typeof row.day === "string" ? row.day : null;
+            if (!acc.latest_day && day) acc.latest_day = day;
+            acc.view_content += asFiniteNumber(row.view_content);
+            acc.initiate_checkout += asFiniteNumber(row.initiate_checkout);
+            acc.purchase += asFiniteNumber(row.purchase);
+            if (typeof row.synced_at === "string" && row.synced_at.trim()) {
+                if (!acc.latest_synced_at || row.synced_at > acc.latest_synced_at) {
+                    acc.latest_synced_at = row.synced_at;
+                }
+            }
+            return acc;
+        },
+        {
+            view_content: 0,
+            initiate_checkout: 0,
+            purchase: 0,
+            latest_day: null,
+            latest_synced_at: null,
+        }
+    );
+    const pixelDailyDaysPresent = (pixelRows ?? []).length;
+    const periodFromTs = Date.parse(`${range.from}T00:00:00.000Z`);
+    const periodToTs = Date.parse(`${range.to}T00:00:00.000Z`);
+    const pixelDailyExpectedDays =
+        Number.isFinite(periodFromTs) && Number.isFinite(periodToTs) && periodToTs >= periodFromTs
+            ? Math.floor((periodToTs - periodFromTs) / (24 * 60 * 60 * 1000)) + 1
+            : 0;
+    const pixelDailyCoveragePercent = pixelDailyExpectedDays > 0
+        ? Number(((pixelDailyDaysPresent * 100) / pixelDailyExpectedDays).toFixed(2))
+        : 0;
+
     // 5. Manual marketing input row (fallback if Meta sync not available yet)
     let marketingInputs: MarketingInputs = {
         reach: 0,
@@ -567,8 +643,39 @@ export async function GET(req: NextRequest) {
         return serverErrorResponse(scrollErr.message);
     }
 
+    const { data: firstScrollDepthRow, error: firstScrollErr } = await db
+        .from("events")
+        .select("created_at")
+        .eq("type", "scroll_depth_50")
+        .order("created_at", { ascending: true })
+        .limit(1)
+        .maybeSingle();
+    if (firstScrollErr) {
+        console.warn("Analytics first scroll depth warning:", firstScrollErr.message);
+    }
+    const firstScrollDepthAt = (firstScrollDepthRow as { created_at?: string } | null)?.created_at ?? null;
+    const alignedFromTs =
+        firstScrollDepthAt && firstScrollDepthAt > range.fromTs ? firstScrollDepthAt : range.fromTs;
+
+    const { count: alignedInitiateCheckoutCount, error: alignedInitiateErr } = await db
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", alignedFromTs)
+        .lt("created_at", range.toExclusiveTs);
+    if (alignedInitiateErr) {
+        console.error("Analytics aligned initiate checkout count error:", alignedInitiateErr);
+        return serverErrorResponse(alignedInitiateErr.message);
+    }
+
+    const scrollDepth50Total = scrollDepth50Count ?? 0;
+    const alignedInitiateCheckoutTotal = alignedInitiateCheckoutCount ?? 0;
     const engagement: EngagementStats = {
-        scroll_depth_50: scrollDepth50Count ?? 0,
+        scroll_depth_50: scrollDepth50Total,
+        initiate_checkout_aligned: alignedInitiateCheckoutTotal,
+        scroll50_to_checkout_percent: Number(
+            safeDivide(alignedInitiateCheckoutTotal * 100, scrollDepth50Total).toFixed(2)
+        ),
+        aligned_from: alignedFromTs,
     };
 
     const { count: localViewContentCount, error: localViewErr } = await db
@@ -594,17 +701,55 @@ export async function GET(req: NextRequest) {
     });
 
     const localViewContent = localViewContentCount ?? 0;
+    const localViewContentFloored =
+        localViewContent > 0 ? Math.max(localViewContent, ordersCreatedCount ?? 0) : localViewContent;
     const fallbackViewContent = pixelResult.totals?.view_content ?? viewContentStats.total;
+    const hasPixelDailyViewContent = pixelDailyAggregate.view_content > 0;
+    const referencePixelViewContent = pixelResult.totals?.view_content ?? null;
+    const businessInitiateCheckout = ordersCreatedCount ?? 0;
+    const pixelStatsUnavailable = (pixelResult.reason ?? "").startsWith("pixel_stats_api_error");
+    const pixelDailyImplausibleForFunnel =
+        hasPixelDailyViewContent &&
+        businessInitiateCheckout > 0 &&
+        pixelDailyAggregate.view_content < businessInitiateCheckout;
+    const preferReferencePixelViewContent =
+        referencePixelViewContent !== null &&
+        referencePixelViewContent > 0 &&
+        (
+            !hasPixelDailyViewContent ||
+            pixelDailyCoveragePercent < 80 ||
+            pixelDailyAggregate.view_content < Math.round(referencePixelViewContent * 0.7)
+        );
+    const pixelDailyLowCoverageWhenPixelUnavailable =
+        pixelStatsUnavailable &&
+        hasPixelDailyViewContent &&
+        pixelDailyCoveragePercent < 99;
+    const usePixelDailyForViewContent =
+        hasPixelDailyViewContent &&
+        !preferReferencePixelViewContent &&
+        !pixelDailyImplausibleForFunnel &&
+        !pixelDailyLowCoverageWhenPixelUnavailable;
+    const resolvedViewContent = usePixelDailyForViewContent
+        ? pixelDailyAggregate.view_content
+        : localViewContent > 0
+            ? localViewContentFloored
+            : fallbackViewContent;
     const viewContentSource =
-        localViewContent > 0
-            ? "local_events"
+        preferReferencePixelViewContent
+            ? "pixel_stats_reference"
+            : usePixelDailyForViewContent
+            ? "pixel_daily_stats"
+            : localViewContent > 0
+            ? localViewContentFloored > localViewContent
+                ? "local_events_floored"
+                : "local_events"
             : pixelResult.totals?.view_content !== null
                 ? "pixel_fallback"
                 : "capi_fallback";
 
     const businessTotals: BusinessEventTotals = {
-        // Preferred source is local events; fallback avoids temporary zeros before backfill.
-        view_content: localViewContent > 0 ? localViewContent : fallbackViewContent,
+        // Preferred source is Pixel daily stats synced from Event Manager.
+        view_content: resolvedViewContent,
         // InitiateCheckout business fact: checkout records created in DB.
         initiate_checkout: ordersCreatedCount ?? 0,
         // Purchase remains business-fact from paid/completed orders.
@@ -623,6 +768,108 @@ export async function GET(req: NextRequest) {
     if (qualityErr) {
         console.warn("Analytics quality gaps warning:", qualityErr.message);
     }
+
+    const { data: qualityOrdersRows, error: qualitySeriesErr } = await db
+        .from("orders")
+        .select("created_at, status, fbclid, fbp, page_url, client_ip, client_ua")
+        .gte("created_at", range.fromTs)
+        .lt("created_at", range.toExclusiveTs)
+        .in("status", ["paid", "completed"])
+        .limit(50000);
+    if (qualitySeriesErr) {
+        console.warn("Analytics quality series warning:", qualitySeriesErr.message);
+    }
+
+    const qualitySeriesMap = new Map<string, QualitySeriesRow>();
+    for (const row of qualityOrdersRows ?? []) {
+        const createdAt = typeof row.created_at === "string" ? row.created_at : null;
+        if (!createdAt) continue;
+        const day = createdAt.slice(0, 10);
+        const existing = qualitySeriesMap.get(day) ?? {
+            date: day,
+            paid_orders: 0,
+            missing_fbclid: 0,
+            missing_fbp: 0,
+            missing_page_url: 0,
+            missing_client_ip: 0,
+            missing_client_ua: 0,
+        };
+        existing.paid_orders += 1;
+        if (!row.fbclid) existing.missing_fbclid += 1;
+        if (!row.fbp) existing.missing_fbp += 1;
+        if (!row.page_url) existing.missing_page_url += 1;
+        if (!row.client_ip) existing.missing_client_ip += 1;
+        if (!row.client_ua) existing.missing_client_ua += 1;
+        qualitySeriesMap.set(day, existing);
+    }
+    const quality_series = Array.from(qualitySeriesMap.values()).sort((a, b) =>
+        a.date.localeCompare(b.date)
+    );
+
+    const [
+        localViewFreshnessRes,
+        scrollFreshnessRes,
+        ordersCreatedFreshnessRes,
+        ordersPaidFreshnessRes,
+        capiFreshnessRes,
+    ] = await Promise.all([
+        db
+            .from("events")
+            .select("created_at")
+            .eq("type", "view_content")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        db
+            .from("events")
+            .select("created_at")
+            .eq("type", "scroll_depth_50")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        db
+            .from("orders")
+            .select("created_at")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        db
+            .from("orders")
+            .select("created_at")
+            .in("status", ["paid", "completed"])
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+        db
+            .from("jobs")
+            .select("created_at")
+            .eq("type", "meta:capi")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+    ]);
+
+    const freshnessErrors = [
+        localViewFreshnessRes.error,
+        scrollFreshnessRes.error,
+        ordersCreatedFreshnessRes.error,
+        ordersPaidFreshnessRes.error,
+        capiFreshnessRes.error,
+    ].filter(Boolean);
+    if (freshnessErrors.length > 0) {
+        console.warn("Analytics freshness warning:", freshnessErrors[0]?.message);
+    }
+
+    const freshness: AnalyticsFreshness = {
+        local_view_content_last_at: (localViewFreshnessRes.data as { created_at?: string } | null)?.created_at ?? null,
+        local_scroll_depth_50_last_at: (scrollFreshnessRes.data as { created_at?: string } | null)?.created_at ?? null,
+        orders_created_last_at: (ordersCreatedFreshnessRes.data as { created_at?: string } | null)?.created_at ?? null,
+        orders_paid_last_at: (ordersPaidFreshnessRes.data as { created_at?: string } | null)?.created_at ?? null,
+        capi_last_sent_at: (capiFreshnessRes.data as { created_at?: string } | null)?.created_at ?? null,
+        meta_last_synced_at: marketingInputs.updated_at ?? null,
+        pixel_daily_last_synced_at: pixelDailyAggregate.latest_synced_at ?? null,
+        quality_snapshot_date: qualityRow?.snapshot_date ?? null,
+    };
 
     // 8. Unified KPI formulas
     const spend = marketingInputs.spend;
@@ -673,6 +920,12 @@ export async function GET(req: NextRequest) {
             ),
         },
         business_events: businessTotals,
+        funnel_sources: {
+            view_content: viewContentSource,
+            initiate_checkout: "orders_created",
+            purchase: "paid_orders",
+            access_granted: "token_consumed",
+        },
         engagement,
         marketing_inputs: marketingInputs,
         funnel_debug: {
@@ -682,7 +935,15 @@ export async function GET(req: NextRequest) {
             },
             view_content_source: viewContentSource,
             business_view_content: localViewContent,
-            resolved_view_content: localViewContent > 0 ? localViewContent : fallbackViewContent,
+            business_view_content_floored: localViewContentFloored,
+            pixel_daily_view_content: pixelDailyAggregate.view_content,
+            pixel_daily_days_present: pixelDailyDaysPresent,
+            pixel_daily_expected_days: pixelDailyExpectedDays,
+            pixel_daily_coverage_percent: pixelDailyCoveragePercent,
+            pixel_daily_implausible_for_funnel: pixelDailyImplausibleForFunnel,
+            pixel_daily_low_coverage_when_pixel_unavailable: pixelDailyLowCoverageWhenPixelUnavailable,
+            prefer_reference_pixel_view_content: preferReferencePixelViewContent,
+            resolved_view_content: resolvedViewContent,
             pixel_reason: pixelResult.reason ?? null,
             reference_pixel_view_content: pixelResult.totals?.view_content ?? null,
             transport_capi_view_content: viewContentStats.total,
@@ -693,6 +954,8 @@ export async function GET(req: NextRequest) {
             pixel_requested_range: pixelResult.requested_range ?? null,
         },
         quality_gaps: (qualityRow ?? null) as QualityGaps | null,
+        quality_series,
+        freshness,
         kpis: {
             cpa: toFixed2(cpa),
             cpc: toFixed2(cpc),
