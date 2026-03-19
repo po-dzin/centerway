@@ -824,7 +824,7 @@ export default function AnalyticsPage() {
       <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4 cw-surface p-6 rounded-2xl border cw-border cw-shadow">
         <div className="xl:max-w-sm">
           <h1 className="text-2xl font-bold cw-text">{t("analytics_title")}</h1>
-          <p className="cw-muted text-sm mt-1">{t("analytics_subtitle_compact")}</p>
+          <p className="cw-muted text-sm mt-1">{t("analytics_subtitle")}</p>
           <p className="text-xs cw-muted mt-2">
             {t("analytics_data_source")}:{" "}
             {marketingInputs?.source === "meta"
