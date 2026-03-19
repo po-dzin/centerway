@@ -90,6 +90,27 @@ type QualityGaps = {
   paid_missing_client_ua: number;
 };
 
+type AnalyticsFreshness = {
+  local_view_content_last_at: string | null;
+  local_scroll_depth_50_last_at: string | null;
+  orders_created_last_at: string | null;
+  orders_paid_last_at: string | null;
+  capi_last_sent_at: string | null;
+  meta_last_synced_at: string | null;
+  pixel_daily_last_synced_at: string | null;
+  quality_snapshot_date: string | null;
+};
+
+type QualitySeriesRow = {
+  date: string;
+  paid_orders: number;
+  missing_fbclid: number;
+  missing_fbp: number;
+  missing_page_url: number;
+  missing_client_ip: number;
+  missing_client_ua: number;
+};
+
 type AnalyticsResponse = {
   period?: {
     from: string;
@@ -101,6 +122,18 @@ type AnalyticsResponse = {
   capi_events: CapiEventStats[];
   capi_overview: CapiOverview;
   funnel_chain: FunnelChain;
+  funnel_sources?: {
+    view_content:
+      | "local_events"
+      | "local_events_floored"
+      | "pixel_daily_stats"
+      | "pixel_stats_reference"
+      | "pixel_fallback"
+      | "capi_fallback";
+    initiate_checkout: "orders_created";
+    purchase: "paid_orders";
+    access_granted: "token_consumed";
+  };
   business_events: {
     view_content: number;
     initiate_checkout: number;
@@ -109,9 +142,14 @@ type AnalyticsResponse = {
   };
   engagement?: {
     scroll_depth_50: number;
+    initiate_checkout_aligned: number;
+    scroll50_to_checkout_percent: number;
+    aligned_from: string | null;
   };
   marketing_inputs: MarketingInputs;
   quality_gaps?: QualityGaps | null;
+  quality_series?: QualitySeriesRow[];
+  freshness?: AnalyticsFreshness | null;
   kpis: UnifiedKpis;
 };
 
@@ -193,6 +231,42 @@ function clampIsoToToday(value: string): string {
 
 function isIsoDateInput(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function freshnessStatus(
+  isoTs: string | null,
+  staleAfterHours: number
+): "ok" | "warn" | "empty" {
+  if (!isoTs) return "empty";
+  const ts = Date.parse(isoTs);
+  if (!Number.isFinite(ts)) return "empty";
+  const diffMs = Date.now() - ts;
+  const staleMs = staleAfterHours * 60 * 60 * 1000;
+  return diffMs <= staleMs ? "ok" : "warn";
+}
+
+function funnelSourceLabel(
+  t: (key: never) => string,
+  source:
+    | "local_events"
+    | "local_events_floored"
+    | "pixel_daily_stats"
+    | "pixel_stats_reference"
+    | "pixel_fallback"
+    | "capi_fallback"
+    | "orders_created"
+    | "paid_orders"
+    | "token_consumed"
+): string {
+  if (source === "local_events") return t("analytics_source_local_events" as never);
+  if (source === "local_events_floored") return t("analytics_source_local_events_floored" as never);
+  if (source === "pixel_daily_stats") return t("analytics_source_pixel_daily_stats" as never);
+  if (source === "pixel_stats_reference") return t("analytics_source_pixel_stats_reference" as never);
+  if (source === "pixel_fallback") return t("analytics_source_pixel_fallback" as never);
+  if (source === "capi_fallback") return t("analytics_source_capi_fallback" as never);
+  if (source === "orders_created") return t("analytics_source_orders_created" as never);
+  if (source === "paid_orders") return t("analytics_source_paid_orders" as never);
+  return t("analytics_source_token_consumed" as never);
 }
 
 function isoToDate(value: string): Date | null {
@@ -379,11 +453,16 @@ export default function AnalyticsPage() {
   const [funnelChain, setFunnelChain] = useState<FunnelChain | null>(null);
   const [kpis, setKpis] = useState<UnifiedKpis | null>(null);
   const [scrollDepth50, setScrollDepth50] = useState<number>(0);
+  const [engagementInitiateAligned, setEngagementInitiateAligned] = useState<number>(0);
+  const [scroll50ToCheckoutPercent, setScroll50ToCheckoutPercent] = useState<number>(0);
+  const [engagementAlignedFrom, setEngagementAlignedFrom] = useState<string | null>(null);
   const [qualityGaps, setQualityGaps] = useState<QualityGaps | null>(null);
+  const [qualitySeries, setQualitySeries] = useState<QualitySeriesRow[]>([]);
+  const [freshness, setFreshness] = useState<AnalyticsFreshness | null>(null);
+  const [funnelSources, setFunnelSources] = useState<AnalyticsResponse["funnel_sources"] | null>(null);
 
   const [marketingInputs, setMarketingInputs] = useState<MarketingInputs | null>(null);
   const [savingMarketing, setSavingMarketing] = useState(false);
-  const [syncingMeta, setSyncingMeta] = useState(false);
 
   const [visibleFields, setVisibleFields] = useState<MetricFieldKey[]>(
     PRIMARY_METRIC_FIELDS.map((item) => item.key)
@@ -517,7 +596,13 @@ export default function AnalyticsPage() {
       setFunnelChain(data.funnel_chain ?? null);
       setKpis(data.kpis ?? null);
       setScrollDepth50(data.engagement?.scroll_depth_50 ?? 0);
+      setEngagementInitiateAligned(data.engagement?.initiate_checkout_aligned ?? 0);
+      setScroll50ToCheckoutPercent(data.engagement?.scroll50_to_checkout_percent ?? 0);
+      setEngagementAlignedFrom(data.engagement?.aligned_from ?? null);
       setQualityGaps(data.quality_gaps ?? null);
+      setQualitySeries(data.quality_series ?? []);
+      setFreshness(data.freshness ?? null);
+      setFunnelSources(data.funnel_sources ?? null);
 
       const inputs = data.marketing_inputs ?? null;
       setMarketingInputs(inputs);
@@ -682,40 +767,6 @@ export default function AnalyticsPage() {
     }
   };
 
-  const syncMetaInsights = async () => {
-    try {
-      setSyncingMeta(true);
-      const {
-        data: { session },
-      } = await supabaseClient.auth.getSession();
-
-      if (!session?.access_token) {
-        throw new Error("No admin session");
-      }
-
-      const res = await fetch("/api/admin/analytics/sync-meta", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({}),
-      });
-
-      const payload = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(payload?.error || `Failed to sync Meta (${res.status})`);
-      }
-
-      toast.success(t("analytics_meta_sync_success"));
-      await fetchAnalytics();
-    } catch (err: unknown) {
-      toast.error(`${t("common_error")}: ${getErrorMessage(err)}`);
-    } finally {
-      setSyncingMeta(false);
-    }
-  };
-
   const campaignLabel = (sourceCampaign: string | null | undefined) => {
     const normalized = (sourceCampaign ?? "").trim().toLowerCase();
     if (!normalized || normalized === "organic" || normalized === "organic/direct") {
@@ -768,25 +819,24 @@ export default function AnalyticsPage() {
     { key: "capi", label: t("analytics_subtab_capi") },
     { key: "inputs_quality", label: t("analytics_subtab_inputs_quality") },
   ] as const;
-  const scrollToCheckoutPercent =
-    scrollDepth50 > 0 ? Number(((funnelChain?.initiate_checkout ?? 0) * 100 / scrollDepth50).toFixed(2)) : 0;
-
   return (
     <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4 cw-surface p-6 rounded-2xl border cw-border cw-shadow">
         <div className="xl:max-w-sm">
           <h1 className="text-2xl font-bold cw-text">{t("analytics_title")}</h1>
-          <p className="cw-muted text-sm mt-1">{t("analytics_subtitle")}</p>
-          {marketingInputs?.period_label ? (
-            <p className="text-xs cw-muted mt-1">
-              {t("analytics_period_label")}: {marketingInputs.period_label}
-            </p>
-          ) : null}
-          {marketingInputs?.source ? (
-            <p className="text-xs cw-muted mt-1">
-              {t("analytics_data_source")}: {marketingInputs.source === "meta" ? t("analytics_data_source_meta") : t("analytics_data_source_manual")}
-            </p>
-          ) : null}
+          <p className="cw-muted text-sm mt-1">{t("analytics_subtitle_compact")}</p>
+          <p className="text-xs cw-muted mt-2">
+            {t("analytics_data_source")}:{" "}
+            {marketingInputs?.source === "meta"
+              ? t("analytics_data_source_meta")
+              : t("analytics_data_source_manual")}
+            {marketingInputs?.updated_at ? (
+              <>
+                {" • "}
+                {t("analytics_last_update")}: {new Date(marketingInputs.updated_at).toLocaleString()}
+              </>
+            ) : null}
+          </p>
         </div>
         <div className="w-full xl:w-auto flex flex-col gap-2">
           <div className="flex flex-col lg:flex-row lg:items-end gap-2">
@@ -843,19 +893,6 @@ export default function AnalyticsPage() {
             >
               {t("analytics_apply_period")}
             </button>
-            <button
-              onClick={syncMetaInsights}
-              disabled={syncingMeta}
-              className="w-full sm:w-auto px-3 py-2 text-sm font-medium cw-btn disabled:opacity-50"
-            >
-              {syncingMeta ? t("analytics_meta_syncing") : t("analytics_meta_sync")}
-            </button>
-            <button
-              onClick={() => fetchAnalytics()}
-              className="w-full sm:w-auto px-4 py-2 text-sm font-medium cw-btn"
-            >
-              {t("analytics_refresh")}
-            </button>
           </div>
         </div>
       </div>
@@ -873,6 +910,14 @@ export default function AnalyticsPage() {
       {analyticsSection === "inputs_quality" && (
         <div className="space-y-1">
           <h2 className="text-lg font-semibold cw-text">{t("analytics_inputs_title")}</h2>
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => fetchAnalytics()}
+              className="px-4 py-2 text-sm font-medium cw-btn"
+            >
+              {t("analytics_refresh")}
+            </button>
+          </div>
         </div>
       )}
 
@@ -1049,6 +1094,60 @@ export default function AnalyticsPage() {
 
       {analyticsSection === "inputs_quality" && (
         <div className="cw-panel p-4">
+          <h3 className="text-sm font-semibold cw-text">{t("analytics_freshness_title")}</h3>
+          <p className="text-xs cw-muted mt-1 mb-3">{t("analytics_freshness_note")}</p>
+          {freshness ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+              {[
+                { key: "local_view_content_last_at", label: t("analytics_freshness_local_view_content"), value: freshness.local_view_content_last_at, staleHours: 24 },
+                { key: "local_scroll_depth_50_last_at", label: t("analytics_freshness_local_scroll50"), value: freshness.local_scroll_depth_50_last_at, staleHours: 24 },
+                { key: "orders_created_last_at", label: t("analytics_freshness_orders_created"), value: freshness.orders_created_last_at, staleHours: 24 },
+                { key: "orders_paid_last_at", label: t("analytics_freshness_orders_paid"), value: freshness.orders_paid_last_at, staleHours: 48 },
+                { key: "capi_last_sent_at", label: t("analytics_freshness_capi"), value: freshness.capi_last_sent_at, staleHours: 24 },
+                { key: "meta_last_synced_at", label: t("analytics_freshness_meta_sync"), value: freshness.meta_last_synced_at, staleHours: 24 },
+                { key: "pixel_daily_last_synced_at", label: t("analytics_freshness_pixel_daily_sync"), value: freshness.pixel_daily_last_synced_at, staleHours: 24 },
+              ].map((item) => {
+                const status = freshnessStatus(item.value, item.staleHours);
+                return (
+                  <div key={item.key} className="cw-surface-2 border cw-border rounded-lg p-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-xs cw-muted">{item.label}</p>
+                      <span
+                        className={`text-[11px] rounded-full px-2 py-0.5 border ${
+                          status === "ok"
+                            ? "cw-status-success-badge"
+                            : status === "warn"
+                              ? "cw-status-pending-badge"
+                              : "cw-muted border cw-border"
+                        }`}
+                      >
+                        {status === "ok"
+                          ? t("analytics_freshness_status_ok")
+                          : status === "warn"
+                            ? t("analytics_freshness_status_stale")
+                            : t("analytics_freshness_status_empty")}
+                      </span>
+                    </div>
+                    <p className="text-sm cw-text mt-2">
+                      {item.value ? new Date(item.value).toLocaleString() : "—"}
+                    </p>
+                  </div>
+                );
+              })}
+
+              <div className="cw-surface-2 border cw-border rounded-lg p-3 md:col-span-2 lg:col-span-3">
+                <p className="text-xs cw-muted">{t("analytics_freshness_quality_snapshot")}</p>
+                <p className="text-sm cw-text mt-2">{freshness.quality_snapshot_date ?? "—"}</p>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm cw-muted">{t("analytics_freshness_no_data")}</div>
+          )}
+        </div>
+      )}
+
+      {analyticsSection === "inputs_quality" && (
+        <div className="cw-panel p-4">
           <h3 className="text-sm font-semibold cw-text">{t("analytics_quality_title")}</h3>
           <p className="text-xs cw-muted mt-1 mb-3">{t("analytics_quality_note")}</p>
           {qualityGaps ? (
@@ -1077,6 +1176,44 @@ export default function AnalyticsPage() {
           ) : (
             <div className="text-sm cw-muted">{t("analytics_quality_no_data")}</div>
           )}
+
+          <div className="mt-4">
+            <h4 className="text-xs font-semibold cw-text uppercase tracking-wide mb-2">
+              {t("analytics_quality_trend_title")}
+            </h4>
+            {qualitySeries.length > 0 ? (
+              <div className="cw-surface rounded-xl border cw-border overflow-x-auto">
+                <table className="min-w-full text-xs md:text-sm">
+                  <thead className="cw-surface-2 border-b cw-border">
+                    <tr>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_date")}</th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_paid")}</th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_fbclid")}</th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_fbp")}</th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_page_url")}</th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_client_ip")}</th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_client_ua")}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {qualitySeries.map((row) => (
+                      <tr key={row.date} className="border-t cw-border">
+                        <td className="px-3 py-2 cw-text">{row.date}</td>
+                        <td className="px-3 py-2 cw-text">{row.paid_orders}</td>
+                        <td className="px-3 py-2 cw-muted">{row.missing_fbclid}</td>
+                        <td className="px-3 py-2 cw-muted">{row.missing_fbp}</td>
+                        <td className="px-3 py-2 cw-muted">{row.missing_page_url}</td>
+                        <td className="px-3 py-2 cw-muted">{row.missing_client_ip}</td>
+                        <td className="px-3 py-2 cw-muted">{row.missing_client_ua}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-sm cw-muted">{t("analytics_quality_trend_no_data")}</div>
+            )}
+          </div>
         </div>
       )}
 
@@ -1141,7 +1278,11 @@ export default function AnalyticsPage() {
           </div>
           <div className="cw-surface-2 border cw-border rounded-xl p-4">
             <div className="text-xs cw-muted">{t("analytics_scroll50_to_checkout_percent")}</div>
-            <div className="text-2xl font-bold cw-text mt-1">{scrollToCheckoutPercent}%</div>
+            <div className="text-2xl font-bold cw-text mt-1">{scroll50ToCheckoutPercent}%</div>
+            <div className="text-xs cw-muted mt-1">
+              {t("analytics_event_initiate_checkout")}: {engagementInitiateAligned}
+              {engagementAlignedFrom ? ` • ${t("analytics_period_from")} ${new Date(engagementAlignedFrom).toLocaleDateString(dateLocale)}` : ""}
+            </div>
           </div>
         </div>
       </div>
@@ -1150,6 +1291,25 @@ export default function AnalyticsPage() {
       {analyticsSection === "funnel" && (
         <div className="cw-panel p-6 space-y-4">
           <h2 className="text-lg font-semibold cw-text">{t("analytics_chain_title")}</h2>
+          {funnelSources ? (
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: "view_content", label: t("analytics_event_view_content"), value: funnelSources.view_content },
+                { key: "initiate_checkout", label: t("analytics_event_initiate_checkout"), value: funnelSources.initiate_checkout },
+                { key: "purchase", label: t("analytics_event_purchase"), value: funnelSources.purchase },
+                ...(funnelUiSettings.mode === "access" || funnelUiSettings.showAccessGrantedCard
+                  ? [{ key: "access_granted", label: t("analytics_event_access_granted"), value: funnelSources.access_granted as "token_consumed" }]
+                  : []),
+              ].map((item) => (
+                <span
+                  key={item.key}
+                  className="text-xs cw-muted border cw-border rounded-full px-2.5 py-1 cw-surface-2"
+                >
+                  {item.label}: {funnelSourceLabel(t, item.value)}
+                </span>
+              ))}
+            </div>
+          ) : null}
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="cw-surface-2 border cw-border rounded-xl p-4">
