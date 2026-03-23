@@ -103,6 +103,11 @@
     background: transparent;
   }
 
+  .s1 iframe.img.mob {
+    max-height: none;
+    aspect-ratio: 16 / 9;
+  }
+
   .s1 .img {
     width: 100%;
     max-width: 448px;

@@ -328,6 +328,18 @@ img {
   filter: drop-shadow(0 22px 32px rgba(0, 0, 0, 0.12));
 }
 
+.s1 iframe.img {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 16 / 9;
+  border: 0;
+}
+
+.s1 iframe.img.desk {
+  max-height: none;
+}
+
 .s1 #divprice {
   display: flex;
   flex-direction: column;
