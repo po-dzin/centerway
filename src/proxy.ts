@@ -22,6 +22,9 @@ function brandFromReferer(rawReferer: string | null): HostBrand | null {
     const p = ref.pathname.toLowerCase();
     if (p === "/irem" || p.startsWith("/irem/")) return "irem";
     if (p === "/reboot" || p.startsWith("/reboot/")) return "short";
+    if (p === "/consult" || p.startsWith("/consult/")) return "consult";
+    if (p === "/detox" || p.startsWith("/detox/")) return "detox";
+    if (p === "/herbs" || p.startsWith("/herbs/")) return "herbs";
   } catch {
     return null;
   }
@@ -54,14 +57,20 @@ export function proxy(req: NextRequest) {
     pathname.startsWith("/pay/return") ||
     pathname.startsWith("/short/") ||
     pathname.startsWith("/irem/") ||
+    pathname.startsWith("/consult/") ||
+    pathname.startsWith("/detox/") ||
+    pathname.startsWith("/herbs/") ||
     pathname === "/favicon.ico"
   ) {
     return NextResponse.next();
   }
 
-  // Local convenience routes to open both landings by path:
+  // Local convenience routes to open landing pages by path:
   // - /reboot -> /short/index.html
   // - /irem   -> /irem/index.html
+  // - /consult -> /consult/index.html
+  // - /detox -> /detox/index.html
+  // - /herbs -> /herbs/index.html
   if (pathname === "/reboot" || pathname === "/reboot/") {
     const url = req.nextUrl.clone();
     url.pathname = "/short/index.html";
@@ -71,6 +80,24 @@ export function proxy(req: NextRequest) {
   if (pathname === "/irem" || pathname === "/irem/") {
     const url = req.nextUrl.clone();
     url.pathname = "/irem/index.html";
+    return NextResponse.rewrite(url);
+  }
+
+  if (pathname === "/consult" || pathname === "/consult/") {
+    const url = req.nextUrl.clone();
+    url.pathname = "/consult/index.html";
+    return NextResponse.rewrite(url);
+  }
+
+  if (pathname === "/detox" || pathname === "/detox/") {
+    const url = req.nextUrl.clone();
+    url.pathname = "/detox/index.html";
+    return NextResponse.rewrite(url);
+  }
+
+  if (pathname === "/herbs" || pathname === "/herbs/") {
+    const url = req.nextUrl.clone();
+    url.pathname = "/herbs/index.html";
     return NextResponse.rewrite(url);
   }
 

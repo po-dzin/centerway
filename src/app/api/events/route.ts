@@ -25,9 +25,11 @@ type EventsRequestBody = {
   content_name?: unknown;
   content_type?: unknown;
   content_ids?: unknown;
+  cta_place?: unknown;
+  target?: unknown;
 };
 
-type LocalOnlyEventName = "ScrollDepth50";
+type LocalOnlyEventName = "ScrollDepth50" | "ConsultCTA" | "DetoxCTA";
 type AllowedEventName = CapiEventPayload["event_name"] | LocalOnlyEventName;
 
 const CAPI_EVENT_NAMES = new Set<CapiEventPayload["event_name"]>([
@@ -35,7 +37,7 @@ const CAPI_EVENT_NAMES = new Set<CapiEventPayload["event_name"]>([
   "Lead",
   "InitiateCheckout",
 ]);
-const LOCAL_ONLY_EVENT_NAMES = new Set<LocalOnlyEventName>(["ScrollDepth50"]);
+const LOCAL_ONLY_EVENT_NAMES = new Set<LocalOnlyEventName>(["ScrollDepth50", "ConsultCTA", "DetoxCTA"]);
 
 function isCapiEventName(name: string): name is CapiEventPayload["event_name"] {
   return CAPI_EVENT_NAMES.has(name as CapiEventPayload["event_name"]);
@@ -125,11 +127,15 @@ export async function POST(req: NextRequest) {
     content_name: asString(body.content_name) ?? undefined,
     content_type: asString(body.content_type) ?? undefined,
     content_ids: asStringArray(body.content_ids),
+    cta_place: asString(body.cta_place),
+    target: asString(body.target),
   };
 
   if (isLocalOnlyEventName(eventName)) {
+    const localType =
+      eventName === "ConsultCTA" ? "consult_cta" : eventName === "DetoxCTA" ? "detox_cta" : "scroll_depth_50";
     const { error: insertErr } = await db.from("events").insert({
-      type: "scroll_depth_50",
+      type: localType,
       order_ref: null,
       payload: sharedPayload,
     });
