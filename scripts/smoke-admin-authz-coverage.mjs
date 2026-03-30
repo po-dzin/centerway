@@ -3,23 +3,19 @@ import path from "node:path";
 
 const repoRoot = process.cwd();
 const apiRoot = path.join(repoRoot, "src", "app", "api", "admin");
+const matrixPath = path.join(repoRoot, "data", "admin-authz-matrix.json");
 const allowedMethods = new Set(["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"]);
 
-const matrix = [
-  { method: "GET", path: "/api/admin/analytics" },
-  { method: "GET", path: "/api/admin/audit" },
-  { method: "GET", path: "/api/admin/orders" },
-  { method: "PATCH", path: "/api/admin/orders" },
-  { method: "GET", path: "/api/admin/jobs" },
-  { method: "POST", path: "/api/admin/jobs/:id/retry" },
-  { method: "GET", path: "/api/admin/customers" },
-  { method: "GET", path: "/api/admin/customers/:id" },
-  { method: "PATCH", path: "/api/admin/customers/:id" },
-  { method: "POST", path: "/api/admin/system/pulse" },
-  { method: "PATCH", path: "/api/admin/analytics/marketing" },
-  { method: "POST", path: "/api/admin/analytics/sync-meta" },
-  { method: "POST", path: "/api/admin/bootstrap-role" },
-];
+function loadMatrix() {
+  const raw = fs.readFileSync(matrixPath, "utf8");
+  const matrix = JSON.parse(raw);
+  if (!Array.isArray(matrix)) {
+    throw new Error(`Invalid authz matrix: expected array in ${path.relative(repoRoot, matrixPath)}`);
+  }
+  return matrix;
+}
+
+const matrix = loadMatrix();
 
 function walkRouteFiles(dir) {
   const entries = [];
@@ -97,6 +93,10 @@ function keyFor(method, routePath) {
   return `${method} ${routePath}`;
 }
 
+function getMatrixRoutePath(entry) {
+  return typeof entry.routePath === "string" && entry.routePath.trim().length > 0 ? entry.routePath : entry.path;
+}
+
 function main() {
   if (!fs.existsSync(apiRoot)) {
     console.error(`ERROR admin api root not found: ${apiRoot}`);
@@ -115,7 +115,7 @@ function main() {
     }
   }
 
-  const matrixByKey = new Map(matrix.map((entry) => [keyFor(entry.method, entry.path), entry]));
+  const matrixByKey = new Map(matrix.map((entry) => [keyFor(entry.method, getMatrixRoutePath(entry)), entry]));
   const missing = [];
   const extra = [];
 
@@ -127,7 +127,7 @@ function main() {
 
   for (const [key, entry] of matrixByKey) {
     if (!actualByKey.has(key)) {
-      extra.push(entry);
+      extra.push({ method: entry.method, path: getMatrixRoutePath(entry) });
     }
   }
 

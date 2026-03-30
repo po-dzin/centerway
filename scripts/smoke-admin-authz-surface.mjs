@@ -1,28 +1,28 @@
+import fs from "node:fs";
+import path from "node:path";
+
+const repoRoot = process.cwd();
+const matrixPath = path.join(repoRoot, "data", "admin-authz-matrix.json");
 const baseUrl = (process.env.SMOKE_BASE_URL || "http://localhost:8000").replace(/\/+$/, "");
 const timeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "10000", 10);
 
-const matrix = [
-  { method: "GET", path: "/api/admin/analytics" },
-  { method: "GET", path: "/api/admin/audit" },
-  { method: "GET", path: "/api/admin/orders" },
-  { method: "PATCH", path: "/api/admin/orders", body: { order_ref: "smoke-order", status: "paid" } },
-  { method: "GET", path: "/api/admin/jobs" },
-  { method: "POST", path: "/api/admin/jobs/smoke/retry" },
-  { method: "GET", path: "/api/admin/customers" },
-  { method: "GET", path: "/api/admin/customers/smoke" },
-  { method: "PATCH", path: "/api/admin/customers/smoke", body: { display_name: "Smoke" } },
-  { method: "POST", path: "/api/admin/system/pulse" },
-  { method: "PATCH", path: "/api/admin/analytics/marketing", body: { spend: 0 } },
-  { method: "POST", path: "/api/admin/analytics/sync-meta" },
-  { method: "POST", path: "/api/admin/bootstrap-role" },
-];
-
-function formatLabel(method, path) {
-  return `${method.padEnd(5, " ")} ${path}`;
+function loadMatrix() {
+  const raw = fs.readFileSync(matrixPath, "utf8");
+  const matrix = JSON.parse(raw);
+  if (!Array.isArray(matrix)) {
+    throw new Error(`Invalid authz matrix: expected array in ${path.relative(repoRoot, matrixPath)}`);
+  }
+  return matrix;
 }
 
-async function fetchWithTimeout(path, options) {
-  const url = `${baseUrl}${path}`;
+const matrix = loadMatrix();
+
+function formatLabel(method, pathValue) {
+  return `${method.padEnd(5, " ")} ${pathValue}`;
+}
+
+async function fetchWithTimeout(pathValue, options) {
+  const url = `${baseUrl}${pathValue}`;
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(new Error("Request timed out")), timeoutMs);
 

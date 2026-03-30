@@ -1,22 +1,41 @@
+import fs from "node:fs";
+import path from "node:path";
+
 const baseUrl = (process.env.SMOKE_BASE_URL || "http://localhost:8000").replace(/\/+$/, "");
 const timeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "10000", 10);
 const bearerToken = process.env.SMOKE_ADMIN_BEARER || "";
 
-const publicCases = [
-  { method: "PATCH", path: "/api/admin/orders", body: { order_ref: "smoke", status: "paid" } },
-  { method: "POST", path: "/api/admin/jobs/smoke/retry" },
-  { method: "PATCH", path: "/api/admin/customers/smoke", body: { display_name: "Smoke" } },
-  { method: "POST", path: "/api/admin/system/pulse" },
-  { method: "PATCH", path: "/api/admin/analytics/marketing", body: { spend: 0 } },
-  { method: "POST", path: "/api/admin/analytics/sync-meta" },
-  { method: "POST", path: "/api/admin/bootstrap-role" },
-];
+const matrixPath = path.join(process.cwd(), "data", "admin-authz-matrix.json");
 
-const safeAuthCases = [
-  { method: "PATCH", path: "/api/admin/orders", body: { order_ref: 0, status: ["paid"] } },
-  { method: "PATCH", path: "/api/admin/customers/smoke", body: { display_name: { value: "Smoke" } } },
-  { method: "PATCH", path: "/api/admin/analytics/marketing", body: { spend: "invalid" } },
-];
+function loadMutateMatrix() {
+  if (!fs.existsSync(matrixPath)) {
+    throw new Error(`Admin authz matrix not found: ${matrixPath}`);
+  }
+
+  const parsed = JSON.parse(fs.readFileSync(matrixPath, "utf8"));
+  if (!Array.isArray(parsed)) {
+    throw new Error(`Admin authz matrix must be an array: ${matrixPath}`);
+  }
+
+  return parsed.filter((entry) => entry && entry.kind === "mutate");
+}
+
+const bodyFallbacks = new Map([
+  ["PATCH /api/admin/orders", { order_ref: "smoke", status: "paid" }],
+  ["PATCH /api/admin/customers/smoke", { display_name: "Smoke" }],
+  ["PATCH /api/admin/analytics/marketing", { spend: 0 }],
+]);
+
+function normalizeCase(entry) {
+  const method = String(entry.method || "").toUpperCase();
+  const pathValue = String(entry.path || "");
+  const body = entry.body !== undefined ? entry.body : bodyFallbacks.get(`${method} ${pathValue}`);
+  return { method, path: pathValue, body };
+}
+
+function loadPublicCases() {
+  return loadMutateMatrix().map(normalizeCase);
+}
 
 const contractKeys = ["error", "message", "ok", "success"];
 
@@ -61,6 +80,36 @@ async function readJsonBody(response) {
 
 function hasContractKey(body) {
   return contractKeys.some((key) => Object.prototype.hasOwnProperty.call(body, key));
+}
+
+function makeMalformedBody(body) {
+  if (body === null || typeof body !== "object" || Array.isArray(body)) {
+    return "invalid";
+  }
+
+  const malformed = Array.isArray(body) ? [...body] : { ...body };
+  const keys = Object.keys(malformed);
+  if (keys.length === 0) {
+    return "invalid";
+  }
+
+  const key = keys[0];
+  const value = malformed[key];
+  if (typeof value === "string") {
+    malformed[key] = 0;
+  } else if (typeof value === "number") {
+    malformed[key] = "invalid";
+  } else if (typeof value === "boolean") {
+    malformed[key] = "invalid";
+  } else if (Array.isArray(value)) {
+    malformed[key] = "invalid";
+  } else if (value && typeof value === "object") {
+    malformed[key] = null;
+  } else {
+    malformed[key] = "invalid";
+  }
+
+  return malformed;
 }
 
 async function checkCase(testCase, mode) {
@@ -120,10 +169,18 @@ async function runMode(mode, matrix) {
 async function main() {
   console.log(`Admin payload-contract smoke base URL: ${baseUrl}`);
 
+  const publicCases = loadPublicCases();
   const publicFailed = await runMode("public", publicCases);
 
   let authFailed = 0;
   if (bearerToken) {
+    const safeAuthCases = publicCases
+      .filter((testCase) => testCase.body !== undefined)
+      .map((testCase) => ({
+        method: testCase.method,
+        path: testCase.path,
+        body: makeMalformedBody(testCase.body),
+      }));
     authFailed = await runMode("auth", safeAuthCases);
   } else {
     console.log("SKIP authenticated safe PATCH cases (set SMOKE_ADMIN_BEARER to enable)");

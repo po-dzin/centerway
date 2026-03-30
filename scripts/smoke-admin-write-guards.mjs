@@ -1,16 +1,40 @@
+import fs from "node:fs";
+import path from "node:path";
+
 const baseUrl = (process.env.SMOKE_BASE_URL || "http://localhost:8000").replace(/\/+$/, "");
 const timeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "10000", 10);
 const userBearer = process.env.SMOKE_USER_BEARER || "";
 
-const matrix = [
-  { method: "PATCH", path: "/api/admin/orders", body: { order_ref: "smoke-order", status: "paid" } },
-  { method: "POST", path: "/api/admin/jobs/smoke/retry" },
-  { method: "PATCH", path: "/api/admin/customers/smoke", body: { display_name: "Smoke" } },
-  { method: "POST", path: "/api/admin/system/pulse" },
-  { method: "PATCH", path: "/api/admin/analytics/marketing", body: { spend: 0 } },
-  { method: "POST", path: "/api/admin/analytics/sync-meta" },
-  { method: "POST", path: "/api/admin/bootstrap-role" },
-];
+const matrixPath = path.join(process.cwd(), "data", "admin-authz-matrix.json");
+
+function loadMutateMatrix() {
+  if (!fs.existsSync(matrixPath)) {
+    throw new Error(`Admin authz matrix not found: ${matrixPath}`);
+  }
+
+  const parsed = JSON.parse(fs.readFileSync(matrixPath, "utf8"));
+  if (!Array.isArray(parsed)) {
+    throw new Error(`Admin authz matrix must be an array: ${matrixPath}`);
+  }
+
+  return parsed.filter((entry) => entry && entry.kind === "mutate");
+}
+
+const bodyFallbacks = new Map([
+  ["PATCH /api/admin/orders", { order_ref: "smoke-order", status: "paid" }],
+  ["PATCH /api/admin/customers/smoke", { display_name: "Smoke" }],
+  ["PATCH /api/admin/analytics/marketing", { spend: 0 }],
+]);
+
+function normalizeCase(entry) {
+  return {
+    method: String(entry.method || "").toUpperCase(),
+    path: String(entry.path || ""),
+    body: entry.body !== undefined ? entry.body : bodyFallbacks.get(`${String(entry.method || "").toUpperCase()} ${String(entry.path || "")}`),
+  };
+}
+
+const matrix = loadMutateMatrix().map(normalizeCase);
 
 function formatLabel(method, path) {
   return `${method.padEnd(5, " ")} ${path}`;
