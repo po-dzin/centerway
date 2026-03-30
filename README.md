@@ -24,6 +24,7 @@ npm run smoke:admin:payload-contracts
 npm run smoke:admin:write-guards
 npm run smoke:admin:authz-coverage
 npm run smoke:admin:ci
+npm run smoke:admin:ui
 ```
 
 `smoke:admin:auth` requires `SMOKE_ADMIN_BEARER` and validates 200-contracts for core admin endpoints.
@@ -31,3 +32,4 @@ npm run smoke:admin:ci
 `smoke:admin:payload-contracts` validates error/payload contracts for admin mutate endpoints.
 `smoke:admin:write-guards` optionally uses `SMOKE_USER_BEARER` to assert strict `403` on mutate endpoints for non-admin users.
 `smoke:admin:ci` runs the full smoke suite sequentially and auto-skips admin-token checks when `SMOKE_ADMIN_BEARER` is not set.
+`smoke:admin:ui` runs browser-level smoke checks for `/admin`, `/admin/analytics`, `/admin/system/audit` (requires Playwright).
