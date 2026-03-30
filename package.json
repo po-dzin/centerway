@@ -13,7 +13,8 @@
     "smoke:admin:funnel": "node scripts/smoke-admin-funnel-consistency.mjs",
     "smoke:admin:payload-contracts": "node scripts/smoke-admin-payload-contracts.mjs",
     "smoke:admin:write-guards": "node scripts/smoke-admin-write-guards.mjs",
-    "smoke:admin:authz-coverage": "node scripts/smoke-admin-authz-coverage.mjs"
+    "smoke:admin:authz-coverage": "node scripts/smoke-admin-authz-coverage.mjs",
+    "smoke:admin:ci": "node scripts/smoke-admin-ci.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
