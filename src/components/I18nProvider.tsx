@@ -37,7 +37,7 @@ const getLangSnapshot = (): Lang => {
 };
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-    const lang = useSyncExternalStore(
+    const lang = useSyncExternalStore<Lang>(
         subscribeToLang,
         getLangSnapshot,
         () => "ru"

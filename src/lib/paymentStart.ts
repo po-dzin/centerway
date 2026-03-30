@@ -45,11 +45,7 @@ export type PaymentStartInput = {
   event_id?: string | null;    // event_id для dedupe Pixel + CAPI (InitiateCheckout)
 };
 
-type PaymentDb = {
-  from: (table: string) => {
-    insert: (value: Record<string, unknown>) => PromiseLike<{ error: { message?: string } | null }>;
-  };
-};
+type PaymentDb = ReturnType<typeof supabaseAdmin>;
 
 type PaymentDeps = {
   db: PaymentDb;
