@@ -17,4 +17,7 @@ npm run dev
 ```bash
 npm run lint
 npm run smoke:admin
+npm run smoke:admin:auth
 ```
+
+`smoke:admin:auth` requires `SMOKE_ADMIN_BEARER` and validates 200-contracts for core admin endpoints.
