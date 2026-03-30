@@ -311,75 +311,78 @@ async function getCapiEventStats(
     eventName: CapiEventName,
     range: DateRange
 ): Promise<CapiEventStats> {
-    const base = db
+    const { data: rows, error } = await db
         .from("jobs")
-        .select("id", { count: "exact", head: true })
+        .select("status, created_at, payload")
         .eq("type", "meta:capi")
         .contains("payload", { event_name: eventName })
         .gte("created_at", range.fromTs)
-        .lt("created_at", range.toExclusiveTs);
+        .lt("created_at", range.toExclusiveTs)
+        .limit(100000);
 
-    const [totalRes, successRes, pendingRes, runningRes, failedRes, lastRes] = await Promise.all([
-        base,
-        db.from("jobs")
-            .select("id", { count: "exact", head: true })
-            .eq("type", "meta:capi")
-            .contains("payload", { event_name: eventName })
-            .gte("created_at", range.fromTs)
-            .lt("created_at", range.toExclusiveTs)
-            .eq("status", "success"),
-        db.from("jobs")
-            .select("id", { count: "exact", head: true })
-            .eq("type", "meta:capi")
-            .contains("payload", { event_name: eventName })
-            .gte("created_at", range.fromTs)
-            .lt("created_at", range.toExclusiveTs)
-            .eq("status", "pending"),
-        db.from("jobs")
-            .select("id", { count: "exact", head: true })
-            .eq("type", "meta:capi")
-            .contains("payload", { event_name: eventName })
-            .gte("created_at", range.fromTs)
-            .lt("created_at", range.toExclusiveTs)
-            .eq("status", "running"),
-        db.from("jobs")
-            .select("id", { count: "exact", head: true })
-            .eq("type", "meta:capi")
-            .contains("payload", { event_name: eventName })
-            .gte("created_at", range.fromTs)
-            .lt("created_at", range.toExclusiveTs)
-            .eq("status", "failed"),
-        db.from("jobs")
-            .select("created_at")
-            .eq("type", "meta:capi")
-            .contains("payload", { event_name: eventName })
-            .gte("created_at", range.fromTs)
-            .lt("created_at", range.toExclusiveTs)
-            .order("created_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-    ]);
+    if (error) {
+        throw new Error(error.message ?? "failed_to_read_capi_event_stats");
+    }
 
-    const possibleErrors = [
-        totalRes.error,
-        successRes.error,
-        pendingRes.error,
-        runningRes.error,
-        failedRes.error,
-        lastRes.error,
-    ].filter(Boolean);
-    if (possibleErrors.length > 0) {
-        throw new Error(possibleErrors[0]?.message ?? "failed_to_read_capi_event_stats");
+    type CapiDedup = {
+        hasSuccess: boolean;
+        hasPending: boolean;
+        hasRunning: boolean;
+        hasFailed: boolean;
+    };
+
+    const dedup = new Map<string, CapiDedup>();
+    let lastSeenAt: string | null = null;
+    let legacyCounter = 0;
+
+    for (const row of rows ?? []) {
+        const createdAt = typeof row.created_at === "string" ? row.created_at : null;
+        if (createdAt && (!lastSeenAt || createdAt > lastSeenAt)) {
+            lastSeenAt = createdAt;
+        }
+
+        const payload = row.payload as Record<string, unknown> | null;
+        const eventId = typeof payload?.event_id === "string" ? payload.event_id : null;
+        const orderRef = typeof payload?.order_ref === "string" ? payload.order_ref : null;
+        const dedupKey =
+            eventId ||
+            (orderRef ? `${eventName}:${orderRef}` : null) ||
+            `legacy:${eventName}:${createdAt ?? "na"}:${legacyCounter++}`;
+
+        const current = dedup.get(dedupKey) ?? {
+            hasSuccess: false,
+            hasPending: false,
+            hasRunning: false,
+            hasFailed: false,
+        };
+        if (row.status === "success") current.hasSuccess = true;
+        else if (row.status === "pending") current.hasPending = true;
+        else if (row.status === "running") current.hasRunning = true;
+        else if (row.status === "failed") current.hasFailed = true;
+        dedup.set(dedupKey, current);
+    }
+
+    let success = 0;
+    let pending = 0;
+    let running = 0;
+    let failed = 0;
+
+    for (const item of dedup.values()) {
+        if (item.hasSuccess) success += 1;
+        else if (item.hasPending) pending += 1;
+        else if (item.hasRunning) running += 1;
+        else if (item.hasFailed) failed += 1;
+        else failed += 1;
     }
 
     return {
         event_name: eventName,
-        total: totalRes.count ?? 0,
-        success: successRes.count ?? 0,
-        pending: pendingRes.count ?? 0,
-        running: runningRes.count ?? 0,
-        failed: failedRes.count ?? 0,
-        last_seen_at: (lastRes.data as { created_at?: string } | null)?.created_at ?? null,
+        total: dedup.size,
+        success,
+        pending,
+        running,
+        failed,
+        last_seen_at: lastSeenAt,
     };
 }
 
@@ -566,14 +569,27 @@ export async function GET(req: NextRequest) {
     if (marketingErr) {
         console.warn("Analytics Marketing Inputs warning:", marketingErr.message);
     } else if (marketingData) {
+        const manualUpdatedAt =
+            typeof marketingData.updated_at === "string" ? marketingData.updated_at : null;
+        const manualUpdatedTs = manualUpdatedAt ? Date.parse(manualUpdatedAt) : NaN;
+        const rangeStartTs = Date.parse(range.fromTs);
+        const rangeEndTs = Date.parse(range.toExclusiveTs);
+        const manualOverlapsSelectedPeriod =
+            Number.isFinite(manualUpdatedTs) &&
+            Number.isFinite(rangeStartTs) &&
+            Number.isFinite(rangeEndTs) &&
+            manualUpdatedTs >= rangeStartTs &&
+            manualUpdatedTs < rangeEndTs;
         marketingInputs = {
-            reach: asFiniteNumber(marketingData.reach),
-            impressions: asFiniteNumber(marketingData.impressions),
-            clicks: asFiniteNumber(marketingData.clicks),
-            spend: asFiniteNumber(marketingData.spend),
+            reach: manualOverlapsSelectedPeriod ? asFiniteNumber(marketingData.reach) : 0,
+            impressions: manualOverlapsSelectedPeriod ? asFiniteNumber(marketingData.impressions) : 0,
+            clicks: manualOverlapsSelectedPeriod ? asFiniteNumber(marketingData.clicks) : 0,
+            spend: manualOverlapsSelectedPeriod ? asFiniteNumber(marketingData.spend) : 0,
             currency: typeof marketingData.currency === "string" ? marketingData.currency : "UAH",
-            period_label: typeof marketingData.period_label === "string" ? marketingData.period_label : null,
-            updated_at: typeof marketingData.updated_at === "string" ? marketingData.updated_at : null,
+            period_label: manualOverlapsSelectedPeriod && typeof marketingData.period_label === "string"
+                ? marketingData.period_label
+                : null,
+            updated_at: manualOverlapsSelectedPeriod ? manualUpdatedAt : null,
             source: "manual",
         };
     }

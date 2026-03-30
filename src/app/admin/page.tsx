@@ -27,8 +27,14 @@ export default function AdminRootPage() {
                     Authorization: `Bearer ${accessToken}`,
                 },
             });
+            if (!res.ok) {
+                setRole(null);
+                return;
+            }
             const payload = (await res.json().catch(() => ({}))) as { role?: string };
             setRole(typeof payload.role === "string" ? payload.role : null);
+        } catch {
+            setRole(null);
         } finally {
             setRoleLoading(false);
         }

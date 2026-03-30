@@ -44,8 +44,14 @@ function AdminShell({ children }: { children: ReactNode }) {
                     Authorization: `Bearer ${accessToken}`,
                 },
             });
+            if (!res.ok) {
+                setRole(null);
+                return;
+            }
             const payload = (await res.json().catch(() => ({}))) as { role?: string };
             setRole(typeof payload.role === "string" ? payload.role : null);
+        } catch {
+            setRole(null);
         } finally {
             setRoleInitialized(true);
         }
@@ -120,7 +126,10 @@ function AdminShell({ children }: { children: ReactNode }) {
 
         if (!jobsDue && !analyticsDue) return;
 
-        const url = `/api/admin/system/pulse${analyticsDue ? "?refreshAnalytics=1" : ""}`;
+        const query = new URLSearchParams();
+        if (analyticsDue) query.set("refreshAnalytics", "1");
+        if (analyticsDue) query.set("refreshMeta", "1");
+        const url = `/api/admin/system/pulse${query.toString() ? `?${query.toString()}` : ""}`;
         fetch(url, {
             method: "POST",
             headers: { Authorization: `Bearer ${session.access_token}` },

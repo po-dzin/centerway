@@ -82,29 +82,54 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Queue CAPI InitiateCheckout for flows that still use /api/orders/create.
-    const capiPayload: CapiEventPayload = {
-      event_name: "InitiateCheckout",
-      event_id: asOptionalString(attrib?.event_id) ?? `checkout_${order_ref}`,
-      event_time: Math.floor(Date.now() / 1000),
-      value: cfg.amount,
-      currency: cfg.currency,
-      order_ref,
-      fbp: asOptionalString(attrib?.fbp),
-      fbclid: asOptionalString(attrib?.fbclid),
-      ip_address: asOptionalString(attrib?.client_ip),
-      user_agent: asOptionalString(attrib?.client_ua),
-      event_source_url: asOptionalString(attrib?.page_url),
-      action_source: "website",
-      content_name: product,
-      content_type: "product",
-      content_ids: [product],
-    };
-    void sb.from("jobs").insert({
-      type: "meta:capi",
-      payload: capiPayload,
-      status: "pending",
-    });
+    const clientEventId = asOptionalString(attrib?.event_id);
+    const capiEventId = clientEventId ?? `checkout_${order_ref}`;
+    const [existingByEventIdRes, existingByOrderRefRes] = await Promise.all([
+      sb
+        .from("jobs")
+        .select("id")
+        .eq("type", "meta:capi")
+        .contains("payload", { event_name: "InitiateCheckout", event_id: capiEventId })
+        .limit(1)
+        .maybeSingle(),
+      sb
+        .from("jobs")
+        .select("id")
+        .eq("type", "meta:capi")
+        .contains("payload", { event_name: "InitiateCheckout", order_ref: order_ref })
+        .limit(1)
+        .maybeSingle(),
+    ]);
+
+    const hasExistingInitiateCheckoutJob =
+      Boolean(existingByEventIdRes.data?.id) || Boolean(existingByOrderRefRes.data?.id);
+
+    // Always ensure a server-side InitiateCheckout CAPI job exists for each created order.
+    // Use event_id dedupe key to stay compatible with client-side Pixel/CAPI deduplication.
+    if (!hasExistingInitiateCheckoutJob) {
+      const capiPayload: CapiEventPayload = {
+        event_name: "InitiateCheckout",
+        event_id: capiEventId,
+        event_time: Math.floor(Date.now() / 1000),
+        value: cfg.amount,
+        currency: cfg.currency,
+        order_ref,
+        fbp: asOptionalString(attrib?.fbp),
+        fbclid: asOptionalString(attrib?.fbclid),
+        ip_address: asOptionalString(attrib?.client_ip),
+        user_agent: asOptionalString(attrib?.client_ua),
+        event_source_url: asOptionalString(attrib?.page_url),
+        action_source: "website",
+        content_name: product,
+        content_type: "product",
+        content_ids: [product],
+      };
+      await sb.from("jobs").insert({
+        type: "meta:capi",
+        payload: capiPayload,
+        status: "pending",
+      });
+    }
 
     return cors(
       NextResponse.json({

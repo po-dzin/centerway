@@ -265,6 +265,25 @@
       var attrib = collectAttrib();
       var eventId = makeEventId("checkout_" + PRODUCT);
       trackInitialCheckout(attrib, eventId);
+      sendCapiEvent({
+        event_name: "InitiateCheckout",
+        event_id: eventId,
+        value: PRICE_VALUE,
+        currency: CURRENCY,
+        page_url: attrib.page_url,
+        fbclid: attrib.fbclid,
+        fbp: attrib.fbp,
+        utm_source: attrib.utm_source,
+        utm_medium: attrib.utm_medium,
+        utm_campaign: attrib.utm_campaign,
+        utm_content: attrib.utm_content,
+        utm_term: attrib.utm_term,
+        session_id: getSessionId(),
+        product: PRODUCT,
+        content_name: CONTENT_NAME,
+        content_type: "product",
+        content_ids: [PRODUCT]
+      });
       window.location.assign(buildPayUrl(attrib, eventId));
       window.setTimeout(function() {
         isRedirecting = false;
