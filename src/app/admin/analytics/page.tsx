@@ -767,15 +767,27 @@ export default function AnalyticsPage() {
     }
   };
 
-  const campaignLabel = (sourceCampaign: string | null | undefined) => {
-    const normalized = (sourceCampaign ?? "").trim().toLowerCase();
+  const resolveCampaignSource = (sourceCampaign: string | null | undefined): string => {
+    const raw = (sourceCampaign ?? "").trim();
+    const normalized = raw.toLowerCase();
+
     if (!normalized || normalized === "organic" || normalized === "organic/direct") {
       return t("analytics_organic_direct");
     }
+
     if (normalized === "meta (no utm_campaign)") {
       return t("analytics_meta_no_utm");
     }
-    return sourceCampaign;
+
+    if (/\{[^}]+\}/.test(raw)) {
+      return `${t("analytics_campaign_placeholder_unresolved")}: ${raw}`;
+    }
+
+    if (/^\d{8,}$/.test(raw)) {
+      return raw;
+    }
+
+    return raw;
   };
 
   if (error) {
@@ -820,23 +832,21 @@ export default function AnalyticsPage() {
     { key: "inputs_quality", label: t("analytics_subtab_inputs_quality") },
   ] as const;
   return (
-    <div className="p-6 md:p-8 max-w-7xl mx-auto space-y-8">
+    <div className="px-6 pb-6 pt-3 md:px-8 md:pb-8 md:pt-4 max-w-7xl mx-auto space-y-8">
       <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4 cw-surface p-6 rounded-2xl border cw-border cw-shadow">
         <div className="xl:max-w-sm">
           <h1 className="text-2xl font-bold cw-text">{t("analytics_title")}</h1>
-          <p className="cw-muted text-sm mt-1">{t("analytics_subtitle")}</p>
           <p className="text-xs cw-muted mt-2">
             {t("analytics_data_source")}:{" "}
             {marketingInputs?.source === "meta"
               ? t("analytics_data_source_meta")
               : t("analytics_data_source_manual")}
-            {marketingInputs?.updated_at ? (
-              <>
-                {" • "}
-                {t("analytics_last_update")}: {new Date(marketingInputs.updated_at).toLocaleString()}
-              </>
-            ) : null}
           </p>
+          {marketingInputs?.updated_at ? (
+            <p className="text-xs cw-muted mt-1">
+              {t("analytics_last_update")}: {new Date(marketingInputs.updated_at).toLocaleString()}
+            </p>
+          ) : null}
         </div>
         <div className="w-full xl:w-auto flex flex-col gap-2">
           <div className="flex flex-col lg:flex-row lg:items-end gap-2">
@@ -1511,8 +1521,8 @@ export default function AnalyticsPage() {
               ) : (
                 campaigns.map((camp, idx) => (
                   <tr key={idx} className="border-t cw-border cw-row-hover">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">
-                      {campaignLabel(camp.source_campaign)}
+                    <td className="px-6 py-4 text-sm font-medium cw-text">
+                      {resolveCampaignSource(camp.source_campaign)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.total_orders}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.paid_orders}</td>

@@ -225,8 +225,12 @@ async function syncPixelDailyStats(
 function resolveSyncWindow(sinceInput?: string | null, untilInput?: string | null) {
   const now = new Date();
   const defaultUntil = toIsoDate(now);
+  const defaultDaysRaw = Number(process.env.META_SYNC_DEFAULT_DAYS ?? 2);
+  const defaultDays = Number.isFinite(defaultDaysRaw) && defaultDaysRaw > 0
+    ? Math.floor(defaultDaysRaw)
+    : 2;
   const defaultSinceDate = new Date(now);
-  defaultSinceDate.setDate(defaultSinceDate.getDate() - 30);
+  defaultSinceDate.setDate(defaultSinceDate.getDate() - (defaultDays - 1));
   const defaultSince = toIsoDate(defaultSinceDate);
 
   const since = typeof sinceInput === "string" && /^\d{4}-\d{2}-\d{2}$/.test(sinceInput)

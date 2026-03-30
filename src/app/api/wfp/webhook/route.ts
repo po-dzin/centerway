@@ -250,6 +250,17 @@ export async function POST(req: NextRequest) {
     // ── CAPI: schedule background Purchase event when payment succeeds ──
     if (paid) {
       try {
+        const { data: existingPurchaseJob } = await sb
+          .from("jobs")
+          .select("id")
+          .eq("type", "meta:capi")
+          .contains("payload", { event_name: "Purchase", order_ref: orderRef })
+          .limit(1)
+          .maybeSingle();
+        if (existingPurchaseJob?.id) {
+          return NextResponse.json({ ok: true });
+        }
+
         // Fetch fbp/fbclid from the order so we can pass to Meta
         const { data: orderTracking } = await sb
           .from("orders")

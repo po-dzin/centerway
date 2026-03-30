@@ -173,29 +173,57 @@ export async function createPaymentInvoiceWithDeps(
     };
   }
 
-  // Queue CAPI InitiateCheckout as soon as checkout starts.
-  const capiPayload: CapiEventPayload = {
-    event_name: "InitiateCheckout",
-    event_id: input.event_id || `checkout_${order_ref}`,
-    event_time: Math.floor(deps.nowMs() / 1000),
-    value: cfg.amount,
-    currency: cfg.currency,
-    order_ref,
-    fbp: input.fbp ?? null,
-    fbclid: input.fbclid ?? null,
-    ip_address: input.client_ip ?? null,
-    user_agent: input.client_ua ?? null,
-    event_source_url: input.page_url ?? null,
-    action_source: "website",
-    content_name: productHeading(input.product, input.locale),
-    content_type: "product",
-    content_ids: [input.product],
-  };
-  void sb.from("jobs").insert({
-    type: "meta:capi",
-    payload: capiPayload,
-    status: "pending",
-  });
+  const clientEventId =
+    typeof input.event_id === "string" && input.event_id.trim()
+      ? input.event_id.trim()
+      : null;
+  const capiEventId = clientEventId ?? `checkout_${order_ref}`;
+  const [existingByEventIdRes, existingByOrderRefRes] = await Promise.all([
+    sb
+      .from("jobs")
+      .select("id")
+      .eq("type", "meta:capi")
+      .contains("payload", { event_name: "InitiateCheckout", event_id: capiEventId })
+      .limit(1)
+      .maybeSingle(),
+    sb
+      .from("jobs")
+      .select("id")
+      .eq("type", "meta:capi")
+      .contains("payload", { event_name: "InitiateCheckout", order_ref: order_ref })
+      .limit(1)
+      .maybeSingle(),
+  ]);
+
+  const hasExistingInitiateCheckoutJob =
+    Boolean(existingByEventIdRes.data?.id) || Boolean(existingByOrderRefRes.data?.id);
+
+  // Always ensure a server-side InitiateCheckout CAPI job exists for each created order.
+  // Use event_id dedupe key to stay compatible with client-side Pixel/CAPI deduplication.
+  if (!hasExistingInitiateCheckoutJob) {
+    const capiPayload: CapiEventPayload = {
+      event_name: "InitiateCheckout",
+      event_id: capiEventId,
+      event_time: Math.floor(deps.nowMs() / 1000),
+      value: cfg.amount,
+      currency: cfg.currency,
+      order_ref,
+      fbp: input.fbp ?? null,
+      fbclid: input.fbclid ?? null,
+      ip_address: input.client_ip ?? null,
+      user_agent: input.client_ua ?? null,
+      event_source_url: input.page_url ?? null,
+      action_source: "website",
+      content_name: productHeading(input.product, input.locale),
+      content_type: "product",
+      content_ids: [input.product],
+    };
+    await sb.from("jobs").insert({
+      type: "meta:capi",
+      payload: capiPayload,
+      status: "pending",
+    });
+  }
 
   // Non-blocking analytics event.
   void sb.from("events").insert({
