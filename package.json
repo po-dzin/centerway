@@ -10,7 +10,9 @@
     "smoke:admin": "node scripts/smoke-admin-api.mjs",
     "smoke:admin:auth": "node scripts/smoke-admin-api.mjs --require-auth",
     "smoke:admin:authz-surface": "node scripts/smoke-admin-authz-surface.mjs",
-    "smoke:admin:funnel": "node scripts/smoke-admin-funnel-consistency.mjs"
+    "smoke:admin:funnel": "node scripts/smoke-admin-funnel-consistency.mjs",
+    "smoke:admin:write-guards": "node scripts/smoke-admin-write-guards.mjs",
+    "smoke:admin:authz-coverage": "node scripts/smoke-admin-authz-coverage.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
