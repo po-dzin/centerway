@@ -1,0 +1,46 @@
+name: admin-smoke
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+      - "codex/**"
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SMOKE_BASE_URL: ${{ secrets.SMOKE_BASE_URL }}
+      SMOKE_UI_BASE_URL: ${{ secrets.SMOKE_UI_BASE_URL }}
+      SMOKE_ADMIN_BEARER: ${{ secrets.SMOKE_ADMIN_BEARER }}
+      SMOKE_USER_BEARER: ${{ secrets.SMOKE_USER_BEARER }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - name: Install
+        run: npm ci
+
+      - name: Lint
+        run: npm run -s lint
+
+      - name: Authz Coverage (offline)
+        run: npm run -s smoke:admin:authz-coverage
+
+      - name: Admin API Smoke Suite (optional)
+        if: ${{ env.SMOKE_BASE_URL != '' }}
+        run: npm run -s smoke:admin:ci
+
+      - name: Install Playwright Chromium (optional)
+        if: ${{ env.SMOKE_UI_BASE_URL != '' }}
+        run: npx playwright install --with-deps chromium
+
+      - name: Admin UI Smoke (optional)
+        if: ${{ env.SMOKE_UI_BASE_URL != '' }}
+        run: npm run -s smoke:admin:ui

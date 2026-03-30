@@ -6,7 +6,16 @@
     "dev": "next dev -p 8000",
     "build": "next build --webpack",
     "start": "next start -p 8000",
-    "lint": "eslint src next.config.ts eslint.config.mjs"
+    "lint": "eslint src next.config.ts eslint.config.mjs",
+    "smoke:admin": "node scripts/smoke-admin-api.mjs",
+    "smoke:admin:auth": "node scripts/smoke-admin-api.mjs --require-auth",
+    "smoke:admin:authz-surface": "node scripts/smoke-admin-authz-surface.mjs",
+    "smoke:admin:funnel": "node scripts/smoke-admin-funnel-consistency.mjs",
+    "smoke:admin:payload-contracts": "node scripts/smoke-admin-payload-contracts.mjs",
+    "smoke:admin:write-guards": "node scripts/smoke-admin-write-guards.mjs",
+    "smoke:admin:authz-coverage": "node scripts/smoke-admin-authz-coverage.mjs",
+    "smoke:admin:ci": "node scripts/smoke-admin-ci.mjs",
+    "smoke:admin:ui": "node scripts/smoke-admin-ui.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
@@ -19,6 +28,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@playwright/test": "^1.51.1",
     "autoprefixer": "^10.4.27",
     "babel-plugin-react-compiler": "1.0.0",
     "eslint": "^9",

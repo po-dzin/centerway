@@ -36,19 +36,27 @@ export default function AuditLogPage() {
         setLogs([]);
 
         try {
-            const { data, count: exactCount, error } = await supabaseClient
-                .from("audit_log")
-                .select("*", { count: "exact" })
-                .order("created_at", { ascending: false })
-                .range(pageIndex * LIMIT, (pageIndex + 1) * LIMIT - 1);
+            const {
+                data: { session },
+            } = await supabaseClient.auth.getSession();
 
-            if (error) {
-                console.error("Error fetching audit logs", error);
-            } else if (data) {
-                if (reqId !== requestSeq.current) return;
-                setLogs(data);
-                setCount(exactCount ?? 0);
+            const token = session?.access_token;
+            const response = await fetch(`/api/admin/audit?limit=${LIMIT}&offset=${pageIndex * LIMIT}`, {
+                headers: token ? { Authorization: `Bearer ${token}` } : undefined,
+            });
+
+            if (reqId !== requestSeq.current) return;
+
+            if (!response.ok) {
+                console.error("Error fetching audit logs", await response.text());
+                return;
             }
+
+            const payload = (await response.json()) as { items?: AuditLogEntry[]; total?: number };
+            if (reqId !== requestSeq.current) return;
+
+            setLogs(payload.items ?? []);
+            setCount(payload.total ?? 0);
         } catch (err) {
             if (reqId !== requestSeq.current) return;
             console.error(err);

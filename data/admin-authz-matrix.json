@@ -1,0 +1,80 @@
+[
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/analytics"
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/audit"
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/orders"
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/orders",
+    "body": {
+      "order_ref": "smoke-order",
+      "status": "paid"
+    }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/jobs"
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/jobs/smoke/retry",
+    "routePath": "/api/admin/jobs/:id/retry"
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/customers"
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/customers/smoke",
+    "routePath": "/api/admin/customers/:id"
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/customers/smoke",
+    "routePath": "/api/admin/customers/:id",
+    "body": {
+      "display_name": "Smoke"
+    }
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/system/pulse"
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/analytics/marketing",
+    "body": {
+      "spend": 0
+    }
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/analytics/sync-meta"
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/bootstrap-role"
+  }
+]
