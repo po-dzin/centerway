@@ -18,6 +18,9 @@ npm run dev
 npm run lint
 npm run smoke:admin
 npm run smoke:admin:auth
+npm run smoke:admin:authz-surface
+npm run smoke:admin:funnel
 ```
 
 `smoke:admin:auth` requires `SMOKE_ADMIN_BEARER` and validates 200-contracts for core admin endpoints.
+`smoke:admin:funnel` requires `SMOKE_ADMIN_BEARER` and validates analytics invariants (funnel/CAPI consistency).
