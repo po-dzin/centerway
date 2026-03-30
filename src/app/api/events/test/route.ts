@@ -1,7 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireCronAuth } from "@/lib/cron/auth";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export async function POST(req: NextRequest) {
+  const authError = requireCronAuth(req);
+  if (authError) {
+    return authError;
+  }
+
   const supabase = supabaseAdmin();
   const body = await req.json().catch(() => ({}));
 
