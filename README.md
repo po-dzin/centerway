@@ -16,6 +16,4 @@ npm run dev
 
 ```bash
 npm run lint
-npm run smoke
-npm run userflows
 ```
