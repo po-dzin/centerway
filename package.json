@@ -6,7 +6,8 @@
     "dev": "next dev -p 8000",
     "build": "next build --webpack",
     "start": "next start -p 8000",
-    "lint": "eslint src next.config.ts eslint.config.mjs"
+    "lint": "eslint src next.config.ts eslint.config.mjs",
+    "smoke:admin": "node scripts/smoke-admin-api.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

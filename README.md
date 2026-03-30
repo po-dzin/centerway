@@ -16,4 +16,5 @@ npm run dev
 
 ```bash
 npm run lint
+npm run smoke:admin
 ```
