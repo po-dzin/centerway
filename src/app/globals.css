@@ -251,10 +251,20 @@ body {
     border-radius: 0.75rem;
     background-color: var(--cw-surface);
     color: var(--cw-text);
+    outline: 2px solid transparent;
+    outline-offset: 0;
+    transition: border-color 0.16s ease, box-shadow 0.16s ease, background-color 0.16s ease, color 0.16s ease;
   }
 
   .cw-input::placeholder {
     color: var(--cw-muted);
+  }
+
+  .cw-input:focus,
+  .cw-input:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--cw-focus-ring);
+    border-color: var(--cw-interactive-active-border);
   }
 
   .cw-btn {
@@ -429,6 +439,11 @@ body {
     opacity: 0.3;
   }
 
+  .cw-page-btn:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--cw-focus-ring);
+  }
+
   .cw-skeleton-row {
     border-radius: 0.75rem;
     background-color: var(--cw-surface-2);
@@ -453,6 +468,17 @@ body {
 
   .cw-chart-bar:hover {
     background-color: color-mix(in srgb, var(--cw-muted) 68%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cw-admin-theme *,
+  .cw-admin-theme *::before,
+  .cw-admin-theme *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
   }
 }
 
