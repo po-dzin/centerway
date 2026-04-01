@@ -7,6 +7,8 @@ import { useI18n } from "@/components/I18nProvider";
 import { getErrorMessage } from "@/lib/errors";
 import { useToast } from "@/components/ToastProvider";
 import { AdminTabs } from "@/components/admin/AdminTabs";
+import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
+import { AdminErrorState } from "@/components/admin/AdminErrorState";
 
 type FunnelData = {
   date: string;
@@ -153,6 +155,11 @@ type AnalyticsResponse = {
   kpis: UnifiedKpis;
 };
 
+type DateRange = {
+  from: string;
+  to: string;
+};
+
 type FunnelMode = "payment" | "access";
 
 type FunnelUiSettings = {
@@ -233,6 +240,44 @@ function isIsoDateInput(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
 }
 
+function normalizeDateRange(range: DateRange): DateRange {
+  const clampedFromDate = clampIsoToToday(range.from);
+  const clampedToDate = clampIsoToToday(range.to);
+  const from = clampedFromDate <= clampedToDate ? clampedFromDate : clampedToDate;
+  const to = clampedToDate >= clampedFromDate ? clampedToDate : clampedFromDate;
+  return { from, to };
+}
+
+type RangePresetKey = "7d" | "30d" | "mtd" | "90d";
+
+function buildPresetRange(preset: RangePresetKey): DateRange {
+  if (preset === "mtd") {
+    const now = new Date();
+    return {
+      from: `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-01`,
+      to: formatDateLocal(now),
+    };
+  }
+
+  const days = preset === "7d" ? 7 : preset === "30d" ? 30 : 90;
+  return {
+    from: shiftedDate(days - 1),
+    to: formatDateLocal(new Date()),
+  };
+}
+
+function detectActivePreset(range: DateRange): RangePresetKey | null {
+  const normalized = normalizeDateRange(range);
+  const presets: RangePresetKey[] = ["7d", "30d", "mtd", "90d"];
+  for (const preset of presets) {
+    const candidate = normalizeDateRange(buildPresetRange(preset));
+    if (candidate.from === normalized.from && candidate.to === normalized.to) {
+      return preset;
+    }
+  }
+  return null;
+}
+
 function freshnessStatus(
   isoTs: string | null,
   staleAfterHours: number
@@ -297,24 +342,34 @@ function buildMonthGrid(viewMonth: Date): Date[] {
   });
 }
 
-type DatePickerFieldProps = {
-  value: string;
-  onChange: (next: string) => void;
+type DateRangePickerProps = {
+  value: DateRange;
+  onApply: (next: DateRange) => Promise<void> | void;
+  applyLabel: string;
   locale: string;
   className?: string;
 };
 
-function DatePickerField({ value, onChange, locale, className = "" }: DatePickerFieldProps) {
+function DateRangePicker({ value, onApply, applyLabel, locale, className = "" }: DateRangePickerProps) {
   const [open, setOpen] = useState(false);
+  const [selectingEnd, setSelectingEnd] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const selectedDate = useMemo(() => isoToDate(value), [value]);
-  const [viewMonth, setViewMonth] = useState<Date>(() => selectedDate ?? new Date());
+  const [draftRange, setDraftRange] = useState<DateRange>(() => normalizeDateRange(value));
+  const selectedFromDate = useMemo(() => isoToDate(draftRange.from), [draftRange.from]);
+  const [viewMonth, setViewMonth] = useState<Date>(() => selectedFromDate ?? new Date());
 
   useEffect(() => {
-    if (selectedDate) {
-      setViewMonth(new Date(selectedDate.getFullYear(), selectedDate.getMonth(), 1));
+    if (!open) {
+      setDraftRange(normalizeDateRange(value));
+      setSelectingEnd(false);
     }
-  }, [selectedDate]);
+  }, [open, value]);
+
+  useEffect(() => {
+    if (open && selectedFromDate) {
+      setViewMonth(new Date(selectedFromDate.getFullYear(), selectedFromDate.getMonth(), 1));
+    }
+  }, [open, selectedFromDate]);
 
   useEffect(() => {
     if (!open) return;
@@ -345,18 +400,102 @@ function DatePickerField({ value, onChange, locale, className = "" }: DatePicker
   }, [locale]);
   const days = useMemo(() => buildMonthGrid(viewMonth), [viewMonth]);
   const todayIso = formatDateLocal(new Date());
+  const activePreset = detectActivePreset(draftRange);
+
+  const formatDisplayDate = (iso: string) => {
+    const date = isoToDate(iso);
+    if (!date) return "YYYY-MM-DD";
+    return date.toLocaleDateString(locale, { day: "2-digit", month: "2-digit", year: "numeric" });
+  };
+
+  const selectDate = (iso: string) => {
+    if (iso > todayIso) return;
+    if (!selectingEnd) {
+      setDraftRange({ from: iso, to: iso });
+      setSelectingEnd(true);
+      return;
+    }
+    const next = normalizeDateRange({ from: draftRange.from, to: iso });
+    setDraftRange(next);
+    setSelectingEnd(false);
+  };
+
+  const applyRange = async () => {
+    const normalized = normalizeDateRange(draftRange);
+    setDraftRange(normalized);
+    setSelectingEnd(false);
+    setOpen(false);
+    await onApply(normalized);
+  };
+
+  const applyPresetQuick = async (preset: RangePresetKey) => {
+    const next = normalizeDateRange(buildPresetRange(preset));
+    setDraftRange(next);
+    setSelectingEnd(false);
+    setOpen(false);
+    await onApply(next);
+  };
+
+  const renderMonth = (monthDays: Date[], monthDate: Date) => (
+    <div className="w-full">
+      <div className="grid grid-cols-7 gap-0.5 mb-0.5">
+        {dayNames.map((name) => (
+          <div key={`${monthDate.getMonth()}-${name}`} className="h-6 text-[10px] cw-muted flex items-center justify-center uppercase">
+            {name}
+          </div>
+        ))}
+      </div>
+      <div className="grid grid-cols-7 gap-0">
+        {monthDays.map((day) => {
+          const iso = formatDateLocal(day);
+          const isCurrentMonth = day.getMonth() === monthDate.getMonth();
+          const isFuture = iso > todayIso;
+          const isStart = draftRange.from === iso;
+          const isEnd = draftRange.to === iso;
+          const isSingle = isStart && isEnd;
+          const inRange = iso >= draftRange.from && iso <= draftRange.to;
+          const isToday = iso === todayIso;
+          const rangeShapeClass = isSingle
+            ? "rounded-md border-[var(--cw-interactive-active-border)]"
+            : isStart
+              ? "rounded-l-md rounded-r-none border-r-0 border-[var(--cw-interactive-active-border)]"
+              : isEnd
+                ? "rounded-r-md rounded-l-none border-l-0 border-[var(--cw-interactive-active-border)]"
+                : "rounded-none border-transparent";
+
+          return (
+            <button
+              key={`${monthDate.getMonth()}-${iso}`}
+              type="button"
+              disabled={isFuture}
+              onClick={() => selectDate(iso)}
+              className={`h-8 border text-xs transition-colors ${
+                isFuture
+                  ? "border-transparent cw-muted opacity-35 cursor-not-allowed"
+                  : inRange
+                    ? `cw-text bg-[var(--cw-interactive-active-bg)] ${rangeShapeClass} m-0`
+                    : isCurrentMonth
+                      ? "border-transparent cw-text hover:bg-[var(--cw-interactive-hover-bg)] m-[1px] rounded-md"
+                      : "border-transparent cw-muted opacity-65 hover:bg-[var(--cw-interactive-hover-bg)] m-[1px] rounded-md"
+              } ${isToday && !inRange && !isFuture ? "border cw-border" : ""} ${isSingle || isStart || isEnd ? "font-semibold" : ""}`}
+            >
+              {day.getDate()}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 
   return (
-    <div ref={rootRef} className={`relative w-full sm:w-[170px] md:w-[180px] ${className}`.trim()}>
+    <div ref={rootRef} className={`relative w-full sm:w-[340px] ${className}`.trim()}>
       <button
         type="button"
         onClick={() => setOpen((prev) => !prev)}
-        className="cw-input h-9 px-3 text-sm flex items-center justify-between gap-2"
+        className="cw-input w-full h-10 px-3 text-sm flex items-center justify-between gap-2"
       >
-        <span className={selectedDate ? "cw-text" : "cw-muted"}>
-          {selectedDate
-            ? selectedDate.toLocaleDateString(locale, { day: "2-digit", month: "2-digit", year: "numeric" })
-            : "YYYY-MM-DD"}
+        <span className="cw-text truncate">
+          {formatDisplayDate(draftRange.from)} - {formatDisplayDate(draftRange.to)}
         </span>
         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" className="cw-muted">
           <rect x="3" y="4" width="18" height="18" rx="2" ry="2" />
@@ -367,8 +506,8 @@ function DatePickerField({ value, onChange, locale, className = "" }: DatePicker
       </button>
 
       {open && (
-        <div className="absolute top-full right-0 sm:right-auto sm:left-0 mt-2 z-40 w-[280px] max-w-[calc(100vw-2rem)] cw-surface-solid border cw-border rounded-xl cw-shadow p-3">
-          <div className="flex items-center justify-between mb-2">
+        <div className="absolute top-full right-0 mt-2 z-40 w-full cw-surface-solid border cw-border rounded-xl cw-shadow p-2.5 space-y-2.5">
+          <div className="flex items-center justify-between">
             <button
               type="button"
               onClick={() => setViewMonth((prev) => new Date(prev.getFullYear(), prev.getMonth() - 1, 1))}
@@ -388,46 +527,30 @@ function DatePickerField({ value, onChange, locale, className = "" }: DatePicker
             </button>
           </div>
 
-          <div className="grid grid-cols-7 gap-1 mb-1">
-            {dayNames.map((name) => (
-              <div key={name} className="h-7 text-[11px] cw-muted flex items-center justify-center uppercase">
-                {name}
-              </div>
-            ))}
-          </div>
-          <div className="grid grid-cols-7 gap-1">
-            {days.map((day) => {
-              const iso = formatDateLocal(day);
-              const isCurrentMonth = day.getMonth() === viewMonth.getMonth();
-              const isSelected = value === iso;
-              const isToday = iso === todayIso;
-              const isFuture = iso > todayIso;
-              return (
+          {renderMonth(days, viewMonth)}
+
+          <div className="flex items-center gap-2 border-t cw-border pt-2">
+            <div className="flex items-center gap-1 flex-1 min-w-0">
+              {(["7d", "30d", "mtd", "90d"] as RangePresetKey[]).map((preset) => (
                 <button
-                  key={iso}
+                  key={preset}
                   type="button"
-                  disabled={isFuture}
                   onClick={() => {
-                    if (isFuture) return;
-                    onChange(iso);
-                    setOpen(false);
+                    void applyPresetQuick(preset);
                   }}
-                  className={`h-8 rounded-md border text-xs transition-colors ${
-                    isFuture
-                      ? "border-transparent cw-muted opacity-35 cursor-not-allowed"
-                      : ""
-                  } ${
-                    isSelected
-                      ? "cw-text border-[var(--cw-interactive-active-border)] bg-[var(--cw-interactive-active-bg)] shadow-[var(--cw-interactive-active-shadow)]"
-                      : isCurrentMonth
-                        ? "border-transparent cw-text hover:bg-[var(--cw-interactive-hover-bg)]"
-                        : "border-transparent cw-muted opacity-65 hover:bg-[var(--cw-interactive-hover-bg)]"
-                  } ${isToday && !isSelected && !isFuture ? "border cw-border" : ""}`}
+                  className={`h-8 w-11 px-0 text-xs rounded-md border transition-colors ${
+                    activePreset === preset
+                      ? "cw-text border-[var(--cw-interactive-active-border)] bg-[var(--cw-interactive-active-bg)]"
+                      : "cw-btn-muted border-[var(--cw-border)] hover:bg-[var(--cw-interactive-hover-bg)]"
+                  }`}
                 >
-                  {day.getDate()}
+                  {preset.toUpperCase()}
                 </button>
-              );
-            })}
+              ))}
+            </div>
+            <button type="button" onClick={applyRange} className="px-3 py-1.5 text-sm font-medium cw-btn shrink-0">
+              {applyLabel}
+            </button>
           </div>
         </div>
       )}
@@ -441,6 +564,7 @@ export default function AnalyticsPage() {
   const toast = useToast();
 
   const [loading, setLoading] = useState(true);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [errorType, setErrorType] = useState<"auth" | "forbidden" | "sql" | "generic">("generic");
 
@@ -537,7 +661,12 @@ export default function AnalyticsPage() {
   }, [funnelUiSettings]);
 
   const fetchAnalytics = async (period?: { from: string; to: string }) => {
-    setLoading(true);
+    const isInitialLoad = summary === null;
+    if (isInitialLoad) {
+      setLoading(true);
+    } else {
+      setIsRefreshing(true);
+    }
     setError(null);
     setErrorType("generic");
     try {
@@ -617,7 +746,11 @@ export default function AnalyticsPage() {
     } catch (err: unknown) {
       setError(getErrorMessage(err));
     } finally {
-      setLoading(false);
+      if (isInitialLoad) {
+        setLoading(false);
+      } else {
+        setIsRefreshing(false);
+      }
     }
   };
 
@@ -626,32 +759,14 @@ export default function AnalyticsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const applyPeriod = async () => {
-    if (!isIsoDateInput(fromDate) || !isIsoDateInput(toDate)) {
+  const applyPeriod = async (nextRange?: DateRange) => {
+    const rawFrom = nextRange?.from ?? fromDate;
+    const rawTo = nextRange?.to ?? toDate;
+    if (!isIsoDateInput(rawFrom) || !isIsoDateInput(rawTo)) {
       toast.error(t("analytics_invalid_period_format"));
       return;
     }
-    const clampedFromDate = clampIsoToToday(fromDate);
-    const clampedToDate = clampIsoToToday(toDate);
-    const from = clampedFromDate <= clampedToDate ? clampedFromDate : clampedToDate;
-    const to = clampedToDate >= clampedFromDate ? clampedToDate : clampedFromDate;
-    setFromDate(from);
-    setToDate(to);
-    await fetchAnalytics({ from, to });
-  };
-
-  const applyPreset = async (days: number) => {
-    const to = formatDateLocal(new Date());
-    const from = shiftedDate(days - 1);
-    setFromDate(from);
-    setToDate(to);
-    await fetchAnalytics({ from, to });
-  };
-
-  const applyMonthToDate = async () => {
-    const now = new Date();
-    const from = `${now.getFullYear()}-${pad2(now.getMonth() + 1)}-01`;
-    const to = formatDateLocal(now);
+    const { from, to } = normalizeDateRange({ from: rawFrom, to: rawTo });
     setFromDate(from);
     setToDate(to);
     await fetchAnalytics({ from, to });
@@ -792,25 +907,33 @@ export default function AnalyticsPage() {
 
   if (error) {
     return (
-      <div className="p-8 text-center cw-status-failed-text">
-        <p>
-          {t("analytics_load_error")}: {error}
-        </p>
-        {errorType === "sql" ? (
-          <div className="mt-4 text-sm cw-muted">{t("analytics_sql_reminder")}</div>
-        ) : null}
-        <button
-          onClick={() => fetchAnalytics()}
-          className="mt-4 px-4 py-2 cw-btn cw-surface-2"
-        >
-          {t("analytics_retry")}
-        </button>
+      <div className="px-6 pb-6 pt-3 md:px-8 md:pb-8 md:pt-4 max-w-7xl mx-auto">
+        <AdminErrorState
+          title={t("analytics_load_error")}
+          message={
+            errorType === "sql"
+              ? `${error}. ${t("analytics_sql_reminder")}`
+              : error
+          }
+          action={(
+            <button
+              onClick={() => fetchAnalytics()}
+              className="px-4 py-2 cw-btn cw-surface-2"
+            >
+              {t("analytics_retry")}
+            </button>
+          )}
+        />
       </div>
     );
   }
 
   if (loading || !summary) {
-    return <div className="p-8 text-center cw-muted animate-pulse">{t("analytics_loading")}</div>;
+    return (
+      <div className="px-6 pb-6 pt-3 md:px-8 md:pb-8 md:pt-4 max-w-7xl mx-auto">
+        <AdminLoadingState variant="spinner" text={t("analytics_loading")} className="cw-panel" />
+      </div>
+    );
   }
 
   const chartHeight = 150;
@@ -849,61 +972,15 @@ export default function AnalyticsPage() {
           ) : null}
         </div>
         <div className="w-full xl:w-auto flex flex-col gap-2">
-          <div className="flex flex-col lg:flex-row lg:items-end gap-2">
-            <div className="flex flex-wrap items-center gap-2">
-              <DatePickerField
-                value={fromDate}
-                onChange={setFromDate}
-                locale={dateLocale}
-                className="sm:w-[150px] md:w-[160px]"
-              />
-              <span className="text-xs cw-muted shrink-0">-</span>
-              <DatePickerField
-                value={toDate}
-                onChange={setToDate}
-                locale={dateLocale}
-                className="sm:w-[150px] md:w-[160px]"
-              />
-            </div>
-            <div className="flex flex-wrap items-center gap-1">
-              <button
-                type="button"
-                onClick={() => applyPreset(7)}
-                className="cw-btn cw-btn-sm cw-btn-muted"
-              >
-                7d
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset(30)}
-                className="cw-btn cw-btn-sm cw-btn-muted"
-              >
-                30d
-              </button>
-              <button
-                type="button"
-                onClick={applyMonthToDate}
-                className="cw-btn cw-btn-sm cw-btn-muted"
-              >
-                MTD
-              </button>
-              <button
-                type="button"
-                onClick={() => applyPreset(90)}
-                className="cw-btn cw-btn-sm cw-btn-muted"
-              >
-                90d
-              </button>
-            </div>
-          </div>
-          <div className="flex flex-wrap gap-2">
-            <button
-              onClick={applyPeriod}
-              className="w-full sm:w-auto px-3 py-2 text-sm font-medium cw-btn"
-            >
-              {t("analytics_apply_period")}
-            </button>
-          </div>
+          <DateRangePicker
+            value={{ from: fromDate, to: toDate }}
+            onApply={applyPeriod}
+            applyLabel={lang === "en" ? "Apply" : "Применить"}
+            locale={dateLocale}
+          />
+          {isRefreshing ? (
+            <p className="text-[11px] cw-muted text-right">{t("analytics_loading")}</p>
+          ) : null}
         </div>
       </div>
 
