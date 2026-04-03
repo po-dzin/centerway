@@ -18,6 +18,7 @@ export function AdminTabs({ items, activeKey, onChange, className = "" }: AdminT
             {items.map((tab) => (
                 <button
                     key={tab.key}
+                    type="button"
                     onClick={() => onChange(tab.key)}
                     className={`cw-tab ${activeKey === tab.key ? "cw-tab-active" : ""}`}
                 >

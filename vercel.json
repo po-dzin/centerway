@@ -5,6 +5,10 @@
       "schedule": "0 3 * * *"
     },
     {
+      "path": "/api/cron/dosha-reminders",
+      "schedule": "*/15 * * * *"
+    },
+    {
       "path": "/api/cron/refresh-analytics",
       "schedule": "30 3 * * *"
     },

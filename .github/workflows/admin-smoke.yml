@@ -30,6 +30,18 @@ jobs:
       - name: Lint
         run: npm run -s lint
 
+      - name: Build
+        run: npm run -s build
+
+      - name: Admin Governance (offline)
+        run: npm run -s smoke:admin:governance
+
+      - name: Admin I18n/Tone Guard (offline)
+        run: npm run -s smoke:admin:i18n-tone
+
+      - name: Admin A11y Contract (offline)
+        run: npm run -s smoke:admin:a11y-contract
+
       - name: Authz Coverage (offline)
         run: npm run -s smoke:admin:authz-coverage
 
@@ -44,3 +56,7 @@ jobs:
       - name: Admin UI Smoke (optional)
         if: ${{ env.SMOKE_UI_BASE_URL != '' }}
         run: npm run -s smoke:admin:ui
+
+      - name: Admin Responsive Matrix (optional)
+        if: ${{ env.SMOKE_UI_BASE_URL != '' }}
+        run: npm run -s smoke:admin:responsive

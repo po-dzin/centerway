@@ -2,8 +2,12 @@ import { spawn } from "node:child_process";
 
 const hasAdminBearer = Boolean(process.env.SMOKE_ADMIN_BEARER);
 const hasUserBearer = Boolean(process.env.SMOKE_USER_BEARER);
+const hasUiBaseUrl = Boolean(process.env.SMOKE_UI_BASE_URL || process.env.SMOKE_BASE_URL);
 
 const steps = [
+  { name: "smoke:admin:governance", cmd: "npm", args: ["run", "-s", "smoke:admin:governance"], required: true },
+  { name: "smoke:admin:i18n-tone", cmd: "npm", args: ["run", "-s", "smoke:admin:i18n-tone"], required: true },
+  { name: "smoke:admin:a11y-contract", cmd: "npm", args: ["run", "-s", "smoke:admin:a11y-contract"], required: true },
   { name: "smoke:admin", cmd: "npm", args: ["run", "-s", "smoke:admin"], required: true },
   { name: "smoke:admin:authz-surface", cmd: "npm", args: ["run", "-s", "smoke:admin:authz-surface"], required: true },
   { name: "smoke:admin:authz-coverage", cmd: "npm", args: ["run", "-s", "smoke:admin:authz-coverage"], required: true },
@@ -22,6 +26,13 @@ const steps = [
     args: ["run", "-s", "smoke:admin:funnel"],
     required: hasAdminBearer,
     skipReason: "SMOKE_ADMIN_BEARER is not set",
+  },
+  {
+    name: "smoke:admin:responsive",
+    cmd: "npm",
+    args: ["run", "-s", "smoke:admin:responsive"],
+    required: hasUiBaseUrl,
+    skipReason: "SMOKE_UI_BASE_URL/SMOKE_BASE_URL is not set",
   },
 ];
 
@@ -60,6 +71,7 @@ async function main() {
   console.log("Admin smoke CI started");
   console.log(`SMOKE_ADMIN_BEARER: ${hasAdminBearer ? "set" : "missing"}`);
   console.log(`SMOKE_USER_BEARER: ${hasUserBearer ? "set" : "missing"}`);
+  console.log(`SMOKE_UI_BASE_URL/SMOKE_BASE_URL: ${hasUiBaseUrl ? "set" : "missing"}`);
 
   let failed = 0;
   let executed = 0;

@@ -1,0 +1,90 @@
+@media (max-width: 1040px) {
+  .hero .container {
+    grid-template-columns: 1fr;
+  }
+
+  .grid-3 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 960px) {
+  .boundary-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .section {
+    padding: 2.6rem 0;
+  }
+
+  .container {
+    width: min(calc(100% - 1.5rem), 1160px);
+  }
+
+  h1 {
+    max-width: 100%;
+  }
+
+  h2 {
+    margin-bottom: 1.2rem;
+  }
+
+  .hero-card,
+  .card,
+  .bio-card,
+  .pricing-card,
+  .timeline,
+  .role-trust-note,
+  .faq-list details {
+    border-radius: 14px;
+  }
+
+  .grid-2,
+  .grid-3,
+  .boundary-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .timeline li {
+    grid-template-columns: 40px minmax(0, 1fr);
+  }
+
+  .step-index {
+    width: 40px;
+    height: 40px;
+  }
+
+  .cta-row {
+    flex-direction: column;
+  }
+
+  .btn {
+    width: 100%;
+  }
+
+  .sticky-cta {
+    width: calc(100% - 1rem);
+  }
+
+  .sticky-cta .btn {
+    width: 100%;
+  }
+
+  .footer .container {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media (max-width: 420px) {
+  .hero-card,
+  .card,
+  .bio-card,
+  .pricing-card,
+  .timeline,
+  .role-trust-note {
+    padding: 1rem;
+  }
+}
