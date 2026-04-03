@@ -29,6 +29,20 @@ async function runRg(args) {
   } catch (error) {
     const code = error && typeof error === "object" ? error.code : null;
     if (code === 1) return "";
+    if (code === "ENOENT") {
+      // Fallback for runners where ripgrep is not installed.
+      // Supported shape in this script: ["-n", pattern, ...paths]
+      const pattern = args[1];
+      const paths = args.slice(2);
+      try {
+        const { stdout } = await execFileAsync("grep", ["-RInE", pattern, ...paths], { encoding: "utf8" });
+        return stdout.trim();
+      } catch (grepError) {
+        const grepCode = grepError && typeof grepError === "object" ? grepError.code : null;
+        if (grepCode === 1) return "";
+        throw grepError;
+      }
+    }
     throw error;
   }
 }

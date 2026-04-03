@@ -20,6 +20,32 @@ async function runRg(args) {
   } catch (error) {
     const code = error && typeof error === "object" ? error.code : null;
     if (code === 1) return "";
+    if (code === "ENOENT") {
+      // Fallback for runners without ripgrep.
+      // Supported shape in this script:
+      // ["-n", pattern, "--glob", "!<exclude>", ...paths]
+      const pattern = args[1];
+      const hasGlob = args[2] === "--glob" && typeof args[3] === "string";
+      const excludedPrefix = hasGlob ? args[3].replace(/^!/, "").replace(/\*.*$/, "") : null;
+      const paths = hasGlob ? args.slice(4) : args.slice(2);
+
+      try {
+        const { stdout } = await execFileAsync("grep", ["-RInE", pattern, ...paths], { encoding: "utf8" });
+        const raw = stdout.trim();
+        if (!raw) return "";
+        if (!excludedPrefix) return raw;
+
+        return raw
+          .split("\n")
+          .filter((line) => !line.startsWith(`${excludedPrefix}:`))
+          .join("\n")
+          .trim();
+      } catch (grepError) {
+        const grepCode = grepError && typeof grepError === "object" ? grepError.code : null;
+        if (grepCode === 1) return "";
+        throw grepError;
+      }
+    }
     throw error;
   }
 }
