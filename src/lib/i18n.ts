@@ -47,6 +47,7 @@ export const translations = {
         common_collapse: "Свернуть",
         common_switch_language: "Сменить язык",
         common_switch_theme: "Сменить тему",
+        common_close: "Закрыть",
 
         // Audit Log
         audit_title: "Аудит",
@@ -354,6 +355,7 @@ export const translations = {
         common_collapse: "Collapse",
         common_switch_language: "Switch language",
         common_switch_theme: "Switch theme",
+        common_close: "Close",
 
         // Audit Log
         audit_title: "Audit Log",

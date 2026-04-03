@@ -6,6 +6,9 @@ export default function Home() {
       <p>
         Health check: <a href="/api/health">/api/health</a>
       </p>
+      <p>
+        Dosha test: <a href="/dosha-test">/dosha-test</a>
+      </p>
     </main>
   );
 }

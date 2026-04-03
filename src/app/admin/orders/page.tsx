@@ -9,6 +9,7 @@ import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
+import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { ReconcileModal } from "@/components/admin/modals/ReconcileModal";
 import { useToast } from "@/components/ToastProvider";
 import { getErrorMessage } from "@/lib/errors";
@@ -256,9 +257,15 @@ export default function OrdersPage() {
 
             {/* Error */}
             {error && !loading && (
-                <div className="p-4 rounded-xl text-sm cw-alert-failed">
-                    {t("common_error")}: {error}
-                </div>
+                <AdminErrorState
+                    title={t("common_error")}
+                    message={error}
+                    action={(
+                        <button type="button" onClick={() => fetchOrders(debouncedQ, activeStatus, page)} className="px-4 py-2 cw-btn cw-surface-2">
+                            {t("analytics_retry")}
+                        </button>
+                    )}
+                />
             )}
 
             {/* Empty */}

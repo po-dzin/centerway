@@ -65,10 +65,20 @@ export function ReconcileModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center cw-overlay" onClick={onClose}>
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center cw-overlay"
+            onClick={onClose}
+            onKeyDown={(e) => {
+                if (e.key === "Escape") onClose();
+            }}
+        >
             <div
                 className="cw-surface-solid border cw-border rounded-2xl cw-shadow p-6 w-full max-w-md mx-4"
                 onClick={(e) => e.stopPropagation()}
+                role="dialog"
+                aria-modal="true"
+                aria-label={labels.title}
+                tabIndex={-1}
             >
                 <h3 className="text-lg font-semibold cw-text mb-1">{labels.title}</h3>
                 <p className="cw-page-subtitle mb-4">
@@ -106,6 +116,7 @@ export function ReconcileModal({
 
                 <div className="flex gap-2">
                     <button
+                        type="button"
                         onClick={() => handle("paid")}
                         disabled={loading || order.status === "paid"}
                         className="flex-1 py-2.5 px-4 rounded-xl cw-btn-status-success disabled:opacity-40 text-sm font-semibold transition-colors"
@@ -113,6 +124,7 @@ export function ReconcileModal({
                         {labels.confirmPaid}
                     </button>
                     <button
+                        type="button"
                         onClick={() => handle("refunded")}
                         disabled={loading}
                         className="py-2.5 px-3 text-sm cw-btn cw-btn-muted"
@@ -120,6 +132,7 @@ export function ReconcileModal({
                         {labels.refund}
                     </button>
                     <button
+                        type="button"
                         onClick={onClose}
                         className="py-2.5 px-3 text-sm cw-btn cw-btn-muted"
                     >

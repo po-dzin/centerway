@@ -8,6 +8,7 @@ import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
+import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/adminLocale";
@@ -164,9 +165,15 @@ export default function CustomersPage() {
 
             {/* State: error */}
             {error && !loading && (
-                <div className="p-4 rounded-xl text-sm cw-alert-failed">
-                    {t("customers_loading_error")}: {error}
-                </div>
+                <AdminErrorState
+                    title={t("customers_loading_error")}
+                    message={error}
+                    action={(
+                        <button type="button" onClick={() => fetchCustomers(debouncedQ, page)} className="px-4 py-2 cw-btn cw-surface-2">
+                            {t("analytics_retry")}
+                        </button>
+                    )}
+                />
             )}
 
             {/* State: empty */}

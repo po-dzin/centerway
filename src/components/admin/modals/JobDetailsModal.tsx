@@ -62,8 +62,21 @@ export function JobDetailsModal({
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 cw-overlay animate-in fade-in duration-200">
-            <div className="cw-surface-solid rounded-2xl cw-shadow w-full max-w-2xl overflow-hidden border cw-border">
+        <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 cw-overlay animate-in fade-in duration-200"
+            onClick={onClose}
+            onKeyDown={(e) => {
+                if (e.key === "Escape") onClose();
+            }}
+        >
+            <div
+                className="cw-surface-solid rounded-2xl cw-shadow w-full max-w-2xl overflow-hidden border cw-border"
+                role="dialog"
+                aria-modal="true"
+                aria-label={labels.details}
+                tabIndex={-1}
+                onClick={(e) => e.stopPropagation()}
+            >
                 <div className="flex items-center justify-between p-4 border-b cw-border">
                     <div>
                         <h3 className="text-lg font-semibold cw-text">{labels.details}</h3>
@@ -72,6 +85,7 @@ export function JobDetailsModal({
                     <div className="flex items-center gap-2">
                         {job.status === "failed" && (
                             <button
+                                type="button"
                                 onClick={handleRetry}
                                 disabled={retrying}
                                 className="px-3 py-1.5 text-xs font-medium rounded-lg transition-colors disabled:opacity-50 flex items-center gap-2 cw-btn-status-running"
@@ -82,7 +96,7 @@ export function JobDetailsModal({
                                 {labels.retry}
                             </button>
                         )}
-                        <button onClick={onClose} className="cw-icon-btn">
+                        <button type="button" onClick={onClose} className="cw-icon-btn" aria-label="Close modal">
                             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
                         </button>
                     </div>

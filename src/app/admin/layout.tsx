@@ -164,6 +164,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                         </div>
                     )}
                     <button
+                        type="button"
                         onClick={() => setExpanded(v => !v)}
                         title={expanded ? t("common_collapse") : t("common_expand")}
                         className={`${expanded ? "" : "mx-auto"} cw-icon-btn shrink-0`}

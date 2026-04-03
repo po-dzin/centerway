@@ -24,6 +24,26 @@
     --cw-interactive-active-border: #b7b7b1;
     --cw-interactive-active-shadow: 0 0 0 1px rgba(183, 183, 177, 0.35);
     --cw-focus-ring: rgba(183, 183, 177, 0.42);
+    --cw-radius-btn: 0.9rem;
+    --cw-brand-hover-border: color-mix(in srgb, var(--cw-status-success) 82%, var(--cw-border) 18%);
+    --cw-btn-primary-bg: var(--cw-text);
+    --cw-btn-primary-bg-hover: var(--cw-btn-primary-bg);
+    --cw-btn-primary-bg-active: var(--cw-btn-primary-bg);
+    --cw-btn-primary-text: #ffffff;
+    --cw-btn-primary-text-hover: #ffffff;
+    --cw-btn-primary-text-active: #ffffff;
+    --cw-btn-primary-border-hover: color-mix(in srgb, #ffffff 90%, var(--cw-border) 10%);
+    --cw-btn-primary-border-active: #ffffff;
+    --cw-btn-primary-focus-ring: color-mix(in srgb, #ffffff 52%, transparent);
+    --cw-btn-outline-bg: transparent;
+    --cw-btn-outline-bg-hover: var(--cw-surface-solid);
+    --cw-btn-outline-bg-active: var(--cw-surface-solid);
+    --cw-btn-ghost-bg: transparent;
+    --cw-btn-ghost-bg-hover: color-mix(in srgb, var(--cw-text) 8%, transparent);
+    --cw-btn-ghost-bg-active: color-mix(in srgb, var(--cw-text) 12%, transparent);
+    --cw-choice-bg: #ffffff;
+    --cw-choice-bg-hover: color-mix(in srgb, var(--cw-text) 7%, #ffffff 93%);
+    --cw-choice-bg-selected: color-mix(in srgb, var(--cw-status-success-soft) 82%, #ffffff 18%);
     --cw-danger: #d9475e;
     --cw-status-success: #2f9f63;
     --cw-status-success-soft: rgba(47, 159, 99, 0.12);
@@ -62,6 +82,26 @@
     --cw-interactive-active-border: #6a6a64;
     --cw-interactive-active-shadow: 0 0 0 1px rgba(106, 106, 100, 0.38);
     --cw-focus-ring: rgba(106, 106, 100, 0.52);
+    --cw-radius-btn: 0.9rem;
+    --cw-brand-hover-border: color-mix(in srgb, var(--cw-status-success) 82%, var(--cw-border) 18%);
+    --cw-btn-primary-bg: var(--cw-text);
+    --cw-btn-primary-bg-hover: var(--cw-btn-primary-bg);
+    --cw-btn-primary-bg-active: var(--cw-btn-primary-bg);
+    --cw-btn-primary-text: #ffffff;
+    --cw-btn-primary-text-hover: #ffffff;
+    --cw-btn-primary-text-active: #ffffff;
+    --cw-btn-primary-border-hover: color-mix(in srgb, #ffffff 90%, var(--cw-border) 10%);
+    --cw-btn-primary-border-active: #ffffff;
+    --cw-btn-primary-focus-ring: color-mix(in srgb, #ffffff 58%, transparent);
+    --cw-btn-outline-bg: transparent;
+    --cw-btn-outline-bg-hover: var(--cw-surface-solid);
+    --cw-btn-outline-bg-active: var(--cw-surface-solid);
+    --cw-btn-ghost-bg: transparent;
+    --cw-btn-ghost-bg-hover: color-mix(in srgb, var(--cw-text) 12%, transparent);
+    --cw-btn-ghost-bg-active: color-mix(in srgb, var(--cw-text) 18%, transparent);
+    --cw-choice-bg: color-mix(in srgb, var(--cw-surface-solid) 78%, #ffffff 22%);
+    --cw-choice-bg-hover: color-mix(in srgb, var(--cw-text) 14%, var(--cw-choice-bg) 86%);
+    --cw-choice-bg-selected: color-mix(in srgb, var(--cw-status-success-soft) 72%, var(--cw-choice-bg) 28%);
     --cw-danger: #ff7f93;
     --cw-status-success: #68c58f;
     --cw-status-success-soft: rgba(104, 197, 143, 0.16);
@@ -294,6 +334,176 @@ body {
 
   .cw-btn-muted {
     color: var(--cw-muted);
+  }
+
+  .cw-interactive-outline {
+    transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+    cursor: pointer;
+  }
+
+  .cw-interactive-outline:hover {
+    border-color: var(--cw-interactive-hover-border);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--cw-interactive-hover-border) 75%, transparent);
+  }
+
+  .cw-interactive-outline:active {
+    border-color: var(--cw-interactive-active-border);
+    box-shadow: var(--cw-interactive-active-shadow);
+    transform: translateY(1px);
+  }
+
+  .cw-interactive-outline:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--cw-focus-ring);
+  }
+
+  .cw-interactive-solid {
+    transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+    cursor: pointer;
+  }
+
+  .cw-interactive-solid:hover {
+    border-color: var(--cw-interactive-hover-border);
+    box-shadow: 0 10px 22px color-mix(in srgb, var(--cw-text) 26%, transparent);
+  }
+
+  .cw-interactive-solid:active {
+    border-color: var(--cw-interactive-active-border);
+    box-shadow: 0 6px 14px color-mix(in srgb, var(--cw-text) 20%, transparent);
+    transform: translateY(1px);
+  }
+
+  .cw-interactive-solid:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px var(--cw-focus-ring), 0 8px 18px color-mix(in srgb, var(--cw-text) 22%, transparent);
+  }
+
+  .cw-choice-btn {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    justify-content: flex-start;
+    border: 1px solid var(--cw-border);
+    border-radius: var(--cw-radius-btn);
+    background-color: var(--cw-choice-bg);
+    color: var(--cw-text);
+    transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+    cursor: pointer;
+  }
+
+  .cw-choice-btn:hover:not(:disabled) {
+    border-color: var(--cw-brand-hover-border);
+    background-color: var(--cw-choice-bg-hover);
+    box-shadow: none;
+  }
+
+  .cw-choice-btn:focus-visible {
+    outline: none;
+    border-color: var(--cw-brand-hover-border);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-status-success) 28%, transparent);
+  }
+
+  .cw-choice-btn:active:not(:disabled) {
+    transform: translateY(1px);
+  }
+
+  .cw-choice-btn[aria-pressed="true"] {
+    border-color: var(--cw-status-success);
+    background: var(--cw-choice-bg-selected);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--cw-status-success) 45%, transparent);
+  }
+
+  .cw-choice-btn:disabled {
+    cursor: not-allowed;
+  }
+
+  .cw-btn-primary {
+    border: 1px solid transparent;
+    border-radius: var(--cw-radius-btn);
+    background-color: var(--cw-btn-primary-bg);
+    color: var(--cw-btn-primary-text);
+    transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+    cursor: pointer;
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--cw-text) 22%, transparent);
+  }
+
+  .cw-btn-primary:hover:not(:disabled) {
+    background-color: var(--cw-btn-primary-bg-hover);
+    color: var(--cw-btn-primary-text-hover);
+    border-color: var(--cw-btn-primary-border-hover);
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--cw-text) 16%, transparent);
+  }
+
+  .cw-btn-primary:active:not(:disabled) {
+    background-color: var(--cw-btn-primary-bg-active);
+    color: var(--cw-btn-primary-text-active);
+    border-color: var(--cw-btn-primary-border-active);
+    transform: translateY(1px);
+  }
+
+  .cw-btn-primary:focus-visible {
+    outline: none;
+    border-color: var(--cw-btn-primary-border-hover);
+    box-shadow: 0 0 0 2px var(--cw-btn-primary-focus-ring), 0 8px 18px color-mix(in srgb, var(--cw-text) 22%, transparent);
+  }
+
+  .cw-btn-primary:focus {
+    outline: none;
+  }
+
+  .cw-btn-outline {
+    border: 1px solid var(--cw-border);
+    border-radius: var(--cw-radius-btn);
+    background-color: var(--cw-btn-outline-bg);
+    color: var(--cw-text);
+    transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+    cursor: pointer;
+  }
+
+  .cw-btn-outline:hover:not(:disabled) {
+    border-color: var(--cw-brand-hover-border);
+    background-color: var(--cw-btn-outline-bg-hover);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--cw-status-success) 32%, transparent);
+  }
+
+  .cw-btn-outline:active:not(:disabled) {
+    border-color: var(--cw-interactive-active-border);
+    background-color: var(--cw-btn-outline-bg-active);
+    transform: translateY(1px);
+  }
+
+  .cw-btn-outline:focus-visible {
+    outline: none;
+    border-color: var(--cw-brand-hover-border);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-status-success) 28%, transparent);
+  }
+
+  .cw-btn-outline:focus {
+    outline: none;
+  }
+
+  .cw-btn-ghost {
+    border: 1px solid transparent;
+    border-radius: var(--cw-radius-btn);
+    background-color: var(--cw-btn-ghost-bg);
+    color: var(--cw-muted);
+    transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+    cursor: pointer;
+  }
+
+  .cw-btn-ghost:hover:not(:disabled) {
+    color: var(--cw-text);
+    border-color: var(--cw-brand-hover-border);
+    background-color: var(--cw-btn-ghost-bg-hover);
+    box-shadow: none;
+  }
+
+  .cw-btn-ghost:active:not(:disabled) {
+    background-color: var(--cw-btn-ghost-bg-active);
+  }
+
+  .cw-btn-ghost:focus {
+    outline: none;
   }
 
   .cw-icon-btn {

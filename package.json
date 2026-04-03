@@ -14,8 +14,18 @@
     "smoke:admin:payload-contracts": "node scripts/smoke-admin-payload-contracts.mjs",
     "smoke:admin:write-guards": "node scripts/smoke-admin-write-guards.mjs",
     "smoke:admin:authz-coverage": "node scripts/smoke-admin-authz-coverage.mjs",
+    "smoke:admin:governance": "node scripts/smoke-admin-governance.mjs",
+    "smoke:admin:i18n-tone": "node scripts/smoke-admin-i18n-tone.mjs",
+    "smoke:admin:a11y-contract": "node scripts/smoke-admin-a11y-contract.mjs",
+    "smoke:admin:responsive": "node scripts/smoke-admin-responsive.mjs",
     "smoke:admin:ci": "node scripts/smoke-admin-ci.mjs",
-    "smoke:admin:ui": "node scripts/smoke-admin-ui.mjs"
+    "smoke:admin:ui": "node scripts/smoke-admin-ui.mjs",
+    "smoke:dosha:result": "node scripts/smoke-dosha-result-engine.mjs",
+    "smoke:dosha:api": "node scripts/smoke-dosha-api-flow.mjs",
+    "smoke:dosha:userflows": "node scripts/smoke-dosha-userflows.mjs",
+    "smoke:dosha:responsive": "node scripts/smoke-dosha-responsive.mjs",
+    "smoke:dosha:brand-fit": "node scripts/smoke-dosha-brand-fit.mjs",
+    "smoke:dosha:qa": "npm run smoke:dosha:result && npm run smoke:dosha:api && npm run smoke:dosha:userflows && npm run smoke:dosha:responsive && npm run smoke:dosha:brand-fit"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

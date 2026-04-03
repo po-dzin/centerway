@@ -2,6 +2,7 @@ import { adminClient } from "@/lib/auth/adminClient";
 import { sendCapiEvent } from "@/lib/tracking/capi";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { getErrorMessage } from "@/lib/errors";
+import { processDoshaReminderJob } from "@/lib/doshaReminder";
 
 // Simple job registry
 type JobHandler = (payload: unknown) => Promise<void>;
@@ -22,6 +23,9 @@ const handlers: Record<string, JobHandler> = {
             throw new Error("Invalid payload for meta:capi job");
         }
         await sendCapiEvent(payload);
+    },
+    "dosha:reminder": async (payload) => {
+        await processDoshaReminderJob(payload);
     },
 };
 

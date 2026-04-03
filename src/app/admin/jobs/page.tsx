@@ -8,6 +8,7 @@ import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
 import { AdminLoadingState } from "@/components/admin/AdminLoadingState";
+import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { JobDetailsModal } from "@/components/admin/modals/JobDetailsModal";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/adminLocale";
@@ -160,9 +161,15 @@ export default function JobsPage() {
             {loading ? (
                 <AdminLoadingState variant="spinner" text={t("jobs_loading")} />
             ) : error ? (
-                <div className="p-4 rounded-xl text-sm cw-alert-failed">
-                    {error}
-                </div>
+                <AdminErrorState
+                    title={t("common_error")}
+                    message={error}
+                    action={(
+                        <button type="button" onClick={() => fetchJobs(debouncedQ, activeStatus, page)} className="px-4 py-2 cw-btn cw-surface-2">
+                            {t("analytics_retry")}
+                        </button>
+                    )}
+                />
             ) : data.length === 0 ? (
                 <AdminEmptyState
                     className="py-20"
@@ -179,10 +186,12 @@ export default function JobsPage() {
             ) : (
                 <div className="space-y-1.5">
                     {data.map((job) => (
-                        <div
+                        <button
                             key={job.id}
+                            type="button"
                             onClick={() => setSelectedJob(job)}
-                            className="cw-list-item flex items-center gap-4 p-4 cursor-pointer group"
+                            className="cw-list-item w-full text-left flex items-center gap-4 p-4 cursor-pointer group"
+                            title={t("jobs_details")}
                         >
                             <div className="w-10 h-10 rounded-full cw-surface-2 flex items-center justify-center shrink-0 group-hover:bg-[var(--cw-surface)] transition-colors border border-transparent group-hover:border-[var(--cw-border)]">
                                 <span className={`w-2.5 h-2.5 rounded-full ${job.status === 'success' ? 'cw-status-success-dot' : job.status === 'failed' ? 'cw-status-failed-dot' : job.status === 'running' ? 'cw-status-running-dot animate-pulse' : 'cw-status-pending-dot'}`} />
@@ -215,7 +224,7 @@ export default function JobsPage() {
                                     {new Date(job.created_at).toLocaleDateString(locale, { day: '2-digit', month: 'short' })}
                                 </p>
                             </div>
-                        </div>
+                        </button>
                     ))}
                 </div>
             )}
