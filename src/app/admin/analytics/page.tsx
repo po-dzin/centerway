@@ -445,7 +445,7 @@ function DateRangePicker({ value, onApply, applyLabel, locale, className = "" }:
           </div>
         ))}
       </div>
-      <div className="grid grid-cols-7 gap-0">
+      <div className="grid grid-cols-7 auto-rows-[32px] gap-0">
         {monthDays.map((day) => {
           const iso = formatDateLocal(day);
           const isCurrentMonth = day.getMonth() === monthDate.getMonth();
@@ -473,10 +473,10 @@ function DateRangePicker({ value, onApply, applyLabel, locale, className = "" }:
                 isFuture
                   ? "border-transparent cw-muted opacity-35 cursor-not-allowed"
                   : inRange
-                    ? `cw-text bg-[var(--cw-interactive-active-bg)] ${rangeShapeClass} m-0`
+                    ? `cw-text bg-[var(--cw-interactive-active-bg)] ${rangeShapeClass}`
                     : isCurrentMonth
-                      ? "border-transparent cw-text hover:bg-[var(--cw-interactive-hover-bg)] m-[1px] rounded-md"
-                      : "border-transparent cw-muted opacity-65 hover:bg-[var(--cw-interactive-hover-bg)] m-[1px] rounded-md"
+                      ? "border-transparent cw-text hover:bg-[var(--cw-interactive-hover-bg)] rounded-md"
+                      : "border-transparent cw-muted opacity-65 hover:bg-[var(--cw-interactive-hover-bg)] rounded-md"
               } ${isToday && !inRange && !isFuture ? "border cw-border" : ""} ${isSingle || isStart || isEnd ? "font-semibold" : ""}`}
             >
               {day.getDate()}
