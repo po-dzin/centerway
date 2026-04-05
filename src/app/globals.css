@@ -561,6 +561,21 @@ body {
     border-bottom: 1px solid var(--cw-border);
     overflow-y: hidden;
     min-height: 2.75rem;
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--cw-text) 20%, transparent) transparent;
+  }
+
+  .cw-tabbar::-webkit-scrollbar {
+    height: 4px;
+  }
+
+  .cw-tabbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .cw-tabbar::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--cw-text) 24%, transparent);
+    border-radius: 999px;
   }
 
   .cw-tab {
@@ -678,6 +693,40 @@ body {
 
   .cw-chart-bar:hover {
     background-color: color-mix(in srgb, var(--cw-muted) 68%, transparent);
+  }
+
+  .custom-scrollbar {
+    scrollbar-width: thin;
+    scrollbar-color: color-mix(in srgb, var(--cw-text) 28%, transparent) transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, var(--cw-text) 28%, transparent);
+    border: 2px solid transparent;
+    background-clip: padding-box;
+    border-radius: 999px;
+  }
+
+  .dark .custom-scrollbar {
+    scrollbar-color: color-mix(in srgb, #ffffff 58%, transparent) color-mix(in srgb, var(--cw-surface-2) 70%, transparent);
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-track {
+    background: color-mix(in srgb, var(--cw-surface-2) 70%, transparent);
+    border-radius: 999px;
+  }
+
+  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, #ffffff 64%, var(--cw-border) 36%);
   }
 }
 

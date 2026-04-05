@@ -21,7 +21,12 @@ async function resolveUserId(req: NextRequest): Promise<string | null> {
 }
 
 export async function POST(req: NextRequest) {
-  const userId = await resolveUserId(req);
+  let userId: string | null = null;
+  try {
+    userId = await resolveUserId(req);
+  } catch {
+    return NextResponse.json({ error: "Auth provider unavailable" }, { status: 503 });
+  }
   if (!userId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
@@ -49,4 +54,3 @@ export async function POST(req: NextRequest) {
     role: typeof data?.role === "string" ? data.role : "user",
   });
 }
-
