@@ -50,9 +50,25 @@ function rewriteLanding(req: NextRequest, landingPath: string) {
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
+  // External pollers hit these paths very frequently in dev.
+  // Respond directly from proxy to avoid touching app route compilation.
+  if (pathname === "/v1/me/balance") {
+    return NextResponse.json(
+      { balance: 0, currency: "UAH" },
+      { status: 200, headers: { "Cache-Control": "public, max-age=300, s-maxage=300" } }
+    );
+  }
+  if (pathname === "/v1/me/photos") {
+    return NextResponse.json(
+      { photos: [] },
+      { status: 200, headers: { "Cache-Control": "public, max-age=300, s-maxage=300" } }
+    );
+  }
+
   // Backend/runtime routes should stay untouched.
   if (
     pathname.startsWith("/api/") ||
+    pathname.startsWith("/v1/") ||
     pathname.startsWith("/_next/") ||
     pathname.startsWith("/pay/return") ||
     pathname.startsWith("/short/") ||
@@ -118,5 +134,5 @@ export function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|sitemap.xml|robots.txt).*)"],
+  matcher: ["/((?!_next/static|_next/image|sitemap.xml|robots.txt|v1/).*)"],
 };

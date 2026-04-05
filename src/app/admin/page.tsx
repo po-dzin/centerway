@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { supabaseClient } from "@/lib/supabaseClient";
@@ -17,8 +17,38 @@ export default function AdminRootPage() {
     const [loading, setLoading] = useState(true);
     const [role, setRole] = useState<string | null>(null);
     const [roleLoading, setRoleLoading] = useState(false);
+    const roleFetchRef = useRef<{ token: string; at: number; inFlight: boolean }>({
+        token: "",
+        at: 0,
+        inFlight: false,
+    });
 
     const loadRole = async (accessToken: string) => {
+        const cacheKey = "cw_admin_role_cache_v1";
+        try {
+            const cachedRaw = sessionStorage.getItem(cacheKey);
+            if (cachedRaw) {
+                const cached = JSON.parse(cachedRaw) as { role?: string; tokenTail?: string; at?: number };
+                const tokenTail = accessToken.slice(-16);
+                const fresh = typeof cached.at === "number" && Date.now() - cached.at < 5 * 60_000;
+                if (fresh && cached.tokenTail === tokenTail && typeof cached.role === "string") {
+                    setRole(cached.role);
+                    setRoleLoading(false);
+                    return;
+                }
+            }
+        } catch {
+            // ignore storage read errors
+        }
+
+        const now = Date.now();
+        const recentSameToken =
+            roleFetchRef.current.token === accessToken && now - roleFetchRef.current.at < 60_000;
+        if (roleFetchRef.current.inFlight || recentSameToken) {
+            return;
+        }
+        roleFetchRef.current.inFlight = true;
+        roleFetchRef.current.token = accessToken;
         setRoleLoading(true);
         try {
             const res = await fetch("/api/admin/bootstrap-role", {
@@ -28,14 +58,28 @@ export default function AdminRootPage() {
                 },
             });
             if (!res.ok) {
+                if (res.status >= 500) return;
                 setRole(null);
                 return;
             }
             const payload = (await res.json().catch(() => ({}))) as { role?: string };
-            setRole(typeof payload.role === "string" ? payload.role : null);
+            const nextRole = typeof payload.role === "string" ? payload.role : null;
+            setRole(nextRole);
+            if (nextRole) {
+                try {
+                    sessionStorage.setItem(
+                        cacheKey,
+                        JSON.stringify({ role: nextRole, tokenTail: accessToken.slice(-16), at: Date.now() })
+                    );
+                } catch {
+                    // ignore storage write errors
+                }
+            }
         } catch {
-            setRole(null);
+            // keep previous role on transient network errors
         } finally {
+            roleFetchRef.current.at = Date.now();
+            roleFetchRef.current.inFlight = false;
             setRoleLoading(false);
         }
     };
@@ -55,10 +99,12 @@ export default function AdminRootPage() {
             data: { subscription },
         } = supabaseClient.auth.onAuthStateChange((_event: AuthChangeEvent, nextSession: Session | null) => {
             setSession(nextSession);
-            if (nextSession?.access_token) {
+            if ((_event === "INITIAL_SESSION" || _event === "SIGNED_IN") && nextSession?.access_token) {
                 void loadRole(nextSession.access_token);
-            } else {
+            } else if (_event === "SIGNED_OUT") {
                 setRole(null);
+            } else {
+                // ignore TOKEN_REFRESHED and USER_UPDATED to avoid bootstrap-role spam
             }
             setLoading(false);
         });

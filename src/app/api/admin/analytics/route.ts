@@ -97,6 +97,16 @@ type DateRange = {
     toExclusiveTs: string;
 };
 
+type FunnelDailyRow = {
+    date: string;
+    leads_count: number;
+    unique_lead_phones: number;
+    orders_created: number;
+    orders_paid: number;
+    total_revenue: number;
+    conversion_rate_percent: string;
+};
+
 type PixelTotals = {
     view_content: number;
     initiate_checkout: number;
@@ -123,6 +133,71 @@ function safeDivide(numerator: number, denominator: number): number {
 
 function isIsoDate(value: string): boolean {
     return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function formatDateIsoUtc(date: Date): string {
+    return date.toISOString().slice(0, 10);
+}
+
+function toFunnelDailyRow(raw: unknown): FunnelDailyRow | null {
+    if (!raw || typeof raw !== "object") return null;
+    const row = raw as Record<string, unknown>;
+    const dateValue = row.date;
+    const date =
+        typeof dateValue === "string"
+            ? dateValue.slice(0, 10)
+            : dateValue instanceof Date
+                ? formatDateIsoUtc(dateValue)
+                : null;
+    if (!date || !isIsoDate(date)) return null;
+    return {
+        date,
+        leads_count: asFiniteNumber(row.leads_count),
+        unique_lead_phones: asFiniteNumber(row.unique_lead_phones),
+        orders_created: asFiniteNumber(row.orders_created),
+        orders_paid: asFiniteNumber(row.orders_paid),
+        total_revenue: asFiniteNumber(row.total_revenue),
+        conversion_rate_percent:
+            typeof row.conversion_rate_percent === "string"
+                ? row.conversion_rate_percent
+                : String(asFiniteNumber(row.conversion_rate_percent).toFixed(2)),
+    };
+}
+
+function buildFunnelSeries(range: DateRange, rows: unknown[]): FunnelDailyRow[] {
+    const byDate = new Map<string, FunnelDailyRow>();
+    for (const raw of rows) {
+        const row = toFunnelDailyRow(raw);
+        if (!row) continue;
+        byDate.set(row.date, row);
+    }
+
+    const from = new Date(`${range.from}T00:00:00.000Z`);
+    const to = new Date(`${range.to}T00:00:00.000Z`);
+    if (!Number.isFinite(from.getTime()) || !Number.isFinite(to.getTime()) || from > to) {
+        return Array.from(byDate.values()).sort((a, b) => a.date.localeCompare(b.date));
+    }
+
+    const result: FunnelDailyRow[] = [];
+    for (let cursor = new Date(from); cursor <= to; cursor.setUTCDate(cursor.getUTCDate() + 1)) {
+        const day = formatDateIsoUtc(cursor);
+        const row = byDate.get(day);
+        if (row) {
+            result.push(row);
+            continue;
+        }
+        result.push({
+            date: day,
+            leads_count: 0,
+            unique_lead_phones: 0,
+            orders_created: 0,
+            orders_paid: 0,
+            total_revenue: 0,
+            conversion_rate_percent: "0.00",
+        });
+    }
+
+    return result;
 }
 
 function normalizePixelEventName(raw: string): "view_content" | "initiate_checkout" | "purchase" | null {
@@ -394,7 +469,7 @@ export async function GET(req: NextRequest) {
     const range = toDateRange(req.nextUrl.searchParams);
 
     // 1. Fetch Funnel
-    const { data: funnelData, error: funnelErr } = await db
+    const { data: funnelDataRaw, error: funnelErr } = await db
         .from("mv_funnel_daily")
         .select("*")
         .gte("date", range.from)
@@ -406,6 +481,7 @@ export async function GET(req: NextRequest) {
         console.error("Analytics Funnel error:", funnelErr);
         return serverErrorResponse(funnelErr.message);
     }
+    const funnelData = buildFunnelSeries(range, funnelDataRaw ?? []);
 
     // 2. Fetch Revenue source breakdown in the selected period
     const { data: revenueOrders, error: revErr } = await db

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { flushSync } from "react-dom";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 import { getErrorMessage } from "@/lib/errors";
@@ -238,6 +239,34 @@ function clampIsoToToday(value: string): string {
 
 function isIsoDateInput(value: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function formatCompactTick(value: number, locale: string): string {
+  if (value <= 0) return "0";
+  return new Intl.NumberFormat(locale, {
+    notation: "compact",
+    maximumFractionDigits: value >= 1000 ? 1 : 0,
+  }).format(value);
+}
+
+function buildNiceScale(maxValue: number, tickCount = 5): { scaleMax: number; ticks: number[] } {
+  if (!Number.isFinite(maxValue) || maxValue <= 0 || tickCount < 2) {
+    return { scaleMax: 1, ticks: [0, 0.25, 0.5, 0.75, 1] };
+  }
+
+  const rawStep = maxValue / (tickCount - 1);
+  const magnitude = Math.pow(10, Math.floor(Math.log10(rawStep)));
+  const residual = rawStep / magnitude;
+  const niceResidual =
+    residual <= 1 ? 1 :
+      residual <= 2 ? 2 :
+        residual <= 2.5 ? 2.5 :
+          residual <= 5 ? 5 : 10;
+  const step = niceResidual * magnitude;
+  const scaleMax = Math.ceil(maxValue / step) * step;
+  const ticks = Array.from({ length: tickCount }, (_, index) => index * step);
+
+  return { scaleMax, ticks };
 }
 
 function normalizeDateRange(range: DateRange): DateRange {
@@ -607,7 +636,9 @@ export default function AnalyticsPage() {
   const [draftPeriodLabel, setDraftPeriodLabel] = useState("");
 
   const [hovered, setHovered] = useState<{ day: FunnelData; x: number } | null>(null);
+  const chartScrollRef = useRef<HTMLDivElement | null>(null);
   const chartWrapRef = useRef<HTMLDivElement | null>(null);
+  const lastBarRef = useRef<HTMLDivElement | null>(null);
   const [fromDate, setFromDate] = useState<string>(shiftedDate(29));
   const [toDate, setToDate] = useState<string>(formatDateLocal(new Date()));
 
@@ -759,6 +790,38 @@ export default function AnalyticsPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const funnelRangeKey = useMemo(() => {
+    if (funnel.length === 0) return "empty";
+    return `${funnel[0]?.date ?? ""}_${funnel[funnel.length - 1]?.date ?? ""}_${funnel.length}`;
+  }, [funnel]);
+
+  useEffect(() => {
+    if (analyticsSection !== "overview") return;
+    const el = chartScrollRef.current;
+    if (!el) return;
+    let delayedAlignId: number | null = null;
+    const doAlign = () => {
+      if (funnel.length <= 30) {
+        el.scrollLeft = 0;
+        return;
+      }
+      if (lastBarRef.current) {
+        lastBarRef.current.scrollIntoView({ inline: "end", block: "nearest", behavior: "auto" });
+      }
+      // Force-right after layout rounding to avoid mobile settling on the left edge.
+      el.scrollLeft = Math.max(0, el.scrollWidth - el.clientWidth);
+    };
+    requestAnimationFrame(() => {
+      doAlign();
+      delayedAlignId = window.setTimeout(doAlign, 180);
+    });
+    return () => {
+      if (delayedAlignId !== null) {
+        window.clearTimeout(delayedAlignId);
+      }
+    };
+  }, [analyticsSection, funnel.length, funnelRangeKey]);
+
   const applyPeriod = async (nextRange?: DateRange) => {
     const rawFrom = nextRange?.from ?? fromDate;
     const rawTo = nextRange?.to ?? toDate;
@@ -907,7 +970,7 @@ export default function AnalyticsPage() {
 
   if (error) {
     return (
-      <div className="px-6 pb-6 pt-3 md:px-8 md:pb-8 md:pt-4 max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <AdminErrorState
           title={t("analytics_load_error")}
           message={
@@ -930,14 +993,35 @@ export default function AnalyticsPage() {
 
   if (loading || !summary) {
     return (
-      <div className="px-6 pb-6 pt-3 md:px-8 md:pb-8 md:pt-4 max-w-7xl mx-auto">
+      <div className="max-w-7xl mx-auto">
         <AdminLoadingState variant="spinner" text={t("analytics_loading")} className="cw-panel" />
       </div>
     );
   }
 
   const chartHeight = 150;
+  const chartTopPadding = 14;
+  const chartBottomPadding = 8;
+  const chartAreaHeight = chartHeight + chartTopPadding + chartBottomPadding;
+  const minBarWidth = 20;
+  const barGapPx = 4;
+  const yAxisWidthPx = 48;
   const maxRevenue = Math.max(...funnel.map((f) => f.total_revenue), 1);
+  const { scaleMax, ticks } = buildNiceScale(maxRevenue, 4);
+  const shouldEnableHorizontalChartScroll = funnel.length > 30;
+  const minTrackWidthPx = Math.max(0, funnel.length * minBarWidth + Math.max(0, funnel.length - 1) * barGapPx);
+  const barsTrackWidth = `max(100%, ${minTrackWidthPx}px)`;
+  const yAxisLabelOffsetPx = -8;
+  const tickLayout = [...ticks]
+    .reverse()
+    .map((tickValue) => {
+      const ratio = scaleMax > 0 ? tickValue / scaleMax : 0;
+      const yPx = chartTopPadding + (1 - ratio) * chartHeight;
+      return {
+        tickValue,
+        yPx,
+      };
+    });
   const paymentConversion = funnelChain?.checkout_to_purchase_percent ?? 0;
   const accessConversion = funnelChain?.purchase_to_access_percent ?? 0;
   const primaryConversion =
@@ -954,11 +1038,18 @@ export default function AnalyticsPage() {
     { key: "capi", label: t("analytics_subtab_capi") },
     { key: "inputs_quality", label: t("analytics_subtab_inputs_quality") },
   ] as const;
+  const handleAnalyticsSectionChange = (key: string) => {
+    flushSync(() => {
+      setAnalyticsSection(
+        key as "overview" | "funnel" | "campaigns" | "capi" | "inputs_quality"
+      );
+    });
+  };
   return (
-    <div className="px-6 pb-6 pt-3 md:px-8 md:pb-8 md:pt-4 max-w-7xl mx-auto space-y-8">
-      <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-4 cw-surface p-6 rounded-2xl border cw-border cw-shadow">
+    <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
+      <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-3 md:gap-4 cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
         <div className="xl:max-w-sm">
-          <h1 className="text-2xl font-bold cw-text">{t("analytics_title")}</h1>
+          <h1 className="text-xl sm:text-2xl font-bold cw-text">{t("analytics_title")}</h1>
           <p className="text-xs cw-muted mt-2">
             {t("analytics_data_source")}:{" "}
             {marketingInputs?.source === "meta"
@@ -984,15 +1075,13 @@ export default function AnalyticsPage() {
         </div>
       </div>
 
-      <AdminTabs
-        items={[...analyticsTabs]}
-        activeKey={analyticsSection}
-        onChange={(key) =>
-          setAnalyticsSection(
-            key as "overview" | "funnel" | "campaigns" | "capi" | "inputs_quality"
-          )
-        }
-      />
+      <div className="pt-1">
+        <AdminTabs
+          items={[...analyticsTabs]}
+          activeKey={analyticsSection}
+          onChange={handleAnalyticsSectionChange}
+        />
+      </div>
 
       {analyticsSection === "inputs_quality" && (
         <div className="space-y-1">
@@ -1305,22 +1394,22 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "overview" && (
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
         {funnelUiSettings.showLeadsCard ? (
-          <div className="cw-surface p-6 rounded-2xl border cw-border cw-shadow">
+          <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
             <div className="text-sm font-medium cw-muted">{t("analytics_leads")}</div>
             <div className="text-3xl font-bold mt-2 cw-text">{summary.totalLeads}</div>
           </div>
         ) : null}
-        <div className="cw-surface p-6 rounded-2xl border cw-border cw-shadow">
+        <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
           <div className="text-sm font-medium cw-muted">{t("analytics_purchases")}</div>
           <div className="text-3xl font-bold mt-2 cw-text">{summary.totalPaidOrders}</div>
         </div>
-        <div className="cw-surface p-6 rounded-2xl border cw-border cw-shadow">
+        <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
           <div className="text-sm font-medium cw-muted">{primaryConversionLabel}</div>
           <div className="text-3xl font-bold mt-2 cw-text">{primaryConversion}%</div>
         </div>
-        <div className="cw-surface p-6 rounded-2xl border cw-border cw-shadow">
+        <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
           <div className="text-sm font-medium cw-muted">{t("analytics_revenue_period")}</div>
           <div className="text-3xl font-bold mt-2 cw-text">{summary.totalRevenue.toLocaleString()} ₴</div>
         </div>
@@ -1328,8 +1417,8 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "overview" && (
-      <div className="cw-panel p-6 space-y-5">
-        <div className="flex items-center justify-between gap-4">
+      <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4 md:space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 md:gap-4">
           <div>
             <h2 className="text-lg font-semibold cw-text">{t("analytics_unified_kpi_title")}</h2>
             <p className="text-sm cw-muted">{t("analytics_unified_kpi_subtitle")}</p>
@@ -1341,7 +1430,7 @@ export default function AnalyticsPage() {
           ) : null}
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
           {METRIC_FIELDS.filter((field) => visibleFields.includes(field.key)).map((field) => (
             <div key={field.key} className="cw-surface-2 border cw-border rounded-xl p-3">
               <div className="text-xs cw-muted">{t(field.labelKey as never)}</div>
@@ -1353,7 +1442,7 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "overview" && (
-      <div className="cw-panel p-6 space-y-4">
+      <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
         <div>
           <h2 className="text-lg font-semibold cw-text">{t("analytics_engagement_title")}</h2>
           <p className="text-sm cw-muted">{t("analytics_engagement_subtitle")}</p>
@@ -1376,7 +1465,7 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "funnel" && (
-        <div className="cw-panel p-6 space-y-4">
+        <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
           <h2 className="text-lg font-semibold cw-text">{t("analytics_chain_title")}</h2>
           {funnelSources ? (
             <div className="flex flex-wrap gap-2">
@@ -1467,7 +1556,7 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "capi" && (
-        <div className="cw-panel p-6 space-y-4">
+        <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
           <h2 className="text-lg font-semibold cw-text">{t("analytics_tab_capi")}</h2>
           <div className="cw-surface rounded-xl border cw-border overflow-x-auto">
             <table className="min-w-full text-sm">
@@ -1507,12 +1596,12 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "overview" && (
-      <div className="cw-surface p-6 rounded-2xl border cw-border cw-shadow">
-        <h2 className="text-lg font-medium mb-6 cw-text">{t("analytics_daily_revenue")}</h2>
+      <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+        <h2 className="text-lg font-medium mb-4 md:mb-6 cw-text">{t("analytics_daily_revenue")}</h2>
         {funnel.length === 0 ? (
           <div className="text-center text-sm cw-muted py-10">{t("analytics_no_chart_data")}</div>
         ) : (
-          <div ref={chartWrapRef} className="relative overflow-visible">
+          <div className="relative overflow-visible">
             {hovered && (
               <div
                 className="absolute z-40 -top-2 -translate-x-1/2 -translate-y-full border cw-border cw-shadow cw-text text-xs rounded-md py-1.5 px-2.5 whitespace-nowrap pointer-events-none"
@@ -1533,30 +1622,93 @@ export default function AnalyticsPage() {
                 </div>
               </div>
             )}
-            <div className="overflow-x-auto pb-2 custom-scrollbar">
-              <div className="flex items-end gap-1 h-[150px] min-w-max">
-                {funnel.map((day, idx) => {
-                  const barHeight = Math.max((day.total_revenue / maxRevenue) * chartHeight, 2);
-                  return (
-                    <div
-                      key={idx}
-                      className="flex flex-col items-center flex-1 min-w-[20px] relative"
-                      onMouseEnter={(e) => {
-                        const wrapRect = chartWrapRef.current?.getBoundingClientRect();
-                        const x = wrapRect ? e.clientX - wrapRect.left : 0;
-                        setHovered({ day, x });
-                      }}
-                      onMouseMove={(e) => {
-                        const wrapRect = chartWrapRef.current?.getBoundingClientRect();
-                        const x = wrapRect ? e.clientX - wrapRect.left : 0;
-                        setHovered({ day, x });
-                      }}
-                      onMouseLeave={() => setHovered(null)}
+            <div className="flex items-end gap-2">
+              <div
+                className="relative shrink-0 pr-1"
+                style={{
+                  height: `${chartAreaHeight}px`,
+                  width: `${yAxisWidthPx}px`,
+                  backgroundColor: "transparent",
+                }}
+              >
+                <svg className="absolute inset-0" width={yAxisWidthPx} height={chartAreaHeight} aria-hidden="true">
+                  {tickLayout.map(({ tickValue, yPx }) => (
+                    <text
+                      key={tickValue}
+                      x={yAxisWidthPx - 8}
+                      y={yPx + yAxisLabelOffsetPx}
+                      textAnchor="end"
+                      dominantBaseline="middle"
+                      alignmentBaseline="middle"
+                      fill="var(--cw-muted)"
+                      fontSize="11"
+                      fontWeight="500"
+                      style={{ fontVariantNumeric: "tabular-nums" }}
                     >
-                      <div className="w-full cw-chart-bar rounded-t-sm" style={{ height: `${barHeight}px` }} />
-                    </div>
-                  );
-                })}
+                      {formatCompactTick(tickValue, dateLocale)}
+                    </text>
+                  ))}
+                </svg>
+              </div>
+
+              <div ref={chartScrollRef} className="flex-1 overflow-x-auto pb-2 custom-scrollbar">
+                <div
+                  ref={chartWrapRef}
+                  className="relative min-w-0 pr-1"
+                  style={{
+                    height: `${chartAreaHeight}px`,
+                    width: barsTrackWidth,
+                    minWidth: barsTrackWidth,
+                  }}
+                >
+                  <svg className="absolute inset-0 pointer-events-none" width="100%" height={chartAreaHeight} aria-hidden="true">
+                    {tickLayout.map(({ tickValue, yPx }) => (
+                      <line
+                        key={tickValue}
+                        x1="0"
+                        x2="100%"
+                        y1={yPx}
+                        y2={yPx}
+                        stroke="color-mix(in srgb, var(--cw-border) 22%, transparent)"
+                        strokeWidth="1"
+                        shapeRendering="crispEdges"
+                      />
+                    ))}
+                  </svg>
+                  <div
+                    className="absolute left-0 right-1 flex items-end gap-1"
+                    style={{
+                      top: `${chartTopPadding}px`,
+                      bottom: `${chartBottomPadding}px`,
+                    }}
+                  >
+                    {funnel.map((day, idx) => {
+                      const barHeight = Math.max((day.total_revenue / scaleMax) * chartHeight, 2);
+                      const isLast = idx === funnel.length - 1;
+                      return (
+                        <div
+                          key={idx}
+                          ref={isLast ? lastBarRef : null}
+                          className="flex flex-col items-center relative"
+                          style={{ flex: "1 1 0", minWidth: `${minBarWidth}px` }}
+                          onMouseEnter={(e) => {
+                            const wrapRect = chartWrapRef.current?.getBoundingClientRect();
+                            const x = wrapRect ? e.clientX - wrapRect.left : 0;
+                            setHovered({ day, x });
+                          }}
+                          onMouseMove={(e) => {
+                            const wrapRect = chartWrapRef.current?.getBoundingClientRect();
+                            const x = wrapRect ? e.clientX - wrapRect.left : 0;
+                            setHovered({ day, x });
+                          }}
+                          onMouseLeave={() => setHovered(null)}
+                        >
+                          <div className="w-full cw-chart-bar rounded-t-sm" style={{ height: `${barHeight}px` }} />
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
@@ -1566,7 +1718,7 @@ export default function AnalyticsPage() {
 
       {analyticsSection === "campaigns" && (
       <div className="cw-surface rounded-2xl border cw-border cw-shadow overflow-hidden">
-        <div className="px-6 py-5 border-b cw-border">
+        <div className="px-4 sm:px-5 md:px-6 py-4 md:py-5 border-b cw-border">
           <h2 className="text-lg font-medium cw-text">{t("analytics_campaign_breakdown")}</h2>
           <p className="text-sm cw-muted mt-1">{t("analytics_campaign_breakdown_subtitle")}</p>
         </div>
@@ -1574,16 +1726,16 @@ export default function AnalyticsPage() {
           <table className="min-w-full divide-y" style={{ borderColor: "var(--cw-border)" }}>
             <thead className="cw-surface-2">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
+                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
                   {t("analytics_col_source_campaign")}
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
+                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
                   {t("analytics_col_orders")}
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
+                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
                   {t("analytics_col_paid")}
                 </th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
+                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
                   {t("analytics_col_revenue")}
                 </th>
               </tr>
@@ -1591,19 +1743,19 @@ export default function AnalyticsPage() {
             <tbody className="cw-surface" style={{ borderColor: "var(--cw-border)" }}>
               {campaigns.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-6 py-4 text-center text-sm cw-muted">
+                  <td colSpan={4} className="px-4 md:px-6 py-4 text-center text-sm cw-muted">
                     {t("analytics_no_campaign_data")}
                   </td>
                 </tr>
               ) : (
                 campaigns.map((camp, idx) => (
                   <tr key={idx} className="border-t cw-border cw-row-hover">
-                    <td className="px-6 py-4 text-sm font-medium cw-text">
+                    <td className="px-4 md:px-6 py-4 text-sm font-medium cw-text">
                       {resolveCampaignSource(camp.source_campaign)}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.total_orders}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.paid_orders}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">{camp.total_revenue} ₴</td>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.total_orders}</td>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.paid_orders}</td>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">{camp.total_revenue} ₴</td>
                   </tr>
                 ))
               )}
