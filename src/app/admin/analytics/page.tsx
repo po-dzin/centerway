@@ -635,7 +635,9 @@ export default function AnalyticsPage() {
   const [draftSpend, setDraftSpend] = useState("0");
   const [draftPeriodLabel, setDraftPeriodLabel] = useState("");
 
-  const [hovered, setHovered] = useState<{ day: FunnelData; x: number } | null>(null);
+  const [hovered, setHovered] = useState<{ day: FunnelData; x: number; idx: number } | null>(null);
+  const [selectedBar, setSelectedBar] = useState<{ day: FunnelData; x: number; idx: number } | null>(null);
+  const chartContainerRef = useRef<HTMLDivElement | null>(null);
   const chartScrollRef = useRef<HTMLDivElement | null>(null);
   const chartWrapRef = useRef<HTMLDivElement | null>(null);
   const lastBarRef = useRef<HTMLDivElement | null>(null);
@@ -1045,6 +1047,7 @@ export default function AnalyticsPage() {
       );
     });
   };
+  const activeBar = hovered ?? selectedBar;
   return (
     <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
       <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-3 md:gap-4 cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
@@ -1601,24 +1604,24 @@ export default function AnalyticsPage() {
         {funnel.length === 0 ? (
           <div className="text-center text-sm cw-muted py-10">{t("analytics_no_chart_data")}</div>
         ) : (
-          <div className="relative overflow-visible">
-            {hovered && (
+          <div ref={chartContainerRef} className="relative overflow-visible">
+            {activeBar && (
               <div
                 className="absolute z-40 -top-2 -translate-x-1/2 -translate-y-full border cw-border cw-shadow cw-text text-xs rounded-md py-1.5 px-2.5 whitespace-nowrap pointer-events-none"
                 style={{
-                  left: `${Math.max(64, Math.min(hovered.x, (chartWrapRef.current?.clientWidth ?? hovered.x) - 64))}px`,
+                  left: `${Math.max(64, Math.min(activeBar.x, (chartContainerRef.current?.clientWidth ?? activeBar.x) - 64))}px`,
                   backgroundColor: "var(--cw-surface-solid)",
                 }}
               >
-                <div className="font-semibold">{hovered.day.date}</div>
+                <div className="font-semibold">{activeBar.day.date}</div>
                 <div className="cw-muted">
-                  {t("analytics_tooltip_revenue")}: <span className="cw-text">{hovered.day.total_revenue} ₴</span>
+                  {t("analytics_tooltip_revenue")}: <span className="cw-text">{activeBar.day.total_revenue} ₴</span>
                 </div>
                 <div className="cw-muted">
-                  {t("analytics_tooltip_leads")}: <span className="cw-text">{hovered.day.leads_count}</span>
+                  {t("analytics_tooltip_leads")}: <span className="cw-text">{activeBar.day.leads_count}</span>
                 </div>
                 <div className="cw-muted">
-                  {t("analytics_tooltip_paid")}: <span className="cw-text">{hovered.day.orders_paid}</span>
+                  {t("analytics_tooltip_paid")}: <span className="cw-text">{activeBar.day.orders_paid}</span>
                 </div>
               </div>
             )}
@@ -1689,19 +1692,25 @@ export default function AnalyticsPage() {
                         <div
                           key={idx}
                           ref={isLast ? lastBarRef : null}
-                          className="flex flex-col items-center relative"
+                          className="relative flex h-full flex-col items-center justify-end"
                           style={{ flex: "1 1 0", minWidth: `${minBarWidth}px` }}
                           onMouseEnter={(e) => {
-                            const wrapRect = chartWrapRef.current?.getBoundingClientRect();
-                            const x = wrapRect ? e.clientX - wrapRect.left : 0;
-                            setHovered({ day, x });
+                            const containerRect = chartContainerRef.current?.getBoundingClientRect();
+                            const x = containerRect ? e.clientX - containerRect.left : 0;
+                            setHovered({ day, x, idx });
                           }}
                           onMouseMove={(e) => {
-                            const wrapRect = chartWrapRef.current?.getBoundingClientRect();
-                            const x = wrapRect ? e.clientX - wrapRect.left : 0;
-                            setHovered({ day, x });
+                            const containerRect = chartContainerRef.current?.getBoundingClientRect();
+                            const x = containerRect ? e.clientX - containerRect.left : 0;
+                            setHovered({ day, x, idx });
                           }}
                           onMouseLeave={() => setHovered(null)}
+                          onPointerUp={(e) => {
+                            const containerRect = chartContainerRef.current?.getBoundingClientRect();
+                            const itemRect = (e.currentTarget as HTMLDivElement).getBoundingClientRect();
+                            const x = containerRect ? itemRect.left - containerRect.left + itemRect.width / 2 : 0;
+                            setSelectedBar((prev) => (prev?.idx === idx ? null : { day, x, idx }));
+                          }}
                         >
                           <div className="w-full cw-chart-bar rounded-t-sm" style={{ height: `${barHeight}px` }} />
                         </div>
