@@ -1618,9 +1618,6 @@ export default function AnalyticsPage() {
                   {t("analytics_tooltip_revenue")}: <span className="cw-text">{activeBar.day.total_revenue} ₴</span>
                 </div>
                 <div className="cw-muted">
-                  {t("analytics_tooltip_leads")}: <span className="cw-text">{activeBar.day.leads_count}</span>
-                </div>
-                <div className="cw-muted">
                   {t("analytics_tooltip_paid")}: <span className="cw-text">{activeBar.day.orders_paid}</span>
                 </div>
               </div>
