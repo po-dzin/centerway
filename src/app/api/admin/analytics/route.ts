@@ -121,6 +121,8 @@ type PixelTotalsResult = {
     requested_range?: { from: string; to: string };
 };
 
+const ADMIN_ANALYTICS_TZ = "Europe/Kyiv";
+
 function asFiniteNumber(value: unknown): number {
     const n = Number(value);
     return Number.isFinite(n) ? n : 0;
@@ -133,6 +135,67 @@ function safeDivide(numerator: number, denominator: number): number {
 
 function isIsoDate(value: string): boolean {
     return /^\d{4}-\d{2}-\d{2}$/.test(value);
+}
+
+function isoDateFromParts(parts: { year: number; month: number; day: number }): string {
+    const y = String(parts.year).padStart(4, "0");
+    const m = String(parts.month).padStart(2, "0");
+    const d = String(parts.day).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+}
+
+function getIsoDateInTimeZone(date: Date, timeZone: string): string {
+    const dtf = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+    });
+    const parts = dtf.formatToParts(date);
+    const year = Number(parts.find((p) => p.type === "year")?.value ?? "0");
+    const month = Number(parts.find((p) => p.type === "month")?.value ?? "0");
+    const day = Number(parts.find((p) => p.type === "day")?.value ?? "0");
+    return isoDateFromParts({ year, month, day });
+}
+
+function shiftIsoDate(isoDate: string, days: number): string {
+    const [y, m, d] = isoDate.split("-").map(Number);
+    const dt = new Date(Date.UTC(y, m - 1, d));
+    dt.setUTCDate(dt.getUTCDate() + days);
+    return dt.toISOString().slice(0, 10);
+}
+
+function parseShortOffsetToMs(raw: string): number | null {
+    // Examples: "GMT+3", "GMT+03:00", "UTC-04:00"
+    const m = raw.match(/([+-])(\d{1,2})(?::?(\d{2}))?$/);
+    if (!m) return null;
+    const sign = m[1] === "-" ? -1 : 1;
+    const hh = Number(m[2] ?? "0");
+    const mm = Number(m[3] ?? "0");
+    return sign * (hh * 60 + mm) * 60 * 1000;
+}
+
+function getTimeZoneOffsetMs(date: Date, timeZone: string): number {
+    const dtf = new Intl.DateTimeFormat("en-US", {
+        timeZone,
+        timeZoneName: "shortOffset",
+        year: "numeric",
+    });
+    const tzName = dtf.formatToParts(date).find((p) => p.type === "timeZoneName")?.value ?? "";
+    return parseShortOffsetToMs(tzName) ?? 0;
+}
+
+function localMidnightUtcIso(isoDate: string, timeZone: string): string {
+    const [y, m, d] = isoDate.split("-").map(Number);
+    let ts = Date.UTC(y, m - 1, d, 0, 0, 0, 0);
+    // Iterate to handle DST boundaries correctly.
+    for (let i = 0; i < 3; i += 1) {
+        const offsetMs = getTimeZoneOffsetMs(new Date(ts), timeZone);
+        const next = Date.UTC(y, m - 1, d, 0, 0, 0, 0) - offsetMs;
+        if (next === ts) break;
+        ts = next;
+    }
+    return new Date(ts).toISOString();
 }
 
 function formatDateIsoUtc(date: Date): string {
@@ -353,12 +416,9 @@ async function fetchPixelTotals(range: DateRange): Promise<PixelTotalsResult> {
 }
 
 function toDateRange(searchParams: URLSearchParams): DateRange {
-    const today = new Date();
-    const todayIso = today.toISOString().slice(0, 10);
+    const todayIso = getIsoDateInTimeZone(new Date(), ADMIN_ANALYTICS_TZ);
     const defaultTo = todayIso;
-    const defaultFromDate = new Date(today);
-    defaultFromDate.setDate(defaultFromDate.getDate() - 29);
-    const defaultFrom = defaultFromDate.toISOString().slice(0, 10);
+    const defaultFrom = shiftIsoDate(todayIso, -29);
 
     const rawFrom = searchParams.get("from");
     const rawTo = searchParams.get("to");
@@ -370,14 +430,14 @@ function toDateRange(searchParams: URLSearchParams): DateRange {
     const clampedTo = normalizedTo > todayIso ? todayIso : normalizedTo;
     const clampedFrom = normalizedFrom > clampedTo ? clampedTo : normalizedFrom;
 
-    const toDate = new Date(`${clampedTo}T00:00:00.000Z`);
-    toDate.setUTCDate(toDate.getUTCDate() + 1);
+    const fromTs = localMidnightUtcIso(clampedFrom, ADMIN_ANALYTICS_TZ);
+    const toExclusiveTs = localMidnightUtcIso(shiftIsoDate(clampedTo, 1), ADMIN_ANALYTICS_TZ);
 
     return {
         from: clampedFrom,
         to: clampedTo,
-        fromTs: `${clampedFrom}T00:00:00.000Z`,
-        toExclusiveTs: toDate.toISOString(),
+        fromTs,
+        toExclusiveTs,
     };
 }
 
@@ -481,12 +541,12 @@ export async function GET(req: NextRequest) {
         console.error("Analytics Funnel error:", funnelErr);
         return serverErrorResponse(funnelErr.message);
     }
-    const funnelData = buildFunnelSeries(range, funnelDataRaw ?? []);
+    let funnelData = buildFunnelSeries(range, funnelDataRaw ?? []);
 
     // 2. Fetch Revenue source breakdown in the selected period
     const { data: revenueOrders, error: revErr } = await db
         .from("orders")
-        .select("campaign, status, amount")
+        .select("campaign, status, amount, created_at")
         .gte("created_at", range.fromTs)
         .lt("created_at", range.toExclusiveTs)
         .limit(50000);
@@ -499,8 +559,13 @@ export async function GET(req: NextRequest) {
         string,
         { source_campaign: string; total_orders: number; paid_orders: number; total_revenue: number }
     >();
+    const ordersCreatedByDay = new Map<string, number>();
+    const ordersPaidByDay = new Map<string, number>();
+    const revenueByDay = new Map<string, number>();
     let paidRevenueFact = 0;
     for (const row of revenueOrders ?? []) {
+        const createdAt = typeof row.created_at === "string" ? row.created_at : null;
+        const dayKey = createdAt ? getIsoDateInTimeZone(new Date(createdAt), ADMIN_ANALYTICS_TZ) : null;
         const source = typeof row.campaign === "string" && row.campaign.trim() ? row.campaign.trim() : "organic";
         const existing = revenueMap.get(source) ?? {
             source_campaign: source,
@@ -509,17 +574,32 @@ export async function GET(req: NextRequest) {
             total_revenue: 0,
         };
         existing.total_orders += 1;
+        if (dayKey) {
+            ordersCreatedByDay.set(dayKey, (ordersCreatedByDay.get(dayKey) ?? 0) + 1);
+        }
         if (row.status === "paid" || row.status === "completed") {
             existing.paid_orders += 1;
             const paidAmount = asFiniteNumber(row.amount);
             existing.total_revenue += paidAmount;
             paidRevenueFact += paidAmount;
+            if (dayKey) {
+                ordersPaidByDay.set(dayKey, (ordersPaidByDay.get(dayKey) ?? 0) + 1);
+                revenueByDay.set(dayKey, (revenueByDay.get(dayKey) ?? 0) + paidAmount);
+            }
         }
         revenueMap.set(source, existing);
     }
     const revenueData = Array.from(revenueMap.values())
         .sort((a, b) => b.total_revenue - a.total_revenue)
         .slice(0, 20);
+
+    // Align daily chart values with Kyiv-local order time (same basis as orders list).
+    funnelData = funnelData.map((row) => ({
+        ...row,
+        orders_created: ordersCreatedByDay.get(row.date) ?? 0,
+        orders_paid: ordersPaidByDay.get(row.date) ?? 0,
+        total_revenue: revenueByDay.get(row.date) ?? 0,
+    }));
 
     // 3. Overall stats from funnel
     const totalLeads = funnelData.reduce((acc, row) => acc + (row.leads_count || 0), 0);
