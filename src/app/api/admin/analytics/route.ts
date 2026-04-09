@@ -666,12 +666,41 @@ export async function GET(req: NextRequest) {
         .gte("day", range.from)
         .lte("day", range.to)
         .order("day", { ascending: false })
+        .order("synced_at", { ascending: false })
         .limit(366);
     if (pixelDailyErr) {
         console.warn("Analytics Pixel daily warning:", pixelDailyErr.message);
     }
 
-    const pixelDailyAggregate: PixelDailyAggregate = (pixelRows ?? []).reduce<PixelDailyAggregate>(
+    // Deduplicate per day: keep latest synced snapshot for that day.
+    const pixelDailyByDay = new Map<string, {
+        day: string;
+        view_content: number;
+        initiate_checkout: number;
+        purchase: number;
+        synced_at: string | null;
+    }>();
+    for (const rawRow of pixelRows ?? []) {
+        const day = typeof rawRow.day === "string" ? rawRow.day : null;
+        if (!day) continue;
+        const nextSyncedAt = typeof rawRow.synced_at === "string" ? rawRow.synced_at : null;
+        const current = pixelDailyByDay.get(day);
+        const currentSyncedAt = current?.synced_at ?? null;
+        const shouldReplace =
+            !current ||
+            (nextSyncedAt && currentSyncedAt ? nextSyncedAt > currentSyncedAt : Boolean(nextSyncedAt));
+        if (!shouldReplace) continue;
+        pixelDailyByDay.set(day, {
+            day,
+            view_content: asFiniteNumber(rawRow.view_content),
+            initiate_checkout: asFiniteNumber(rawRow.initiate_checkout),
+            purchase: asFiniteNumber(rawRow.purchase),
+            synced_at: nextSyncedAt,
+        });
+    }
+    const pixelDailyRows = Array.from(pixelDailyByDay.values());
+
+    const pixelDailyAggregate: PixelDailyAggregate = pixelDailyRows.reduce<PixelDailyAggregate>(
         (acc, row) => {
             const day = typeof row.day === "string" ? row.day : null;
             if (!acc.latest_day && day) acc.latest_day = day;
@@ -693,7 +722,7 @@ export async function GET(req: NextRequest) {
             latest_synced_at: null,
         }
     );
-    const pixelDailyDaysPresent = (pixelRows ?? []).length;
+    const pixelDailyDaysPresent = pixelDailyRows.length;
     const periodFromTs = Date.parse(`${range.from}T00:00:00.000Z`);
     const periodToTs = Date.parse(`${range.to}T00:00:00.000Z`);
     const pixelDailyExpectedDays =
@@ -884,13 +913,19 @@ export async function GET(req: NextRequest) {
         hasPixelDailyViewContent &&
         businessInitiateCheckout > 0 &&
         pixelDailyAggregate.view_content < businessInitiateCheckout;
+    const pixelDailyImplausiblyHighVsReference =
+        hasPixelDailyViewContent &&
+        referencePixelViewContent !== null &&
+        referencePixelViewContent > 0 &&
+        pixelDailyAggregate.view_content > Math.round(referencePixelViewContent * 1.5);
     const preferReferencePixelViewContent =
         referencePixelViewContent !== null &&
         referencePixelViewContent > 0 &&
         (
             !hasPixelDailyViewContent ||
             pixelDailyCoveragePercent < 80 ||
-            pixelDailyAggregate.view_content < Math.round(referencePixelViewContent * 0.7)
+            pixelDailyAggregate.view_content < Math.round(referencePixelViewContent * 0.7) ||
+            pixelDailyImplausiblyHighVsReference
         );
     const pixelDailyLowCoverageWhenPixelUnavailable =
         pixelStatsUnavailable &&
@@ -1113,6 +1148,7 @@ export async function GET(req: NextRequest) {
             pixel_daily_expected_days: pixelDailyExpectedDays,
             pixel_daily_coverage_percent: pixelDailyCoveragePercent,
             pixel_daily_implausible_for_funnel: pixelDailyImplausibleForFunnel,
+            pixel_daily_implausibly_high_vs_reference: pixelDailyImplausiblyHighVsReference,
             pixel_daily_low_coverage_when_pixel_unavailable: pixelDailyLowCoverageWhenPixelUnavailable,
             prefer_reference_pixel_view_content: preferReferencePixelViewContent,
             resolved_view_content: resolvedViewContent,
