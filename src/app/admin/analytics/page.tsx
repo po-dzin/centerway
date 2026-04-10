@@ -1768,6 +1768,19 @@ export default function AnalyticsPage() {
           <h2 className="text-lg font-medium cw-text">{t("analytics_campaign_breakdown")}</h2>
           <p className="text-sm cw-muted mt-1">{t("analytics_campaign_breakdown_subtitle")}</p>
         </div>
+        {(() => {
+          const showRevenueCol = visibleFields.includes("revenue");
+          const showImpressionsCol = visibleFields.includes("impressions");
+          const showReachCol = visibleFields.includes("reach");
+          const showSpendCol = visibleFields.includes("spend");
+          const totalColumns =
+            4 + // source + view content + orders + paid
+            (showRevenueCol ? 1 : 0) +
+            (showImpressionsCol ? 1 : 0) +
+            (showReachCol ? 1 : 0) +
+            (showSpendCol ? 1 : 0);
+
+          return (
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y" style={{ borderColor: "var(--cw-border)" }}>
             <thead className="cw-surface-2">
@@ -1776,32 +1789,40 @@ export default function AnalyticsPage() {
                   {t("analytics_col_source_campaign")}
                 </th>
                 <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
+                  {t("analytics_metric_view_content")}
+                </th>
+                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
                   {t("analytics_col_orders")}
                 </th>
                 <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
                   {t("analytics_col_paid")}
                 </th>
-                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                  {t("analytics_col_revenue")}
-                </th>
-                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                  {t("analytics_metric_view_content")}
-                </th>
-                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                  {t("analytics_metric_impressions")}
-                </th>
-                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                  {t("analytics_metric_reach")}
-                </th>
-                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                  {t("analytics_metric_spend")}
-                </th>
+                {showRevenueCol ? (
+                  <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
+                    {t("analytics_col_revenue")}
+                  </th>
+                ) : null}
+                {showSpendCol ? (
+                  <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
+                    {t("analytics_metric_spend")}
+                  </th>
+                ) : null}
+                {showReachCol ? (
+                  <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
+                    {t("analytics_metric_reach")}
+                  </th>
+                ) : null}
+                {showImpressionsCol ? (
+                  <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
+                    {t("analytics_metric_impressions")}
+                  </th>
+                ) : null}
               </tr>
             </thead>
             <tbody className="cw-surface" style={{ borderColor: "var(--cw-border)" }}>
               {campaigns.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="px-4 md:px-6 py-4 text-center text-sm cw-muted">
+                  <td colSpan={totalColumns} className="px-4 md:px-6 py-4 text-center text-sm cw-muted">
                     {t("analytics_no_campaign_data")}
                   </td>
                 </tr>
@@ -1811,19 +1832,29 @@ export default function AnalyticsPage() {
                     <td className="px-4 md:px-6 py-4 text-sm font-medium cw-text">
                       {resolveCampaignSource(camp.source_campaign)}
                     </td>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{(camp.view_content ?? 0).toLocaleString()}</td>
                     <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.total_orders.toLocaleString()}</td>
                     <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.paid_orders.toLocaleString()}</td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">{camp.total_revenue.toLocaleString()} ₴</td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{(camp.view_content ?? 0).toLocaleString()}</td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{(camp.impressions ?? 0).toLocaleString()}</td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{(camp.reach ?? 0).toLocaleString()}</td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{formatCampaignSpend(camp.spend ?? 0, camp.currency)}</td>
+                    {showRevenueCol ? (
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">{camp.total_revenue.toLocaleString()} ₴</td>
+                    ) : null}
+                    {showSpendCol ? (
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{formatCampaignSpend(camp.spend ?? 0, camp.currency)}</td>
+                    ) : null}
+                    {showReachCol ? (
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{(camp.reach ?? 0).toLocaleString()}</td>
+                    ) : null}
+                    {showImpressionsCol ? (
+                      <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{(camp.impressions ?? 0).toLocaleString()}</td>
+                    ) : null}
                   </tr>
                 ))
               )}
             </tbody>
           </table>
         </div>
+          );
+        })()}
       </div>
       )}
     </div>
