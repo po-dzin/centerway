@@ -97,6 +97,18 @@ type DateRange = {
     toExclusiveTs: string;
 };
 
+type CampaignBreakdownRow = {
+    source_campaign: string;
+    total_orders: number;
+    paid_orders: number;
+    total_revenue: number;
+    view_content: number;
+    impressions: number;
+    reach: number;
+    spend: number;
+    currency: string;
+};
+
 type FunnelDailyRow = {
     date: string;
     leads_count: number;
@@ -126,6 +138,16 @@ const ADMIN_ANALYTICS_TZ = "Europe/Kyiv";
 function asFiniteNumber(value: unknown): number {
     const n = Number(value);
     return Number.isFinite(n) ? n : 0;
+}
+
+function normalizeCampaignSource(raw: unknown, fallback: string): string {
+    if (typeof raw !== "string") return fallback;
+    const trimmed = raw.trim();
+    return trimmed.length > 0 ? trimmed : fallback;
+}
+
+function campaignMergeKey(sourceCampaign: string): string {
+    return sourceCampaign.trim().toLowerCase();
 }
 
 function safeDivide(numerator: number, denominator: number): number {
@@ -555,10 +577,7 @@ export async function GET(req: NextRequest) {
         console.error("Analytics Revenue error:", revErr);
         return serverErrorResponse(revErr.message);
     }
-    const revenueMap = new Map<
-        string,
-        { source_campaign: string; total_orders: number; paid_orders: number; total_revenue: number }
-    >();
+    const revenueMap = new Map<string, CampaignBreakdownRow>();
     const ordersCreatedByDay = new Map<string, number>();
     const ordersPaidByDay = new Map<string, number>();
     const revenueByDay = new Map<string, number>();
@@ -566,12 +585,18 @@ export async function GET(req: NextRequest) {
     for (const row of revenueOrders ?? []) {
         const createdAt = typeof row.created_at === "string" ? row.created_at : null;
         const dayKey = createdAt ? getIsoDateInTimeZone(new Date(createdAt), ADMIN_ANALYTICS_TZ) : null;
-        const source = typeof row.campaign === "string" && row.campaign.trim() ? row.campaign.trim() : "organic";
-        const existing = revenueMap.get(source) ?? {
+        const source = normalizeCampaignSource(row.campaign, "organic");
+        const sourceKey = campaignMergeKey(source);
+        const existing = revenueMap.get(sourceKey) ?? {
             source_campaign: source,
             total_orders: 0,
             paid_orders: 0,
             total_revenue: 0,
+            view_content: 0,
+            impressions: 0,
+            reach: 0,
+            spend: 0,
+            currency: "UAH",
         };
         existing.total_orders += 1;
         if (dayKey) {
@@ -587,10 +612,49 @@ export async function GET(req: NextRequest) {
                 revenueByDay.set(dayKey, (revenueByDay.get(dayKey) ?? 0) + paidAmount);
             }
         }
-        revenueMap.set(source, existing);
+        revenueMap.set(sourceKey, existing);
     }
+
+    const { data: metaCampaignRows, error: metaCampaignErr } = await db
+        .from("analytics_meta_campaign_daily")
+        .select("campaign_name, view_content, reach, impressions, spend, currency")
+        .gte("day", range.from)
+        .lte("day", range.to)
+        .limit(100000);
+    if (metaCampaignErr) {
+        console.warn("Analytics Meta campaign warning:", metaCampaignErr.message);
+    } else {
+        for (const row of metaCampaignRows ?? []) {
+            const source = normalizeCampaignSource(row.campaign_name, "meta (no utm_campaign)");
+            const sourceKey = campaignMergeKey(source);
+            const existing = revenueMap.get(sourceKey) ?? {
+                source_campaign: source,
+                total_orders: 0,
+                paid_orders: 0,
+                total_revenue: 0,
+                view_content: 0,
+                impressions: 0,
+                reach: 0,
+                spend: 0,
+                currency: "UAH",
+            };
+            existing.view_content += asFiniteNumber(row.view_content);
+            existing.impressions += asFiniteNumber(row.impressions);
+            existing.reach += asFiniteNumber(row.reach);
+            existing.spend += asFiniteNumber(row.spend);
+            if (typeof row.currency === "string" && row.currency.trim()) {
+                existing.currency = row.currency.trim();
+            }
+            revenueMap.set(sourceKey, existing);
+        }
+    }
+
     const revenueData = Array.from(revenueMap.values())
-        .sort((a, b) => b.total_revenue - a.total_revenue)
+        .sort((a, b) => {
+            if (b.total_revenue !== a.total_revenue) return b.total_revenue - a.total_revenue;
+            if (b.spend !== a.spend) return b.spend - a.spend;
+            return b.total_orders - a.total_orders;
+        })
         .slice(0, 20);
 
     // Align daily chart values with Kyiv-local order time (same basis as orders list).

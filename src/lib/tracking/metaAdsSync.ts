@@ -8,6 +8,8 @@ type MetaInsightsAction = {
 type MetaInsightsRow = {
   date_start?: string;
   date_stop?: string;
+  campaign_id?: string;
+  campaign_name?: string;
   spend?: string;
   reach?: string;
   impressions?: string;
@@ -28,6 +30,7 @@ export type MetaSyncResult = {
   since: string;
   until: string;
   accountId: string;
+  campaignSyncedRows?: number;
   pixelSyncedRows?: number;
   pixelId?: string | null;
 };
@@ -329,6 +332,76 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
     }
   }
 
+  const campaignParams = new URLSearchParams({
+    access_token: token,
+    level: "campaign",
+    time_increment: "1",
+    fields: "date_start,date_stop,campaign_id,campaign_name,spend,reach,impressions,clicks,actions,account_currency",
+    time_range: JSON.stringify({ since, until }),
+    limit: "500",
+  });
+
+  let campaignNextUrl = `https://graph.facebook.com/${apiVersion}/${accountId}/insights?${campaignParams.toString()}`;
+  const campaignRows: MetaInsightsRow[] = [];
+
+  while (campaignNextUrl) {
+    const page = await fetchInsightsPage(campaignNextUrl);
+    if (page.error?.message) {
+      throw new Error(page.error.message);
+    }
+    if (Array.isArray(page.data)) {
+      campaignRows.push(...page.data);
+    }
+    campaignNextUrl = page.paging?.next ?? "";
+  }
+
+  const campaignUpsertRows = campaignRows
+    .map((row) => {
+      const day = row.date_start;
+      if (!day || !/^\d{4}-\d{2}-\d{2}$/.test(day)) return null;
+      const campaignIdRaw = typeof row.campaign_id === "string" ? row.campaign_id.trim() : "";
+      const campaignName = typeof row.campaign_name === "string" ? row.campaign_name.trim() : "";
+      const campaignId = campaignIdRaw || campaignName;
+      if (!campaignId) return null;
+      const events = extractEventCounts(row.actions);
+      return {
+        day,
+        account_id: accountId,
+        campaign_id: campaignId,
+        campaign_name: campaignName,
+        reach: Math.round(toNumber(row.reach)),
+        impressions: Math.round(toNumber(row.impressions)),
+        clicks: Math.round(toNumber(row.clicks)),
+        spend: toNumber(row.spend),
+        currency: typeof row.account_currency === "string" && row.account_currency.trim() ? row.account_currency.trim() : "UAH",
+        view_content: Math.round(events.view_content),
+        initiate_checkout: Math.round(events.initiate_checkout),
+        purchase: Math.round(events.purchase),
+        raw: row,
+        synced_at: new Date().toISOString(),
+      };
+    })
+    .filter(Boolean) as Array<Record<string, unknown>>;
+
+  let campaignSyncedRows = 0;
+  if (campaignUpsertRows.length > 0) {
+    const { error } = await db
+      .from("analytics_meta_campaign_daily")
+      .upsert(campaignUpsertRows, { onConflict: "day,account_id,campaign_id" });
+    if (error) {
+      const message = error.message.toLowerCase();
+      const isMissingTable =
+        message.includes("analytics_meta_campaign_daily") &&
+        (message.includes("does not exist") || message.includes("relation") || message.includes("schema cache"));
+      if (!isMissingTable) {
+        throw new Error(error.message);
+      }
+      console.warn("Meta campaign sync skipped:", error.message);
+    } else {
+      campaignSyncedRows = campaignUpsertRows.length;
+    }
+  }
+
   let pixelSyncedRows = 0;
   const pixelId = rawPixelId ? normalizePixelId(rawPixelId) : null;
   if (pixelId) {
@@ -347,6 +420,7 @@ export async function syncMetaAdsInsights(options?: { since?: string | null; unt
     since,
     until,
     accountId,
+    campaignSyncedRows,
     pixelSyncedRows,
     pixelId,
   };

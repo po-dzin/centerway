@@ -26,6 +26,11 @@ type CampaignData = {
   total_orders: number;
   paid_orders: number;
   total_revenue: number;
+  view_content: number;
+  impressions: number;
+  reach: number;
+  spend: number;
+  currency: string;
 };
 
 type AnalyticsSummary = {
@@ -328,6 +333,8 @@ function funnelSourceLabel(
     | "pixel_stats_reference"
     | "pixel_fallback"
     | "capi_fallback"
+    | "meta_daily"
+    | "manual_input"
     | "orders_created"
     | "paid_orders"
     | "token_consumed"
@@ -338,6 +345,8 @@ function funnelSourceLabel(
   if (source === "pixel_stats_reference") return t("analytics_source_pixel_stats_reference" as never);
   if (source === "pixel_fallback") return t("analytics_source_pixel_fallback" as never);
   if (source === "capi_fallback") return t("analytics_source_capi_fallback" as never);
+  if (source === "meta_daily") return t("analytics_source_meta_daily" as never);
+  if (source === "manual_input") return t("analytics_source_manual_input" as never);
   if (source === "orders_created") return t("analytics_source_orders_created" as never);
   if (source === "paid_orders") return t("analytics_source_paid_orders" as never);
   return t("analytics_source_token_consumed" as never);
@@ -970,6 +979,16 @@ export default function AnalyticsPage() {
     return raw;
   };
 
+  const formatCampaignSpend = (value: number, currency: string | null | undefined): string => {
+    const normalizedCurrency = (currency ?? "UAH").toUpperCase();
+    const amount = Number(value ?? 0).toLocaleString(lang === "en" ? "en-US" : "ru-RU", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    });
+    if (normalizedCurrency === "UAH") return `${amount} ₴`;
+    return `${amount} ${normalizedCurrency}`;
+  };
+
   if (error) {
     return (
       <div className="max-w-7xl mx-auto">
@@ -1033,6 +1052,11 @@ export default function AnalyticsPage() {
       ? t("analytics_primary_conversion_payment")
       : t("analytics_primary_conversion_access");
   const dateLocale = lang === "en" ? "en-US" : "ru-RU";
+  const uniqueImpressions = marketingInputs?.reach ?? 0;
+  const viewContentFromReachPercent =
+    uniqueImpressions > 0
+      ? Number((((funnelChain?.view_content ?? 0) * 100) / uniqueImpressions).toFixed(2))
+      : 0;
   const analyticsTabs = [
     { key: "overview", label: t("analytics_subtab_overview") },
     { key: "funnel", label: t("analytics_subtab_funnel") },
@@ -1473,6 +1497,7 @@ export default function AnalyticsPage() {
           {funnelSources ? (
             <div className="flex flex-wrap gap-2">
               {[
+                { key: "unique_impressions", label: t("analytics_event_unique_impressions"), value: marketingInputs?.source === "meta" ? "meta_daily" : "manual_input" },
                 { key: "view_content", label: t("analytics_event_view_content"), value: funnelSources.view_content },
                 { key: "initiate_checkout", label: t("analytics_event_initiate_checkout"), value: funnelSources.initiate_checkout },
                 { key: "purchase", label: t("analytics_event_purchase"), value: funnelSources.purchase },
@@ -1484,7 +1509,7 @@ export default function AnalyticsPage() {
                   key={item.key}
                   className="text-xs cw-muted border cw-border rounded-full px-2.5 py-1 cw-surface-2"
                 >
-                  {item.label}: {funnelSourceLabel(t, item.value)}
+                  {item.label}: {funnelSourceLabel(t, item.value as Parameters<typeof funnelSourceLabel>[1])}
                 </span>
               ))}
             </div>
@@ -1492,8 +1517,18 @@ export default function AnalyticsPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="cw-surface-2 border cw-border rounded-xl p-4">
+              <div className="text-xs cw-muted">{t("analytics_event_unique_impressions")}</div>
+              <div className="text-2xl font-bold cw-text mt-1">{uniqueImpressions.toLocaleString()}</div>
+              <div className="text-xs cw-muted mt-1">
+                {t("analytics_chain_from_prev")}: —
+              </div>
+            </div>
+            <div className="cw-surface-2 border cw-border rounded-xl p-4">
               <div className="text-xs cw-muted">{t("analytics_event_view_content")}</div>
               <div className="text-2xl font-bold cw-text mt-1">{funnelChain?.view_content ?? 0}</div>
+              <div className="text-xs cw-muted mt-1">
+                {t("analytics_chain_from_prev")}: {viewContentFromReachPercent}%
+              </div>
             </div>
             <div className="cw-surface-2 border cw-border rounded-xl p-4">
               <div className="text-xs cw-muted">{t("analytics_event_initiate_checkout")}</div>
@@ -1531,9 +1566,14 @@ export default function AnalyticsPage() {
               </thead>
               <tbody>
                 <tr className="border-t cw-border">
+                  <td className="px-4 py-3 cw-text font-medium">{t("analytics_event_unique_impressions")}</td>
+                  <td className="px-4 py-3 cw-text">{uniqueImpressions}</td>
+                  <td className="px-4 py-3 cw-muted">—</td>
+                </tr>
+                <tr className="border-t cw-border">
                   <td className="px-4 py-3 cw-text font-medium">{t("analytics_event_view_content")}</td>
                   <td className="px-4 py-3 cw-text">{funnelChain?.view_content ?? 0}</td>
-                  <td className="px-4 py-3 cw-muted">—</td>
+                  <td className="px-4 py-3 cw-muted">{viewContentFromReachPercent}%</td>
                 </tr>
                 <tr className="border-t cw-border">
                   <td className="px-4 py-3 cw-text font-medium">{t("analytics_event_initiate_checkout")}</td>
@@ -1744,12 +1784,24 @@ export default function AnalyticsPage() {
                 <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
                   {t("analytics_col_revenue")}
                 </th>
+                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
+                  {t("analytics_metric_view_content")}
+                </th>
+                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
+                  {t("analytics_metric_impressions")}
+                </th>
+                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
+                  {t("analytics_metric_reach")}
+                </th>
+                <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
+                  {t("analytics_metric_spend")}
+                </th>
               </tr>
             </thead>
             <tbody className="cw-surface" style={{ borderColor: "var(--cw-border)" }}>
               {campaigns.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="px-4 md:px-6 py-4 text-center text-sm cw-muted">
+                  <td colSpan={8} className="px-4 md:px-6 py-4 text-center text-sm cw-muted">
                     {t("analytics_no_campaign_data")}
                   </td>
                 </tr>
@@ -1759,9 +1811,13 @@ export default function AnalyticsPage() {
                     <td className="px-4 md:px-6 py-4 text-sm font-medium cw-text">
                       {resolveCampaignSource(camp.source_campaign)}
                     </td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.total_orders}</td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.paid_orders}</td>
-                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">{camp.total_revenue} ₴</td>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.total_orders.toLocaleString()}</td>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{camp.paid_orders.toLocaleString()}</td>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm font-medium cw-text">{camp.total_revenue.toLocaleString()} ₴</td>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{(camp.view_content ?? 0).toLocaleString()}</td>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{(camp.impressions ?? 0).toLocaleString()}</td>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{(camp.reach ?? 0).toLocaleString()}</td>
+                    <td className="px-4 md:px-6 py-4 whitespace-nowrap text-sm cw-muted">{formatCampaignSpend(camp.spend ?? 0, camp.currency)}</td>
                   </tr>
                 ))
               )}
