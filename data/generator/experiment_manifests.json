@@ -1,0 +1,45 @@
+{
+  "schema_version": "1.0.0",
+  "experiments": [
+    {
+      "id": "exp.consult.theme.v1",
+      "key": "consult_theme_v1",
+      "version": "1.0.0",
+      "status": "active",
+      "route_key": "consult",
+      "default_variant": "control",
+      "variants": [
+        {
+          "key": "control",
+          "weight": 50,
+          "screen_manifest_id": "screen.consult.v1.control"
+        },
+        {
+          "key": "warm_route",
+          "weight": 50,
+          "screen_manifest_id": "screen.consult.v1.warm_route"
+        }
+      ]
+    },
+    {
+      "id": "exp.dosha.ui_variant.v1",
+      "key": "dosha_ui_variant_v1",
+      "version": "1.0.0",
+      "status": "active",
+      "route_key": "dosha-test",
+      "default_variant": "control",
+      "variants": [
+        {
+          "key": "control",
+          "weight": 50,
+          "screen_manifest_id": "screen.dosha-test.v1.control"
+        },
+        {
+          "key": "routecopy",
+          "weight": 50,
+          "screen_manifest_id": "screen.dosha-test.v1.routecopy"
+        }
+      ]
+    }
+  ]
+}

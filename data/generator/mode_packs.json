@@ -1,0 +1,51 @@
+{
+  "schema_version": "1.0.0",
+  "packs": [
+    {
+      "id": "mode_pack.consult.v1",
+      "version": "1.0.0",
+      "mode": "consult",
+      "tokens": {
+        "--cw-accent": "#A06F52",
+        "--cw-accent-soft": "#E9D7C9",
+        "--cw-status-running": "#5E6A68"
+      }
+    },
+    {
+      "id": "mode_pack.detox.v1",
+      "version": "1.0.0",
+      "mode": "detox",
+      "tokens": {
+        "--cw-accent": "#6F7A63",
+        "--cw-accent-soft": "#DDE3D8",
+        "--cw-status-running": "#5F6962"
+      }
+    },
+    {
+      "id": "mode_pack.herbs.v1",
+      "version": "1.0.0",
+      "mode": "herbs",
+      "tokens": {
+        "--cw-accent": "#7A856E",
+        "--cw-accent-soft": "#E1E7DC",
+        "--cw-status-running": "#5D6960"
+      }
+    },
+    {
+      "id": "mode_pack.lesson.v1",
+      "version": "1.0.0",
+      "mode": "lesson",
+      "tokens": {
+        "--cw-accent": "#8E775F",
+        "--cw-accent-soft": "#E9DED1",
+        "--cw-status-running": "#626966"
+      }
+    },
+    {
+      "id": "mode_pack.support.v1",
+      "version": "1.0.0",
+      "mode": "support",
+      "tokens": {}
+    }
+  ]
+}

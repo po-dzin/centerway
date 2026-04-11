@@ -1,5 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import { HostBrand, hostBrandFromHost } from "@/lib/hostBrand";
+import {
+  CW_EXPERIMENT_ASSIGNMENTS_HEADER,
+  encodeExperimentAssignmentsHeader,
+  parseCookieHeader,
+  resolveExperimentAssignments,
+} from "@/lib/experiments/engine";
+import { getExperiments } from "@/lib/generator/registry";
+import type { ScreenRouteKey } from "@/lib/generator/types";
+import {
+  CW_THEME_COOKIE,
+  CW_THEME_SELECTION_HEADER,
+  getThemeFromSearchParams,
+} from "@/lib/generator/theme";
 
 const ROOT_PAGE_MAP: Record<string, string> = {
   "/": "/index.html",
@@ -14,6 +27,7 @@ const ROOT_PAGE_MAP: Record<string, string> = {
 
 const LANDING_ASSET_PREFIXES = ["/css/", "/js/", "/img/", "/fonts/", "/libs/"];
 const LANDING_ROOT_FILES = new Set(["/main-short.css", "/media-short.css", "/Frame"]);
+const EXPERIMENT_COOKIE_MAX_AGE = 60 * 60 * 24 * 90;
 
 function brandFromReferer(rawReferer: string | null): HostBrand | null {
   if (!rawReferer) return null;
@@ -47,8 +61,72 @@ function rewriteLanding(req: NextRequest, landingPath: string) {
   return NextResponse.rewrite(url);
 }
 
+function experimentRouteFromPathname(pathname: string): ScreenRouteKey | null {
+  if (pathname === "/consult") return "consult";
+  if (pathname === "/detox") return "detox";
+  if (pathname === "/herbs") return "herbs";
+  if (pathname === "/dosha-test") return "dosha-test";
+  if (pathname === "/lesson/pilot") return "lesson-pilot";
+  return null;
+}
+
+function normalizePathname(pathname: string): string {
+  if (pathname.length > 1 && pathname.endsWith("/")) {
+    return pathname.slice(0, -1);
+  }
+  return pathname;
+}
+
+function nextWithExperimentContext(req: NextRequest, routeKey: ScreenRouteKey): NextResponse {
+  const cookies = parseCookieHeader(req.headers.get("cookie"));
+  const themeFromQuery = getThemeFromSearchParams(req.nextUrl.searchParams);
+  const themeFromCookie = cookies.get(CW_THEME_COOKIE)?.trim() || null;
+  const resolvedThemeSelection = themeFromQuery ?? themeFromCookie;
+  const resolved = resolveExperimentAssignments({
+    routeKey,
+    experiments: getExperiments(),
+    searchParams: req.nextUrl.searchParams,
+    cookies,
+  });
+
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set(CW_EXPERIMENT_ASSIGNMENTS_HEADER, encodeExperimentAssignmentsHeader(resolved.assignments));
+  if (resolvedThemeSelection) {
+    requestHeaders.set(CW_THEME_SELECTION_HEADER, resolvedThemeSelection);
+  }
+
+  const res = NextResponse.next({
+    request: {
+      headers: requestHeaders,
+    },
+  });
+
+  const secure = req.nextUrl.protocol === "https:";
+  for (const mutation of resolved.cookieMutations) {
+    res.cookies.set(mutation.name, mutation.value, {
+      path: "/",
+      maxAge: EXPERIMENT_COOKIE_MAX_AGE,
+      sameSite: "lax",
+      secure,
+      httpOnly: true,
+    });
+  }
+  if (themeFromQuery) {
+    res.cookies.set(CW_THEME_COOKIE, themeFromQuery, {
+      path: "/",
+      maxAge: EXPERIMENT_COOKIE_MAX_AGE,
+      sameSite: "lax",
+      secure,
+      httpOnly: false,
+    });
+  }
+
+  return res;
+}
+
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
+  const normalizedPathname = normalizePathname(pathname);
 
   // External pollers hit these paths very frequently in dev.
   // Respond directly from proxy to avoid touching app route compilation.
@@ -63,6 +141,11 @@ export function proxy(req: NextRequest) {
       { photos: [] },
       { status: 200, headers: { "Cache-Control": "public, max-age=300, s-maxage=300" } }
     );
+  }
+
+  const experimentRoute = experimentRouteFromPathname(normalizedPathname);
+  if (experimentRoute) {
+    return nextWithExperimentContext(req, experimentRoute);
   }
 
   // Backend/runtime routes should stay untouched.
@@ -81,12 +164,10 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // Local convenience routes to open landing pages by path:
+  // Local convenience routes for static legacy landing pages:
   // - /reboot -> /short/index.html
   // - /irem   -> /irem/index.html
-  // - /consult -> /consult/index.html
-  // - /detox -> /detox/index.html
-  // - /herbs -> /herbs/index.html
+  // /consult, /detox, /herbs are Next app routes.
   if (pathname === "/reboot" || pathname === "/reboot/") {
     const url = req.nextUrl.clone();
     url.pathname = "/short/index.html";
@@ -96,24 +177,6 @@ export function proxy(req: NextRequest) {
   if (pathname === "/irem" || pathname === "/irem/") {
     const url = req.nextUrl.clone();
     url.pathname = "/irem/index.html";
-    return NextResponse.rewrite(url);
-  }
-
-  if (pathname === "/consult" || pathname === "/consult/") {
-    const url = req.nextUrl.clone();
-    url.pathname = "/consult/index.html";
-    return NextResponse.rewrite(url);
-  }
-
-  if (pathname === "/detox" || pathname === "/detox/") {
-    const url = req.nextUrl.clone();
-    url.pathname = "/detox/index.html";
-    return NextResponse.rewrite(url);
-  }
-
-  if (pathname === "/herbs" || pathname === "/herbs/") {
-    const url = req.nextUrl.clone();
-    url.pathname = "/herbs/index.html";
     return NextResponse.rewrite(url);
   }
 

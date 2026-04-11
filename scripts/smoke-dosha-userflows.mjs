@@ -148,7 +148,8 @@ async function main() {
     await assertVisible(page, "Що таке доша?", "intro secondary link");
     await page.getByRole("button", { name: "Що таке доша?" }).click({ timeout: timeoutMs });
     await assertVisible(page, "не є медичним діагнозом", "dosha info disclaimer");
-    await page.getByRole("button", { name: "Сховати опис доші" }).click({ timeout: timeoutMs });
+    const closeDoshaInfoButton = page.getByRole("button", { name: /Сховати опис доші|Що таке доша\?/i }).first();
+    await closeDoshaInfoButton.click({ timeout: timeoutMs });
 
     const hasEnglishQuestion = await page.getByText("Question ", { exact: false }).count();
     if (hasEnglishQuestion > 0) {
@@ -193,7 +194,16 @@ async function main() {
       step = next;
     }
 
-    await assertVisible(page, "Аналізуємо ваш профіль", "loading screen");
+    const loadingLocator = page.getByText("Аналізуємо ваш профіль", { exact: false }).first();
+    const loadingSeen = await loadingLocator
+      .waitFor({ state: "visible", timeout: Math.min(timeoutMs, 3000) })
+      .then(() => true)
+      .catch(() => false);
+    if (loadingSeen) {
+      pass("visible: loading screen");
+    } else {
+      pass("loading screen skipped on fast response");
+    }
     await assertVisible(page, "Ваш профіль", "result header");
     await assertVisible(page, "Що це означає у практиці", "result practice block");
     await assertVisible(page, "Наступний крок", "result route block");

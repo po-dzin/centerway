@@ -1,0 +1,754 @@
+{
+  "schema_version": "1.0.0",
+  "blocks": [
+    {
+      "id": "block.consult.hero.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.hero_entry_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.hero.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "page-shell",
+        "section-shell",
+        "route-action-button",
+        "proof-card",
+        "boundary-block-component"
+      ],
+      "default_props": {
+        "ctaPrimaryLabel": "Записатися",
+        "route": "consult"
+      }
+    },
+    {
+      "id": "block.consult.route-framing.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.route-framing.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-card"
+      ],
+      "default_props": {
+        "marker": "consult.route-framing",
+        "route": "consult"
+      }
+    },
+    {
+      "id": "block.consult.offer-definition.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.offer-definition.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "proof-card"
+      ],
+      "default_props": {
+        "marker": "consult.offer-definition",
+        "route": "consult"
+      }
+    },
+    {
+      "id": "block.consult.offer-includes.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_includes.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.offer-includes.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell"
+      ],
+      "default_props": {
+        "marker": "consult.offer-includes",
+        "route": "consult"
+      }
+    },
+    {
+      "id": "block.consult.format-price.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.format_duration_price.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.format-price.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "section-shell",
+        "expectation-block-component"
+      ],
+      "default_props": {
+        "marker": "consult.format-duration-price",
+        "route": "consult"
+      }
+    },
+    {
+      "id": "block.consult.how-it-works.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.how_it_works.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.how-it-works.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-card"
+      ],
+      "default_props": {
+        "marker": "consult.how-it-works",
+        "route": "consult"
+      }
+    },
+    {
+      "id": "block.consult.stage-breakdown.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.stage_breakdown.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.stage-breakdown.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-chip-status-pill"
+      ],
+      "default_props": {
+        "marker": "consult.stage-breakdown",
+        "route": "consult"
+      }
+    },
+    {
+      "id": "block.consult.proof.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.proof_block.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.proof.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "proof-action-button",
+        "support-action-button"
+      ],
+      "default_props": {
+        "marker": "consult.proof-block",
+        "route": "consult"
+      }
+    },
+    {
+      "id": "block.consult.boundary.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.boundary_block.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.boundary.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "boundary-block-component"
+      ],
+      "default_props": {
+        "marker": "consult.boundary-block",
+        "route": "consult"
+      }
+    },
+    {
+      "id": "block.consult.next-step.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.next_step_block.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.next-step.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "next-step-banner"
+      ],
+      "default_props": {
+        "marker": "consult.next-step",
+        "route": "consult"
+      }
+    },
+    {
+      "id": "block.detox.hero.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.hero_entry_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.hero.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "page-shell",
+        "section-shell",
+        "route-action-button",
+        "proof-card",
+        "boundary-block-component"
+      ],
+      "default_props": {
+        "ctaPrimaryLabel": "Записатися",
+        "route": "detox"
+      }
+    },
+    {
+      "id": "block.detox.route-framing.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.route-framing.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-card"
+      ],
+      "default_props": {
+        "marker": "detox.route-framing",
+        "route": "detox"
+      }
+    },
+    {
+      "id": "block.detox.offer-definition.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.offer-definition.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "proof-card"
+      ],
+      "default_props": {
+        "marker": "detox.offer-definition",
+        "route": "detox"
+      }
+    },
+    {
+      "id": "block.detox.offer-includes.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_includes.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.offer-includes.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell"
+      ],
+      "default_props": {
+        "marker": "detox.offer-includes",
+        "route": "detox"
+      }
+    },
+    {
+      "id": "block.detox.format-price.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.format_duration_price.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.format-price.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "section-shell",
+        "expectation-block-component"
+      ],
+      "default_props": {
+        "marker": "detox.format-duration-price",
+        "route": "detox"
+      }
+    },
+    {
+      "id": "block.detox.how-it-works.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.how_it_works.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.how-it-works.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-card"
+      ],
+      "default_props": {
+        "marker": "detox.how-it-works",
+        "route": "detox"
+      }
+    },
+    {
+      "id": "block.detox.stage-breakdown.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.stage_breakdown.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.stage-breakdown.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-chip-status-pill"
+      ],
+      "default_props": {
+        "marker": "detox.stage-breakdown",
+        "route": "detox"
+      }
+    },
+    {
+      "id": "block.detox.proof.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.proof_block.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.proof.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "proof-action-button",
+        "support-action-button"
+      ],
+      "default_props": {
+        "marker": "detox.proof-block",
+        "route": "detox"
+      }
+    },
+    {
+      "id": "block.detox.boundary.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.boundary_block.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.boundary.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "boundary-block-component"
+      ],
+      "default_props": {
+        "marker": "detox.boundary-block",
+        "route": "detox"
+      }
+    },
+    {
+      "id": "block.detox.next-step.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.next_step_block.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.next-step.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "next-step-banner"
+      ],
+      "default_props": {
+        "marker": "detox.next-step",
+        "route": "detox"
+      }
+    },
+    {
+      "id": "block.herbs.hero.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.hero_entry_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.hero.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "page-shell",
+        "section-shell",
+        "route-action-button",
+        "proof-card",
+        "boundary-block-component"
+      ],
+      "default_props": {
+        "ctaPrimaryLabel": "Записатися",
+        "route": "herbs"
+      }
+    },
+    {
+      "id": "block.herbs.route-framing.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.route-framing.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-card"
+      ],
+      "default_props": {
+        "marker": "herbs.route-framing",
+        "route": "herbs"
+      }
+    },
+    {
+      "id": "block.herbs.offer-definition.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.offer-definition.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "proof-card"
+      ],
+      "default_props": {
+        "marker": "herbs.offer-definition",
+        "route": "herbs"
+      }
+    },
+    {
+      "id": "block.herbs.offer-includes.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_includes.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.offer-includes.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell"
+      ],
+      "default_props": {
+        "marker": "herbs.offer-includes",
+        "route": "herbs"
+      }
+    },
+    {
+      "id": "block.herbs.format-price.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.format_duration_price.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.format-price.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "section-shell",
+        "expectation-block-component"
+      ],
+      "default_props": {
+        "marker": "herbs.format-duration-price",
+        "route": "herbs"
+      }
+    },
+    {
+      "id": "block.herbs.how-it-works.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.how_it_works.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.how-it-works.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-card"
+      ],
+      "default_props": {
+        "marker": "herbs.how-it-works",
+        "route": "herbs"
+      }
+    },
+    {
+      "id": "block.herbs.stage-breakdown.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.stage_breakdown.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.stage-breakdown.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-chip-status-pill"
+      ],
+      "default_props": {
+        "marker": "herbs.stage-breakdown",
+        "route": "herbs"
+      }
+    },
+    {
+      "id": "block.herbs.proof.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.proof_block.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.proof.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "proof-action-button",
+        "support-action-button"
+      ],
+      "default_props": {
+        "marker": "herbs.proof-block",
+        "route": "herbs"
+      }
+    },
+    {
+      "id": "block.herbs.boundary.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.boundary_block.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.boundary.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "boundary-block-component"
+      ],
+      "default_props": {
+        "marker": "herbs.boundary-block",
+        "route": "herbs"
+      }
+    },
+    {
+      "id": "block.herbs.next-step.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.next_step_block.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.next-step.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "next-step-banner"
+      ],
+      "default_props": {
+        "marker": "herbs.next-step",
+        "route": "herbs"
+      }
+    },
+    {
+      "id": "block.dosha.hero.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.hero_entry_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.dosha.intro.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "render_mode": "semantic-only",
+      "component_families": [
+        "section-shell"
+      ],
+      "default_props": {
+        "marker": "dosha.hero",
+        "route": "dosha-test"
+      }
+    },
+    {
+      "id": "block.dosha.route-framing.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.dosha.route-framing.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "render_mode": "semantic-only",
+      "component_families": [
+        "section-shell"
+      ],
+      "default_props": {
+        "marker": "dosha.route-framing",
+        "route": "dosha-test"
+      }
+    },
+    {
+      "id": "block.dosha.route-choice-main.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_choice.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.dosha.test.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "page-shell",
+        "section-shell",
+        "route-action-button",
+        "path-card",
+        "support-action-button"
+      ],
+      "default_props": {
+        "uiVariant": "dosha_test_calm_route_v1"
+      }
+    },
+    {
+      "id": "block.dosha.next-step.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.next_step_block.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.dosha.next-step.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "render_mode": "semantic-only",
+      "component_families": [
+        "stage-chip-status-pill"
+      ],
+      "default_props": {
+        "marker": "dosha.next-step",
+        "route": "dosha-test"
+      }
+    },
+    {
+      "id": "block.lesson.header.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.current_step.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.lesson.pilot.header.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "page-shell",
+        "section-shell"
+      ],
+      "default_props": {
+        "title": "Модуль 1 · Ритм відновлення",
+        "subtitle": "Коротка практика для стабілізації нервової системи і фокусу"
+      }
+    },
+    {
+      "id": "block.lesson.practice.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.practice_unit.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.lesson.pilot.practice.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "practice-card",
+        "support-card"
+      ],
+      "default_props": {
+        "steps": [
+          "3 хвилини: дихання 4-6 у спокійному темпі",
+          "5 хвилин: повільна мобілізація грудного відділу",
+          "2 хвилини: фіксація самопочуття і пульсу"
+        ],
+        "duration": "10 хвилин",
+        "supportHint": "Якщо з'являється запаморочення, зменшіть темп і поверніться до природного дихання"
+      }
+    },
+    {
+      "id": "block.lesson.nextstep.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.next_step_block.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.lesson.pilot.nextstep.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "route-action-button",
+        "next-step-banner"
+      ],
+      "default_props": {
+        "nextTitle": "Наступний крок",
+        "nextText": "Повторіть практику 3 дні поспіль і зафіксуйте зміни у сні та енергії",
+        "ctaHref": "/consult",
+        "ctaLabel": "Обговорити план з консультантом"
+      }
+    },
+    {
+      "id": "block.consult.route-map.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.route-map.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "route-nav",
+        "path-card",
+        "route-node"
+      ],
+      "default_props": {
+        "marker": "consult.route-map",
+        "route": "consult"
+      }
+    },
+    {
+      "id": "block.consult.resource-entry.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.support_path.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.resource-entry.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "support-card",
+        "support-action-button"
+      ],
+      "default_props": {
+        "marker": "consult.resource-entry",
+        "route": "consult"
+      }
+    },
+    {
+      "id": "block.detox.route-map.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.route-map.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "route-nav",
+        "path-card",
+        "route-node"
+      ],
+      "default_props": {
+        "marker": "detox.route-map",
+        "route": "detox"
+      }
+    },
+    {
+      "id": "block.detox.resource-entry.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.support_path.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.resource-entry.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "support-card",
+        "support-action-button"
+      ],
+      "default_props": {
+        "marker": "detox.resource-entry",
+        "route": "detox"
+      }
+    },
+    {
+      "id": "block.herbs.route-map.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.route-map.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "route-nav",
+        "path-card",
+        "route-node"
+      ],
+      "default_props": {
+        "marker": "herbs.route-map",
+        "route": "herbs"
+      }
+    },
+    {
+      "id": "block.herbs.resource-entry.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.support_path.v1",
+      "semantic_block_version": "1.0.0",
+      "recipe_id": "recipe.funnel.resource-entry.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "support-card",
+        "support-action-button"
+      ],
+      "default_props": {
+        "marker": "herbs.resource-entry",
+        "route": "herbs"
+      }
+    }
+  ]
+}

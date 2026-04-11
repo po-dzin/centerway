@@ -1,0 +1,396 @@
+{
+  "schema_version": "1.0.0",
+  "manifests": [
+    {
+      "id": "screen.consult.v1.control",
+      "version": "1.1.0",
+      "route_key": "consult",
+      "archetype": "offer-detail",
+      "mode": "consult",
+      "branch": "consult",
+      "token_pack_id": "token_pack.warm-mineral.v1",
+      "mode_pack_id": "mode_pack.consult.v1",
+      "branch_overlay_id": "branch_overlay.consult.v1",
+      "blocks": [
+        {
+          "id": "consult.hero",
+          "block_manifest_id": "block.consult.hero.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.route-framing",
+          "block_manifest_id": "block.consult.route-framing.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.route-map",
+          "block_manifest_id": "block.consult.route-map.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.offer-definition",
+          "block_manifest_id": "block.consult.offer-definition.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.offer-includes",
+          "block_manifest_id": "block.consult.offer-includes.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.format-price",
+          "block_manifest_id": "block.consult.format-price.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.how-it-works",
+          "block_manifest_id": "block.consult.how-it-works.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.proof",
+          "block_manifest_id": "block.consult.proof.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.resource-entry",
+          "block_manifest_id": "block.consult.resource-entry.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.boundary",
+          "block_manifest_id": "block.consult.boundary.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.next-step",
+          "block_manifest_id": "block.consult.next-step.v1",
+          "block_manifest_version": "1.0.0"
+        }
+      ]
+    },
+    {
+      "id": "screen.consult.v1.warm_route",
+      "version": "1.1.0",
+      "route_key": "consult",
+      "archetype": "offer-detail",
+      "mode": "consult",
+      "branch": "consult",
+      "token_pack_id": "token_pack.warm-mineral.v1",
+      "mode_pack_id": "mode_pack.consult.v1",
+      "branch_overlay_id": "branch_overlay.consult.v1",
+      "blocks": [
+        {
+          "id": "consult.hero",
+          "block_manifest_id": "block.consult.hero.v1",
+          "block_manifest_version": "1.0.0",
+          "props": {
+            "ctaPrimaryLabel": "Почати маршрут"
+          }
+        },
+        {
+          "id": "consult.route-framing",
+          "block_manifest_id": "block.consult.route-framing.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.route-map",
+          "block_manifest_id": "block.consult.route-map.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.offer-definition",
+          "block_manifest_id": "block.consult.offer-definition.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.offer-includes",
+          "block_manifest_id": "block.consult.offer-includes.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.format-price",
+          "block_manifest_id": "block.consult.format-price.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.how-it-works",
+          "block_manifest_id": "block.consult.how-it-works.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.proof",
+          "block_manifest_id": "block.consult.proof.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.resource-entry",
+          "block_manifest_id": "block.consult.resource-entry.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.boundary",
+          "block_manifest_id": "block.consult.boundary.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "consult.next-step",
+          "block_manifest_id": "block.consult.next-step.v1",
+          "block_manifest_version": "1.0.0"
+        }
+      ]
+    },
+    {
+      "id": "screen.detox.v1.control",
+      "version": "1.1.0",
+      "route_key": "detox",
+      "archetype": "offer-detail",
+      "mode": "detox",
+      "branch": "detox",
+      "token_pack_id": "token_pack.warm-mineral.v1",
+      "mode_pack_id": "mode_pack.detox.v1",
+      "branch_overlay_id": "branch_overlay.detox.v1",
+      "blocks": [
+        {
+          "id": "detox.hero",
+          "block_manifest_id": "block.detox.hero.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "detox.route-framing",
+          "block_manifest_id": "block.detox.route-framing.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "detox.route-map",
+          "block_manifest_id": "block.detox.route-map.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "detox.offer-definition",
+          "block_manifest_id": "block.detox.offer-definition.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "detox.offer-includes",
+          "block_manifest_id": "block.detox.offer-includes.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "detox.format-price",
+          "block_manifest_id": "block.detox.format-price.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "detox.how-it-works",
+          "block_manifest_id": "block.detox.how-it-works.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "detox.proof",
+          "block_manifest_id": "block.detox.proof.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "detox.resource-entry",
+          "block_manifest_id": "block.detox.resource-entry.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "detox.boundary",
+          "block_manifest_id": "block.detox.boundary.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "detox.next-step",
+          "block_manifest_id": "block.detox.next-step.v1",
+          "block_manifest_version": "1.0.0"
+        }
+      ]
+    },
+    {
+      "id": "screen.herbs.v1.control",
+      "version": "1.1.0",
+      "route_key": "herbs",
+      "archetype": "offer-detail",
+      "mode": "herbs",
+      "branch": "herbs",
+      "token_pack_id": "token_pack.warm-mineral.v1",
+      "mode_pack_id": "mode_pack.herbs.v1",
+      "branch_overlay_id": "branch_overlay.herbs.v1",
+      "blocks": [
+        {
+          "id": "herbs.hero",
+          "block_manifest_id": "block.herbs.hero.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "herbs.route-framing",
+          "block_manifest_id": "block.herbs.route-framing.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "herbs.route-map",
+          "block_manifest_id": "block.herbs.route-map.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "herbs.offer-definition",
+          "block_manifest_id": "block.herbs.offer-definition.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "herbs.offer-includes",
+          "block_manifest_id": "block.herbs.offer-includes.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "herbs.format-price",
+          "block_manifest_id": "block.herbs.format-price.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "herbs.how-it-works",
+          "block_manifest_id": "block.herbs.how-it-works.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "herbs.proof",
+          "block_manifest_id": "block.herbs.proof.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "herbs.resource-entry",
+          "block_manifest_id": "block.herbs.resource-entry.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "herbs.boundary",
+          "block_manifest_id": "block.herbs.boundary.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "herbs.next-step",
+          "block_manifest_id": "block.herbs.next-step.v1",
+          "block_manifest_version": "1.0.0"
+        }
+      ]
+    },
+    {
+      "id": "screen.dosha-test.v1.control",
+      "version": "1.1.0",
+      "route_key": "dosha-test",
+      "archetype": "overview-entry",
+      "mode": "support",
+      "branch": "platform",
+      "token_pack_id": "token_pack.warm-mineral.v1",
+      "mode_pack_id": "mode_pack.support.v1",
+      "branch_overlay_id": "branch_overlay.platform.v1",
+      "blocks": [
+        {
+          "id": "dosha.hero",
+          "block_manifest_id": "block.dosha.hero.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "dosha.route-framing",
+          "block_manifest_id": "block.dosha.route-framing.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "dosha.route-choice-main",
+          "block_manifest_id": "block.dosha.route-choice-main.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "dosha.next-step",
+          "block_manifest_id": "block.dosha.next-step.v1",
+          "block_manifest_version": "1.0.0"
+        }
+      ]
+    },
+    {
+      "id": "screen.dosha-test.v1.routecopy",
+      "version": "1.1.0",
+      "route_key": "dosha-test",
+      "archetype": "overview-entry",
+      "mode": "support",
+      "branch": "platform",
+      "token_pack_id": "token_pack.warm-mineral.v1",
+      "mode_pack_id": "mode_pack.support.v1",
+      "branch_overlay_id": "branch_overlay.platform.v1",
+      "blocks": [
+        {
+          "id": "dosha.hero",
+          "block_manifest_id": "block.dosha.hero.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "dosha.route-framing",
+          "block_manifest_id": "block.dosha.route-framing.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "dosha.route-choice-main",
+          "block_manifest_id": "block.dosha.route-choice-main.v1",
+          "block_manifest_version": "1.0.0",
+          "props": {
+            "uiVariant": "dosha_test_calm_route_v1_b"
+          }
+        },
+        {
+          "id": "dosha.next-step",
+          "block_manifest_id": "block.dosha.next-step.v1",
+          "block_manifest_version": "1.0.0"
+        }
+      ]
+    },
+    {
+      "id": "screen.lesson.pilot.v1.control",
+      "version": "1.0.0",
+      "route_key": "lesson-pilot",
+      "archetype": "lesson-practice",
+      "mode": "lesson",
+      "branch": "platform",
+      "token_pack_id": "token_pack.warm-mineral.v1",
+      "mode_pack_id": "mode_pack.lesson.v1",
+      "branch_overlay_id": "branch_overlay.platform.v1",
+      "blocks": [
+        {
+          "id": "lesson.header",
+          "block_manifest_id": "block.lesson.header.v1",
+          "block_manifest_version": "1.0.0",
+          "props": {
+            "title": "Модуль 1 · Ритм відновлення",
+            "subtitle": "Коротка практика для стабілізації нервової системи і фокусу"
+          }
+        },
+        {
+          "id": "lesson.practice",
+          "block_manifest_id": "block.lesson.practice.v1",
+          "block_manifest_version": "1.0.0",
+          "props": {
+            "steps": [
+              "3 хвилини: дихання 4-6 у спокійному темпі",
+              "5 хвилин: повільна мобілізація грудного відділу",
+              "2 хвилини: фіксація самопочуття і пульсу"
+            ],
+            "duration": "10 хвилин",
+            "supportHint": "Якщо з'являється запаморочення, зменшіть темп і поверніться до природного дихання"
+          }
+        },
+        {
+          "id": "lesson.next_step",
+          "block_manifest_id": "block.lesson.nextstep.v1",
+          "block_manifest_version": "1.0.0",
+          "props": {
+            "nextTitle": "Наступний крок",
+            "nextText": "Повторіть практику 3 дні поспіль і зафіксуйте зміни у сні та енергії",
+            "ctaHref": "/consult",
+            "ctaLabel": "Обговорити план з консультантом"
+          }
+        }
+      ]
+    }
+  ]
+}

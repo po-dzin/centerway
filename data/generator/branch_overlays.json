@@ -1,0 +1,66 @@
+{
+  "schema_version": "1.0.0",
+  "overlays": [
+    {
+      "id": "branch_overlay.consult.v1",
+      "version": "1.0.0",
+      "branch": "consult",
+      "tokens": {
+        "--cw-branch-proof-emphasis": "1",
+        "--cw-branch-route-emphasis": "0.8",
+        "--cw-branch-support-warmth": "1"
+      }
+    },
+    {
+      "id": "branch_overlay.detox.v1",
+      "version": "1.0.0",
+      "branch": "detox",
+      "tokens": {
+        "--cw-branch-proof-emphasis": "0.9",
+        "--cw-branch-route-emphasis": "0.95",
+        "--cw-branch-support-warmth": "0.85"
+      }
+    },
+    {
+      "id": "branch_overlay.herbs.v1",
+      "version": "1.0.0",
+      "branch": "herbs",
+      "tokens": {
+        "--cw-branch-proof-emphasis": "0.85",
+        "--cw-branch-route-emphasis": "0.9",
+        "--cw-branch-support-warmth": "0.9"
+      }
+    },
+    {
+      "id": "branch_overlay.short.v1",
+      "version": "1.0.0",
+      "branch": "short",
+      "tokens": {
+        "--cw-branch-proof-emphasis": "0.7",
+        "--cw-branch-route-emphasis": "1",
+        "--cw-branch-support-warmth": "0.6"
+      }
+    },
+    {
+      "id": "branch_overlay.irem.v1",
+      "version": "1.0.0",
+      "branch": "irem",
+      "tokens": {
+        "--cw-branch-proof-emphasis": "0.8",
+        "--cw-branch-route-emphasis": "0.9",
+        "--cw-branch-support-warmth": "0.8"
+      }
+    },
+    {
+      "id": "branch_overlay.platform.v1",
+      "version": "1.0.0",
+      "branch": "platform",
+      "tokens": {
+        "--cw-branch-proof-emphasis": "0.8",
+        "--cw-branch-route-emphasis": "0.9",
+        "--cw-branch-support-warmth": "0.7",
+        "--cw-branch-grid-discipline": "1"
+      }
+    }
+  ]
+}

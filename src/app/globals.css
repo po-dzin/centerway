@@ -11,6 +11,7 @@
     --cw-bg: #f2f2f0;
     --cw-surface: rgba(255, 255, 255, 0.72);
     --cw-surface-2: rgba(238, 238, 236, 0.72);
+    --cw-surface-muted: rgba(236, 232, 225, 0.9);
     --cw-surface-solid: #f6f6f4;
     --cw-border: #d1d1cd;
     --cw-text: #2d2d2b;
@@ -25,16 +26,16 @@
     --cw-interactive-active-shadow: 0 0 0 1px rgba(183, 183, 177, 0.35);
     --cw-focus-ring: rgba(183, 183, 177, 0.42);
     --cw-radius-btn: 0.9rem;
-    --cw-brand-hover-border: color-mix(in srgb, var(--cw-status-success) 82%, var(--cw-border) 18%);
-    --cw-btn-primary-bg: var(--cw-text);
-    --cw-btn-primary-bg-hover: var(--cw-btn-primary-bg);
-    --cw-btn-primary-bg-active: var(--cw-btn-primary-bg);
-    --cw-btn-primary-text: #ffffff;
-    --cw-btn-primary-text-hover: #ffffff;
-    --cw-btn-primary-text-active: #ffffff;
-    --cw-btn-primary-border-hover: color-mix(in srgb, #ffffff 90%, var(--cw-border) 10%);
-    --cw-btn-primary-border-active: #ffffff;
-    --cw-btn-primary-focus-ring: color-mix(in srgb, #ffffff 52%, transparent);
+    --cw-brand-hover-border: color-mix(in srgb, var(--cw-accent) 72%, var(--cw-border) 28%);
+    --cw-btn-primary-bg: color-mix(in srgb, var(--cw-accent) 70%, var(--cw-status-success) 30%);
+    --cw-btn-primary-bg-hover: color-mix(in srgb, var(--cw-accent) 76%, var(--cw-status-success) 24%);
+    --cw-btn-primary-bg-active: color-mix(in srgb, var(--cw-accent) 64%, var(--cw-status-success) 36%);
+    --cw-btn-primary-text: var(--cw-accent-contrast);
+    --cw-btn-primary-text-hover: var(--cw-accent-contrast);
+    --cw-btn-primary-text-active: var(--cw-accent-contrast);
+    --cw-btn-primary-border-hover: color-mix(in srgb, var(--cw-accent) 74%, var(--cw-border) 26%);
+    --cw-btn-primary-border-active: color-mix(in srgb, var(--cw-accent) 66%, var(--cw-border) 34%);
+    --cw-btn-primary-focus-ring: color-mix(in srgb, var(--cw-accent) 36%, transparent);
     --cw-btn-outline-bg: transparent;
     --cw-btn-outline-bg-hover: var(--cw-surface-solid);
     --cw-btn-outline-bg-active: var(--cw-surface-solid);
@@ -43,7 +44,7 @@
     --cw-btn-ghost-bg-active: color-mix(in srgb, var(--cw-text) 12%, transparent);
     --cw-choice-bg: #ffffff;
     --cw-choice-bg-hover: color-mix(in srgb, var(--cw-text) 7%, #ffffff 93%);
-    --cw-choice-bg-selected: color-mix(in srgb, var(--cw-status-success-soft) 82%, #ffffff 18%);
+    --cw-choice-bg-selected: color-mix(in srgb, var(--cw-accent-soft) 84%, #ffffff 16%);
     --cw-danger: #d9475e;
     --cw-status-success: #2f9f63;
     --cw-status-success-soft: rgba(47, 159, 99, 0.12);
@@ -59,6 +60,33 @@
     --cw-glass-stroke: rgba(255, 255, 255, 0.2);
     --cw-glass-glow: transparent;
     --cw-border-width: 1px;
+    --cw-font-ui: "Manrope", "Segoe UI", sans-serif;
+    --cw-font-editorial: "Cormorant Garamond", "Times New Roman", serif;
+    --cw-font-data: "IBM Plex Mono", ui-monospace, monospace;
+
+    --cw-text-tertiary: color-mix(in srgb, var(--cw-muted) 82%, #ffffff 18%);
+    --cw-border-strong: color-mix(in srgb, var(--cw-border) 68%, var(--cw-text) 32%);
+    --cw-accent-strong: color-mix(in srgb, var(--cw-accent) 78%, #3a2a22 22%);
+    --cw-space-2xs: 0.25rem;
+    --cw-space-xs: 0.5rem;
+    --cw-space-sm: 0.75rem;
+    --cw-space-md: 1rem;
+    --cw-space-lg: 1.5rem;
+    --cw-space-xl: 2rem;
+    --cw-space-2xl: 3rem;
+    --cw-space-3xl: 4.5rem;
+    --cw-space-section-y: clamp(3.6rem, 7.5vw, 6rem);
+    --cw-radius-sm: 12px;
+    --cw-radius-md: 18px;
+    --cw-radius-lg: 28px;
+    --cw-radius-pill: 999px;
+    --cw-shadow-soft: 0 10px 22px rgba(16, 16, 16, 0.08);
+    --cw-shadow-strong: 0 12px 28px rgba(16, 16, 16, 0.18);
+    --cw-card-padding: clamp(1.1rem, 1.8vw, 1.45rem);
+    --cw-card-radius: 20px;
+    --cw-card-border: 1px solid var(--cw-border);
+    --cw-card-shadow: var(--cw-shadow-soft);
+    --cw-max-width: 1160px;
   }
 
   .dark {
@@ -69,6 +97,7 @@
     --cw-bg: #141414;
     --cw-surface: rgba(32, 32, 32, 0.72);
     --cw-surface-2: rgba(40, 40, 40, 0.72);
+    --cw-surface-muted: rgba(36, 36, 35, 0.9);
     --cw-surface-solid: #1f1f1d;
     --cw-border: #4a4a46;
     --cw-text: #e4e4e1;
@@ -83,16 +112,16 @@
     --cw-interactive-active-shadow: 0 0 0 1px rgba(106, 106, 100, 0.38);
     --cw-focus-ring: rgba(106, 106, 100, 0.52);
     --cw-radius-btn: 0.9rem;
-    --cw-brand-hover-border: color-mix(in srgb, var(--cw-status-success) 82%, var(--cw-border) 18%);
-    --cw-btn-primary-bg: var(--cw-text);
-    --cw-btn-primary-bg-hover: var(--cw-btn-primary-bg);
-    --cw-btn-primary-bg-active: var(--cw-btn-primary-bg);
-    --cw-btn-primary-text: #ffffff;
-    --cw-btn-primary-text-hover: #ffffff;
-    --cw-btn-primary-text-active: #ffffff;
-    --cw-btn-primary-border-hover: color-mix(in srgb, #ffffff 90%, var(--cw-border) 10%);
-    --cw-btn-primary-border-active: #ffffff;
-    --cw-btn-primary-focus-ring: color-mix(in srgb, #ffffff 58%, transparent);
+    --cw-brand-hover-border: color-mix(in srgb, var(--cw-accent) 74%, var(--cw-border) 26%);
+    --cw-btn-primary-bg: color-mix(in srgb, var(--cw-accent) 72%, var(--cw-status-success) 28%);
+    --cw-btn-primary-bg-hover: color-mix(in srgb, var(--cw-accent) 78%, var(--cw-status-success) 22%);
+    --cw-btn-primary-bg-active: color-mix(in srgb, var(--cw-accent) 66%, var(--cw-status-success) 34%);
+    --cw-btn-primary-text: var(--cw-accent-contrast);
+    --cw-btn-primary-text-hover: var(--cw-accent-contrast);
+    --cw-btn-primary-text-active: var(--cw-accent-contrast);
+    --cw-btn-primary-border-hover: color-mix(in srgb, var(--cw-accent) 74%, var(--cw-border) 26%);
+    --cw-btn-primary-border-active: color-mix(in srgb, var(--cw-accent) 66%, var(--cw-border) 34%);
+    --cw-btn-primary-focus-ring: color-mix(in srgb, var(--cw-accent) 42%, transparent);
     --cw-btn-outline-bg: transparent;
     --cw-btn-outline-bg-hover: var(--cw-surface-solid);
     --cw-btn-outline-bg-active: var(--cw-surface-solid);
@@ -101,7 +130,7 @@
     --cw-btn-ghost-bg-active: color-mix(in srgb, var(--cw-text) 18%, transparent);
     --cw-choice-bg: color-mix(in srgb, var(--cw-surface-solid) 78%, #ffffff 22%);
     --cw-choice-bg-hover: color-mix(in srgb, var(--cw-text) 14%, var(--cw-choice-bg) 86%);
-    --cw-choice-bg-selected: color-mix(in srgb, var(--cw-status-success-soft) 72%, var(--cw-choice-bg) 28%);
+    --cw-choice-bg-selected: color-mix(in srgb, var(--cw-accent-soft) 74%, var(--cw-choice-bg) 26%);
     --cw-danger: #ff7f93;
     --cw-status-success: #68c58f;
     --cw-status-success-soft: rgba(104, 197, 143, 0.16);
@@ -117,13 +146,40 @@
     --cw-glass-stroke: rgba(255, 255, 255, 0.08);
     --cw-glass-glow: transparent;
     --cw-border-width: 1px;
+    --cw-font-ui: "Manrope", "Segoe UI", sans-serif;
+    --cw-font-editorial: "Cormorant Garamond", "Times New Roman", serif;
+    --cw-font-data: "IBM Plex Mono", ui-monospace, monospace;
+
+    --cw-text-tertiary: color-mix(in srgb, var(--cw-muted) 82%, #141414 18%);
+    --cw-border-strong: color-mix(in srgb, var(--cw-border) 70%, var(--cw-text) 30%);
+    --cw-accent-strong: color-mix(in srgb, var(--cw-accent) 72%, #f4f1e9 28%);
+    --cw-space-2xs: 0.25rem;
+    --cw-space-xs: 0.5rem;
+    --cw-space-sm: 0.75rem;
+    --cw-space-md: 1rem;
+    --cw-space-lg: 1.5rem;
+    --cw-space-xl: 2rem;
+    --cw-space-2xl: 3rem;
+    --cw-space-3xl: 4.5rem;
+    --cw-space-section-y: clamp(3.6rem, 7.5vw, 6rem);
+    --cw-radius-sm: 12px;
+    --cw-radius-md: 18px;
+    --cw-radius-lg: 28px;
+    --cw-radius-pill: 999px;
+    --cw-shadow-soft: var(--cw-shadow);
+    --cw-shadow-strong: 0 18px 36px rgba(0, 0, 0, 0.4);
+    --cw-card-padding: clamp(1.1rem, 1.8vw, 1.45rem);
+    --cw-card-radius: 20px;
+    --cw-card-border: 1px solid var(--cw-border);
+    --cw-card-shadow: var(--cw-shadow-soft);
+    --cw-max-width: 1160px;
   }
 }
 
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--cw-font-ui), "Manrope", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }

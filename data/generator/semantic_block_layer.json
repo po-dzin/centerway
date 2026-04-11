@@ -1,0 +1,192 @@
+{
+  "schema_version": "1.0.0",
+  "blocks": [
+    {
+      "id": "sb.hero_entry_definition.v1",
+      "version": "1.0.0",
+      "block_type": "hero-entry-definition",
+      "family": "orientation",
+      "primary_semantic": "guide",
+      "semantic_tags": ["calm", "guide", "method"],
+      "user_question": "Куда я попал и какой следующий шаг?",
+      "dominant_action": "start_or_continue",
+      "tier": "tier1"
+    },
+    {
+      "id": "sb.route_framing.v1",
+      "version": "1.0.0",
+      "block_type": "route-framing",
+      "family": "orientation",
+      "primary_semantic": "guide",
+      "semantic_tags": ["guide", "progress", "method"],
+      "user_question": "Как устроен маршрут и где я сейчас?",
+      "dominant_action": "orient",
+      "tier": "tier1"
+    },
+    {
+      "id": "sb.route_choice.v1",
+      "version": "1.0.0",
+      "block_type": "route-choice",
+      "family": "progress_pathway",
+      "primary_semantic": "guide",
+      "semantic_tags": ["guide", "progress", "trust"],
+      "user_question": "Какой маршрут выбрать дальше?",
+      "dominant_action": "choose_route",
+      "tier": "tier1"
+    },
+    {
+      "id": "sb.offer_definition.v1",
+      "version": "1.0.0",
+      "block_type": "offer-definition",
+      "family": "offer_route",
+      "primary_semantic": "guide",
+      "semantic_tags": ["guide", "trust", "method"],
+      "user_question": "Что это за оффер и для кого он?",
+      "dominant_action": "evaluate_fit",
+      "tier": "tier1"
+    },
+    {
+      "id": "sb.offer_includes.v1",
+      "version": "1.0.0",
+      "block_type": "offer-includes",
+      "family": "offer_route",
+      "primary_semantic": "method",
+      "semantic_tags": ["method", "guide", "trust"],
+      "user_question": "Что конкретно входит в предложение?",
+      "dominant_action": "understand_scope",
+      "tier": "tier1"
+    },
+    {
+      "id": "sb.format_duration_price.v1",
+      "version": "1.0.0",
+      "block_type": "format-duration-price",
+      "family": "offer_route",
+      "primary_semantic": "trust",
+      "semantic_tags": ["trust", "boundary", "guide"],
+      "user_question": "Сколько это длится, в каком формате и сколько стоит?",
+      "dominant_action": "assess_commitment",
+      "tier": "tier1"
+    },
+    {
+      "id": "sb.how_it_works.v1",
+      "version": "1.0.0",
+      "block_type": "how-it-works",
+      "family": "method_explanation",
+      "primary_semantic": "method",
+      "semantic_tags": ["method", "guide", "trust"],
+      "user_question": "Как это работает по шагам?",
+      "dominant_action": "understand_method",
+      "tier": "tier1"
+    },
+    {
+      "id": "sb.stage_breakdown.v1",
+      "version": "1.0.0",
+      "block_type": "stage-breakdown",
+      "family": "progress_pathway",
+      "primary_semantic": "progress",
+      "semantic_tags": ["progress", "guide", "method"],
+      "user_question": "Какие этапы прохождения?",
+      "dominant_action": "plan_path",
+      "tier": "tier1"
+    },
+    {
+      "id": "sb.proof_block.v1",
+      "version": "1.0.0",
+      "block_type": "proof-block",
+      "family": "trust_proof_expectation",
+      "primary_semantic": "trust",
+      "semantic_tags": ["trust", "guide", "method"],
+      "user_question": "Почему этому можно доверять?",
+      "dominant_action": "validate_trust",
+      "tier": "tier1"
+    },
+    {
+      "id": "sb.expectation_block.v1",
+      "version": "1.0.0",
+      "block_type": "expectation-block",
+      "family": "trust_proof_expectation",
+      "primary_semantic": "trust",
+      "semantic_tags": ["trust", "boundary", "guide"],
+      "user_question": "Какой реалистичный результат ожидать?",
+      "dominant_action": "set_expectation",
+      "tier": "tier2"
+    },
+    {
+      "id": "sb.faq_clarification.v1",
+      "version": "1.0.0",
+      "block_type": "faq-clarification",
+      "family": "trust_proof_expectation",
+      "primary_semantic": "trust",
+      "semantic_tags": ["trust", "guide", "method"],
+      "user_question": "Какие ключевые сомнения нужно закрыть?",
+      "dominant_action": "reduce_uncertainty",
+      "tier": "tier2"
+    },
+    {
+      "id": "sb.support_path.v1",
+      "version": "1.0.0",
+      "block_type": "support-path",
+      "family": "support_care",
+      "primary_semantic": "trust",
+      "semantic_tags": ["trust", "guide", "boundary"],
+      "user_question": "Как получить поддержку, если есть тревога или вопросы?",
+      "dominant_action": "seek_support",
+      "tier": "tier2"
+    },
+    {
+      "id": "sb.boundary_block.v1",
+      "version": "1.0.0",
+      "block_type": "boundary-block",
+      "family": "boundary_caution",
+      "primary_semantic": "boundary",
+      "semantic_tags": ["boundary", "trust", "guide"],
+      "user_question": "Где границы метода и что важно учитывать?",
+      "dominant_action": "set_boundaries",
+      "tier": "tier1"
+    },
+    {
+      "id": "sb.next_step_block.v1",
+      "version": "1.0.0",
+      "block_type": "next-step",
+      "family": "progress_pathway",
+      "primary_semantic": "guide",
+      "semantic_tags": ["guide", "progress", "trust"],
+      "user_question": "Какой следующий шаг после текущего блока?",
+      "dominant_action": "continue",
+      "tier": "tier1"
+    },
+    {
+      "id": "sb.current_step.v1",
+      "version": "1.0.0",
+      "block_type": "current-step",
+      "family": "orientation",
+      "primary_semantic": "progress",
+      "semantic_tags": ["progress", "guide", "method"],
+      "user_question": "На каком шаге процесса я нахожусь?",
+      "dominant_action": "orient",
+      "tier": "tier2"
+    },
+    {
+      "id": "sb.practice_unit.v1",
+      "version": "1.0.0",
+      "block_type": "practice-unit",
+      "family": "method_explanation",
+      "primary_semantic": "method",
+      "semantic_tags": ["method", "progress", "embodied"],
+      "user_question": "Что конкретно делать в практическом блоке?",
+      "dominant_action": "practice",
+      "tier": "tier2"
+    },
+    {
+      "id": "sb.error_recovery.v1",
+      "version": "1.0.0",
+      "block_type": "error-recovery",
+      "family": "support_care",
+      "primary_semantic": "guide",
+      "semantic_tags": ["guide", "trust", "boundary"],
+      "user_question": "Что делать, если возникла ошибка или сбой?",
+      "dominant_action": "recover",
+      "tier": "tier2"
+    }
+  ]
+}

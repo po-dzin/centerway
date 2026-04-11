@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import type { DoshaResultType } from "@/lib/doshaTest";
+import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
 import { supabaseClient } from "@/lib/supabaseClient";
 
 type TestOption = {
@@ -57,12 +58,25 @@ type AttemptEventPayload = {
   scores?: { vata: number; pitta: number; kapha: number };
   completedAt?: string | null;
   nextStep?: string | null;
+  experimentKey?: string | null;
+  variantKey?: string | null;
+  manifestId?: string | null;
+  manifestVersion?: string | null;
+  recipeVersion?: string | null;
+  mode?: string | null;
+  branch?: string | null;
+  assignmentSource?: "bucket" | "override" | "cookie" | "default" | null;
 };
 
 const ATTEMPT_STORAGE_KEY = "centerway_dosha_test_attempt_id";
 const DRAFT_STORAGE_KEY = "centerway_dosha_test_draft_v1";
 const SESSION_STORAGE_KEY = "centerway_dosha_test_session_id";
-const UI_VARIANT = "dosha_test_calm_route_v1";
+const DEFAULT_UI_VARIANT = "dosha_test_calm_route_v1";
+
+type DoshaTestClientProps = {
+  uiVariant?: string;
+  generatorContext?: GeneratorAnalyticsContext;
+};
 
 const RESULT_COPY: Record<DoshaResultType, {
   title: string;
@@ -119,7 +133,7 @@ function getCurrentQuestion(questions: TestQuestion[], currentQuestionIndex: num
   return questions[idx] ?? null;
 }
 
-export default function DoshaTestClient() {
+export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, generatorContext }: DoshaTestClientProps) {
   const [phase, setPhase] = useState<"intro" | "question" | "loading" | "result">("intro");
   const [attemptId, setAttemptId] = useState<string | null>(null);
   const [questions, setQuestions] = useState<TestQuestion[]>([]);
@@ -180,15 +194,23 @@ export default function DoshaTestClient() {
         step: payload.step,
         ctaTarget: payload.ctaTarget,
         cta_target: payload.ctaTarget,
-        uiVariant: payload.uiVariant ?? UI_VARIANT,
-        ui_variant: payload.uiVariant ?? UI_VARIANT,
+        uiVariant: payload.uiVariant ?? uiVariant,
+        ui_variant: payload.uiVariant ?? uiVariant,
         resultType: payload.resultType,
         scores: payload.scores,
         completedAt: payload.completedAt,
         nextStep: payload.nextStep,
+        experimentKey: payload.experimentKey ?? generatorContext?.experiment_key ?? null,
+        variantKey: payload.variantKey ?? generatorContext?.variant_key ?? null,
+        manifestId: payload.manifestId ?? generatorContext?.manifest_id ?? null,
+        manifestVersion: payload.manifestVersion ?? generatorContext?.manifest_version ?? null,
+        recipeVersion: payload.recipeVersion ?? generatorContext?.recipe_version ?? null,
+        mode: payload.mode ?? generatorContext?.mode ?? null,
+        branch: payload.branch ?? generatorContext?.branch ?? null,
+        assignmentSource: payload.assignmentSource ?? generatorContext?.assignment_source ?? null,
       }),
     }).catch(() => undefined);
-  }, [attemptId, phase]);
+  }, [attemptId, generatorContext?.assignment_source, generatorContext?.branch, generatorContext?.experiment_key, generatorContext?.manifest_id, generatorContext?.manifest_version, generatorContext?.mode, generatorContext?.recipe_version, generatorContext?.variant_key, phase, uiVariant]);
 
   const syncPlatformUser = useCallback(async (accessToken: string) => {
     await fetch("/api/platform/users/sync", {
@@ -343,14 +365,14 @@ export default function DoshaTestClient() {
       void emitAttemptEvent("dosha_result_viewed", {
         screen: "result",
         step: totalQuestions,
-        uiVariant: UI_VARIANT,
+        uiVariant,
         resultType,
         scores,
         completedAt,
         nextStep,
       });
     }
-  }, [completedAt, emitAttemptEvent, nextStep, phase, resultType, resultViewedSent, scores, totalQuestions]);
+  }, [completedAt, emitAttemptEvent, nextStep, phase, resultType, resultViewedSent, scores, totalQuestions, uiVariant]);
 
   const startTest = useCallback(async () => {
     setIsBusy(true);
@@ -423,11 +445,11 @@ export default function DoshaTestClient() {
 
   const progress = Math.min(100, Math.round((Math.max(0, currentQuestionIndex - 1) / totalQuestions) * 100));
   const resultCopy = resultType ? RESULT_COPY[resultType] : null;
-  const testFontFamily = "'Avenir Next', 'Segoe UI', 'Helvetica Neue', sans-serif";
+  const testFontFamily = "var(--cw-font-ui), 'Manrope', 'Segoe UI', sans-serif";
 
   return (
     <main
-      className="min-h-dvh select-none px-4 py-7 sm:px-6 sm:py-10 lg:px-8"
+      className="min-h-dvh select-none px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 md:flex md:flex-col"
       style={{
         fontFamily: testFontFamily,
         userSelect: "none",
@@ -436,7 +458,7 @@ export default function DoshaTestClient() {
           "radial-gradient(1200px circle at 12% -18%, color-mix(in srgb, var(--cw-status-pending) 28%, transparent), transparent 52%), radial-gradient(1000px circle at 86% 12%, color-mix(in srgb, var(--cw-status-success) 26%, transparent), transparent 46%), linear-gradient(180deg, color-mix(in srgb, var(--cw-bg) 88%, #ffffff 12%) 0%, var(--cw-bg) 100%)",
       }}
     >
-      <section className="mx-auto max-w-2xl">
+      <section className="mx-auto max-w-2xl md:my-auto md:w-full">
         <div
           className="rounded-[2rem] border p-6 backdrop-blur-md sm:p-8"
           style={{
@@ -460,8 +482,8 @@ export default function DoshaTestClient() {
                 </span>
                 <button
                   type="button"
-                  title={session?.user ? "Профіль" : "Увійти через Google"}
-                  aria-label={session?.user ? "Профіль" : "Увійти через Google"}
+                  title={session?.user ? "Профіль" : "Увійти через обліковий запис"}
+                  aria-label={session?.user ? "Профіль" : "Увійти через обліковий запис"}
                   onClick={() => {
                     if (!session?.user) void signInWithGoogle();
                   }}
@@ -713,7 +735,7 @@ export default function DoshaTestClient() {
                         ctaTarget: "consultation",
                         screen: "result",
                         step: totalQuestions,
-                        uiVariant: UI_VARIANT,
+                        uiVariant,
                         resultType,
                         scores,
                         completedAt,
@@ -732,7 +754,7 @@ export default function DoshaTestClient() {
                         ctaTarget: "program",
                         screen: "result",
                         step: totalQuestions,
-                        uiVariant: UI_VARIANT,
+                        uiVariant,
                         resultType,
                         scores,
                         completedAt,

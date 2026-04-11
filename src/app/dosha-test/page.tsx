@@ -1,4 +1,4 @@
-import DoshaTestClient from "@/components/dosha-test/DoshaTestClient";
+import { GeneratedRouteScreen } from "@/components/generator/GeneratedRouteScreen";
 
 export const metadata = {
   title: "CenterWay Dosha Test",
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function DoshaTestPage() {
-  return <DoshaTestClient />;
+  return <GeneratedRouteScreen routeKey="dosha-test" />;
 }
