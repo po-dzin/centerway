@@ -27,6 +27,14 @@ type EventsRequestBody = {
   content_ids?: unknown;
   cta_place?: unknown;
   target?: unknown;
+  experiment_key?: unknown;
+  variant_key?: unknown;
+  manifest_id?: unknown;
+  manifest_version?: unknown;
+  recipe_version?: unknown;
+  mode?: unknown;
+  branch?: unknown;
+  assignment_source?: unknown;
 };
 
 type LocalOnlyEventName = "ScrollDepth50" | "ConsultCTA" | "DetoxCTA";
@@ -38,6 +46,7 @@ const CAPI_EVENT_NAMES = new Set<CapiEventPayload["event_name"]>([
   "InitiateCheckout",
 ]);
 const LOCAL_ONLY_EVENT_NAMES = new Set<LocalOnlyEventName>(["ScrollDepth50", "ConsultCTA", "DetoxCTA"]);
+let hasWarnedMissingExperimentAssignmentsTable = false;
 
 function isCapiEventName(name: string): name is CapiEventPayload["event_name"] {
   return CAPI_EVENT_NAMES.has(name as CapiEventPayload["event_name"]);
@@ -129,7 +138,43 @@ export async function POST(req: NextRequest) {
     content_ids: asStringArray(body.content_ids),
     cta_place: asString(body.cta_place),
     target: asString(body.target),
+    experiment_key: asString(body.experiment_key),
+    variant_key: asString(body.variant_key),
+    manifest_id: asString(body.manifest_id),
+    manifest_version: asString(body.manifest_version),
+    recipe_version: asString(body.recipe_version),
+    mode: asString(body.mode),
+    branch: asString(body.branch),
+    assignment_source: asString(body.assignment_source),
   };
+
+  if (sharedPayload.experiment_key && sharedPayload.variant_key && sharedPayload.session_id) {
+    const { error: assignmentError } = await db
+      .from("experiment_assignments")
+      .upsert(
+        {
+          experiment_key: sharedPayload.experiment_key,
+          variant_key: sharedPayload.variant_key,
+          session_id: sharedPayload.session_id,
+          assignment_source: sharedPayload.assignment_source,
+          last_event_name: sharedPayload.event_name,
+          last_seen_at: new Date().toISOString(),
+        },
+        { onConflict: "experiment_key,session_id" }
+      );
+
+    if (assignmentError) {
+      const missingTable = assignmentError.message.includes("experiment_assignments");
+      if (missingTable) {
+        if (!hasWarnedMissingExperimentAssignmentsTable) {
+          hasWarnedMissingExperimentAssignmentsTable = true;
+          console.warn("experiment_assignment_upsert_skipped_missing_table", assignmentError.message);
+        }
+      } else {
+        console.warn("experiment_assignment_upsert_failed", assignmentError.message);
+      }
+    }
+  }
 
   if (isLocalOnlyEventName(eventName)) {
     const localType =

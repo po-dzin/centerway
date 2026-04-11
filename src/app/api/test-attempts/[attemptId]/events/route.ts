@@ -17,6 +17,14 @@ type EventBody = {
   scores?: unknown;
   completedAt?: unknown;
   nextStep?: unknown;
+  experimentKey?: unknown;
+  variantKey?: unknown;
+  manifestId?: unknown;
+  manifestVersion?: unknown;
+  recipeVersion?: unknown;
+  mode?: unknown;
+  branch?: unknown;
+  assignmentSource?: unknown;
 };
 
 function asString(v: unknown): string | null {
@@ -60,6 +68,14 @@ export async function POST(
   const scores = asScorePayload(body.scores);
   const completedAt = asString(body.completedAt);
   const nextStep = asString(body.nextStep);
+  const experimentKey = asString(body.experimentKey);
+  const variantKey = asString(body.variantKey);
+  const manifestId = asString(body.manifestId);
+  const manifestVersion = asString(body.manifestVersion);
+  const recipeVersion = asString(body.recipeVersion);
+  const mode = asString(body.mode);
+  const branch = asString(body.branch);
+  const assignmentSource = asString(body.assignmentSource);
 
   if (!eventName || !["dosha_result_viewed", "dosha_followup_clicked"].includes(eventName)) {
     return NextResponse.json({ error: "invalid_event_name" }, { status: 400 });
@@ -84,6 +100,14 @@ export async function POST(
         step,
         ctaTarget: ctaTarget ?? null,
         uiVariant: uiVariant ?? null,
+        experimentKey: experimentKey ?? null,
+        variantKey: variantKey ?? null,
+        manifestId: manifestId ?? null,
+        manifestVersion: manifestVersion ?? null,
+        recipeVersion: recipeVersion ?? null,
+        mode: mode ?? null,
+        branch: branch ?? null,
+        assignmentSource: assignmentSource ?? null,
         resultView: eventName === "dosha_result_viewed"
           ? {
               resultType: resultType ?? attempt.result_type,

@@ -1029,7 +1029,6 @@ export default function AnalyticsPage() {
   const yAxisWidthPx = 48;
   const maxRevenue = Math.max(...funnel.map((f) => f.total_revenue), 1);
   const { scaleMax, ticks } = buildNiceScale(maxRevenue, 4);
-  const shouldEnableHorizontalChartScroll = funnel.length > 30;
   const minTrackWidthPx = Math.max(0, funnel.length * minBarWidth + Math.max(0, funnel.length - 1) * barGapPx);
   const barsTrackWidth = `max(100%, ${minTrackWidthPx}px)`;
   const yAxisLabelOffsetPx = -8;
