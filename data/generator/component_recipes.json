@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0.0",
+  "recipes": [
+    {
+      "id": "recipe.dosha.test.v1",
+      "version": "1.0.0",
+      "component_key": "dosha.test.main"
+    },
+    {
+      "id": "recipe.lesson.pilot.header.v1",
+      "version": "1.0.0",
+      "component_key": "lesson.pilot.header"
+    },
+    {
+      "id": "recipe.lesson.pilot.practice.v1",
+      "version": "1.0.0",
+      "component_key": "lesson.pilot.practice"
+    },
+    {
+      "id": "recipe.lesson.pilot.nextstep.v1",
+      "version": "1.0.0",
+      "component_key": "lesson.pilot.nextstep"
+    },
+    {
+      "id": "recipe.funnel.hero.v1",
+      "version": "1.0.0",
+      "component_key": "funnel.hero"
+    },
+    {
+      "id": "recipe.funnel.route-framing.v1",
+      "version": "1.0.0",
+      "component_key": "funnel.route-framing"
+    },
+    {
+      "id": "recipe.funnel.offer-definition.v1",
+      "version": "1.0.0",
+      "component_key": "funnel.offer-definition"
+    },
+    {
+      "id": "recipe.funnel.offer-includes.v1",
+      "version": "1.0.0",
+      "component_key": "funnel.offer-includes"
+    },
+    {
+      "id": "recipe.funnel.format-price.v1",
+      "version": "1.0.0",
+      "component_key": "funnel.format-price"
+    },
+    {
+      "id": "recipe.funnel.how-it-works.v1",
+      "version": "1.0.0",
+      "component_key": "funnel.how-it-works"
+    },
+    {
+      "id": "recipe.funnel.stage-breakdown.v1",
+      "version": "1.0.0",
+      "component_key": "funnel.stage-breakdown"
+    },
+    {
+      "id": "recipe.funnel.proof.v1",
+      "version": "1.0.0",
+      "component_key": "funnel.proof"
+    },
+    {
+      "id": "recipe.funnel.boundary.v1",
+      "version": "1.0.0",
+      "component_key": "funnel.boundary"
+    },
+    {
+      "id": "recipe.funnel.next-step.v1",
+      "version": "1.0.0",
+      "component_key": "funnel.next-step"
+    },
+    {
+      "id": "recipe.dosha.intro.v1",
+      "version": "1.0.0",
+      "component_key": "dosha.intro"
+    },
+    {
+      "id": "recipe.dosha.route-framing.v1",
+      "version": "1.0.0",
+      "component_key": "dosha.route-framing"
+    },
+    {
+      "id": "recipe.dosha.next-step.v1",
+      "version": "1.0.0",
+      "component_key": "dosha.next-step"
+    },
+    {
+      "id": "recipe.funnel.route-map.v1",
+      "version": "1.0.0",
+      "component_key": "funnel.route-map"
+    },
+    {
+      "id": "recipe.funnel.resource-entry.v1",
+      "version": "1.0.0",
+      "component_key": "funnel.resource-entry"
+    }
+  ]
+}

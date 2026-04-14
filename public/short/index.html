@@ -18,8 +18,12 @@
     <link rel="stylesheet" href="js/jquery.arcticmodal-0.3.css" defer="">
     <link rel="stylesheet" href="js/themes/simple.css" defer="">
     <link rel="stylesheet" href="css/fonts.css">
-    <link rel="stylesheet" href="css/main.css">
-    <link rel="stylesheet" href="css/media.css">
+    <link rel="stylesheet" href="../shared/css/tokens.css">
+    <link rel="stylesheet" href="../shared/css/foundation.css">
+    <link rel="stylesheet" href="../shared/css/landing.css">
+  <link rel="stylesheet" href="../shared/css/pages.css">
+    <link rel="stylesheet" href="css/short.product.css">
+    <link rel="stylesheet" href="css/short.product.responsive.css">
 
     <!-- Meta Pixel Code (BASE) -->
     <script>
@@ -52,7 +56,7 @@
     
 </head>
 <body>
-    <section class="s1">
+    <section class="s1 section-hero" data-section="hero" data-flow-index="1">
         <div class="container">
             <div class="content hero-text">
                 <span class="badge">АВТОРСЬКИЙ КУРС</span>
@@ -81,7 +85,7 @@
                 <p class="hero-proof__quote hero-proof__quote-after-list">Цей метод розроблений та практикується моїм вчителем протягом 44 років</p>
 
                 <div>
-                    <p class="s1-preprice">Почніть вже сьогодні 👇</p>
+                    <p class="s1-preprice section-hero-preprice">Почніть вже сьогодні 👇</p>
                 </div>
 
                 <div id="divprice">
@@ -96,7 +100,7 @@
                             <span class="price-note">300+ людей пройшли курс</span>
                         </div>
                     </div>
-                    <button class="openModal">Хочу на курс</button>
+                    <button class="openModal" data-cta-primary>Хочу на курс</button>
                     <p class="cta-note">Підходить і новачкам, і практикуючим</p>
                 </div>
             </div>
@@ -106,12 +110,12 @@
         </div>
     </section>
     
-    <div id="menu" class="default">
+    <div id="menu" class="default" data-sticky-menu>
         <button class="openModal">Хочу на курс</button>   
 
     </div>
 
-    <section class="s4">
+    <section class="s2 section-problem" data-section="problem" data-flow-index="2">
         <div class="container">
             <h2>Вам підходить це якщо</h2>
             <div class="items">
@@ -153,7 +157,7 @@
         </div>
     </section>
 
-   <section class="s2">
+   <section class="s3 section-solution" data-section="solution" data-flow-index="3">
         <div class="container">
             <h2>Ми знаємо, як вам допомогти</h2>
             <p>Компактний мікс руху + дихання + розумового розвантаження (7 вправ / 10 хв)</p>
@@ -198,42 +202,7 @@
         </div>
     </section>    
 
-    <section class="s55">
-        <div class="container">
-            <div class="s55-grid">
-                <img data-src="img/Photoroom.png" class="lazyload s55-image">
-                <div class="s55-text" id="divs55">
-                    <h2>Куратор курсу</h2>
-                    <p>👋 Давайте знайомитись: я — Євгеній Корякін, дослідник і практик аюрведи, йоги та інших систем вивчення руху</p>
-                    <ul class="regalia-list">
-                        <li>Магістр комплементарної медицини і засновник центру «Centerway» з 15-тирічним професійним досвідом 👨‍⚕️</li>
-                        <li>Автор методик по дієтології та детоксикації, ⚙️ розробник оздоровчих програм, на основі йога терапії, сучасних систем вивчення руху, аюрведи</li>
-                        <li>🧘 Йога та Аюрведа терапевт, переможець змагань з авторських оздоровчих методик “Битва титанів”</li>
-                    </ul>
-                </div>
-            </div>
-        </div>
-    </section>
-    <section class="s3">
-        <div class="container">
-            <h2>Нам довіряють</h2>
-            <p>Більше 300 людей<span class="mobile-break"></span> успішно пройшли курс</p>
-            <div class="reviews-carousel" aria-label="Відгуки">
-                <button class="carousel-btn prev" type="button" aria-label="Попередній відгук">‹</button>
-                <div class="reviews-track" id="reviews-track">
-                    <div class="reviews-item"><img src="img/feedback9.jpg" alt="Відгук 1"></div>
-                    <div class="reviews-item"><img src="img/feedback10.jpg" alt="Відгук 2"></div>
-                    <div class="reviews-item"><img src="img/feedback_short_fb.jpg" alt="Відгук 3"></div>
-                    <div class="reviews-item"><img src="img/feedback_short_tg.jpg" alt="Відгук 4"></div>
-                </div>
-                <button class="carousel-btn next" type="button" aria-label="Наступний відгук">›</button>
-            </div>
-            <div class="reviews-video">
-               <iframe id="iframe" src="https://www.youtube.com/embed/2cxLE4GUuRw" title="Відгук" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-            </div>
-        </div>
-    </section>
-<section class="s8">
+<section class="s4 section-program" data-section="program" data-flow-index="4">
     <div class="container">
         <h2>Програма курсу</h2>
         <div class="s8-grid">
@@ -280,7 +249,7 @@
     </div>
 </section>
 
-    <section class="s9">
+    <section class="s5 section-format" data-section="format" data-flow-index="5">
         <div class="container">
             <h2>Формат</h2>
             <div class="s9items">
@@ -296,7 +265,42 @@
             </div>
         </div>
     </section>
-    <section class="s11">
+    <section class="s6 section-proof" data-section="proof" data-flow-index="6">
+        <div class="container">
+            <h2>Нам довіряють</h2>
+            <p>Більше 300 людей<span class="mobile-break"></span> успішно пройшли курс</p>
+            <div class="reviews-carousel" aria-label="Відгуки">
+                <button class="carousel-btn prev" type="button" aria-label="Попередній відгук">‹</button>
+                <div class="reviews-track" id="reviews-track">
+                    <div class="reviews-item"><img src="img/feedback9.jpg" alt="Відгук 1"></div>
+                    <div class="reviews-item"><img src="img/feedback10.jpg" alt="Відгук 2"></div>
+                    <div class="reviews-item"><img src="img/feedback_short_fb.jpg" alt="Відгук 3"></div>
+                    <div class="reviews-item"><img src="img/feedback_short_tg.jpg" alt="Відгук 4"></div>
+                </div>
+                <button class="carousel-btn next" type="button" aria-label="Наступний відгук">›</button>
+            </div>
+            <div class="reviews-video">
+               <iframe id="iframe" src="https://www.youtube.com/embed/2cxLE4GUuRw" title="Відгук" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            </div>
+        </div>
+    </section>
+    <section class="s7 section-expert" data-section="expert" data-flow-index="7">
+        <div class="container">
+            <div class="s55-grid">
+                <img data-src="img/Photoroom.png" class="lazyload s55-image">
+                <div class="s55-text" id="divs55">
+                    <h2>Куратор курсу</h2>
+                    <p>👋 Давайте знайомитись: я — Євгеній Корякін, дослідник і практик аюрведи, йоги та інших систем вивчення руху</p>
+                    <ul class="regalia-list">
+                        <li>Магістр комплементарної медицини і засновник центру «Centerway» з 15-тирічним професійним досвідом 👨‍⚕️</li>
+                        <li>Автор методик по дієтології та детоксикації, ⚙️ розробник оздоровчих програм, на основі йога терапії, сучасних систем вивчення руху, аюрведи</li>
+                        <li>🧘 Йога та Аюрведа терапевт, переможець змагань з авторських оздоровчих методик “Битва титанів”</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+    <section class="s8 section-offer" data-section="offer" data-flow-index="8">
         <div class="container">
             <div class="guarantee-icon" aria-hidden="true">
                 <svg viewBox="0 0 24 24" width="32" height="32" fill="none">
@@ -309,12 +313,12 @@
             <div class="guarantee-cta">
                 <p>Не зволікайте та приєднуйтесь вже зараз 👇</p>
                 <div class="price"><span>359 грн</span></div>
-                <button class="openModal">Хочу на курс</button>
+                <button class="openModal" data-cta-final>Хочу на курс</button>
             </div>
         </div>
     </section>
     
-    <section class="s12">
+    <section class="s9 section-faq" data-section="faq" data-flow-index="9">
         <div class="container">
            <h2>Відповіді на запитання</h2>
     <div class="accordion" id="acc">

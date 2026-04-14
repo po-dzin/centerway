@@ -363,9 +363,9 @@ var date = new Date($.cookie("time-timer1"));
 }(jQuery);
 
 $(document).ready(function(){
-    var $menu = $("#menu");
-    var $topCta = $(".s1 .openModal");
-    var $bottomCta = $(".s11 .openModal");
+    var $menu = $("[data-sticky-menu]");
+    var $topCta = $("[data-cta-primary]").first();
+    var $bottomCta = $("[data-cta-final]").first();
     function isInViewport($el) {
         if (!$el.length) {
             return false;
@@ -376,7 +376,7 @@ $(document).ready(function(){
 
     function shouldShowMenu() {
         var isTablet = window.matchMedia("(min-width: 601px) and (max-width: 1023px)").matches;
-        var firstScreenHeight = isTablet ? ($(".s1").outerHeight() || window.innerHeight) : window.innerHeight;
+        var firstScreenHeight = isTablet ? ($("[data-section='hero']").first().outerHeight() || window.innerHeight) : window.innerHeight;
         var pastFirstScreen = window.scrollY > firstScreenHeight;
         var topVisible = isInViewport($topCta);
         var bottomVisible = isInViewport($bottomCta);

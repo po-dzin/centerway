@@ -44,9 +44,19 @@ npm run smoke:dosha:result
 `smoke:admin:ui` runs browser-level smoke checks for `/admin`, `/admin/analytics`, `/admin/system/audit` (requires Playwright).
 `smoke:admin:responsive` runs responsive matrix checks for `/admin/*` at `375/768/1024/1440` (requires Playwright + base URL).
 `smoke:dosha:result` validates the dosha result matrix (`single/dual/tridosha`) used by test scoring.
+`ds:qa` runs baseline design-system quality checks (token contract + lint).
+`ds:qa:landing` runs design-system contract checks plus landing smoke (`short/irem`).
+
+## Token Contract
+
+- `public/shared/css/tokens.css` is the shared fallback contract for static pages.
+- `src/app/globals.css` is the app brand override layer.
+- Required `--ds-*` foundations: colors, base font family, font scale, line heights, spacing, radii, shadows, z-index, breakpoints, container width, and minimum touch target.
+- In the app, `--ds-color-*` maps to `--cw-*` brand tokens; the non-brand scales stay stable and should not drift without a deliberate contract change.
 
 ## Auth and users foundation
 
 - `docs/migration/sql/2026-04-01_platform_users_google_auth.sql` creates platform-wide `platform_users` linked to `auth.users` (not test-specific).
 - `POST /api/platform/users/sync` upserts current authenticated user profile (Google metadata supported).
-- `/dosha-test` includes Google sign-in prompt and securely attaches anonymous attempt to authenticated user via bearer token.
+- `/dosha-test` is now protected by Google auth gate and syncs authenticated user profile before test interaction.
+- Protected generated routes are configured centrally in `src/lib/auth/protectedRoutes.ts` (currently: `dosha-test`).

@@ -332,9 +332,9 @@
 }(jQuery);
 
 $(document).ready(function(){
-    var $menu = $("#menu");
-    var $topCta = $(".s1 .openModal");
-    var $bottomCta = $(".s10 .openModal");
+    var $menu = $("[data-sticky-menu]");
+    var $topCta = $("[data-cta-primary]").first();
+    var $bottomCta = $("[data-cta-final]").first();
 
     function isInViewport($el) {
         if (!$el.length) {

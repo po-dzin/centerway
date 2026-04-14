@@ -33,7 +33,6 @@ export function hostBrandFromHost(rawHost: string | null): HostBrand | null {
   for (const prefix of HERBS_HOST_PREFIXES) {
     if (host.startsWith(prefix)) return "herbs";
   }
-
   // Local/dev fallback.
   if (isLocalDevHost(host)) return "short";
 

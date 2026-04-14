@@ -124,6 +124,7 @@ type AnalyticsResponse = {
     from: string;
     to: string;
   };
+  campaigns_level?: "adset" | "ad";
   funnel: FunnelData[];
   campaigns: CampaignData[];
   summary: AnalyticsSummary;
@@ -637,6 +638,7 @@ export default function AnalyticsPage() {
   const [analyticsSection, setAnalyticsSection] = useState<
     "overview" | "funnel" | "campaigns" | "capi" | "inputs_quality"
   >("overview");
+  const [campaignsLevel, setCampaignsLevel] = useState<"adset" | "ad">("adset");
 
   const [draftReach, setDraftReach] = useState("0");
   const [draftImpressions, setDraftImpressions] = useState("0");
@@ -721,6 +723,7 @@ export default function AnalyticsPage() {
       const activeTo = period?.to ?? toDate;
       if (activeFrom) query.set("from", activeFrom);
       if (activeTo) query.set("to", activeTo);
+      query.set("campaign_level", campaignsLevel);
 
       const res = await fetch(`/api/admin/analytics?${query.toString()}`, {
         headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
@@ -757,6 +760,9 @@ export default function AnalyticsPage() {
       if (data.period?.from && data.period?.to) {
         setFromDate(data.period.from);
         setToDate(data.period.to);
+      }
+      if (data.campaigns_level === "ad" || data.campaigns_level === "adset") {
+        setCampaignsLevel(data.campaigns_level);
       }
 
       setFunnel(data.funnel ?? []);
@@ -799,7 +805,7 @@ export default function AnalyticsPage() {
   useEffect(() => {
     fetchAnalytics({ from: fromDate, to: toDate });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [campaignsLevel]);
 
   const funnelRangeKey = useMemo(() => {
     if (funnel.length === 0) return "empty";
@@ -1029,7 +1035,6 @@ export default function AnalyticsPage() {
   const yAxisWidthPx = 48;
   const maxRevenue = Math.max(...funnel.map((f) => f.total_revenue), 1);
   const { scaleMax, ticks } = buildNiceScale(maxRevenue, 4);
-  const shouldEnableHorizontalChartScroll = funnel.length > 30;
   const minTrackWidthPx = Math.max(0, funnel.length * minBarWidth + Math.max(0, funnel.length - 1) * barGapPx);
   const barsTrackWidth = `max(100%, ${minTrackWidthPx}px)`;
   const yAxisLabelOffsetPx = -8;
@@ -1071,6 +1076,10 @@ export default function AnalyticsPage() {
       );
     });
   };
+  const sourceColumnLabel =
+    campaignsLevel === "ad"
+      ? t("analytics_col_source_ad")
+      : t("analytics_col_source_adset");
   const activeBar = hovered ?? selectedBar;
   return (
     <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
@@ -1767,6 +1776,22 @@ export default function AnalyticsPage() {
         <div className="px-4 sm:px-5 md:px-6 py-4 md:py-5 border-b cw-border">
           <h2 className="text-lg font-medium cw-text">{t("analytics_campaign_breakdown")}</h2>
           <p className="text-sm cw-muted mt-1">{t("analytics_campaign_breakdown_subtitle")}</p>
+          <div className="mt-3 inline-flex rounded-lg border cw-border overflow-hidden">
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-sm ${campaignsLevel === "adset" ? "cw-surface-2 cw-text" : "cw-btn-muted cw-muted"}`}
+              onClick={() => setCampaignsLevel("adset")}
+            >
+              {t("analytics_level_adset")}
+            </button>
+            <button
+              type="button"
+              className={`px-3 py-1.5 text-sm border-l cw-border ${campaignsLevel === "ad" ? "cw-surface-2 cw-text" : "cw-btn-muted cw-muted"}`}
+              onClick={() => setCampaignsLevel("ad")}
+            >
+              {t("analytics_level_ad")}
+            </button>
+          </div>
         </div>
         {(() => {
           const showRevenueCol = visibleFields.includes("revenue");
@@ -1786,7 +1811,7 @@ export default function AnalyticsPage() {
             <thead className="cw-surface-2">
               <tr>
                 <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
-                  {t("analytics_col_source_campaign")}
+                  {sourceColumnLabel}
                 </th>
                 <th scope="col" className="px-4 md:px-6 py-3 text-left text-xs font-medium cw-muted uppercase tracking-wider">
                   {t("analytics_metric_view_content")}

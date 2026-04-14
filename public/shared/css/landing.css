@@ -1,0 +1,91 @@
+/* Shared landing primitives for short/irem */
+
+.section-hero,
+.section-problem,
+.section-solution,
+.section-program,
+.section-format,
+.section-proof,
+.section-expert,
+.section-offer,
+.section-faq,
+.section-addon-results,
+.section-addon-foundations,
+.section-addon-protocol,
+.section-addon-guarantee {
+  padding-block: clamp(2rem, 4vw, 3rem);
+}
+
+.section-hero .container,
+.section-problem .container,
+.section-solution .container,
+.section-program .container,
+.section-format .container,
+.section-proof .container,
+.section-expert .container,
+.section-offer .container,
+.section-faq .container {
+  padding-inline: clamp(1.25rem, 3vw, 3rem);
+}
+
+section:not(.section-hero) h2 {
+  font-size: clamp(1.875rem, 3.4vw, 2.25rem);
+  line-height: 1.15;
+}
+
+.section-hero h1 {
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  line-height: 1.05;
+}
+
+.section-hero h3,
+.section-hero h4 {
+  font-size: clamp(1.125rem, 2vw, 1.5rem);
+  line-height: 1.45;
+}
+
+.section-problem .item,
+.section-program .items,
+.section-format .itemsli,
+.section-expert .s55-text,
+.section-addon-protocol .item,
+.section-addon-foundations .grid-item {
+  border-radius: var(--ds-radius-lg, 1.25rem);
+}
+
+.section-hero .openModal,
+.section-offer .openModal,
+[data-sticky-menu] .openModal {
+  min-height: var(--ds-touch-target-min, 44px);
+  border-radius: var(--ds-radius-sm, 0.75rem);
+}
+
+@media (max-width: 37.5rem) {
+  .section-hero,
+  .section-problem,
+  .section-solution,
+  .section-program,
+  .section-format,
+  .section-proof,
+  .section-expert,
+  .section-offer,
+  .section-faq,
+  .section-addon-results,
+  .section-addon-foundations,
+  .section-addon-protocol,
+  .section-addon-guarantee {
+    padding-block: 1.75rem;
+  }
+
+  .section-hero .container,
+  .section-problem .container,
+  .section-solution .container,
+  .section-program .container,
+  .section-format .container,
+  .section-proof .container,
+  .section-expert .container,
+  .section-offer .container,
+  .section-faq .container {
+    padding-inline: 1.25rem;
+  }
+}

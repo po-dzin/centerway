@@ -1,0 +1,828 @@
+{
+  "schema_version": "0.1.0",
+  "spec": "CenterWay Screen Assembly Spec v0.1",
+  "spec_version": "0.1.0",
+  "archetype_registry": [
+    "overview-entry",
+    "offer-detail",
+    "intent-checkout",
+    "lesson-practice",
+    "dashboard-route",
+    "support-proof",
+    "overlay-modal",
+    "admin-utility"
+  ],
+  "engine_bindings": {
+    "required_semantics_by_contract": {
+      "overview-entry": [
+        "guide",
+        "method",
+        "progress"
+      ],
+      "offer-detail": [
+        "guide",
+        "trust",
+        "boundary"
+      ],
+      "lesson-practice": [
+        "progress",
+        "method",
+        "embodied",
+        "guide"
+      ]
+    }
+  },
+  "contracts": [
+    {
+      "archetype": "overview-entry",
+      "primaryCTA": "1",
+      "primary_cta_repetition": "1..N",
+      "semanticBlocks": {
+        "required": [
+          "hero-entry-definition",
+          "route-framing",
+          "route-choice",
+          "next-step"
+        ],
+        "optional": [
+          "offer-includes",
+          "how-it-works",
+          "method-principles",
+          "identity-guide",
+          "testimonial-story",
+          "faq-clarification",
+          "gentle-reassurance"
+        ],
+        "conditional": [
+          "current-step",
+          "offer-definition",
+          "format-duration-price",
+          "stage-breakdown",
+          "proof-block",
+          "expectation-block",
+          "support-path",
+          "human-handoff",
+          "pathway-map",
+          "boundary-block",
+          "contraindication-block",
+          "error-recovery"
+        ],
+        "forbidden": [
+          "practice-unit",
+          "reflection-note",
+          "current-progress",
+          "completion-block"
+        ]
+      },
+      "componentFamilies": {
+        "required": [
+          "page-shell",
+          "section-shell",
+          "route-action-button",
+          "path-card"
+        ],
+        "optional": [
+          "testimonial-card"
+        ],
+        "conditional": [
+          "route-nav",
+          "breadcrumb-return-path",
+          "proof-action-button",
+          "support-action-button",
+          "stage-card",
+          "proof-card",
+          "support-card",
+          "select-choice-control",
+          "progress-bar-track",
+          "route-node",
+          "stage-chip-status-pill",
+          "expectation-block-component",
+          "boundary-block-component",
+          "feedback-message",
+          "empty-state",
+          "loading-state",
+          "error-recovery-state"
+        ],
+        "forbidden": [
+          "tabs-segment-switch",
+          "boundary-action",
+          "practice-card",
+          "text-input",
+          "checkbox-consent-control",
+          "search-filter-utility",
+          "modal",
+          "drawer",
+          "popover-tooltip",
+          "admin-panel",
+          "admin-status-badge"
+        ]
+      },
+      "rules": [
+        "exactly one dominant route action",
+        "supporting actions may exist but must not outrank primary",
+        "route legibility must be explicit"
+      ]
+    },
+    {
+      "archetype": "offer-detail",
+      "primaryCTA": "1",
+      "primary_cta_repetition": "1..N",
+      "semanticBlocks": {
+        "required": [
+          "hero-entry-definition",
+          "route-framing",
+          "offer-definition",
+          "offer-includes",
+          "format-duration-price",
+          "how-it-works",
+          "proof-block",
+          "next-step",
+          "boundary-block"
+        ],
+        "optional": [
+          "method-principles",
+          "identity-guide",
+          "testimonial-story",
+          "faq-clarification",
+          "reflection-note"
+        ],
+        "conditional": [
+          "current-step",
+          "route-choice",
+          "expectation-block",
+          "support-path",
+          "gentle-reassurance",
+          "human-handoff",
+          "stage-breakdown",
+          "pathway-map",
+          "completion-block",
+          "contraindication-block",
+          "error-recovery"
+        ],
+        "forbidden": [
+          "practice-unit",
+          "current-progress"
+        ]
+      },
+      "componentFamilies": {
+        "required": [
+          "page-shell",
+          "section-shell",
+          "route-action-button",
+          "proof-card",
+          "boundary-block-component"
+        ],
+        "optional": [
+          "testimonial-card"
+        ],
+        "conditional": [
+          "route-nav",
+          "breadcrumb-return-path",
+          "tabs-segment-switch",
+          "proof-action-button",
+          "support-action-button",
+          "boundary-action",
+          "path-card",
+          "stage-card",
+          "support-card",
+          "text-input",
+          "select-choice-control",
+          "progress-bar-track",
+          "route-node",
+          "stage-chip-status-pill",
+          "next-step-banner",
+          "expectation-block-component",
+          "feedback-message",
+          "empty-state",
+          "loading-state",
+          "error-recovery-state",
+          "modal",
+          "drawer",
+          "popover-tooltip"
+        ],
+        "forbidden": [
+          "practice-card",
+          "checkbox-consent-control",
+          "search-filter-utility",
+          "admin-panel",
+          "admin-status-badge"
+        ]
+      },
+      "rules": [
+        "exactly one dominant route action",
+        "visible offer fit and route role",
+        "visible format and price",
+        "boundary must be explicit"
+      ]
+    },
+    {
+      "archetype": "intent-checkout",
+      "primaryCTA": "1",
+      "primary_cta_repetition": "1..N",
+      "semanticBlocks": {
+        "required": [
+          "offer-definition",
+          "format-duration-price",
+          "proof-block",
+          "expectation-block",
+          "support-path",
+          "human-handoff",
+          "next-step",
+          "boundary-block"
+        ],
+        "optional": [],
+        "conditional": [
+          "route-framing",
+          "current-step",
+          "offer-includes",
+          "how-it-works",
+          "stage-breakdown",
+          "identity-guide",
+          "testimonial-story",
+          "faq-clarification",
+          "gentle-reassurance",
+          "contraindication-block",
+          "error-recovery"
+        ],
+        "forbidden": [
+          "hero-entry-definition",
+          "route-choice",
+          "method-principles",
+          "practice-unit",
+          "reflection-note",
+          "pathway-map",
+          "current-progress",
+          "completion-block"
+        ]
+      },
+      "componentFamilies": {
+        "required": [
+          "page-shell",
+          "section-shell",
+          "route-action-button",
+          "support-action-button",
+          "proof-card",
+          "support-card",
+          "expectation-block-component",
+          "boundary-block-component"
+        ],
+        "optional": [],
+        "conditional": [
+          "breadcrumb-return-path",
+          "proof-action-button",
+          "boundary-action",
+          "testimonial-card",
+          "text-input",
+          "checkbox-consent-control",
+          "stage-chip-status-pill",
+          "next-step-banner",
+          "feedback-message",
+          "empty-state",
+          "loading-state",
+          "error-recovery-state",
+          "modal",
+          "drawer",
+          "popover-tooltip"
+        ],
+        "forbidden": [
+          "route-nav",
+          "tabs-segment-switch",
+          "path-card",
+          "stage-card",
+          "practice-card",
+          "select-choice-control",
+          "search-filter-utility",
+          "progress-bar-track",
+          "route-node",
+          "admin-panel",
+          "admin-status-badge"
+        ]
+      },
+      "rules": [
+        "exactly one commitment action",
+        "must reduce anxiety and clarify action consequence",
+        "trust expectation support boundary layers are mandatory"
+      ]
+    },
+    {
+      "archetype": "lesson-practice",
+      "primaryCTA": "1",
+      "primary_cta_repetition": "1",
+      "semanticBlocks": {
+        "required": [
+          "current-step",
+          "practice-unit",
+          "next-step"
+        ],
+        "optional": [],
+        "conditional": [
+          "hero-entry-definition",
+          "route-framing",
+          "offer-includes",
+          "how-it-works",
+          "method-principles",
+          "stage-breakdown",
+          "proof-block",
+          "expectation-block",
+          "support-path",
+          "gentle-reassurance",
+          "reflection-note",
+          "current-progress",
+          "completion-block",
+          "boundary-block",
+          "contraindication-block",
+          "error-recovery"
+        ],
+        "forbidden": [
+          "offer-definition",
+          "route-choice",
+          "identity-guide",
+          "testimonial-story",
+          "faq-clarification",
+          "human-handoff",
+          "pathway-map"
+        ]
+      },
+      "componentFamilies": {
+        "required": [
+          "page-shell",
+          "route-action-button",
+          "practice-card"
+        ],
+        "optional": [],
+        "conditional": [
+          "section-shell",
+          "route-nav",
+          "breadcrumb-return-path",
+          "tabs-segment-switch",
+          "support-action-button",
+          "boundary-action",
+          "stage-card",
+          "proof-card",
+          "support-card",
+          "progress-bar-track",
+          "route-node",
+          "stage-chip-status-pill",
+          "next-step-banner",
+          "expectation-block-component",
+          "boundary-block-component",
+          "feedback-message",
+          "empty-state",
+          "loading-state",
+          "error-recovery-state",
+          "modal",
+          "drawer",
+          "popover-tooltip"
+        ],
+        "forbidden": [
+          "proof-action-button",
+          "path-card",
+          "testimonial-card",
+          "text-input",
+          "select-choice-control",
+          "checkbox-consent-control",
+          "search-filter-utility",
+          "admin-panel",
+          "admin-status-badge"
+        ]
+      },
+      "rules": [
+        "exactly one continue or complete action",
+        "practice and next-step logic dominate over storytelling",
+        "no competing commercial CTA"
+      ]
+    },
+    {
+      "archetype": "dashboard-route",
+      "primaryCTA": "1",
+      "primary_cta_repetition": "1",
+      "semanticBlocks": {
+        "required": [
+          "route-framing",
+          "current-step",
+          "pathway-map",
+          "current-progress",
+          "next-step",
+          "support-path"
+        ],
+        "optional": [],
+        "conditional": [
+          "hero-entry-definition",
+          "route-choice",
+          "stage-breakdown",
+          "proof-block",
+          "expectation-block",
+          "gentle-reassurance",
+          "human-handoff",
+          "completion-block",
+          "boundary-block",
+          "error-recovery"
+        ],
+        "forbidden": [
+          "offer-definition",
+          "offer-includes",
+          "format-duration-price",
+          "how-it-works",
+          "method-principles",
+          "practice-unit",
+          "identity-guide",
+          "testimonial-story",
+          "faq-clarification",
+          "reflection-note",
+          "contraindication-block"
+        ]
+      },
+      "componentFamilies": {
+        "required": [
+          "page-shell",
+          "route-nav",
+          "route-action-button",
+          "support-action-button",
+          "stage-card",
+          "support-card",
+          "progress-bar-track",
+          "route-node",
+          "stage-chip-status-pill",
+          "next-step-banner"
+        ],
+        "optional": [],
+        "conditional": [
+          "section-shell",
+          "breadcrumb-return-path",
+          "tabs-segment-switch",
+          "path-card",
+          "proof-card",
+          "select-choice-control",
+          "search-filter-utility",
+          "expectation-block-component",
+          "boundary-block-component",
+          "feedback-message",
+          "empty-state",
+          "loading-state",
+          "error-recovery-state",
+          "modal",
+          "drawer",
+          "popover-tooltip"
+        ],
+        "forbidden": [
+          "proof-action-button",
+          "boundary-action",
+          "testimonial-card",
+          "practice-card",
+          "text-input",
+          "checkbox-consent-control",
+          "admin-panel",
+          "admin-status-badge"
+        ]
+      },
+      "rules": [
+        "exactly one recommended resume action",
+        "pathway and current progress are mandatory",
+        "route must be legible at a glance"
+      ]
+    },
+    {
+      "archetype": "support-proof",
+      "primaryCTA": "0..1",
+      "primary_cta_repetition": "0..1",
+      "semanticBlocks": {
+        "required": [
+          "proof-block",
+          "identity-guide",
+          "faq-clarification",
+          "support-path",
+          "human-handoff",
+          "boundary-block",
+          "contraindication-block"
+        ],
+        "optional": [],
+        "conditional": [
+          "route-framing",
+          "offer-definition",
+          "how-it-works",
+          "method-principles",
+          "expectation-block",
+          "testimonial-story",
+          "gentle-reassurance",
+          "next-step",
+          "error-recovery"
+        ],
+        "forbidden": [
+          "hero-entry-definition",
+          "current-step",
+          "offer-includes",
+          "format-duration-price",
+          "route-choice",
+          "stage-breakdown",
+          "practice-unit",
+          "reflection-note",
+          "pathway-map",
+          "current-progress",
+          "completion-block"
+        ]
+      },
+      "componentFamilies": {
+        "required": [
+          "page-shell",
+          "section-shell",
+          "support-action-button",
+          "proof-card",
+          "support-card",
+          "expectation-block-component",
+          "boundary-block-component"
+        ],
+        "optional": [],
+        "conditional": [
+          "breadcrumb-return-path",
+          "tabs-segment-switch",
+          "route-action-button",
+          "proof-action-button",
+          "boundary-action",
+          "testimonial-card",
+          "text-input",
+          "stage-chip-status-pill",
+          "feedback-message",
+          "empty-state",
+          "loading-state",
+          "error-recovery-state",
+          "modal",
+          "drawer",
+          "popover-tooltip"
+        ],
+        "forbidden": [
+          "route-nav",
+          "path-card",
+          "stage-card",
+          "practice-card",
+          "select-choice-control",
+          "checkbox-consent-control",
+          "search-filter-utility",
+          "progress-bar-track",
+          "route-node",
+          "next-step-banner",
+          "admin-panel",
+          "admin-status-badge"
+        ]
+      },
+      "rules": [
+        "primary CTA may be absent",
+        "if primary CTA exists it must be continue-route or ask-for-help",
+        "proof support boundary structures dominate"
+      ]
+    },
+    {
+      "archetype": "overlay-modal",
+      "primaryCTA": "1",
+      "primary_cta_repetition": "1",
+      "semanticBlocks": {
+        "required": [
+          "next-step"
+        ],
+        "optional": [],
+        "conditional": [
+          "current-step",
+          "proof-block",
+          "expectation-block",
+          "support-path",
+          "human-handoff",
+          "boundary-block",
+          "error-recovery"
+        ],
+        "forbidden": [
+          "hero-entry-definition",
+          "route-framing",
+          "offer-definition",
+          "offer-includes",
+          "format-duration-price",
+          "route-choice",
+          "how-it-works",
+          "method-principles",
+          "stage-breakdown",
+          "practice-unit",
+          "identity-guide",
+          "testimonial-story",
+          "faq-clarification",
+          "gentle-reassurance",
+          "reflection-note",
+          "pathway-map",
+          "current-progress",
+          "completion-block",
+          "contraindication-block"
+        ]
+      },
+      "componentFamilies": {
+        "required": [
+          "route-action-button",
+          "modal"
+        ],
+        "optional": [],
+        "conditional": [
+          "page-shell",
+          "support-action-button",
+          "boundary-action",
+          "proof-card",
+          "support-card",
+          "checkbox-consent-control",
+          "stage-chip-status-pill",
+          "expectation-block-component",
+          "boundary-block-component",
+          "feedback-message",
+          "empty-state",
+          "loading-state",
+          "error-recovery-state",
+          "drawer",
+          "popover-tooltip"
+        ],
+        "forbidden": [
+          "section-shell",
+          "route-nav",
+          "breadcrumb-return-path",
+          "tabs-segment-switch",
+          "proof-action-button",
+          "path-card",
+          "stage-card",
+          "testimonial-card",
+          "practice-card",
+          "text-input",
+          "select-choice-control",
+          "search-filter-utility",
+          "progress-bar-track",
+          "route-node",
+          "next-step-banner",
+          "admin-panel",
+          "admin-status-badge"
+        ]
+      },
+      "rules": [
+        "exactly one primary action",
+        "safe cancel or close path required",
+        "compact payload only"
+      ]
+    },
+    {
+      "archetype": "admin-utility",
+      "primaryCTA": "0..1",
+      "primary_cta_repetition": "0..1",
+      "semanticBlocks": {
+        "required": [
+          "error-recovery"
+        ],
+        "optional": [],
+        "conditional": [
+          "current-step",
+          "next-step"
+        ],
+        "forbidden": [
+          "hero-entry-definition",
+          "route-framing",
+          "offer-definition",
+          "offer-includes",
+          "format-duration-price",
+          "route-choice",
+          "how-it-works",
+          "method-principles",
+          "stage-breakdown",
+          "practice-unit",
+          "proof-block",
+          "expectation-block",
+          "identity-guide",
+          "testimonial-story",
+          "faq-clarification",
+          "support-path",
+          "gentle-reassurance",
+          "reflection-note",
+          "human-handoff",
+          "pathway-map",
+          "current-progress",
+          "completion-block",
+          "boundary-block",
+          "contraindication-block"
+        ]
+      },
+      "componentFamilies": {
+        "required": [
+          "page-shell",
+          "text-input",
+          "select-choice-control",
+          "checkbox-consent-control",
+          "search-filter-utility",
+          "stage-chip-status-pill",
+          "feedback-message",
+          "empty-state",
+          "loading-state",
+          "error-recovery-state",
+          "popover-tooltip",
+          "admin-panel",
+          "admin-status-badge"
+        ],
+        "optional": [],
+        "conditional": [
+          "section-shell",
+          "route-nav",
+          "breadcrumb-return-path",
+          "tabs-segment-switch",
+          "route-action-button",
+          "boundary-action",
+          "progress-bar-track",
+          "next-step-banner",
+          "modal",
+          "drawer"
+        ],
+        "forbidden": [
+          "proof-action-button",
+          "support-action-button",
+          "path-card",
+          "stage-card",
+          "proof-card",
+          "support-card",
+          "testimonial-card",
+          "practice-card",
+          "route-node",
+          "expectation-block-component",
+          "boundary-block-component"
+        ]
+      },
+      "rules": [
+        "primary CTA is task-driven not brand-driven",
+        "no marketing-style hierarchy",
+        "state and recovery clarity overrides narrative"
+      ]
+    }
+  ],
+  "ordered_sequences": {
+    "overview-entry": [
+      "hero-entry-definition",
+      "route-framing",
+      "route-choice",
+      "how-it-works|proof-block",
+      "support-path?",
+      "next-step",
+      "boundary-block|expectation-block?"
+    ],
+    "offer-detail": [
+      "hero-entry-definition",
+      "route-framing",
+      "offer-definition",
+      "offer-includes",
+      "format-duration-price",
+      "how-it-works|stage-breakdown",
+      "proof-block|testimonial-story|identity-guide",
+      "boundary-block|faq-clarification|expectation-block",
+      "support-path",
+      "next-step"
+    ],
+    "intent-checkout": [
+      "offer-definition",
+      "format-duration-price",
+      "expectation-block",
+      "proof-block",
+      "boundary-block",
+      "support-path|human-handoff",
+      "next-step"
+    ],
+    "lesson-practice": [
+      "current-step",
+      "practice-unit",
+      "how-it-works|method-principles?",
+      "reflection-note|support-path?",
+      "next-step",
+      "completion-block|boundary-block|error-recovery?"
+    ],
+    "dashboard-route": [
+      "route-framing",
+      "pathway-map",
+      "current-progress",
+      "stage-breakdown",
+      "next-step",
+      "support-path",
+      "completion-block|expectation-block?"
+    ],
+    "support-proof": [
+      "proof-block",
+      "faq-clarification",
+      "boundary-block|contraindication-block",
+      "expectation-block",
+      "identity-guide|human-handoff",
+      "support-path",
+      "next-step?"
+    ],
+    "overlay-modal": [
+      "current-step|compact-explanation",
+      "boundary-block|expectation-block?",
+      "next-step",
+      "safe-close"
+    ],
+    "admin-utility": [
+      "current-task-context",
+      "data-control",
+      "state-feedback",
+      "next-step|completion-path"
+    ]
+  },
+  "assembly_constraints": [
+    "for health-adjacent or commitment-adjacent screens include at least one trust-oriented semantic block and trust-oriented component family",
+    "for health-adjacent or risky-decision screens include boundary block as required or conditional",
+    "if user anxiety is high include visible support block or support action",
+    "for route-led archetypes route next step must be visually legible"
+  ]
+}

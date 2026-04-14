@@ -97,6 +97,8 @@ type DateRange = {
     toExclusiveTs: string;
 };
 
+type CampaignBreakdownLevel = "adset" | "ad";
+
 type CampaignBreakdownRow = {
     source_campaign: string;
     total_orders: number;
@@ -148,6 +150,28 @@ function normalizeCampaignSource(raw: unknown, fallback: string): string {
 
 function campaignMergeKey(sourceCampaign: string): string {
     return sourceCampaign.trim().toLowerCase();
+}
+
+function campaignBreakdownLevelFromQuery(searchParams: URLSearchParams): CampaignBreakdownLevel {
+    const raw = (searchParams.get("campaign_level") ?? "").trim().toLowerCase();
+    return raw === "ad" ? "ad" : "adset";
+}
+
+function extractUrlQueryParam(rawUrl: unknown, param: string): string | null {
+    if (typeof rawUrl !== "string" || !rawUrl.trim()) return null;
+    const valueFromUrl = (url: URL): string | null => {
+        const value = url.searchParams.get(param);
+        return value && value.trim() ? value.trim() : null;
+    };
+    try {
+        return valueFromUrl(new URL(rawUrl));
+    } catch {
+        try {
+            return valueFromUrl(new URL(rawUrl, "https://centerway.local"));
+        } catch {
+            return null;
+        }
+    }
 }
 
 function safeDivide(numerator: number, denominator: number): number {
@@ -549,6 +573,7 @@ export async function GET(req: NextRequest) {
 
     const db = adminClient();
     const range = toDateRange(req.nextUrl.searchParams);
+    const campaignLevel = campaignBreakdownLevelFromQuery(req.nextUrl.searchParams);
 
     // 1. Fetch Funnel
     const { data: funnelDataRaw, error: funnelErr } = await db
@@ -568,7 +593,7 @@ export async function GET(req: NextRequest) {
     // 2. Fetch Revenue source breakdown in the selected period
     const { data: revenueOrders, error: revErr } = await db
         .from("orders")
-        .select("campaign, status, amount, created_at")
+        .select("campaign, page_url, status, amount, created_at")
         .gte("created_at", range.fromTs)
         .lt("created_at", range.toExclusiveTs)
         .limit(50000);
@@ -585,7 +610,11 @@ export async function GET(req: NextRequest) {
     for (const row of revenueOrders ?? []) {
         const createdAt = typeof row.created_at === "string" ? row.created_at : null;
         const dayKey = createdAt ? getIsoDateInTimeZone(new Date(createdAt), ADMIN_ANALYTICS_TZ) : null;
-        const source = normalizeCampaignSource(row.campaign, "organic");
+        const adsetFromUrl = extractUrlQueryParam(row.page_url, "utm_content");
+        const adFromUrl = extractUrlQueryParam(row.page_url, "utm_term");
+        const source = campaignLevel === "ad"
+            ? normalizeCampaignSource(adFromUrl ?? adsetFromUrl ?? row.campaign, "organic")
+            : normalizeCampaignSource(adsetFromUrl ?? row.campaign, "organic");
         const sourceKey = campaignMergeKey(source);
         const existing = revenueMap.get(sourceKey) ?? {
             source_campaign: source,
@@ -615,17 +644,19 @@ export async function GET(req: NextRequest) {
         revenueMap.set(sourceKey, existing);
     }
 
-    const { data: metaCampaignRows, error: metaCampaignErr } = await db
-        .from("analytics_meta_campaign_daily")
-        .select("campaign_name, view_content, reach, impressions, spend, currency")
-        .gte("day", range.from)
-        .lte("day", range.to)
-        .limit(100000);
-    if (metaCampaignErr) {
-        console.warn("Analytics Meta campaign warning:", metaCampaignErr.message);
-    } else {
-        for (const row of metaCampaignRows ?? []) {
-            const source = normalizeCampaignSource(row.campaign_name, "meta (no utm_campaign)");
+    const mergeMetaIntoRevenueMap = (
+        rows: Array<{
+            source_name?: unknown;
+            view_content?: unknown;
+            reach?: unknown;
+            impressions?: unknown;
+            spend?: unknown;
+            currency?: unknown;
+        }>,
+        sourceFallback: string
+    ) => {
+        for (const row of rows) {
+            const source = normalizeCampaignSource(row.source_name, sourceFallback);
             const sourceKey = campaignMergeKey(source);
             const existing = revenueMap.get(sourceKey) ?? {
                 source_campaign: source,
@@ -646,6 +677,94 @@ export async function GET(req: NextRequest) {
                 existing.currency = row.currency.trim();
             }
             revenueMap.set(sourceKey, existing);
+        }
+    };
+
+    if (campaignLevel === "ad") {
+        const { data: metaAdRowsRaw, error: metaAdErr } = await db
+            .from("analytics_meta_ad_daily")
+            .select("ad_name, view_content, reach, impressions, spend, currency")
+            .gte("day", range.from)
+            .lte("day", range.to)
+            .limit(100000);
+        if (metaAdErr) {
+            console.warn("Analytics Meta ad warning:", metaAdErr.message);
+            const { data: metaAdsetRowsRaw, error: metaAdsetErr } = await db
+                .from("analytics_meta_adset_daily")
+                .select("adset_name, view_content, reach, impressions, spend, currency")
+                .gte("day", range.from)
+                .lte("day", range.to)
+                .limit(100000);
+            if (metaAdsetErr) {
+                console.warn("Analytics Meta adset warning:", metaAdsetErr.message);
+            } else {
+                mergeMetaIntoRevenueMap(
+                    (metaAdsetRowsRaw ?? []).map((row) => ({
+                        source_name: row.adset_name,
+                        view_content: row.view_content,
+                        reach: row.reach,
+                        impressions: row.impressions,
+                        spend: row.spend,
+                        currency: row.currency,
+                    })),
+                    "meta (no utm_campaign)"
+                );
+            }
+        } else {
+            mergeMetaIntoRevenueMap(
+                (metaAdRowsRaw ?? []).map((row) => ({
+                    source_name: row.ad_name,
+                    view_content: row.view_content,
+                    reach: row.reach,
+                    impressions: row.impressions,
+                    spend: row.spend,
+                    currency: row.currency,
+                })),
+                "meta (no utm_campaign)"
+            );
+        }
+    } else {
+        const { data: metaAdsetRowsRaw, error: metaAdsetErr } = await db
+            .from("analytics_meta_adset_daily")
+            .select("adset_name, view_content, reach, impressions, spend, currency")
+            .gte("day", range.from)
+            .lte("day", range.to)
+            .limit(100000);
+        if (metaAdsetErr) {
+            console.warn("Analytics Meta adset warning:", metaAdsetErr.message);
+            const { data: metaCampaignRowsRaw, error: metaCampaignErr } = await db
+                .from("analytics_meta_campaign_daily")
+                .select("campaign_name, view_content, reach, impressions, spend, currency")
+                .gte("day", range.from)
+                .lte("day", range.to)
+                .limit(100000);
+            if (metaCampaignErr) {
+                console.warn("Analytics Meta campaign warning:", metaCampaignErr.message);
+            } else {
+                mergeMetaIntoRevenueMap(
+                    (metaCampaignRowsRaw ?? []).map((row) => ({
+                        source_name: row.campaign_name,
+                        view_content: row.view_content,
+                        reach: row.reach,
+                        impressions: row.impressions,
+                        spend: row.spend,
+                        currency: row.currency,
+                    })),
+                    "meta (no utm_campaign)"
+                );
+            }
+        } else {
+            mergeMetaIntoRevenueMap(
+                (metaAdsetRowsRaw ?? []).map((row) => ({
+                    source_name: row.adset_name,
+                    view_content: row.view_content,
+                    reach: row.reach,
+                    impressions: row.impressions,
+                    spend: row.spend,
+                    currency: row.currency,
+                })),
+                "meta (no utm_campaign)"
+            );
         }
     }
 
@@ -1159,6 +1278,7 @@ export async function GET(req: NextRequest) {
             from: range.from,
             to: range.to,
         },
+        campaigns_level: campaignLevel,
         funnel: funnelData,
         campaigns: revenueData,
         summary: {
