@@ -1,3 +1,4 @@
+/* Consolidated DS responsive layer: legacy media.css + product responsive overrides. */
 /* Desktop */
 @media (min-width: 1024px) {
   .container {
@@ -5,26 +6,26 @@
     padding-right: 48px;
   }
 
-  .s1 h3 {
+  .section-hero h3 {
     font-size: 24px;
   }
 
-  .s1 h1 {
+  .section-hero h1 {
     font-size: 52px;
   }
 
-  .s1 .container {
+  .section-hero .container {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-items: center;
     column-gap: 56px;
     row-gap: 0;
   }
 
-  .s1 .content {
+  .section-hero .content {
     grid-column: 1;
   }
 
-  .s1 .img.desk {
+  .section-hero .img.desk {
     grid-column: 2;
   }
 
@@ -32,46 +33,42 @@
 
 /* Tablet */
 @media (min-width: 601px) and (max-width: 1023px) {
-  section:not(.s1) h2 {
+  section:not(.section-hero) h2 {
     font-size: 32px;
   }
 
-  .s1 h3 {
+  .section-hero h3 {
     font-size: 24px;
   }
 
-  .s1 h1 {
+  .section-hero h1 {
     font-size: 52px;
   }
 
-  .s1 .container {
+  .section-hero .container {
     padding-left: 24px;
     padding-right: 24px;
     gap: 0;
   }
 
-  .s1 .img {
+  .section-hero .img {
     margin-top: 32px;
   }
 
-  .s4 .items {
+  .section-problem .items {
     grid-template-columns: repeat(2, 1fr);
-  }
-
-  .s8 .s8-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
 }
 
 /* Mobile */
 @media (max-width: 600px) {
-  section:not(.s1) h2 {
+  section:not(.section-hero) h2 {
     font-size: 30px;
     text-align: center;
   }
 
-  section:not(.s1) h3 {
+  section:not(.section-hero) h3 {
     font-size: 20px;
     line-height: 1.45;
     font-weight: 500;
@@ -92,7 +89,7 @@
     display: block !important;
   }
 
-  .s1 .img.mob {
+  .section-hero .img.mob {
     position: relative;
     width: 100%;
     height: auto;
@@ -103,25 +100,25 @@
     background: transparent;
   }
 
-  .s1 iframe.img.mob {
+  .section-hero iframe.img.mob {
     max-height: none;
     aspect-ratio: 16 / 9;
   }
 
-  .s1 .img {
+  .section-hero .img {
     width: 100%;
     max-width: 448px;
     margin-left: auto;
     margin-right: auto;
   }
 
-  .s1 h1 {
+  .section-hero h1 {
     font-size: 32px;
     line-height: 1.06;
     margin-top: 24px;
   }
 
-  .s1 h3 {
+  .section-hero h3 {
     font-size: 20px;
     line-height: 1.45;
     font-weight: 500;
@@ -146,18 +143,18 @@
     padding: 10px 12px;
   }
 
-  .s1 .s1-preprice {
+  .section-hero .section-hero-preprice {
     text-align: center;
   }
 
-  .s1 .benefits-block > p {
+  .section-hero .benefits-block > p {
     font-size: 18px;
     line-height: 1.6;
     color: #000000;
     font-weight: 500;
   }
 
-  .s1 .benefits-block {
+  .section-hero .benefits-block {
     margin-top: 24px;
   }
 
@@ -174,30 +171,30 @@
     line-height: 1;
   }
 
-  .s1 .price span {
+  .section-hero .price span {
     font-size: 30px;
   }
 
-  .s1 #divprice .price-stack {
+  .section-hero #divprice .price-stack {
     justify-content: center;
     gap: 8px;
   }
 
-  .s1 .price .price-old {
+  .section-hero .price .price-old {
     font-size: 22px;
   }
 
-  .s1 .price .price-current {
+  .section-hero .price .price-current {
     font-size: 32px;
   }
 
-  .s1 #divprice .price-note {
+  .section-hero #divprice .price-note {
     font-size: 14px;
     font-weight: 400;
     line-height: 1.4;
   }
 
-  .s1 #divprice .openModal {
+  .section-hero #divprice .openModal {
     width: 100%;
     max-width: 100%;
     padding: 10px 32px;
@@ -223,33 +220,33 @@
     padding-right: 16px;
   }
 
-  .s1::after {
+  .section-hero::after {
     display: none;
   }
 
-  .s1 .container {
+  .section-hero .container {
     padding-left: 20px;
     padding-right: 20px;
     gap: 0;
   }
 
-  .s1 #divprice {
+  .section-hero #divprice {
     flex-direction: column;
     align-items: center;
     text-align: center;
     gap: 0;
   }
 
-  .s1 #divprice .price-note,
-  .s1 #divprice .cta-note {
+  .section-hero #divprice .price-note,
+  .section-hero #divprice .cta-note {
     text-align: center;
   }
 
-  .s1 #divprice .price-note-row {
+  .section-hero #divprice .price-note-row {
     justify-content: center;
   }
 
-  .s1 #divprice p {
+  .section-hero #divprice p {
     font-size: 12px;
     white-space: normal;
     text-align: center;
@@ -258,11 +255,11 @@
     width: 100%;
   }
 
-  .s2 h2 {
+  .section-solution h2 {
     margin-bottom: 16px;
   }
 
-  .s2 p {
+  .section-solution p {
 	margin-bottom: 24px;
   }
 
@@ -304,68 +301,9 @@
     text-align: center;
   }
 
-  .s4 .items {
+  .section-problem .items {
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
-  }
-
-  .s55 .s55-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .s55 .s55-text {
-    text-align: left;
-    padding-right: 0;
-    width: 100%;
-    max-width: 520px;
-    margin-left: auto;
-    margin-right: auto;
-  }
-
-  .s55 img {
-    position: relative;
-    width: 100%;
-    max-width: 360px;
-    right: 0;
-    top: auto;
-    transform: none;
-    display: block;
-  }
-
-  .s55 h2 {
-    text-align: center;
-    display: block;
-  }
-
-  .s55 p,
-  .s55 ul {
-    text-align: left;
-  }
-
-  .s8 .lesson {
-    padding: 5px 10px;
-    font-size: 14px;
-  }
-
-  .s8 .items {
-    padding: 18px;
-    width: 100%;
-    max-width: 100%;
-  }
-
-  .s8 .s8-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
-  }
-
-  .s3 h2 {
-    text-align: center;
-    width: 100%;
-  }
-
-  .s11 .openModal {
-    width: 100%;
-    max-width: 100%;
   }
 
   .grid-item {
@@ -434,5 +372,90 @@
     width: 32px;
     height: 32px;
     display: block;
+  }
+}
+
+
+/* Product responsive overrides */
+@media (min-width: 64rem) {
+  .section-hero .container {
+    max-width: var(--ds-container-max);
+  }
+}
+
+@media (min-width: 37.5625rem) and (max-width: 63.9375rem) {
+  .section-program,
+  .section-format,
+  .section-proof,
+  .section-expert,
+  .section-offer,
+  .section-faq {
+    padding-inline: var(--ds-space-4);
+  }
+
+  .section-program .s8-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 37.5rem) {
+  .section-expert .s55-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .section-expert .s55-text {
+    text-align: left;
+    padding-right: 0;
+    width: 100%;
+    max-width: 520px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .section-expert .s55-image {
+    position: relative;
+    width: 100%;
+    max-width: 360px;
+    right: 0;
+    top: auto;
+    transform: none;
+    display: block;
+  }
+
+  .section-expert h2 {
+    text-align: center;
+    display: block;
+  }
+
+  .section-expert p,
+  .section-expert ul {
+    text-align: left;
+  }
+
+  .section-program .lesson {
+    padding: 5px 10px;
+    font-size: 14px;
+  }
+
+  .section-program .items {
+    padding: 18px;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .section-program .s8-grid {
+    grid-template-columns: 1fr;
+    gap: 16px;
+  }
+
+  .section-proof h2 {
+    text-align: center;
+    width: 100%;
+  }
+
+  .section-hero .openModal,
+  .section-offer .openModal,
+  [data-sticky-menu] .openModal {
+    width: 100%;
   }
 }

@@ -8,6 +8,7 @@
     "start": "next start -p 8000",
     "lint": "eslint src next.config.ts eslint.config.mjs",
     "tokens:build": "node scripts/generate-design-tokens.mjs",
+    "guard:ds-contract": "node scripts/guard-ds-contract.mjs",
     "generator:validate": "node scripts/generator-validate.mjs",
     "guard:rhythm": "node scripts/guard-rhythm-grid.mjs",
     "generator:snapshot": "node scripts/generator-build-snapshots.mjs",
@@ -32,6 +33,11 @@
     "smoke:dosha:userflows": "node scripts/smoke-dosha-userflows.mjs",
     "smoke:dosha:responsive": "node scripts/smoke-dosha-responsive.mjs",
     "smoke:dosha:brand-fit": "node scripts/smoke-dosha-brand-fit.mjs",
+    "smoke:landing:short-irem": "node scripts/smoke-landing-short-irem.mjs",
+    "smoke:landing:qa": "npm run smoke:landing:short-irem",
+    "ds:qa": "npm run guard:ds-contract && npm run lint",
+    "ds:qa:landing": "npm run guard:ds-contract && npm run smoke:landing:qa",
+    "smoke:dosha:route": "npm run smoke:dosha:userflows && npm run smoke:dosha:brand-fit",
     "smoke:dosha:qa": "npm run smoke:dosha:result && npm run smoke:dosha:api && npm run smoke:dosha:userflows && npm run smoke:dosha:responsive && npm run smoke:dosha:brand-fit"
   },
   "dependencies": {

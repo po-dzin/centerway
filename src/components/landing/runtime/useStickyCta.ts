@@ -17,11 +17,11 @@ export function useStickyCta(config: StickyConfig = {}) {
   useEffect(() => {
     const sticky = document.getElementById(stickyId);
     const heroCta = document.querySelector<HTMLElement>(heroSelector);
-    const staticCtas = Array.from(document.querySelectorAll<HTMLElement>(staticCtaSelector));
 
     if (!sticky || !heroCta) return;
 
     const shouldShowSticky = () => {
+      const staticCtas = Array.from(document.querySelectorAll<HTMLElement>(staticCtaSelector));
       const heroRect = heroCta.getBoundingClientRect();
       const heroOutOfView = heroRect.bottom <= 0;
       const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;

@@ -39,7 +39,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="uk" suppressHydrationWarning>
       <body className={`${manrope.variable} ${cormorant.variable} ${ibmPlexMono.variable}`} suppressHydrationWarning>
         {children}
       </body>

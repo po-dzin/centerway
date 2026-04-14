@@ -174,6 +174,27 @@ async function checkRuntimeSemantics() {
       return;
     }
 
+    const authGateHeading = page.getByRole("heading", { name: /Увійдіть, щоб пройти тест доші/i }).first();
+    const introPromiseText = page.getByText("12 питань", { exact: false }).first();
+    await Promise.race([
+      authGateHeading.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),
+      introPromiseText.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),
+    ]);
+
+    const authGateVisible = await authGateHeading.isVisible().catch(() => false);
+    if (authGateVisible) {
+      const authCtaVisible = (await page.getByRole("button", { name: /Увійти через Google/i }).count()) > 0;
+      if (authCtaVisible) {
+        points = 40;
+        details.push("auth gate contract: heading + Google CTA present (40/40)");
+      } else {
+        points = 30;
+        details.push("auth gate contract: heading present, CTA missing (30/40)");
+      }
+      addSection("Runtime semio/ux signals", points, 40, details);
+      return;
+    }
+
     const introChecks = [
       "12 питань",
       "Як це працює",

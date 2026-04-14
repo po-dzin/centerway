@@ -414,7 +414,6 @@ export function validateBlockManifests(input: unknown): BlockManifest[] {
     if (renderMode && !["visual", "semantic-only"].includes(renderMode)) {
       throw new Error(`block_manifest_invalid_render_mode:${id}:${renderMode}`);
     }
-
     return {
       id,
       version,
@@ -459,7 +458,6 @@ export function validateScreens(input: unknown): ScreenManifest[] {
     if (!CANONICAL_ARCHETYPES.has(archetype as ArchetypeContract["archetype"])) {
       throw new Error(`screen_manifest_invalid_archetype:${id}:${archetype}`);
     }
-
     if (!Array.isArray(entry.blocks) || entry.blocks.length === 0) {
       throw new Error(`screen_manifest_invalid_blocks:${id}`);
     }

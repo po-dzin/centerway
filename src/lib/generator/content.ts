@@ -26,6 +26,8 @@ export type RouteMapItem = {
   text: string;
   icon: EthnoIconName;
   status?: "done" | "active" | "next";
+  href?: string;
+  ctaLabel?: string;
 };
 
 export type RouteLink = {
@@ -48,7 +50,6 @@ export type RouteContent = {
   nextBestRoute: RouteLink;
   resourceEntry: RouteLink;
   offerDefinition: { title: string; text: string };
-  offerIncludes: string[];
   offerIncludeClusters: OfferIncludeCluster[];
   priceLabel: string;
   priceValue: number;

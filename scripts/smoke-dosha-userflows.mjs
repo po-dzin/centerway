@@ -142,6 +142,29 @@ async function main() {
     }
     pass(`/dosha-test: status ${response.status()}`);
 
+    const authGateHeading = page.getByRole("heading", { name: /Увійдіть, щоб пройти тест доші/i }).first();
+    const introPromiseText = page.getByText("12 питань", { exact: false }).first();
+    await Promise.race([
+      authGateHeading.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),
+      introPromiseText.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),
+    ]);
+
+    const isAuthGate = await authGateHeading.isVisible().catch(() => false);
+    if (isAuthGate) {
+      pass("visible: auth gate heading");
+      await assertVisible(page, "Увійти через Google", "auth gate primary cta");
+      if (pageErrors.length > 0) {
+        for (const err of pageErrors) {
+          fail(`pageerror: ${err}`);
+        }
+      } else {
+        pass("no pageerror events");
+      }
+      if (process.exitCode) process.exit(process.exitCode);
+      console.log("Dosha userflow smoke passed (auth-gated route)");
+      return;
+    }
+
     await assertVisible(page, "12 питань", "intro promise");
     await assertVisible(page, "Як це працює", "intro how-it-works");
     await assertVisible(page, "Почати тест", "intro primary cta");

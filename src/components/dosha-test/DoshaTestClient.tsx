@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import type { DoshaResultType } from "@/lib/doshaTest";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
@@ -37,6 +37,20 @@ type CompleteResponse = {
   scores: { vata: number; pitta: number; kapha: number };
   completedAt?: string;
   nextStep?: string;
+};
+
+type UserDoshaProfileResponse = {
+  userId: string;
+  profile: {
+    attemptId: string;
+    testId: string;
+    testSlug: string;
+    testVersion: string;
+    resultType: DoshaResultType;
+    scores: { vata: number; pitta: number; kapha: number };
+    completedAt: string | null;
+    version: string;
+  } | null;
 };
 
 type DraftState = {
@@ -148,6 +162,12 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
   const [resultViewedSent, setResultViewedSent] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [isDoshaInfoOpen, setIsDoshaInfoOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [profileView, setProfileView] = useState<"profile" | "result">("profile");
+  const [userDoshaProfile, setUserDoshaProfile] = useState<UserDoshaProfileResponse["profile"] | null>(null);
+  const [isProfileLoading, setIsProfileLoading] = useState(false);
+  const [profileError, setProfileError] = useState<string | null>(null);
+  const profileMenuRef = useRef<HTMLDivElement | null>(null);
 
   const currentQuestion = useMemo(
     () => getCurrentQuestion(questions, currentQuestionIndex),
@@ -212,22 +232,10 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     }).catch(() => undefined);
   }, [attemptId, generatorContext?.assignment_source, generatorContext?.branch, generatorContext?.experiment_key, generatorContext?.manifest_id, generatorContext?.manifest_version, generatorContext?.mode, generatorContext?.recipe_version, generatorContext?.variant_key, phase, uiVariant]);
 
-  const syncPlatformUser = useCallback(async (accessToken: string) => {
-    await fetch("/api/platform/users/sync", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }).catch(() => undefined);
-  }, []);
-
   useEffect(() => {
     const bootAuth = async () => {
       const { data } = await supabaseClient.auth.getSession();
       setSession(data.session);
-      if (data.session?.access_token) {
-        await syncPlatformUser(data.session.access_token);
-      }
     };
     void bootAuth();
 
@@ -235,13 +243,10 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
       data: { subscription },
     } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
-      if (nextSession?.access_token) {
-        void syncPlatformUser(nextSession.access_token);
-      }
     });
 
     return () => subscription.unsubscribe();
-  }, [syncPlatformUser]);
+  }, []);
 
   const loadDefinition = useCallback(async (): Promise<TestDefinitionResponse | null> => {
     const readJson = async (response: Response) => {
@@ -434,14 +439,59 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     }
   }, [answers, completeTest, getOrCreateSessionId, isBusy, saveDraft, totalQuestions]);
 
-  const signInWithGoogle = useCallback(async () => {
-    await supabaseClient.auth.signInWithOAuth({
-      provider: "google",
-      options: {
-        redirectTo: `${window.location.origin}/dosha-test`,
-      },
-    });
+  useEffect(() => {
+    if (!isProfileMenuOpen) return;
+    const handleOutsideClick = (event: MouseEvent) => {
+      if (!profileMenuRef.current) return;
+      if (!profileMenuRef.current.contains(event.target as Node)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleOutsideClick);
+    return () => document.removeEventListener("mousedown", handleOutsideClick);
+  }, [isProfileMenuOpen]);
+
+  const loadMyDoshaProfile = useCallback(async () => {
+    if (!session?.access_token) return;
+    setIsProfileLoading(true);
+    setProfileError(null);
+    try {
+      const response = await fetch("/api/platform/users/me/dosha", {
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      if (!response.ok) {
+        setProfileError("Не вдалося завантажити профіль.");
+        return;
+      }
+      const data = (await response.json()) as UserDoshaProfileResponse;
+      setUserDoshaProfile(data.profile ?? null);
+    } catch {
+      setProfileError("Не вдалося завантажити профіль.");
+    } finally {
+      setIsProfileLoading(false);
+    }
+  }, [session?.access_token]);
+
+  const handleOpenProfileMenu = useCallback(async () => {
+    const nextState = !isProfileMenuOpen;
+    setIsProfileMenuOpen(nextState);
+    if (nextState && !userDoshaProfile && !isProfileLoading) {
+      await loadMyDoshaProfile();
+    }
+  }, [isProfileLoading, isProfileMenuOpen, loadMyDoshaProfile, userDoshaProfile]);
+
+  const handleSignOut = useCallback(async () => {
+    setIsProfileMenuOpen(false);
+    await supabaseClient.auth.signOut();
   }, []);
+
+  const resultTypeLabel = useMemo(() => {
+    if (resultType) return RESULT_COPY[resultType].title;
+    if (userDoshaProfile?.resultType) return RESULT_COPY[userDoshaProfile.resultType].title;
+    return null;
+  }, [resultType, userDoshaProfile?.resultType]);
 
   const progress = Math.min(100, Math.round((Math.max(0, currentQuestionIndex - 1) / totalQuestions) * 100));
   const resultCopy = resultType ? RESULT_COPY[resultType] : null;
@@ -449,7 +499,8 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
 
   return (
     <main
-      className="min-h-dvh select-none px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 md:flex md:flex-col"
+      data-dosha-test="true"
+      className="cw-dosha-shell min-h-dvh select-none px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8 md:flex md:items-center md:justify-center"
       style={{
         fontFamily: testFontFamily,
         userSelect: "none",
@@ -458,15 +509,118 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
           "radial-gradient(1200px circle at 12% -18%, color-mix(in srgb, var(--cw-status-pending) 28%, transparent), transparent 52%), radial-gradient(1000px circle at 86% 12%, color-mix(in srgb, var(--cw-status-success) 26%, transparent), transparent 46%), linear-gradient(180deg, color-mix(in srgb, var(--cw-bg) 88%, #ffffff 12%) 0%, var(--cw-bg) 100%)",
       }}
     >
-      <section className="mx-auto max-w-2xl md:my-auto md:w-full">
+      <section className="mx-auto w-full max-w-2xl">
         <div
-          className="rounded-[2rem] border p-6 backdrop-blur-md sm:p-8"
+          className="relative rounded-[2rem] border p-6 backdrop-blur-md sm:p-8"
           style={{
             borderColor: "color-mix(in srgb, var(--cw-border) 88%, #ffffff 12%)",
             background: "color-mix(in srgb, var(--cw-surface) 78%, #ffffff 22%)",
             boxShadow: "0 18px 50px color-mix(in srgb, #161410 12%, transparent)",
           }}
         >
+          <div className="absolute right-4 top-4 z-20" ref={profileMenuRef}>
+            <button
+              type="button"
+              title="Профіль"
+              aria-label="Профіль"
+              onClick={() => {
+                void handleOpenProfileMenu();
+              }}
+              className="cw-btn-outline inline-flex h-11 w-11 items-center justify-center rounded-full motion-reduce:transition-none"
+              style={{
+                borderColor: "var(--cw-border)",
+                background: "color-mix(in srgb, var(--cw-surface-solid) 94%, #ffffff 6%)",
+                color: "var(--cw-text)",
+              }}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M20 21a8 8 0 0 0-16 0" />
+                <circle cx="12" cy="7" r="4" />
+              </svg>
+            </button>
+
+            {isProfileMenuOpen && (
+              <div
+                className="mt-2 w-72 rounded-2xl border p-3 shadow-lg"
+                style={{
+                  borderColor: "var(--cw-border)",
+                  background: "color-mix(in srgb, var(--cw-surface-solid) 96%, #ffffff 4%)",
+                }}
+              >
+                <div className="mb-3 flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setProfileView("profile")}
+                    className="cw-btn-outline inline-flex min-h-11 flex-1 items-center justify-center px-3 text-xs font-semibold"
+                    style={{ color: "var(--cw-text)" }}
+                  >
+                    Профіль
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProfileView("result")}
+                    className="cw-btn-outline inline-flex min-h-11 flex-1 items-center justify-center px-3 text-xs font-semibold"
+                    style={{ color: "var(--cw-text)" }}
+                  >
+                    Результат
+                  </button>
+                </div>
+
+                {profileView === "profile" && (
+                  <div className="space-y-2 text-xs" style={{ color: "var(--cw-muted)" }}>
+                    <p><span className="font-semibold" style={{ color: "var(--cw-text)" }}>Email:</span> {session?.user?.email ?? "—"}</p>
+                    <p><span className="font-semibold" style={{ color: "var(--cw-text)" }}>ID:</span> {session?.user?.id ?? "—"}</p>
+                  </div>
+                )}
+
+                {profileView === "result" && (
+                  <div className="space-y-2 text-xs" style={{ color: "var(--cw-muted)" }}>
+                    {isProfileLoading ? <p>Завантаження...</p> : null}
+                    {profileError ? <p style={{ color: "var(--cw-danger)" }}>{profileError}</p> : null}
+                    {!isProfileLoading && !profileError && resultTypeLabel ? (
+                      <>
+                        <p>
+                          <span className="font-semibold" style={{ color: "var(--cw-text)" }}>Поточний профіль:</span>{" "}
+                          {resultTypeLabel}
+                        </p>
+                        <p>
+                          <span className="font-semibold" style={{ color: "var(--cw-text)" }}>Рахунок:</span>{" "}
+                          Вата {scores.vata || userDoshaProfile?.scores.vata || 0} •
+                          {" "}Пітта {scores.pitta || userDoshaProfile?.scores.pitta || 0} •
+                          {" "}Капха {scores.kapha || userDoshaProfile?.scores.kapha || 0}
+                        </p>
+                      </>
+                    ) : null}
+                    {!isProfileLoading && !profileError && !resultTypeLabel ? (
+                      <p>Результат ще недоступний. Пройдіть тест до кінця.</p>
+                    ) : null}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    void loadMyDoshaProfile();
+                  }}
+                  className="cw-btn-ghost mt-3 inline-flex min-h-11 w-full items-center justify-center px-3 text-xs font-semibold"
+                  style={{ color: "var(--cw-text)" }}
+                >
+                  Оновити дані
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    void handleSignOut();
+                  }}
+                  className="cw-btn-primary mt-2 inline-flex min-h-11 w-full items-center justify-center px-3 text-xs font-semibold"
+                >
+                  Вийти
+                </button>
+              </div>
+            )}
+          </div>
+
           {phase === "intro" && (
             <div className="space-y-6">
               <div className="flex items-start justify-between gap-3">
@@ -480,25 +634,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                 >
                   12 питань • ~2 хв
                 </span>
-                <button
-                  type="button"
-                  title={session?.user ? "Профіль" : "Увійти через обліковий запис"}
-                  aria-label={session?.user ? "Профіль" : "Увійти через обліковий запис"}
-                  onClick={() => {
-                    if (!session?.user) void signInWithGoogle();
-                  }}
-                  className="cw-btn-outline inline-flex h-11 w-11 items-center justify-center rounded-full motion-reduce:transition-none"
-                  style={{
-                    borderColor: "var(--cw-border)",
-                    background: "color-mix(in srgb, var(--cw-surface-solid) 94%, #ffffff 6%)",
-                    color: "var(--cw-text)",
-                  }}
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                    <path d="M20 21a8 8 0 0 0-16 0" />
-                    <circle cx="12" cy="7" r="4" />
-                  </svg>
-                </button>
+                <span className="inline-flex h-11 w-11" aria-hidden="true" />
               </div>
 
               <div className="space-y-3">

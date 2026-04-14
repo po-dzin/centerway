@@ -1,0 +1,53 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: var(--ds-font-family-base);
+  color: var(--ds-color-text);
+  background: var(--ds-color-bg-canvas);
+  line-height: var(--ds-line-height-body);
+}
+
+img,
+iframe {
+  max-width: 100%;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible {
+  outline: 0.125rem solid var(--ds-color-accent);
+  outline-offset: 0.125rem;
+}
+
+.container {
+  width: 100%;
+  max-width: var(--ds-container-max);
+  margin: 0 auto;
+}
+
+.section-hero,
+.section-problem,
+.section-solution,
+.section-program,
+.section-format,
+.section-proof,
+.section-expert,
+.section-offer,
+.section-faq {
+  position: relative;
+}
