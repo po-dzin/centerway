@@ -122,6 +122,8 @@ function syncUrl(profile: DepthProfile, percent: number, theme: ThemeKey) {
   url.searchParams.set(QUERY_PROFILE, profile);
   url.searchParams.set(QUERY_PERCENT, String(clampPercent(percent)));
   url.searchParams.set(QUERY_THEME, theme);
+  url.searchParams.delete("cw_layout");
+  url.searchParams.delete("layout");
   window.history.replaceState(null, "", `${url.pathname}?${url.searchParams.toString()}${url.hash}`);
 }
 

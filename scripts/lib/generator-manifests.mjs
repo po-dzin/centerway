@@ -409,7 +409,6 @@ export function validateGeneratorManifests(manifests) {
     if (renderMode) {
       assert(VALID_RENDER_MODES.has(renderMode), `block_manifest_invalid_render_mode:${id}:${renderMode}`);
     }
-
     const semanticBlock = semanticBlockById.get(semanticBlockId);
     assert(semanticBlock, `block_manifest_missing_semantic_block:${id}:${semanticBlockId}`);
     assert(semanticBlock.version === semanticBlockVersion, `block_manifest_semantic_version_mismatch:${id}`);

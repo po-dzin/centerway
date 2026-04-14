@@ -7,7 +7,7 @@ export const cwGeneratorSnapshots = [
     "mode": "consult",
     "route_key": "consult",
     "screen_id": "screen.consult.v1.control",
-    "screen_version": "1.1.0",
+    "screen_version": "1.2.0",
     "variant_key": "control"
   },
   {
@@ -17,7 +17,7 @@ export const cwGeneratorSnapshots = [
     "mode": "consult",
     "route_key": "consult",
     "screen_id": "screen.consult.v1.warm_route",
-    "screen_version": "1.1.0",
+    "screen_version": "1.2.0",
     "variant_key": "warm_route"
   },
   {
@@ -27,7 +27,7 @@ export const cwGeneratorSnapshots = [
     "mode": "detox",
     "route_key": "detox",
     "screen_id": "screen.detox.v1.control",
-    "screen_version": "1.1.0",
+    "screen_version": "1.2.0",
     "variant_key": null
   },
   {
@@ -37,7 +37,7 @@ export const cwGeneratorSnapshots = [
     "mode": "herbs",
     "route_key": "herbs",
     "screen_id": "screen.herbs.v1.control",
-    "screen_version": "1.1.0",
+    "screen_version": "1.2.0",
     "variant_key": null
   },
   {
@@ -47,7 +47,7 @@ export const cwGeneratorSnapshots = [
     "mode": "support",
     "route_key": "dosha-test",
     "screen_id": "screen.dosha-test.v1.control",
-    "screen_version": "1.1.0",
+    "screen_version": "1.3.0",
     "variant_key": "control"
   },
   {
@@ -57,7 +57,7 @@ export const cwGeneratorSnapshots = [
     "mode": "support",
     "route_key": "dosha-test",
     "screen_id": "screen.dosha-test.v1.routecopy",
-    "screen_version": "1.1.0",
+    "screen_version": "1.3.0",
     "variant_key": "routecopy"
   },
   {

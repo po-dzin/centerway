@@ -62,6 +62,33 @@ function ctaClassForRoute(route: FunnelRouteKey) {
   return route === "consult" ? "js-consult-cta" : "js-detox-cta";
 }
 
+function FunnelPricingCard({ route, ctaPrimaryLabel }: { route: FunnelRouteKey; ctaPrimaryLabel: string }) {
+  const content = getFunnelContent(route);
+  const ctaClass = ctaClassForRoute(route);
+  const isFree = content.priceValue <= 0;
+
+  return (
+    <div className="cw3-pricing cw3-pricing-emphasis pricing-card" data-price-value={content.priceValue}>
+      <p className="cw3-pricing-label">{content.priceLabel}</p>
+      <p className="cw3-pricing-value">
+        {isFree ? (
+          "Безкоштовно"
+        ) : (
+          <>
+            <span className="js-price-value">{content.priceValue.toLocaleString("uk-UA")}</span> грн
+          </>
+        )}
+      </p>
+      <p className="cw3-pricing-note">
+        {isFree ? "Безкоштовний стартовий формат без прихованих доплат." : "Фіксований стартовий формат без прихованих доплат."}
+      </p>
+      <a className={`cw3-btn cw3-btn-primary ${ctaClass}`} data-cta-place="pricing" href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer">
+        {ctaPrimaryLabel}
+      </a>
+    </div>
+  );
+}
+
 function useRouteRuntime(route: FunnelRouteKey, generatorContext?: GeneratorAnalyticsContext) {
   const map = {
     consult: {
@@ -131,9 +158,10 @@ export function FunnelRouteFramingSection({ route }: BaseProps) {
   const content = getFunnelContent(route);
 
   return (
-    <section className="cw3-section cw3-screen cw3-screen-fit reveal">
+    <section className="cw3-section cw3-screen cw3-screen-route reveal">
       <div className="cw3-container">
         <div className="cw3-section-head">
+          <p className="cw3-rail-label">Підбір</p>
           <h2>{content.routeTitle}</h2>
           <p>Три сценарії, де маршрут дає найбільшу практичну користь уже в першому циклі.</p>
         </div>
@@ -157,36 +185,35 @@ export function FunnelRouteMapSection({ route }: BaseProps) {
   const content = getFunnelContent(route);
 
   return (
-    <section className="cw3-section cw3-screen-continue cw3-screen-fit-tail cw3-flow-cluster cw3-flow-mid reveal">
+    <section className="cw3-section cw3-screen-continue cw3-screen-route-tail cw3-flow-cluster cw3-flow-mid reveal">
       <div className="cw3-container">
         <div className="cw3-section-head">
+          <p className="cw3-rail-label">Продовження маршруту</p>
           <h2>{content.routeMapTitle}</h2>
           <p>{content.routeMapLead}</p>
         </div>
-        <div className="cw3-grid cw3-grid-2 cw3-ecosystem-grid">
-          <ol className="cw3-route-map">
-            {content.routeMap.map((step) => (
-              <li key={step.phase + step.title} className={`cw3-route-map-item cw3-route-map-${step.status ?? "next"}`}>
-                <span className="cw3-route-map-icon" aria-hidden="true">
-                  <EthnoIcon name={step.icon} />
-                </span>
-                <div>
-                  <p className="cw3-route-map-phase">{step.phase}</p>
-                  <h3>{step.title}</h3>
-                  <p>{step.text}</p>
+        <ol className="cw3-route-map">
+          {content.routeMap.map((step) => (
+            <li key={step.phase + step.title} className={`cw3-route-map-item cw3-route-map-${step.status ?? "next"}`}>
+              <span className="cw3-route-map-icon" aria-hidden="true">
+                <EthnoIcon name={step.icon} />
+              </span>
+              <div>
+                <p className="cw3-route-map-phase">{step.phase}</p>
+                <h3>{step.title}</h3>
+                <p>{step.text}</p>
+                <div className="cw3-route-map-actions">
+                  {step.status === "active" ? <span className="cw3-route-map-current">Ви зараз тут</span> : null}
+                  {step.href && step.ctaLabel ? (
+                    <a className="cw3-btn cw3-btn-ghost" href={step.href}>
+                      {step.ctaLabel}
+                    </a>
+                  ) : null}
                 </div>
-              </li>
-            ))}
-          </ol>
-          <article className="cw3-card cw3-card-support">
-            <p className="cw3-rail-label">Екосистема</p>
-            <h3>{content.nextBestRoute.title}</h3>
-            <p>{content.nextBestRoute.text}</p>
-            <a className="cw3-btn cw3-btn-ghost" href={content.nextBestRoute.href}>
-              {content.nextBestRoute.ctaLabel}
-            </a>
-          </article>
-        </div>
+              </div>
+            </li>
+          ))}
+        </ol>
       </div>
     </section>
   );
@@ -213,9 +240,10 @@ export function FunnelOfferDefinitionSection({ route }: BaseProps) {
   };
 
   return (
-    <section className="cw3-section cw3-screen-continue cw3-screen-fit-tail cw3-flow-cluster cw3-flow-start reveal">
+    <section className="cw3-section cw3-screen-continue cw3-screen-route-tail cw3-flow-cluster cw3-flow-start reveal">
       <div className="cw3-container">
         <div className="cw3-section-head">
+          <p className="cw3-rail-label">Результат</p>
           <h2>{content.offerDefinition.title}</h2>
           <p>{content.offerDefinition.text}</p>
         </div>
@@ -246,6 +274,7 @@ export function FunnelOfferIncludesSection({ route }: BaseProps) {
     <section className="cw3-section cw3-screen cw3-screen-offer cw3-flow-cluster cw3-flow-mid reveal">
       <div className="cw3-container">
         <div className="cw3-section-head">
+          <p className="cw3-rail-label">Склад продукту</p>
           <h2>Що входить</h2>
           <p>Кожен елемент має чітку роль: діагностика старту, маршрут дій і супровід впровадження.</p>
         </div>
@@ -270,25 +299,9 @@ export function FunnelOfferIncludesSection({ route }: BaseProps) {
 }
 
 export function FunnelFormatPriceSection({ route, ctaPrimaryLabel = "Записатися" }: BaseProps) {
-  const content = getFunnelContent(route);
-  const ctaClass = ctaClassForRoute(route);
-
-  return (
-    <section className="cw3-section cw3-screen-continue cw3-screen-offer-tail cw3-flow-cluster cw3-flow-end reveal" id="price">
-      <div className="cw3-container">
-        <div className="cw3-pricing cw3-pricing-emphasis pricing-card" data-price-value={content.priceValue}>
-          <p className="cw3-pricing-label">{content.priceLabel}</p>
-          <p className="cw3-pricing-value">
-            <span className="js-price-value">{content.priceValue.toLocaleString("uk-UA")}</span> грн
-          </p>
-          <p className="cw3-pricing-note">Фіксований стартовий формат без прихованих доплат.</p>
-          <a className={`cw3-btn cw3-btn-primary ${ctaClass}`} data-cta-place="pricing" href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer">
-            {ctaPrimaryLabel}
-          </a>
-        </div>
-      </div>
-    </section>
-  );
+  void route;
+  void ctaPrimaryLabel;
+  return null;
 }
 
 export function FunnelHowItWorksSection({ route }: BaseProps) {
@@ -299,15 +312,22 @@ export function FunnelHowItWorksSection({ route }: BaseProps) {
     herbs: "Як проходить трав'яний трек",
   };
   const leadByRoute: Record<FunnelRouteKey, string> = {
-    consult: "Три послідовні кроки сесії: скринінг, діагностика і персональний план дій.",
-    detox: "Три фази програми: підготовка, робочий цикл і інтеграція результату.",
-    herbs: "Три фази треку: оцінка старту, схема застосування та адаптація.",
+    consult: "Структура сесії: скринінг, діагностика і персональний план дій.",
+    detox: "Структура програми: підготовка, робочий цикл і інтеграція результату.",
+    herbs: "Структура треку: оцінка старту, схема застосування та адаптація.",
+  };
+
+  const ctaPrimaryLabelByRoute: Record<FunnelRouteKey, string> = {
+    consult: "Записатися",
+    detox: "Записатися",
+    herbs: "Записатися",
   };
 
   return (
-    <section className="cw3-section cw3-screen cw3-screen-method cw3-section-muted cw3-flow-cluster cw3-flow-start reveal">
+    <section className="cw3-section cw3-screen cw3-screen-method cw3-section-muted cw3-method-with-price cw3-flow-cluster cw3-flow-start reveal">
       <div className="cw3-container">
         <div className="cw3-section-head">
+          <p className="cw3-rail-label">Метод</p>
           <h2>{titleByRoute[route]}</h2>
           <p>{leadByRoute[route]}</p>
         </div>
@@ -324,6 +344,9 @@ export function FunnelHowItWorksSection({ route }: BaseProps) {
             </li>
           ))}
         </ol>
+        <div className="cw3-method-price-wrap">
+          <FunnelPricingCard route={route} ctaPrimaryLabel={ctaPrimaryLabelByRoute[route]} />
+        </div>
       </div>
     </section>
   );
@@ -341,6 +364,7 @@ export function FunnelProofSection({ route }: BaseProps) {
     <section className="cw3-section cw3-screen cw3-screen-trust cw3-flow-cluster cw3-flow-start reveal">
       <div className="cw3-container">
         <div className="cw3-section-head">
+          <p className="cw3-rail-label">Довіра</p>
           <h2>Доказовий контур маршруту</h2>
           <p>Підхід і практична реалізація пояснені прозоро, без обіцянок «універсального рішення».</p>
         </div>
@@ -377,6 +401,7 @@ export function FunnelBoundarySection({ route }: BaseProps) {
     <section className="cw3-section cw3-screen-continue cw3-screen-trust-mid cw3-flow-cluster cw3-flow-mid reveal">
       <div className="cw3-container">
         <div className="cw3-section-head">
+          <p className="cw3-rail-label">Межі</p>
           <h2>Межі та безпека</h2>
           <p>Це практичний маршрут підтримки. У ризикових або клінічних станах потрібен медичний супровід.</p>
         </div>
@@ -396,27 +421,8 @@ export function FunnelBoundarySection({ route }: BaseProps) {
 }
 
 export function FunnelResourceEntrySection({ route }: BaseProps) {
-  const content = getFunnelContent(route);
-
-  return (
-    <section className="cw3-section cw3-screen-continue cw3-screen-trust-mid cw3-flow-cluster cw3-flow-mid reveal">
-      <div className="cw3-container">
-        <article className="cw3-card cw3-card-support cw3-resource-entry">
-          <div className="cw3-card-icon-slot" aria-hidden="true">
-            <EthnoIcon name="spiral" />
-          </div>
-          <div className="cw3-resource-entry-copy">
-            <p className="cw3-rail-label">Вхідний ресурс</p>
-            <h3>{content.resourceEntry.title}</h3>
-            <p>{content.resourceEntry.text}</p>
-          </div>
-          <a className="cw3-btn cw3-btn-ghost" href={content.resourceEntry.href}>
-            {content.resourceEntry.ctaLabel}
-          </a>
-        </article>
-      </div>
-    </section>
-  );
+  void route;
+  return null;
 }
 
 export function FunnelNextStepSection({ route, ctaPrimaryLabel = "Записатися" }: BaseProps) {
@@ -424,25 +430,34 @@ export function FunnelNextStepSection({ route, ctaPrimaryLabel = "Записат
   const ctaClass = ctaClassForRoute(route);
 
   return (
-    <>
-      <section className="cw3-section cw3-screen-continue cw3-screen-trust-tail cw3-next-step cw3-flow-cluster cw3-flow-end reveal">
-        <div className="cw3-container">
-          <div className="cw3-section-head">
-            <h2>{content.nextStepTitle}</h2>
-            <p>{content.nextStepText}</p>
-          </div>
-          <div className="cw3-card cw3-card-strong cw3-nextstep-card">
-            <ul className="cw3-list cw3-nextstep-list">
-              {content.nextStepChecklist.map((item) => (
-                <li key={item}>{item}</li>
-              ))}
-            </ul>
-            <a className={`cw3-btn cw3-btn-primary ${ctaClass}`} data-cta-place="next_step" href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer">
-              {ctaPrimaryLabel}
-            </a>
-          </div>
+    <section className="cw3-section cw3-screen-continue cw3-screen-trust-tail cw3-next-step cw3-flow-cluster cw3-flow-end reveal">
+      <div className="cw3-container">
+        <div className="cw3-section-head">
+          <p className="cw3-rail-label">Комміт</p>
+          <h2>{content.nextStepTitle}</h2>
+          <p>{content.nextStepText}</p>
         </div>
-      </section>
+        <div className="cw3-card cw3-card-strong cw3-nextstep-card">
+          <ul className="cw3-list cw3-nextstep-list">
+            {content.nextStepChecklist.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+          <a className={`cw3-btn cw3-btn-primary ${ctaClass}`} data-cta-place="next_step" href={TELEGRAM_URL} target="_blank" rel="noopener noreferrer">
+            {ctaPrimaryLabel}
+          </a>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+export function FunnelFooterSticky({ route, ctaPrimaryLabel = "Записатися" }: BaseProps) {
+  const content = getFunnelContent(route);
+  const ctaClass = ctaClassForRoute(route);
+
+  return (
+    <>
       <footer className="cw3-footer">
         <div className="cw3-container">
           <p>{content.footerLabel}</p>
@@ -457,14 +472,40 @@ export function FunnelNextStepSection({ route, ctaPrimaryLabel = "Записат
   );
 }
 
-export function DoshaIntroSection() {
-  return null;
+type DoshaSemanticSectionProps = {
+  semanticKey?: string;
+  semanticLabel?: string;
+};
+
+function DoshaCompactSemanticSection({ semanticKey, semanticLabel }: DoshaSemanticSectionProps) {
+  return (
+    <section
+      data-cw-semantic-compact={semanticKey ?? "dosha.semantic"}
+      style={{
+        position: "absolute",
+        width: "1px",
+        height: "1px",
+        padding: 0,
+        margin: "-1px",
+        overflow: "hidden",
+        clip: "rect(0, 0, 0, 0)",
+        whiteSpace: "nowrap",
+        border: 0,
+      }}
+    >
+      {semanticLabel ?? "Dosha test semantic anchor"}
+    </section>
+  );
 }
 
-export function DoshaRouteFramingSection() {
-  return null;
+export function DoshaIntroSection(props: DoshaSemanticSectionProps) {
+  return <DoshaCompactSemanticSection {...props} />;
 }
 
-export function DoshaNextStepSection() {
-  return null;
+export function DoshaRouteFramingSection(props: DoshaSemanticSectionProps) {
+  return <DoshaCompactSemanticSection {...props} />;
+}
+
+export function DoshaNextStepSection(props: DoshaSemanticSectionProps) {
+  return <DoshaCompactSemanticSection {...props} />;
 }

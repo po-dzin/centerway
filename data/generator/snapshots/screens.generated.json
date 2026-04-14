@@ -22,16 +22,6 @@
         "recipe_version": "1.0.0"
       },
       {
-        "component_key": "funnel.route-map",
-        "id": "consult.route-map",
-        "props": {
-          "marker": "consult.route-map",
-          "route": "consult"
-        },
-        "recipe_id": "recipe.funnel.route-map.v1",
-        "recipe_version": "1.0.0"
-      },
-      {
         "component_key": "funnel.offer-definition",
         "id": "consult.offer-definition",
         "props": {
@@ -52,16 +42,6 @@
         "recipe_version": "1.0.0"
       },
       {
-        "component_key": "funnel.format-price",
-        "id": "consult.format-price",
-        "props": {
-          "marker": "consult.format-duration-price",
-          "route": "consult"
-        },
-        "recipe_id": "recipe.funnel.format-price.v1",
-        "recipe_version": "1.0.0"
-      },
-      {
         "component_key": "funnel.how-it-works",
         "id": "consult.how-it-works",
         "props": {
@@ -72,6 +52,16 @@
         "recipe_version": "1.0.0"
       },
       {
+        "component_key": "funnel.format-price",
+        "id": "consult.format-price",
+        "props": {
+          "marker": "consult.format-duration-price",
+          "route": "consult"
+        },
+        "recipe_id": "recipe.funnel.format-price.v1",
+        "recipe_version": "1.0.0"
+      },
+      {
         "component_key": "funnel.proof",
         "id": "consult.proof",
         "props": {
@@ -79,16 +69,6 @@
           "route": "consult"
         },
         "recipe_id": "recipe.funnel.proof.v1",
-        "recipe_version": "1.0.0"
-      },
-      {
-        "component_key": "funnel.resource-entry",
-        "id": "consult.resource-entry",
-        "props": {
-          "marker": "consult.resource-entry",
-          "route": "consult"
-        },
-        "recipe_id": "recipe.funnel.resource-entry.v1",
         "recipe_version": "1.0.0"
       },
       {
@@ -110,6 +90,16 @@
         },
         "recipe_id": "recipe.funnel.next-step.v1",
         "recipe_version": "1.0.0"
+      },
+      {
+        "component_key": "funnel.route-map",
+        "id": "consult.route-map",
+        "props": {
+          "marker": "consult.route-map",
+          "route": "consult"
+        },
+        "recipe_id": "recipe.funnel.route-map.v1",
+        "recipe_version": "1.0.0"
       }
     ],
     "branch": "consult",
@@ -122,7 +112,7 @@
     "mode": "consult",
     "route_key": "consult",
     "screen_id": "screen.consult.v1.control",
-    "screen_version": "1.1.0",
+    "screen_version": "1.2.0",
     "tokens": {
       "--cw-accent": "#A06F52",
       "--cw-accent-contrast": "#FFF9F4",
@@ -182,16 +172,6 @@
         "recipe_version": "1.0.0"
       },
       {
-        "component_key": "funnel.route-map",
-        "id": "consult.route-map",
-        "props": {
-          "marker": "consult.route-map",
-          "route": "consult"
-        },
-        "recipe_id": "recipe.funnel.route-map.v1",
-        "recipe_version": "1.0.0"
-      },
-      {
         "component_key": "funnel.offer-definition",
         "id": "consult.offer-definition",
         "props": {
@@ -212,16 +192,6 @@
         "recipe_version": "1.0.0"
       },
       {
-        "component_key": "funnel.format-price",
-        "id": "consult.format-price",
-        "props": {
-          "marker": "consult.format-duration-price",
-          "route": "consult"
-        },
-        "recipe_id": "recipe.funnel.format-price.v1",
-        "recipe_version": "1.0.0"
-      },
-      {
         "component_key": "funnel.how-it-works",
         "id": "consult.how-it-works",
         "props": {
@@ -232,6 +202,16 @@
         "recipe_version": "1.0.0"
       },
       {
+        "component_key": "funnel.format-price",
+        "id": "consult.format-price",
+        "props": {
+          "marker": "consult.format-duration-price",
+          "route": "consult"
+        },
+        "recipe_id": "recipe.funnel.format-price.v1",
+        "recipe_version": "1.0.0"
+      },
+      {
         "component_key": "funnel.proof",
         "id": "consult.proof",
         "props": {
@@ -239,16 +219,6 @@
           "route": "consult"
         },
         "recipe_id": "recipe.funnel.proof.v1",
-        "recipe_version": "1.0.0"
-      },
-      {
-        "component_key": "funnel.resource-entry",
-        "id": "consult.resource-entry",
-        "props": {
-          "marker": "consult.resource-entry",
-          "route": "consult"
-        },
-        "recipe_id": "recipe.funnel.resource-entry.v1",
         "recipe_version": "1.0.0"
       },
       {
@@ -270,6 +240,16 @@
         },
         "recipe_id": "recipe.funnel.next-step.v1",
         "recipe_version": "1.0.0"
+      },
+      {
+        "component_key": "funnel.route-map",
+        "id": "consult.route-map",
+        "props": {
+          "marker": "consult.route-map",
+          "route": "consult"
+        },
+        "recipe_id": "recipe.funnel.route-map.v1",
+        "recipe_version": "1.0.0"
       }
     ],
     "branch": "consult",
@@ -282,7 +262,7 @@
     "mode": "consult",
     "route_key": "consult",
     "screen_id": "screen.consult.v1.warm_route",
-    "screen_version": "1.1.0",
+    "screen_version": "1.2.0",
     "tokens": {
       "--cw-accent": "#A06F52",
       "--cw-accent-contrast": "#FFF9F4",
@@ -342,16 +322,6 @@
         "recipe_version": "1.0.0"
       },
       {
-        "component_key": "funnel.route-map",
-        "id": "detox.route-map",
-        "props": {
-          "marker": "detox.route-map",
-          "route": "detox"
-        },
-        "recipe_id": "recipe.funnel.route-map.v1",
-        "recipe_version": "1.0.0"
-      },
-      {
         "component_key": "funnel.offer-definition",
         "id": "detox.offer-definition",
         "props": {
@@ -372,16 +342,6 @@
         "recipe_version": "1.0.0"
       },
       {
-        "component_key": "funnel.format-price",
-        "id": "detox.format-price",
-        "props": {
-          "marker": "detox.format-duration-price",
-          "route": "detox"
-        },
-        "recipe_id": "recipe.funnel.format-price.v1",
-        "recipe_version": "1.0.0"
-      },
-      {
         "component_key": "funnel.how-it-works",
         "id": "detox.how-it-works",
         "props": {
@@ -392,6 +352,16 @@
         "recipe_version": "1.0.0"
       },
       {
+        "component_key": "funnel.format-price",
+        "id": "detox.format-price",
+        "props": {
+          "marker": "detox.format-duration-price",
+          "route": "detox"
+        },
+        "recipe_id": "recipe.funnel.format-price.v1",
+        "recipe_version": "1.0.0"
+      },
+      {
         "component_key": "funnel.proof",
         "id": "detox.proof",
         "props": {
@@ -399,16 +369,6 @@
           "route": "detox"
         },
         "recipe_id": "recipe.funnel.proof.v1",
-        "recipe_version": "1.0.0"
-      },
-      {
-        "component_key": "funnel.resource-entry",
-        "id": "detox.resource-entry",
-        "props": {
-          "marker": "detox.resource-entry",
-          "route": "detox"
-        },
-        "recipe_id": "recipe.funnel.resource-entry.v1",
         "recipe_version": "1.0.0"
       },
       {
@@ -430,6 +390,16 @@
         },
         "recipe_id": "recipe.funnel.next-step.v1",
         "recipe_version": "1.0.0"
+      },
+      {
+        "component_key": "funnel.route-map",
+        "id": "detox.route-map",
+        "props": {
+          "marker": "detox.route-map",
+          "route": "detox"
+        },
+        "recipe_id": "recipe.funnel.route-map.v1",
+        "recipe_version": "1.0.0"
       }
     ],
     "branch": "detox",
@@ -438,7 +408,7 @@
     "mode": "detox",
     "route_key": "detox",
     "screen_id": "screen.detox.v1.control",
-    "screen_version": "1.1.0",
+    "screen_version": "1.2.0",
     "tokens": {
       "--cw-accent": "#6F7A63",
       "--cw-accent-contrast": "#FFF9F4",
@@ -498,16 +468,6 @@
         "recipe_version": "1.0.0"
       },
       {
-        "component_key": "funnel.route-map",
-        "id": "herbs.route-map",
-        "props": {
-          "marker": "herbs.route-map",
-          "route": "herbs"
-        },
-        "recipe_id": "recipe.funnel.route-map.v1",
-        "recipe_version": "1.0.0"
-      },
-      {
         "component_key": "funnel.offer-definition",
         "id": "herbs.offer-definition",
         "props": {
@@ -528,16 +488,6 @@
         "recipe_version": "1.0.0"
       },
       {
-        "component_key": "funnel.format-price",
-        "id": "herbs.format-price",
-        "props": {
-          "marker": "herbs.format-duration-price",
-          "route": "herbs"
-        },
-        "recipe_id": "recipe.funnel.format-price.v1",
-        "recipe_version": "1.0.0"
-      },
-      {
         "component_key": "funnel.how-it-works",
         "id": "herbs.how-it-works",
         "props": {
@@ -548,6 +498,16 @@
         "recipe_version": "1.0.0"
       },
       {
+        "component_key": "funnel.format-price",
+        "id": "herbs.format-price",
+        "props": {
+          "marker": "herbs.format-duration-price",
+          "route": "herbs"
+        },
+        "recipe_id": "recipe.funnel.format-price.v1",
+        "recipe_version": "1.0.0"
+      },
+      {
         "component_key": "funnel.proof",
         "id": "herbs.proof",
         "props": {
@@ -555,16 +515,6 @@
           "route": "herbs"
         },
         "recipe_id": "recipe.funnel.proof.v1",
-        "recipe_version": "1.0.0"
-      },
-      {
-        "component_key": "funnel.resource-entry",
-        "id": "herbs.resource-entry",
-        "props": {
-          "marker": "herbs.resource-entry",
-          "route": "herbs"
-        },
-        "recipe_id": "recipe.funnel.resource-entry.v1",
         "recipe_version": "1.0.0"
       },
       {
@@ -586,6 +536,16 @@
         },
         "recipe_id": "recipe.funnel.next-step.v1",
         "recipe_version": "1.0.0"
+      },
+      {
+        "component_key": "funnel.route-map",
+        "id": "herbs.route-map",
+        "props": {
+          "marker": "herbs.route-map",
+          "route": "herbs"
+        },
+        "recipe_id": "recipe.funnel.route-map.v1",
+        "recipe_version": "1.0.0"
       }
     ],
     "branch": "herbs",
@@ -594,7 +554,7 @@
     "mode": "herbs",
     "route_key": "herbs",
     "screen_id": "screen.herbs.v1.control",
-    "screen_version": "1.1.0",
+    "screen_version": "1.2.0",
     "tokens": {
       "--cw-accent": "#7A856E",
       "--cw-accent-contrast": "#FFF9F4",
@@ -637,8 +597,9 @@
         "component_key": "dosha.intro",
         "id": "dosha.hero",
         "props": {
-          "marker": "dosha.hero",
-          "route": "dosha-test"
+          "route": "dosha-test",
+          "semanticKey": "dosha.hero",
+          "semanticLabel": "Dosha test intro semantic anchor"
         },
         "recipe_id": "recipe.dosha.intro.v1",
         "recipe_version": "1.0.0"
@@ -647,8 +608,9 @@
         "component_key": "dosha.route-framing",
         "id": "dosha.route-framing",
         "props": {
-          "marker": "dosha.route-framing",
-          "route": "dosha-test"
+          "route": "dosha-test",
+          "semanticKey": "dosha.route-framing",
+          "semanticLabel": "Dosha test route framing semantic anchor"
         },
         "recipe_id": "recipe.dosha.route-framing.v1",
         "recipe_version": "1.0.0"
@@ -666,8 +628,9 @@
         "component_key": "dosha.next-step",
         "id": "dosha.next-step",
         "props": {
-          "marker": "dosha.next-step",
-          "route": "dosha-test"
+          "route": "dosha-test",
+          "semanticKey": "dosha.next-step",
+          "semanticLabel": "Dosha test next-step semantic anchor"
         },
         "recipe_id": "recipe.dosha.next-step.v1",
         "recipe_version": "1.0.0"
@@ -683,7 +646,7 @@
     "mode": "support",
     "route_key": "dosha-test",
     "screen_id": "screen.dosha-test.v1.control",
-    "screen_version": "1.1.0",
+    "screen_version": "1.3.0",
     "tokens": {
       "--cw-accent": "#A06F52",
       "--cw-accent-contrast": "#FFF9F4",
@@ -727,8 +690,9 @@
         "component_key": "dosha.intro",
         "id": "dosha.hero",
         "props": {
-          "marker": "dosha.hero",
-          "route": "dosha-test"
+          "route": "dosha-test",
+          "semanticKey": "dosha.hero",
+          "semanticLabel": "Dosha test intro semantic anchor"
         },
         "recipe_id": "recipe.dosha.intro.v1",
         "recipe_version": "1.0.0"
@@ -737,8 +701,9 @@
         "component_key": "dosha.route-framing",
         "id": "dosha.route-framing",
         "props": {
-          "marker": "dosha.route-framing",
-          "route": "dosha-test"
+          "route": "dosha-test",
+          "semanticKey": "dosha.route-framing",
+          "semanticLabel": "Dosha test route framing semantic anchor"
         },
         "recipe_id": "recipe.dosha.route-framing.v1",
         "recipe_version": "1.0.0"
@@ -756,8 +721,9 @@
         "component_key": "dosha.next-step",
         "id": "dosha.next-step",
         "props": {
-          "marker": "dosha.next-step",
-          "route": "dosha-test"
+          "route": "dosha-test",
+          "semanticKey": "dosha.next-step",
+          "semanticLabel": "Dosha test next-step semantic anchor"
         },
         "recipe_id": "recipe.dosha.next-step.v1",
         "recipe_version": "1.0.0"
@@ -773,7 +739,7 @@
     "mode": "support",
     "route_key": "dosha-test",
     "screen_id": "screen.dosha-test.v1.routecopy",
-    "screen_version": "1.1.0",
+    "screen_version": "1.3.0",
     "tokens": {
       "--cw-accent": "#A06F52",
       "--cw-accent-contrast": "#FFF9F4",

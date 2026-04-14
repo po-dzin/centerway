@@ -513,35 +513,37 @@
     },
     {
       "id": "block.dosha.hero.v1",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "semantic_block_id": "sb.hero_entry_definition.v1",
       "semantic_block_version": "1.0.0",
+      "render_mode": "semantic-only",
       "recipe_id": "recipe.dosha.intro.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "render_mode": "semantic-only",
       "component_families": [
         "section-shell"
       ],
       "default_props": {
-        "marker": "dosha.hero",
+        "semanticKey": "dosha.hero",
+        "semanticLabel": "Dosha test intro semantic anchor",
         "route": "dosha-test"
       }
     },
     {
       "id": "block.dosha.route-framing.v1",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "semantic_block_id": "sb.route_framing.v1",
       "semantic_block_version": "1.0.0",
+      "render_mode": "semantic-only",
       "recipe_id": "recipe.dosha.route-framing.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "render_mode": "semantic-only",
       "component_families": [
         "section-shell"
       ],
       "default_props": {
-        "marker": "dosha.route-framing",
+        "semanticKey": "dosha.route-framing",
+        "semanticLabel": "Dosha test route framing semantic anchor",
         "route": "dosha-test"
       }
     },
@@ -566,18 +568,19 @@
     },
     {
       "id": "block.dosha.next-step.v1",
-      "version": "1.0.0",
+      "version": "1.1.0",
       "semantic_block_id": "sb.next_step_block.v1",
       "semantic_block_version": "1.0.0",
+      "render_mode": "semantic-only",
       "recipe_id": "recipe.dosha.next-step.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
-      "render_mode": "semantic-only",
       "component_families": [
         "stage-chip-status-pill"
       ],
       "default_props": {
-        "marker": "dosha.next-step",
+        "semanticKey": "dosha.next-step",
+        "semanticLabel": "Dosha test next-step semantic anchor",
         "route": "dosha-test"
       }
     },
