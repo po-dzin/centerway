@@ -652,6 +652,7 @@ export default function AnalyticsPage() {
   const chartScrollRef = useRef<HTMLDivElement | null>(null);
   const chartWrapRef = useRef<HTMLDivElement | null>(null);
   const lastBarRef = useRef<HTMLDivElement | null>(null);
+  const analyticsRequestSeqRef = useRef(0);
   const [fromDate, setFromDate] = useState<string>(shiftedDate(29));
   const [toDate, setToDate] = useState<string>(formatDateLocal(new Date()));
 
@@ -705,6 +706,7 @@ export default function AnalyticsPage() {
   }, [funnelUiSettings]);
 
   const fetchAnalytics = async (period?: { from: string; to: string }) => {
+    const requestSeq = ++analyticsRequestSeqRef.current;
     const isInitialLoad = summary === null;
     if (isInitialLoad) {
       setLoading(true);
@@ -733,6 +735,10 @@ export default function AnalyticsPage() {
         error?: string;
       };
 
+      if (requestSeq !== analyticsRequestSeqRef.current) {
+        return;
+      }
+
       if (!res.ok) {
         if (res.status === 401) {
           setErrorType("auth");
@@ -760,9 +766,6 @@ export default function AnalyticsPage() {
       if (data.period?.from && data.period?.to) {
         setFromDate(data.period.from);
         setToDate(data.period.to);
-      }
-      if (data.campaigns_level === "ad" || data.campaigns_level === "adset") {
-        setCampaignsLevel(data.campaigns_level);
       }
 
       setFunnel(data.funnel ?? []);

@@ -111,6 +111,16 @@ type CampaignBreakdownRow = {
     currency: string;
 };
 
+type MetaBreakdownInputRow = {
+    source_id: string;
+    source_name: string;
+    view_content: number;
+    reach: number;
+    impressions: number;
+    spend: number;
+    currency: string;
+};
+
 type FunnelDailyRow = {
     date: string;
     leads_count: number;
@@ -150,6 +160,23 @@ function normalizeCampaignSource(raw: unknown, fallback: string): string {
 
 function campaignMergeKey(sourceCampaign: string): string {
     return sourceCampaign.trim().toLowerCase();
+}
+
+function campaignLooseKey(sourceCampaign: string): string {
+    return sourceCampaign
+        .normalize("NFKC")
+        .toLowerCase()
+        .replace(/[^\p{L}\p{N}]+/gu, "");
+}
+
+function isLikelyMetaId(value: string): boolean {
+    return /^\d{8,}$/.test(value.trim());
+}
+
+function preferredSourceLabel(sourceName: string, sourceId: string, fallback: string): string {
+    if (sourceName && !isLikelyMetaId(sourceName)) return sourceName;
+    if (sourceId) return sourceId;
+    return fallback;
 }
 
 function campaignBreakdownLevelFromQuery(searchParams: URLSearchParams): CampaignBreakdownLevel {
@@ -606,17 +633,143 @@ export async function GET(req: NextRequest) {
     const ordersCreatedByDay = new Map<string, number>();
     const ordersPaidByDay = new Map<string, number>();
     const revenueByDay = new Map<string, number>();
+    const resolveRowByAliases = (aliases: string[]): CampaignBreakdownRow | null => {
+        for (const alias of aliases) {
+            if (!alias || !alias.trim()) continue;
+            const exact = campaignMergeKey(alias);
+            const byExact = revenueMap.get(exact);
+            if (byExact) return byExact;
+            const loose = campaignLooseKey(alias);
+            if (loose) {
+                const byLoose = revenueMap.get(`loose:${loose}`);
+                if (byLoose) return byLoose;
+            }
+        }
+        return null;
+    };
+    const registerRowAliases = (row: CampaignBreakdownRow, aliases: string[]) => {
+        for (const alias of aliases) {
+            if (!alias || !alias.trim()) continue;
+            const exact = campaignMergeKey(alias);
+            revenueMap.set(exact, row);
+            const loose = campaignLooseKey(alias);
+            if (loose) revenueMap.set(`loose:${loose}`, row);
+        }
+    };
+
+    let metaRowsForLevel: MetaBreakdownInputRow[] = [];
+    if (campaignLevel === "ad") {
+        const { data: metaAdRowsRaw, error: metaAdErr } = await db
+            .from("analytics_meta_ad_daily")
+            .select("ad_id, ad_name, view_content, reach, impressions, spend, currency")
+            .gte("day", range.from)
+            .lte("day", range.to)
+            .limit(100000);
+        if (metaAdErr) {
+            console.warn("Analytics Meta ad warning:", metaAdErr.message);
+            const { data: metaAdsetRowsRaw, error: metaAdsetErr } = await db
+                .from("analytics_meta_adset_daily")
+                .select("adset_id, adset_name, view_content, reach, impressions, spend, currency")
+                .gte("day", range.from)
+                .lte("day", range.to)
+                .limit(100000);
+            if (metaAdsetErr) {
+                console.warn("Analytics Meta adset warning:", metaAdsetErr.message);
+            } else {
+                metaRowsForLevel = (metaAdsetRowsRaw ?? []).map((row) => ({
+                    source_id: normalizeCampaignSource(row.adset_id, ""),
+                    source_name: normalizeCampaignSource(row.adset_name, ""),
+                    view_content: asFiniteNumber(row.view_content),
+                    reach: asFiniteNumber(row.reach),
+                    impressions: asFiniteNumber(row.impressions),
+                    spend: asFiniteNumber(row.spend),
+                    currency: normalizeCampaignSource(row.currency, "UAH"),
+                }));
+            }
+        } else {
+            metaRowsForLevel = (metaAdRowsRaw ?? []).map((row) => ({
+                source_id: normalizeCampaignSource(row.ad_id, ""),
+                source_name: normalizeCampaignSource(row.ad_name, ""),
+                view_content: asFiniteNumber(row.view_content),
+                reach: asFiniteNumber(row.reach),
+                impressions: asFiniteNumber(row.impressions),
+                spend: asFiniteNumber(row.spend),
+                currency: normalizeCampaignSource(row.currency, "UAH"),
+            }));
+        }
+    } else {
+        const { data: metaAdsetRowsRaw, error: metaAdsetErr } = await db
+            .from("analytics_meta_adset_daily")
+            .select("adset_id, adset_name, view_content, reach, impressions, spend, currency")
+            .gte("day", range.from)
+            .lte("day", range.to)
+            .limit(100000);
+        if (metaAdsetErr) {
+            console.warn("Analytics Meta adset warning:", metaAdsetErr.message);
+            const { data: metaCampaignRowsRaw, error: metaCampaignErr } = await db
+                .from("analytics_meta_campaign_daily")
+                .select("campaign_id, campaign_name, view_content, reach, impressions, spend, currency")
+                .gte("day", range.from)
+                .lte("day", range.to)
+                .limit(100000);
+            if (metaCampaignErr) {
+                console.warn("Analytics Meta campaign warning:", metaCampaignErr.message);
+            } else {
+                metaRowsForLevel = (metaCampaignRowsRaw ?? []).map((row) => ({
+                    source_id: normalizeCampaignSource(row.campaign_id, ""),
+                    source_name: normalizeCampaignSource(row.campaign_name, ""),
+                    view_content: asFiniteNumber(row.view_content),
+                    reach: asFiniteNumber(row.reach),
+                    impressions: asFiniteNumber(row.impressions),
+                    spend: asFiniteNumber(row.spend),
+                    currency: normalizeCampaignSource(row.currency, "UAH"),
+                }));
+            }
+        } else {
+            metaRowsForLevel = (metaAdsetRowsRaw ?? []).map((row) => ({
+                source_id: normalizeCampaignSource(row.adset_id, ""),
+                source_name: normalizeCampaignSource(row.adset_name, ""),
+                view_content: asFiniteNumber(row.view_content),
+                reach: asFiniteNumber(row.reach),
+                impressions: asFiniteNumber(row.impressions),
+                spend: asFiniteNumber(row.spend),
+                currency: normalizeCampaignSource(row.currency, "UAH"),
+            }));
+        }
+    }
+
+    // Alias map to resolve order-side ids/names to Meta canonical names.
+    const metaAliasToName = new Map<string, string>();
+    for (const row of metaRowsForLevel) {
+        const canonical = preferredSourceLabel(row.source_name, row.source_id, "meta");
+        for (const alias of [row.source_id, row.source_name]) {
+            if (!alias) continue;
+            const exact = campaignMergeKey(alias);
+            if (exact) metaAliasToName.set(exact, canonical);
+            const loose = campaignLooseKey(alias);
+            if (loose) metaAliasToName.set(`loose:${loose}`, canonical);
+        }
+    }
+    const resolveMetaCanonicalName = (rawSource: string): string | null => {
+        const exact = campaignMergeKey(rawSource);
+        const byExact = metaAliasToName.get(exact);
+        if (byExact) return byExact;
+        const loose = campaignLooseKey(rawSource);
+        if (!loose) return null;
+        return metaAliasToName.get(`loose:${loose}`) ?? null;
+    };
+
     let paidRevenueFact = 0;
     for (const row of revenueOrders ?? []) {
         const createdAt = typeof row.created_at === "string" ? row.created_at : null;
         const dayKey = createdAt ? getIsoDateInTimeZone(new Date(createdAt), ADMIN_ANALYTICS_TZ) : null;
         const adsetFromUrl = extractUrlQueryParam(row.page_url, "utm_content");
         const adFromUrl = extractUrlQueryParam(row.page_url, "utm_term");
-        const source = campaignLevel === "ad"
-            ? normalizeCampaignSource(adFromUrl ?? adsetFromUrl ?? row.campaign, "organic")
-            : normalizeCampaignSource(adsetFromUrl ?? row.campaign, "organic");
-        const sourceKey = campaignMergeKey(source);
-        const existing = revenueMap.get(sourceKey) ?? {
+        const rawSource = campaignLevel === "ad"
+            ? normalizeCampaignSource(adFromUrl, "organic")
+            : normalizeCampaignSource(adsetFromUrl, "organic");
+        const source = resolveMetaCanonicalName(rawSource) ?? rawSource;
+        const existing = resolveRowByAliases([source]) ?? {
             source_campaign: source,
             total_orders: 0,
             paid_orders: 0,
@@ -641,11 +794,12 @@ export async function GET(req: NextRequest) {
                 revenueByDay.set(dayKey, (revenueByDay.get(dayKey) ?? 0) + paidAmount);
             }
         }
-        revenueMap.set(sourceKey, existing);
+        registerRowAliases(existing, [source]);
     }
 
     const mergeMetaIntoRevenueMap = (
         rows: Array<{
+            source_id?: unknown;
             source_name?: unknown;
             view_content?: unknown;
             reach?: unknown;
@@ -656,9 +810,11 @@ export async function GET(req: NextRequest) {
         sourceFallback: string
     ) => {
         for (const row of rows) {
-            const source = normalizeCampaignSource(row.source_name, sourceFallback);
-            const sourceKey = campaignMergeKey(source);
-            const existing = revenueMap.get(sourceKey) ?? {
+            const sourceId = normalizeCampaignSource(row.source_id, "");
+            const sourceName = normalizeCampaignSource(row.source_name, "");
+            const source = sourceName || sourceId || sourceFallback;
+            const aliases = [source, sourceId, sourceName].filter((value) => Boolean(value && value.trim()));
+            const existing = resolveRowByAliases(aliases) ?? {
                 source_campaign: source,
                 total_orders: 0,
                 paid_orders: 0,
@@ -669,6 +825,9 @@ export async function GET(req: NextRequest) {
                 spend: 0,
                 currency: "UAH",
             };
+            if (isLikelyMetaId(existing.source_campaign) && sourceName && !isLikelyMetaId(sourceName)) {
+                existing.source_campaign = sourceName;
+            }
             existing.view_content += asFiniteNumber(row.view_content);
             existing.impressions += asFiniteNumber(row.impressions);
             existing.reach += asFiniteNumber(row.reach);
@@ -676,99 +835,13 @@ export async function GET(req: NextRequest) {
             if (typeof row.currency === "string" && row.currency.trim()) {
                 existing.currency = row.currency.trim();
             }
-            revenueMap.set(sourceKey, existing);
+            registerRowAliases(existing, aliases);
         }
     };
 
-    if (campaignLevel === "ad") {
-        const { data: metaAdRowsRaw, error: metaAdErr } = await db
-            .from("analytics_meta_ad_daily")
-            .select("ad_name, view_content, reach, impressions, spend, currency")
-            .gte("day", range.from)
-            .lte("day", range.to)
-            .limit(100000);
-        if (metaAdErr) {
-            console.warn("Analytics Meta ad warning:", metaAdErr.message);
-            const { data: metaAdsetRowsRaw, error: metaAdsetErr } = await db
-                .from("analytics_meta_adset_daily")
-                .select("adset_name, view_content, reach, impressions, spend, currency")
-                .gte("day", range.from)
-                .lte("day", range.to)
-                .limit(100000);
-            if (metaAdsetErr) {
-                console.warn("Analytics Meta adset warning:", metaAdsetErr.message);
-            } else {
-                mergeMetaIntoRevenueMap(
-                    (metaAdsetRowsRaw ?? []).map((row) => ({
-                        source_name: row.adset_name,
-                        view_content: row.view_content,
-                        reach: row.reach,
-                        impressions: row.impressions,
-                        spend: row.spend,
-                        currency: row.currency,
-                    })),
-                    "meta (no utm_campaign)"
-                );
-            }
-        } else {
-            mergeMetaIntoRevenueMap(
-                (metaAdRowsRaw ?? []).map((row) => ({
-                    source_name: row.ad_name,
-                    view_content: row.view_content,
-                    reach: row.reach,
-                    impressions: row.impressions,
-                    spend: row.spend,
-                    currency: row.currency,
-                })),
-                "meta (no utm_campaign)"
-            );
-        }
-    } else {
-        const { data: metaAdsetRowsRaw, error: metaAdsetErr } = await db
-            .from("analytics_meta_adset_daily")
-            .select("adset_name, view_content, reach, impressions, spend, currency")
-            .gte("day", range.from)
-            .lte("day", range.to)
-            .limit(100000);
-        if (metaAdsetErr) {
-            console.warn("Analytics Meta adset warning:", metaAdsetErr.message);
-            const { data: metaCampaignRowsRaw, error: metaCampaignErr } = await db
-                .from("analytics_meta_campaign_daily")
-                .select("campaign_name, view_content, reach, impressions, spend, currency")
-                .gte("day", range.from)
-                .lte("day", range.to)
-                .limit(100000);
-            if (metaCampaignErr) {
-                console.warn("Analytics Meta campaign warning:", metaCampaignErr.message);
-            } else {
-                mergeMetaIntoRevenueMap(
-                    (metaCampaignRowsRaw ?? []).map((row) => ({
-                        source_name: row.campaign_name,
-                        view_content: row.view_content,
-                        reach: row.reach,
-                        impressions: row.impressions,
-                        spend: row.spend,
-                        currency: row.currency,
-                    })),
-                    "meta (no utm_campaign)"
-                );
-            }
-        } else {
-            mergeMetaIntoRevenueMap(
-                (metaAdsetRowsRaw ?? []).map((row) => ({
-                    source_name: row.adset_name,
-                    view_content: row.view_content,
-                    reach: row.reach,
-                    impressions: row.impressions,
-                    spend: row.spend,
-                    currency: row.currency,
-                })),
-                "meta (no utm_campaign)"
-            );
-        }
-    }
+    mergeMetaIntoRevenueMap(metaRowsForLevel, "meta (no utm_campaign)");
 
-    const revenueData = Array.from(revenueMap.values())
+    const revenueData = Array.from(new Set(revenueMap.values()))
         .sort((a, b) => {
             if (b.total_revenue !== a.total_revenue) return b.total_revenue - a.total_revenue;
             if (b.spend !== a.spend) return b.spend - a.spend;

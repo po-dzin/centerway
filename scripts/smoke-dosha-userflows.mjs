@@ -142,28 +142,8 @@ async function main() {
     }
     pass(`/dosha-test: status ${response.status()}`);
 
-    const authGateHeading = page.getByRole("heading", { name: /Увійдіть, щоб пройти тест доші/i }).first();
     const introPromiseText = page.getByText("12 питань", { exact: false }).first();
-    await Promise.race([
-      authGateHeading.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),
-      introPromiseText.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),
-    ]);
-
-    const isAuthGate = await authGateHeading.isVisible().catch(() => false);
-    if (isAuthGate) {
-      pass("visible: auth gate heading");
-      await assertVisible(page, "Увійти через Google", "auth gate primary cta");
-      if (pageErrors.length > 0) {
-        for (const err of pageErrors) {
-          fail(`pageerror: ${err}`);
-        }
-      } else {
-        pass("no pageerror events");
-      }
-      if (process.exitCode) process.exit(process.exitCode);
-      console.log("Dosha userflow smoke passed (auth-gated route)");
-      return;
-    }
+    await introPromiseText.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined);
 
     await assertVisible(page, "12 питань", "intro promise");
     await assertVisible(page, "Як це працює", "intro how-it-works");
@@ -182,7 +162,28 @@ async function main() {
     }
 
     await page.getByRole("button", { name: "Почати тест" }).click({ timeout: timeoutMs });
-    await page.getByText(/Питання\s+\d+\s+з\s+12/i).first().waitFor({ state: "visible", timeout: timeoutMs });
+    const questionStep = page.getByText(/Питання\s+\d+\s+з\s+12/i).first();
+    const authPromptHeading = page.getByRole("heading", { name: /Увійдіть після натискання старту/i }).first();
+    await Promise.race([
+      questionStep.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),
+      authPromptHeading.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),
+    ]);
+
+    const isDeferredAuthPrompt = await authPromptHeading.isVisible().catch(() => false);
+    if (isDeferredAuthPrompt) {
+      pass("visible: deferred auth prompt heading");
+      await assertVisible(page, "Увійти через Google", "deferred auth prompt primary cta");
+      if (pageErrors.length > 0) {
+        for (const err of pageErrors) {
+          fail(`pageerror: ${err}`);
+        }
+      } else {
+        pass("no pageerror events");
+      }
+      if (process.exitCode) process.exit(process.exitCode);
+      console.log("Dosha userflow smoke passed (deferred-auth start)");
+      return;
+    }
 
     let step = await readCurrentStep(page);
     if (!step) {

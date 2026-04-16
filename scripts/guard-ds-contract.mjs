@@ -15,6 +15,8 @@ const shortIndex2Path = path.join(rootDir, "public/short/index2.html");
 const iremIndex2Path = path.join(rootDir, "public/irem/index2.html");
 const shortPublicOfferPath = path.join(rootDir, "public/short/public-offer.html");
 const iremPublicOfferPath = path.join(rootDir, "public/irem/public-offer.html");
+const shortProductSemanticPath = path.join(rootDir, "public/short/css/short.product.css");
+const iremProductSemanticPath = path.join(rootDir, "public/irem/css/irem.product.css");
 const removedLegacyCssFiles = [
   path.join(rootDir, "public/short/css/main.css"),
   path.join(rootDir, "public/short/css/media.css"),
@@ -100,17 +102,7 @@ function logMissing(filePath, missing) {
 
 function assertNoRawHex(filePath) {
   const content = readFile(filePath);
-  const markers = ["/* Product overrides */", "/* Product responsive overrides */"];
-  let inspectedContent = content;
-
-  for (const marker of markers) {
-    const markerIndex = content.indexOf(marker);
-    if (markerIndex >= 0) {
-      inspectedContent = content.slice(markerIndex + marker.length);
-      break;
-    }
-  }
-  const matches = [...inspectedContent.matchAll(/#([0-9a-fA-F]{3,8})/g)];
+  const matches = [...content.matchAll(/#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})(?![0-9a-zA-Z_-])/g)];
   if (matches.length === 0) {
     console.log(`[PASS] No raw hex in ${path.relative(rootDir, filePath)}`);
     return true;
@@ -171,6 +163,7 @@ function main() {
     iremPublicOfferPath,
   ];
   const legacyCssPattern = /css\/(main|media|main2)\.css/;
+  const sharedLandingPattern = /shared\/css\/landing\.css/;
   for (const htmlPath of htmlPaths) {
     const html = readFile(htmlPath);
     if (legacyCssPattern.test(html)) {
@@ -178,6 +171,13 @@ function main() {
       console.error(`\n[FAIL] Legacy CSS include found in ${path.relative(rootDir, htmlPath)}`);
     } else {
       console.log(`[PASS] No legacy CSS include in ${path.relative(rootDir, htmlPath)}`);
+    }
+
+    if (sharedLandingPattern.test(html)) {
+      failed = true;
+      console.error(`\n[FAIL] Shared landing include found in ${path.relative(rootDir, htmlPath)}`);
+    } else {
+      console.log(`[PASS] No shared landing include in ${path.relative(rootDir, htmlPath)}`);
     }
   }
 
@@ -187,6 +187,23 @@ function main() {
       console.error(`\n[FAIL] Legacy CSS file still exists: ${path.relative(rootDir, legacyPath)}`);
     } else {
       console.log(`[PASS] Legacy CSS file removed: ${path.relative(rootDir, legacyPath)}`);
+    }
+  }
+
+  const semanticMigrationFiles = [
+    shortIndexPath,
+    iremIndexPath,
+    shortProductSemanticPath,
+    iremProductSemanticPath,
+  ];
+  const legacyExpertPattern = /(s55-grid|s55-text|s55-image|divs55)/;
+  for (const filePath of semanticMigrationFiles) {
+    const content = readFile(filePath);
+    if (legacyExpertPattern.test(content)) {
+      failed = true;
+      console.error(`\n[FAIL] Legacy expert class/id found in ${path.relative(rootDir, filePath)}`);
+    } else {
+      console.log(`[PASS] No legacy expert class/id in ${path.relative(rootDir, filePath)}`);
     }
   }
 

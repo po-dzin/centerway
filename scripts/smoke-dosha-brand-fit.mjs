@@ -174,26 +174,8 @@ async function checkRuntimeSemantics() {
       return;
     }
 
-    const authGateHeading = page.getByRole("heading", { name: /Увійдіть, щоб пройти тест доші/i }).first();
     const introPromiseText = page.getByText("12 питань", { exact: false }).first();
-    await Promise.race([
-      authGateHeading.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),
-      introPromiseText.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),
-    ]);
-
-    const authGateVisible = await authGateHeading.isVisible().catch(() => false);
-    if (authGateVisible) {
-      const authCtaVisible = (await page.getByRole("button", { name: /Увійти через Google/i }).count()) > 0;
-      if (authCtaVisible) {
-        points = 40;
-        details.push("auth gate contract: heading + Google CTA present (40/40)");
-      } else {
-        points = 30;
-        details.push("auth gate contract: heading present, CTA missing (30/40)");
-      }
-      addSection("Runtime semio/ux signals", points, 40, details);
-      return;
-    }
+    await introPromiseText.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined);
 
     const introChecks = [
       "12 питань",
@@ -245,6 +227,28 @@ async function checkRuntimeSemantics() {
       details.push(`touch target: start=${targetHeights.startHeight}px`);
     } else {
       details.push(`touch target below threshold: start=${targetHeights.startHeight}px`);
+    }
+
+    await page.getByRole("button", { name: "Почати тест" }).click({ timeout: timeoutMs });
+    const deferredAuthHeading = page.getByRole("heading", { name: /Увійдіть після натискання старту/i }).first();
+    const questionHeading = page.getByText(/Питання\s+\d+\s+з\s+12/i).first();
+    await Promise.race([
+      deferredAuthHeading.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),
+      questionHeading.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),
+    ]);
+
+    const deferredAuthVisible = await deferredAuthHeading.isVisible().catch(() => false);
+    if (deferredAuthVisible) {
+      const authCtaVisible = (await page.getByRole("button", { name: /Увійти через Google/i }).count()) > 0;
+      if (authCtaVisible) {
+        points += 10;
+        details.push("deferred auth contract: start opens Google CTA (10/10)");
+      } else {
+        details.push("deferred auth contract: prompt visible, CTA missing");
+      }
+    } else {
+      points += 10;
+      details.push("start contract: question flow opens without extra blocker");
     }
 
     if (points > 40) points = 40;
