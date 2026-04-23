@@ -179,6 +179,10 @@ function preferredSourceLabel(sourceName: string, sourceId: string, fallback: st
     return fallback;
 }
 
+function isTemplatePlaceholder(value: string): boolean {
+    return /\{\{[^}]+\}\}/.test(value);
+}
+
 function campaignBreakdownLevelFromQuery(searchParams: URLSearchParams): CampaignBreakdownLevel {
     const raw = (searchParams.get("campaign_level") ?? "").trim().toLowerCase();
     return raw === "ad" ? "ad" : "adset";
@@ -199,6 +203,44 @@ function extractUrlQueryParam(rawUrl: unknown, param: string): string | null {
             return null;
         }
     }
+}
+
+function resolveOrderBreakdownSource(
+    level: CampaignBreakdownLevel,
+    values: {
+        campaignParam: string | null;
+        contentParam: string | null;
+        termParam: string | null;
+        fallbackCampaign: unknown;
+        knownMetaIds: Set<string>;
+    }
+): string {
+    const campaignParam = normalizeCampaignSource(values.campaignParam ?? values.fallbackCampaign, "");
+    const contentParam = normalizeCampaignSource(values.contentParam, "");
+    const termParam = normalizeCampaignSource(values.termParam, "");
+    const knownMetaIds = values.knownMetaIds;
+
+    if (level === "adset") {
+        // Preferred (new): utm_content={{adset.id}}.
+        if (contentParam && isLikelyMetaId(contentParam) && knownMetaIds.has(contentParam)) return contentParam;
+        // Legacy: utm_campaign={{adset.name}}.
+        if (campaignParam && !isTemplatePlaceholder(campaignParam)) return campaignParam;
+        // Additional backward compatibility if adset name is still in utm_content.
+        if (contentParam && !isTemplatePlaceholder(contentParam) && !isLikelyMetaId(contentParam)) return contentParam;
+        return "organic";
+    }
+
+    // level === "ad"
+    // Preferred (new): utm_term={{ad.id}} (or ad.name)
+    if (termParam && !isTemplatePlaceholder(termParam)) return termParam;
+    // Legacy in current account: utm_content={{ad.name}}.
+    if (contentParam && !isTemplatePlaceholder(contentParam)) {
+        if (isLikelyMetaId(contentParam)) {
+            return knownMetaIds.has(contentParam) ? contentParam : "organic";
+        }
+        return contentParam;
+    }
+    return "organic";
 }
 
 function safeDivide(numerator: number, denominator: number): number {
@@ -740,8 +782,10 @@ export async function GET(req: NextRequest) {
 
     // Alias map to resolve order-side ids/names to Meta canonical names.
     const metaAliasToName = new Map<string, string>();
+    const knownMetaIds = new Set<string>();
     for (const row of metaRowsForLevel) {
         const canonical = preferredSourceLabel(row.source_name, row.source_id, "meta");
+        if (row.source_id) knownMetaIds.add(row.source_id);
         for (const alias of [row.source_id, row.source_name]) {
             if (!alias) continue;
             const exact = campaignMergeKey(alias);
@@ -763,11 +807,16 @@ export async function GET(req: NextRequest) {
     for (const row of revenueOrders ?? []) {
         const createdAt = typeof row.created_at === "string" ? row.created_at : null;
         const dayKey = createdAt ? getIsoDateInTimeZone(new Date(createdAt), ADMIN_ANALYTICS_TZ) : null;
-        const adsetFromUrl = extractUrlQueryParam(row.page_url, "utm_content");
-        const adFromUrl = extractUrlQueryParam(row.page_url, "utm_term");
-        const rawSource = campaignLevel === "ad"
-            ? normalizeCampaignSource(adFromUrl, "organic")
-            : normalizeCampaignSource(adsetFromUrl, "organic");
+        const campaignParam = extractUrlQueryParam(row.page_url, "utm_campaign");
+        const contentParam = extractUrlQueryParam(row.page_url, "utm_content");
+        const termParam = extractUrlQueryParam(row.page_url, "utm_term");
+        const rawSource = resolveOrderBreakdownSource(campaignLevel, {
+            campaignParam,
+            contentParam,
+            termParam,
+            fallbackCampaign: row.campaign,
+            knownMetaIds,
+        });
         const source = resolveMetaCanonicalName(rawSource) ?? rawSource;
         const existing = resolveRowByAliases([source]) ?? {
             source_campaign: source,
