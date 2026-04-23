@@ -47,7 +47,7 @@ section:not(.section-hero) h2 {
 .section-problem .item,
 .section-program .items,
 .section-format .itemsli,
-.section-expert .s55-text,
+.section-expert .section-expert-text,
 .section-addon-protocol .item,
 .section-addon-foundations .grid-item {
   border-radius: var(--ds-radius-lg, 1.25rem);

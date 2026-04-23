@@ -77,7 +77,7 @@
     font-size: 20px;
     line-height: 1.45;
     font-weight: 500;
-    color: #333333;
+    color: var(--ds-color-ref-333333);
     margin-bottom: 24px;
   }
 
@@ -346,7 +346,7 @@
 }
 
 @media (max-width: 48rem) {
-  .section-expert .s55-grid {
+  .section-expert .section-expert-grid {
     grid-template-columns: 1fr;
   }
 
@@ -367,7 +367,7 @@
     gap: 12px;
   }
 
-  .section-expert .s55-text {
+  .section-expert .section-expert-text {
     text-align: left;
     padding-right: 0;
     width: 100%;
@@ -376,7 +376,7 @@
     margin-right: auto;
   }
 
-  .section-expert .s55-image {
+  .section-expert .section-expert-image {
     position: relative;
     width: 100%;
     max-width: 360px;

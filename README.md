@@ -51,12 +51,18 @@ npm run smoke:dosha:result
 
 - `public/shared/css/tokens.css` is the shared fallback contract for static pages.
 - `src/app/globals.css` is the app brand override layer.
+- `public/shared/css/landing.css` is a source template; landing primitives are inlined into product CSS (`short.product.css`, `irem.product.css`) and are not linked directly in HTML.
 - Required `--ds-*` foundations: colors, base font family, font scale, line heights, spacing, radii, shadows, z-index, breakpoints, container width, and minimum touch target.
 - In the app, `--ds-color-*` maps to `--cw-*` brand tokens; the non-brand scales stay stable and should not drift without a deliberate contract change.
+
+## Semantic Migration Plan
+
+- Completed: expert blocks now use semantic-only classes (`section-expert-grid`, `section-expert-text`, `section-expert-image`, `section-expert-text-content`) and legacy `s55-*` is removed from target HTML/CSS.
+- Guarded: `guard:ds-contract` fails if legacy expert class/id (`s55-grid|s55-text|s55-image|divs55`) appears again.
 
 ## Auth and users foundation
 
 - `docs/migration/sql/2026-04-01_platform_users_google_auth.sql` creates platform-wide `platform_users` linked to `auth.users` (not test-specific).
 - `POST /api/platform/users/sync` upserts current authenticated user profile (Google metadata supported).
-- `/dosha-test` is now protected by Google auth gate and syncs authenticated user profile before test interaction.
-- Protected generated routes are configured centrally in `src/lib/auth/protectedRoutes.ts` (currently: `dosha-test`).
+- `/dosha-test` opens without auth, but requests Google sign-in only after the user clicks start; after sign-in it syncs the platform profile and resumes the test launch.
+- Protected generated routes are configured centrally in `src/lib/auth/protectedRoutes.ts` (currently none).

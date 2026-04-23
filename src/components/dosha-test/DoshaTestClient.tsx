@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import type { DoshaResultType } from "@/lib/doshaTest";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
@@ -85,6 +85,7 @@ type AttemptEventPayload = {
 const ATTEMPT_STORAGE_KEY = "centerway_dosha_test_attempt_id";
 const DRAFT_STORAGE_KEY = "centerway_dosha_test_draft_v1";
 const SESSION_STORAGE_KEY = "centerway_dosha_test_session_id";
+const PENDING_START_KEY = "centerway_dosha_test_pending_start";
 const DEFAULT_UI_VARIANT = "dosha_test_calm_route_v1";
 
 type DoshaTestClientProps = {
@@ -92,12 +93,15 @@ type DoshaTestClientProps = {
   generatorContext?: GeneratorAnalyticsContext;
 };
 
-const RESULT_COPY: Record<DoshaResultType, {
-  title: string;
-  summary: string;
-  recommendation: string;
-  weekVector: string;
-}> = {
+const RESULT_COPY: Record<
+  DoshaResultType,
+  {
+    title: string;
+    summary: string;
+    recommendation: string;
+    weekVector: string;
+  }
+> = {
   vata: {
     title: "Вата домінує",
     summary: "Ваш ритм швидкий і чутливий до змін, тому енергія може коливатися протягом дня.",
@@ -161,13 +165,17 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
   const [error, setError] = useState<string | null>(null);
   const [resultViewedSent, setResultViewedSent] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
+  const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [isDoshaInfoOpen, setIsDoshaInfoOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [profileView, setProfileView] = useState<"profile" | "result">("profile");
   const [userDoshaProfile, setUserDoshaProfile] = useState<UserDoshaProfileResponse["profile"] | null>(null);
   const [isProfileLoading, setIsProfileLoading] = useState(false);
   const [profileError, setProfileError] = useState<string | null>(null);
-  const profileMenuRef = useRef<HTMLDivElement | null>(null);
+  const isAuthEnabled = useMemo(
+    () => Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
+    []
+  );
 
   const currentQuestion = useMemo(
     () => getCurrentQuestion(questions, currentQuestionIndex),
@@ -232,20 +240,29 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     }).catch(() => undefined);
   }, [attemptId, generatorContext?.assignment_source, generatorContext?.branch, generatorContext?.experiment_key, generatorContext?.manifest_id, generatorContext?.manifest_version, generatorContext?.mode, generatorContext?.recipe_version, generatorContext?.variant_key, phase, uiVariant]);
 
-  useEffect(() => {
-    const bootAuth = async () => {
-      const { data } = await supabaseClient.auth.getSession();
-      setSession(data.session);
-    };
-    void bootAuth();
+  const syncPlatformUser = useCallback(async (accessToken: string) => {
+    await fetch("/api/platform/users/sync", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+      },
+    }).catch(() => undefined);
+  }, []);
 
-    const {
-      data: { subscription },
-    } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
+  const signInWithGoogle = useCallback(async () => {
+    if (typeof window !== "undefined") {
+      window.sessionStorage.setItem(PENDING_START_KEY, "1");
+    }
+
+    const redirectTo =
+      typeof window !== "undefined" ? `${window.location.origin}${window.location.pathname}${window.location.search}` : undefined;
+
+    await supabaseClient.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+      },
     });
-
-    return () => subscription.unsubscribe();
   }, []);
 
   const loadDefinition = useCallback(async (): Promise<TestDefinitionResponse | null> => {
@@ -270,7 +287,6 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
       }
     }
 
-    // Fallback for unstable local/dev environments where GET can fail intermittently.
     try {
       const res = await fetch("/api/tests/dosha-test/start", {
         method: "POST",
@@ -344,42 +360,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     }
   }, [clearDraft, getOrCreateSessionId, questions, saveAttemptId, session?.access_token]);
 
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-
-    // Per product decision: a full page reload always resets test state to intro.
-    window.localStorage.removeItem(ATTEMPT_STORAGE_KEY);
-    window.localStorage.removeItem(DRAFT_STORAGE_KEY);
-    window.localStorage.removeItem(SESSION_STORAGE_KEY);
-
-    setAttemptId(null);
-    setQuestions([]);
-    setCurrentQuestionIndex(1);
-    setAnswers({});
-    setResultType(null);
-    setScores({ vata: 0, pitta: 0, kapha: 0 });
-    setCompletedAt(null);
-    setNextStep(null);
-    setError(null);
-    setPhase("intro");
-  }, []);
-
-  useEffect(() => {
-    if (phase === "result" && resultType && resultViewedSent === false) {
-      setResultViewedSent(true);
-      void emitAttemptEvent("dosha_result_viewed", {
-        screen: "result",
-        step: totalQuestions,
-        uiVariant,
-        resultType,
-        scores,
-        completedAt,
-        nextStep,
-      });
-    }
-  }, [completedAt, emitAttemptEvent, nextStep, phase, resultType, resultViewedSent, scores, totalQuestions, uiVariant]);
-
-  const startTest = useCallback(async () => {
+  const runStartFlow = useCallback(async () => {
     setIsBusy(true);
     setError(null);
     setResultViewedSent(false);
@@ -416,6 +397,103 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     }
   }, [clearDraft, getOrCreateSessionId, loadDefinition, saveAttemptId, saveDraft]);
 
+  const resumePendingStartIfNeeded = useCallback(async (nextSession: Session | null) => {
+    if (!nextSession?.access_token || typeof window === "undefined") return;
+    if (window.sessionStorage.getItem(PENDING_START_KEY) !== "1") return;
+
+    window.sessionStorage.removeItem(PENDING_START_KEY);
+    setShowAuthPrompt(false);
+    await syncPlatformUser(nextSession.access_token);
+    await runStartFlow();
+  }, [runStartFlow, syncPlatformUser]);
+
+  useEffect(() => {
+    const bootAuth = async () => {
+      const { data } = await supabaseClient.auth.getSession();
+      setSession(data.session);
+      if (data.session?.access_token) {
+        await syncPlatformUser(data.session.access_token);
+        await resumePendingStartIfNeeded(data.session);
+      }
+    };
+    void bootAuth();
+
+    const {
+      data: { subscription },
+    } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
+      setSession(nextSession);
+
+      if (!nextSession) {
+        setIsProfileMenuOpen(false);
+        setShowAuthPrompt(false);
+        setUserDoshaProfile(null);
+        return;
+      }
+
+      void (async () => {
+        await syncPlatformUser(nextSession.access_token);
+        await resumePendingStartIfNeeded(nextSession);
+      })();
+    });
+
+    return () => subscription.unsubscribe();
+  }, [resumePendingStartIfNeeded, syncPlatformUser]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    window.localStorage.removeItem(ATTEMPT_STORAGE_KEY);
+    window.localStorage.removeItem(DRAFT_STORAGE_KEY);
+    window.localStorage.removeItem(SESSION_STORAGE_KEY);
+
+    setAttemptId(null);
+    setQuestions([]);
+    setCurrentQuestionIndex(1);
+    setAnswers({});
+    setResultType(null);
+    setScores({ vata: 0, pitta: 0, kapha: 0 });
+    setCompletedAt(null);
+    setNextStep(null);
+    setError(null);
+    setShowAuthPrompt(false);
+    setPhase("intro");
+  }, []);
+
+  useEffect(() => {
+    if (phase === "result" && resultType && resultViewedSent === false) {
+      setResultViewedSent(true);
+      void emitAttemptEvent("dosha_result_viewed", {
+        screen: "result",
+        step: totalQuestions,
+        uiVariant,
+        resultType,
+        scores,
+        completedAt,
+        nextStep,
+      });
+    }
+  }, [completedAt, emitAttemptEvent, nextStep, phase, resultType, resultViewedSent, scores, totalQuestions, uiVariant]);
+
+  const requestStartTest = useCallback(async () => {
+    setShowAuthPrompt(false);
+
+    if (!isAuthEnabled) {
+      await runStartFlow();
+      return;
+    }
+
+    const authState = await supabaseClient.auth.getSession();
+    const activeSession = authState.data.session ?? session;
+    if (!activeSession?.access_token) {
+      setShowAuthPrompt(true);
+      return;
+    }
+
+    setSession(activeSession);
+    await syncPlatformUser(activeSession.access_token);
+    await runStartFlow();
+  }, [isAuthEnabled, runStartFlow, session, syncPlatformUser]);
+
   const submitAnswer = useCallback((questionId: string, optionId: string) => {
     if (isBusy) return;
     if (answers[questionId]) return;
@@ -439,26 +517,16 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     }
   }, [answers, completeTest, getOrCreateSessionId, isBusy, saveDraft, totalQuestions]);
 
-  useEffect(() => {
-    if (!isProfileMenuOpen) return;
-    const handleOutsideClick = (event: MouseEvent) => {
-      if (!profileMenuRef.current) return;
-      if (!profileMenuRef.current.contains(event.target as Node)) {
-        setIsProfileMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleOutsideClick);
-    return () => document.removeEventListener("mousedown", handleOutsideClick);
-  }, [isProfileMenuOpen]);
+  const loadMyDoshaProfile = useCallback(async (accessToken?: string | null) => {
+    const token = accessToken ?? session?.access_token;
+    if (!token) return;
 
-  const loadMyDoshaProfile = useCallback(async () => {
-    if (!session?.access_token) return;
     setIsProfileLoading(true);
     setProfileError(null);
     try {
       const response = await fetch("/api/platform/users/me/dosha", {
         headers: {
-          Authorization: `Bearer ${session.access_token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
       if (!response.ok) {
@@ -496,6 +564,19 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
   const progress = Math.min(100, Math.round((Math.max(0, currentQuestionIndex - 1) / totalQuestions) * 100));
   const resultCopy = resultType ? RESULT_COPY[resultType] : null;
   const testFontFamily = "var(--cw-font-ui), 'Manrope', 'Segoe UI', sans-serif";
+  const topbarBadge = phase === "intro"
+    ? "12 питань • ~2 хв"
+    : phase === "question"
+      ? `Питання ${currentQuestion?.orderIndex ?? currentQuestionIndex} з ${totalQuestions}`
+      : phase === "loading"
+        ? "Формуємо результат"
+        : "Результат готовий";
+  const topbarMeta = phase === "question"
+    ? `Прогрес ${progress}%`
+    : session?.user?.email
+      ? `Персональний режим для ${session.user.email}`
+      : "Гостьовий перегляд до старту тесту";
+  const userLabel = session?.user?.email?.split("@")[0] ?? "Профіль";
 
   return (
     <main
@@ -518,91 +599,128 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
             boxShadow: "0 18px 50px color-mix(in srgb, #161410 12%, transparent)",
           }}
         >
-          <div className="absolute right-4 top-4 z-20" ref={profileMenuRef}>
-            <button
-              type="button"
-              title="Профіль"
-              aria-label="Профіль"
-              onClick={() => {
-                void handleOpenProfileMenu();
-              }}
-              className="cw-btn-outline inline-flex h-11 w-11 items-center justify-center rounded-full motion-reduce:transition-none"
-              style={{
-                borderColor: "var(--cw-border)",
-                background: "color-mix(in srgb, var(--cw-surface-solid) 94%, #ffffff 6%)",
-                color: "var(--cw-text)",
-              }}
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                <path d="M20 21a8 8 0 0 0-16 0" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-            </button>
-
-            {isProfileMenuOpen && (
-              <div
-                className="mt-2 w-72 rounded-2xl border p-3 shadow-lg"
+          <div
+            className="mb-6 flex flex-wrap items-start justify-between gap-3 border-b pb-5"
+            style={{ borderColor: "color-mix(in srgb, var(--cw-border) 76%, #ffffff 24%)" }}
+          >
+            <div className="min-w-0 space-y-1">
+              <span
+                className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
                 style={{
                   borderColor: "var(--cw-border)",
-                  background: "color-mix(in srgb, var(--cw-surface-solid) 96%, #ffffff 4%)",
+                  background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
+                  color: "var(--cw-text)",
                 }}
               >
-                <div className="mb-3 flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setProfileView("profile")}
-                    className="cw-btn-outline inline-flex min-h-11 flex-1 items-center justify-center px-3 text-xs font-semibold"
-                    style={{ color: "var(--cw-text)" }}
-                  >
-                    Профіль
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setProfileView("result")}
-                    className="cw-btn-outline inline-flex min-h-11 flex-1 items-center justify-center px-3 text-xs font-semibold"
-                    style={{ color: "var(--cw-text)" }}
-                  >
-                    Результат
-                  </button>
+                {topbarBadge}
+              </span>
+              <p className="text-xs leading-relaxed sm:text-sm" style={{ color: "var(--cw-muted)" }}>
+                {topbarMeta}
+              </p>
+            </div>
+
+            <div className="flex items-center gap-2 self-start">
+              {session?.user ? (
+                <button
+                  type="button"
+                  title="Профіль"
+                  aria-label="Профіль"
+                  onClick={() => {
+                    void handleOpenProfileMenu();
+                  }}
+                  className="cw-btn-outline inline-flex min-h-11 items-center gap-2 rounded-full px-3 motion-reduce:transition-none"
+                  style={{
+                    borderColor: "var(--cw-border)",
+                    background: "color-mix(in srgb, var(--cw-surface-solid) 94%, #ffffff 6%)",
+                    color: "var(--cw-text)",
+                  }}
+                >
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full border" style={{ borderColor: "var(--cw-border)" }}>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                      <path d="M20 21a8 8 0 0 0-16 0" />
+                      <circle cx="12" cy="7" r="4" />
+                    </svg>
+                  </span>
+                  <span className="hidden max-w-32 truncate text-sm font-semibold sm:inline">{userLabel}</span>
+                </button>
+              ) : isAuthEnabled ? (
+                <button
+                  type="button"
+                  onClick={() => setShowAuthPrompt(true)}
+                  className="cw-btn-outline inline-flex min-h-11 items-center justify-center rounded-full px-4 text-sm font-semibold motion-reduce:transition-none"
+                  style={{ color: "var(--cw-text)" }}
+                >
+                  Увійти
+                </button>
+              ) : null}
+            </div>
+          </div>
+
+          {isProfileMenuOpen && session?.user && (
+            <div
+              className="mb-6 rounded-2xl border p-3 sm:p-4"
+              style={{
+                borderColor: "var(--cw-border)",
+                background: "color-mix(in srgb, var(--cw-surface-solid) 96%, #ffffff 4%)",
+              }}
+            >
+              <div className="mb-3 flex flex-col gap-2 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => setProfileView("profile")}
+                  className="cw-btn-outline inline-flex min-h-11 flex-1 items-center justify-center px-3 text-xs font-semibold"
+                  style={{ color: "var(--cw-text)" }}
+                >
+                  Профіль
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setProfileView("result")}
+                  className="cw-btn-outline inline-flex min-h-11 flex-1 items-center justify-center px-3 text-xs font-semibold"
+                  style={{ color: "var(--cw-text)" }}
+                >
+                  Результат
+                </button>
+              </div>
+
+              {profileView === "profile" && (
+                <div className="space-y-2 text-xs sm:text-sm" style={{ color: "var(--cw-muted)" }}>
+                  <p><span className="font-semibold" style={{ color: "var(--cw-text)" }}>Email:</span> {session.user.email ?? "—"}</p>
+                  <p><span className="font-semibold" style={{ color: "var(--cw-text)" }}>ID:</span> {session.user.id ?? "—"}</p>
                 </div>
+              )}
 
-                {profileView === "profile" && (
-                  <div className="space-y-2 text-xs" style={{ color: "var(--cw-muted)" }}>
-                    <p><span className="font-semibold" style={{ color: "var(--cw-text)" }}>Email:</span> {session?.user?.email ?? "—"}</p>
-                    <p><span className="font-semibold" style={{ color: "var(--cw-text)" }}>ID:</span> {session?.user?.id ?? "—"}</p>
-                  </div>
-                )}
+              {profileView === "result" && (
+                <div className="space-y-2 text-xs sm:text-sm" style={{ color: "var(--cw-muted)" }}>
+                  {isProfileLoading ? <p>Завантаження...</p> : null}
+                  {profileError ? <p style={{ color: "var(--cw-danger)" }}>{profileError}</p> : null}
+                  {!isProfileLoading && !profileError && resultTypeLabel ? (
+                    <>
+                      <p>
+                        <span className="font-semibold" style={{ color: "var(--cw-text)" }}>Поточний профіль:</span>{" "}
+                        {resultTypeLabel}
+                      </p>
+                      <p>
+                        <span className="font-semibold" style={{ color: "var(--cw-text)" }}>Рахунок:</span>{" "}
+                        Вата {scores.vata || userDoshaProfile?.scores.vata || 0} •
+                        {" "}Пітта {scores.pitta || userDoshaProfile?.scores.pitta || 0} •
+                        {" "}Капха {scores.kapha || userDoshaProfile?.scores.kapha || 0}
+                      </p>
+                    </>
+                  ) : null}
+                  {!isProfileLoading && !profileError && !resultTypeLabel ? (
+                    <p>Результат ще недоступний. Пройдіть тест до кінця.</p>
+                  ) : null}
+                </div>
+              )}
 
-                {profileView === "result" && (
-                  <div className="space-y-2 text-xs" style={{ color: "var(--cw-muted)" }}>
-                    {isProfileLoading ? <p>Завантаження...</p> : null}
-                    {profileError ? <p style={{ color: "var(--cw-danger)" }}>{profileError}</p> : null}
-                    {!isProfileLoading && !profileError && resultTypeLabel ? (
-                      <>
-                        <p>
-                          <span className="font-semibold" style={{ color: "var(--cw-text)" }}>Поточний профіль:</span>{" "}
-                          {resultTypeLabel}
-                        </p>
-                        <p>
-                          <span className="font-semibold" style={{ color: "var(--cw-text)" }}>Рахунок:</span>{" "}
-                          Вата {scores.vata || userDoshaProfile?.scores.vata || 0} •
-                          {" "}Пітта {scores.pitta || userDoshaProfile?.scores.pitta || 0} •
-                          {" "}Капха {scores.kapha || userDoshaProfile?.scores.kapha || 0}
-                        </p>
-                      </>
-                    ) : null}
-                    {!isProfileLoading && !profileError && !resultTypeLabel ? (
-                      <p>Результат ще недоступний. Пройдіть тест до кінця.</p>
-                    ) : null}
-                  </div>
-                )}
-
+              <div className="mt-4 flex flex-col gap-2 sm:flex-row">
                 <button
                   type="button"
                   onClick={() => {
                     void loadMyDoshaProfile();
                   }}
-                  className="cw-btn-ghost mt-3 inline-flex min-h-11 w-full items-center justify-center px-3 text-xs font-semibold"
+                  className="cw-btn-ghost inline-flex min-h-11 flex-1 items-center justify-center px-3 text-xs font-semibold"
                   style={{ color: "var(--cw-text)" }}
                 >
                   Оновити дані
@@ -613,30 +731,16 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                   onClick={() => {
                     void handleSignOut();
                   }}
-                  className="cw-btn-primary mt-2 inline-flex min-h-11 w-full items-center justify-center px-3 text-xs font-semibold"
+                  className="cw-btn-primary inline-flex min-h-11 flex-1 items-center justify-center px-3 text-xs font-semibold"
                 >
                   Вийти
                 </button>
               </div>
-            )}
-          </div>
+            </div>
+          )}
 
           {phase === "intro" && (
             <div className="space-y-6">
-              <div className="flex items-start justify-between gap-3">
-                <span
-                  className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
-                  style={{
-                    borderColor: "var(--cw-border)",
-                    background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
-                    color: "var(--cw-text)",
-                  }}
-                >
-                  12 питань • ~2 хв
-                </span>
-                <span className="inline-flex h-11 w-11" aria-hidden="true" />
-              </div>
-
               <div className="space-y-3">
                 <p className="text-sm font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--cw-status-success)" }}>
                   CenterWay • Доша-тест
@@ -681,11 +785,50 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                 </p>
               )}
 
+              {showAuthPrompt && !session?.user && isAuthEnabled && (
+                <div
+                  className="rounded-2xl border p-4 sm:p-5"
+                  style={{
+                    borderColor: "color-mix(in srgb, var(--cw-status-success) 38%, var(--cw-border) 62%)",
+                    background: "color-mix(in srgb, var(--cw-surface-solid) 94%, #ffffff 6%)",
+                  }}
+                >
+                  <p className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--cw-status-success)" }}>
+                    Крок перед стартом
+                  </p>
+                  <h2 className="mt-2 text-xl font-bold" style={{ color: "var(--cw-text)" }}>
+                    Увійдіть після натискання старту
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--cw-muted)" }}>
+                    Ми просимо авторизацію тільки перед запуском тесту, щоб зберегти персональний результат і подальший маршрут у платформі.
+                  </p>
+                  <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void signInWithGoogle();
+                      }}
+                      className="cw-btn-primary inline-flex min-h-11 flex-1 items-center justify-center px-4 py-3 text-sm font-semibold"
+                    >
+                      Увійти через Google
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setShowAuthPrompt(false)}
+                      className="cw-btn-ghost inline-flex min-h-11 items-center justify-center px-4 py-3 text-sm font-semibold"
+                      style={{ color: "var(--cw-text)" }}
+                    >
+                      Пізніше
+                    </button>
+                  </div>
+                </div>
+              )}
+
               <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
                 <button
                   type="button"
                   onClick={() => {
-                    void startTest();
+                    void requestStartTest();
                   }}
                   disabled={isBusy}
                   className="cw-btn-primary inline-flex min-h-11 items-center justify-center gap-2 px-6 py-3 text-sm font-semibold motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-65"
@@ -925,11 +1068,11 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
         <div
           className="mx-auto mt-4 max-w-lg overflow-hidden transition-all duration-300 ease-out motion-reduce:transition-none"
           style={{
-            maxHeight: isDoshaInfoOpen ? "16rem" : "0rem",
-            opacity: isDoshaInfoOpen ? 1 : 0,
-            transform: isDoshaInfoOpen ? "translateY(0)" : "translateY(-8px)",
+            maxHeight: isDoshaInfoOpen && phase === "intro" ? "16rem" : "0rem",
+            opacity: isDoshaInfoOpen && phase === "intro" ? 1 : 0,
+            transform: isDoshaInfoOpen && phase === "intro" ? "translateY(0)" : "translateY(-8px)",
           }}
-          aria-hidden={!isDoshaInfoOpen}
+          aria-hidden={!(isDoshaInfoOpen && phase === "intro")}
         >
           <section
             id="what-is-dosha"
