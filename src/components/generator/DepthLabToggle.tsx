@@ -127,7 +127,7 @@ function syncUrl(profile: DepthProfile, percent: number, theme: ThemeKey) {
   window.history.replaceState(null, "", `${url.pathname}?${url.searchParams.toString()}${url.hash}`);
 }
 
-export function DepthLabToggle() {
+export function DepthLabToggle({ variant = "floating" }: { variant?: "floating" | "embedded" }) {
   const [open, setOpen] = useState(false);
   const [profile, setProfile] = useState<DepthProfile>("balanced");
   const [percent, setPercent] = useState<number>(70);
@@ -167,7 +167,7 @@ export function DepthLabToggle() {
   }, [theme, profile, percent]);
 
   return (
-    <div className={`cw-depth-lab ${open ? "is-open" : ""}`} data-open={open ? "1" : "0"}>
+    <div className={`cw-depth-lab ${open ? "is-open" : ""} ${variant === "embedded" ? "is-embedded" : ""}`} data-open={open ? "1" : "0"}>
       <button
         type="button"
         className="cw-depth-lab-toggle"

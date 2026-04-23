@@ -23,9 +23,7 @@ export function GeneratedScreenClient({ resolved }: GeneratedScreenClientProps) 
     routeKey === "consult" ||
     routeKey === "detox" ||
     routeKey === "herbs";
-  const showDepthLab =
-    isFunnelRoute ||
-    routeKey === "dosha-test";
+  const showDepthLab = isFunnelRoute;
 
   const content = (
     <div
