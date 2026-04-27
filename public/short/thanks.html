@@ -36,6 +36,14 @@
       src="https://www.facebook.com/tr?id=885125430564169&ev=PageView&noscript=1"/>
   </noscript>
   <!-- ✅ End Meta Pixel (BASE) -->
+  <!-- Google tag (gtag.js) -->
+  <script async src="https://www.googletagmanager.com/gtag/js?id=AW-957636387"></script>
+  <script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'AW-957636387');
+  </script>
 </head>
 
 <body>
@@ -117,6 +125,35 @@
     }
     sessionStorage.setItem(firedKey, '1');
   }
+  })();
+  </script>
+
+  <!-- ✅ Google Ads conversion event -->
+  <script>
+  (function () {
+    const qs = new URLSearchParams(location.search);
+    const orderRef = qs.get('order_ref') || qs.get('orderReference') || '';
+    const rrn = qs.get('payment_id') || qs.get('rrn') || '';
+    const amountRaw = qs.get('amount') || '';
+    const currency = (qs.get('currency') || 'UAH').toUpperCase();
+    const amount = amountRaw ? Number(String(amountRaw).replace(',', '.')) : NaN;
+
+    const dedupeId = orderRef || rrn || 'thanks';
+    const firedKey = 'cw_google_ads_conversion:' + dedupeId;
+
+    if (sessionStorage.getItem(firedKey) === '1') return;
+    if (typeof gtag !== 'function') return;
+
+    const payload = {
+      send_to: 'AW-957636387/THR-CKrbn54cEKO-0cgD',
+      currency: currency
+    };
+
+    if (!Number.isNaN(amount) && amount > 0) payload.value = amount;
+    if (orderRef || rrn) payload.transaction_id = orderRef || rrn;
+
+    gtag('event', 'conversion', payload);
+    sessionStorage.setItem(firedKey, '1');
   })();
   </script>
   
