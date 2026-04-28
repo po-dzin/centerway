@@ -62,7 +62,7 @@ npm run smoke:dosha:result
 
 - Feature flag: `CW_NEXT_LANDING_SHORT_IREM=1` enables Next-managed entrypoints for `/reboot` and `/irem`.
 - Default (flag on): Next-managed entrypoints are enabled.
-- Fallback/rollback: unset the flag to route traffic back to `/short/index.html` and `/irem/index.html`.
+- Host-based root domains (`reboot.*`, `irem.*`) are served through middleware rewrites into `src/landing-static/**`; `public/short/*` and `public/irem/*` are no longer part of the runtime surface.
 - Typed hero rollout flag: `CW_TYPED_HERO_SHORT_IREM=1` enables typed hero replacements for `short/irem`.
 - Default for typed hero flag is off: `CW_TYPED_HERO_SHORT_IREM=0`.
 - Next entrypoints preserve legacy DOM and JS behavior, but move inline tracking bootstrap to managed shared runtime:
