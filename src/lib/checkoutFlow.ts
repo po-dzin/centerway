@@ -2,7 +2,7 @@ import { ProductCode } from "@/lib/products";
 import { CheckoutStartRequest, buildCheckoutEventPayload } from "@/lib/checkout";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
-type LeadRecord = {
+export type LeadRecord = {
   order_ref: string;
   product_code: ProductCode;
   source: string;

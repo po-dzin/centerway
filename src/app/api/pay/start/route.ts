@@ -1,7 +1,7 @@
 // src/app/api/pay/start/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
-import { resolveProduct } from "@/lib/products";
+import { resolvePayableProduct } from "@/lib/products";
 import {
   createPaymentInvoice,
   resolveLocaleFromRequest,
@@ -11,7 +11,7 @@ export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
-  const product = resolveProduct({
+  const product = resolvePayableProduct({
     product: url.searchParams.get("product") ?? undefined,
   });
   const format = url.searchParams.get("format"); // json | null

@@ -2,7 +2,7 @@ import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   Locale,
-  ProductCode,
+  PayableProductCode,
   PRODUCTS,
   normalizeLocale,
   productDescription,
@@ -14,7 +14,7 @@ import type { CapiEventPayload } from "@/lib/tracking/capi";
 export type PaymentStartSuccess = {
   ok: true;
   order_ref: string;
-  product: ProductCode;
+  product: PayableProductCode;
   payUrl: string;
 };
 
@@ -31,7 +31,7 @@ export type PaymentStartError = {
 export type PaymentStartResult = PaymentStartSuccess | PaymentStartError;
 
 export type PaymentStartInput = {
-  product: ProductCode;
+  product: PayableProductCode;
   locale: Locale;
   source: "pay_start" | "checkout_start";
   host?: string | null;
@@ -64,7 +64,7 @@ export function requiredPaymentEnv() {
   return { need, missing };
 }
 
-function makeOrderRef(product: ProductCode, nowMs: () => number, randomHex: (bytes: number) => string) {
+function makeOrderRef(product: PayableProductCode, nowMs: () => number, randomHex: (bytes: number) => string) {
   const d = new Date(nowMs());
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");

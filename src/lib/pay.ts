@@ -1,6 +1,6 @@
-import { ProductCode } from "./products";
+import { PayableProductCode } from "./products";
 
-export function buildReturnUrl(appBaseUrl: string, product: ProductCode, orderRef: string): string {
+export function buildReturnUrl(appBaseUrl: string, product: PayableProductCode, orderRef: string): string {
   const base = appBaseUrl.replace(/\/+$/, "");
   return `${base}/pay/return?product=${encodeURIComponent(product)}&order_ref=${encodeURIComponent(orderRef)}`;
 }
