@@ -7,3 +7,5 @@ node_modules/
 legacy/
 next-env.d.ts
 pnpm-workspace.yaml
+artifacts/
+output/
