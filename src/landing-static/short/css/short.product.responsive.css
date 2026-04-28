@@ -7,7 +7,7 @@
   }
 
   .reviews-track {
-    justify-content: center;
+    justify-content: flex-start;
   }
 
   .section-hero h3 {
@@ -37,6 +37,10 @@
 
 /* Tablet */
 @media (min-width: 601px) and (max-width: 1023px) {
+  :root {
+    --landing-space-proof-reviews-edge-padding: var(--landing-space-scale-20);
+  }
+
   section:not(.section-hero) h2 {
     font-size: var(--landing-type-responsive-section-h2-tablet-size, 32px);
   }
@@ -70,7 +74,8 @@
 
   .section-expert .section-expert-image {
     width: 100%;
-    max-width: 28rem;
+    width: min(100%, 23rem);
+    max-width: 23rem;
     margin-left: auto;
     margin-right: auto;
     justify-self: center;
@@ -298,6 +303,9 @@
   }
 
   .help-card {
+    --landing-size-help-card-media-slot: 7.25rem;
+    --landing-space-help-card-media-gap: var(--landing-space-scale-18);
+    --landing-space-help-card-title-gap: var(--landing-space-scale-12);
     padding: var(--landing-space-responsive-card-padding, 18px);
   }
 

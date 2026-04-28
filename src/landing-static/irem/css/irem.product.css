@@ -7,37 +7,6 @@ html {
 }
 
 :root {
-  --product-color-ref-000000: #000000;
-  --product-color-ref-111111: #111111;
-  --product-color-ref-333333: #333333;
-  --product-color-ref-384a77: #384a77;
-  --product-color-ref-555555: #555555;
-  --product-color-ref-727e90: #727e90;
-  --product-color-ref-747ab1: #747ab1;
-  --product-color-ref-9a9a9a: #9a9a9a;
-  --product-color-ref-9f1239: #9f1239;
-  --product-color-ref-b91c1c: #b91c1c;
-  --product-color-ref-cccccc: #cccccc;
-  --product-color-ref-cedbfd: #cedbfd;
-  --product-color-ref-d4d9e2: #d4d9e2;
-  --product-color-ref-d8dce3: #d8dce3;
-  --product-color-ref-dbe3ff: #dbe3ff;
-  --product-color-ref-dd6d0c: #dd6d0c;
-  --product-color-ref-e5e7eb: #e5e7eb;
-  --product-color-ref-e8efff: #e8efff;
-  --product-color-ref-eaf4ff: #eaf4ff;
-  --product-color-ref-ef4444: #ef4444;
-  --product-color-ref-f3f3f3: #f3f3f3;
-  --product-color-ref-f3f6ff: #f3f6ff;
-  --product-color-ref-f58220: #f58220;
-  --product-color-ref-f5f7fb: #f5f7fb;
-  --product-color-ref-f5faff: #f5faff;
-  --product-color-ref-fafafa: #fafafa;
-  --product-color-ref-fecdd3: #fecdd3;
-  --product-color-ref-fff1f2: #fff1f2;
-  --product-color-ref-fff9f8: #fff9f8;
-  --product-color-ref-fffdf7: #fffdf7;
-  --product-color-ref-ffffff: #ffffff;
   --landing-space-problem-title-margin-bottom: var(--landing-space-scale-48);
   --landing-space-problem-items-gap: var(--landing-space-scale-16);
   --landing-space-problem-item-padding: var(--landing-space-scale-20) var(--landing-space-scale-16);
@@ -58,8 +27,9 @@ html {
   --landing-space-proof-reviews-margin-bottom: var(--landing-space-scale-24);
   --landing-space-proof-reviews-track-gap: var(--landing-space-scale-24);
   --landing-space-proof-reviews-track-padding: 0 48px;
+  --landing-space-proof-reviews-track-padding-mobile: 0 var(--landing-space-scale-20);
   --landing-space-proof-reviews-video-margin-top: var(--landing-space-scale-24);
-  --landing-space-proof-subtitle-padding-bottom: var(--landing-space-scale-30);
+  --landing-space-proof-subtitle-margin-bottom: var(--landing-space-scale-20);
   --landing-space-proof-grid-margin-bottom: var(--landing-space-scale-20);
   --landing-radius-proof-reviews-item: var(--landing-radius-media);
   --landing-radius-proof-carousel-button: 50%;
@@ -71,7 +41,6 @@ html {
   --landing-radius-help-card: var(--landing-radius-scale-sm);
   --landing-space-help-card-padding: var(--landing-space-scale-32);
   --landing-space-help-card-margin: var(--landing-space-scale-32) auto 0;
-  --landing-space-help-text-padding: var(--landing-space-scale-4) var(--landing-space-scale-10);
   --landing-space-grid-item-padding: var(--landing-space-scale-20);
   --landing-space-grid-gap: var(--landing-space-scale-20);
   --landing-space-footer-list-item-margin-bottom: var(--landing-space-scale-5);
@@ -91,8 +60,38 @@ html {
   --landing-space-addon-list-item-margin-bottom: var(--landing-space-scale-15);
   --landing-radius-addon-list-icon: 50%;
   --landing-space-addon-list-icon-size: var(--landing-space-scale-25);
-  --landing-radius-addon-guarantee-icon: 50%;
-  --landing-space-addon-guarantee-icon-margin-bottom: var(--landing-space-scale-16);
+  --landing-space-offer-card-padding: var(--landing-space-rhythm-32);
+  --landing-space-offer-card-gap: var(--landing-space-rhythm-20);
+  --landing-space-offer-cta-gap: var(--landing-space-rhythm-12);
+  --landing-space-offer-cta-margin-top: var(--landing-space-rhythm-8);
+  --landing-space-proof-accordion-title-padding: var(--landing-space-rhythm-16) var(--landing-space-rhythm-20);
+  --landing-space-proof-accordion-title-gap: var(--landing-space-rhythm-12);
+  --landing-space-proof-accordion-title-padding-right: var(--landing-space-rhythm-48);
+  --landing-space-proof-accordion-info-padding: 0 var(--landing-space-rhythm-24) var(--landing-space-rhythm-20);
+  --landing-space-proof-accordion-list-padding-left: var(--landing-space-rhythm-20);
+  --landing-size-hero-media-max-width: 34rem;
+  --landing-size-foundations-card-min-width: 13rem;
+  --landing-size-foundations-icon: 4.5rem;
+  --landing-size-proof-carousel-control: 2.5rem;
+  --landing-space-proof-carousel-control-offset: calc(var(--landing-space-rhythm-8) * -1);
+  --landing-size-footer-payment-mark-height: 4rem;
+  --landing-size-modal-panel-max-width: 32rem;
+  --landing-size-modal-close: 2.25rem;
+  --landing-size-section-reading-max-width: 42rem;
+  --landing-size-section-stack-max-width: 48rem;
+  --landing-size-section-media-max-width: 45rem;
+  --landing-color-surface-section: var(--landing-color-surface-muted);
+  --landing-color-accent-strong: var(--ds-color-product-text-badge);
+  --landing-color-price-accent: var(--landing-color-accent);
+  --landing-color-hero-chip-cool-bg: var(--landing-color-surface-chip);
+  --landing-color-hero-chip-cool-border: var(--landing-color-border-chip);
+  --landing-color-hero-chip-cool-text: var(--landing-color-primary);
+  --landing-color-hero-chip-soft-bg: var(--landing-color-surface-base);
+  --landing-color-hero-chip-soft-border: var(--landing-color-border-chip-soft);
+  --landing-color-hero-chip-soft-text: var(--landing-color-text-chip);
+  --landing-size-proof-video-width: 23.1875rem;
+  --landing-size-proof-video-height: 18.75rem;
+  --landing-color-spinner-border: rgb(255 255 255 / 0.45);
   --landing-color-card-unified: var(--landing-color-surface-card);
   --landing-shadow-card-unified: var(--landing-shadow-card-soft);
   --landing-radius-card-unified: var(--landing-radius-card);
@@ -228,30 +227,34 @@ button::before {
   background: var(--landing-color-card-unified);
   border-radius: var(--landing-radius-card-unified);
   padding: var(--landing-space-help-card-padding, 32px);
-  max-width: 780px;
+  max-width: var(--landing-size-section-stack-max-width, 48rem);
   margin: var(--landing-space-help-card-margin, 32px auto 0);
   box-shadow: var(--landing-shadow-card-unified);
 }
 
-.help-why h2 {
-  margin-bottom: var(--landing-space-input-margin-bottom, 10px);
+.help-why h3 {
+  text-align: center;
+  font-size: var(--landing-type-section-h3-size, 24px);
+  font-weight: var(--landing-type-section-h3-weight, 500);
+  color: var(--landing-color-text-muted);
+  margin-bottom: var(--landing-space-rhythm-20);
 }
 
 .help-why p {
-  padding: var(--landing-space-help-text-padding, 4px 10px);
-  line-height: var(--landing-line-ui, 1.25);
-  margin: 0;
+  max-width: var(--landing-size-section-reading-max-width, 42rem);
+  margin: 0 auto;
+  line-height: var(--landing-line-body, 1.5);
 }
 
 #accordion_1 {
-  max-width: 800px;
+  max-width: var(--landing-size-section-stack-max-width, 48rem);
   margin: 0 auto;
 }
 
 .section-addon-results-subtitle {
   text-align: center;
-  padding-bottom: var(--landing-space-proof-subtitle-padding-bottom, 30px);
-  color: var(--landing-color-primary);
+  margin-bottom: var(--landing-space-proof-subtitle-margin-bottom, 20px);
+  color: var(--landing-color-text-muted);
 }
 
 .openModal:active {
@@ -259,7 +262,7 @@ button::before {
 }
 
 .openModal:hover {
-  background-color: var(--landing-color-primary-strong);
+  background-color: var(--landing-color-accent-strong);
 }
 
 section {
@@ -273,7 +276,7 @@ img {
 
 #menu {
   width: 100%;
-  background: var(--landing-color-surface-muted);
+  background: var(--landing-color-surface-base);
   padding: var(--landing-space-rhythm-8) var(--landing-space-rhythm-16);
   box-sizing: border-box;
 }
@@ -302,7 +305,7 @@ img {
 }
 
 .bg {
-  background: linear-gradient(180deg, var(--landing-color-surface-gradient-start) 73.74%, rgba(241, 241, 241, 0) 105.34%);
+  background: linear-gradient(180deg, var(--landing-color-surface-section) 73.74%, rgba(243, 246, 255, 0) 105.34%);
 }
 
 .section-hero {
@@ -337,8 +340,8 @@ img {
   align-self: flex-start;
   padding: var(--landing-space-rhythm-8) var(--landing-space-rhythm-16);
   border-radius: var(--landing-radius-pill, 999px);
-  background: var(--landing-color-surface-chip);
-  border: 1px solid var(--landing-color-border-chip);
+  background: var(--landing-color-hero-chip-cool-bg);
+  border: 1px solid var(--landing-color-hero-chip-cool-border);
   color: var(--landing-color-primary);
   font-size: var(--landing-type-hero-badge-size, 14px);
   font-weight: var(--landing-type-hero-badge-weight, 700);
@@ -385,9 +388,9 @@ img {
   align-items: center;
   padding: var(--landing-space-rhythm-8) var(--landing-space-rhythm-8);
   border-radius: var(--landing-radius-pill, 999px);
-  background: var(--landing-color-surface-chip-soft);
-  border: 1px solid var(--landing-color-border-chip-soft);
-  color: var(--landing-color-text-chip);
+  background: var(--landing-color-hero-chip-soft-bg);
+  border: 1px solid var(--landing-color-hero-chip-soft-border);
+  color: var(--landing-color-hero-chip-soft-text);
   font-size: var(--landing-type-hero-chip-size, 14px);
   line-height: var(--landing-type-hero-chip-line-height, 1.2);
   font-weight: var(--landing-type-hero-chip-weight, 600);
@@ -403,10 +406,10 @@ img {
 
 .section-hero .img.desk {
   position: relative;
-  width: 80%;
-  max-width: none;
+  width: min(100%, var(--landing-size-hero-media-max-width, 34rem));
+  max-width: var(--landing-size-hero-media-max-width, 34rem);
   max-height: none;
-  height: 80%;
+  height: auto;
   margin: 0 auto;
   align-self: center;
   justify-self: center;
@@ -431,7 +434,7 @@ img {
   gap: 0;
 }
 
-.section-hero .price span {
+.section-hero #divprice .price span {
   color: var(--landing-color-primary);
   font-size: var(--landing-type-hero-price-size, 32px);
   font-weight: var(--landing-type-hero-price-weight, 700);
@@ -481,7 +484,7 @@ img {
 }
 
 .section-solution h2 {
-  margin-bottom: var(--landing-space-rhythm-16);
+  margin-bottom: var(--landing-space-rhythm-32);
 }
 
 #divflex {
@@ -502,7 +505,7 @@ img {
 .bluebg h3 {
   color: var(--landing-color-primary);
   text-align: center;
-  margin: 0 0 8px;
+  margin: 0 0 var(--landing-space-rhythm-16);
   min-height: 64px;
   display: flex;
   align-items: center;
@@ -523,7 +526,7 @@ img {
 }
 
 .bluebg ul {
-  margin: var(--landing-space-rhythm-4) 0 0;
+  margin: 0;
   padding-left: var(--landing-space-rhythm-20);
   list-style: disc;
 }
@@ -538,7 +541,7 @@ img {
 }
 
 .section-addon-foundations {
-  background: linear-gradient(var(--landing-color-surface-muted), var(--landing-color-surface-chip));
+  background: linear-gradient(var(--landing-color-surface-section), var(--landing-color-surface-base));
 }
 
 .section-addon-foundations h2 {
@@ -552,7 +555,8 @@ img {
   text-align: center;
   border-radius: var(--landing-radius-card-unified);
   box-shadow: var(--landing-shadow-card-unified);
-  width: 231px;
+  width: 100%;
+  min-width: min(100%, var(--landing-size-foundations-card-min-width, 13rem));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -561,17 +565,16 @@ img {
 }
 
 .grid-container {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(var(--landing-size-foundations-card-min-width, 13rem), 1fr));
   gap: var(--landing-space-grid-gap, 20px);
 }
 
 .divicon {
-  width: 80px;
-  height: 80px;
+  width: var(--landing-size-foundations-icon, 4.5rem);
+  height: var(--landing-size-foundations-icon, 4.5rem);
   display: block;
-  margin: 0 auto var(--landing-space-input-margin-bottom, 10px);
+  margin: 0 auto var(--landing-space-rhythm-10);
   object-fit: contain;
   flex: 0 0 auto;
 }
@@ -586,7 +589,7 @@ img {
 /* Core funnel + addon visual styles moved to irem.product.css / irem.product.responsive.css */
 
 .accordion {
-  max-width: 800px;
+  max-width: var(--landing-size-section-stack-max-width, 48rem);
   margin: 0 auto;
 }
 
@@ -686,8 +689,8 @@ img {
 }
 
 #iframe {
-  width: 371px;
-  height: 300px;
+  width: var(--landing-size-proof-video-width, 23.1875rem);
+  height: var(--landing-size-proof-video-height, 18.75rem);
   border-radius: var(--landing-radius-media);
 }
 
@@ -715,7 +718,7 @@ img {
 
 .reviews-item {
   flex: 0 0 auto;
-  width: auto;
+  width: min(100%, 280px);
   max-width: 100%;
   scroll-snap-align: center;
   overflow: hidden;
@@ -724,7 +727,7 @@ img {
 }
 
 .reviews-item img {
-  width: auto;
+  width: 100%;
   height: auto;
   max-width: 100%;
   display: block;
@@ -736,8 +739,8 @@ img {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  width: 44px;
-  height: 44px;
+  width: var(--landing-size-proof-carousel-control, 2.5rem);
+  height: var(--landing-size-proof-carousel-control, 2.5rem);
   border-radius: var(--landing-radius-proof-carousel-button, 50%);
   border: 1px solid var(--landing-color-border-subtle);
   background: var(--landing-color-card-unified);
@@ -751,11 +754,15 @@ img {
 }
 
 .carousel-btn.prev {
-  left: -18px;
+  left: var(--landing-space-proof-carousel-control-offset, -0.5rem);
 }
 
 .carousel-btn.next {
-  right: -18px;
+  right: var(--landing-space-proof-carousel-control-offset, -0.5rem);
+}
+
+.carousel-btn::before {
+  display: none;
 }
 
 .carousel-icon {
@@ -779,7 +786,7 @@ img {
 
 .reviews-iframe {
   width: 100%;
-  max-width: 720px;
+  max-width: var(--landing-size-section-media-max-width, 45rem);
   aspect-ratio: 16 / 9;
   height: auto;
   border-radius: var(--landing-radius-media);
@@ -883,7 +890,7 @@ img {
 
 .footer-logo-payments img {
   align-items: center;
-  height: 80px;
+  height: var(--landing-size-footer-payment-mark-height, 4rem);
   width: auto;
   margin: 0;
 }
@@ -913,7 +920,7 @@ img {
 .precheckout-modal__panel {
   position: relative;
   z-index: 1;
-  width: min(100%, 520px);
+  width: min(100%, var(--landing-size-modal-panel-max-width, 32rem));
   margin: 0;
   background: var(--landing-color-card-unified);
   border-radius: var(--landing-modal-panel-radius, var(--landing-radius-card-unified));
@@ -928,8 +935,8 @@ img {
   position: absolute;
   top: 12px;
   right: 12px;
-  width: 36px;
-  height: 36px;
+  width: var(--landing-size-modal-close, 2.25rem);
+  height: var(--landing-size-modal-close, 2.25rem);
   border-radius: var(--landing-radius-circle, 50%);
   border: 1px solid var(--landing-color-border-panel);
   background: var(--landing-color-card-unified);
@@ -965,7 +972,7 @@ img {
 
 .precheckout-modal__course-price {
   text-align: left;
-  color: var(--landing-color-primary);
+  color: var(--landing-color-price-accent);
   font-weight: var(--landing-type-modal-price-weight, 700);
   font-size: var(--landing-type-modal-price-size, 24px);
   line-height: var(--landing-type-modal-price-line-height, 1.2);
@@ -1094,7 +1101,7 @@ img {
   width: 16px;
   height: 16px;
   border-radius: var(--landing-radius-circle, 50%);
-  border: 2px solid rgba(255, 255, 255, 0.45);
+  border: 2px solid var(--landing-color-spinner-border);
   border-top-color: var(--landing-color-on-inverse);
   animation: precheckout-spin 0.8s linear infinite;
 }
@@ -1135,11 +1142,11 @@ body.modal-open {
 .section-hero .openModal:hover,
 .section-offer .openModal:hover,
 [data-sticky-menu] .openModal:hover {
-  background: var(--landing-color-primary-strong);
+  background: var(--landing-color-accent-strong);
 }
 
 .section-problem {
-  background: linear-gradient(var(--landing-color-surface-chip), var(--landing-color-surface-base));
+  background: linear-gradient(var(--landing-color-surface-section), var(--landing-color-surface-base));
 }
 
 .section-problem h2 {
@@ -1156,11 +1163,11 @@ body.modal-open {
 }
 
 .section-problem .item {
-  background: var(--landing-color-surface-card);
-  border-radius: var(--landing-radius-problem-item, var(--landing-radius-card));
+  background: var(--landing-color-card-unified);
+  border-radius: var(--landing-radius-card-unified);
   padding: var(--landing-space-problem-item-padding, 20px 16px);
   text-align: center;
-  box-shadow: var(--landing-shadow-card);
+  box-shadow: var(--landing-shadow-card-unified);
   transition: transform 0.2s ease;
   display: flex;
   flex-direction: column;
@@ -1199,7 +1206,7 @@ body.modal-open {
 }
 
 .section-expert {
-  background: linear-gradient(var(--landing-color-surface-chip), var(--landing-color-surface-base));
+  background: linear-gradient(var(--landing-color-surface-section), var(--landing-color-surface-base));
   font-size: var(--landing-type-expert-body-size, 15px);
 }
 
@@ -1273,8 +1280,9 @@ body.modal-open {
 .section-program .items {
   margin: 0 auto;
   width: 100%;
-  border-radius: var(--landing-radius-card);
-  background: var(--landing-color-surface-subtle);
+  border-radius: var(--landing-radius-card-unified);
+  background: var(--landing-color-card-unified);
+  box-shadow: var(--landing-shadow-card-unified);
   margin-bottom: 0;
   padding: var(--landing-space-program-card-padding, 26px);
   box-sizing: border-box;
@@ -1358,10 +1366,10 @@ body.modal-open {
 }
 
 .section-addon-protocol .item {
-  background: var(--landing-color-surface-subtle);
-  border-radius: var(--landing-radius-card);
+  background: var(--landing-color-card-unified);
+  border-radius: var(--landing-radius-card-unified);
   padding: var(--landing-space-addon-protocol-item-padding, 20px 22px);
-  box-shadow: var(--landing-shadow-card-soft);
+  box-shadow: var(--landing-shadow-card-unified);
 }
 
 .section-addon-protocol .item h4 {
@@ -1376,41 +1384,30 @@ body.modal-open {
 
 .section-format .items {
   border-radius: var(--landing-radius-card);
-  margin-bottom: var(--landing-space-addon-format-item-margin-bottom, 8px);
   padding: var(--landing-space-addon-format-item-padding, 32px);
-  text-align: center;
-  font-size: var(--landing-type-addon-card-body-size, 20px);
-  max-width: 780px;
-  margin: 0 auto;
-  box-shadow: var(--landing-shadow-chip);
-  background: linear-gradient(var(--landing-color-surface-chip), var(--landing-color-surface-base));
-}
-
-.section-format .items p {
-  margin-top: var(--landing-space-addon-format-item-paragraph-margin-top, 8px);
-}
-
-.section-format .items h4 {
-  padding: var(--landing-space-addon-format-item-title-padding-top, 17px) 0 0;
-}
-
-.itemsli {
-  background-color: var(--landing-color-surface-card);
-  border-radius: var(--landing-radius-card);
-  box-shadow: var(--landing-shadow-card);
-  max-width: 780px;
-  margin: 0 auto;
-  padding: var(--landing-space-addon-list-padding, 40px);
   text-align: left;
+  font-size: var(--landing-type-addon-card-body-size, 20px);
+  max-width: var(--landing-size-section-stack-max-width, 48rem);
+  margin: 0 auto;
+  box-shadow: var(--landing-shadow-card-unified);
+  background: var(--landing-color-surface-card);
+  display: flex;
+  flex-direction: column;
+  gap: var(--landing-space-rhythm-20);
 }
 
-.itemsli ul {
-  list-style-type: none;
+.section-format .items h2 {
+  margin: 0;
+  text-align: center;
+}
+
+.section-format .items ul {
+  list-style: none;
   padding: 0;
   margin: 0;
 }
 
-.itemsli li {
+.section-format .items li {
   color: var(--landing-color-text-strong);
   position: relative;
   padding-left: var(--landing-space-addon-list-item-padding-left, 37px);
@@ -1419,7 +1416,11 @@ body.modal-open {
   line-height: var(--landing-line-body, 1.5);
 }
 
-.itemsli li::before {
+.section-format .items li:last-child {
+  margin-bottom: 0;
+}
+
+.section-format .items li::before {
   content: "✓";
   display: flex;
   align-items: center;
@@ -1437,22 +1438,62 @@ body.modal-open {
 
 .section-offer {
   text-align: center;
-  background: var(--landing-color-surface-subtle);
+  background: var(--landing-color-surface-base);
 }
 
 .section-offer p {
   font-weight: 400;
+  margin: 0;
 }
 
-.section-offer .title p {
-  font-weight: 500;
+.section-offer .container {
+  max-width: var(--landing-size-section-stack-max-width, 42rem);
+  margin: 0 auto;
+  background: var(--landing-color-card-unified);
+  border-radius: var(--landing-radius-card-unified);
+  box-shadow: var(--landing-shadow-card-unified);
+  padding: var(--landing-space-offer-card-padding, var(--landing-space-rhythm-32));
+  display: flex;
+  flex-direction: column;
+  gap: var(--landing-space-offer-card-gap, var(--landing-space-rhythm-20));
+}
+
+.section-offer .offer-icon {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--landing-color-surface-warm);
+  color: var(--landing-color-state-warning-text);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto;
+}
+
+.section-offer h2 {
+  margin: 0;
+}
+
+.section-offer .offer-proof,
+.section-offer .offer-lead {
+  width: 100%;
+  max-width: var(--landing-size-section-reading-max-width, 42rem);
+  margin: 0 auto;
+}
+
+.section-offer .offer-cta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--landing-space-offer-cta-gap, var(--landing-space-rhythm-12));
+  margin-top: var(--landing-space-offer-cta-margin-top, var(--landing-space-rhythm-8));
+  width: 100%;
 }
 
 .section-offer .price {
   font-size: var(--landing-type-offer-price-size, 20px);
   font-weight: 700;
-  margin-top: var(--landing-space-rhythm-16);
-  margin-bottom: var(--landing-space-rhythm-16);
+  margin: 0;
   text-transform: none;
 }
 
@@ -1479,37 +1520,9 @@ body.modal-open {
   display: none;
 }
 
-.section-addon-guarantee {
-  text-align: center;
-  font-size: var(--landing-type-section-body-size, 18px);
-  background: var(--landing-color-surface-base);
-}
-
-.section-addon-guarantee .guarantee-icon {
-  width: 64px;
-  height: 64px;
-  border-radius: var(--landing-radius-addon-guarantee-icon, 50%);
-  background: var(--landing-color-surface-badge);
-  color: var(--landing-color-state-warning-text);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin: 0 auto var(--landing-space-addon-guarantee-icon-margin-bottom, 16px);
-}
-
-.section-addon-guarantee .guarantee-text {
-  display: block;
-  width: 100%;
-  max-width: 900px;
-  font-weight: 400;
-  line-height: var(--landing-line-body, 1.5);
-  text-align: center;
-  margin: 0 auto;
-}
-
 .section-addon-results,
 .section-faq {
-  background: linear-gradient(var(--landing-color-surface-chip), var(--landing-color-surface-base));
+  background: linear-gradient(var(--landing-color-surface-section), var(--landing-color-surface-base));
 }
 
 .section-addon-results h2,
@@ -1519,12 +1532,12 @@ body.modal-open {
 }
 
 .addon-results-note {
-  max-width: 800px;
+  max-width: var(--landing-size-section-stack-max-width, 48rem);
   margin: var(--landing-space-faq-note-margin, 16px auto 0);
   padding: var(--landing-space-faq-note-padding, 16px 20px);
-  border-radius: var(--landing-radius-faq-note, 16px);
-  background: var(--landing-color-surface-card);
-  box-shadow: var(--landing-shadow-chip);
+  border-radius: var(--landing-radius-card-unified);
+  background: var(--landing-color-card-unified);
+  box-shadow: var(--landing-shadow-card-unified);
 }
 
 .addon-results-note p {
