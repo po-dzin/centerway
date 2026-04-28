@@ -1,7 +1,8 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import type { PayableProductCode } from "@/lib/products";
+import type { ProductCode } from "@/lib/products";
 
 type Supabase = ReturnType<typeof supabaseAdmin>;
+type BotProductCode = Extract<ProductCode, "short" | "irem">;
 
 type BotState =
   | "idle"
@@ -12,7 +13,7 @@ type BotState =
 type BotSession = {
   telegram_user_id: string;
   telegram_username: string | null;
-  selected_product: PayableProductCode | null;
+  selected_product: BotProductCode | null;
   state: BotState;
   contact: string | null;
 };
@@ -57,7 +58,7 @@ type InlineKeyboardMarkup = {
   inline_keyboard: InlineKeyboardButton[][];
 };
 
-const PRODUCT_LABELS: Record<PayableProductCode, string> = {
+const PRODUCT_LABELS: Record<BotProductCode, string> = {
   short: "Short Reboot",
   irem: "IREM",
 };
@@ -77,11 +78,11 @@ const FAQ_ANSWERS: Record<string, string> = {
     "Если вопрос не подходит под разделы FAQ, нажмите «Связаться с поддержкой» и опишите ситуацию.",
 };
 
-function assertProduct(value: string | null | undefined): PayableProductCode | null {
+function assertProduct(value: string | null | undefined): BotProductCode | null {
   return value === "short" || value === "irem" ? value : null;
 }
 
-function accessLink(product: PayableProductCode): string {
+function accessLink(product: BotProductCode): string {
   if (product === "short") {
     return (
       process.env.SHORT_ACCESS_LINK ||
@@ -264,7 +265,7 @@ async function logEventBestEffort(
 
 async function findPaidOrder(
   db: Supabase,
-  product: PayableProductCode,
+  product: BotProductCode,
   contact: string
 ): Promise<boolean> {
   const email = normalizeEmail(contact);
@@ -315,7 +316,7 @@ async function sendProductPicker(chatId: number): Promise<void> {
 
 async function sendMainMenu(
   chatId: number,
-  product: PayableProductCode
+  product: BotProductCode
 ): Promise<void> {
   await sendMessage(
     chatId,
