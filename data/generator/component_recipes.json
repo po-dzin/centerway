@@ -95,6 +95,11 @@
       "id": "recipe.funnel.resource-entry.v1",
       "version": "1.0.0",
       "component_key": "funnel.resource-entry"
+    },
+    {
+      "id": "recipe.platform.block.v1",
+      "version": "1.0.0",
+      "component_key": "platform.block"
     }
   ]
 }

@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useLandingRuntime } from "@/components/landing/runtime/useLandingRuntime";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
 import { getFunnelContent, type EthnoIconName, type FunnelRouteKey } from "@/lib/generator/content";
@@ -143,11 +144,24 @@ export function FunnelHeroSection({ route, ctaPrimaryLabel = "Записатис
           </aside>
         </div>
         <div className="cw3-hero-media">
-          <div className="cw3-photo-slot cw3-photo-slot-hero" data-photo-slot={`${route}-hero-primary`} aria-hidden="true">
-            <span className="cw3-photo-slot-glyph">
-              <EthnoIcon name="person" />
-            </span>
-          </div>
+          {route === "consult" ? (
+            <figure className="cw3-photo-slot cw3-photo-slot-hero cw3-photo-slot-image" data-photo-slot={`${route}-hero-primary`}>
+              <Image
+                src="/cw/landing/img/consult-hero-evgeniy.jpeg"
+                alt="Євгеній Корякін на консультаційній практиці"
+                fill
+                priority
+                sizes="(max-width: 760px) 100vw, (max-width: 1040px) 88vw, 42vw"
+                className="cw3-photo-slot-img cw3-photo-slot-img-consult-hero"
+              />
+            </figure>
+          ) : (
+            <div className="cw3-photo-slot cw3-photo-slot-hero" data-photo-slot={`${route}-hero-primary`} aria-hidden="true">
+              <span className="cw3-photo-slot-glyph">
+                <EthnoIcon name="person" />
+              </span>
+            </div>
+          )}
         </div>
       </div>
     </section>

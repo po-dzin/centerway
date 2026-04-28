@@ -46,6 +46,16 @@
       "version": "1.0.0",
       "mode": "support",
       "tokens": {}
+    },
+    {
+      "id": "mode_pack.platform.v1",
+      "version": "1.0.0",
+      "mode": "platform",
+      "tokens": {
+        "--cw-accent": "var(--cw-sem-guide-primary)",
+        "--cw-accent-soft": "color-mix(in srgb, var(--cw-sem-guide-primary) 14%, var(--cw-sem-calm-surface) 86%)",
+        "--cw-status-running": "var(--cw-sem-method-ink)"
+      }
     }
   ]
 }

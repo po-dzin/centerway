@@ -24,6 +24,12 @@ const DEFAULT_SCREEN_BY_ROUTE: Record<ScreenRouteKey, string> = {
   herbs: "screen.herbs.v1.control",
   "dosha-test": "screen.dosha-test.v1.control",
   "lesson-pilot": "screen.lesson.pilot.v1.control",
+  "platform-home": "screen.platform-home.v1.control",
+  expert: "screen.expert.v1.control",
+  "program-way21": "screen.program-way21.v1.control",
+  "program-ideal-body": "screen.program-ideal-body.v1.control",
+  "program-irem": "screen.program-irem.v1.control",
+  "mini-detox": "screen.mini-detox.v1.control",
 };
 
 function mergeTokens(...sources: Array<Record<`--${string}`, string> | null>): Record<`--${string}`, string> {

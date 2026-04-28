@@ -7,6 +7,7 @@ import { DepthLabToggle } from "@/components/generator/DepthLabToggle";
 import { FunnelFooterSticky } from "@/components/landing/revork/FunnelSections";
 import { RouteAuthGate } from "@/components/auth/RouteAuthGate";
 import { isAuthRequiredRoute } from "@/lib/auth/protectedRoutes";
+import { PlatformShell } from "@/components/platform/PlatformLayout";
 
 type GeneratedScreenClientProps = {
   resolved: ResolvedGeneratedScreen;
@@ -23,6 +24,13 @@ export function GeneratedScreenClient({ resolved }: GeneratedScreenClientProps) 
     routeKey === "consult" ||
     routeKey === "detox" ||
     routeKey === "herbs";
+  const isPlatformRoute =
+    routeKey === "platform-home" ||
+    routeKey === "expert" ||
+    routeKey === "program-way21" ||
+    routeKey === "program-ideal-body" ||
+    routeKey === "program-irem" ||
+    routeKey === "mini-detox";
   const showDepthLab = isFunnelRoute;
 
   const content = (
@@ -31,6 +39,8 @@ export function GeneratedScreenClient({ resolved }: GeneratedScreenClientProps) 
       data-cw-screen-version={resolved.screen.version}
       data-cw-mode={resolved.screen.mode}
       data-cw-branch={resolved.screen.branch}
+      data-cw-route-family={resolved.screen.route_family}
+      data-cw-route-boundary={resolved.screen.route_boundary}
       data-cw-token-pack={resolved.tokenPackId}
       data-cw-theme={resolved.themeFamily}
       style={style}
@@ -46,7 +56,11 @@ export function GeneratedScreenClient({ resolved }: GeneratedScreenClientProps) 
               recipeVersion={block.recipe.version}
               componentKey={block.recipe.component_key}
               semanticBlockType={block.semanticBlock?.block_type}
-              semanticFamily={block.semanticBlock?.family}
+              semanticFamily={block.block?.semantic_family ?? block.semanticBlock?.family}
+              semanticRole={block.block?.semantic_role}
+              userQuestion={block.block?.user_question}
+              routeBoundary={block.block?.route_boundary}
+              renderer={block.block?.renderer}
               props={block.props}
               generatorContext={{
                 manifest_id: resolved.screen.id,
@@ -64,6 +78,12 @@ export function GeneratedScreenClient({ resolved }: GeneratedScreenClientProps) 
     </div>
   );
 
-  if (!isAuthRequiredRoute(routeKey)) return content;
-  return <RouteAuthGate routeKey={routeKey}>{content}</RouteAuthGate>;
+  const wrappedContent = isPlatformRoute ? (
+    <PlatformShell headerMode={routeKey === "platform-home" ? "overlay" : "default"}>{content}</PlatformShell>
+  ) : (
+    content
+  );
+
+  if (!isAuthRequiredRoute(routeKey)) return wrappedContent;
+  return <RouteAuthGate routeKey={routeKey}>{wrappedContent}</RouteAuthGate>;
 }

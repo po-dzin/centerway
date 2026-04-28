@@ -7,6 +7,7 @@ import blockManifestsJson from "../../../data/generator/block_manifests.json";
 import screenManifestsJson from "../../../data/generator/screen_manifests.json";
 import experimentsJson from "../../../data/generator/experiment_manifests.json";
 import archetypeContractsJson from "../../../data/generator/archetype_contracts_v0_1.json";
+import routeFamilyContractsJson from "../../../data/generator/route_family_contracts.json";
 import type {
   ArchetypeContractsManifest,
   BlockManifest,
@@ -14,6 +15,7 @@ import type {
   ComponentRecipeManifest,
   ExperimentManifest,
   ModePackManifest,
+  RouteFamilyContractsManifest,
   ScreenManifest,
   SemanticBlockManifest,
   TokenPackManifest,
@@ -26,6 +28,7 @@ import {
   validateExperiments,
   validateModePacks,
   validateRecipes,
+  validateRouteFamilyContracts,
   validateSemanticBlocks,
   validateScreens,
   validateTokenPacks,
@@ -48,7 +51,8 @@ const blockManifests = validateBlockManifests(blockManifestsJson);
 const screenManifests = validateScreens(screenManifestsJson);
 const experiments = validateExperiments(experimentsJson);
 const archetypeContracts = validateArchetypeContracts(archetypeContractsJson);
-enforceCanonicalIntegrity(screenManifests, blockManifests, semanticBlocks, recipes);
+const routeFamilyContracts = validateRouteFamilyContracts(routeFamilyContractsJson);
+enforceCanonicalIntegrity(screenManifests, blockManifests, semanticBlocks, recipes, routeFamilyContracts.contracts);
 
 const tokenPackMap = indexById(tokenPacks);
 const modePackMap = indexById(modePacks);
@@ -92,6 +96,10 @@ export function getExperiments(): ExperimentManifest[] {
 
 export function getArchetypeContracts(): ArchetypeContractsManifest {
   return archetypeContracts;
+}
+
+export function getRouteFamilyContracts(): RouteFamilyContractsManifest {
+  return routeFamilyContracts;
 }
 
 export function findTokenPackById(id: string): TokenPackManifest | null {

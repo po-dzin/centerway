@@ -57,6 +57,7 @@
     --cw-shadow: 0 10px 22px rgba(16, 16, 16, 0.08);
     --cw-overlay: rgba(20, 20, 20, 0.36);
     --cw-glass-blur: 12px;
+    --cw-glass-backdrop-filter: blur(var(--cw-glass-blur));
     --cw-glass-stroke: rgba(255, 255, 255, 0.2);
     --cw-glass-glow: transparent;
     --cw-border-width: 1px;
@@ -87,6 +88,160 @@
     --cw-card-border: 1px solid var(--cw-border);
     --cw-card-shadow: var(--cw-shadow-soft);
     --cw-max-width: 1160px;
+    --cw-sem-calm-bg: #f6f2ea;
+    --cw-sem-calm-surface: #fbfaf6;
+    --cw-sem-calm-surface-muted: #e9e2d6;
+    --cw-sem-method-ink: #31403e;
+    --cw-sem-guide-primary: #4f7e76;
+    --cw-sem-guide-strong: #1e3d34;
+    --cw-sem-embodied: #6e8668;
+    --cw-sem-progress: #c1906b;
+    --cw-sem-warmth: #dba54f;
+    --cw-sem-boundary: #b76045;
+    --cw-depth-card-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 92%, transparent);
+    --cw-depth-support-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 88%, var(--cw-sem-calm-surface-muted) 12%);
+    --cw-depth-proof-bg: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-sem-calm-surface) 38%);
+    --cw-depth-boundary-bg: color-mix(in srgb, var(--cw-sem-boundary) 10%, var(--cw-sem-calm-surface) 90%);
+    --cw-depth-icon-slot-bg: color-mix(in srgb, var(--cw-sem-warmth) 9%, var(--cw-sem-calm-surface) 91%);
+    --cw-depth-rail-color: var(--cw-sem-progress);
+    --cw-depth-shadow-soft: 0 14px 35px rgba(35, 29, 20, 0.08);
+    --cw-depth-shadow-medium: 0 18px 42px rgba(35, 29, 20, 0.12);
+    --cw-depth-shadow-strong: 0 24px 48px rgba(24, 20, 14, 0.16);
+    --cw-platform-bg: var(--cw-sem-calm-bg);
+    --cw-platform-surface: var(--cw-sem-calm-surface);
+    --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
+    --cw-platform-text: #0d1b17;
+    --cw-platform-muted: color-mix(in srgb, var(--cw-platform-text) 64%, var(--cw-platform-bg) 36%);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-progress) 38%, var(--cw-platform-bg) 62%);
+    --cw-platform-accent: var(--cw-sem-warmth);
+    --cw-platform-accent-strong: var(--cw-sem-guide-strong);
+    --cw-platform-accent-contrast: #fff8eb;
+    --cw-component-glass-bg: color-mix(in srgb, var(--cw-platform-text) 12%, transparent);
+    --cw-component-glass-bg-hover: color-mix(in srgb, var(--cw-platform-text) 16%, transparent);
+    --cw-component-glass-border: color-mix(in srgb, var(--cw-platform-accent-contrast) 18%, transparent);
+    --cw-component-glass-blur: 72px;
+    --cw-component-glass-filter: blur(var(--cw-component-glass-blur)) saturate(1.28) brightness(0.96);
+    --cw-component-glass-shadow: 0 14px 32px color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+    --cw-component-glass-frost-image: url("/cw/landing/img/consult-hero-evgeniy.jpeg");
+    --cw-component-glass-frost-position: 38% center;
+
+    /* CW_RUNTIME_TOKENS_START */
+    --cw-sem-calm-bg: #f6f2ea;
+    --cw-sem-calm-surface: #fbfaf6;
+    --cw-sem-calm-surface-muted: #e9e2d6;
+    --cw-sem-method-ink: #31403e;
+    --cw-sem-guide-primary: #4f7e76;
+    --cw-sem-guide-strong: #1e3d34;
+    --cw-sem-embodied: #6e8668;
+    --cw-sem-progress: #c1906b;
+    --cw-sem-warmth: #dba54f;
+    --cw-sem-boundary: #b76045;
+    --cw-depth-card-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 92%, transparent);
+    --cw-depth-support-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 88%, var(--cw-sem-calm-surface-muted) 12%);
+    --cw-depth-proof-bg: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-sem-calm-surface) 38%);
+    --cw-depth-boundary-bg: color-mix(in srgb, var(--cw-sem-boundary) 10%, var(--cw-sem-calm-surface) 90%);
+    --cw-depth-icon-slot-bg: color-mix(in srgb, var(--cw-sem-warmth) 9%, var(--cw-sem-calm-surface) 91%);
+    --cw-depth-rail-color: var(--cw-sem-progress);
+    --cw-depth-shadow-soft: 0 14px 35px rgba(35, 29, 20, 0.08);
+    --cw-depth-shadow-medium: 0 18px 42px rgba(35, 29, 20, 0.12);
+    --cw-depth-shadow-strong: 0 24px 48px rgba(24, 20, 14, 0.16);
+    --cw-platform-bg: var(--cw-sem-calm-bg);
+    --cw-platform-surface: var(--cw-sem-calm-surface);
+    --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
+    --cw-platform-text: #0d1b17;
+    --cw-platform-muted: color-mix(in srgb, var(--cw-platform-text) 64%, var(--cw-platform-bg) 36%);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-progress) 38%, var(--cw-platform-bg) 62%);
+    --cw-platform-accent: var(--cw-sem-warmth);
+    --cw-platform-accent-strong: var(--cw-sem-guide-strong);
+    --cw-platform-accent-contrast: #fff8eb;
+    --cw-component-glass-bg: color-mix(in srgb, var(--cw-platform-text) 12%, transparent);
+    --cw-component-glass-bg-hover: color-mix(in srgb, var(--cw-platform-text) 16%, transparent);
+    --cw-component-glass-border: color-mix(in srgb, var(--cw-platform-accent-contrast) 18%, transparent);
+    --cw-component-glass-blur: 72px;
+    --cw-component-glass-filter: blur(var(--cw-component-glass-blur)) saturate(1.28) brightness(0.96);
+    --cw-component-glass-shadow: 0 14px 32px color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+    --cw-component-glass-frost-image: url("/cw/landing/img/consult-hero-evgeniy.jpeg");
+    --cw-component-glass-frost-position: 38% center;
+    --cw-branch-grid-discipline: 1;
+    /* CW_RUNTIME_TOKENS_END */
+
+    /* DS_ALIAS_LIGHT_START */
+    --cw-color-bg-primary: var(--cw-bg);
+    --cw-color-bg-secondary: color-mix(in srgb, var(--cw-bg) 88%, #ffffff 12%);
+    --cw-color-surface-primary: var(--cw-surface-solid);
+    --cw-color-surface-elevated: color-mix(in srgb, var(--cw-surface) 78%, #ffffff 22%);
+    --cw-color-text-primary: var(--cw-text);
+    --cw-color-text-secondary: var(--cw-muted);
+    --cw-color-border-soft: var(--cw-border);
+    --cw-color-border-strong: color-mix(in srgb, var(--cw-border) 68%, var(--cw-text) 32%);
+    --cw-color-accent-route: var(--cw-accent);
+    --cw-color-accent-route-soft: var(--cw-accent-soft);
+    --cw-color-trust-info: var(--cw-status-running);
+    --cw-color-success: var(--cw-status-success);
+    --cw-color-warning: var(--cw-status-pending);
+    --cw-font-ui: Manrope, "Segoe UI", sans-serif;
+    --cw-font-editorial: "Cormorant Garamond", "Times New Roman", serif;
+    --cw-space-2xs: 0.25rem;
+    --cw-space-xs: 0.5rem;
+    --cw-space-sm: 0.75rem;
+    --cw-space-md: 1rem;
+    --cw-space-lg: 1.5rem;
+    --cw-space-xl: 2rem;
+    --cw-space-2xl: 3rem;
+    --cw-space-3xl: 4.5rem;
+    --cw-space-section-y: clamp(3.6rem, 7.5vw, 6rem);
+    --cw-radius-sm: 12px;
+    --cw-radius-md: 18px;
+    --cw-radius-lg: 28px;
+    --cw-radius-pill: 999px;
+    --cw-shadow-soft: 0 10px 22px rgba(16, 16, 16, 0.08);
+    --cw-shadow-strong: 0 12px 28px rgba(16, 16, 16, 0.18);
+    --cw-card-padding: clamp(1.1rem, 1.8vw, 1.45rem);
+    --cw-card-radius: 20px;
+    --cw-card-border: 1px solid var(--cw-color-border-soft);
+    --cw-card-shadow: var(--cw-shadow-soft);
+    --cw-max-width: 1160px;
+    --ds-color-bg-canvas: var(--cw-bg);
+    --ds-color-bg-soft: var(--cw-surface-2);
+    --ds-color-surface: var(--cw-surface-solid);
+    --ds-color-text: var(--cw-text);
+    --ds-color-text-muted: var(--cw-muted);
+    --ds-color-primary: var(--cw-accent);
+    --ds-color-primary-strong: var(--cw-accent-strong);
+    --ds-color-accent: var(--cw-accent);
+    --ds-color-accent-strong: var(--cw-accent-strong);
+    --ds-color-border-soft: var(--cw-border);
+    --ds-font-family-base: var(--cw-font-ui);
+    --ds-font-size-100: 0.875rem;
+    --ds-font-size-200: 1rem;
+    --ds-font-size-300: 1.125rem;
+    --ds-font-size-400: 1.5rem;
+    --ds-font-size-500: 2rem;
+    --ds-font-size-600: 3rem;
+    --ds-line-height-tight: 1.15;
+    --ds-line-height-body: 1.5;
+    --ds-space-1: 0.25rem;
+    --ds-space-2: 0.5rem;
+    --ds-space-3: 0.75rem;
+    --ds-space-4: 1rem;
+    --ds-space-5: 1.5rem;
+    --ds-space-6: 2rem;
+    --ds-space-7: 3rem;
+    --ds-radius-sm: 0.75rem;
+    --ds-radius-md: 1rem;
+    --ds-radius-lg: 1.25rem;
+    --ds-radius-pill: 62.4375rem;
+    --ds-shadow-sm: var(--cw-shadow-soft);
+    --ds-shadow-md: var(--cw-shadow-strong);
+    --ds-z-base: 1;
+    --ds-z-sticky: 999;
+    --ds-breakpoint-mobile-max: 37.5rem;
+    --ds-breakpoint-tablet-min: 37.5625rem;
+    --ds-breakpoint-tablet-max: 63.9375rem;
+    --ds-breakpoint-desktop-min: 64rem;
+    --ds-container-max: var(--cw-max-width);
+    --ds-touch-target-min: 2.75rem;
+    /* DS_ALIAS_LIGHT_END */
 
     /* Platform DS contract:
        - `--ds-color-*` resolves from the CenterWay brand layer.
@@ -187,6 +342,7 @@
     --cw-shadow: 0 12px 28px rgba(0, 0, 0, 0.34);
     --cw-overlay: rgba(8, 8, 8, 0.58);
     --cw-glass-blur: 12px;
+    --cw-glass-backdrop-filter: blur(var(--cw-glass-blur));
     --cw-glass-stroke: rgba(255, 255, 255, 0.08);
     --cw-glass-glow: transparent;
     --cw-border-width: 1px;
@@ -218,6 +374,56 @@
     --cw-card-shadow: var(--cw-shadow-soft);
     --cw-max-width: 1160px;
 
+    /* DS_ALIAS_DARK_START */
+    --cw-color-bg-primary: var(--cw-bg);
+    --cw-color-bg-secondary: color-mix(in srgb, var(--cw-bg) 92%, #ffffff 8%);
+    --cw-color-surface-primary: var(--cw-surface-solid);
+    --cw-color-surface-elevated: color-mix(in srgb, var(--cw-surface) 84%, #ffffff 16%);
+    --cw-color-text-primary: var(--cw-text);
+    --cw-color-text-secondary: var(--cw-muted);
+    --cw-color-border-soft: var(--cw-border);
+    --cw-color-border-strong: color-mix(in srgb, var(--cw-border) 70%, var(--cw-text) 30%);
+    --cw-color-accent-route: var(--cw-accent);
+    --cw-color-accent-route-soft: var(--cw-accent-soft);
+    --cw-color-trust-info: var(--cw-status-running);
+    --cw-color-success: var(--cw-status-success);
+    --cw-color-warning: var(--cw-status-pending);
+    --cw-font-ui: Manrope, "Segoe UI", sans-serif;
+    --cw-font-editorial: "Cormorant Garamond", "Times New Roman", serif;
+    --cw-space-2xs: 0.25rem;
+    --cw-space-xs: 0.5rem;
+    --cw-space-sm: 0.75rem;
+    --cw-space-md: 1rem;
+    --cw-space-lg: 1.5rem;
+    --cw-space-xl: 2rem;
+    --cw-space-2xl: 3rem;
+    --cw-space-3xl: 4.5rem;
+    --cw-space-section-y: clamp(3.6rem, 7.5vw, 6rem);
+    --cw-radius-sm: 12px;
+    --cw-radius-md: 18px;
+    --cw-radius-lg: 28px;
+    --cw-radius-pill: 999px;
+    --cw-shadow-soft: var(--cw-shadow);
+    --cw-shadow-strong: 0 18px 36px rgba(0, 0, 0, 0.4);
+    --cw-card-padding: clamp(1.1rem, 1.8vw, 1.45rem);
+    --cw-card-radius: 20px;
+    --cw-card-border: 1px solid var(--cw-color-border-soft);
+    --cw-card-shadow: var(--cw-shadow-soft);
+    --cw-max-width: 1160px;
+    --ds-color-bg-canvas: var(--cw-bg);
+    --ds-color-bg-soft: var(--cw-surface-2);
+    --ds-color-surface: var(--cw-surface-solid);
+    --ds-color-text: var(--cw-text);
+    --ds-color-text-muted: var(--cw-muted);
+    --ds-color-primary: var(--cw-accent);
+    --ds-color-primary-strong: var(--cw-accent-strong);
+    --ds-color-accent: var(--cw-accent);
+    --ds-color-accent-strong: var(--cw-accent-strong);
+    --ds-color-border-soft: var(--cw-border);
+    --ds-shadow-sm: var(--cw-shadow-soft);
+    --ds-shadow-md: var(--cw-shadow-strong);
+    /* DS_ALIAS_DARK_END */
+
     /* Platform DS contract, dark theme */
     --ds-color-bg-canvas: var(--cw-bg);
     --ds-color-bg-soft: var(--cw-surface-2);
@@ -240,6 +446,94 @@ body {
   font-family: var(--cw-font-ui), "Manrope", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+[data-cw-glass] {
+  position: relative;
+  isolation: isolate;
+  backdrop-filter: blur(var(--cw-component-glass-blur)) saturate(1.28) brightness(0.96);
+  -webkit-backdrop-filter: blur(var(--cw-component-glass-blur)) saturate(1.28) brightness(0.96);
+}
+
+[data-cw-glass]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cw-platform-text) 12%, transparent) 0%,
+      color-mix(in srgb, var(--cw-platform-text) 6%, transparent) 42%,
+      transparent 100%
+    ),
+    radial-gradient(
+      circle at 18% 0%,
+      color-mix(in srgb, var(--cw-platform-accent) 10%, transparent) 0%,
+      transparent 58%
+    );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cw-platform-accent-contrast) 10%, transparent);
+}
+
+[data-cw-glass]::after {
+  content: none;
+}
+
+[data-cw-glass="menu"]::after {
+  content: "";
+  position: absolute;
+  inset: -16px;
+  z-index: 1;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0.2;
+  background-image: var(--cw-component-glass-frost-image);
+  background-size: cover;
+  background-position: var(--cw-component-glass-frost-position);
+  filter: blur(26px) saturate(1.08);
+  transform: scale(1.06);
+}
+
+[data-cw-glass="menu"]::before {
+  content: none;
+}
+
+[data-cw-glass="shell"]::before {
+  content: none;
+}
+
+[data-cw-glass="shell"]::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0.14;
+  background-image: var(--cw-component-glass-frost-image);
+  background-size: cover;
+  background-position: center;
+  filter: blur(24px) saturate(1.06);
+  transform: scale(1.02);
+}
+
+@media (max-width: 900px) {
+  [data-cw-glass="shell"]::after {
+    opacity: 0.18;
+  }
+}
+
+@media (min-width: 901px) {
+  [data-cw-glass="menu"]::after {
+    content: none;
+  }
+}
+
+[data-cw-glass] > * {
+  position: relative;
+  z-index: 2;
 }
 
 @layer utilities {

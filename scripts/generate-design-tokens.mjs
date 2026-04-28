@@ -13,6 +13,8 @@ const LIGHT_START = "/* DS_ALIAS_LIGHT_START */";
 const LIGHT_END = "/* DS_ALIAS_LIGHT_END */";
 const DARK_START = "/* DS_ALIAS_DARK_START */";
 const DARK_END = "/* DS_ALIAS_DARK_END */";
+const RUNTIME_START = "/* CW_RUNTIME_TOKENS_START */";
+const RUNTIME_END = "/* CW_RUNTIME_TOKENS_END */";
 
 function toDecls(map, indent = "  ") {
   return Object.entries(map)
@@ -32,16 +34,42 @@ function replaceBetween(source, startMarker, endMarker, nextBody) {
   return `${before}${startMarker}\n${nextBody}\n    ${endMarker}${after}`;
 }
 
+function upsertBefore(source, startMarker, endMarker, beforeNeedle, nextBody) {
+  if (source.includes(startMarker) && source.includes(endMarker)) {
+    return replaceBetween(source, startMarker, endMarker, nextBody);
+  }
+  const index = source.indexOf(beforeNeedle);
+  if (index === -1) {
+    throw new Error(`Missing insertion point: ${beforeNeedle}`);
+  }
+  const block = `${startMarker}\n${nextBody}\n    ${endMarker}\n\n    `;
+  return `${source.slice(0, index)}${block}${source.slice(index)}`;
+}
+
+function flattenRuntimeLayers(layers) {
+  if (!layers) return {};
+  return {
+    ...(layers.semanticAliases ?? {}),
+    ...(layers.componentRecipes?.depth ?? {}),
+    ...(layers.modeOverrides?.platform ?? {}),
+    ...(layers.componentRecipes?.glass ?? {}),
+    ...(layers.routeOverlays?.platform ?? {}),
+  };
+}
+
 async function main() {
   const rawTokens = await readFile(TOKENS_PATH, "utf8");
   const tokens = JSON.parse(rawTokens);
 
   const globals = await readFile(GLOBALS_CSS_PATH, "utf8");
-  const lightDecls = toDecls(tokens.appAlias.light, "    ");
-  const darkDecls = toDecls(tokens.appAlias.dark, "    ");
+  const dsAlias = tokens.delivery?.dsAlias ?? {};
+  const lightDecls = toDecls({ ...tokens.appAlias.light, ...(dsAlias.light ?? {}) }, "    ");
+  const darkDecls = toDecls({ ...tokens.appAlias.dark, ...(dsAlias.dark ?? {}) }, "    ");
+  const runtimeDecls = toDecls(flattenRuntimeLayers(tokens.layers), "    ");
 
-  let nextGlobals = replaceBetween(globals, LIGHT_START, LIGHT_END, lightDecls);
-  nextGlobals = replaceBetween(nextGlobals, DARK_START, DARK_END, darkDecls);
+  let nextGlobals = upsertBefore(globals, RUNTIME_START, RUNTIME_END, "/* Platform DS contract:", runtimeDecls);
+  nextGlobals = upsertBefore(nextGlobals, LIGHT_START, LIGHT_END, "/* Platform DS contract:", lightDecls);
+  nextGlobals = upsertBefore(nextGlobals, DARK_START, DARK_END, "/* Platform DS contract, dark theme */", darkDecls);
 
   await writeFile(GLOBALS_CSS_PATH, nextGlobals, "utf8");
 }
