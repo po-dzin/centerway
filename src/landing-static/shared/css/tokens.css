@@ -1,0 +1,114 @@
+:root {
+  /* Shared platform defaults.
+     App globals may override these with the brand layer, but the public contract stays stable. */
+  --ds-color-bg-canvas: #fffdf7;
+  --ds-color-bg-soft: #f6f8fb;
+  --ds-color-surface: #ffffff;
+  --ds-color-surface-muted: #fffdf7;
+  --ds-color-surface-elevated: #ffffff;
+  --ds-color-surface-disabled: #f5f7fb;
+  --ds-color-surface-inverse: #000000;
+  --ds-color-surface-gradient-start: #f3f3f3;
+  --ds-color-overlay: rgb(12 22 33 / 0.56);
+  --ds-color-text: #111111;
+  --ds-color-text-strong: #111111;
+  --ds-color-text-muted: #333333;
+  --ds-color-text-soft: #555555;
+  --ds-color-text-disabled: #727e90;
+  --ds-color-on-primary: #fff9f8;
+  --ds-color-on-inverse: #ffffff;
+  --ds-color-primary: #c90008;
+  --ds-color-primary-strong: #530d10;
+  --ds-color-accent: #747ab1;
+  --ds-color-accent-strong: #dd6d0c;
+  --ds-color-border-soft: #e7eaf0;
+  --ds-color-border-strong: #d4d9e2;
+  --ds-color-border-panel: #d8dce3;
+  --ds-color-border-input: #cccccc;
+  --ds-color-border-focus: #c90008;
+  --ds-color-border-muted: #9a9a9a;
+  --ds-color-divider: #e7eaf0;
+  --ds-color-status-warning-bg: #fff3ec;
+  --ds-color-status-warning-border: #e6d4bf;
+  --ds-color-status-warning-text: #8b4f29;
+  --ds-color-status-error-bg: #fff1f2;
+  --ds-color-status-error-border: #fecdd3;
+  --ds-color-status-error-text: #9f1239;
+  --ds-color-status-error-text-strong: #b91c1c;
+  --ds-color-status-error-border-strong: #ef4444;
+  --ds-color-status-info-bg: #f3f6ff;
+  --ds-color-status-info-border: #cedbfd;
+  --ds-color-status-info-text: #384a77;
+  --ds-color-product-bg-warm: #eaf4ff;
+  --ds-color-product-bg-surface-subtle: #fafafa;
+  --ds-color-product-bg-surface-warm: #f4f4ff;
+  --ds-color-product-text-strong: #111827;
+  --ds-color-product-bg-soft-peach: #ffdfdc;
+  --ds-color-product-bg-card: #fff7f1;
+  --ds-color-product-bg-badge: #fef3c7;
+  --ds-color-product-text-badge: #f58220;
+  --ds-color-product-accent-soft: #ffabab;
+  --ds-color-product-success-bg: #c6edd7;
+  --ds-color-product-success-text: #41b310ed;
+  --ds-color-product-price-accent: #e87d73;
+  --ds-color-product-short-accent: #e87d73;
+  --ds-color-product-short-accent-soft: #e87d73;
+  --ds-color-product-short-price-old: #7f7f7f;
+  --ds-color-product-short-text-info: #3b3b3b;
+  --ds-color-product-short-surface-note: #fef5ea;
+  --ds-color-product-short-surface-quote: #f8f6f1;
+  --ds-color-product-short-surface-warm: #fef8ef;
+  --ds-color-product-short-surface-warm-strong: #fff8bd;
+  --ds-color-product-short-surface-warm-soft: #fff3ec;
+  --ds-color-product-short-surface-badge: #fefbbd;
+  --ds-color-product-short-surface-accent-soft: #ffe8e6;
+  --ds-color-product-short-border-soft: #ddd8cf;
+  --ds-color-product-short-border-subtle: #f0f0f0;
+  --ds-color-product-short-border-note: #e6d4bf;
+  --ds-color-product-irem-surface-chip: #e8efff;
+  --ds-color-product-irem-surface-chip-soft: #f3f6ff;
+  --ds-color-product-irem-warning-text: #d97706;
+  --ds-color-product-irem-border-soft: #cedbfd;
+  --ds-color-product-irem-border-strong: #b7c6ea;
+  --ds-color-product-irem-border-chip-soft: #dbe3ff;
+  --ds-color-product-irem-border-subtle: #e5e7eb;
+
+  --ds-font-family-base: "Open Sans", sans-serif;
+  --ds-font-size-100: 0.875rem;
+  --ds-font-size-200: 1rem;
+  --ds-font-size-300: 1.125rem;
+  --ds-font-size-400: 1.5rem;
+  --ds-font-size-500: 2rem;
+  --ds-font-size-600: 3rem;
+
+  --ds-line-height-tight: 1.15;
+  --ds-line-height-body: 1.5;
+
+  --ds-space-1: 0.25rem;
+  --ds-space-2: 0.5rem;
+  --ds-space-3: 0.75rem;
+  --ds-space-4: 1rem;
+  --ds-space-5: 1.5rem;
+  --ds-space-6: 2rem;
+  --ds-space-7: 3rem;
+
+  --ds-radius-sm: 0.75rem;
+  --ds-radius-md: 1rem;
+  --ds-radius-lg: 1.25rem;
+  --ds-radius-pill: 62.4375rem;
+
+  --ds-shadow-sm: 0 0.125rem 0.25rem rgb(17 17 17 / 0.08);
+  --ds-shadow-md: 0 0.375rem 1rem rgb(17 17 17 / 0.12);
+
+  --ds-z-base: 1;
+  --ds-z-sticky: 999;
+  --ds-z-modal: 1200;
+
+  --ds-breakpoint-mobile-max: 37.5rem;
+  --ds-breakpoint-tablet-min: 37.5625rem;
+  --ds-breakpoint-tablet-max: 63.9375rem;
+  --ds-breakpoint-desktop-min: 64rem;
+
+  --ds-container-max: 75rem;
+  --ds-touch-target-min: 2.75rem;
+}

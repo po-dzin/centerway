@@ -1,0 +1,544 @@
+/* Responsive overrides for shell, blocks, and components.
+   Derived from PlatformSite.module.css during semantic architecture CSS split. */
+
+@media (max-width: 1100px) and (min-width: 901px) {
+  .header {
+    width: min(100% - 1.5rem, 60rem);
+  }
+
+  .shellOverlay .header {
+    width: min(100% - 1.5rem, 60rem);
+  }
+
+  .headerInner {
+    min-height: 3.85rem;
+    padding-left: 0.9rem;
+  }
+
+  .nav a {
+    min-height: 2.35rem;
+    padding: 0 0.72rem;
+    font-size: 0.92rem;
+  }
+}
+
+@media (min-width: 901px) {
+  .mobileMenuSurface {
+    display: contents;
+    min-height: 0;
+    width: auto;
+    padding: 0;
+    margin: 0;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (max-width: 900px) {
+  .shell {
+    padding-bottom: 0;
+  }
+
+  .header.header {
+    position: sticky;
+    top: 0;
+    right: 0;
+    left: 0;
+    width: 100%;
+    display: block;
+    margin: 0;
+    border: 0;
+    border-bottom: 0;
+    border-radius: 0;
+    background: color-mix(in srgb, var(--cw-platform-text) 52%, transparent);
+    box-shadow: 0 10px 24px color-mix(in srgb, var(--cw-platform-text) 24%, transparent);
+    backdrop-filter: blur(24px) saturate(1.28);
+    -webkit-backdrop-filter: blur(24px) saturate(1.28);
+  }
+
+  .shell:has(.heroFeature) .header.header {
+    position: fixed;
+  }
+
+  .headerInner {
+    min-height: 4rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0;
+    padding: 0.72rem 1rem;
+    box-sizing: border-box;
+  }
+
+  .menuButton {
+    display: grid;
+  }
+
+  .shellOverlay .menuButton {
+    color: var(--cw-platform-accent-contrast);
+    background: var(--cw-component-glass-bg);
+    border-color: var(--cw-component-glass-border);
+    box-shadow: var(--cw-component-glass-shadow);
+    backdrop-filter: var(--cw-component-glass-filter);
+    -webkit-backdrop-filter: var(--cw-component-glass-filter);
+  }
+
+  .shellOverlay .header.header {
+    border-bottom-color: transparent;
+    background: color-mix(in srgb, var(--cw-platform-text) 52%, transparent);
+    backdrop-filter: blur(24px) saturate(1.28);
+    -webkit-backdrop-filter: blur(24px) saturate(1.28);
+  }
+
+  .shellOverlay .header[data-cw-glass="shell"]::after {
+    content: none;
+  }
+
+  .navLayer.navLayer {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    left: 0;
+    margin-left: 0;
+    bottom: auto;
+    z-index: calc(var(--ds-z-sticky) + 1);
+    display: none;
+    flex: initial;
+    overflow: visible;
+    padding: 0;
+    border-bottom: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    isolation: isolate;
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(-0.5rem);
+    transition: opacity 160ms ease, transform 160ms ease;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .header[data-menu-open="true"] .navLayer,
+  .navLayerOpen {
+    display: block;
+    opacity: 1;
+    pointer-events: auto;
+    transform: translateY(0);
+  }
+
+  .shellOverlay .navLayer {
+    top: 100%;
+    background: transparent;
+  }
+
+  .mobileMenuSurface {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    display: grid;
+    gap: 0.35rem;
+    margin: 0;
+    padding: 0.8rem 1rem 1rem;
+    border: 0;
+    border-top: 0;
+    border-radius: 0;
+    background: color-mix(in srgb, var(--cw-platform-surface) 74%, transparent);
+    box-shadow: var(--cw-component-glass-shadow);
+    backdrop-filter: blur(24px) saturate(1.28);
+    -webkit-backdrop-filter: blur(24px) saturate(1.28);
+    justify-items: stretch;
+    justify-content: stretch;
+    align-content: start;
+  }
+
+  .mobileMenuSurface::before {
+    content: none;
+  }
+
+  .mobileMenuSurface > * {
+    position: relative;
+    z-index: 1;
+  }
+
+  .shellOverlay .mobileMenuSurface {
+    background: color-mix(in srgb, var(--cw-platform-text) 52%, transparent);
+    border-top-color: transparent;
+    box-shadow: none;
+    backdrop-filter: blur(24px) saturate(1.28);
+    -webkit-backdrop-filter: blur(24px) saturate(1.28);
+  }
+
+  .shellOverlay .mobileMenuSurface::before {
+    content: none;
+  }
+
+  .navLayer .nav {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 0.25rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+    margin: 0 auto;
+    justify-self: center;
+    align-self: center;
+    padding: 0 1rem;
+    box-sizing: border-box;
+  }
+
+  .navLayer .nav a {
+    min-height: 3.1rem;
+    justify-content: center;
+    padding: 0 1.1rem;
+    border: 0;
+    border-radius: var(--cw-radius-sm);
+    background: transparent;
+    color: var(--cw-platform-text);
+    font-size: 1rem;
+    box-shadow: none;
+    text-align: center;
+    width: 100%;
+    max-width: 22rem;
+    margin: 0 auto;
+  }
+
+  .navLayer .nav a:hover,
+  .navLayer .nav a:focus-visible {
+    background: color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+  }
+
+  .navLayer .nav a + a {
+    border-top: 0;
+  }
+
+  .shellOverlay .navLayer .nav a {
+    color: var(--cw-platform-accent-contrast);
+  }
+
+  .shellOverlay .navLayer .nav a:hover,
+  .shellOverlay .navLayer .nav a:focus-visible {
+    background: color-mix(in srgb, var(--cw-platform-accent-contrast) 10%, transparent);
+  }
+
+  .mobileMenuNav {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    align-self: stretch;
+    gap: 0.25rem;
+    width: 100%;
+    max-width: 100%;
+    min-width: 100%;
+    padding: 0 1rem;
+    box-sizing: border-box;
+  }
+
+  .mobileMenuNav a {
+    width: 100%;
+    max-width: 22rem;
+    margin: 0 auto;
+  }
+
+  .mobileMenuActions {
+    display: contents;
+  }
+
+  .actions {
+    display: none;
+  }
+
+  .hero,
+  .heroFeature,
+  .videoSection,
+  .entryMap,
+  .split,
+  .authorGrid,
+  .consultGrid,
+  .programShowcase,
+  .grid2,
+  .grid3,
+  .footerGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .mediaPanel,
+  .heroPanel {
+    min-height: auto;
+  }
+
+  .hero {
+    padding-top: 0.9rem;
+  }
+
+  .heroPanel,
+  .panel,
+  .formPanel,
+  .mediaPanel {
+    border-radius: clamp(1.05rem, 4vw, var(--cw-radius-lg));
+  }
+
+  .heroFeature {
+    min-height: 100vh;
+    min-height: 100svh;
+    align-items: center;
+    margin-top: 0;
+  }
+
+  .heroPhotoLayer::after {
+    background:
+      linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 54%, transparent) 0%, color-mix(in srgb, var(--cw-platform-text) 48%, transparent) 42%, color-mix(in srgb, var(--cw-platform-text) 20%, transparent) 100%),
+      linear-gradient(90deg, color-mix(in srgb, var(--cw-platform-accent-strong) 18%, transparent), transparent 64%);
+  }
+
+  .heroFeatureContent {
+    width: 100%;
+    align-self: center;
+    padding: clamp(4.8rem, 14vw, 6rem) 1.25rem clamp(9.5rem, 28vw, 12rem);
+  }
+
+  .heroFeatureActions {
+    width: 100%;
+    max-width: none;
+  }
+
+  .heroPrimaryButton,
+  .heroSecondaryButton {
+    width: 100%;
+    min-height: 3.1rem;
+  }
+
+  .heroFeatureTitle {
+    max-width: 8.4ch;
+    font-size: clamp(3.1rem, 14vw, 4.25rem);
+  }
+
+  .heroProofGrid {
+    right: 1rem;
+    bottom: 1rem;
+    left: 1rem;
+    width: auto;
+  }
+
+  .section {
+    padding: clamp(1.9rem, 8vw, 3.2rem) 0;
+  }
+
+  .videoPanel {
+    min-height: auto;
+    aspect-ratio: 16 / 9;
+    border-radius: clamp(1.05rem, 4vw, var(--cw-radius-lg));
+  }
+
+  .videoAside {
+    border-radius: clamp(1.05rem, 4vw, var(--cw-radius-lg));
+  }
+
+  .sectionHeader {
+    display: grid;
+    align-items: start;
+    gap: 0.9rem;
+  }
+
+  .sectionHeader .secondaryButton {
+    width: fit-content;
+    min-height: 2.65rem;
+  }
+
+  .sectionTitle,
+  .title {
+    font-size: clamp(2rem, 10vw, 3.1rem);
+    line-height: 1.04;
+    overflow-wrap: anywhere;
+  }
+
+  .heroTitle {
+    max-width: 11ch;
+    font-size: clamp(2.75rem, 12vw, 4.2rem);
+  }
+
+  .heroPanel {
+    gap: 1.35rem;
+  }
+
+  .card {
+    min-height: 0;
+    padding: 1rem;
+  }
+
+  .mockVisual {
+    min-height: 10.5rem;
+  }
+
+  .timeline li {
+    padding: 0.85rem;
+  }
+
+  .footer {
+    padding-bottom: calc(2rem + env(safe-area-inset-bottom));
+  }
+}
+
+@media (max-width: 560px) {
+  .container {
+    width: min(100% - 1.2rem, var(--cw-max-width));
+  }
+
+  .heroTitle {
+    max-width: 10ch;
+    font-size: 2.55rem;
+  }
+
+  .heroFeature {
+    min-height: 100vh;
+    min-height: 100svh;
+    border-radius: 0;
+  }
+
+  .heroPhotoLayer .expertImage {
+    object-position: 38% center;
+  }
+
+  .heroFeatureTitle {
+    font-size: clamp(2.85rem, 15vw, 3.4rem);
+  }
+
+  .heroFeatureLead {
+    max-width: 20rem;
+    font-size: 0.98rem;
+  }
+
+  .heroSupportNote {
+    max-width: 20rem;
+    font-size: 0.84rem;
+  }
+
+  .heroFeatureActions,
+  .heroFooter {
+    grid-template-columns: 1fr;
+  }
+
+  .heroProofGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.35rem;
+  }
+
+  .heroPrimaryButton,
+  .heroSecondaryButton {
+    width: 100%;
+    min-height: 3rem;
+  }
+
+  .heroProofGrid div {
+    min-height: 3.75rem;
+    padding: 0.6rem 0.5rem;
+    border-radius: 0.9rem;
+  }
+
+  .heroProofGrid strong {
+    font-size: 1.35rem;
+  }
+
+  .heroProofGrid span {
+    font-size: 0.66rem;
+  }
+
+  .heroFooter,
+  .heroFeatureActions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .primaryButton,
+  .secondaryButton,
+  .ghostButton {
+    width: 100%;
+  }
+
+  .brand {
+    gap: 0.65rem;
+  }
+
+  .mark {
+    width: 2.45rem;
+    height: 2.45rem;
+  }
+
+  .heroFeatureLead,
+  .lead {
+    font-size: 0.98rem;
+    line-height: 1.55;
+  }
+
+  .heroBadge,
+  .eyebrow,
+  .label {
+    font-size: 0.7rem;
+  }
+
+  .grid2,
+  .grid3,
+  .entryMap,
+  .split,
+  .authorGrid,
+  .consultGrid,
+  .programShowcase {
+    gap: 0.75rem;
+  }
+
+  .factGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .sectionHeader {
+    margin-bottom: 0.8rem;
+  }
+
+  .sectionHeader .secondaryButton {
+    width: 100%;
+  }
+
+  .form {
+    gap: 0.75rem;
+  }
+
+  .field textarea {
+    min-height: 6rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .heroFeature {
+    min-height: 100vh;
+    min-height: 100svh;
+  }
+
+  .heroFeatureTitle {
+    font-size: 2.65rem;
+  }
+
+  .heroFeatureLead {
+    max-width: 16rem;
+  }
+
+  .heroProofGrid {
+    gap: 0.25rem;
+  }
+
+  .heroProofGrid div {
+    padding: 0.52rem 0.4rem;
+  }
+
+  .heroProofGrid span {
+    font-size: 0.6rem;
+  }
+
+}

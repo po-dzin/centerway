@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { PRODUCTS, ProductCode, resolveProduct } from "@/lib/products";
+import { PRODUCTS, PayableProductCode, resolvePayableProduct } from "@/lib/products";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 
 export const runtime = "nodejs";
@@ -37,7 +37,7 @@ export async function OPTIONS() {
   return cors(new NextResponse(null, { status: 204 }));
 }
 
-function makeOrderRef(product: ProductCode) {
+function makeOrderRef(product: PayableProductCode) {
   const d = new Date();
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -50,7 +50,7 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as Body;
 
-    const product = resolveProduct(body.product_code);
+    const product = resolvePayableProduct(body.product_code);
     const cfg = PRODUCTS[product];
     const attrib = body.attrib ?? null;
 

@@ -9,6 +9,8 @@ import type {
   CWSemanticBlockGroup,
   ExperimentManifest,
   ModePackManifest,
+  RouteFamilyContract,
+  RouteFamilyContractsManifest,
   ScreenManifest,
   SemanticBlockManifest,
   TokenPackManifest,
@@ -82,6 +84,16 @@ const CANONICAL_ARCHETYPES = new Set<ArchetypeContract["archetype"]>([
   "support-proof",
   "overlay-modal",
   "admin-utility",
+]);
+
+const ROUTE_FAMILIES = new Set([
+  "platform hub",
+  "expert",
+  "program offer",
+  "standalone route entry",
+  "funnel surface",
+  "legal",
+  "utility",
 ]);
 
 export function validateArchetypeContracts(input: unknown): ArchetypeContractsManifest {
@@ -399,15 +411,38 @@ export function validateBlockManifests(input: unknown): BlockManifest[] {
     const version = asString(entry.version);
     const semanticBlockId = asString(entry.semantic_block_id);
     const semanticBlockVersion = asString(entry.semantic_block_version);
+    const semanticRole = asString(entry.semantic_role);
+    const semanticFamily = asString(entry.semantic_family);
+    const userQuestion = asString(entry.user_question);
+    const routeBoundary = asString(entry.route_boundary);
+    const mode = asString(entry.mode);
     const recipeId = asString(entry.recipe_id);
     const recipeVersion = asString(entry.recipe_version);
     const actionRole = asString(entry.action_role);
     const renderMode = asString(entry.render_mode);
+    const renderer = asString(entry.renderer);
 
-    if (!id || !version || !semanticBlockId || !semanticBlockVersion || !recipeId || !recipeVersion || !actionRole) {
+    if (
+      !id ||
+      !version ||
+      !semanticBlockId ||
+      !semanticBlockVersion ||
+      !semanticRole ||
+      !semanticFamily ||
+      !userQuestion ||
+      !routeBoundary ||
+      !mode ||
+      !recipeId ||
+      !recipeVersion ||
+      !actionRole ||
+      !renderer
+    ) {
       throw new Error(`block_manifest_invalid_fields:${idx}`);
     }
 
+    if (!SEMANTIC_GROUPS.has(semanticFamily as CWSemanticBlockGroup)) {
+      throw new Error(`block_manifest_invalid_semantic_family:${id}:${semanticFamily}`);
+    }
     if (!["primary", "support", "none"].includes(actionRole)) {
       throw new Error(`block_manifest_invalid_action_role:${id}:${actionRole}`);
     }
@@ -419,11 +454,21 @@ export function validateBlockManifests(input: unknown): BlockManifest[] {
       version,
       semantic_block_id: semanticBlockId,
       semantic_block_version: semanticBlockVersion,
+      semantic_role: semanticRole,
+      semantic_family: semanticFamily as CWSemanticBlockGroup,
+      user_question: userQuestion,
+      required_fields: asStringArray(entry.required_fields),
+      allowed_actions: asStringArray(entry.allowed_actions),
+      route_boundary: routeBoundary,
+      mode: mode as BlockManifest["mode"],
       recipe_id: recipeId,
       recipe_version: recipeVersion,
       action_role: actionRole as BlockManifest["action_role"],
       render_mode: (renderMode as BlockManifest["render_mode"] | null) ?? undefined,
       component_families: asStringArray(entry.component_families),
+      renderer,
+      token_recipes: asStringArray(entry.token_recipes),
+      layout_variants: asStringArray(entry.layout_variants),
       default_props: isObject(entry.default_props) ? entry.default_props : {},
     };
   });
@@ -445,6 +490,10 @@ export function validateScreens(input: unknown): ScreenManifest[] {
     const id = asString(entry.id);
     const version = asString(entry.version);
     const routeKey = asString(entry.route_key);
+    const routePath = asString(entry.route_path);
+    const routeFamily = asString(entry.route_family);
+    const routeBoundary = asString(entry.route_boundary);
+    const routeFamilyContractId = asString(entry.route_family_contract_id);
     const archetype = asString(entry.archetype);
     const mode = asString(entry.mode);
     const branch = asString(entry.branch);
@@ -452,8 +501,25 @@ export function validateScreens(input: unknown): ScreenManifest[] {
     const modePackId = asString(entry.mode_pack_id);
     const branchOverlayId = asString(entry.branch_overlay_id);
 
-    if (!id || !version || !routeKey || !archetype || !mode || !branch || !tokenPackId || !modePackId || !branchOverlayId) {
+    if (
+      !id ||
+      !version ||
+      !routeKey ||
+      !routePath ||
+      !routeFamily ||
+      !routeBoundary ||
+      !routeFamilyContractId ||
+      !archetype ||
+      !mode ||
+      !branch ||
+      !tokenPackId ||
+      !modePackId ||
+      !branchOverlayId
+    ) {
       throw new Error(`screen_manifest_invalid_fields:${idx}`);
+    }
+    if (!ROUTE_FAMILIES.has(routeFamily)) {
+      throw new Error(`screen_manifest_invalid_route_family:${id}:${routeFamily}`);
     }
     if (!CANONICAL_ARCHETYPES.has(archetype as ArchetypeContract["archetype"])) {
       throw new Error(`screen_manifest_invalid_archetype:${id}:${archetype}`);
@@ -489,6 +555,10 @@ export function validateScreens(input: unknown): ScreenManifest[] {
       id,
       version,
       route_key: routeKey as ScreenManifest["route_key"],
+      route_path: routePath,
+      route_family: routeFamily as ScreenManifest["route_family"],
+      route_boundary: routeBoundary,
+      route_family_contract_id: routeFamilyContractId,
       archetype: archetype as ScreenManifest["archetype"],
       mode: mode as ScreenManifest["mode"],
       branch: branch as ScreenManifest["branch"],
@@ -566,15 +636,69 @@ export function validateExperiments(input: unknown): ExperimentManifest[] {
   return experiments;
 }
 
+export function validateRouteFamilyContracts(input: unknown): RouteFamilyContractsManifest {
+  if (!isObject(input) || !Array.isArray(input.contracts)) {
+    throw new Error("route_family_contracts_invalid_shape");
+  }
+
+  const schemaVersion = asString(input.schema_version);
+  if (!schemaVersion) {
+    throw new Error("route_family_contracts_invalid_meta");
+  }
+
+  const contracts = input.contracts.map((entry, idx) => {
+    if (!isObject(entry)) {
+      throw new Error(`route_family_contract_invalid_entry:${idx}`);
+    }
+
+    const id = asString(entry.id);
+    const version = asString(entry.version);
+    const routeFamily = asString(entry.route_family);
+    const routeBoundary = asString(entry.route_boundary);
+    if (!id || !version || !routeFamily || !routeBoundary || !ROUTE_FAMILIES.has(routeFamily)) {
+      throw new Error(`route_family_contract_invalid_fields:${idx}`);
+    }
+
+    const allowedArchetypes = asStringArray(entry.allowed_archetypes);
+    if (allowedArchetypes.length === 0) {
+      throw new Error(`route_family_contract_missing_archetypes:${id}`);
+    }
+    for (const archetype of allowedArchetypes) {
+      if (!CANONICAL_ARCHETYPES.has(archetype as ArchetypeContract["archetype"])) {
+        throw new Error(`route_family_contract_invalid_archetype:${id}:${archetype}`);
+      }
+    }
+
+    const contract: RouteFamilyContract = {
+      id,
+      version,
+      route_family: routeFamily as RouteFamilyContract["route_family"],
+      route_boundary: routeBoundary,
+      route_paths: asStringArray(entry.route_paths),
+      allowed_archetypes: allowedArchetypes as RouteFamilyContract["allowed_archetypes"],
+      allowed_block_order: asStringArray(entry.allowed_block_order),
+      allowed_renderers: asStringArray(entry.allowed_renderers),
+      required_semantic_roles: asStringArray(entry.required_semantic_roles),
+      isolated: typeof entry.isolated === "boolean" ? entry.isolated : undefined,
+    };
+    return contract;
+  });
+
+  ensureUnique(contracts.map((item) => item.id), "route_family_contract");
+  return { schema_version: schemaVersion, contracts };
+}
+
 export function enforceCanonicalIntegrity(
   screens: ScreenManifest[],
   blockManifests: BlockManifest[],
   semanticBlocks: SemanticBlockManifest[],
-  recipes: ComponentRecipeManifest[]
+  recipes: ComponentRecipeManifest[],
+  routeFamilyContracts?: RouteFamilyContract[]
 ): void {
   const blockManifestMap = new Map(blockManifests.map((item) => [item.id, item]));
   const semanticBlockMap = new Map(semanticBlocks.map((item) => [item.id, item]));
   const recipeMap = new Map(recipes.map((item) => [item.id, item]));
+  const routeFamilyContractMap = new Map((routeFamilyContracts ?? []).map((item) => [item.id, item]));
 
   for (const blockManifest of blockManifests) {
     const semanticBlock = semanticBlockMap.get(blockManifest.semantic_block_id);
@@ -595,6 +719,22 @@ export function enforceCanonicalIntegrity(
   }
 
   for (const screen of screens) {
+    const routeFamilyContract = routeFamilyContractMap.get(screen.route_family_contract_id);
+    if (routeFamilyContracts && !routeFamilyContract) {
+      throw new Error(`canon_screen_missing_route_family_contract:${screen.id}:${screen.route_family_contract_id}`);
+    }
+    if (routeFamilyContract) {
+      if (routeFamilyContract.route_family !== screen.route_family) {
+        throw new Error(`canon_screen_route_family_mismatch:${screen.id}`);
+      }
+      if (!routeFamilyContract.route_paths.includes(screen.route_path)) {
+        throw new Error(`canon_screen_route_path_not_allowed:${screen.id}:${screen.route_path}`);
+      }
+      if (!routeFamilyContract.allowed_archetypes.includes(screen.archetype)) {
+        throw new Error(`canon_screen_archetype_not_allowed_for_route_family:${screen.id}:${screen.archetype}`);
+      }
+    }
+
     const screenBlockManifests: BlockManifest[] = [];
     const screenSemanticBlocks: SemanticBlockManifest[] = [];
 
@@ -614,11 +754,23 @@ export function enforceCanonicalIntegrity(
       if (!semanticBlock) {
         throw new Error(`canon_screen_missing_semantic_block:${screen.id}:${blockManifest.semantic_block_id}`);
       }
+      if (routeFamilyContract && !routeFamilyContract.allowed_renderers.includes(blockManifest.renderer)) {
+        throw new Error(`canon_screen_renderer_not_allowed:${screen.id}:${blockManifest.renderer}`);
+      }
       screenSemanticBlocks.push(semanticBlock);
     }
 
     if (screenBlockManifests.length > 0) {
       enforceCanonForScreen(screen, screenBlockManifests, screenSemanticBlocks);
+    }
+
+    if (routeFamilyContract) {
+      const semanticRoleSet = new Set(screenBlockManifests.map((block) => block.semantic_role));
+      for (const requiredRole of routeFamilyContract.required_semantic_roles) {
+        if (!semanticRoleSet.has(requiredRole)) {
+          throw new Error(`canon_screen_missing_route_required_semantic_role:${screen.id}:${requiredRole}`);
+        }
+      }
     }
   }
 }

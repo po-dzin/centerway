@@ -11,10 +11,6 @@ function normalizeHost(raw: string | null): string {
   return raw.split(":")[0].trim().toLowerCase();
 }
 
-function isLocalDevHost(host: string): boolean {
-  return host === "localhost" || host === "127.0.0.1";
-}
-
 export function hostBrandFromHost(rawHost: string | null): HostBrand | null {
   const host = normalizeHost(rawHost);
 
@@ -33,8 +29,5 @@ export function hostBrandFromHost(rawHost: string | null): HostBrand | null {
   for (const prefix of HERBS_HOST_PREFIXES) {
     if (host.startsWith(prefix)) return "herbs";
   }
-  // Local/dev fallback.
-  if (isLocalDevHost(host)) return "short";
-
   return null;
 }

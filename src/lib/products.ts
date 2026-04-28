@@ -35,7 +35,11 @@ export const PRODUCTS = {
   },
 } as const;
 
-export type ProductCode = keyof typeof PRODUCTS;
+export const LEAD_PRODUCT_CODES = ["consult", "ideal-body", "platform"] as const;
+
+export type PayableProductCode = keyof typeof PRODUCTS;
+export type LeadProductCode = (typeof LEAD_PRODUCT_CODES)[number];
+export type ProductCode = PayableProductCode | LeadProductCode;
 export type Locale = "ua" | "en";
 
 const DEFAULT_LOCALE: Locale = "en";
@@ -57,6 +61,9 @@ export function normalizeProduct(input: unknown): ProductCode | null {
   if (typeof input === "string") {
     const s = input.trim().toLowerCase();
     if (s === "short" || s === "irem") return s;
+    if (s === "consult" || s === "consultation") return "consult";
+    if (s === "ideal-body" || s === "ideal_body" || s === "idealne-tilo") return "ideal-body";
+    if (s === "platform" || s === "centerway") return "platform";
     return null;
   }
 
@@ -82,6 +89,19 @@ export function resolveProduct(input: unknown): ProductCode {
   return normalizeProduct(input) ?? "short";
 }
 
+export function isPayableProduct(product: ProductCode | string | null | undefined): product is PayableProductCode {
+  return product === "short" || product === "irem";
+}
+
+export function normalizePayableProduct(input: unknown): PayableProductCode | null {
+  const product = normalizeProduct(input);
+  return isPayableProduct(product) ? product : null;
+}
+
+export function resolvePayableProduct(input: unknown): PayableProductCode {
+  return normalizePayableProduct(input) ?? "short";
+}
+
 export function normalizeLocale(input: string | null | undefined): Locale | null {
   if (!input) return null;
   const s = input.trim().toLowerCase();
@@ -90,12 +110,12 @@ export function normalizeLocale(input: string | null | undefined): Locale | null
   return null;
 }
 
-export function productHeading(product: ProductCode, locale: Locale): string {
+export function productHeading(product: PayableProductCode, locale: Locale): string {
   const headings = PRODUCTS[product].heading;
   return headings[locale] ?? headings[DEFAULT_LOCALE];
 }
 
-export function productDescription(product: ProductCode, locale: Locale): string {
+export function productDescription(product: PayableProductCode, locale: Locale): string {
   const descriptions = PRODUCTS[product].description;
   return descriptions[locale] ?? descriptions[DEFAULT_LOCALE];
 }

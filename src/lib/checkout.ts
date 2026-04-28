@@ -1,4 +1,4 @@
-import { ProductCode, normalizeProduct } from "@/lib/products";
+import { PayableProductCode, normalizePayableProduct } from "@/lib/products";
 
 export type CheckoutStartRequest = {
   name?: unknown;
@@ -31,8 +31,8 @@ function asCleanString(v: unknown): string | null {
   return s ? s : null;
 }
 
-export function resolveCheckoutProduct(body: CheckoutStartRequest): ProductCode {
-  const byProductField = normalizeProduct({
+export function resolveCheckoutProduct(body: CheckoutStartRequest): PayableProductCode {
+  const byProductField = normalizePayableProduct({
     product: asCleanString(body.product) ?? undefined,
     product_code: asCleanString(body.product_code) ?? undefined,
   });

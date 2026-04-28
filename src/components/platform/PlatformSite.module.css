@@ -1,0 +1,4 @@
+/* Deprecated compatibility entrypoint.
+   Platform recipes are split across PlatformShell.module.css,
+   PlatformBlocks.module.css, PlatformComponents.module.css, and
+   PlatformResponsive.module.css. Import ./PlatformStyles instead. */

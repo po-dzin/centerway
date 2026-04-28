@@ -6,7 +6,7 @@ export type CWThemeFamily =
   | "natural-premium"
   | "natural3"
   | "curcuma";
-export type CWMode = "consult" | "detox" | "herbs" | "lesson" | "dashboard" | "support" | "admin";
+export type CWMode = "consult" | "detox" | "herbs" | "lesson" | "dashboard" | "support" | "admin" | "platform";
 export type CWBranch = "consult" | "detox" | "herbs" | "short" | "irem" | "platform";
 export type CWSemanticFamily = "calm" | "method" | "guide" | "trust" | "progress" | "organic" | "embodied" | "boundary";
 export type CWSemanticBlockGroup =
@@ -55,7 +55,27 @@ export type CWGeneratorConfig = {
   };
 };
 
-export type ScreenRouteKey = "consult" | "detox" | "herbs" | "dosha-test" | "lesson-pilot";
+export type ScreenRouteKey =
+  | "consult"
+  | "detox"
+  | "herbs"
+  | "dosha-test"
+  | "lesson-pilot"
+  | "platform-home"
+  | "expert"
+  | "program-way21"
+  | "program-ideal-body"
+  | "program-irem"
+  | "mini-detox";
+
+export type RouteFamily =
+  | "platform hub"
+  | "expert"
+  | "program offer"
+  | "standalone route entry"
+  | "funnel surface"
+  | "legal"
+  | "utility";
 
 export type SemanticBlockManifest = {
   id: string;
@@ -74,11 +94,21 @@ export type BlockManifest = {
   version: string;
   semantic_block_id: string;
   semantic_block_version: string;
+  semantic_role: string;
+  semantic_family: CWSemanticBlockGroup;
+  user_question: string;
+  required_fields: string[];
+  allowed_actions: string[];
+  route_boundary: string;
+  mode: CWMode;
   recipe_id: string;
   recipe_version: string;
   action_role: "primary" | "support" | "none";
   render_mode?: "visual" | "semantic-only";
   component_families?: string[];
+  renderer: string;
+  token_recipes: string[];
+  layout_variants: string[];
   default_props: Record<string, unknown>;
 };
 
@@ -120,6 +150,10 @@ export type ScreenManifest = {
   id: string;
   version: string;
   route_key: ScreenRouteKey;
+  route_path: string;
+  route_family: RouteFamily;
+  route_boundary: string;
+  route_family_contract_id: string;
   archetype: ArchetypeContract["archetype"];
   mode: CWMode;
   branch: CWBranch;
@@ -127,6 +161,24 @@ export type ScreenManifest = {
   mode_pack_id: string;
   branch_overlay_id: string;
   blocks: ScreenBlockManifest[];
+};
+
+export type RouteFamilyContract = {
+  id: string;
+  version: string;
+  route_family: RouteFamily;
+  route_boundary: string;
+  route_paths: string[];
+  allowed_archetypes: ArchetypeContract["archetype"][];
+  allowed_block_order: string[];
+  allowed_renderers: string[];
+  required_semantic_roles: string[];
+  isolated?: boolean;
+};
+
+export type RouteFamilyContractsManifest = {
+  schema_version: string;
+  contracts: RouteFamilyContract[];
 };
 
 export type ExperimentVariantManifest = {

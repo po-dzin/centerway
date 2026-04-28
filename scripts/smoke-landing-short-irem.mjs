@@ -7,10 +7,18 @@ const baseUrl = (
 ).replace(/\/+$/, "");
 
 const timeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "20000", 10);
+const landingEntry = (process.env.SMOKE_LANDING_ENTRY || "next").toLowerCase();
+
+const routePathByEntry = {
+  next: { short: "/reboot", irem: "/irem" },
+  fallback: { short: "/reboot", irem: "/irem" },
+};
+
+const selectedPaths = routePathByEntry[landingEntry] || routePathByEntry.next;
 
 const routes = [
-  { name: "short", path: "/short/index.html", hasAddons: false },
-  { name: "irem", path: "/irem/index.html", hasAddons: true },
+  { name: "short", path: selectedPaths.short, hasAddons: false },
+  { name: "irem", path: selectedPaths.irem, hasAddons: true },
 ];
 
 const viewports = [
@@ -111,6 +119,7 @@ async function assertAddonContract(page, label) {
 
 async function main() {
   console.log(`Landing short/irem smoke base URL: ${baseUrl}`);
+  console.log(`Landing entry mode: ${landingEntry}`);
   const browser = await chromium.launch({ headless: true });
 
   try {

@@ -3,7 +3,15 @@
 Next.js runtime for:
 - host-based landing routing (`reboot.*` and `irem.*`)
 - payment API endpoints
-- static landing assets under `public/*`
+- static landing assets under `src/landing-static/*`
+
+## Documentation and Canon
+
+Local implementation notes and operational decisions live in `docs/**`.
+
+`docs/legacy/**` is a read-only reservoir of superseded specs and migration-era documents. It is not part of the active agent reading set.
+
+The shared stable canon lives in `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay` and should only be updated when a local decision becomes a durable cross-project rule. See [docs/CANON.md](docs/CANON.md).
 
 ## Run
 
@@ -46,12 +54,43 @@ npm run smoke:dosha:result
 `smoke:dosha:result` validates the dosha result matrix (`single/dual/tridosha`) used by test scoring.
 `ds:qa` runs baseline design-system quality checks (token contract + lint).
 `ds:qa:landing` runs design-system contract checks plus landing smoke (`short/irem`).
+`smoke:landing:short-irem` accepts `SMOKE_LANDING_ENTRY=next|fallback` (`next` by default).
+`smoke:landing:next-contract` checks `/reboot` and `/irem` HTML contract (managed bridge/runtime injection, no legacy inline attribution block). Set `SMOKE_REQUIRE_NEXT_LANDING=1` to fail when routes are still in legacy fallback.
+`baseline:landing:short-irem` saves full-page baseline screenshots for `390/768/1024/1440` into `artifacts/landing-baseline/*` and accepts `BASELINE_LANDING_ENTRY=next|fallback`.
+
+## Next Landing Rollout (`short/irem`)
+
+- Feature flag: `CW_NEXT_LANDING_SHORT_IREM=1` enables Next-managed entrypoints for `/reboot` and `/irem`.
+- Default (flag on): Next-managed entrypoints are enabled.
+- Fallback/rollback: unset the flag to route traffic back to `/short/index.html` and `/irem/index.html`.
+- Typed hero rollout flag: `CW_TYPED_HERO_SHORT_IREM=1` enables typed hero replacements for `short/irem`.
+- Default for typed hero flag is off: `CW_TYPED_HERO_SHORT_IREM=0`.
+- Next entrypoints preserve legacy DOM and JS behavior, but move inline tracking bootstrap to managed shared runtime:
+  - `/shared/js/landing-pixel.js`
+  - `/shared/js/landing-runtime.js`
+  - `/shared/css/landing.bridge.css`
+
+### Local Check (No Browser Smoke)
+
+```bash
+node scripts/guard-ds-contract.mjs
+npm run -s lint
+npm run -s build
+SMOKE_BASE_URL=http://localhost:8000 npm run -s smoke:landing:cutover-toggle
+SMOKE_BASE_URL=http://localhost:8000 SMOKE_REQUIRE_NEXT_LANDING=1 npm run -s smoke:landing:next-contract
+```
+
+Optional one-shot gate without browser smoke:
+
+```bash
+SMOKE_BASE_URL=http://localhost:8000 LANDING_GATE_BROWSER_SMOKE=off npm run -s gate:landing:short-irem
+```
 
 ## Token Contract
 
-- `public/shared/css/tokens.css` is the shared fallback contract for static pages.
+- `src/landing-static/shared/css/tokens.css` is the shared fallback contract for landing assets served via app routes.
 - `src/app/globals.css` is the app brand override layer.
-- `public/shared/css/landing.css` is a source template; landing primitives are inlined into product CSS (`short.product.css`, `irem.product.css`) and are not linked directly in HTML.
+- `src/landing-static/shared/css/landing.bridge.css` is the semantic bridge between DS tokens and product landing tokens.
 - Required `--ds-*` foundations: colors, base font family, font scale, line heights, spacing, radii, shadows, z-index, breakpoints, container width, and minimum touch target.
 - In the app, `--ds-color-*` maps to `--cw-*` brand tokens; the non-brand scales stay stable and should not drift without a deliberate contract change.
 

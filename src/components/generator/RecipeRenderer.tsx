@@ -23,6 +23,7 @@ import {
   PilotLessonNextStep,
   PilotLessonPractice,
 } from "@/components/lesson/PilotLessonRecipes";
+import { PlatformGeneratedBlock } from "@/components/platform/PlatformGeneratedBlock";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
 
 type RecipeRendererProps = {
@@ -32,6 +33,10 @@ type RecipeRendererProps = {
   componentKey: string;
   semanticBlockType?: string;
   semanticFamily?: string;
+  semanticRole?: string;
+  userQuestion?: string;
+  routeBoundary?: string;
+  renderer?: string;
   props: Record<string, unknown>;
   generatorContext: Omit<GeneratorAnalyticsContext, "recipe_version">;
 };
@@ -55,6 +60,7 @@ const componentRegistry: Record<string, ComponentType<any>> = {
   "dosha.intro": DoshaIntroSection,
   "dosha.route-framing": DoshaRouteFramingSection,
   "dosha.next-step": DoshaNextStepSection,
+  "platform.block": PlatformGeneratedBlock,
 };
 
 export function RecipeRenderer({
@@ -64,6 +70,10 @@ export function RecipeRenderer({
   componentKey,
   semanticBlockType,
   semanticFamily,
+  semanticRole,
+  userQuestion,
+  routeBoundary,
+  renderer,
   props,
   generatorContext,
 }: RecipeRendererProps) {
@@ -93,6 +103,10 @@ export function RecipeRenderer({
       data-cw-recipe-version={recipeVersion}
       data-cw-semantic-block-type={semanticBlockType}
       data-cw-semantic-family={semanticFamily}
+      data-cw-semantic-role={semanticRole}
+      data-cw-user-question={userQuestion}
+      data-cw-route-boundary={routeBoundary}
+      data-cw-renderer={renderer}
     >
       <Component {...props} generatorContext={analyticsContext} />
     </div>

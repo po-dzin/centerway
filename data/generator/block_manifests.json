@@ -6,6 +6,19 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.hero_entry_definition.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "orientation",
+      "semantic_family": "orientation",
+      "user_question": "Куда я попал и какой следующий шаг?",
+      "required_fields": [
+        "title",
+        "lead",
+        "primary_cta"
+      ],
+      "allowed_actions": [
+        "start_or_continue"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "consult",
       "recipe_id": "recipe.funnel.hero.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
@@ -15,6 +28,14 @@
         "route-action-button",
         "proof-card",
         "boundary-block-component"
+      ],
+      "renderer": "funnel.hero",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "ctaPrimaryLabel": "Записатися",
@@ -26,12 +47,32 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.route_framing.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "orientation",
+      "user_question": "Как устроен маршрут и где я сейчас?",
+      "required_fields": [
+        "route_label",
+        "current_step"
+      ],
+      "allowed_actions": [
+        "orient"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "consult",
       "recipe_id": "recipe.funnel.route-framing.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell",
         "stage-card"
+      ],
+      "renderer": "funnel.route-framing",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "consult.route-framing",
@@ -43,12 +84,32 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.offer_definition.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что это за оффер и для кого он?",
+      "required_fields": [
+        "definition",
+        "fit"
+      ],
+      "allowed_actions": [
+        "evaluate_fit"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "consult",
       "recipe_id": "recipe.funnel.offer-definition.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell",
         "proof-card"
+      ],
+      "renderer": "funnel.offer-definition",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "consult.offer-definition",
@@ -60,11 +121,30 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.offer_includes.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что конкретно входит в предложение?",
+      "required_fields": [
+        "included_items"
+      ],
+      "allowed_actions": [
+        "understand_scope"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "consult",
       "recipe_id": "recipe.funnel.offer-includes.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell"
+      ],
+      "renderer": "funnel.offer-includes",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "consult.offer-includes",
@@ -76,12 +156,33 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.format_duration_price.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Сколько это длится, в каком формате и сколько стоит?",
+      "required_fields": [
+        "format",
+        "duration",
+        "price_or_commitment"
+      ],
+      "allowed_actions": [
+        "assess_commitment"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "consult",
       "recipe_id": "recipe.funnel.format-price.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
       "component_families": [
         "section-shell",
         "expectation-block-component"
+      ],
+      "renderer": "funnel.format-price",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "consult.format-duration-price",
@@ -93,12 +194,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.how_it_works.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "method_explanation",
+      "user_question": "Как это работает по шагам?",
+      "required_fields": [
+        "steps"
+      ],
+      "allowed_actions": [
+        "understand_method"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "consult",
       "recipe_id": "recipe.funnel.how-it-works.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell",
         "stage-card"
+      ],
+      "renderer": "funnel.how-it-works",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "consult.how-it-works",
@@ -110,12 +230,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.stage_breakdown.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "progress",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какие этапы прохождения?",
+      "required_fields": [
+        "stages"
+      ],
+      "allowed_actions": [
+        "plan_path"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "consult",
       "recipe_id": "recipe.funnel.stage-breakdown.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell",
         "stage-chip-status-pill"
+      ],
+      "renderer": "funnel.stage-breakdown",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.progress"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "consult.stage-breakdown",
@@ -127,12 +266,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.proof_block.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "proof",
+      "semantic_family": "trust_proof_expectation",
+      "user_question": "Почему этому можно доверять?",
+      "required_fields": [
+        "proof_points"
+      ],
+      "allowed_actions": [
+        "validate_trust"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "consult",
       "recipe_id": "recipe.funnel.proof.v1",
       "recipe_version": "1.0.0",
       "action_role": "support",
       "component_families": [
         "proof-action-button",
         "support-action-button"
+      ],
+      "renderer": "funnel.proof",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "consult.proof-block",
@@ -144,11 +302,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.boundary_block.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "boundary",
+      "semantic_family": "boundary_caution",
+      "user_question": "Где границы метода и что важно учитывать?",
+      "required_fields": [
+        "limits",
+        "safety_note"
+      ],
+      "allowed_actions": [
+        "set_boundaries"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "consult",
       "recipe_id": "recipe.funnel.boundary.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "boundary-block-component"
+      ],
+      "renderer": "funnel.boundary",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.boundary"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "consult.boundary-block",
@@ -160,11 +338,30 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.next_step_block.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "progress",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой следующий шаг после текущего блока?",
+      "required_fields": [
+        "primary_action"
+      ],
+      "allowed_actions": [
+        "continue"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "consult",
       "recipe_id": "recipe.funnel.next-step.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
       "component_families": [
         "next-step-banner"
+      ],
+      "renderer": "funnel.next-step",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "consult.next-step",
@@ -176,6 +373,19 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.hero_entry_definition.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "orientation",
+      "semantic_family": "orientation",
+      "user_question": "Куда я попал и какой следующий шаг?",
+      "required_fields": [
+        "title",
+        "lead",
+        "primary_cta"
+      ],
+      "allowed_actions": [
+        "start_or_continue"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "detox",
       "recipe_id": "recipe.funnel.hero.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
@@ -185,6 +395,14 @@
         "route-action-button",
         "proof-card",
         "boundary-block-component"
+      ],
+      "renderer": "funnel.hero",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "ctaPrimaryLabel": "Записатися",
@@ -196,12 +414,32 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.route_framing.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "orientation",
+      "user_question": "Как устроен маршрут и где я сейчас?",
+      "required_fields": [
+        "route_label",
+        "current_step"
+      ],
+      "allowed_actions": [
+        "orient"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "detox",
       "recipe_id": "recipe.funnel.route-framing.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell",
         "stage-card"
+      ],
+      "renderer": "funnel.route-framing",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "detox.route-framing",
@@ -213,12 +451,32 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.offer_definition.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что это за оффер и для кого он?",
+      "required_fields": [
+        "definition",
+        "fit"
+      ],
+      "allowed_actions": [
+        "evaluate_fit"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "detox",
       "recipe_id": "recipe.funnel.offer-definition.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell",
         "proof-card"
+      ],
+      "renderer": "funnel.offer-definition",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "detox.offer-definition",
@@ -230,11 +488,30 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.offer_includes.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что конкретно входит в предложение?",
+      "required_fields": [
+        "included_items"
+      ],
+      "allowed_actions": [
+        "understand_scope"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "detox",
       "recipe_id": "recipe.funnel.offer-includes.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell"
+      ],
+      "renderer": "funnel.offer-includes",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "detox.offer-includes",
@@ -246,12 +523,33 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.format_duration_price.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Сколько это длится, в каком формате и сколько стоит?",
+      "required_fields": [
+        "format",
+        "duration",
+        "price_or_commitment"
+      ],
+      "allowed_actions": [
+        "assess_commitment"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "detox",
       "recipe_id": "recipe.funnel.format-price.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
       "component_families": [
         "section-shell",
         "expectation-block-component"
+      ],
+      "renderer": "funnel.format-price",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "detox.format-duration-price",
@@ -263,12 +561,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.how_it_works.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "method_explanation",
+      "user_question": "Как это работает по шагам?",
+      "required_fields": [
+        "steps"
+      ],
+      "allowed_actions": [
+        "understand_method"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "detox",
       "recipe_id": "recipe.funnel.how-it-works.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell",
         "stage-card"
+      ],
+      "renderer": "funnel.how-it-works",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "detox.how-it-works",
@@ -280,12 +597,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.stage_breakdown.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "progress",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какие этапы прохождения?",
+      "required_fields": [
+        "stages"
+      ],
+      "allowed_actions": [
+        "plan_path"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "detox",
       "recipe_id": "recipe.funnel.stage-breakdown.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell",
         "stage-chip-status-pill"
+      ],
+      "renderer": "funnel.stage-breakdown",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.progress"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "detox.stage-breakdown",
@@ -297,12 +633,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.proof_block.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "proof",
+      "semantic_family": "trust_proof_expectation",
+      "user_question": "Почему этому можно доверять?",
+      "required_fields": [
+        "proof_points"
+      ],
+      "allowed_actions": [
+        "validate_trust"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "detox",
       "recipe_id": "recipe.funnel.proof.v1",
       "recipe_version": "1.0.0",
       "action_role": "support",
       "component_families": [
         "proof-action-button",
         "support-action-button"
+      ],
+      "renderer": "funnel.proof",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "detox.proof-block",
@@ -314,11 +669,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.boundary_block.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "boundary",
+      "semantic_family": "boundary_caution",
+      "user_question": "Где границы метода и что важно учитывать?",
+      "required_fields": [
+        "limits",
+        "safety_note"
+      ],
+      "allowed_actions": [
+        "set_boundaries"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "detox",
       "recipe_id": "recipe.funnel.boundary.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "boundary-block-component"
+      ],
+      "renderer": "funnel.boundary",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.boundary"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "detox.boundary-block",
@@ -330,11 +705,30 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.next_step_block.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "progress",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой следующий шаг после текущего блока?",
+      "required_fields": [
+        "primary_action"
+      ],
+      "allowed_actions": [
+        "continue"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "detox",
       "recipe_id": "recipe.funnel.next-step.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
       "component_families": [
         "next-step-banner"
+      ],
+      "renderer": "funnel.next-step",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "detox.next-step",
@@ -346,6 +740,19 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.hero_entry_definition.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "orientation",
+      "semantic_family": "orientation",
+      "user_question": "Куда я попал и какой следующий шаг?",
+      "required_fields": [
+        "title",
+        "lead",
+        "primary_cta"
+      ],
+      "allowed_actions": [
+        "start_or_continue"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "herbs",
       "recipe_id": "recipe.funnel.hero.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
@@ -355,6 +762,14 @@
         "route-action-button",
         "proof-card",
         "boundary-block-component"
+      ],
+      "renderer": "funnel.hero",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "ctaPrimaryLabel": "Записатися",
@@ -366,12 +781,32 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.route_framing.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "orientation",
+      "user_question": "Как устроен маршрут и где я сейчас?",
+      "required_fields": [
+        "route_label",
+        "current_step"
+      ],
+      "allowed_actions": [
+        "orient"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "herbs",
       "recipe_id": "recipe.funnel.route-framing.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell",
         "stage-card"
+      ],
+      "renderer": "funnel.route-framing",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "herbs.route-framing",
@@ -383,12 +818,32 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.offer_definition.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что это за оффер и для кого он?",
+      "required_fields": [
+        "definition",
+        "fit"
+      ],
+      "allowed_actions": [
+        "evaluate_fit"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "herbs",
       "recipe_id": "recipe.funnel.offer-definition.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell",
         "proof-card"
+      ],
+      "renderer": "funnel.offer-definition",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "herbs.offer-definition",
@@ -400,11 +855,30 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.offer_includes.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что конкретно входит в предложение?",
+      "required_fields": [
+        "included_items"
+      ],
+      "allowed_actions": [
+        "understand_scope"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "herbs",
       "recipe_id": "recipe.funnel.offer-includes.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell"
+      ],
+      "renderer": "funnel.offer-includes",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "herbs.offer-includes",
@@ -416,12 +890,33 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.format_duration_price.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Сколько это длится, в каком формате и сколько стоит?",
+      "required_fields": [
+        "format",
+        "duration",
+        "price_or_commitment"
+      ],
+      "allowed_actions": [
+        "assess_commitment"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "herbs",
       "recipe_id": "recipe.funnel.format-price.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
       "component_families": [
         "section-shell",
         "expectation-block-component"
+      ],
+      "renderer": "funnel.format-price",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "herbs.format-duration-price",
@@ -433,12 +928,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.how_it_works.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "method_explanation",
+      "user_question": "Как это работает по шагам?",
+      "required_fields": [
+        "steps"
+      ],
+      "allowed_actions": [
+        "understand_method"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "herbs",
       "recipe_id": "recipe.funnel.how-it-works.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell",
         "stage-card"
+      ],
+      "renderer": "funnel.how-it-works",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "herbs.how-it-works",
@@ -450,12 +964,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.stage_breakdown.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "progress",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какие этапы прохождения?",
+      "required_fields": [
+        "stages"
+      ],
+      "allowed_actions": [
+        "plan_path"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "herbs",
       "recipe_id": "recipe.funnel.stage-breakdown.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "section-shell",
         "stage-chip-status-pill"
+      ],
+      "renderer": "funnel.stage-breakdown",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.progress"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "herbs.stage-breakdown",
@@ -467,12 +1000,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.proof_block.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "proof",
+      "semantic_family": "trust_proof_expectation",
+      "user_question": "Почему этому можно доверять?",
+      "required_fields": [
+        "proof_points"
+      ],
+      "allowed_actions": [
+        "validate_trust"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "herbs",
       "recipe_id": "recipe.funnel.proof.v1",
       "recipe_version": "1.0.0",
       "action_role": "support",
       "component_families": [
         "proof-action-button",
         "support-action-button"
+      ],
+      "renderer": "funnel.proof",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "herbs.proof-block",
@@ -484,11 +1036,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.boundary_block.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "boundary",
+      "semantic_family": "boundary_caution",
+      "user_question": "Где границы метода и что важно учитывать?",
+      "required_fields": [
+        "limits",
+        "safety_note"
+      ],
+      "allowed_actions": [
+        "set_boundaries"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "herbs",
       "recipe_id": "recipe.funnel.boundary.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "boundary-block-component"
+      ],
+      "renderer": "funnel.boundary",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.boundary"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "herbs.boundary-block",
@@ -500,11 +1072,30 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.next_step_block.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "progress",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой следующий шаг после текущего блока?",
+      "required_fields": [
+        "primary_action"
+      ],
+      "allowed_actions": [
+        "continue"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "herbs",
       "recipe_id": "recipe.funnel.next-step.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
       "component_families": [
         "next-step-banner"
+      ],
+      "renderer": "funnel.next-step",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "herbs.next-step",
@@ -516,12 +1107,33 @@
       "version": "1.1.0",
       "semantic_block_id": "sb.hero_entry_definition.v1",
       "semantic_block_version": "1.0.0",
-      "render_mode": "semantic-only",
+      "semantic_role": "orientation",
+      "semantic_family": "orientation",
+      "user_question": "Куда я попал и какой следующий шаг?",
+      "required_fields": [
+        "title",
+        "lead",
+        "primary_cta"
+      ],
+      "allowed_actions": [
+        "start_or_continue"
+      ],
+      "route_boundary": "platform utility route",
+      "mode": "support",
       "recipe_id": "recipe.dosha.intro.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
+      "render_mode": "semantic-only",
       "component_families": [
         "section-shell"
+      ],
+      "renderer": "dosha.intro",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "semanticKey": "dosha.hero",
@@ -534,12 +1146,32 @@
       "version": "1.1.0",
       "semantic_block_id": "sb.route_framing.v1",
       "semantic_block_version": "1.0.0",
-      "render_mode": "semantic-only",
+      "semantic_role": "method",
+      "semantic_family": "orientation",
+      "user_question": "Как устроен маршрут и где я сейчас?",
+      "required_fields": [
+        "route_label",
+        "current_step"
+      ],
+      "allowed_actions": [
+        "orient"
+      ],
+      "route_boundary": "platform utility route",
+      "mode": "support",
       "recipe_id": "recipe.dosha.route-framing.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
+      "render_mode": "semantic-only",
       "component_families": [
         "section-shell"
+      ],
+      "renderer": "dosha.route-framing",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "semanticKey": "dosha.route-framing",
@@ -552,6 +1184,18 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.route_choice.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "route-map",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой маршрут выбрать дальше?",
+      "required_fields": [
+        "routes",
+        "recommended_next_step"
+      ],
+      "allowed_actions": [
+        "choose_route"
+      ],
+      "route_boundary": "platform utility route",
+      "mode": "support",
       "recipe_id": "recipe.dosha.test.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
@@ -562,6 +1206,14 @@
         "path-card",
         "support-action-button"
       ],
+      "renderer": "dosha.test.main",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
       "default_props": {
         "uiVariant": "dosha_test_calm_route_v1"
       }
@@ -571,12 +1223,31 @@
       "version": "1.1.0",
       "semantic_block_id": "sb.next_step_block.v1",
       "semantic_block_version": "1.0.0",
-      "render_mode": "semantic-only",
+      "semantic_role": "progress",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой следующий шаг после текущего блока?",
+      "required_fields": [
+        "primary_action"
+      ],
+      "allowed_actions": [
+        "continue"
+      ],
+      "route_boundary": "platform utility route",
+      "mode": "support",
       "recipe_id": "recipe.dosha.next-step.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
+      "render_mode": "semantic-only",
       "component_families": [
         "stage-chip-status-pill"
+      ],
+      "renderer": "dosha.next-step",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "semanticKey": "dosha.next-step",
@@ -589,12 +1260,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.current_step.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "orientation",
+      "semantic_family": "orientation",
+      "user_question": "На каком шаге процесса я нахожусь?",
+      "required_fields": [
+        "current_step"
+      ],
+      "allowed_actions": [
+        "orient"
+      ],
+      "route_boundary": "platform utility route",
+      "mode": "lesson",
       "recipe_id": "recipe.lesson.pilot.header.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
       "component_families": [
         "page-shell",
         "section-shell"
+      ],
+      "renderer": "lesson.pilot.header",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.progress"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "title": "Модуль 1 · Ритм відновлення",
@@ -606,12 +1296,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.practice_unit.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "method_explanation",
+      "user_question": "Что конкретно делать в практическом блоке?",
+      "required_fields": [
+        "practice_instruction"
+      ],
+      "allowed_actions": [
+        "practice"
+      ],
+      "route_boundary": "platform utility route",
+      "mode": "lesson",
       "recipe_id": "recipe.lesson.pilot.practice.v1",
       "recipe_version": "1.0.0",
       "action_role": "support",
       "component_families": [
         "practice-card",
         "support-card"
+      ],
+      "renderer": "lesson.pilot.practice",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "steps": [
@@ -628,12 +1337,31 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.next_step_block.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "progress",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой следующий шаг после текущего блока?",
+      "required_fields": [
+        "primary_action"
+      ],
+      "allowed_actions": [
+        "continue"
+      ],
+      "route_boundary": "platform utility route",
+      "mode": "lesson",
       "recipe_id": "recipe.lesson.pilot.nextstep.v1",
       "recipe_version": "1.0.0",
       "action_role": "primary",
       "component_families": [
         "route-action-button",
         "next-step-banner"
+      ],
+      "renderer": "lesson.pilot.nextstep",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "nextTitle": "Наступний крок",
@@ -645,8 +1373,20 @@
     {
       "id": "block.consult.route-map.v1",
       "version": "1.0.0",
-      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_id": "sb.route_choice.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "route-map",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой маршрут выбрать дальше?",
+      "required_fields": [
+        "routes",
+        "recommended_next_step"
+      ],
+      "allowed_actions": [
+        "choose_route"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "consult",
       "recipe_id": "recipe.funnel.route-map.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
@@ -655,6 +1395,14 @@
         "route-nav",
         "path-card",
         "route-node"
+      ],
+      "renderer": "funnel.route-map",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "consult.route-map",
@@ -666,6 +1414,18 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.support_path.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "support",
+      "semantic_family": "support_care",
+      "user_question": "Как получить поддержку, если есть тревога или вопросы?",
+      "required_fields": [
+        "support_contact",
+        "support_context"
+      ],
+      "allowed_actions": [
+        "seek_support"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "consult",
       "recipe_id": "recipe.funnel.resource-entry.v1",
       "recipe_version": "1.0.0",
       "action_role": "support",
@@ -673,6 +1433,14 @@
         "section-shell",
         "support-card",
         "support-action-button"
+      ],
+      "renderer": "funnel.resource-entry",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "consult.resource-entry",
@@ -682,8 +1450,20 @@
     {
       "id": "block.detox.route-map.v1",
       "version": "1.0.0",
-      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_id": "sb.route_choice.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "route-map",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой маршрут выбрать дальше?",
+      "required_fields": [
+        "routes",
+        "recommended_next_step"
+      ],
+      "allowed_actions": [
+        "choose_route"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "detox",
       "recipe_id": "recipe.funnel.route-map.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
@@ -692,6 +1472,14 @@
         "route-nav",
         "path-card",
         "route-node"
+      ],
+      "renderer": "funnel.route-map",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "detox.route-map",
@@ -703,6 +1491,18 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.support_path.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "support",
+      "semantic_family": "support_care",
+      "user_question": "Как получить поддержку, если есть тревога или вопросы?",
+      "required_fields": [
+        "support_contact",
+        "support_context"
+      ],
+      "allowed_actions": [
+        "seek_support"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "detox",
       "recipe_id": "recipe.funnel.resource-entry.v1",
       "recipe_version": "1.0.0",
       "action_role": "support",
@@ -710,6 +1510,14 @@
         "section-shell",
         "support-card",
         "support-action-button"
+      ],
+      "renderer": "funnel.resource-entry",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "detox.resource-entry",
@@ -719,8 +1527,20 @@
     {
       "id": "block.herbs.route-map.v1",
       "version": "1.0.0",
-      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_id": "sb.route_choice.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "route-map",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой маршрут выбрать дальше?",
+      "required_fields": [
+        "routes",
+        "recommended_next_step"
+      ],
+      "allowed_actions": [
+        "choose_route"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "herbs",
       "recipe_id": "recipe.funnel.route-map.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
@@ -729,6 +1549,14 @@
         "route-nav",
         "path-card",
         "route-node"
+      ],
+      "renderer": "funnel.route-map",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
       ],
       "default_props": {
         "marker": "herbs.route-map",
@@ -740,6 +1568,18 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.support_path.v1",
       "semantic_block_version": "1.0.0",
+      "semantic_role": "support",
+      "semantic_family": "support_care",
+      "user_question": "Как получить поддержку, если есть тревога или вопросы?",
+      "required_fields": [
+        "support_contact",
+        "support_context"
+      ],
+      "allowed_actions": [
+        "seek_support"
+      ],
+      "route_boundary": "isolated funnel route",
+      "mode": "herbs",
       "recipe_id": "recipe.funnel.resource-entry.v1",
       "recipe_version": "1.0.0",
       "action_role": "support",
@@ -748,9 +1588,2028 @@
         "support-card",
         "support-action-button"
       ],
+      "renderer": "funnel.resource-entry",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
       "default_props": {
         "marker": "herbs.resource-entry",
         "route": "herbs"
+      }
+    },
+    {
+      "id": "block.platform-home.hero.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.hero_entry_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "orientation",
+      "semantic_family": "orientation",
+      "user_question": "Куда я попал и какой следующий шаг?",
+      "required_fields": [
+        "title",
+        "lead",
+        "primary_cta"
+      ],
+      "allowed_actions": [
+        "start_or_continue"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "page-shell",
+        "section-shell",
+        "route-action-button"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "platform-home",
+        "variant": "home.hero"
+      }
+    },
+    {
+      "id": "block.platform-home.intro.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "orientation",
+      "user_question": "Как устроен маршрут и где я сейчас?",
+      "required_fields": [
+        "route_label",
+        "current_step"
+      ],
+      "allowed_actions": [
+        "orient"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "platform-home",
+        "variant": "home.intro"
+      }
+    },
+    {
+      "id": "block.platform-home.method.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.how_it_works.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "method_explanation",
+      "user_question": "Как это работает по шагам?",
+      "required_fields": [
+        "steps"
+      ],
+      "allowed_actions": [
+        "understand_method"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "platform-home",
+        "variant": "home.method"
+      }
+    },
+    {
+      "id": "block.platform-home.route-map.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_choice.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "route-map",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой маршрут выбрать дальше?",
+      "required_fields": [
+        "routes",
+        "recommended_next_step"
+      ],
+      "allowed_actions": [
+        "choose_route"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "path-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "platform-home",
+        "variant": "home.route-map"
+      }
+    },
+    {
+      "id": "block.platform-home.trust.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.proof_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "proof",
+      "semantic_family": "trust_proof_expectation",
+      "user_question": "Почему этому можно доверять?",
+      "required_fields": [
+        "proof_points"
+      ],
+      "allowed_actions": [
+        "validate_trust"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "platform-home",
+        "variant": "home.trust"
+      }
+    },
+    {
+      "id": "block.platform-home.support.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.support_path.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "support",
+      "semantic_family": "support_care",
+      "user_question": "Как получить поддержку, если есть тревога или вопросы?",
+      "required_fields": [
+        "support_contact",
+        "support_context"
+      ],
+      "allowed_actions": [
+        "seek_support"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "support-card",
+        "support-action-button"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "platform-home",
+        "variant": "support.form"
+      }
+    },
+    {
+      "id": "block.platform-home.next-step.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.next_step_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "progress",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой следующий шаг после текущего блока?",
+      "required_fields": [
+        "primary_action"
+      ],
+      "allowed_actions": [
+        "continue"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "route-action-button"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "platform-home",
+        "variant": "next-step"
+      }
+    },
+    {
+      "id": "block.expert.hero.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.hero_entry_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "orientation",
+      "semantic_family": "orientation",
+      "user_question": "Куда я попал и какой следующий шаг?",
+      "required_fields": [
+        "title",
+        "lead",
+        "primary_cta"
+      ],
+      "allowed_actions": [
+        "start_or_continue"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "page-shell",
+        "section-shell",
+        "route-action-button",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "expert",
+        "variant": "expert.hero"
+      }
+    },
+    {
+      "id": "block.expert.proof.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.proof_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "proof",
+      "semantic_family": "trust_proof_expectation",
+      "user_question": "Почему этому можно доверять?",
+      "required_fields": [
+        "proof_points"
+      ],
+      "allowed_actions": [
+        "validate_trust"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "expert",
+        "variant": "expert.proof"
+      }
+    },
+    {
+      "id": "block.expert.path.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "orientation",
+      "user_question": "Как устроен маршрут и где я сейчас?",
+      "required_fields": [
+        "route_label",
+        "current_step"
+      ],
+      "allowed_actions": [
+        "orient"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "expert",
+        "variant": "expert.path"
+      }
+    },
+    {
+      "id": "block.expert.support.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.support_path.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "support",
+      "semantic_family": "support_care",
+      "user_question": "Как получить поддержку, если есть тревога или вопросы?",
+      "required_fields": [
+        "support_contact",
+        "support_context"
+      ],
+      "allowed_actions": [
+        "seek_support"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "support-card",
+        "support-action-button"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "expert",
+        "variant": "support.form"
+      }
+    },
+    {
+      "id": "block.expert.next-step.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.next_step_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "progress",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой следующий шаг после текущего блока?",
+      "required_fields": [
+        "primary_action"
+      ],
+      "allowed_actions": [
+        "continue"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "route-action-button"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "expert",
+        "variant": "next-step"
+      }
+    },
+    {
+      "id": "block.program-way21.hero.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.hero_entry_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "orientation",
+      "semantic_family": "orientation",
+      "user_question": "Куда я попал и какой следующий шаг?",
+      "required_fields": [
+        "title",
+        "lead",
+        "primary_cta"
+      ],
+      "allowed_actions": [
+        "start_or_continue"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "page-shell",
+        "section-shell",
+        "route-action-button",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-way21",
+        "variant": "offer.hero",
+        "programSlug": "way21"
+      }
+    },
+    {
+      "id": "block.program-way21.route-framing.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "orientation",
+      "user_question": "Как устроен маршрут и где я сейчас?",
+      "required_fields": [
+        "route_label",
+        "current_step"
+      ],
+      "allowed_actions": [
+        "orient"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-way21",
+        "variant": "offer.details",
+        "programSlug": "way21"
+      }
+    },
+    {
+      "id": "block.program-way21.offer-definition.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что это за оффер и для кого он?",
+      "required_fields": [
+        "definition",
+        "fit"
+      ],
+      "allowed_actions": [
+        "evaluate_fit"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-way21",
+        "variant": "offer.details",
+        "programSlug": "way21"
+      }
+    },
+    {
+      "id": "block.program-way21.offer-includes.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_includes.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что конкретно входит в предложение?",
+      "required_fields": [
+        "included_items"
+      ],
+      "allowed_actions": [
+        "understand_scope"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-way21",
+        "variant": "offer.details",
+        "programSlug": "way21"
+      }
+    },
+    {
+      "id": "block.program-way21.format-price.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.format_duration_price.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Сколько это длится, в каком формате и сколько стоит?",
+      "required_fields": [
+        "format",
+        "duration",
+        "price_or_commitment"
+      ],
+      "allowed_actions": [
+        "assess_commitment"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "expectation-block-component"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-way21",
+        "variant": "offer.details",
+        "programSlug": "way21"
+      }
+    },
+    {
+      "id": "block.program-way21.how-it-works.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.how_it_works.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "method_explanation",
+      "user_question": "Как это работает по шагам?",
+      "required_fields": [
+        "steps"
+      ],
+      "allowed_actions": [
+        "understand_method"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-way21",
+        "variant": "offer.details",
+        "programSlug": "way21"
+      }
+    },
+    {
+      "id": "block.program-way21.proof.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.proof_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "proof",
+      "semantic_family": "trust_proof_expectation",
+      "user_question": "Почему этому можно доверять?",
+      "required_fields": [
+        "proof_points"
+      ],
+      "allowed_actions": [
+        "validate_trust"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "proof-card",
+        "proof-action-button"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-way21",
+        "variant": "offer.details",
+        "programSlug": "way21"
+      }
+    },
+    {
+      "id": "block.program-way21.boundary.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.boundary_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "boundary",
+      "semantic_family": "boundary_caution",
+      "user_question": "Где границы метода и что важно учитывать?",
+      "required_fields": [
+        "limits",
+        "safety_note"
+      ],
+      "allowed_actions": [
+        "set_boundaries"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "boundary-block-component"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.boundary"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-way21",
+        "variant": "boundary",
+        "programSlug": "way21"
+      }
+    },
+    {
+      "id": "block.program-way21.support.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.support_path.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "support",
+      "semantic_family": "support_care",
+      "user_question": "Как получить поддержку, если есть тревога или вопросы?",
+      "required_fields": [
+        "support_contact",
+        "support_context"
+      ],
+      "allowed_actions": [
+        "seek_support"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "support-card",
+        "support-action-button",
+        "text-input"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-way21",
+        "variant": "offer.support",
+        "programSlug": "way21"
+      }
+    },
+    {
+      "id": "block.program-way21.next-step.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.next_step_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "progress",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой следующий шаг после текущего блока?",
+      "required_fields": [
+        "primary_action"
+      ],
+      "allowed_actions": [
+        "continue"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "next-step-banner"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-way21",
+        "variant": "next-step",
+        "programSlug": "way21"
+      }
+    },
+    {
+      "id": "block.program-ideal-body.hero.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.hero_entry_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "orientation",
+      "semantic_family": "orientation",
+      "user_question": "Куда я попал и какой следующий шаг?",
+      "required_fields": [
+        "title",
+        "lead",
+        "primary_cta"
+      ],
+      "allowed_actions": [
+        "start_or_continue"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "page-shell",
+        "section-shell",
+        "route-action-button",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-ideal-body",
+        "variant": "offer.hero",
+        "programSlug": "ideal-body"
+      }
+    },
+    {
+      "id": "block.program-ideal-body.route-framing.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "orientation",
+      "user_question": "Как устроен маршрут и где я сейчас?",
+      "required_fields": [
+        "route_label",
+        "current_step"
+      ],
+      "allowed_actions": [
+        "orient"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-ideal-body",
+        "variant": "offer.details",
+        "programSlug": "ideal-body"
+      }
+    },
+    {
+      "id": "block.program-ideal-body.offer-definition.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что это за оффер и для кого он?",
+      "required_fields": [
+        "definition",
+        "fit"
+      ],
+      "allowed_actions": [
+        "evaluate_fit"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-ideal-body",
+        "variant": "offer.details",
+        "programSlug": "ideal-body"
+      }
+    },
+    {
+      "id": "block.program-ideal-body.offer-includes.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_includes.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что конкретно входит в предложение?",
+      "required_fields": [
+        "included_items"
+      ],
+      "allowed_actions": [
+        "understand_scope"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-ideal-body",
+        "variant": "offer.details",
+        "programSlug": "ideal-body"
+      }
+    },
+    {
+      "id": "block.program-ideal-body.format-price.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.format_duration_price.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Сколько это длится, в каком формате и сколько стоит?",
+      "required_fields": [
+        "format",
+        "duration",
+        "price_or_commitment"
+      ],
+      "allowed_actions": [
+        "assess_commitment"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "expectation-block-component"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-ideal-body",
+        "variant": "offer.details",
+        "programSlug": "ideal-body"
+      }
+    },
+    {
+      "id": "block.program-ideal-body.how-it-works.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.how_it_works.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "method_explanation",
+      "user_question": "Как это работает по шагам?",
+      "required_fields": [
+        "steps"
+      ],
+      "allowed_actions": [
+        "understand_method"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-ideal-body",
+        "variant": "offer.details",
+        "programSlug": "ideal-body"
+      }
+    },
+    {
+      "id": "block.program-ideal-body.proof.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.proof_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "proof",
+      "semantic_family": "trust_proof_expectation",
+      "user_question": "Почему этому можно доверять?",
+      "required_fields": [
+        "proof_points"
+      ],
+      "allowed_actions": [
+        "validate_trust"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "proof-card",
+        "proof-action-button"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-ideal-body",
+        "variant": "offer.details",
+        "programSlug": "ideal-body"
+      }
+    },
+    {
+      "id": "block.program-ideal-body.boundary.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.boundary_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "boundary",
+      "semantic_family": "boundary_caution",
+      "user_question": "Где границы метода и что важно учитывать?",
+      "required_fields": [
+        "limits",
+        "safety_note"
+      ],
+      "allowed_actions": [
+        "set_boundaries"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "boundary-block-component"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.boundary"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-ideal-body",
+        "variant": "boundary",
+        "programSlug": "ideal-body"
+      }
+    },
+    {
+      "id": "block.program-ideal-body.support.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.support_path.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "support",
+      "semantic_family": "support_care",
+      "user_question": "Как получить поддержку, если есть тревога или вопросы?",
+      "required_fields": [
+        "support_contact",
+        "support_context"
+      ],
+      "allowed_actions": [
+        "seek_support"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "support-card",
+        "support-action-button",
+        "text-input"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-ideal-body",
+        "variant": "offer.support",
+        "programSlug": "ideal-body"
+      }
+    },
+    {
+      "id": "block.program-ideal-body.next-step.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.next_step_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "progress",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой следующий шаг после текущего блока?",
+      "required_fields": [
+        "primary_action"
+      ],
+      "allowed_actions": [
+        "continue"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "next-step-banner"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-ideal-body",
+        "variant": "next-step",
+        "programSlug": "ideal-body"
+      }
+    },
+    {
+      "id": "block.program-irem.hero.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.hero_entry_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "orientation",
+      "semantic_family": "orientation",
+      "user_question": "Куда я попал и какой следующий шаг?",
+      "required_fields": [
+        "title",
+        "lead",
+        "primary_cta"
+      ],
+      "allowed_actions": [
+        "start_or_continue"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "page-shell",
+        "section-shell",
+        "route-action-button",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-irem",
+        "variant": "offer.hero",
+        "programSlug": "irem"
+      }
+    },
+    {
+      "id": "block.program-irem.route-framing.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "orientation",
+      "user_question": "Как устроен маршрут и где я сейчас?",
+      "required_fields": [
+        "route_label",
+        "current_step"
+      ],
+      "allowed_actions": [
+        "orient"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-irem",
+        "variant": "offer.details",
+        "programSlug": "irem"
+      }
+    },
+    {
+      "id": "block.program-irem.offer-definition.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что это за оффер и для кого он?",
+      "required_fields": [
+        "definition",
+        "fit"
+      ],
+      "allowed_actions": [
+        "evaluate_fit"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-irem",
+        "variant": "offer.details",
+        "programSlug": "irem"
+      }
+    },
+    {
+      "id": "block.program-irem.offer-includes.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_includes.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что конкретно входит в предложение?",
+      "required_fields": [
+        "included_items"
+      ],
+      "allowed_actions": [
+        "understand_scope"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-irem",
+        "variant": "offer.details",
+        "programSlug": "irem"
+      }
+    },
+    {
+      "id": "block.program-irem.format-price.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.format_duration_price.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Сколько это длится, в каком формате и сколько стоит?",
+      "required_fields": [
+        "format",
+        "duration",
+        "price_or_commitment"
+      ],
+      "allowed_actions": [
+        "assess_commitment"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "expectation-block-component"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-irem",
+        "variant": "offer.details",
+        "programSlug": "irem"
+      }
+    },
+    {
+      "id": "block.program-irem.how-it-works.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.how_it_works.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "method_explanation",
+      "user_question": "Как это работает по шагам?",
+      "required_fields": [
+        "steps"
+      ],
+      "allowed_actions": [
+        "understand_method"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-irem",
+        "variant": "offer.details",
+        "programSlug": "irem"
+      }
+    },
+    {
+      "id": "block.program-irem.proof.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.proof_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "proof",
+      "semantic_family": "trust_proof_expectation",
+      "user_question": "Почему этому можно доверять?",
+      "required_fields": [
+        "proof_points"
+      ],
+      "allowed_actions": [
+        "validate_trust"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "proof-card",
+        "proof-action-button"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-irem",
+        "variant": "offer.details",
+        "programSlug": "irem"
+      }
+    },
+    {
+      "id": "block.program-irem.boundary.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.boundary_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "boundary",
+      "semantic_family": "boundary_caution",
+      "user_question": "Где границы метода и что важно учитывать?",
+      "required_fields": [
+        "limits",
+        "safety_note"
+      ],
+      "allowed_actions": [
+        "set_boundaries"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "boundary-block-component"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.boundary"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-irem",
+        "variant": "boundary",
+        "programSlug": "irem"
+      }
+    },
+    {
+      "id": "block.program-irem.support.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.support_path.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "support",
+      "semantic_family": "support_care",
+      "user_question": "Как получить поддержку, если есть тревога или вопросы?",
+      "required_fields": [
+        "support_contact",
+        "support_context"
+      ],
+      "allowed_actions": [
+        "seek_support"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "support-card",
+        "support-action-button",
+        "text-input"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-irem",
+        "variant": "offer.support",
+        "programSlug": "irem"
+      }
+    },
+    {
+      "id": "block.program-irem.next-step.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.next_step_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "progress",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой следующий шаг после текущего блока?",
+      "required_fields": [
+        "primary_action"
+      ],
+      "allowed_actions": [
+        "continue"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "next-step-banner"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-irem",
+        "variant": "next-step",
+        "programSlug": "irem"
+      }
+    },
+    {
+      "id": "block.mini-detox.hero.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.hero_entry_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "orientation",
+      "semantic_family": "orientation",
+      "user_question": "Куда я попал и какой следующий шаг?",
+      "required_fields": [
+        "title",
+        "lead",
+        "primary_cta"
+      ],
+      "allowed_actions": [
+        "start_or_continue"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "page-shell",
+        "section-shell",
+        "route-action-button",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "mini-detox",
+        "variant": "offer.hero",
+        "programSlug": "mini-detox"
+      }
+    },
+    {
+      "id": "block.mini-detox.route-framing.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_framing.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "orientation",
+      "user_question": "Как устроен маршрут и где я сейчас?",
+      "required_fields": [
+        "route_label",
+        "current_step"
+      ],
+      "allowed_actions": [
+        "orient"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "mini-detox",
+        "variant": "offer.details",
+        "programSlug": "mini-detox"
+      }
+    },
+    {
+      "id": "block.mini-detox.offer-definition.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что это за оффер и для кого он?",
+      "required_fields": [
+        "definition",
+        "fit"
+      ],
+      "allowed_actions": [
+        "evaluate_fit"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "mini-detox",
+        "variant": "offer.details",
+        "programSlug": "mini-detox"
+      }
+    },
+    {
+      "id": "block.mini-detox.offer-includes.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_includes.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что конкретно входит в предложение?",
+      "required_fields": [
+        "included_items"
+      ],
+      "allowed_actions": [
+        "understand_scope"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "mini-detox",
+        "variant": "offer.details",
+        "programSlug": "mini-detox"
+      }
+    },
+    {
+      "id": "block.mini-detox.format-price.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.format_duration_price.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Сколько это длится, в каком формате и сколько стоит?",
+      "required_fields": [
+        "format",
+        "duration",
+        "price_or_commitment"
+      ],
+      "allowed_actions": [
+        "assess_commitment"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "expectation-block-component"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "mini-detox",
+        "variant": "offer.details",
+        "programSlug": "mini-detox"
+      }
+    },
+    {
+      "id": "block.mini-detox.how-it-works.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.how_it_works.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "method",
+      "semantic_family": "method_explanation",
+      "user_question": "Как это работает по шагам?",
+      "required_fields": [
+        "steps"
+      ],
+      "allowed_actions": [
+        "understand_method"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "stage-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.method"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "mini-detox",
+        "variant": "offer.details",
+        "programSlug": "mini-detox"
+      }
+    },
+    {
+      "id": "block.mini-detox.proof.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.proof_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "proof",
+      "semantic_family": "trust_proof_expectation",
+      "user_question": "Почему этому можно доверять?",
+      "required_fields": [
+        "proof_points"
+      ],
+      "allowed_actions": [
+        "validate_trust"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "proof-card",
+        "proof-action-button"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "mini-detox",
+        "variant": "offer.details",
+        "programSlug": "mini-detox"
+      }
+    },
+    {
+      "id": "block.mini-detox.boundary.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.boundary_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "boundary",
+      "semantic_family": "boundary_caution",
+      "user_question": "Где границы метода и что важно учитывать?",
+      "required_fields": [
+        "limits",
+        "safety_note"
+      ],
+      "allowed_actions": [
+        "set_boundaries"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "boundary-block-component"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.boundary"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "mini-detox",
+        "variant": "boundary",
+        "programSlug": "mini-detox"
+      }
+    },
+    {
+      "id": "block.mini-detox.support.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.support_path.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "support",
+      "semantic_family": "support_care",
+      "user_question": "Как получить поддержку, если есть тревога или вопросы?",
+      "required_fields": [
+        "support_contact",
+        "support_context"
+      ],
+      "allowed_actions": [
+        "seek_support"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "support-card",
+        "support-action-button",
+        "text-input"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "mini-detox",
+        "variant": "offer.support",
+        "programSlug": "mini-detox"
+      }
+    },
+    {
+      "id": "block.mini-detox.next-step.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.next_step_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "progress",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой следующий шаг после текущего блока?",
+      "required_fields": [
+        "primary_action"
+      ],
+      "allowed_actions": [
+        "continue"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "next-step-banner"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "mini-detox",
+        "variant": "next-step",
+        "programSlug": "mini-detox"
+      }
+    },
+    {
+      "id": "block.expert.route-map.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.route_choice.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "route-map",
+      "semantic_family": "progress_pathway",
+      "user_question": "Какой маршрут выбрать дальше?",
+      "required_fields": [
+        "routes",
+        "recommended_next_step"
+      ],
+      "allowed_actions": [
+        "choose_route"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "path-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "route-map"
+      ],
+      "default_props": {
+        "route": "expert",
+        "variant": "next-step"
       }
     }
   ]

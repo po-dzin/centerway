@@ -1,0 +1,219 @@
+{
+  "schema_version": "1.0.0",
+  "contracts": [
+    {
+      "id": "route_family.platform-hub.v1",
+      "version": "1.0.0",
+      "route_family": "platform hub",
+      "route_boundary": "platform route",
+      "route_paths": [
+        "/"
+      ],
+      "allowed_archetypes": [
+        "overview-entry"
+      ],
+      "allowed_block_order": [
+        "hero-entry-definition",
+        "route-framing",
+        "how-it-works",
+        "route-choice",
+        "proof-block",
+        "support-path",
+        "next-step",
+        "boundary-block"
+      ],
+      "allowed_renderers": [
+        "platform.block"
+      ],
+      "required_semantic_roles": [
+        "orientation",
+        "route-map",
+        "support"
+      ]
+    },
+    {
+      "id": "route_family.expert.v1",
+      "version": "1.0.0",
+      "route_family": "expert",
+      "route_boundary": "platform route",
+      "route_paths": [
+        "/expert"
+      ],
+      "allowed_archetypes": [
+        "overview-entry"
+      ],
+      "allowed_block_order": [
+        "hero-entry-definition",
+        "proof-block",
+        "route-choice",
+        "route-framing",
+        "support-path",
+        "next-step",
+        "boundary-block"
+      ],
+      "allowed_renderers": [
+        "platform.block"
+      ],
+      "required_semantic_roles": [
+        "orientation",
+        "proof",
+        "support"
+      ]
+    },
+    {
+      "id": "route_family.program-offer.v1",
+      "version": "1.0.0",
+      "route_family": "program offer",
+      "route_boundary": "platform route",
+      "route_paths": [
+        "/programs/way21",
+        "/programs/ideal-body",
+        "/programs/irem"
+      ],
+      "allowed_archetypes": [
+        "offer-detail"
+      ],
+      "allowed_block_order": [
+        "hero-entry-definition",
+        "route-framing",
+        "offer-definition",
+        "offer-includes",
+        "format-duration-price",
+        "how-it-works",
+        "proof-block",
+        "boundary-block",
+        "support-path",
+        "next-step"
+      ],
+      "allowed_renderers": [
+        "platform.block"
+      ],
+      "required_semantic_roles": [
+        "orientation",
+        "offer",
+        "boundary",
+        "support"
+      ]
+    },
+    {
+      "id": "route_family.standalone-entry.v1",
+      "version": "1.0.0",
+      "route_family": "standalone route entry",
+      "route_boundary": "platform route",
+      "route_paths": [
+        "/mini-detox"
+      ],
+      "allowed_archetypes": [
+        "offer-detail"
+      ],
+      "allowed_block_order": [
+        "hero-entry-definition",
+        "route-framing",
+        "offer-definition",
+        "offer-includes",
+        "format-duration-price",
+        "how-it-works",
+        "proof-block",
+        "boundary-block",
+        "support-path",
+        "next-step"
+      ],
+      "allowed_renderers": [
+        "platform.block"
+      ],
+      "required_semantic_roles": [
+        "orientation",
+        "offer",
+        "boundary",
+        "support"
+      ]
+    },
+    {
+      "id": "route_family.funnel-surface.v1",
+      "version": "1.0.0",
+      "route_family": "funnel surface",
+      "route_boundary": "isolated funnel route",
+      "route_paths": [
+        "/consult",
+        "/detox",
+        "/herbs",
+        "/irem",
+        "/reboot",
+        "/short/*"
+      ],
+      "allowed_archetypes": [
+        "offer-detail",
+        "overview-entry"
+      ],
+      "allowed_block_order": [
+        "hero-entry-definition",
+        "route-framing",
+        "offer-definition",
+        "offer-includes",
+        "how-it-works",
+        "format-duration-price",
+        "stage-breakdown",
+        "proof-block",
+        "boundary-block",
+        "next-step",
+        "route-choice"
+      ],
+      "allowed_renderers": [
+        "funnel.hero",
+        "funnel.route-framing",
+        "funnel.route-map",
+        "funnel.offer-definition",
+        "funnel.offer-includes",
+        "funnel.format-price",
+        "funnel.how-it-works",
+        "funnel.stage-breakdown",
+        "funnel.proof",
+        "funnel.boundary",
+        "funnel.next-step",
+        "funnel.resource-entry"
+      ],
+      "required_semantic_roles": [
+        "orientation",
+        "offer",
+        "boundary"
+      ],
+      "isolated": true
+    },
+    {
+      "id": "route_family.utility.v1",
+      "version": "1.0.0",
+      "route_family": "utility",
+      "route_boundary": "platform utility route",
+      "route_paths": [
+        "/dosha-test",
+        "/lesson/pilot"
+      ],
+      "allowed_archetypes": [
+        "overview-entry",
+        "lesson-practice",
+        "support-proof"
+      ],
+      "allowed_block_order": [
+        "hero-entry-definition",
+        "route-framing",
+        "route-choice",
+        "current-step",
+        "practice-unit",
+        "next-step",
+        "boundary-block"
+      ],
+      "allowed_renderers": [
+        "dosha.test.main",
+        "lesson.pilot.header",
+        "lesson.pilot.practice",
+        "lesson.pilot.nextstep",
+        "dosha.intro",
+        "dosha.route-framing",
+        "dosha.next-step"
+      ],
+      "required_semantic_roles": [
+        "orientation"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,261 @@
+/* Shell, header, navigation, shared page frame recipes.
+   Derived from PlatformSite.module.css during semantic architecture CSS split. */
+
+.shell {
+  min-height: 100vh;
+  min-height: 100svh;
+  color: var(--cw-platform-text);
+  background:
+    radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--cw-platform-accent) 13%, transparent), transparent 26rem),
+    linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-calm-surface-muted) 42%, transparent), transparent 28rem),
+    var(--cw-platform-bg);
+}
+
+.container {
+  width: min(100% - 2rem, var(--cw-max-width));
+  margin: 0 auto;
+}
+
+.shell :where(a, button, input, select, textarea):focus-visible {
+  outline: 2px solid var(--cw-platform-accent);
+  outline-offset: 3px;
+}
+
+.header {
+  position: sticky;
+  top: 0.75rem;
+  z-index: var(--ds-z-sticky);
+  width: min(100% - 2rem, 70rem);
+  margin: 0 auto;
+  overflow: visible;
+  isolation: isolate;
+  border: 1px solid var(--cw-component-glass-border);
+  border-radius: calc(var(--cw-radius-pill) - 6px);
+  background: color-mix(in srgb, var(--cw-platform-surface) 94%, var(--cw-platform-bg) 6%);
+  box-shadow: var(--cw-component-glass-shadow);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.header[data-cw-glass="shell"]::after {
+  content: none;
+}
+
+.shellOverlay .header {
+  position: fixed;
+  top: 1rem;
+  right: 0;
+  left: 0;
+  width: min(100% - 2rem, 68rem);
+  border-color: var(--cw-component-glass-border);
+  background: color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+  box-shadow: var(--cw-component-glass-shadow);
+  backdrop-filter: var(--cw-component-glass-filter);
+  -webkit-backdrop-filter: var(--cw-component-glass-filter);
+}
+
+.shellOverlay .header[data-cw-glass="shell"]::after {
+  content: "";
+  position: absolute;
+  inset: -12px;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  opacity: 0.14;
+  background-image: var(--cw-component-glass-frost-image);
+  background-size: cover;
+  background-position: center;
+  filter: blur(24px) saturate(1.06);
+  transform: scale(1.02);
+}
+
+.shellOverlay .brand,
+.shellOverlay .nav a {
+  color: var(--cw-platform-accent-contrast);
+}
+
+.shellOverlay .nav a:hover {
+  background: color-mix(in srgb, var(--cw-platform-accent-contrast) 12%, transparent);
+}
+
+.shellOverlay .ghostButton {
+  border-color: color-mix(in srgb, var(--cw-platform-accent-contrast) 36%, transparent);
+  color: var(--cw-platform-accent-contrast);
+  background: color-mix(in srgb, var(--cw-platform-text) 18%, transparent);
+}
+
+.headerInner {
+  position: relative;
+  z-index: 1;
+  min-height: 4.1rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  padding: 0 1rem;
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: var(--cw-platform-text);
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.mark {
+  width: 2.75rem;
+  height: 2.75rem;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--cw-platform-accent) 42%, transparent);
+  border-radius: 50%;
+  color: var(--cw-platform-accent);
+  background: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: 0.76rem;
+}
+
+.mark::first-letter {
+  color: var(--cw-platform-accent-contrast);
+}
+
+.nav {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
+  gap: 0.2rem;
+}
+
+.navLayer {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  position: relative;
+}
+
+.nav a,
+.ghostButton,
+.primaryButton,
+.secondaryButton {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--cw-radius-btn);
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.nav a {
+  min-height: 2.5rem;
+  padding: 0 0.9rem;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 74%, transparent);
+  border-radius: var(--cw-radius-pill);
+  font-size: 0.98rem;
+  white-space: nowrap;
+}
+
+.nav a:hover {
+  color: var(--cw-platform-accent-contrast);
+  background: color-mix(in srgb, var(--cw-platform-accent-contrast) 12%, transparent);
+}
+
+.actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.menuButton {
+  width: 2.75rem;
+  height: 2.75rem;
+  position: relative;
+  display: none;
+  place-items: center;
+  overflow: hidden;
+  isolation: isolate;
+  border: 1px solid var(--cw-component-glass-border);
+  border-radius: var(--cw-radius-sm);
+  color: var(--cw-platform-text);
+  background: var(--cw-component-glass-bg);
+  box-shadow: var(--cw-component-glass-shadow);
+  backdrop-filter: var(--cw-component-glass-filter);
+  -webkit-backdrop-filter: var(--cw-component-glass-filter);
+}
+
+.menuButton span {
+  position: relative;
+  z-index: 1;
+  width: 1.2rem;
+  height: 2px;
+  display: block;
+  grid-area: 1 / 1;
+  background: currentColor;
+  transform-origin: center;
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.menuButton span:nth-child(1) {
+  transform: translateY(-0.38rem);
+}
+
+.menuButton span:nth-child(3) {
+  transform: translateY(0.38rem);
+}
+
+.menuButton[aria-expanded="true"] span:nth-child(1) {
+  transform: translateY(0) rotate(45deg);
+}
+
+.menuButton[aria-expanded="true"] span:nth-child(2) {
+  opacity: 0;
+}
+
+.menuButton[aria-expanded="true"] span:nth-child(3) {
+  transform: translateY(0) rotate(-45deg);
+}
+
+.ghostButton,
+.secondaryButton {
+  padding: 0 1rem;
+  border: 0;
+  color: var(--cw-platform-text);
+  background: var(--cw-platform-surface);
+  box-shadow: var(--cw-depth-shadow-soft);
+}
+
+.primaryButton {
+  padding: 0 1.15rem;
+  border: 1px solid var(--cw-platform-accent-strong);
+  color: var(--cw-platform-accent-contrast);
+  background: var(--cw-platform-accent-strong);
+  box-shadow: var(--cw-depth-shadow-strong);
+}
+
+.mobileMenuSurface,
+.mobileMenuActions {
+  display: flex;
+  align-items: center;
+  min-height: 4.1rem;
+}
+
+.mobileMenuSurface {
+  justify-content: flex-end;
+  width: 100%;
+}
+
+.panel,
+.heroPanel,
+.mediaPanel,
+.card,
+.formPanel {
+  border: 0;
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-depth-card-bg);
+  box-shadow: var(--cw-depth-shadow-soft);
+}
