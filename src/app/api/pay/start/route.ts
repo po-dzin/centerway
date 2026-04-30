@@ -27,6 +27,7 @@ export async function GET(req: NextRequest) {
       query: Object.fromEntries(url.searchParams.entries()),
     },
     fbp: req.cookies.get("_fbp")?.value ?? url.searchParams.get("fbp") ?? undefined,
+    fbc: req.cookies.get("_fbc")?.value ?? url.searchParams.get("fbc") ?? undefined,
     fbclid: url.searchParams.get("fbclid") ?? undefined,
     campaign: url.searchParams.get("utm_campaign") ?? undefined,
     event_id: url.searchParams.get("event_id") ?? undefined,

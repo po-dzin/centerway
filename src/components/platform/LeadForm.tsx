@@ -15,6 +15,12 @@ function eventId() {
   return `lead_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 }
 
+function readCookie(name: string) {
+  if (typeof document === "undefined") return "";
+  const match = document.cookie.match(new RegExp(`(^|;\\s*)${name}=([^;]+)`));
+  return match ? decodeURIComponent(match[2]) : "";
+}
+
 function paramsFromLocation() {
   if (typeof window === "undefined") return {};
   const sp = new URLSearchParams(window.location.search);
@@ -27,6 +33,8 @@ function paramsFromLocation() {
     utm_content: sp.get("utm_content") ?? "",
     utm_term: sp.get("utm_term") ?? "",
     fbclid: sp.get("fbclid") ?? "",
+    fbp: readCookie("_fbp"),
+    fbc: readCookie("_fbc"),
   };
 }
 

@@ -24,6 +24,7 @@ type LeadRequestBody = {
   utm_content?: unknown;
   utm_term?: unknown;
   fbp?: unknown;
+  fbc?: unknown;
   fbclid?: unknown;
   event_id?: unknown;
 };
@@ -73,6 +74,11 @@ export async function POST(req: NextRequest) {
   }
 
   const pageUrl = asString(body.page_url) ?? req.headers.get("referer") ?? null;
+  const clientIp =
+    req.headers.get("x-forwarded-for")?.split(",")[0].trim() ??
+    req.headers.get("cf-connecting-ip") ??
+    req.headers.get("x-real-ip") ??
+    null;
   const lead: LeadRecord = {
     order_ref: makeLeadRef(product),
     product_code: product,
@@ -94,7 +100,11 @@ export async function POST(req: NextRequest) {
       utm_campaign: asString(body.utm_campaign),
       utm_content: asString(body.utm_content),
       utm_term: asString(body.utm_term),
+      fbp: asString(body.fbp) ?? req.cookies.get("_fbp")?.value ?? null,
+      fbc: asString(body.fbc) ?? req.cookies.get("_fbc")?.value ?? null,
+      fbclid: asString(body.fbclid),
       event_id: asString(body.event_id),
+      client_ip: clientIp,
       user_agent: req.headers.get("user-agent"),
     },
   };
@@ -127,7 +137,9 @@ export async function POST(req: NextRequest) {
         email,
         phone,
         fbp: lead.fbp,
+        fbc: asString(body.fbc) ?? req.cookies.get("_fbc")?.value ?? null,
         fbclid: lead.fbclid,
+        ip_address: clientIp,
         user_agent: req.headers.get("user-agent"),
       },
     });

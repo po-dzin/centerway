@@ -11,6 +11,7 @@ type EventsRequestBody = {
   currency?: unknown;
   page_url?: unknown;
   fbp?: unknown;
+  fbc?: unknown;
   fbclid?: unknown;
   utm_source?: unknown;
   utm_medium?: unknown;
@@ -113,6 +114,7 @@ export async function POST(req: NextRequest) {
     currency: asString(body.currency) ?? undefined,
     event_source_url: asString(body.page_url) ?? req.headers.get("referer") ?? null,
     fbp: asString(body.fbp) ?? req.cookies.get("_fbp")?.value ?? null,
+    fbc: asString(body.fbc) ?? req.cookies.get("_fbc")?.value ?? null,
     fbclid: asString(body.fbclid),
     utm_source: asString(body.utm_source),
     utm_medium: asString(body.utm_medium),
@@ -174,6 +176,7 @@ export async function POST(req: NextRequest) {
     currency: sharedPayload.currency,
     event_source_url: sharedPayload.event_source_url,
     fbp: sharedPayload.fbp,
+    fbc: sharedPayload.fbc,
     fbclid: sharedPayload.fbclid,
     email: sharedPayload.email,
     phone: sharedPayload.phone,

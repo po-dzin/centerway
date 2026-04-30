@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { extractPaymentMeta } from "@/lib/paymentMeta";
 import { isWfpApproved, wfpEventTypeFromStatus } from "@/lib/wfp";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
+import { normalizeTrackingString } from "@/lib/tracking/metaClickIds";
 
 export const runtime = "nodejs";
 
@@ -261,12 +262,30 @@ export async function POST(req: NextRequest) {
           return NextResponse.json({ ok: true });
         }
 
-        // Fetch fbp/fbclid from the order so we can pass to Meta
+        // Recover the original click identity and request context from the checkout chain.
         const { data: orderTracking } = await sb
           .from("orders")
           .select("fbp, fbclid, amount, currency, client_ip, client_ua, page_url")
           .eq("order_ref", orderRef)
           .maybeSingle();
+        const { data: initiateCheckoutJob } = await sb
+          .from("jobs")
+          .select("payload, created_at")
+          .eq("type", "meta:capi")
+          .contains("payload", { event_name: "InitiateCheckout", order_ref: orderRef })
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const { data: checkoutStartedEvent } = await sb
+          .from("events")
+          .select("payload, created_at")
+          .eq("type", "checkout_started")
+          .eq("order_ref", orderRef)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const initiatePayload = (initiateCheckoutJob?.payload ?? null) as Record<string, unknown> | null;
+        const checkoutPayload = (checkoutStartedEvent?.payload ?? null) as Record<string, unknown> | null;
 
         const capiPayload: CapiEventPayload = {
           event_name: "Purchase",
@@ -277,11 +296,30 @@ export async function POST(req: NextRequest) {
           order_ref: orderRef,
           email: meta.email ?? null,
           phone: meta.phone ?? null,
-          fbp: orderTracking?.fbp ?? null,
-          fbclid: orderTracking?.fbclid ?? null,
-          ip_address: orderTracking?.client_ip ?? null,
-          user_agent: orderTracking?.client_ua ?? null,
-          event_source_url: orderTracking?.page_url ?? null,
+          fbp:
+            normalizeTrackingString(orderTracking?.fbp) ??
+            normalizeTrackingString(initiatePayload?.fbp) ??
+            normalizeTrackingString(checkoutPayload?.fbp),
+          fbc:
+            normalizeTrackingString(initiatePayload?.fbc) ??
+            normalizeTrackingString(checkoutPayload?.fbc),
+          fbclid:
+            normalizeTrackingString(orderTracking?.fbclid) ??
+            normalizeTrackingString(initiatePayload?.fbclid) ??
+            normalizeTrackingString(checkoutPayload?.fbclid),
+          ip_address:
+            normalizeTrackingString(orderTracking?.client_ip) ??
+            normalizeTrackingString(initiatePayload?.ip_address) ??
+            normalizeTrackingString(checkoutPayload?.client_ip),
+          user_agent:
+            normalizeTrackingString(orderTracking?.client_ua) ??
+            normalizeTrackingString(initiatePayload?.user_agent) ??
+            normalizeTrackingString(checkoutPayload?.client_ua) ??
+            normalizeTrackingString(checkoutPayload?.user_agent),
+          event_source_url:
+            normalizeTrackingString(orderTracking?.page_url) ??
+            normalizeTrackingString(initiatePayload?.event_source_url) ??
+            normalizeTrackingString(checkoutPayload?.page_url),
           action_source: "website",
         };
 
