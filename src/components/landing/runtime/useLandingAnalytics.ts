@@ -11,6 +11,7 @@ type BasePayload = {
   page_url: string;
   fbclid?: string;
   fbp?: string;
+  fbc?: string;
   utm_source?: string;
   utm_medium?: string;
   utm_campaign?: string;
@@ -93,6 +94,7 @@ function collectAttrib(): Record<string, string> {
   out.page_url = window.location.href;
   out.user_agent = navigator.userAgent || "";
   out.fbp = readCookie("_fbp");
+  out.fbc = readCookie("_fbc");
 
   return out;
 }
@@ -172,6 +174,7 @@ export function useLandingAnalytics({ product, contentName, generatorContext }: 
       page_url: attrib.page_url,
       fbclid: attrib.fbclid,
       fbp: attrib.fbp,
+      fbc: attrib.fbc,
       utm_source: attrib.utm_source,
       utm_medium: attrib.utm_medium,
       utm_campaign: attrib.utm_campaign,
@@ -223,6 +226,7 @@ export function useLandingAnalytics({ product, contentName, generatorContext }: 
         page_url: attrib.page_url,
         fbclid: attrib.fbclid,
         fbp: attrib.fbp,
+        fbc: attrib.fbc,
         utm_source: attrib.utm_source,
         utm_medium: attrib.utm_medium,
         utm_campaign: attrib.utm_campaign,
@@ -262,6 +266,7 @@ export function useLandingAnalytics({ product, contentName, generatorContext }: 
       page_url: attrib.page_url,
       fbclid: attrib.fbclid,
       fbp: attrib.fbp,
+      fbc: attrib.fbc,
       utm_source: attrib.utm_source,
       utm_medium: attrib.utm_medium,
       utm_campaign: attrib.utm_campaign,

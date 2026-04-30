@@ -1,4 +1,5 @@
 import crypto from "crypto";
+import { resolveFbc } from "@/lib/tracking/metaClickIds";
 
 /**
  * Meta Conversions API (CAPI) server-side event sender.
@@ -23,6 +24,7 @@ export type CapiEventPayload = {
     email?: string | null;
     phone?: string | null;
     fbp?: string | null;
+    fbc?: string | null;
     fbclid?: string | null;
     ip_address?: string | null;        // Клиентский IP в момент старта оплаты
     user_agent?: string | null;        // User-Agent браузера клиента
@@ -42,12 +44,12 @@ function buildUserData(payload: CapiEventPayload) {
         ud.ph = sha256(digits);
     }
     if (payload.fbp) ud.fbp = payload.fbp;
-    if (payload.fbclid) {
-        // Accept raw fbclid and convert it to fbc format expected by Meta.
-        ud.fbc = payload.fbclid.startsWith("fb.1.")
-            ? payload.fbclid
-            : `fb.1.${payload.event_time}.${payload.fbclid}`;
-    }
+    const fbc = resolveFbc({
+        fbc: payload.fbc,
+        fbclid: payload.fbclid,
+        creationTimeSeconds: payload.event_time,
+    });
+    if (fbc) ud.fbc = fbc;
     // IP and UA are sent plain (Meta hashes internally)
     if (payload.ip_address) ud.client_ip_address = payload.ip_address;
     if (payload.user_agent) ud.client_user_agent = payload.user_agent;

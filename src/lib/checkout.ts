@@ -18,6 +18,7 @@ export type CheckoutStartRequest = {
   utm_term?: unknown;
   fbclid?: unknown;
   fbp?: unknown;
+  fbc?: unknown;
   cr?: unknown;
   lv?: unknown;
   referrer?: unknown;
@@ -69,6 +70,8 @@ export function buildCheckoutEventPayload(body: CheckoutStartRequest) {
     utm_content: asCleanString(body.utm_content),
     utm_term: asCleanString(body.utm_term),
     fbclid: asCleanString(body.fbclid),
+    fbp: asCleanString(body.fbp),
+    fbc: asCleanString(body.fbc),
     cr: asCleanString(body.cr),
     lv: asCleanString(body.lv),
     referrer: asCleanString(body.referrer),

@@ -31,12 +31,31 @@ async function backfillInitiateCheckoutJobs(daysBack = 2): Promise<number> {
     if (jobsErr) {
         throw new Error(`jobs_backfill_read_failed:${jobsErr.message}`);
     }
+    const { data: checkoutStartedEvents, error: checkoutEventsErr } = await db
+        .from("events")
+        .select("order_ref, payload, created_at")
+        .eq("type", "checkout_started")
+        .gte("created_at", fromIso)
+        .order("created_at", { ascending: false })
+        .limit(10000);
+    if (checkoutEventsErr) {
+        throw new Error(`checkout_started_backfill_read_failed:${checkoutEventsErr.message}`);
+    }
 
     const existingByOrderRef = new Set<string>();
     for (const row of jobs ?? []) {
         const payload = (row as { payload?: Record<string, unknown> }).payload;
         const orderRef = typeof payload?.order_ref === "string" ? payload.order_ref : null;
         if (orderRef) existingByOrderRef.add(orderRef);
+    }
+    const checkoutTrackingByOrderRef = new Map<string, { fbc: string | null }>();
+    for (const row of checkoutStartedEvents ?? []) {
+        const orderRef = typeof row.order_ref === "string" ? row.order_ref : null;
+        if (!orderRef || checkoutTrackingByOrderRef.has(orderRef)) continue;
+        const payload = row.payload as Record<string, unknown> | null;
+        checkoutTrackingByOrderRef.set(orderRef, {
+            fbc: typeof payload?.fbc === "string" && payload.fbc.trim().length > 0 ? payload.fbc.trim() : null,
+        });
     }
 
     const toInsert = [];
@@ -48,6 +67,7 @@ async function backfillInitiateCheckoutJobs(daysBack = 2): Promise<number> {
         const eventTimeTs = typeof order.created_at === "string"
             ? Math.floor(Date.parse(order.created_at) / 1000)
             : Math.floor(Date.now() / 1000);
+        const checkoutTracking = checkoutTrackingByOrderRef.get(orderRef);
         const payload: CapiEventPayload = {
             event_name: "InitiateCheckout",
             event_id: `checkout_${orderRef}`,
@@ -56,6 +76,7 @@ async function backfillInitiateCheckoutJobs(daysBack = 2): Promise<number> {
             currency: typeof order.currency === "string" ? order.currency : undefined,
             order_ref: orderRef,
             fbp: typeof order.fbp === "string" ? order.fbp : null,
+            fbc: checkoutTracking?.fbc ?? null,
             fbclid: typeof order.fbclid === "string" ? order.fbclid : null,
             ip_address: typeof order.client_ip === "string" ? order.client_ip : null,
             user_agent: typeof order.client_ua === "string" ? order.client_ua : null,

@@ -13,6 +13,7 @@ type Body = {
   // optional attribution payload for CAPI matching quality
   attrib?: {
     fbp?: unknown;
+    fbc?: unknown;
     fbclid?: unknown;
     utm_campaign?: unknown;
     event_id?: unknown;
@@ -115,6 +116,7 @@ export async function POST(req: NextRequest) {
         currency: cfg.currency,
         order_ref,
         fbp: asOptionalString(attrib?.fbp),
+        fbc: asOptionalString(attrib?.fbc),
         fbclid: asOptionalString(attrib?.fbclid),
         ip_address: asOptionalString(attrib?.client_ip),
         user_agent: asOptionalString(attrib?.client_ua),

@@ -105,6 +105,7 @@
     out.page_url = window.location.href;
     out.user_agent = navigator.userAgent || "";
     out.fbp = readCookie("_fbp");
+    out.fbc = readCookie("_fbc");
     return out;
   }
 
@@ -157,6 +158,7 @@
       page_url: attrib.page_url,
       fbclid: attrib.fbclid,
       fbp: attrib.fbp,
+      fbc: attrib.fbc,
       utm_source: attrib.utm_source,
       utm_medium: attrib.utm_medium,
       utm_campaign: attrib.utm_campaign,
@@ -184,7 +186,7 @@
     url.searchParams.set("currency", CURRENCY);
     url.searchParams.set("event_id", eventId);
 
-    var queryKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid", "cr", "lv", "fbp"];
+    var queryKeys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "fbclid", "cr", "lv", "fbp", "fbc"];
     queryKeys.forEach(function(key) {
       var value = attrib[key];
       if (value) {
@@ -307,25 +309,6 @@
       var attrib = collectAttrib();
       var eventId = makeEventId("checkout_" + PRODUCT);
       trackInitialCheckout(attrib, eventId);
-      sendCapiEvent({
-        event_name: "InitiateCheckout",
-        event_id: eventId,
-        value: PRICE_VALUE,
-        currency: CURRENCY,
-        page_url: attrib.page_url,
-        fbclid: attrib.fbclid,
-        fbp: attrib.fbp,
-        utm_source: attrib.utm_source,
-        utm_medium: attrib.utm_medium,
-        utm_campaign: attrib.utm_campaign,
-        utm_content: attrib.utm_content,
-        utm_term: attrib.utm_term,
-        session_id: getSessionId(),
-        product: PRODUCT,
-        content_name: CONTENT_NAME,
-        content_type: "product",
-        content_ids: [PRODUCT]
-      });
       window.location.assign(buildPayUrl(attrib, eventId));
       window.setTimeout(function() {
         isRedirecting = false;
@@ -352,6 +335,7 @@
       page_url: attrib.page_url,
       fbclid: attrib.fbclid,
       fbp: attrib.fbp,
+      fbc: attrib.fbc,
       email: leadPayload && leadPayload.email,
       phone: leadPayload && leadPayload.phone
     });

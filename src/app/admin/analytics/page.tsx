@@ -100,6 +100,7 @@ type UnifiedKpis = {
 
 type QualityGaps = {
   snapshot_date: string;
+  paid_missing_fbc: number;
   paid_missing_fbclid: number;
   paid_missing_fbp: number;
   paid_missing_page_url: number;
@@ -121,6 +122,7 @@ type AnalyticsFreshness = {
 type QualitySeriesRow = {
   date: string;
   paid_orders: number;
+  missing_fbc: number;
   missing_fbclid: number;
   missing_fbp: number;
   missing_page_url: number;
@@ -1387,7 +1389,11 @@ export default function AnalyticsPage() {
           <h3 className="text-sm font-semibold cw-text">{t("analytics_quality_title")}</h3>
           <p className="text-xs cw-muted mt-1 mb-3">{t("analytics_quality_note")}</p>
           {qualityGaps ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-2">
+              <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                <p className="text-xs cw-muted">{t("analytics_quality_missing_fbc")}</p>
+                <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_fbc ?? 0}</p>
+              </div>
               <div className="cw-surface-2 border cw-border rounded-lg p-3">
                 <p className="text-xs cw-muted">{t("analytics_quality_missing_fbclid")}</p>
                 <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_fbclid ?? 0}</p>
@@ -1424,6 +1430,7 @@ export default function AnalyticsPage() {
                     <tr>
                       <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_date")}</th>
                       <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_paid")}</th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_fbc")}</th>
                       <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_fbclid")}</th>
                       <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_fbp")}</th>
                       <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_page_url")}</th>
@@ -1436,6 +1443,7 @@ export default function AnalyticsPage() {
                       <tr key={row.date} className="border-t cw-border">
                         <td className="px-3 py-2 cw-text">{row.date}</td>
                         <td className="px-3 py-2 cw-text">{row.paid_orders}</td>
+                        <td className="px-3 py-2 cw-muted">{row.missing_fbc}</td>
                         <td className="px-3 py-2 cw-muted">{row.missing_fbclid}</td>
                         <td className="px-3 py-2 cw-muted">{row.missing_fbp}</td>
                         <td className="px-3 py-2 cw-muted">{row.missing_page_url}</td>

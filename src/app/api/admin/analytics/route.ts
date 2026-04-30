@@ -55,6 +55,7 @@ type PixelDailyAggregate = {
 
 type QualityGaps = {
     snapshot_date: string;
+    paid_missing_fbc: number;
     paid_missing_fbclid: number;
     paid_missing_fbp: number;
     paid_missing_page_url: number;
@@ -65,6 +66,7 @@ type QualityGaps = {
 type QualitySeriesRow = {
     date: string;
     paid_orders: number;
+    missing_fbc: number;
     missing_fbclid: number;
     missing_fbp: number;
     missing_page_url: number;
@@ -158,6 +160,12 @@ const ADMIN_ANALYTICS_TZ = "Europe/Kyiv";
 function asFiniteNumber(value: unknown): number {
     const n = Number(value);
     return Number.isFinite(n) ? n : 0;
+}
+
+function payloadString(payload: unknown, key: string): string | null {
+    if (!payload || typeof payload !== "object") return null;
+    const value = (payload as Record<string, unknown>)[key];
+    return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 
 function normalizeCampaignSource(raw: unknown, fallback: string): string {
@@ -1313,7 +1321,7 @@ export async function GET(req: NextRequest) {
 
     const { data: qualityOrdersRows, error: qualitySeriesErr } = await db
         .from("orders")
-        .select("created_at, status, fbclid, fbp, page_url, client_ip, client_ua")
+        .select("order_ref, created_at, status, fbclid, fbp, page_url, client_ip, client_ua")
         .gte("created_at", range.fromTs)
         .lt("created_at", range.toExclusiveTs)
         .in("status", ["paid", "completed"])
@@ -1321,15 +1329,38 @@ export async function GET(req: NextRequest) {
     if (qualitySeriesErr) {
         console.warn("Analytics quality series warning:", qualitySeriesErr.message);
     }
+    const { data: checkoutStartedRows, error: checkoutStartedErr } = await db
+        .from("events")
+        .select("order_ref, payload, created_at")
+        .eq("type", "checkout_started")
+        .gte("created_at", range.fromTs)
+        .lt("created_at", range.toExclusiveTs)
+        .order("created_at", { ascending: false })
+        .limit(50000);
+    if (checkoutStartedErr) {
+        console.warn("Analytics checkout_started quality warning:", checkoutStartedErr.message);
+    }
+
+    const checkoutTrackingByOrderRef = new Map<string, { fbc: string | null }>();
+    for (const row of checkoutStartedRows ?? []) {
+        const orderRef = typeof row.order_ref === "string" ? row.order_ref : null;
+        if (!orderRef || checkoutTrackingByOrderRef.has(orderRef)) continue;
+        checkoutTrackingByOrderRef.set(orderRef, {
+            fbc: payloadString(row.payload, "fbc"),
+        });
+    }
 
     const qualitySeriesMap = new Map<string, QualitySeriesRow>();
     for (const row of qualityOrdersRows ?? []) {
         const createdAt = typeof row.created_at === "string" ? row.created_at : null;
         if (!createdAt) continue;
+        const orderRef = typeof row.order_ref === "string" ? row.order_ref : null;
+        const checkoutTracking = orderRef ? checkoutTrackingByOrderRef.get(orderRef) : null;
         const day = createdAt.slice(0, 10);
         const existing = qualitySeriesMap.get(day) ?? {
             date: day,
             paid_orders: 0,
+            missing_fbc: 0,
             missing_fbclid: 0,
             missing_fbp: 0,
             missing_page_url: 0,
@@ -1337,6 +1368,7 @@ export async function GET(req: NextRequest) {
             missing_client_ua: 0,
         };
         existing.paid_orders += 1;
+        if (!checkoutTracking?.fbc) existing.missing_fbc += 1;
         if (!row.fbclid) existing.missing_fbclid += 1;
         if (!row.fbp) existing.missing_fbp += 1;
         if (!row.page_url) existing.missing_page_url += 1;
@@ -1347,6 +1379,28 @@ export async function GET(req: NextRequest) {
     const quality_series = Array.from(qualitySeriesMap.values()).sort((a, b) =>
         a.date.localeCompare(b.date)
     );
+    const quality_gaps: QualityGaps | null = quality_series.length > 0
+        ? quality_series.reduce<QualityGaps>(
+            (acc, row) => {
+                acc.paid_missing_fbc += row.missing_fbc;
+                acc.paid_missing_fbclid += row.missing_fbclid;
+                acc.paid_missing_fbp += row.missing_fbp;
+                acc.paid_missing_page_url += row.missing_page_url;
+                acc.paid_missing_client_ip += row.missing_client_ip;
+                acc.paid_missing_client_ua += row.missing_client_ua;
+                return acc;
+            },
+            {
+                snapshot_date: qualityRow?.snapshot_date ?? new Date().toISOString().slice(0, 10),
+                paid_missing_fbc: 0,
+                paid_missing_fbclid: 0,
+                paid_missing_fbp: 0,
+                paid_missing_page_url: 0,
+                paid_missing_client_ip: 0,
+                paid_missing_client_ua: 0,
+            }
+        )
+        : null;
 
     const [
         localViewFreshnessRes,
@@ -1499,7 +1553,7 @@ export async function GET(req: NextRequest) {
             pixel_preview: pixelResult.preview ?? null,
             pixel_requested_range: pixelResult.requested_range ?? null,
         },
-        quality_gaps: (qualityRow ?? null) as QualityGaps | null,
+        quality_gaps,
         quality_series,
         freshness,
         kpis: {

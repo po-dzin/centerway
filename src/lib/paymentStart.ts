@@ -37,6 +37,7 @@ export type PaymentStartInput = {
   host?: string | null;
   payload?: Record<string, unknown>;
   fbp?: string | null;
+  fbc?: string | null;
   fbclid?: string | null;
   campaign?: string | null;
   client_ip?: string | null;   // IP пользователя в момент клика на оплату
@@ -205,6 +206,7 @@ export async function createPaymentInvoiceWithDeps(
       currency: cfg.currency,
       order_ref,
       fbp: input.fbp ?? null,
+      fbc: input.fbc ?? null,
       fbclid: input.fbclid ?? null,
       ip_address: input.client_ip ?? null,
       user_agent: input.client_ua ?? null,
@@ -229,6 +231,14 @@ export async function createPaymentInvoiceWithDeps(
       source: input.source,
       host: input.host ?? null,
       product: input.product,
+      event_id: clientEventId,
+      fbp: input.fbp ?? null,
+      fbc: input.fbc ?? null,
+      fbclid: input.fbclid ?? null,
+      campaign: input.campaign ?? null,
+      client_ip: input.client_ip ?? null,
+      client_ua: input.client_ua ?? null,
+      page_url: input.page_url ?? null,
       ...(input.payload ?? {}),
     },
   });
