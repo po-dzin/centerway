@@ -1,5 +1,6 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { ProductCode } from "@/lib/products";
+import { callTelegramBotApi, sendTelegramMessage } from "@/lib/tg";
 
 type Supabase = ReturnType<typeof supabaseAdmin>;
 type BotProductCode = Extract<ProductCode, "short" | "irem">;
@@ -176,42 +177,26 @@ function retryKeyboard(): InlineKeyboardMarkup {
   };
 }
 
-async function telegramApi<T>(
-  method: string,
-  payload: Record<string, unknown>
-): Promise<T | null> {
-  const token = process.env.TELEGRAM_BOT_TOKEN;
-  if (!token) throw new Error("Missing TELEGRAM_BOT_TOKEN");
-
-  const response = await fetch(`https://api.telegram.org/bot${token}/${method}`, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(payload),
-  });
-
-  if (!response.ok) {
-    const details = await response.text().catch(() => "");
-    throw new Error(`Telegram ${method} failed: ${response.status} ${details}`);
-  }
-
-  return (await response.json().catch(() => null)) as T | null;
-}
-
 async function sendMessage(
   chatId: number | string,
   text: string,
   replyMarkup?: InlineKeyboardMarkup
 ): Promise<void> {
-  await telegramApi("sendMessage", {
+  if (!replyMarkup) {
+    await sendTelegramMessage(chatId, text);
+    return;
+  }
+
+  await callTelegramBotApi("sendMessage", {
     chat_id: chatId,
     text,
     disable_web_page_preview: true,
-    ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
+    reply_markup: replyMarkup,
   });
 }
 
 async function answerCallbackQuery(callbackQueryId: string): Promise<void> {
-  await telegramApi("answerCallbackQuery", {
+  await callTelegramBotApi("answerCallbackQuery", {
     callback_query_id: callbackQueryId,
   });
 }
