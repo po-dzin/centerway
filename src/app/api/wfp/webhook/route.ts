@@ -4,6 +4,7 @@ import { extractPaymentMeta } from "@/lib/paymentMeta";
 import { isWfpApproved, wfpEventTypeFromStatus } from "@/lib/wfp";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { normalizeTrackingString } from "@/lib/tracking/metaClickIds";
+import { sendConfirmedSaleTelegramReport } from "@/lib/reporting/analyticsReports";
 
 export const runtime = "nodejs";
 
@@ -331,6 +332,12 @@ export async function POST(req: NextRequest) {
       } catch (capiErr) {
         // Non-fatal: don't fail the webhook for CAPI errors
         console.warn("[wfp webhook] Failed to queue CAPI job:", capiErr);
+      }
+
+      try {
+        await sendConfirmedSaleTelegramReport(orderRef);
+      } catch (reportErr) {
+        console.warn("[wfp webhook] Failed to send Telegram sale report:", reportErr);
       }
     }
 
