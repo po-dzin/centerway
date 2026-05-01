@@ -29,7 +29,7 @@
 
   .section-hero .img.desk {
     grid-column: 2;
-    width: 92%;
+    width: min(100%, var(--landing-size-hero-media-max-width, 34rem));
   }
 }
 
@@ -226,9 +226,57 @@
     flex-direction: column;
   }
 
+  .section-solution h2 {
+    margin-bottom: var(--landing-space-rhythm-24);
+  }
+
   .bluebg h3,
   .bluebg strong {
     min-height: 0;
+  }
+
+  .bluebg h3 {
+    margin-bottom: var(--landing-space-rhythm-20);
+  }
+
+  .section-format .items {
+    padding: var(--landing-space-responsive-card-padding, 18px);
+    gap: var(--landing-space-responsive-card-gap, 16px);
+  }
+
+  .help-why {
+    width: calc(100% - (var(--landing-space-responsive-container-inline-mobile, 20px) * 2));
+    max-width: calc(100% - (var(--landing-space-responsive-container-inline-mobile, 20px) * 2));
+    margin-left: auto;
+    margin-right: auto;
+    padding: var(--landing-space-responsive-card-padding, 18px);
+  }
+
+  .reviews-track {
+    gap: var(--landing-space-responsive-card-gap, 16px);
+    padding: var(--landing-space-proof-reviews-track-padding-mobile, 0 20px);
+  }
+
+  .reviews-item {
+    width: min(100%, 280px);
+    max-width: min(100%, 280px);
+  }
+
+  .carousel-btn.prev {
+    left: 4px;
+  }
+
+  .carousel-btn.next {
+    right: 4px;
+  }
+
+  .section-offer .container {
+    width: calc(100% - (var(--landing-space-responsive-container-inline-mobile, 20px) * 2));
+    max-width: calc(100% - (var(--landing-space-responsive-container-inline-mobile, 20px) * 2));
+    margin-left: auto;
+    margin-right: auto;
+    padding: var(--landing-space-responsive-card-padding, 18px);
+    gap: var(--landing-space-responsive-card-gap, 16px);
   }
 
   .grid-item {
@@ -335,8 +383,7 @@
   .section-faq,
   .section-addon-results,
   .section-addon-foundations,
-  .section-addon-protocol,
-  .section-addon-guarantee {
+  .section-addon-protocol {
     padding-inline: var(--ds-space-4);
   }
 
@@ -409,10 +456,6 @@
     padding: var(--landing-space-responsive-card-padding, 18px);
     width: 100%;
     max-width: 100%;
-  }
-
-  .itemsli {
-    padding: var(--landing-space-responsive-itemsli-padding, 24px 18px);
   }
 
   .section-program .grid-container {

@@ -134,15 +134,29 @@ html {
   --landing-size-card-media-frame-max-width: 40rem;
   --landing-size-card-stack-max-width: 42rem;
   --landing-size-card-decision-max-width: var(--landing-size-card-stack-max-width);
-  --landing-size-card-composition-media-max-width: 31.5rem;
+  --landing-size-card-composition-media-max-width: 26rem;
   --landing-size-card-composition-min-height: 32rem;
   --landing-size-card-summary-max-width: 48.75rem;
   --landing-size-card-problem-min-height: 11rem;
-  --landing-size-card-solution-min-height: 15.5rem;
+  --landing-space-problem-card-padding-block: var(--landing-space-scale-20);
+  --landing-space-problem-card-padding-inline: var(--landing-space-scale-16);
+  --landing-space-problem-card-content-gap: var(--landing-space-scale-10);
+  --landing-size-card-solution-min-height: auto;
+  --landing-space-help-card-padding-block-start: var(--landing-space-scale-24);
+  --landing-space-help-card-padding-inline: var(--landing-space-scale-20);
+  --landing-space-help-card-padding-block-end: var(--landing-space-scale-20);
+  --landing-space-help-card-media-gap: var(--landing-space-scale-14);
+  --landing-space-help-card-title-gap: var(--landing-space-scale-10);
+  --landing-size-help-card-media-slot: 5.875rem;
   --landing-size-card-program-min-height: 24rem;
   --landing-size-section-reading-max-width: 42rem;
   --landing-size-section-stack-max-width: var(--landing-size-card-stack-max-width);
   --landing-size-section-shell-max-width: var(--ds-container-max);
+  --landing-space-proof-reviews-edge-padding: var(--landing-space-scale-24);
+  --landing-space-offer-card-padding: var(--landing-space-rhythm-32);
+  --landing-space-offer-card-gap: var(--landing-space-rhythm-20);
+  --landing-space-offer-cta-gap: var(--landing-space-rhythm-10);
+  --landing-space-offer-cta-margin-top: var(--landing-space-rhythm-8);
   --landing-color-card-neutral: var(--landing-color-surface-card);
   --landing-color-card-trust: var(--landing-color-state-info-bg);
   --landing-color-card-note: var(--landing-color-surface-warm-soft);
@@ -462,8 +476,8 @@ img {
 
 .section-hero .img.desk {
   position: relative;
-  width: 80%;
-  max-width: 520px;
+  width: 100%;
+  max-width: none;
   max-height: 520px;
   height: auto;
   margin: 0 auto;
@@ -707,12 +721,15 @@ img {
 
 .help-card {
   flex: 1;
-  padding: var(--landing-space-help-card-padding, 20px 22px 24px);
+  padding:
+    var(--landing-space-help-card-padding-block-start, 24px)
+    var(--landing-space-help-card-padding-inline, 20px)
+    var(--landing-space-help-card-padding-block-end, 20px);
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: var(--landing-space-card-media-gap, 12px);
+  display: grid;
+  grid-template-rows: var(--landing-size-help-card-media-slot, 5.875rem) auto 1fr;
+  justify-items: center;
+  align-items: start;
   min-height: var(--landing-size-card-solution-min-height);
 }
 
@@ -724,16 +741,19 @@ img {
   border-radius: var(--landing-radius-media-secondary);
   object-fit: contain;
   display: block;
-  margin: 0 auto;
+  margin: 0 auto var(--landing-space-help-card-media-gap, 14px);
+  align-self: start;
 }
 
 .help-card h4 {
   font-size: var(--landing-type-help-title-size, 18px);
   line-height: var(--landing-line-heading, 1.2);
-  margin-bottom: 0;
+  margin: 0 0 var(--landing-space-help-card-title-gap, 10px);
 }
 
 .help-card p {
+  margin: 0;
+  max-width: 31ch;
   font-size: var(--landing-type-help-body-size, 15px);
   line-height: var(--landing-line-body, 1.5);
 }
@@ -829,13 +849,15 @@ img {
 }
 
 .section-problem .item {
-  padding: var(--landing-space-problem-card-padding, 20px 16px);
+  padding:
+    var(--landing-space-problem-card-padding-block, 20px)
+    var(--landing-space-problem-card-padding-inline, 16px);
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: flex-start;
-  gap: var(--landing-space-card-media-gap, 12px);
+  justify-content: center;
+  gap: var(--landing-space-problem-card-content-gap, 10px);
   min-height: var(--landing-size-card-problem-min-height);
   height: 100%;
 }
@@ -996,7 +1018,7 @@ img {
   gap: var(--landing-space-proof-reviews-gap, 24px);
   overflow-x: auto;
   scroll-snap-type: x mandatory;
-  padding: var(--landing-space-proof-reviews-track-padding, 0);
+  padding: 0 var(--landing-space-proof-reviews-edge-padding, 24px);
   scrollbar-width: none;
 }
 
@@ -1499,7 +1521,7 @@ body.modal-open {
 
 .section-expert .section-expert-image {
   position: relative;
-  width: auto;
+  width: min(100%, var(--landing-size-card-composition-media-max-width));
   max-width: var(--landing-size-card-composition-media-max-width);
   min-height: 0;
   height: auto;
@@ -1647,6 +1669,8 @@ body.modal-open {
 .section-offer .container {
   margin: 0 auto;
   background: var(--landing-color-card-trust);
+  padding: var(--landing-space-offer-card-padding, var(--landing-space-rhythm-32));
+  gap: var(--landing-space-offer-card-gap, var(--landing-space-rhythm-20));
 }
 
 .section-offer .offer-icon {
@@ -1658,7 +1682,11 @@ body.modal-open {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  margin: 0 auto 16px;
+  margin: 0 auto;
+}
+
+.section-offer h2 {
+  margin: 0;
 }
 
 .section-offer .offer-text {
@@ -1675,19 +1703,24 @@ body.modal-open {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--landing-space-rhythm-8);
-  margin-top: var(--landing-space-offer-cta-margin-top, 20px);
+  gap: var(--landing-space-offer-cta-gap, var(--landing-space-rhythm-10));
+  margin-top: var(--landing-space-offer-cta-margin-top, var(--landing-space-rhythm-8));
+  width: 100%;
 }
 
 .section-offer .offer-cta p {
+  margin: 0;
+  max-width: var(--landing-size-section-reading-max-width);
   font-size: var(--landing-type-offer-lead-size, 20px);
   font-weight: 500;
+  line-height: var(--landing-line-body, 1.5);
 }
 
 .section-offer .price {
   font-size: var(--landing-type-offer-price-size, 20px);
   font-weight: 900;
   margin-bottom: 0;
+  line-height: 1;
   text-transform: uppercase;
 }
 
