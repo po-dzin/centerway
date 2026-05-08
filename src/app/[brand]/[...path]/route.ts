@@ -2,7 +2,7 @@ import { getUtilityPageFromAssetPath, LANDING_STATIC_BRANDS } from "@/lib/landin
 import { htmlResponse } from "@/lib/landing/http";
 import { prepareLandingHtml } from "@/lib/landing/prepareLandingHtml";
 import { isNextLandingEnabled } from "@/lib/landing/routing";
-import { isLandingProduct } from "@/lib/landing/types";
+import { isStaticLandingProduct } from "@/lib/landing/types";
 import { serveStaticAsset } from "@/lib/staticAssets/serve";
 
 export const runtime = "nodejs";
@@ -16,7 +16,7 @@ export async function GET(_: Request, context: { params: Promise<{ brand: string
     return new Response("Not found", { status: 404 });
   }
 
-  if (isLandingProduct(brand)) {
+  if (isStaticLandingProduct(brand)) {
     const utilityPage = getUtilityPageFromAssetPath(assetPath);
     if (utilityPage) {
       if (!isNextLandingEnabled()) {
