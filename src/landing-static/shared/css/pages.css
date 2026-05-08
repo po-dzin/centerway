@@ -1,7 +1,7 @@
 /* Shared page primitives for legal/status/support pages */
 
 body {
-  font-family: var(--ds-font-family-base, "Open Sans", sans-serif);
+  font-family: var(--ds-font-family-base, Formular, "Segoe UI", Arial, sans-serif);
   color: var(--ds-color-text, #111111);
   background: var(--ds-color-bg-canvas, #fffdf7);
 }

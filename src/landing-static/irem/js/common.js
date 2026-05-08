@@ -10,6 +10,29 @@
   var CLARITY_PROJECT_ID = "vy9u7jygno";
   var REDIRECT_RESET_MS = 5000;
   var isRedirecting = false;
+  var deferredScriptStarted = {};
+
+  function scheduleDeferredScript(key, callback) {
+    if (deferredScriptStarted[key]) return;
+    deferredScriptStarted[key] = true;
+
+    var done = false;
+    function run() {
+      if (done) return;
+      done = true;
+      window.removeEventListener("pointerdown", run, true);
+      window.removeEventListener("touchstart", run, true);
+      window.removeEventListener("keydown", run, true);
+      window.removeEventListener("scroll", run, true);
+      callback();
+    }
+
+    window.addEventListener("pointerdown", run, true);
+    window.addEventListener("touchstart", run, true);
+    window.addEventListener("keydown", run, true);
+    window.addEventListener("scroll", run, true);
+    window.setTimeout(run, 12000);
+  }
 
   function ensureClarity() {
     if (typeof window === "undefined" || typeof document === "undefined") return;
@@ -18,20 +41,22 @@
         (window.clarity.q = window.clarity.q || []).push(arguments);
       };
     }
-    var existingClarityScript = document.querySelector('script[src*="clarity.ms/tag/"]');
-    if (existingClarityScript || document.querySelector('script[data-cw-clarity="1"]')) {
-      return;
-    }
-    var script = document.createElement("script");
-    script.async = true;
-    script.src = "https://www.clarity.ms/tag/" + CLARITY_PROJECT_ID;
-    script.setAttribute("data-cw-clarity", "1");
-    var firstScript = document.getElementsByTagName("script")[0];
-    if (firstScript && firstScript.parentNode) {
-      firstScript.parentNode.insertBefore(script, firstScript);
-    } else {
-      document.head.appendChild(script);
-    }
+    scheduleDeferredScript("clarity", function() {
+      var existingClarityScript = document.querySelector('script[src*="clarity.ms/tag/"]');
+      if (existingClarityScript || document.querySelector('script[data-cw-clarity="1"]')) {
+        return;
+      }
+      var script = document.createElement("script");
+      script.async = true;
+      script.src = "https://www.clarity.ms/tag/" + CLARITY_PROJECT_ID;
+      script.setAttribute("data-cw-clarity", "1");
+      var firstScript = document.getElementsByTagName("script")[0];
+      if (firstScript && firstScript.parentNode) {
+        firstScript.parentNode.insertBefore(script, firstScript);
+      } else {
+        document.head.appendChild(script);
+      }
+    });
   }
 
   ensureClarity();
@@ -39,6 +64,10 @@
   function readCookie(name) {
     var match = document.cookie.match(new RegExp("(^|;\\s*)" + name + "=([^;]+)"));
     return match ? decodeURIComponent(match[2]) : "";
+  }
+
+  function buildFbcFromFbclid(fbclid) {
+    return "fb.1." + Math.floor(Date.now() / 1000) + "." + fbclid;
   }
 
   function makeEventId(prefix) {
@@ -105,7 +134,10 @@
     out.page_url = window.location.href;
     out.user_agent = navigator.userAgent || "";
     out.fbp = readCookie("_fbp");
-    out.fbc = readCookie("_fbc");
+    out.fbc = readCookie("_fbc") || stored.fbc || "";
+    if (!out.fbc && out.fbclid) {
+      out.fbc = buildFbcFromFbclid(out.fbclid);
+    }
     return out;
   }
 
@@ -255,44 +287,34 @@
     setTimeout(maybeSend, 300);
   }
 
-  function setupYoutubeIframeRecovery() {
-    var selector = 'iframe[src*="youtube.com/embed"], iframe[src*="youtube-nocookie.com/embed"]';
-    var frames = document.querySelectorAll(selector);
+  function createVideoFrame(wrapper) {
+    if (!(wrapper instanceof HTMLElement) || wrapper.getAttribute("data-cw-video-loaded") === "1") return;
 
-    function tryRecover(iframe) {
-      if (!(iframe instanceof HTMLIFrameElement)) return;
-      var originalSrc = iframe.getAttribute("src") || "";
-      if (!originalSrc) return;
+    var src = wrapper.getAttribute("data-embed-src");
+    var title = wrapper.getAttribute("data-embed-title") || "Відео";
+    if (!src) return;
 
-      var fallbackSrc = originalSrc.indexOf("youtube-nocookie.com") >= 0
-        ? originalSrc
-        : originalSrc.replace("www.youtube.com", "www.youtube-nocookie.com");
-      var attempt = Number(iframe.getAttribute("data-cw-embed-attempt") || "0");
-      if (attempt >= 2) return;
+    var iframe = document.createElement("iframe");
+    iframe.className = wrapper.getAttribute("data-embed-frame-class") || "video-embed__frame";
+    iframe.src = src;
+    iframe.title = title;
+    iframe.loading = "lazy";
+    iframe.allow = "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share";
+    iframe.referrerPolicy = "strict-origin-when-cross-origin";
+    iframe.allowFullscreen = true;
+    iframe.setAttribute("frameborder", "0");
 
-      var currentHref = "";
-      try {
-        currentHref = iframe.contentWindow && iframe.contentWindow.location
-          ? iframe.contentWindow.location.href
-          : "";
-      } catch (_) {
-        // Cross-origin access error means iframe navigated away from about:blank and is loading.
-        return;
-      }
+    wrapper.innerHTML = "";
+    wrapper.appendChild(iframe);
+    wrapper.setAttribute("data-cw-video-loaded", "1");
+  }
 
-      if (currentHref !== "" && currentHref !== "about:blank" && currentHref !== "about:srcdoc") {
-        return;
-      }
-
-      iframe.setAttribute("data-cw-embed-attempt", String(attempt + 1));
-      iframe.src = attempt === 0 ? originalSrc : fallbackSrc;
-    }
-
-    frames.forEach(function(iframe) {
-      setTimeout(function() { tryRecover(iframe); }, 400);
-      setTimeout(function() { tryRecover(iframe); }, 1400);
-      iframe.addEventListener("load", function() {
-        setTimeout(function() { tryRecover(iframe); }, 120);
+  function setupDeferredVideoEmbeds() {
+    document.querySelectorAll("[data-cw-video-embed]").forEach(function(wrapper) {
+      var button = wrapper.querySelector(".video-embed__button");
+      if (!(button instanceof HTMLButtonElement)) return;
+      button.addEventListener("click", function() {
+        createVideoFrame(wrapper);
       });
     });
   }
@@ -343,7 +365,7 @@
 
   setupViewContent();
   setupScrollDepth50();
-  setupYoutubeIframeRecovery();
+  setupDeferredVideoEmbeds();
 })();
 
 function initAccordion() {

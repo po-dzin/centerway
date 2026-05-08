@@ -9,7 +9,7 @@ body {
 }
 
 body {
-  font-family: var(--ds-font-family-base);
+  font-family: var(--ds-font-family-base, Formular, "Segoe UI", Arial, sans-serif);
   color: var(--ds-color-text);
   background: var(--ds-color-bg-canvas);
   line-height: var(--ds-line-height-body);
