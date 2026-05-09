@@ -149,7 +149,25 @@
       "--cw-sem-embodied": "#6e8668",
       "--cw-sem-progress": "#c1906b",
       "--cw-sem-warmth": "#dba54f",
-      "--cw-sem-boundary": "#b76045"
+      "--cw-sem-boundary": "#b76045",
+      "--cw-brand-asset-logo-symbol": "url(\"/cw/brand/cw-symbol-gold.svg\")",
+      "--cw-brand-asset-logo-symbol-header": "url(\"/cw/brand/cw-symbol-centered-v9.png\")",
+      "--cw-brand-asset-lockup-header": "url(\"/cw/brand/cw-lockup-exact.png\")",
+      "--cw-brand-asset-wordmark-dark": "url(\"/cw/brand/cw-wordmark-dark.svg\")",
+      "--cw-brand-asset-wordmark-light": "url(\"/cw/brand/cw-wordmark-light.svg\")",
+      "--cw-brand-size-symbol-header": "2rem",
+      "--cw-brand-size-wordmark-header-width": "8.1rem",
+      "--cw-brand-size-wordmark-header-height": "1.66rem",
+      "--cw-brand-size-symbol-footer": "2rem",
+      "--cw-brand-size-wordmark-footer-width": "8.6rem",
+      "--cw-brand-size-wordmark-footer-height": "1.45rem",
+      "--cw-sem-symbol-center": "var(--cw-brand-asset-logo-symbol)",
+      "--cw-sem-symbol-path": "linear-gradient(110deg, transparent 8%, color-mix(in srgb, var(--cw-sem-warmth) 78%, transparent) 9% 11%, transparent 12% 44%, color-mix(in srgb, var(--cw-sem-warmth) 62%, transparent) 45% 47%, transparent 48%)",
+      "--cw-sem-symbol-body": "radial-gradient(circle at 32% 34%, color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent), transparent 44%), radial-gradient(circle at 70% 68%, color-mix(in srgb, var(--cw-sem-embodied) 16%, transparent), transparent 48%)",
+      "--cw-sem-symbol-cleansing": "linear-gradient(180deg, color-mix(in srgb, var(--cw-sem-calm-surface) 62%, transparent), color-mix(in srgb, var(--cw-sem-calm-bg) 88%, transparent))",
+      "--cw-sem-symbol-integration": "linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-warmth) 16%, transparent), color-mix(in srgb, var(--cw-sem-calm-surface-muted) 92%, transparent))",
+      "--cw-shell-frost-bg": "var(--cw-component-glass-bg)",
+      "--cw-shell-frost-filter": "var(--cw-component-glass-filter)"
     },
     "modeOverrides": {
       "platform": {
@@ -166,12 +184,12 @@
     },
     "componentRecipes": {
       "glass": {
-        "--cw-component-glass-bg": "color-mix(in srgb, var(--cw-platform-text) 18%, transparent)",
-        "--cw-component-glass-bg-hover": "color-mix(in srgb, var(--cw-platform-text) 24%, transparent)",
+        "--cw-component-glass-bg": "color-mix(in srgb, var(--cw-platform-text) 34%, transparent)",
+        "--cw-component-glass-bg-hover": "color-mix(in srgb, var(--cw-platform-text) 42%, transparent)",
         "--cw-component-glass-border": "transparent",
-        "--cw-component-glass-blur": "72px",
-        "--cw-component-glass-filter": "blur(var(--cw-component-glass-blur)) saturate(1.28) brightness(0.96)",
-        "--cw-component-glass-shadow": "0 14px 32px color-mix(in srgb, var(--cw-platform-text) 10%, transparent)",
+        "--cw-component-glass-blur": "84px",
+        "--cw-component-glass-filter": "blur(var(--cw-component-glass-blur)) saturate(1.36) brightness(0.92)",
+        "--cw-component-glass-shadow": "0 12px 28px color-mix(in srgb, var(--cw-platform-text) 20%, transparent)",
         "--cw-component-glass-frost-image": "url(\"/cw/landing/img/consult-hero-evgeniy.jpeg\")",
         "--cw-component-glass-frost-position": "38% center"
       },

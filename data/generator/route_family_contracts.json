@@ -10,16 +10,16 @@
         "/"
       ],
       "allowed_archetypes": [
-        "overview-entry"
+        "hub-journey"
       ],
       "allowed_block_order": [
         "hero-entry-definition",
         "route-framing",
         "how-it-works",
         "route-choice",
+        "offer-definition",
         "proof-block",
         "support-path",
-        "next-step",
         "boundary-block"
       ],
       "allowed_renderers": [
@@ -129,14 +129,57 @@
       ]
     },
     {
+      "id": "route_family.platform-offer-entry.v1",
+      "version": "1.0.0",
+      "route_family": "standalone route entry",
+      "route_boundary": "platform route",
+      "route_paths": [
+        "/consult",
+        "/detox",
+        "/herbs"
+      ],
+      "allowed_archetypes": [
+        "offer-detail"
+      ],
+      "allowed_block_order": [
+        "hero-entry-definition",
+        "route-framing",
+        "offer-definition",
+        "offer-includes",
+        "how-it-works",
+        "format-duration-price",
+        "stage-breakdown",
+        "proof-block",
+        "boundary-block",
+        "next-step",
+        "route-choice"
+      ],
+      "allowed_renderers": [
+        "funnel.hero",
+        "funnel.route-framing",
+        "funnel.route-map",
+        "funnel.offer-definition",
+        "funnel.offer-includes",
+        "funnel.format-price",
+        "funnel.how-it-works",
+        "funnel.stage-breakdown",
+        "funnel.proof",
+        "funnel.boundary",
+        "funnel.next-step",
+        "funnel.resource-entry"
+      ],
+      "required_semantic_roles": [
+        "orientation",
+        "offer",
+        "boundary"
+      ]
+    },
+    {
       "id": "route_family.funnel-surface.v1",
       "version": "1.0.0",
       "route_family": "funnel surface",
       "route_boundary": "isolated funnel route",
       "route_paths": [
-        "/consult",
-        "/detox",
-        "/herbs",
         "/irem",
         "/reboot",
         "/short/*"

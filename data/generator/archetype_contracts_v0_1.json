@@ -4,6 +4,7 @@
   "spec_version": "0.1.0",
   "archetype_registry": [
     "overview-entry",
+    "hub-journey",
     "offer-detail",
     "intent-checkout",
     "lesson-practice",
@@ -18,6 +19,10 @@
         "guide",
         "method",
         "progress"
+      ],
+      "hub-journey": [
+        "guide",
+        "trust"
       ],
       "offer-detail": [
         "guide",
@@ -121,6 +126,91 @@
         "exactly one dominant route action",
         "supporting actions may exist but must not outrank primary",
         "route legibility must be explicit"
+      ]
+    },
+    {
+      "archetype": "hub-journey",
+      "primaryCTA": "1",
+      "primary_cta_repetition": "1..N",
+      "semanticBlocks": {
+        "required": [
+          "hero-entry-definition",
+          "route-choice"
+        ],
+        "optional": [],
+        "conditional": [
+          "route-framing",
+          "offer-definition",
+          "how-it-works",
+          "identity-guide",
+          "proof-block",
+          "support-path",
+          "boundary-block",
+          "expectation-block",
+          "testimonial-story",
+          "faq-clarification",
+          "human-handoff",
+          "pathway-map",
+          "error-recovery"
+        ],
+        "forbidden": [
+          "next-step",
+          "current-step",
+          "practice-unit",
+          "reflection-note",
+          "current-progress",
+          "completion-block",
+          "format-duration-price",
+          "stage-breakdown",
+          "contraindication-block"
+        ]
+      },
+      "componentFamilies": {
+        "required": [
+          "page-shell",
+          "section-shell",
+          "route-action-button",
+          "path-card"
+        ],
+        "optional": [],
+        "conditional": [
+          "route-nav",
+          "breadcrumb-return-path",
+          "proof-action-button",
+          "support-action-button",
+          "proof-card",
+          "support-card",
+          "stage-card",
+          "testimonial-card",
+          "expectation-block-component",
+          "boundary-block-component",
+          "feedback-message",
+          "empty-state",
+          "loading-state",
+          "error-recovery-state"
+        ],
+        "forbidden": [
+          "tabs-segment-switch",
+          "boundary-action",
+          "practice-card",
+          "text-input",
+          "checkbox-consent-control",
+          "search-filter-utility",
+          "progress-bar-track",
+          "route-node",
+          "stage-chip-status-pill",
+          "next-step-banner",
+          "modal",
+          "drawer",
+          "popover-tooltip",
+          "admin-panel",
+          "admin-status-badge"
+        ]
+      },
+      "rules": [
+        "home acts as a guided hub rather than a single CTA tail",
+        "hero and diagnostics establish orientation before offer choice",
+        "proof support and guide surfaces may appear without a final next-step block"
       ]
     },
     {

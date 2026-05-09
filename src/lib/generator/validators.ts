@@ -77,6 +77,7 @@ function ensureUnique(ids: string[], entityName: string): void {
 const CTA_CARDINALITY = new Set(["1", "0..1", "1..N", "0"]);
 const CANONICAL_ARCHETYPES = new Set<ArchetypeContract["archetype"]>([
   "overview-entry",
+  "hub-journey",
   "offer-detail",
   "intent-checkout",
   "lesson-practice",

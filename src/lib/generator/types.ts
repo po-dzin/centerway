@@ -199,7 +199,7 @@ export type ExperimentManifest = {
 
 export type ExperimentSource = "bucket" | "override" | "cookie" | "default";
 
-export type ExperimentResolution = {
+export type ExperimentAssignment = {
   experiment_key: string;
   variant_key: string;
   source: ExperimentSource;
@@ -217,7 +217,7 @@ export type ResolvedGeneratedScreen = {
   tokens: Record<`--${string}`, string>;
   tokenPackId: string;
   themeFamily: CWThemeFamily;
-  experimentResolution?: ExperimentResolution;
+  experimentAssignment?: ExperimentAssignment;
 };
 
 export type PrimaryCTACardinality = "1" | "0..1" | "1..N" | "0";
@@ -225,6 +225,7 @@ export type PrimaryCTACardinality = "1" | "0..1" | "1..N" | "0";
 export type ArchetypeContract = {
   archetype:
     | "overview-entry"
+    | "hub-journey"
     | "offer-detail"
     | "intent-checkout"
     | "lesson-practice"
