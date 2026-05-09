@@ -307,7 +307,7 @@ async function loadLandingHtml(product: StaticLandingProduct, options: PrepareLa
   const htmlPath =
     options.pageKind === "entry"
       ? LANDING_ROUTE_CONFIG[product].htmlPath
-      : path.join(product, UTILITY_FILE_BY_PAGE[options.page]);
+      : path.join(LANDING_ROUTE_CONFIG[product].assetName, UTILITY_FILE_BY_PAGE[options.page]);
 
   const sourcePath = path.join(process.cwd(), "src", "landing-static", htmlPath);
   return readFile(sourcePath, "utf-8");

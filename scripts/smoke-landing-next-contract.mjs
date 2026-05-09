@@ -7,6 +7,7 @@ const baseUrl = (
 const requireNextLanding = (process.env.SMOKE_REQUIRE_NEXT_LANDING || "0").toLowerCase() === "1";
 
 const routes = ["/reboot", "/irem"];
+const utilityRoutes = ["/short/thanks.html", "/irem/thanks.html"];
 const requiredSnippets = [
   'data-cw-runtime="next"',
   '/shared/css/landing.bridge.css',
@@ -16,6 +17,12 @@ const requiredSnippets = [
 const forbiddenSnippets = [
   "cw_attrib",
   "Meta Pixel Code",
+];
+const utilityRequiredSnippets = [
+  'data-cw-runtime="next"',
+  '/shared/js/landing-pixel.js',
+  "fbq('track', 'Purchase'",
+  "cw_purchase_fired:",
 ];
 
 function pass(message) {
@@ -76,6 +83,30 @@ async function main() {
       } else {
         pass(`${route}: no forbidden "${snippet}"`);
       }
+    }
+  }
+
+  for (const route of utilityRoutes) {
+    const { status, text } = await fetchHtml(route);
+    const checkedHtml = stripNextFlightScripts(text);
+    if (status >= 400) {
+      fail(`${route}: status ${status}`);
+      continue;
+    }
+    pass(`${route}: status ${status}`);
+
+    for (const snippet of utilityRequiredSnippets) {
+      if (!checkedHtml.includes(snippet)) {
+        fail(`${route}: missing required snippet "${snippet}"`);
+      } else {
+        pass(`${route}: has "${snippet}"`);
+      }
+    }
+
+    if (checkedHtml.includes("localStorage.setItem('cw_attrib'") || checkedHtml.includes('localStorage.setItem("cw_attrib"')) {
+      fail(`${route}: found legacy cw_attrib writer`);
+    } else {
+      pass(`${route}: no legacy cw_attrib writer`);
     }
   }
 

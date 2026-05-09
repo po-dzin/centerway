@@ -66,14 +66,14 @@ export async function sendCapiEvent(payload: CapiEventPayload): Promise<void> {
         process.env.META_CAPI_TOKEN;
 
     if (!pixelId || !accessToken) {
+        const missing: string[] = [];
+        if (!pixelId) missing.push("META_PIXEL_ID|META_AD_PIXEL_ID|META_PIXEL");
+        if (!accessToken) missing.push("META_ACCESS_TOKEN|META_CAPI_TOKEN");
         if (!hasWarnedMissingCapiEnv) {
             hasWarnedMissingCapiEnv = true;
-            const missing: string[] = [];
-            if (!pixelId) missing.push("META_PIXEL_ID|META_AD_PIXEL_ID|META_PIXEL");
-            if (!accessToken) missing.push("META_ACCESS_TOKEN|META_CAPI_TOKEN");
             console.warn(`[CAPI] Missing env: ${missing.join(", ")}. CAPI send disabled; skipping jobs.`);
         }
-        return;
+        throw new Error(`CAPI missing env: ${missing.join(", ")}`);
     }
 
     const url = CAPI_ENDPOINT.replace("{PIXEL_ID}", pixelId);
