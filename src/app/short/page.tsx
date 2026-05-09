@@ -3,6 +3,6 @@ import { getLandingMetadata, renderLandingPage } from "@/lib/landing/renderLandi
 export const runtime = "nodejs";
 export const metadata = getLandingMetadata("short");
 
-export default async function RebootPage() {
+export default async function ShortPage() {
   return renderLandingPage("short");
 }

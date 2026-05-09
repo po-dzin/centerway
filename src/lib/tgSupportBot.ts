@@ -80,7 +80,8 @@ const FAQ_ANSWERS: Record<string, string> = {
 };
 
 function assertProduct(value: string | null | undefined): BotProductCode | null {
-  return value === "short" || value === "irem" ? value : null;
+  if (value === "short" || value === "reboot") return "short";
+  return value === "irem" ? value : null;
 }
 
 function accessLink(product: BotProductCode): string {

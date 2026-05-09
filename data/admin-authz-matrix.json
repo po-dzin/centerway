@@ -76,5 +76,10 @@
     "kind": "mutate",
     "method": "POST",
     "path": "/api/admin/bootstrap-role"
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/purchases/backfill"
   }
 ]

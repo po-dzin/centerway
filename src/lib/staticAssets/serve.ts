@@ -36,13 +36,18 @@ function contentTypeByExt(filePath: string): string {
   return CONTENT_TYPES[ext] ?? "application/octet-stream";
 }
 
+function sourceDirectoryForPrefix(prefix: string): string {
+  if (prefix === "reboot") return "short";
+  return prefix;
+}
+
 export async function serveStaticAsset(prefix: string, segments: string[]): Promise<Response> {
   const safe = safeSegments(segments);
   if (!safe) {
     return new Response("Bad request", { status: 400 });
   }
 
-  const filePath = path.join(STATIC_ROOT, prefix, ...safe);
+  const filePath = path.join(STATIC_ROOT, sourceDirectoryForPrefix(prefix), ...safe);
   try {
     const data = await readFile(filePath);
     const isDev = process.env.NODE_ENV !== "production";

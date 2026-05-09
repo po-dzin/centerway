@@ -100,7 +100,9 @@ type UnifiedKpis = {
 
 type QualityGaps = {
   snapshot_date: string;
-  paid_missing_fbc: number;
+  paid_missing_fbc_raw: number;
+  paid_recoverable_fbc_from_fbclid: number;
+  paid_truly_missing_fbc: number;
   paid_missing_fbclid: number;
   paid_missing_fbp: number;
   paid_missing_page_url: number;
@@ -122,13 +124,28 @@ type AnalyticsFreshness = {
 type QualitySeriesRow = {
   date: string;
   paid_orders: number;
-  missing_fbc: number;
+  missing_fbc_raw: number;
+  recoverable_fbc_from_fbclid: number;
+  truly_missing_fbc: number;
   missing_fbclid: number;
   missing_fbp: number;
   missing_page_url: number;
   missing_client_ip: number;
   missing_client_ua: number;
 };
+
+type PurchaseTransport = {
+  total_paid_orders: number;
+  success: number;
+  pending: number;
+  running: number;
+  failed: number;
+  missing_job: number;
+  stale_pending: number;
+  last_success_at: string | null;
+};
+
+type DiagnosticsPanelKey = "freshness" | "quality" | "purchase_transport";
 
 type AnalyticsResponse = {
   period?: {
@@ -170,6 +187,7 @@ type AnalyticsResponse = {
   marketing_inputs: MarketingInputs;
   quality_gaps?: QualityGaps | null;
   quality_series?: QualitySeriesRow[];
+  purchase_transport?: PurchaseTransport | null;
   freshness?: AnalyticsFreshness | null;
   kpis: UnifiedKpis;
 };
@@ -231,6 +249,50 @@ function metricEventLabelKey(eventName: CapiEventName): string {
   return "analytics_event_purchase";
 }
 
+function AnalyticsCollapsePanel(props: {
+  title: string;
+  note?: string;
+  open: boolean;
+  onToggle: () => void;
+  expandLabel: string;
+  collapseLabel: string;
+  children: React.ReactNode;
+}) {
+  const { title, note, open, onToggle, expandLabel, collapseLabel, children } = props;
+  return (
+    <div className="cw-panel p-4">
+      <button
+        type="button"
+        onClick={onToggle}
+        className="w-full flex items-start justify-between gap-3 text-left"
+        aria-expanded={open}
+      >
+        <div>
+          <h3 className="text-sm font-semibold cw-text">{title}</h3>
+          {note ? <p className="text-xs cw-muted mt-1">{note}</p> : null}
+        </div>
+        <span
+          className="cw-icon-btn shrink-0 inline-flex items-center justify-center"
+          aria-label={open ? collapseLabel : expandLabel}
+          title={open ? collapseLabel : expandLabel}
+        >
+          <svg
+            className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`}
+            viewBox="0 0 20 20"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.75"
+            aria-hidden="true"
+          >
+            <path d="M5 8l5 5 5-5" strokeLinecap="round" strokeLinejoin="round" />
+          </svg>
+        </span>
+      </button>
+      {open ? <div className="mt-3">{children}</div> : null}
+    </div>
+  );
+}
+
 function toNumberInput(value: string): number {
   const num = Number(value);
   return Number.isFinite(num) && num >= 0 ? num : 0;
@@ -270,7 +332,7 @@ function formatCompactTick(value: number, locale: string): string {
 function formatProductName(productCode: string, unknownLabel: string): string {
   const normalized = productCode.trim().toLowerCase();
   if (!normalized || normalized === "unknown") return unknownLabel;
-  if (normalized === "short") return "Short Reboot";
+  if (normalized === "short" || normalized === "reboot") return "Short Reboot";
   if (normalized === "irem") return "IREM Gymnastics";
   return productCode;
 }
@@ -642,6 +704,7 @@ export default function AnalyticsPage() {
   const [engagementAlignedFrom, setEngagementAlignedFrom] = useState<string | null>(null);
   const [qualityGaps, setQualityGaps] = useState<QualityGaps | null>(null);
   const [qualitySeries, setQualitySeries] = useState<QualitySeriesRow[]>([]);
+  const [purchaseTransport, setPurchaseTransport] = useState<PurchaseTransport | null>(null);
   const [freshness, setFreshness] = useState<AnalyticsFreshness | null>(null);
   const [funnelSources, setFunnelSources] = useState<AnalyticsResponse["funnel_sources"] | null>(null);
 
@@ -659,6 +722,11 @@ export default function AnalyticsPage() {
   const [analyticsSection, setAnalyticsSection] = useState<
     "overview" | "funnel" | "products" | "campaigns" | "capi" | "inputs_quality"
   >("overview");
+  const [diagnosticsPanels, setDiagnosticsPanels] = useState<Record<DiagnosticsPanelKey, boolean>>({
+    freshness: false,
+    quality: false,
+    purchase_transport: false,
+  });
   const [campaignsLevel, setCampaignsLevel] = useState<"adset" | "ad">("adset");
 
   const [draftReach, setDraftReach] = useState("0");
@@ -803,6 +871,7 @@ export default function AnalyticsPage() {
       setEngagementAlignedFrom(data.engagement?.aligned_from ?? null);
       setQualityGaps(data.quality_gaps ?? null);
       setQualitySeries(data.quality_series ?? []);
+      setPurchaseTransport(data.purchase_transport ?? null);
       setFreshness(data.freshness ?? null);
       setFunnelSources(data.funnel_sources ?? null);
 
@@ -1102,6 +1171,12 @@ export default function AnalyticsPage() {
       );
     });
   };
+  const toggleDiagnosticsPanel = (key: DiagnosticsPanelKey) => {
+    setDiagnosticsPanels((prev) => ({
+      ...prev,
+      [key]: !prev[key],
+    }));
+  };
   const sourceColumnLabel =
     campaignsLevel === "ad"
       ? t("analytics_col_source_ad")
@@ -1331,9 +1406,14 @@ export default function AnalyticsPage() {
       )}
 
       {analyticsSection === "inputs_quality" && (
-        <div className="cw-panel p-4">
-          <h3 className="text-sm font-semibold cw-text">{t("analytics_freshness_title")}</h3>
-          <p className="text-xs cw-muted mt-1 mb-3">{t("analytics_freshness_note")}</p>
+        <AnalyticsCollapsePanel
+          title={t("analytics_freshness_title")}
+          note={t("analytics_freshness_note")}
+          open={diagnosticsPanels.freshness}
+          onToggle={() => toggleDiagnosticsPanel("freshness")}
+          expandLabel={t("common_expand")}
+          collapseLabel={t("common_collapse")}
+        >
           {freshness ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
               {[
@@ -1381,18 +1461,31 @@ export default function AnalyticsPage() {
           ) : (
             <div className="text-sm cw-muted">{t("analytics_freshness_no_data")}</div>
           )}
-        </div>
+        </AnalyticsCollapsePanel>
       )}
 
       {analyticsSection === "inputs_quality" && (
-        <div className="cw-panel p-4">
-          <h3 className="text-sm font-semibold cw-text">{t("analytics_quality_title")}</h3>
-          <p className="text-xs cw-muted mt-1 mb-3">{t("analytics_quality_note")}</p>
+        <AnalyticsCollapsePanel
+          title={t("analytics_quality_title")}
+          note={t("analytics_quality_note")}
+          open={diagnosticsPanels.quality}
+          onToggle={() => toggleDiagnosticsPanel("quality")}
+          expandLabel={t("common_expand")}
+          collapseLabel={t("common_collapse")}
+        >
           {qualityGaps ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-2">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-2">
               <div className="cw-surface-2 border cw-border rounded-lg p-3">
-                <p className="text-xs cw-muted">{t("analytics_quality_missing_fbc")}</p>
-                <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_fbc ?? 0}</p>
+                <p className="text-xs cw-muted">{t("analytics_quality_missing_fbc_raw")}</p>
+                <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_missing_fbc_raw ?? 0}</p>
+              </div>
+              <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                <p className="text-xs cw-muted">{t("analytics_quality_recoverable_fbc")}</p>
+                <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_recoverable_fbc_from_fbclid ?? 0}</p>
+              </div>
+              <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                <p className="text-xs cw-muted">{t("analytics_quality_truly_missing_fbc")}</p>
+                <p className="text-lg font-semibold cw-text mt-1">{qualityGaps.paid_truly_missing_fbc ?? 0}</p>
               </div>
               <div className="cw-surface-2 border cw-border rounded-lg p-3">
                 <p className="text-xs cw-muted">{t("analytics_quality_missing_fbclid")}</p>
@@ -1430,7 +1523,9 @@ export default function AnalyticsPage() {
                     <tr>
                       <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_date")}</th>
                       <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_paid")}</th>
-                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_fbc")}</th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_fbc_raw")}</th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_recoverable_fbc")}</th>
+                      <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_truly_missing_fbc")}</th>
                       <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_fbclid")}</th>
                       <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_fbp")}</th>
                       <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_quality_missing_page_url")}</th>
@@ -1443,7 +1538,9 @@ export default function AnalyticsPage() {
                       <tr key={row.date} className="border-t cw-border">
                         <td className="px-3 py-2 cw-text">{row.date}</td>
                         <td className="px-3 py-2 cw-text">{row.paid_orders}</td>
-                        <td className="px-3 py-2 cw-muted">{row.missing_fbc}</td>
+                        <td className="px-3 py-2 cw-muted">{row.missing_fbc_raw}</td>
+                        <td className="px-3 py-2 cw-muted">{row.recoverable_fbc_from_fbclid}</td>
+                        <td className="px-3 py-2 cw-muted">{row.truly_missing_fbc}</td>
                         <td className="px-3 py-2 cw-muted">{row.missing_fbclid}</td>
                         <td className="px-3 py-2 cw-muted">{row.missing_fbp}</td>
                         <td className="px-3 py-2 cw-muted">{row.missing_page_url}</td>
@@ -1458,7 +1555,65 @@ export default function AnalyticsPage() {
               <div className="text-sm cw-muted">{t("analytics_quality_trend_no_data")}</div>
             )}
           </div>
-        </div>
+        </AnalyticsCollapsePanel>
+      )}
+
+      {analyticsSection === "inputs_quality" && (
+        <AnalyticsCollapsePanel
+          title={t("analytics_purchase_transport_title")}
+          note={t("analytics_purchase_transport_note")}
+          open={diagnosticsPanels.purchase_transport}
+          onToggle={() => toggleDiagnosticsPanel("purchase_transport")}
+          expandLabel={t("common_expand")}
+          collapseLabel={t("common_collapse")}
+        >
+          {purchaseTransport ? (
+            <div className="space-y-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-2">
+                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_paid_total")}</p>
+                  <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.total_paid_orders}</p>
+                </div>
+                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_success")}</p>
+                  <p className="text-lg font-semibold cw-status-success-text mt-1">{purchaseTransport.success}</p>
+                </div>
+                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_pending")}</p>
+                  <p className="text-lg font-semibold cw-status-pending-text mt-1">{purchaseTransport.pending + purchaseTransport.running}</p>
+                </div>
+                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_failed")}</p>
+                  <p className="text-lg font-semibold cw-status-failed-text mt-1">{purchaseTransport.failed}</p>
+                </div>
+                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_missing_job")}</p>
+                  <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.missing_job}</p>
+                </div>
+                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_stale_pending")}</p>
+                  <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.stale_pending}</p>
+                </div>
+                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_last_success")}</p>
+                  <p className="text-sm font-semibold cw-text mt-1">
+                    {purchaseTransport.last_success_at ? new Date(purchaseTransport.last_success_at).toLocaleString() : "—"}
+                  </p>
+                </div>
+              </div>
+              <div className="text-xs cw-muted">
+                {t("analytics_purchase_transport_coverage")}{" "}
+                <span className="cw-text font-medium">
+                  {purchaseTransport.total_paid_orders > 0
+                    ? `${Math.round((purchaseTransport.success / purchaseTransport.total_paid_orders) * 100)}%`
+                    : "0%"}
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="text-sm cw-muted">{t("analytics_purchase_transport_no_data")}</div>
+          )}
+        </AnalyticsCollapsePanel>
       )}
 
       {analyticsSection === "overview" && (

@@ -138,8 +138,10 @@
         "/detox",
         "/herbs",
         "/irem",
+        "/short",
+        "/short/*",
         "/reboot",
-        "/short/*"
+        "/reboot/*"
       ],
       "allowed_archetypes": [
         "offer-detail",

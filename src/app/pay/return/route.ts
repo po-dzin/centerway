@@ -12,8 +12,10 @@ function norm(v: unknown): string | null {
 }
 
 function productFrom(orderRef: string | null, productRaw: string | null): ProductCode {
+  if (productRaw === "short" || productRaw === "reboot") return "short";
   if (productRaw && productRaw in PRODUCTS) return productRaw as ProductCode;
   if (orderRef?.startsWith("irem_")) return "irem" as ProductCode;
+  if (orderRef?.startsWith("short_") || orderRef?.startsWith("reboot_")) return "short" as ProductCode;
   return "short" as ProductCode;
 }
 

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
 import { requireAdminSession, serverErrorResponse, unauthorizedResponse } from "@/lib/api/adminRoute";
+import { normalizeTrackingString, resolveFbc } from "@/lib/tracking/metaClickIds";
 
 type CapiEventName = "ViewContent" | "InitiateCheckout" | "Purchase";
 
@@ -55,7 +56,9 @@ type PixelDailyAggregate = {
 
 type QualityGaps = {
     snapshot_date: string;
-    paid_missing_fbc: number;
+    paid_missing_fbc_raw: number;
+    paid_recoverable_fbc_from_fbclid: number;
+    paid_truly_missing_fbc: number;
     paid_missing_fbclid: number;
     paid_missing_fbp: number;
     paid_missing_page_url: number;
@@ -66,12 +69,30 @@ type QualityGaps = {
 type QualitySeriesRow = {
     date: string;
     paid_orders: number;
-    missing_fbc: number;
+    missing_fbc_raw: number;
+    recoverable_fbc_from_fbclid: number;
+    truly_missing_fbc: number;
     missing_fbclid: number;
     missing_fbp: number;
     missing_page_url: number;
     missing_client_ip: number;
     missing_client_ua: number;
+};
+
+type PurchaseTransportRow = {
+    total_paid_orders: number;
+    success: number;
+    pending: number;
+    running: number;
+    failed: number;
+    missing_job: number;
+    stale_pending: number;
+    last_success_at: string | null;
+};
+
+type PaidWindowOrder = {
+    order_ref: string;
+    paid_at: string;
 };
 
 type EngagementStats = {
@@ -331,6 +352,85 @@ function localMidnightUtcIso(isoDate: string, timeZone: string): string {
 
 function formatDateIsoUtc(date: Date): string {
     return date.toISOString().slice(0, 10);
+}
+
+function toUnixSeconds(isoString: string | null): number | null {
+    if (!isoString) return null;
+    const ms = Date.parse(isoString);
+    if (!Number.isFinite(ms)) return null;
+    return Math.floor(ms / 1000);
+}
+
+function compareIsoDesc(a: string | null, b: string | null): number {
+    if (!a && !b) return 0;
+    if (!a) return 1;
+    if (!b) return -1;
+    return a < b ? 1 : a > b ? -1 : 0;
+}
+
+function buildPaidWindowOrders(
+    payments: Array<{ order_ref?: unknown; status?: unknown; created_at?: unknown }>,
+    paymentEvents: Array<{ order_ref?: unknown; created_at?: unknown }>
+): PaidWindowOrder[] {
+    const byOrderRef = new Map<string, PaidWindowOrder>();
+
+    for (const row of payments) {
+        const orderRef = normalizeTrackingString(row.order_ref);
+        const createdAt = normalizeTrackingString(row.created_at);
+        const status = normalizeTrackingString(row.status);
+        if (!orderRef || !createdAt) continue;
+        if (status !== "paid" && status !== "completed") continue;
+        if (!byOrderRef.has(orderRef)) {
+            byOrderRef.set(orderRef, { order_ref: orderRef, paid_at: createdAt });
+        }
+    }
+
+    for (const row of paymentEvents) {
+        const orderRef = normalizeTrackingString(row.order_ref);
+        const createdAt = normalizeTrackingString(row.created_at);
+        if (!orderRef || !createdAt) continue;
+        if (!byOrderRef.has(orderRef)) {
+            byOrderRef.set(orderRef, { order_ref: orderRef, paid_at: createdAt });
+        }
+    }
+
+    return Array.from(byOrderRef.values()).sort((a, b) => compareIsoDesc(a.paid_at, b.paid_at));
+}
+
+async function fetchLatestPurchaseJobsByOrderRefs(
+    db: ReturnType<typeof adminClient>,
+    orderRefs: string[]
+): Promise<Map<string, { status: string; created_at: string | null }>> {
+    const result = new Map<string, { status: string; created_at: string | null }>();
+    const chunkSize = 25;
+
+    for (let i = 0; i < orderRefs.length; i += chunkSize) {
+        const chunk = orderRefs.slice(i, i + chunkSize);
+        const rows = await Promise.all(
+            chunk.map(async (orderRef) => {
+                const { data, error } = await db
+                    .from("jobs")
+                    .select("status, created_at")
+                    .eq("type", "meta:capi")
+                    .contains("payload", { event_name: "Purchase", order_ref: orderRef })
+                    .order("created_at", { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                if (error) throw new Error(error.message);
+                return { orderRef, row: data as { status?: string; created_at?: string | null } | null };
+            })
+        );
+
+        for (const item of rows) {
+            if (!item.row?.status) continue;
+            result.set(item.orderRef, {
+                status: item.row.status,
+                created_at: item.row.created_at ?? null,
+            });
+        }
+    }
+
+    return result;
 }
 
 function toFunnelDailyRow(raw: unknown): FunnelDailyRow | null {
@@ -1319,26 +1419,97 @@ export async function GET(req: NextRequest) {
         console.warn("Analytics quality gaps warning:", qualityErr.message);
     }
 
-    const { data: qualityOrdersRows, error: qualitySeriesErr } = await db
-        .from("orders")
-        .select("order_ref, created_at, status, fbclid, fbp, page_url, client_ip, client_ua")
-        .gte("created_at", range.fromTs)
-        .lt("created_at", range.toExclusiveTs)
-        .in("status", ["paid", "completed"])
-        .limit(50000);
-    if (qualitySeriesErr) {
-        console.warn("Analytics quality series warning:", qualitySeriesErr.message);
+    const paidWindowFetchLimit = 50000;
+    const [paidPaymentsRes, paidEventsRes] = await Promise.all([
+        db
+            .from("payments")
+            .select("order_ref, status, created_at")
+            .in("status", ["paid", "completed"])
+            .gte("created_at", range.fromTs)
+            .lt("created_at", range.toExclusiveTs)
+            .order("created_at", { ascending: false })
+            .limit(paidWindowFetchLimit),
+        db
+            .from("events")
+            .select("order_ref, created_at, type")
+            .in("type", ["purchase_completed", "payment_approved"])
+            .gte("created_at", range.fromTs)
+            .lt("created_at", range.toExclusiveTs)
+            .order("created_at", { ascending: false })
+            .limit(paidWindowFetchLimit),
+    ]);
+    if (paidPaymentsRes.error) {
+        console.warn("Analytics paid payments warning:", paidPaymentsRes.error.message);
     }
-    const { data: checkoutStartedRows, error: checkoutStartedErr } = await db
-        .from("events")
-        .select("order_ref, payload, created_at")
-        .eq("type", "checkout_started")
-        .gte("created_at", range.fromTs)
-        .lt("created_at", range.toExclusiveTs)
-        .order("created_at", { ascending: false })
-        .limit(50000);
-    if (checkoutStartedErr) {
-        console.warn("Analytics checkout_started quality warning:", checkoutStartedErr.message);
+    if (paidEventsRes.error) {
+        console.warn("Analytics paid events warning:", paidEventsRes.error.message);
+    }
+
+    const paidWindowOrders = buildPaidWindowOrders(
+        (paidPaymentsRes.data ?? []) as Array<{ order_ref?: unknown; status?: unknown; created_at?: unknown }>,
+        (paidEventsRes.data ?? []) as Array<{ order_ref?: unknown; created_at?: unknown }>
+    );
+    const paidAtByOrderRef = new Map<string, string>();
+    for (const entry of paidWindowOrders) {
+        paidAtByOrderRef.set(entry.order_ref, entry.paid_at);
+    }
+    const paidOrderRefs = paidWindowOrders.map((entry) => entry.order_ref);
+
+    let qualityOrdersRows:
+        | Array<{
+              order_ref: string;
+              created_at: string | null;
+              status: string | null;
+              fbclid: string | null;
+              fbp: string | null;
+              page_url: string | null;
+              client_ip: string | null;
+              client_ua: string | null;
+          }>
+        = [];
+    let checkoutStartedRows:
+        | Array<{
+              order_ref: string | null;
+              payload: unknown;
+              created_at: string | null;
+          }>
+        = [];
+    let purchaseJobByOrderRef = new Map<string, { status: string; created_at: string | null }>();
+
+    if (paidOrderRefs.length > 0) {
+        const [qualityOrdersRes, checkoutStartedRes] = await Promise.all([
+            db
+                .from("orders")
+                .select("order_ref, created_at, status, fbclid, fbp, page_url, client_ip, client_ua")
+                .in("status", ["paid", "completed"])
+                .in("order_ref", paidOrderRefs)
+                .limit(paidWindowFetchLimit),
+            db
+                .from("events")
+                .select("order_ref, payload, created_at")
+                .eq("type", "checkout_started")
+                .in("order_ref", paidOrderRefs)
+                .order("created_at", { ascending: false })
+                .limit(paidWindowFetchLimit),
+        ]);
+        if (qualityOrdersRes.error) {
+            console.warn("Analytics quality series warning:", qualityOrdersRes.error.message);
+        } else {
+            qualityOrdersRows = (qualityOrdersRes.data ?? []) as typeof qualityOrdersRows;
+        }
+        if (checkoutStartedRes.error) {
+            console.warn("Analytics checkout_started quality warning:", checkoutStartedRes.error.message);
+        } else {
+            checkoutStartedRows = (checkoutStartedRes.data ?? []) as typeof checkoutStartedRows;
+        }
+        try {
+            purchaseJobByOrderRef = await fetchLatestPurchaseJobsByOrderRefs(db, paidOrderRefs);
+        } catch (error) {
+            console.warn(
+                "Analytics purchase transport warning:",
+                error instanceof Error ? error.message : String(error)
+            );
+        }
     }
 
     const checkoutTrackingByOrderRef = new Map<string, { fbc: string | null }>();
@@ -1352,23 +1523,33 @@ export async function GET(req: NextRequest) {
 
     const qualitySeriesMap = new Map<string, QualitySeriesRow>();
     for (const row of qualityOrdersRows ?? []) {
-        const createdAt = typeof row.created_at === "string" ? row.created_at : null;
-        if (!createdAt) continue;
+        const paidAt = paidAtByOrderRef.get(row.order_ref) ?? null;
+        if (!paidAt) continue;
         const orderRef = typeof row.order_ref === "string" ? row.order_ref : null;
         const checkoutTracking = orderRef ? checkoutTrackingByOrderRef.get(orderRef) : null;
-        const day = createdAt.slice(0, 10);
+        const day = paidAt.slice(0, 10);
         const existing = qualitySeriesMap.get(day) ?? {
             date: day,
             paid_orders: 0,
-            missing_fbc: 0,
+            missing_fbc_raw: 0,
+            recoverable_fbc_from_fbclid: 0,
+            truly_missing_fbc: 0,
             missing_fbclid: 0,
             missing_fbp: 0,
             missing_page_url: 0,
             missing_client_ip: 0,
             missing_client_ua: 0,
         };
+        const rawFbc = checkoutTracking?.fbc ?? null;
+        const resolvedFbc = resolveFbc({
+            fbc: rawFbc,
+            fbclid: row.fbclid,
+            creationTimeSeconds: toUnixSeconds(paidAt),
+        });
         existing.paid_orders += 1;
-        if (!checkoutTracking?.fbc) existing.missing_fbc += 1;
+        if (!rawFbc) existing.missing_fbc_raw += 1;
+        if (!rawFbc && row.fbclid && resolvedFbc) existing.recoverable_fbc_from_fbclid += 1;
+        if (!resolvedFbc) existing.truly_missing_fbc += 1;
         if (!row.fbclid) existing.missing_fbclid += 1;
         if (!row.fbp) existing.missing_fbp += 1;
         if (!row.page_url) existing.missing_page_url += 1;
@@ -1376,13 +1557,61 @@ export async function GET(req: NextRequest) {
         if (!row.client_ua) existing.missing_client_ua += 1;
         qualitySeriesMap.set(day, existing);
     }
+
+    const stalePendingThresholdMs = 2 * 60 * 60 * 1000;
+    const nowMs = Date.now();
+    const purchase_transport = (qualityOrdersRows ?? []).reduce<PurchaseTransportRow>(
+        (acc, row) => {
+            const orderRef = typeof row.order_ref === "string" ? row.order_ref : null;
+            acc.total_paid_orders += 1;
+            if (!orderRef) {
+                acc.missing_job += 1;
+                return acc;
+            }
+            const status = purchaseJobByOrderRef.get(orderRef);
+            if (!status) {
+                acc.missing_job += 1;
+                return acc;
+            }
+            if (status.status === "success") {
+                acc.success += 1;
+                if (status.created_at && (!acc.last_success_at || status.created_at > acc.last_success_at)) {
+                    acc.last_success_at = status.created_at;
+                }
+                return acc;
+            }
+            if (status.status === "pending") acc.pending += 1;
+            if (status.status === "running") acc.running += 1;
+            if (status.status === "failed") acc.failed += 1;
+            if ((status.status === "pending" || status.status === "running") && status.created_at) {
+                const lastPendingMs = Date.parse(status.created_at);
+                if (Number.isFinite(lastPendingMs) && nowMs - lastPendingMs >= stalePendingThresholdMs) {
+                    acc.stale_pending += 1;
+                }
+            }
+            return acc;
+        },
+        {
+            total_paid_orders: 0,
+            success: 0,
+            pending: 0,
+            running: 0,
+            failed: 0,
+            missing_job: 0,
+            stale_pending: 0,
+            last_success_at: null,
+        }
+    );
+
     const quality_series = Array.from(qualitySeriesMap.values()).sort((a, b) =>
         a.date.localeCompare(b.date)
     );
     const quality_gaps: QualityGaps | null = quality_series.length > 0
         ? quality_series.reduce<QualityGaps>(
             (acc, row) => {
-                acc.paid_missing_fbc += row.missing_fbc;
+                acc.paid_missing_fbc_raw += row.missing_fbc_raw;
+                acc.paid_recoverable_fbc_from_fbclid += row.recoverable_fbc_from_fbclid;
+                acc.paid_truly_missing_fbc += row.truly_missing_fbc;
                 acc.paid_missing_fbclid += row.missing_fbclid;
                 acc.paid_missing_fbp += row.missing_fbp;
                 acc.paid_missing_page_url += row.missing_page_url;
@@ -1392,7 +1621,9 @@ export async function GET(req: NextRequest) {
             },
             {
                 snapshot_date: qualityRow?.snapshot_date ?? new Date().toISOString().slice(0, 10),
-                paid_missing_fbc: 0,
+                paid_missing_fbc_raw: 0,
+                paid_recoverable_fbc_from_fbclid: 0,
+                paid_truly_missing_fbc: 0,
                 paid_missing_fbclid: 0,
                 paid_missing_fbp: 0,
                 paid_missing_page_url: 0,
@@ -1555,6 +1786,7 @@ export async function GET(req: NextRequest) {
         },
         quality_gaps,
         quality_series,
+        purchase_transport,
         freshness,
         kpis: {
             cpa: toFixed2(cpa),
