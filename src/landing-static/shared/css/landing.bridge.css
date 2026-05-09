@@ -448,7 +448,9 @@
 }
 
 :root[data-cw-landing="short"],
-[data-cw-landing="short"] {
+[data-cw-landing="short"],
+:root[data-cw-landing="reboot"],
+[data-cw-landing="reboot"] {
   --landing-color-heading: var(--landing-color-text);
   --landing-color-primary: var(--product-primary, var(--ds-color-primary));
   --landing-color-primary-strong: var(--product-primary-strong, var(--ds-color-primary-strong));

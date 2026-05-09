@@ -1,7 +1,7 @@
 export type SearchParams = Record<string, string | string[] | undefined>;
 
 export const PRODUCTS = {
-  reboot: {
+  short: {
     heading: {
       ua: "Short Reboot — онлайн-курс",
       en: "Short Reboot — online course",
@@ -60,7 +60,7 @@ export function normalizeProduct(input: unknown): ProductCode | null {
   // строка
   if (typeof input === "string") {
     const s = input.trim().toLowerCase();
-    if (s === "short" || s === "reboot") return "reboot";
+    if (s === "short" || s === "reboot") return "short";
     if (s === "irem") return "irem";
     if (s === "consult" || s === "consultation") return "consult";
     if (s === "ideal-body" || s === "ideal_body" || s === "idealne-tilo") return "ideal-body";
@@ -84,14 +84,14 @@ export function normalizeProduct(input: unknown): ProductCode | null {
 }
 
 /**
- * Всегда возвращает валидный продукт (дефолт reboot)
+ * Всегда возвращает валидный продукт (дефолт short)
  */
 export function resolveProduct(input: unknown): ProductCode {
-  return normalizeProduct(input) ?? "reboot";
+  return normalizeProduct(input) ?? "short";
 }
 
 export function isPayableProduct(product: ProductCode | string | null | undefined): product is PayableProductCode {
-  return product === "reboot" || product === "irem";
+  return product === "short" || product === "irem";
 }
 
 export function normalizePayableProduct(input: unknown): PayableProductCode | null {
@@ -100,7 +100,7 @@ export function normalizePayableProduct(input: unknown): PayableProductCode | nu
 }
 
 export function resolvePayableProduct(input: unknown): PayableProductCode {
-  return normalizePayableProduct(input) ?? "reboot";
+  return normalizePayableProduct(input) ?? "short";
 }
 
 export function normalizeLocale(input: string | null | undefined): Locale | null {

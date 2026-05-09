@@ -3,7 +3,7 @@ import type { StaticLandingProduct } from "@/lib/landing/types";
 
 export type LandingRouteConfig = {
   title: string;
-  entryPage: "reboot" | "irem";
+  entryPage: "short" | "irem";
   htmlPath: string;
   assetPrefix: "/short" | "/irem";
   assetName: "short" | "irem";
@@ -22,9 +22,9 @@ const SHARED_SCRIPTS = [
 ];
 
 export const LANDING_ROUTE_CONFIG: Record<StaticLandingProduct, LandingRouteConfig> = {
-  reboot: {
-    title: LANDING_CONTENT.reboot.title,
-    entryPage: "reboot",
+  short: {
+    title: LANDING_CONTENT.short.title,
+    entryPage: "short",
     htmlPath: "short/index.html",
     assetPrefix: "/short",
     assetName: "short",
@@ -71,10 +71,10 @@ export function getLandingShellAssets(product: StaticLandingProduct) {
 
 export function getLandingCriticalCss(product: StaticLandingProduct) {
   const config = LANDING_ROUTE_CONFIG[product];
-  const accent = product === "reboot" ? "#e87d73" : "#4f7e76";
-  const accentStrong = product === "reboot" ? "#cf6a61" : "#1e3d34";
-  const badgeBg = product === "reboot" ? "#fefbbd" : "#eef6ff";
-  const badgeText = product === "reboot" ? "#7a430f" : "#27485f";
+  const accent = product === "short" ? "#e87d73" : "#4f7e76";
+  const accentStrong = product === "short" ? "#cf6a61" : "#1e3d34";
+  const badgeBg = product === "short" ? "#fefbbd" : "#eef6ff";
+  const badgeText = product === "short" ? "#7a430f" : "#27485f";
 
   return `
 html,body{margin:0;padding:0;background:#fffdf7;color:#2d2d2b}

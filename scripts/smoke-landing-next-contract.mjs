@@ -6,8 +6,9 @@ const baseUrl = (
 
 const requireNextLanding = (process.env.SMOKE_REQUIRE_NEXT_LANDING || "0").toLowerCase() === "1";
 
-const routes = ["/reboot", "/irem"];
+const routes = ["/short", "/irem"];
 const utilityRoutes = ["/short/thanks.html", "/irem/thanks.html"];
+const utilityAliasRoutes = ["/reboot/thanks.html"];
 const requiredSnippets = [
   'data-cw-runtime="next"',
   '/shared/css/landing.bridge.css',
@@ -107,6 +108,24 @@ async function main() {
       fail(`${route}: found legacy cw_attrib writer`);
     } else {
       pass(`${route}: no legacy cw_attrib writer`);
+    }
+  }
+
+  for (const route of utilityAliasRoutes) {
+    const { status, text } = await fetchHtml(route);
+    const checkedHtml = stripNextFlightScripts(text);
+    if (status >= 400) {
+      fail(`${route}: alias status ${status}`);
+      continue;
+    }
+    pass(`${route}: alias status ${status}`);
+
+    for (const snippet of utilityRequiredSnippets) {
+      if (!checkedHtml.includes(snippet)) {
+        fail(`${route}: alias missing required snippet "${snippet}"`);
+      } else {
+        pass(`${route}: alias has "${snippet}"`);
+      }
     }
   }
 

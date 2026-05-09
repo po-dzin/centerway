@@ -37,17 +37,17 @@ export function resolveCheckoutProduct(body: CheckoutStartRequest): PayableProdu
     product: asCleanString(body.product) ?? undefined,
     product_code: asCleanString(body.product_code) ?? undefined,
   });
-  if (byProductField === "reboot" || byProductField === "irem") return byProductField;
+  if (byProductField === "short" || byProductField === "irem") return byProductField;
 
   const site = asCleanString(body.site)?.toLowerCase();
   if (site === "irem") return "irem";
-  if (site === "short" || site === "reboot") return "reboot";
+  if (site === "short" || site === "reboot") return "short";
 
   const offer = asCleanString(body.offer_id)?.toLowerCase() ?? "";
   if (offer.includes("irem")) return "irem";
-  if (offer.includes("short") || offer.includes("reboot")) return "reboot";
+  if (offer.includes("short") || offer.includes("reboot")) return "short";
 
-  return "reboot";
+  return "short";
 }
 
 export function checkoutLeadId(orderRef: string): string {

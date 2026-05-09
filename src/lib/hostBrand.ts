@@ -1,4 +1,4 @@
-export type HostBrand = "reboot" | "irem" | "consult" | "detox" | "herbs";
+export type HostBrand = "short" | "irem" | "consult" | "detox" | "herbs";
 
 const IREM_HOST_PREFIXES = ["irem.", "www.irem."];
 const SHORT_HOST_PREFIXES = ["reboot.", "www.reboot."];
@@ -18,7 +18,7 @@ export function hostBrandFromHost(rawHost: string | null): HostBrand | null {
     if (host.startsWith(prefix)) return "irem";
   }
   for (const prefix of SHORT_HOST_PREFIXES) {
-    if (host.startsWith(prefix)) return "reboot";
+    if (host.startsWith(prefix)) return "short";
   }
   for (const prefix of CONSULT_HOST_PREFIXES) {
     if (host.startsWith(prefix)) return "consult";

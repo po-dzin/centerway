@@ -46,7 +46,7 @@ export type LandingProductContent = {
 };
 
 export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent> = {
-  reboot: {
+  short: {
     title: "Short-Перезавантаження",
     description: "7 простих вправ, що за 10 хвилин відновлюють тіло та розум.",
     hero: {

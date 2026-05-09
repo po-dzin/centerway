@@ -9,8 +9,9 @@ const portBase = Number.parseInt(process.env.SMOKE_PORT_BASE || "8010", 10);
 const startupTimeoutMs = Number.parseInt(process.env.SMOKE_STARTUP_TIMEOUT_MS || "90000", 10);
 const requestTimeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "15000", 10);
 
-const entryRoutes = ["/reboot", "/irem"];
+const entryRoutes = ["/short", "/irem"];
 const utilityRoutes = ["/short/thanks.html", "/irem/thanks.html", "/short/public-offer.html", "/irem/public-offer.html"];
+const utilityAliasRoutes = ["/reboot/thanks.html", "/reboot/public-offer.html"];
 const requiredNextSnippets = [
   'data-cw-runtime="next"',
   '/shared/css/landing.bridge.css',
@@ -210,7 +211,7 @@ async function assertMode(baseUrl, nextExpected, typedHeroEnabled) {
     if (!nextExpected) continue;
 
     if (typedHeroEnabled && heroStringsByProduct) {
-      const product = route === "/reboot" ? "short" : "irem";
+      const product = route === "/short" ? "short" : "irem";
       const heroStrings = heroStringsByProduct[product] ?? [];
       for (const { key, value } of heroStrings) {
         if (!html.includes(value)) {
@@ -255,6 +256,23 @@ async function assertMode(baseUrl, nextExpected, typedHeroEnabled) {
     pass(`${route}: next marker ${nextExpected ? "present" : "absent"} as expected`);
   }
 
+  for (const route of utilityAliasRoutes) {
+    const { status, text } = await fetchHtml(baseUrl, route);
+    const html = stripNextFlightScripts(text);
+    if (status >= 400) {
+      fail(`${route}: alias status ${status}`);
+      continue;
+    }
+    pass(`${route}: alias status ${status}`);
+
+    const hasNextMarker = html.includes('data-cw-runtime="next"');
+    if (hasNextMarker !== nextExpected) {
+      fail(`${route}: alias next marker mismatch (expected ${nextExpected}, got ${hasNextMarker})`);
+      continue;
+    }
+    pass(`${route}: alias next marker ${nextExpected ? "present" : "absent"} as expected`);
+  }
+
   return { entryHtmlByRoute };
 }
 
@@ -286,7 +304,7 @@ async function runMode(nextEnabled, typedHeroEnabled, portOffset) {
 function assertEntryHeroParityBetweenTypedModes(typedOnResult, typedOffResult) {
   const heroStringsByProduct = parseTypedHeroStringsByProduct();
   for (const route of entryRoutes) {
-    const product = route === "/reboot" ? "short" : "irem";
+    const product = route === "/short" ? "short" : "irem";
     const heroStrings = heroStringsByProduct[product] ?? [];
     const typedOnHtml = typedOnResult.entryHtmlByRoute[route] ?? "";
     const typedOffHtml = typedOffResult.entryHtmlByRoute[route] ?? "";

@@ -79,14 +79,14 @@
 
   function getCurrentProduct() {
     var fromScript = (document.currentScript && document.currentScript.dataset && document.currentScript.dataset.cwProduct) || "";
-    if (fromScript === "short" || fromScript === "reboot" || fromScript === "irem") return fromScript === "short" ? "reboot" : fromScript;
+    if (fromScript === "short" || fromScript === "reboot" || fromScript === "irem") return fromScript === "reboot" ? "short" : fromScript;
 
     var fromHtml = (document.documentElement && document.documentElement.dataset && document.documentElement.dataset.cwLanding) || "";
-    if (fromHtml === "short" || fromHtml === "reboot" || fromHtml === "irem") return fromHtml === "short" ? "reboot" : fromHtml;
+    if (fromHtml === "short" || fromHtml === "reboot" || fromHtml === "irem") return fromHtml === "reboot" ? "short" : fromHtml;
 
     var fromMain = document.querySelector("[data-cw-landing]");
     var mainValue = fromMain && fromMain.getAttribute("data-cw-landing");
-    if (mainValue === "short" || mainValue === "reboot" || mainValue === "irem") return mainValue === "short" ? "reboot" : mainValue;
+    if (mainValue === "short" || mainValue === "reboot" || mainValue === "irem") return mainValue === "reboot" ? "short" : mainValue;
 
     return "";
   }
@@ -108,7 +108,7 @@
 
   function setupGoogleAds() {
     var product = getCurrentProduct();
-    if (product !== "reboot" && product !== "irem") return;
+    if (product !== "short" && product !== "irem") return;
 
     window.dataLayer = window.dataLayer || [];
     window.gtag =

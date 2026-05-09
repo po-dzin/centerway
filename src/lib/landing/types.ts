@@ -1,11 +1,11 @@
-export type LandingProduct = "reboot" | "irem" | "mini-detox" | "detox" | "consult";
-export type StaticLandingProduct = "reboot" | "irem";
+export type LandingProduct = "short" | "irem" | "mini-detox" | "detox" | "consult";
+export type StaticLandingProduct = "short" | "irem";
 
-const LANDING_PRODUCTS = new Set<LandingProduct>(["reboot", "irem", "mini-detox", "detox", "consult"]);
-const STATIC_LANDING_PRODUCTS = new Set<StaticLandingProduct>(["reboot", "irem"]);
+const LANDING_PRODUCTS = new Set<LandingProduct>(["short", "irem", "mini-detox", "detox", "consult"]);
+const STATIC_LANDING_PRODUCTS = new Set<StaticLandingProduct>(["short", "irem"]);
 const STATIC_LANDING_PRODUCT_ALIASES: Record<string, StaticLandingProduct> = {
-  short: "reboot",
-  reboot: "reboot",
+  short: "short",
+  reboot: "short",
   irem: "irem",
 };
 

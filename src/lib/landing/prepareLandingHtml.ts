@@ -38,7 +38,7 @@ const TRACKING_BLOCKS: RegExp[] = [
 
 const SCRIPT_TAG_BLOCK = /<script[\s\S]*?<\/script>/gi;
 const MANAGED_HEAD_PATTERN =
-  /<base[^>]*href="\/(?:short|irem)\/"[^>]*>\s*|<link[^>]*href="\/shared\/css\/landing\.bridge\.css"[^>]*>\s*|<script[^>]*src="\/shared\/js\/landing-pixel\.js"[^>]*><\/script>\s*|<script[^>]*src="\/shared\/js\/landing-runtime\.js"[^>]*><\/script>\s*/gi;
+  /<base[^>]*href="\/(?:reboot|short|irem)\/"[^>]*>\s*|<link[^>]*href="\/shared\/css\/landing\.bridge\.css"[^>]*>\s*|<script[^>]*src="\/shared\/js\/landing-pixel\.js"[^>]*><\/script>\s*|<script[^>]*src="\/shared\/js\/landing-runtime\.js"[^>]*><\/script>\s*/gi;
 const TYPED_HERO_FLAG = "CW_TYPED_HERO_SHORT_IREM";
 
 function isTypedHeroEnabled(): boolean {
@@ -62,7 +62,7 @@ function applyTypedHeroReplacements(product: StaticLandingProduct, html: string)
   const hero = LANDING_CONTENT[product].hero;
   let next = html;
 
-  if (product === "reboot") {
+  if (product === "short") {
     next = replaceIfMatch(next, /(<span class="badge">)([\s\S]*?)(<\/span>)/i, (match) => {
       return `${match[1]}${hero.badge}${match[3]}`;
     });
