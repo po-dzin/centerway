@@ -80,13 +80,16 @@
   function getCurrentProduct() {
     var fromScript = (document.currentScript && document.currentScript.dataset && document.currentScript.dataset.cwProduct) || "";
     if (fromScript === "short" || fromScript === "irem") return fromScript;
+    if (fromScript === "reboot") return "short";
 
     var fromHtml = (document.documentElement && document.documentElement.dataset && document.documentElement.dataset.cwLanding) || "";
     if (fromHtml === "short" || fromHtml === "irem") return fromHtml;
+    if (fromHtml === "reboot") return "short";
 
     var fromMain = document.querySelector("[data-cw-landing]");
     var mainValue = fromMain && fromMain.getAttribute("data-cw-landing");
     if (mainValue === "short" || mainValue === "irem") return mainValue;
+    if (mainValue === "reboot") return "short";
 
     return "";
   }
@@ -162,5 +165,9 @@
     } catch (_) {}
   }
 
-  scheduleDeferredScripts(setupGoogleAds, { timeoutMs: 12000 });
+  if (isThanksPage()) {
+    setupGoogleAds();
+  } else {
+    scheduleDeferredScripts(setupGoogleAds, { timeoutMs: 12000 });
+  }
 })();
