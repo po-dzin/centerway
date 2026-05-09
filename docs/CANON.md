@@ -39,7 +39,7 @@ The repo runtime manifest layer serializes RAverse into execution artifacts. The
 
 Update `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay` only when all conditions are true:
 
-- The decision changes a stable product, brand, UI/UX, architecture, data, or release invariant.
+- The decision changes a stable product, brand, интерфейс, architecture, data, or release invariant.
 - The decision should guide more than one immediate task or implementation file.
 - The local repo already contains enough evidence to explain why the change is needed.
 - The change resolves drift, removes ambiguity, or promotes a repeated local pattern into a rule.
@@ -76,10 +76,10 @@ The important check is:
 
 - the runtime manifests still serialize the active canon;
 - materially changed behavior still matches the canon;
-- when a notable product, brand, UI/UX, architecture, route-family, data, or release invariant changes, the canon is updated accordingly;
+- when a notable product, brand, интерфейс, architecture, route-family, data, or release invariant changes, the canon is updated accordingly;
 - every agent completes preflight before starting substantial work.
 
-If implementation changes are large enough to alter user-facing structure, semantic roles, token contracts, block contracts, CTA logic, route-family logic, route boundaries, admin rules, data contracts, or release gates, treat that as a canon-sync event.
+If implementation changes are large enough to alter user-facing structure, semantic roles, token contracts, block contracts, CTA logic, route-family logic, route boundaries, admin rules, data contracts, or release gate, treat that as a canon-sync event.
 
 Canon-sync means:
 
