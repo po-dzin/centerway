@@ -16,7 +16,7 @@ function brandFromReferer(rawReferer: string | null, requestHost: string): HostB
     }
     const pathname = ref.pathname.toLowerCase();
     if (pathname === "/irem" || pathname.startsWith("/irem/")) return "irem";
-    if (pathname === "/reboot" || pathname.startsWith("/reboot/")) return "short";
+    if (pathname === "/reboot" || pathname.startsWith("/reboot/")) return "reboot";
     if (pathname === "/consult" || pathname.startsWith("/consult/")) return "consult";
     if (pathname === "/detox" || pathname.startsWith("/detox/")) return "detox";
     if (pathname === "/herbs" || pathname.startsWith("/herbs/")) return "herbs";

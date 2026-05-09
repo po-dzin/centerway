@@ -129,6 +129,7 @@ function localMidnightUtcIso(isoDate: string, timeZone: string): string {
 
 function productLabel(productCode: string | null | undefined): string {
   switch ((productCode ?? "").trim()) {
+    case "reboot":
     case "short":
       return "Short Reboot";
     case "irem":

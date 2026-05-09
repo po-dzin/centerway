@@ -79,17 +79,14 @@
 
   function getCurrentProduct() {
     var fromScript = (document.currentScript && document.currentScript.dataset && document.currentScript.dataset.cwProduct) || "";
-    if (fromScript === "short" || fromScript === "irem") return fromScript;
-    if (fromScript === "reboot") return "short";
+    if (fromScript === "short" || fromScript === "reboot" || fromScript === "irem") return fromScript === "short" ? "reboot" : fromScript;
 
     var fromHtml = (document.documentElement && document.documentElement.dataset && document.documentElement.dataset.cwLanding) || "";
-    if (fromHtml === "short" || fromHtml === "irem") return fromHtml;
-    if (fromHtml === "reboot") return "short";
+    if (fromHtml === "short" || fromHtml === "reboot" || fromHtml === "irem") return fromHtml === "short" ? "reboot" : fromHtml;
 
     var fromMain = document.querySelector("[data-cw-landing]");
     var mainValue = fromMain && fromMain.getAttribute("data-cw-landing");
-    if (mainValue === "short" || mainValue === "irem") return mainValue;
-    if (mainValue === "reboot") return "short";
+    if (mainValue === "short" || mainValue === "reboot" || mainValue === "irem") return mainValue === "short" ? "reboot" : mainValue;
 
     return "";
   }
@@ -111,7 +108,7 @@
 
   function setupGoogleAds() {
     var product = getCurrentProduct();
-    if (product !== "short" && product !== "irem") return;
+    if (product !== "reboot" && product !== "irem") return;
 
     window.dataLayer = window.dataLayer || [];
     window.gtag =

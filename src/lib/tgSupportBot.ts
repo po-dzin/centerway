@@ -3,7 +3,7 @@ import type { ProductCode } from "@/lib/products";
 import { callTelegramBotApi, sendTelegramMessage } from "@/lib/tg";
 
 type Supabase = ReturnType<typeof supabaseAdmin>;
-type BotProductCode = Extract<ProductCode, "short" | "irem">;
+type BotProductCode = Extract<ProductCode, "reboot" | "irem">;
 
 type BotState =
   | "idle"
@@ -60,7 +60,7 @@ type InlineKeyboardMarkup = {
 };
 
 const PRODUCT_LABELS: Record<BotProductCode, string> = {
-  short: "Short Reboot",
+  reboot: "Short Reboot",
   irem: "IREM",
 };
 
@@ -80,11 +80,12 @@ const FAQ_ANSWERS: Record<string, string> = {
 };
 
 function assertProduct(value: string | null | undefined): BotProductCode | null {
-  return value === "short" || value === "irem" ? value : null;
+  if (value === "short" || value === "reboot") return "reboot";
+  return value === "irem" ? value : null;
 }
 
 function accessLink(product: BotProductCode): string {
-  if (product === "short") {
+  if (product === "reboot") {
     return (
       process.env.SHORT_ACCESS_LINK ||
       "https://t.me/ShortRebootBot?start=ZGw6MjA1MTc3"
@@ -135,7 +136,7 @@ function productKeyboard(): InlineKeyboardMarkup {
   return {
     inline_keyboard: [
       [
-        { text: "Short Reboot", callback_data: "product:short" },
+        { text: "Short Reboot", callback_data: "product:reboot" },
         { text: "IREM", callback_data: "product:irem" },
       ],
     ],

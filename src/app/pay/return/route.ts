@@ -12,9 +12,11 @@ function norm(v: unknown): string | null {
 }
 
 function productFrom(orderRef: string | null, productRaw: string | null): ProductCode {
+  if (productRaw === "short" || productRaw === "reboot") return "reboot";
   if (productRaw && productRaw in PRODUCTS) return productRaw as ProductCode;
   if (orderRef?.startsWith("irem_")) return "irem" as ProductCode;
-  return "short" as ProductCode;
+  if (orderRef?.startsWith("short_") || orderRef?.startsWith("reboot_")) return "reboot" as ProductCode;
+  return "reboot" as ProductCode;
 }
 
 async function readBody(req: NextRequest): Promise<Record<string, string>> {
