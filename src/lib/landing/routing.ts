@@ -4,7 +4,7 @@ import {
   LANDING_ROOT_FILES,
   ROOT_LANDING_PAGE_MAP,
 } from "@/lib/landing/contracts";
-import type { LandingProduct } from "@/lib/landing/types";
+import type { StaticLandingProduct } from "@/lib/landing/types";
 
 export function normalizeLandingPathname(pathname: string): string {
   if (pathname.length > 1 && pathname.endsWith("/")) {
@@ -21,10 +21,10 @@ export function isLandingRootAssetPath(pathname: string): boolean {
   return LANDING_ASSET_PREFIXES.some((prefix) => pathname.startsWith(prefix)) || LANDING_ROOT_FILES.has(pathname);
 }
 
-export function getLandingEntryProduct(pathname: string): LandingProduct | null {
+export function getLandingEntryProduct(pathname: string): StaticLandingProduct | null {
   const normalizedPathname = normalizeLandingPathname(pathname);
 
-  for (const product of Object.keys(LANDING_ROUTE_CONFIG) as LandingProduct[]) {
+  for (const product of Object.keys(LANDING_ROUTE_CONFIG) as StaticLandingProduct[]) {
     if (normalizedPathname === getLandingEntryPath(product)) {
       return product;
     }
@@ -33,7 +33,7 @@ export function getLandingEntryProduct(pathname: string): LandingProduct | null 
   return null;
 }
 
-export function getLandingFallbackPath(product: LandingProduct): string {
+export function getLandingFallbackPath(product: StaticLandingProduct): string {
   return `${LANDING_ROUTE_CONFIG[product].assetPrefix}/index.html`;
 }
 

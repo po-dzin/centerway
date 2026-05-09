@@ -5,12 +5,14 @@ import "./globals.css";
 const manrope = Manrope({
   subsets: ["latin", "cyrillic"],
   display: "swap",
+  preload: false,
   variable: "--cw-font-ui",
 });
 
 const cormorant = Cormorant_Garamond({
   subsets: ["latin", "cyrillic"],
   display: "swap",
+  preload: false,
   variable: "--cw-font-editorial",
   weight: ["500", "600", "700"],
 });
@@ -18,6 +20,7 @@ const cormorant = Cormorant_Garamond({
 const ibmPlexMono = IBM_Plex_Mono({
   subsets: ["latin", "cyrillic"],
   display: "swap",
+  preload: false,
   variable: "--cw-font-data",
   weight: ["400", "500", "600"],
 });

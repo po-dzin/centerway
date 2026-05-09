@@ -120,6 +120,15 @@
     margin-right: auto;
   }
 
+  .video-embed__play {
+    width: 64px;
+    height: 64px;
+  }
+
+  .video-embed__label {
+    font-size: 13px;
+  }
+
   .section-hero h2 {
     font-size: var(--landing-type-responsive-hero-title-mobile-size, 30px);
     line-height: var(--landing-type-hero-h2-line-height, 1.1);

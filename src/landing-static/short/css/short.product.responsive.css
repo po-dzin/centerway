@@ -138,6 +138,19 @@
     aspect-ratio: 16 / 9;
   }
 
+  .section-hero .video-embed.img.mob {
+    max-height: none;
+  }
+
+  .video-embed__play {
+    width: 64px;
+    height: 64px;
+  }
+
+  .video-embed__label {
+    font-size: 13px;
+  }
+
   .section-hero .img {
     width: 100%;
     max-width: 448px;
