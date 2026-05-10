@@ -1,4 +1,4 @@
-import type { ExperimentManifest, ExperimentResolution, ScreenRouteKey } from "@/lib/generator/types";
+import type { ExperimentAssignment, ExperimentManifest, ScreenRouteKey } from "@/lib/generator/types";
 
 export const CW_EXPERIMENT_ASSIGNMENTS_HEADER = "x-cw-exp-assignments";
 
@@ -14,7 +14,7 @@ type ResolveExperimentInput = {
 };
 
 export type ResolveExperimentOutput = {
-  assignments: Record<string, ExperimentResolution>;
+  assignments: Record<string, ExperimentAssignment>;
   cookieMutations: Array<{ name: string; value: string }>;
 };
 
@@ -91,7 +91,7 @@ export function resolveExperimentAssignments(input: ResolveExperimentInput): Res
     cookieMutations.push({ name: EXPERIMENT_SEED_COOKIE, value: seed });
   }
 
-  const assignments: Record<string, ExperimentResolution> = {};
+  const assignments: Record<string, ExperimentAssignment> = {};
 
   for (const experiment of routeExperiments) {
     const overrideKey = `${EXPERIMENT_OVERRIDE_PREFIX}${experiment.key}`;
@@ -101,7 +101,7 @@ export function resolveExperimentAssignments(input: ResolveExperimentInput): Res
     const cookieVariant = parseCookieValue(input.cookies.get(cookieKey));
 
     let resolvedVariant = experiment.default_variant;
-    let source: ExperimentResolution["source"] = "default";
+    let source: ExperimentAssignment["source"] = "default";
 
     if (overrideVariant && hasVariant(experiment, overrideVariant)) {
       resolvedVariant = overrideVariant;
@@ -129,14 +129,14 @@ export function resolveExperimentAssignments(input: ResolveExperimentInput): Res
   };
 }
 
-export function encodeExperimentAssignmentsHeader(assignments: Record<string, ExperimentResolution>): string {
+export function encodeExperimentAssignmentsHeader(assignments: Record<string, ExperimentAssignment>): string {
   return JSON.stringify(assignments);
 }
 
-export function decodeExperimentAssignmentsHeader(rawValue: string | null): Record<string, ExperimentResolution> {
+export function decodeExperimentAssignmentsHeader(rawValue: string | null): Record<string, ExperimentAssignment> {
   if (!rawValue) return {};
   try {
-    const parsed = JSON.parse(rawValue) as Record<string, ExperimentResolution>;
+    const parsed = JSON.parse(rawValue) as Record<string, ExperimentAssignment>;
     if (!parsed || typeof parsed !== "object") return {};
     return parsed;
   } catch {
