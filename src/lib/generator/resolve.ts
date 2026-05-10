@@ -10,27 +10,14 @@ import {
   getExperiments,
   getScreenManifests,
 } from "@/lib/generator/registry";
+import { getRouteRuntime } from "@/lib/generator/routeRuntime";
 import { resolveTokenPackFromSelection } from "@/lib/generator/theme";
 import type {
-  ExperimentResolution,
+  ExperimentAssignment,
   ResolvedGeneratedScreen,
   ScreenManifest,
   ScreenRouteKey,
 } from "@/lib/generator/types";
-
-const DEFAULT_SCREEN_BY_ROUTE: Record<ScreenRouteKey, string> = {
-  consult: "screen.consult.v1.control",
-  detox: "screen.detox.v1.control",
-  herbs: "screen.herbs.v1.control",
-  "dosha-test": "screen.dosha-test.v1.control",
-  "lesson-pilot": "screen.lesson.pilot.v1.control",
-  "platform-home": "screen.platform-home.v1.control",
-  expert: "screen.expert.v1.control",
-  "program-way21": "screen.program-way21.v1.control",
-  "program-ideal-body": "screen.program-ideal-body.v1.control",
-  "program-irem": "screen.program-irem.v1.control",
-  "mini-detox": "screen.mini-detox.v1.control",
-};
 
 function mergeTokens(...sources: Array<Record<`--${string}`, string> | null>): Record<`--${string}`, string> {
   const out: Record<`--${string}`, string> = {};
@@ -49,7 +36,7 @@ function findRouteExperiment(routeKey: ScreenRouteKey): ReturnType<typeof getExp
 }
 
 function findFallbackScreenByRoute(routeKey: ScreenRouteKey): ScreenManifest | null {
-  const byDefaultId = findScreenManifestById(DEFAULT_SCREEN_BY_ROUTE[routeKey]);
+  const byDefaultId = findScreenManifestById(getRouteRuntime(routeKey).defaultScreenId);
   if (byDefaultId) return byDefaultId;
 
   const byRoute = getScreenManifests().find((manifest) => manifest.route_key === routeKey);
@@ -58,13 +45,13 @@ function findFallbackScreenByRoute(routeKey: ScreenRouteKey): ScreenManifest | n
 
 export function resolveScreenForRoute(
   routeKey: ScreenRouteKey,
-  assignments: Record<string, ExperimentResolution>,
+  assignments: Record<string, ExperimentAssignment>,
   options?: { themeSelection?: string | null }
 ): ResolvedGeneratedScreen {
   const routeExperiment = findRouteExperiment(routeKey);
 
   let selectedScreenManifest: ScreenManifest | null = null;
-  let experimentResolution: ExperimentResolution | undefined;
+  let experimentAssignment: ExperimentAssignment | undefined;
 
   if (routeExperiment) {
     const assignment = assignments[routeExperiment.key];
@@ -74,7 +61,7 @@ export function resolveScreenForRoute(
         const candidateScreen = findScreenManifestById(variant.screen_manifest_id);
         if (candidateScreen) {
           selectedScreenManifest = candidateScreen;
-          experimentResolution = assignment;
+          experimentAssignment = assignment;
         }
       }
     }
@@ -132,6 +119,6 @@ export function resolveScreenForRoute(
     tokens: mergeTokens(tokenPack.tokens, modePack.tokens, branchOverlay.tokens),
     tokenPackId: tokenPack.id,
     themeFamily: tokenPack.theme_family,
-    experimentResolution,
+    experimentAssignment,
   };
 }

@@ -1,16 +1,23 @@
+import { getFunnelHostUrl, getPlatformRoute } from "@/lib/surfaces/catalog";
+
 export const platformNav = [
-  { label: "Метод", href: "/#method" },
+  { label: "Центр", href: "/#center" },
+  { label: "Вступ", href: "/#intro-video" },
+  { label: "Діагностика", href: "/#diagnostics" },
+  { label: "Міні-курси", href: "/#mini-courses" },
   { label: "Програми", href: "/#programs" },
-  { label: "Про мене", href: "/expert" },
-  { label: "Відгуки", href: "/#proof" },
-  { label: "Консультація", href: "/#consultation" },
+  { label: "Автор", href: "/#author" },
 ];
 
 export const socialLinks = [
-  { label: "YouTube", href: "https://www.youtube.com/channel/UC0VPHLWTIXD3Rad5XkcyliA" },
-  { label: "Telegram", href: "https://t.me/E_Koriakin" },
-  { label: "Facebook", href: "https://www.facebook.com/people/%D0%95%D0%B2%D0%B3%D0%B5%D0%BD%D0%B8%D0%B9-%D0%9A%D0%BE%D1%80%D1%8F%D0%BA%D0%B8%D0%BD/pfbid0YaunkXwFi6MSSbgp7GjtxRMR7B3j6X9456AFwomQ7mLkracAdH9uCiKMxVYgkU8Ml/" },
-  { label: "Instagram", href: "https://www.instagram.com/evgeniy_koryakin/" },
+  { label: "YouTube", network: "youtube", href: "https://www.youtube.com/channel/UC0VPHLWTIXD3Rad5XkcyliA" },
+  { label: "Telegram", network: "telegram", href: "https://t.me/E_Koriakin" },
+  {
+    label: "Facebook",
+    network: "facebook",
+    href: "https://www.facebook.com/people/%D0%95%D0%B2%D0%B3%D0%B5%D0%BD%D0%B8%D0%B9-%D0%9A%D0%BE%D1%80%D1%8F%D0%BA%D0%B8%D0%BD/pfbid0YaunkXwFi6MSSbgp7GjtxRMR7B3j6X9456AFwomQ7mLkracAdH9uCiKMxVYgkU8Ml/",
+  },
+  { label: "Instagram", network: "instagram", href: "https://www.instagram.com/evgeniy_koryakin/" },
 ];
 
 export const contact = {
@@ -18,19 +25,44 @@ export const contact = {
   email: "centertheway@gmail.com",
 };
 
+const detoxFunnelHref = getFunnelHostUrl("detox") ?? "/detox";
+const consultFunnelHref = getFunnelHostUrl("consult") ?? "/consult";
+const iremFunnelHref = getFunnelHostUrl("irem") ?? "/irem";
+const rebootFunnelHref = getFunnelHostUrl("reboot") ?? "/reboot";
+const miniDetoxFunnelHref = getFunnelHostUrl("mini-detox") ?? "/mini-detox";
+
 export const programs = [
+  {
+    slug: "reboot",
+    title: "Short Reboot",
+    fullTitle: "Short Reboot",
+    href: getPlatformRoute("reboot") ?? "/programs/reboot",
+    funnelHref: rebootFunnelHref,
+    tag: "Міні-курс руху",
+    duration: "короткий вхід",
+    visual: "movement",
+    description: "Короткий тілесний міні-курс: розігрів, увага, дихання і м'яке повернення енергії.",
+    longDescription:
+      "Short Reboot - це компактний вхід у тілесну практику CenterWay. На платформі сторінка пояснює логіку маршруту, а основна funnel-версія залишається окремою швидкою поверхнею для конверсії.",
+    results: [
+      "почати з короткого безпечного входу без перевантаження",
+      "зрозуміти базову логіку руху, уваги і дихання",
+      "повернути відчуття енергії через коротку практику",
+      "отримати ясний наступний крок для глибшого маршруту",
+    ],
+  },
   {
     slug: "way21",
     title: "Шлях 21",
     fullTitle: "Детокс Програма «Шлях 21»",
-    href: "/programs/way21",
-    funnelHref: "/detox",
+    href: getPlatformRoute("detox") ?? "/programs/detox",
+    funnelHref: detoxFunnelHref,
     tag: "Очищення",
     duration: "21 день",
     visual: "water",
-    description: "21-денний маршрут м'якого аюрведичного розвантаження: харчування, трави, режим і щоденні опори без жорсткого тиску.",
+    description: "21-денна аюрведична програма розвантаження: харчування, трави, режим і щоденні опори без жорсткого тиску.",
     longDescription:
-      "Програма перекладає принципи аюрведичного очищення у структурований 21-денний маршрут: підготовка, розвантаження, підтримка травлення, трав'яний супровід і повернення до стабільного режиму. Це wellness-освіта і направлена практика, а не медичне лікування.",
+      "Програма перекладає принципи аюрведичного очищення у структурований 21-денний маршрут: підготовка, м'яке виведення перевантаження, підтримка травлення, трав'яний супровід і повернення до стабільного ритму. Це wellness-освіта і направлена практика, а не медичне лікування.",
     results: [
       "зрозуміти особистий ритм розвантаження і харчування",
       "підтримати травлення без крайніх обмежень",
@@ -44,13 +76,13 @@ export const programs = [
     title: "Ідеальне тіло з Аюрведою",
     fullTitle: "Ідеальне тіло з Аюрведою",
     href: "/programs/ideal-body",
-    funnelHref: "/#consultation",
+    funnelHref: consultFunnelHref,
     tag: "Харчування",
     duration: "8 тижнів",
     visual: "stone",
-    description: "8-тижневий маршрут харчування і тілесної стабілізації: вага, апетит, травлення і раціон під вашу конституцію.",
+    description: "8-тижнева програма харчування і тілесної стабілізації: вага, апетит, травлення і раціон під вашу конституцію.",
     longDescription:
-      "Програма допомагає спокійно розібратися з харчовими звичками, апетитом, травленням і комфортною вагою через аюрведичну логіку конституції, щоденні рішення і підтримку ритму. Фокус - не швидка обіцянка, а зрозумілий план, який можна втримати.",
+      "Програма допомагає зібрати живе, комфортне тіло через ритм харчування, стабільну енергію і бережну корекцію звичок. Фокус - не зовнішній культ «ідеалу», а стійкі щоденні рішення, які можна втримати.",
     results: [
       "побачити зв'язок між конституцією, апетитом і режимом",
       "зменшити хаос у харчуванні без самокритики",
@@ -63,8 +95,8 @@ export const programs = [
     slug: "irem",
     title: "IREM Гімнастика",
     fullTitle: "Відновлююча гімнастика IREM",
-    href: "/programs/irem",
-    funnelHref: "/irem",
+    href: getPlatformRoute("irem") ?? "/programs/irem",
+    funnelHref: iremFunnelHref,
     tag: "Рух",
     duration: "12 тижнів",
     visual: "mountain",
@@ -83,14 +115,14 @@ export const programs = [
     slug: "mini-detox",
     title: "Mini Detox",
     fullTitle: "Mini Detox - короткий розвантажувальний маршрут",
-    href: "/mini-detox",
-    funnelHref: "/detox",
-    tag: "Вхідний маршрут",
+    href: getPlatformRoute("mini-detox") ?? "/programs/mini-detox",
+    funnelHref: miniDetoxFunnelHref,
+    tag: "Міні-курс детоксу",
     duration: "3 дні",
     visual: "stone",
-    description: "Короткий самостійний вхід у систему: 3 дні м'якого режиму, простого харчування і спостереження за сигналами тіла.",
+    description: "3 дні м'якого режиму, простого харчування і спостереження за сигналами тіла.",
     longDescription:
-      "Mini Detox - це standalone-маршрут для першого знайомства з підходом CenterWay. Він не обіцяє різкого очищення або лікування, а допомагає на три дні спростити харчування, режим і навантаження, щоб помітити реакції тіла і вирішити, чи потрібен глибший маршрут.",
+      "Mini Detox - це standalone-маршрут для першого знайомства з підходом CenterWay. Він не обіцяє різкого очищення або лікування, а дає м'який 3-денний формат для зниження перевантаження і розуміння власного стану. На платформі це окремий вхідний блок, який може вести одразу до оплати.",
     results: [
       "спокійно увійти у практику без довгого зобов'язання",
       "побачити, як тіло реагує на прості зміни режиму",
@@ -104,6 +136,30 @@ export const programs = [
 export const programPageBySlug = Object.fromEntries(programs.map((program) => [program.slug, program]));
 
 export const featuredPrograms = programs.filter((program) => ["way21", "ideal-body", "irem"].includes(program.slug));
+
+export const miniCourses = [
+  programPageBySlug["mini-detox"],
+  programPageBySlug["reboot"],
+].filter(Boolean);
+
+export const journeySteps = [
+  { id: "center", title: "Центр", text: "Де мій живий ритм і що зараз важливо відновити?" },
+  { id: "signals", title: "Сигнали тіла", text: "Які симптоми є мовою перевантаження, а не «поломкою»?" },
+  { id: "method", title: "Метод", text: "Як працює м'яке відновлення через тіло, харчування і ритм?" },
+  { id: "diagnostics", title: "Діагностика", text: "З якого персонального кроку варто почати саме мені?" },
+  { id: "programs", title: "Програми", text: "Який маршрут підходить моєму поточному стану?" },
+  { id: "guide", title: "Провідник", text: "Хто веде цей процес і як відбувається супровід?" },
+  { id: "stories", title: "Історії", text: "Які зміни проходять інші люди в реальних умовах?" },
+  { id: "support-nature", title: "Природна підтримка", text: "Як трави і побутові ритуали підтримують процес?" },
+  { id: "consultation", title: "Консультація", text: "Як отримати індивідуальний маршрут і чіткий план?" },
+];
+
+export const bodySignals = [
+  "втома, важкість, нестабільний сон і просідання енергії",
+  "набряки, зміни ваги, складність утримувати ритм харчування",
+  "дискомфорт травлення, шкіра як індикатор перевантаження",
+  "втрата контакту з тілом, напруга і перевтома нервової системи",
+];
 
 export const platformEntryCards = [
   {
@@ -127,10 +183,10 @@ export const platformEntryCards = [
 ];
 
 export const expertFacts = [
-  "12 років практики",
-  "Магістр комплементарної медицини та інтегративної психології",
-  "Інструктор з йоги та практикуючий йогін",
-  "Засновник центру Centerway",
+  { label: "12 років практики", icon: "practice" },
+  { label: "Магістр комплементарної медицини та інтегративної психології", icon: "degree" },
+  { label: "Інструктор з йоги та практикуючий йогін", icon: "embodiment" },
+  { label: "Засновник центру Centerway", icon: "center" },
 ];
 
 export const educationTimeline = [
@@ -164,28 +220,34 @@ export const personalFacts = [
 
 export const doshas = [
   {
-    title: "Kapha",
-    text: "Капха Доша відрізняється повільним травленням, при якому рекомендується пропускати сніданок, бути стриманим в обід та під час вечері.",
+    title: "Харчування",
+    text: "Їжа під конституцію і поточний стан: не контроль заради контролю, а ясний ритм, який підтримує енергію.",
   },
   {
-    title: "Pitta",
-    text: "Питта Доша має активне травлення, при якому велика кількість їжі перетравлюється без залишку, не утворюючи ами.",
+    title: "Очищення",
+    text: "М'яке звільнення від накопиченого перевантаження без насильства над тілом і без екстремальних режимів.",
   },
   {
-    title: "Vata",
-    text: "Вата Доше характерне нестабільне травлення, що потребує уважного ставлення до організму.",
+    title: "Практика і ритм",
+    text: "Рух, дихання, сон і побутові опори повертають зібраність, легкість і стабільний контакт із собою.",
   },
 ];
 
 export const consultationCopy = {
   title: "Особиста консультація з Євгенієм Корякіним",
-  text: "Ви дізнаєтеся, до якого з трьох типів належите. Зрозумієте індивідуальні особливості і отримаєте інструкцію по очищенню організму та детальні індивідуальні рекомендації від Євгенія.",
+  text: "Не «просто порада», а персональний маршрут відновлення: стан, конституція, харчування, очищення, ритм і наступні кроки без зайвого тиску.",
 };
 
 export const proofItems = [
-  "Відгуки і результати клієнтів зберігаємо як доказ практики і реального досвіду проходження програм.",
-  "Комплект трав і аюрведичне харчування протестовані на більш ніж 1000 людях.",
-  "CenterWay об'єднує програми, тест доши, консультацію і практики відновлення в одну платформену систему.",
+  "Коли з'являється ясний маршрут, легше втримувати харчування, сон і щоденний ритм без самокритики.",
+  "Практики працюють не як одноразовий ривок, а як повторювані дії, які поступово повертають опору.",
+  "Найціннішим для учасників часто стає не швидкий результат, а розуміння, що робити далі у звичайному житті.",
+];
+
+export const naturalSupportItems = [
+  "Трави - не «магічний продукт», а природна підтримка процесу очищення і відновлення.",
+  "Підбір має спиратися на стан, конституцію і поточний ритм, а не на універсальну схему для всіх.",
+  "Трави доречні тоді, коли вони підтримують маршрут, а не замінюють харчування, сон і практику.",
 ];
 
 export const legal = {

@@ -1608,7 +1608,7 @@
       "semantic_block_version": "1.0.0",
       "semantic_role": "orientation",
       "semantic_family": "orientation",
-      "user_question": "Куда я попал и какой следующий шаг?",
+      "user_question": "Що це за простір і з якого кроку повернення варто почати?",
       "required_fields": [
         "title",
         "lead",
@@ -1647,7 +1647,7 @@
       "semantic_block_version": "1.0.0",
       "semantic_role": "method",
       "semantic_family": "orientation",
-      "user_question": "Как устроен маршрут и где я сейчас?",
+      "user_question": "Які сигнали тіла важливі зараз і як виглядає весь маршрут?",
       "required_fields": [
         "route_label",
         "current_step"
@@ -1684,7 +1684,7 @@
       "semantic_block_version": "1.0.0",
       "semantic_role": "method",
       "semantic_family": "method_explanation",
-      "user_question": "Как это работает по шагам?",
+      "user_question": "Як м'яке відновлення працює по кроках: тіло, харчування, ритм?",
       "required_fields": [
         "steps"
       ],
@@ -1696,6 +1696,7 @@
       "recipe_id": "recipe.platform.block.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
+      "render_mode": "semantic-only",
       "component_families": [
         "section-shell",
         "proof-card"
@@ -1720,7 +1721,7 @@
       "semantic_block_version": "1.0.0",
       "semantic_role": "route-map",
       "semantic_family": "progress_pathway",
-      "user_question": "Какой маршрут выбрать дальше?",
+      "user_question": "З якого діагностичного кроку мені почати: тест чи консультація?",
       "required_fields": [
         "routes",
         "recommended_next_step"
@@ -1751,13 +1752,121 @@
       }
     },
     {
-      "id": "block.platform-home.trust.v1",
+      "id": "block.platform-home.mini-courses.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "mini-entry",
+      "semantic_family": "progress_pathway",
+      "user_question": "Який короткий вхід без великого зобов'язання підійде мені зараз?",
+      "required_fields": [
+        "offers"
+      ],
+      "allowed_actions": [
+        "choose_route"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "section-shell",
+        "path-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.cleansing"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "platform-home",
+        "variant": "home.mini-courses"
+      }
+    },
+    {
+      "id": "block.platform-home.programs.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "program-selection",
+      "semantic_family": "progress_pathway",
+      "user_question": "Яка велика програма відповідає моєму стану і формату роботи?",
+      "required_fields": [
+        "offers"
+      ],
+      "allowed_actions": [
+        "choose_route"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "section-shell",
+        "path-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "platform-home",
+        "variant": "home.programs"
+      }
+    },
+    {
+      "id": "block.platform-home.natural-support.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.support_path.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "support",
+      "semantic_family": "support_care",
+      "user_question": "Як природна підтримка доповнює процес, а не підміняє його?",
+      "required_fields": [
+        "support_context"
+      ],
+      "allowed_actions": [
+        "understand_support"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "support-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.organic"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "platform-home",
+        "variant": "home.natural-support"
+      }
+    },
+    {
+      "id": "block.platform-home.proof.v1",
       "version": "1.0.0",
       "semantic_block_id": "sb.proof_block.v1",
       "semantic_block_version": "1.0.0",
       "semantic_role": "proof",
       "semantic_family": "trust_proof_expectation",
-      "user_question": "Почему этому можно доверять?",
+      "user_question": "Які реальні історії і докази підтверджують цей підхід?",
       "required_fields": [
         "proof_points"
       ],
@@ -1768,7 +1877,7 @@
       "mode": "platform",
       "recipe_id": "recipe.platform.block.v1",
       "recipe_version": "1.0.0",
-      "action_role": "support",
+      "action_role": "none",
       "component_families": [
         "section-shell",
         "proof-card"
@@ -1783,7 +1892,7 @@
       ],
       "default_props": {
         "route": "platform-home",
-        "variant": "home.trust"
+        "variant": "home.proof"
       }
     },
     {
@@ -1791,15 +1900,14 @@
       "version": "1.0.0",
       "semantic_block_id": "sb.support_path.v1",
       "semantic_block_version": "1.0.0",
-      "semantic_role": "support",
-      "semantic_family": "support_care",
-      "user_question": "Как получить поддержку, если есть тревога или вопросы?",
+      "semantic_role": "guide",
+      "semantic_family": "trust_proof_expectation",
+      "user_question": "Хто веде систему і чому йому можна довіряти?",
       "required_fields": [
-        "support_contact",
-        "support_context"
+        "guide_identity"
       ],
       "allowed_actions": [
-        "seek_support"
+        "learn_more"
       ],
       "route_boundary": "platform route",
       "mode": "platform",
@@ -1831,7 +1939,7 @@
       "semantic_block_version": "1.0.0",
       "semantic_role": "progress",
       "semantic_family": "progress_pathway",
-      "user_question": "Какой следующий шаг после текущего блока?",
+      "user_question": "Який наступний крок зараз буде найбільш доречним?",
       "required_fields": [
         "primary_action"
       ],
@@ -1843,6 +1951,7 @@
       "recipe_id": "recipe.platform.block.v1",
       "recipe_version": "1.0.0",
       "action_role": "none",
+      "render_mode": "semantic-only",
       "component_families": [
         "section-shell",
         "route-action-button"

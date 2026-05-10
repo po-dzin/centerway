@@ -6,9 +6,9 @@
       "version": "1.2.0",
       "route_key": "consult",
       "route_path": "/consult",
-      "route_family": "funnel surface",
-      "route_boundary": "isolated funnel route",
-      "route_family_contract_id": "route_family.funnel-surface.v1",
+      "route_family": "standalone route entry",
+      "route_boundary": "platform route",
+      "route_family_contract_id": "route_family.platform-offer-entry.v1",
       "archetype": "offer-detail",
       "mode": "consult",
       "branch": "consult",
@@ -73,9 +73,9 @@
       "version": "1.2.0",
       "route_key": "consult",
       "route_path": "/consult",
-      "route_family": "funnel surface",
-      "route_boundary": "isolated funnel route",
-      "route_family_contract_id": "route_family.funnel-surface.v1",
+      "route_family": "standalone route entry",
+      "route_boundary": "platform route",
+      "route_family_contract_id": "route_family.platform-offer-entry.v1",
       "archetype": "offer-detail",
       "mode": "consult",
       "branch": "consult",
@@ -143,9 +143,9 @@
       "version": "1.2.0",
       "route_key": "detox",
       "route_path": "/detox",
-      "route_family": "funnel surface",
-      "route_boundary": "isolated funnel route",
-      "route_family_contract_id": "route_family.funnel-surface.v1",
+      "route_family": "standalone route entry",
+      "route_boundary": "platform route",
+      "route_family_contract_id": "route_family.platform-offer-entry.v1",
       "archetype": "offer-detail",
       "mode": "detox",
       "branch": "detox",
@@ -210,9 +210,9 @@
       "version": "1.2.0",
       "route_key": "herbs",
       "route_path": "/herbs",
-      "route_family": "funnel surface",
-      "route_boundary": "isolated funnel route",
-      "route_family_contract_id": "route_family.funnel-surface.v1",
+      "route_family": "standalone route entry",
+      "route_boundary": "platform route",
+      "route_family_contract_id": "route_family.platform-offer-entry.v1",
       "archetype": "offer-detail",
       "mode": "herbs",
       "branch": "herbs",
@@ -408,7 +408,7 @@
       "route_family": "platform hub",
       "route_boundary": "platform route",
       "route_family_contract_id": "route_family.platform-hub.v1",
-      "archetype": "overview-entry",
+      "archetype": "hub-journey",
       "mode": "platform",
       "branch": "platform",
       "token_pack_id": "token_pack.living-mineral.v1",
@@ -426,28 +426,33 @@
           "block_manifest_version": "1.0.0"
         },
         {
-          "id": "platform-home.method",
-          "block_manifest_id": "block.platform-home.method.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
           "id": "platform-home.route-map",
           "block_manifest_id": "block.platform-home.route-map.v1",
           "block_manifest_version": "1.0.0"
         },
         {
-          "id": "platform-home.trust",
-          "block_manifest_id": "block.platform-home.trust.v1",
+          "id": "platform-home.mini-courses",
+          "block_manifest_id": "block.platform-home.mini-courses.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "platform-home.programs",
+          "block_manifest_id": "block.platform-home.programs.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "platform-home.natural-support",
+          "block_manifest_id": "block.platform-home.natural-support.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "platform-home.proof",
+          "block_manifest_id": "block.platform-home.proof.v1",
           "block_manifest_version": "1.0.0"
         },
         {
           "id": "platform-home.support",
           "block_manifest_id": "block.platform-home.support.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "platform-home.next-step",
-          "block_manifest_id": "block.platform-home.next-step.v1",
           "block_manifest_version": "1.0.0"
         }
       ]

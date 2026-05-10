@@ -8,30 +8,24 @@ import { FunnelFooterSticky } from "@/components/landing/revork/FunnelSections";
 import { RouteAuthGate } from "@/components/auth/RouteAuthGate";
 import { isAuthRequiredRoute } from "@/lib/auth/protectedRoutes";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
+import { isStickyFooterRoute, resolveEffectiveRouteMetadata, resolveRouteRuntime } from "@/lib/generator/routeRuntime";
+import type { SurfaceKind } from "@/lib/surfaces/catalog";
 
 type GeneratedScreenClientProps = {
   resolved: ResolvedGeneratedScreen;
+  requestedSurfaceKind?: SurfaceKind;
 };
 
 function asCustomPropertyStyle(tokens: Record<`--${string}`, string>): CSSProperties {
   return tokens as unknown as CSSProperties;
 }
 
-export function GeneratedScreenClient({ resolved }: GeneratedScreenClientProps) {
+export function GeneratedScreenClient({ resolved, requestedSurfaceKind }: GeneratedScreenClientProps) {
   const style = asCustomPropertyStyle(resolved.tokens);
   const routeKey = resolved.screen.route_key;
-  const isFunnelRoute =
-    routeKey === "consult" ||
-    routeKey === "detox" ||
-    routeKey === "herbs";
-  const isPlatformRoute =
-    routeKey === "platform-home" ||
-    routeKey === "expert" ||
-    routeKey === "program-way21" ||
-    routeKey === "program-ideal-body" ||
-    routeKey === "program-irem" ||
-    routeKey === "mini-detox";
-  const showDepthLab = isFunnelRoute;
+  const routeRuntime = resolveRouteRuntime(routeKey, requestedSurfaceKind);
+  const showDepthLab = routeRuntime.stickyFooter === true;
+  const effectiveRouteMetadata = resolveEffectiveRouteMetadata(routeKey, requestedSurfaceKind);
 
   const content = (
     <div
@@ -39,8 +33,9 @@ export function GeneratedScreenClient({ resolved }: GeneratedScreenClientProps) 
       data-cw-screen-version={resolved.screen.version}
       data-cw-mode={resolved.screen.mode}
       data-cw-branch={resolved.screen.branch}
-      data-cw-route-family={resolved.screen.route_family}
-      data-cw-route-boundary={resolved.screen.route_boundary}
+      data-cw-route-family={effectiveRouteMetadata.routeFamily}
+      data-cw-route-boundary={effectiveRouteMetadata.routeBoundary}
+      data-cw-surface-kind={effectiveRouteMetadata.surfaceKind}
       data-cw-token-pack={resolved.tokenPackId}
       data-cw-theme={resolved.themeFamily}
       style={style}
@@ -67,19 +62,19 @@ export function GeneratedScreenClient({ resolved }: GeneratedScreenClientProps) 
                 manifest_version: resolved.screen.version,
                 mode: resolved.screen.mode,
                 branch: resolved.screen.branch,
-                experiment_key: resolved.experimentResolution?.experiment_key,
-                variant_key: resolved.experimentResolution?.variant_key,
-                assignment_source: resolved.experimentResolution?.source,
+                experiment_key: resolved.experimentAssignment?.experiment_key,
+                variant_key: resolved.experimentAssignment?.variant_key,
+                assignment_source: resolved.experimentAssignment?.source,
               }}
             />
           </div>
         ))}
-      {isFunnelRoute ? <FunnelFooterSticky route={routeKey} /> : null}
+      {routeRuntime.stickyFooter && isStickyFooterRoute(routeKey) ? <FunnelFooterSticky route={routeKey} /> : null}
     </div>
   );
 
-  const wrappedContent = isPlatformRoute ? (
-    <PlatformShell headerMode={routeKey === "platform-home" ? "overlay" : "default"}>{content}</PlatformShell>
+  const wrappedContent = routeRuntime.shell === "platform" ? (
+    <PlatformShell headerMode={routeRuntime.platformHeaderMode ?? "default"}>{content}</PlatformShell>
   ) : (
     content
   );

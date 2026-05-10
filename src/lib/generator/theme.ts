@@ -1,4 +1,4 @@
-import type { ExperimentResolution, TokenPackManifest } from "@/lib/generator/types";
+import type { ExperimentAssignment, TokenPackManifest } from "@/lib/generator/types";
 
 export const CW_THEME_SELECTION_HEADER = "x-cw-theme-selection";
 export const CW_THEME_COOKIE = "cw_theme";
@@ -57,7 +57,7 @@ export function resolveTokenPackFromSelection(input: {
   defaultTokenPack: TokenPackManifest;
   tokenPacks: TokenPackManifest[];
   explicitSelection?: string | null;
-  assignments?: Record<string, ExperimentResolution>;
+  assignments?: Record<string, ExperimentAssignment>;
 }): TokenPackManifest {
   const { defaultTokenPack, tokenPacks, explicitSelection, assignments } = input;
   const byFamily = new Map(tokenPacks.map((pack) => [normalizeToken(pack.theme_family), pack] as const));

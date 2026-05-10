@@ -25,16 +25,16 @@
   position: sticky;
   top: 0.75rem;
   z-index: var(--ds-z-sticky);
-  width: min(100% - 2rem, 70rem);
+  width: min(100% - 2rem, var(--cw-max-width));
   margin: 0 auto;
   overflow: visible;
   isolation: isolate;
-  border: 1px solid var(--cw-component-glass-border);
+  border: 0;
   border-radius: calc(var(--cw-radius-pill) - 6px);
-  background: color-mix(in srgb, var(--cw-platform-surface) 94%, var(--cw-platform-bg) 6%);
+  background: var(--cw-shell-frost-bg);
   box-shadow: var(--cw-component-glass-shadow);
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  backdrop-filter: var(--cw-shell-frost-filter);
+  -webkit-backdrop-filter: var(--cw-shell-frost-filter);
 }
 
 .header[data-cw-glass="shell"]::after {
@@ -43,30 +43,19 @@
 
 .shellOverlay .header {
   position: fixed;
-  top: 1rem;
+  top: 0.95rem;
   right: 0;
   left: 0;
-  width: min(100% - 2rem, 68rem);
-  border-color: var(--cw-component-glass-border);
-  background: color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+  width: min(100% - 2rem, var(--cw-max-width));
+  border-color: transparent;
+  background: var(--cw-shell-frost-bg);
   box-shadow: var(--cw-component-glass-shadow);
-  backdrop-filter: var(--cw-component-glass-filter);
-  -webkit-backdrop-filter: var(--cw-component-glass-filter);
+  backdrop-filter: var(--cw-shell-frost-filter);
+  -webkit-backdrop-filter: var(--cw-shell-frost-filter);
 }
 
 .shellOverlay .header[data-cw-glass="shell"]::after {
-  content: "";
-  position: absolute;
-  inset: -12px;
-  z-index: 0;
-  pointer-events: none;
-  border-radius: inherit;
-  opacity: 0.14;
-  background-image: var(--cw-component-glass-frost-image);
-  background-size: cover;
-  background-position: center;
-  filter: blur(24px) saturate(1.06);
-  transform: scale(1.02);
+  content: none;
 }
 
 .shellOverlay .brand,
@@ -91,51 +80,72 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 0.85rem;
+  gap: 0.65rem;
   padding: 0 1rem;
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 0;
+  flex: 0 0 auto;
   color: var(--cw-platform-text);
   text-decoration: none;
-  font-weight: 800;
+  min-height: 2.75rem;
 }
 
-.mark {
+.brand:not([data-surface="footer"]) {
   width: 2.75rem;
-  height: 2.75rem;
-  display: grid;
-  place-items: center;
-  border: 1px solid color-mix(in srgb, var(--cw-platform-accent) 42%, transparent);
-  border-radius: 50%;
-  color: var(--cw-platform-accent);
-  background: var(--cw-platform-text);
-  font-family: var(--cw-font-data);
-  font-size: 0.76rem;
+  min-width: 2.75rem;
+  justify-content: center;
 }
 
-.mark::first-letter {
-  color: var(--cw-platform-accent-contrast);
+.brandSymbol {
+  width: var(--cw-brand-size-symbol-header);
+  height: var(--cw-brand-size-symbol-header);
+  display: block;
+  flex: 0 0 auto;
+  background: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
+  filter: none;
+}
+
+.brandWordmark {
+  width: var(--cw-brand-size-wordmark-header-width);
+  height: var(--cw-brand-size-wordmark-header-height);
+  display: block;
+  flex: 0 0 auto;
+  background: var(--cw-brand-asset-lockup-header) center / contain no-repeat;
+}
+
+.brand[data-surface="footer"] .brandSymbol {
+  width: var(--cw-brand-size-symbol-footer);
+  height: var(--cw-brand-size-symbol-footer);
+  background-image: var(--cw-brand-asset-logo-symbol-header);
+}
+
+.brand[data-surface="footer"] .brandWordmark {
+  width: var(--cw-brand-size-wordmark-footer-width);
+  height: var(--cw-brand-size-wordmark-footer-height);
+  background-image: var(--cw-brand-asset-wordmark-dark);
+  filter: none;
 }
 
 .nav {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: center;
   flex-wrap: nowrap;
   gap: 0.2rem;
 }
 
 .navLayer {
-  min-width: 0;
-  flex: 1 1 auto;
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   align-items: center;
-  justify-content: flex-end;
-  position: relative;
+  justify-content: center;
+  min-width: 0;
 }
 
 .nav a,
@@ -171,6 +181,151 @@
   gap: 0.6rem;
 }
 
+.profileSlot {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-width: 2.75rem;
+  flex: 0 0 auto;
+}
+
+.profileWrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.profileEntry {
+  min-height: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.55rem;
+  padding: 0.24rem 0.84rem;
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  color: var(--cw-platform-accent-contrast);
+  background: var(--cw-component-glass-bg);
+  box-shadow: var(--cw-component-glass-shadow);
+  backdrop-filter: var(--cw-component-glass-filter);
+  -webkit-backdrop-filter: var(--cw-component-glass-filter);
+  font: inherit;
+  font-weight: 750;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.profileEntryCompact {
+  width: 2.75rem;
+  min-width: 2.75rem;
+  padding: 0;
+  gap: 0;
+}
+
+.profileEntry:has(.profileAvatar) {
+  padding-left: 0.28rem;
+}
+
+.profileEntryCompact:has(.profileAvatar) {
+  padding-left: 0;
+}
+
+.profileEntry:hover {
+  background: var(--cw-component-glass-bg-hover);
+}
+
+.profileGlyph {
+  width: 1.18rem;
+  height: 1.18rem;
+  display: block;
+  background: currentColor;
+  -webkit-mask: url("/cw/brand/profile-outline.svg") center / contain no-repeat;
+  mask: url("/cw/brand/profile-outline.svg") center / contain no-repeat;
+}
+
+.profileAvatar {
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 999px;
+  color: var(--cw-platform-text);
+  background:
+    radial-gradient(circle at 36% 24%, color-mix(in srgb, var(--cw-sem-warmth) 44%, transparent), transparent 46%),
+    color-mix(in srgb, var(--cw-platform-accent-contrast) 86%, transparent);
+  font-family: var(--cw-font-data);
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.profileAvatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.profileLabel {
+  line-height: 1;
+}
+
+.profileMenu {
+  position: absolute;
+  top: calc(100% + 0.55rem);
+  right: 0;
+  z-index: calc(var(--ds-z-sticky) + 2);
+  width: min(17rem, calc(100vw - 2rem));
+  display: grid;
+  gap: 0.25rem;
+  padding: 0.7rem;
+  border: 0;
+  border-radius: var(--cw-radius-md);
+  color: var(--cw-platform-accent-contrast);
+  background: var(--cw-component-glass-bg);
+  box-shadow: var(--cw-component-glass-shadow);
+  backdrop-filter: var(--cw-component-glass-filter);
+  -webkit-backdrop-filter: var(--cw-component-glass-filter);
+}
+
+.profileMenu p {
+  margin: 0;
+  padding: 0.45rem 0.55rem 0.6rem;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 70%, transparent);
+  font-size: 0.84rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.profileMenu a,
+.profileMenu button {
+  min-height: 2.55rem;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 0.65rem;
+  border: 0;
+  border-radius: var(--cw-radius-sm);
+  color: var(--cw-platform-accent-contrast);
+  background: transparent;
+  font: inherit;
+  font-weight: 720;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.profileMenu a:hover,
+.profileMenu button:hover {
+  background: color-mix(in srgb, var(--cw-platform-accent-contrast) 12%, transparent);
+}
+
+.mobileProfileSlot {
+  display: none;
+}
+
 .menuButton {
   width: 2.75rem;
   height: 2.75rem;
@@ -179,13 +334,13 @@
   place-items: center;
   overflow: hidden;
   isolation: isolate;
-  border: 1px solid var(--cw-component-glass-border);
+  border: 0;
   border-radius: var(--cw-radius-sm);
   color: var(--cw-platform-text);
-  background: var(--cw-component-glass-bg);
+  background: var(--cw-shell-frost-bg);
   box-shadow: var(--cw-component-glass-shadow);
-  backdrop-filter: var(--cw-component-glass-filter);
-  -webkit-backdrop-filter: var(--cw-component-glass-filter);
+  backdrop-filter: var(--cw-shell-frost-filter);
+  -webkit-backdrop-filter: var(--cw-shell-frost-filter);
 }
 
 .menuButton span {
