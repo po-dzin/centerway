@@ -644,12 +644,15 @@ export async function POST(req: NextRequest) {
       let jobId = existingJob?.id ?? null;
       let attempts = existingAttempts;
 
+      const directSend = mode === "send";
+      const inFlightStatus = directSend ? "running" : "pending";
+
       if (existingJob?.id) {
         const { error: updateErr } = await db
           .from("jobs")
           .update({
             payload: candidate.payload,
-            status: "pending",
+            status: inFlightStatus,
             attempts: 0,
             error_text: null,
             run_at: new Date().toISOString(),
@@ -676,7 +679,7 @@ export async function POST(req: NextRequest) {
           .insert({
             type: "meta:capi",
             payload: candidate.payload,
-            status: "pending",
+            status: inFlightStatus,
           })
           .select("id, attempts, status")
           .maybeSingle();
@@ -698,7 +701,7 @@ export async function POST(req: NextRequest) {
         attempts = insertedJob?.attempts ?? 0;
       }
 
-      if (mode === "queue") {
+      if (!directSend) {
         results.push({
           order_ref: candidate.order_ref,
           diagnosis: candidate.diagnosis,
