@@ -3,6 +3,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { extractPaymentMeta } from "@/lib/paymentMeta";
 import { isWfpApproved, wfpEventTypeFromStatus } from "@/lib/wfp";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
+import { sendCapiEvent } from "@/lib/tracking/capi";
 import { normalizeTrackingString } from "@/lib/tracking/metaClickIds";
 import { sendConfirmedSaleTelegramReport } from "@/lib/reporting/analyticsReports";
 
@@ -324,11 +325,34 @@ export async function POST(req: NextRequest) {
           action_source: "website",
         };
 
-        await sb.from("jobs").insert({
-          type: "meta:capi",
-          payload: capiPayload,
-          status: "pending",
-        });
+        const { data: insertedPurchaseJob, error: purchaseJobInsertErr } = await sb
+          .from("jobs")
+          .insert({
+            type: "meta:capi",
+            payload: capiPayload,
+            status: "pending",
+          })
+          .select("id")
+          .maybeSingle();
+
+        if (purchaseJobInsertErr) {
+          throw purchaseJobInsertErr;
+        }
+
+        try {
+          await sendCapiEvent(capiPayload);
+          if (insertedPurchaseJob?.id) {
+            await sb
+              .from("jobs")
+              .update({
+                status: "success",
+                error_text: null,
+              })
+              .eq("id", insertedPurchaseJob.id);
+          }
+        } catch (immediateSendErr) {
+          console.warn("[wfp webhook] Immediate Purchase CAPI send failed, queued for retry:", immediateSendErr);
+        }
       } catch (capiErr) {
         // Non-fatal: don't fail the webhook for CAPI errors
         console.warn("[wfp webhook] Failed to queue CAPI job:", capiErr);

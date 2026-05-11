@@ -41,7 +41,7 @@ export function resolveCheckoutProduct(body: CheckoutStartRequest): PayableProdu
 
   const site = asCleanString(body.site)?.toLowerCase();
   if (site === "irem") return "irem";
-  if (site === "short") return "short";
+  if (site === "short" || site === "reboot") return "short";
 
   const offer = asCleanString(body.offer_id)?.toLowerCase() ?? "";
   if (offer.includes("irem")) return "irem";

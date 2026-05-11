@@ -1,7 +1,7 @@
 :root,
 :root[data-cw-landing],
 [data-cw-landing] {
-  --landing-font-family-base: var(--ds-font-family-base, "Open Sans", sans-serif);
+  --landing-font-family-base: var(--ds-font-family-base, Formular, "Segoe UI", Arial, sans-serif);
   --landing-color-text: var(--ds-color-text);
   --landing-color-text-muted: var(--ds-color-text-muted);
   --landing-color-surface: var(--ds-color-surface);
@@ -448,7 +448,9 @@
 }
 
 :root[data-cw-landing="short"],
-[data-cw-landing="short"] {
+[data-cw-landing="short"],
+:root[data-cw-landing="reboot"],
+[data-cw-landing="reboot"] {
   --landing-color-heading: var(--landing-color-text);
   --landing-color-primary: var(--product-primary, var(--ds-color-primary));
   --landing-color-primary-strong: var(--product-primary-strong, var(--ds-color-primary-strong));

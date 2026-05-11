@@ -181,8 +181,10 @@
       "route_boundary": "isolated funnel route",
       "route_paths": [
         "/irem",
+        "/short",
+        "/short/*",
         "/reboot",
-        "/short/*"
+        "/reboot/*"
       ],
       "allowed_archetypes": [
         "offer-detail",

@@ -12,7 +12,7 @@ const routes = [
   "/legal/public-offer",
   "/legal/privacy",
   "/dosha-test",
-  "/reboot",
+  "/short",
   "/irem",
   "/detox",
   "/herbs",

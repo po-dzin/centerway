@@ -332,7 +332,7 @@ function formatCompactTick(value: number, locale: string): string {
 function formatProductName(productCode: string, unknownLabel: string): string {
   const normalized = productCode.trim().toLowerCase();
   if (!normalized || normalized === "unknown") return unknownLabel;
-  if (normalized === "short") return "Short Reboot";
+  if (normalized === "short" || normalized === "reboot") return "Short Reboot";
   if (normalized === "irem") return "IREM Gymnastics";
   return productCode;
 }

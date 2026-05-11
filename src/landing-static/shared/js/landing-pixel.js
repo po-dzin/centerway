@@ -3,6 +3,7 @@
 
   var pixelId = window.CW_PIXEL_ID || "885125430564169";
   var data = {};
+  var deferredStarted = false;
 
   try {
     var stored = JSON.parse(localStorage.getItem("cw_user") || "{}");
@@ -21,32 +22,71 @@
     };
     if (!f._fbq) f._fbq = n;
     n.push = n;
-    n.loaded = true;
+    n.loaded = false;
     n.version = "2.0";
     n.queue = [];
-    t = b.createElement(e);
-    t.async = true;
-    t.src = v;
-    s = b.getElementsByTagName(e)[0];
-    s.parentNode.insertBefore(t, s);
   })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
+
+  function loadFacebookPixel() {
+    if (deferredStarted) return;
+    deferredStarted = true;
+    if (document.querySelector('script[src*="connect.facebook.net/en_US/fbevents.js"]')) return;
+
+    var script = document.createElement("script");
+    script.async = true;
+    script.src = "https://connect.facebook.net/en_US/fbevents.js";
+    script.onload = function () {
+      if (window.fbq) {
+        window.fbq.loaded = true;
+      }
+    };
+
+    var first = document.getElementsByTagName("script")[0];
+    if (first && first.parentNode) {
+      first.parentNode.insertBefore(script, first);
+    } else {
+      document.head.appendChild(script);
+    }
+  }
+
+  function scheduleDeferredScripts(callback, options) {
+    var settings = options || {};
+    var timeoutMs = typeof settings.timeoutMs === "number" ? settings.timeoutMs : 12000;
+    var done = false;
+    function run() {
+      if (done) return;
+      done = true;
+      window.removeEventListener("pointerdown", run, true);
+      window.removeEventListener("touchstart", run, true);
+      window.removeEventListener("keydown", run, true);
+      window.removeEventListener("scroll", run, true);
+      callback();
+    }
+
+    window.addEventListener("pointerdown", run, true);
+    window.addEventListener("touchstart", run, true);
+    window.addEventListener("keydown", run, true);
+    window.addEventListener("scroll", run, true);
+    window.setTimeout(run, timeoutMs);
+  }
 
   window.fbq("init", pixelId, data);
   window.fbq("track", "PageView");
+  scheduleDeferredScripts(loadFacebookPixel, { timeoutMs: 12000 });
 
   var ADS_TAG_ID = "AW-957636387";
   var ADS_CONVERSION_ID = "AW-957636387/THR-CKrbn54cEKO-0cgD";
 
   function getCurrentProduct() {
     var fromScript = (document.currentScript && document.currentScript.dataset && document.currentScript.dataset.cwProduct) || "";
-    if (fromScript === "short" || fromScript === "irem") return fromScript;
+    if (fromScript === "short" || fromScript === "reboot" || fromScript === "irem") return fromScript === "reboot" ? "short" : fromScript;
 
     var fromHtml = (document.documentElement && document.documentElement.dataset && document.documentElement.dataset.cwLanding) || "";
-    if (fromHtml === "short" || fromHtml === "irem") return fromHtml;
+    if (fromHtml === "short" || fromHtml === "reboot" || fromHtml === "irem") return fromHtml === "reboot" ? "short" : fromHtml;
 
     var fromMain = document.querySelector("[data-cw-landing]");
     var mainValue = fromMain && fromMain.getAttribute("data-cw-landing");
-    if (mainValue === "short" || mainValue === "irem") return mainValue;
+    if (mainValue === "short" || mainValue === "reboot" || mainValue === "irem") return mainValue === "reboot" ? "short" : mainValue;
 
     return "";
   }
@@ -80,14 +120,16 @@
     window.gtag("js", new Date());
     window.gtag("config", ADS_TAG_ID);
 
-    var script = document.createElement("script");
-    script.async = true;
-    script.src = "https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(ADS_TAG_ID);
-    var first = document.getElementsByTagName("script")[0];
-    if (first && first.parentNode) {
-      first.parentNode.insertBefore(script, first);
-    } else {
-      document.head.appendChild(script);
+    if (!document.querySelector('script[src*="googletagmanager.com/gtag/js"]')) {
+      var script = document.createElement("script");
+      script.async = true;
+      script.src = "https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(ADS_TAG_ID);
+      var first = document.getElementsByTagName("script")[0];
+      if (first && first.parentNode) {
+        first.parentNode.insertBefore(script, first);
+      } else {
+        document.head.appendChild(script);
+      }
     }
 
     if (!isThanksPage()) return;
@@ -120,5 +162,9 @@
     } catch (_) {}
   }
 
-  setupGoogleAds();
+  if (isThanksPage()) {
+    setupGoogleAds();
+  } else {
+    scheduleDeferredScripts(setupGoogleAds, { timeoutMs: 12000 });
+  }
 })();

@@ -18,7 +18,7 @@ Read the shared canon:
 
 Also read the local implementation references listed in `docs/platform_agent_preflight.md`.
 
-Before editing, state the semantic role, user question, token source, content source, and route boundary for every new or materially changed page/block/component. If any of these are unclear, resolve the semantic contract before coding.
+Before editing, state the semantic role, user question, token source, content source, and route boundary for every new or substantially changed page/block/component. If any of these are unclear, resolve the semantic contract before coding.
 
 Do not define new local palettes, shadows, radii, type scales, or glass effects inside component CSS modules as an ad hoc decision. Use the canon and app/global DS tokens first.
 
@@ -39,18 +39,18 @@ Then read the specific RAverse canon note for the current task domain:
 
 - architecture: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Архитектура.md`
 - brand or claims: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Бренд-контракт.md`
-- UI/UX: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/UI-UX канон.md`
+- интерфейс: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/UI-UX канон.md`
 - design tokens: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Дизайн-токены.md`
 - generator or screen assembly: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Генератор экранов.md`
 - semantic blocks or components: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Блоки и компоненты.md`
 - landings: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Лендинги.md`
-- dosha test: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Dosha-тест.md`
+- доша-тест: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Доша-тест.md`
 - admin: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Админка.md`
-- release gates: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Ship-чеклист.md`
-- migration or SQL: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Миграция и SQL.md`
+- релизный гейт: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Релизный чеклист.md`
+- миграция и SQL: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Миграция и SQL.md`
 - canon governance or drift checks: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Мета-аудит.md`
 
-For public UI, platform pages, product funnels, or visual system work, also read:
+Для публичного интерфейса, платформенных страниц, продуктовых воронок и задач по визуальной системе также читать:
 
 - `docs/platform_agent_preflight.md`
 
@@ -72,15 +72,15 @@ If local evidence shows the canon is outdated, update the local doc first, then 
 
 ## Canon Sync Trigger
 
-If a work cycle materially changes any of the following, do not stop at code-only completion:
+Если рабочий цикл существенно меняет что-либо из следующего, не останавливайся на кодовых правках:
 
-- user-facing structure or semantic block composition;
-- CTA hierarchy or route logic;
-- token contracts, visual roles, or component semantics;
-- brand claims, policy boundaries, or trust surfaces;
-- admin rules, data contracts, migration rules, or release gates.
+- пользовательскую структуру или состав смысловых блоков;
+- иерархию CTA или логику маршрутов;
+- токенные контракты, визуальные роли или семантику компонентов;
+- брендовые заявления, границы политики или поверхности доверия;
+- админские правила, контракты данных, правила миграции или релизный гейт.
 
-In those cases:
+В этих случаях:
 
 1. update the local operational doc in `docs/**`;
 2. decide whether the change is durable cross-project behavior;

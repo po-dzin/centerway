@@ -3,15 +3,15 @@ import path from "node:path";
 import { getLandingPageName, LANDING_ROUTE_CONFIG } from "@/lib/landing/config";
 import { LANDING_CONTENT } from "@/lib/landing/content";
 import { UTILITY_FILE_BY_PAGE, type UtilityPage } from "@/lib/landing/contracts";
-import type { LandingProduct } from "@/lib/landing/types";
+import type { StaticLandingProduct } from "@/lib/landing/types";
 
 type PrepareEntryOptions = {
-  product: LandingProduct;
+  product: StaticLandingProduct;
   pageKind: "entry";
 };
 
 type PrepareUtilityOptions = {
-  product: LandingProduct;
+  product: StaticLandingProduct;
   pageKind: "utility";
   page: UtilityPage;
 };
@@ -33,12 +33,12 @@ type PreparedUtilityHtml = {
 const TRACKING_BLOCKS: RegExp[] = [
   /<!--\s*(?:✅\s*)?Meta Pixel[\s\S]*?<!--\s*(?:✅\s*)?End Meta Pixel[\s\S]*?-->/gi,
   /<script[^>]*>\s*\(function\(c,l,a,r,i,t,y\)\{[\s\S]*?clarity[\s\S]*?<\/script>/gi,
-  /<script[^>]*>[\s\S]*?cw_attrib[\s\S]*?<\/script>/gi,
+  /<script[^>]*>[\s\S]*?localStorage\.setItem\((['"])cw_attrib\1[\s\S]*?<\/script>/gi,
 ];
 
 const SCRIPT_TAG_BLOCK = /<script[\s\S]*?<\/script>/gi;
 const MANAGED_HEAD_PATTERN =
-  /<base[^>]*href="\/(?:short|irem)\/"[^>]*>\s*|<link[^>]*href="\/shared\/css\/landing\.bridge\.css"[^>]*>\s*|<script[^>]*src="\/shared\/js\/landing-pixel\.js"[^>]*><\/script>\s*|<script[^>]*src="\/shared\/js\/landing-runtime\.js"[^>]*><\/script>\s*/gi;
+  /<base[^>]*href="\/(?:reboot|short|irem)\/"[^>]*>\s*|<link[^>]*href="\/shared\/css\/landing\.bridge\.css"[^>]*>\s*|<script[^>]*src="\/shared\/js\/landing-pixel\.js"[^>]*><\/script>\s*|<script[^>]*src="\/shared\/js\/landing-runtime\.js"[^>]*><\/script>\s*/gi;
 const TYPED_HERO_FLAG = "CW_TYPED_HERO_SHORT_IREM";
 
 function isTypedHeroEnabled(): boolean {
@@ -54,7 +54,7 @@ function replaceIfMatch(html: string, pattern: RegExp, makeReplacement: (match: 
   return html.slice(0, match.index) + makeReplacement(match) + html.slice(match.index + match[0].length);
 }
 
-function applyTypedHeroReplacements(product: LandingProduct, html: string): string {
+function applyTypedHeroReplacements(product: StaticLandingProduct, html: string): string {
   if (!isTypedHeroEnabled()) {
     return html;
   }
@@ -207,7 +207,7 @@ function stripInlineTracking(html: string): string {
   return TRACKING_BLOCKS.reduce((next, regex) => next.replace(regex, ""), html);
 }
 
-function extractBody(html: string, product: LandingProduct): string {
+function extractBody(html: string, product: StaticLandingProduct): string {
   const match = html.match(/<body[^>]*>([\s\S]*?)<\/body>/i);
   if (!match) {
     throw new Error(`Unable to extract <body> from ${product} landing source`);
@@ -215,7 +215,7 @@ function extractBody(html: string, product: LandingProduct): string {
   return match[1];
 }
 
-function toProductAssetPath(product: LandingProduct, url: string): string {
+function toProductAssetPath(product: StaticLandingProduct, url: string): string {
   if (
     url.startsWith("/") ||
     url.startsWith("#") ||
@@ -235,23 +235,23 @@ function toProductAssetPath(product: LandingProduct, url: string): string {
   }
 
   const normalized = url.replace(/^(\.\/)+/g, "").replace(/^(\.\.\/)+/g, "");
-  return `/${product}/${normalized}`;
+  return `${LANDING_ROUTE_CONFIG[product].assetPrefix}/${normalized}`;
 }
 
-function normalizeRelativeUrls(product: LandingProduct, html: string): string {
+function normalizeRelativeUrls(product: StaticLandingProduct, html: string): string {
   return html.replace(/\b(src|href|data-src|poster|action)=(['"])([^'"]+)\2/gi, (_, attr, quote, value) => {
     return `${attr}=${quote}${toProductAssetPath(product, value)}${quote}`;
   });
 }
 
-function injectHtmlDataAttrs(html: string, product: LandingProduct, page: UtilityPage): string {
+function injectHtmlDataAttrs(html: string, product: StaticLandingProduct, page: UtilityPage): string {
   return html.replace(
     /<html([^>]*)>/i,
     `<html$1 data-cw-landing="${product}" data-cw-runtime="next" data-cw-page="${page}">`
   );
 }
 
-function injectManagedHead(html: string, product: LandingProduct): string {
+function injectManagedHead(html: string, product: StaticLandingProduct): string {
   const { assetPrefix } = LANDING_ROUTE_CONFIG[product];
   const inject = [
     `    <base href="${assetPrefix}/">`,
@@ -274,7 +274,7 @@ function injectManagedRuntimeScript(html: string): string {
   return html.replace(/<\/body>/i, `${runtimeScript}</body>`);
 }
 
-function patchUtilityPageContent(html: string, product: LandingProduct, page: UtilityPage): string {
+function patchUtilityPageContent(html: string, product: StaticLandingProduct, page: UtilityPage): string {
   const content = LANDING_CONTENT[product].utility;
 
   if (page === "thanks") {
@@ -303,11 +303,11 @@ function patchUtilityPageContent(html: string, product: LandingProduct, page: Ut
   return html;
 }
 
-async function loadLandingHtml(product: LandingProduct, options: PrepareLandingHtmlOptions): Promise<string> {
+async function loadLandingHtml(product: StaticLandingProduct, options: PrepareLandingHtmlOptions): Promise<string> {
   const htmlPath =
     options.pageKind === "entry"
       ? LANDING_ROUTE_CONFIG[product].htmlPath
-      : path.join(product, UTILITY_FILE_BY_PAGE[options.page]);
+      : path.join(LANDING_ROUTE_CONFIG[product].assetName, UTILITY_FILE_BY_PAGE[options.page]);
 
   const sourcePath = path.join(process.cwd(), "src", "landing-static", htmlPath);
   return readFile(sourcePath, "utf-8");

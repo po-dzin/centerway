@@ -1,4 +1,4 @@
-import type { LandingProduct } from "@/lib/landing/types";
+import type { StaticLandingProduct } from "@/lib/landing/types";
 
 type LandingUtilityContent = {
   thanks: {
@@ -40,13 +40,15 @@ type LandingHeroContent = {
 
 export type LandingProductContent = {
   title: string;
+  description: string;
   hero: LandingHeroContent;
   utility: LandingUtilityContent;
 };
 
-export const LANDING_CONTENT: Record<LandingProduct, LandingProductContent> = {
+export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent> = {
   short: {
     title: "Short-Перезавантаження",
+    description: "7 простих вправ, що за 10 хвилин відновлюють тіло та розум.",
     hero: {
       badge: "АВТОРСЬКИЙ КУРС",
       title: "Short-Перезавантаження",
@@ -86,6 +88,8 @@ export const LANDING_CONTENT: Record<LandingProduct, LandingProductContent> = {
   },
   irem: {
     title: "ІВЕМ-гімнастика",
+    description:
+      "Інтегральна відновлювальна енергомодулююча гімнастика для енергії, тонусу та стабільного стану.",
     hero: {
       badge: "Авторська методика",
       title: "ІВЕМ гімнастика",
