@@ -7,6 +7,7 @@ import type { Session } from "@supabase/supabase-js";
 import type { DoshaResultType } from "@/lib/doshaTest";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
 import { DepthLabToggle } from "@/components/generator/DepthLabToggle";
+import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT } from "@/lib/doshaRouting";
 import { supabaseClient } from "@/lib/supabaseClient";
 
 type TestOption = {
@@ -349,7 +350,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
       setScores(data.scores);
       setResultType(data.resultType);
       setCompletedAt(data.completedAt ?? new Date().toISOString());
-      setNextStep(data.nextStep ?? "consultation");
+      setNextStep(data.nextStep ?? DOSHA_PRIMARY_EXIT.nextStep);
       setUserDoshaProfile({
         attemptId: data.attemptId,
         testId: userDoshaProfile?.testId ?? "dosha-test",
@@ -1056,18 +1057,18 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                   </p>
                   <div className="grid gap-3 sm:grid-cols-2">
                     <Link
-                      href="/consult"
+                      href={DOSHA_PRIMARY_EXIT.href}
                       onClick={() => {
                         void emitAttemptEvent("dosha_followup_clicked", {
-                          target: "consultation",
-                          ctaTarget: "consultation",
+                          target: DOSHA_PRIMARY_EXIT.target,
+                          ctaTarget: DOSHA_PRIMARY_EXIT.ctaTarget,
                           screen: "result",
                           step: totalQuestions,
                           uiVariant,
                           resultType,
                           scores,
                           completedAt,
-                          nextStep: "consultation",
+                          nextStep: DOSHA_PRIMARY_EXIT.nextStep,
                         });
                       }}
                       className="cw-btn-primary inline-flex w-full min-h-11 items-center justify-center px-4 py-3 text-sm font-semibold motion-reduce:transition-none"
@@ -1075,18 +1076,18 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                       Отримати персональні рекомендації
                     </Link>
                     <Link
-                      href="/detox"
+                      href={DOSHA_SECONDARY_EXIT.href}
                       onClick={() => {
                         void emitAttemptEvent("dosha_followup_clicked", {
-                          target: "program",
-                          ctaTarget: "program",
+                          target: DOSHA_SECONDARY_EXIT.target,
+                          ctaTarget: DOSHA_SECONDARY_EXIT.ctaTarget,
                           screen: "result",
                           step: totalQuestions,
                           uiVariant,
                           resultType,
                           scores,
                           completedAt,
-                          nextStep: "program",
+                          nextStep: DOSHA_SECONDARY_EXIT.nextStep,
                         });
                       }}
                       className="cw-btn-outline inline-flex w-full min-h-11 items-center justify-center px-4 py-3 text-sm font-semibold motion-reduce:transition-none"

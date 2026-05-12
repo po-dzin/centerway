@@ -6,7 +6,10 @@ const baseUrl = (
 
 const requireNextLanding = (process.env.SMOKE_REQUIRE_NEXT_LANDING || "0").toLowerCase() === "1";
 
-const routes = ["/short", "/irem"];
+// Contract:
+// - `short` is the canonical product key in code and assets
+// - `reboot` remains the public host/route alias for the short funnel entry + payment returns
+const publicEntryRoutes = ["/reboot", "/irem"];
 const utilityRoutes = ["/short/thanks.html", "/irem/thanks.html"];
 const utilityAliasRoutes = ["/reboot/thanks.html"];
 const requiredSnippets = [
@@ -51,7 +54,7 @@ async function main() {
   console.log(`Landing next-contract smoke base URL: ${baseUrl}`);
   console.log(`Require Next landing marker: ${requireNextLanding ? "yes" : "no"}`);
 
-  for (const route of routes) {
+  for (const route of publicEntryRoutes) {
     const { status, text } = await fetchHtml(route);
     const checkedHtml = stripNextFlightScripts(text);
     if (status >= 400) {
@@ -128,7 +131,6 @@ async function main() {
       }
     }
   }
-
   if (process.exitCode) process.exit(process.exitCode);
   console.log("Landing next-contract smoke passed");
 }

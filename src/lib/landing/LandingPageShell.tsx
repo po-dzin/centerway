@@ -1,4 +1,5 @@
-import { getLandingCriticalCss, getLandingPageName, getLandingShellAssets } from "@/lib/landing/config";
+import { getLandingPublicRouteName, getLandingShellAssets } from "@/lib/landing/config";
+import { getLandingCriticalCss } from "@/lib/landing/config";
 import type { StaticLandingProduct } from "@/lib/landing/types";
 import Script from "next/script";
 
@@ -61,7 +62,7 @@ export function LandingPageShell({ product, bodyHtml }: LandingPageShellProps) {
       <main
         data-cw-landing={product}
         data-cw-runtime="next"
-        data-cw-page={getLandingPageName(product)}
+        data-cw-page={getLandingPublicRouteName(product)}
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: bodyHtml }}
       />

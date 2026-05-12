@@ -1,6 +1,6 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { getLandingPageName, LANDING_ROUTE_CONFIG } from "@/lib/landing/config";
+import { getLandingPublicRouteName, LANDING_ROUTE_CONFIG } from "@/lib/landing/config";
 import { LANDING_CONTENT } from "@/lib/landing/content";
 import { UTILITY_FILE_BY_PAGE, type UtilityPage } from "@/lib/landing/contracts";
 import type { StaticLandingProduct } from "@/lib/landing/types";
@@ -20,7 +20,7 @@ export type PrepareLandingHtmlOptions = PrepareEntryOptions | PrepareUtilityOpti
 
 type PreparedEntryHtml = {
   pageKind: "entry";
-  page: ReturnType<typeof getLandingPageName>;
+  page: ReturnType<typeof getLandingPublicRouteName>;
   bodyHtml: string;
 };
 
@@ -329,7 +329,7 @@ export async function prepareLandingHtml(
     const bodyHtml = extractBody(html, product).replace(SCRIPT_TAG_BLOCK, "").trim();
     return {
       pageKind: "entry",
-      page: getLandingPageName(product),
+      page: getLandingPublicRouteName(product),
       bodyHtml,
     };
   }

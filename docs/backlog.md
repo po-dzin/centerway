@@ -53,3 +53,31 @@
   - `product surface` instead of `old site`;
   - `platform hub` instead of `main site`;
   - `platform-native LMS layer` instead of `course plugin`.
+
+## Experimentation Automation (Deferred)
+
+- Status: deferred
+- Date: 2026-05-01
+- Scope:
+  - semi-automatic experimentation workflow for generated funnels:
+    - winner/loser recommendations,
+    - suggested weight shifts,
+    - guarded auto-stop for clearly underperforming variants,
+    - manual promote-to-control flow.
+  - later-stage automatic routing / bandit-style traffic adaptation:
+    - gradual traffic rebalancing by primary KPI,
+    - optional segment-aware routing,
+    - variant lifecycle automation.
+- Not for v1:
+  - no autonomous production reweighting before measurement quality is trusted;
+  - no auto-personalization by health/profile semantics;
+  - no opaque AI-driven copy rewriting directly on prod traffic.
+- Depends on:
+  - variant-aware event ingestion,
+  - stable experiment assignment persistence,
+  - admin analytics breakdown by `experiment_key / variant_key`,
+  - minimum sample and confidence policy.
+- Return when:
+  - first generated funnel A/Bs are measurable end-to-end,
+  - admin analytics can compare variants on primary and secondary KPIs,
+  - rollback and operator approval rules are explicit.

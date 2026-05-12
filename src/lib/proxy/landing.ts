@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getUtilityPageByFile } from "@/lib/landing/contracts";
 import {
   getLandingEntryProduct,
   getLandingFallbackPath,
@@ -6,20 +7,50 @@ import {
   isLandingRootAssetPath,
   isNextLandingEnabled,
 } from "@/lib/landing/routing";
+import { resolveExperimentAssignmentRoute, withExperimentAssignmentRewrite } from "@/lib/proxy/experiments";
 import { resolveRequestBrand } from "@/lib/proxy/requestBrand";
+import { CW_SURFACE_KIND_HEADER } from "@/lib/surfaces/headers";
+import { getProductSurfaceEntry, isActiveFunnelProduct, type ProductKey } from "@/lib/surfaces/catalog";
 
-function rewriteLanding(req: NextRequest, landingPath: string) {
-  const brand = resolveRequestBrand(req);
-  if (!brand) {
-    return null;
+function rewriteSurfaceRoute(req: NextRequest, pathname: string, surfaceKind: "funnel" | "platform") {
+  const requestHeaders = new Headers(req.headers);
+  requestHeaders.set(CW_SURFACE_KIND_HEADER, surfaceKind);
+  const routeKey = resolveExperimentAssignmentRoute(pathname);
+  if (routeKey) {
+    return withExperimentAssignmentRewrite(req, pathname, routeKey, requestHeaders);
   }
 
   const url = req.nextUrl.clone();
-  url.pathname = `/${brand}${landingPath}`;
+  url.pathname = pathname;
+  return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
+}
+
+function rewriteStaticLanding(req: NextRequest, staticPath: string) {
+  const url = req.nextUrl.clone();
+  url.pathname = staticPath;
   return NextResponse.rewrite(url);
 }
 
-export function maybeHandleLandingEntry(req: NextRequest): NextResponse | null {
+function rewriteDisabledSurface(req: NextRequest) {
+  const url = req.nextUrl.clone();
+  url.pathname = "/__surface-disabled";
+  return NextResponse.rewrite(url);
+}
+
+function getLegacyStaticPrefix(product: ProductKey) {
+  return product === "reboot" ? "/short" : "/irem";
+}
+
+function rewriteGeneratedFunnelUtility(req: NextRequest, product: "consult" | "detox" | "mini-detox", mappedPage: string) {
+  const utilityPage = getUtilityPageByFile(mappedPage.replace(/^\//, ""));
+  if (!utilityPage) {
+    return rewriteDisabledSurface(req);
+  }
+
+  return rewriteSurfaceRoute(req, `/funnel-support/${product}/${utilityPage}`, "funnel");
+}
+
+export function rewriteLegacyLandingEntryRequest(req: NextRequest): NextResponse | null {
   const product = getLandingEntryProduct(req.nextUrl.pathname);
   if (!product) {
     return null;
@@ -29,20 +60,46 @@ export function maybeHandleLandingEntry(req: NextRequest): NextResponse | null {
     return NextResponse.next();
   }
 
-  const url = req.nextUrl.clone();
-  url.pathname = getLandingFallbackPath(product);
-  return NextResponse.rewrite(url);
+  return rewriteStaticLanding(req, getLandingFallbackPath(product));
 }
 
-export function maybeRewriteLandingRequest(req: NextRequest): NextResponse | null {
+export function rewriteFunnelHostRequest(req: NextRequest): NextResponse | null {
+  const product = resolveRequestBrand(req);
+  if (!product) {
+    return null;
+  }
+  const entry = getProductSurfaceEntry(product);
+
   const mappedPage = getLandingRootRewritePath(req.nextUrl.pathname);
   if (mappedPage) {
-    return rewriteLanding(req, mappedPage);
+    if (!isActiveFunnelProduct(product)) {
+      return rewriteDisabledSurface(req);
+    }
+
+    if (mappedPage === "/index.html" && entry.internalFunnelRoute) {
+      return rewriteSurfaceRoute(req, entry.internalFunnelRoute, "funnel");
+    }
+
+    if (entry.funnelRuntime === "landing-app") {
+      return rewriteStaticLanding(req, `${getLegacyStaticPrefix(product)}${mappedPage}`);
+    }
+
+    if (
+      entry.funnelRuntime === "generated-app" &&
+      (product === "consult" || product === "detox" || product === "mini-detox")
+    ) {
+      return rewriteGeneratedFunnelUtility(req, product, mappedPage);
+    }
+
+    return rewriteDisabledSurface(req);
   }
 
   if (isLandingRootAssetPath(req.nextUrl.pathname)) {
-    return rewriteLanding(req, req.nextUrl.pathname);
+    if (entry.funnelRuntime === "landing-app") {
+      return rewriteStaticLanding(req, `${getLegacyStaticPrefix(product)}${req.nextUrl.pathname}`);
+    }
+    return rewriteDisabledSurface(req);
   }
 
-  return null;
+  return rewriteDisabledSurface(req);
 }

@@ -12,19 +12,51 @@ import {
   getThemeFromSearchParams,
 } from "@/lib/generator/theme";
 import type { ScreenRouteKey } from "@/lib/generator/types";
+import { resolveRequestBrand } from "@/lib/proxy/requestBrand";
+import { getProductSurfaceEntry } from "@/lib/surfaces/catalog";
 
 const EXPERIMENT_COOKIE_MAX_AGE = 60 * 60 * 24 * 90;
 
-export function resolveExperimentRoute(pathname: string): ScreenRouteKey | null {
+type ExperimentAssignmentContext = {
+  requestHeaders: Headers;
+  cookieMutations: Array<{ name: string; value: string }>;
+  themeFromQuery: string | null;
+};
+
+export function resolveExperimentAssignmentRoute(pathname: string): ScreenRouteKey | null {
   if (pathname === "/consult") return "consult";
   if (pathname === "/detox") return "detox";
   if (pathname === "/herbs") return "herbs";
+  if (pathname === "/mini-detox") return "mini-detox";
   if (pathname === "/dosha-test") return "dosha-test";
   if (pathname === "/lesson/pilot") return "lesson-pilot";
   return null;
 }
 
-export function nextWithExperimentContext(req: NextRequest, routeKey: ScreenRouteKey): NextResponse {
+export function resolveExperimentAssignmentRouteForRequest(req: NextRequest): ScreenRouteKey | null {
+  const directRoute = resolveExperimentAssignmentRoute(req.nextUrl.pathname);
+  if (directRoute) {
+    return directRoute;
+  }
+
+  if (req.nextUrl.pathname !== "/" && req.nextUrl.pathname !== "/index.html") {
+    return null;
+  }
+
+  const product = resolveRequestBrand(req);
+  if (!product) {
+    return null;
+  }
+
+  const entry = getProductSurfaceEntry(product);
+  if (entry.funnelRuntime !== "generated-app" || !entry.internalFunnelRoute) {
+    return null;
+  }
+
+  return resolveExperimentAssignmentRoute(entry.internalFunnelRoute);
+}
+
+function buildExperimentAssignmentContext(req: NextRequest, routeKey: ScreenRouteKey): ExperimentAssignmentContext {
   const cookies = parseCookieHeader(req.headers.get("cookie"));
   const themeFromQuery = getThemeFromSearchParams(req.nextUrl.searchParams);
   const themeFromCookie = cookies.get(CW_THEME_COOKIE)?.trim() || null;
@@ -42,14 +74,16 @@ export function nextWithExperimentContext(req: NextRequest, routeKey: ScreenRout
     requestHeaders.set(CW_THEME_SELECTION_HEADER, resolvedThemeSelection);
   }
 
-  const res = NextResponse.next({
-    request: {
-      headers: requestHeaders,
-    },
-  });
+  return {
+    requestHeaders,
+    cookieMutations: resolved.cookieMutations,
+    themeFromQuery,
+  };
+}
 
+function applyExperimentAssignmentCookies(req: NextRequest, res: NextResponse, context: ExperimentAssignmentContext): NextResponse {
   const secure = req.nextUrl.protocol === "https:";
-  for (const mutation of resolved.cookieMutations) {
+  for (const mutation of context.cookieMutations) {
     res.cookies.set(mutation.name, mutation.value, {
       path: "/",
       maxAge: EXPERIMENT_COOKIE_MAX_AGE,
@@ -58,8 +92,8 @@ export function nextWithExperimentContext(req: NextRequest, routeKey: ScreenRout
       httpOnly: true,
     });
   }
-  if (themeFromQuery) {
-    res.cookies.set(CW_THEME_COOKIE, themeFromQuery, {
+  if (context.themeFromQuery) {
+    res.cookies.set(CW_THEME_COOKIE, context.themeFromQuery, {
       path: "/",
       maxAge: EXPERIMENT_COOKIE_MAX_AGE,
       sameSite: "lax",
@@ -69,4 +103,47 @@ export function nextWithExperimentContext(req: NextRequest, routeKey: ScreenRout
   }
 
   return res;
+}
+
+function mergeRequestHeaders(base: Headers, extraHeaders?: HeadersInit): Headers {
+  const merged = new Headers(base);
+  if (!extraHeaders) {
+    return merged;
+  }
+
+  const extra = new Headers(extraHeaders);
+  extra.forEach((value, key) => {
+    merged.set(key, value);
+  });
+  return merged;
+}
+
+export function withExperimentAssignmentNext(req: NextRequest, routeKey: ScreenRouteKey): NextResponse {
+  const context = buildExperimentAssignmentContext(req, routeKey);
+  const res = NextResponse.next({
+    request: {
+      headers: context.requestHeaders,
+    },
+  });
+
+  return applyExperimentAssignmentCookies(req, res, context);
+}
+
+export function withExperimentAssignmentRewrite(
+  req: NextRequest,
+  pathname: string,
+  routeKey: ScreenRouteKey,
+  extraRequestHeaders?: HeadersInit
+): NextResponse {
+  const context = buildExperimentAssignmentContext(req, routeKey);
+  const url = req.nextUrl.clone();
+  url.pathname = pathname;
+
+  const res = NextResponse.rewrite(url, {
+    request: {
+      headers: mergeRequestHeaders(context.requestHeaders, extraRequestHeaders),
+    },
+  });
+
+  return applyExperimentAssignmentCookies(req, res, context);
 }

@@ -339,6 +339,8 @@ export async function POST(req: NextRequest) {
           throw purchaseJobInsertErr;
         }
 
+        // Best-effort immediate send for paid purchases.
+        // Daily cron remains a fallback if Meta is temporarily unavailable.
         try {
           await sendCapiEvent(capiPayload);
           if (insertedPurchaseJob?.id) {

@@ -1,30 +1,28 @@
 import { NextRequest, NextResponse } from "next/server";
-import { normalizeLandingPathname } from "@/lib/landing/routing";
 import { shouldBypassProxy } from "@/lib/proxy/bypass";
-import { nextWithExperimentContext, resolveExperimentRoute } from "@/lib/proxy/experiments";
-import { maybeHandleLandingEntry, maybeRewriteLandingRequest } from "@/lib/proxy/landing";
+import { resolveExperimentAssignmentRouteForRequest, withExperimentAssignmentNext } from "@/lib/proxy/experiments";
+import { rewriteFunnelHostRequest, rewriteLegacyLandingEntryRequest } from "@/lib/proxy/landing";
 
 export function proxy(req: NextRequest) {
   const { pathname } = req.nextUrl;
-  const normalizedPathname = normalizeLandingPathname(pathname);
-
-  const experimentRoute = resolveExperimentRoute(normalizedPathname);
-  if (experimentRoute) {
-    return nextWithExperimentContext(req, experimentRoute);
-  }
 
   if (shouldBypassProxy(pathname)) {
     return NextResponse.next();
   }
 
-  const landingEntryResponse = maybeHandleLandingEntry(req);
+  const landingEntryResponse = rewriteLegacyLandingEntryRequest(req);
   if (landingEntryResponse) {
     return landingEntryResponse;
   }
 
-  const landingRewriteResponse = maybeRewriteLandingRequest(req);
+  const landingRewriteResponse = rewriteFunnelHostRequest(req);
   if (landingRewriteResponse) {
     return landingRewriteResponse;
+  }
+
+  const experimentRoute = resolveExperimentAssignmentRouteForRequest(req);
+  if (experimentRoute) {
+    return withExperimentAssignmentNext(req, experimentRoute);
   }
 
   return NextResponse.next();

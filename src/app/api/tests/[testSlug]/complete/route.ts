@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { calculateDoshaResult, DOSHA_TEST_SLUG, isValidScoreInvariant } from "@/lib/doshaTest";
+import { DOSHA_PRIMARY_EXIT } from "@/lib/doshaRouting";
 import {
   createTestAttempt,
   emitDoshaTestEvent,
@@ -146,7 +147,7 @@ export async function POST(
           kapha: idempotent.score_kapha,
         },
         completedAt: idempotent.completed_at,
-        nextStep: (idempotent.result_payload_json?.nextStep as string | undefined) ?? "consultation",
+        nextStep: (idempotent.result_payload_json?.nextStep as string | undefined) ?? DOSHA_PRIMARY_EXIT.nextStep,
       });
     }
 
@@ -202,7 +203,7 @@ export async function POST(
 
     const resultType = calculateDoshaResult(vata, pitta, kapha);
     const completedAt = new Date().toISOString();
-    const nextStep = "consultation";
+    const nextStep = DOSHA_PRIMARY_EXIT.nextStep;
 
     const { error: completeError } = await db
       .from("test_attempts")

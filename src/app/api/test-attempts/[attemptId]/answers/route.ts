@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
 import { calculateDoshaResult, isValidScoreInvariant, DOSHA_TEST_SLUG } from "@/lib/doshaTest";
+import { DOSHA_PRIMARY_EXIT } from "@/lib/doshaRouting";
 import {
   emitDoshaTestEvent,
   ensureDoshaTestSeed,
@@ -196,7 +197,7 @@ export async function POST(
       resultType,
       scores: { vata, pitta, kapha },
       completedAt,
-      nextStep: "consultation",
+      nextStep: DOSHA_PRIMARY_EXIT.nextStep,
       answeredCount,
       currentQuestionIndex: test.questions.length,
     });

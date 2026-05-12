@@ -1,4 +1,4 @@
-import { getLandingEntryPath, LANDING_ROUTE_CONFIG } from "@/lib/landing/config";
+import { getLandingPublicEntryPath, LANDING_ROUTE_CONFIG } from "@/lib/landing/config";
 import {
   LANDING_ASSET_PREFIXES,
   LANDING_ROOT_FILES,
@@ -25,7 +25,7 @@ export function getLandingEntryProduct(pathname: string): StaticLandingProduct |
   const normalizedPathname = normalizeLandingPathname(pathname);
 
   for (const product of Object.keys(LANDING_ROUTE_CONFIG) as StaticLandingProduct[]) {
-    if (normalizedPathname === getLandingEntryPath(product)) {
+    if (normalizedPathname === getLandingPublicEntryPath(product)) {
       return product;
     }
   }
