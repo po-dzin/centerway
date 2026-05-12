@@ -70,6 +70,13 @@
     return "fb.1." + Math.floor(Date.now() / 1000) + "." + fbclid;
   }
 
+  function extractFbclidFromFbc(fbc) {
+    if (!fbc) return "";
+    var parts = String(fbc).split(".");
+    if (parts.length < 4) return "";
+    return parts.slice(3).join(".").trim();
+  }
+
   function makeEventId(prefix) {
     return prefix + "_" + Date.now() + "_" + Math.random().toString(36).slice(2, 10);
   }
@@ -135,6 +142,12 @@
     out.user_agent = navigator.userAgent || "";
     out.fbp = readCookie("_fbp");
     out.fbc = readCookie("_fbc") || stored.fbc || "";
+    if (out.fbc && out.fbclid) {
+      var embeddedFbclid = extractFbclidFromFbc(out.fbc);
+      if (embeddedFbclid && embeddedFbclid !== out.fbclid) {
+        out.fbc = "";
+      }
+    }
     if (!out.fbc && out.fbclid) {
       out.fbc = buildFbcFromFbclid(out.fbclid);
     }

@@ -16,15 +16,30 @@ export function buildFbcFromFbclid(fbclid: string, creationTimeSeconds: number):
   return `fb.1.${Math.max(0, Math.floor(creationTimeSeconds))}.${fbclid}`;
 }
 
+export function extractFbclidFromFbc(value: unknown): string | null {
+  const fbc = normalizeFbc(value);
+  if (!fbc) return null;
+  const parts = fbc.split(".");
+  if (parts.length < 4) return null;
+  const embeddedFbclid = parts.slice(3).join(".").trim();
+  return embeddedFbclid.length > 0 ? embeddedFbclid : null;
+}
+
 export function resolveFbc(input: {
   fbc?: unknown;
   fbclid?: unknown;
   creationTimeSeconds?: number | null;
 }): string | null {
   const directFbc = normalizeFbc(input.fbc);
-  if (directFbc) return directFbc;
-
   const fbclid = normalizeFbclid(input.fbclid);
+  if (directFbc) {
+    if (!fbclid) return directFbc;
+    const embeddedFbclid = extractFbclidFromFbc(directFbc);
+    if (!embeddedFbclid || embeddedFbclid === fbclid) {
+      return directFbc;
+    }
+  }
+
   if (!fbclid) return null;
 
   const creationTimeSeconds =
