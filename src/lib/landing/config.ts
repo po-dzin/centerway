@@ -3,7 +3,7 @@ import type { StaticLandingProduct } from "@/lib/landing/types";
 
 export type LandingRouteConfig = {
   title: string;
-  entryPage: "short" | "irem";
+  publicEntryRoute: "reboot" | "irem";
   htmlPath: string;
   assetPrefix: "/short" | "/irem";
   assetName: "short" | "irem";
@@ -24,26 +24,26 @@ const SHARED_SCRIPTS = [
 export const LANDING_ROUTE_CONFIG: Record<StaticLandingProduct, LandingRouteConfig> = {
   short: {
     title: LANDING_CONTENT.short.title,
-    entryPage: "short",
+    publicEntryRoute: "reboot",
     htmlPath: "short/index.html",
     assetPrefix: "/short",
     assetName: "short",
   },
   irem: {
     title: LANDING_CONTENT.irem.title,
-    entryPage: "irem",
+    publicEntryRoute: "irem",
     htmlPath: "irem/index.html",
     assetPrefix: "/irem",
     assetName: "irem",
   },
 };
 
-export function getLandingEntryPath(product: StaticLandingProduct): `/${LandingRouteConfig["entryPage"]}` {
-  return `/${LANDING_ROUTE_CONFIG[product].entryPage}`;
+export function getLandingPublicEntryPath(product: StaticLandingProduct): `/${LandingRouteConfig["publicEntryRoute"]}` {
+  return `/${LANDING_ROUTE_CONFIG[product].publicEntryRoute}`;
 }
 
-export function getLandingPageName(product: StaticLandingProduct): LandingRouteConfig["entryPage"] {
-  return LANDING_ROUTE_CONFIG[product].entryPage;
+export function getLandingPublicRouteName(product: StaticLandingProduct): LandingRouteConfig["publicEntryRoute"] {
+  return LANDING_ROUTE_CONFIG[product].publicEntryRoute;
 }
 
 export function getLandingShellAssets(product: StaticLandingProduct) {
@@ -79,7 +79,7 @@ export function getLandingCriticalCss(product: StaticLandingProduct) {
   return `
 html,body{margin:0;padding:0;background:#fffdf7;color:#2d2d2b}
 body{font-family:"Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
-main[data-cw-page="${config.entryPage}"]{display:block}
+main[data-cw-page="${config.publicEntryRoute}"]{display:block}
 .section-hero{background:#fffdf7;padding:0;position:relative;overflow:hidden}
 .section-hero .container{max-width:1160px;margin:0 auto;padding:24px 20px 32px;display:grid;grid-template-columns:1fr;gap:24px;align-items:center}
 .section-hero .content,.section-hero .hero-text{display:flex;flex-direction:column;gap:16px}

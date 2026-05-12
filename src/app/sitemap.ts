@@ -1,26 +1,10 @@
 import type { MetadataRoute } from "next";
+import { getMainDomainSitemapRoutes } from "@/lib/surfaces/catalog";
 
 const BASE_URL = "https://www.centerway.net.ua";
-
-const routes = [
-  "/",
-  "/expert",
-  "/programs/way21",
-  "/programs/ideal-body",
-  "/programs/irem",
-  "/mini-detox",
-  "/legal/public-offer",
-  "/legal/privacy",
-  "/dosha-test",
-  "/short",
-  "/irem",
-  "/detox",
-  "/herbs",
-];
-
 export default function sitemap(): MetadataRoute.Sitemap {
   const now = new Date();
-  return routes.map((route) => ({
+  return getMainDomainSitemapRoutes().map((route) => ({
     url: `${BASE_URL}${route}`,
     lastModified: now,
     changeFrequency: route === "/" ? "weekly" : "monthly",

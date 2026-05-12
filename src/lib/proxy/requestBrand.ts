@@ -1,5 +1,6 @@
 import type { NextRequest } from "next/server";
 import { type HostBrand, hostBrandFromHost } from "@/lib/hostBrand";
+import { getProductKeyByAlias } from "@/lib/surfaces/catalog";
 
 function normalizedHost(rawHost: string | null): string {
   if (!rawHost) return "";
@@ -16,14 +17,13 @@ function brandFromReferer(rawReferer: string | null, requestHost: string): HostB
     }
     const pathname = ref.pathname.toLowerCase();
     if (pathname === "/irem" || pathname.startsWith("/irem/")) return "irem";
-    if (
-      pathname === "/short" ||
-      pathname.startsWith("/short/") ||
-      pathname === "/reboot" ||
-      pathname.startsWith("/reboot/")
-    ) {
-      return "short";
-    }
+    if (pathname === "/short" || pathname.startsWith("/short/")) return "reboot";
+    if (pathname === "/reboot" || pathname.startsWith("/reboot/")) return "reboot";
+    if (pathname === "/programs/reboot" || pathname.startsWith("/programs/reboot/")) return "reboot";
+    if (pathname === "/programs/irem" || pathname.startsWith("/programs/irem/")) return "irem";
+    if (pathname === "/programs/mini-detox" || pathname.startsWith("/programs/mini-detox/")) return "mini-detox";
+    if (pathname === "/mini-detox" || pathname.startsWith("/mini-detox/")) return "mini-detox";
+    if (pathname === "/programs/detox" || pathname.startsWith("/programs/detox/")) return "detox";
     if (pathname === "/consult" || pathname.startsWith("/consult/")) return "consult";
     if (pathname === "/detox" || pathname.startsWith("/detox/")) return "detox";
     if (pathname === "/herbs" || pathname.startsWith("/herbs/")) return "herbs";
@@ -43,4 +43,19 @@ export function resolveRequestBrand(req: NextRequest): HostBrand | null {
 
   // Referer acts only as a same-host fallback hint in ambiguous cases.
   return brandFromReferer(req.headers.get("referer"), requestHost);
+}
+
+export function resolveRequestBrandFromPath(pathname: string): HostBrand | null {
+  const clean = pathname.trim().toLowerCase();
+  if (clean === "/programs/reboot" || clean.startsWith("/programs/reboot/")) return "reboot";
+  if (clean === "/reboot" || clean.startsWith("/reboot/")) return "reboot";
+  if (clean === "/programs/irem" || clean.startsWith("/programs/irem/")) return "irem";
+  if (clean === "/irem" || clean.startsWith("/irem/")) return "irem";
+  if (clean === "/programs/mini-detox" || clean.startsWith("/programs/mini-detox/")) return "mini-detox";
+  if (clean === "/mini-detox" || clean.startsWith("/mini-detox/")) return "mini-detox";
+  if (clean === "/programs/detox" || clean.startsWith("/programs/detox/")) return "detox";
+  if (clean === "/detox" || clean.startsWith("/detox/")) return "detox";
+  if (clean === "/consult" || clean.startsWith("/consult/")) return "consult";
+  if (clean === "/herbs" || clean.startsWith("/herbs/")) return "herbs";
+  return getProductKeyByAlias(clean.replace(/^\//, ""));
 }
