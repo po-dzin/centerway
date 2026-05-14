@@ -21,6 +21,13 @@
     return "fb.1." + Math.floor(nowMs / 1000) + "." + fbclid;
   }
 
+  function extractFbclidFromFbc(fbc) {
+    if (!fbc) return "";
+    var parts = String(fbc).split(".");
+    if (parts.length < 4) return "";
+    return parts.slice(3).join(".").trim();
+  }
+
   var keys = ["utm_source", "utm_medium", "utm_campaign", "utm_content", "utm_term", "lv", "cr", "fbclid"];
   var qs = new URLSearchParams(window.location.search);
   var attrib = {};
@@ -39,9 +46,11 @@
   if (!fbclid) return;
 
   var existingFbc = readCookie("_fbc");
-  var resolvedFbc = existingFbc || buildFbc(fbclid, Date.now());
+  var existingFbclid = extractFbclidFromFbc(existingFbc);
+  var shouldReuseExistingFbc = existingFbc && existingFbclid === fbclid;
+  var resolvedFbc = shouldReuseExistingFbc ? existingFbc : buildFbc(fbclid, Date.now());
 
-  if (!existingFbc) {
+  if (!shouldReuseExistingFbc) {
     try {
       writeCookie("_fbc", resolvedFbc, 60 * 60 * 24 * 90);
     } catch (_) {}

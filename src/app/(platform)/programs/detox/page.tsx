@@ -11,4 +11,3 @@ export const metadata: Metadata = {
 export default function DetoxProgramPage() {
   return <ProgramDetailPage program={programPageBySlug.way21} />;
 }
-

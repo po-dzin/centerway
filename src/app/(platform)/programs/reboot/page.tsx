@@ -11,4 +11,3 @@ export const metadata: Metadata = {
 export default function RebootProgramPage() {
   return <ProgramDetailPage program={programPageBySlug.reboot} />;
 }
-

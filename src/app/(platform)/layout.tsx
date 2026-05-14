@@ -1,6 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, IBM_Plex_Mono, Manrope } from "next/font/google";
-import "./globals.css";
+import "../globals.css";
 
 const manrope = Manrope({
   subsets: ["latin", "cyrillic"],

@@ -53,6 +53,50 @@ function normPhone(phone: string | null): string | null {
   return p ? p : null;
 }
 
+function parseUnixSeconds(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) {
+    if (value > 1_000_000_000_000) return Math.floor(value / 1000);
+    if (value > 1_000_000_000) return Math.floor(value);
+    return null;
+  }
+  if (typeof value !== "string") return null;
+  const trimmed = value.trim();
+  if (!trimmed) return null;
+
+  if (/^\d+$/.test(trimmed)) {
+    const numeric = Number(trimmed);
+    if (!Number.isFinite(numeric)) return null;
+    if (numeric > 1_000_000_000_000) return Math.floor(numeric / 1000);
+    if (numeric > 1_000_000_000) return Math.floor(numeric);
+  }
+
+  const parsedMs = Date.parse(trimmed);
+  if (!Number.isFinite(parsedMs)) return null;
+  return Math.floor(parsedMs / 1000);
+}
+
+function resolvePaymentEventTime(payload: Payload): number {
+  const candidates = [
+    payload["transactionDate"],
+    payload["transaction_date"],
+    payload["paymentDate"],
+    payload["payment_date"],
+    payload["processingDate"],
+    payload["processing_date"],
+    payload["updatedDate"],
+    payload["updated_at"],
+    payload["createdDate"],
+    payload["created_at"],
+  ];
+
+  for (const candidate of candidates) {
+    const parsed = parseUnixSeconds(candidate);
+    if (parsed !== null) return parsed;
+  }
+
+  return Math.floor(Date.now() / 1000);
+}
+
 async function upsertCustomer(
   sb: ReturnType<typeof supabaseAdmin>,
   email: string | null,
@@ -292,7 +336,7 @@ export async function POST(req: NextRequest) {
         const capiPayload: CapiEventPayload = {
           event_name: "Purchase",
           event_id: `purchase_${orderRef}`,
-          event_time: Math.floor(Date.now() / 1000),
+          event_time: resolvePaymentEventTime(payload),
           value: orderTracking?.amount ?? meta.amount ?? undefined,
           currency: orderTracking?.currency ?? meta.currency ?? "UAH",
           order_ref: orderRef,

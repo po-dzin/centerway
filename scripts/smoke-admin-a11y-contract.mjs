@@ -56,7 +56,7 @@ async function checkNoClickableDivs() {
     "<div[^>]*onClick=",
     "--glob",
     "!src/components/admin/modals/*",
-    "src/app/admin",
+    "src/app/(platform)/admin",
     "src/components/admin",
   ]);
   if (!hits) {

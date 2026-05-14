@@ -43,3 +43,22 @@ This is a local implementation note and SQL provenance companion, not a shared c
    - `InitiateCheckout` warning about invalid `creationTime` clears;
    - `fbc` coverage rises;
    - event matching quality for `ViewContent`, `InitiateCheckout`, `Purchase` improves.
+
+## 2026-05-12 Alert Fix
+
+Meta Business Suite still reported invalid `creationTime` for `Purchase`, `ViewContent`, and `InitiateCheckout`.
+
+Root cause in runtime:
+
+- landing runtime reused an existing `_fbc` cookie even when a new landing session arrived with a different `fbclid`
+- checkout collection reused raw `fbc` without checking that its embedded click id still matched the current `fbclid`
+- server-side fallback trusted direct `fbc` before verifying it against `fbclid`
+
+That produced a stale `fbc` + fresh `fbclid` pair, which Meta interprets as an invalid click creation timeline.
+
+Applied fix:
+
+- client runtime now rebuilds `_fbc` whenever the stored `fbc` belongs to a different `fbclid`
+- static short/irem checkout collectors discard mismatched raw `fbc` and rebuild it from the current `fbclid`
+- server-side `resolveFbc()` now ignores direct `fbc` when its embedded click id conflicts with the current `fbclid`
+- webhook `Purchase` now prefers payment timestamps from webhook payload fields instead of always using webhook receipt time

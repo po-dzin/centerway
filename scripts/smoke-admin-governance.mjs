@@ -4,13 +4,13 @@ import { readFile } from "node:fs/promises";
 
 const execFileAsync = promisify(execFile);
 
-const SEARCH_SCOPE = ["src/app/admin", "src/components"];
+const SEARCH_SCOPE = ["src/app/(platform)/admin", "src/components"];
 const FORBIDDEN_CLASS_PATTERN =
   "(text|bg|border|from|to|ring|divide|hover:bg|hover:text)-(blue|indigo|emerald|purple|green|yellow|red|gray)-|bg-gradient|text-transparent";
 
-const HEX_SCOPE = ["src/app/admin", "src/components/admin"];
+const HEX_SCOPE = ["src/app/(platform)/admin", "src/components/admin"];
 const HEX_ALLOWLIST = [
-  "src/app/admin/page.tsx", // Google brand icon in auth button
+  "src/app/(platform)/admin/page.tsx", // Google brand icon in auth button
 ];
 
 function fail(message) {
