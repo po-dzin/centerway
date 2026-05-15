@@ -1,7 +1,6 @@
 import { getFunnelHostUrl, getPlatformRoute } from "@/lib/surfaces/catalog";
 
 export const platformNav = [
-  { label: "Центр", href: "/#center" },
   { label: "Вступ", href: "/#intro-video" },
   { label: "Діагностика", href: "/#diagnostics" },
   { label: "Міні-курси", href: "/#mini-courses" },
@@ -31,9 +30,16 @@ const iremFunnelHref = getFunnelHostUrl("irem") ?? "/irem";
 const rebootFunnelHref = getFunnelHostUrl("reboot") ?? "/reboot";
 const miniDetoxFunnelHref = getFunnelHostUrl("mini-detox") ?? "/mini-detox";
 
+export type PlatformOfferSurfaceType = "program" | "mini-course" | "product";
+export type PlatformOfferConversionMode = "lead" | "direct-pay" | "hybrid";
+export type PlatformOfferPrimaryActionKind = "enroll" | "buy";
+
 export const programs = [
   {
     slug: "reboot",
+    surfaceType: "mini-course" as PlatformOfferSurfaceType,
+    conversionMode: "direct-pay" as PlatformOfferConversionMode,
+    primaryActionKind: "buy" as PlatformOfferPrimaryActionKind,
     title: "Short Reboot",
     fullTitle: "Short Reboot",
     href: getPlatformRoute("reboot") ?? "/programs/reboot",
@@ -53,6 +59,9 @@ export const programs = [
   },
   {
     slug: "way21",
+    surfaceType: "program" as PlatformOfferSurfaceType,
+    conversionMode: "lead" as PlatformOfferConversionMode,
+    primaryActionKind: "enroll" as PlatformOfferPrimaryActionKind,
     title: "Шлях 21",
     fullTitle: "Детокс Програма «Шлях 21»",
     href: getPlatformRoute("detox") ?? "/programs/detox",
@@ -73,6 +82,9 @@ export const programs = [
   },
   {
     slug: "ideal-body",
+    surfaceType: "program" as PlatformOfferSurfaceType,
+    conversionMode: "lead" as PlatformOfferConversionMode,
+    primaryActionKind: "enroll" as PlatformOfferPrimaryActionKind,
     title: "Ідеальне тіло з Аюрведою",
     fullTitle: "Ідеальне тіло з Аюрведою",
     href: "/programs/ideal-body",
@@ -93,6 +105,9 @@ export const programs = [
   },
   {
     slug: "irem",
+    surfaceType: "program" as PlatformOfferSurfaceType,
+    conversionMode: "lead" as PlatformOfferConversionMode,
+    primaryActionKind: "enroll" as PlatformOfferPrimaryActionKind,
     title: "IREM Гімнастика",
     fullTitle: "Відновлююча гімнастика IREM",
     href: getPlatformRoute("irem") ?? "/programs/irem",
@@ -113,6 +128,9 @@ export const programs = [
   },
   {
     slug: "mini-detox",
+    surfaceType: "mini-course" as PlatformOfferSurfaceType,
+    conversionMode: "direct-pay" as PlatformOfferConversionMode,
+    primaryActionKind: "buy" as PlatformOfferPrimaryActionKind,
     title: "Mini Detox",
     fullTitle: "Mini Detox - короткий розвантажувальний маршрут",
     href: getPlatformRoute("mini-detox") ?? "/programs/mini-detox",
@@ -122,7 +140,7 @@ export const programs = [
     visual: "stone",
     description: "3 дні м'якого режиму, простого харчування і спостереження за сигналами тіла.",
     longDescription:
-      "Mini Detox - це standalone-маршрут для першого знайомства з підходом CenterWay. Він не обіцяє різкого очищення або лікування, а дає м'який 3-денний формат для зниження перевантаження і розуміння власного стану. На платформі це окремий вхідний блок, який може вести одразу до оплати.",
+      "Mini Detox дає м'який 3-денний формат, щоб знизити перевантаження, впорядкувати режим і спокійно побачити сигнали тіла без різких обіцянок та жорсткого тиску.",
     results: [
       "спокійно увійти у практику без довгого зобов'язання",
       "побачити, як тіло реагує на прості зміни режиму",
@@ -135,11 +153,13 @@ export const programs = [
 
 export const programPageBySlug = Object.fromEntries(programs.map((program) => [program.slug, program]));
 
-export const featuredPrograms = programs.filter((program) => ["way21", "ideal-body", "irem"].includes(program.slug));
+export const platformProgramOffers = programs.filter((program) => program.surfaceType === "program");
+export const platformMiniCourses = programs.filter((program) => program.surfaceType === "mini-course");
+
+export const featuredPrograms = platformProgramOffers;
 
 export const miniCourses = [
-  programPageBySlug["mini-detox"],
-  programPageBySlug["reboot"],
+  ...platformMiniCourses,
 ].filter(Boolean);
 
 export const journeySteps = [

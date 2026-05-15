@@ -60,22 +60,27 @@ const ROUTE_RUNTIME: Record<ScreenRouteKey, RouteRuntimeConfig> = {
   "program-way21": {
     defaultScreenId: "screen.program-way21.v1.control",
     shell: "platform",
-    platformHeaderMode: "default",
+    platformHeaderMode: "overlay",
   },
   "program-ideal-body": {
     defaultScreenId: "screen.program-ideal-body.v1.control",
     shell: "platform",
-    platformHeaderMode: "default",
+    platformHeaderMode: "overlay",
   },
   "program-irem": {
     defaultScreenId: "screen.program-irem.v1.control",
     shell: "platform",
-    platformHeaderMode: "default",
+    platformHeaderMode: "overlay",
+  },
+  "program-reboot": {
+    defaultScreenId: "screen.program-reboot.v1.control",
+    shell: "platform",
+    platformHeaderMode: "overlay",
   },
   "mini-detox": {
     defaultScreenId: "screen.mini-detox.v1.control",
     shell: "platform",
-    platformHeaderMode: "default",
+    platformHeaderMode: "overlay",
   },
 };
 
@@ -130,7 +135,7 @@ export function resolveEffectiveRouteMetadata(routeKey: ScreenRouteKey, surfaceK
     };
   }
 
-  if (routeKey === "consult" || routeKey === "detox" || routeKey === "herbs" || routeKey === "mini-detox") {
+  if (routeKey === "consult" || routeKey === "detox" || routeKey === "herbs") {
     return {
       routeFamily: "standalone route entry",
       routeBoundary: "platform route",
@@ -157,6 +162,14 @@ export function resolveEffectiveRouteMetadata(routeKey: ScreenRouteKey, surfaceK
   if (routeKey === "program-way21" || routeKey === "program-ideal-body" || routeKey === "program-irem") {
     return {
       routeFamily: "program offer",
+      routeBoundary: "platform route",
+      surfaceKind: "platform",
+    };
+  }
+
+  if (routeKey === "program-reboot" || routeKey === "mini-detox") {
+    return {
+      routeFamily: "mini-course offer",
       routeBoundary: "platform route",
       surfaceKind: "platform",
     };

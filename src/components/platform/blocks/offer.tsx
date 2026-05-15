@@ -4,11 +4,54 @@ import styles from "@/components/platform/PlatformStyles";
 import { currentProgram, routeLabels } from "@/components/platform/blocks/shared";
 import type { PlatformGeneratedBlockProps } from "@/components/platform/blocks/types";
 
-export function OfferHero({ programSlug }: Pick<PlatformGeneratedBlockProps, "programSlug">) {
+function offerView(programSlug?: PlatformGeneratedBlockProps["programSlug"]) {
   const program = currentProgram(programSlug);
+  const isMiniCourse = program?.surfaceType === "mini-course";
+
+  return {
+    program,
+    isMiniCourse,
+    heroPrimaryCta: isMiniCourse ? "Перейти до формату" : "Записатися на програму",
+    heroSecondaryCta: isMiniCourse ? null : "Подивитися деталі",
+    detailsTitle: isMiniCourse ? "Що дає цей короткий вхід" : "Коротко про результат",
+    supportLabel: isMiniCourse ? "Участь" : "Запис",
+    supportTitle: isMiniCourse ? `Оформити ${program?.title ?? "участь"}` : `Записатися на ${program?.title ?? ""}`,
+    supportLead: isMiniCourse
+      ? "Це короткий platform mini-course без переходу на окремий лендинг. Залиште контакт тут, щоб отримати підтвердження формату, спосіб оплати і найближчий крок прямо всередині платформи."
+      : "Це вже продаюча platform-сторінка: залиште запит тут, якщо хочете отримати підтвердження формату, деталі оплати і наступний крок без переходу на окремий лендинг.",
+    formatMeta: isMiniCourse
+      ? [
+          "короткий вхід у систему без довгого зобов'язання",
+          "рішення про участь, оплата і наступний крок живуть у межах цієї сторінки",
+        ]
+      : [
+          "платформений маршрут без переходу на окремий лендинг",
+          "підтвердження формату, оплата і наступний крок живуть у межах цієї сторінки",
+        ],
+    productCode:
+      program?.slug === "ideal-body"
+        ? "ideal-body"
+        : program?.slug === "irem"
+          ? "irem"
+          : program?.surfaceType === "mini-course"
+            ? "platform"
+            : "consult",
+  };
+}
+
+export function OfferHero({ programSlug }: Pick<PlatformGeneratedBlockProps, "programSlug">) {
+  const { isMiniCourse, program, heroPrimaryCta, heroSecondaryCta } = offerView(programSlug);
   if (!program) return null;
   return (
-    <section className={`${styles.container} ${styles.hero}`}>
+    <section className={`${styles.container} ${styles.hero} ${styles.offerHeroLayout}`}>
+      <aside className={styles.offerHeroVisualCard} data-visual={program.visual} aria-label={program.title}>
+        <div className={styles.programPhoto} aria-hidden="true" />
+        <div className={styles.offerHeroVisualMeta}>
+          <p className={styles.label}>{program.duration}</p>
+          <h3>{program.title}</h3>
+          <p>{program.description}</p>
+        </div>
+      </aside>
       <div className={styles.heroPanel}>
         <div>
           <p className={styles.eyebrow}>{program.tag}</p>
@@ -16,36 +59,30 @@ export function OfferHero({ programSlug }: Pick<PlatformGeneratedBlockProps, "pr
         </div>
         <p className={styles.lead}>{program.longDescription}</p>
         <div className={styles.heroFooter}>
-          <Link className={styles.primaryButton} href={program.funnelHref}>
-            Перейти до формату
+          <Link className={styles.primaryButton} href={isMiniCourse ? "#program-results" : "#program-enroll"}>
+            {heroPrimaryCta}
           </Link>
-          <Link className={styles.secondaryButton} href="/#programs">
-            Усі програми
-          </Link>
+          {heroSecondaryCta ? (
+            <Link className={styles.secondaryButton} href="#program-results">
+              {heroSecondaryCta}
+            </Link>
+          ) : null}
         </div>
       </div>
-      <aside className={styles.programTile} data-visual={program.visual}>
-        <div className={styles.programPhoto} aria-hidden="true" />
-        <div className={styles.programTileBody}>
-          <p className={styles.label}>{program.duration}</p>
-          <h3>{program.title}</h3>
-          <p>{program.description}</p>
-        </div>
-      </aside>
     </section>
   );
 }
 
 export function OfferDetails({ programSlug }: Pick<PlatformGeneratedBlockProps, "programSlug">) {
-  const program = currentProgram(programSlug);
+  const { program, detailsTitle, formatMeta } = offerView(programSlug);
   if (!program) return null;
   return (
-    <section className={`${styles.container} ${styles.section}`}>
-      <div className={styles.split}>
+    <section className={`${styles.container} ${styles.section}`} id="program-results">
+      <div className={`${styles.split} ${styles.programOfferDetailsGrid}`}>
         <article className={styles.panel}>
           <p className={styles.label}>Що змінюємо</p>
-          <h2 className={styles.title}>Коротко про результат</h2>
-          <ul className={styles.timeline}>
+          <h2 className={styles.title}>{detailsTitle}</h2>
+          <ul className={`${styles.timeline} ${styles.programResultList}`}>
             {program.results.slice(0, 5).map((result) => (
               <li key={result}>{result}</li>
             ))}
@@ -55,9 +92,11 @@ export function OfferDetails({ programSlug }: Pick<PlatformGeneratedBlockProps, 
           <p className={styles.label}>Формат</p>
           <h2 className={styles.title}>{program.duration}</h2>
           <p className={styles.lead}>{program.description}</p>
-          <Link className={styles.secondaryButton} href={program.funnelHref}>
-            Деталі маршруту
-          </Link>
+          <div className={styles.programFormatMeta}>
+            {formatMeta.map((item) => (
+              <span key={item}>{item}</span>
+            ))}
+          </div>
         </article>
       </div>
     </section>
@@ -65,22 +104,20 @@ export function OfferDetails({ programSlug }: Pick<PlatformGeneratedBlockProps, 
 }
 
 export function OfferSupport({ route, programSlug }: Pick<PlatformGeneratedBlockProps, "route" | "programSlug">) {
-  const program = currentProgram(programSlug);
+  const { productCode, supportLabel, supportLead, supportTitle } = offerView(programSlug);
   return (
-    <section className={`${styles.container} ${styles.section}`}>
+    <section className={`${styles.container} ${styles.section}`} id="program-enroll">
       <div className={styles.split}>
         <article className={styles.panel}>
-          <p className={styles.label}>Підтримка</p>
-          <h2 className={styles.title}>Підібрати маршрут</h2>
-          <p className={styles.lead}>
-            Якщо не ясно, чи підходить {program?.title ?? routeLabels[route]}, краще почати з короткого запиту і уточнити формат без тиску.
-          </p>
+          <p className={styles.label}>{supportLabel}</p>
+          <h2 className={styles.title}>{supportTitle || routeLabels[route]}</h2>
+          <p className={styles.lead}>{supportLead}</p>
         </article>
         <article className={styles.formPanel}>
-          <p className={styles.label}>Запит</p>
+          <p className={styles.label}>Форма</p>
           <h2 className={styles.title}>Залишити контакти</h2>
           <LeadForm
-            productCode={program?.slug === "ideal-body" ? "ideal-body" : "consult"}
+            productCode={productCode}
             source={`platform_${route}_form`}
             ctaPlace={`${route}_offer`}
           />

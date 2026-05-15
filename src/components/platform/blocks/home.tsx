@@ -22,7 +22,7 @@ function ProgramTile({ program, compact = false }: { program: ProgramTileData; c
 
 export function HomeHero() {
   return (
-    <section className={styles.heroFeature} id="center">
+    <section className={styles.heroFeature} id="center" data-cw-topbar-tone="dark">
       <div className={styles.heroPhotoLayer}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img className={styles.expertImage} src="/cw/landing/img/consult-hero-evgeniy.jpeg" alt="Євгеній Корякін" />
@@ -38,9 +38,6 @@ export function HomeHero() {
         <div className={styles.heroFeatureActions}>
           <Link className={styles.heroPrimaryButton} href="#intro-video">
             Почати шлях
-          </Link>
-          <Link className={styles.heroSecondaryButton} href="/dosha-test" data-cw-glass="control">
-            <span>Пройти тест доши</span>
           </Link>
         </div>
       </div>
@@ -62,14 +59,27 @@ export function HomeIntro() {
             allowFullScreen
           />
         </div>
-        <aside className={styles.videoAside}>
+        <aside className={styles.videoAside} id="diagnostics">
           <h2 className={styles.title}>Спочатку - зрозуміти свій стан</h2>
           <p className={styles.lead}>
             Перед програмами, тестами і консультаціями важливо побачити систему цілком: як тіло, харчування, увага і звички формують процес відновлення.
           </p>
-          <Link className={styles.secondaryButton} href="/dosha-test">
-            Пройти тест
-          </Link>
+          <div className={styles.videoActionGrid}>
+            <Link className={styles.videoActionCard} href="/dosha-test" data-icon="focus">
+              <span className={styles.lineIcon} data-icon="focus" aria-hidden="true" />
+              <span>
+                <strong>Тест доши</strong>
+                <small>Коротка самодіагностика, щоб побачити конституцію, ритм і перший напрям.</small>
+              </span>
+            </Link>
+            <Link className={styles.videoActionCard} href="/consult" data-icon="guide">
+              <span className={styles.lineIcon} data-icon="guide" aria-hidden="true" />
+              <span>
+                <strong>Консультація</strong>
+                <small>Живий розбір стану, якщо потрібен персональний підхід і опора у виборі.</small>
+              </span>
+            </Link>
+          </div>
         </aside>
       </div>
     </section>
@@ -77,31 +87,7 @@ export function HomeIntro() {
 }
 
 export function HomeRoutes() {
-  return (
-    <section className={`${styles.container} ${styles.section} ${styles.sectionFlow}`} id="diagnostics">
-      <div className={styles.sectionHeader}>
-        <div>
-          <h2 className={styles.sectionTitle}>Оберіть перший крок: тест або консультація</h2>
-        </div>
-      </div>
-      <div className={styles.routeChoiceGrid}>
-        <Link className={styles.routeChoiceCard} href="/dosha-test" data-icon="focus">
-          <span className={styles.lineIcon} data-icon="focus" aria-hidden="true" />
-          <span>
-            <strong>Тест доши</strong>
-            <small>Коротка самодіагностика, щоб побачити конституцію, ритм і перший напрям.</small>
-          </span>
-        </Link>
-        <Link className={styles.routeChoiceCard} href="/consult" data-icon="guide">
-          <span className={styles.lineIcon} data-icon="guide" aria-hidden="true" />
-          <span>
-            <strong>Консультація</strong>
-            <small>Живий розбір стану, якщо потрібен персональний підхід і опора у виборі.</small>
-          </span>
-        </Link>
-      </div>
-    </section>
-  );
+  return null;
 }
 
 export function HomeMiniCourses() {

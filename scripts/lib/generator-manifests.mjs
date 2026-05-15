@@ -26,13 +26,14 @@ const DEFAULT_SCREEN_BY_ROUTE = {
   "program-way21": "screen.program-way21.v1.control",
   "program-ideal-body": "screen.program-ideal-body.v1.control",
   "program-irem": "screen.program-irem.v1.control",
+  "program-reboot": "screen.program-reboot.v1.control",
   "mini-detox": "screen.mini-detox.v1.control",
 };
 
-const VALID_ROUTES = new Set(["consult", "detox", "herbs", "dosha-test", "lesson-pilot", "platform-home", "expert", "program-way21", "program-ideal-body", "program-irem", "mini-detox"]);
+const VALID_ROUTES = new Set(["consult", "detox", "herbs", "dosha-test", "lesson-pilot", "platform-home", "expert", "program-way21", "program-ideal-body", "program-irem", "program-reboot", "mini-detox"]);
 const VALID_MODES = new Set(["consult", "detox", "herbs", "lesson", "dashboard", "support", "admin", "platform"]);
 const VALID_BRANCHES = new Set(["consult", "detox", "herbs", "short", "irem", "platform"]);
-const VALID_ROUTE_FAMILIES = new Set(["platform hub", "expert", "program offer", "standalone route entry", "funnel surface", "legal", "utility"]);
+const VALID_ROUTE_FAMILIES = new Set(["platform hub", "expert", "program offer", "mini-course offer", "standalone route entry", "funnel surface", "legal", "utility"]);
 const VALID_EXPERIMENT_STATUS = new Set(["active", "paused"]);
 const VALID_SEMANTIC_GROUPS = new Set([
   "orientation",

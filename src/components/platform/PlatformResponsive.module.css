@@ -12,7 +12,7 @@
 
   .headerInner {
     min-height: 3.85rem;
-    padding: 0 0.85rem;
+    padding: 0;
   }
 
   .nav a {
@@ -48,6 +48,14 @@
 }
 
 @media (min-width: 901px) {
+  .heroFeatureContent {
+    width: min(39rem, 100%);
+    padding-inline-start: max(1.5rem, calc((100vw - var(--cw-max-width)) / 2 + 1rem));
+    padding-inline-end: max(1.5rem, calc((100vw - var(--cw-max-width)) / 2 + 1rem));
+  }
+}
+
+@media (min-width: 901px) {
   .mobileMenuSurface {
     display: contents;
     min-height: 0;
@@ -78,10 +86,10 @@
     border: 0;
     border-bottom: 0;
     border-radius: 0;
-    background: var(--cw-shell-frost-bg);
-    box-shadow: var(--cw-component-glass-shadow);
-    backdrop-filter: var(--cw-shell-frost-filter);
-    -webkit-backdrop-filter: var(--cw-shell-frost-filter);
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .shell:has(.heroFeature) .header.header {
@@ -89,15 +97,42 @@
   }
 
   .headerInner {
-    min-height: 4rem;
+    min-height: 4.1rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0;
-    padding: 0.68rem 0.9rem 0.68rem 1rem;
+    padding: 0.62rem 1rem;
     box-sizing: border-box;
+  }
+
+  .headerInner > .brand,
+  .headerInner > .menuButton {
+    position: relative;
+    z-index: 3;
+  }
+
+  .header .brand:not([data-surface="footer"]),
+  .header .menuButton {
+    min-width: 3rem;
+    min-height: 3rem;
+    border-radius: 0;
+  }
+
+  .header .brand:not([data-surface="footer"]) {
+    width: auto;
+    padding-right: 0.05rem;
+  }
+
+  .brandWordmark {
+    display: none;
+  }
+
+  .brandSymbol {
+    width: 2.36rem;
+    height: 2.36rem;
   }
 
   .profileSlot {
@@ -110,19 +145,19 @@
   }
 
   .shellOverlay .menuButton {
-    color: var(--cw-platform-accent-contrast);
-    background: var(--cw-component-glass-bg);
-    border-color: var(--cw-component-glass-border);
-    box-shadow: var(--cw-component-glass-shadow);
-    backdrop-filter: var(--cw-component-glass-filter);
-    -webkit-backdrop-filter: var(--cw-component-glass-filter);
+    color: var(--cw-header-fg);
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .shellOverlay .header.header {
     border-bottom-color: transparent;
-    background: var(--cw-shell-frost-bg);
-    backdrop-filter: var(--cw-shell-frost-filter);
-    -webkit-backdrop-filter: var(--cw-shell-frost-filter);
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .shellOverlay .header[data-cw-glass="shell"]::after {
@@ -130,16 +165,16 @@
   }
 
   .navLayer.navLayer {
-    position: absolute;
-    top: calc(100% - 1px);
+    position: fixed;
+    top: 0;
     right: 0;
     left: 0;
+    bottom: 0;
     margin-left: 0;
-    bottom: auto;
-    z-index: calc(var(--ds-z-sticky) + 1);
+    z-index: 2;
     display: none;
     flex: initial;
-    overflow: visible;
+    overflow: hidden;
     padding: 0;
     border-bottom: 0;
     background: transparent;
@@ -155,6 +190,24 @@
     max-width: 100%;
   }
 
+  .navLayer.navLayer::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    background:
+      linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--cw-platform-text) 56%, transparent) 0%,
+        color-mix(in srgb, var(--cw-platform-text) 68%, transparent) 100%
+      );
+    backdrop-filter: var(--cw-shell-frost-filter);
+    -webkit-backdrop-filter: var(--cw-shell-frost-filter);
+    opacity: 0;
+    transition: opacity 160ms ease;
+  }
+
   .header[data-menu-open="true"] .navLayer,
   .navLayerOpen {
     display: block;
@@ -163,36 +216,51 @@
     transform: translateY(0);
   }
 
+  .header[data-menu-open="true"] .navLayer::before,
+  .navLayerOpen::before {
+    opacity: 1;
+  }
+
   .shellOverlay .navLayer {
-    top: 100%;
+    top: 0;
     background: transparent;
   }
 
   .mobileMenuSurface {
+    --cw-mobile-menu-item-hover-bg: color-mix(in srgb, var(--cw-header-fg) 10%, transparent);
+    --cw-mobile-menu-item-accent-bg:
+      linear-gradient(135deg, color-mix(in srgb, var(--cw-platform-accent) 74%, var(--cw-platform-accent-strong) 26%), var(--cw-platform-accent-strong));
+    --cw-mobile-menu-item-accent-fg: var(--cw-platform-accent-contrast);
     position: relative;
     z-index: 1;
     width: 100%;
+    min-height: 100svh;
     display: grid;
-    gap: 0.35rem;
+    gap: 0.6rem;
     margin: 0;
-    padding: 0.45rem 1rem 0.9rem;
+    padding: calc(4rem + 1rem) 1rem max(1rem, env(safe-area-inset-bottom));
     border: 0;
     border-top: 0;
     border-radius: 0;
-    background: var(--cw-shell-frost-bg);
-    box-shadow: var(--cw-component-glass-shadow);
+    background: color-mix(in srgb, var(--cw-shell-frost-bg) 86%, var(--cw-platform-text) 14%);
+    box-shadow: none;
     backdrop-filter: var(--cw-shell-frost-filter);
     -webkit-backdrop-filter: var(--cw-shell-frost-filter);
     justify-items: stretch;
     justify-content: stretch;
     align-content: start;
+    overflow: hidden;
+  }
+
+  .mobileMenuSurface[data-cw-glass="shell"]::after {
+    content: none;
   }
 
   .mobileProfileSlot {
     display: flex;
     justify-content: center;
     width: 100%;
-    padding: 0 1rem 0.15rem;
+    padding: 0.15rem 1rem 0.35rem;
     box-sizing: border-box;
   }
 
@@ -212,6 +280,24 @@
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    border-radius: var(--cw-radius-sm);
+  }
+
+  .profileEntryMobile:hover,
+  .profileEntryMobile:focus-visible {
+    background: var(--cw-mobile-menu-item-hover-bg);
+  }
+
+  .profileEntryMobile[data-auth-state="guest"] {
+    color: var(--cw-mobile-menu-item-accent-fg);
+    background: var(--cw-mobile-menu-item-accent-bg);
+    box-shadow: var(--cw-depth-shadow-strong);
+  }
+
+  .profileEntryMobile[data-auth-state="guest"]:hover,
+  .profileEntryMobile[data-auth-state="guest"]:focus-visible {
+    background: var(--cw-mobile-menu-item-accent-bg);
+    filter: brightness(1.03);
   }
 
   .profileWrapMobile .profileMenu {
@@ -226,7 +312,7 @@
 
   .mobileMenuSurface > * {
     position: relative;
-    z-index: 1;
+    z-index: 2;
   }
 
   .shellOverlay .mobileMenuSurface {
@@ -252,9 +338,15 @@
     min-width: 100%;
     margin: 0 auto;
     justify-self: center;
-    align-self: center;
+    align-self: start;
     padding: 0 1rem;
     box-sizing: border-box;
+    min-height: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .navLayer .nav a {
@@ -275,7 +367,7 @@
 
   .navLayer .nav a:hover,
   .navLayer .nav a:focus-visible {
-    background: color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+    background: var(--cw-mobile-menu-item-hover-bg);
   }
 
   .navLayer .nav a + a {
@@ -283,12 +375,12 @@
   }
 
   .shellOverlay .navLayer .nav a {
-    color: var(--cw-platform-accent-contrast);
+    color: var(--cw-header-fg);
   }
 
   .shellOverlay .navLayer .nav a:hover,
   .shellOverlay .navLayer .nav a:focus-visible {
-    background: color-mix(in srgb, var(--cw-platform-accent-contrast) 10%, transparent);
+    background: var(--cw-mobile-menu-item-hover-bg);
   }
 
   .mobileMenuNav {
@@ -296,6 +388,7 @@
     flex-direction: column;
     align-items: center;
     align-self: stretch;
+    justify-content: flex-start;
     gap: 0.25rem;
     width: 100%;
     max-width: 100%;
@@ -339,6 +432,10 @@
     min-height: auto;
   }
 
+  .offerHeroVisualCard {
+    min-height: 19rem;
+  }
+
   .hero {
     padding-top: 0.9rem;
   }
@@ -359,14 +456,14 @@
 
   .heroPhotoLayer::after {
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 54%, transparent) 0%, color-mix(in srgb, var(--cw-platform-text) 48%, transparent) 42%, color-mix(in srgb, var(--cw-platform-text) 20%, transparent) 100%),
-      linear-gradient(90deg, color-mix(in srgb, var(--cw-platform-accent-strong) 18%, transparent), transparent 64%);
+      linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 60%, transparent) 0%, color-mix(in srgb, var(--cw-platform-text) 54%, transparent) 38%, color-mix(in srgb, var(--cw-platform-text) 26%, transparent) 100%),
+      linear-gradient(90deg, color-mix(in srgb, var(--cw-platform-accent-strong) 28%, transparent), transparent 64%);
   }
 
   .heroFeatureContent {
     width: 100%;
     align-self: center;
-    padding: clamp(4.8rem, 14vw, 6rem) 1.25rem clamp(9.5rem, 28vw, 12rem);
+    padding: clamp(4.8rem, 14vw, 6rem) 1rem clamp(9.8rem, 28vw, 12.4rem);
   }
 
   .heroFeatureActions {
@@ -425,6 +522,25 @@
     padding-top: 1.1rem;
   }
 
+  .videoActionGrid {
+    gap: 0.75rem;
+  }
+
+  .videoActionCard {
+    min-height: 0;
+    padding: 0.95rem 1rem 1rem;
+    gap: 0.85rem;
+  }
+
+  .videoActionCard strong {
+    font-size: clamp(1.38rem, 7vw, 1.8rem);
+  }
+
+  .videoActionCard small {
+    font-size: 0.95rem;
+    line-height: 1.42;
+  }
+
   .sectionHeader {
     display: grid;
     align-items: start;
@@ -456,6 +572,10 @@
     gap: 1.35rem;
   }
 
+  .offerHeroLayout {
+    gap: 0.85rem;
+  }
+
   .card {
     min-height: 0;
     padding: 1rem;
@@ -484,6 +604,18 @@
     font-size: 2.55rem;
   }
 
+  .offerHeroVisualCard {
+    min-height: 17rem;
+  }
+
+  .offerHeroVisualMeta h3 {
+    font-size: 1.85rem;
+  }
+
+  .offerHeroVisualMeta p:not(.label) {
+    font-size: 0.98rem;
+  }
+
   .heroFeature {
     min-height: 100vh;
     min-height: 100svh;
@@ -491,7 +623,8 @@
   }
 
   .heroPhotoLayer .expertImage {
-    object-position: 38% center;
+    object-position: 79% 12%;
+    transform: scale(1.14);
   }
 
   .heroFeatureTitle {
@@ -551,7 +684,7 @@
   }
 
   .brand {
-    gap: 0.65rem;
+    gap: 0;
   }
 
   .brandSymbol {
@@ -654,6 +787,13 @@
   }
 }
 
+@media (min-width: 561px) and (max-width: 900px) {
+  .heroPhotoLayer .expertImage {
+    object-position: 77% 16%;
+    transform: scale(1.12);
+  }
+}
+
 @media (max-width: 380px) {
   .heroFeature {
     min-height: 100vh;
@@ -678,6 +818,10 @@
 
   .heroProofGrid span {
     font-size: 0.6rem;
+  }
+
+  .videoActionCard strong {
+    font-size: 1.28rem;
   }
 
 }

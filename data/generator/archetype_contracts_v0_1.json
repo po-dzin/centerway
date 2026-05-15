@@ -6,6 +6,8 @@
     "overview-entry",
     "hub-journey",
     "offer-detail",
+    "platform-program-offer",
+    "platform-mini-course-offer",
     "intent-checkout",
     "lesson-practice",
     "dashboard-route",
@@ -25,6 +27,16 @@
         "trust"
       ],
       "offer-detail": [
+        "guide",
+        "trust",
+        "boundary"
+      ],
+      "platform-program-offer": [
+        "guide",
+        "trust",
+        "boundary"
+      ],
+      "platform-mini-course-offer": [
         "guide",
         "trust",
         "boundary"
@@ -134,12 +146,12 @@
       "primary_cta_repetition": "1..N",
       "semanticBlocks": {
         "required": [
-          "hero-entry-definition",
-          "route-choice"
+          "hero-entry-definition"
         ],
         "optional": [],
         "conditional": [
           "route-framing",
+          "route-choice",
           "offer-definition",
           "how-it-works",
           "identity-guide",
@@ -209,7 +221,7 @@
       },
       "rules": [
         "home acts as a guided hub rather than a single CTA tail",
-        "hero and diagnostics establish orientation before offer choice",
+        "hero and intro establish orientation before offer choice",
         "proof support and guide surfaces may appear without a final next-step block"
       ]
     },
@@ -303,6 +315,188 @@
         "visible offer fit and route role",
         "visible format and price",
         "boundary must be explicit"
+      ]
+    },
+    {
+      "archetype": "platform-program-offer",
+      "primaryCTA": "1",
+      "primary_cta_repetition": "1..N",
+      "semanticBlocks": {
+        "required": [
+          "hero-entry-definition",
+          "offer-definition",
+          "support-path",
+          "boundary-block"
+        ],
+        "optional": [
+          "route-framing",
+          "offer-includes",
+          "format-duration-price",
+          "how-it-works",
+          "proof-block",
+          "next-step",
+          "method-principles",
+          "identity-guide",
+          "testimonial-story",
+          "faq-clarification",
+          "reflection-note"
+        ],
+        "conditional": [
+          "current-step",
+          "route-choice",
+          "expectation-block",
+          "gentle-reassurance",
+          "human-handoff",
+          "stage-breakdown",
+          "pathway-map",
+          "completion-block",
+          "contraindication-block",
+          "error-recovery"
+        ],
+        "forbidden": [
+          "practice-unit",
+          "current-progress"
+        ]
+      },
+      "componentFamilies": {
+        "required": [
+          "page-shell",
+          "section-shell",
+          "route-action-button",
+          "boundary-block-component"
+        ],
+        "optional": [
+          "proof-card",
+          "testimonial-card"
+        ],
+        "conditional": [
+          "route-nav",
+          "breadcrumb-return-path",
+          "tabs-segment-switch",
+          "proof-action-button",
+          "support-action-button",
+          "boundary-action",
+          "path-card",
+          "stage-card",
+          "support-card",
+          "text-input",
+          "select-choice-control",
+          "progress-bar-track",
+          "route-node",
+          "stage-chip-status-pill",
+          "next-step-banner",
+          "expectation-block-component",
+          "feedback-message",
+          "empty-state",
+          "loading-state",
+          "error-recovery-state",
+          "modal",
+          "drawer",
+          "popover-tooltip"
+        ],
+        "forbidden": [
+          "practice-card",
+          "checkbox-consent-control",
+          "search-filter-utility",
+          "admin-panel",
+          "admin-status-badge"
+        ]
+      },
+      "rules": [
+        "platform program pages may collapse route education into the hero and direct enrollment block",
+        "primary action must stay inside the platform surface",
+        "boundary and human support must stay explicit"
+      ]
+    },
+    {
+      "archetype": "platform-mini-course-offer",
+      "primaryCTA": "1",
+      "primary_cta_repetition": "1..N",
+      "semanticBlocks": {
+        "required": [
+          "hero-entry-definition",
+          "offer-definition",
+          "support-path",
+          "boundary-block"
+        ],
+        "optional": [
+          "route-framing",
+          "offer-includes",
+          "format-duration-price",
+          "how-it-works",
+          "proof-block",
+          "next-step",
+          "method-principles",
+          "identity-guide",
+          "testimonial-story",
+          "faq-clarification",
+          "reflection-note"
+        ],
+        "conditional": [
+          "current-step",
+          "route-choice",
+          "expectation-block",
+          "gentle-reassurance",
+          "human-handoff",
+          "stage-breakdown",
+          "pathway-map",
+          "completion-block",
+          "contraindication-block",
+          "error-recovery"
+        ],
+        "forbidden": [
+          "practice-unit",
+          "current-progress"
+        ]
+      },
+      "componentFamilies": {
+        "required": [
+          "page-shell",
+          "section-shell",
+          "route-action-button",
+          "boundary-block-component"
+        ],
+        "optional": [
+          "proof-card",
+          "testimonial-card"
+        ],
+        "conditional": [
+          "route-nav",
+          "breadcrumb-return-path",
+          "tabs-segment-switch",
+          "proof-action-button",
+          "support-action-button",
+          "boundary-action",
+          "path-card",
+          "stage-card",
+          "support-card",
+          "text-input",
+          "select-choice-control",
+          "progress-bar-track",
+          "route-node",
+          "stage-chip-status-pill",
+          "next-step-banner",
+          "expectation-block-component",
+          "feedback-message",
+          "empty-state",
+          "loading-state",
+          "error-recovery-state",
+          "modal",
+          "drawer",
+          "popover-tooltip"
+        ],
+        "forbidden": [
+          "practice-card",
+          "checkbox-consent-control",
+          "search-filter-utility",
+          "admin-panel",
+          "admin-status-badge"
+        ]
+      },
+      "rules": [
+        "platform mini-courses are shorter and denser than long programs",
+        "primary action must stay inside the platform surface",
+        "fit, format and boundary must be visible before the enrollment step"
       ]
     },
     {
@@ -860,6 +1054,24 @@
       "boundary-block|faq-clarification|expectation-block",
       "support-path",
       "next-step"
+    ],
+    "platform-program-offer": [
+      "hero-entry-definition",
+      "route-framing?",
+      "offer-definition",
+      "offer-includes|format-duration-price|how-it-works|stage-breakdown|proof-block|testimonial-story|identity-guide?",
+      "boundary-block|faq-clarification|expectation-block",
+      "support-path",
+      "next-step?"
+    ],
+    "platform-mini-course-offer": [
+      "hero-entry-definition",
+      "route-framing?",
+      "offer-definition",
+      "offer-includes|format-duration-price|how-it-works|stage-breakdown|proof-block|testimonial-story|identity-guide?",
+      "boundary-block|faq-clarification|expectation-block",
+      "support-path",
+      "next-step?"
     ],
     "intent-checkout": [
       "offer-definition",

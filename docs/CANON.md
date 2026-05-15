@@ -33,6 +33,16 @@ The repo runtime manifest layer serializes RAverse into execution artifacts. The
 - `data/generator/archetype_contracts_v0_1.json`
 - `data/generator/route_family_contracts.json`
 
+## Agent Output Format
+
+For ordinary agent-facing output inside this repository, file references should use repo-relative paths with line numbers.
+
+Preferred form:
+
+- `src/components/platform/PlatformBlocks.module.css:167`
+
+Avoid full absolute filesystem paths in normal handoff notes, progress updates, and review comments unless the user explicitly asks for them.
+
 `docs/legacy/**` is a read-only legacy reservoir. It exists for provenance, audits, and reference recovery, not as active guidance for new work.
 
 ## When To Update RAverse

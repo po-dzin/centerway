@@ -29,16 +29,58 @@
   margin: 0 auto;
   overflow: visible;
   isolation: isolate;
+  --cw-header-fg: var(--cw-platform-text);
+  --cw-header-muted-fg: color-mix(in srgb, var(--cw-platform-text) 72%, transparent);
+  --cw-header-hover-bg: color-mix(in srgb, var(--cw-platform-surface) 10%, transparent);
+  --cw-header-band-bg: color-mix(in srgb, var(--cw-platform-surface) 14%, transparent);
+  --cw-header-fade-bg:
+    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-surface) 34%, transparent) 0%, color-mix(in srgb, var(--cw-platform-surface) 18%, transparent) 42%, transparent 100%);
+  --cw-header-sheet-shadow: 0 8px 20px color-mix(in srgb, var(--cw-platform-text) 6%, transparent);
+  --cw-header-sheet-filter: blur(20px) saturate(1.08) brightness(1.02);
+  --cw-header-wordmark-image: var(--cw-brand-asset-wordmark-dark);
   border: 0;
-  border-radius: calc(var(--cw-radius-pill) - 6px);
-  background: var(--cw-shell-frost-bg);
-  box-shadow: var(--cw-component-glass-shadow);
-  backdrop-filter: var(--cw-shell-frost-filter);
-  -webkit-backdrop-filter: var(--cw-shell-frost-filter);
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.header[data-cw-header-tone="dark"] {
+  --cw-header-fg: var(--cw-platform-accent-contrast);
+  --cw-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
+  --cw-header-hover-bg: color-mix(in srgb, var(--cw-platform-text) 9%, transparent);
+  --cw-header-band-bg: color-mix(in srgb, var(--cw-platform-text) 11%, transparent);
+  --cw-header-fade-bg:
+    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 22%, transparent) 0%, color-mix(in srgb, var(--cw-platform-text) 12%, transparent) 44%, transparent 100%);
+  --cw-header-sheet-shadow: 0 8px 22px color-mix(in srgb, #000000 14%, transparent);
+  --cw-header-sheet-filter: blur(22px) saturate(1.1) brightness(0.99);
+  --cw-header-wordmark-image: var(--cw-brand-asset-wordmark-light);
+}
+
+.header[data-cw-glass="shell"]::before,
+.header[data-cw-glass="shell"]::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  pointer-events: none;
+  box-shadow: var(--cw-header-sheet-shadow);
+  backdrop-filter: var(--cw-header-sheet-filter);
+  -webkit-backdrop-filter: var(--cw-header-sheet-filter);
+}
+
+.header[data-cw-glass="shell"]::before {
+  inset: -0.25rem -1rem auto;
+  height: calc(100% - 0.25rem);
+  background: var(--cw-header-band-bg);
 }
 
 .header[data-cw-glass="shell"]::after {
-  content: none;
+  inset: -0.25rem -1rem -0.85rem;
+  background: var(--cw-header-fade-bg);
+  mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 100%);
+  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 100%);
+  opacity: 1;
 }
 
 .shellOverlay .header {
@@ -48,10 +90,10 @@
   left: 0;
   width: min(100% - 2rem, var(--cw-max-width));
   border-color: transparent;
-  background: var(--cw-shell-frost-bg);
-  box-shadow: var(--cw-component-glass-shadow);
-  backdrop-filter: var(--cw-shell-frost-filter);
-  -webkit-backdrop-filter: var(--cw-shell-frost-filter);
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .shellOverlay .header[data-cw-glass="shell"]::after {
@@ -60,11 +102,11 @@
 
 .shellOverlay .brand,
 .shellOverlay .nav a {
-  color: var(--cw-platform-accent-contrast);
+  color: var(--cw-header-fg);
 }
 
 .shellOverlay .nav a:hover {
-  background: color-mix(in srgb, var(--cw-platform-accent-contrast) 12%, transparent);
+  background: color-mix(in srgb, var(--cw-header-fg) 10%, transparent);
 }
 
 .shellOverlay .ghostButton {
@@ -76,28 +118,34 @@
 .headerInner {
   position: relative;
   z-index: 1;
-  min-height: 4.1rem;
+  min-height: 4rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.65rem;
-  padding: 0 1rem;
+  padding: 0;
 }
 
 .brand {
   display: inline-flex;
   align-items: center;
-  gap: 0;
+  justify-content: center;
+  gap: 0.7rem;
   flex: 0 0 auto;
-  color: var(--cw-platform-text);
+  color: var(--cw-header-fg);
   text-decoration: none;
-  min-height: 2.75rem;
+  min-height: 3rem;
 }
 
 .brand:not([data-surface="footer"]) {
-  width: 2.75rem;
-  min-width: 2.75rem;
-  justify-content: center;
+  min-width: 3rem;
+  padding: 0 0.35rem 0 0;
+  min-height: 3rem;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .brandSymbol {
@@ -114,13 +162,23 @@
   height: var(--cw-brand-size-wordmark-header-height);
   display: block;
   flex: 0 0 auto;
-  background: var(--cw-brand-asset-lockup-header) center / contain no-repeat;
+  background: var(--cw-header-wordmark-image) center / contain no-repeat;
+}
+
+.brand[data-surface="footer"] {
+  justify-content: flex-start;
+  min-height: auto;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .brand[data-surface="footer"] .brandSymbol {
   width: var(--cw-brand-size-symbol-footer);
   height: var(--cw-brand-size-symbol-footer);
   background-image: var(--cw-brand-asset-logo-symbol-header);
+  filter: none;
 }
 
 .brand[data-surface="footer"] .brandWordmark {
@@ -148,6 +206,16 @@
   min-width: 0;
 }
 
+.nav {
+  min-height: 2.9rem;
+  padding: 0 0.2rem;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
 .nav a,
 .ghostButton,
 .primaryButton,
@@ -164,15 +232,15 @@
 .nav a {
   min-height: 2.5rem;
   padding: 0 0.9rem;
-  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 74%, transparent);
+  color: var(--cw-header-muted-fg);
   border-radius: var(--cw-radius-pill);
   font-size: 0.98rem;
   white-space: nowrap;
 }
 
 .nav a:hover {
-  color: var(--cw-platform-accent-contrast);
-  background: color-mix(in srgb, var(--cw-platform-accent-contrast) 12%, transparent);
+  color: var(--cw-header-fg);
+  background: var(--cw-header-hover-bg);
 }
 
 .actions {
@@ -205,11 +273,11 @@
   padding: 0.24rem 0.84rem;
   border: 0;
   border-radius: var(--cw-radius-pill);
-  color: var(--cw-platform-accent-contrast);
-  background: var(--cw-component-glass-bg);
-  box-shadow: var(--cw-component-glass-shadow);
-  backdrop-filter: var(--cw-component-glass-filter);
-  -webkit-backdrop-filter: var(--cw-component-glass-filter);
+  color: var(--cw-header-fg);
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   font: inherit;
   font-weight: 750;
   text-decoration: none;
@@ -233,7 +301,7 @@
 }
 
 .profileEntry:hover {
-  background: var(--cw-component-glass-bg-hover);
+  background: var(--cw-header-hover-bg);
 }
 
 .profileGlyph {
@@ -284,17 +352,17 @@
   padding: 0.7rem;
   border: 0;
   border-radius: var(--cw-radius-md);
-  color: var(--cw-platform-accent-contrast);
-  background: var(--cw-component-glass-bg);
-  box-shadow: var(--cw-component-glass-shadow);
-  backdrop-filter: var(--cw-component-glass-filter);
-  -webkit-backdrop-filter: var(--cw-component-glass-filter);
+  color: var(--cw-header-fg);
+  background: color-mix(in srgb, var(--cw-platform-surface) 42%, transparent);
+  box-shadow: var(--cw-header-sheet-shadow);
+  backdrop-filter: var(--cw-header-sheet-filter);
+  -webkit-backdrop-filter: var(--cw-header-sheet-filter);
 }
 
 .profileMenu p {
   margin: 0;
   padding: 0.45rem 0.55rem 0.6rem;
-  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 70%, transparent);
+  color: color-mix(in srgb, var(--cw-header-fg) 72%, transparent);
   font-size: 0.84rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -309,7 +377,7 @@
   padding: 0 0.65rem;
   border: 0;
   border-radius: var(--cw-radius-sm);
-  color: var(--cw-platform-accent-contrast);
+  color: var(--cw-header-fg);
   background: transparent;
   font: inherit;
   font-weight: 720;
@@ -319,7 +387,7 @@
 
 .profileMenu a:hover,
 .profileMenu button:hover {
-  background: color-mix(in srgb, var(--cw-platform-accent-contrast) 12%, transparent);
+  background: color-mix(in srgb, var(--cw-header-fg) 10%, transparent);
 }
 
 .mobileProfileSlot {
@@ -327,27 +395,32 @@
 }
 
 .menuButton {
-  width: 2.75rem;
-  height: 2.75rem;
+  width: 3rem;
+  height: 3rem;
   position: relative;
   display: none;
   place-items: center;
   overflow: hidden;
   isolation: isolate;
+  appearance: none;
+  -webkit-appearance: none;
   border: 0;
-  border-radius: var(--cw-radius-sm);
-  color: var(--cw-platform-text);
-  background: var(--cw-shell-frost-bg);
-  box-shadow: var(--cw-component-glass-shadow);
-  backdrop-filter: var(--cw-shell-frost-filter);
-  -webkit-backdrop-filter: var(--cw-shell-frost-filter);
+  border-radius: 999px;
+  color: var(--cw-header-fg);
+  background: transparent;
+  background-color: transparent;
+  background-image: none;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  outline: none;
 }
 
 .menuButton span {
   position: relative;
   z-index: 1;
-  width: 1.2rem;
-  height: 2px;
+  width: 1.55rem;
+  height: 2.25px;
   display: block;
   grid-area: 1 / 1;
   background: currentColor;
@@ -356,11 +429,11 @@
 }
 
 .menuButton span:nth-child(1) {
-  transform: translateY(-0.38rem);
+  transform: translateY(-0.46rem);
 }
 
 .menuButton span:nth-child(3) {
-  transform: translateY(0.38rem);
+  transform: translateY(0.46rem);
 }
 
 .menuButton[aria-expanded="true"] span:nth-child(1) {

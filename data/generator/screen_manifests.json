@@ -426,11 +426,6 @@
           "block_manifest_version": "1.0.0"
         },
         {
-          "id": "platform-home.route-map",
-          "block_manifest_id": "block.platform-home.route-map.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
           "id": "platform-home.mini-courses",
           "block_manifest_id": "block.platform-home.mini-courses.v1",
           "block_manifest_version": "1.0.0"
@@ -512,7 +507,7 @@
       "route_family": "program offer",
       "route_boundary": "platform route",
       "route_family_contract_id": "route_family.program-offer.v1",
-      "archetype": "offer-detail",
+      "archetype": "platform-program-offer",
       "mode": "platform",
       "branch": "platform",
       "token_pack_id": "token_pack.living-mineral.v1",
@@ -525,33 +520,8 @@
           "block_manifest_version": "1.0.0"
         },
         {
-          "id": "program-way21.route-framing",
-          "block_manifest_id": "block.program-way21.route-framing.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
           "id": "program-way21.offer-definition",
           "block_manifest_id": "block.program-way21.offer-definition.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-way21.offer-includes",
-          "block_manifest_id": "block.program-way21.offer-includes.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-way21.format-price",
-          "block_manifest_id": "block.program-way21.format-price.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-way21.how-it-works",
-          "block_manifest_id": "block.program-way21.how-it-works.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-way21.proof",
-          "block_manifest_id": "block.program-way21.proof.v1",
           "block_manifest_version": "1.0.0"
         },
         {
@@ -562,11 +532,6 @@
         {
           "id": "program-way21.support",
           "block_manifest_id": "block.program-way21.support.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-way21.next-step",
-          "block_manifest_id": "block.program-way21.next-step.v1",
           "block_manifest_version": "1.0.0"
         }
       ]
@@ -579,7 +544,7 @@
       "route_family": "program offer",
       "route_boundary": "platform route",
       "route_family_contract_id": "route_family.program-offer.v1",
-      "archetype": "offer-detail",
+      "archetype": "platform-program-offer",
       "mode": "platform",
       "branch": "platform",
       "token_pack_id": "token_pack.living-mineral.v1",
@@ -592,33 +557,8 @@
           "block_manifest_version": "1.0.0"
         },
         {
-          "id": "program-ideal-body.route-framing",
-          "block_manifest_id": "block.program-ideal-body.route-framing.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
           "id": "program-ideal-body.offer-definition",
           "block_manifest_id": "block.program-ideal-body.offer-definition.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-ideal-body.offer-includes",
-          "block_manifest_id": "block.program-ideal-body.offer-includes.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-ideal-body.format-price",
-          "block_manifest_id": "block.program-ideal-body.format-price.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-ideal-body.how-it-works",
-          "block_manifest_id": "block.program-ideal-body.how-it-works.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-ideal-body.proof",
-          "block_manifest_id": "block.program-ideal-body.proof.v1",
           "block_manifest_version": "1.0.0"
         },
         {
@@ -629,11 +569,6 @@
         {
           "id": "program-ideal-body.support",
           "block_manifest_id": "block.program-ideal-body.support.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-ideal-body.next-step",
-          "block_manifest_id": "block.program-ideal-body.next-step.v1",
           "block_manifest_version": "1.0.0"
         }
       ]
@@ -646,7 +581,7 @@
       "route_family": "program offer",
       "route_boundary": "platform route",
       "route_family_contract_id": "route_family.program-offer.v1",
-      "archetype": "offer-detail",
+      "archetype": "platform-program-offer",
       "mode": "platform",
       "branch": "platform",
       "token_pack_id": "token_pack.living-mineral.v1",
@@ -659,33 +594,8 @@
           "block_manifest_version": "1.0.0"
         },
         {
-          "id": "program-irem.route-framing",
-          "block_manifest_id": "block.program-irem.route-framing.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
           "id": "program-irem.offer-definition",
           "block_manifest_id": "block.program-irem.offer-definition.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-irem.offer-includes",
-          "block_manifest_id": "block.program-irem.offer-includes.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-irem.format-price",
-          "block_manifest_id": "block.program-irem.format-price.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-irem.how-it-works",
-          "block_manifest_id": "block.program-irem.how-it-works.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-irem.proof",
-          "block_manifest_id": "block.program-irem.proof.v1",
           "block_manifest_version": "1.0.0"
         },
         {
@@ -697,11 +607,6 @@
           "id": "program-irem.support",
           "block_manifest_id": "block.program-irem.support.v1",
           "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-irem.next-step",
-          "block_manifest_id": "block.program-irem.next-step.v1",
-          "block_manifest_version": "1.0.0"
         }
       ]
     },
@@ -710,10 +615,10 @@
       "version": "1.0.0",
       "route_key": "mini-detox",
       "route_path": "/mini-detox",
-      "route_family": "standalone route entry",
+      "route_family": "mini-course offer",
       "route_boundary": "platform route",
-      "route_family_contract_id": "route_family.standalone-entry.v1",
-      "archetype": "offer-detail",
+      "route_family_contract_id": "route_family.mini-course-offer.v1",
+      "archetype": "platform-mini-course-offer",
       "mode": "platform",
       "branch": "platform",
       "token_pack_id": "token_pack.living-mineral.v1",
@@ -726,33 +631,8 @@
           "block_manifest_version": "1.0.0"
         },
         {
-          "id": "mini-detox.route-framing",
-          "block_manifest_id": "block.mini-detox.route-framing.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
           "id": "mini-detox.offer-definition",
           "block_manifest_id": "block.mini-detox.offer-definition.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "mini-detox.offer-includes",
-          "block_manifest_id": "block.mini-detox.offer-includes.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "mini-detox.format-price",
-          "block_manifest_id": "block.mini-detox.format-price.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "mini-detox.how-it-works",
-          "block_manifest_id": "block.mini-detox.how-it-works.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "mini-detox.proof",
-          "block_manifest_id": "block.mini-detox.proof.v1",
           "block_manifest_version": "1.0.0"
         },
         {
@@ -764,10 +644,42 @@
           "id": "mini-detox.support",
           "block_manifest_id": "block.mini-detox.support.v1",
           "block_manifest_version": "1.0.0"
+        }
+      ]
+    },
+    {
+      "id": "screen.program-reboot.v1.control",
+      "version": "1.0.0",
+      "route_key": "program-reboot",
+      "route_path": "/programs/reboot",
+      "route_family": "mini-course offer",
+      "route_boundary": "platform route",
+      "route_family_contract_id": "route_family.mini-course-offer.v1",
+      "archetype": "platform-mini-course-offer",
+      "mode": "platform",
+      "branch": "platform",
+      "token_pack_id": "token_pack.living-mineral.v1",
+      "mode_pack_id": "mode_pack.platform.v1",
+      "branch_overlay_id": "branch_overlay.platform.v1",
+      "blocks": [
+        {
+          "id": "program-reboot.hero",
+          "block_manifest_id": "block.program-reboot.hero.v1",
+          "block_manifest_version": "1.0.0"
         },
         {
-          "id": "mini-detox.next-step",
-          "block_manifest_id": "block.mini-detox.next-step.v1",
+          "id": "program-reboot.offer-definition",
+          "block_manifest_id": "block.program-reboot.offer-definition.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "program-reboot.boundary",
+          "block_manifest_id": "block.program-reboot.boundary.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "program-reboot.support",
+          "block_manifest_id": "block.program-reboot.support.v1",
           "block_manifest_version": "1.0.0"
         }
       ]

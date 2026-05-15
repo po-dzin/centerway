@@ -3685,6 +3685,163 @@
       }
     },
     {
+      "id": "block.program-reboot.hero.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.hero_entry_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "orientation",
+      "semantic_family": "orientation",
+      "user_question": "Куда я попал и какой следующий шаг?",
+      "required_fields": [
+        "title",
+        "lead",
+        "primary_cta"
+      ],
+      "allowed_actions": [
+        "start_or_continue"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "primary",
+      "component_families": [
+        "page-shell",
+        "section-shell",
+        "route-action-button",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-reboot",
+        "variant": "offer.hero",
+        "programSlug": "reboot"
+      }
+    },
+    {
+      "id": "block.program-reboot.offer-definition.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.offer_definition.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "offer",
+      "semantic_family": "offer_route",
+      "user_question": "Что это за оффер и для кого он?",
+      "required_fields": [
+        "definition",
+        "fit"
+      ],
+      "allowed_actions": [
+        "evaluate_fit"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "proof-card"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.guide"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-reboot",
+        "variant": "offer.details",
+        "programSlug": "reboot"
+      }
+    },
+    {
+      "id": "block.program-reboot.boundary.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.boundary_block.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "boundary",
+      "semantic_family": "boundary_caution",
+      "user_question": "Где границы метода и что важно учитывать?",
+      "required_fields": [
+        "limits",
+        "safety_note"
+      ],
+      "allowed_actions": [
+        "set_boundaries"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "none",
+      "component_families": [
+        "section-shell",
+        "boundary-block-component"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.boundary"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-reboot",
+        "variant": "boundary",
+        "programSlug": "reboot"
+      }
+    },
+    {
+      "id": "block.program-reboot.support.v1",
+      "version": "1.0.0",
+      "semantic_block_id": "sb.support_path.v1",
+      "semantic_block_version": "1.0.0",
+      "semantic_role": "support",
+      "semantic_family": "support_care",
+      "user_question": "Как получить поддержку, если есть тревога или вопросы?",
+      "required_fields": [
+        "support_contact",
+        "support_context"
+      ],
+      "allowed_actions": [
+        "seek_support"
+      ],
+      "route_boundary": "platform route",
+      "mode": "platform",
+      "recipe_id": "recipe.platform.block.v1",
+      "recipe_version": "1.0.0",
+      "action_role": "support",
+      "component_families": [
+        "section-shell",
+        "support-card",
+        "support-action-button",
+        "text-input"
+      ],
+      "renderer": "platform.block",
+      "token_recipes": [
+        "semantic.runtime",
+        "semantic.trust"
+      ],
+      "layout_variants": [
+        "default"
+      ],
+      "default_props": {
+        "route": "program-reboot",
+        "variant": "offer.support",
+        "programSlug": "reboot"
+      }
+    },
+    {
       "id": "block.expert.route-map.v1",
       "version": "1.0.0",
       "semantic_block_id": "sb.route_choice.v1",
