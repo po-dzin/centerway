@@ -27,7 +27,6 @@
       ],
       "required_semantic_roles": [
         "orientation",
-        "route-map",
         "support"
       ]
     },
@@ -71,7 +70,43 @@
         "/programs/irem"
       ],
       "allowed_archetypes": [
-        "offer-detail"
+        "offer-detail",
+        "platform-program-offer"
+      ],
+      "allowed_block_order": [
+        "hero-entry-definition",
+        "route-framing",
+        "offer-definition",
+        "offer-includes",
+        "format-duration-price",
+        "how-it-works",
+        "proof-block",
+        "boundary-block",
+        "support-path",
+        "next-step"
+      ],
+      "allowed_renderers": [
+        "platform.block"
+      ],
+      "required_semantic_roles": [
+        "orientation",
+        "offer",
+        "boundary",
+        "support"
+      ]
+    },
+    {
+      "id": "route_family.mini-course-offer.v1",
+      "version": "1.0.0",
+      "route_family": "mini-course offer",
+      "route_boundary": "platform route",
+      "route_paths": [
+        "/mini-detox",
+        "/programs/mini-detox",
+        "/programs/reboot"
+      ],
+      "allowed_archetypes": [
+        "platform-mini-course-offer"
       ],
       "allowed_block_order": [
         "hero-entry-definition",

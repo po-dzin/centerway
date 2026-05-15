@@ -25,7 +25,8 @@
     --cw-interactive-active-border: #b7b7b1;
     --cw-interactive-active-shadow: 0 0 0 1px rgba(183, 183, 177, 0.35);
     --cw-focus-ring: rgba(183, 183, 177, 0.42);
-    --cw-radius-btn: 0.9rem;
+    --ds-radius-button-soft: 1rem;
+    --cw-radius-btn: var(--ds-radius-button-soft);
     --cw-brand-hover-border: color-mix(in srgb, var(--cw-accent) 72%, var(--cw-border) 28%);
     --cw-btn-primary-bg: color-mix(in srgb, var(--cw-accent) 70%, var(--cw-status-success) 30%);
     --cw-btn-primary-bg-hover: color-mix(in srgb, var(--cw-accent) 76%, var(--cw-status-success) 24%);
@@ -249,6 +250,7 @@
     --ds-radius-md: 1rem;
     --ds-radius-lg: 1.25rem;
     --ds-radius-pill: 62.4375rem;
+    --ds-radius-button-soft: 1rem;
     --ds-shadow-sm: var(--cw-shadow-soft);
     --ds-shadow-md: var(--cw-shadow-strong);
     --ds-z-base: 1;
@@ -294,6 +296,7 @@
     --ds-radius-md: 1rem;
     --ds-radius-lg: 1.25rem;
     --ds-radius-pill: 62.4375rem;
+    --ds-radius-button-soft: 1rem;
     --ds-shadow-sm: var(--cw-shadow-soft);
     --ds-shadow-md: var(--cw-shadow-strong);
     --ds-z-base: 1;
@@ -328,7 +331,8 @@
     --cw-interactive-active-border: #6a6a64;
     --cw-interactive-active-shadow: 0 0 0 1px rgba(106, 106, 100, 0.38);
     --cw-focus-ring: rgba(106, 106, 100, 0.52);
-    --cw-radius-btn: 0.9rem;
+    --ds-radius-button-soft: 1rem;
+    --cw-radius-btn: var(--ds-radius-button-soft);
     --cw-brand-hover-border: color-mix(in srgb, var(--cw-accent) 74%, var(--cw-border) 26%);
     --cw-btn-primary-bg: color-mix(in srgb, var(--cw-accent) 72%, var(--cw-status-success) 28%);
     --cw-btn-primary-bg-hover: color-mix(in srgb, var(--cw-accent) 78%, var(--cw-status-success) 22%);

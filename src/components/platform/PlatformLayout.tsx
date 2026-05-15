@@ -8,9 +8,90 @@ import { contact, platformNav, socialLinks } from "@/lib/platform/content";
 import { supabaseClient } from "@/lib/supabaseClient";
 import styles from "./PlatformStyles";
 
+type HeaderTone = "light" | "dark";
+
 function getUserInitial(session: Session | null) {
   const name = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email;
   return typeof name === "string" && name.length > 0 ? name.charAt(0).toUpperCase() : "?";
+}
+
+function parseCssColor(value: string) {
+  const normalized = value.trim().toLowerCase();
+
+  if (normalized.startsWith("rgb")) {
+    const parts = normalized.match(/[\d.]+/g);
+    if (!parts || parts.length < 3) return null;
+    return {
+      r: Number(parts[0]),
+      g: Number(parts[1]),
+      b: Number(parts[2]),
+      a: parts[3] ? Number(parts[3]) : 1,
+    };
+  }
+
+  if (normalized.startsWith("#")) {
+    const hex = normalized.slice(1);
+    if (hex.length === 3 || hex.length === 4) {
+      return {
+        r: parseInt(hex[0] + hex[0], 16),
+        g: parseInt(hex[1] + hex[1], 16),
+        b: parseInt(hex[2] + hex[2], 16),
+        a: hex.length === 4 ? parseInt(hex[3] + hex[3], 16) / 255 : 1,
+      };
+    }
+
+    if (hex.length === 6 || hex.length === 8) {
+      return {
+        r: parseInt(hex.slice(0, 2), 16),
+        g: parseInt(hex.slice(2, 4), 16),
+        b: parseInt(hex.slice(4, 6), 16),
+        a: hex.length === 8 ? parseInt(hex.slice(6, 8), 16) / 255 : 1,
+      };
+    }
+  }
+
+  return null;
+}
+
+function luminanceFromColor(color: { r: number; g: number; b: number }) {
+  const channels = [color.r, color.g, color.b].map((value) => {
+    const channel = value / 255;
+    return channel <= 0.03928 ? channel / 12.92 : ((channel + 0.055) / 1.055) ** 2.4;
+  });
+
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+}
+
+function resolveToneFromPoint(x: number, y: number): HeaderTone | null {
+  const elements = document.elementsFromPoint(x, y);
+
+  for (const node of elements) {
+    if (!(node instanceof HTMLElement)) continue;
+    if (node.closest("header[data-cw-header-tone]")) continue;
+
+    const explicitTone = node.closest<HTMLElement>("[data-cw-topbar-tone]")?.dataset.cwTopbarTone;
+    if (explicitTone === "light" || explicitTone === "dark") return explicitTone;
+
+    let current: HTMLElement | null = node;
+
+    while (current && current !== document.body) {
+      const style = window.getComputedStyle(current);
+      const backgroundImage = style.backgroundImage;
+      const parsed = parseCssColor(style.backgroundColor);
+
+      if (parsed && parsed.a > 0.08) {
+        return luminanceFromColor(parsed) < 0.34 ? "dark" : "light";
+      }
+
+      if (backgroundImage && backgroundImage !== "none") {
+        return "dark";
+      }
+
+      current = current.parentElement;
+    }
+  }
+
+  return null;
 }
 
 function PlatformProfileEntry({
@@ -81,6 +162,7 @@ function PlatformProfileEntry({
         href="/dosha-test"
         onClick={onNavigate}
         aria-label="Профіль"
+        data-auth-state="fallback"
       >
         {compact ? <span className={styles.profileGlyph} aria-hidden="true" /> : <span className={styles.profileLabel}>Профіль</span>}
       </Link>
@@ -93,6 +175,7 @@ function PlatformProfileEntry({
         className={`${styles.profileEntry} ${mobile ? styles.profileEntryMobile : ""} ${compact ? styles.profileEntryCompact : ""}`}
         type="button"
         aria-label="Увійти"
+        data-auth-state="guest"
         onClick={() => {
           onNavigate?.();
           void signInWithGoogle();
@@ -110,6 +193,7 @@ function PlatformProfileEntry({
         type="button"
         aria-label={label}
         aria-expanded={menuOpen}
+        data-auth-state="user"
         onClick={() => setMenuOpen((open) => !open)}
       >
         <span className={styles.profileAvatar} aria-hidden="true">
@@ -139,19 +223,80 @@ function PlatformProfileEntry({
 
 export function PlatformHeader() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [headerTone, setHeaderTone] = useState<HeaderTone>("light");
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    const { body } = document;
+    const previousOverflow = body.style.overflow;
+    const previousTouchAction = body.style.touchAction;
+
+    if (menuOpen) {
+      body.style.overflow = "hidden";
+      body.style.touchAction = "none";
+    }
+
+    return () => {
+      body.style.overflow = previousOverflow;
+      body.style.touchAction = previousTouchAction;
+    };
+  }, [menuOpen]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    let frame = 0;
+
+    const updateTone = () => {
+      frame = 0;
+      const header = document.querySelector<HTMLElement>("header[data-cw-header-tone]");
+      const headerHeight = header?.offsetHeight ?? 72;
+      const sampleY = Math.max(16, Math.min(window.innerHeight - 16, Math.round(headerHeight * 0.72)));
+      const samplePoints = [0.18, 0.5, 0.82].map((ratio) => Math.round(window.innerWidth * ratio));
+      const tones = samplePoints
+        .map((sampleX) => resolveToneFromPoint(sampleX, sampleY))
+        .filter((tone): tone is HeaderTone => tone === "light" || tone === "dark");
+
+      if (!tones.length) return;
+
+      const darkVotes = tones.filter((tone) => tone === "dark").length;
+      setHeaderTone(darkVotes >= Math.ceil(tones.length / 2) ? "dark" : "light");
+    };
+
+    const requestToneUpdate = () => {
+      if (frame) return;
+      frame = window.requestAnimationFrame(updateTone);
+    };
+
+    updateTone();
+    window.addEventListener("scroll", requestToneUpdate, { passive: true });
+    window.addEventListener("resize", requestToneUpdate);
+
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", requestToneUpdate);
+      window.removeEventListener("resize", requestToneUpdate);
+    };
+  }, []);
 
   function closeMenu() {
     setMenuOpen(false);
   }
 
   return (
-    <header className={styles.header} data-cw-glass="shell" data-menu-open={menuOpen ? "true" : "false"}>
+    <header
+      className={styles.header}
+      data-cw-glass="shell"
+      data-cw-header-tone={headerTone}
+      data-menu-open={menuOpen ? "true" : "false"}
+    >
       <div className={`${styles.container} ${styles.headerInner}`}>
         <Link className={styles.brand} href="/" onClick={closeMenu} aria-label="CenterWay">
           <span className={styles.brandSymbol} aria-hidden="true" />
+          <span className={styles.brandWordmark} aria-hidden="true" />
         </Link>
         <div className={`${styles.navLayer} ${menuOpen ? styles.navLayerOpen : ""}`} id="platform-mobile-menu">
-          <div className={styles.mobileMenuSurface}>
+          <div className={styles.mobileMenuSurface} data-cw-glass="shell">
             <nav className={`${styles.nav} ${styles.mobileMenuNav}`} aria-label="Основна навігація">
               {platformNav.map((item) => (
                 <Link key={item.href} href={item.href} onClick={closeMenu}>
@@ -173,7 +318,6 @@ export function PlatformHeader() {
           aria-label={menuOpen ? "Закрити меню" : "Відкрити меню"}
           aria-expanded={menuOpen}
           aria-controls="platform-mobile-menu"
-          data-cw-glass="control"
           onClick={() => setMenuOpen((open) => !open)}
         >
           <span />

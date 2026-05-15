@@ -66,12 +66,14 @@ export type ScreenRouteKey =
   | "program-way21"
   | "program-ideal-body"
   | "program-irem"
+  | "program-reboot"
   | "mini-detox";
 
 export type RouteFamily =
   | "platform hub"
   | "expert"
   | "program offer"
+  | "mini-course offer"
   | "standalone route entry"
   | "funnel surface"
   | "legal"
@@ -227,6 +229,8 @@ export type ArchetypeContract = {
     | "overview-entry"
     | "hub-journey"
     | "offer-detail"
+    | "platform-program-offer"
+    | "platform-mini-course-offer"
     | "intent-checkout"
     | "lesson-practice"
     | "dashboard-route"

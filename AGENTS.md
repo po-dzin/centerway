@@ -64,6 +64,17 @@ Use local docs for implementation notes, audits, route-specific decisions, runti
 
 Update RAverse only when a local decision becomes a durable project rule that should guide future work beyond one immediate task, route, script, component, or migration.
 
+## Agent Output Path Rule
+
+When agents report changed files, references, handoff notes, or review comments, do not print full absolute filesystem paths by default.
+
+Use only:
+
+- repo-relative file paths like `src/components/platform/PlatformBlocks.module.css:167`
+- or bare filenames with line when the reference is unambiguous
+
+Do not use forms like `/Users/.../project/file.ts:42` in ordinary agent-facing output unless the user explicitly asks for the absolute path.
+
 ## Conflict Rule
 
 If local docs and RAverse disagree, treat RAverse as the active canon.

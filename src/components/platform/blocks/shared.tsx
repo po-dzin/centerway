@@ -10,6 +10,7 @@ export const routeLabels: Record<string, string> = {
   "program-way21": "Шлях 21",
   "program-ideal-body": "Ідеальне тіло",
   "program-irem": "IREM Гімнастика",
+  "program-reboot": "Short Reboot",
   "mini-detox": "Mini Detox",
 };
 
