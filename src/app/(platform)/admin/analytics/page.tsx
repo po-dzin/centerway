@@ -365,7 +365,7 @@ function normalizeDateRange(range: DateRange): DateRange {
   return { from, to };
 }
 
-type RangePresetKey = "7d" | "30d" | "mtd" | "90d";
+type RangePresetKey = "7d" | "30d" | "mtd" | "90d" | "1y";
 
 function buildPresetRange(preset: RangePresetKey): DateRange {
   if (preset === "mtd") {
@@ -376,7 +376,10 @@ function buildPresetRange(preset: RangePresetKey): DateRange {
     };
   }
 
-  const days = preset === "7d" ? 7 : preset === "30d" ? 30 : 90;
+  const days =
+    preset === "7d" ? 7 :
+      preset === "30d" ? 30 :
+        preset === "90d" ? 90 : 365;
   return {
     from: shiftedDate(days - 1),
     to: formatDateLocal(new Date()),
@@ -385,7 +388,7 @@ function buildPresetRange(preset: RangePresetKey): DateRange {
 
 function detectActivePreset(range: DateRange): RangePresetKey | null {
   const normalized = normalizeDateRange(range);
-  const presets: RangePresetKey[] = ["7d", "30d", "mtd", "90d"];
+  const presets: RangePresetKey[] = ["7d", "30d", "mtd", "90d", "1y"];
   for (const preset of presets) {
     const candidate = normalizeDateRange(buildPresetRange(preset));
     if (candidate.from === normalized.from && candidate.to === normalized.to) {
@@ -650,16 +653,16 @@ function DateRangePicker({ value, onApply, applyLabel, locale, className = "" }:
 
           {renderMonth(days, viewMonth)}
 
-          <div className="flex items-center gap-2 border-t cw-border pt-2">
-            <div className="flex items-center gap-1 flex-1 min-w-0">
-              {(["7d", "30d", "mtd", "90d"] as RangePresetKey[]).map((preset) => (
+          <div className="flex items-center gap-1.5 border-t cw-border pt-2">
+            <div className="flex items-center gap-0.5 flex-1 min-w-0">
+              {(["7d", "30d", "mtd", "90d", "1y"] as RangePresetKey[]).map((preset) => (
                 <button
                   key={preset}
                   type="button"
                   onClick={() => {
                     void applyPresetQuick(preset);
                   }}
-                  className={`h-8 w-11 px-0 text-xs rounded-md border transition-colors ${
+                  className={`h-7 min-w-9 px-1.5 text-[11px] rounded-md border transition-colors ${
                     activePreset === preset
                       ? "cw-text border-[var(--cw-interactive-active-border)] bg-[var(--cw-interactive-active-bg)]"
                       : "cw-btn-muted border-[var(--cw-border)] hover:bg-[var(--cw-interactive-hover-bg)]"
@@ -669,7 +672,7 @@ function DateRangePicker({ value, onApply, applyLabel, locale, className = "" }:
                 </button>
               ))}
             </div>
-            <button type="button" onClick={applyRange} className="px-3 py-1.5 text-sm font-medium cw-btn shrink-0">
+            <button type="button" onClick={applyRange} className="h-8 px-2.5 text-sm font-medium cw-btn shrink-0">
               {applyLabel}
             </button>
           </div>
