@@ -1,17 +1,24 @@
-# CenterWay Platform App
+# CenterWay
 
-Next.js runtime for:
-- host-based landing routing (`reboot.*` and `irem.*`)
-- payment API endpoints
+Next.js runtime for the current CenterWay product surface.
+
+## What lives here
+
+- platform routes: home, expert, consult, programs, legal, support surfaces
+- dosha-test flow and related API endpoints
+- admin surface and admin API endpoints
+- host-based landing routing for `reboot.*` and `irem.*`
 - static landing assets under `src/landing-static/*`
+- design-token, generator, and canon runtime manifests
 
-## Documentation and Canon
+## Canon
 
-Local implementation notes and operational decisions live in `docs/**`.
-
-`docs/legacy/**` is a read-only reservoir of superseded specs and migration-era documents. It is not part of the active agent reading set.
-
-The shared stable canon lives in `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay` and should only be updated when a local decision becomes a durable cross-project rule. See [docs/CANON.md](docs/CANON.md).
+- shared semantic source of truth: `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay`
+- local implementation notes: `docs/**`
+- local canon policy: `docs/CANON.md`
+- local platform preflight: `docs/platform_agent_preflight.md`
+- local DS spec: `docs/design-system-spec-2026-05-17.md`
+- `docs/legacy/**` is read-only provenance, not active guidance
 
 ## Run
 
@@ -20,88 +27,93 @@ npm install
 npm run dev
 ```
 
-## Validate
+App runs on `http://localhost:8000`.
+
+## Core checks
 
 ```bash
 npm run lint
 npm run build
-npm run smoke:admin:governance
-npm run smoke:admin:i18n-tone
-npm run smoke:admin:a11y-contract
+npm run canon:guard
+npm run guard:ds-contract
+npm run semantic:audit
+```
+
+## Generator checks
+
+```bash
+npm run generator:validate
+npm run generator:snapshot
+npm run generator:determinism
+npm run generator:language
+npm run guard:rhythm
+```
+
+Combined gate:
+
+```bash
+npm run generator:gate
+```
+
+## Route and surface smoke
+
+### Admin
+
+```bash
 npm run smoke:admin
-npm run smoke:admin:auth
-npm run smoke:admin:authz-surface
-npm run smoke:admin:funnel
-npm run smoke:admin:payload-contracts
-npm run smoke:admin:write-guards
-npm run smoke:admin:authz-coverage
 npm run smoke:admin:ci
 npm run smoke:admin:ui
 npm run smoke:admin:responsive
+```
+
+Some admin checks require `SMOKE_ADMIN_BEARER`.
+
+### Dosha
+
+```bash
 npm run smoke:dosha:result
+npm run smoke:dosha:api
+npm run smoke:dosha:userflows
+npm run smoke:dosha:responsive
+npm run smoke:dosha:brand-fit
 ```
 
-`smoke:admin:auth` requires `SMOKE_ADMIN_BEARER` and validates 200-contracts for core admin endpoints.
-`smoke:admin:funnel` requires `SMOKE_ADMIN_BEARER` and validates analytics invariants (funnel/CAPI consistency).
-`smoke:admin:governance` enforces token-first style rules, forbidden classes, and reduced-motion/focus contracts.
-`smoke:admin:i18n-tone` verifies RU/EN admin key parity and blocks pressure/urgency phrasing in admin copy.
-`smoke:admin:a11y-contract` validates modal semantics, reduced-motion, and blocks non-semantic clickable blocks.
-`smoke:admin:payload-contracts` validates error/payload contracts for admin mutate endpoints.
-`smoke:admin:write-guards` optionally uses `SMOKE_USER_BEARER` to assert strict `403` on mutate endpoints for non-admin users.
-`smoke:admin:ci` runs the full smoke suite sequentially and auto-skips admin-token checks when `SMOKE_ADMIN_BEARER` is not set.
-`smoke:admin:ui` runs browser-level smoke checks for `/admin`, `/admin/analytics`, `/admin/system/audit` (requires Playwright).
-`smoke:admin:responsive` runs responsive matrix checks for `/admin/*` at `375/768/1024/1440` (requires Playwright + base URL).
-`smoke:dosha:result` validates the dosha result matrix (`single/dual/tridosha`) used by test scoring.
-`ds:qa` runs baseline design-system quality checks (token contract + lint).
-`ds:qa:landing` runs design-system contract checks plus landing smoke (`short/irem`).
-`smoke:landing:short-irem` accepts `SMOKE_LANDING_ENTRY=next|fallback` (`next` by default).
-`smoke:landing:next-contract` checks `/reboot` and `/irem` HTML contract (managed bridge/runtime injection, no legacy inline attribution block). Set `SMOKE_REQUIRE_NEXT_LANDING=1` to fail when routes are still in legacy fallback.
-`baseline:landing:short-irem` saves full-page baseline screenshots for `390/768/1024/1440` into `artifacts/landing-baseline/*` and accepts `BASELINE_LANDING_ENTRY=next|fallback`.
-
-## Next Landing Rollout (`short/irem`)
-
-- Feature flag: `CW_NEXT_LANDING_SHORT_IREM=1` enables Next-managed entrypoints for `/reboot` and `/irem`.
-- Default (flag on): Next-managed entrypoints are enabled.
-- Host-based root domains (`reboot.*`, `irem.*`) are served through middleware rewrites into `src/landing-static/**`; `public/short/*` and `public/irem/*` are no longer part of the runtime surface.
-- Typed hero rollout flag: `CW_TYPED_HERO_SHORT_IREM=1` enables typed hero replacements for `short/irem`.
-- Default for typed hero flag is off: `CW_TYPED_HERO_SHORT_IREM=0`.
-- Next entrypoints preserve legacy DOM and JS behavior, but move inline tracking bootstrap to managed shared runtime:
-  - `/shared/js/landing-pixel.js`
-  - `/shared/js/landing-runtime.js`
-  - `/shared/css/landing.bridge.css`
-
-### Local Check (No Browser Smoke)
+Combined gate:
 
 ```bash
-node scripts/guard-ds-contract.mjs
-npm run -s lint
-npm run -s build
-SMOKE_BASE_URL=http://localhost:8000 npm run -s smoke:landing:cutover-toggle
-SMOKE_BASE_URL=http://localhost:8000 SMOKE_REQUIRE_NEXT_LANDING=1 npm run -s smoke:landing:next-contract
+npm run smoke:dosha:qa
 ```
 
-Optional one-shot gate without browser smoke:
+### Landings
 
 ```bash
-SMOKE_BASE_URL=http://localhost:8000 LANDING_GATE_BROWSER_SMOKE=off npm run -s gate:landing:short-irem
+npm run smoke:landing:short-irem
+npm run smoke:landing:next-contract
+npm run smoke:landing:cutover-toggle
+npm run baseline:landing:short-irem
 ```
 
-## Token Contract
+Combined gate:
 
-- `src/landing-static/shared/css/tokens.css` is the shared fallback contract for landing assets served via app routes.
-- `src/app/globals.css` is the app brand override layer.
-- `src/landing-static/shared/css/landing.bridge.css` is the semantic bridge between DS tokens and product landing tokens.
-- Required `--ds-*` foundations: colors, base font family, font scale, line heights, spacing, radii, shadows, z-index, breakpoints, container width, and minimum touch target.
-- In the app, `--ds-color-*` maps to `--cw-*` brand tokens; the non-brand scales stay stable and should not drift without a deliberate contract change.
+```bash
+npm run gate:landing:short-irem
+```
 
-## Semantic Migration Plan
+## Main runtime areas
 
-- Completed: expert blocks now use semantic-only classes (`section-expert-grid`, `section-expert-text`, `section-expert-image`, `section-expert-text-content`) and legacy `s55-*` is removed from target HTML/CSS.
-- Guarded: `guard:ds-contract` fails if legacy expert class/id (`s55-grid|s55-text|s55-image|divs55`) appears again.
+- app routes: `src/app/**`
+- platform UI: `src/components/platform/**`
+- generator runtime: `src/lib/generator/**`
+- landing runtime: `src/landing-static/**`
+- scripts and guards: `scripts/**`
+- design/runtime manifests:
+  - `data/design-tokens/cw.tokens.json`
+  - `data/generator/screen_manifests.json`
+  - `data/generator/block_manifests.json`
+  - `data/generator/route_family_contracts.json`
 
-## Auth and users foundation
+## Notes
 
-- `docs/migration/sql/2026-04-01_platform_users_google_auth.sql` creates platform-wide `platform_users` linked to `auth.users` (not test-specific).
-- `POST /api/platform/users/sync` upserts current authenticated user profile (Google metadata supported).
-- `/dosha-test` opens without auth, but requests Google sign-in only after the user clicks start; after sign-in it syncs the platform profile and resumes the test launch.
-- Protected generated routes are configured centrally in `src/lib/auth/protectedRoutes.ts` (currently none).
+- repo docs are derived / operational
+- promote only stable cross-project rules into RAverse
+- for public UI work, use `docs/platform_agent_preflight.md`

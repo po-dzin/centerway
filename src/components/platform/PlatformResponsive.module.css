@@ -12,7 +12,7 @@
 
   .headerInner {
     min-height: 3.85rem;
-    padding: 0;
+    padding: 0 0.9rem;
   }
 
   .nav a {
@@ -48,6 +48,10 @@
 }
 
 @media (min-width: 901px) {
+  .header[data-cw-glass="shell"]::after {
+    inset: 0 0 -0.7rem;
+  }
+
   .heroFeatureContent {
     width: min(39rem, 100%);
     padding-inline-start: max(1.5rem, calc((100vw - var(--cw-max-width)) / 2 + 1rem));
@@ -90,6 +94,7 @@
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+    --cw-header-shell-radius: 0px;
   }
 
   .shell:has(.heroFeature) .header.header {
@@ -106,6 +111,17 @@
     margin: 0;
     padding: 0.62rem 1rem;
     box-sizing: border-box;
+  }
+
+  .header[data-cw-glass="shell"]::before {
+    inset: -0.25rem -1rem auto;
+    height: calc(100% - 0.25rem);
+    border-radius: 0;
+  }
+
+  .header[data-cw-glass="shell"]::after {
+    inset: -0.25rem -1rem -0.85rem;
+    border-radius: 0;
   }
 
   .headerInner > .brand,
@@ -620,11 +636,17 @@
     min-height: 100vh;
     min-height: 100svh;
     border-radius: 0;
+    --cw-hero-photo-x: 79%;
+    --cw-hero-photo-y: 4%;
+    --cw-hero-photo-shift-y: -8%;
+    --cw-hero-photo-scale: 1.08;
+    --cw-hero-photo-origin: center top;
   }
 
   .heroPhotoLayer .expertImage {
-    object-position: 79% 12%;
-    transform: scale(1.14);
+    object-position: var(--cw-hero-photo-x) var(--cw-hero-photo-y);
+    transform: translateY(var(--cw-hero-photo-shift-y)) scale(var(--cw-hero-photo-scale));
+    transform-origin: var(--cw-hero-photo-origin);
   }
 
   .heroFeatureTitle {
@@ -762,12 +784,19 @@
   .footerLegal {
     gap: 0.6rem;
     justify-self: start;
+    justify-items: start;
   }
 
   .footerSocials {
     justify-self: start;
+    justify-items: start;
     justify-content: flex-start;
     gap: 1rem;
+    text-align: left;
+  }
+
+  .footerSocialsRow {
+    justify-content: flex-start;
   }
 
   .sectionHeader {
@@ -788,9 +817,18 @@
 }
 
 @media (min-width: 561px) and (max-width: 900px) {
+  .heroFeature {
+    --cw-hero-photo-x: 73%;
+    --cw-hero-photo-y: 42%;
+    --cw-hero-photo-shift-y: -8%;
+    --cw-hero-photo-scale: 1.17;
+    --cw-hero-photo-origin: center center;
+  }
+
   .heroPhotoLayer .expertImage {
-    object-position: 77% 16%;
-    transform: scale(1.12);
+    object-position: var(--cw-hero-photo-x) var(--cw-hero-photo-y);
+    transform: translateY(var(--cw-hero-photo-shift-y)) scale(var(--cw-hero-photo-scale));
+    transform-origin: var(--cw-hero-photo-origin);
   }
 }
 

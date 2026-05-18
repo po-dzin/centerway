@@ -60,7 +60,7 @@
 
 .footerGrid {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1.5rem;
   align-items: start;
 }
@@ -89,6 +89,7 @@
 
 .footerLinks {
   gap: 0.7rem;
+  align-content: start;
 }
 
 .footer a {
@@ -118,14 +119,16 @@
 
 .footerLegal {
   align-content: start;
-  justify-self: center;
+  justify-self: stretch;
+  justify-items: center;
 }
 
 .footerSocials {
-  justify-self: end;
-  justify-items: start;
+  justify-self: stretch;
+  justify-items: end;
   align-content: start;
   gap: 0.8rem;
+  text-align: right;
 }
 
 .footerSocials a:first-child {
@@ -137,6 +140,7 @@
   align-items: center;
   flex-wrap: nowrap;
   gap: 0.95rem;
+  justify-content: flex-end;
 }
 
 .footerSocialsRow a {
