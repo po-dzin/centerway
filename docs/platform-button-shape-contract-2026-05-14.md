@@ -24,6 +24,7 @@ This token now feeds:
 - platform `primaryButton`
 - platform `secondaryButton`
 - platform `ghostButton`
+- desktop / tablet `topbar shell`
 - hero primary / secondary CTA
 - program card CTA links
 
@@ -39,6 +40,7 @@ This token now feeds:
 Applies to main platform page actions, not to:
 
 - topbar icon slots
+- mobile topbar glass band
 - chips / badges
 - circular icon markers
 - legacy funnel surfaces

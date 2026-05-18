@@ -49,3 +49,7 @@ The merged surface keeps the platform-hub rule:
 Local only for now.
 
 If this merged entry pattern becomes the durable rule for future platform hub screens, promote the minimum contract update into RAverse UI-UX / blocks canon.
+
+Related local rule:
+
+- `docs/platform-home-hero-recipe-2026-05-17.md`
