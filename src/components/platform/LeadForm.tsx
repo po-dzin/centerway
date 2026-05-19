@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import styles from "./PlatformStyles";
+import styles from "./PlatformContentStyles";
 
 type LeadFormProps = {
   source?: string;
@@ -124,6 +124,7 @@ export function LeadForm({
           <option value="detox">Детокс / Шлях 21</option>
           <option value="ideal-body">Ідеальне тіло з Аюрведою</option>
           <option value="irem">Відновлююча гімнастика</option>
+          <option value="herbs">Трав&apos;яна підтримка</option>
         </select>
       </div>
       <div className={styles.field}>

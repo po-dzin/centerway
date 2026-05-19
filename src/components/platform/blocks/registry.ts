@@ -1,23 +1,26 @@
-import { ExpertHero, ExpertPath, ExpertProof } from "@/components/platform/blocks/expert";
-import { HomeHero, HomeIntro, HomeMiniCourses, HomeNaturalSupport, HomePrograms, HomeProof } from "@/components/platform/blocks/home";
-import { OfferDetails, OfferHero, OfferSupport } from "@/components/platform/blocks/offer";
-import { BoundaryBlock, NextStep, SupportForm } from "@/components/platform/blocks/shared";
+import { HubHero, HubIntro } from "@/components/platform/blocks/orientation/hub";
+import { HubMini, HubPrograms } from "@/components/platform/blocks/offer/hub";
+import { NextStep } from "@/components/platform/blocks/route/next";
+import { ExpertHero, ExpertPath, ExpertProof } from "@/components/platform/blocks/trust/expert";
+import { HubProof, HubSupport } from "@/components/platform/blocks/trust/hub";
+import { BoundaryBlock, SupportForm } from "@/components/platform/blocks/trust/support";
+import { OfferHero, OfferInfo, OfferForm } from "@/components/platform/blocks/offer/surface";
 import type { PlatformBlockComponent } from "@/components/platform/blocks/types";
 
 export const platformBlockRegistry: Record<string, PlatformBlockComponent> = {
-  "home.hero": HomeHero,
-  "home.intro": HomeIntro,
-  "home.mini-courses": HomeMiniCourses,
-  "home.programs": HomePrograms,
-  "home.natural-support": HomeNaturalSupport,
-  "home.proof": HomeProof,
+  "hub.hero": HubHero,
+  "hub.intro": HubIntro,
+  "hub.mini": HubMini,
+  "hub.programs": HubPrograms,
+  "hub.support": HubSupport,
+  "hub.proof": HubProof,
   "support.form": SupportForm,
   "expert.hero": ExpertHero,
   "expert.proof": ExpertProof,
   "expert.path": ExpertPath,
   "offer.hero": OfferHero,
-  "offer.details": OfferDetails,
-  "offer.support": OfferSupport,
+  "offer.info": OfferInfo,
+  "offer.form": OfferForm,
   boundary: BoundaryBlock,
-  "next-step": NextStep,
+  next: NextStep,
 };

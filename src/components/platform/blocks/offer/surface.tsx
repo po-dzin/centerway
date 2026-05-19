@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LeadForm } from "@/components/platform/LeadForm";
-import styles from "@/components/platform/PlatformStyles";
-import { currentProgram, routeLabels } from "@/components/platform/blocks/shared";
+import styles from "@/components/platform/PlatformContentStyles";
+import { currentProgram, routeLabels } from "@/components/platform/blocks/route/context";
 import type { PlatformGeneratedBlockProps } from "@/components/platform/blocks/types";
 
 function offerView(programSlug?: PlatformGeneratedBlockProps["programSlug"]) {
@@ -73,7 +73,7 @@ export function OfferHero({ programSlug }: Pick<PlatformGeneratedBlockProps, "pr
   );
 }
 
-export function OfferDetails({ programSlug }: Pick<PlatformGeneratedBlockProps, "programSlug">) {
+export function OfferInfo({ programSlug }: Pick<PlatformGeneratedBlockProps, "programSlug">) {
   const { program, detailsTitle, formatMeta } = offerView(programSlug);
   if (!program) return null;
   return (
@@ -103,7 +103,7 @@ export function OfferDetails({ programSlug }: Pick<PlatformGeneratedBlockProps, 
   );
 }
 
-export function OfferSupport({ route, programSlug }: Pick<PlatformGeneratedBlockProps, "route" | "programSlug">) {
+export function OfferForm({ route, programSlug }: Pick<PlatformGeneratedBlockProps, "route" | "programSlug">) {
   const { productCode, supportLabel, supportLead, supportTitle } = offerView(programSlug);
   return (
     <section className={`${styles.container} ${styles.section}`} id="program-enroll">

@@ -20,7 +20,7 @@ Platform program pages are treated as direct selling surfaces, not teaser bridge
 
 ## Why
 
-The previous generator assembly repeated one `offer.details` renderer across multiple semantic roles (`route-framing`, `offer-definition`, `offer-includes`, `format-price`, `how-it-works`, `proof`), which produced visible duplicate sections and weak CTA logic.
+The previous generator assembly repeated one `offer.info` renderer across multiple semantic roles (`route-framing`, `offer-definition`, `offer-includes`, `format-price`, `how-it-works`, `proof`), which produced visible duplicate sections and weak CTA logic.
 
 ## Runtime change
 

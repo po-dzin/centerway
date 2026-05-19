@@ -144,7 +144,7 @@ This remains separate and must not share platform page IA by default.
 
 ### Semantic drift
 
-- `offer.details` currently tries to cover both long programs and mini-entry products.
+- `offer.info` currently tries to cover both long programs and mini-entry products.
 - some routes behave like program pages but have mini-course economics.
 - some platform pages still inherit old funnel assumptions.
 

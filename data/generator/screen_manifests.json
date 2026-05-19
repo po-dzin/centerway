@@ -210,9 +210,9 @@
       "version": "1.2.0",
       "route_key": "herbs",
       "route_path": "/herbs",
-      "route_family": "standalone route entry",
-      "route_boundary": "platform route",
-      "route_family_contract_id": "route_family.platform-offer-entry.v1",
+      "route_family": "funnel surface",
+      "route_boundary": "isolated funnel route",
+      "route_family_contract_id": "route_family.funnel-surface.v1",
       "archetype": "offer-detail",
       "mode": "herbs",
       "branch": "herbs",
@@ -417,32 +417,32 @@
       "blocks": [
         {
           "id": "platform-home.hero",
-          "block_manifest_id": "block.platform-home.hero.v1",
+          "block_manifest_id": "block.platform-hub.hero.v1",
           "block_manifest_version": "1.0.0"
         },
         {
           "id": "platform-home.intro",
-          "block_manifest_id": "block.platform-home.intro.v1",
+          "block_manifest_id": "block.platform-hub.intro.v1",
           "block_manifest_version": "1.0.0"
         },
         {
           "id": "platform-home.mini-courses",
-          "block_manifest_id": "block.platform-home.mini-courses.v1",
+          "block_manifest_id": "block.platform-hub.mini.v1",
           "block_manifest_version": "1.0.0"
         },
         {
           "id": "platform-home.programs",
-          "block_manifest_id": "block.platform-home.programs.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "platform-home.natural-support",
-          "block_manifest_id": "block.platform-home.natural-support.v1",
+          "block_manifest_id": "block.platform-hub.programs.v1",
           "block_manifest_version": "1.0.0"
         },
         {
           "id": "platform-home.proof",
-          "block_manifest_id": "block.platform-home.proof.v1",
+          "block_manifest_id": "block.platform-hub.proof.v1",
+          "block_manifest_version": "1.0.0"
+        },
+        {
+          "id": "platform-home.natural-support",
+          "block_manifest_id": "block.platform-hub.support.v1",
           "block_manifest_version": "1.0.0"
         },
         {
