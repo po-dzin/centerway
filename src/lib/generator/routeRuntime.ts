@@ -40,7 +40,8 @@ const ROUTE_RUNTIME: Record<ScreenRouteKey, RouteRuntimeConfig> = {
   "dosha-test": {
     defaultScreenId: "screen.dosha-test.v1.control",
     cssHrefs: [REVORK_STYLESHEET],
-    shell: "plain",
+    shell: "platform",
+    platformHeaderMode: "default",
   },
   "lesson-pilot": {
     defaultScreenId: "screen.lesson.pilot.v1.control",
@@ -127,11 +128,19 @@ export function resolveEffectiveRouteMetadata(routeKey: ScreenRouteKey, surfaceK
     };
   }
 
-  if (routeKey === "dosha-test" || routeKey === "lesson-pilot") {
+  if (routeKey === "lesson-pilot") {
     return {
       routeFamily: "utility",
       routeBoundary: "platform utility route",
       surfaceKind: "utility",
+    };
+  }
+
+  if (routeKey === "dosha-test") {
+    return {
+      routeFamily: "standalone route entry",
+      routeBoundary: "platform route",
+      surfaceKind: "platform",
     };
   }
 

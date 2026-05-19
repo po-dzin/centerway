@@ -1,0 +1,124 @@
+/* Shared block typography and neutral layout primitives.
+   Extracted from PlatformBlocks.module.css during semantic family split. */
+
+.section {
+  padding: clamp(2.3rem, 6.2vw, 4.8rem) 0;
+  scroll-margin-top: 5.25rem;
+}
+
+.sectionFlow {
+  display: grid;
+  gap: clamp(1rem, 2.8vw, 1.6rem);
+}
+
+.sectionHeader {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  scroll-margin-top: 5.25rem;
+}
+
+.panelIntro,
+.panelStack {
+  display: grid;
+}
+
+.panelIntro {
+  gap: 0.45rem;
+}
+
+.panelStack {
+  gap: clamp(1.2rem, 2.8vw, 1.7rem);
+}
+
+.eyebrow,
+.label {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.heroTitle,
+.title,
+.sectionTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-editorial);
+  font-weight: 700;
+  letter-spacing: 0;
+  line-height: 1.02;
+}
+
+.heroTitle {
+  max-width: 12ch;
+  margin-top: 1.25rem;
+  font-size: clamp(3rem, 5.8vw, 5.2rem);
+}
+
+.sectionTitle,
+.title {
+  font-size: clamp(2.15rem, 4.9vw, 3.7rem);
+}
+
+.lead {
+  max-width: 44rem;
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: clamp(1rem, 1.5vw, 1.18rem);
+  line-height: 1.65;
+}
+
+.heroFooter {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.grid3,
+.grid2 {
+  display: grid;
+  gap: 1rem;
+}
+
+.grid3 {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.grid2 {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.split {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+
+.panel {
+  padding: clamp(1.15rem, 3vw, 2rem);
+  scroll-margin-top: 5.25rem;
+}
+
+.timeline {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.timeline li {
+  padding: 0.9rem;
+  border: 0;
+  border-radius: var(--cw-radius-sm);
+  color: var(--cw-platform-muted);
+  background: var(--cw-platform-surface);
+  box-shadow: var(--cw-depth-shadow-soft);
+}
