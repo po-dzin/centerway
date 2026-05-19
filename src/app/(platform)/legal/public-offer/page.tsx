@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
-import styles from "@/components/platform/PlatformStyles";
+import styles from "@/components/platform/PlatformContentStyles";
 import { contact, legal } from "@/lib/platform/content";
 
 export const metadata: Metadata = {

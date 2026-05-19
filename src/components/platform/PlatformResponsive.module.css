@@ -94,7 +94,7 @@
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
-    --cw-header-shell-radius: 0px;
+    --platform-header-shell-radius: 0px;
   }
 
   .shell:has(.heroFeature) .header.header {
@@ -161,7 +161,7 @@
   }
 
   .shellOverlay .menuButton {
-    color: var(--cw-header-fg);
+    color: var(--platform-header-fg);
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
@@ -243,10 +243,10 @@
   }
 
   .mobileMenuSurface {
-    --cw-mobile-menu-item-hover-bg: color-mix(in srgb, var(--cw-header-fg) 10%, transparent);
-    --cw-mobile-menu-item-accent-bg:
+    --mobile-menu-item-hover-bg: color-mix(in srgb, var(--platform-header-fg) 10%, transparent);
+    --mobile-menu-item-accent-bg:
       linear-gradient(135deg, color-mix(in srgb, var(--cw-platform-accent) 74%, var(--cw-platform-accent-strong) 26%), var(--cw-platform-accent-strong));
-    --cw-mobile-menu-item-accent-fg: var(--cw-platform-accent-contrast);
+    --mobile-menu-item-accent-fg: var(--cw-platform-accent-contrast);
     position: relative;
     z-index: 1;
     width: 100%;
@@ -301,18 +301,18 @@
 
   .profileEntryMobile:hover,
   .profileEntryMobile:focus-visible {
-    background: var(--cw-mobile-menu-item-hover-bg);
+    background: var(--mobile-menu-item-hover-bg);
   }
 
   .profileEntryMobile[data-auth-state="guest"] {
-    color: var(--cw-mobile-menu-item-accent-fg);
-    background: var(--cw-mobile-menu-item-accent-bg);
+    color: var(--mobile-menu-item-accent-fg);
+    background: var(--mobile-menu-item-accent-bg);
     box-shadow: var(--cw-depth-shadow-strong);
   }
 
   .profileEntryMobile[data-auth-state="guest"]:hover,
   .profileEntryMobile[data-auth-state="guest"]:focus-visible {
-    background: var(--cw-mobile-menu-item-accent-bg);
+    background: var(--mobile-menu-item-accent-bg);
     filter: brightness(1.03);
   }
 
@@ -383,7 +383,7 @@
 
   .navLayer .nav a:hover,
   .navLayer .nav a:focus-visible {
-    background: var(--cw-mobile-menu-item-hover-bg);
+    background: var(--mobile-menu-item-hover-bg);
   }
 
   .navLayer .nav a + a {
@@ -391,12 +391,12 @@
   }
 
   .shellOverlay .navLayer .nav a {
-    color: var(--cw-header-fg);
+    color: var(--platform-header-fg);
   }
 
   .shellOverlay .navLayer .nav a:hover,
   .shellOverlay .navLayer .nav a:focus-visible {
-    background: var(--cw-mobile-menu-item-hover-bg);
+    background: var(--mobile-menu-item-hover-bg);
   }
 
   .mobileMenuNav {
@@ -450,6 +450,11 @@
 
   .offerHeroVisualCard {
     min-height: 19rem;
+  }
+
+  .programTile[data-has-art="true"] {
+    --program-photo-active-image: var(--program-photo-image-mobile, var(--program-photo-image));
+    --program-photo-position: center 34%;
   }
 
   .hero {
@@ -624,6 +629,10 @@
     min-height: 17rem;
   }
 
+  .programTile[data-has-art="true"] {
+    --program-photo-position: center 26%;
+  }
+
   .offerHeroVisualMeta h3 {
     font-size: 1.85rem;
   }
@@ -636,17 +645,17 @@
     min-height: 100vh;
     min-height: 100svh;
     border-radius: 0;
-    --cw-hero-photo-x: 79%;
-    --cw-hero-photo-y: 4%;
-    --cw-hero-photo-shift-y: -8%;
-    --cw-hero-photo-scale: 1.08;
-    --cw-hero-photo-origin: center top;
+    --hero-photo-x: 79%;
+    --hero-photo-y: 4%;
+    --hero-photo-shift-y: -8%;
+    --hero-photo-scale: 1.08;
+    --hero-photo-origin: center top;
   }
 
   .heroPhotoLayer .expertImage {
-    object-position: var(--cw-hero-photo-x) var(--cw-hero-photo-y);
-    transform: translateY(var(--cw-hero-photo-shift-y)) scale(var(--cw-hero-photo-scale));
-    transform-origin: var(--cw-hero-photo-origin);
+    object-position: var(--hero-photo-x) var(--hero-photo-y);
+    transform: translateY(var(--hero-photo-shift-y)) scale(var(--hero-photo-scale));
+    transform-origin: var(--hero-photo-origin);
   }
 
   .heroFeatureTitle {
@@ -818,17 +827,17 @@
 
 @media (min-width: 561px) and (max-width: 900px) {
   .heroFeature {
-    --cw-hero-photo-x: 73%;
-    --cw-hero-photo-y: 42%;
-    --cw-hero-photo-shift-y: -8%;
-    --cw-hero-photo-scale: 1.17;
-    --cw-hero-photo-origin: center center;
+    --hero-photo-x: 73%;
+    --hero-photo-y: 42%;
+    --hero-photo-shift-y: -8%;
+    --hero-photo-scale: 1.17;
+    --hero-photo-origin: center center;
   }
 
   .heroPhotoLayer .expertImage {
-    object-position: var(--cw-hero-photo-x) var(--cw-hero-photo-y);
-    transform: translateY(var(--cw-hero-photo-shift-y)) scale(var(--cw-hero-photo-scale));
-    transform-origin: var(--cw-hero-photo-origin);
+    object-position: var(--hero-photo-x) var(--hero-photo-y);
+    transform: translateY(var(--hero-photo-shift-y)) scale(var(--hero-photo-scale));
+    transform-origin: var(--hero-photo-origin);
   }
 }
 

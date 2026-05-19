@@ -1,5 +1,5 @@
 import Link from "next/link";
-import styles from "@/components/platform/PlatformStyles";
+import styles from "@/components/platform/PlatformContentStyles";
 import { educationTimeline, expertFacts, expertStory, personalFacts } from "@/lib/platform/content";
 import { getFunnelHostUrl } from "@/lib/surfaces/catalog";
 
@@ -22,7 +22,7 @@ export function ExpertHero() {
           <Link className={styles.primaryButton} href={consultFunnelHref}>
             Запит на консультацію
           </Link>
-          <Link className={styles.secondaryButton} href="/#programs">
+          <Link className={styles.secondaryButton} href="/programs">
             Програми
           </Link>
         </div>

@@ -353,7 +353,7 @@
       "recipe_version": "1.0.0",
       "action_role": "primary",
       "component_families": [
-        "next-step-banner"
+        "route-action-button"
       ],
       "renderer": "funnel.next-step",
       "token_recipes": [
@@ -720,7 +720,7 @@
       "recipe_version": "1.0.0",
       "action_role": "primary",
       "component_families": [
-        "next-step-banner"
+        "route-action-button"
       ],
       "renderer": "funnel.next-step",
       "token_recipes": [
@@ -1087,7 +1087,7 @@
       "recipe_version": "1.0.0",
       "action_role": "primary",
       "component_families": [
-        "next-step-banner"
+        "route-action-button"
       ],
       "renderer": "funnel.next-step",
       "token_recipes": [
@@ -1250,8 +1250,8 @@
         "default"
       ],
       "default_props": {
-        "semanticKey": "dosha.next-step",
-        "semanticLabel": "Dosha test next-step semantic anchor",
+        "semanticKey": "dosha.next",
+        "semanticLabel": "Dosha test next semantic anchor",
         "route": "dosha-test"
       }
     },
@@ -1602,7 +1602,7 @@
       }
     },
     {
-      "id": "block.platform-home.hero.v1",
+      "id": "block.platform-hub.hero.v1",
       "version": "1.0.0",
       "semantic_block_id": "sb.hero_entry_definition.v1",
       "semantic_block_version": "1.0.0",
@@ -1637,11 +1637,11 @@
       ],
       "default_props": {
         "route": "platform-home",
-        "variant": "home.hero"
+        "variant": "hub.hero"
       }
     },
     {
-      "id": "block.platform-home.intro.v1",
+      "id": "block.platform-hub.intro.v1",
       "version": "1.0.0",
       "semantic_block_id": "sb.route_framing.v1",
       "semantic_block_version": "1.0.0",
@@ -1674,7 +1674,7 @@
       ],
       "default_props": {
         "route": "platform-home",
-        "variant": "home.intro"
+        "variant": "hub.intro"
       }
     },
     {
@@ -1752,7 +1752,7 @@
       }
     },
     {
-      "id": "block.platform-home.mini-courses.v1",
+      "id": "block.platform-hub.mini.v1",
       "version": "1.0.0",
       "semantic_block_id": "sb.offer_definition.v1",
       "semantic_block_version": "1.0.0",
@@ -1784,11 +1784,11 @@
       ],
       "default_props": {
         "route": "platform-home",
-        "variant": "home.mini-courses"
+        "variant": "hub.mini"
       }
     },
     {
-      "id": "block.platform-home.programs.v1",
+      "id": "block.platform-hub.programs.v1",
       "version": "1.0.0",
       "semantic_block_id": "sb.offer_definition.v1",
       "semantic_block_version": "1.0.0",
@@ -1820,11 +1820,11 @@
       ],
       "default_props": {
         "route": "platform-home",
-        "variant": "home.programs"
+        "variant": "hub.programs"
       }
     },
     {
-      "id": "block.platform-home.natural-support.v1",
+      "id": "block.platform-hub.support.v1",
       "version": "1.0.0",
       "semantic_block_id": "sb.support_path.v1",
       "semantic_block_version": "1.0.0",
@@ -1856,11 +1856,11 @@
       ],
       "default_props": {
         "route": "platform-home",
-        "variant": "home.natural-support"
+        "variant": "hub.support"
       }
     },
     {
-      "id": "block.platform-home.proof.v1",
+      "id": "block.platform-hub.proof.v1",
       "version": "1.0.0",
       "semantic_block_id": "sb.proof_block.v1",
       "semantic_block_version": "1.0.0",
@@ -1892,7 +1892,7 @@
       ],
       "default_props": {
         "route": "platform-home",
-        "variant": "home.proof"
+        "variant": "hub.proof"
       }
     },
     {
@@ -1966,7 +1966,7 @@
       ],
       "default_props": {
         "route": "platform-home",
-        "variant": "next-step"
+        "variant": "next"
       }
     },
     {
@@ -2153,7 +2153,7 @@
       ],
       "default_props": {
         "route": "expert",
-        "variant": "next-step"
+        "variant": "next"
       }
     },
     {
@@ -2231,7 +2231,7 @@
       ],
       "default_props": {
         "route": "program-way21",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "way21"
       }
     },
@@ -2269,7 +2269,7 @@
       ],
       "default_props": {
         "route": "program-way21",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "way21"
       }
     },
@@ -2305,7 +2305,7 @@
       ],
       "default_props": {
         "route": "program-way21",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "way21"
       }
     },
@@ -2344,7 +2344,7 @@
       ],
       "default_props": {
         "route": "program-way21",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "way21"
       }
     },
@@ -2381,7 +2381,7 @@
       ],
       "default_props": {
         "route": "program-way21",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "way21"
       }
     },
@@ -2419,7 +2419,7 @@
       ],
       "default_props": {
         "route": "program-way21",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "way21"
       }
     },
@@ -2497,7 +2497,7 @@
       ],
       "default_props": {
         "route": "program-way21",
-        "variant": "offer.support",
+        "variant": "offer.form",
         "programSlug": "way21"
       }
     },
@@ -2534,7 +2534,7 @@
       ],
       "default_props": {
         "route": "program-way21",
-        "variant": "next-step",
+        "variant": "next",
         "programSlug": "way21"
       }
     },
@@ -2613,7 +2613,7 @@
       ],
       "default_props": {
         "route": "program-ideal-body",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "ideal-body"
       }
     },
@@ -2651,7 +2651,7 @@
       ],
       "default_props": {
         "route": "program-ideal-body",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "ideal-body"
       }
     },
@@ -2687,7 +2687,7 @@
       ],
       "default_props": {
         "route": "program-ideal-body",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "ideal-body"
       }
     },
@@ -2726,7 +2726,7 @@
       ],
       "default_props": {
         "route": "program-ideal-body",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "ideal-body"
       }
     },
@@ -2763,7 +2763,7 @@
       ],
       "default_props": {
         "route": "program-ideal-body",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "ideal-body"
       }
     },
@@ -2801,7 +2801,7 @@
       ],
       "default_props": {
         "route": "program-ideal-body",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "ideal-body"
       }
     },
@@ -2879,7 +2879,7 @@
       ],
       "default_props": {
         "route": "program-ideal-body",
-        "variant": "offer.support",
+        "variant": "offer.form",
         "programSlug": "ideal-body"
       }
     },
@@ -2916,7 +2916,7 @@
       ],
       "default_props": {
         "route": "program-ideal-body",
-        "variant": "next-step",
+        "variant": "next",
         "programSlug": "ideal-body"
       }
     },
@@ -2995,7 +2995,7 @@
       ],
       "default_props": {
         "route": "program-irem",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "irem"
       }
     },
@@ -3033,7 +3033,7 @@
       ],
       "default_props": {
         "route": "program-irem",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "irem"
       }
     },
@@ -3069,7 +3069,7 @@
       ],
       "default_props": {
         "route": "program-irem",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "irem"
       }
     },
@@ -3108,7 +3108,7 @@
       ],
       "default_props": {
         "route": "program-irem",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "irem"
       }
     },
@@ -3145,7 +3145,7 @@
       ],
       "default_props": {
         "route": "program-irem",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "irem"
       }
     },
@@ -3183,7 +3183,7 @@
       ],
       "default_props": {
         "route": "program-irem",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "irem"
       }
     },
@@ -3261,7 +3261,7 @@
       ],
       "default_props": {
         "route": "program-irem",
-        "variant": "offer.support",
+        "variant": "offer.form",
         "programSlug": "irem"
       }
     },
@@ -3298,7 +3298,7 @@
       ],
       "default_props": {
         "route": "program-irem",
-        "variant": "next-step",
+        "variant": "next",
         "programSlug": "irem"
       }
     },
@@ -3377,7 +3377,7 @@
       ],
       "default_props": {
         "route": "mini-detox",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "mini-detox"
       }
     },
@@ -3415,7 +3415,7 @@
       ],
       "default_props": {
         "route": "mini-detox",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "mini-detox"
       }
     },
@@ -3451,7 +3451,7 @@
       ],
       "default_props": {
         "route": "mini-detox",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "mini-detox"
       }
     },
@@ -3490,7 +3490,7 @@
       ],
       "default_props": {
         "route": "mini-detox",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "mini-detox"
       }
     },
@@ -3527,7 +3527,7 @@
       ],
       "default_props": {
         "route": "mini-detox",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "mini-detox"
       }
     },
@@ -3565,7 +3565,7 @@
       ],
       "default_props": {
         "route": "mini-detox",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "mini-detox"
       }
     },
@@ -3643,7 +3643,7 @@
       ],
       "default_props": {
         "route": "mini-detox",
-        "variant": "offer.support",
+        "variant": "offer.form",
         "programSlug": "mini-detox"
       }
     },
@@ -3680,7 +3680,7 @@
       ],
       "default_props": {
         "route": "mini-detox",
-        "variant": "next-step",
+        "variant": "next",
         "programSlug": "mini-detox"
       }
     },
@@ -3759,7 +3759,7 @@
       ],
       "default_props": {
         "route": "program-reboot",
-        "variant": "offer.details",
+        "variant": "offer.info",
         "programSlug": "reboot"
       }
     },
@@ -3837,7 +3837,7 @@
       ],
       "default_props": {
         "route": "program-reboot",
-        "variant": "offer.support",
+        "variant": "offer.form",
         "programSlug": "reboot"
       }
     },
@@ -3875,7 +3875,7 @@
       ],
       "default_props": {
         "route": "expert",
-        "variant": "next-step"
+        "variant": "next"
       }
     }
   ]
