@@ -29,18 +29,18 @@
   margin: 0 auto;
   overflow: visible;
   isolation: isolate;
-  --cw-header-fg: var(--cw-platform-text);
-  --cw-header-muted-fg: color-mix(in srgb, var(--cw-platform-text) 72%, transparent);
-  --cw-header-hover-bg: color-mix(in srgb, var(--cw-platform-surface) 10%, transparent);
-  --cw-header-band-bg: color-mix(in srgb, var(--cw-platform-surface) 14%, transparent);
-  --cw-header-fade-bg:
+  --platform-header-fg: var(--cw-platform-text);
+  --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-text) 72%, transparent);
+  --platform-header-hover-bg: color-mix(in srgb, var(--cw-platform-surface) 10%, transparent);
+  --platform-header-band-bg: color-mix(in srgb, var(--cw-platform-surface) 14%, transparent);
+  --platform-header-fade-bg:
     linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-surface) 34%, transparent) 0%, color-mix(in srgb, var(--cw-platform-surface) 18%, transparent) 42%, transparent 100%);
-  --cw-header-sheet-shadow: 0 8px 20px color-mix(in srgb, var(--cw-platform-text) 6%, transparent);
-  --cw-header-sheet-filter: blur(20px) saturate(1.08) brightness(1.02);
-  --cw-header-wordmark-image: var(--cw-brand-asset-wordmark-dark);
-  --cw-header-shell-radius: var(--cw-radius-btn);
+  --platform-header-sheet-shadow: 0 8px 20px color-mix(in srgb, var(--cw-platform-text) 6%, transparent);
+  --platform-header-sheet-filter: blur(20px) saturate(1.08) brightness(1.02);
+  --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-dark);
+  --platform-header-shell-radius: var(--cw-radius-btn);
   border: 0;
-  border-radius: var(--cw-header-shell-radius);
+  border-radius: var(--platform-header-shell-radius);
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
@@ -48,15 +48,15 @@
 }
 
 .header[data-cw-header-tone="dark"] {
-  --cw-header-fg: var(--cw-platform-accent-contrast);
-  --cw-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
-  --cw-header-hover-bg: color-mix(in srgb, var(--cw-platform-text) 9%, transparent);
-  --cw-header-band-bg: color-mix(in srgb, var(--cw-platform-text) 11%, transparent);
-  --cw-header-fade-bg:
+  --platform-header-fg: var(--cw-platform-accent-contrast);
+  --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
+  --platform-header-hover-bg: color-mix(in srgb, var(--cw-platform-text) 9%, transparent);
+  --platform-header-band-bg: color-mix(in srgb, var(--cw-platform-text) 11%, transparent);
+  --platform-header-fade-bg:
     linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 22%, transparent) 0%, color-mix(in srgb, var(--cw-platform-text) 12%, transparent) 44%, transparent 100%);
-  --cw-header-sheet-shadow: 0 8px 22px color-mix(in srgb, #000000 14%, transparent);
-  --cw-header-sheet-filter: blur(22px) saturate(1.1) brightness(0.99);
-  --cw-header-wordmark-image: var(--cw-brand-asset-wordmark-light);
+  --platform-header-sheet-shadow: 0 8px 22px color-mix(in srgb, #000000 14%, transparent);
+  --platform-header-sheet-filter: blur(22px) saturate(1.1) brightness(0.99);
+  --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-light);
 }
 
 .header[data-cw-glass="shell"]::before,
@@ -65,22 +65,22 @@
   position: absolute;
   z-index: 0;
   pointer-events: none;
-  box-shadow: var(--cw-header-sheet-shadow);
-  backdrop-filter: var(--cw-header-sheet-filter);
-  -webkit-backdrop-filter: var(--cw-header-sheet-filter);
+  box-shadow: var(--platform-header-sheet-shadow);
+  backdrop-filter: var(--platform-header-sheet-filter);
+  -webkit-backdrop-filter: var(--platform-header-sheet-filter);
 }
 
 .header[data-cw-glass="shell"]::before {
   inset: 0;
   height: 100%;
   border-radius: inherit;
-  background: var(--cw-header-band-bg);
+  background: var(--platform-header-band-bg);
 }
 
 .header[data-cw-glass="shell"]::after {
   inset: 0 0 -0.85rem;
   border-radius: inherit;
-  background: var(--cw-header-fade-bg);
+  background: var(--platform-header-fade-bg);
   mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 100%);
   -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 100%);
   opacity: 1;
@@ -105,11 +105,11 @@
 
 .shellOverlay .brand,
 .shellOverlay .nav a {
-  color: var(--cw-header-fg);
+  color: var(--platform-header-fg);
 }
 
 .shellOverlay .nav a:hover {
-  background: color-mix(in srgb, var(--cw-header-fg) 10%, transparent);
+  background: color-mix(in srgb, var(--platform-header-fg) 10%, transparent);
 }
 
 .shellOverlay .ghostButton {
@@ -135,7 +135,7 @@
   justify-content: center;
   gap: 0.7rem;
   flex: 0 0 auto;
-  color: var(--cw-header-fg);
+  color: var(--platform-header-fg);
   text-decoration: none;
   min-height: 3rem;
 }
@@ -165,7 +165,7 @@
   height: var(--cw-brand-size-wordmark-header-height);
   display: block;
   flex: 0 0 auto;
-  background: var(--cw-header-wordmark-image) center / contain no-repeat;
+  background: var(--platform-header-wordmark-image) center / contain no-repeat;
 }
 
 .brand[data-surface="footer"] {
@@ -235,15 +235,20 @@
 .nav a {
   min-height: 2.5rem;
   padding: 0 0.9rem;
-  color: var(--cw-header-muted-fg);
+  color: var(--platform-header-muted-fg);
   border-radius: var(--cw-radius-pill);
   font-size: 0.98rem;
   white-space: nowrap;
 }
 
 .nav a:hover {
-  color: var(--cw-header-fg);
-  background: var(--cw-header-hover-bg);
+  color: var(--platform-header-fg);
+  background: var(--platform-header-hover-bg);
+}
+
+.nav a[aria-current="page"] {
+  color: var(--platform-header-fg);
+  background: color-mix(in srgb, var(--platform-header-fg) 10%, transparent);
 }
 
 .actions {
@@ -276,7 +281,7 @@
   padding: 0.24rem 0.84rem;
   border: 0;
   border-radius: var(--cw-radius-pill);
-  color: var(--cw-header-fg);
+  color: var(--platform-header-fg);
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
@@ -304,7 +309,7 @@
 }
 
 .profileEntry:hover {
-  background: var(--cw-header-hover-bg);
+  background: var(--platform-header-hover-bg);
 }
 
 .profileGlyph {
@@ -355,17 +360,17 @@
   padding: 0.7rem;
   border: 0;
   border-radius: var(--cw-radius-md);
-  color: var(--cw-header-fg);
+  color: var(--platform-header-fg);
   background: color-mix(in srgb, var(--cw-platform-surface) 42%, transparent);
-  box-shadow: var(--cw-header-sheet-shadow);
-  backdrop-filter: var(--cw-header-sheet-filter);
-  -webkit-backdrop-filter: var(--cw-header-sheet-filter);
+  box-shadow: var(--platform-header-sheet-shadow);
+  backdrop-filter: var(--platform-header-sheet-filter);
+  -webkit-backdrop-filter: var(--platform-header-sheet-filter);
 }
 
 .profileMenu p {
   margin: 0;
   padding: 0.45rem 0.55rem 0.6rem;
-  color: color-mix(in srgb, var(--cw-header-fg) 72%, transparent);
+  color: color-mix(in srgb, var(--platform-header-fg) 72%, transparent);
   font-size: 0.84rem;
   line-height: 1.35;
   overflow-wrap: anywhere;
@@ -380,7 +385,7 @@
   padding: 0 0.65rem;
   border: 0;
   border-radius: var(--cw-radius-sm);
-  color: var(--cw-header-fg);
+  color: var(--platform-header-fg);
   background: transparent;
   font: inherit;
   font-weight: 720;
@@ -390,7 +395,7 @@
 
 .profileMenu a:hover,
 .profileMenu button:hover {
-  background: color-mix(in srgb, var(--cw-header-fg) 10%, transparent);
+  background: color-mix(in srgb, var(--platform-header-fg) 10%, transparent);
 }
 
 .mobileProfileSlot {
@@ -409,7 +414,7 @@
   -webkit-appearance: none;
   border: 0;
   border-radius: 999px;
-  color: var(--cw-header-fg);
+  color: var(--platform-header-fg);
   background: transparent;
   background-color: transparent;
   background-image: none;

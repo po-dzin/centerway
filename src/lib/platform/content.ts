@@ -1,11 +1,13 @@
 import { getFunnelHostUrl, getPlatformRoute } from "@/lib/surfaces/catalog";
 
+export const platformHomeHref = "/";
+
 export const platformNav = [
-  { label: "Вступ", href: "/#intro-video" },
-  { label: "Діагностика", href: "/#diagnostics" },
-  { label: "Міні-курси", href: "/#mini-courses" },
-  { label: "Програми", href: "/#programs" },
-  { label: "Автор", href: "/#author" },
+  { label: "Головна", href: "/", match: "exact" as const },
+  { label: "Діагностика", href: "/dosha-test", match: "exact" as const },
+  { label: "Програми", href: "/programs", match: "prefix" as const },
+  { label: "Продукти", href: "/products", match: "prefix" as const },
+  { label: "Про автора", href: "/expert", match: "exact" as const },
 ];
 
 export const socialLinks = [
@@ -31,7 +33,7 @@ const rebootFunnelHref = getFunnelHostUrl("reboot") ?? "/reboot";
 const miniDetoxFunnelHref = getFunnelHostUrl("mini-detox") ?? "/mini-detox";
 
 export type PlatformOfferSurfaceType = "program" | "mini-course" | "product";
-export type PlatformOfferConversionMode = "lead" | "direct-pay" | "hybrid";
+export type PlatformOfferConversionMode = "lead" | "direct-pay" | "hybrid" | "redirect";
 export type PlatformOfferPrimaryActionKind = "enroll" | "buy";
 
 export const programs = [
@@ -69,6 +71,11 @@ export const programs = [
     tag: "Очищення",
     duration: "21 день",
     visual: "water",
+    artwork: {
+      desktop: "/cw/platform/programs/way21-home-desktop-v1.png",
+      mobile: "/cw/platform/programs/way21-home-mobile-v1.png",
+      altPreview: "/cw/platform/programs/way21-home-alt-v1.png",
+    },
     description: "21-денна аюрведична програма розвантаження: харчування, трави, режим і щоденні опори без жорсткого тиску.",
     longDescription:
       "Програма перекладає принципи аюрведичного очищення у структурований 21-денний маршрут: підготовка, м'яке виведення перевантаження, підтримка травлення, трав'яний супровід і повернення до стабільного ритму. Це wellness-освіта і направлена практика, а не медичне лікування.",
@@ -127,6 +134,28 @@ export const programs = [
     ],
   },
   {
+    slug: "herbs",
+    surfaceType: "product" as PlatformOfferSurfaceType,
+    conversionMode: "redirect" as PlatformOfferConversionMode,
+    primaryActionKind: "buy" as PlatformOfferPrimaryActionKind,
+    title: "Трави",
+    fullTitle: "Трав'яна підтримка CenterWay",
+    href: getPlatformRoute("herbs") ?? "/products/herbs",
+    funnelHref: getFunnelHostUrl("herbs") ?? "/herbs",
+    tag: "Природна підтримка",
+    duration: "підбір за станом",
+    visual: "leaf",
+    description: "Трав'яні формули і природна підтримка як окремий продукт всередині системи CenterWay, а не випадкове доповнення.",
+    longDescription:
+      "Трав'яна підтримка на платформі пояснюється як окрема продуктова поверхня: коли вона доречна, як поєднується з харчуванням, ритмом і програмами, які межі очікувань і чому вона не замінює діагностику чи лікування. Funnel `/herbs` лишається окремим входом, а ця сторінка вбудовує продукт у загальну архітектуру CenterWay.",
+    results: [
+      "зрозуміти, коли трав'яна підтримка доречна, а коли ні",
+      "побачити, як трави поєднуються з режимом, харчуванням і програмами",
+      "отримати ясний наступний крок: консультація, підбір або вхідний funnel",
+      "уникнути хаотичного вибору банок без контексту стану і меж методу",
+    ],
+  },
+  {
     slug: "mini-detox",
     surfaceType: "mini-course" as PlatformOfferSurfaceType,
     conversionMode: "direct-pay" as PlatformOfferConversionMode,
@@ -155,6 +184,7 @@ export const programPageBySlug = Object.fromEntries(programs.map((program) => [p
 
 export const platformProgramOffers = programs.filter((program) => program.surfaceType === "program");
 export const platformMiniCourses = programs.filter((program) => program.surfaceType === "mini-course");
+export const platformProductOffers = programs.filter((program) => program.surfaceType === "product");
 
 export const featuredPrograms = platformProgramOffers;
 

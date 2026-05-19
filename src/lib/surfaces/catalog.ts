@@ -64,14 +64,14 @@ const PRODUCT_SURFACE_REGISTRY: Record<ProductKey, ProductSurfaceEntry> = {
   },
   herbs: {
     productKey: "herbs",
-    surfaceKinds: ["platform"],
+    surfaceKinds: ["funnel", "platform"],
     host: "herbs.centerway.net.ua",
-    platformRoute: "/herbs",
+    platformRoute: "/products/herbs",
     ctaMode: "redirect",
-    defaultDoshaEligibility: "none",
-    status: "disabled",
-    funnelRuntime: "disabled",
-    internalFunnelRoute: null,
+    defaultDoshaEligibility: "secondary",
+    status: "active",
+    funnelRuntime: "generated-app",
+    internalFunnelRoute: "/herbs",
   },
   consult: {
     productKey: "consult",
@@ -138,9 +138,12 @@ export function getPlatformRoute(productKey: ProductKey): string | null {
 export function getMainDomainSitemapRoutes(): string[] {
   return [
     "/",
+    "/programs",
+    "/products",
     "/expert",
     "/programs/reboot",
     "/programs/detox",
+    "/products/herbs",
     "/programs/ideal-body",
     "/programs/irem",
     "/programs/mini-detox",
@@ -151,4 +154,3 @@ export function getMainDomainSitemapRoutes(): string[] {
     "/legal/privacy",
   ];
 }
-

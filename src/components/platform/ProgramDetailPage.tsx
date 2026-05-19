@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { LeadForm } from "@/components/platform/LeadForm";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
-import styles from "@/components/platform/PlatformStyles";
+import styles from "@/components/platform/PlatformContentStyles";
 import type { programs } from "@/lib/platform/content";
 
 type Program = (typeof programs)[number];
@@ -26,7 +26,7 @@ export function ProgramDetailPage({ program }: { program: Program }) {
               <Link className={styles.primaryButton} href={program.funnelHref}>
                 Перейти до формату
               </Link>
-              <Link className={styles.secondaryButton} href="/#programs">
+              <Link className={styles.secondaryButton} href="/programs">
                 Усі програми
               </Link>
             </div>

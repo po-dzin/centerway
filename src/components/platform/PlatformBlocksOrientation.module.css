@@ -1,0 +1,322 @@
+/* Orientation, hero, and media-first block recipes.
+   Extracted from PlatformBlocks.module.css during semantic family split. */
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(19rem, 0.72fr);
+  gap: 1rem;
+  align-items: stretch;
+  padding-top: clamp(1.2rem, 3vw, 2.5rem);
+}
+
+.offerHeroLayout {
+  grid-template-columns: minmax(18rem, 0.86fr) minmax(0, 1.14fr);
+  align-items: stretch;
+}
+
+.heroPanel {
+  min-height: 34rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 2rem;
+  padding: clamp(1.3rem, 4vw, 2.5rem);
+}
+
+.heroFeature {
+  position: relative;
+  min-height: 100vh;
+  min-height: 100svh;
+  display: grid;
+  align-items: center;
+  overflow: hidden;
+  margin-top: 0;
+  border: 0;
+  border-radius: 0;
+  background: var(--cw-platform-accent-strong);
+  box-shadow: none;
+  isolation: isolate;
+  scroll-margin-top: 5.25rem;
+  --hero-photo-x: 74%;
+  --hero-photo-y: 44%;
+  --hero-photo-shift-y: -2%;
+  --hero-photo-scale: 1.15;
+  --hero-photo-origin: center center;
+}
+
+.heroFeature::before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  content: "";
+  pointer-events: none;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 16%, transparent), transparent 34%),
+    linear-gradient(90deg, color-mix(in srgb, var(--cw-platform-accent-strong) 14%, transparent), transparent 58%);
+}
+
+.heroPhotoLayer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--cw-platform-text);
+}
+
+.heroPhotoLayer .expertImage {
+  object-position: var(--hero-photo-x) var(--hero-photo-y);
+  transform: translateY(var(--hero-photo-shift-y)) scale(var(--hero-photo-scale));
+  transform-origin: var(--hero-photo-origin);
+  filter: saturate(0.82) contrast(1.08) brightness(0.9) sepia(0.08) hue-rotate(-6deg);
+}
+
+.heroPhotoLayer::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  content: "";
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--cw-platform-text) 90%, transparent) 0%, color-mix(in srgb, var(--cw-platform-text) 68%, transparent) 38%, color-mix(in srgb, var(--cw-platform-text) 20%, transparent) 76%),
+    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 28%, transparent), color-mix(in srgb, var(--cw-platform-accent-strong) 28%, transparent)),
+    linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-guide-strong) 12%, transparent), color-mix(in srgb, var(--cw-sem-warmth) 7%, transparent));
+}
+
+.heroFeatureContent {
+  width: min(42rem, 100%);
+  max-width: calc(var(--cw-max-width) - 2rem);
+  min-width: 0;
+  position: relative;
+  z-index: 2;
+  display: grid;
+  gap: 1rem;
+  padding: clamp(5.75rem, 10vw, 8rem) clamp(1rem, 4vw, 1.35rem) clamp(6.4rem, 10vw, 8.5rem);
+  color: var(--cw-platform-accent-contrast);
+}
+
+.heroBadge {
+  width: fit-content;
+  margin: 0;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  padding: 0.48rem 0.74rem;
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 92%, transparent);
+  background: color-mix(in srgb, var(--cw-platform-text) 28%, transparent);
+  backdrop-filter: blur(var(--cw-component-glass-blur)) saturate(1.28) brightness(0.96);
+  -webkit-backdrop-filter: blur(var(--cw-component-glass-blur)) saturate(1.28) brightness(0.96);
+  font-family: var(--cw-font-data);
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.heroBadge span,
+.heroSecondaryButton span {
+  position: relative;
+  z-index: 1;
+}
+
+.heroFeatureTitle {
+  max-width: min(9.8ch, 100%);
+  margin: 0;
+  color: var(--cw-platform-accent-contrast);
+  font-family: var(--cw-font-ui);
+  font-size: clamp(3.4rem, 8.3vw, 7.6rem);
+  font-weight: 900;
+  line-height: 0.95;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.heroFeatureLead {
+  max-width: min(29rem, 100%);
+  margin: 0;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 82%, transparent);
+  font-size: clamp(1rem, 1.44vw, 1.12rem);
+  font-weight: 560;
+  line-height: 1.6;
+}
+
+.heroSupportNote {
+  max-width: 27rem;
+  margin: 0;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 68%, transparent);
+  font-size: 0.94rem;
+  font-weight: 540;
+  line-height: 1.52;
+}
+
+.heroFeatureActions {
+  width: min(100%, 19.5rem);
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.7rem;
+  margin-top: 0.2rem;
+}
+
+.heroPrimaryButton,
+.heroSecondaryButton {
+  width: 100%;
+  min-height: 3.1rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--ds-radius-button-soft);
+  padding: 0 1.35rem;
+  text-decoration: none;
+  font-weight: 800;
+}
+
+.heroPrimaryButton {
+  border: 0;
+  color: var(--cw-platform-accent-contrast);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--cw-platform-accent) 78%, var(--cw-platform-accent-strong) 22%), var(--cw-platform-accent-strong));
+  box-shadow: 0 16px 30px color-mix(in srgb, var(--cw-platform-accent) 20%, transparent);
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.heroPrimaryButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 32px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent);
+}
+
+.heroSecondaryButton {
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  border: 0;
+  color: var(--cw-platform-accent-contrast);
+  background: var(--cw-component-glass-bg);
+  box-shadow: var(--cw-depth-shadow-soft);
+  backdrop-filter: blur(var(--cw-component-glass-blur)) saturate(1.3) brightness(0.94);
+  -webkit-backdrop-filter: blur(var(--cw-component-glass-blur)) saturate(1.3) brightness(0.94);
+}
+
+.videoSection {
+  display: grid;
+  grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
+  gap: clamp(1rem, 2.4vw, 1.5rem);
+  align-items: stretch;
+}
+
+.videoPanel,
+.videoAside {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  border-radius: var(--cw-radius-lg);
+  background: color-mix(in srgb, var(--cw-platform-surface) 88%, transparent);
+  box-shadow: var(--cw-depth-shadow-soft);
+}
+
+.videoPanel {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16 / 9;
+  background: var(--cw-platform-text);
+  align-self: start;
+  scroll-margin-top: 5.25rem;
+}
+
+.videoPanel::after {
+  display: none;
+}
+
+.videoEmbed {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+
+.videoAside {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  gap: 0.85rem;
+  padding: clamp(1.05rem, 2.4vw, 1.55rem);
+}
+
+.videoActionGrid {
+  display: grid;
+  gap: 0.8rem;
+  margin-top: auto;
+  padding-top: 0.3rem;
+}
+
+.videoActionCard {
+  min-height: 5.85rem;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 0.9rem;
+  padding: 0.9rem 1rem 0.95rem;
+  border: 0;
+  border-radius: var(--cw-card-radius);
+  text-decoration: none;
+  color: var(--cw-platform-text);
+  background: color-mix(in srgb, var(--cw-platform-surface) 94%, transparent);
+  box-shadow: var(--cw-depth-shadow-soft);
+}
+
+.videoActionCard:hover {
+  background: color-mix(in srgb, var(--cw-platform-surface) 88%, var(--cw-platform-surface-muted) 12%);
+}
+
+.videoActionCard strong,
+.videoActionCard small {
+  display: block;
+}
+
+.videoActionCard strong {
+  margin-bottom: 0.26rem;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(1.4rem, 2.2vw, 1.72rem);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.videoActionCard small {
+  color: var(--cw-platform-muted);
+  font-size: 0.94rem;
+  line-height: 1.36;
+}
+
+.mediaPanel {
+  min-height: 34rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, transparent, color-mix(in srgb, var(--cw-platform-accent-strong) 58%, transparent)),
+    var(--cw-platform-surface-muted);
+}
+
+.expertImage {
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  object-fit: cover;
+  object-position: center top;
+}
+
+.mediaCaption {
+  display: grid;
+  gap: 0.65rem;
+  padding: 1.25rem;
+  color: var(--cw-platform-accent-contrast);
+  background: var(--cw-platform-accent-strong);
+}
+
+.mediaCaption strong {
+  font-size: 1.25rem;
+}
