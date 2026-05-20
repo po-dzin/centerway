@@ -24,6 +24,7 @@ function brandFromReferer(rawReferer: string | null, requestHost: string): HostB
     if (pathname === "/programs/mini-detox" || pathname.startsWith("/programs/mini-detox/")) return "mini-detox";
     if (pathname === "/mini-detox" || pathname.startsWith("/mini-detox/")) return "mini-detox";
     if (pathname === "/programs/detox" || pathname.startsWith("/programs/detox/")) return "detox";
+    if (pathname === "/products/herbs" || pathname.startsWith("/products/herbs/")) return "herbs";
     if (pathname === "/consult" || pathname.startsWith("/consult/")) return "consult";
     if (pathname === "/detox" || pathname.startsWith("/detox/")) return "detox";
     if (pathname === "/herbs" || pathname.startsWith("/herbs/")) return "herbs";
@@ -54,6 +55,7 @@ export function resolveRequestBrandFromPath(pathname: string): HostBrand | null 
   if (clean === "/programs/mini-detox" || clean.startsWith("/programs/mini-detox/")) return "mini-detox";
   if (clean === "/mini-detox" || clean.startsWith("/mini-detox/")) return "mini-detox";
   if (clean === "/programs/detox" || clean.startsWith("/programs/detox/")) return "detox";
+  if (clean === "/products/herbs" || clean.startsWith("/products/herbs/")) return "herbs";
   if (clean === "/detox" || clean.startsWith("/detox/")) return "detox";
   if (clean === "/consult" || clean.startsWith("/consult/")) return "consult";
   if (clean === "/herbs" || clean.startsWith("/herbs/")) return "herbs";

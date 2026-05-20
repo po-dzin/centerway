@@ -35,7 +35,7 @@ export const PRODUCTS = {
   },
 } as const;
 
-export const LEAD_PRODUCT_CODES = ["consult", "ideal-body", "platform"] as const;
+export const LEAD_PRODUCT_CODES = ["consult", "ideal-body", "platform", "herbs"] as const;
 
 export type PayableProductCode = keyof typeof PRODUCTS;
 export type LeadProductCode = (typeof LEAD_PRODUCT_CODES)[number];
@@ -65,6 +65,7 @@ export function normalizeProduct(input: unknown): ProductCode | null {
     if (s === "irem") return "irem";
     if (s === "consult" || s === "consultation") return "consult";
     if (s === "ideal-body" || s === "ideal_body" || s === "idealne-tilo") return "ideal-body";
+    if (s === "herbs") return "herbs";
     if (s === "platform" || s === "centerway") return "platform";
     return null;
   }
