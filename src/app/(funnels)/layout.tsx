@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: "CenterWay Funnels",
@@ -18,7 +19,10 @@ export default function FunnelsRootLayout({
 }>) {
   return (
     <html lang="uk" suppressHydrationWarning>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        {children}
+        <Analytics />
+      </body>
     </html>
   );
 }
