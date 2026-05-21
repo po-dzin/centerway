@@ -151,7 +151,9 @@ function AdminShell({ children }: { children: ReactNode }) {
 
         const now = Date.now();
         const JOBS_PULSE_MS = 60 * 1000;
-        const ANALYTICS_PULSE_MS = 15 * 60 * 1000;
+        // Materialized analytics refresh is deliberately infrequent because
+        // the dashboard API now carries its own short server-side cache.
+        const ANALYTICS_PULSE_MS = 30 * 60 * 1000;
         const jobsKey = "cw_admin_jobs_pulse_at";
         const analyticsKey = "cw_admin_analytics_pulse_at";
 
