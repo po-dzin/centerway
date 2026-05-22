@@ -46,6 +46,28 @@ Events written by the reporting runtime:
 
 The route itself decides which report windows are due using `Europe/Kyiv` calendar boundaries, so one daily cron is enough for daily, weekly, and monthly dispatch.
 
+## Report Format
+
+Periodic Telegram report uses two depth levels:
+
+1. `daily`:
+   - `Саммари`
+   - `Реклама`
+   - `Вывод`
+2. `weekly` and `monthly`:
+   - `Саммари`
+   - `Реклама`
+   - `Продукты` when at least two products have confirmed paid orders in the period
+   - `Топ кампаний`
+   - `Внимание` when needed
+   - `Вывод`
+
+Telegram formatting uses HTML mode for clearer visual rhythm:
+
+- bold section headers;
+- bullet points inside each section;
+- plain text campaign rows without extra diagnostics counters.
+
 ## Environment
 
 Required:
