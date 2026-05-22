@@ -400,36 +400,37 @@ function buildPaidWindowOrders(
 
 async function fetchLatestPurchaseJobsByOrderRefs(
     db: ReturnType<typeof adminClient>,
-    orderRefs: string[],
-    range: DateRange
+    orderRefs: string[]
 ): Promise<Map<string, { status: string; created_at: string | null }>> {
     const result = new Map<string, { status: string; created_at: string | null }>();
     if (orderRefs.length === 0) return result;
 
-    const orderRefSet = new Set(orderRefs);
-    const { data, error } = await db
-        .from("jobs")
-        .select("status, created_at, payload")
-        .eq("type", "meta:capi")
-        .contains("payload", { event_name: "Purchase" })
-        .gte("created_at", range.fromTs)
-        .lt("created_at", range.toExclusiveTs)
-        .order("created_at", { ascending: false })
-        .limit(50000);
+    const chunkSize = 25;
 
-    if (error) {
-        throw new Error(error.message);
-    }
+    for (let i = 0; i < orderRefs.length; i += chunkSize) {
+        const chunk = orderRefs.slice(i, i + chunkSize);
+        const rows = await Promise.all(
+            chunk.map(async (orderRef) => {
+                const { data, error } = await db
+                    .from("jobs")
+                    .select("status, created_at")
+                    .eq("type", "meta:capi")
+                    .contains("payload", { event_name: "Purchase", order_ref: orderRef })
+                    .order("created_at", { ascending: false })
+                    .limit(1)
+                    .maybeSingle();
+                if (error) throw new Error(error.message);
+                return { orderRef, row: data as { status?: string; created_at?: string | null } | null };
+            })
+        );
 
-    for (const row of data ?? []) {
-        const payload = row.payload as Record<string, unknown> | null;
-        const orderRef = typeof payload?.order_ref === "string" ? payload.order_ref : null;
-        if (!orderRef || !orderRefSet.has(orderRef) || result.has(orderRef)) continue;
-        if (typeof row.status !== "string") continue;
-        result.set(orderRef, {
-            status: row.status,
-            created_at: typeof row.created_at === "string" ? row.created_at : null,
-        });
+        for (const item of rows) {
+            if (!item.row?.status) continue;
+            result.set(item.orderRef, {
+                status: item.row.status,
+                created_at: item.row.created_at ?? null,
+            });
+        }
     }
 
     return result;
@@ -820,7 +821,6 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
         client_ip: string | null;
         client_ua: string | null;
     }>;
-    const paidRevenueOrders = revenueOrderRows.filter((row) => row.status === "paid" || row.status === "completed");
     const revenueMap = new Map<string, CampaignBreakdownRow>();
     const productMap = new Map<string, Omit<ProductBreakdownRow, "share_revenue_percent">>();
     const ordersCreatedByDay = new Map<string, number>();
@@ -1287,9 +1287,28 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
         throw new Error(accessErr.message);
     }
 
-    // 7.5 Business-fact event totals are derived from the already-loaded order window.
-    const ordersCreatedCount = revenueOrderRows.length;
-    const paidOrdersCount = paidRevenueOrders.length;
+    // 7.5 Business-fact totals stay exact and must not inherit the 50k row cap
+    // used for breakdown/detail datasets.
+    const { count: ordersCreatedCount, error: ordersCreatedErr } = await db
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", range.fromTs)
+        .lt("created_at", range.toExclusiveTs);
+    if (ordersCreatedErr) {
+        console.error("Analytics orders created count error:", ordersCreatedErr);
+        throw new Error(ordersCreatedErr.message);
+    }
+
+    const { count: paidOrdersCount, error: paidErr } = await db
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", range.fromTs)
+        .lt("created_at", range.toExclusiveTs)
+        .in("status", ["paid", "completed"]);
+    if (paidErr) {
+        console.error("Analytics paid count error:", paidErr);
+        throw new Error(paidErr.message);
+    }
 
     const { count: scrollDepth50Count, error: scrollErr } = await db
         .from("events")
@@ -1315,15 +1334,18 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
     const firstScrollDepthAt = (firstScrollDepthRow as { created_at?: string } | null)?.created_at ?? null;
     const alignedFromTs =
         firstScrollDepthAt && firstScrollDepthAt > range.fromTs ? firstScrollDepthAt : range.fromTs;
-    const alignedInitiateCheckoutCount = revenueOrderRows.reduce((count, row) => {
-        if (!row.created_at || row.created_at < alignedFromTs || row.created_at >= range.toExclusiveTs) {
-            return count;
-        }
-        return count + 1;
-    }, 0);
+    const { count: alignedInitiateCheckoutCount, error: alignedInitiateErr } = await db
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", alignedFromTs)
+        .lt("created_at", range.toExclusiveTs);
+    if (alignedInitiateErr) {
+        console.error("Analytics aligned initiate checkout count error:", alignedInitiateErr);
+        throw new Error(alignedInitiateErr.message);
+    }
 
     const scrollDepth50Total = scrollDepth50Count ?? 0;
-    const alignedInitiateCheckoutTotal = alignedInitiateCheckoutCount;
+    const alignedInitiateCheckoutTotal = alignedInitiateCheckoutCount ?? 0;
     const engagement: EngagementStats = {
         scroll_depth_50: scrollDepth50Total,
         initiate_checkout_aligned: alignedInitiateCheckoutTotal,
@@ -1488,32 +1510,33 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
     let purchaseJobByOrderRef = new Map<string, { status: string; created_at: string | null }>();
 
     if (paidOrderRefs.length > 0) {
-        qualityOrdersRows = paidRevenueOrders
-            .filter((row): row is typeof row & { order_ref: string } => typeof row.order_ref === "string")
-            .map((row) => ({
-                order_ref: row.order_ref,
-                created_at: row.created_at,
-                status: row.status,
-                fbclid: row.fbclid,
-                fbp: row.fbp,
-                page_url: row.page_url,
-                client_ip: row.client_ip,
-                client_ua: row.client_ua,
-            }));
-        const { data: checkoutStartedData, error: checkoutStartedErr } = await db
-            .from("events")
-            .select("order_ref, payload, created_at")
-            .eq("type", "checkout_started")
-            .in("order_ref", paidOrderRefs)
-            .order("created_at", { ascending: false })
-            .limit(paidWindowFetchLimit);
-        if (checkoutStartedErr) {
-            console.warn("Analytics checkout_started quality warning:", checkoutStartedErr.message);
+        const [qualityOrdersRes, checkoutStartedRes] = await Promise.all([
+            db
+                .from("orders")
+                .select("order_ref, created_at, status, fbclid, fbp, page_url, client_ip, client_ua")
+                .in("status", ["paid", "completed"])
+                .in("order_ref", paidOrderRefs)
+                .limit(paidWindowFetchLimit),
+            db
+                .from("events")
+                .select("order_ref, payload, created_at")
+                .eq("type", "checkout_started")
+                .in("order_ref", paidOrderRefs)
+                .order("created_at", { ascending: false })
+                .limit(paidWindowFetchLimit),
+        ]);
+        if (qualityOrdersRes.error) {
+            console.warn("Analytics quality series warning:", qualityOrdersRes.error.message);
         } else {
-            checkoutStartedRows = (checkoutStartedData ?? []) as typeof checkoutStartedRows;
+            qualityOrdersRows = (qualityOrdersRes.data ?? []) as typeof qualityOrdersRows;
+        }
+        if (checkoutStartedRes.error) {
+            console.warn("Analytics checkout_started quality warning:", checkoutStartedRes.error.message);
+        } else {
+            checkoutStartedRows = (checkoutStartedRes.data ?? []) as typeof checkoutStartedRows;
         }
         try {
-            purchaseJobByOrderRef = await fetchLatestPurchaseJobsByOrderRefs(db, paidOrderRefs, range);
+            purchaseJobByOrderRef = await fetchLatestPurchaseJobsByOrderRefs(db, paidOrderRefs);
         } catch (error) {
             console.warn(
                 "Analytics purchase transport warning:",
