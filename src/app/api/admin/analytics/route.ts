@@ -1309,6 +1309,8 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
         console.error("Analytics paid count error:", paidErr);
         throw new Error(paidErr.message);
     }
+    const ordersCreatedTotal = ordersCreatedCount ?? 0;
+    const paidOrdersTotal = paidOrdersCount ?? 0;
 
     const { count: scrollDepth50Count, error: scrollErr } = await db
         .from("events")
@@ -1379,11 +1381,11 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
 
     const localViewContent = localViewContentCount ?? 0;
     const localViewContentFloored =
-        localViewContent > 0 ? Math.max(localViewContent, ordersCreatedCount) : localViewContent;
+        localViewContent > 0 ? Math.max(localViewContent, ordersCreatedTotal) : localViewContent;
     const fallbackViewContent = pixelResult.totals?.view_content ?? viewContentStats.total;
     const hasPixelDailyViewContent = pixelDailyAggregate.view_content > 0;
     const referencePixelViewContent = pixelResult.totals?.view_content ?? null;
-    const businessInitiateCheckout = ordersCreatedCount;
+    const businessInitiateCheckout = ordersCreatedTotal;
     const pixelStatsUnavailable = (pixelResult.reason ?? "").startsWith("pixel_stats_api_error");
     const pixelDailyImplausibleForFunnel =
         hasPixelDailyViewContent &&
@@ -1434,9 +1436,9 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
         // Preferred source is Pixel daily stats synced from Event Manager.
         view_content: resolvedViewContent,
         // InitiateCheckout business fact: checkout records created in DB.
-        initiate_checkout: ordersCreatedCount,
+        initiate_checkout: ordersCreatedTotal,
         // Purchase remains business-fact from paid/completed orders.
-        purchase: paidOrdersCount,
+        purchase: paidOrdersTotal,
         access_granted: accessGrantedCount ?? 0,
     };
     const totalPaidOrders = businessTotals.purchase;
@@ -1812,7 +1814,7 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
             reference_pixel_view_content: pixelResult.totals?.view_content ?? null,
             transport_capi_view_content: viewContentStats.total,
             reference_pixel_initiate_checkout: pixelResult.totals?.initiate_checkout ?? null,
-            business_initiate_checkout: ordersCreatedCount,
+            business_initiate_checkout: ordersCreatedTotal,
             transport_capi_initiate_checkout: initiateCheckoutStats.total,
             pixel_preview: pixelResult.preview ?? null,
             pixel_requested_range: pixelResult.requested_range ?? null,
