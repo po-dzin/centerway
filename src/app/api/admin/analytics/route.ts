@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { unstable_cache } from "next/cache";
 import { adminClient } from "@/lib/auth/adminClient";
 import { requireAdminSession, serverErrorResponse, unauthorizedResponse } from "@/lib/api/adminRoute";
 import { normalizeTrackingString, resolveFbc } from "@/lib/tracking/metaClickIds";
@@ -402,6 +403,8 @@ async function fetchLatestPurchaseJobsByOrderRefs(
     orderRefs: string[]
 ): Promise<Map<string, { status: string; created_at: string | null }>> {
     const result = new Map<string, { status: string; created_at: string | null }>();
+    if (orderRefs.length === 0) return result;
+
     const chunkSize = 25;
 
     for (let i = 0; i < orderRefs.length; i += chunkSize) {
@@ -672,16 +675,14 @@ function toDateRange(searchParams: URLSearchParams): DateRange {
     };
 }
 
-async function getCapiEventStats(
+async function getCapiEventStatsMap(
     db: ReturnType<typeof adminClient>,
-    eventName: CapiEventName,
     range: DateRange
-): Promise<CapiEventStats> {
+): Promise<Map<CapiEventName, CapiEventStats>> {
     const { data: rows, error } = await db
         .from("jobs")
         .select("status, created_at, payload")
         .eq("type", "meta:capi")
-        .contains("payload", { event_name: eventName })
         .gte("created_at", range.fromTs)
         .lt("created_at", range.toExclusiveTs)
         .limit(100000);
@@ -697,24 +698,43 @@ async function getCapiEventStats(
         hasFailed: boolean;
     };
 
-    const dedup = new Map<string, CapiDedup>();
-    let lastSeenAt: string | null = null;
-    let legacyCounter = 0;
+    const perEventDedup = new Map<CapiEventName, Map<string, CapiDedup>>([
+        ["ViewContent", new Map()],
+        ["InitiateCheckout", new Map()],
+        ["Purchase", new Map()],
+    ]);
+    const perEventLastSeen = new Map<CapiEventName, string | null>([
+        ["ViewContent", null],
+        ["InitiateCheckout", null],
+        ["Purchase", null],
+    ]);
+    const perEventLegacyCounters = new Map<CapiEventName, number>([
+        ["ViewContent", 0],
+        ["InitiateCheckout", 0],
+        ["Purchase", 0],
+    ]);
 
     for (const row of rows ?? []) {
-        const createdAt = typeof row.created_at === "string" ? row.created_at : null;
-        if (createdAt && (!lastSeenAt || createdAt > lastSeenAt)) {
-            lastSeenAt = createdAt;
-        }
-
         const payload = row.payload as Record<string, unknown> | null;
+        const eventName = payload?.event_name;
+        if (eventName !== "ViewContent" && eventName !== "InitiateCheckout" && eventName !== "Purchase") {
+            continue;
+        }
+        const createdAt = typeof row.created_at === "string" ? row.created_at : null;
+        const lastSeenAt = perEventLastSeen.get(eventName) ?? null;
+        if (createdAt && (!lastSeenAt || createdAt > lastSeenAt)) {
+            perEventLastSeen.set(eventName, createdAt);
+        }
         const eventId = typeof payload?.event_id === "string" ? payload.event_id : null;
         const orderRef = typeof payload?.order_ref === "string" ? payload.order_ref : null;
+        let legacyCounter = perEventLegacyCounters.get(eventName) ?? 0;
         const dedupKey =
             eventId ||
             (orderRef ? `${eventName}:${orderRef}` : null) ||
             `legacy:${eventName}:${createdAt ?? "na"}:${legacyCounter++}`;
+        perEventLegacyCounters.set(eventName, legacyCounter);
 
+        const dedup = perEventDedup.get(eventName)!;
         const current = dedup.get(dedupKey) ?? {
             hasSuccess: false,
             hasPending: false,
@@ -728,37 +748,38 @@ async function getCapiEventStats(
         dedup.set(dedupKey, current);
     }
 
-    let success = 0;
-    let pending = 0;
-    let running = 0;
-    let failed = 0;
+    const result = new Map<CapiEventName, CapiEventStats>();
+    for (const eventName of ["ViewContent", "InitiateCheckout", "Purchase"] as const) {
+        const dedup = perEventDedup.get(eventName)!;
+        let success = 0;
+        let pending = 0;
+        let running = 0;
+        let failed = 0;
 
-    for (const item of dedup.values()) {
-        if (item.hasSuccess) success += 1;
-        else if (item.hasPending) pending += 1;
-        else if (item.hasRunning) running += 1;
-        else if (item.hasFailed) failed += 1;
-        else failed += 1;
+        for (const item of dedup.values()) {
+            if (item.hasSuccess) success += 1;
+            else if (item.hasPending) pending += 1;
+            else if (item.hasRunning) running += 1;
+            else if (item.hasFailed) failed += 1;
+            else failed += 1;
+        }
+
+        result.set(eventName, {
+            event_name: eventName,
+            total: dedup.size,
+            success,
+            pending,
+            running,
+            failed,
+            last_seen_at: perEventLastSeen.get(eventName) ?? null,
+        });
     }
 
-    return {
-        event_name: eventName,
-        total: dedup.size,
-        success,
-        pending,
-        running,
-        failed,
-        last_seen_at: lastSeenAt,
-    };
+    return result;
 }
 
-export async function GET(req: NextRequest) {
-    const session = await requireAdminSession(req);
-    if (!session) return unauthorizedResponse();
-
+async function computeAnalyticsPayload(range: DateRange, campaignLevel: CampaignBreakdownLevel) {
     const db = adminClient();
-    const range = toDateRange(req.nextUrl.searchParams);
-    const campaignLevel = campaignBreakdownLevelFromQuery(req.nextUrl.searchParams);
 
     // 1. Fetch Funnel
     const { data: funnelDataRaw, error: funnelErr } = await db
@@ -771,22 +792,35 @@ export async function GET(req: NextRequest) {
 
     if (funnelErr) {
         console.error("Analytics Funnel error:", funnelErr);
-        return serverErrorResponse(funnelErr.message);
+        throw new Error(funnelErr.message);
     }
     let funnelData = buildFunnelSeries(range, funnelDataRaw ?? []);
 
     // 2. Fetch Revenue source breakdown in the selected period
     const { data: revenueOrders, error: revErr } = await db
         .from("orders")
-        .select("campaign, page_url, product_code, status, amount, created_at")
+        .select("order_ref, campaign, page_url, product_code, status, amount, created_at, fbclid, fbp, client_ip, client_ua")
         .gte("created_at", range.fromTs)
         .lt("created_at", range.toExclusiveTs)
         .limit(50000);
 
     if (revErr) {
         console.error("Analytics Revenue error:", revErr);
-        return serverErrorResponse(revErr.message);
+        throw new Error(revErr.message);
     }
+    const revenueOrderRows = (revenueOrders ?? []) as Array<{
+        order_ref: string | null;
+        campaign: string | null;
+        page_url: string | null;
+        product_code: string | null;
+        status: string | null;
+        amount: number | null;
+        created_at: string | null;
+        fbclid: string | null;
+        fbp: string | null;
+        client_ip: string | null;
+        client_ua: string | null;
+    }>;
     const revenueMap = new Map<string, CampaignBreakdownRow>();
     const productMap = new Map<string, Omit<ProductBreakdownRow, "share_revenue_percent">>();
     const ordersCreatedByDay = new Map<string, number>();
@@ -921,7 +955,7 @@ export async function GET(req: NextRequest) {
     };
 
     let paidRevenueFact = 0;
-    for (const row of revenueOrders ?? []) {
+    for (const row of revenueOrderRows) {
         const createdAt = typeof row.created_at === "string" ? row.created_at : null;
         const dayKey = createdAt ? getIsoDateInTimeZone(new Date(createdAt), ADMIN_ANALYTICS_TZ) : null;
         const campaignParam = extractUrlQueryParam(row.page_url, "utm_campaign");
@@ -1235,12 +1269,11 @@ export async function GET(req: NextRequest) {
         };
     }
 
-    // 6. CAPI event-level stats
-    const [viewContentStats, initiateCheckoutStats, purchaseStats] = await Promise.all([
-        getCapiEventStats(db, "ViewContent", range),
-        getCapiEventStats(db, "InitiateCheckout", range),
-        getCapiEventStats(db, "Purchase", range),
-    ]);
+    // 6. CAPI transport stats come from one shared jobs read instead of three scans.
+    const capiEventStats = await getCapiEventStatsMap(db, range);
+    const viewContentStats = capiEventStats.get("ViewContent")!;
+    const initiateCheckoutStats = capiEventStats.get("InitiateCheckout")!;
+    const purchaseStats = capiEventStats.get("Purchase")!;
 
     // 7. Access granted proxy (token consumed)
     const { count: accessGrantedCount, error: accessErr } = await db
@@ -1251,10 +1284,21 @@ export async function GET(req: NextRequest) {
         .eq("type", "token_consumed");
     if (accessErr) {
         console.error("Analytics access count error:", accessErr);
-        return serverErrorResponse(accessErr.message);
+        throw new Error(accessErr.message);
     }
 
-    // 7.5 Business-fact event totals (not CAPI transport totals)
+    // 7.5 Business-fact totals stay exact and must not inherit the 50k row cap
+    // used for breakdown/detail datasets.
+    const { count: ordersCreatedCount, error: ordersCreatedErr } = await db
+        .from("orders")
+        .select("id", { count: "exact", head: true })
+        .gte("created_at", range.fromTs)
+        .lt("created_at", range.toExclusiveTs);
+    if (ordersCreatedErr) {
+        console.error("Analytics orders created count error:", ordersCreatedErr);
+        throw new Error(ordersCreatedErr.message);
+    }
+
     const { count: paidOrdersCount, error: paidErr } = await db
         .from("orders")
         .select("id", { count: "exact", head: true })
@@ -1263,18 +1307,10 @@ export async function GET(req: NextRequest) {
         .in("status", ["paid", "completed"]);
     if (paidErr) {
         console.error("Analytics paid count error:", paidErr);
-        return serverErrorResponse(paidErr.message);
+        throw new Error(paidErr.message);
     }
-
-    const { count: ordersCreatedCount, error: ordersCreatedErr } = await db
-        .from("orders")
-        .select("id", { count: "exact", head: true })
-        .gte("created_at", range.fromTs)
-        .lt("created_at", range.toExclusiveTs);
-    if (ordersCreatedErr) {
-        console.error("Analytics orders created count error:", ordersCreatedErr);
-        return serverErrorResponse(ordersCreatedErr.message);
-    }
+    const ordersCreatedTotal = ordersCreatedCount ?? 0;
+    const paidOrdersTotal = paidOrdersCount ?? 0;
 
     const { count: scrollDepth50Count, error: scrollErr } = await db
         .from("events")
@@ -1284,7 +1320,7 @@ export async function GET(req: NextRequest) {
         .lt("created_at", range.toExclusiveTs);
     if (scrollErr) {
         console.error("Analytics scroll depth count error:", scrollErr);
-        return serverErrorResponse(scrollErr.message);
+        throw new Error(scrollErr.message);
     }
 
     const { data: firstScrollDepthRow, error: firstScrollErr } = await db
@@ -1300,7 +1336,6 @@ export async function GET(req: NextRequest) {
     const firstScrollDepthAt = (firstScrollDepthRow as { created_at?: string } | null)?.created_at ?? null;
     const alignedFromTs =
         firstScrollDepthAt && firstScrollDepthAt > range.fromTs ? firstScrollDepthAt : range.fromTs;
-
     const { count: alignedInitiateCheckoutCount, error: alignedInitiateErr } = await db
         .from("orders")
         .select("id", { count: "exact", head: true })
@@ -1308,7 +1343,7 @@ export async function GET(req: NextRequest) {
         .lt("created_at", range.toExclusiveTs);
     if (alignedInitiateErr) {
         console.error("Analytics aligned initiate checkout count error:", alignedInitiateErr);
-        return serverErrorResponse(alignedInitiateErr.message);
+        throw new Error(alignedInitiateErr.message);
     }
 
     const scrollDepth50Total = scrollDepth50Count ?? 0;
@@ -1330,7 +1365,7 @@ export async function GET(req: NextRequest) {
         .lt("created_at", range.toExclusiveTs);
     if (localViewErr) {
         console.error("Analytics local view content count error:", localViewErr);
-        return serverErrorResponse(localViewErr.message);
+        throw new Error(localViewErr.message);
     }
 
     const pixelResult: PixelTotalsResult = await fetchPixelTotals(range).catch((err: unknown): PixelTotalsResult => {
@@ -1346,11 +1381,11 @@ export async function GET(req: NextRequest) {
 
     const localViewContent = localViewContentCount ?? 0;
     const localViewContentFloored =
-        localViewContent > 0 ? Math.max(localViewContent, ordersCreatedCount ?? 0) : localViewContent;
+        localViewContent > 0 ? Math.max(localViewContent, ordersCreatedTotal) : localViewContent;
     const fallbackViewContent = pixelResult.totals?.view_content ?? viewContentStats.total;
     const hasPixelDailyViewContent = pixelDailyAggregate.view_content > 0;
     const referencePixelViewContent = pixelResult.totals?.view_content ?? null;
-    const businessInitiateCheckout = ordersCreatedCount ?? 0;
+    const businessInitiateCheckout = ordersCreatedTotal;
     const pixelStatsUnavailable = (pixelResult.reason ?? "").startsWith("pixel_stats_api_error");
     const pixelDailyImplausibleForFunnel =
         hasPixelDailyViewContent &&
@@ -1401,9 +1436,9 @@ export async function GET(req: NextRequest) {
         // Preferred source is Pixel daily stats synced from Event Manager.
         view_content: resolvedViewContent,
         // InitiateCheckout business fact: checkout records created in DB.
-        initiate_checkout: ordersCreatedCount ?? 0,
+        initiate_checkout: ordersCreatedTotal,
         // Purchase remains business-fact from paid/completed orders.
-        purchase: paidOrdersCount ?? 0,
+        purchase: paidOrdersTotal,
         access_granted: accessGrantedCount ?? 0,
     };
     const totalPaidOrders = businessTotals.purchase;
@@ -1710,7 +1745,7 @@ export async function GET(req: NextRequest) {
 
     const toFixed2 = (value: number) => Number(value.toFixed(2));
 
-    return NextResponse.json({
+    return {
         period: {
             from: range.from,
             to: range.to,
@@ -1721,7 +1756,7 @@ export async function GET(req: NextRequest) {
         products: productData,
         summary: {
             totalLeads,
-            totalOrders: ordersCreatedCount ?? 0,
+            totalOrders: ordersCreatedCount,
             totalPaidOrders,
             totalRevenue,
             avgConversionRate: totalLeads > 0 ? ((totalPaidOrders / totalLeads) * 100).toFixed(2) : 0
@@ -1779,7 +1814,7 @@ export async function GET(req: NextRequest) {
             reference_pixel_view_content: pixelResult.totals?.view_content ?? null,
             transport_capi_view_content: viewContentStats.total,
             reference_pixel_initiate_checkout: pixelResult.totals?.initiate_checkout ?? null,
-            business_initiate_checkout: ordersCreatedCount ?? 0,
+            business_initiate_checkout: ordersCreatedTotal,
             transport_capi_initiate_checkout: initiateCheckoutStats.total,
             pixel_preview: pixelResult.preview ?? null,
             pixel_requested_range: pixelResult.requested_range ?? null,
@@ -1795,5 +1830,32 @@ export async function GET(req: NextRequest) {
             roas: toFixed2(roas),
             roi_percent: toFixed2(roiPercent),
         },
-    });
+    };
+}
+
+function getCachedAnalyticsPayload(range: DateRange, campaignLevel: CampaignBreakdownLevel) {
+    return unstable_cache(
+        async () => computeAnalyticsPayload(range, campaignLevel),
+        ["admin-analytics-v2", range.from, range.to, campaignLevel],
+        {
+            // Short shared cache reduces repeated Supabase scans and Meta API work
+            // while keeping the admin dashboard effectively fresh.
+            revalidate: 120,
+        }
+    )();
+}
+
+export async function GET(req: NextRequest) {
+    const session = await requireAdminSession(req);
+    if (!session) return unauthorizedResponse();
+
+    const range = toDateRange(req.nextUrl.searchParams);
+    const campaignLevel = campaignBreakdownLevelFromQuery(req.nextUrl.searchParams);
+    try {
+        const payload = await getCachedAnalyticsPayload(range, campaignLevel);
+        return NextResponse.json(payload);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return serverErrorResponse(message);
+    }
 }
