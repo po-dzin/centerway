@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, IBM_Plex_Mono, Manrope } from "next/font/google";
+import { Analytics } from "@vercel/analytics/next";
 import "../globals.css";
 
 const manrope = Manrope({
@@ -45,6 +46,7 @@ export default function RootLayout({
     <html lang="uk" suppressHydrationWarning>
       <body className={`${manrope.variable} ${cormorant.variable} ${ibmPlexMono.variable}`} suppressHydrationWarning>
         {children}
+        <Analytics />
       </body>
     </html>
   );

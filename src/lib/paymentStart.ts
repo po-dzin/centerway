@@ -229,28 +229,34 @@ export async function createPaymentInvoiceWithDeps(
     });
   }
 
-  const { error: checkoutStartedErr } = await sb.from("events").insert({
-    type: "checkout_started",
-    order_ref,
-    payload: {
-      source: input.source,
-      host: input.host ?? null,
-      product: input.product,
-      offer_id: input.offer_id ?? null,
-      event_id: clientEventId,
-      fbp: input.fbp ?? null,
-      fbc: input.fbc ?? null,
-      fbclid: input.fbclid ?? null,
-      campaign: input.campaign ?? null,
-      client_ip: input.client_ip ?? null,
-      client_ua: input.client_ua ?? null,
-      page_url: input.page_url ?? null,
-      ...(input.payload ?? {}),
-    },
-  });
-  if (checkoutStartedErr) {
-    console.warn("checkout_started_insert_failed", checkoutStartedErr.message, { order_ref });
-  }
+  void (async () => {
+    try {
+      const { error: checkoutStartedErr } = await sb.from("events").insert({
+        type: "checkout_started",
+        order_ref,
+        payload: {
+          source: input.source,
+          host: input.host ?? null,
+          product: input.product,
+          offer_id: input.offer_id ?? null,
+          event_id: clientEventId,
+          fbp: input.fbp ?? null,
+          fbc: input.fbc ?? null,
+          fbclid: input.fbclid ?? null,
+          campaign: input.campaign ?? null,
+          client_ip: input.client_ip ?? null,
+          client_ua: input.client_ua ?? null,
+          page_url: input.page_url ?? null,
+          ...(input.payload ?? {}),
+        },
+      });
+      if (checkoutStartedErr) {
+        console.warn("checkout_started_insert_failed", checkoutStartedErr.message, { order_ref });
+      }
+    } catch (checkoutStartedErr) {
+      console.warn("checkout_started_insert_failed", checkoutStartedErr, { order_ref });
+    }
+  })();
 
   const returnUrl = buildReturnUrl(appBaseUrl, input.product, order_ref);
 

@@ -68,6 +68,7 @@ export async function sendTelegramMessageWithToken(
   text: string,
   options?: {
     messageThreadId?: number | null;
+    parseMode?: "HTML" | "MarkdownV2";
   }
 ): Promise<void> {
   await callTelegramBotApiWithToken(
@@ -76,6 +77,7 @@ export async function sendTelegramMessageWithToken(
       chat_id: normalizeTelegramChatId(chatId),
       text,
       disable_web_page_preview: true,
+      ...(options?.parseMode ? { parse_mode: options.parseMode } : {}),
       ...(options?.messageThreadId ? { message_thread_id: options.messageThreadId } : {}),
     },
     requireTelegramToken(token, "custom telegram token")
