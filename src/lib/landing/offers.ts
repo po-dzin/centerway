@@ -134,7 +134,7 @@ function formatDeadlineLabel(iso: string | null): string | null {
 
 function computeDiscountPercent(oldAmount: number, amount: number): number {
   const discount = ((oldAmount - amount) / oldAmount) * 100;
-  return Math.round(discount);
+  return Math.ceil(discount);
 }
 
 function buildActiveNote(deadlineLabel: string | null): string {
