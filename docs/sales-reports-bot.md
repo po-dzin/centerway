@@ -31,9 +31,14 @@ If a forum topic is configured, messages are sent into `ANALYTICS_REPORTS_THREAD
 ## Data Sources
 
 - sales facts: `public.orders`, `public.customers`
-- funnel facts: `public.mv_funnel_daily`
 - ad metrics: `public.analytics_meta_daily`, `public.analytics_meta_campaign_daily`
 - idempotency log: `public.events`
+
+Daily funnel is intentionally mixed but operationally reliable:
+
+- page views come from `public.analytics_meta_daily.view_content`;
+- created orders come from `public.orders`;
+- confirmed payments come from `public.orders` with status `paid|completed`.
 
 Events written by the reporting runtime:
 
@@ -67,6 +72,7 @@ Telegram formatting uses HTML mode for clearer visual rhythm:
 - bold section headers;
 - bullet points inside each section;
 - plain text campaign rows without extra diagnostics counters.
+- daily funnel uses `просмотр страницы -> создано заказов -> покупка`, not Meta-attributed `InitiateCheckout`.
 
 ## Environment
 

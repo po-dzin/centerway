@@ -192,56 +192,63 @@ function boldHeading(text: string): string {
 }
 
 function buildAttentionLines(input: {
+  totalOrders: number;
   totalPaidOrders: number;
-  totalRevenue: number;
   spend: number;
   clicks: number;
-  initiateCheckout: number;
   viewContent: number;
 }): string[] {
   const lines: string[] = [];
 
-  if (input.spend > 0 && input.totalPaidOrders === 0) {
-    lines.push("Есть расход, но нет подтверждённых оплат.");
+  if (input.spend > 0 && input.totalOrders === 0) {
+    lines.push("Есть расход, но созданных заказов за период нет.");
   }
 
-  if (input.clicks > 0 && input.initiateCheckout === 0) {
-    lines.push("Есть клики, но нет перехода к началу оплаты.");
+  if (input.viewContent > 0 && input.totalOrders === 0) {
+    lines.push("Есть просмотры страницы, но они не переходят в создание заказа.");
   }
 
-  if (input.viewContent > 0 && input.initiateCheckout > 0 && input.totalPaidOrders === 0) {
-    lines.push("Люди доходят до оплаты, но покупка не завершается.");
+  if (input.totalOrders > 0 && input.totalPaidOrders === 0) {
+    lines.push("Заказы создаются, но подтверждённых оплат пока нет.");
+  }
+
+  if (input.totalPaidOrders > 0 && input.totalOrders > input.totalPaidOrders) {
+    lines.push("Часть созданных заказов не дошла до подтверждённой оплаты.");
   }
 
   return lines;
 }
 
 function buildConclusionLine(input: {
+  totalOrders: number;
   totalPaidOrders: number;
   totalRevenue: number;
   spend: number;
   roas: number;
   clicks: number;
   viewContent: number;
-  initiateCheckout: number;
   topCampaign?: CampaignSummary;
 }): string {
   if (input.totalPaidOrders > 0) {
     if (input.roas >= 1) {
-      return `Подтверждено ${formatNumber(input.totalPaidOrders)} оплат на ${formatCurrency(input.totalRevenue)}; ROAS ${formatNumber(input.roas)}.`;
+      return `Создано ${formatNumber(input.totalOrders)} заказов, подтверждено ${formatNumber(input.totalPaidOrders)} оплат на ${formatCurrency(input.totalRevenue)}; ROAS ${formatNumber(input.roas)}.`;
     }
-    if (input.initiateCheckout > input.totalPaidOrders) {
-      return `Подтверждено ${formatNumber(input.totalPaidOrders)} оплат на ${formatCurrency(input.totalRevenue)}, но из ${formatNumber(input.initiateCheckout)} начатых оплат завершились не все.`;
+    if (input.totalOrders > input.totalPaidOrders) {
+      return `Создано ${formatNumber(input.totalOrders)} заказов, подтверждено ${formatNumber(input.totalPaidOrders)} оплат на ${formatCurrency(input.totalRevenue)}.`;
     }
     return `Есть подтверждённые оплаты на ${formatCurrency(input.totalRevenue)}, но ROAS пока ${formatNumber(input.roas)}.`;
   }
 
-  if (input.spend > 0 && input.viewContent > 0 && input.initiateCheckout > 0) {
-    return `Из ${formatNumber(input.viewContent)} просмотров страницы и ${formatNumber(input.initiateCheckout)} начатых оплат подтверждённых покупок пока нет.`;
+  if (input.viewContent > 0 && input.totalOrders > 0) {
+    return `Из ${formatNumber(input.viewContent)} просмотров страницы создано ${formatNumber(input.totalOrders)} заказов, но подтверждённых оплат пока нет.`;
   }
 
   if (input.spend > 0 && input.clicks > 0 && input.viewContent === 0) {
     return `Есть ${formatNumber(input.clicks)} кликов, но переход в просмотр страницы почти не сформирован.`;
+  }
+
+  if (input.spend > 0 && input.viewContent > 0 && input.totalOrders === 0) {
+    return `Из ${formatNumber(input.viewContent)} просмотров страницы заказы пока не созданы.`;
   }
 
   if (input.spend > 0 && input.topCampaign && input.topCampaign.clicks > 0) {
@@ -451,13 +458,13 @@ export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise
         dateStyle: "short",
         timeStyle: "short",
       }).format(new Date(order.created_at))
-    : "невідомо";
+    : "неизвестно";
 
   const text = [
     "Подтверждена продажа",
     `Продукт: ${productLabel(order.product_code)}`,
     `Сумма: ${formatCurrency(asFiniteNumber(order.amount), typeof order.currency === "string" && order.currency ? order.currency : "UAH")}`,
-    `Order: ${order.order_ref}`,
+    `Заказ: ${order.order_ref}`,
     `Кампания: ${escapeTelegramText(campaign)}`,
     `Клиент: ${customerEmail || customerPhone || "контакт не найден"}`,
     `Время: ${confirmedAt}`,
@@ -486,7 +493,7 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
       .limit(50000),
     db
       .from("analytics_meta_daily")
-      .select("reach, impressions, clicks, spend, view_content, initiate_checkout, purchase, currency")
+      .select("reach, impressions, clicks, spend, view_content, currency")
       .gte("day", window.from)
       .lte("day", window.to)
       .limit(366),
@@ -543,7 +550,6 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
     clicks: 0,
     spend: 0,
     viewContent: 0,
-    initiateCheckout: 0,
   };
   for (const row of metaResult.data ?? []) {
     metaTotals.reach += asFiniteNumber(row.reach);
@@ -551,7 +557,6 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
     metaTotals.clicks += asFiniteNumber(row.clicks);
     metaTotals.spend += asFiniteNumber(row.spend);
     metaTotals.viewContent += asFiniteNumber(row.view_content);
-    metaTotals.initiateCheckout += asFiniteNumber(row.initiate_checkout);
     if (typeof row.currency === "string" && row.currency.trim()) {
       currency = row.currency.trim();
     }
@@ -600,21 +605,20 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
 
   const roas = safeDivide(totalRevenue, metaTotals.spend);
   const attentionLines = buildAttentionLines({
+    totalOrders,
     totalPaidOrders,
-    totalRevenue,
     spend: metaTotals.spend,
     clicks: metaTotals.clicks,
-    initiateCheckout: metaTotals.initiateCheckout,
     viewContent: metaTotals.viewContent,
   });
   const conclusionLine = buildConclusionLine({
+    totalOrders,
     totalPaidOrders,
     totalRevenue,
     spend: metaTotals.spend,
     roas,
     clicks: metaTotals.clicks,
     viewContent: metaTotals.viewContent,
-    initiateCheckout: metaTotals.initiateCheckout,
     topCampaign: topCampaigns[0],
   });
 
@@ -626,7 +630,7 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
     bulletLine("Выручка", formatCurrency(totalRevenue, currency)),
     bulletLine(
       "Воронка",
-      `просмотр страницы ${formatNumber(metaTotals.viewContent)} → начало оплаты ${formatNumber(metaTotals.initiateCheckout)} → покупка ${formatNumber(totalPaidOrders)}`
+      `просмотр страницы ${formatNumber(metaTotals.viewContent)} → создано заказов ${formatNumber(totalOrders)} → покупка ${formatNumber(totalPaidOrders)}`
     ),
     bulletLine("Конверсия просмотр → оплата", toPercent(totalPaidOrders, metaTotals.viewContent)),
     "",

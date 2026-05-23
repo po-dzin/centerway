@@ -223,8 +223,7 @@ export async function createPaymentInvoiceWithDeps(
     });
   }
 
-  // Non-blocking analytics event.
-  void sb.from("events").insert({
+  const { error: checkoutStartedErr } = await sb.from("events").insert({
     type: "checkout_started",
     order_ref,
     payload: {
@@ -242,6 +241,9 @@ export async function createPaymentInvoiceWithDeps(
       ...(input.payload ?? {}),
     },
   });
+  if (checkoutStartedErr) {
+    console.warn("checkout_started_insert_failed", checkoutStartedErr.message, { order_ref });
+  }
 
   const returnUrl = buildReturnUrl(appBaseUrl, input.product, order_ref);
 
