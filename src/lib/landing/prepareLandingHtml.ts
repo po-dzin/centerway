@@ -205,13 +205,24 @@ ${match[3]}`;
   return next;
 }
 
+function buildIremPromoNoteMarkup(offer: LandingResolvedOffer): string {
+  if (offer.offerApplied && !offer.offerExpired && offer.expiresAt) {
+    return `<p class="promo-note" data-promo-note><span class="promo-note__label" data-promo-note-label>Персональна ціна діє ще</span><span class="promo-timer" data-promo-timer aria-live="polite">48:00:00</span></p>`;
+  }
+
+  const note = offer.activeNote ?? offer.expiredNote;
+  return note ? `<p class="promo-note">${note}</p>` : "";
+}
+
 function buildIremPriceMarkup(offer: LandingResolvedOffer, includeNote: boolean): string {
+  const discountBadge =
+    offer.offerApplied && !offer.offerExpired && offer.discountPercent && offer.discountPercent > 0
+      ? `<span class="price-discount-badge">-${offer.discountPercent}%</span>`
+      : "";
   const stack = offer.oldPriceLabel
-    ? `<div class="price-stack"><span class="price-old">${offer.oldPriceLabel}</span><span class="price-current">${offer.currentPriceLabel}</span></div>`
+    ? `<div class="price-stack"><span class="price-old">${offer.oldPriceLabel}</span><span class="price-current">${offer.currentPriceLabel}</span>${discountBadge}</div>`
     : `<span class="price-current">${offer.currentPriceLabel}</span>`;
-  const note = includeNote && (offer.activeNote || offer.expiredNote)
-    ? `<p class="promo-note">${offer.activeNote ?? offer.expiredNote}</p>`
-    : "";
+  const note = includeNote ? buildIremPromoNoteMarkup(offer) : "";
   return `<div class="price">${stack}</div>${note}`;
 }
 

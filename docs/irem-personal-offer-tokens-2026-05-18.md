@@ -70,8 +70,9 @@ No global shared promo code as the primary model.
 ## Runtime Behavior
 
 - if `offer_token` is `draft`, the first landing open activates it and starts the 48h window
-- if `offer_token` is valid and active, the landing shows `2900 UAH`
-- if token is missing, invalid, or expired, the landing shows base price `4100 UAH`
+- if `offer_token` is valid and active, the landing shows `2900 грн` and a live `48:00:00` countdown based on `expires_at`
+- when the countdown reaches zero in an already open tab, the landing switches the visible price back to base and marks the promo as expired
+- if token is missing, invalid, or expired, the landing shows base price `4100 грн`
 - checkout amount is resolved server-side from the same token
 - the token is not trusted for client-only price mutation
 

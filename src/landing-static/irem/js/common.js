@@ -24,6 +24,91 @@
     CURRENCY = ROOT.dataset.cwCurrency || CURRENCY;
   }
 
+  function pad2(value) {
+    return String(value).padStart(2, "0");
+  }
+
+  function formatCountdown(msRemaining) {
+    var totalSeconds = Math.max(0, Math.floor(msRemaining / 1000));
+    var hours = Math.floor(totalSeconds / 3600);
+    var minutes = Math.floor((totalSeconds % 3600) / 60);
+    var seconds = totalSeconds % 60;
+    return pad2(hours) + ":" + pad2(minutes) + ":" + pad2(seconds);
+  }
+
+  function parsePriceLabelValue(label) {
+    var digits = String(label || "").replace(/[^\d]/g, "");
+    var numericValue = Number(digits);
+    return Number.isFinite(numericValue) && numericValue > 0 ? numericValue : null;
+  }
+
+  function setupPromoCountdown() {
+    if (!(ROOT instanceof HTMLElement)) return;
+    if (ROOT.dataset.cwOfferState !== "active") return;
+
+    var expiresAt = ROOT.dataset.cwOfferExpiresAt;
+    var timerNodes = document.querySelectorAll("[data-promo-timer]");
+    if (!expiresAt || timerNodes.length === 0) return;
+
+    var labelNodes = document.querySelectorAll("[data-promo-note-label]");
+    var expiresAtMs = Date.parse(expiresAt);
+    if (!Number.isFinite(expiresAtMs)) return;
+
+    function renderExpired() {
+      document.querySelectorAll(".price-stack").forEach(function(stack) {
+        var oldNode = stack.querySelector(".price-old");
+        var currentNode = stack.querySelector(".price-current");
+        if (!(oldNode instanceof HTMLElement) || !(currentNode instanceof HTMLElement)) return;
+
+        var basePriceLabel = oldNode.textContent || "";
+        var basePriceValue = parsePriceLabelValue(basePriceLabel);
+        currentNode.textContent = basePriceLabel;
+        oldNode.remove();
+        if (basePriceValue) {
+          PRICE_VALUE = basePriceValue;
+          if (ROOT instanceof HTMLElement) {
+            ROOT.dataset.cwPriceValue = String(basePriceValue);
+          }
+        }
+      });
+
+      timerNodes.forEach(function(node) {
+        node.textContent = "00:00:00";
+      });
+      labelNodes.forEach(function(node) {
+        node.textContent = "Термін дії персональної ціни завершився";
+      });
+    }
+
+    function renderTick() {
+      var remainingMs = expiresAtMs - Date.now();
+      if (remainingMs <= 0) {
+        renderExpired();
+        return false;
+      }
+
+      var timerValue = formatCountdown(remainingMs);
+      timerNodes.forEach(function(node) {
+        node.textContent = timerValue;
+      });
+      return true;
+    }
+
+    if (!renderTick()) {
+      return;
+    }
+
+    var intervalId = window.setInterval(function() {
+      if (!renderTick()) {
+        window.clearInterval(intervalId);
+      }
+    }, 1000);
+
+    window.addEventListener("pagehide", function() {
+      window.clearInterval(intervalId);
+    }, { once: true });
+  }
+
   function scheduleDeferredScript(key, callback) {
     if (deferredScriptStarted[key]) return;
     deferredScriptStarted[key] = true;
@@ -393,6 +478,7 @@
   };
 
   setupViewContent();
+  setupPromoCountdown();
   setupScrollDepth50();
   setupDeferredVideoEmbeds();
 })();
