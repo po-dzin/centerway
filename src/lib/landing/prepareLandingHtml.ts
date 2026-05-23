@@ -3,11 +3,13 @@ import path from "node:path";
 import { getLandingPublicRouteName, LANDING_ROUTE_CONFIG } from "@/lib/landing/config";
 import { LANDING_CONTENT } from "@/lib/landing/content";
 import { UTILITY_FILE_BY_PAGE, type UtilityPage } from "@/lib/landing/contracts";
+import type { LandingResolvedOffer } from "@/lib/landing/offers";
 import type { StaticLandingProduct } from "@/lib/landing/types";
 
 type PrepareEntryOptions = {
   product: StaticLandingProduct;
   pageKind: "entry";
+  offer?: LandingResolvedOffer | null;
 };
 
 type PrepareUtilityOptions = {
@@ -203,6 +205,40 @@ ${match[3]}`;
   return next;
 }
 
+function buildIremPriceMarkup(offer: LandingResolvedOffer, includeNote: boolean): string {
+  const stack = offer.oldPriceLabel
+    ? `<div class="price-stack"><span class="price-old">${offer.oldPriceLabel}</span><span class="price-current">${offer.currentPriceLabel}</span></div>`
+    : `<span class="price-current">${offer.currentPriceLabel}</span>`;
+  const note = includeNote && (offer.activeNote || offer.expiredNote)
+    ? `<p class="promo-note">${offer.activeNote ?? offer.expiredNote}</p>`
+    : "";
+  return `<div class="price">${stack}</div>${note}`;
+}
+
+function applyOfferReplacements(product: StaticLandingProduct, html: string, offer?: LandingResolvedOffer | null): string {
+  if (product !== "irem" || !offer) {
+    return html;
+  }
+
+  let next = html;
+  const heroMarkup = buildIremPriceMarkup(offer, true);
+  const offerMarkup = buildIremPriceMarkup(offer, true);
+
+  next = replaceIfMatch(
+    next,
+    /(<div id="divprice">)[\s\S]*?(<button class="openModal"\s+data-cta-primary>[\s\S]*?<\/button>)/i,
+    (match) => `${match[1]}${heroMarkup}${match[2]}`
+  );
+
+  next = replaceIfMatch(
+    next,
+    /(<div class="offer-cta">[\s\S]*?<p class="offer-lead">[\s\S]*?<\/p>)[\s\S]*?(<button class="openModal"\s+data-cta-final>[\s\S]*?<\/button>)/i,
+    (match) => `${match[1]}${offerMarkup}${match[2]}`
+  );
+
+  return next;
+}
+
 function stripInlineTracking(html: string): string {
   return TRACKING_BLOCKS.reduce((next, regex) => next.replace(regex, ""), html);
 }
@@ -326,6 +362,7 @@ export async function prepareLandingHtml(
 
   if (options.pageKind === "entry") {
     html = applyTypedHeroReplacements(product, html);
+    html = applyOfferReplacements(product, html, options.offer);
     const bodyHtml = extractBody(html, product).replace(SCRIPT_TAG_BLOCK, "").trim();
     return {
       pageKind: "entry",

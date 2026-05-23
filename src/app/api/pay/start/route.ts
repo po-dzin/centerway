@@ -1,6 +1,7 @@
 // src/app/api/pay/start/route.ts
 
 import { NextRequest, NextResponse } from "next/server";
+import { resolveIremLandingOffer } from "@/lib/landing/offers";
 import { resolvePayableProduct } from "@/lib/products";
 import {
   createPaymentInvoice,
@@ -14,6 +15,7 @@ export async function GET(req: NextRequest) {
   const product = resolvePayableProduct({
     product: url.searchParams.get("product") ?? undefined,
   });
+  const resolvedOffer = product === "irem" ? await resolveIremLandingOffer(url.searchParams) : null;
   const format = url.searchParams.get("format"); // json | null
   const locale = resolveLocaleFromRequest(req.headers, url.searchParams);
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
@@ -22,9 +24,24 @@ export async function GET(req: NextRequest) {
     product,
     locale,
     source: "pay_start",
+    offer_id: resolvedOffer?.offerId ?? url.searchParams.get("offer_id") ?? undefined,
+    amountOverride: resolvedOffer?.amount ?? null,
     host,
     payload: {
       query: Object.fromEntries(url.searchParams.entries()),
+      offer: resolvedOffer
+        ? {
+            offer_id: resolvedOffer.offerId,
+            offer_token: resolvedOffer.offerToken,
+            offer_applied: resolvedOffer.offerApplied,
+            offer_expired: resolvedOffer.offerExpired,
+            issued_at: resolvedOffer.issuedAt,
+            expires_at: resolvedOffer.expiresAt,
+            recipient_key: resolvedOffer.recipientKey,
+            campaign: resolvedOffer.campaign,
+            channel: resolvedOffer.channel,
+          }
+        : null,
     },
     fbp: req.cookies.get("_fbp")?.value ?? url.searchParams.get("fbp") ?? undefined,
     fbc: req.cookies.get("_fbc")?.value ?? url.searchParams.get("fbc") ?? undefined,
