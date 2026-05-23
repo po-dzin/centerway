@@ -7,31 +7,47 @@ import { platformHomeHref, platformNav } from "@/lib/platform/content";
 import styles from "@/components/platform/PlatformShellStyles";
 import { PlatformProfileEntry } from "./PlatformProfileEntry";
 import { useHeaderTone } from "./headerTone";
+import { PLATFORM_SITE_ORIGIN, useIsBrandedHost } from "./usePlatformHref";
 
 export function PlatformHeader() {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const [openMenuPath, setOpenMenuPath] = useState<string | null>(null);
   const headerTone = useHeaderTone();
   const pathname = usePathname();
+  const isBrandedHost = useIsBrandedHost();
+  const homeHref = isBrandedHost ? `${PLATFORM_SITE_ORIGIN}${platformHomeHref}` : platformHomeHref;
+  const navItems = platformNav.map((item) => ({
+    ...item,
+    resolvedHref: isBrandedHost ? `${PLATFORM_SITE_ORIGIN}${item.href}` : item.href,
+  }));
+  const currentPath = pathname ?? null;
+  const menuOpen = openMenuPath !== null && openMenuPath === currentPath;
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    const { body } = document;
-    const previousOverflow = body.style.overflow;
-    const previousTouchAction = body.style.touchAction;
+    const { body, documentElement } = document;
 
     if (menuOpen) {
       body.style.overflow = "hidden";
       body.style.touchAction = "none";
+      documentElement.style.overflow = "hidden";
+      documentElement.style.touchAction = "none";
+    } else {
+      body.style.overflow = "";
+      body.style.touchAction = "";
+      documentElement.style.overflow = "";
+      documentElement.style.touchAction = "";
     }
 
     return () => {
-      body.style.overflow = previousOverflow;
-      body.style.touchAction = previousTouchAction;
+      body.style.overflow = "";
+      body.style.touchAction = "";
+      documentElement.style.overflow = "";
+      documentElement.style.touchAction = "";
     };
-  }, [menuOpen]);
+  }, [menuOpen, pathname]);
 
   function closeMenu() {
-    setMenuOpen(false);
+    setOpenMenuPath(null);
   }
 
   function isActive(href: string, match: "exact" | "prefix") {
@@ -48,17 +64,17 @@ export function PlatformHeader() {
       data-menu-open={menuOpen ? "true" : "false"}
     >
       <div className={`${styles.container} ${styles.headerInner}`}>
-        <Link className={styles.brand} href={platformHomeHref} onClick={closeMenu} aria-label="CenterWay">
+        <Link className={styles.brand} href={homeHref} onClick={closeMenu} aria-label="CenterWay">
           <span className={styles.brandSymbol} aria-hidden="true" />
           <span className={styles.brandWordmark} aria-hidden="true" />
         </Link>
         <div className={`${styles.navLayer} ${menuOpen ? styles.navLayerOpen : ""}`} id="platform-mobile-menu">
           <div className={styles.mobileMenuSurface} data-cw-glass="shell">
             <nav className={`${styles.nav} ${styles.mobileMenuNav}`} aria-label="Основна навігація">
-              {platformNav.map((item) => (
+              {navItems.map((item) => (
                 <Link
                   key={item.href}
-                  href={item.href}
+                  href={item.resolvedHref}
                   onClick={closeMenu}
                   aria-current={isActive(item.href, item.match) ? "page" : undefined}
                 >
@@ -80,7 +96,7 @@ export function PlatformHeader() {
           aria-label={menuOpen ? "Закрити меню" : "Відкрити меню"}
           aria-expanded={menuOpen}
           aria-controls="platform-mobile-menu"
-          onClick={() => setMenuOpen((open) => !open)}
+          onClick={() => setOpenMenuPath(menuOpen ? null : currentPath)}
         >
           <span />
           <span />

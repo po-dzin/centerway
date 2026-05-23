@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { GeneratedRouteScreen } from "@/components/generator/GeneratedRouteScreen";
+import { ProgramDetailPage } from "@/components/platform/ProgramDetailPage";
+import { programPageBySlug } from "@/lib/platform/content";
 
 export const metadata: Metadata = {
   title: "Ідеальне тіло з Аюрведою - CenterWay",
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function IdealBodyPage() {
-  return <GeneratedRouteScreen routeKey="program-ideal-body" />;
+  return <ProgramDetailPage program={programPageBySlug["ideal-body"]} />;
 }

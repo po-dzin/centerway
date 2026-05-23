@@ -11,22 +11,74 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.aggregateRail {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.aggregateRail[data-layout="single"] {
+  grid-template-columns: minmax(0, 1fr);
+  justify-content: stretch;
+}
+
+.aggregateRail[data-layout="single"] > * {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .aggregateRail {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 0.85rem;
+    overflow-x: auto;
+    overflow-y: visible;
+    margin: 0 -0.05rem;
+    padding: 0.1rem 0.35rem 0.35rem 0.05rem;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    scrollbar-width: none;
+  }
+
+  .aggregateRail::-webkit-scrollbar {
+    display: none;
+  }
+
+  .aggregateRail > * {
+    flex: 0 0 var(--ds-offer-card-rail-width);
+    min-width: var(--ds-offer-card-rail-width);
+    scroll-snap-align: start;
+  }
+
+  .aggregateRail[data-layout="single"] > * {
+    flex-basis: 100%;
+    min-width: 100%;
+  }
+
+}
+
 .programTile {
+  --program-tile-fg: var(--cw-platform-accent-contrast);
+  --program-tile-copy: color-mix(in srgb, var(--cw-platform-accent-contrast) 82%, transparent);
+  --program-tile-button-bg: color-mix(in srgb, var(--cw-platform-accent) 76%, var(--cw-platform-accent-strong) 24%);
+  --program-tile-button-border: color-mix(in srgb, var(--cw-platform-accent) 56%, transparent);
+  --program-tile-shadow: var(--cw-depth-shadow-soft);
   --program-photo-active-image: var(--program-photo-image);
   --program-photo-position: center center;
-  min-height: 29rem;
+  min-height: var(--ds-offer-card-min-height-desktop);
   position: relative;
   display: flex;
   align-items: flex-end;
   overflow: hidden;
   border-radius: var(--cw-radius-lg);
-  color: var(--cw-platform-accent-contrast);
+  color: var(--program-tile-fg);
   background: var(--cw-platform-accent-strong);
-  box-shadow: var(--cw-depth-shadow-soft);
+  box-shadow: var(--program-tile-shadow);
 }
 
 .programTile[data-size="compact"] {
-  min-height: 24rem;
+  min-height: var(--ds-offer-card-compact-min-height-desktop);
 }
 
 .offerHeroVisualCard {
@@ -44,6 +96,34 @@
 .offerHeroVisualCard .programPhoto {
   position: absolute;
   inset: 0;
+}
+
+.offerHeroVisualCard[data-has-art="true"] .programPhoto {
+  background:
+    linear-gradient(180deg, transparent 0 22%, color-mix(in srgb, var(--cw-platform-text) 84%, transparent) 100%),
+    linear-gradient(135deg, color-mix(in srgb, var(--cw-platform-text) 12%, transparent), color-mix(in srgb, var(--cw-platform-text) 30%, transparent)),
+    var(--program-photo-image) var(--program-photo-position, center 20%) / cover no-repeat;
+}
+
+.offerHeroVisualCard[data-has-art="true"] .programPhoto::before {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background:
+    linear-gradient(104deg, transparent 0 10%, color-mix(in srgb, var(--cw-sem-progress) 24%, transparent) 10.4% 11%, transparent 11.6% 58%, color-mix(in srgb, var(--cw-platform-accent-contrast) 6%, transparent) 58.5% 59%, transparent 59.6%),
+    radial-gradient(circle at 14% 18%, color-mix(in srgb, var(--cw-platform-accent-contrast) 8%, transparent) 0 0.12rem, transparent 0.14rem);
+  opacity: 0.88;
+  pointer-events: none;
+}
+
+.offerHeroVisualCard[data-has-art="true"] .programPhoto::after {
+  position: absolute;
+  inset: 0;
+  content: "";
+  background:
+    linear-gradient(180deg, transparent 0 30%, color-mix(in srgb, var(--cw-platform-text) 80%, transparent) 100%);
+  opacity: 1;
+  pointer-events: none;
 }
 
 .offerHeroVisualMeta {
@@ -71,24 +151,82 @@
   line-height: 1.48;
 }
 
+.detailHeroBody {
+  position: relative;
+  z-index: 1;
+  width: min(100%, 43rem);
+  display: grid;
+  gap: 1rem;
+  align-self: flex-end;
+  padding: clamp(1.3rem, 4vw, 2rem);
+}
+
+.detailHeroLabel,
+.detailHeroTitle,
+.detailHeroLead {
+  margin: 0;
+}
+
+.detailHeroLabel {
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 72%, transparent);
+  font-family: var(--cw-font-data);
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.detailHeroTitle {
+  max-width: 11ch;
+  color: var(--cw-platform-accent-contrast);
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(3rem, 6vw, 5.3rem);
+  font-weight: 700;
+  line-height: 0.96;
+}
+
+.detailHeroLead {
+  max-width: 34rem;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 86%, transparent);
+  font-size: clamp(1rem, 1.5vw, 1.14rem);
+  line-height: 1.55;
+}
+
+.offerHeroVisualCard[data-hero-visual="immersive"] {
+  min-height: clamp(31rem, 46vw, 39rem);
+  align-items: flex-end;
+}
+
 .programPhoto {
   position: absolute;
   inset: 0;
   background:
-    radial-gradient(circle at 50% 20%, color-mix(in srgb, var(--cw-platform-accent) 40%, transparent), transparent 0.45rem),
-    linear-gradient(180deg, transparent 0 38%, color-mix(in srgb, var(--cw-platform-text) 72%, transparent) 100%),
-    linear-gradient(135deg, color-mix(in srgb, var(--cw-platform-accent-strong) 76%, var(--cw-platform-text) 24%), color-mix(in srgb, var(--cw-platform-accent) 28%, var(--cw-platform-text) 72%));
+    radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--cw-platform-accent) 10%, transparent) 0 0.16rem, transparent 0.18rem),
+    radial-gradient(circle at 78% 72%, color-mix(in srgb, var(--cw-platform-accent) 10%, transparent) 0 0.14rem, transparent 0.16rem),
+    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 10%, transparent), color-mix(in srgb, var(--cw-platform-text) 72%, transparent)),
+    linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-method-ink) 94%, black 6%), color-mix(in srgb, var(--cw-sem-guide-strong) 88%, black 12%));
 }
 
 .programTile[data-has-art="true"] .programPhoto {
+  background: var(--program-photo-active-image) var(--program-photo-position) / cover no-repeat;
+}
+
+.programPhoto::before {
+  position: absolute;
+  inset: 0;
+  content: "";
   background:
-    linear-gradient(180deg, transparent 0 26%, color-mix(in srgb, var(--cw-platform-text) 82%, transparent) 100%),
-    linear-gradient(
-      135deg,
-      color-mix(in srgb, var(--cw-platform-accent-strong) 30%, transparent),
-      color-mix(in srgb, var(--cw-sem-method-ink) 16%, transparent)
-    ),
-    var(--program-photo-active-image) var(--program-photo-position) / cover no-repeat;
+    linear-gradient(102deg, transparent 0 9%, color-mix(in srgb, var(--cw-sem-progress) 88%, transparent) 9.4% 10.2%, transparent 10.8% 57%, color-mix(in srgb, var(--cw-sem-progress) 72%, transparent) 57.4% 58.2%, transparent 58.8%),
+    radial-gradient(circle at 14% 18%, color-mix(in srgb, var(--cw-platform-accent-contrast) 8%, transparent) 0 0.12rem, transparent 0.14rem);
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+.programTile[data-has-art="true"] .programPhoto::before {
+  background:
+    linear-gradient(104deg, transparent 0 10%, color-mix(in srgb, var(--cw-sem-progress) 42%, transparent) 10.4% 11%, transparent 11.6% 58%, color-mix(in srgb, var(--cw-platform-accent-contrast) 8%, transparent) 58.5% 59%, transparent 59.6%),
+    radial-gradient(circle at 14% 18%, color-mix(in srgb, var(--cw-platform-accent-contrast) 10%, transparent) 0 0.12rem, transparent 0.14rem);
+  opacity: 0.9;
 }
 
 .programPhoto::after {
@@ -96,38 +234,200 @@
   inset: 0;
   content: "";
   background:
-    linear-gradient(180deg, transparent 0 44%, color-mix(in srgb, var(--cw-platform-text) 76%, transparent) 100%),
-    var(--cw-sem-symbol-path);
-  opacity: 0.45;
+    linear-gradient(180deg, transparent 0 38%, color-mix(in srgb, var(--cw-platform-text) 78%, transparent) 100%);
+  opacity: 1;
   pointer-events: none;
+}
+
+.programTile[data-visual="movement"] .programPhoto {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 6%, transparent), color-mix(in srgb, var(--cw-platform-text) 70%, transparent)),
+    linear-gradient(135deg, #17332d 0%, #25473f 48%, #102621 100%);
+}
+
+.programTile[data-visual="movement"] .programPhoto::before {
+  background:
+    linear-gradient(112deg, transparent 0 12%, color-mix(in srgb, var(--cw-sem-progress) 78%, transparent) 12.4% 13.4%, transparent 14.2% 62%, color-mix(in srgb, var(--cw-sem-embodied) 36%, transparent) 62.6% 64%, transparent 64.6%),
+    linear-gradient(162deg, transparent 0 44%, color-mix(in srgb, var(--cw-platform-accent-contrast) 18%, transparent) 44.6% 45.1%, transparent 46%);
+}
+
+.programTile[data-visual="movement"] .programPhoto::after {
+  background:
+    linear-gradient(180deg, transparent 0 42%, color-mix(in srgb, var(--cw-platform-text) 76%, transparent) 100%),
+    linear-gradient(82deg, transparent 0 78%, color-mix(in srgb, var(--cw-platform-accent-contrast) 22%, transparent) 78.4% 78.8%, transparent 79.2%);
 }
 
 .programTile[data-visual="water"] .programPhoto {
   background:
-    radial-gradient(circle at 50% 30%, color-mix(in srgb, var(--cw-platform-accent) 90%, transparent) 0 0.22rem, transparent 0.24rem),
-    radial-gradient(ellipse at 50% 34%, transparent 0 2rem, color-mix(in srgb, var(--cw-platform-accent) 48%, transparent) 2.05rem 2.12rem, transparent 2.18rem 4.7rem),
-    radial-gradient(ellipse at 50% 44%, transparent 0 4rem, color-mix(in srgb, var(--cw-platform-accent) 36%, transparent) 4.05rem 4.14rem, transparent 4.2rem 8rem),
-    linear-gradient(180deg, transparent 0 35%, color-mix(in srgb, var(--cw-platform-text) 78%, transparent) 100%),
-    linear-gradient(135deg, var(--cw-sem-method-ink), var(--cw-platform-text));
+    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 8%, transparent), color-mix(in srgb, var(--cw-platform-text) 68%, transparent)),
+    linear-gradient(135deg, #102a25 0%, #17352f 52%, #0b201c 100%);
+}
+
+.programTile[data-visual="water"] .programPhoto::before {
+  background:
+    radial-gradient(ellipse at 34% 58%, transparent 0 16%, color-mix(in srgb, var(--cw-sem-progress) 72%, transparent) 16.5% 17.4%, transparent 17.9% 100%),
+    radial-gradient(ellipse at 52% 42%, transparent 0 11%, color-mix(in srgb, var(--cw-sem-progress) 48%, transparent) 11.5% 12.2%, transparent 12.7% 100%),
+    linear-gradient(102deg, transparent 0 10%, color-mix(in srgb, var(--cw-sem-progress) 78%, transparent) 10.4% 11.2%, transparent 12% 58%, color-mix(in srgb, var(--cw-sem-progress) 40%, transparent) 58.4% 59%, transparent 59.6%);
+}
+
+.programTile[data-visual="water"] .programPhoto::after {
+  background:
+    linear-gradient(180deg, transparent 0 38%, color-mix(in srgb, var(--cw-platform-text) 76%, transparent) 100%),
+    radial-gradient(circle at 26% 28%, color-mix(in srgb, var(--cw-platform-accent-contrast) 9%, transparent) 0 0.16rem, transparent 0.18rem),
+    radial-gradient(circle at 62% 22%, color-mix(in srgb, var(--cw-platform-accent-contrast) 7%, transparent) 0 0.12rem, transparent 0.14rem);
+}
+
+.programTile[data-program="way21"][data-has-art="true"] .programPhoto::after {
+  background:
+    linear-gradient(180deg, transparent 0 32%, color-mix(in srgb, var(--cw-platform-text) 78%, transparent) 100%);
+  opacity: 1;
+}
+
+.programTile[data-program="way21"][data-has-art="true"] .programPhoto::before {
+  background: none;
+  opacity: 0;
+}
+
+.programTile[data-program="way21"][data-has-art="true"] .programPhoto {
+  background: var(--program-photo-active-image) var(--program-photo-position) / cover no-repeat;
 }
 
 .programTile[data-program="way21"] .programPhoto::after {
-  opacity: 0.28;
-}
-
-.programTile[data-visual="mountain"] .programPhoto {
-  background:
-    linear-gradient(150deg, transparent 0 44%, color-mix(in srgb, var(--cw-platform-accent-contrast) 50%, transparent) 44.2% 44.8%, transparent 45%),
-    linear-gradient(28deg, color-mix(in srgb, var(--cw-platform-text) 36%, transparent) 0 42%, transparent 42.2%),
-    linear-gradient(180deg, transparent 0 35%, color-mix(in srgb, var(--cw-platform-text) 76%, transparent) 100%),
-    linear-gradient(135deg, var(--cw-platform-border), var(--cw-platform-accent-strong) 58%, var(--cw-platform-text));
+  opacity: 0.96;
 }
 
 .programTile[data-visual="stone"] .programPhoto {
   background:
-    repeating-radial-gradient(circle at 78% 28%, transparent 0 1.15rem, color-mix(in srgb, var(--cw-platform-accent) 28%, transparent) 1.2rem 1.26rem),
-    linear-gradient(180deg, transparent 0 34%, color-mix(in srgb, var(--cw-platform-text) 58%, transparent) 100%),
-    linear-gradient(135deg, var(--cw-platform-bg), var(--cw-platform-border) 48%, var(--cw-platform-muted));
+    linear-gradient(180deg, color-mix(in srgb, white 44%, transparent), color-mix(in srgb, var(--cw-sem-progress) 16%, transparent)),
+    linear-gradient(135deg, #f0e8d9 0%, #ece0cb 52%, #d8c09b 100%);
+}
+
+.programTile[data-visual="stone"] {
+  --program-tile-fg: var(--cw-sem-method-ink);
+  --program-tile-copy: color-mix(in srgb, var(--cw-sem-method-ink) 72%, transparent);
+  --program-tile-button-bg: color-mix(in srgb, var(--cw-sem-progress) 66%, #f7efe3 34%);
+  --program-tile-button-border: color-mix(in srgb, var(--cw-sem-progress) 58%, transparent);
+}
+
+.programTile[data-visual="stone"] .programPhoto::before {
+  background:
+    repeating-radial-gradient(circle at 82% 22%, transparent 0 0.72rem, color-mix(in srgb, var(--cw-sem-progress) 26%, transparent) 0.75rem 0.82rem),
+    repeating-radial-gradient(circle at 82% 22%, transparent 0 1.52rem, color-mix(in srgb, var(--cw-sem-progress) 18%, transparent) 1.56rem 1.62rem),
+    linear-gradient(102deg, transparent 0 10%, color-mix(in srgb, var(--cw-sem-progress) 44%, transparent) 10.4% 11%, transparent 11.6% 60%, color-mix(in srgb, var(--cw-sem-progress) 22%, transparent) 60.4% 61%, transparent 61.6%);
+}
+
+.programTile[data-visual="stone"] .programPhoto::after {
+  background:
+    linear-gradient(180deg, transparent 0 48%, color-mix(in srgb, var(--cw-sem-method-ink) 18%, transparent) 100%),
+    radial-gradient(circle at 76% 20%, color-mix(in srgb, var(--cw-platform-accent-contrast) 30%, transparent) 0 0.2rem, transparent 0.22rem);
+}
+
+.programTile[data-visual="leaf"],
+.offerHeroVisualCard[data-visual="leaf"] {
+  --program-tile-fg: var(--cw-sem-method-ink);
+  --program-tile-copy: color-mix(in srgb, var(--cw-sem-method-ink) 72%, transparent);
+  --program-tile-button-bg: color-mix(in srgb, var(--cw-sem-progress) 66%, #f7efe3 34%);
+  --program-tile-button-border: color-mix(in srgb, var(--cw-sem-progress) 52%, transparent);
+  color: var(--cw-sem-method-ink);
+  background: color-mix(in srgb, var(--cw-platform-surface) 94%, var(--cw-platform-surface-muted));
+}
+
+.programTile[data-visual="leaf"] .programPhoto,
+.offerHeroVisualCard[data-visual="leaf"] .programPhoto {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 42%, transparent), color-mix(in srgb, var(--cw-sem-progress) 12%, transparent)),
+    radial-gradient(ellipse at 78% 22%, color-mix(in srgb, var(--cw-sem-progress) 14%, transparent) 0 18%, transparent 19%),
+    linear-gradient(135deg, #f1eadc 0%, #ebe0cd 54%, #d8c6a8 100%);
+}
+
+.programTile[data-visual="leaf"] .programPhoto::before,
+.offerHeroVisualCard[data-visual="leaf"] .programPhoto::before {
+  background:
+    linear-gradient(118deg, transparent 0 13%, color-mix(in srgb, var(--cw-sem-progress) 32%, transparent) 13.4% 14.1%, transparent 14.7% 62%, color-mix(in srgb, var(--cw-sem-guide-strong) 14%, transparent) 62.4% 63.1%, transparent 63.7%),
+    radial-gradient(ellipse at 30% 38%, transparent 0 12%, color-mix(in srgb, var(--cw-sem-progress) 18%, transparent) 12.5% 13.1%, transparent 13.7%),
+    radial-gradient(ellipse at 70% 62%, transparent 0 10%, color-mix(in srgb, var(--cw-sem-guide-strong) 14%, transparent) 10.5% 11.1%, transparent 11.7%);
+  opacity: 0.9;
+}
+
+.programTile[data-visual="leaf"] .programPhoto::after,
+.offerHeroVisualCard[data-visual="leaf"] .programPhoto::after {
+  background:
+    linear-gradient(180deg, transparent 0 42%, color-mix(in srgb, var(--cw-sem-method-ink) 14%, transparent) 100%),
+    radial-gradient(circle at 22% 26%, color-mix(in srgb, var(--cw-sem-progress) 20%, transparent) 0 0.18rem, transparent 0.2rem),
+    radial-gradient(circle at 78% 22%, color-mix(in srgb, var(--cw-sem-guide-strong) 18%, transparent) 0 0.14rem, transparent 0.16rem);
+}
+
+.programTile[data-visual="mountain"] .programPhoto {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 10%, transparent), color-mix(in srgb, var(--cw-platform-text) 72%, transparent)),
+    linear-gradient(135deg, #213d36 0%, #314740 42%, #102622 100%);
+}
+
+.programTile[data-visual="mountain"] .programPhoto::before {
+  background:
+    linear-gradient(138deg, transparent 0 46%, color-mix(in srgb, var(--cw-platform-accent-contrast) 24%, transparent) 46.5% 47.1%, transparent 47.6%),
+    linear-gradient(64deg, transparent 0 70%, color-mix(in srgb, var(--cw-sem-progress) 72%, transparent) 70.4% 71.2%, transparent 72%),
+    linear-gradient(108deg, transparent 0 10%, color-mix(in srgb, var(--cw-sem-progress) 54%, transparent) 10.4% 11%, transparent 11.6% 58%, color-mix(in srgb, var(--cw-sem-embodied) 24%, transparent) 58.6% 59.3%, transparent 60%);
+}
+
+.programTile[data-visual="mountain"] .programPhoto::after {
+  background:
+    linear-gradient(180deg, transparent 0 42%, color-mix(in srgb, var(--cw-platform-text) 76%, transparent) 100%),
+    linear-gradient(152deg, transparent 0 54%, color-mix(in srgb, var(--cw-platform-accent-contrast) 18%, transparent) 54.5% 55%, transparent 55.5%);
+}
+
+.programTile[data-has-art="true"]:not([data-program="way21"]) .programPhoto {
+  background: var(--program-photo-active-image) var(--program-photo-position) / cover no-repeat;
+}
+
+.offerHeroVisualCard[data-has-art="true"] .programPhoto {
+  background:
+    linear-gradient(180deg, transparent 0 24%, color-mix(in srgb, var(--cw-platform-text) 82%, transparent) 100%),
+    linear-gradient(135deg, color-mix(in srgb, var(--cw-platform-text) 12%, transparent), color-mix(in srgb, var(--cw-platform-text) 34%, transparent)),
+    var(--program-photo-image) var(--program-photo-position) / cover no-repeat;
+}
+
+.programTile[data-has-art="true"] {
+  --program-tile-fg: var(--cw-platform-accent-contrast);
+  --program-tile-copy: color-mix(in srgb, var(--cw-platform-accent-contrast) 88%, transparent);
+  --program-label-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 70%, transparent);
+  --program-tile-button-bg: color-mix(in srgb, var(--cw-platform-accent) 76%, var(--cw-platform-accent-strong) 24%);
+  --program-tile-button-border: color-mix(in srgb, var(--cw-platform-accent) 56%, transparent);
+  color: var(--program-tile-fg);
+}
+
+.programTile[data-has-art="true"]:not([data-program="way21"]) .programPhoto::before {
+  background: none;
+  opacity: 0;
+}
+
+.programTile[data-has-art="true"]:not([data-program="way21"]) .programPhoto::after {
+  background:
+    linear-gradient(180deg, transparent 0 26%, color-mix(in srgb, var(--cw-platform-text) 86%, transparent) 100%);
+  opacity: 1;
+}
+
+.programTile[data-has-art="true"] .programTileBody,
+.programTile[data-has-art="true"] .programTileBody h3,
+.programTile[data-has-art="true"] .programTileBody p,
+.programTile[data-has-art="true"] .programLink {
+  text-shadow: 0 1px 1px color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+}
+
+.programTile[data-has-art="true"] .programTileBody .label {
+  color: var(--program-label-fg);
+}
+
+.programTile[data-has-art="true"] .programPhoto::before,
+.offerHeroVisualCard[data-has-art="true"] .programPhoto::before {
+  background: none;
+  opacity: 0;
+}
+
+.programTile[data-has-art="true"] .programPhoto::after,
+.offerHeroVisualCard[data-has-art="true"] .programPhoto::after {
+  background: linear-gradient(180deg, transparent 0 50%, color-mix(in srgb, var(--cw-platform-text) 72%, transparent) 100%);
+  opacity: 1;
 }
 
 .programTileBody {
@@ -145,12 +445,13 @@
 }
 
 .programTileBody h3 {
+  color: var(--program-tile-fg);
   font-size: clamp(1.55rem, 3vw, 2.2rem);
   line-height: 1;
 }
 
 .programTileBody p:not(.label) {
-  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 82%, transparent);
+  color: var(--program-tile-copy);
   line-height: 1.45;
 }
 
@@ -168,10 +469,10 @@
   align-items: center;
   justify-content: center;
   padding: 0 1rem;
-  border: 1px solid color-mix(in srgb, var(--cw-platform-accent) 56%, transparent);
+  border: 1px solid var(--program-tile-button-border);
   border-radius: var(--ds-radius-button-soft);
-  color: var(--cw-platform-accent-contrast);
-  background: color-mix(in srgb, var(--cw-platform-accent) 76%, var(--cw-platform-accent-strong) 24%);
+  color: var(--program-tile-fg);
+  background: var(--program-tile-button-bg);
   box-shadow: 0 12px 24px color-mix(in srgb, var(--cw-platform-text) 18%, transparent);
   font-weight: 800;
   text-decoration: none;
@@ -180,7 +481,7 @@
 
 .programLink:hover {
   transform: translateY(-1px);
-  background: color-mix(in srgb, var(--cw-platform-accent) 66%, var(--cw-platform-accent-strong) 34%);
+  background: color-mix(in srgb, var(--program-tile-button-bg) 88%, var(--cw-platform-surface) 12%);
   box-shadow: 0 16px 28px color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
 }
 

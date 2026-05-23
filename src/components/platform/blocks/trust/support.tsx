@@ -16,9 +16,9 @@ export function SupportForm({ route }: Pick<PlatformGeneratedBlockProps, "route"
             <img className={styles.authorPortrait} src="/cw/landing/img/consult-hero-evgeniy.jpeg" alt="Євгеній Корякін" />
           </div>
           <div className={styles.authorPanelContent}>
-            <h2 className={styles.title}>Євгеній Корякін</h2>
+            <h2 className={styles.title}>Про автора</h2>
             <p className={styles.lead}>
-              Дослідник і практик аюрведи, магістр комплементарної медицини та засновник CenterWay. На головній він присутній як точка довіри, а не окремий рекламний блок.
+              Євгеній Корякін - дослідник і практик аюрведи, магістр комплементарної медицини та засновник CenterWay. На головній він присутній як точка довіри, а не окремий рекламний блок.
             </p>
             <div className={styles.factGrid}>
               {expertFacts.slice(0, 4).map((fact) => (

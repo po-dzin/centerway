@@ -307,6 +307,19 @@
     --ds-breakpoint-desktop-min: 64rem;
     --ds-container-max: var(--cw-max-width);
     --ds-touch-target-min: 2.75rem;
+    --ds-button-min-height: 3rem;
+    --ds-button-padding-inline: 1.15rem;
+    --ds-button-min-width: 10.5rem;
+    --ds-offer-card-min-height-desktop: 29rem;
+    --ds-offer-card-min-height-tablet: 26rem;
+    --ds-offer-card-min-height-mobile: 22rem;
+    --ds-offer-card-compact-min-height-desktop: 24rem;
+    --ds-offer-card-compact-min-height-tablet: 22rem;
+    --ds-offer-card-compact-min-height-mobile: 20rem;
+    --ds-offer-card-width-desktop: 24rem;
+    --ds-offer-card-width-tablet: 21rem;
+    --ds-offer-card-width-mobile: min(82vw, 19rem);
+    --ds-offer-card-rail-width: var(--ds-offer-card-width-mobile);
   }
 
   .dark {
@@ -961,6 +974,41 @@ body {
       0 0 0 2px color-mix(in srgb, #ffffff 80%, var(--cw-bg) 20%),
       0 0 0 4px color-mix(in srgb, var(--cw-status-success) 64%, var(--cw-accent) 36%),
       0 8px 18px color-mix(in srgb, var(--cw-text) 22%, transparent);
+  }
+
+  [data-dosha-test="true"] {
+    --cw-bg: color-mix(in srgb, var(--cw-platform-bg) 94%, #ffffff 6%);
+    --cw-surface: color-mix(in srgb, var(--cw-platform-surface) 78%, #ffffff 22%);
+    --cw-surface-2: color-mix(in srgb, var(--cw-platform-surface-muted) 72%, var(--cw-platform-surface) 28%);
+    --cw-surface-muted: color-mix(in srgb, var(--cw-platform-surface-muted) 84%, var(--cw-platform-surface) 16%);
+    --cw-surface-solid: var(--cw-platform-surface);
+    --cw-border: var(--cw-platform-border);
+    --cw-text: var(--cw-platform-text);
+    --cw-muted: var(--cw-platform-muted);
+    --cw-accent: var(--cw-platform-accent-strong);
+    --cw-accent-soft: color-mix(in srgb, var(--cw-platform-surface-muted) 72%, var(--cw-platform-surface) 28%);
+    --cw-accent-contrast: var(--cw-platform-accent-contrast);
+    --cw-interactive-hover-bg: color-mix(in srgb, var(--cw-platform-text) 6%, var(--cw-platform-surface) 94%);
+    --cw-interactive-hover-border: color-mix(in srgb, var(--cw-platform-text) 12%, var(--cw-platform-border) 88%);
+    --cw-interactive-active-bg: color-mix(in srgb, var(--cw-platform-text) 10%, var(--cw-platform-surface) 90%);
+    --cw-interactive-active-border: color-mix(in srgb, var(--cw-platform-text) 14%, var(--cw-platform-border) 86%);
+    --cw-interactive-active-shadow: 0 0 0 1px color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+    --cw-focus-ring: color-mix(in srgb, var(--cw-platform-accent) 32%, transparent);
+    --cw-choice-bg: color-mix(in srgb, var(--cw-platform-surface) 92%, #ffffff 8%);
+    --cw-choice-bg-hover: color-mix(in srgb, var(--cw-platform-text) 5%, var(--cw-platform-surface) 95%);
+    --cw-choice-bg-selected: color-mix(in srgb, var(--cw-platform-surface-muted) 70%, var(--cw-platform-surface) 30%);
+    --cw-danger: var(--cw-sem-boundary);
+    --cw-status-success: var(--cw-sem-guide-primary);
+    --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-guide-primary) 12%, transparent);
+    --cw-status-running: color-mix(in srgb, var(--cw-sem-guide-primary) 42%, var(--cw-sem-method-ink) 58%);
+    --cw-status-running-soft: color-mix(in srgb, var(--cw-sem-guide-primary) 12%, transparent);
+    --cw-status-pending: var(--cw-sem-progress);
+    --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-progress) 14%, transparent);
+    --cw-status-failed: var(--cw-sem-boundary);
+    --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-boundary) 12%, transparent);
+    --cw-shadow: var(--cw-depth-shadow-soft);
+    --cw-shadow-soft: var(--cw-depth-shadow-soft);
+    --cw-shadow-strong: var(--cw-depth-shadow-medium);
   }
 
   .cw-icon-btn {

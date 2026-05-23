@@ -1,49 +1,84 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import styles from "@/components/platform/PlatformContentStyles";
-import { educationTimeline, expertFacts, expertStory, personalFacts } from "@/lib/platform/content";
-import { getFunnelHostUrl } from "@/lib/surfaces/catalog";
+import { educationTimeline, expertFacts, expertStory, personalFacts, platformPageArtwork } from "@/lib/platform/content";
 
-const consultFunnelHref = getFunnelHostUrl("consult") ?? "/consult";
+function CollapsibleTimeline({
+  items,
+  initiallyVisible,
+  summaryLabel,
+}: {
+  items: string[];
+  initiallyVisible: number;
+  summaryLabel: string;
+}) {
+  const visible = items.slice(0, initiallyVisible);
+  const hidden = items.slice(initiallyVisible);
+
+  return (
+    <div className={styles.copyStack}>
+      <ul className={`${styles.timeline} ${styles.timelineCompact}`}>
+        {visible.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
+      {hidden.length > 0 ? (
+        <details className={styles.collapsibleBlock}>
+          <summary className={styles.collapsibleSummary}>{summaryLabel}</summary>
+          <ul className={`${styles.timeline} ${styles.timelineCompact} ${styles.collapsibleList}`}>
+            {hidden.map((item) => (
+              <li key={item}>{item}</li>
+            ))}
+          </ul>
+        </details>
+      ) : null}
+    </div>
+  );
+}
 
 export function ExpertHero() {
   return (
-    <section className={`${styles.container} ${styles.hero}`} id="about-author">
-      <div className={styles.heroPanel}>
-        <div>
-          <p className={styles.eyebrow}>Про автора</p>
-          <h1 className={styles.heroTitle}>Євгеній Корякін</h1>
-        </div>
-        <div className={styles.copyStack}>
-          {expertStory.map((paragraph) => (
-            <p key={paragraph}>{paragraph}</p>
-          ))}
-        </div>
-        <div className={styles.heroFooter}>
-          <Link className={styles.primaryButton} href={consultFunnelHref}>
+    <section
+      className={styles.heroFeature}
+      id="about-author"
+      data-cw-topbar-tone="dark"
+      style={{
+        "--hero-photo-x": "50%",
+        "--hero-photo-y": "16%",
+        "--hero-photo-shift-y": "0%",
+        "--hero-photo-scale": "1.02",
+        "--hero-photo-origin": "center top",
+      } as CSSProperties}
+    >
+      <div className={styles.heroPhotoLayer}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className={styles.expertImage} src={platformPageArtwork.expert.desktop} alt="Про автора CenterWay" />
+      </div>
+      <div className={styles.heroFeatureContent}>
+        <p className={styles.heroBadge}>
+          <span>Автор · Практика · Шлях</span>
+        </p>
+        <h1 className={styles.heroFeatureTitle}>Про автора</h1>
+        <p className={styles.heroFeatureLead}>{expertStory[0]}</p>
+        <p className={styles.heroSupportNote}>12 років практики: аюрведа, дієтологія, детоксикація, йога і комплементарна медицина.</p>
+        <div className={styles.heroFeatureActions}>
+          <Link className={styles.heroPrimaryButton} href="#consultation">
             Запит на консультацію
           </Link>
-          <Link className={styles.secondaryButton} href="/programs">
-            Програми
+          <Link className={styles.heroSecondaryButton} href="#expert-path">
+            Освіта і шлях
           </Link>
         </div>
       </div>
-      <aside className={styles.mediaPanel}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className={styles.expertImage} src="/cw/landing/img/consult-hero-evgeniy.jpeg" alt="Євгеній Корякін" />
-        <div className={styles.mediaCaption}>
-          <strong>12 років практики</strong>
-          <span>Аюрведа, дієтологія, детоксикація, йога і комплементарна медицина.</span>
-        </div>
-      </aside>
     </section>
   );
 }
 
 export function ExpertProof() {
   return (
-    <section className={`${styles.container} ${styles.section}`}>
-      <div className={styles.grid2}>
-        <article className={styles.panel}>
+    <section className={`${styles.container} ${styles.section}`} id="expert-proof">
+      <div className={`${styles.grid2} ${styles.profileGridPair}`}>
+        <article className={`${styles.panel} ${styles.expertCompactPanel}`}>
           <p className={styles.label}>Профіль</p>
           <h2 className={styles.title}>Практика CenterWay</h2>
           <div className={styles.factGrid}>
@@ -52,14 +87,10 @@ export function ExpertProof() {
             ))}
           </div>
         </article>
-        <article className={styles.panel}>
+        <article className={`${styles.panel} ${styles.expertCompactPanel}`}>
           <p className={styles.label}>Особисто</p>
           <h2 className={styles.title}>Факти про мене</h2>
-          <ul className={styles.timeline}>
-            {personalFacts.map((fact) => (
-              <li key={fact}>{fact}</li>
-            ))}
-          </ul>
+          <CollapsibleTimeline items={personalFacts} initiallyVisible={3} summaryLabel="Ще факти" />
         </article>
       </div>
     </section>
@@ -68,18 +99,16 @@ export function ExpertProof() {
 
 export function ExpertPath() {
   return (
-    <section className={`${styles.container} ${styles.section}`}>
+    <section className={`${styles.container} ${styles.section}`} id="expert-path">
       <div className={styles.sectionHeader}>
         <div>
           <p className={styles.label}>Освіта і шлях</p>
           <h2 className={styles.sectionTitle}>Від технічної освіти до системи CenterWay</h2>
         </div>
       </div>
-      <ol className={styles.timeline}>
-        {educationTimeline.map((item) => (
-          <li key={item}>{item}</li>
-        ))}
-      </ol>
+      <article className={`${styles.panel} ${styles.expertCompactPanel}`}>
+        <CollapsibleTimeline items={educationTimeline} initiallyVisible={4} summaryLabel="Показати весь шлях" />
+      </article>
     </section>
   );
 }

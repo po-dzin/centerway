@@ -15,7 +15,7 @@ type GeneratedRouteScreenProps = {
 export async function GeneratedRouteScreen({ routeKey }: GeneratedRouteScreenProps) {
   const headerStore = await headers();
   const assignments = decodeExperimentAssignmentsHeader(headerStore.get(CW_EXPERIMENT_ASSIGNMENTS_HEADER));
-  const themeSelection = headerStore.get(CW_THEME_SELECTION_HEADER);
+  const themeSelection = routeKey === "dosha-test" ? null : headerStore.get(CW_THEME_SELECTION_HEADER);
   const requestedSurfaceKind = (headerStore.get(CW_SURFACE_KIND_HEADER) as SurfaceKind | null) ?? undefined;
   const resolved = resolveScreenForRoute(routeKey, assignments, { themeSelection });
   const cssHrefs = resolveRouteRuntime(routeKey, requestedSurfaceKind).cssHrefs ?? [];

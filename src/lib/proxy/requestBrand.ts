@@ -7,7 +7,20 @@ function normalizedHost(rawHost: string | null): string {
   return rawHost.split(":")[0].trim().toLowerCase();
 }
 
-function brandFromReferer(rawReferer: string | null, requestHost: string): HostBrand | null {
+function isPlatformRootRoute(pathname: string): boolean {
+  return (
+    pathname === "/" ||
+    pathname === "/programs" ||
+    pathname === "/products" ||
+    pathname === "/expert" ||
+    pathname === "/dosha-test"
+  );
+}
+
+function brandFromReferer(rawReferer: string | null, requestHost: string, requestPathname: string): HostBrand | null {
+  if (isPlatformRootRoute(requestPathname)) {
+    return null;
+  }
   if (!rawReferer) return null;
   try {
     const ref = new URL(rawReferer);
@@ -42,8 +55,8 @@ export function resolveRequestBrand(req: NextRequest): HostBrand | null {
   const byHost = hostBrandFromHost(requestHost);
   if (byHost) return byHost;
 
-  // Referer acts only as a same-host fallback hint in ambiguous cases.
-  return brandFromReferer(req.headers.get("referer"), requestHost);
+  // Referer acts only as a same-host fallback hint in ambiguous non-platform cases.
+  return brandFromReferer(req.headers.get("referer"), requestHost, req.nextUrl.pathname.toLowerCase());
 }
 
 export function resolveRequestBrandFromPath(pathname: string): HostBrand | null {

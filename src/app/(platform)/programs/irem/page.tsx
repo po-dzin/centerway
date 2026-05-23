@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { GeneratedRouteScreen } from "@/components/generator/GeneratedRouteScreen";
+import { ProgramDetailPage } from "@/components/platform/ProgramDetailPage";
+import { programPageBySlug } from "@/lib/platform/content";
 
 export const metadata: Metadata = {
   title: "IREM Гімнастика - CenterWay",
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function IremPage() {
-  return <GeneratedRouteScreen routeKey="program-irem" />;
+  return <ProgramDetailPage program={programPageBySlug.irem} />;
 }

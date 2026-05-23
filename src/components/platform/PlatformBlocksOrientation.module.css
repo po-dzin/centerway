@@ -9,9 +9,32 @@
   padding-top: clamp(1.2rem, 3vw, 2.5rem);
 }
 
+.hero > * {
+  min-width: 0;
+}
+
 .offerHeroLayout {
   grid-template-columns: minmax(18rem, 0.86fr) minmax(0, 1.14fr);
   align-items: stretch;
+}
+
+.immersiveHeroLayout {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.productIntroHero {
+  align-items: stretch;
+}
+
+@media (max-width: 900px) {
+  .productIntroHero {
+    grid-template-columns: 1fr;
+  }
+
+  .productIntroHero > * {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 .heroPanel {
@@ -82,14 +105,15 @@
 }
 
 .heroFeatureContent {
-  width: min(42rem, 100%);
-  max-width: calc(var(--cw-max-width) - 2rem);
+  width: min(100% - 2rem, var(--cw-max-width));
+  max-width: var(--cw-max-width);
   min-width: 0;
   position: relative;
   z-index: 2;
   display: grid;
   gap: 1rem;
-  padding: clamp(5.75rem, 10vw, 8rem) clamp(1rem, 4vw, 1.35rem) clamp(6.4rem, 10vw, 8.5rem);
+  margin-inline: auto;
+  padding: clamp(5.75rem, 10vw, 8rem) 0 clamp(6.4rem, 10vw, 8.5rem);
   color: var(--cw-platform-accent-contrast);
 }
 

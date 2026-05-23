@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { GeneratedRouteScreen } from "@/components/generator/GeneratedRouteScreen";
+import { ProgramDetailPage } from "@/components/platform/ProgramDetailPage";
+import { programPageBySlug } from "@/lib/platform/content";
 
 export const metadata: Metadata = {
   title: "Way 21 - детокс програма CenterWay",
@@ -8,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function Way21Page() {
-  return <GeneratedRouteScreen routeKey="program-way21" />;
+  return <ProgramDetailPage program={programPageBySlug.way21} />;
 }

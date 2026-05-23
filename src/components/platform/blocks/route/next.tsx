@@ -5,6 +5,10 @@ import type { PlatformGeneratedBlockProps } from "@/components/platform/blocks/t
 
 export function NextStep({ route, programSlug }: Pick<PlatformGeneratedBlockProps, "route" | "programSlug">) {
   const program = currentProgram(programSlug);
+  const primaryHref = program ? "#program-enroll" : "/dosha-test";
+  const secondaryHref = program ? "/expert" : "/dosha-test";
+  const secondaryLabel = program ? "Поставити питання автору" : "Пройти діагностику";
+
   return (
     <section className={`${styles.container} ${styles.section}`}>
       <article className={styles.panel}>
@@ -14,11 +18,11 @@ export function NextStep({ route, programSlug }: Pick<PlatformGeneratedBlockProp
           Оберіть дію, яка відповідає вашому стану зараз: отримати орієнтацію через діагностику, спробувати короткий вхідний маршрут або зібрати персональний план із провідником.
         </p>
         <div className={styles.heroFooter}>
-          <Link className={styles.primaryButton} href={program?.funnelHref ?? "/dosha-test"}>
+          <Link className={styles.primaryButton} href={primaryHref}>
             Продовжити маршрут
           </Link>
-          <Link className={styles.secondaryButton} href="/consult">
-            Запитати про формат
+          <Link className={styles.secondaryButton} href={secondaryHref}>
+            {secondaryLabel}
           </Link>
         </div>
       </article>

@@ -26,22 +26,25 @@ const ROUTE_RUNTIME: Record<ScreenRouteKey, RouteRuntimeConfig> = {
     defaultScreenId: "screen.consult.v1.control",
     cssHrefs: [REVORK_STYLESHEET],
     shell: "platform",
+    platformHeaderMode: "overlay",
   },
   detox: {
     defaultScreenId: "screen.detox.v1.control",
     cssHrefs: [REVORK_STYLESHEET],
     shell: "platform",
+    platformHeaderMode: "overlay",
   },
   herbs: {
     defaultScreenId: "screen.herbs.v1.control",
     cssHrefs: [REVORK_STYLESHEET],
     shell: "platform",
+    platformHeaderMode: "overlay",
   },
   "dosha-test": {
     defaultScreenId: "screen.dosha-test.v1.control",
     cssHrefs: [REVORK_STYLESHEET],
     shell: "platform",
-    platformHeaderMode: "default",
+    platformHeaderMode: "overlay",
   },
   "lesson-pilot": {
     defaultScreenId: "screen.lesson.pilot.v1.control",
@@ -56,7 +59,7 @@ const ROUTE_RUNTIME: Record<ScreenRouteKey, RouteRuntimeConfig> = {
   expert: {
     defaultScreenId: "screen.expert.v1.control",
     shell: "platform",
-    platformHeaderMode: "default",
+    platformHeaderMode: "overlay",
   },
   "program-way21": {
     defaultScreenId: "screen.program-way21.v1.control",

@@ -1738,6 +1738,7 @@
         "section-shell",
         "path-card"
       ],
+      "render_mode": "semantic-only",
       "renderer": "platform.block",
       "token_recipes": [
         "semantic.runtime",
@@ -1956,6 +1957,7 @@
         "section-shell",
         "route-action-button"
       ],
+      "render_mode": "semantic-only",
       "renderer": "platform.block",
       "token_recipes": [
         "semantic.runtime",
@@ -2143,6 +2145,7 @@
         "section-shell",
         "route-action-button"
       ],
+      "render_mode": "semantic-only",
       "renderer": "platform.block",
       "token_recipes": [
         "semantic.runtime",
@@ -3865,6 +3868,7 @@
         "section-shell",
         "path-card"
       ],
+      "render_mode": "semantic-only",
       "renderer": "platform.block",
       "token_recipes": [
         "semantic.runtime",
