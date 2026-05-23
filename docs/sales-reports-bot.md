@@ -31,9 +31,14 @@ If a forum topic is configured, messages are sent into `ANALYTICS_REPORTS_THREAD
 ## Data Sources
 
 - sales facts: `public.orders`, `public.customers`
-- funnel facts: `public.mv_funnel_daily`
 - ad metrics: `public.analytics_meta_daily`, `public.analytics_meta_campaign_daily`
 - idempotency log: `public.events`
+
+Daily funnel is intentionally mixed but operationally reliable:
+
+- page views come from `public.analytics_meta_daily.view_content`;
+- created orders come from `public.orders`;
+- confirmed payments come from `public.orders` with status `paid|completed`.
 
 Events written by the reporting runtime:
 
@@ -45,6 +50,29 @@ Events written by the reporting runtime:
 `vercel.json` calls `/api/cron/analytics-reports` once per day.
 
 The route itself decides which report windows are due using `Europe/Kyiv` calendar boundaries, so one daily cron is enough for daily, weekly, and monthly dispatch.
+
+## Report Format
+
+Periodic Telegram report uses two depth levels:
+
+1. `daily`:
+   - `Саммари`
+   - `Реклама`
+   - `Вывод`
+2. `weekly` and `monthly`:
+   - `Саммари`
+   - `Реклама`
+   - `Продукты` when at least two products have confirmed paid orders in the period
+   - `Топ кампаний`
+   - `Внимание` when needed
+   - `Вывод`
+
+Telegram formatting uses HTML mode for clearer visual rhythm:
+
+- bold section headers;
+- bullet points inside each section;
+- plain text campaign rows without extra diagnostics counters.
+- daily funnel uses `просмотр страницы -> создано заказов -> покупка`, not Meta-attributed `InitiateCheckout`.
 
 ## Environment
 

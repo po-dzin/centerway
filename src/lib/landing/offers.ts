@@ -437,6 +437,7 @@ export async function issueIremPersonalOffersBatch(input: IssuePersonalOfferBatc
       channel: rawEntry.channel ?? null,
       campaign: rawEntry.campaign ?? null,
       note: rawEntry.note ?? null,
+      batchId: rawEntry.batchId ?? null,
     });
   }
 

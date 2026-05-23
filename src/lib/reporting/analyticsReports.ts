@@ -64,6 +64,36 @@ function formatNumber(amount: number): string {
   }).format(amount);
 }
 
+function formatDateLabel(isoDate: string): string {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  return new Intl.DateTimeFormat("uk-UA", {
+    timeZone: REPORTS_TIME_ZONE,
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  }).format(new Date(Date.UTC(year, month - 1, day)));
+}
+
+function reportKindLabel(kind: ReportKind): string {
+  switch (kind) {
+    case "daily":
+      return "Ежедневный отчёт";
+    case "weekly":
+      return "Еженедельный отчёт";
+    case "monthly":
+      return "Ежемесячный отчёт";
+    default:
+      return "Отчёт";
+  }
+}
+
+function reportPeriodLabel(window: ReportWindow): string {
+  if (window.from === window.to) {
+    return formatDateLabel(window.from);
+  }
+  return `${formatDateLabel(window.from)} - ${formatDateLabel(window.to)}`;
+}
+
 function toPercent(numerator: number, denominator: number): string {
   return `${formatNumber(safeDivide(numerator * 100, denominator))}%`;
 }
@@ -137,15 +167,99 @@ function productLabel(productCode: string | null | undefined): string {
       return "Consult";
     case "ideal-body":
       return "Ideal Body";
+    case "herbs":
+      return "Herbs";
     case "platform":
-      return "Platform";
+      return "Платформа";
     default:
-      return "unknown";
+      return "Неизвестный продукт";
   }
 }
 
 function escapeTelegramText(input: string): string {
-  return input.replace(/[<>]/g, "");
+  return input
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function bulletLine(label: string, value: string): string {
+  return `• ${escapeTelegramText(label)}: ${escapeTelegramText(value)}`;
+}
+
+function boldHeading(text: string): string {
+  return `<b>${escapeTelegramText(text)}</b>`;
+}
+
+function buildAttentionLines(input: {
+  totalOrders: number;
+  totalPaidOrders: number;
+  spend: number;
+  clicks: number;
+  viewContent: number;
+}): string[] {
+  const lines: string[] = [];
+
+  if (input.spend > 0 && input.totalOrders === 0) {
+    lines.push("Есть расход, но созданных заказов за период нет.");
+  }
+
+  if (input.viewContent > 0 && input.totalOrders === 0) {
+    lines.push("Есть просмотры страницы, но они не переходят в создание заказа.");
+  }
+
+  if (input.totalOrders > 0 && input.totalPaidOrders === 0) {
+    lines.push("Заказы создаются, но подтверждённых оплат пока нет.");
+  }
+
+  if (input.totalPaidOrders > 0 && input.totalOrders > input.totalPaidOrders) {
+    lines.push("Часть созданных заказов не дошла до подтверждённой оплаты.");
+  }
+
+  return lines;
+}
+
+function buildConclusionLine(input: {
+  totalOrders: number;
+  totalPaidOrders: number;
+  totalRevenue: number;
+  spend: number;
+  roas: number;
+  clicks: number;
+  viewContent: number;
+  topCampaign?: CampaignSummary;
+}): string {
+  if (input.totalPaidOrders > 0) {
+    if (input.roas >= 1) {
+      return `Создано ${formatNumber(input.totalOrders)} заказов, подтверждено ${formatNumber(input.totalPaidOrders)} оплат на ${formatCurrency(input.totalRevenue)}; ROAS ${formatNumber(input.roas)}.`;
+    }
+    if (input.totalOrders > input.totalPaidOrders) {
+      return `Создано ${formatNumber(input.totalOrders)} заказов, подтверждено ${formatNumber(input.totalPaidOrders)} оплат на ${formatCurrency(input.totalRevenue)}.`;
+    }
+    return `Есть подтверждённые оплаты на ${formatCurrency(input.totalRevenue)}, но ROAS пока ${formatNumber(input.roas)}.`;
+  }
+
+  if (input.viewContent > 0 && input.totalOrders > 0) {
+    return `Из ${formatNumber(input.viewContent)} просмотров страницы создано ${formatNumber(input.totalOrders)} заказов, но подтверждённых оплат пока нет.`;
+  }
+
+  if (input.spend > 0 && input.clicks > 0 && input.viewContent === 0) {
+    return `Есть ${formatNumber(input.clicks)} кликов, но переход в просмотр страницы почти не сформирован.`;
+  }
+
+  if (input.spend > 0 && input.viewContent > 0 && input.totalOrders === 0) {
+    return `Из ${formatNumber(input.viewContent)} просмотров страницы заказы пока не созданы.`;
+  }
+
+  if (input.spend > 0 && input.topCampaign && input.topCampaign.clicks > 0) {
+    return `Расход ${formatCurrency(input.spend)}, подтверждённых оплат нет; лучший источник по кликам — ${input.topCampaign.campaign}.`;
+  }
+
+  if (input.spend > 0) {
+    return `Расход составил ${formatCurrency(input.spend)}, но подтверждённых оплат за период нет.`;
+  }
+
+  return "За период нет значимого рекламного и платёжного сигнала.";
 }
 
 function startOfMonth(isoDate: string): string {
@@ -291,7 +405,7 @@ function topCampaignLines(campaigns: CampaignSummary[]): string[] {
     const roas = safeDivide(campaign.revenue, campaign.spend);
     return [
       `${index + 1}. ${escapeTelegramText(campaign.campaign)}`,
-      `спенд ${formatCurrency(campaign.spend)}, клики ${formatNumber(campaign.clicks)}, покупки ${formatNumber(campaign.purchases)}, выручка ${formatCurrency(campaign.revenue)}, ROAS ${formatNumber(roas)}`,
+      `расход ${formatCurrency(campaign.spend)}, клики ${formatNumber(campaign.clicks)}, покупки ${formatNumber(campaign.purchases)}, выручка ${formatCurrency(campaign.revenue)}, ROAS ${formatNumber(roas)}`,
     ].join(" — ");
   });
 }
@@ -344,13 +458,13 @@ export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise
         dateStyle: "short",
         timeStyle: "short",
       }).format(new Date(order.created_at))
-    : "невідомо";
+    : "неизвестно";
 
   const text = [
     "Подтверждена продажа",
     `Продукт: ${productLabel(order.product_code)}`,
     `Сумма: ${formatCurrency(asFiniteNumber(order.amount), typeof order.currency === "string" && order.currency ? order.currency : "UAH")}`,
-    `Order: ${order.order_ref}`,
+    `Заказ: ${order.order_ref}`,
     `Кампания: ${escapeTelegramText(campaign)}`,
     `Клиент: ${customerEmail || customerPhone || "контакт не найден"}`,
     `Время: ${confirmedAt}`,
@@ -368,10 +482,8 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
 
   const [
     ordersResult,
-    funnelResult,
     metaResult,
     campaignResult,
-    qualityResult,
   ] = await Promise.all([
     db
       .from("orders")
@@ -380,14 +492,8 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
       .lt("created_at", window.toExclusiveTs)
       .limit(50000),
     db
-      .from("mv_funnel_daily")
-      .select("date, leads_count, orders_created, orders_paid, total_revenue")
-      .gte("date", window.from)
-      .lte("date", window.to)
-      .limit(366),
-    db
       .from("analytics_meta_daily")
-      .select("reach, impressions, clicks, spend, view_content, initiate_checkout, purchase, currency")
+      .select("reach, impressions, clicks, spend, view_content, currency")
       .gte("day", window.from)
       .lte("day", window.to)
       .limit(366),
@@ -397,19 +503,11 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
       .gte("day", window.from)
       .lte("day", window.to)
       .limit(5000),
-    db
-      .from("mv_quality_gaps")
-      .select("snapshot_date, paid_missing_fbc, paid_missing_fbclid, paid_missing_fbp, paid_missing_page_url, paid_missing_client_ip, paid_missing_client_ua")
-      .order("snapshot_date", { ascending: false })
-      .limit(1)
-      .maybeSingle(),
   ]);
 
   if (ordersResult.error) throw ordersResult.error;
-  if (funnelResult.error) throw funnelResult.error;
   if (metaResult.error) throw metaResult.error;
   if (campaignResult.error) throw campaignResult.error;
-  if (qualityResult.error) throw qualityResult.error;
 
   const productTotals = new Map<string, ProductTotals>();
   const orderCampaignTotals = new Map<string, { revenue: number; paidOrders: number }>();
@@ -446,21 +544,12 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
     productTotals.set(productCode, totals);
   }
 
-  let leads = 0;
-  let funnelOrdersCreated = 0;
-  for (const row of funnelResult.data ?? []) {
-    leads += asFiniteNumber(row.leads_count);
-    funnelOrdersCreated += asFiniteNumber(row.orders_created);
-  }
-
   const metaTotals = {
     reach: 0,
     impressions: 0,
     clicks: 0,
     spend: 0,
     viewContent: 0,
-    initiateCheckout: 0,
-    purchase: 0,
   };
   for (const row of metaResult.data ?? []) {
     metaTotals.reach += asFiniteNumber(row.reach);
@@ -468,8 +557,6 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
     metaTotals.clicks += asFiniteNumber(row.clicks);
     metaTotals.spend += asFiniteNumber(row.spend);
     metaTotals.viewContent += asFiniteNumber(row.view_content);
-    metaTotals.initiateCheckout += asFiniteNumber(row.initiate_checkout);
-    metaTotals.purchase += asFiniteNumber(row.purchase);
     if (typeof row.currency === "string" && row.currency.trim()) {
       currency = row.currency.trim();
     }
@@ -511,58 +598,72 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
     });
 
   const topProducts = Array.from(productTotals.entries())
+    .filter(([, totals]) => totals.paidOrders > 0)
     .sort((a, b) => b[1].revenue - a[1].revenue)
     .slice(0, 3)
-    .map(([product, totals]) => `${product}: ${totals.paidOrders} paid / ${formatCurrency(totals.revenue, currency)}`);
+    .map(([product, totals]) => `${product}: ${totals.paidOrders} оплат / ${formatCurrency(totals.revenue, currency)}`);
 
-  const quality = qualityResult.data;
-  const missingTrackingTotal = quality
-    ? asFiniteNumber(quality.paid_missing_fbc) +
-      asFiniteNumber(quality.paid_missing_fbclid) +
-      asFiniteNumber(quality.paid_missing_fbp) +
-      asFiniteNumber(quality.paid_missing_page_url) +
-      asFiniteNumber(quality.paid_missing_client_ip) +
-      asFiniteNumber(quality.paid_missing_client_ua)
-    : 0;
+  const roas = safeDivide(totalRevenue, metaTotals.spend);
+  const attentionLines = buildAttentionLines({
+    totalOrders,
+    totalPaidOrders,
+    spend: metaTotals.spend,
+    clicks: metaTotals.clicks,
+    viewContent: metaTotals.viewContent,
+  });
+  const conclusionLine = buildConclusionLine({
+    totalOrders,
+    totalPaidOrders,
+    totalRevenue,
+    spend: metaTotals.spend,
+    roas,
+    clicks: metaTotals.clicks,
+    viewContent: metaTotals.viewContent,
+    topCampaign: topCampaigns[0],
+  });
 
   const lines = [
-    `Отчёт ${window.kind}: ${window.label}`,
+    boldHeading(`${reportKindLabel(window.kind)}: ${reportPeriodLabel(window)}`),
     "",
-    "Продажи",
-    `Подтверждено оплат: ${formatNumber(totalPaidOrders)} из ${formatNumber(totalOrders)}`,
-    `Выручка: ${formatCurrency(totalRevenue, currency)}`,
-    `Лиды: ${formatNumber(leads)}`,
-    `CR lead → paid: ${toPercent(totalPaidOrders, leads)}`,
+    boldHeading("Саммари"),
+    bulletLine("Оплаты", `${formatNumber(totalPaidOrders)} из ${formatNumber(totalOrders)}`),
+    bulletLine("Выручка", formatCurrency(totalRevenue, currency)),
+    bulletLine(
+      "Воронка",
+      `просмотр страницы ${formatNumber(metaTotals.viewContent)} → создано заказов ${formatNumber(totalOrders)} → покупка ${formatNumber(totalPaidOrders)}`
+    ),
+    bulletLine("Конверсия просмотр → оплата", toPercent(totalPaidOrders, metaTotals.viewContent)),
     "",
-    "Реклама",
-    `Spend: ${formatCurrency(metaTotals.spend, currency)}`,
-    `Reach: ${formatNumber(metaTotals.reach)}`,
-    `Impressions: ${formatNumber(metaTotals.impressions)}`,
-    `Clicks: ${formatNumber(metaTotals.clicks)}`,
-    `CTR: ${toPercent(metaTotals.clicks, metaTotals.impressions)}`,
-    `CPC: ${formatCurrency(safeDivide(metaTotals.spend, metaTotals.clicks), currency)}`,
-    `CPA: ${formatCurrency(safeDivide(metaTotals.spend, totalPaidOrders), currency)}`,
-    `ROAS: ${formatNumber(safeDivide(totalRevenue, metaTotals.spend))}`,
-    `ViewContent → Checkout: ${formatNumber(metaTotals.viewContent)} → ${formatNumber(metaTotals.initiateCheckout)}`,
-    `Meta Purchase: ${formatNumber(metaTotals.purchase)}`,
-    "",
-    "Продукты",
-    ...(topProducts.length > 0 ? topProducts : ["Нет подтверждённых продаж за период"]),
-    "",
-    "Топ кампаний",
-    ...(topCampaigns.length > 0 ? topCampaignLines(topCampaigns) : ["Нет данных по кампаниям"]),
+    boldHeading("Реклама"),
+    bulletLine("Расход", formatCurrency(metaTotals.spend, currency)),
+    bulletLine("Охват", formatNumber(metaTotals.reach)),
+    bulletLine("Клики", formatNumber(metaTotals.clicks)),
+    bulletLine("CTR", toPercent(metaTotals.clicks, metaTotals.impressions)),
+    bulletLine("Цена клика", formatCurrency(safeDivide(metaTotals.spend, metaTotals.clicks), currency)),
+    bulletLine("Цена оплаты", formatCurrency(safeDivide(metaTotals.spend, totalPaidOrders), currency)),
+    bulletLine("ROAS", formatNumber(roas)),
   ];
 
-  if (funnelOrdersCreated > 0) {
-    lines.push("", `Orders created: ${formatNumber(funnelOrdersCreated)}`);
+  if (window.kind === "daily") {
+    lines.push("", boldHeading("Вывод"), `• ${escapeTelegramText(conclusionLine)}`);
+    return lines.join("\n");
   }
 
-  if (quality) {
-    lines.push(
-      "",
-      `Tracking gaps snapshot ${quality.snapshot_date}: ${formatNumber(missingTrackingTotal)}`
-    );
+  if (topProducts.length > 1) {
+    lines.push("", boldHeading("Продукты"), ...topProducts.map((line) => `• ${escapeTelegramText(line)}`));
   }
+
+  lines.push(
+    "",
+    boldHeading("Топ кампаний"),
+    ...(topCampaigns.length > 0 ? topCampaignLines(topCampaigns).map((line) => `• ${escapeTelegramText(line)}`) : ["• Нет данных по кампаниям"])
+  );
+
+  if (attentionLines.length > 0) {
+    lines.push("", boldHeading("Внимание"), ...attentionLines.map((line) => `• ${escapeTelegramText(line)}`));
+  }
+
+  lines.push("", boldHeading("Вывод"), `• ${escapeTelegramText(conclusionLine)}`);
 
   return lines.join("\n");
 }
@@ -601,6 +702,7 @@ export async function dispatchDueTelegramPeriodicReports(now = new Date()): Prom
     const text = await buildPeriodicReport(window);
     await sendTelegramMessageWithToken(REPORTS_BOT_TOKEN, REPORTS_CHAT_ID, text, {
       messageThreadId: REPORTS_THREAD_ID,
+      parseMode: "HTML",
     });
     await markReportSent(window.eventKey, {
       report_kind: window.kind,
