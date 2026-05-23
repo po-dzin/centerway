@@ -507,6 +507,7 @@ img {
 }
 
 .section-hero #divprice .price-stack {
+  position: relative;
   display: flex;
   align-items: baseline;
   gap: var(--landing-space-rhythm-12);
@@ -535,6 +536,9 @@ img {
 
 .section-hero #divprice .price .price-discount-badge,
 .section-offer .price .price-discount-badge {
+  position: absolute;
+  top: -10px;
+  right: -44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -553,9 +557,9 @@ img {
   margin: 0;
   display: flex;
   flex-wrap: wrap;
-  align-items: center;
-  gap: var(--landing-space-rhythm-8);
-  font-size: var(--landing-type-hero-price-note-size, 14px);
+  align-items: baseline;
+  gap: var(--landing-space-rhythm-6, 6px);
+  font-size: var(--landing-type-hero-price-note-size, 13px);
   line-height: var(--landing-line-body-soft, 1.45);
   color: var(--landing-color-text-soft);
 }
@@ -571,7 +575,9 @@ img {
 .section-hero #divprice .promo-timer,
 .section-offer .promo-timer {
   color: var(--landing-color-primary);
-  font-weight: 700;
+  font-size: 18px;
+  font-weight: 800;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1637,6 +1643,7 @@ body.modal-open {
 }
 
 .section-offer .price-stack {
+  position: relative;
   display: flex;
   align-items: baseline;
   justify-content: center;
