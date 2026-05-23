@@ -183,6 +183,23 @@
     font-size: var(--landing-type-responsive-hero-emphasis-mobile-size, 28px);
   }
 
+  .section-hero .price .price-old {
+    font-size: var(--landing-type-responsive-hero-price-old-mobile-size, 22px);
+  }
+
+  .section-hero .price .price-discount-badge,
+  .section-offer .price .price-discount-badge {
+    padding: 5px 9px;
+    font-size: 13px;
+  }
+
+  .section-hero .promo-note,
+  .section-offer .promo-note {
+    font-size: var(--landing-type-responsive-hero-price-note-mobile-size, 14px);
+    justify-content: center;
+    text-align: center;
+  }
+
   .section-hero #divprice .openModal {
     width: 100%;
     max-width: 100%;

@@ -114,7 +114,7 @@ function asPositiveInteger(value: number | string | null | undefined): number | 
 }
 
 function formatPriceLabel(amount: number, currency: string): string {
-  return `${amount.toLocaleString("uk-UA")} ${currency}`;
+  return `${amount.toLocaleString("uk-UA")} ${currency === "UAH" ? "грн" : currency}`;
 }
 
 function formatDeadlineLabel(iso: string | null): string | null {
@@ -138,7 +138,7 @@ function computeDiscountPercent(oldAmount: number, amount: number): number {
 }
 
 function buildActiveNote(deadlineLabel: string | null): string {
-  if (!deadlineLabel) return "Персональна ціна для раннього входу";
+  if (!deadlineLabel) return "Персональна ціна для раннього входу діє ще";
   return `Персональна ціна для раннього входу діє до ${deadlineLabel}`;
 }
 
@@ -437,6 +437,7 @@ export async function issueIremPersonalOffersBatch(input: IssuePersonalOfferBatc
       channel: rawEntry.channel ?? null,
       campaign: rawEntry.campaign ?? null,
       note: rawEntry.note ?? null,
+      batchId: rawEntry.batchId ?? null,
     });
   }
 

@@ -1,14 +1,16 @@
 import { getLandingPublicRouteName, getLandingShellAssets } from "@/lib/landing/config";
 import { getLandingCriticalCss } from "@/lib/landing/config";
+import type { LandingResolvedOffer } from "@/lib/landing/offers";
 import type { StaticLandingProduct } from "@/lib/landing/types";
 import Script from "next/script";
 
 type LandingPageShellProps = {
   product: StaticLandingProduct;
   bodyHtml: string;
+  offer?: LandingResolvedOffer | null;
 };
 
-export function LandingPageShell({ product, bodyHtml }: LandingPageShellProps) {
+export function LandingPageShell({ product, bodyHtml, offer }: LandingPageShellProps) {
   const config = getLandingShellAssets(product);
   const criticalCss = getLandingCriticalCss(product);
 
@@ -33,6 +35,13 @@ export function LandingPageShell({ product, bodyHtml }: LandingPageShellProps) {
         data-cw-landing={product}
         data-cw-runtime="next"
         data-cw-page={getLandingPublicRouteName(product)}
+        data-cw-offer-id={offer?.offerId ?? undefined}
+        data-cw-price-value={offer?.amount ?? undefined}
+        data-cw-currency={offer?.currency ?? undefined}
+        data-cw-offer-token={offer?.offerApplied ? offer.offerToken ?? undefined : undefined}
+        data-cw-offer-state={offer ? (offer.offerApplied ? "active" : offer.offerExpired ? "expired" : "base") : undefined}
+        data-cw-offer-issued-at={offer?.issuedAt ?? undefined}
+        data-cw-offer-expires-at={offer?.expiresAt ?? undefined}
         suppressHydrationWarning
         dangerouslySetInnerHTML={{ __html: bodyHtml }}
       />

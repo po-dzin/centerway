@@ -17,6 +17,17 @@ const unauthorizedMatrix = [
   { method: "PATCH", path: "/api/admin/analytics/marketing", body: { spend: 0 } },
   { method: "POST", path: "/api/admin/analytics/sync-meta" },
   { method: "POST", path: "/api/admin/bootstrap-role" },
+  {
+    method: "POST",
+    path: "/api/admin/landing-offers",
+    body: {
+      product: "irem",
+      recipient_key: "smoke:admin-api",
+      channel: "telegram",
+      campaign: "smoke_admin",
+      note: "unauthorized smoke",
+    },
+  },
 ];
 
 const authenticatedContracts = [

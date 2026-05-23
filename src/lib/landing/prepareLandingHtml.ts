@@ -205,6 +205,51 @@ ${match[3]}`;
   return next;
 }
 
+function buildIremPromoNoteMarkup(offer: LandingResolvedOffer): string {
+  if (offer.offerApplied && !offer.offerExpired && offer.expiresAt) {
+    return `<p class="promo-note" data-promo-note><span class="promo-note__label" data-promo-note-label>Персональна ціна діє ще</span><span class="promo-timer" data-promo-timer aria-live="polite">48:00:00</span></p>`;
+  }
+
+  const note = offer.activeNote ?? offer.expiredNote;
+  return note ? `<p class="promo-note">${note}</p>` : "";
+}
+
+function buildIremPriceMarkup(offer: LandingResolvedOffer, includeNote: boolean): string {
+  const discountBadge =
+    offer.offerApplied && !offer.offerExpired && offer.discountPercent && offer.discountPercent > 0
+      ? `<span class="price-discount-badge">-${offer.discountPercent}%</span>`
+      : "";
+  const stack = offer.oldPriceLabel
+    ? `<div class="price-stack"><span class="price-old">${offer.oldPriceLabel}</span><span class="price-current">${offer.currentPriceLabel}</span>${discountBadge}</div>`
+    : `<span class="price-current">${offer.currentPriceLabel}</span>`;
+  const note = includeNote ? buildIremPromoNoteMarkup(offer) : "";
+  return `<div class="price">${stack}</div>${note}`;
+}
+
+function applyOfferReplacements(product: StaticLandingProduct, html: string, offer?: LandingResolvedOffer | null): string {
+  if (product !== "irem" || !offer) {
+    return html;
+  }
+
+  let next = html;
+  const heroMarkup = buildIremPriceMarkup(offer, true);
+  const offerMarkup = buildIremPriceMarkup(offer, true);
+
+  next = replaceIfMatch(
+    next,
+    /(<div id="divprice">)[\s\S]*?(<button class="openModal"\s+data-cta-primary>[\s\S]*?<\/button>)/i,
+    (match) => `${match[1]}${heroMarkup}${match[2]}`
+  );
+
+  next = replaceIfMatch(
+    next,
+    /(<div class="offer-cta">[\s\S]*?<p class="offer-lead">[\s\S]*?<\/p>)[\s\S]*?(<button class="openModal"\s+data-cta-final>[\s\S]*?<\/button>)/i,
+    (match) => `${match[1]}${offerMarkup}${match[2]}`
+  );
+
+  return next;
+}
+
 function stripInlineTracking(html: string): string {
   return TRACKING_BLOCKS.reduce((next, regex) => next.replace(regex, ""), html);
 }
@@ -328,6 +373,7 @@ export async function prepareLandingHtml(
 
   if (options.pageKind === "entry") {
     html = applyTypedHeroReplacements(product, html);
+    html = applyOfferReplacements(product, html, options.offer);
     const bodyHtml = extractBody(html, product).replace(SCRIPT_TAG_BLOCK, "").trim();
     return {
       pageKind: "entry",

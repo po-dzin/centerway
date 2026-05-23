@@ -33,5 +33,6 @@ export async function requireAdmin(req: NextRequest) {
         console.error("requireAdmin: Invalid role or missing data", data);
         return null;
     }
-    return { user };
+    const normalizedRole = String(data.role).toLowerCase();
+    return { user, role: normalizedRole };
 }

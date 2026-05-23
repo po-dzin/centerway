@@ -506,10 +506,73 @@ img {
   gap: 0;
 }
 
+.section-hero #divprice .price-stack {
+  display: flex;
+  align-items: baseline;
+  gap: var(--landing-space-rhythm-12);
+  flex-wrap: wrap;
+}
+
 .section-hero #divprice .price span {
   color: var(--landing-color-primary);
   font-size: var(--landing-type-hero-price-size, 32px);
   font-weight: var(--landing-type-hero-price-weight, 700);
+}
+
+.section-hero #divprice .price .price-old,
+.section-offer .price .price-old {
+  color: var(--landing-color-price-old, var(--landing-color-text-soft));
+  font-size: var(--landing-type-hero-price-old-size, 24px);
+  font-weight: 600;
+  text-decoration: line-through;
+  text-decoration-color: var(--landing-color-price-old-strike, var(--landing-color-price-old, var(--landing-color-text-soft)));
+}
+
+.section-hero #divprice .price .price-current,
+.section-offer .price .price-current {
+  color: var(--landing-color-primary);
+}
+
+.section-hero #divprice .price .price-discount-badge,
+.section-offer .price .price-discount-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: var(--landing-color-primary-strong, var(--landing-color-primary));
+  color: var(--landing-color-text-on-accent, #fff);
+  font-size: 14px;
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.section-hero #divprice .promo-note,
+.section-offer .promo-note {
+  margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--landing-space-rhythm-8);
+  font-size: var(--landing-type-hero-price-note-size, 14px);
+  line-height: var(--landing-line-body-soft, 1.45);
+  color: var(--landing-color-text-soft);
+}
+
+.section-hero #divprice .promo-note {
+  justify-content: flex-start;
+}
+
+.section-offer .promo-note {
+  justify-content: center;
+}
+
+.section-hero #divprice .promo-timer,
+.section-offer .promo-timer {
+  color: var(--landing-color-primary);
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
 }
 
 .section-hero #divprice .openModal {
@@ -1571,6 +1634,14 @@ body.modal-open {
   font-weight: 700;
   margin: 0;
   text-transform: none;
+}
+
+.section-offer .price-stack {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: var(--landing-space-rhythm-12);
+  flex-wrap: wrap;
 }
 
 .section-offer .price span {

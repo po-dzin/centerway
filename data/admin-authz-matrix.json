@@ -80,6 +80,18 @@
   {
     "kind": "mutate",
     "method": "POST",
+    "path": "/api/admin/landing-offers",
+    "body": {
+      "product": "irem",
+      "recipient_key": "smoke:admin-landing-offers",
+      "channel": "telegram",
+      "campaign": "smoke_admin",
+      "note": "authz coverage smoke"
+    }
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
     "path": "/api/admin/purchases/backfill"
   }
 ]
