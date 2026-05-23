@@ -75,6 +75,22 @@ Use only:
 
 Do not use forms like `/Users/.../project/file.ts:42` in ordinary agent-facing output unless the user explicitly asks for the absolute path.
 
+## Safe Push Rule
+
+When the user asks to "push this block", "commit and push this part", or otherwise requests a scoped publish, treat that as a request for a safe, self-contained change set rather than a narrow file-only slice.
+
+Before commit and push:
+
+1. collect the full dependency set for that block, including imported modules, required config, scripts, migrations, docs, and runtime contracts it depends on;
+2. verify the staged diff is internally coherent and does not leave unresolved imports, broken routes, partial schema changes, or missing assets/scripts;
+3. run the relevant validation for the block before pushing:
+   - at minimum `lint`;
+   - also `build` for runtime/code-path changes unless a known unrelated blocker prevents it;
+   - plus any directly relevant smoke/contract checks for the affected area;
+4. do not publish a knowingly incomplete slice just because only part of the local work was explicitly mentioned.
+
+If unrelated dirty work exists in the tree, isolate the requested block safely instead of pushing a partial set that breaks CI or runtime.
+
 ## Conflict Rule
 
 If local docs and RAverse disagree, treat RAverse as the active canon.

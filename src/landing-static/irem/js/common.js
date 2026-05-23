@@ -11,6 +11,18 @@
   var REDIRECT_RESET_MS = 5000;
   var isRedirecting = false;
   var deferredScriptStarted = {};
+  var ROOT = document.querySelector('main[data-cw-landing="irem"]');
+
+  function parsePositiveNumber(value, fallback) {
+    var num = Number(value);
+    return Number.isFinite(num) && num > 0 ? num : fallback;
+  }
+
+  if (ROOT instanceof HTMLElement) {
+    OFFER_ID = ROOT.dataset.cwOfferId || OFFER_ID;
+    PRICE_VALUE = parsePositiveNumber(ROOT.dataset.cwPriceValue, PRICE_VALUE);
+    CURRENCY = ROOT.dataset.cwCurrency || CURRENCY;
+  }
 
   function scheduleDeferredScript(key, callback) {
     if (deferredScriptStarted[key]) return;
@@ -238,6 +250,10 @@
         url.searchParams.set(key, String(value));
       }
     });
+
+    if (ROOT instanceof HTMLElement && ROOT.dataset.cwOfferToken) {
+      url.searchParams.set("offer_token", ROOT.dataset.cwOfferToken);
+    }
 
     return url.toString();
   }

@@ -9,6 +9,10 @@ export function unauthorizedResponse() {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
 }
 
+export function forbiddenResponse() {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+}
+
 export function badRequestResponse(error: string) {
     return NextResponse.json({ error }, { status: 400 });
 }
@@ -25,4 +29,3 @@ export function parseLimitOffset(
     const offset = Number(searchParams.get("offset") ?? 0);
     return { limit, offset };
 }
-

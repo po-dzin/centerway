@@ -28,6 +28,20 @@ const steps = [
     skipReason: "SMOKE_ADMIN_BEARER is not set",
   },
   {
+    name: "smoke:admin:landing-offers",
+    cmd: "npm",
+    args: ["run", "-s", "smoke:admin:landing-offers"],
+    required: hasAdminBearer,
+    skipReason: "SMOKE_ADMIN_BEARER is not set",
+  },
+  {
+    name: "smoke:admin:ui",
+    cmd: "npm",
+    args: ["run", "-s", "smoke:admin:ui"],
+    required: hasUiBaseUrl,
+    skipReason: "SMOKE_UI_BASE_URL/SMOKE_BASE_URL is not set",
+  },
+  {
     name: "smoke:admin:responsive",
     cmd: "npm",
     args: ["run", "-s", "smoke:admin:responsive"],

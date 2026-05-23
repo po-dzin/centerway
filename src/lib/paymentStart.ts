@@ -34,6 +34,8 @@ export type PaymentStartInput = {
   product: PayableProductCode;
   locale: Locale;
   source: "pay_start" | "checkout_start";
+  offer_id?: string | null;
+  amountOverride?: number | null;
   host?: string | null;
   payload?: Record<string, unknown>;
   fbp?: string | null;
@@ -134,6 +136,10 @@ export async function createPaymentInvoiceWithDeps(
   }
 
   const cfg = PRODUCTS[input.product];
+  const amount =
+    typeof input.amountOverride === "number" && Number.isFinite(input.amountOverride) && input.amountOverride > 0
+      ? input.amountOverride
+      : cfg.amount;
   const title = buildWfpProductName(
     productHeading(input.product, input.locale),
     productDescription(input.product, input.locale)
@@ -150,7 +156,7 @@ export async function createPaymentInvoiceWithDeps(
   const { error: orderErr } = await sb.from("orders").insert({
     order_ref,
     product_code: input.product,
-    amount: cfg.amount,
+    amount,
     currency: cfg.currency,
     status: "created",
     fbp: input.fbp,
@@ -202,7 +208,7 @@ export async function createPaymentInvoiceWithDeps(
       event_name: "InitiateCheckout",
       event_id: capiEventId,
       event_time: Math.floor(deps.nowMs() / 1000),
-      value: cfg.amount,
+      value: amount,
       currency: cfg.currency,
       order_ref,
       fbp: input.fbp ?? null,
@@ -231,6 +237,7 @@ export async function createPaymentInvoiceWithDeps(
       source: input.source,
       host: input.host ?? null,
       product: input.product,
+      offer_id: input.offer_id ?? null,
       event_id: clientEventId,
       fbp: input.fbp ?? null,
       fbc: input.fbc ?? null,
@@ -267,10 +274,10 @@ export async function createPaymentInvoiceWithDeps(
     merchantDomainName,
     orderReference: order_ref,
     orderDate: Math.floor(deps.nowMs() / 1000),
-    amount: cfg.amount,
+    amount,
     currency: cfg.currency,
     productName: [title],
-    productPrice: [cfg.amount],
+    productPrice: [amount],
     productCount: [1],
     serviceUrl: `${appBaseUrl}/api/wfp/webhook`,
     returnUrl,
