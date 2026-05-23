@@ -3,11 +3,13 @@ import path from "node:path";
 import { getLandingPublicRouteName, LANDING_ROUTE_CONFIG } from "@/lib/landing/config";
 import { LANDING_CONTENT } from "@/lib/landing/content";
 import { UTILITY_FILE_BY_PAGE, type UtilityPage } from "@/lib/landing/contracts";
+import type { LandingResolvedOffer } from "@/lib/landing/offers";
 import type { StaticLandingProduct } from "@/lib/landing/types";
 
 type PrepareEntryOptions = {
   product: StaticLandingProduct;
   pageKind: "entry";
+  offer?: LandingResolvedOffer | null;
 };
 
 type PrepareUtilityOptions = {
