@@ -581,11 +581,11 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
 
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
                 <p className="text-xs cw-muted">{labels.helper}</p>
-                <div className="flex flex-wrap items-center gap-2">
+                <div className="grid w-full grid-cols-2 gap-2 lg:ml-auto lg:w-[320px]">
                     <button
                         type="button"
                         onClick={clearAllInputs}
-                        className="cw-btn cw-surface-2 px-4 py-2 text-sm"
+                        className="cw-btn cw-surface-2 min-h-[44px] w-full px-4 py-2 text-sm"
                     >
                         {labels.clear}
                     </button>
@@ -593,7 +593,7 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
                         type="button"
                         onClick={handleIssue}
                         disabled={loading}
-                        className="cw-btn cw-surface-2 px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
+                        className="cw-btn cw-surface-2 min-h-[44px] w-full px-4 py-2 text-sm disabled:cursor-not-allowed disabled:opacity-60"
                     >
                         {loading ? labels.submitting : labels.submit}
                     </button>
@@ -646,7 +646,6 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
                             <div key={offer.offerToken} className="border-b cw-border last:border-b-0 pb-3 last:pb-0">
                                 <div className="flex flex-col gap-2 lg:flex-row lg:items-start lg:justify-between">
                                     <div className="space-y-1">
-                                        <p className="text-xs cw-muted">{offer.landingUrl}</p>
                                         <p className="text-sm font-mono cw-text break-all">{offer.landingUrl}</p>
                                     </div>
                                     <div className="flex items-center gap-2">
