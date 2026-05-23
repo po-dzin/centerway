@@ -5,10 +5,23 @@
   min-height: 100vh;
   min-height: 100svh;
   color: var(--cw-platform-text);
+  --platform-topbar-clearance: clamp(5.8rem, 7.5vw, 7.35rem);
   background:
     radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--cw-platform-accent) 13%, transparent), transparent 26rem),
     linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-calm-surface-muted) 42%, transparent), transparent 28rem),
     var(--cw-platform-bg);
+}
+
+.shell:has([data-dosha-test="true"]) {
+  background:
+    radial-gradient(1200px circle at 12% -18%, color-mix(in srgb, var(--cw-status-pending) 20%, transparent), transparent 52%),
+    radial-gradient(1000px circle at 86% 12%, color-mix(in srgb, var(--cw-status-success) 18%, transparent), transparent 46%),
+    linear-gradient(180deg, color-mix(in srgb, var(--cw-bg) 94%, #ffffff 6%) 0%, var(--cw-bg) 100%);
+}
+
+.shell:has([data-dosha-test="true"]) [data-platform-footer="true"] {
+  border-top-color: transparent;
+  padding-top: 1.35rem;
 }
 
 .container {
@@ -27,18 +40,18 @@
   z-index: var(--ds-z-sticky);
   width: min(100% - 2rem, var(--cw-max-width));
   margin: 0 auto;
-  overflow: visible;
+  overflow: clip;
   isolation: isolate;
   --platform-header-fg: var(--cw-platform-text);
   --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-text) 72%, transparent);
   --platform-header-hover-bg: color-mix(in srgb, var(--cw-platform-surface) 10%, transparent);
   --platform-header-band-bg: color-mix(in srgb, var(--cw-platform-surface) 14%, transparent);
-  --platform-header-fade-bg:
-    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-surface) 34%, transparent) 0%, color-mix(in srgb, var(--cw-platform-surface) 18%, transparent) 42%, transparent 100%);
-  --platform-header-sheet-shadow: 0 8px 20px color-mix(in srgb, var(--cw-platform-text) 6%, transparent);
+  --platform-header-control-bg: color-mix(in srgb, var(--platform-header-fg) 10%, transparent);
+  --platform-header-popover-bg: color-mix(in srgb, var(--platform-header-fg) 14%, var(--cw-platform-surface) 86%);
+  --platform-header-sheet-shadow: 0 12px 30px color-mix(in srgb, var(--cw-platform-text) 7%, transparent);
   --platform-header-sheet-filter: blur(20px) saturate(1.08) brightness(1.02);
   --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-dark);
-  --platform-header-shell-radius: var(--cw-radius-btn);
+  --platform-header-shell-radius: clamp(1.45rem, 2vw, 1.7rem);
   border: 0;
   border-radius: var(--platform-header-shell-radius);
   background: transparent;
@@ -52,9 +65,9 @@
   --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
   --platform-header-hover-bg: color-mix(in srgb, var(--cw-platform-text) 9%, transparent);
   --platform-header-band-bg: color-mix(in srgb, var(--cw-platform-text) 11%, transparent);
-  --platform-header-fade-bg:
-    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 22%, transparent) 0%, color-mix(in srgb, var(--cw-platform-text) 12%, transparent) 44%, transparent 100%);
-  --platform-header-sheet-shadow: 0 8px 22px color-mix(in srgb, #000000 14%, transparent);
+  --platform-header-control-bg: color-mix(in srgb, var(--platform-header-fg) 10%, transparent);
+  --platform-header-popover-bg: color-mix(in srgb, var(--platform-header-fg) 14%, var(--cw-platform-text) 86%);
+  --platform-header-sheet-shadow: 0 14px 34px color-mix(in srgb, #000000 15%, transparent);
   --platform-header-sheet-filter: blur(22px) saturate(1.1) brightness(0.99);
   --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-light);
 }
@@ -78,12 +91,7 @@
 }
 
 .header[data-cw-glass="shell"]::after {
-  inset: 0 0 -0.85rem;
-  border-radius: inherit;
-  background: var(--platform-header-fade-bg);
-  mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 100%);
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 100%);
-  opacity: 1;
+  content: none;
 }
 
 .shellOverlay .header {
@@ -99,6 +107,15 @@
   -webkit-backdrop-filter: none;
 }
 
+.shellOverlay > main:not(:has(> [class*="heroFeature"]:first-child)) {
+  padding-top: var(--platform-topbar-clearance);
+}
+
+.shellOverlay > main[data-dosha-test="true"],
+.shellOverlay > main[data-dosha-test="true"]:not(:has(> [class*="heroFeature"]:first-child)) {
+  padding-top: 0;
+}
+
 .shellOverlay .header[data-cw-glass="shell"]::after {
   content: none;
 }
@@ -109,7 +126,7 @@
 }
 
 .shellOverlay .nav a:hover {
-  background: color-mix(in srgb, var(--platform-header-fg) 10%, transparent);
+  background: var(--platform-header-control-bg);
 }
 
 .shellOverlay .ghostButton {
@@ -223,13 +240,21 @@
 .ghostButton,
 .primaryButton,
 .secondaryButton {
-  min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   border-radius: var(--cw-radius-btn);
   text-decoration: none;
   font-weight: 700;
+}
+
+.ghostButton,
+.primaryButton,
+.secondaryButton {
+  min-width: var(--ds-button-min-width);
+  min-height: var(--ds-button-min-height);
+  padding-inline: var(--ds-button-padding-inline);
+  line-height: 1.1;
 }
 
 .nav a {
@@ -243,12 +268,12 @@
 
 .nav a:hover {
   color: var(--platform-header-fg);
-  background: var(--platform-header-hover-bg);
+  background: var(--platform-header-control-bg);
 }
 
 .nav a[aria-current="page"] {
   color: var(--platform-header-fg);
-  background: color-mix(in srgb, var(--platform-header-fg) 10%, transparent);
+  background: var(--platform-header-control-bg);
 }
 
 .actions {
@@ -309,7 +334,7 @@
 }
 
 .profileEntry:hover {
-  background: var(--platform-header-hover-bg);
+  background: var(--platform-header-control-bg);
 }
 
 .profileGlyph {
@@ -361,7 +386,7 @@
   border: 0;
   border-radius: var(--cw-radius-md);
   color: var(--platform-header-fg);
-  background: color-mix(in srgb, var(--cw-platform-surface) 42%, transparent);
+  background: var(--platform-header-popover-bg);
   box-shadow: var(--platform-header-sheet-shadow);
   backdrop-filter: var(--platform-header-sheet-filter);
   -webkit-backdrop-filter: var(--platform-header-sheet-filter);
@@ -395,7 +420,7 @@
 
 .profileMenu a:hover,
 .profileMenu button:hover {
-  background: color-mix(in srgb, var(--platform-header-fg) 10%, transparent);
+  background: var(--platform-header-control-bg);
 }
 
 .mobileProfileSlot {
@@ -458,7 +483,6 @@
 
 .ghostButton,
 .secondaryButton {
-  padding: 0 1rem;
   border: 0;
   color: var(--cw-platform-text);
   background: var(--cw-platform-surface);
@@ -466,7 +490,6 @@
 }
 
 .primaryButton {
-  padding: 0 1.15rem;
   border: 1px solid var(--cw-platform-accent-strong);
   color: var(--cw-platform-accent-contrast);
   background: var(--cw-platform-accent-strong);

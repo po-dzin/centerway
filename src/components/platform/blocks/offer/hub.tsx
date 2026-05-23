@@ -14,6 +14,8 @@ function ProgramTile({ program, compact = false }: { program: ProgramTileData; c
       ? ({
           "--program-photo-image": `url("${program.artwork.desktop}")`,
           "--program-photo-image-mobile": `url("${program.artwork.mobile ?? program.artwork.desktop}")`,
+          "--program-photo-position-desktop": program.artwork.desktopPosition ?? "center 20%",
+          "--program-photo-position-mobile": program.artwork.mobilePosition ?? "center 42%",
         } as CSSProperties)
       : undefined;
 

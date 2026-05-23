@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { LeadForm } from "@/components/platform/LeadForm";
+import { PlatformDetailHero } from "@/components/platform/PlatformDetailHero";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import styles from "@/components/platform/PlatformContentStyles";
 import type { programs } from "@/lib/platform/content";
@@ -8,38 +8,24 @@ type Product = (typeof programs)[number];
 
 export function ProductDetailPage({ product }: { product: Product }) {
   return (
-    <PlatformShell>
-      <main>
-        <section
-          className={`${styles.container} ${styles.hero}`}
-          data-cw-semantic-role="offer-orientation"
-          data-cw-semantic-family="guide-trust"
-          data-cw-token-source="global-app-ds"
-        >
-          <div className={styles.heroPanel}>
-            <div>
-              <p className={styles.eyebrow}>{product.tag}</p>
-              <h1 className={styles.heroTitle}>{product.fullTitle}</h1>
-            </div>
-            <p className={styles.lead}>{product.longDescription}</p>
-            <div className={styles.heroFooter}>
-              <Link className={styles.primaryButton} href={product.funnelHref}>
-                Перейти до замовлення
-              </Link>
-              <Link className={styles.secondaryButton} href="/products">
-                Усі продукти
-              </Link>
-            </div>
-          </div>
-          <aside className={styles.programTile} data-visual={product.visual}>
-            <div className={styles.programPhoto} aria-hidden="true" />
-            <div className={styles.programTileBody}>
-              <p className={styles.label}>{product.duration}</p>
-              <h3>{product.title}</h3>
-              <p>{product.description}</p>
-            </div>
-          </aside>
-        </section>
+    <PlatformShell headerMode="overlay">
+      <main data-cw-detail-template="product">
+        <PlatformDetailHero
+          title={product.fullTitle}
+          description={product.description}
+          badge={`${product.tag} · ${product.duration}`}
+          artwork={product.artwork}
+          imageAlt={product.title}
+          templateKind="product"
+          primaryAction={{
+            href: "#product-support",
+            label: "Перейти до запиту",
+          }}
+          secondaryAction={{
+            href: "/products",
+            label: "Усі продукти",
+          }}
+        />
 
         <section
           className={`${styles.container} ${styles.section}`}
@@ -74,6 +60,7 @@ export function ProductDetailPage({ product }: { product: Product }) {
           data-cw-semantic-role="support"
           data-cw-semantic-family="support-boundary"
           data-cw-token-source="global-app-ds"
+          id="product-support"
         >
           <div className={styles.split}>
             <article className={styles.panel}>

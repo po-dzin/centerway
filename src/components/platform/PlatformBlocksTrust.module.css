@@ -204,6 +204,57 @@
   box-shadow: var(--cw-depth-shadow-soft);
 }
 
+.expertCompactPanel {
+  padding: clamp(1rem, 2.4vw, 1.45rem);
+}
+
+.timelineCompact {
+  gap: 0.6rem;
+}
+
+.timelineCompact li {
+  padding: 0.72rem 0.85rem;
+}
+
+.collapsibleBlock {
+  display: grid;
+  gap: 0.7rem;
+}
+
+.collapsibleSummary {
+  width: fit-content;
+  min-height: 2.5rem;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 0.95rem;
+  border-radius: var(--cw-radius-btn);
+  color: var(--cw-platform-text);
+  background: var(--cw-platform-surface);
+  box-shadow: var(--cw-depth-shadow-soft);
+  font-weight: 700;
+  cursor: pointer;
+  list-style: none;
+}
+
+.collapsibleSummary::-webkit-details-marker {
+  display: none;
+}
+
+.collapsibleSummary::after {
+  content: "+";
+  margin-left: 0.55rem;
+  color: var(--cw-platform-muted);
+  font-weight: 600;
+}
+
+.collapsibleBlock[open] .collapsibleSummary::after {
+  content: "−";
+}
+
+.collapsibleList {
+  margin-top: 0.05rem;
+}
+
 .relaxedGrid {
   margin-top: 0.15rem;
 }
@@ -221,10 +272,24 @@
   overflow: hidden;
   border-radius: calc(var(--cw-radius-lg) - 0.35rem);
   background:
+    var(--support-photo-image, linear-gradient(135deg, transparent, transparent)),
     radial-gradient(circle at 23% 28%, color-mix(in srgb, var(--cw-platform-accent) 18%, transparent) 0 0.28rem, transparent 0.3rem),
     radial-gradient(circle at 71% 62%, color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent) 0 0.24rem, transparent 0.26rem),
     repeating-linear-gradient(102deg, color-mix(in srgb, var(--cw-sem-warmth) 12%, transparent) 0 0.34rem, transparent 0.34rem 0.82rem),
     linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-warmth) 14%, var(--cw-platform-surface)) 0%, color-mix(in srgb, var(--cw-sem-calm-surface-muted) 74%, var(--cw-platform-surface) 26%) 52%, color-mix(in srgb, var(--cw-sem-guide-strong) 16%, var(--cw-platform-text)) 100%);
+  background-position:
+    var(--support-photo-position, center 24%),
+    center,
+    center,
+    center,
+    center;
+  background-size:
+    cover,
+    auto,
+    auto,
+    auto,
+    auto;
+  background-repeat: no-repeat;
   box-shadow: var(--cw-depth-shadow-soft);
 }
 
@@ -233,8 +298,8 @@
   inset: 0;
   content: "";
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-surface) 8%, transparent), color-mix(in srgb, var(--cw-platform-text) 14%, transparent)),
-    linear-gradient(115deg, transparent 0 58%, color-mix(in srgb, var(--cw-platform-text) 18%, transparent) 58.5% 60%, transparent 60.5%);
+    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-surface) 5%, transparent) 0%, color-mix(in srgb, var(--cw-platform-text) 24%, transparent) 100%),
+    linear-gradient(115deg, transparent 0 58%, color-mix(in srgb, var(--cw-platform-text) 12%, transparent) 58.5% 60%, transparent 60.5%);
   pointer-events: none;
 }
 

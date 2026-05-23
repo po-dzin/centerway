@@ -1,8 +1,10 @@
+import type { CSSProperties } from "react";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import styles from "@/components/platform/PlatformContentStyles";
-import { platformMiniCourses, platformProgramOffers } from "@/lib/platform/content";
+import type { PlatformOfferArtwork } from "@/lib/platform/content";
+import { platformAggregateArtwork, platformMiniCourses, platformProgramOffers } from "@/lib/platform/content";
 
 function ProgramCard({
   title,
@@ -10,15 +12,34 @@ function ProgramCard({
   description,
   href,
   visual,
+  slug,
+  artwork,
 }: {
   title: string;
   tag: string;
   description: string;
   href: string;
   visual: string;
+  slug: string;
+  artwork?: PlatformOfferArtwork;
 }) {
+  const cardStyle = artwork?.desktop
+    ? ({
+        "--program-photo-image": `url("${artwork.desktop}")`,
+        "--program-photo-image-mobile": `url("${artwork.mobile ?? artwork.desktop}")`,
+        "--program-photo-position-desktop": artwork.desktopPosition ?? "center 20%",
+        "--program-photo-position-mobile": artwork.mobilePosition ?? "center 42%",
+      } as CSSProperties)
+    : undefined;
+
   return (
-    <article className={styles.programTile} data-visual={visual}>
+    <article
+      className={styles.programTile}
+      data-visual={visual}
+      data-program={slug}
+      data-has-art={artwork?.desktop ? "true" : "false"}
+      style={cardStyle}
+    >
       <div className={styles.programPhoto} aria-hidden="true" />
       <div className={styles.programTileBody}>
         <p className={styles.label}>{tag}</p>
@@ -40,33 +61,46 @@ export const metadata: Metadata = {
 };
 
 export default function ProgramsIndexPage() {
+  const heroStyle = {
+    "--hero-photo-x": "50%",
+    "--hero-photo-y": "18%",
+    "--hero-photo-shift-y": "0%",
+    "--hero-photo-scale": "1.02",
+    "--hero-photo-origin": "center top",
+  } as CSSProperties;
+
   return (
-    <PlatformShell>
+    <PlatformShell headerMode="overlay">
       <main>
         <section
-          className={`${styles.container} ${styles.hero}`}
+          className={styles.heroFeature}
+          data-cw-topbar-tone="dark"
           data-cw-semantic-role="route-index"
           data-cw-semantic-family="guide-method"
           data-cw-token-source="global-app-ds"
+          style={heroStyle}
         >
-          <div className={styles.heroPanel}>
-            <div>
-              <p className={styles.eyebrow}>Каталог маршрутів</p>
-              <h1 className={styles.heroTitle}>Програми CenterWay</h1>
-            </div>
-            <p className={styles.lead}>
-              Окрема дошка всіх актуальних форматів платформи: короткі входи, довші програми і маршрути, які згодом
-              можна буде фільтрувати за категоріями та авторами.
+          <div className={styles.heroPhotoLayer}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className={styles.expertImage} src={platformAggregateArtwork.programs.desktop} alt="Програми CenterWay" />
+          </div>
+          <div className={styles.heroFeatureContent}>
+            <p className={styles.heroBadge}>
+              <span>Маршрути · Ритм · Глибина</span>
             </p>
-            <div className={styles.heroFooter}>
-              <Link className={styles.primaryButton} href="/dosha-test">
-                Почати з діагностики
-              </Link>
-              <Link className={styles.secondaryButton} href="/expert">
-                Про автора
+            <h1 className={styles.heroFeatureTitle}>Програми CenterWay</h1>
+            <p className={styles.heroFeatureLead}>
+              Короткі входи, довші програми і різна глибина роботи з тілом, ритмом, харчуванням та увагою.
+            </p>
+            <div className={styles.heroFeatureActions}>
+              <Link className={styles.heroPrimaryButton} href="#mini-courses">
+                Перейти до програм
               </Link>
             </div>
           </div>
+        </section>
+
+        <section className={`${styles.container} ${styles.section} ${styles.sectionFlow}`}>
           <article className={styles.panel}>
             <p className={styles.label}>Як обирати</p>
             <ul className={styles.timeline}>
@@ -79,6 +113,7 @@ export default function ProgramsIndexPage() {
         </section>
 
         <section
+          id="mini-courses"
           className={`${styles.container} ${styles.section} ${styles.sectionFlow}`}
           data-cw-semantic-role="offer-index"
           data-cw-semantic-family="guide-offer"
@@ -90,7 +125,7 @@ export default function ProgramsIndexPage() {
               <h2 className={styles.sectionTitle}>Короткий вхід у практику</h2>
             </div>
           </div>
-          <div className={styles.programShowcase} data-layout="mini">
+          <div className={styles.aggregateRail} data-rail="mini">
             {platformMiniCourses.map((program) => (
               <ProgramCard
                 key={program.slug}
@@ -99,12 +134,15 @@ export default function ProgramsIndexPage() {
                 description={program.description}
                 href={program.href}
                 visual={program.visual}
+                slug={program.slug}
+                artwork={program.artwork}
               />
             ))}
           </div>
         </section>
 
         <section
+          id="program-catalog"
           className={`${styles.container} ${styles.section} ${styles.sectionFlow}`}
           data-cw-semantic-role="offer-index"
           data-cw-semantic-family="guide-offer"
@@ -116,7 +154,7 @@ export default function ProgramsIndexPage() {
               <h2 className={styles.sectionTitle}>Глибші маршрути відновлення</h2>
             </div>
           </div>
-          <div className={styles.programShowcase}>
+          <div className={styles.aggregateRail}>
             {platformProgramOffers.map((program) => (
               <ProgramCard
                 key={program.slug}
@@ -125,29 +163,11 @@ export default function ProgramsIndexPage() {
                 description={program.description}
                 href={program.href}
                 visual={program.visual}
+                slug={program.slug}
+                artwork={program.artwork}
               />
             ))}
           </div>
-        </section>
-
-        <section
-          className={`${styles.container} ${styles.section}`}
-          data-cw-semantic-role="route-bridge"
-          data-cw-semantic-family="guide-support"
-          data-cw-token-source="global-app-ds"
-        >
-          <article className={styles.panel}>
-            <p className={styles.label}>Окремий family</p>
-            <h2 className={styles.title}>Продукти живуть не в програмах</h2>
-            <p className={styles.lead}>
-              Трави і майбутні physical support surfaces винесені в окремий агрегатор, тому що їм потрібен інший шаблон: не program brochure, а product guidance з підбором, межами і route clarity.
-            </p>
-            <div className={styles.heroFooter}>
-              <Link className={styles.primaryButton} href="/products">
-                Перейти до продуктів
-              </Link>
-            </div>
-          </article>
         </section>
       </main>
     </PlatformShell>

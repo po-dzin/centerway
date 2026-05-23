@@ -101,6 +101,21 @@
   gap: 1rem;
 }
 
+.productFocusSplit {
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .productFocusSplit {
+    grid-template-columns: 1fr;
+  }
+
+  .productFocusSplit > * {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 .panel {
   padding: clamp(1.15rem, 3vw, 2rem);
   scroll-margin-top: 5.25rem;
