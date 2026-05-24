@@ -1,9 +1,9 @@
 import Link from "next/link";
 import styles from "@/components/platform/PlatformContentStyles";
 import { currentProgram, routeLabels } from "@/components/platform/blocks/route/context";
-import type { PlatformGeneratedBlockProps } from "@/components/platform/blocks/types";
+import type { PlatformRouteBlockProps } from "@/components/platform/blocks/types";
 
-export function NextStep({ route, programSlug }: Pick<PlatformGeneratedBlockProps, "route" | "programSlug">) {
+export function NextStep({ route, programSlug }: Pick<PlatformRouteBlockProps, "route" | "programSlug">) {
   const program = currentProgram(programSlug);
   const primaryHref = program ? "#program-enroll" : "/dosha-test";
   const secondaryHref = program ? "/expert" : "/dosha-test";
