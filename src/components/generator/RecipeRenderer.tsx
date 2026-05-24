@@ -1,11 +1,7 @@
 "use client";
 
 import type { ComponentType } from "react";
-import DoshaTestClient from "@/components/dosha-test/DoshaTestClient";
 import {
-  DoshaIntroSection,
-  DoshaRouteFramingSection,
-  DoshaNextStepSection,
   FunnelBoundarySection,
   FunnelFormatPriceSection,
   FunnelHeroSection,
@@ -23,7 +19,6 @@ import {
   PilotLessonNextStep,
   PilotLessonPractice,
 } from "@/components/lesson/PilotLessonRecipes";
-import { PlatformGeneratedBlock } from "@/components/platform/PlatformGeneratedBlock";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
 
 type RecipeRendererProps = {
@@ -42,7 +37,6 @@ type RecipeRendererProps = {
 };
 
 const componentRegistry: Record<string, ComponentType<any>> = {
-  "dosha.test.main": DoshaTestClient,
   "lesson.pilot.header": PilotLessonHeader,
   "lesson.pilot.practice": PilotLessonPractice,
   "lesson.pilot.nextstep": PilotLessonNextStep,
@@ -57,10 +51,6 @@ const componentRegistry: Record<string, ComponentType<any>> = {
   "funnel.proof": FunnelProofSection,
   "funnel.boundary": FunnelBoundarySection,
   "funnel.next-step": FunnelNextStepSection,
-  "dosha.intro": DoshaIntroSection,
-  "dosha.route-framing": DoshaRouteFramingSection,
-  "dosha.next-step": DoshaNextStepSection,
-  "platform.block": PlatformGeneratedBlock,
 };
 
 export function RecipeRenderer({
