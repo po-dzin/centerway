@@ -2,9 +2,9 @@ import Link from "next/link";
 import { LeadForm } from "@/components/platform/LeadForm";
 import styles from "@/components/platform/PlatformContentStyles";
 import { consultationCopy, expertFacts } from "@/lib/platform/content";
-import type { PlatformGeneratedBlockProps } from "@/components/platform/blocks/types";
+import type { PlatformRouteBlockProps } from "@/components/platform/blocks/types";
 
-export function SupportForm({ route }: Pick<PlatformGeneratedBlockProps, "route">) {
+export function SupportForm({ route }: Pick<PlatformRouteBlockProps, "route">) {
   const productCode = route.startsWith("program-ideal-body") ? "ideal-body" : route.startsWith("program-irem") ? "irem" : "consult";
 
   if (route === "platform-home") {

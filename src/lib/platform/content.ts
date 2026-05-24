@@ -78,7 +78,7 @@ export const programs = [
     primaryActionKind: "enroll" as PlatformOfferPrimaryActionKind,
     title: "Шлях 21",
     fullTitle: "Детокс Програма «Шлях 21»",
-    href: getPlatformRoute("detox") ?? "/programs/detox",
+    href: getPlatformRoute("detox") ?? "/programs/way21",
     funnelHref: detoxFunnelHref,
     tag: "Очищення",
     duration: "21 день",

@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { PlatformShell } from "@/components/platform/PlatformLayout";
-import styles from "@/components/platform/PlatformContentStyles";
+import { PlatformLegalTemplate } from "@/components/platform/PlatformLegalTemplate";
 import { contact, legal } from "@/lib/platform/content";
 
 export const metadata: Metadata = {
@@ -11,28 +10,31 @@ export const metadata: Metadata = {
 
 export default function PrivacyPage() {
   return (
-    <PlatformShell>
-      <main className={`${styles.container} ${styles.section}`}>
-        <article className={styles.panel}>
-          <p className={styles.label}>Privacy</p>
-          <h1 className={styles.title}>Політика конфіденційності</h1>
-          <p className={styles.lead}>{legal.privacy}</p>
-          <div className={styles.grid2}>
-            <section className={styles.card} data-tone="proof">
-              <h2>Які дані збираються</h2>
-              <p>
-                Ім&apos;я, телефон, email, коментар, обраний інтерес, технічні дані сторінки, UTM-мітки та дані, необхідні для обробки заявок або оплат.
-              </p>
-            </section>
-            <section className={styles.card} data-tone="policy">
-              <h2>Як зв’язатися</h2>
-              <p>
-                З питань персональних даних напишіть на {contact.email} або зв’яжіться за телефоном {contact.phone}.
-              </p>
-            </section>
-          </div>
-        </article>
-      </main>
-    </PlatformShell>
+    <PlatformLegalTemplate
+      eyebrow="Privacy"
+      title="Політика конфіденційності"
+      lead={legal.privacy}
+      panels={[
+        {
+          title: "Які дані збираються",
+          tone: "proof",
+          body: (
+            <p>
+              Ім&apos;я, телефон, email, коментар, обраний інтерес, технічні дані сторінки, UTM-мітки та дані, необхідні
+              для обробки заявок або оплат.
+            </p>
+          ),
+        },
+        {
+          title: "Як зв’язатися",
+          tone: "policy",
+          body: (
+            <p>
+              З питань персональних даних напишіть на {contact.email} або зв’яжіться за телефоном {contact.phone}.
+            </p>
+          ),
+        },
+      ]}
+    />
   );
 }

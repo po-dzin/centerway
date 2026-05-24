@@ -1,4 +1,4 @@
-import { GeneratedRouteScreen } from "@/components/generator/GeneratedRouteScreen";
+import { PlatformConsultPage } from "@/components/platform/PlatformStandalonePages";
 
 export const metadata = {
   title: "CenterWay | Аюрведична консультація",
@@ -17,5 +17,5 @@ export const metadata = {
 };
 
 export default function ConsultPage() {
-  return <GeneratedRouteScreen routeKey="consult" />;
+  return <PlatformConsultPage />;
 }
