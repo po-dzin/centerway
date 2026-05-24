@@ -17,6 +17,10 @@ const routeContracts = readJson("data/generator/route_family_contracts.json");
 const screens = readJson("data/generator/screen_manifests.json");
 const blocks = readJson("data/generator/block_manifests.json");
 const semanticBlocks = readJson("data/generator/semantic_block_layer.json");
+const platformDetoxAliasPage = path.join(root, "src", "app", "(platform)", "programs", "detox", "page.tsx");
+const publicDetoxAliasPage = path.join(root, "src", "app", "(platform)", "detox", "page.tsx");
+const publicHerbsAliasPage = path.join(root, "src", "app", "(platform)", "herbs", "page.tsx");
+const funnelSupportPage = path.join(root, "src", "app", "(platform)", "funnel-support", "[product]", "[page]", "page.tsx");
 
 const contractById = new Map(routeContracts.contracts.map((item) => [item.id, item]));
 const blockById = new Map(blocks.blocks.map((item) => [item.id, item]));
@@ -101,12 +105,46 @@ if (existsSync(herbsProgramPath)) {
 
 const herbsScreens = screens.manifests.filter((screen) => screen.route_key === "herbs");
 for (const screen of herbsScreens) {
-  if (screen.route_path !== "/herbs") {
-    fail(`/herbs invariant failed: ${screen.id} uses route_path ${screen.route_path}`);
+  if (screen.route_path !== "/funnel-entry/herbs") {
+    fail(`/herbs invariant failed: ${screen.id} must stay on internal /funnel-entry/herbs, got ${screen.route_path}`);
   }
   if (screen.route_family !== "funnel surface") {
-    fail(`/herbs invariant failed: ${screen.id} must remain a root funnel surface`);
+    fail(`/herbs invariant failed: ${screen.id} must remain an isolated funnel surface`);
   }
+}
+
+const consultScreens = screens.manifests.filter((screen) => screen.route_key === "consult");
+for (const screen of consultScreens) {
+  if (screen.route_path !== "/funnel-entry/consult") {
+    fail(`/consult invariant failed: ${screen.id} must stay on internal /funnel-entry/consult, got ${screen.route_path}`);
+  }
+}
+
+const detoxScreens = screens.manifests.filter((screen) => screen.route_key === "detox");
+for (const screen of detoxScreens) {
+  if (screen.route_path !== "/funnel-entry/detox") {
+    fail(`/detox invariant failed: ${screen.id} must stay on internal /funnel-entry/detox, got ${screen.route_path}`);
+  }
+}
+
+const platformDetoxAliasSource = readFileSync(platformDetoxAliasPage, "utf8");
+if (!platformDetoxAliasSource.includes('permanentRedirect("/programs/way21")')) {
+  fail("/programs/detox invariant failed: alias route must permanently redirect to /programs/way21");
+}
+
+const publicDetoxAliasSource = readFileSync(publicDetoxAliasPage, "utf8");
+if (!publicDetoxAliasSource.includes('permanentRedirect("/programs/way21")')) {
+  fail("/detox invariant failed: alias route must permanently redirect to /programs/way21");
+}
+
+const publicHerbsAliasSource = readFileSync(publicHerbsAliasPage, "utf8");
+if (!publicHerbsAliasSource.includes('Redirect("/products/herbs")')) {
+  fail("/herbs invariant failed: alias route must redirect to /products/herbs");
+}
+
+const funnelSupportSource = readFileSync(funnelSupportPage, "utf8");
+if (funnelSupportSource.includes('"herbs"')) {
+  fail("funnel-support invariant failed: herbs utility pages must remain disabled in Wave 1");
 }
 
 if (failures.length > 0) {

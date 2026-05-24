@@ -1,4 +1,4 @@
-import { GeneratedRouteScreen } from "@/components/generator/GeneratedRouteScreen";
+import { permanentRedirect } from "next/navigation";
 
 export const metadata = {
   title: "CenterWay Detox | Програма м'якого перезавантаження",
@@ -17,5 +17,5 @@ export const metadata = {
 };
 
 export default function DetoxPage() {
-  return <GeneratedRouteScreen routeKey="detox" />;
+  permanentRedirect("/programs/way21");
 }

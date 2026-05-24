@@ -1,7 +1,8 @@
-import { LeadForm } from "@/components/platform/LeadForm";
-import { PlatformDetailHero } from "@/components/platform/PlatformDetailHero";
-import { PlatformShell } from "@/components/platform/PlatformLayout";
-import styles from "@/components/platform/PlatformContentStyles";
+import {
+  PlatformOfferMetaList,
+  PlatformOfferResultList,
+  PlatformOfferSurfaceTemplate,
+} from "@/components/platform/PlatformOfferSurfaceTemplate";
 import type { programs } from "@/lib/platform/content";
 
 type Program = (typeof programs)[number];
@@ -31,91 +32,56 @@ export function ProgramDetailPage({ program }: { program: Program }) {
           : "consult";
 
   return (
-    <PlatformShell headerMode="overlay">
-      <main data-cw-detail-template="program">
-        <PlatformDetailHero
-          title={program.fullTitle}
-          description={program.description}
-          badge={`${program.tag} · ${program.duration}`}
-          artwork={program.artwork}
-          imageAlt={program.title}
-          templateKind="program"
-          primaryAction={{
-            href: "#program-enroll",
-            label: isMiniCourse ? "Перейти до формату" : "Записатися на програму",
-          }}
-          secondaryAction={{
-            href: "#program-results",
-            label: isMiniCourse ? "Подивитися формат" : "Подивитися деталі",
-          }}
-        />
-
-        <section
-          className={`${styles.container} ${styles.section}`}
-          data-cw-semantic-role="offer-detail"
-          data-cw-semantic-family="method-progress"
-          data-cw-token-source="global-app-ds"
-          id="program-results"
-        >
-          <div className={`${styles.split} ${styles.programOfferDetailsGrid}`}>
-            <article className={styles.panel}>
-              <p className={styles.label}>Що змінюємо</p>
-              <h2 className={styles.title}>{isMiniCourse ? "Що дає цей короткий вхід" : "Коротко про результат"}</h2>
-              <ul className={`${styles.timeline} ${styles.programResultList}`}>
-                {program.results.slice(0, 5).map((result) => (
-                  <li key={result}>{result}</li>
-                ))}
-              </ul>
-            </article>
-            <article className={styles.panel}>
-              <p className={styles.label}>Формат</p>
-              <h2 className={styles.title}>{program.duration}</h2>
-              <p className={styles.lead}>{program.description}</p>
-              <div className={styles.programFormatMeta}>
-                {formatMeta.map((item) => (
-                  <span key={item}>{item}</span>
-                ))}
-              </div>
-            </article>
-          </div>
-        </section>
-
-        <section
-          className={`${styles.container} ${styles.section}`}
-          data-cw-semantic-role="support"
-          data-cw-semantic-family="support-boundary"
-          data-cw-token-source="global-app-ds"
-          id="program-enroll"
-        >
-          <div className={styles.split}>
-            <article className={styles.panel}>
-              <p className={styles.label}>{isMiniCourse ? "Участь" : "Запис"}</p>
-              <h2 className={styles.title}>{supportTitle}</h2>
-              <p className={styles.lead}>{supportLead}</p>
-            </article>
-            <article className={styles.formPanel}>
-              <p className={styles.label}>Форма</p>
-              <h2 className={styles.title}>Залишити контакти</h2>
-              <LeadForm productCode={productCode} source={`platform_${program.slug}_form`} ctaPlace={`${program.slug}_offer`} />
-            </article>
-          </div>
-        </section>
-
-        <section
-          className={`${styles.container} ${styles.section}`}
-          data-cw-semantic-role="boundary"
-          data-cw-semantic-family="trust-boundary"
-          data-cw-token-source="global-app-ds"
-        >
-          <article className={styles.panel}>
-            <p className={styles.label}>Межі методу</p>
-            <h2 className={styles.title}>Чесний формат без медичних обіцянок</h2>
-            <p className={styles.lead}>
-              CenterWay працює як освітня wellness-платформа і маршрут практики. Програми не замінюють діагностику, лікування або рекомендації вашого лікаря; якщо є гострі стани, вагітність, хронічні захворювання або медикаментозна терапія, спочатку потрібна медична консультація.
-            </p>
-          </article>
-        </section>
-      </main>
-    </PlatformShell>
+    <PlatformOfferSurfaceTemplate
+      templateKind="program"
+      hero={{
+        title: program.fullTitle,
+        description: program.description,
+        badge: `${program.tag} · ${program.duration}`,
+        artwork: program.artwork,
+        imageAlt: program.title,
+        templateKind: "program",
+        primaryAction: {
+          href: "#program-enroll",
+          label: isMiniCourse ? "Перейти до формату" : "Записатися на програму",
+        },
+        secondaryAction: {
+          href: "#program-results",
+          label: isMiniCourse ? "Подивитися формат" : "Подивитися деталі",
+        },
+      }}
+      detailSectionId="program-results"
+      detailSemanticFamily="method-progress"
+      detailLeft={{
+        label: "Що змінюємо",
+        title: isMiniCourse ? "Що дає цей короткий вхід" : "Коротко про результат",
+        body: <PlatformOfferResultList items={program.results.slice(0, 5)} />,
+      }}
+      detailRight={{
+        label: "Формат",
+        title: program.duration,
+        lead: program.description,
+        body: <PlatformOfferMetaList items={formatMeta} />,
+      }}
+      supportSectionId="program-enroll"
+      supportLeft={{
+        label: isMiniCourse ? "Участь" : "Запис",
+        title: supportTitle,
+        lead: supportLead,
+      }}
+      form={{
+        label: "Форма",
+        title: "Залишити контакти",
+        productCode,
+        source: `platform_${program.slug}_form`,
+        ctaPlace: `${program.slug}_offer`,
+      }}
+      boundary={{
+        label: "Межі методу",
+        title: "Чесний формат без медичних обіцянок",
+        lead:
+          "CenterWay працює як освітня wellness-платформа і маршрут практики. Програми не замінюють діагностику, лікування або рекомендації вашого лікаря; якщо є гострі стани, вагітність, хронічні захворювання або медикаментозна терапія, спочатку потрібна медична консультація.",
+      }}
+    />
   );
 }

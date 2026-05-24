@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useLayoutEffect, useState } from "react";
 
 export type HeaderTone = "light" | "dark";
 
@@ -83,13 +83,15 @@ function resolveToneFromPoint(x: number, y: number): HeaderTone | null {
   return null;
 }
 
-export function useHeaderTone() {
-  const [headerTone, setHeaderTone] = useState<HeaderTone>("light");
+export function useHeaderTone(initialTone: HeaderTone = "light") {
+  const [headerTone, setHeaderTone] = useState<HeaderTone>(initialTone);
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     if (typeof window === "undefined") return;
 
     let frame = 0;
+    let followupFrame = 0;
+    let settleTimer = 0;
 
     const updateTone = () => {
       frame = 0;
@@ -113,13 +115,22 @@ export function useHeaderTone() {
     };
 
     updateTone();
+    requestToneUpdate();
+    followupFrame = window.requestAnimationFrame(() => {
+      updateTone();
+      settleTimer = window.setTimeout(updateTone, 120);
+    });
     window.addEventListener("scroll", requestToneUpdate, { passive: true });
     window.addEventListener("resize", requestToneUpdate);
+    window.addEventListener("load", requestToneUpdate);
 
     return () => {
       if (frame) window.cancelAnimationFrame(frame);
+      if (followupFrame) window.cancelAnimationFrame(followupFrame);
+      if (settleTimer) window.clearTimeout(settleTimer);
       window.removeEventListener("scroll", requestToneUpdate);
       window.removeEventListener("resize", requestToneUpdate);
+      window.removeEventListener("load", requestToneUpdate);
     };
   }, []);
 

@@ -1,12 +1,8 @@
-import type { ComponentType } from "react";
 import type { programPageBySlug } from "@/lib/platform/content";
 
 export type PlatformProgramSlug = keyof typeof programPageBySlug;
 
-export type PlatformGeneratedBlockProps = {
+export type PlatformRouteBlockProps = {
   route: string;
-  variant: string;
   programSlug?: PlatformProgramSlug;
 };
-
-export type PlatformBlockComponent = ComponentType<PlatformGeneratedBlockProps>;

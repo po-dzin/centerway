@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import { PlatformShell } from "@/components/platform/PlatformLayout";
-import styles from "@/components/platform/PlatformContentStyles";
+import { PlatformLegalTemplate } from "@/components/platform/PlatformLegalTemplate";
 import { contact, legal } from "@/lib/platform/content";
 
 export const metadata: Metadata = {
@@ -11,32 +10,35 @@ export const metadata: Metadata = {
 
 export default function PublicOfferPage() {
   return (
-    <PlatformShell>
-      <main className={`${styles.container} ${styles.section}`}>
-        <article className={styles.panel}>
-          <p className={styles.label}>Legal</p>
-          <h1 className={styles.title}>Публічний договір</h1>
-          <p className={styles.lead}>{legal.publicOffer}</p>
-          <div className={styles.grid2}>
-            <section className={styles.card} data-tone="policy">
-              <h2>Предмет договору</h2>
-              <p>
-                CenterWay надає доступ до цифрових матеріалів, онлайн-програм, консультацій та супутніх інформаційних сервісів, розміщених на сайті та піддоменах.
-              </p>
-            </section>
-            <section className={styles.card} data-tone="support">
-              <h2>Контакти продавця</h2>
-              <p>
-                Email: {contact.email}
-                <br />
-                Телефон: {contact.phone}
-                <br />
-                Сайт: https://centerway.net.ua
-              </p>
-            </section>
-          </div>
-        </article>
-      </main>
-    </PlatformShell>
+    <PlatformLegalTemplate
+      eyebrow="Legal"
+      title="Публічний договір"
+      lead={legal.publicOffer}
+      panels={[
+        {
+          title: "Предмет договору",
+          tone: "policy",
+          body: (
+            <p>
+              CenterWay надає доступ до цифрових матеріалів, онлайн-програм, консультацій та супутніх інформаційних
+              сервісів, розміщених на сайті та піддоменах.
+            </p>
+          ),
+        },
+        {
+          title: "Контакти продавця",
+          tone: "support",
+          body: (
+            <p>
+              Email: {contact.email}
+              <br />
+              Телефон: {contact.phone}
+              <br />
+              Сайт: https://centerway.net.ua
+            </p>
+          ),
+        },
+      ]}
+    />
   );
 }

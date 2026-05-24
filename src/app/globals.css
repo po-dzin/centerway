@@ -99,7 +99,7 @@
     --cw-sem-progress: #c1906b;
     --cw-sem-warmth: #dba54f;
     --cw-sem-boundary: #b76045;
-    --cw-depth-card-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 92%, transparent);
+    --cw-depth-card-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 92%, var(--cw-sem-calm-surface-muted) 8%);
     --cw-depth-support-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 88%, var(--cw-sem-calm-surface-muted) 12%);
     --cw-depth-proof-bg: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-sem-calm-surface) 38%);
     --cw-depth-boundary-bg: color-mix(in srgb, var(--cw-sem-boundary) 10%, var(--cw-sem-calm-surface) 90%);
@@ -117,6 +117,22 @@
     --cw-platform-accent: var(--cw-sem-warmth);
     --cw-platform-accent-strong: var(--cw-sem-guide-strong);
     --cw-platform-accent-contrast: #fff8eb;
+    --cw-platform-visual-movement-start: #17332d;
+    --cw-platform-visual-movement-mid: #25473f;
+    --cw-platform-visual-movement-end: #102621;
+    --cw-platform-visual-water-start: #102a25;
+    --cw-platform-visual-water-mid: #17352f;
+    --cw-platform-visual-water-end: #0b201c;
+    --cw-platform-visual-stone-start: #f0e8d9;
+    --cw-platform-visual-stone-mid: #ece0cb;
+    --cw-platform-visual-stone-end: #d8c09b;
+    --cw-platform-visual-leaf-start: #f1eadc;
+    --cw-platform-visual-leaf-mid: #ebe0cd;
+    --cw-platform-visual-leaf-end: #d8c6a8;
+    --cw-platform-visual-mountain-start: #213d36;
+    --cw-platform-visual-mountain-mid: #314740;
+    --cw-platform-visual-mountain-end: #102622;
+    --cw-platform-visual-sand-button-base: #f7efe3;
     --cw-component-glass-bg: color-mix(in srgb, var(--cw-platform-text) 12%, transparent);
     --cw-component-glass-bg-hover: color-mix(in srgb, var(--cw-platform-text) 16%, transparent);
     --cw-component-glass-border: color-mix(in srgb, var(--cw-platform-accent-contrast) 18%, transparent);
@@ -125,6 +141,15 @@
     --cw-component-glass-shadow: 0 14px 32px color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
     --cw-component-glass-frost-image: url("/cw/landing/img/consult-hero-evgeniy.jpeg");
     --cw-component-glass-frost-position: 38% center;
+    --cw-surface-glass-bg: var(--cw-component-glass-bg);
+    --cw-surface-glass-bg-hover: var(--cw-component-glass-bg-hover);
+    --cw-surface-glass-border: var(--cw-component-glass-border);
+    --cw-surface-glass-filter: var(--cw-component-glass-filter);
+    --cw-surface-glass-shadow: var(--cw-component-glass-shadow);
+    --cw-surface-shell-band-bg: var(--cw-surface-glass-bg);
+    --cw-surface-shell-control-bg: var(--cw-surface-glass-bg);
+    --cw-surface-shell-hover-bg: var(--cw-surface-glass-bg-hover);
+    --cw-surface-shell-popover-bg: color-mix(in srgb, var(--cw-surface-glass-bg) 86%, var(--cw-platform-surface) 14%);
 
     /* CW_RUNTIME_TOKENS_START */
     --cw-sem-calm-bg: #f6f2ea;
@@ -153,9 +178,18 @@
     --cw-sem-symbol-body: radial-gradient(circle at 32% 34%, color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent), transparent 44%), radial-gradient(circle at 70% 68%, color-mix(in srgb, var(--cw-sem-embodied) 16%, transparent), transparent 48%);
     --cw-sem-symbol-cleansing: linear-gradient(180deg, color-mix(in srgb, var(--cw-sem-calm-surface) 62%, transparent), color-mix(in srgb, var(--cw-sem-calm-bg) 88%, transparent));
     --cw-sem-symbol-integration: linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-warmth) 16%, transparent), color-mix(in srgb, var(--cw-sem-calm-surface-muted) 92%, transparent));
-    --cw-shell-frost-bg: var(--cw-component-glass-bg);
-    --cw-shell-frost-filter: var(--cw-component-glass-filter);
-    --cw-depth-card-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 92%, transparent);
+    --cw-surface-glass-bg: var(--cw-component-glass-bg);
+    --cw-surface-glass-bg-hover: var(--cw-component-glass-bg-hover);
+    --cw-surface-glass-border: var(--cw-component-glass-border);
+    --cw-surface-glass-filter: var(--cw-component-glass-filter);
+    --cw-surface-glass-shadow: var(--cw-component-glass-shadow);
+    --cw-surface-shell-band-bg: var(--cw-surface-glass-bg);
+    --cw-surface-shell-control-bg: var(--cw-surface-glass-bg);
+    --cw-surface-shell-hover-bg: var(--cw-surface-glass-bg-hover);
+    --cw-surface-shell-popover-bg: color-mix(in srgb, var(--cw-surface-glass-bg) 86%, var(--cw-platform-surface) 14%);
+    --cw-shell-frost-bg: var(--cw-surface-glass-bg);
+    --cw-shell-frost-filter: var(--cw-surface-glass-filter);
+    --cw-depth-card-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 92%, var(--cw-sem-calm-surface-muted) 8%);
     --cw-depth-support-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 88%, var(--cw-sem-calm-surface-muted) 12%);
     --cw-depth-proof-bg: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-sem-calm-surface) 38%);
     --cw-depth-boundary-bg: color-mix(in srgb, var(--cw-sem-boundary) 10%, var(--cw-sem-calm-surface) 90%);
@@ -1009,6 +1043,10 @@ body {
     --cw-shadow: var(--cw-depth-shadow-soft);
     --cw-shadow-soft: var(--cw-depth-shadow-soft);
     --cw-shadow-strong: var(--cw-depth-shadow-medium);
+  }
+
+  [data-dosha-test="true"][data-dosha-phase="intro"] {
+    background: transparent;
   }
 
   .cw-icon-btn {

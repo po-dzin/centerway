@@ -14,7 +14,7 @@ export function PlatformShell({
 }) {
   return (
     <div className={`${styles.shell} ${headerMode === "overlay" ? styles.shellOverlay : ""}`}>
-      <PlatformHeader />
+      <PlatformHeader initialTone={headerMode === "overlay" ? "dark" : "light"} />
       {children}
       <PlatformFooter />
     </div>

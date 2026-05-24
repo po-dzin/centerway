@@ -36,6 +36,7 @@ function brandFromReferer(rawReferer: string | null, requestHost: string, reques
     if (pathname === "/programs/irem" || pathname.startsWith("/programs/irem/")) return "irem";
     if (pathname === "/programs/mini-detox" || pathname.startsWith("/programs/mini-detox/")) return "mini-detox";
     if (pathname === "/mini-detox" || pathname.startsWith("/mini-detox/")) return "mini-detox";
+    if (pathname === "/programs/way21" || pathname.startsWith("/programs/way21/")) return "detox";
     if (pathname === "/programs/detox" || pathname.startsWith("/programs/detox/")) return "detox";
     if (pathname === "/products/herbs" || pathname.startsWith("/products/herbs/")) return "herbs";
     if (pathname === "/consult" || pathname.startsWith("/consult/")) return "consult";
@@ -67,6 +68,7 @@ export function resolveRequestBrandFromPath(pathname: string): HostBrand | null 
   if (clean === "/irem" || clean.startsWith("/irem/")) return "irem";
   if (clean === "/programs/mini-detox" || clean.startsWith("/programs/mini-detox/")) return "mini-detox";
   if (clean === "/mini-detox" || clean.startsWith("/mini-detox/")) return "mini-detox";
+  if (clean === "/programs/way21" || clean.startsWith("/programs/way21/")) return "detox";
   if (clean === "/programs/detox" || clean.startsWith("/programs/detox/")) return "detox";
   if (clean === "/products/herbs" || clean.startsWith("/products/herbs/")) return "herbs";
   if (clean === "/detox" || clean.startsWith("/detox/")) return "detox";

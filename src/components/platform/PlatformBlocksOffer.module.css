@@ -242,7 +242,12 @@
 .programTile[data-visual="movement"] .programPhoto {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 6%, transparent), color-mix(in srgb, var(--cw-platform-text) 70%, transparent)),
-    linear-gradient(135deg, #17332d 0%, #25473f 48%, #102621 100%);
+    linear-gradient(
+      135deg,
+      var(--cw-platform-visual-movement-start) 0%,
+      var(--cw-platform-visual-movement-mid) 48%,
+      var(--cw-platform-visual-movement-end) 100%
+    );
 }
 
 .programTile[data-visual="movement"] .programPhoto::before {
@@ -260,7 +265,12 @@
 .programTile[data-visual="water"] .programPhoto {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 8%, transparent), color-mix(in srgb, var(--cw-platform-text) 68%, transparent)),
-    linear-gradient(135deg, #102a25 0%, #17352f 52%, #0b201c 100%);
+    linear-gradient(
+      135deg,
+      var(--cw-platform-visual-water-start) 0%,
+      var(--cw-platform-visual-water-mid) 52%,
+      var(--cw-platform-visual-water-end) 100%
+    );
 }
 
 .programTile[data-visual="water"] .programPhoto::before {
@@ -299,13 +309,18 @@
 .programTile[data-visual="stone"] .programPhoto {
   background:
     linear-gradient(180deg, color-mix(in srgb, white 44%, transparent), color-mix(in srgb, var(--cw-sem-progress) 16%, transparent)),
-    linear-gradient(135deg, #f0e8d9 0%, #ece0cb 52%, #d8c09b 100%);
+    linear-gradient(
+      135deg,
+      var(--cw-platform-visual-stone-start) 0%,
+      var(--cw-platform-visual-stone-mid) 52%,
+      var(--cw-platform-visual-stone-end) 100%
+    );
 }
 
 .programTile[data-visual="stone"] {
   --program-tile-fg: var(--cw-sem-method-ink);
   --program-tile-copy: color-mix(in srgb, var(--cw-sem-method-ink) 72%, transparent);
-  --program-tile-button-bg: color-mix(in srgb, var(--cw-sem-progress) 66%, #f7efe3 34%);
+  --program-tile-button-bg: color-mix(in srgb, var(--cw-sem-progress) 66%, var(--cw-platform-visual-sand-button-base) 34%);
   --program-tile-button-border: color-mix(in srgb, var(--cw-sem-progress) 58%, transparent);
 }
 
@@ -326,7 +341,7 @@
 .offerHeroVisualCard[data-visual="leaf"] {
   --program-tile-fg: var(--cw-sem-method-ink);
   --program-tile-copy: color-mix(in srgb, var(--cw-sem-method-ink) 72%, transparent);
-  --program-tile-button-bg: color-mix(in srgb, var(--cw-sem-progress) 66%, #f7efe3 34%);
+  --program-tile-button-bg: color-mix(in srgb, var(--cw-sem-progress) 66%, var(--cw-platform-visual-sand-button-base) 34%);
   --program-tile-button-border: color-mix(in srgb, var(--cw-sem-progress) 52%, transparent);
   color: var(--cw-sem-method-ink);
   background: color-mix(in srgb, var(--cw-platform-surface) 94%, var(--cw-platform-surface-muted));
@@ -337,7 +352,12 @@
   background:
     linear-gradient(180deg, color-mix(in srgb, white 42%, transparent), color-mix(in srgb, var(--cw-sem-progress) 12%, transparent)),
     radial-gradient(ellipse at 78% 22%, color-mix(in srgb, var(--cw-sem-progress) 14%, transparent) 0 18%, transparent 19%),
-    linear-gradient(135deg, #f1eadc 0%, #ebe0cd 54%, #d8c6a8 100%);
+    linear-gradient(
+      135deg,
+      var(--cw-platform-visual-leaf-start) 0%,
+      var(--cw-platform-visual-leaf-mid) 54%,
+      var(--cw-platform-visual-leaf-end) 100%
+    );
 }
 
 .programTile[data-visual="leaf"] .programPhoto::before,
@@ -360,7 +380,12 @@
 .programTile[data-visual="mountain"] .programPhoto {
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 10%, transparent), color-mix(in srgb, var(--cw-platform-text) 72%, transparent)),
-    linear-gradient(135deg, #213d36 0%, #314740 42%, #102622 100%);
+    linear-gradient(
+      135deg,
+      var(--cw-platform-visual-mountain-start) 0%,
+      var(--cw-platform-visual-mountain-mid) 42%,
+      var(--cw-platform-visual-mountain-end) 100%
+    );
 }
 
 .programTile[data-visual="mountain"] .programPhoto::before {
@@ -504,7 +529,7 @@
   padding: 0.95rem 1rem;
   border-radius: var(--cw-card-radius);
   color: var(--cw-platform-muted);
-  background: color-mix(in srgb, var(--cw-platform-surface) 92%, transparent);
+  background: var(--cw-depth-card-bg);
   box-shadow: var(--cw-depth-shadow-soft);
   line-height: 1.45;
 }
