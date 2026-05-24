@@ -2,9 +2,9 @@ import { LeadForm } from "@/components/platform/LeadForm";
 import { PlatformDetailHero } from "@/components/platform/PlatformDetailHero";
 import styles from "@/components/platform/PlatformContentStyles";
 import { currentProgram, routeLabels } from "@/components/platform/blocks/route/context";
-import type { PlatformGeneratedBlockProps } from "@/components/platform/blocks/types";
+import type { PlatformRouteBlockProps } from "@/components/platform/blocks/types";
 
-function offerView(programSlug?: PlatformGeneratedBlockProps["programSlug"]) {
+function offerView(programSlug?: PlatformRouteBlockProps["programSlug"]) {
   const program = currentProgram(programSlug);
   const isMiniCourse = program?.surfaceType === "mini-course";
 
@@ -39,7 +39,7 @@ function offerView(programSlug?: PlatformGeneratedBlockProps["programSlug"]) {
   };
 }
 
-export function OfferHero({ programSlug }: Pick<PlatformGeneratedBlockProps, "programSlug">) {
+export function OfferHero({ programSlug }: Pick<PlatformRouteBlockProps, "programSlug">) {
   const { isMiniCourse, program, heroPrimaryCta, heroSecondaryCta } = offerView(programSlug);
   if (!program) return null;
 
@@ -60,7 +60,7 @@ export function OfferHero({ programSlug }: Pick<PlatformGeneratedBlockProps, "pr
   );
 }
 
-export function OfferInfo({ programSlug }: Pick<PlatformGeneratedBlockProps, "programSlug">) {
+export function OfferInfo({ programSlug }: Pick<PlatformRouteBlockProps, "programSlug">) {
   const { program, detailsTitle, formatMeta } = offerView(programSlug);
   if (!program) return null;
   return (
@@ -90,7 +90,7 @@ export function OfferInfo({ programSlug }: Pick<PlatformGeneratedBlockProps, "pr
   );
 }
 
-export function OfferForm({ route, programSlug }: Pick<PlatformGeneratedBlockProps, "route" | "programSlug">) {
+export function OfferForm({ route, programSlug }: Pick<PlatformRouteBlockProps, "route" | "programSlug">) {
   const { productCode, supportLabel, supportLead, supportTitle } = offerView(programSlug);
   return (
     <section className={`${styles.container} ${styles.section}`} id="program-enroll">
