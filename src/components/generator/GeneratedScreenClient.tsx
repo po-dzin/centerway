@@ -9,23 +9,21 @@ import { RouteAuthGate } from "@/components/auth/RouteAuthGate";
 import { isAuthRequiredRoute } from "@/lib/auth/protectedRoutes";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { isStickyFooterRoute, resolveEffectiveRouteMetadata, resolveRouteRuntime } from "@/lib/generator/routeRuntime";
-import type { SurfaceKind } from "@/lib/surfaces/catalog";
 
 type GeneratedScreenClientProps = {
   resolved: ResolvedGeneratedScreen;
-  requestedSurfaceKind?: SurfaceKind;
 };
 
 function asCustomPropertyStyle(tokens: Record<`--${string}`, string>): CSSProperties {
   return tokens as unknown as CSSProperties;
 }
 
-export function GeneratedScreenClient({ resolved, requestedSurfaceKind }: GeneratedScreenClientProps) {
+export function GeneratedScreenClient({ resolved }: GeneratedScreenClientProps) {
   const style = asCustomPropertyStyle(resolved.tokens);
   const routeKey = resolved.screen.route_key;
-  const routeRuntime = resolveRouteRuntime(routeKey, requestedSurfaceKind);
+  const routeRuntime = resolveRouteRuntime(routeKey);
   const showDepthLab = routeRuntime.stickyFooter === true;
-  const effectiveRouteMetadata = resolveEffectiveRouteMetadata(routeKey, requestedSurfaceKind);
+  const effectiveRouteMetadata = resolveEffectiveRouteMetadata(routeKey);
 
   const content = (
     <div
