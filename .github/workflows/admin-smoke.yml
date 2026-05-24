@@ -33,16 +33,16 @@ jobs:
       - name: Build
         run: npm run -s build
 
-      - name: Admin Governance (offline)
+      - name: Admin Governance
         run: npm run -s smoke:admin:governance
 
-      - name: Admin I18n/Tone Guard (offline)
+      - name: Admin i18n / tone
         run: npm run -s smoke:admin:i18n-tone
 
-      - name: Admin A11y Contract (offline)
+      - name: Admin a11y contract
         run: npm run -s smoke:admin:a11y-contract
 
-      - name: Authz Coverage (offline)
+      - name: Admin authz coverage
         run: npm run -s smoke:admin:authz-coverage
 
       - name: Admin API Smoke Suite (optional)
@@ -53,10 +53,6 @@ jobs:
         if: ${{ env.SMOKE_UI_BASE_URL != '' }}
         run: npx playwright install --with-deps chromium
 
-      - name: Admin UI Smoke (optional)
+      - name: Platform Browser Smoke (optional)
         if: ${{ env.SMOKE_UI_BASE_URL != '' }}
-        run: npm run -s smoke:admin:ui
-
-      - name: Admin Responsive Matrix (optional)
-        if: ${{ env.SMOKE_UI_BASE_URL != '' }}
-        run: npm run -s smoke:admin:responsive
+        run: npm run -s smoke:platform:browser
