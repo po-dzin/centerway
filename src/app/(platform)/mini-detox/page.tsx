@@ -1,8 +1,5 @@
 import type { Metadata } from "next";
-import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { GeneratedRouteScreen } from "@/components/generator/GeneratedRouteScreen";
-import { getProductByHost } from "@/lib/surfaces/catalog";
 
 export const metadata: Metadata = {
   title: "Mini Detox - короткий маршрут CenterWay",
@@ -10,12 +7,6 @@ export const metadata: Metadata = {
   alternates: { canonical: "/programs/mini-detox" },
 };
 
-export default async function MiniDetoxPage() {
-  const headerStore = await headers();
-  const requestHost = headerStore.get("x-forwarded-host") ?? headerStore.get("host");
-  if (getProductByHost(requestHost) !== "mini-detox") {
-    redirect("/programs/mini-detox");
-  }
-
-  return <GeneratedRouteScreen routeKey="mini-detox" />;
+export default function MiniDetoxPage() {
+  redirect("/programs/mini-detox");
 }
