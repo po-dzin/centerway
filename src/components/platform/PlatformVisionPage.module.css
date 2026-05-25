@@ -1,0 +1,367 @@
+.page {
+  min-height: 100vh;
+  color: var(--cw-platform-text);
+  background:
+    radial-gradient(circle at top, color-mix(in srgb, var(--cw-platform-accent) 12%, transparent), transparent 42%),
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cw-platform-bg) 96%, var(--cw-platform-surface) 4%),
+      color-mix(in srgb, var(--cw-platform-surface) 94%, var(--cw-platform-bg) 6%)
+    );
+}
+
+.stack {
+  display: grid;
+  gap: var(--cw-space-lg);
+  padding-block: clamp(1.5rem, 3vw, 3rem);
+}
+
+.hero {
+  display: grid;
+  gap: 1rem;
+}
+
+.eyebrow {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.heroHeader {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: end;
+  justify-content: space-between;
+}
+
+.heroHeader h1,
+.sectionHeader h2 {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  line-height: 1.02;
+}
+
+.heroHeader h1 {
+  max-width: 12ch;
+  font-size: clamp(2.1rem, 5vw, 4.5rem);
+}
+
+.heroActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.primaryAction,
+.secondaryAction {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 3rem;
+  padding: 0 1.125rem;
+  border-radius: var(--cw-radius-pill);
+  text-decoration: none;
+  transition:
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.primaryAction {
+  color: var(--cw-platform-accent-contrast);
+  background: color-mix(in srgb, var(--cw-platform-accent) 72%, var(--cw-platform-accent-strong) 28%);
+  border: 1px solid color-mix(in srgb, var(--cw-platform-accent) 52%, transparent);
+}
+
+.secondaryAction {
+  color: var(--cw-platform-text);
+  background: color-mix(in srgb, var(--cw-platform-surface) 86%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 84%, transparent);
+}
+
+.primaryAction:hover,
+.secondaryAction:hover {
+  transform: translateY(-1px);
+}
+
+.heroLead {
+  margin: 0;
+  max-width: 62rem;
+  color: var(--cw-platform-muted);
+  font-size: clamp(1rem, 1.4vw, 1.16rem);
+  line-height: 1.7;
+}
+
+.heroGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(16rem, 0.8fr);
+  gap: 1rem;
+}
+
+.flowCard,
+.phoneCard {
+  min-height: 100%;
+}
+
+.flowList {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
+
+.flowItem {
+  display: grid;
+  grid-template-columns: 2.75rem minmax(0, 1fr);
+  gap: 0.85rem;
+  align-items: center;
+  padding: 0.95rem;
+  border-radius: var(--cw-card-radius);
+  background: color-mix(in srgb, var(--cw-platform-surface) 90%, transparent);
+  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 70%, transparent);
+}
+
+.flowIndex {
+  display: grid;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.75rem;
+  color: var(--cw-platform-accent-contrast);
+  background: color-mix(in srgb, var(--cw-status-running) 72%, var(--cw-platform-accent) 28%);
+  font-family: var(--cw-font-data);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.flowText {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.flowText strong,
+.routeBody strong,
+.programBody strong {
+  font-size: 1rem;
+  line-height: 1.2;
+}
+
+.flowText span,
+.routeBody span,
+.programBody span {
+  color: var(--cw-platform-muted);
+  line-height: 1.5;
+}
+
+.phoneMock {
+  width: min(100%, 19rem);
+  margin-inline: auto;
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  border-radius: 2rem;
+  background:
+    linear-gradient(
+      180deg,
+      color-mix(in srgb, var(--cw-platform-text) 4%, var(--cw-platform-surface) 96%),
+      color-mix(in srgb, var(--cw-platform-surface-muted) 72%, var(--cw-platform-surface) 28%)
+    );
+  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 86%, transparent);
+  box-shadow: 0 18px 40px color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+}
+
+.phoneBar {
+  width: 36%;
+  height: 0.35rem;
+  margin-inline: auto;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cw-platform-border) 86%, transparent);
+}
+
+.phoneHero {
+  display: grid;
+  gap: 0.25rem;
+  padding: 1rem;
+  border-radius: 1.25rem;
+  color: var(--cw-platform-accent-contrast);
+  background:
+    linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--cw-platform-accent-strong) 82%, var(--cw-platform-accent) 18%),
+      color-mix(in srgb, var(--cw-status-running) 54%, var(--cw-platform-accent-strong) 46%)
+    );
+}
+
+.phoneHero span {
+  font-family: var(--cw-font-data);
+  font-size: 0.74rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.phoneHero strong {
+  font-family: var(--cw-font-editorial);
+  font-size: 1.3rem;
+  line-height: 1.1;
+}
+
+.phoneStack {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.phoneStack span {
+  display: block;
+  min-height: 3.25rem;
+  border-radius: 1rem;
+  background: color-mix(in srgb, var(--cw-platform-surface) 88%, var(--cw-platform-bg) 12%);
+  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 74%, transparent);
+}
+
+.phoneButton {
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 3rem;
+  border-radius: 1rem;
+  color: var(--cw-platform-accent-contrast);
+  background: color-mix(in srgb, var(--cw-status-success) 82%, var(--cw-platform-accent) 18%);
+  font-weight: 700;
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.sectionHeader {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: end;
+  margin-bottom: 1rem;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0 0.8rem;
+  border-radius: 999px;
+  color: var(--cw-platform-accent-strong);
+  background: color-mix(in srgb, var(--cw-platform-accent) 12%, var(--cw-platform-surface) 88%);
+  border: 1px solid color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
+  font-family: var(--cw-font-data);
+  font-size: 0.76rem;
+  font-weight: 700;
+}
+
+.routeList,
+.programList,
+.tokenGrid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.routeItem,
+.programItem,
+.tokenItem {
+  padding: 1rem;
+  border-radius: var(--cw-card-radius);
+  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 72%, transparent);
+  background: color-mix(in srgb, var(--cw-platform-surface) 90%, transparent);
+}
+
+.routeItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: start;
+}
+
+.routeBody,
+.programBody {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.routeStatus {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2rem;
+  padding: 0 0.7rem;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.routeStatus[data-tone="running"] {
+  color: var(--cw-status-running);
+  background: var(--cw-status-running-soft);
+}
+
+.routeStatus[data-tone="success"] {
+  color: var(--cw-status-success);
+  background: var(--cw-status-success-soft);
+}
+
+.routeStatus[data-tone="pending"] {
+  color: var(--cw-status-pending);
+  background: var(--cw-status-pending-soft);
+}
+
+.meter {
+  overflow: hidden;
+  height: 0.75rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cw-platform-surface-muted) 78%, var(--cw-platform-surface) 22%);
+  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 68%, transparent);
+}
+
+.meter span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background:
+    linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--cw-status-success) 80%, var(--cw-platform-accent) 20%),
+      color-mix(in srgb, var(--cw-platform-accent-strong) 78%, var(--cw-status-running) 22%)
+    );
+}
+
+.tokenGrid {
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+}
+
+.tokenItem {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.tokenSwatch {
+  width: 100%;
+  min-height: 3rem;
+  border-radius: 0.95rem;
+  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 68%, transparent);
+}
+
+.tokenItem code {
+  font-family: var(--cw-font-data);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 960px) {
+  .heroGrid,
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}
+
