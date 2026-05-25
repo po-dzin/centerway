@@ -1,6 +1,6 @@
 import { LANDING_STATIC_BRANDS } from "@/lib/landing/contracts";
 
-const INFRA_BYPASS_PREFIXES = ["/api/", "/v1/", "/_next/", "/pay/return"] as const;
+const INFRA_BYPASS_PREFIXES = ["/api/", "/v1/", "/_next/", "/pay/return", "/go/"] as const;
 
 const LANDING_BRAND_PREFIXES = Array.from(LANDING_STATIC_BRANDS, (brand) => `/${brand}/`);
 
