@@ -401,13 +401,92 @@ function normalizeCampaignKey(input: string): string {
 }
 
 function topCampaignLines(campaigns: CampaignSummary[]): string[] {
-  return campaigns.slice(0, 5).map((campaign, index) => {
+  return campaigns.slice(0, 3).map((campaign, index) => {
     const roas = safeDivide(campaign.revenue, campaign.spend);
     return [
       `${index + 1}. ${escapeTelegramText(campaign.campaign)}`,
       `расход ${formatCurrency(campaign.spend)}, клики ${formatNumber(campaign.clicks)}, покупки ${formatNumber(campaign.purchases)}, выручка ${formatCurrency(campaign.revenue)}, ROAS ${formatNumber(roas)}`,
     ].join(" — ");
   });
+}
+
+function resolveCampaignRevenueMatches(
+  sourceCampaign: string,
+  campaigns: CampaignSummary[]
+): CampaignSummary[] {
+  const normalized = normalizeCampaignKey(sourceCampaign);
+  if (!normalized) return [];
+
+  const exactMatches = campaigns.filter((campaign) => normalizeCampaignKey(campaign.campaign) === normalized);
+  if (exactMatches.length > 0) return exactMatches;
+
+  const fuzzyMatches = campaigns.filter((campaign) => {
+    const target = normalizeCampaignKey(campaign.campaign);
+    return Boolean(target) && (target.includes(normalized) || normalized.includes(target));
+  });
+  return fuzzyMatches;
+}
+
+function allocateCampaignRevenue(
+  sourceCampaign: string,
+  totals: { revenue: number; paidOrders: number },
+  campaigns: CampaignSummary[]
+): void {
+  const matches = resolveCampaignRevenueMatches(sourceCampaign, campaigns);
+  if (matches.length === 0) return;
+
+  if (matches.length === 1) {
+    matches[0].revenue += totals.revenue;
+    return;
+  }
+
+  // When order-side utm_campaign is broader than Meta breakdown rows,
+  // distribute revenue across all matching rows by purchase count first.
+  const purchaseWeight = matches.reduce((sum, campaign) => sum + Math.max(campaign.purchases, 0), 0);
+  if (purchaseWeight > 0) {
+    let remainingRevenue = totals.revenue;
+    let remainingWeight = purchaseWeight;
+
+    for (let index = 0; index < matches.length; index += 1) {
+      const campaign = matches[index];
+      const weight = Math.max(campaign.purchases, 0);
+      if (weight <= 0) continue;
+
+      const allocatedRevenue =
+        index === matches.length - 1 || remainingWeight <= 0
+          ? remainingRevenue
+          : Math.round((remainingRevenue * weight) / remainingWeight);
+
+      campaign.revenue += allocatedRevenue;
+      remainingRevenue -= allocatedRevenue;
+      remainingWeight -= weight;
+    }
+    return;
+  }
+
+  const spendWeight = matches.reduce((sum, campaign) => sum + Math.max(campaign.spend, 0), 0);
+  if (spendWeight > 0) {
+    let remainingRevenue = totals.revenue;
+    let remainingWeight = spendWeight;
+
+    for (let index = 0; index < matches.length; index += 1) {
+      const campaign = matches[index];
+      const weight = Math.max(campaign.spend, 0);
+      if (weight <= 0) continue;
+
+      const allocatedRevenue =
+        index === matches.length - 1 || remainingWeight <= 0
+          ? remainingRevenue
+          : Math.round((remainingRevenue * weight) / remainingWeight);
+
+      campaign.revenue += allocatedRevenue;
+      remainingRevenue -= allocatedRevenue;
+      remainingWeight -= weight;
+    }
+    return;
+  }
+
+  matches[0].revenue += totals.revenue;
 }
 
 export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise<{
@@ -582,12 +661,7 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
   }
 
   for (const [campaignName, totals] of orderCampaignTotals.entries()) {
-    const normalized = normalizeCampaignKey(campaignName);
-    for (const campaign of campaignMap.values()) {
-      if (normalizeCampaignKey(campaign.campaign) === normalized) {
-        campaign.revenue += totals.revenue;
-      }
-    }
+    allocateCampaignRevenue(campaignName, totals, Array.from(campaignMap.values()));
   }
 
   const topCampaigns = Array.from(campaignMap.values())
