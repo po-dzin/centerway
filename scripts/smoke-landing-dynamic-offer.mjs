@@ -5,6 +5,7 @@ const baseUrl = (
 ).replace(/\/+$/, "");
 
 const smokeTgUserId = process.env.SMOKE_DYNAMIC_TG_USER_ID || "";
+const smokeEmail = process.env.SMOKE_DYNAMIC_EMAIL || "";
 
 function pass(message) {
   console.log(`PASS ${message}`);
@@ -34,13 +35,20 @@ async function requestDynamicOffer(pathname) {
 async function main() {
   console.log(`Landing dynamic-offer smoke base URL: ${baseUrl}`);
 
-  if (!smokeTgUserId.trim()) {
-    skip("SMOKE_DYNAMIC_TG_USER_ID is not set");
+  const usesEmail = Boolean(smokeEmail.trim());
+  const usesTelegram = Boolean(smokeTgUserId.trim());
+
+  if (!usesEmail && !usesTelegram) {
+    skip("SMOKE_DYNAMIC_TG_USER_ID or SMOKE_DYNAMIC_EMAIL is not set");
     return;
   }
 
   const campaign = `smoke_dynamic_${Date.now()}`;
-  const pathname = `/go/irem?tgUserId=${encodeURIComponent(smokeTgUserId)}&campaign=${encodeURIComponent(campaign)}&utm_source=smoke_dynamic`;
+  const identityQuery = usesEmail
+    ? `email=${encodeURIComponent(smokeEmail.trim().toLowerCase())}`
+    : `tgUserId=${encodeURIComponent(smokeTgUserId)}`;
+  const identityLabel = usesEmail ? "email" : "tgUserId";
+  const pathname = `/go/irem?${identityQuery}&campaign=${encodeURIComponent(campaign)}&utm_source=smoke_dynamic`;
 
   const first = await requestDynamicOffer(pathname);
   if (first.status !== 302) {
@@ -86,7 +94,7 @@ async function main() {
   }
 
   if (secondToken !== firstToken) {
-    fail("dynamic redirect did not reuse the live offer token for the same tgUserId and campaign");
+    fail(`dynamic redirect did not reuse the live offer token for the same ${identityLabel} and campaign`);
     return;
   }
 
