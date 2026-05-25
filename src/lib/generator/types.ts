@@ -59,24 +59,10 @@ export type ScreenRouteKey =
   | "consult"
   | "detox"
   | "herbs"
-  | "dosha-test"
-  | "lesson-pilot"
-  | "platform-home"
-  | "expert"
-  | "program-way21"
-  | "program-ideal-body"
-  | "program-irem"
-  | "program-reboot"
-  | "mini-detox";
+  | "lesson-pilot";
 
 export type RouteFamily =
-  | "platform hub"
-  | "expert"
-  | "program offer"
-  | "mini-course offer"
-  | "standalone route entry"
   | "funnel surface"
-  | "legal"
   | "utility";
 
 export type SemanticBlockManifest = {
