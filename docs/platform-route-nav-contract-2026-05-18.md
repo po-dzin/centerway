@@ -26,7 +26,8 @@ Main platform navigation uses four stable route entries only:
 ## Active Nav Marker
 
 - selected topbar item is a route-orientation marker, not a button-like control;
-- active state uses `--cw-platform-accent` on the text itself;
+- active state does not rely on color alone;
+- selected item uses stronger current-page text plus a compact accent marker;
 - active item does not receive a filled glass/control background or outline pill;
 - hover and focus stay text-led too: stronger text plus a subtle bottom rule, not a filled capsule;
 - desktop topbar nav and mobile burger-menu nav use the same state logic across breakpoints.

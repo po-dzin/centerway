@@ -66,7 +66,7 @@ export function PlatformProfileEntry({
   };
 
   const avatarUrl = session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || null;
-  const label = session?.user ? "Профіль" : "Увійти";
+  const label = session?.user ? "Профіль" : mobile ? "Профіль" : "Увійти";
 
   return (
     <Link
