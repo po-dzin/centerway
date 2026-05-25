@@ -9,9 +9,13 @@ import { PlatformProfileEntry } from "./PlatformProfileEntry";
 import { useHeaderTone } from "./headerTone";
 import { PLATFORM_SITE_ORIGIN, useIsBrandedHost } from "./usePlatformHref";
 
-export function PlatformHeader() {
+export function PlatformHeader({
+  initialTone = "light",
+}: {
+  initialTone?: "light" | "dark";
+}) {
   const [openMenuPath, setOpenMenuPath] = useState<string | null>(null);
-  const headerTone = useHeaderTone();
+  const headerTone = useHeaderTone(initialTone);
   const pathname = usePathname();
   const isBrandedHost = useIsBrandedHost();
   const homeHref = isBrandedHost ? `${PLATFORM_SITE_ORIGIN}${platformHomeHref}` : platformHomeHref;

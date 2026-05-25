@@ -23,6 +23,7 @@ const requiredLocalCanon = [
 ];
 
 const platformCssRoot = "src/components/platform";
+const publicPlatformRoutesRoot = "src/app/(platform)";
 const tokenSourceFiles = ["src/app/globals.css", "data/design-tokens/cw.tokens.json"];
 const semanticRuntimeFiles = [
   "data/generator/route_family_contracts.json",
@@ -264,6 +265,42 @@ for (const absolute of platformCssFiles) {
     if (!allowedHexColors.has(value)) {
       addFailure(
         `Raw hex color is not in the platform allowlist: ${match.value}. Use a DS token or add the color to the canonical token source first.`,
+        absolute,
+        match,
+      );
+    }
+  }
+}
+
+const publicPlatformRouteFiles = listFiles(publicPlatformRoutesRoot, (file) => {
+  const normalized = relativePath(file);
+  return normalized.endsWith("/page.tsx") && !normalized.includes("/admin/");
+});
+
+for (const absolute of publicPlatformRouteFiles) {
+  const file = relativePath(absolute);
+  const source = readFileSync(absolute, "utf8");
+
+  for (const match of collectMatches(source, /from\s+["']([^"']+\.css)["']/g)) {
+    addFailure(
+      `Public platform route files must not import CSS directly: ${match.value}. Route files must delegate to shared platform components/templates.`,
+      absolute,
+      match,
+    );
+  }
+
+  for (const match of collectMatches(source, /from\s+["']([^"']*PlatformContentStyles[^"']*)["']/g)) {
+    addFailure(
+      `Public platform route files must not import PlatformContentStyles directly: ${match.value}. Use approved shared platform components/templates instead.`,
+      absolute,
+      match,
+    );
+  }
+
+  if (file !== "src/app/(platform)/funnel-entry/[product]/page.tsx" && file !== "src/app/(platform)/lesson/pilot/page.tsx") {
+    for (const match of collectMatches(source, /<(main|section|aside|nav|header)\b/g)) {
+      addFailure(
+        `Public platform route files must not author structural layout tags directly: <${match.value}>. Move layout composition into shared platform components/templates.`,
         absolute,
         match,
       );
