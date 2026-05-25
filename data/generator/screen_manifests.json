@@ -5,10 +5,10 @@
       "id": "screen.consult.v1.control",
       "version": "1.2.0",
       "route_key": "consult",
-      "route_path": "/consult",
-      "route_family": "standalone route entry",
-      "route_boundary": "platform route",
-      "route_family_contract_id": "route_family.platform-offer-entry.v1",
+      "route_path": "/funnel-entry/consult",
+      "route_family": "funnel surface",
+      "route_boundary": "isolated funnel route",
+      "route_family_contract_id": "route_family.funnel-surface.v1",
       "archetype": "offer-detail",
       "mode": "consult",
       "branch": "consult",
@@ -72,10 +72,10 @@
       "id": "screen.consult.v1.warm_route",
       "version": "1.2.0",
       "route_key": "consult",
-      "route_path": "/consult",
-      "route_family": "standalone route entry",
-      "route_boundary": "platform route",
-      "route_family_contract_id": "route_family.platform-offer-entry.v1",
+      "route_path": "/funnel-entry/consult",
+      "route_family": "funnel surface",
+      "route_boundary": "isolated funnel route",
+      "route_family_contract_id": "route_family.funnel-surface.v1",
       "archetype": "offer-detail",
       "mode": "consult",
       "branch": "consult",
@@ -142,10 +142,10 @@
       "id": "screen.detox.v1.control",
       "version": "1.2.0",
       "route_key": "detox",
-      "route_path": "/detox",
-      "route_family": "standalone route entry",
-      "route_boundary": "platform route",
-      "route_family_contract_id": "route_family.platform-offer-entry.v1",
+      "route_path": "/funnel-entry/detox",
+      "route_family": "funnel surface",
+      "route_boundary": "isolated funnel route",
+      "route_family_contract_id": "route_family.funnel-surface.v1",
       "archetype": "offer-detail",
       "mode": "detox",
       "branch": "detox",
@@ -209,7 +209,7 @@
       "id": "screen.herbs.v1.control",
       "version": "1.2.0",
       "route_key": "herbs",
-      "route_path": "/herbs",
+      "route_path": "/funnel-entry/herbs",
       "route_family": "funnel surface",
       "route_boundary": "isolated funnel route",
       "route_family_contract_id": "route_family.funnel-surface.v1",
@@ -273,83 +273,6 @@
       ]
     },
     {
-      "id": "screen.dosha-test.v1.control",
-      "version": "1.3.0",
-      "route_key": "dosha-test",
-      "route_path": "/dosha-test",
-      "route_family": "utility",
-      "route_boundary": "platform utility route",
-      "route_family_contract_id": "route_family.utility.v1",
-      "archetype": "overview-entry",
-      "mode": "support",
-      "branch": "platform",
-      "token_pack_id": "token_pack.warm-mineral.v1",
-      "mode_pack_id": "mode_pack.support.v1",
-      "branch_overlay_id": "branch_overlay.platform.v1",
-      "blocks": [
-        {
-          "id": "dosha.hero",
-          "block_manifest_id": "block.dosha.hero.v1",
-          "block_manifest_version": "1.1.0"
-        },
-        {
-          "id": "dosha.route-framing",
-          "block_manifest_id": "block.dosha.route-framing.v1",
-          "block_manifest_version": "1.1.0"
-        },
-        {
-          "id": "dosha.route-choice-main",
-          "block_manifest_id": "block.dosha.route-choice-main.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "dosha.next-step",
-          "block_manifest_id": "block.dosha.next-step.v1",
-          "block_manifest_version": "1.1.0"
-        }
-      ]
-    },
-    {
-      "id": "screen.dosha-test.v1.routecopy",
-      "version": "1.3.0",
-      "route_key": "dosha-test",
-      "route_path": "/dosha-test",
-      "route_family": "utility",
-      "route_boundary": "platform utility route",
-      "route_family_contract_id": "route_family.utility.v1",
-      "archetype": "overview-entry",
-      "mode": "support",
-      "branch": "platform",
-      "token_pack_id": "token_pack.warm-mineral.v1",
-      "mode_pack_id": "mode_pack.support.v1",
-      "branch_overlay_id": "branch_overlay.platform.v1",
-      "blocks": [
-        {
-          "id": "dosha.hero",
-          "block_manifest_id": "block.dosha.hero.v1",
-          "block_manifest_version": "1.1.0"
-        },
-        {
-          "id": "dosha.route-framing",
-          "block_manifest_id": "block.dosha.route-framing.v1",
-          "block_manifest_version": "1.1.0"
-        },
-        {
-          "id": "dosha.route-choice-main",
-          "block_manifest_id": "block.dosha.route-choice-main.v1",
-          "block_manifest_version": "1.0.0",
-          "props": {
-            "uiVariant": "dosha_test_calm_route_v1_b"
-          }
-        },
-        {
-          "id": "dosha.next-step",
-          "block_manifest_id": "block.dosha.next-step.v1",
-          "block_manifest_version": "1.1.0"
-        }
-      ]
-    },
-    {
       "id": "screen.lesson.pilot.v1.control",
       "version": "1.0.0",
       "route_key": "lesson-pilot",
@@ -397,290 +320,6 @@
             "ctaHref": "/consult",
             "ctaLabel": "Обговорити план з консультантом"
           }
-        }
-      ]
-    },
-    {
-      "id": "screen.platform-home.v1.control",
-      "version": "1.0.0",
-      "route_key": "platform-home",
-      "route_path": "/",
-      "route_family": "platform hub",
-      "route_boundary": "platform route",
-      "route_family_contract_id": "route_family.platform-hub.v1",
-      "archetype": "hub-journey",
-      "mode": "platform",
-      "branch": "platform",
-      "token_pack_id": "token_pack.living-mineral.v1",
-      "mode_pack_id": "mode_pack.platform.v1",
-      "branch_overlay_id": "branch_overlay.platform.v1",
-      "blocks": [
-        {
-          "id": "platform-home.hero",
-          "block_manifest_id": "block.platform-hub.hero.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "platform-home.intro",
-          "block_manifest_id": "block.platform-hub.intro.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "platform-home.mini-courses",
-          "block_manifest_id": "block.platform-hub.mini.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "platform-home.programs",
-          "block_manifest_id": "block.platform-hub.programs.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "platform-home.proof",
-          "block_manifest_id": "block.platform-hub.proof.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "platform-home.natural-support",
-          "block_manifest_id": "block.platform-hub.support.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "platform-home.support",
-          "block_manifest_id": "block.platform-home.support.v1",
-          "block_manifest_version": "1.0.0"
-        }
-      ]
-    },
-    {
-      "id": "screen.expert.v1.control",
-      "version": "1.0.0",
-      "route_key": "expert",
-      "route_path": "/expert",
-      "route_family": "expert",
-      "route_boundary": "platform route",
-      "route_family_contract_id": "route_family.expert.v1",
-      "archetype": "overview-entry",
-      "mode": "platform",
-      "branch": "platform",
-      "token_pack_id": "token_pack.living-mineral.v1",
-      "mode_pack_id": "mode_pack.platform.v1",
-      "branch_overlay_id": "branch_overlay.platform.v1",
-      "blocks": [
-        {
-          "id": "expert.hero",
-          "block_manifest_id": "block.expert.hero.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "expert.proof",
-          "block_manifest_id": "block.expert.proof.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "expert.route-map",
-          "block_manifest_id": "block.expert.route-map.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "expert.path",
-          "block_manifest_id": "block.expert.path.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "expert.support",
-          "block_manifest_id": "block.expert.support.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "expert.next-step",
-          "block_manifest_id": "block.expert.next-step.v1",
-          "block_manifest_version": "1.0.0"
-        }
-      ]
-    },
-    {
-      "id": "screen.program-way21.v1.control",
-      "version": "1.0.0",
-      "route_key": "program-way21",
-      "route_path": "/programs/way21",
-      "route_family": "program offer",
-      "route_boundary": "platform route",
-      "route_family_contract_id": "route_family.program-offer.v1",
-      "archetype": "platform-program-offer",
-      "mode": "platform",
-      "branch": "platform",
-      "token_pack_id": "token_pack.living-mineral.v1",
-      "mode_pack_id": "mode_pack.platform.v1",
-      "branch_overlay_id": "branch_overlay.platform.v1",
-      "blocks": [
-        {
-          "id": "program-way21.hero",
-          "block_manifest_id": "block.program-way21.hero.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-way21.offer-definition",
-          "block_manifest_id": "block.program-way21.offer-definition.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-way21.boundary",
-          "block_manifest_id": "block.program-way21.boundary.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-way21.support",
-          "block_manifest_id": "block.program-way21.support.v1",
-          "block_manifest_version": "1.0.0"
-        }
-      ]
-    },
-    {
-      "id": "screen.program-ideal-body.v1.control",
-      "version": "1.0.0",
-      "route_key": "program-ideal-body",
-      "route_path": "/programs/ideal-body",
-      "route_family": "program offer",
-      "route_boundary": "platform route",
-      "route_family_contract_id": "route_family.program-offer.v1",
-      "archetype": "platform-program-offer",
-      "mode": "platform",
-      "branch": "platform",
-      "token_pack_id": "token_pack.living-mineral.v1",
-      "mode_pack_id": "mode_pack.platform.v1",
-      "branch_overlay_id": "branch_overlay.platform.v1",
-      "blocks": [
-        {
-          "id": "program-ideal-body.hero",
-          "block_manifest_id": "block.program-ideal-body.hero.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-ideal-body.offer-definition",
-          "block_manifest_id": "block.program-ideal-body.offer-definition.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-ideal-body.boundary",
-          "block_manifest_id": "block.program-ideal-body.boundary.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-ideal-body.support",
-          "block_manifest_id": "block.program-ideal-body.support.v1",
-          "block_manifest_version": "1.0.0"
-        }
-      ]
-    },
-    {
-      "id": "screen.program-irem.v1.control",
-      "version": "1.0.0",
-      "route_key": "program-irem",
-      "route_path": "/programs/irem",
-      "route_family": "program offer",
-      "route_boundary": "platform route",
-      "route_family_contract_id": "route_family.program-offer.v1",
-      "archetype": "platform-program-offer",
-      "mode": "platform",
-      "branch": "platform",
-      "token_pack_id": "token_pack.living-mineral.v1",
-      "mode_pack_id": "mode_pack.platform.v1",
-      "branch_overlay_id": "branch_overlay.platform.v1",
-      "blocks": [
-        {
-          "id": "program-irem.hero",
-          "block_manifest_id": "block.program-irem.hero.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-irem.offer-definition",
-          "block_manifest_id": "block.program-irem.offer-definition.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-irem.boundary",
-          "block_manifest_id": "block.program-irem.boundary.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-irem.support",
-          "block_manifest_id": "block.program-irem.support.v1",
-          "block_manifest_version": "1.0.0"
-        }
-      ]
-    },
-    {
-      "id": "screen.mini-detox.v1.control",
-      "version": "1.0.0",
-      "route_key": "mini-detox",
-      "route_path": "/mini-detox",
-      "route_family": "mini-course offer",
-      "route_boundary": "platform route",
-      "route_family_contract_id": "route_family.mini-course-offer.v1",
-      "archetype": "platform-mini-course-offer",
-      "mode": "platform",
-      "branch": "platform",
-      "token_pack_id": "token_pack.living-mineral.v1",
-      "mode_pack_id": "mode_pack.platform.v1",
-      "branch_overlay_id": "branch_overlay.platform.v1",
-      "blocks": [
-        {
-          "id": "mini-detox.hero",
-          "block_manifest_id": "block.mini-detox.hero.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "mini-detox.offer-definition",
-          "block_manifest_id": "block.mini-detox.offer-definition.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "mini-detox.boundary",
-          "block_manifest_id": "block.mini-detox.boundary.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "mini-detox.support",
-          "block_manifest_id": "block.mini-detox.support.v1",
-          "block_manifest_version": "1.0.0"
-        }
-      ]
-    },
-    {
-      "id": "screen.program-reboot.v1.control",
-      "version": "1.0.0",
-      "route_key": "program-reboot",
-      "route_path": "/programs/reboot",
-      "route_family": "mini-course offer",
-      "route_boundary": "platform route",
-      "route_family_contract_id": "route_family.mini-course-offer.v1",
-      "archetype": "platform-mini-course-offer",
-      "mode": "platform",
-      "branch": "platform",
-      "token_pack_id": "token_pack.living-mineral.v1",
-      "mode_pack_id": "mode_pack.platform.v1",
-      "branch_overlay_id": "branch_overlay.platform.v1",
-      "blocks": [
-        {
-          "id": "program-reboot.hero",
-          "block_manifest_id": "block.program-reboot.hero.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-reboot.offer-definition",
-          "block_manifest_id": "block.program-reboot.offer-definition.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-reboot.boundary",
-          "block_manifest_id": "block.program-reboot.boundary.v1",
-          "block_manifest_version": "1.0.0"
-        },
-        {
-          "id": "program-reboot.support",
-          "block_manifest_id": "block.program-reboot.support.v1",
-          "block_manifest_version": "1.0.0"
         }
       ]
     }
