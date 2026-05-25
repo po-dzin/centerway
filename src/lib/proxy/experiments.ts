@@ -24,11 +24,9 @@ type ExperimentAssignmentContext = {
 };
 
 export function resolveExperimentAssignmentRoute(pathname: string): ScreenRouteKey | null {
-  if (pathname === "/consult") return "consult";
-  if (pathname === "/detox") return "detox";
-  if (pathname === "/herbs") return "herbs";
-  if (pathname === "/mini-detox") return "mini-detox";
-  if (pathname === "/dosha-test") return "dosha-test";
+  if (pathname === "/funnel-entry/consult") return "consult";
+  if (pathname === "/funnel-entry/detox") return "detox";
+  if (pathname === "/funnel-entry/herbs") return "herbs";
   if (pathname === "/lesson/pilot") return "lesson-pilot";
   return null;
 }
