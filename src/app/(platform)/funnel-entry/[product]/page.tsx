@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+
 import { GeneratedRouteScreen } from "@/components/generator/GeneratedRouteScreen";
 import type { ScreenRouteKey } from "@/lib/generator/types";
 
@@ -32,6 +33,5 @@ export default async function FunnelEntryPage({ params }: FunnelEntryPageProps) 
     notFound();
   }
 
-  const routeKey = FUNNEL_ROUTE_MAP[product];
-  return <GeneratedRouteScreen routeKey={routeKey} />;
+  return <GeneratedRouteScreen routeKey={FUNNEL_ROUTE_MAP[product]} />;
 }
