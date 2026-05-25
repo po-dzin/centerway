@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { sendConfirmedSaleTelegramReport } from "@/lib/reporting/analyticsReports";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { extractPaymentMeta } from "@/lib/paymentMeta";
 import { isWfpApproved, wfpEventTypeFromStatus } from "@/lib/wfp";
@@ -174,6 +175,31 @@ async function upsertCustomer(
   return null;
 }
 
+async function enqueueTelegramSaleReport(
+  sb: ReturnType<typeof supabaseAdmin>,
+  orderRef: string
+): Promise<void> {
+  const { data: existingTelegramJob } = await sb
+    .from("jobs")
+    .select("id")
+    .eq("type", "reporting:telegram-sale")
+    .contains("payload", { order_ref: orderRef })
+    .limit(1)
+    .maybeSingle();
+
+  if (existingTelegramJob?.id) return;
+
+  const { error: reportJobErr } = await sb.from("jobs").insert({
+    type: "reporting:telegram-sale",
+    payload: { order_ref: orderRef },
+    status: "pending",
+  });
+
+  if (reportJobErr) {
+    throw reportJobErr;
+  }
+}
+
 export async function POST(req: NextRequest) {
   const payload = await readBodyParams(req);
 
@@ -301,32 +327,30 @@ export async function POST(req: NextRequest) {
           .contains("payload", { event_name: "Purchase", order_ref: orderRef })
           .limit(1)
           .maybeSingle();
-        if (existingPurchaseJob?.id) {
-          return NextResponse.json({ ok: true });
-        }
+        if (!existingPurchaseJob?.id) {
+          const capiPayload = {
+            event_name: "Purchase",
+            order_ref: orderRef,
+            payment_event_time: resolvePaymentEventTime(payload),
+            value: meta.amount ?? undefined,
+            currency: meta.currency ?? "UAH",
+            email: meta.email ?? null,
+            phone: meta.phone ?? null,
+          };
 
-        const capiPayload = {
-          event_name: "Purchase",
-          order_ref: orderRef,
-          payment_event_time: resolvePaymentEventTime(payload),
-          value: meta.amount ?? undefined,
-          currency: meta.currency ?? "UAH",
-          email: meta.email ?? null,
-          phone: meta.phone ?? null,
-        };
+          const { error: purchaseJobInsertErr } = await sb
+            .from("jobs")
+            .insert({
+              type: "meta:capi",
+              payload: capiPayload,
+              status: "pending",
+            })
+            .select("id")
+            .maybeSingle();
 
-        const { error: purchaseJobInsertErr } = await sb
-          .from("jobs")
-          .insert({
-            type: "meta:capi",
-            payload: capiPayload,
-            status: "pending",
-          })
-          .select("id")
-          .maybeSingle();
-
-        if (purchaseJobInsertErr) {
-          throw purchaseJobInsertErr;
+          if (purchaseJobInsertErr) {
+            throw purchaseJobInsertErr;
+          }
         }
       } catch (capiErr) {
         // Non-fatal: don't fail the webhook for CAPI errors
@@ -334,25 +358,20 @@ export async function POST(req: NextRequest) {
       }
 
       try {
-        const { data: existingTelegramJob } = await sb
-          .from("jobs")
-          .select("id")
-          .eq("type", "reporting:telegram-sale")
-          .contains("payload", { order_ref: orderRef })
-          .limit(1)
-          .maybeSingle();
-        if (!existingTelegramJob?.id) {
-          const { error: reportJobErr } = await sb.from("jobs").insert({
-            type: "reporting:telegram-sale",
-            payload: { order_ref: orderRef },
-            status: "pending",
+        await sendConfirmedSaleTelegramReport(orderRef);
+      } catch (telegramErr) {
+        console.warn("[wfp webhook] Failed to send Telegram sale report directly:", {
+          orderRef,
+          error: telegramErr instanceof Error ? telegramErr.message : String(telegramErr),
+        });
+        try {
+          await enqueueTelegramSaleReport(sb, orderRef);
+        } catch (queueReportErr) {
+          console.warn("[wfp webhook] Failed to queue Telegram sale report fallback:", {
+            orderRef,
+            error: queueReportErr instanceof Error ? queueReportErr.message : String(queueReportErr),
           });
-          if (reportJobErr) {
-            throw reportJobErr;
-          }
         }
-      } catch (queueReportErr) {
-        console.warn("[wfp webhook] Failed to queue Telegram sale report:", queueReportErr);
       }
     }
 

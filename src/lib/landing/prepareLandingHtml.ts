@@ -207,7 +207,7 @@ ${match[3]}`;
 
 function buildIremPromoNoteMarkup(offer: LandingResolvedOffer): string {
   if (offer.offerApplied && !offer.offerExpired && offer.expiresAt) {
-    return `<p class="promo-note" data-promo-note><span class="promo-note__label" data-promo-note-label>Персональна ціна діє ще</span><span class="promo-timer" data-promo-timer aria-live="polite">48:00:00</span></p>`;
+    return `<p class="promo-note" data-promo-note><span class="promo-note__label" data-promo-note-label>До завершення персональної ціни</span><span class="promo-timer" data-promo-timer aria-live="polite">48:00:00</span></p>`;
   }
 
   const note = offer.activeNote ?? offer.expiredNote;

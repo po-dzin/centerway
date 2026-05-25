@@ -200,9 +200,11 @@ async function syncPixelDailyStats(
         rawRows: [],
       };
       const parsed = parsePixelRowTotals(row);
-      existing.totals.view_content += parsed.view_content;
-      existing.totals.initiate_checkout += parsed.initiate_checkout;
-      existing.totals.purchase += parsed.purchase;
+      // Pixel Stats API returns repeated intraday snapshots for the same day.
+      // Summing them inflates totals dramatically; keep the highest seen count per event.
+      existing.totals.view_content = Math.max(existing.totals.view_content, parsed.view_content);
+      existing.totals.initiate_checkout = Math.max(existing.totals.initiate_checkout, parsed.initiate_checkout);
+      existing.totals.purchase = Math.max(existing.totals.purchase, parsed.purchase);
       existing.rawRows.push(row);
       byDay.set(day, existing);
     }

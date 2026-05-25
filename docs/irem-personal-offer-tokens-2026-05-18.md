@@ -126,7 +126,7 @@ Response returns:
 - `batchId`
 - for batch: `offers[] + summary`
 
-## Dynamic Bot Route
+## Dynamic Route
 
 Current dynamic entrypoint:
 
@@ -134,28 +134,38 @@ Current dynamic entrypoint:
 
 Required query params:
 
-- `tgUserId`
+- one of:
+  - `tgUserId`
+  - `email`
 - `campaign`
 
 Optional query params:
 
-- `channel` default `telegram`
+- `channel` default `telegram` for `tgUserId`, default `email` for `email`
 - `note`
-- `source`
+- `source` default `smartsender` for `tgUserId`, default `sendpulse` for `email`
 - any `utm_*` / attribution params are preserved on redirect to the final landing URL
 
 Runtime rule:
 
-- route builds `recipient_key = tg:{tgUserId}`
+- route builds:
+  - `recipient_key = tg:{tgUserId}`
+  - or `recipient_key = email:{normalizedEmail}`
 - lookup scope is `product_code + campaign + recipient_key`
 - if there is a live token in `draft` or `active` state, that exact token is reused
 - if the `active` token is already expired, a new token is created
-- different Telegram users never receive the same token by design
+- different recipients never receive the same token by design
 
-Example:
+Telegram example:
 
 ```text
 https://irem.centerway.net.ua/go/irem?tgUserId={{tgUserId}}&campaign=launch_may_2026&utm_source=smartsender
+```
+
+SendPulse email example:
+
+```text
+https://irem.centerway.net.ua/go/irem?email={{email}}&campaign=launch_may_2026_email&source=sendpulse&utm_source=sendpulse
 ```
 
 ## Runtime Status
