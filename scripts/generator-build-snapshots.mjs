@@ -41,28 +41,6 @@ const SCENARIOS = [
     assignments: {},
   },
   {
-    id: "dosha-control",
-    routeKey: "dosha-test",
-    assignments: {
-      dosha_ui_variant_v1: {
-        experiment_key: "dosha_ui_variant_v1",
-        variant_key: "control",
-        source: "override",
-      },
-    },
-  },
-  {
-    id: "dosha-routecopy",
-    routeKey: "dosha-test",
-    assignments: {
-      dosha_ui_variant_v1: {
-        experiment_key: "dosha_ui_variant_v1",
-        variant_key: "routecopy",
-        source: "override",
-      },
-    },
-  },
-  {
     id: "lesson-pilot-control",
     routeKey: "lesson-pilot",
     assignments: {},
