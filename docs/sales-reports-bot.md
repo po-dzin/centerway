@@ -94,3 +94,4 @@ Optional:
 - If `ANALYTICS_REPORTS_CHAT_ID` or `ANALYTICS_BOT_TOKEN` is not configured, the runtime skips sending without affecting payment confirmation or analytics refresh flows.
 - Supergroup IDs can be stored either as Telegram API form `-100...` or as the UI/export form `100...`; the sender normalizes `100...` into `-100...`.
 - Attribution for top campaigns is intentionally conservative: Meta spend/click/purchase comes from Meta daily tables, while revenue is mapped from order-side `campaign` or `utm_campaign` when names match.
+- The `Топ кампаний` block is intentionally capped at three rows; expand it only if the report contract changes explicitly.
