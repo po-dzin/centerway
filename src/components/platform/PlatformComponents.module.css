@@ -219,14 +219,38 @@
 }
 
 .footer {
-  border-top: 1px solid var(--cw-platform-border);
-  padding: 2.1rem 0 2.35rem;
+  position: relative;
+  padding: clamp(2.7rem, 6vw, 4.1rem) 0 2.45rem;
+  background:
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      color-mix(in srgb, var(--cw-platform-bg) 96%, var(--cw-sem-calm-surface-muted) 4%) 18%,
+      color-mix(in srgb, var(--cw-platform-bg) 98%, white 2%) 56%,
+      color-mix(in srgb, var(--cw-platform-bg) 97%, white 3%) 100%
+    );
+}
+
+.footer::before {
+  content: "";
+  position: absolute;
+  inset: 0 0 auto;
+  height: clamp(3rem, 7vw, 4.6rem);
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      transparent 0%,
+      color-mix(in srgb, var(--cw-platform-accent) 4%, transparent) 34%,
+      transparent 72%
+    );
+  opacity: 0.24;
 }
 
 .footerGrid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: minmax(0, 1.08fr) minmax(0, 0.9fr) minmax(0, 0.88fr);
+  gap: clamp(1.5rem, 3vw, 2.25rem);
   align-items: start;
 }
 
@@ -284,16 +308,18 @@
 
 .footerLegal {
   align-content: start;
-  justify-self: stretch;
-  justify-items: center;
+  justify-self: center;
+  justify-items: start;
 }
 
 .footerSocials {
-  justify-self: stretch;
-  justify-items: end;
+  width: fit-content;
+  justify-self: end;
+  justify-items: start;
   align-content: start;
-  gap: 0.8rem;
-  text-align: right;
+  gap: 0.85rem;
+  padding-right: clamp(0.35rem, 1.4vw, 1rem);
+  text-align: left;
 }
 
 .footerSocials a:first-child {
@@ -305,7 +331,7 @@
   align-items: center;
   flex-wrap: nowrap;
   gap: 0.95rem;
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .footerSocialsRow a {
@@ -354,6 +380,37 @@
 
 .profileMain {
   display: block;
+}
+
+.profileEmptyMain {
+  display: grid;
+  flex: 1 0 auto;
+}
+
+.profileEmptySection {
+  min-height: 100%;
+  display: grid;
+  align-items: center;
+}
+
+.profileEmptyPanel {
+  width: min(100%, 56rem);
+  display: grid;
+  gap: clamp(0.85rem, 2.2vw, 1.15rem);
+  margin: 0 auto;
+}
+
+.profileEmptyPanel .lead {
+  max-width: 34rem;
+}
+
+.profileEmptyActions {
+  align-items: stretch;
+  margin-top: 0.15rem;
+}
+
+.profileEmptyActions > * {
+  flex: 0 0 auto;
 }
 
 .profileHeroIdentityCard {

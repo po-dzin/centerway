@@ -167,6 +167,7 @@ export function UserProfilePageClient() {
   const [error, setError] = useState<string | null>(null);
   const [lang, setLang] = useState<ProfileLang>("uk");
   const doshaTestHref = usePlatformHref("/dosha-test");
+  const homeHref = usePlatformHref("/");
 
   useEffect(() => {
     const syncLang = () => setLang(resolveProfileLang());
@@ -210,6 +211,7 @@ export function UserProfilePageClient() {
             authTitle: "Sign in to view your route",
             authLead: "Your dosha result, programs, products, and contact details will appear here.",
             signIn: "Sign in with Google",
+            returnHome: "Return home",
             takeDosha: "Take the dosha test",
             badge: "Profile · Dosha · Route",
             dosha: "Dosha",
@@ -278,6 +280,7 @@ export function UserProfilePageClient() {
             authTitle: "Увійдіть, щоб побачити свій маршрут",
             authLead: "Тут буде ваш результат доша-тесту, програми, продукти і контактна інформація.",
             signIn: "Увійти через Google",
+            returnHome: "Повернутися на головну",
             takeDosha: "Пройти доша-тест",
             badge: "Профіль · Доша · Маршрут",
             dosha: "Доша",
@@ -439,21 +442,23 @@ export function UserProfilePageClient() {
 
   if (!session?.user) {
     return (
-      <section className={`${styles.container} ${styles.section}`}>
-        <article className={styles.panel}>
+      <main className={styles.profileEmptyMain} data-cw-platform-template="profile-empty">
+        <section className={`${styles.container} ${styles.section} ${styles.profileEmptySection}`}>
+          <article className={`${styles.panel} ${styles.profileEmptyPanel}`}>
           <p className={styles.label}>{copy.profile}</p>
           <h1 className={styles.title}>{copy.authTitle}</h1>
           <p className={styles.lead}>{copy.authLead}</p>
-          <div className={styles.heroFooter}>
+          <div className={`${styles.heroFooter} ${styles.profileEmptyActions}`}>
             <button className={styles.primaryButton} type="button" onClick={() => void signInWithGoogle()}>
               {copy.signIn}
             </button>
-            <Link className={styles.secondaryButton} href={doshaTestHref}>
-              {copy.takeDosha}
+            <Link className={styles.secondaryButton} href={homeHref}>
+              {copy.returnHome}
             </Link>
           </div>
-        </article>
-      </section>
+          </article>
+        </section>
+      </main>
     );
   }
 

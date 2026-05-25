@@ -5,6 +5,8 @@
   min-height: 100vh;
   min-height: 100svh;
   position: relative;
+  display: flex;
+  flex-direction: column;
   color: var(--cw-platform-text);
   --platform-topbar-clearance: clamp(5.8rem, 7.5vw, 7.35rem);
   background:
@@ -33,6 +35,12 @@
   isolation: isolate;
   --platform-header-fg: var(--cw-platform-text);
   --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-text) 72%, transparent);
+  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-text) 62%, var(--cw-platform-bg) 38%);
+  --platform-header-nav-active-fg: var(--cw-platform-text);
+  --platform-header-nav-marker: var(--cw-platform-accent);
+  --platform-header-nav-marker-shadow:
+    0 0 0 0.36rem color-mix(in srgb, var(--cw-platform-accent) 14%, transparent);
+  --platform-header-symbol-filter: brightness(0) saturate(100%) opacity(0.96);
   --platform-header-hover-bg: var(--cw-surface-shell-hover-bg);
   --platform-header-band-bg: var(--cw-surface-shell-band-bg);
   --platform-header-control-bg: var(--cw-surface-shell-control-bg);
@@ -56,6 +64,12 @@
 .header[data-cw-header-tone="dark"] {
   --platform-header-fg: var(--cw-platform-accent-contrast);
   --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
+  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 74%, transparent);
+  --platform-header-nav-active-fg: var(--cw-platform-accent-contrast);
+  --platform-header-nav-marker: var(--cw-platform-accent);
+  --platform-header-nav-marker-shadow:
+    0 0 0 0.42rem color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
+  --platform-header-symbol-filter: none;
   --platform-header-hover-bg: color-mix(in srgb, var(--cw-platform-text) 28%, transparent);
   --platform-header-band-bg: color-mix(in srgb, var(--cw-platform-text) 14%, transparent);
   --platform-header-control-bg: color-mix(in srgb, var(--cw-platform-text) 20%, transparent);
@@ -95,6 +109,12 @@
   width: min(100% - 2rem, var(--cw-max-width));
   --platform-header-fg: var(--cw-platform-accent-contrast);
   --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
+  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 74%, transparent);
+  --platform-header-nav-active-fg: var(--cw-platform-accent-contrast);
+  --platform-header-nav-marker: var(--cw-platform-accent);
+  --platform-header-nav-marker-shadow:
+    0 0 0 0.42rem color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
+  --platform-header-symbol-filter: none;
   --platform-header-hover-bg: color-mix(in srgb, var(--cw-platform-text) 28%, transparent);
   --platform-header-band-bg: color-mix(in srgb, var(--cw-platform-text) 14%, transparent);
   --platform-header-control-bg: color-mix(in srgb, var(--cw-platform-text) 20%, transparent);
@@ -109,6 +129,12 @@
 .shellOverlay .header[data-cw-header-tone="light"] {
   --platform-header-fg: var(--cw-platform-text);
   --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-text) 72%, transparent);
+  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-text) 62%, var(--cw-platform-bg) 38%);
+  --platform-header-nav-active-fg: var(--cw-platform-text);
+  --platform-header-nav-marker: var(--cw-platform-accent);
+  --platform-header-nav-marker-shadow:
+    0 0 0 0.36rem color-mix(in srgb, var(--cw-platform-accent) 14%, transparent);
+  --platform-header-symbol-filter: brightness(0) saturate(100%) opacity(0.96);
   --platform-header-hover-bg: var(--cw-surface-shell-hover-bg);
   --platform-header-band-bg: var(--cw-surface-shell-band-bg);
   --platform-header-control-bg: var(--cw-surface-shell-control-bg);
@@ -133,7 +159,7 @@
 }
 
 .shellOverlay .nav a[aria-current="page"] {
-  color: var(--cw-platform-accent);
+  color: var(--platform-header-nav-active-fg);
   background: transparent;
   box-shadow: none;
 }
@@ -183,7 +209,7 @@
   display: block;
   flex: 0 0 auto;
   background: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
-  filter: none;
+  filter: var(--platform-header-symbol-filter);
 }
 
 .brandWordmark {
@@ -207,7 +233,7 @@
   width: var(--cw-brand-size-symbol-footer);
   height: var(--cw-brand-size-symbol-footer);
   background-image: var(--cw-brand-asset-logo-symbol-header);
-  filter: none;
+  filter: brightness(0) saturate(100%) opacity(0.96);
 }
 
 .brand[data-surface="footer"] .brandWordmark {
@@ -278,32 +304,68 @@
 .nav a {
   min-height: 2.5rem;
   padding: 0 0.9rem;
-  color: var(--platform-header-muted-fg);
+  color: var(--platform-header-nav-muted-fg);
   border-radius: var(--cw-radius-pill);
   font-size: 0.98rem;
   white-space: nowrap;
+  position: relative;
+  font-weight: 680;
+  letter-spacing: 0;
+  transition:
+    color 160ms ease,
+    transform 160ms ease;
 }
 
 .nav a:hover {
-  color: var(--platform-header-fg);
+  color: var(--platform-header-nav-active-fg);
   background: transparent;
 }
 
 .nav a:focus-visible {
-  color: var(--platform-header-fg);
+  color: var(--platform-header-nav-active-fg);
   background: transparent;
   outline: none;
 }
 
 .nav a[aria-current="page"] {
-  color: var(--cw-platform-accent);
+  color: var(--platform-header-nav-active-fg);
   background: transparent;
   box-shadow: none;
+  font-weight: 780;
 }
 
 .nav a[aria-current="page"]:hover {
-  color: var(--cw-platform-accent);
+  color: var(--platform-header-nav-active-fg);
   background: transparent;
+}
+
+.nav a::after {
+  content: "";
+  position: absolute;
+  left: 0.95rem;
+  right: 0.95rem;
+  bottom: 0.42rem;
+  width: auto;
+  height: 0.14rem;
+  border-radius: 999px;
+  background: var(--platform-header-nav-marker);
+  transform: scaleX(0.38);
+  transform-origin: center;
+  opacity: 0;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.nav a:hover::after,
+.nav a:focus-visible::after {
+  opacity: 0.42;
+  transform: scaleX(0.74);
+}
+
+.nav a[aria-current="page"]::after {
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .actions {
