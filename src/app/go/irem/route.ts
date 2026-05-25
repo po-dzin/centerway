@@ -6,6 +6,7 @@ export const runtime = "nodejs";
 const CONTROL_QUERY_PARAMS = new Set([
   "tguserid",
   "tg_user_id",
+  "email",
   "recipient_key",
   "campaign",
   "channel",
@@ -27,16 +28,31 @@ function buildRecipientKey(tgUserId: string): string {
   return `tg:${tgUserId}`;
 }
 
+function normalizeEmail(email: string): string | null {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized || !normalized.includes("@")) {
+    return null;
+  }
+  return normalized;
+}
+
+function buildEmailRecipientKey(email: string): string {
+  return `email:${email}`;
+}
+
 export async function GET(req: NextRequest) {
   const url = new URL(req.url);
   const tgUserId = readTrimmed(url.searchParams, "tgUserId", "tg_user_id");
+  const rawEmail = readTrimmed(url.searchParams, "email");
+  const email = rawEmail ? normalizeEmail(rawEmail) : null;
   const campaign = readTrimmed(url.searchParams, "campaign");
-  const channel = readTrimmed(url.searchParams, "channel") ?? "telegram";
+  const recipientKey = tgUserId ? buildRecipientKey(tgUserId) : email ? buildEmailRecipientKey(email) : null;
+  const channel = readTrimmed(url.searchParams, "channel") ?? (email ? "email" : "telegram");
   const note = readTrimmed(url.searchParams, "note");
-  const source = readTrimmed(url.searchParams, "source") ?? "smartsender";
+  const source = readTrimmed(url.searchParams, "source") ?? (email ? "sendpulse" : "smartsender");
 
-  if (!tgUserId) {
-    return NextResponse.json({ ok: false, error: "tgUserId required" }, { status: 400 });
+  if (!recipientKey) {
+    return NextResponse.json({ ok: false, error: "tgUserId or email required" }, { status: 400 });
   }
   if (!campaign) {
     return NextResponse.json({ ok: false, error: "campaign required" }, { status: 400 });
@@ -45,7 +61,7 @@ export async function GET(req: NextRequest) {
   try {
     const resolved = await issueOrReuseIremPersonalOffer({
       product: "irem",
-      recipientKey: buildRecipientKey(tgUserId),
+      recipientKey,
       campaign,
       channel,
       note: note ?? `dynamic:${source}`,
@@ -64,6 +80,7 @@ export async function GET(req: NextRequest) {
     const message = error instanceof Error ? error.message : "dynamic_offer_redirect_failed";
     console.error("dynamic_offer_redirect_failed", {
       tgUserId,
+      email,
       campaign,
       channel,
       source,
