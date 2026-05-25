@@ -9,12 +9,7 @@ type RouteAuthGateProps = PropsWithChildren<{
   routeKey: ScreenRouteKey;
 }>;
 
-const ROUTE_COPY: Partial<Record<ScreenRouteKey, { title: string; subtitle: string }>> = {
-  "dosha-test": {
-    title: "Увійдіть, щоб пройти тест доші",
-    subtitle: "Авторизація потрібна для персонального результату, збереження прогресу й подальшого маршруту.",
-  },
-};
+const ROUTE_COPY: Partial<Record<ScreenRouteKey, { title: string; subtitle: string }>> = {};
 
 export function RouteAuthGate({ routeKey, children }: RouteAuthGateProps) {
   const [session, setSession] = useState<Session | null>(null);
