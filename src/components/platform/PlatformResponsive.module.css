@@ -86,10 +86,6 @@
     padding-bottom: 0;
   }
 
-  .shell:has([data-dosha-test="true"]) {
-    overflow-x: clip;
-  }
-
   .header.header {
     position: sticky;
     top: 0;
@@ -109,8 +105,7 @@
     --platform-header-shell-radius: 0px;
   }
 
-  .shell:has(.heroFeature) .header.header,
-  .shell:has([data-dosha-test="true"]) .header.header {
+  .shell:has(.heroFeature) .header.header {
     position: fixed;
   }
 
@@ -135,15 +130,6 @@
   .header[data-cw-glass="shell"]::after {
     inset: 0;
     border-radius: 0;
-  }
-
-  .shell:has([data-dosha-test="true"]) .header[data-cw-glass="shell"]::before {
-    inset: 0;
-    height: 100%;
-  }
-
-  .shell:has([data-dosha-test="true"]) .header[data-cw-glass="shell"]::after {
-    content: none;
   }
 
   .headerInner > .brand,
@@ -171,6 +157,22 @@
   .brandSymbol {
     width: 2.36rem;
     height: 2.36rem;
+  }
+
+  .diagnosticHeroCard {
+    width: 100%;
+  }
+
+  .diagnosticActions {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .diagnosticTextButton {
+    min-height: 2.4rem;
+    justify-content: flex-start;
+    padding: 0;
   }
 
   .profileSlot {
@@ -252,7 +254,6 @@
   .navLayerOpen {
     --platform-header-fg: var(--cw-platform-accent-contrast);
     --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
-    --mobile-menu-item-hover-bg: color-mix(in srgb, var(--cw-platform-accent-contrast) 12%, transparent);
     display: block;
     opacity: 1;
     pointer-events: auto;
@@ -276,7 +277,6 @@
   .mobileMenuSurface {
     --platform-header-fg: var(--cw-platform-accent-contrast);
     --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
-    --mobile-menu-item-hover-bg: color-mix(in srgb, var(--cw-platform-accent-contrast) 12%, transparent);
     --mobile-menu-item-accent-bg:
       linear-gradient(135deg, color-mix(in srgb, var(--cw-platform-accent) 74%, var(--cw-platform-accent-strong) 26%), var(--cw-platform-accent-strong));
     --mobile-menu-item-accent-fg: var(--cw-platform-accent-contrast);
@@ -291,7 +291,7 @@
     border: 0;
     border-top: 0;
     border-radius: 0;
-    background: color-mix(in srgb, var(--cw-shell-frost-bg) 86%, var(--cw-platform-text) 14%);
+    background: var(--cw-shell-frost-bg);
     box-shadow: none;
     backdrop-filter: var(--cw-shell-frost-filter);
     -webkit-backdrop-filter: var(--cw-shell-frost-filter);
@@ -423,9 +423,9 @@
     justify-content: center;
     padding: 0 1.1rem;
     border: 0;
-    border-radius: var(--cw-radius-sm);
+    border-radius: 0;
     background: transparent;
-    color: var(--platform-header-fg);
+    color: var(--platform-header-muted-fg);
     font-size: 1rem;
     box-shadow: none;
     text-align: center;
@@ -436,12 +436,15 @@
 
   .navLayer .nav a:hover,
   .navLayer .nav a:focus-visible {
-    background: var(--mobile-menu-item-hover-bg);
+    color: var(--platform-header-fg);
+    background: transparent;
+    outline: none;
   }
 
   .navLayer .nav a[aria-current="page"] {
-    color: var(--platform-header-fg);
-    background: var(--mobile-menu-item-hover-bg);
+    color: var(--cw-platform-accent);
+    background: transparent;
+    box-shadow: none;
   }
 
   .navLayer .nav a + a {
@@ -449,12 +452,17 @@
   }
 
   .shellOverlay .navLayer .nav a {
-    color: var(--platform-header-fg);
+    color: var(--platform-header-muted-fg);
   }
 
   .shellOverlay .navLayer .nav a:hover,
   .shellOverlay .navLayer .nav a:focus-visible {
-    background: var(--mobile-menu-item-hover-bg);
+    color: var(--platform-header-fg);
+    background: transparent;
+  }
+
+  .shellOverlay .navLayer .nav a[aria-current="page"] {
+    color: var(--cw-platform-accent);
   }
 
   .mobileMenuNav {
@@ -651,7 +659,7 @@
     gap: 0;
     overflow: hidden;
     border-radius: clamp(1.05rem, 4vw, var(--cw-radius-lg));
-    background: color-mix(in srgb, var(--cw-platform-surface) 88%, transparent);
+    background: var(--cw-depth-card-bg);
     box-shadow: var(--cw-depth-shadow-soft);
   }
 
@@ -742,9 +750,22 @@
   .profileGridPair {
     grid-template-columns: 1fr;
   }
+
+  .profileMain .grid2,
+  .profileMain .profileGridPair {
+    grid-template-columns: 1fr;
+  }
+
+  .profileMain .profileSummaryList {
+    gap: 0.65rem;
+  }
 }
 
 @media (max-width: 560px) {
+  .heroFeature[data-cw-profile-hero="true"] {
+    overflow-x: clip;
+  }
+
   .container {
     width: min(100% - 1.2rem, var(--cw-max-width));
   }
@@ -911,6 +932,71 @@
   .lead {
     font-size: 0.98rem;
     line-height: 1.55;
+  }
+
+  .heroFeature[data-cw-profile-hero="true"] .heroFeatureContent {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    padding-inline: 1rem;
+    overflow-x: clip;
+  }
+
+  .heroFeature[data-cw-profile-hero="true"] .profileHeroIdentity,
+  .heroFeature[data-cw-profile-hero="true"] .profileStatGrid,
+  .heroFeature[data-cw-profile-hero="true"] .profileHeroActions {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .heroFeature[data-cw-profile-hero="true"] .profileHeroIdentityCard,
+  .heroFeature[data-cw-profile-hero="true"] .panelIntro,
+  .heroFeature[data-cw-profile-hero="true"] .profileStatCard {
+    min-width: 0;
+  }
+
+  .profileMain .grid2,
+  .profileMain .profileGridPair,
+  .profileMain .split {
+    grid-template-columns: 1fr;
+    gap: 0.75rem;
+  }
+
+  .profileMain .panel,
+  .profileMain .formPanel {
+    padding: 1rem;
+  }
+
+  .profileMain .title,
+  .profileMain .sectionTitle {
+    font-size: clamp(1.85rem, 8.8vw, 2.45rem);
+    line-height: 1.06;
+  }
+
+  .profileMain .timeline {
+    gap: 0.65rem;
+  }
+
+  .profileMain .timeline li,
+  .profileMain .profileSummaryList li {
+    padding: 0.85rem 0.9rem;
+  }
+
+  .profileMain .profileSummaryList strong {
+    font-size: clamp(1.1rem, 6vw, 1.38rem);
+    line-height: 1.12;
+  }
+
+  .heroFeature[data-cw-profile-hero="true"] .detailHeroTitle {
+    max-width: 100%;
+    font-size: clamp(2.5rem, 12vw, 3.7rem);
+    line-height: 0.94;
+    overflow-wrap: anywhere;
+  }
+
+  .heroFeature[data-cw-profile-hero="true"] .heroFeatureLead {
+    max-width: 100%;
+    overflow-wrap: anywhere;
   }
 
   .heroBadge,
@@ -1124,6 +1210,15 @@
     width: min(100%, 22rem);
     gap: 0.78rem;
   }
+
+  main[data-cw-detail-template="dosha"] .diagnosticHeroContent,
+  .heroFeature[data-cw-detail-template="dosha"] .diagnosticHeroContent {
+    min-height: 100svh;
+    align-content: center;
+    justify-items: center;
+    padding-top: clamp(6.2rem, 9vw, 8rem);
+    padding-bottom: clamp(6.2rem, 9vw, 8rem);
+  }
 }
 
 @media (min-width: 561px) and (max-width: 1100px) {
@@ -1197,6 +1292,15 @@
   .heroFeature[data-cw-detail-template] .heroFeatureActions {
     width: min(100%, 20rem);
     gap: 0.72rem;
+  }
+
+  main[data-cw-detail-template="dosha"] .diagnosticHeroContent,
+  .heroFeature[data-cw-detail-template="dosha"] .diagnosticHeroContent {
+    min-height: 100svh;
+    align-content: center;
+    justify-items: center;
+    padding-top: clamp(5.6rem, 11vw, 7rem);
+    padding-bottom: clamp(5.6rem, 11vw, 7rem);
   }
 }
 
@@ -1299,6 +1403,15 @@
     width: 100%;
     max-width: 100%;
     gap: 0.78rem;
+  }
+
+  main[data-cw-detail-template="dosha"] .diagnosticHeroContent,
+  .heroFeature[data-cw-detail-template="dosha"] .diagnosticHeroContent {
+    min-height: 100svh;
+    align-content: start;
+    justify-items: stretch;
+    padding-top: clamp(4.7rem, 14vw, 5.8rem);
+    padding-bottom: 1rem;
   }
 
   .heroFeature[data-cw-detail-template] .heroPrimaryButton,

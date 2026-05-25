@@ -52,10 +52,10 @@ export function PlatformVisionPage() {
                   <h1>Семантична архітектура замість Wix-колажу</h1>
                 </div>
                 <div className={visionStyles.heroActions}>
-                  <Link className={visionStyles.secondaryAction} href="#routes">
+                  <Link className={styles.secondaryButton} href="#routes">
                     Подивитися маршрути
                   </Link>
-                  <Link className={visionStyles.primaryAction} href="/programs">
+                  <Link className={styles.primaryButton} href="/programs">
                     Відкрити платформу
                   </Link>
                 </div>
@@ -172,4 +172,3 @@ export function PlatformVisionPage() {
     </PlatformShell>
   );
 }
-

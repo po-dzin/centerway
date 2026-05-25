@@ -55,7 +55,7 @@ function LegalContent({ eyebrow, title, lead, panels = [], actions = [], childre
           <section className={templateStyles.actions}>
             {actions.map((action) => (
               <Link
-                className={action.tone === "secondary" ? templateStyles.actionSecondary : templateStyles.actionPrimary}
+                className={action.tone === "secondary" ? styles.secondaryButton : styles.primaryButton}
                 href={action.href}
                 key={`${action.href}:${action.label}`}
               >

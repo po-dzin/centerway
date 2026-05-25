@@ -472,9 +472,10 @@ export function UserProfilePageClient() {
   const { account, contacts, dosha } = profile.profile;
 
   return (
-    <main>
+    <main className={styles.profileMain} data-cw-platform-template="profile">
       <section
         className={styles.heroFeature}
+        data-cw-profile-hero="true"
         data-cw-topbar-tone="dark"
         data-cw-semantic-role="progress"
         data-cw-semantic-family="guide-trust"
@@ -485,31 +486,34 @@ export function UserProfilePageClient() {
           <p className={styles.heroBadge}>
             <span>{copy.badge}</span>
           </p>
-          <div className={styles.profileHeroIdentity}>
-            <span className={styles.profileHeroAvatar} aria-hidden="true">
-              {account.avatarUrl ? (
-                // Remote auth avatars stay on plain img to avoid introducing image config coupling into platform profile.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={account.avatarUrl} alt="" referrerPolicy="no-referrer" />
-              ) : (
-                getUserInitial(session, account.fullName)
-              )}
-            </span>
-            <div className={styles.panelIntro}>
-              <h1 className={styles.detailHeroTitle}>{account.fullName ?? "Ваш профіль CenterWay"}</h1>
-              <p className={styles.heroFeatureLead}>{account.email ?? "Google-профіль підключено до CenterWay"}</p>
+          <article className={styles.profileHeroIdentityCard}>
+            <div className={styles.profileHeroIdentity}>
+              <span className={styles.profileHeroAvatar} aria-hidden="true">
+                {account.avatarUrl ? (
+                  // Remote auth avatars stay on plain img to avoid introducing image config coupling into platform profile.
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={account.avatarUrl} alt="" referrerPolicy="no-referrer" />
+                ) : (
+                  getUserInitial(session, account.fullName)
+                )}
+              </span>
+              <div className={styles.panelIntro}>
+                <p className={styles.profileHeroKicker}>{copy.profile}</p>
+                <h1 className={styles.detailHeroTitle}>{account.fullName ?? "Ваш профіль CenterWay"}</h1>
+                <p className={styles.heroFeatureLead}>{account.email ?? "Google-профіль підключено до CenterWay"}</p>
+              </div>
             </div>
-          </div>
+          </article>
           <div className={styles.profileStatGrid}>
-            <article className={styles.profileStatCard}>
+            <article className={styles.profileStatCard} data-tone="guide">
               <p className={styles.label}>{copy.dosha}</p>
               <strong>{formatDoshaResult(dosha?.resultType, lang)}</strong>
             </article>
-            <article className={styles.profileStatCard}>
+            <article className={styles.profileStatCard} data-tone="support">
               <p className={styles.label}>{copy.activePrograms}</p>
               <strong>{activePrograms.length > 0 ? copy.hasPrograms : copy.noPrograms}</strong>
             </article>
-            <article className={styles.profileStatCard}>
+            <article className={styles.profileStatCard} data-tone="proof">
               <p className={styles.label}>{copy.products}</p>
               <strong>{productPurchases.length > 0 ? copy.hasProducts : copy.noProducts}</strong>
             </article>

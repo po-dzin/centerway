@@ -37,7 +37,7 @@ type PlatformOfferSurfaceTemplateProps = {
   supportSectionId: string;
   supportLeft: PanelSlot;
   form: FormConfig;
-  boundary: BoundaryConfig;
+  boundary?: BoundaryConfig;
 };
 
 export function PlatformOfferResultList({ items }: { items: string[] }) {
@@ -138,18 +138,20 @@ export function PlatformOfferSurfaceTemplate({
           </div>
         </section>
 
-        <section
-          className={`${styles.container} ${styles.section}`}
-          data-cw-semantic-role="boundary"
-          data-cw-semantic-family="trust-boundary"
-          data-cw-token-source="global-app-ds"
-        >
-          <article className={styles.panel}>
-            <p className={styles.label}>{boundary.label}</p>
-            <h2 className={styles.title}>{boundary.title}</h2>
-            <p className={styles.lead}>{boundary.lead}</p>
-          </article>
-        </section>
+        {boundary ? (
+          <section
+            className={`${styles.container} ${styles.section}`}
+            data-cw-semantic-role="boundary"
+            data-cw-semantic-family="trust-boundary"
+            data-cw-token-source="global-app-ds"
+          >
+            <article className={styles.panel}>
+              <p className={styles.label}>{boundary.label}</p>
+              <h2 className={styles.title}>{boundary.title}</h2>
+              <p className={styles.lead}>{boundary.lead}</p>
+            </article>
+          </section>
+        ) : null}
       </main>
     </PlatformShell>
   );

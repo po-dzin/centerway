@@ -9,7 +9,7 @@ import { HubMini, HubPrograms } from "@/components/platform/blocks/offer/hub";
 import { HubHero, HubIntro } from "@/components/platform/blocks/orientation/hub";
 import { ExpertHero, ExpertPath, ExpertProof } from "@/components/platform/blocks/trust/expert";
 import { HubProof, HubSupport } from "@/components/platform/blocks/trust/hub";
-import { BoundaryBlock, SupportForm } from "@/components/platform/blocks/trust/support";
+import { SupportForm } from "@/components/platform/blocks/trust/support";
 import { bodySignals, consultationCopy, journeySteps, platformPageArtwork } from "@/lib/platform/content";
 
 export function PlatformHomePage() {
@@ -23,7 +23,6 @@ export function PlatformHomePage() {
         <HubProof />
         <HubSupport />
         <SupportForm route="platform-home" />
-        <BoundaryBlock />
       </main>
     </PlatformShell>
   );
@@ -37,7 +36,6 @@ export function PlatformExpertPage() {
         <ExpertProof />
         <ExpertPath />
         <SupportForm route="expert" />
-        <BoundaryBlock />
       </main>
     </PlatformShell>
   );
@@ -83,12 +81,6 @@ export function PlatformConsultPage() {
         productCode: "consult",
         source: "platform_consult_form",
         ctaPlace: "consult_request",
-      }}
-      boundary={{
-        label: "Межі методу",
-        title: "Чесний формат без медичних обіцянок",
-        lead:
-          "CenterWay працює як освітня wellness-платформа і маршрут практики. Програми не замінюють діагностику, лікування або рекомендації лікаря; якщо є гострі стани, вагітність, хронічні захворювання або медикаментозна терапія, спочатку потрібна медична консультація.",
       }}
     />
   );

@@ -51,6 +51,21 @@ function luminanceFromColor(color: { r: number; g: number; b: number }) {
   return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
 }
 
+function resolveExplicitTopbarTone(sampleY: number): HeaderTone | null {
+  const candidates = Array.from(document.querySelectorAll<HTMLElement>("[data-cw-topbar-tone]"));
+
+  for (const candidate of candidates) {
+    const tone = candidate.dataset.cwTopbarTone;
+    if (tone !== "light" && tone !== "dark") continue;
+
+    const rect = candidate.getBoundingClientRect();
+    if (rect.bottom <= 0 || rect.top >= window.innerHeight) continue;
+    if (rect.top <= sampleY && rect.bottom >= sampleY) return tone;
+  }
+
+  return null;
+}
+
 function resolveToneFromPoint(x: number, y: number): HeaderTone | null {
   const elements = document.elementsFromPoint(x, y);
 
@@ -83,7 +98,7 @@ function resolveToneFromPoint(x: number, y: number): HeaderTone | null {
   return null;
 }
 
-export function useHeaderTone(initialTone: HeaderTone = "light") {
+export function useHeaderTone(initialTone: HeaderTone = "light", watchKey?: string | null) {
   const [headerTone, setHeaderTone] = useState<HeaderTone>(initialTone);
 
   useLayoutEffect(() => {
@@ -98,6 +113,13 @@ export function useHeaderTone(initialTone: HeaderTone = "light") {
       const header = document.querySelector<HTMLElement>("header[data-cw-header-tone]");
       const headerHeight = header?.offsetHeight ?? 72;
       const sampleY = Math.max(16, Math.min(window.innerHeight - 16, Math.round(headerHeight * 0.72)));
+      const explicitTone = resolveExplicitTopbarTone(sampleY);
+
+      if (explicitTone) {
+        setHeaderTone(explicitTone);
+        return;
+      }
+
       const samplePoints = [0.18, 0.5, 0.82].map((ratio) => Math.round(window.innerWidth * ratio));
       const tones = samplePoints
         .map((sampleX) => resolveToneFromPoint(sampleX, sampleY))
@@ -120,6 +142,15 @@ export function useHeaderTone(initialTone: HeaderTone = "light") {
       updateTone();
       settleTimer = window.setTimeout(updateTone, 120);
     });
+
+    const mutationObserver = new MutationObserver(requestToneUpdate);
+    mutationObserver.observe(document.body, {
+      subtree: true,
+      childList: true,
+      attributes: true,
+      attributeFilter: ["data-cw-topbar-tone", "style", "class"],
+    });
+
     window.addEventListener("scroll", requestToneUpdate, { passive: true });
     window.addEventListener("resize", requestToneUpdate);
     window.addEventListener("load", requestToneUpdate);
@@ -128,11 +159,12 @@ export function useHeaderTone(initialTone: HeaderTone = "light") {
       if (frame) window.cancelAnimationFrame(frame);
       if (followupFrame) window.cancelAnimationFrame(followupFrame);
       if (settleTimer) window.clearTimeout(settleTimer);
+      mutationObserver.disconnect();
       window.removeEventListener("scroll", requestToneUpdate);
       window.removeEventListener("resize", requestToneUpdate);
       window.removeEventListener("load", requestToneUpdate);
     };
-  }, []);
+  }, [initialTone, watchKey]);
 
   return headerTone;
 }

@@ -15,8 +15,8 @@ export function PlatformHeader({
   initialTone?: "light" | "dark";
 }) {
   const [openMenuPath, setOpenMenuPath] = useState<string | null>(null);
-  const headerTone = useHeaderTone(initialTone);
   const pathname = usePathname();
+  const headerTone = useHeaderTone(initialTone, pathname);
   const isBrandedHost = useIsBrandedHost();
   const homeHref = isBrandedHost ? `${PLATFORM_SITE_ORIGIN}${platformHomeHref}` : platformHomeHref;
   const navItems = platformNav.map((item) => ({
