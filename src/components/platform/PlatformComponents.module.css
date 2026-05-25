@@ -5,6 +5,171 @@
   padding: clamp(1rem, 3vw, 1.5rem);
 }
 
+.diagnosticHeroContent {
+  display: grid;
+  align-items: center;
+}
+
+.diagnosticHeroCard {
+  width: min(100%, 42rem);
+  display: grid;
+  gap: clamp(1rem, 2.8vw, 1.5rem);
+  padding: clamp(1.2rem, 3vw, 1.8rem);
+  border: 0;
+  background: var(--cw-depth-card-bg);
+  box-shadow: var(--cw-depth-shadow-medium);
+}
+
+.diagnosticStage {
+  width: min(100%, 46rem);
+  margin: 0 auto;
+}
+
+.diagnosticPanel {
+  padding: clamp(1.2rem, 3vw, 1.85rem);
+}
+
+.diagnosticActions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.8rem;
+}
+
+.authModal {
+  width: min(100%, 32rem);
+  position: relative;
+  padding: clamp(1.3rem, 4vw, 1.75rem);
+}
+
+.authModal .panelIntro {
+  padding-right: 3.35rem;
+}
+
+.authModalTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(2.15rem, 4.9vw, 3.7rem);
+  font-weight: 700;
+  line-height: 1.02;
+}
+
+.authModalActions {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.authModalActions > * {
+  width: 100%;
+}
+
+.authModalClose {
+  width: var(--platform-utility-control-size);
+  height: var(--platform-utility-control-size);
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  border: 0;
+  border-radius: var(--platform-utility-control-radius);
+  color: var(--cw-platform-muted);
+  background: transparent;
+  box-shadow: none;
+  cursor: pointer;
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.authModalClose:hover {
+  color: var(--cw-platform-text);
+  background: var(--cw-surface-shell-hover-bg);
+}
+
+.authModalClose:focus-visible {
+  outline: none;
+  color: var(--cw-platform-text);
+  background: var(--cw-surface-shell-hover-bg);
+  box-shadow: var(--platform-utility-control-focus);
+}
+
+.authModalClose span {
+  line-height: 1;
+  font-size: 1.9rem;
+  font-weight: 300;
+}
+
+.diagnosticTextButton {
+  width: fit-content;
+  min-height: 2.8rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 0.15rem;
+  border: 0;
+  color: var(--cw-platform-muted);
+  background: transparent;
+  font-size: 0.98rem;
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.24em;
+  cursor: pointer;
+}
+
+.diagnosticProgressTrack {
+  height: 0.5rem;
+  overflow: hidden;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cw-platform-border) 72%, #ffffff 28%);
+}
+
+.diagnosticProgressBar {
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--cw-status-success) 0%, color-mix(in srgb, var(--cw-status-pending) 75%, var(--cw-status-success) 25%) 100%);
+  transition: width 0.3s ease;
+}
+
+.diagnosticHeroCard #what-is-dosha {
+  gap: 0.5rem;
+}
+
+.diagnosticHeroCard #what-is-dosha h2 {
+  margin: 0;
+}
+
+.diagnosticHeroCard #what-is-dosha p {
+  margin: 0;
+}
+
+.diagnosticHeroCard .card[data-tone="proof"] p,
+.diagnosticHeroCard .card[data-tone="proof"] li {
+  color: color-mix(in srgb, var(--cw-platform-text) 70%, var(--cw-platform-muted) 30%);
+}
+
+.diagnosticNumberList {
+  margin: 0;
+  padding-left: 1.35rem;
+  display: grid;
+  gap: 0.7rem;
+  list-style: decimal;
+}
+
+.diagnosticNumberList li {
+  font-size: 0.98rem;
+  line-height: 1.58;
+}
+
+.diagnosticNumberList li::marker {
+  color: color-mix(in srgb, var(--cw-platform-text) 82%, #ffffff 18%);
+  font-weight: 500;
+}
+
 .form {
   display: grid;
   gap: 0.85rem;
@@ -187,11 +352,34 @@
   border: 0;
 }
 
+.profileMain {
+  display: block;
+}
+
+.profileHeroIdentityCard {
+  padding: clamp(1.05rem, 2.8vw, 1.4rem);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-surface-glass-bg);
+  box-shadow: var(--cw-surface-glass-shadow);
+  backdrop-filter: var(--cw-surface-glass-filter);
+  -webkit-backdrop-filter: var(--cw-surface-glass-filter);
+}
+
 .profileHeroIdentity {
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
-  align-items: center;
+  align-items: start;
   gap: clamp(1rem, 2.4vw, 1.35rem);
+}
+
+.profileHeroKicker {
+  margin: 0 0 0.15rem;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 72%, transparent);
+  font-family: var(--cw-font-data);
+  font-size: 0.74rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
 }
 
 .profileHeroAvatar {
@@ -228,11 +416,26 @@
   min-height: 5.4rem;
   padding: 1rem 1.1rem;
   border-radius: var(--cw-radius-sm);
-  color: var(--cw-platform-accent-contrast);
-  background: color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
-  backdrop-filter: blur(var(--cw-component-glass-blur)) saturate(1.2) brightness(0.96);
-  -webkit-backdrop-filter: blur(var(--cw-component-glass-blur)) saturate(1.2) brightness(0.96);
+  color: var(--cw-platform-text);
+  background: var(--cw-depth-card-bg);
   box-shadow: var(--cw-depth-shadow-soft);
+  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 74%, transparent);
+}
+
+.profileStatCard .label {
+  color: var(--cw-platform-muted);
+}
+
+.profileStatCard[data-tone="guide"] {
+  background: color-mix(in srgb, var(--cw-depth-support-bg) 84%, var(--cw-platform-surface) 16%);
+}
+
+.profileStatCard[data-tone="support"] {
+  background: var(--cw-depth-card-bg);
+}
+
+.profileStatCard[data-tone="proof"] {
+  background: var(--cw-depth-proof-bg);
 }
 
 .profileHeroActions {
@@ -280,13 +483,19 @@
   min-width: 0;
 }
 
+.profileMain .profileSummaryList li {
+  min-height: 0;
+}
+
 .profileStatCard strong {
   display: block;
   margin-top: 0.22rem;
+  color: var(--cw-platform-text);
   font-family: var(--cw-font-editorial);
   font-size: clamp(1.2rem, 2vw, 1.65rem);
   font-weight: 700;
   line-height: 1.02;
+  overflow-wrap: anywhere;
 }
 
 .profileScoreList {
@@ -313,7 +522,7 @@
   height: 0.7rem;
   overflow: hidden;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--cw-platform-border) 72%, transparent);
+  background: color-mix(in srgb, var(--cw-platform-border) 72%, var(--cw-platform-surface) 28%);
 }
 
 .profileScoreFill {

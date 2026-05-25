@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useLandingRuntime } from "@/components/landing/runtime/useLandingRuntime";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
 import { getFunnelContent, type EthnoIconName, type FunnelRouteKey } from "@/lib/generator/content";
+import { platformPageArtwork } from "@/lib/platform/content";
 
 type BaseProps = {
   route: FunnelRouteKey;
@@ -147,12 +148,13 @@ export function FunnelHeroSection({ route, ctaPrimaryLabel = "Записатис
           {route === "consult" ? (
             <figure className="cw3-photo-slot cw3-photo-slot-hero cw3-photo-slot-image" data-photo-slot={`${route}-hero-primary`}>
               <Image
-                src="/cw/landing/img/consult-hero-evgeniy.jpeg"
-                alt="Євгеній Корякін на консультаційній практиці"
+                src={platformPageArtwork.consult.desktop}
+                alt="Аюрведична консультація CenterWay"
                 fill
                 priority
                 sizes="(max-width: 760px) 100vw, (max-width: 1040px) 88vw, 42vw"
                 className="cw3-photo-slot-img cw3-photo-slot-img-consult-hero"
+                style={{ objectPosition: platformPageArtwork.consult.desktopPosition ?? "center 24%" }}
               />
             </figure>
           ) : (

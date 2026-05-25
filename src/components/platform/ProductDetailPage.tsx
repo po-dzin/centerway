@@ -56,12 +56,6 @@ export function ProductDetailPage({ product }: { product: Product }) {
         source: `platform_${product.slug}_form`,
         ctaPlace: `${product.slug}_product_page`,
       }}
-      boundary={{
-        label: "Межі методу",
-        title: "Не лікування і не заміна медичної консультації",
-        lead:
-          "Трав&apos;яна підтримка CenterWay описується як wellness-продукт усередині більшої системи ритму, харчування і практики. Вона не замінює лікаря, діагностику або медикаментозне лікування, особливо при гострих станах, вагітності, хронічних захворюваннях чи постійній терапії.",
-      }}
     />
   );
 }

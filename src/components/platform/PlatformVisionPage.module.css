@@ -57,39 +57,6 @@
   gap: 0.75rem;
 }
 
-.primaryAction,
-.secondaryAction {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: 3rem;
-  padding: 0 1.125rem;
-  border-radius: var(--cw-radius-pill);
-  text-decoration: none;
-  transition:
-    background-color 160ms ease,
-    border-color 160ms ease,
-    color 160ms ease,
-    transform 160ms ease;
-}
-
-.primaryAction {
-  color: var(--cw-platform-accent-contrast);
-  background: color-mix(in srgb, var(--cw-platform-accent) 72%, var(--cw-platform-accent-strong) 28%);
-  border: 1px solid color-mix(in srgb, var(--cw-platform-accent) 52%, transparent);
-}
-
-.secondaryAction {
-  color: var(--cw-platform-text);
-  background: color-mix(in srgb, var(--cw-platform-surface) 86%, transparent);
-  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 84%, transparent);
-}
-
-.primaryAction:hover,
-.secondaryAction:hover {
-  transform: translateY(-1px);
-}
-
 .heroLead {
   margin: 0;
   max-width: 62rem;
@@ -121,9 +88,9 @@
   gap: 0.85rem;
   align-items: center;
   padding: 0.95rem;
-  border-radius: var(--cw-card-radius);
-  background: color-mix(in srgb, var(--cw-platform-surface) 90%, transparent);
-  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 70%, transparent);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-depth-card-bg);
+  box-shadow: var(--cw-depth-shadow-soft);
 }
 
 .flowIndex {
@@ -165,14 +132,9 @@
   gap: 1rem;
   padding: 1rem;
   border-radius: 2rem;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--cw-platform-text) 4%, var(--cw-platform-surface) 96%),
-      color-mix(in srgb, var(--cw-platform-surface-muted) 72%, var(--cw-platform-surface) 28%)
-    );
-  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 86%, transparent);
-  box-shadow: 0 18px 40px color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+  background: var(--cw-depth-card-bg);
+  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 72%, transparent);
+  box-shadow: var(--cw-depth-shadow-medium);
 }
 
 .phoneBar {
@@ -219,8 +181,8 @@
   display: block;
   min-height: 3.25rem;
   border-radius: 1rem;
-  background: color-mix(in srgb, var(--cw-platform-surface) 88%, var(--cw-platform-bg) 12%);
-  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 74%, transparent);
+  background: var(--cw-depth-support-bg);
+  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 68%, transparent);
 }
 
 .phoneButton {
@@ -254,9 +216,9 @@
   align-items: center;
   min-height: 2rem;
   padding: 0 0.8rem;
-  border-radius: 999px;
+  border-radius: var(--cw-radius-pill);
   color: var(--cw-platform-accent-strong);
-  background: color-mix(in srgb, var(--cw-platform-accent) 12%, var(--cw-platform-surface) 88%);
+  background: var(--cw-depth-proof-bg);
   border: 1px solid color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
   font-family: var(--cw-font-data);
   font-size: 0.76rem;
@@ -274,9 +236,10 @@
 .programItem,
 .tokenItem {
   padding: 1rem;
-  border-radius: var(--cw-card-radius);
+  border-radius: var(--cw-radius-lg);
   border: 1px solid color-mix(in srgb, var(--cw-platform-border) 72%, transparent);
-  background: color-mix(in srgb, var(--cw-platform-surface) 90%, transparent);
+  background: var(--cw-depth-card-bg);
+  box-shadow: var(--cw-depth-shadow-soft);
 }
 
 .routeItem {
@@ -364,4 +327,3 @@
     grid-template-columns: 1fr;
   }
 }
-

@@ -56,17 +56,3 @@ export function SupportForm({ route }: Pick<PlatformRouteBlockProps, "route">) {
     </section>
   );
 }
-
-export function BoundaryBlock() {
-  return (
-    <section className={`${styles.container} ${styles.section}`}>
-      <article className={styles.panel}>
-        <p className={styles.label}>Межі методу</p>
-        <h2 className={styles.title}>Чесний формат без медичних обіцянок</h2>
-        <p className={styles.lead}>
-          CenterWay працює як освітня wellness-платформа і маршрут практики. Програми не замінюють діагностику, лікування або рекомендації лікаря; якщо є гострі стани, вагітність, хронічні захворювання або медикаментозна терапія, спочатку потрібна медична консультація.
-        </p>
-      </article>
-    </section>
-  );
-}

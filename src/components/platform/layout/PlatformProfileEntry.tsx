@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import type { MouseEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabaseClient } from "@/lib/supabaseClient";
 import styles from "@/components/platform/PlatformShellStyles";
@@ -43,14 +44,35 @@ export function PlatformProfileEntry({
     return () => subscription.unsubscribe();
   }, [isAuthEnabled]);
 
+  const signInWithGoogle = async () => {
+    const redirectTo = typeof window !== "undefined" ? window.location.href : undefined;
+    await supabaseClient.auth.signInWithOAuth({
+      provider: "google",
+      options: {
+        redirectTo,
+      },
+    });
+  };
+
+  const handleProfileClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (session?.user || !isAuthEnabled) {
+      onNavigate?.();
+      return;
+    }
+
+    event.preventDefault();
+    onNavigate?.();
+    void signInWithGoogle();
+  };
+
   const avatarUrl = session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || null;
-  const label = "Профіль";
+  const label = session?.user ? "Профіль" : "Увійти";
 
   return (
     <Link
       className={`${styles.profileEntry} ${mobile ? styles.profileEntryMobile : ""} ${compact ? styles.profileEntryCompact : ""}`}
       href={profileHref}
-      onClick={onNavigate}
+      onClick={handleProfileClick}
       aria-label={label}
       data-auth-state={session?.user ? "user" : isAuthEnabled ? "guest" : "fallback"}
     >
