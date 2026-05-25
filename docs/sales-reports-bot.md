@@ -20,6 +20,8 @@ Route boundary: `platform routes /api/cron/analytics-reports and /api/wfp/webhoo
 The reporting flow has two outputs:
 
 1. Immediate sale confirmation message to Telegram after `orders.status` becomes `paid` or `completed` in the WayForPay webhook.
+   - primary path: direct send from webhook;
+   - fallback path: enqueue `reporting:telegram-sale` job only if direct Telegram send fails.
 2. Periodic Telegram summary for ad analytics and confirmed sales:
    - `daily`: previous Kyiv day
    - `weekly`: previous Monday-Sunday block, sent on Monday
@@ -63,7 +65,7 @@ Periodic Telegram report uses two depth levels:
    - `Саммари`
    - `Реклама`
    - `Продукты` when at least two products have confirmed paid orders in the period
-   - `Топ кампаний`
+   - `Топ кампаний` top 3 only
    - `Внимание` when needed
    - `Вывод`
 
