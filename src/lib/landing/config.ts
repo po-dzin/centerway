@@ -96,8 +96,9 @@ main[data-cw-page="${config.publicEntryRoute}"]{display:block}
 .price-current,.price span{color:${accent};font-size:32px;font-weight:700;line-height:1.1}
 .price-discount-badge{position:absolute;top:-10px;right:-44px;display:inline-flex;align-items:center;justify-content:center;padding:6px 10px;border-radius:999px;background:${accentStrong};color:#fff;font-size:14px;font-weight:700;line-height:1;white-space:nowrap}
 .price-note-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-.promo-note{display:flex;flex-wrap:wrap;gap:6px;align-items:baseline}
-.promo-timer{color:${accentStrong};font-size:18px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+.promo-note{display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center}
+.promo-note__label{font-size:16px;font-weight:600;line-height:1.25}
+.promo-timer{color:${accentStrong};font-size:26px;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
 .openModal{display:inline-flex;align-items:center;justify-content:center;min-height:52px;padding:14px 24px;border:0;border-radius:999px;background:${accent};color:#fff;font-size:16px;font-weight:700;line-height:1.1;text-decoration:none}
 [data-sticky-menu]{display:none}
 .video-embed{position:relative;display:block;width:100%;aspect-ratio:16/9;border-radius:24px;overflow:hidden;background:#f2f2f0}
