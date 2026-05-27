@@ -304,6 +304,10 @@ img {
   display: none !important;
 }
 
+.hero-media {
+  display: block;
+}
+
 .bg {
   background: linear-gradient(180deg, var(--landing-color-surface-section) 73.74%, rgba(243, 246, 255, 0) 105.34%);
 }
@@ -1501,6 +1505,11 @@ body.modal-open {
   display: flex;
   flex-direction: column;
   align-items: stretch;
+}
+
+.section-program .lesson-trigger picture {
+  display: block;
+  width: 100%;
 }
 
 .section-format h2,
