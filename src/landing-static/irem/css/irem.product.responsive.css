@@ -31,6 +31,10 @@
     grid-column: 2;
     width: min(100%, var(--landing-size-hero-media-max-width, 34rem));
   }
+
+  .section-hero .hero-media.desk {
+    grid-column: 2;
+  }
 }
 
 /* Tablet */
