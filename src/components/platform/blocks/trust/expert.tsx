@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformTrustStyles";
 import { educationTimeline, expertFacts, expertStory, personalFacts, platformPageArtwork } from "@/lib/platform/content";
 
 function CollapsibleTimeline({

@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useMemo, useState } from "react";
-import styles from "./PlatformContentStyles";
+import styles from "./PlatformSurfaceStyles";
 
 type LeadFormProps = {
   source?: string;

@@ -74,7 +74,7 @@
   --platform-header-band-bg: color-mix(in srgb, var(--cw-platform-text) 14%, transparent);
   --platform-header-control-bg: color-mix(in srgb, var(--cw-platform-text) 20%, transparent);
   --platform-header-popover-bg: color-mix(in srgb, var(--cw-platform-text) 34%, var(--cw-platform-surface) 66%);
-  --platform-header-sheet-shadow: 0 14px 30px color-mix(in srgb, #000000 11%, transparent);
+  --platform-header-sheet-shadow: 0 14px 30px color-mix(in srgb, var(--cw-platform-text) 11%, transparent);
   --platform-header-sheet-filter: blur(22px) saturate(1.1) brightness(0.99);
   --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-light);
 }

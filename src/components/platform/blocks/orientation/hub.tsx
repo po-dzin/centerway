@@ -1,5 +1,5 @@
 import Link from "next/link";
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformHeroStyles";
 
 export function HubHero() {
   return (

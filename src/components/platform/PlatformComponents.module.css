@@ -125,7 +125,7 @@
   height: 0.5rem;
   overflow: hidden;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--cw-platform-border) 72%, #ffffff 28%);
+  background: color-mix(in srgb, var(--cw-platform-border) 72%, var(--cw-platform-surface) 28%);
 }
 
 .diagnosticProgressBar {
@@ -166,7 +166,7 @@
 }
 
 .diagnosticNumberList li::marker {
-  color: color-mix(in srgb, var(--cw-platform-text) 82%, #ffffff 18%);
+  color: color-mix(in srgb, var(--cw-platform-text) 82%, var(--cw-platform-surface) 18%);
   font-weight: 500;
 }
 

@@ -2,7 +2,8 @@ import type { CSSProperties } from "react";
 import Link from "next/link";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
-import styles from "@/components/platform/PlatformContentStyles";
+import heroStyles from "@/components/platform/PlatformHeroStyles";
+import offerStyles from "@/components/platform/PlatformOfferStyles";
 import { platformAggregateArtwork, platformMiniCourses, platformProductOffers, platformProgramOffers } from "@/lib/platform/content";
 
 export function PlatformProgramsIndexPage() {
@@ -18,37 +19,37 @@ export function PlatformProgramsIndexPage() {
     <PlatformShell headerMode="overlay">
       <main>
         <section
-          className={styles.heroFeature}
+          className={heroStyles.heroFeature}
           data-cw-topbar-tone="dark"
           data-cw-semantic-role="route-index"
           data-cw-semantic-family="guide-method"
           data-cw-token-source="global-app-ds"
           style={heroStyle}
         >
-          <div className={styles.heroPhotoLayer}>
+          <div className={heroStyles.heroPhotoLayer}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className={styles.expertImage} src={platformAggregateArtwork.programs.desktop} alt="Програми CenterWay" />
+            <img className={heroStyles.expertImage} src={platformAggregateArtwork.programs.desktop} alt="Програми CenterWay" />
           </div>
-          <div className={styles.heroFeatureContent}>
-            <p className={styles.heroBadge}>
+          <div className={heroStyles.heroFeatureContent}>
+            <p className={heroStyles.heroBadge}>
               <span>Маршрути · Ритм · Глибина</span>
             </p>
-            <h1 className={styles.heroFeatureTitle}>Програми CenterWay</h1>
-            <p className={styles.heroFeatureLead}>
+            <h1 className={heroStyles.heroFeatureTitle}>Програми CenterWay</h1>
+            <p className={heroStyles.heroFeatureLead}>
               Короткі входи, довші програми і різна глибина роботи з тілом, ритмом, харчуванням та увагою.
             </p>
-            <div className={styles.heroFeatureActions}>
-              <Link className={styles.heroPrimaryButton} href="#mini-courses">
+            <div className={heroStyles.heroFeatureActions}>
+              <Link className={heroStyles.heroPrimaryButton} href="#mini-courses">
                 Перейти до програм
               </Link>
             </div>
           </div>
         </section>
 
-        <section className={`${styles.container} ${styles.section} ${styles.sectionFlow}`}>
-          <article className={styles.panel}>
-            <p className={styles.label}>Як обирати</p>
-            <ul className={styles.timeline}>
+        <section className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}>
+          <article className={offerStyles.panel}>
+            <p className={offerStyles.label}>Як обирати</p>
+            <ul className={offerStyles.timeline}>
               <li>міні-курси — для короткого входу без довгого зобов&apos;язання;</li>
               <li>програми — для глибшої роботи з тілом, харчуванням, рухом і ритмом;</li>
               <li>продукти винесені в окремий агрегатор, бо це інший тип поверхні і рішення;</li>
@@ -59,18 +60,18 @@ export function PlatformProgramsIndexPage() {
 
         <section
           id="mini-courses"
-          className={`${styles.container} ${styles.section} ${styles.sectionFlow}`}
+          className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}
           data-cw-semantic-role="offer-index"
           data-cw-semantic-family="guide-offer"
           data-cw-token-source="global-app-ds"
         >
-          <div className={styles.sectionHeader}>
+          <div className={offerStyles.sectionHeader}>
             <div>
-              <p className={styles.label}>Міні-курси</p>
-              <h2 className={styles.sectionTitle}>Короткий вхід у практику</h2>
+              <p className={offerStyles.label}>Міні-курси</p>
+              <h2 className={offerStyles.sectionTitle}>Короткий вхід у практику</h2>
             </div>
           </div>
-          <div className={styles.aggregateRail} data-rail="mini">
+          <div className={offerStyles.aggregateRail} data-rail="mini">
             {platformMiniCourses.map((program) => (
               <PlatformOfferCard
                 key={program.slug}
@@ -90,18 +91,18 @@ export function PlatformProgramsIndexPage() {
 
         <section
           id="program-catalog"
-          className={`${styles.container} ${styles.section} ${styles.sectionFlow}`}
+          className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}
           data-cw-semantic-role="offer-index"
           data-cw-semantic-family="guide-offer"
           data-cw-token-source="global-app-ds"
         >
-          <div className={styles.sectionHeader}>
+          <div className={offerStyles.sectionHeader}>
             <div>
-              <p className={styles.label}>Основні програми</p>
-              <h2 className={styles.sectionTitle}>Глибші маршрути відновлення</h2>
+              <p className={offerStyles.label}>Основні програми</p>
+              <h2 className={offerStyles.sectionTitle}>Глибші маршрути відновлення</h2>
             </div>
           </div>
-          <div className={styles.aggregateRail}>
+          <div className={offerStyles.aggregateRail}>
             {platformProgramOffers.map((program) => (
               <PlatformOfferCard
                 key={program.slug}
@@ -139,11 +140,14 @@ export function PlatformProductsIndexPage() {
     return (
       <PlatformShell headerMode="overlay">
         <main>
-          <section className={`${styles.container} ${styles.section}`}>
-            <article className={styles.panel}>
-              <p className={styles.label}>Каталог</p>
-              <h1 className={styles.title}>Продукти CenterWay</h1>
-              <p className={styles.lead}>Зараз продуктовий агрегатор оновлюється. Поверніться трохи пізніше.</p>
+          <section className={`${offerStyles.container} ${offerStyles.section}`}>
+            <article className={offerStyles.panel}>
+              <p className={offerStyles.label}>Каталог</p>
+              <h1 className={offerStyles.title}>Продукти CenterWay</h1>
+              <p className={offerStyles.lead}>
+                Цей каталог збирається навколо придатності й контексту. Якщо потрібен наступний крок вже зараз,
+                почніть з доша-тесту або консультації.
+              </p>
             </article>
           </section>
         </main>
@@ -155,28 +159,28 @@ export function PlatformProductsIndexPage() {
     <PlatformShell headerMode="overlay">
       <main>
         <section
-          className={styles.heroFeature}
+          className={heroStyles.heroFeature}
           data-cw-topbar-tone="dark"
           data-cw-semantic-role="route-index"
           data-cw-semantic-family="guide-trust"
           data-cw-token-source="global-app-ds"
           style={heroStyle}
         >
-          <div className={styles.heroPhotoLayer}>
+          <div className={heroStyles.heroPhotoLayer}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className={styles.expertImage} src={platformAggregateArtwork.products.desktop} alt="Продукти CenterWay" />
+            <img className={heroStyles.expertImage} src={platformAggregateArtwork.products.desktop} alt="Продукти CenterWay" />
           </div>
-          <div className={styles.heroFeatureContent}>
-            <p className={styles.heroBadge}>
+          <div className={heroStyles.heroFeatureContent}>
+            <p className={heroStyles.heroBadge}>
               <span>Підтримка · Придатність · Контекст</span>
             </p>
-            <h1 className={styles.heroFeatureTitle}>Продукти CenterWay</h1>
-            <p className={styles.heroFeatureLead}>
+            <h1 className={heroStyles.heroFeatureTitle}>Продукти CenterWay</h1>
+            <p className={heroStyles.heroFeatureLead}>
               Окремий шар підтримки: трави й інші продуктові формати, які мають сенс тільки в контексті стану, режиму
               та вашого поточного маршруту.
             </p>
-            <div className={styles.heroFeatureActions}>
-              <Link className={styles.heroPrimaryButton} href="#product-focus">
+            <div className={heroStyles.heroFeatureActions}>
+              <Link className={heroStyles.heroPrimaryButton} href="#product-focus">
                 Дивитися трави
               </Link>
             </div>
@@ -185,32 +189,32 @@ export function PlatformProductsIndexPage() {
 
         <section
           id="product-focus"
-          className={`${styles.container} ${styles.section} ${styles.sectionFlow}`}
+          className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}
           data-cw-semantic-role="offer-index"
           data-cw-semantic-family="guide-offer"
           data-cw-token-source="global-app-ds"
         >
-          <div className={styles.sectionHeader}>
+          <div className={offerStyles.sectionHeader}>
             <div>
-              <p className={styles.label}>Поточний фокус</p>
-              <h2 className={styles.sectionTitle}>Трав&apos;яна підтримка як окремий продуктовий напрям</h2>
+              <p className={offerStyles.label}>Поточний фокус</p>
+              <h2 className={offerStyles.sectionTitle}>Трав&apos;яна підтримка як окремий продуктовий напрям</h2>
             </div>
           </div>
-          <article className={styles.panel}>
-            <div className={styles.panelIntro}>
-              <p className={styles.label}>Як читати</p>
-              <p className={styles.lead}>
+          <article className={offerStyles.panel}>
+            <div className={offerStyles.panelIntro}>
+              <p className={offerStyles.label}>Як читати</p>
+              <p className={offerStyles.lead}>
                 Тут важлива не випадкова покупка, а придатність: чи доречна така підтримка саме зараз, і як вона
                 поєднується з режимом, харчуванням та програмою.
               </p>
             </div>
-            <div className={styles.programFormatMeta}>
+            <div className={offerStyles.programFormatMeta}>
               <span>Коли доречно: м&apos;яка підтримка травлення, ритму і щоденного самопочуття.</span>
               <span>Не замінює: діагностику, лікаря або хаотичне самопризначення.</span>
               <span>Найкращий контекст: разом із програмою, режимом і зрозумілим маршрутом.</span>
             </div>
           </article>
-          <div className={styles.aggregateRail} data-layout="single">
+          <div className={offerStyles.aggregateRail} data-layout="single">
             <PlatformOfferCard
               title={featuredProduct.title}
               tag={featuredProduct.tag}
@@ -225,18 +229,18 @@ export function PlatformProductsIndexPage() {
 
         <section
           id="related-programs"
-          className={`${styles.container} ${styles.section} ${styles.sectionFlow}`}
+          className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}
           data-cw-semantic-role="route-bridge"
           data-cw-semantic-family="guide-support"
           data-cw-token-source="global-app-ds"
         >
-          <div className={styles.sectionHeader}>
+          <div className={offerStyles.sectionHeader}>
             <div>
-              <p className={styles.label}>Пов&apos;язані маршрути</p>
-              <h2 className={styles.sectionTitle}>Де продукт має найбільше сенсу</h2>
+              <p className={offerStyles.label}>Пов&apos;язані маршрути</p>
+              <h2 className={offerStyles.sectionTitle}>Де продукт має найбільше сенсу</h2>
             </div>
           </div>
-          <div className={styles.aggregateRail} data-rail="mini">
+          <div className={offerStyles.aggregateRail} data-rail="mini">
             {relatedPrograms.map((program) => (
               <PlatformOfferCard
                 key={program.slug}

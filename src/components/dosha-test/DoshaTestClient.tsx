@@ -5,7 +5,7 @@ import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { PlatformAuthModal } from "@/components/platform/PlatformAuthModal";
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformHeroStyles";
 import type { DoshaResultType } from "@/lib/doshaTest";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
 import { CW_THEME_QUERY_KEYS } from "@/lib/generator/theme";

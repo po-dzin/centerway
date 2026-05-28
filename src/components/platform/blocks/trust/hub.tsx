@@ -1,4 +1,4 @@
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformTrustStyles";
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
 import { naturalSupportItems, platformProductOffers, proofItems } from "@/lib/platform/content";
 

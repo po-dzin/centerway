@@ -2,7 +2,7 @@
 
 import { useEffect, useId } from "react";
 import { createPortal } from "react-dom";
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformSurfaceStyles";
 
 type PlatformAuthModalProps = {
   open: boolean;

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { LeadForm } from "@/components/platform/LeadForm";
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformTrustStyles";
 import { consultationCopy, expertFacts } from "@/lib/platform/content";
 import type { PlatformRouteBlockProps } from "@/components/platform/blocks/types";
 

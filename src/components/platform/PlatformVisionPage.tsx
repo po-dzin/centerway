@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformSurfaceStyles";
 import visionStyles from "@/components/platform/PlatformVisionPage.module.css";
 
 const routes = [
