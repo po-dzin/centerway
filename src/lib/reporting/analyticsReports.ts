@@ -22,6 +22,13 @@ type CampaignSummary = {
   revenue: number;
 };
 
+type CampaignAliasSummary = {
+  alias: string;
+  campaign: string;
+  spend: number;
+  purchases: number;
+};
+
 type ReportWindow = {
   kind: ReportKind;
   from: string;
@@ -400,6 +407,17 @@ function normalizeCampaignKey(input: string): string {
     .replace(/[^\p{L}\p{N}]+/gu, "");
 }
 
+function isMissingOptionalMetaBreakdown(
+  error: { message?: string | null } | null | undefined,
+  table: "analytics_meta_adset_daily" | "analytics_meta_ad_daily"
+): boolean {
+  const message = typeof error?.message === "string" ? error.message.toLowerCase() : "";
+  return (
+    message.includes(table) &&
+    (message.includes("does not exist") || message.includes("relation") || message.includes("schema cache"))
+  );
+}
+
 function topCampaignLines(campaigns: CampaignSummary[]): string[] {
   return campaigns.slice(0, 3).map((campaign, index) => {
     const roas = safeDivide(campaign.revenue, campaign.spend);
@@ -427,6 +445,22 @@ function resolveCampaignRevenueMatches(
   return fuzzyMatches;
 }
 
+function resolveCampaignAliasMatches(
+  sourceCampaign: string,
+  aliases: CampaignAliasSummary[]
+): CampaignAliasSummary[] {
+  const normalized = normalizeCampaignKey(sourceCampaign);
+  if (!normalized) return [];
+
+  const exactMatches = aliases.filter((alias) => normalizeCampaignKey(alias.alias) === normalized);
+  if (exactMatches.length > 0) return exactMatches;
+
+  const fuzzyMatches = aliases.filter((alias) => {
+    const target = normalizeCampaignKey(alias.alias);
+    return Boolean(target) && (target.includes(normalized) || normalized.includes(target));
+  });
+  return fuzzyMatches;
+}
 function allocateCampaignRevenue(
   sourceCampaign: string,
   totals: { revenue: number; paidOrders: number },
@@ -489,6 +523,86 @@ function allocateCampaignRevenue(
   matches[0].revenue += totals.revenue;
 }
 
+function allocateCampaignRevenueByAliases(
+  sourceCampaign: string,
+  totals: { revenue: number; paidOrders: number },
+  aliases: CampaignAliasSummary[],
+  campaignLookup: Map<string, CampaignSummary>
+): boolean {
+  const matches = resolveCampaignAliasMatches(sourceCampaign, aliases);
+  if (matches.length === 0) return false;
+
+  const grouped = new Map<string, { spend: number; purchases: number }>();
+  for (const match of matches) {
+    const bucket = grouped.get(match.campaign) ?? { spend: 0, purchases: 0 };
+    bucket.spend += Math.max(match.spend, 0);
+    bucket.purchases += Math.max(match.purchases, 0);
+    grouped.set(match.campaign, bucket);
+  }
+
+  const groups = Array.from(grouped.entries())
+    .map(([campaign, stats]) => ({
+      campaign,
+      summary: campaignLookup.get(campaign) ?? null,
+      spend: stats.spend,
+      purchases: stats.purchases,
+    }))
+    .filter((item) => item.summary);
+
+  if (groups.length === 0) return false;
+
+  if (groups.length === 1) {
+    groups[0].summary!.revenue += totals.revenue;
+    return true;
+  }
+
+  const purchaseWeight = groups.reduce((sum, group) => sum + Math.max(group.purchases, 0), 0);
+  if (purchaseWeight > 0) {
+    let remainingRevenue = totals.revenue;
+    let remainingWeight = purchaseWeight;
+
+    for (let index = 0; index < groups.length; index += 1) {
+      const group = groups[index];
+      const weight = Math.max(group.purchases, 0);
+      if (weight <= 0) continue;
+
+      const allocatedRevenue =
+        index === groups.length - 1 || remainingWeight <= 0
+          ? remainingRevenue
+          : Math.round((remainingRevenue * weight) / remainingWeight);
+
+      group.summary!.revenue += allocatedRevenue;
+      remainingRevenue -= allocatedRevenue;
+      remainingWeight -= weight;
+    }
+    return true;
+  }
+
+  const spendWeight = groups.reduce((sum, group) => sum + Math.max(group.spend, 0), 0);
+  if (spendWeight > 0) {
+    let remainingRevenue = totals.revenue;
+    let remainingWeight = spendWeight;
+
+    for (let index = 0; index < groups.length; index += 1) {
+      const group = groups[index];
+      const weight = Math.max(group.spend, 0);
+      if (weight <= 0) continue;
+
+      const allocatedRevenue =
+        index === groups.length - 1 || remainingWeight <= 0
+          ? remainingRevenue
+          : Math.round((remainingRevenue * weight) / remainingWeight);
+
+      group.summary!.revenue += allocatedRevenue;
+      remainingRevenue -= allocatedRevenue;
+      remainingWeight -= weight;
+    }
+    return true;
+  }
+
+  groups[0].summary!.revenue += totals.revenue;
+  return true;
+}
 export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise<{
   sent: boolean;
   reason?: string;
@@ -563,6 +677,8 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
     ordersResult,
     metaResult,
     campaignResult,
+    adsetResult,
+    adResult,
   ] = await Promise.all([
     db
       .from("orders")
@@ -582,11 +698,41 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
       .gte("day", window.from)
       .lte("day", window.to)
       .limit(5000),
+    db
+      .from("analytics_meta_adset_daily")
+      .select("campaign_name, adset_name, spend, purchase")
+      .gte("day", window.from)
+      .lte("day", window.to)
+      .limit(10000),
+    db
+      .from("analytics_meta_ad_daily")
+      .select("campaign_name, ad_name, spend, purchase")
+      .gte("day", window.from)
+      .lte("day", window.to)
+      .limit(10000),
   ]);
 
   if (ordersResult.error) throw ordersResult.error;
   if (metaResult.error) throw metaResult.error;
   if (campaignResult.error) throw campaignResult.error;
+
+  const adsetMissingTable = isMissingOptionalMetaBreakdown(adsetResult.error, "analytics_meta_adset_daily");
+  if (adsetResult.error && !adsetMissingTable) {
+    throw adsetResult.error;
+  }
+  if (adsetResult.error && adsetMissingTable) {
+    console.warn("Analytics reports: adset breakdown skipped:", adsetResult.error.message);
+  }
+  const adsetRows = adsetMissingTable ? [] : adsetResult.data ?? [];
+
+  const adMissingTable = isMissingOptionalMetaBreakdown(adResult.error, "analytics_meta_ad_daily");
+  if (adResult.error && !adMissingTable) {
+    throw adResult.error;
+  }
+  if (adResult.error && adMissingTable) {
+    console.warn("Analytics reports: ad breakdown skipped:", adResult.error.message);
+  }
+  const adRows = adMissingTable ? [] : adResult.data ?? [];
 
   const productTotals = new Map<string, ProductTotals>();
   const orderCampaignTotals = new Map<string, { revenue: number; paidOrders: number }>();
@@ -660,8 +806,57 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
     campaignMap.set(campaignName, existing);
   }
 
+  const campaignAliases = new Map<string, CampaignAliasSummary>();
+  for (const row of adsetRows) {
+    const alias =
+      typeof row.adset_name === "string" && row.adset_name.trim()
+        ? row.adset_name.trim()
+        : "";
+    const campaign =
+      typeof row.campaign_name === "string" && row.campaign_name.trim()
+        ? row.campaign_name.trim()
+        : "";
+    if (!alias || !campaign) continue;
+    const key = `${campaign}::${alias}`;
+    const existing = campaignAliases.get(key) ?? { alias, campaign, spend: 0, purchases: 0 };
+    existing.spend += asFiniteNumber(row.spend);
+    existing.purchases += asFiniteNumber(row.purchase);
+    campaignAliases.set(key, existing);
+  }
+  for (const row of adRows) {
+    const alias =
+      typeof row.ad_name === "string" && row.ad_name.trim()
+        ? row.ad_name.trim()
+        : "";
+    const campaign =
+      typeof row.campaign_name === "string" && row.campaign_name.trim()
+        ? row.campaign_name.trim()
+        : "";
+    if (!alias || !campaign) continue;
+    const key = `${campaign}::${alias}`;
+    const existing = campaignAliases.get(key) ?? { alias, campaign, spend: 0, purchases: 0 };
+    existing.spend += asFiniteNumber(row.spend);
+    existing.purchases += asFiniteNumber(row.purchase);
+    campaignAliases.set(key, existing);
+  }
+
   for (const [campaignName, totals] of orderCampaignTotals.entries()) {
-    allocateCampaignRevenue(campaignName, totals, Array.from(campaignMap.values()));
+    const campaignSummaries = Array.from(campaignMap.values());
+    const allocatedDirectly = resolveCampaignRevenueMatches(campaignName, campaignSummaries).length > 0;
+    if (allocatedDirectly) {
+      allocateCampaignRevenue(campaignName, totals, campaignSummaries);
+      continue;
+    }
+
+    const allocatedByAlias = allocateCampaignRevenueByAliases(
+      campaignName,
+      totals,
+      Array.from(campaignAliases.values()),
+      campaignMap
+    );
+    if (!allocatedByAlias) {
+      continue;
+    }
   }
 
   const topCampaigns = Array.from(campaignMap.values())
