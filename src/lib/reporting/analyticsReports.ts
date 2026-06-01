@@ -407,6 +407,17 @@ function normalizeCampaignKey(input: string): string {
     .replace(/[^\p{L}\p{N}]+/gu, "");
 }
 
+function isMissingOptionalMetaBreakdown(
+  error: { message?: string | null } | null | undefined,
+  table: "analytics_meta_adset_daily" | "analytics_meta_ad_daily"
+): boolean {
+  const message = typeof error?.message === "string" ? error.message.toLowerCase() : "";
+  return (
+    message.includes(table) &&
+    (message.includes("does not exist") || message.includes("relation") || message.includes("schema cache"))
+  );
+}
+
 function topCampaignLines(campaigns: CampaignSummary[]): string[] {
   return campaigns.slice(0, 3).map((campaign, index) => {
     const roas = safeDivide(campaign.revenue, campaign.spend);
@@ -704,8 +715,24 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
   if (ordersResult.error) throw ordersResult.error;
   if (metaResult.error) throw metaResult.error;
   if (campaignResult.error) throw campaignResult.error;
-  if (adsetResult.error) throw adsetResult.error;
-  if (adResult.error) throw adResult.error;
+
+  const adsetMissingTable = isMissingOptionalMetaBreakdown(adsetResult.error, "analytics_meta_adset_daily");
+  if (adsetResult.error && !adsetMissingTable) {
+    throw adsetResult.error;
+  }
+  if (adsetResult.error && adsetMissingTable) {
+    console.warn("Analytics reports: adset breakdown skipped:", adsetResult.error.message);
+  }
+  const adsetRows = adsetMissingTable ? [] : adsetResult.data ?? [];
+
+  const adMissingTable = isMissingOptionalMetaBreakdown(adResult.error, "analytics_meta_ad_daily");
+  if (adResult.error && !adMissingTable) {
+    throw adResult.error;
+  }
+  if (adResult.error && adMissingTable) {
+    console.warn("Analytics reports: ad breakdown skipped:", adResult.error.message);
+  }
+  const adRows = adMissingTable ? [] : adResult.data ?? [];
 
   const productTotals = new Map<string, ProductTotals>();
   const orderCampaignTotals = new Map<string, { revenue: number; paidOrders: number }>();
@@ -780,7 +807,7 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
   }
 
   const campaignAliases = new Map<string, CampaignAliasSummary>();
-  for (const row of adsetResult.data ?? []) {
+  for (const row of adsetRows) {
     const alias =
       typeof row.adset_name === "string" && row.adset_name.trim()
         ? row.adset_name.trim()
@@ -796,7 +823,7 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
     existing.purchases += asFiniteNumber(row.purchase);
     campaignAliases.set(key, existing);
   }
-  for (const row of adResult.data ?? []) {
+  for (const row of adRows) {
     const alias =
       typeof row.ad_name === "string" && row.ad_name.trim()
         ? row.ad_name.trim()
