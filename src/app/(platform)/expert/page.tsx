@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { GeneratedRouteScreen } from "@/components/generator/GeneratedRouteScreen";
+import { PlatformExpertPage } from "@/components/platform/PlatformStandalonePages";
 
 export const metadata: Metadata = {
   title: "Євгеній Корякін - про автора CenterWay",
@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function ExpertPage() {
-  return <GeneratedRouteScreen routeKey="expert" />;
+  return <PlatformExpertPage />;
 }

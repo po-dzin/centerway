@@ -35,6 +35,13 @@ const miniDetoxFunnelHref = getFunnelHostUrl("mini-detox") ?? "/mini-detox";
 export type PlatformOfferSurfaceType = "program" | "mini-course" | "product";
 export type PlatformOfferConversionMode = "lead" | "direct-pay" | "hybrid" | "redirect";
 export type PlatformOfferPrimaryActionKind = "enroll" | "buy";
+export type PlatformOfferArtwork = {
+  desktop: string;
+  mobile?: string;
+  altPreview?: string;
+  desktopPosition?: string;
+  mobilePosition?: string;
+};
 
 export const programs = [
   {
@@ -49,6 +56,11 @@ export const programs = [
     tag: "Міні-курс руху",
     duration: "короткий вхід",
     visual: "movement",
+    artwork: {
+      desktop: "/cw/platform/programs/reboot-card-v1.png",
+      desktopPosition: "center 18%",
+      mobilePosition: "center 18%",
+    },
     description: "Короткий тілесний міні-курс: розігрів, увага, дихання і м'яке повернення енергії.",
     longDescription:
       "Short Reboot - це компактний вхід у тілесну практику CenterWay. На платформі сторінка пояснює логіку маршруту, а основна funnel-версія залишається окремою швидкою поверхнею для конверсії.",
@@ -66,7 +78,7 @@ export const programs = [
     primaryActionKind: "enroll" as PlatformOfferPrimaryActionKind,
     title: "Шлях 21",
     fullTitle: "Детокс Програма «Шлях 21»",
-    href: getPlatformRoute("detox") ?? "/programs/detox",
+    href: getPlatformRoute("detox") ?? "/programs/way21",
     funnelHref: detoxFunnelHref,
     tag: "Очищення",
     duration: "21 день",
@@ -99,6 +111,11 @@ export const programs = [
     tag: "Харчування",
     duration: "8 тижнів",
     visual: "stone",
+    artwork: {
+      desktop: "/cw/platform/programs/ideal-body-card-v1.png",
+      desktopPosition: "center 16%",
+      mobilePosition: "center 16%",
+    },
     description: "8-тижнева програма харчування і тілесної стабілізації: вага, апетит, травлення і раціон під вашу конституцію.",
     longDescription:
       "Програма допомагає зібрати живе, комфортне тіло через ритм харчування, стабільну енергію і бережну корекцію звичок. Фокус - не зовнішній культ «ідеалу», а стійкі щоденні рішення, які можна втримати.",
@@ -122,6 +139,11 @@ export const programs = [
     tag: "Рух",
     duration: "12 тижнів",
     visual: "mountain",
+    artwork: {
+      desktop: "/cw/platform/programs/irem-card-v1.png",
+      desktopPosition: "center 16%",
+      mobilePosition: "center 18%",
+    },
     description: "12-тижнева рухова практика для контакту з тілом, м'якшої мобільності, енергії і зняття побутової напруги.",
     longDescription:
       "IREM збирає прості рухові техніки у послідовний маршрут: розігрів, дихання, мобільність, робота з напруженням і повернення уваги до сигналів тіла. Сторінка платформи пояснює програму, а основна воронка IREM залишається окремим маршрутом.",
@@ -138,13 +160,18 @@ export const programs = [
     surfaceType: "product" as PlatformOfferSurfaceType,
     conversionMode: "redirect" as PlatformOfferConversionMode,
     primaryActionKind: "buy" as PlatformOfferPrimaryActionKind,
-    title: "Трави",
-    fullTitle: "Трав'яна підтримка CenterWay",
+    title: "Травʼяний збір",
+    fullTitle: "Травʼяний збір CenterWay",
     href: getPlatformRoute("herbs") ?? "/products/herbs",
     funnelHref: getFunnelHostUrl("herbs") ?? "/herbs",
     tag: "Природна підтримка",
     duration: "підбір за станом",
     visual: "leaf",
+    artwork: {
+      desktop: "/cw/platform/aggregates/products-hero-v1.png",
+      desktopPosition: "center 24%",
+      mobilePosition: "center 22%",
+    },
     description: "Трав'яні формули і м'яка природна підтримка, яку обирають за станом, ритмом і поточним маршрутом відновлення.",
     longDescription:
       "Трав'яна підтримка може бути доречною, коли потрібно м'яко підтримати травлення, ритм і щоденне самопочуття. Її важливо розглядати не окремо від життя, а разом із харчуванням, сном, практикою і вашим поточним станом — тоді продукт не стає випадковою покупкою без сенсу.",
@@ -167,6 +194,11 @@ export const programs = [
     tag: "Міні-курс детоксу",
     duration: "3 дні",
     visual: "stone",
+    artwork: {
+      desktop: "/cw/platform/programs/mini-detox-card-v1.png",
+      desktopPosition: "center 14%",
+      mobilePosition: "center 16%",
+    },
     description: "3 дні м'якого режиму, простого харчування і спостереження за сигналами тіла.",
     longDescription:
       "Mini Detox дає м'який 3-денний формат, щоб знизити перевантаження, впорядкувати режим і спокійно побачити сигнали тіла без різких обіцянок та жорсткого тиску.",
@@ -185,6 +217,37 @@ export const programPageBySlug = Object.fromEntries(programs.map((program) => [p
 export const platformProgramOffers = programs.filter((program) => program.surfaceType === "program");
 export const platformMiniCourses = programs.filter((program) => program.surfaceType === "mini-course");
 export const platformProductOffers = programs.filter((program) => program.surfaceType === "product");
+
+export const platformAggregateArtwork = {
+  programs: {
+    desktop: "/cw/platform/aggregates/programs-hero-v1.png",
+    desktopPosition: "center 18%",
+    mobilePosition: "center 16%",
+  },
+  products: {
+    desktop: "/cw/platform/aggregates/products-hero-v1.png",
+    desktopPosition: "center 16%",
+    mobilePosition: "center 18%",
+  },
+} satisfies Record<string, PlatformOfferArtwork>;
+
+export const platformPageArtwork = {
+  dosha: {
+    desktop: "/cw/platform/pages/dosha-hero-v1.png",
+    desktopPosition: "center 18%",
+    mobilePosition: "center 16%",
+  },
+  consult: {
+    desktop: "/cw/platform/pages/consult-hero-v1.png",
+    desktopPosition: "center 18%",
+    mobilePosition: "center 16%",
+  },
+  expert: {
+    desktop: "/cw/platform/pages/expert-hero-v1.png",
+    desktopPosition: "center 16%",
+    mobilePosition: "center 18%",
+  },
+} satisfies Record<string, PlatformOfferArtwork>;
 
 export const featuredPrograms = platformProgramOffers;
 

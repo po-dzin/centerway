@@ -23,6 +23,15 @@ Main platform navigation uses four stable route entries only:
 - platform logo in header/footer always resolves to `/`;
 - program detail pages link back to `/programs`, not to home anchors.
 
+## Active Nav Marker
+
+- selected topbar item is a route-orientation marker, not a button-like control;
+- active state does not rely on color alone;
+- selected item uses stronger current-page text plus a compact accent marker;
+- active item does not receive a filled glass/control background or outline pill;
+- hover and focus stay text-led too: stronger text plus a subtle bottom rule, not a filled capsule;
+- desktop topbar nav and mobile burger-menu nav use the same state logic across breakpoints.
+
 ## Current Intent
 
 This change promotes `/dosha-test` from utility-style entry into the main platform route set and introduces `/programs` as the stable catalog route for current and future programs, authors, and categories.

@@ -91,6 +91,29 @@ Before commit and push:
 
 If unrelated dirty work exists in the tree, isolate the requested block safely instead of pushing a partial set that breaks CI or runtime.
 
+## CI Follow-Through Rule
+
+After every push to a review branch or PR branch, do not stop at local green checks.
+
+The agent must proactively monitor the remote CI and preview deployment for the exact pushed `headSha` until the current run set is green or until a new blocker is identified and fixed.
+
+Required loop after push:
+
+1. check the fresh GitHub Actions runs for the pushed `headSha`;
+2. if a `push` or `pull_request` run fails, fetch the failed logs directly instead of waiting for user screenshots;
+3. if the preview deployment fails, inspect the deployment directly;
+4. fix the blocker locally, rerun the relevant local validations, and push the next fix;
+5. repeat until the active run set for the latest `headSha` is green or until an external blocker is clearly identified.
+
+Default tools for this loop:
+
+- `gh run list`
+- `gh run view --log-failed`
+- `npx vercel inspect <deployment>`
+
+Do not ask the user to bring screenshots of failing checks if the agent can inspect the current remote status directly.
+Treat screenshots as supplemental evidence only, not as the primary CI feedback channel.
+
 ## Conflict Rule
 
 If local docs and RAverse disagree, treat RAverse as the active canon.

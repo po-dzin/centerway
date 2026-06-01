@@ -2,9 +2,9 @@ import Link from "next/link";
 import { LeadForm } from "@/components/platform/LeadForm";
 import styles from "@/components/platform/PlatformContentStyles";
 import { consultationCopy, expertFacts } from "@/lib/platform/content";
-import type { PlatformGeneratedBlockProps } from "@/components/platform/blocks/types";
+import type { PlatformRouteBlockProps } from "@/components/platform/blocks/types";
 
-export function SupportForm({ route }: Pick<PlatformGeneratedBlockProps, "route">) {
+export function SupportForm({ route }: Pick<PlatformRouteBlockProps, "route">) {
   const productCode = route.startsWith("program-ideal-body") ? "ideal-body" : route.startsWith("program-irem") ? "irem" : "consult";
 
   if (route === "platform-home") {
@@ -16,9 +16,9 @@ export function SupportForm({ route }: Pick<PlatformGeneratedBlockProps, "route"
             <img className={styles.authorPortrait} src="/cw/landing/img/consult-hero-evgeniy.jpeg" alt="Євгеній Корякін" />
           </div>
           <div className={styles.authorPanelContent}>
-            <h2 className={styles.title}>Євгеній Корякін</h2>
+            <h2 className={styles.title}>Про автора</h2>
             <p className={styles.lead}>
-              Дослідник і практик аюрведи, магістр комплементарної медицини та засновник CenterWay. На головній він присутній як точка довіри, а не окремий рекламний блок.
+              Євгеній Корякін - дослідник і практик аюрведи, магістр комплементарної медицини та засновник CenterWay. На головній він присутній як точка довіри, а не окремий рекламний блок.
             </p>
             <div className={styles.factGrid}>
               {expertFacts.slice(0, 4).map((fact) => (
@@ -53,20 +53,6 @@ export function SupportForm({ route }: Pick<PlatformGeneratedBlockProps, "route"
           <LeadForm productCode={productCode} source={`platform_${route}_form`} ctaPlace={`${route}_support`} />
         </article>
       </div>
-    </section>
-  );
-}
-
-export function BoundaryBlock() {
-  return (
-    <section className={`${styles.container} ${styles.section}`}>
-      <article className={styles.panel}>
-        <p className={styles.label}>Межі методу</p>
-        <h2 className={styles.title}>Чесний формат без медичних обіцянок</h2>
-        <p className={styles.lead}>
-          CenterWay працює як освітня wellness-платформа і маршрут практики. Програми не замінюють діагностику, лікування або рекомендації лікаря; якщо є гострі стани, вагітність, хронічні захворювання або медикаментозна терапія, спочатку потрібна медична консультація.
-        </p>
-      </article>
     </section>
   );
 }

@@ -99,7 +99,7 @@
     --cw-sem-progress: #c1906b;
     --cw-sem-warmth: #dba54f;
     --cw-sem-boundary: #b76045;
-    --cw-depth-card-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 92%, transparent);
+    --cw-depth-card-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 92%, var(--cw-sem-calm-surface-muted) 8%);
     --cw-depth-support-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 88%, var(--cw-sem-calm-surface-muted) 12%);
     --cw-depth-proof-bg: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-sem-calm-surface) 38%);
     --cw-depth-boundary-bg: color-mix(in srgb, var(--cw-sem-boundary) 10%, var(--cw-sem-calm-surface) 90%);
@@ -117,6 +117,22 @@
     --cw-platform-accent: var(--cw-sem-warmth);
     --cw-platform-accent-strong: var(--cw-sem-guide-strong);
     --cw-platform-accent-contrast: #fff8eb;
+    --cw-platform-visual-movement-start: #17332d;
+    --cw-platform-visual-movement-mid: #25473f;
+    --cw-platform-visual-movement-end: #102621;
+    --cw-platform-visual-water-start: #102a25;
+    --cw-platform-visual-water-mid: #17352f;
+    --cw-platform-visual-water-end: #0b201c;
+    --cw-platform-visual-stone-start: #f0e8d9;
+    --cw-platform-visual-stone-mid: #ece0cb;
+    --cw-platform-visual-stone-end: #d8c09b;
+    --cw-platform-visual-leaf-start: #f1eadc;
+    --cw-platform-visual-leaf-mid: #ebe0cd;
+    --cw-platform-visual-leaf-end: #d8c6a8;
+    --cw-platform-visual-mountain-start: #213d36;
+    --cw-platform-visual-mountain-mid: #314740;
+    --cw-platform-visual-mountain-end: #102622;
+    --cw-platform-visual-sand-button-base: #f7efe3;
     --cw-component-glass-bg: color-mix(in srgb, var(--cw-platform-text) 12%, transparent);
     --cw-component-glass-bg-hover: color-mix(in srgb, var(--cw-platform-text) 16%, transparent);
     --cw-component-glass-border: color-mix(in srgb, var(--cw-platform-accent-contrast) 18%, transparent);
@@ -125,6 +141,15 @@
     --cw-component-glass-shadow: 0 14px 32px color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
     --cw-component-glass-frost-image: url("/cw/landing/img/consult-hero-evgeniy.jpeg");
     --cw-component-glass-frost-position: 38% center;
+    --cw-surface-glass-bg: var(--cw-component-glass-bg);
+    --cw-surface-glass-bg-hover: var(--cw-component-glass-bg-hover);
+    --cw-surface-glass-border: var(--cw-component-glass-border);
+    --cw-surface-glass-filter: var(--cw-component-glass-filter);
+    --cw-surface-glass-shadow: var(--cw-component-glass-shadow);
+    --cw-surface-shell-band-bg: var(--cw-surface-glass-bg);
+    --cw-surface-shell-control-bg: var(--cw-surface-glass-bg);
+    --cw-surface-shell-hover-bg: var(--cw-surface-glass-bg-hover);
+    --cw-surface-shell-popover-bg: color-mix(in srgb, var(--cw-surface-glass-bg) 86%, var(--cw-platform-surface) 14%);
 
     /* CW_RUNTIME_TOKENS_START */
     --cw-sem-calm-bg: #f6f2ea;
@@ -153,9 +178,18 @@
     --cw-sem-symbol-body: radial-gradient(circle at 32% 34%, color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent), transparent 44%), radial-gradient(circle at 70% 68%, color-mix(in srgb, var(--cw-sem-embodied) 16%, transparent), transparent 48%);
     --cw-sem-symbol-cleansing: linear-gradient(180deg, color-mix(in srgb, var(--cw-sem-calm-surface) 62%, transparent), color-mix(in srgb, var(--cw-sem-calm-bg) 88%, transparent));
     --cw-sem-symbol-integration: linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-warmth) 16%, transparent), color-mix(in srgb, var(--cw-sem-calm-surface-muted) 92%, transparent));
-    --cw-shell-frost-bg: var(--cw-component-glass-bg);
-    --cw-shell-frost-filter: var(--cw-component-glass-filter);
-    --cw-depth-card-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 92%, transparent);
+    --cw-surface-glass-bg: var(--cw-component-glass-bg);
+    --cw-surface-glass-bg-hover: var(--cw-component-glass-bg-hover);
+    --cw-surface-glass-border: var(--cw-component-glass-border);
+    --cw-surface-glass-filter: var(--cw-component-glass-filter);
+    --cw-surface-glass-shadow: var(--cw-component-glass-shadow);
+    --cw-surface-shell-band-bg: var(--cw-surface-glass-bg);
+    --cw-surface-shell-control-bg: var(--cw-surface-glass-bg);
+    --cw-surface-shell-hover-bg: var(--cw-surface-glass-bg-hover);
+    --cw-surface-shell-popover-bg: color-mix(in srgb, var(--cw-surface-glass-bg) 86%, var(--cw-platform-surface) 14%);
+    --cw-shell-frost-bg: var(--cw-surface-glass-bg);
+    --cw-shell-frost-filter: var(--cw-surface-glass-filter);
+    --cw-depth-card-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 92%, var(--cw-sem-calm-surface-muted) 8%);
     --cw-depth-support-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 88%, var(--cw-sem-calm-surface-muted) 12%);
     --cw-depth-proof-bg: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-sem-calm-surface) 38%);
     --cw-depth-boundary-bg: color-mix(in srgb, var(--cw-sem-boundary) 10%, var(--cw-sem-calm-surface) 90%);
@@ -307,6 +341,19 @@
     --ds-breakpoint-desktop-min: 64rem;
     --ds-container-max: var(--cw-max-width);
     --ds-touch-target-min: 2.75rem;
+    --ds-button-min-height: 3rem;
+    --ds-button-padding-inline: 1.15rem;
+    --ds-button-min-width: 10.5rem;
+    --ds-offer-card-min-height-desktop: 29rem;
+    --ds-offer-card-min-height-tablet: 26rem;
+    --ds-offer-card-min-height-mobile: 22rem;
+    --ds-offer-card-compact-min-height-desktop: 24rem;
+    --ds-offer-card-compact-min-height-tablet: 22rem;
+    --ds-offer-card-compact-min-height-mobile: 20rem;
+    --ds-offer-card-width-desktop: 24rem;
+    --ds-offer-card-width-tablet: 21rem;
+    --ds-offer-card-width-mobile: min(82vw, 19rem);
+    --ds-offer-card-rail-width: var(--ds-offer-card-width-mobile);
   }
 
   .dark {
@@ -961,6 +1008,45 @@ body {
       0 0 0 2px color-mix(in srgb, #ffffff 80%, var(--cw-bg) 20%),
       0 0 0 4px color-mix(in srgb, var(--cw-status-success) 64%, var(--cw-accent) 36%),
       0 8px 18px color-mix(in srgb, var(--cw-text) 22%, transparent);
+  }
+
+  [data-dosha-test="true"] {
+    --cw-bg: color-mix(in srgb, var(--cw-platform-bg) 94%, #ffffff 6%);
+    --cw-surface: color-mix(in srgb, var(--cw-platform-surface) 78%, #ffffff 22%);
+    --cw-surface-2: color-mix(in srgb, var(--cw-platform-surface-muted) 72%, var(--cw-platform-surface) 28%);
+    --cw-surface-muted: color-mix(in srgb, var(--cw-platform-surface-muted) 84%, var(--cw-platform-surface) 16%);
+    --cw-surface-solid: var(--cw-platform-surface);
+    --cw-border: var(--cw-platform-border);
+    --cw-text: var(--cw-platform-text);
+    --cw-muted: var(--cw-platform-muted);
+    --cw-accent: var(--cw-platform-accent-strong);
+    --cw-accent-soft: color-mix(in srgb, var(--cw-platform-surface-muted) 72%, var(--cw-platform-surface) 28%);
+    --cw-accent-contrast: var(--cw-platform-accent-contrast);
+    --cw-interactive-hover-bg: color-mix(in srgb, var(--cw-platform-text) 6%, var(--cw-platform-surface) 94%);
+    --cw-interactive-hover-border: color-mix(in srgb, var(--cw-platform-text) 12%, var(--cw-platform-border) 88%);
+    --cw-interactive-active-bg: color-mix(in srgb, var(--cw-platform-text) 10%, var(--cw-platform-surface) 90%);
+    --cw-interactive-active-border: color-mix(in srgb, var(--cw-platform-text) 14%, var(--cw-platform-border) 86%);
+    --cw-interactive-active-shadow: 0 0 0 1px color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+    --cw-focus-ring: color-mix(in srgb, var(--cw-platform-accent) 32%, transparent);
+    --cw-choice-bg: color-mix(in srgb, var(--cw-platform-surface) 92%, #ffffff 8%);
+    --cw-choice-bg-hover: color-mix(in srgb, var(--cw-platform-text) 5%, var(--cw-platform-surface) 95%);
+    --cw-choice-bg-selected: color-mix(in srgb, var(--cw-platform-surface-muted) 70%, var(--cw-platform-surface) 30%);
+    --cw-danger: var(--cw-sem-boundary);
+    --cw-status-success: var(--cw-sem-guide-primary);
+    --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-guide-primary) 12%, transparent);
+    --cw-status-running: color-mix(in srgb, var(--cw-sem-guide-primary) 42%, var(--cw-sem-method-ink) 58%);
+    --cw-status-running-soft: color-mix(in srgb, var(--cw-sem-guide-primary) 12%, transparent);
+    --cw-status-pending: var(--cw-sem-progress);
+    --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-progress) 14%, transparent);
+    --cw-status-failed: var(--cw-sem-boundary);
+    --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-boundary) 12%, transparent);
+    --cw-shadow: var(--cw-depth-shadow-soft);
+    --cw-shadow-soft: var(--cw-depth-shadow-soft);
+    --cw-shadow-strong: var(--cw-depth-shadow-medium);
+  }
+
+  [data-dosha-test="true"][data-dosha-phase="intro"] {
+    background: transparent;
   }
 
   .cw-icon-btn {

@@ -4,7 +4,11 @@
 .shell {
   min-height: 100vh;
   min-height: 100svh;
+  position: relative;
+  display: flex;
+  flex-direction: column;
   color: var(--cw-platform-text);
+  --platform-topbar-clearance: clamp(5.8rem, 7.5vw, 7.35rem);
   background:
     radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--cw-platform-accent) 13%, transparent), transparent 26rem),
     linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-calm-surface-muted) 42%, transparent), transparent 28rem),
@@ -27,18 +31,28 @@
   z-index: var(--ds-z-sticky);
   width: min(100% - 2rem, var(--cw-max-width));
   margin: 0 auto;
-  overflow: visible;
+  overflow: clip;
   isolation: isolate;
   --platform-header-fg: var(--cw-platform-text);
   --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-text) 72%, transparent);
-  --platform-header-hover-bg: color-mix(in srgb, var(--cw-platform-surface) 10%, transparent);
-  --platform-header-band-bg: color-mix(in srgb, var(--cw-platform-surface) 14%, transparent);
-  --platform-header-fade-bg:
-    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-surface) 34%, transparent) 0%, color-mix(in srgb, var(--cw-platform-surface) 18%, transparent) 42%, transparent 100%);
-  --platform-header-sheet-shadow: 0 8px 20px color-mix(in srgb, var(--cw-platform-text) 6%, transparent);
+  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-text) 62%, var(--cw-platform-bg) 38%);
+  --platform-header-nav-active-fg: var(--cw-platform-text);
+  --platform-header-nav-marker: var(--cw-platform-accent);
+  --platform-header-nav-marker-shadow:
+    0 0 0 0.36rem color-mix(in srgb, var(--cw-platform-accent) 14%, transparent);
+  --platform-header-symbol-filter: brightness(0) saturate(100%) opacity(0.96);
+  --platform-header-hover-bg: var(--cw-surface-shell-hover-bg);
+  --platform-header-band-bg: var(--cw-surface-shell-band-bg);
+  --platform-header-control-bg: var(--cw-surface-shell-control-bg);
+  --platform-header-popover-bg: var(--cw-surface-shell-popover-bg);
+  --platform-header-sheet-shadow: 0 12px 30px color-mix(in srgb, var(--cw-platform-text) 7%, transparent);
   --platform-header-sheet-filter: blur(20px) saturate(1.08) brightness(1.02);
   --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-dark);
-  --platform-header-shell-radius: var(--cw-radius-btn);
+  --platform-header-shell-radius: clamp(1.45rem, 2vw, 1.7rem);
+  --platform-utility-control-size: 3rem;
+  --platform-utility-control-radius: var(--cw-radius-pill);
+  --platform-utility-control-focus:
+    0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent);
   border: 0;
   border-radius: var(--platform-header-shell-radius);
   background: transparent;
@@ -50,11 +64,17 @@
 .header[data-cw-header-tone="dark"] {
   --platform-header-fg: var(--cw-platform-accent-contrast);
   --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
-  --platform-header-hover-bg: color-mix(in srgb, var(--cw-platform-text) 9%, transparent);
-  --platform-header-band-bg: color-mix(in srgb, var(--cw-platform-text) 11%, transparent);
-  --platform-header-fade-bg:
-    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 22%, transparent) 0%, color-mix(in srgb, var(--cw-platform-text) 12%, transparent) 44%, transparent 100%);
-  --platform-header-sheet-shadow: 0 8px 22px color-mix(in srgb, #000000 14%, transparent);
+  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 74%, transparent);
+  --platform-header-nav-active-fg: var(--cw-platform-accent-contrast);
+  --platform-header-nav-marker: var(--cw-platform-accent);
+  --platform-header-nav-marker-shadow:
+    0 0 0 0.42rem color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
+  --platform-header-symbol-filter: none;
+  --platform-header-hover-bg: color-mix(in srgb, var(--cw-platform-text) 28%, transparent);
+  --platform-header-band-bg: color-mix(in srgb, var(--cw-platform-text) 14%, transparent);
+  --platform-header-control-bg: color-mix(in srgb, var(--cw-platform-text) 20%, transparent);
+  --platform-header-popover-bg: color-mix(in srgb, var(--cw-platform-text) 34%, var(--cw-platform-surface) 66%);
+  --platform-header-sheet-shadow: 0 14px 30px color-mix(in srgb, #000000 11%, transparent);
   --platform-header-sheet-filter: blur(22px) saturate(1.1) brightness(0.99);
   --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-light);
 }
@@ -78,12 +98,7 @@
 }
 
 .header[data-cw-glass="shell"]::after {
-  inset: 0 0 -0.85rem;
-  border-radius: inherit;
-  background: var(--platform-header-fade-bg);
-  mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 100%);
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 52%, transparent 100%);
-  opacity: 1;
+  content: none;
 }
 
 .shellOverlay .header {
@@ -92,11 +107,42 @@
   right: 0;
   left: 0;
   width: min(100% - 2rem, var(--cw-max-width));
+  --platform-header-fg: var(--cw-platform-accent-contrast);
+  --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
+  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 74%, transparent);
+  --platform-header-nav-active-fg: var(--cw-platform-accent-contrast);
+  --platform-header-nav-marker: var(--cw-platform-accent);
+  --platform-header-nav-marker-shadow:
+    0 0 0 0.42rem color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
+  --platform-header-symbol-filter: none;
+  --platform-header-hover-bg: color-mix(in srgb, var(--cw-platform-text) 28%, transparent);
+  --platform-header-band-bg: color-mix(in srgb, var(--cw-platform-text) 14%, transparent);
+  --platform-header-control-bg: color-mix(in srgb, var(--cw-platform-text) 20%, transparent);
+  --platform-header-popover-bg: color-mix(in srgb, var(--cw-platform-text) 34%, var(--cw-platform-surface) 66%);
   border-color: transparent;
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+}
+
+.shellOverlay .header[data-cw-header-tone="light"] {
+  --platform-header-fg: var(--cw-platform-text);
+  --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-text) 72%, transparent);
+  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-text) 62%, var(--cw-platform-bg) 38%);
+  --platform-header-nav-active-fg: var(--cw-platform-text);
+  --platform-header-nav-marker: var(--cw-platform-accent);
+  --platform-header-nav-marker-shadow:
+    0 0 0 0.36rem color-mix(in srgb, var(--cw-platform-accent) 14%, transparent);
+  --platform-header-symbol-filter: brightness(0) saturate(100%) opacity(0.96);
+  --platform-header-hover-bg: var(--cw-surface-shell-hover-bg);
+  --platform-header-band-bg: var(--cw-surface-shell-band-bg);
+  --platform-header-control-bg: var(--cw-surface-shell-control-bg);
+  --platform-header-popover-bg: var(--cw-surface-shell-popover-bg);
+}
+
+.shellOverlay > main:not(:has(> [class*="heroFeature"]:first-child)) {
+  padding-top: var(--platform-topbar-clearance);
 }
 
 .shellOverlay .header[data-cw-glass="shell"]::after {
@@ -109,13 +155,19 @@
 }
 
 .shellOverlay .nav a:hover {
-  background: color-mix(in srgb, var(--platform-header-fg) 10%, transparent);
+  background: transparent;
+}
+
+.shellOverlay .nav a[aria-current="page"] {
+  color: var(--platform-header-nav-active-fg);
+  background: transparent;
+  box-shadow: none;
 }
 
 .shellOverlay .ghostButton {
   border-color: color-mix(in srgb, var(--cw-platform-accent-contrast) 36%, transparent);
   color: var(--cw-platform-accent-contrast);
-  background: color-mix(in srgb, var(--cw-platform-text) 18%, transparent);
+  background: var(--cw-surface-shell-control-bg);
 }
 
 .headerInner {
@@ -157,7 +209,7 @@
   display: block;
   flex: 0 0 auto;
   background: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
-  filter: none;
+  filter: var(--platform-header-symbol-filter);
 }
 
 .brandWordmark {
@@ -181,7 +233,7 @@
   width: var(--cw-brand-size-symbol-footer);
   height: var(--cw-brand-size-symbol-footer);
   background-image: var(--cw-brand-asset-logo-symbol-header);
-  filter: none;
+  filter: brightness(0) saturate(100%) opacity(0.96);
 }
 
 .brand[data-surface="footer"] .brandWordmark {
@@ -223,7 +275,6 @@
 .ghostButton,
 .primaryButton,
 .secondaryButton {
-  min-height: 2.75rem;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -232,23 +283,89 @@
   font-weight: 700;
 }
 
+.ghostButton,
+.primaryButton,
+.secondaryButton {
+  min-width: var(--ds-button-min-width);
+  min-height: var(--ds-button-min-height);
+  padding-inline: var(--ds-button-padding-inline);
+  line-height: 1.1;
+  font-size: 1rem;
+  text-align: center;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+  cursor: pointer;
+}
+
 .nav a {
   min-height: 2.5rem;
   padding: 0 0.9rem;
-  color: var(--platform-header-muted-fg);
+  color: var(--platform-header-nav-muted-fg);
   border-radius: var(--cw-radius-pill);
   font-size: 0.98rem;
   white-space: nowrap;
+  position: relative;
+  font-weight: 680;
+  letter-spacing: 0;
+  transition:
+    color 160ms ease,
+    transform 160ms ease;
 }
 
 .nav a:hover {
-  color: var(--platform-header-fg);
-  background: var(--platform-header-hover-bg);
+  color: var(--platform-header-nav-active-fg);
+  background: transparent;
+}
+
+.nav a:focus-visible {
+  color: var(--platform-header-nav-active-fg);
+  background: transparent;
+  outline: none;
 }
 
 .nav a[aria-current="page"] {
-  color: var(--platform-header-fg);
-  background: color-mix(in srgb, var(--platform-header-fg) 10%, transparent);
+  color: var(--platform-header-nav-active-fg);
+  background: transparent;
+  box-shadow: none;
+  font-weight: 780;
+}
+
+.nav a[aria-current="page"]:hover {
+  color: var(--platform-header-nav-active-fg);
+  background: transparent;
+}
+
+.nav a::after {
+  content: "";
+  position: absolute;
+  left: 0.95rem;
+  right: 0.95rem;
+  bottom: 0.42rem;
+  width: auto;
+  height: 0.14rem;
+  border-radius: 999px;
+  background: var(--platform-header-nav-marker);
+  transform: scaleX(0.38);
+  transform-origin: center;
+  opacity: 0;
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.nav a:hover::after,
+.nav a:focus-visible::after {
+  opacity: 0.42;
+  transform: scaleX(0.74);
+}
+
+.nav a[aria-current="page"]::after {
+  opacity: 1;
+  transform: scaleX(1);
 }
 
 .actions {
@@ -273,14 +390,14 @@
 }
 
 .profileEntry {
-  min-height: 2.75rem;
+  min-height: var(--platform-utility-control-size);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.55rem;
   padding: 0.24rem 0.84rem;
   border: 0;
-  border-radius: var(--cw-radius-pill);
+  border-radius: var(--platform-utility-control-radius);
   color: var(--platform-header-fg);
   background: transparent;
   box-shadow: none;
@@ -291,11 +408,16 @@
   text-decoration: none;
   white-space: nowrap;
   cursor: pointer;
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease,
+    transform 180ms ease;
 }
 
 .profileEntryCompact {
-  width: 2.75rem;
-  min-width: 2.75rem;
+  width: var(--platform-utility-control-size);
+  min-width: var(--platform-utility-control-size);
   padding: 0;
   gap: 0;
 }
@@ -309,7 +431,13 @@
 }
 
 .profileEntry:hover {
-  background: var(--platform-header-hover-bg);
+  background: var(--platform-header-control-bg);
+}
+
+.profileEntry:focus-visible {
+  outline: none;
+  background: var(--platform-header-control-bg);
+  box-shadow: var(--platform-utility-control-focus);
 }
 
 .profileGlyph {
@@ -361,7 +489,7 @@
   border: 0;
   border-radius: var(--cw-radius-md);
   color: var(--platform-header-fg);
-  background: color-mix(in srgb, var(--cw-platform-surface) 42%, transparent);
+  background: var(--platform-header-popover-bg);
   box-shadow: var(--platform-header-sheet-shadow);
   backdrop-filter: var(--platform-header-sheet-filter);
   -webkit-backdrop-filter: var(--platform-header-sheet-filter);
@@ -395,7 +523,7 @@
 
 .profileMenu a:hover,
 .profileMenu button:hover {
-  background: color-mix(in srgb, var(--platform-header-fg) 10%, transparent);
+  background: var(--platform-header-control-bg);
 }
 
 .mobileProfileSlot {
@@ -403,8 +531,8 @@
 }
 
 .menuButton {
-  width: 3rem;
-  height: 3rem;
+  width: var(--platform-utility-control-size);
+  height: var(--platform-utility-control-size);
   position: relative;
   display: none;
   place-items: center;
@@ -413,7 +541,7 @@
   appearance: none;
   -webkit-appearance: none;
   border: 0;
-  border-radius: 999px;
+  border-radius: var(--platform-utility-control-radius);
   color: var(--platform-header-fg);
   background: transparent;
   background-color: transparent;
@@ -422,6 +550,19 @@
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
   outline: none;
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.menuButton:hover {
+  background: var(--platform-header-control-bg);
+}
+
+.menuButton:focus-visible {
+  background: var(--platform-header-control-bg);
+  box-shadow: none;
 }
 
 .menuButton span {
@@ -458,7 +599,6 @@
 
 .ghostButton,
 .secondaryButton {
-  padding: 0 1rem;
   border: 0;
   color: var(--cw-platform-text);
   background: var(--cw-platform-surface);
@@ -466,11 +606,45 @@
 }
 
 .primaryButton {
-  padding: 0 1.15rem;
-  border: 1px solid var(--cw-platform-accent-strong);
+  border: 0;
   color: var(--cw-platform-accent-contrast);
-  background: var(--cw-platform-accent-strong);
-  box-shadow: var(--cw-depth-shadow-strong);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--cw-platform-accent) 78%, var(--cw-platform-accent-strong) 22%),
+    var(--cw-platform-accent-strong)
+  );
+  box-shadow: 0 16px 30px color-mix(in srgb, var(--cw-platform-accent) 20%, transparent);
+}
+
+.primaryButton:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 20px 32px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent);
+}
+
+.primaryButton:active {
+  transform: translateY(1px);
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
+}
+
+.primaryButton:focus-visible,
+.secondaryButton:focus-visible,
+.ghostButton:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 28%, transparent),
+    var(--cw-depth-shadow-soft);
+}
+
+.secondaryButton:hover,
+.ghostButton:hover {
+  transform: translateY(-1px);
+  background: color-mix(in srgb, var(--cw-platform-surface) 72%, var(--cw-platform-surface-muted) 28%);
+  box-shadow: var(--cw-depth-shadow-medium);
+}
+
+.secondaryButton:active,
+.ghostButton:active {
+  transform: translateY(1px);
 }
 
 .mobileMenuSurface,

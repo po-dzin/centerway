@@ -304,6 +304,10 @@ img {
   display: none !important;
 }
 
+.hero-media {
+  display: block;
+}
+
 .bg {
   background: linear-gradient(180deg, var(--landing-color-surface-section) 73.74%, rgba(243, 246, 255, 0) 105.34%);
 }
@@ -507,6 +511,7 @@ img {
 }
 
 .section-hero #divprice .price-stack {
+  position: relative;
   display: flex;
   align-items: baseline;
   gap: var(--landing-space-rhythm-12);
@@ -535,6 +540,9 @@ img {
 
 .section-hero #divprice .price .price-discount-badge,
 .section-offer .price .price-discount-badge {
+  position: absolute;
+  top: -10px;
+  right: -44px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -552,26 +560,36 @@ img {
 .section-offer .promo-note {
   margin: 0;
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   align-items: center;
-  gap: var(--landing-space-rhythm-8);
-  font-size: var(--landing-type-hero-price-note-size, 14px);
+  gap: 6px;
+  font-size: var(--landing-type-hero-price-note-size, 16px);
   line-height: var(--landing-line-body-soft, 1.45);
   color: var(--landing-color-text-soft);
+  text-align: center;
 }
 
 .section-hero #divprice .promo-note {
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 .section-offer .promo-note {
   justify-content: center;
 }
 
+.section-hero #divprice .promo-note__label,
+.section-offer .promo-note__label {
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+}
+
 .section-hero #divprice .promo-timer,
 .section-offer .promo-timer {
   color: var(--landing-color-primary);
-  font-weight: 700;
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1;
   font-variant-numeric: tabular-nums;
 }
 
@@ -1489,6 +1507,11 @@ body.modal-open {
   align-items: stretch;
 }
 
+.section-program .lesson-trigger picture {
+  display: block;
+  width: 100%;
+}
+
 .section-format h2,
 .section-addon-protocol h2 {
   text-align: center;
@@ -1637,6 +1660,7 @@ body.modal-open {
 }
 
 .section-offer .price-stack {
+  position: relative;
   display: flex;
   align-items: baseline;
   justify-content: center;

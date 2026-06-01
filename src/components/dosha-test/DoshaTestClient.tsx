@@ -1,13 +1,16 @@
 "use client";
 
-import Image from "next/image";
 import Link from "next/link";
+import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
+import { PlatformAuthModal } from "@/components/platform/PlatformAuthModal";
+import styles from "@/components/platform/PlatformContentStyles";
 import type { DoshaResultType } from "@/lib/doshaTest";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
-import { DepthLabToggle } from "@/components/generator/DepthLabToggle";
+import { CW_THEME_QUERY_KEYS } from "@/lib/generator/theme";
 import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT } from "@/lib/doshaRouting";
+import { platformPageArtwork } from "@/lib/platform/content";
 import { supabaseClient } from "@/lib/supabaseClient";
 
 type TestOption = {
@@ -41,20 +44,6 @@ type CompleteResponse = {
   scores: { vata: number; pitta: number; kapha: number };
   completedAt?: string;
   nextStep?: string;
-};
-
-type UserDoshaProfileResponse = {
-  userId: string;
-  profile: {
-    attemptId: string;
-    testId: string;
-    testSlug: string;
-    testVersion: string;
-    resultType: DoshaResultType;
-    scores: { vata: number; pitta: number; kapha: number };
-    completedAt: string | null;
-    version: string;
-  } | null;
 };
 
 type DraftState = {
@@ -150,6 +139,20 @@ const RESULT_COPY: Record<
   },
 };
 
+function resolveHeroPosition(position?: string) {
+  if (!position) {
+    return {
+      x: "50%",
+      y: "20%",
+    };
+  }
+  const [x, y] = position.trim().split(/\s+/);
+  return {
+    x: x === "center" ? "50%" : x,
+    y: y ?? "20%",
+  };
+}
+
 function getCurrentQuestion(questions: TestQuestion[], currentQuestionIndex: number): TestQuestion | null {
   const idx = Math.max(1, currentQuestionIndex) - 1;
   return questions[idx] ?? null;
@@ -171,10 +174,6 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
   const [session, setSession] = useState<Session | null>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
   const [isDoshaInfoOpen, setIsDoshaInfoOpen] = useState(false);
-  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
-  const [userDoshaProfile, setUserDoshaProfile] = useState<UserDoshaProfileResponse["profile"] | null>(null);
-  const [isProfileLoading, setIsProfileLoading] = useState(false);
-  const [profileError, setProfileError] = useState<string | null>(null);
   const isAuthEnabled = useMemo(
     () => Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
     []
@@ -351,16 +350,6 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
       setResultType(data.resultType);
       setCompletedAt(data.completedAt ?? new Date().toISOString());
       setNextStep(data.nextStep ?? DOSHA_PRIMARY_EXIT.nextStep);
-      setUserDoshaProfile({
-        attemptId: data.attemptId,
-        testId: userDoshaProfile?.testId ?? "dosha-test",
-        testSlug: userDoshaProfile?.testSlug ?? "dosha-test",
-        testVersion: userDoshaProfile?.testVersion ?? "current",
-        resultType: data.resultType,
-        scores: data.scores,
-        completedAt: data.completedAt ?? new Date().toISOString(),
-        version: userDoshaProfile?.version ?? "current",
-      });
       setCurrentQuestionIndex(questions.length);
       setResultViewedSent(false);
       clearDraft();
@@ -371,7 +360,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     } finally {
       setIsBusy(false);
     }
-  }, [clearDraft, getOrCreateSessionId, questions, saveAttemptId, session?.access_token, userDoshaProfile?.testId, userDoshaProfile?.testSlug, userDoshaProfile?.testVersion, userDoshaProfile?.version]);
+  }, [clearDraft, getOrCreateSessionId, questions, saveAttemptId, session?.access_token]);
 
   const runStartFlow = useCallback(async () => {
     setIsBusy(true);
@@ -420,31 +409,6 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     await runStartFlow();
   }, [runStartFlow, syncPlatformUser]);
 
-  const loadMyDoshaProfile = useCallback(async (accessToken?: string | null) => {
-    const token = accessToken ?? session?.access_token;
-    if (!token) return;
-
-    setIsProfileLoading(true);
-    setProfileError(null);
-    try {
-      const response = await fetch("/api/platform/users/me/dosha", {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      if (!response.ok) {
-        setProfileError("Не вдалося завантажити профіль.");
-        return;
-      }
-      const data = (await response.json()) as UserDoshaProfileResponse;
-      setUserDoshaProfile(data.profile ?? null);
-    } catch {
-      setProfileError("Не вдалося завантажити профіль.");
-    } finally {
-      setIsProfileLoading(false);
-    }
-  }, [session?.access_token]);
-
   useEffect(() => {
     const bootAuth = async () => {
       const { data } = await supabaseClient.auth.getSession();
@@ -462,9 +426,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
       setSession(nextSession);
 
       if (!nextSession) {
-        setIsProfileMenuOpen(false);
         setShowAuthPrompt(false);
-        setUserDoshaProfile(null);
         return;
       }
 
@@ -496,6 +458,36 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     setShowAuthPrompt(false);
     setPhase("intro");
   }, []);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const url = new URL(window.location.href);
+    let changed = false;
+
+    for (const key of CW_THEME_QUERY_KEYS) {
+      if (!url.searchParams.has(key)) continue;
+      url.searchParams.delete(key);
+      changed = true;
+    }
+
+    if (!changed) return;
+    const search = url.searchParams.toString();
+    window.history.replaceState(null, "", `${url.pathname}${search ? `?${search}` : ""}${url.hash}`);
+  }, []);
+
+  useEffect(() => {
+    if (!showAuthPrompt) return;
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setShowAuthPrompt(false);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [showAuthPrompt]);
 
   useEffect(() => {
     if (phase === "result" && resultType && resultViewedSent === false) {
@@ -555,594 +547,352 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     }
   }, [answers, completeTest, getOrCreateSessionId, isBusy, saveDraft, totalQuestions]);
 
-  const handleOpenProfileMenu = useCallback(async () => {
-    const nextState = !isProfileMenuOpen;
-    setIsProfileMenuOpen(nextState);
-    if (nextState && !userDoshaProfile && !isProfileLoading) {
-      await loadMyDoshaProfile();
-    }
-  }, [isProfileLoading, isProfileMenuOpen, loadMyDoshaProfile, userDoshaProfile]);
-
-  const handleSignOut = useCallback(async () => {
-    setIsProfileMenuOpen(false);
-    await supabaseClient.auth.signOut();
-  }, []);
-
-  const resultTypeLabel = useMemo(() => {
-    if (resultType) return RESULT_COPY[resultType].title;
-    if (userDoshaProfile?.resultType) return RESULT_COPY[userDoshaProfile.resultType].title;
-    return null;
-  }, [resultType, userDoshaProfile?.resultType]);
-  const profileScores = useMemo(
-    () => ({
-      vata: scores.vata || userDoshaProfile?.scores.vata || 0,
-      pitta: scores.pitta || userDoshaProfile?.scores.pitta || 0,
-      kapha: scores.kapha || userDoshaProfile?.scores.kapha || 0,
-    }),
-    [scores.kapha, scores.pitta, scores.vata, userDoshaProfile?.scores.kapha, userDoshaProfile?.scores.pitta, userDoshaProfile?.scores.vata]
-  );
-
   const progress = Math.min(100, Math.round((Math.max(0, currentQuestionIndex - 1) / totalQuestions) * 100));
   const resultCopy = resultType ? RESULT_COPY[resultType] : null;
   const testFontFamily = "var(--cw-font-ui), 'Manrope', 'Segoe UI', sans-serif";
   const topbarBadge = phase === "intro"
-    ? "12 питань • ~2 хв"
+    ? "12 питань • 3-5 хв"
     : phase === "question"
       ? `Питання ${currentQuestion?.orderIndex ?? currentQuestionIndex} з ${totalQuestions}`
-      : phase === "loading"
-        ? "Формуємо результат"
-        : "Результат готовий";
-  const avatarUrl = session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || null;
-
-  const renderAvatarButton = (onClick: () => void, mobile = false) => (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`${mobile ? "md:hidden" : "hidden md:inline-flex"} h-8 w-8 items-center justify-center overflow-hidden rounded-full`}
-      style={{ boxShadow: "0 0 0 1px var(--cw-border)" }}
-      title="Профіль"
-      aria-label="Профіль"
-    >
-      {avatarUrl ? (
-        <Image
-          src={avatarUrl}
-          alt="Google avatar"
-          width={36}
-          height={36}
-          unoptimized
-          className="h-full w-full object-cover"
-          referrerPolicy="no-referrer"
-        />
-      ) : (
-        <span className="inline-flex h-full w-full items-center justify-center rounded-full border" style={{ borderColor: "var(--cw-border)", color: "var(--cw-text)" }}>
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-            <path d="M20 21a8 8 0 0 0-16 0" />
-            <circle cx="12" cy="7" r="4" />
-          </svg>
-        </span>
-      )}
-    </button>
-  );
-
-  const profilePanel = (
-    <>
-      <div className="space-y-3 text-xs sm:text-sm" style={{ color: "var(--cw-muted)" }}>
-        <div className="space-y-1">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.08em]">Google</p>
-          <p style={{ color: "var(--cw-text)" }}>{session?.user?.email ?? "Email недоступний"}</p>
-        </div>
-        <div className="space-y-1">
-          <p className="text-[0.7rem] font-semibold uppercase tracking-[0.08em]">Результат</p>
-          {isProfileLoading ? <p>Завантаження...</p> : null}
-          {profileError ? <p style={{ color: "var(--cw-danger)" }}>{profileError}</p> : null}
-          {!isProfileLoading && !profileError && resultTypeLabel ? (
-            <>
-              <p style={{ color: "var(--cw-text)" }}>{resultTypeLabel}</p>
-              <p>
-                Вата {profileScores.vata} • Пітта {profileScores.pitta} • Капха {profileScores.kapha}
-              </p>
-            </>
-          ) : null}
-          {!isProfileLoading && !profileError && !resultTypeLabel ? (
-            <p>Результат ще недоступний. Пройдіть тест до кінця.</p>
-          ) : null}
-        </div>
-      </div>
-
-      <div className="mt-4">
-        <button
-          type="button"
-          onClick={() => {
-            void handleSignOut();
-          }}
-          className="cw-btn-primary inline-flex min-h-11 w-full items-center justify-center px-3 text-xs font-semibold"
-        >
-          Вийти
-        </button>
-      </div>
-    </>
-  );
+        : phase === "loading"
+          ? "Формуємо результат"
+          : "Результат готовий";
+  const doshaHeroArtwork = platformPageArtwork.dosha;
+  const desktopFocus = resolveHeroPosition(doshaHeroArtwork.desktopPosition);
+  const mobileFocus = resolveHeroPosition(doshaHeroArtwork.mobilePosition ?? doshaHeroArtwork.desktopPosition);
+  const heroStyle = {
+    "--hero-photo-x": desktopFocus.x,
+    "--hero-photo-y": desktopFocus.y,
+    "--hero-photo-x-desktop": desktopFocus.x,
+    "--hero-photo-y-desktop": desktopFocus.y,
+    "--hero-photo-x-mobile": mobileFocus.x,
+    "--hero-photo-y-mobile": mobileFocus.y,
+    "--hero-photo-shift-y": "0%",
+    "--hero-photo-scale": "1.02",
+    "--hero-photo-origin": "center center",
+  } as CSSProperties;
 
   return (
-    <main
+    <>
+      {phase === "intro" ? (
+        <section
+      className={styles.heroFeature}
+      data-cw-topbar-tone="dark"
+      data-cw-detail-template="dosha"
+      data-cw-semantic-role="diagnostic-entry"
+      data-cw-semantic-family="guide-progress"
+      data-cw-token-source="global-app-ds"
       data-dosha-test="true"
-      className="cw-dosha-shell min-h-dvh select-none px-4 py-4 sm:px-6 sm:py-6 lg:px-8 lg:py-8"
+      data-dosha-phase="intro"
+      style={heroStyle}
+    >
+      <div className={styles.heroPhotoLayer}>
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img className={styles.expertImage} src={doshaHeroArtwork.desktop} alt="Доша-тест CenterWay" />
+      </div>
+      <div
+        className={`${styles.heroFeatureContent} ${styles.diagnosticHeroContent}`}
+        style={{
+          fontFamily: testFontFamily,
+          userSelect: "none",
+          WebkitUserSelect: "none",
+        }}
+      >
+        <article className={`${styles.panel} ${styles.diagnosticHeroCard}`}>
+          <div className={styles.panelStack}>
+            <div className={styles.panelIntro}>
+              <p className={styles.heroBadge}>
+                <span>{topbarBadge}</span>
+              </p>
+              <p className={styles.label}>CenterWay • Діагностика стану</p>
+              <h1 className={styles.title}>Тест доші</h1>
+              <p className={styles.lead}>
+                Швидка самодіагностика ритму, енергії, травлення і напруги, щоб побачити свій поточний стан і зрозуміти
+                перший доречний маршрут у платформі.
+              </p>
+            </div>
+
+            <div className={styles.card} data-tone="proof">
+              <p className={styles.label}>Що ви отримаєте</p>
+              <ol className={styles.diagnosticNumberList}>
+                <li>Короткий профіль доші як робочу гіпотезу для читання свого стану.</li>
+                <li>Практичний вектор на найближчі 7 днів без зайвої абстракції.</li>
+                <li>Зрозумілий наступний крок: консультація, програма або самостійний старт.</li>
+              </ol>
+            </div>
+
+            {error ? (
+              <p
+                className={styles.proofNote}
+                style={{
+                  color: "var(--cw-danger)",
+                  background: "color-mix(in srgb, var(--cw-danger) 8%, var(--cw-platform-surface) 92%)",
+                }}
+              >
+                {error}
+              </p>
+            ) : null}
+
+            <div className={styles.diagnosticActions}>
+              <button
+                type="button"
+                onClick={() => {
+                  void requestStartTest();
+                }}
+                disabled={isBusy}
+                className={styles.heroPrimaryButton}
+              >
+                {isBusy ? "Запускаємо..." : "Почати тест"}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsDoshaInfoOpen((prev) => !prev)}
+                className={styles.heroSecondaryButton}
+                aria-expanded={isDoshaInfoOpen}
+                aria-controls="what-is-dosha"
+              >
+                <span>{isDoshaInfoOpen ? "Сховати опис доші" : "Що таке доші?"}</span>
+              </button>
+            </div>
+
+            {isDoshaInfoOpen ? (
+              <div className={styles.card} data-tone="support" id="what-is-dosha">
+                <p>У підході CenterWay доші описують природні патерни енергії, ритму й відновлення. Тест допомагає обрати релевантний маршрут практик і контенту в платформі.</p>
+              </div>
+            ) : null}
+          </div>
+        </article>
+      </div>
+        </section>
+      ) : (
+        <section
+      className={`${styles.container} ${styles.section}`}
+      data-cw-semantic-role="diagnostic-flow"
+      data-cw-semantic-family="method-progress"
+      data-cw-token-source="global-app-ds"
+      data-dosha-test="true"
+      data-dosha-phase={phase}
       style={{
         fontFamily: testFontFamily,
         userSelect: "none",
         WebkitUserSelect: "none",
-        background:
-          "radial-gradient(1200px circle at 12% -18%, color-mix(in srgb, var(--cw-status-pending) 28%, transparent), transparent 52%), radial-gradient(1000px circle at 86% 12%, color-mix(in srgb, var(--cw-status-success) 26%, transparent), transparent 46%), linear-gradient(180deg, color-mix(in srgb, var(--cw-bg) 88%, #ffffff 12%) 0%, var(--cw-bg) 100%)",
       }}
     >
-      <div className="mx-auto w-full max-w-2xl">
-        <header
-          className="mb-4 flex h-14 items-center justify-end rounded-[1.4rem] border px-3 sm:h-16 sm:px-4"
-          style={{
-            borderColor: "var(--cw-border)",
-            background: "color-mix(in srgb, var(--cw-surface) 84%, #ffffff 16%)",
-            boxShadow: "0 12px 30px color-mix(in srgb, #161410 10%, transparent)",
-          }}
-        >
-          <div
-            className="flex items-center gap-2"
-          >
-            <DepthLabToggle variant="embedded" />
-
-            {session?.user ? (
-              <>
-                <div className="relative">
-                  {renderAvatarButton(() => {
-                    void handleOpenProfileMenu();
-                  })}
-                  {isProfileMenuOpen ? (
-                    <div
-                      className="fixed left-1/2 top-[5.25rem] z-40 w-[min(22rem,calc(100vw-2rem))] -translate-x-1/2 rounded-2xl border p-4 shadow-lg md:absolute md:left-auto md:right-0 md:top-full md:mt-2 md:w-[22rem] md:translate-x-0 sm:top-[6.25rem]"
-                      style={{
-                        borderColor: "var(--cw-border)",
-                        background: "color-mix(in srgb, var(--cw-surface-solid) 96%, #ffffff 4%)",
-                      }}
-                    >
-                      {profilePanel}
-                    </div>
-                  ) : null}
-                </div>
-
-                {renderAvatarButton(() => {
-                  void handleOpenProfileMenu();
-                }, true)}
-              </>
-            ) : (
-              <>
-                <button
-                  type="button"
-                  onClick={() => setShowAuthPrompt(true)}
-                  className="cw-btn-outline hidden min-h-11 items-center justify-center rounded-full px-4 text-sm font-semibold md:inline-flex"
-                  style={{ color: "var(--cw-text)" }}
-                >
-                  Увійти
-                </button>
-                {renderAvatarButton(() => setShowAuthPrompt(true), true)}
-              </>
-            )}
-          </div>
-        </header>
-
-        <section className="mx-auto w-full max-w-2xl">
-          <div
-            className="relative rounded-[2rem] border p-6 backdrop-blur-md sm:p-8"
-            style={{
-              borderColor: "color-mix(in srgb, var(--cw-border) 88%, #ffffff 12%)",
-              background: "color-mix(in srgb, var(--cw-surface) 78%, #ffffff 22%)",
-              boxShadow: "0 18px 50px color-mix(in srgb, #161410 12%, transparent)",
-            }}
-          >
-            {phase === "intro" && (
-              <div className="space-y-6">
-                <div className="flex items-start justify-between gap-3">
-                  <span
-                    className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
-                    style={{
-                      borderColor: "var(--cw-border)",
-                      background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
-                      color: "var(--cw-text)",
-                    }}
-                  >
-                    {topbarBadge}
-                  </span>
-                </div>
-
-                <div className="space-y-3">
-                  <p className="text-sm font-semibold uppercase tracking-[0.1em]" style={{ color: "var(--cw-status-success)" }}>
-                    CenterWay • Доша-тест
-                  </p>
-                  <h1
-                    className="text-3xl font-bold leading-tight sm:text-4xl"
-                    style={{
-                      color: "var(--cw-text)",
-                    }}
-                  >
-                    Дізнайтесь ваш доша-профіль і визначте персональний вектор балансу
-                  </h1>
-                </div>
-
-                <div
-                  className="rounded-2xl border p-4"
+      <div className={styles.diagnosticStage}>
+        <article className={`${styles.panel} ${styles.diagnosticPanel}`}>
+          {phase === "question" && currentQuestion ? (
+            <div className="space-y-6">
+              <div className="flex items-start justify-between gap-3">
+                <span
+                  className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
                   style={{
                     borderColor: "var(--cw-border)",
-                    background: "color-mix(in srgb, var(--cw-accent-soft) 86%, #ffffff 14%)",
+                    background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
+                    color: "var(--cw-text)",
                   }}
                 >
-                  <p className="mb-3 text-sm font-semibold" style={{ color: "var(--cw-text)" }}>
-                    Як це працює
-                  </p>
-                  <ol className="space-y-2 text-sm" style={{ color: "var(--cw-muted)" }}>
-                    <li>1. Ви проходите 12 коротких питань про ритм, енергію та відновлення.</li>
-                    <li>2. Система розраховує ваш доша-профіль за прозорою схемою балів.</li>
-                    <li>3. Ви отримуєте практичний вектор на найближчі 7 днів і наступний маршрут.</li>
-                  </ol>
+                  {topbarBadge}
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--cw-muted)" }}>
+                  <span>Питання {currentQuestion.orderIndex} з {totalQuestions}</span>
+                  <span>Прогрес {progress}%</span>
                 </div>
-
-                {error ? (
-                  <p
-                    className="rounded-xl border p-3 text-sm"
-                    style={{
-                      borderColor: "color-mix(in srgb, var(--cw-danger) 55%, var(--cw-border) 45%)",
-                      color: "var(--cw-danger)",
-                      background: "color-mix(in srgb, var(--cw-danger) 10%, #ffffff 90%)",
-                    }}
-                  >
-                    {error}
-                  </p>
-                ) : null}
-
-                {showAuthPrompt && !session?.user && isAuthEnabled ? (
+                <div className={styles.diagnosticProgressTrack}>
                   <div
-                    className="rounded-2xl border p-4 sm:p-5"
+                    className={styles.diagnosticProgressBar}
                     style={{
-                      borderColor: "color-mix(in srgb, var(--cw-status-success) 38%, var(--cw-border) 62%)",
-                      background: "color-mix(in srgb, var(--cw-surface-solid) 94%, #ffffff 6%)",
+                      width: `${progress}%`,
                     }}
-                  >
-                    <p className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--cw-status-success)" }}>
-                      Крок перед стартом
-                    </p>
-                    <h2 className="mt-2 text-xl font-bold" style={{ color: "var(--cw-text)" }}>
-                      Увійдіть після натискання старту
-                    </h2>
-                    <p className="mt-2 text-sm leading-relaxed" style={{ color: "var(--cw-muted)" }}>
-                      Ми просимо авторизацію тільки перед запуском тесту, щоб зберегти персональний результат і подальший маршрут у платформі.
-                    </p>
-                    <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          void signInWithGoogle();
-                        }}
-                        className="cw-btn-primary inline-flex min-h-11 flex-1 items-center justify-center px-4 py-3 text-sm font-semibold"
-                      >
-                        Увійти через Google
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setShowAuthPrompt(false)}
-                        className="cw-btn-ghost inline-flex min-h-11 items-center justify-center px-4 py-3 text-sm font-semibold"
-                        style={{ color: "var(--cw-text)" }}
-                      >
-                        Пізніше
-                      </button>
-                    </div>
-                  </div>
-                ) : null}
-
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void requestStartTest();
-                    }}
-                    disabled={isBusy}
-                    className="cw-btn-primary inline-flex min-h-11 items-center justify-center gap-2 px-6 py-3 text-sm font-semibold motion-reduce:transition-none disabled:cursor-not-allowed disabled:opacity-65"
-                  >
-                    {isBusy ? "Запускаємо..." : "Почати тест"}
-                    {!isBusy ? (
-                      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-                        <polyline points="9 18 15 12 9 6" />
-                      </svg>
-                    ) : null}
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsDoshaInfoOpen((prev) => !prev)}
-                    className="cw-btn-ghost inline-flex min-h-11 items-center px-3 text-sm font-medium underline-offset-4 motion-reduce:transition-none"
-                    style={{
-                      color: "var(--cw-muted)",
-                    }}
-                  >
-                    {isDoshaInfoOpen ? "Сховати опис доші" : "Що таке доша?"}
-                  </button>
+                  />
                 </div>
               </div>
-            )}
 
-            {phase === "question" && currentQuestion ? (
-              <div className="space-y-6">
-                <div className="flex items-start justify-between gap-3">
-                  <span
-                    className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
-                    style={{
-                      borderColor: "var(--cw-border)",
-                      background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
-                      color: "var(--cw-text)",
-                    }}
-                  >
-                    {topbarBadge}
-                  </span>
-                </div>
+              <div className="space-y-2">
+                <h2 className={styles.title}>{currentQuestion.text}</h2>
+                <p className={styles.lead}>Оберіть варіант, який найточніше описує ваш поточний стан.</p>
+              </div>
 
-                <div className="space-y-2">
-                  <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--cw-muted)" }}>
-                    <span>Питання {currentQuestion.orderIndex} з {totalQuestions}</span>
-                    <span>Прогрес {progress}%</span>
-                  </div>
-                  <div className="h-2 overflow-hidden rounded-full" style={{ background: "color-mix(in srgb, var(--cw-border) 72%, #ffffff 28%)" }}>
-                    <div
-                      className="h-full rounded-full transition-all duration-300 motion-reduce:transition-none"
-                      style={{
-                        width: `${progress}%`,
-                        background: "linear-gradient(90deg, var(--cw-status-success) 0%, color-mix(in srgb, var(--cw-status-pending) 75%, var(--cw-status-success) 25%) 100%)",
+              <div className="space-y-3">
+                {currentQuestion.options.map((option) => {
+                  const selected = answers[currentQuestion.id] === option.id;
+
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      aria-pressed={selected}
+                      disabled={isBusy || Boolean(answers[currentQuestion.id])}
+                      onClick={() => {
+                        void submitAnswer(currentQuestion.id, option.id);
                       }}
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <h2
-                    className="text-2xl font-bold leading-snug"
-                    style={{
-                      color: "var(--cw-text)",
-                    }}
-                  >
-                    {currentQuestion.text}
-                  </h2>
-                  <p className="text-sm" style={{ color: "var(--cw-muted)" }}>
-                    Оберіть варіант, який найточніше описує ваш поточний стан.
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  {currentQuestion.options.map((option) => {
-                    const selected = answers[currentQuestion.id] === option.id;
-
-                    return (
-                      <button
-                        key={option.id}
-                        type="button"
-                        aria-pressed={selected}
-                        disabled={isBusy || Boolean(answers[currentQuestion.id])}
-                        onClick={() => {
-                          void submitAnswer(currentQuestion.id, option.id);
-                        }}
-                        className="cw-choice-btn w-full min-h-11 px-4 py-2.5 text-left text-[0.95rem] font-semibold leading-snug motion-reduce:transition-none"
-                        style={{
-                          color: "var(--cw-text)",
-                          opacity: isBusy ? 0.86 : 1,
-                          outlineColor: "transparent",
-                        }}
-                      >
-                        {option.text}
-                      </button>
-                    );
-                  })}
-                </div>
-
-                {error ? (
-                  <p
-                    className="rounded-xl border p-3 text-sm"
-                    style={{
-                      borderColor: "color-mix(in srgb, var(--cw-danger) 55%, var(--cw-border) 45%)",
-                      color: "var(--cw-danger)",
-                      background: "color-mix(in srgb, var(--cw-danger) 10%, #ffffff 90%)",
-                    }}
-                  >
-                    {error}
-                  </p>
-                ) : null}
-
-                <div className="flex items-center justify-between gap-3 text-xs" style={{ color: "var(--cw-muted)" }}>
-                  <button
-                    type="button"
-                    onClick={() => setPhase("intro")}
-                    className="cw-btn-outline inline-flex min-h-11 select-none items-center justify-center px-3 text-xs font-semibold motion-reduce:transition-none"
-                    style={{
-                      color: "var(--cw-text)",
-                    }}
-                  >
-                    На головну
-                  </button>
-                  <span>Режим v1: попередню відповідь змінити не можна.</span>
-                </div>
+                      className="cw-choice-btn w-full min-h-11 px-4 py-2.5 text-left text-[0.95rem] font-semibold leading-snug motion-reduce:transition-none"
+                      style={{
+                        color: "var(--cw-text)",
+                        opacity: isBusy ? 0.86 : 1,
+                        outlineColor: "transparent",
+                      }}
+                    >
+                      {option.text}
+                    </button>
+                  );
+                })}
               </div>
-            ) : null}
 
-            {phase === "loading" ? (
-              <div className="space-y-4 py-10 text-center">
-                <div className="flex justify-start">
-                  <span
-                    className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
-                    style={{
-                      borderColor: "var(--cw-border)",
-                      background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
-                      color: "var(--cw-text)",
-                    }}
-                  >
-                    {topbarBadge}
-                  </span>
-                </div>
+              {error ? (
+                <p
+                  className={styles.proofNote}
+                  style={{
+                    color: "var(--cw-danger)",
+                    background: "color-mix(in srgb, var(--cw-danger) 8%, var(--cw-platform-surface) 92%)",
+                  }}
+                >
+                  {error}
+                </p>
+              ) : null}
 
-                <div
-                  className="mx-auto h-12 w-12 rounded-full border-4 animate-spin motion-reduce:animate-none"
-                  style={{ borderColor: "var(--cw-border)", borderTopColor: "var(--cw-status-success)" }}
-                />
-                <h2
-                  className="text-2xl font-bold"
+              <div className="flex items-center justify-between gap-3 text-xs" style={{ color: "var(--cw-muted)" }}>
+                <button
+                  type="button"
+                  onClick={() => setPhase("intro")}
+                  className="cw-btn-outline inline-flex min-h-11 select-none items-center justify-center px-3 text-xs font-semibold motion-reduce:transition-none"
                   style={{
                     color: "var(--cw-text)",
                   }}
                 >
-                  Аналізуємо ваш профіль...
-                </h2>
-                <p className="text-sm" style={{ color: "var(--cw-muted)" }}>
-                  Формуємо практичний вектор і наступний маршрут у платформі.
-                </p>
+                  На головну
+                </button>
+                <span>Режим v1: попередню відповідь змінити не можна.</span>
               </div>
-            ) : null}
+            </div>
+          ) : null}
 
-            {phase === "result" && resultType && resultCopy ? (
-              <div className="space-y-6">
-                <div className="flex justify-start">
-                  <span
-                    className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
-                    style={{
-                      borderColor: "var(--cw-border)",
-                      background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
-                      color: "var(--cw-text)",
-                    }}
-                  >
-                    {topbarBadge}
-                  </span>
-                </div>
-
-                <div
-                  className="rounded-2xl border p-5"
+          {phase === "loading" ? (
+            <div className="space-y-4 py-10 text-center">
+              <div className="flex justify-start">
+                <span
+                  className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
                   style={{
-                    borderColor: "color-mix(in srgb, var(--cw-status-success) 38%, var(--cw-border) 62%)",
-                    background: "color-mix(in srgb, var(--cw-status-success-soft) 72%, #ffffff 28%)",
+                    borderColor: "var(--cw-border)",
+                    background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
+                    color: "var(--cw-text)",
                   }}
                 >
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--cw-status-success)" }}>
-                    Ваш профіль
-                  </p>
-                  <h2
-                    className="mt-2 text-3xl font-bold"
-                    style={{
-                      color: "var(--cw-text)",
-                    }}
-                  >
-                    {resultCopy.title}
-                  </h2>
-                  <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--cw-text)" }}>
-                    {resultCopy.summary}
-                  </p>
-                  <p className="mt-3 text-sm font-medium leading-relaxed" style={{ color: "var(--cw-text)" }}>
-                    {resultCopy.recommendation}
-                  </p>
-                </div>
-
-                <div
-                  className="rounded-2xl border p-4 text-sm"
-                  style={{ borderColor: "var(--cw-border)", background: "color-mix(in srgb, var(--cw-surface-solid) 92%, #ffffff 8%)", color: "var(--cw-text)" }}
-                >
-                  <p className="font-semibold">Що це означає у практиці</p>
-                  <p className="mt-2" style={{ color: "var(--cw-muted)" }}>{resultCopy.weekVector}</p>
-                  <p className="mt-3" style={{ color: "var(--cw-muted)" }}>
-                    Рахунок: Вата {scores.vata} • Пітта {scores.pitta} • Капха {scores.kapha}
-                  </p>
-                </div>
-
-                <div className="space-y-3">
-                  <p className="text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--cw-muted)" }}>
-                    Наступний крок
-                  </p>
-                  <div className="grid gap-3 sm:grid-cols-2">
-                    <Link
-                      href={DOSHA_PRIMARY_EXIT.href}
-                      onClick={() => {
-                        void emitAttemptEvent("dosha_followup_clicked", {
-                          target: DOSHA_PRIMARY_EXIT.target,
-                          ctaTarget: DOSHA_PRIMARY_EXIT.ctaTarget,
-                          screen: "result",
-                          step: totalQuestions,
-                          uiVariant,
-                          resultType,
-                          scores,
-                          completedAt,
-                          nextStep: DOSHA_PRIMARY_EXIT.nextStep,
-                        });
-                      }}
-                      className="cw-btn-primary inline-flex w-full min-h-11 items-center justify-center px-4 py-3 text-sm font-semibold motion-reduce:transition-none"
-                    >
-                      Отримати персональні рекомендації
-                    </Link>
-                    <Link
-                      href={DOSHA_SECONDARY_EXIT.href}
-                      onClick={() => {
-                        void emitAttemptEvent("dosha_followup_clicked", {
-                          target: DOSHA_SECONDARY_EXIT.target,
-                          ctaTarget: DOSHA_SECONDARY_EXIT.ctaTarget,
-                          screen: "result",
-                          step: totalQuestions,
-                          uiVariant,
-                          resultType,
-                          scores,
-                          completedAt,
-                          nextStep: DOSHA_SECONDARY_EXIT.nextStep,
-                        });
-                      }}
-                      className="cw-btn-outline inline-flex w-full min-h-11 items-center justify-center px-4 py-3 text-sm font-semibold motion-reduce:transition-none"
-                      style={{ color: "var(--cw-text)" }}
-                    >
-                      Переглянути програму
-                    </Link>
-                  </div>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      saveAttemptId(null);
-                      setAttemptId(null);
-                      setPhase("intro");
-                      setResultViewedSent(false);
-                    }}
-                    className="cw-btn-ghost inline-flex min-h-11 items-center justify-center px-3 text-sm font-semibold underline underline-offset-4 motion-reduce:transition-none"
-                    style={{ color: "var(--cw-muted)" }}
-                  >
-                    Пройти тест ще раз
-                  </button>
-                </div>
+                  {topbarBadge}
+                </span>
               </div>
-            ) : null}
-          </div>
 
-          <div
-            className="mx-auto mt-4 max-w-lg overflow-hidden transition-all duration-300 ease-out motion-reduce:transition-none"
-            style={{
-              maxHeight: isDoshaInfoOpen && phase === "intro" ? "16rem" : "0rem",
-              opacity: isDoshaInfoOpen && phase === "intro" ? 1 : 0,
-              transform: isDoshaInfoOpen && phase === "intro" ? "translateY(0)" : "translateY(-8px)",
-            }}
-            aria-hidden={!(isDoshaInfoOpen && phase === "intro")}
-          >
-            <section
-              id="what-is-dosha"
-              className="rounded-2xl border p-5 text-sm leading-relaxed backdrop-blur"
-              style={{
-                borderColor: "var(--cw-border)",
-                background: "color-mix(in srgb, var(--cw-surface) 84%, #ffffff 16%)",
-                color: "var(--cw-muted)",
-              }}
-            >
-              <h3 className="text-base font-semibold" style={{ color: "var(--cw-text)" }}>Що таке доша?</h3>
-              <p className="mt-2">
-                У підході CenterWay доші описують природні патерни енергії, ритму й відновлення. Тест допомагає обрати релевантний маршрут практик і контенту в платформі.
-                Це wellness-орієнтир для персоналізації й не є медичним діагнозом.
-              </p>
-            </section>
-          </div>
-        </section>
+              <div
+                className="mx-auto h-12 w-12 rounded-full border-4 animate-spin motion-reduce:animate-none"
+                style={{ borderColor: "var(--cw-border)", borderTopColor: "var(--cw-status-success)" }}
+              />
+              <h2 className={styles.title}>Аналізуємо ваш профіль...</h2>
+              <p className={styles.lead}>Формуємо практичний вектор і наступний маршрут у платформі.</p>
+            </div>
+          ) : null}
+
+          {phase === "result" && resultType && resultCopy ? (
+            <div className="space-y-6">
+              <div className="flex justify-start">
+                <span
+                  className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
+                  style={{
+                    borderColor: "var(--cw-border)",
+                    background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
+                    color: "var(--cw-text)",
+                  }}
+                >
+                  {topbarBadge}
+                </span>
+              </div>
+
+              <div className={styles.card} data-tone="support">
+                <p className={styles.label}>Ваш профіль</p>
+                <h2>{resultCopy.title}</h2>
+                <p>{resultCopy.summary}</p>
+                <p>{resultCopy.recommendation}</p>
+              </div>
+
+              <div className={styles.card} data-tone="proof">
+                <h2>Що це означає у практиці</h2>
+                <p>{resultCopy.weekVector}</p>
+                <p>Рахунок: Вата {scores.vata} • Пітта {scores.pitta} • Капха {scores.kapha}</p>
+              </div>
+
+              <div className="space-y-3">
+                <p className={styles.label}>Наступний крок</p>
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <Link
+                    href={DOSHA_PRIMARY_EXIT.href}
+                    onClick={() => {
+                      void emitAttemptEvent("dosha_followup_clicked", {
+                        target: DOSHA_PRIMARY_EXIT.target,
+                        ctaTarget: DOSHA_PRIMARY_EXIT.ctaTarget,
+                        screen: "result",
+                        step: totalQuestions,
+                        uiVariant,
+                        resultType,
+                        scores,
+                        completedAt,
+                        nextStep: DOSHA_PRIMARY_EXIT.nextStep,
+                      });
+                    }}
+                    className="cw-btn-primary inline-flex w-full min-h-11 items-center justify-center px-4 py-3 text-sm font-semibold motion-reduce:transition-none"
+                  >
+                    Отримати персональні рекомендації
+                  </Link>
+                  <Link
+                    href={DOSHA_SECONDARY_EXIT.href}
+                    onClick={() => {
+                      void emitAttemptEvent("dosha_followup_clicked", {
+                        target: DOSHA_SECONDARY_EXIT.target,
+                        ctaTarget: DOSHA_SECONDARY_EXIT.ctaTarget,
+                        screen: "result",
+                        step: totalQuestions,
+                        uiVariant,
+                        resultType,
+                        scores,
+                        completedAt,
+                        nextStep: DOSHA_SECONDARY_EXIT.nextStep,
+                      });
+                    }}
+                    className="cw-btn-outline inline-flex w-full min-h-11 items-center justify-center px-4 py-3 text-sm font-semibold motion-reduce:transition-none"
+                    style={{ color: "var(--cw-text)" }}
+                  >
+                    Переглянути програму
+                  </Link>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    saveAttemptId(null);
+                    setAttemptId(null);
+                    setPhase("intro");
+                    setResultViewedSent(false);
+                  }}
+                  className={styles.heroSecondaryButton}
+                >
+                  <span>Пройти тест ще раз</span>
+                </button>
+              </div>
+            </div>
+          ) : null}
+        </article>
       </div>
+        </section>
+      )}
 
-    </main>
+      <PlatformAuthModal
+        open={showAuthPrompt && !session?.user && isAuthEnabled}
+        onClose={() => setShowAuthPrompt(false)}
+        onSignIn={() => {
+          void signInWithGoogle();
+        }}
+      />
+    </>
   );
 }

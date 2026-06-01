@@ -88,6 +88,7 @@ The important check is:
 - materially changed behavior still matches the canon;
 - when a notable product, brand, интерфейс, architecture, route-family, data, or release invariant changes, the canon is updated accordingly;
 - every agent completes preflight before starting substantial work.
+- after each push, the agent follows the remote CI/deploy loop for the exact pushed `headSha` instead of stopping at local green checks.
 
 If implementation changes are large enough to alter user-facing structure, semantic roles, token contracts, block contracts, CTA logic, route-family logic, route boundaries, admin rules, data contracts, or release gate, treat that as a canon-sync event.
 
@@ -96,6 +97,19 @@ Canon-sync means:
 1. update the local operational doc;
 2. decide whether the change is durable enough for RAverse;
 3. if yes, update the smallest relevant RAverse canon note in the same work cycle.
+
+## Remote CI Loop
+
+For review-branch and PR work, local green checks are necessary but not sufficient.
+
+The default operating rule is:
+
+1. push the coherent change set;
+2. inspect fresh remote runs for that exact `headSha`;
+3. inspect failed logs directly if any run is red;
+4. inspect failed preview deployments directly if deploy is red;
+5. treat screenshots as secondary evidence, not as the main source of CI status;
+6. continue the fix -> validate -> push -> inspect loop until the active remote run set is green or an external blocker is isolated.
 
 ## Conflict Rule
 

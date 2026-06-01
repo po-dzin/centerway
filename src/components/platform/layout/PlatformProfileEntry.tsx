@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
+import type { MouseEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabaseClient } from "@/lib/supabaseClient";
 import styles from "@/components/platform/PlatformShellStyles";
+import { usePlatformHref } from "./usePlatformHref";
 
 function getUserInitial(session: Session | null) {
   const name = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email;
@@ -21,17 +23,8 @@ export function PlatformProfileEntry({
   onNavigate?: () => void;
 }) {
   const [session, setSession] = useState<Session | null>(null);
-  const [menuOpen, setMenuOpen] = useState(false);
   const isAuthEnabled = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
-
-  const syncPlatformUser = useCallback(async (accessToken: string) => {
-    await fetch("/api/platform/users/sync", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }).catch(() => undefined);
-  }, []);
+  const profileHref = usePlatformHref("/profile");
 
   useEffect(() => {
     if (!isAuthEnabled) return;
@@ -39,7 +32,6 @@ export function PlatformProfileEntry({
     const boot = async () => {
       const { data } = await supabaseClient.auth.getSession();
       setSession(data.session);
-      if (data.session?.access_token) void syncPlatformUser(data.session.access_token);
     };
     void boot();
 
@@ -47,13 +39,12 @@ export function PlatformProfileEntry({
       data: { subscription },
     } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
-      if (nextSession?.access_token) void syncPlatformUser(nextSession.access_token);
     });
 
     return () => subscription.unsubscribe();
-  }, [isAuthEnabled, syncPlatformUser]);
+  }, [isAuthEnabled]);
 
-  const signInWithGoogle = useCallback(async () => {
+  const signInWithGoogle = async () => {
     const redirectTo = typeof window !== "undefined" ? window.location.href : undefined;
     await supabaseClient.auth.signInWithOAuth({
       provider: "google",
@@ -61,58 +52,31 @@ export function PlatformProfileEntry({
         redirectTo,
       },
     });
-  }, []);
+  };
 
-  const signOut = useCallback(async () => {
-    await supabaseClient.auth.signOut();
-    setMenuOpen(false);
+  const handleProfileClick = (event: MouseEvent<HTMLAnchorElement>) => {
+    if (session?.user || !isAuthEnabled) {
+      onNavigate?.();
+      return;
+    }
+
+    event.preventDefault();
     onNavigate?.();
-  }, [onNavigate]);
+    void signInWithGoogle();
+  };
 
   const avatarUrl = session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || null;
-  const label = session?.user ? "Профіль" : "Увійти";
-
-  if (!isAuthEnabled) {
-    return (
-      <Link
-        className={`${styles.profileEntry} ${mobile ? styles.profileEntryMobile : ""} ${compact ? styles.profileEntryCompact : ""}`}
-        href="/dosha-test"
-        onClick={onNavigate}
-        aria-label="Профіль"
-        data-auth-state="fallback"
-      >
-        {compact ? <span className={styles.profileGlyph} aria-hidden="true" /> : <span className={styles.profileLabel}>Профіль</span>}
-      </Link>
-    );
-  }
-
-  if (!session?.user) {
-    return (
-      <button
-        className={`${styles.profileEntry} ${mobile ? styles.profileEntryMobile : ""} ${compact ? styles.profileEntryCompact : ""}`}
-        type="button"
-        aria-label="Увійти"
-        data-auth-state="guest"
-        onClick={() => {
-          onNavigate?.();
-          void signInWithGoogle();
-        }}
-      >
-        {compact ? <span className={styles.profileGlyph} aria-hidden="true" /> : <span className={styles.profileLabel}>Увійти</span>}
-      </button>
-    );
-  }
+  const label = session?.user ? "Профіль" : mobile ? "Профіль" : "Увійти";
 
   return (
-    <div className={`${styles.profileWrap} ${mobile ? styles.profileWrapMobile : ""}`}>
-      <button
-        className={`${styles.profileEntry} ${mobile ? styles.profileEntryMobile : ""} ${compact ? styles.profileEntryCompact : ""}`}
-        type="button"
-        aria-label={label}
-        aria-expanded={menuOpen}
-        data-auth-state="user"
-        onClick={() => setMenuOpen((open) => !open)}
-      >
+    <Link
+      className={`${styles.profileEntry} ${mobile ? styles.profileEntryMobile : ""} ${compact ? styles.profileEntryCompact : ""}`}
+      href={profileHref}
+      onClick={handleProfileClick}
+      aria-label={label}
+      data-auth-state={session?.user ? "user" : isAuthEnabled ? "guest" : "fallback"}
+    >
+      {session?.user ? (
         <span className={styles.profileAvatar} aria-hidden="true">
           {avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -121,19 +85,10 @@ export function PlatformProfileEntry({
             getUserInitial(session)
           )}
         </span>
-        {compact ? null : <span className={styles.profileLabel}>{label}</span>}
-      </button>
-      {menuOpen ? (
-        <div className={styles.profileMenu}>
-          <p>{session.user.email ?? "Google профіль"}</p>
-          <Link href="/dosha-test" onClick={onNavigate}>
-            Мій тест доши
-          </Link>
-          <button type="button" onClick={() => void signOut()}>
-            Вийти
-          </button>
-        </div>
+      ) : compact ? (
+        <span className={styles.profileGlyph} aria-hidden="true" />
       ) : null}
-    </div>
+      {compact ? null : <span className={styles.profileLabel}>{label}</span>}
+    </Link>
   );
 }

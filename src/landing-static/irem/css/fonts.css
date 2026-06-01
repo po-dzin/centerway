@@ -2,67 +2,38 @@
   font-family: "Formular";
   font-style: normal;
   font-weight: 300;
-  src: url("../fonts/Formular-Light.ttf") format("truetype"); 
+  font-display: swap;
+  src: url("../fonts/Formular-Light.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Formular";
   font-style: normal;
   font-weight: 400;
-  src: url("../fonts/Formular.ttf") format("truetype"); 
+  font-display: swap;
+  src: url("../fonts/Formular.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Formular";
   font-style: normal;
   font-weight: 500;
-  src: url("../fonts/Formular-Medium.ttf") format("truetype"); 
+  font-display: swap;
+  src: url("../fonts/Formular-Medium.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Formular";
   font-style: normal;
   font-weight: 600;
-  src: url("../fonts/Formular-Bold.ttf") format("truetype"); 
+  font-display: swap;
+  src: url("../fonts/Formular-Bold.woff2") format("woff2");
 }
 
 @font-face {
   font-family: "Formular";
   font-style: normal;
   font-weight: 700;
-  src: url("../fonts/Formular-Black.ttf") format("truetype"); 
-}
-@font-face {
-  font-family: "OpenSans";
-  font-style: normal;
-  font-weight: 300;
-  src: url("../fonts/OpenSans-Light.ttf") format("truetype"); 
-}
-
-@font-face {
-  font-family: "OpenSans";
-  font-style: normal;
-  font-weight: 400;
-  src: url("../fonts/OpenSans-Regular.ttf") format("truetype"); 
-}
-
-@font-face {
-  font-family: "OpenSans";
-  font-style: normal;
-  font-weight: 500;
-  src: url("../fonts/OpenSans-SemiBold.ttf") format("truetype"); 
-}
-
-@font-face {
-  font-family: "OpenSans";
-  font-style: normal;
-  font-weight: 600;
-  src: url("../fonts/OpenSans-Bold.ttf") format("truetype"); 
-}
-
-@font-face {
-  font-family: "OpenSans";
-  font-style: normal;
-  font-weight: 700;
-  src: url("../fonts/OpenSans-ExtraBold.ttf") format("truetype"); 
+  font-display: swap;
+  src: url("../fonts/Formular-Black.woff2") format("woff2");
 }

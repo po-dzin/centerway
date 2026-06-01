@@ -166,6 +166,15 @@
       "--cw-sem-symbol-body": "radial-gradient(circle at 32% 34%, color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent), transparent 44%), radial-gradient(circle at 70% 68%, color-mix(in srgb, var(--cw-sem-embodied) 16%, transparent), transparent 48%)",
       "--cw-sem-symbol-cleansing": "linear-gradient(180deg, color-mix(in srgb, var(--cw-sem-calm-surface) 62%, transparent), color-mix(in srgb, var(--cw-sem-calm-bg) 88%, transparent))",
       "--cw-sem-symbol-integration": "linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-warmth) 16%, transparent), color-mix(in srgb, var(--cw-sem-calm-surface-muted) 92%, transparent))",
+      "--cw-surface-glass-bg": "var(--cw-component-glass-bg)",
+      "--cw-surface-glass-bg-hover": "var(--cw-component-glass-bg-hover)",
+      "--cw-surface-glass-border": "var(--cw-component-glass-border)",
+      "--cw-surface-glass-filter": "var(--cw-component-glass-filter)",
+      "--cw-surface-glass-shadow": "var(--cw-component-glass-shadow)",
+      "--cw-surface-shell-band-bg": "var(--cw-surface-glass-bg)",
+      "--cw-surface-shell-control-bg": "var(--cw-surface-glass-bg)",
+      "--cw-surface-shell-hover-bg": "var(--cw-surface-glass-bg-hover)",
+      "--cw-surface-shell-popover-bg": "color-mix(in srgb, var(--cw-surface-glass-bg) 86%, var(--cw-platform-surface) 14%)",
       "--cw-shell-frost-bg": "var(--cw-component-glass-bg)",
       "--cw-shell-frost-filter": "var(--cw-component-glass-filter)"
     },
@@ -194,7 +203,7 @@
         "--cw-component-glass-frost-position": "38% center"
       },
       "depth": {
-        "--cw-depth-card-bg": "color-mix(in srgb, var(--cw-sem-calm-surface) 92%, transparent)",
+        "--cw-depth-card-bg": "color-mix(in srgb, var(--cw-sem-calm-surface) 92%, var(--cw-sem-calm-surface-muted) 8%)",
         "--cw-depth-support-bg": "color-mix(in srgb, var(--cw-sem-calm-surface) 88%, var(--cw-sem-calm-surface-muted) 12%)",
         "--cw-depth-proof-bg": "color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-sem-calm-surface) 38%)",
         "--cw-depth-boundary-bg": "color-mix(in srgb, var(--cw-sem-boundary) 10%, var(--cw-sem-calm-surface) 90%)",

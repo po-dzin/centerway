@@ -41,7 +41,7 @@ function getLegacyStaticPrefix(product: ProductKey) {
   return product === "reboot" ? "/short" : "/irem";
 }
 
-function rewriteGeneratedFunnelUtility(req: NextRequest, product: "consult" | "detox" | "mini-detox", mappedPage: string) {
+function rewriteGeneratedFunnelUtility(req: NextRequest, product: "consult" | "detox", mappedPage: string) {
   const utilityPage = getUtilityPageByFile(mappedPage.replace(/^\//, ""));
   if (!utilityPage) {
     return rewriteDisabledSurface(req);
@@ -72,6 +72,10 @@ export function rewriteFunnelHostRequest(req: NextRequest): NextResponse | null 
 
   const mappedPage = getLandingRootRewritePath(req.nextUrl.pathname);
   if (mappedPage) {
+    if (product === "mini-detox" && mappedPage === "/index.html") {
+      return rewriteSurfaceRoute(req, "/programs/mini-detox", "platform");
+    }
+
     if (!isActiveFunnelProduct(product)) {
       return rewriteDisabledSurface(req);
     }
@@ -86,7 +90,7 @@ export function rewriteFunnelHostRequest(req: NextRequest): NextResponse | null 
 
     if (
       entry.funnelRuntime === "generated-app" &&
-      (product === "consult" || product === "detox" || product === "mini-detox")
+      (product === "consult" || product === "detox")
     ) {
       return rewriteGeneratedFunnelUtility(req, product, mappedPage);
     }

@@ -66,6 +66,15 @@
   font-size: clamp(2.15rem, 4.9vw, 3.7rem);
 }
 
+.panel :where(.title, .sectionTitle),
+.card :where(.title, .sectionTitle),
+.formPanel :where(.title, .sectionTitle),
+.mediaPanel :where(.title, .sectionTitle) {
+  max-width: min(16ch, 100%);
+  text-wrap: balance;
+  overflow-wrap: normal;
+}
+
 .lead {
   max-width: 44rem;
   margin: 0;
@@ -99,6 +108,21 @@
   display: grid;
   grid-template-columns: minmax(0, 0.8fr) minmax(0, 1fr);
   gap: 1rem;
+}
+
+.productFocusSplit {
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .productFocusSplit {
+    grid-template-columns: 1fr;
+  }
+
+  .productFocusSplit > * {
+    width: 100%;
+    min-width: 0;
+  }
 }
 
 .panel {

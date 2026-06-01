@@ -1,4 +1,4 @@
-import { GeneratedRouteScreen } from "@/components/generator/GeneratedRouteScreen";
+import { permanentRedirect } from "next/navigation";
 
 export const metadata = {
   title: "CenterWay Herbs | Вхід через трави",
@@ -16,5 +16,5 @@ export const metadata = {
 };
 
 export default function HerbsPage() {
-  return <GeneratedRouteScreen routeKey="herbs" />;
+  permanentRedirect("/products/herbs");
 }

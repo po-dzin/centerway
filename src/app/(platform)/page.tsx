@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { GeneratedRouteScreen } from "@/components/generator/GeneratedRouteScreen";
+import { PlatformHomePage } from "@/components/platform/PlatformStandalonePages";
 
 export const metadata: Metadata = {
   title: "CenterWay - аюрведична платформа відновлення",
@@ -9,5 +9,5 @@ export const metadata: Metadata = {
 };
 
 export default function Home() {
-  return <GeneratedRouteScreen routeKey="platform-home" />;
+  return <PlatformHomePage />;
 }

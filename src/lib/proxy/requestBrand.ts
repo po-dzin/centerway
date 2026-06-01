@@ -7,7 +7,20 @@ function normalizedHost(rawHost: string | null): string {
   return rawHost.split(":")[0].trim().toLowerCase();
 }
 
-function brandFromReferer(rawReferer: string | null, requestHost: string): HostBrand | null {
+function isPlatformRootRoute(pathname: string): boolean {
+  return (
+    pathname === "/" ||
+    pathname === "/programs" ||
+    pathname === "/products" ||
+    pathname === "/expert" ||
+    pathname === "/dosha-test"
+  );
+}
+
+function brandFromReferer(rawReferer: string | null, requestHost: string, requestPathname: string): HostBrand | null {
+  if (isPlatformRootRoute(requestPathname)) {
+    return null;
+  }
   if (!rawReferer) return null;
   try {
     const ref = new URL(rawReferer);
@@ -23,6 +36,7 @@ function brandFromReferer(rawReferer: string | null, requestHost: string): HostB
     if (pathname === "/programs/irem" || pathname.startsWith("/programs/irem/")) return "irem";
     if (pathname === "/programs/mini-detox" || pathname.startsWith("/programs/mini-detox/")) return "mini-detox";
     if (pathname === "/mini-detox" || pathname.startsWith("/mini-detox/")) return "mini-detox";
+    if (pathname === "/programs/way21" || pathname.startsWith("/programs/way21/")) return "detox";
     if (pathname === "/programs/detox" || pathname.startsWith("/programs/detox/")) return "detox";
     if (pathname === "/products/herbs" || pathname.startsWith("/products/herbs/")) return "herbs";
     if (pathname === "/consult" || pathname.startsWith("/consult/")) return "consult";
@@ -42,8 +56,8 @@ export function resolveRequestBrand(req: NextRequest): HostBrand | null {
   const byHost = hostBrandFromHost(requestHost);
   if (byHost) return byHost;
 
-  // Referer acts only as a same-host fallback hint in ambiguous cases.
-  return brandFromReferer(req.headers.get("referer"), requestHost);
+  // Referer acts only as a same-host fallback hint in ambiguous non-platform cases.
+  return brandFromReferer(req.headers.get("referer"), requestHost, req.nextUrl.pathname.toLowerCase());
 }
 
 export function resolveRequestBrandFromPath(pathname: string): HostBrand | null {
@@ -54,6 +68,7 @@ export function resolveRequestBrandFromPath(pathname: string): HostBrand | null 
   if (clean === "/irem" || clean.startsWith("/irem/")) return "irem";
   if (clean === "/programs/mini-detox" || clean.startsWith("/programs/mini-detox/")) return "mini-detox";
   if (clean === "/mini-detox" || clean.startsWith("/mini-detox/")) return "mini-detox";
+  if (clean === "/programs/way21" || clean.startsWith("/programs/way21/")) return "detox";
   if (clean === "/programs/detox" || clean.startsWith("/programs/detox/")) return "detox";
   if (clean === "/products/herbs" || clean.startsWith("/products/herbs/")) return "herbs";
   if (clean === "/detox" || clean.startsWith("/detox/")) return "detox";

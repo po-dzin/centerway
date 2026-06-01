@@ -32,6 +32,7 @@
     "smoke:admin:ci": "node scripts/smoke-admin-ci.mjs",
     "smoke:admin:ui": "node scripts/smoke-admin-ui.mjs",
     "smoke:landing:dynamic-offer": "node scripts/smoke-landing-dynamic-offer.mjs",
+    "smoke:platform:browser": "npx playwright test tests/e2e/platform-unification.spec.ts --reporter=list",
     "smoke:dosha:result": "node scripts/smoke-dosha-result-engine.mjs",
     "smoke:dosha:api": "node scripts/smoke-dosha-api-flow.mjs",
     "smoke:dosha:userflows": "node scripts/smoke-dosha-userflows.mjs",
@@ -68,6 +69,7 @@
     "eslint-config-next": "16.1.5",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.19",
-    "typescript": "^5"
+    "typescript": "^5",
+    "vitest": "^4.1.7"
   }
 }

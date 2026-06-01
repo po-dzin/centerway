@@ -26,7 +26,7 @@
   border-radius: var(--cw-radius-lg);
   color: var(--cw-platform-text);
   text-decoration: none;
-  background: color-mix(in srgb, var(--cw-platform-surface) 92%, transparent);
+  background: var(--cw-depth-card-bg);
   box-shadow: var(--cw-depth-shadow-soft);
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
@@ -63,7 +63,7 @@
   padding: 1rem;
   border-radius: var(--cw-radius-lg);
   text-decoration: none;
-  background: color-mix(in srgb, var(--cw-platform-surface) 90%, transparent);
+  background: var(--cw-depth-card-bg);
   box-shadow: var(--cw-depth-shadow-soft);
 }
 

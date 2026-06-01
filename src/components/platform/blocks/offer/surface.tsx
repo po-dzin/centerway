@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { LeadForm } from "@/components/platform/LeadForm";
+import { PlatformDetailHero } from "@/components/platform/PlatformDetailHero";
 import styles from "@/components/platform/PlatformContentStyles";
 import { currentProgram, routeLabels } from "@/components/platform/blocks/route/context";
-import type { PlatformGeneratedBlockProps } from "@/components/platform/blocks/types";
+import type { PlatformRouteBlockProps } from "@/components/platform/blocks/types";
 
-function offerView(programSlug?: PlatformGeneratedBlockProps["programSlug"]) {
+function offerView(programSlug?: PlatformRouteBlockProps["programSlug"]) {
   const program = currentProgram(programSlug);
   const isMiniCourse = program?.surfaceType === "mini-course";
 
@@ -39,41 +39,28 @@ function offerView(programSlug?: PlatformGeneratedBlockProps["programSlug"]) {
   };
 }
 
-export function OfferHero({ programSlug }: Pick<PlatformGeneratedBlockProps, "programSlug">) {
+export function OfferHero({ programSlug }: Pick<PlatformRouteBlockProps, "programSlug">) {
   const { isMiniCourse, program, heroPrimaryCta, heroSecondaryCta } = offerView(programSlug);
   if (!program) return null;
+
   return (
-    <section className={`${styles.container} ${styles.hero} ${styles.offerHeroLayout}`}>
-      <aside className={styles.offerHeroVisualCard} data-visual={program.visual} aria-label={program.title}>
-        <div className={styles.programPhoto} aria-hidden="true" />
-        <div className={styles.offerHeroVisualMeta}>
-          <p className={styles.label}>{program.duration}</p>
-          <h3>{program.title}</h3>
-          <p>{program.description}</p>
-        </div>
-      </aside>
-      <div className={styles.heroPanel}>
-        <div>
-          <p className={styles.eyebrow}>{program.tag}</p>
-          <h1 className={styles.heroTitle}>{program.fullTitle}</h1>
-        </div>
-        <p className={styles.lead}>{program.longDescription}</p>
-        <div className={styles.heroFooter}>
-          <Link className={styles.primaryButton} href={isMiniCourse ? "#program-results" : "#program-enroll"}>
-            {heroPrimaryCta}
-          </Link>
-          {heroSecondaryCta ? (
-            <Link className={styles.secondaryButton} href="#program-results">
-              {heroSecondaryCta}
-            </Link>
-          ) : null}
-        </div>
-      </div>
-    </section>
+    <PlatformDetailHero
+      title={program.fullTitle}
+      description={program.description}
+      badge={`${program.tag} · ${program.duration}`}
+      artwork={program.artwork}
+      imageAlt={program.title}
+      templateKind="program"
+      primaryAction={{
+        href: isMiniCourse ? "#program-enroll" : "#program-enroll",
+        label: heroPrimaryCta,
+      }}
+      secondaryAction={heroSecondaryCta ? { href: "#program-results", label: heroSecondaryCta } : null}
+    />
   );
 }
 
-export function OfferInfo({ programSlug }: Pick<PlatformGeneratedBlockProps, "programSlug">) {
+export function OfferInfo({ programSlug }: Pick<PlatformRouteBlockProps, "programSlug">) {
   const { program, detailsTitle, formatMeta } = offerView(programSlug);
   if (!program) return null;
   return (
@@ -103,7 +90,7 @@ export function OfferInfo({ programSlug }: Pick<PlatformGeneratedBlockProps, "pr
   );
 }
 
-export function OfferForm({ route, programSlug }: Pick<PlatformGeneratedBlockProps, "route" | "programSlug">) {
+export function OfferForm({ route, programSlug }: Pick<PlatformRouteBlockProps, "route" | "programSlug">) {
   const { productCode, supportLabel, supportLead, supportTitle } = offerView(programSlug);
   return (
     <section className={`${styles.container} ${styles.section}`} id="program-enroll">

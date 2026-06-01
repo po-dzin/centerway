@@ -1,3 +1,4 @@
+import { findScreenManifestById } from "@/lib/generator/registry";
 import type { RouteFamily, ScreenRouteKey } from "@/lib/generator/types";
 import type { SurfaceKind } from "@/lib/surfaces/catalog";
 
@@ -25,63 +26,25 @@ const ROUTE_RUNTIME: Record<ScreenRouteKey, RouteRuntimeConfig> = {
   consult: {
     defaultScreenId: "screen.consult.v1.control",
     cssHrefs: [REVORK_STYLESHEET],
-    shell: "platform",
+    shell: "plain",
+    stickyFooter: true,
   },
   detox: {
     defaultScreenId: "screen.detox.v1.control",
     cssHrefs: [REVORK_STYLESHEET],
-    shell: "platform",
+    shell: "plain",
+    stickyFooter: true,
   },
   herbs: {
     defaultScreenId: "screen.herbs.v1.control",
     cssHrefs: [REVORK_STYLESHEET],
-    shell: "platform",
-  },
-  "dosha-test": {
-    defaultScreenId: "screen.dosha-test.v1.control",
-    cssHrefs: [REVORK_STYLESHEET],
-    shell: "platform",
-    platformHeaderMode: "default",
+    shell: "plain",
+    stickyFooter: true,
   },
   "lesson-pilot": {
     defaultScreenId: "screen.lesson.pilot.v1.control",
     cssHrefs: [REVORK_STYLESHEET],
     shell: "plain",
-  },
-  "platform-home": {
-    defaultScreenId: "screen.platform-home.v1.control",
-    shell: "platform",
-    platformHeaderMode: "overlay",
-  },
-  expert: {
-    defaultScreenId: "screen.expert.v1.control",
-    shell: "platform",
-    platformHeaderMode: "default",
-  },
-  "program-way21": {
-    defaultScreenId: "screen.program-way21.v1.control",
-    shell: "platform",
-    platformHeaderMode: "overlay",
-  },
-  "program-ideal-body": {
-    defaultScreenId: "screen.program-ideal-body.v1.control",
-    shell: "platform",
-    platformHeaderMode: "overlay",
-  },
-  "program-irem": {
-    defaultScreenId: "screen.program-irem.v1.control",
-    shell: "platform",
-    platformHeaderMode: "overlay",
-  },
-  "program-reboot": {
-    defaultScreenId: "screen.program-reboot.v1.control",
-    shell: "platform",
-    platformHeaderMode: "overlay",
-  },
-  "mini-detox": {
-    defaultScreenId: "screen.mini-detox.v1.control",
-    shell: "platform",
-    platformHeaderMode: "overlay",
   },
 };
 
@@ -89,104 +52,33 @@ export function getRouteRuntime(routeKey: ScreenRouteKey): RouteRuntimeConfig {
   return ROUTE_RUNTIME[routeKey];
 }
 
-export function resolveRouteRuntime(routeKey: ScreenRouteKey, surfaceKind?: SurfaceKind): RouteRuntimeConfig {
-  const base = getRouteRuntime(routeKey);
-
-  if (surfaceKind !== "funnel") {
-    return base;
-  }
-
-  if (routeKey === "consult" || routeKey === "detox" || routeKey === "herbs") {
-    return {
-      ...base,
-      shell: "plain",
-      stickyFooter: true,
-    };
-  }
-
-  if (routeKey === "mini-detox") {
-    return {
-      ...base,
-      shell: "plain",
-      platformHeaderMode: undefined,
-    };
-  }
-
-  return base;
+export function resolveRouteRuntime(routeKey: ScreenRouteKey): RouteRuntimeConfig {
+  return getRouteRuntime(routeKey);
 }
 
 export function isStickyFooterRoute(routeKey: ScreenRouteKey): routeKey is StickyFooterRouteKey {
   return routeKey === "consult" || routeKey === "detox" || routeKey === "herbs";
 }
 
-export function resolveEffectiveRouteMetadata(routeKey: ScreenRouteKey, surfaceKind?: SurfaceKind): EffectiveRouteMetadata {
-  if (surfaceKind === "funnel") {
-    return {
-      routeFamily: "funnel surface",
-      routeBoundary: "isolated funnel route",
-      surfaceKind: "funnel",
-    };
-  }
+function surfaceKindFromRouteFamily(routeFamily: RouteFamily): SurfaceKind {
+  return routeFamily === "utility" ? "utility" : "funnel";
+}
 
-  if (routeKey === "lesson-pilot") {
-    return {
-      routeFamily: "utility",
-      routeBoundary: "platform utility route",
-      surfaceKind: "utility",
-    };
-  }
+export function resolveEffectiveRouteMetadata(routeKey: ScreenRouteKey): EffectiveRouteMetadata {
+  const runtime = getRouteRuntime(routeKey);
+  const screen = findScreenManifestById(runtime.defaultScreenId);
 
-  if (routeKey === "dosha-test") {
+  if (screen) {
     return {
-      routeFamily: "standalone route entry",
-      routeBoundary: "platform route",
-      surfaceKind: "platform",
-    };
-  }
-
-  if (routeKey === "consult" || routeKey === "detox" || routeKey === "herbs") {
-    return {
-      routeFamily: "standalone route entry",
-      routeBoundary: "platform route",
-      surfaceKind: "platform",
-    };
-  }
-
-  if (routeKey === "platform-home") {
-    return {
-      routeFamily: "platform hub",
-      routeBoundary: "platform route",
-      surfaceKind: "platform",
-    };
-  }
-
-  if (routeKey === "expert") {
-    return {
-      routeFamily: "expert",
-      routeBoundary: "platform route",
-      surfaceKind: "platform",
-    };
-  }
-
-  if (routeKey === "program-way21" || routeKey === "program-ideal-body" || routeKey === "program-irem") {
-    return {
-      routeFamily: "program offer",
-      routeBoundary: "platform route",
-      surfaceKind: "platform",
-    };
-  }
-
-  if (routeKey === "program-reboot" || routeKey === "mini-detox") {
-    return {
-      routeFamily: "mini-course offer",
-      routeBoundary: "platform route",
-      surfaceKind: "platform",
+      routeFamily: screen.route_family,
+      routeBoundary: screen.route_boundary,
+      surfaceKind: surfaceKindFromRouteFamily(screen.route_family),
     };
   }
 
   return {
-    routeFamily: "standalone route entry",
-    routeBoundary: "platform route",
-    surfaceKind: "platform",
+    routeFamily: routeKey === "lesson-pilot" ? "utility" : "funnel surface",
+    routeBoundary: routeKey === "lesson-pilot" ? "platform utility route" : "isolated funnel route",
+    surfaceKind: routeKey === "lesson-pilot" ? "utility" : "funnel",
   };
 }
