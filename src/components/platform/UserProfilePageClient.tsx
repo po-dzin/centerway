@@ -4,57 +4,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabaseClient } from "@/lib/supabaseClient";
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformSurfaceStyles";
 import { usePlatformHref } from "@/components/platform/layout/usePlatformHref";
-
-type ProfileResponse = {
-  userId: string;
-  profile: {
-    account: {
-      email: string | null;
-      fullName: string | null;
-      avatarUrl: string | null;
-    };
-    contacts: {
-      phone: string | null;
-      telegram: string | null;
-    } | null;
-    dosha: {
-      attemptId: string;
-      testId: string;
-      testSlug: string;
-      resultType: string;
-      version: number | null;
-      completedAt: string | null;
-      scores: {
-        vata: number | null;
-        pitta: number | null;
-        kapha: number | null;
-      };
-    } | null;
-    purchases: Array<{
-      orderRef: string;
-      offerCode: string;
-      offerKind: string;
-      title: string;
-      amount: number | null;
-      currency: string | null;
-      createdAt: string | null;
-      access: {
-        order_ref: string;
-        used: boolean;
-        expires_at: string | null;
-        created_at: string | null;
-      } | null;
-    }>;
-    progress: {
-      items: unknown[];
-      note: string;
-    };
-  };
-};
-
-type ProfileLang = "uk" | "en";
+import { getProfileCopy } from "@/components/platform/profile/copy";
+import type { ProfileLang, ProfileResponse } from "@/components/platform/profile/types";
 
 const LANG_EVENT = "cw-lang-change";
 
@@ -203,145 +156,11 @@ export function UserProfilePageClient() {
 
   const copy = useMemo(
     () =>
-      lang === "en"
-        ? {
-            profile: "Profile",
-            loadingTitle: "Loading your data",
-            loadingLead: "We are gathering your dosha result, programs, products, and contact fields.",
-            authTitle: "Sign in to view your route",
-            authLead: "Your dosha result, programs, products, and contact details will appear here.",
-            signIn: "Sign in with Google",
-            returnHome: "Return home",
-            takeDosha: "Take the dosha test",
-            badge: "Profile · Dosha · Route",
-            dosha: "Dosha",
-            activePrograms: "Active programs",
-            products: "Products",
-            contacts: "Contacts",
-            contactsReady: "Saved",
-            contactsMissing: "Add your details",
-            noDosha: "Not defined yet",
-            noPrograms: "None yet",
-            hasPrograms: "In progress",
-            hasProducts: "Added to profile",
-            noProducts: "None yet",
-            heroViewDosha: "View dosha result",
-            signOut: "Sign out",
-            doshaCurrent: "Current result",
-            doshaResultPrefix: "Result",
-            doshaCompletedPrefix: "Completed",
-            completedShort: "Completed",
-            retakeTest: "Retake the test",
-            doshaEmptyLead: "There is no completed dosha test in this profile yet, so the personal state map is not assembled.",
-            startTest: "Start the dosha test",
-            routeSummaryLabel: "Route",
-            routeSummaryTitle: "Current route summary",
-            summaryActivePrograms: "Active programs",
-            summaryCompletedPrograms: "Completed programs",
-            summaryProducts: "Products in profile",
-            summaryActiveProgramsValue: activePrograms.length > 0 ? `${activePrograms.length}` : "None yet",
-            summaryCompletedProgramsValue: completedPrograms.length > 0 ? `${completedPrograms.length}` : "None yet",
-            summaryProductsValue: productPurchases.length > 0 ? `${productPurchases.length}` : "None yet",
-            programsLabel: "Programs",
-            programsTitle: "Active and completed routes",
-            activeProgramLabel: "Active program",
-            completedProgramLabel: "Completed route",
-            routeStarted: "Route started",
-            purchasedAt: "Purchase date",
-            accessStatus: "Access status",
-            programProgressNote: "Detailed lesson progress will appear here once the platform starts storing program completion.",
-            programAccessManual: "Access is activated manually",
-            programAccessNoToken: "This route was issued without a separate access token",
-            noProgramsLead: "There are no programs linked to this profile yet.",
-            productsTitle: "Purchased support formats",
-            productLabel: "Product",
-            price: "Price",
-            productNoAccess: "Not created yet",
-            noProductsLead: "There are no purchased products linked to this profile yet.",
-            progressLabel: "Progress",
-            progressTitle: "Program progress",
-            progressLead: "Program progress will appear here once the platform starts storing lesson and program completion.",
-            contactsTitle: "Saved contact fields",
-            name: "Name",
-            email: "Email",
-            phone: "Phone",
-            telegram: "Telegram",
-            unavailableTitle: "Profile is temporarily unavailable",
-            unavailableLead: "Google auth is disabled in this build, so the personal profile is not available here yet.",
-            errorTitle: "Could not assemble the profile",
-            errorFallback: "Please refresh the page a bit later.",
-            emptyValue: "—",
-            doshaLabels: { vata: "Vata", pitta: "Pitta", kapha: "Kapha" },
-          }
-        : {
-            profile: "Профіль",
-            loadingTitle: "Завантажуємо ваші дані",
-            loadingLead: "Підтягуємо результат доша-тесту, програми, продукти і ваші контактні поля.",
-            authTitle: "Увійдіть, щоб побачити свій маршрут",
-            authLead: "Тут буде ваш результат доша-тесту, програми, продукти і контактна інформація.",
-            signIn: "Увійти через Google",
-            returnHome: "Повернутися на головну",
-            takeDosha: "Пройти доша-тест",
-            badge: "Профіль · Доша · Маршрут",
-            dosha: "Доша",
-            activePrograms: "Активні програми",
-            products: "Продукти",
-            contacts: "Контакти",
-            contactsReady: "Заповнені",
-            contactsMissing: "Додайте дані",
-            noDosha: "Ще не визначено",
-            noPrograms: "Поки немає",
-            hasPrograms: "Є маршрут",
-            hasProducts: "Додані до профілю",
-            noProducts: "Поки немає",
-            heroViewDosha: "Подивитися результат доші",
-            signOut: "Вийти",
-            doshaCurrent: "Поточний результат",
-            doshaResultPrefix: "Результат",
-            doshaCompletedPrefix: "Завершено",
-            completedShort: "Пройдено",
-            retakeTest: "Перепройти тест",
-            doshaEmptyLead: "У профілі ще немає завершеного доша-тесту, тому персональна карта стану поки не зібрана.",
-            startTest: "Почати доша-тест",
-            routeSummaryLabel: "Маршрут",
-            routeSummaryTitle: "Коротка карта маршруту",
-            summaryActivePrograms: "Активні програми",
-            summaryCompletedPrograms: "Завершені маршрути",
-            summaryProducts: "Продукти в профілі",
-            summaryActiveProgramsValue: activePrograms.length > 0 ? `${activePrograms.length}` : "Поки немає",
-            summaryCompletedProgramsValue: completedPrograms.length > 0 ? `${completedPrograms.length}` : "Поки немає",
-            summaryProductsValue: productPurchases.length > 0 ? `${productPurchases.length}` : "Поки немає",
-            programsLabel: "Програми",
-            programsTitle: "Активні та завершені маршрути",
-            activeProgramLabel: "Активна програма",
-            completedProgramLabel: "Завершений маршрут",
-            routeStarted: "Старт маршруту",
-            purchasedAt: "Дата покупки",
-            accessStatus: "Стан доступу",
-            programProgressNote: "Детальний поступ по уроках з’явиться тут, коли платформа почне зберігати проходження програми.",
-            programAccessManual: "Доступ активується вручну",
-            programAccessNoToken: "Маршрут був оформлений без окремого токена доступу",
-            noProgramsLead: "Поки немає програм, прив’язаних до цього профілю.",
-            productsTitle: "Куплені формати підтримки",
-            productLabel: "Продукт",
-            price: "Сума",
-            productNoAccess: "Ще не створено",
-            noProductsLead: "Куплених продуктів, прив’язаних до цього профілю, поки не знайдено.",
-            progressLabel: "Поступ",
-            progressTitle: "Проходження програм",
-            progressLead: "Поступ програм з’явиться тут, коли платформа почне зберігати проходження уроків і програм.",
-            contactsTitle: "Збережені контактні поля",
-            name: "Ім’я",
-            email: "Email",
-            phone: "Телефон",
-            telegram: "Telegram",
-            unavailableTitle: "Профіль тимчасово недоступний",
-            unavailableLead: "Google auth для цієї збірки не увімкнено, тому персональний профіль тут поки не працює.",
-            errorTitle: "Не вдалося зібрати профіль",
-            errorFallback: "Спробуйте оновити сторінку трохи пізніше.",
-            emptyValue: "—",
-            doshaLabels: { vata: "Вата", pitta: "Пітта", kapha: "Капха" },
-          },
+      getProfileCopy(lang, {
+        activePrograms: activePrograms.length,
+        completedPrograms: completedPrograms.length,
+        productPurchases: productPurchases.length,
+      }),
     [lang, activePrograms.length, completedPrograms.length, productPurchases.length],
   );
 

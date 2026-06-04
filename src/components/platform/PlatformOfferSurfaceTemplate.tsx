@@ -2,7 +2,7 @@ import type { ComponentProps, ReactNode } from "react";
 import { LeadForm } from "@/components/platform/LeadForm";
 import { PlatformDetailHero } from "@/components/platform/PlatformDetailHero";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformOfferStyles";
 
 type HeroProps = ComponentProps<typeof PlatformDetailHero>;
 

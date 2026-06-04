@@ -1,6 +1,6 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformOfferStyles";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 
 type PlatformOfferCardProps = {

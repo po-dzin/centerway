@@ -1,5 +1,5 @@
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformOfferStyles";
 import { featuredPrograms, miniCourses } from "@/lib/platform/content";
 
 export function HubMini() {

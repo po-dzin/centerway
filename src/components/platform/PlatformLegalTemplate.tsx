@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformSurfaceStyles";
 import templateStyles from "@/components/platform/PlatformLegalTemplate.module.css";
 
 type LegalPanelTone = "policy" | "proof" | "support";

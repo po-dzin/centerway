@@ -1,5 +1,5 @@
-import { PlatformVisionPage } from "@/components/platform/PlatformVisionPage";
+import { redirect } from "next/navigation";
 
 export default function VisionPage() {
-  return <PlatformVisionPage />;
+  redirect("/");
 }

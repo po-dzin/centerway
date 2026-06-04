@@ -124,7 +124,7 @@ Before each new work cycle, agents must read:
 - `docs/CANON.md`
 - `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/ABOUT.md`
 - `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/CenterWay.md`
-- `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Registry.md`
+- `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Реестр.md`
 
 Then they must read the domain canon relevant to the task.
 

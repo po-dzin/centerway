@@ -1,5 +1,5 @@
 import Link from "next/link";
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformRouteStyles";
 import { currentProgram, routeLabels } from "@/components/platform/blocks/route/context";
 import type { PlatformRouteBlockProps } from "@/components/platform/blocks/types";
 

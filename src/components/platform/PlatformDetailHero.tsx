@@ -1,6 +1,6 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformHeroStyles";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 
 type DetailHeroAction = {

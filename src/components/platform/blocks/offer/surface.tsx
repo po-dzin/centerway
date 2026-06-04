@@ -1,6 +1,6 @@
 import { LeadForm } from "@/components/platform/LeadForm";
 import { PlatformDetailHero } from "@/components/platform/PlatformDetailHero";
-import styles from "@/components/platform/PlatformContentStyles";
+import styles from "@/components/platform/PlatformOfferStyles";
 import { currentProgram, routeLabels } from "@/components/platform/blocks/route/context";
 import type { PlatformRouteBlockProps } from "@/components/platform/blocks/types";
 
