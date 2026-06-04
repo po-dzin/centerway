@@ -20,7 +20,7 @@ Current required files:
 - `Блоки и компоненты.md`
 - `Архитектура.md`
 - `Лендинги.md`
-- `Registry.md`
+- `Реестр.md`
 
 Local implementation references are derived / implementation-only:
 

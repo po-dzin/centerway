@@ -1,3 +1,5 @@
+@import "./platform-fonts.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -187,8 +189,8 @@
     --cw-surface-shell-control-bg: var(--cw-surface-glass-bg);
     --cw-surface-shell-hover-bg: var(--cw-surface-glass-bg-hover);
     --cw-surface-shell-popover-bg: color-mix(in srgb, var(--cw-surface-glass-bg) 86%, var(--cw-platform-surface) 14%);
-    --cw-shell-frost-bg: var(--cw-surface-glass-bg);
-    --cw-shell-frost-filter: var(--cw-surface-glass-filter);
+    --cw-shell-frost-bg: var(--cw-component-glass-bg);
+    --cw-shell-frost-filter: var(--cw-component-glass-filter);
     --cw-depth-card-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 92%, var(--cw-sem-calm-surface-muted) 8%);
     --cw-depth-support-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 88%, var(--cw-sem-calm-surface-muted) 12%);
     --cw-depth-proof-bg: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-sem-calm-surface) 38%);
@@ -284,7 +286,6 @@
     --ds-radius-md: 1rem;
     --ds-radius-lg: 1.25rem;
     --ds-radius-pill: 62.4375rem;
-    --ds-radius-button-soft: 1rem;
     --ds-shadow-sm: var(--cw-shadow-soft);
     --ds-shadow-md: var(--cw-shadow-strong);
     --ds-z-base: 1;

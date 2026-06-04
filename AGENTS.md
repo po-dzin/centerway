@@ -14,7 +14,7 @@ Read the shared canon:
 6. `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Блоки и компоненты.md`
 7. `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Архитектура.md`
 8. `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Лендинги.md`
-9. `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Registry.md`
+9. `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Реестр.md`
 
 Also read the local implementation references listed in `docs/platform_agent_preflight.md`.
 
@@ -33,7 +33,7 @@ Before each new work cycle in this repository, read the current canon entry poin
 1. `docs/CANON.md`
 2. `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/ABOUT.md`
 3. `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/CenterWay.md`
-4. `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Registry.md`
+4. `/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/Реестр.md`
 
 Then read the specific RAverse canon note for the current task domain:
 

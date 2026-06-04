@@ -44,7 +44,7 @@ Current behavior:
 
 - `src/app/(platform)/platform-vision/page.tsx` redirects to `/`
 
-The old `PlatformVisionPage` component remains in the repo as implementation residue / internal provenance, but it is no longer exposed as a normal public route.
+The old `PlatformVisionPage` residue has been removed from the active component tree, so `/platform-vision` now exists only as a redirecting route boundary.
 
 ### Profile structure
 

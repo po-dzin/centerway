@@ -13,7 +13,7 @@ const requiredExternalCanon = [
   "Блоки и компоненты.md",
   "Архитектура.md",
   "Лендинги.md",
-  "Registry.md",
+  "Реестр.md",
 ];
 
 const requiredLocalCanon = [

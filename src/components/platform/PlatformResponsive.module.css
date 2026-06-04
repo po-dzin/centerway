@@ -45,6 +45,7 @@
     width: 7.35rem;
     height: 1.52rem;
   }
+
 }
 
 @media (min-width: 901px) {
@@ -88,12 +89,14 @@
 
   .header.header {
     position: sticky;
-    top: 0;
+    inset: 0 0 auto 0;
+    top: 0 !important;
     right: 0;
     left: 0;
-    width: 100%;
+    width: auto !important;
+    max-width: none !important;
     display: block;
-    margin: 0;
+    margin: 0 !important;
     overflow: visible;
     border: 0;
     border-bottom: 0;
@@ -109,13 +112,24 @@
     position: fixed;
   }
 
-  .headerInner {
+  .shellOverlay .header.header {
+    inset: 0 0 auto 0;
+    top: 0 !important;
+    right: 0;
+    left: 0;
+    width: auto !important;
+    max-width: none !important;
+    margin: 0 !important;
+  }
+
+  .headerInner,
+  .headerInner.container {
     min-height: 4.1rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
     width: 100% !important;
-    max-width: 100% !important;
+    max-width: none !important;
     margin: 0;
     padding: 0.62rem 1rem;
     box-sizing: border-box;
@@ -158,17 +172,26 @@
   }
 
   .header .brand:not([data-surface="footer"]) {
-    width: auto;
-    padding-right: 0.05rem;
+    width: 3rem;
+    height: 3rem;
+    padding: 0;
+    display: grid;
+    place-items: center;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
   }
 
   .brandWordmark {
-    display: none;
+    display: none !important;
   }
 
   .brandSymbol {
     width: 2.36rem;
     height: 2.36rem;
+    margin: auto;
+    justify-self: center;
+    align-self: center;
   }
 
   .diagnosticHeroCard {
@@ -187,15 +210,18 @@
     padding: 0;
   }
 
-  .profileSlot {
+  .headerInner > .profileSlot,
+  .header .profileSlot {
     display: none;
   }
 
-  .menuButton {
+  .headerInner > .menuButton,
+  .header .menuButton {
     display: grid;
     margin-left: auto;
     margin-right: 0;
     flex: 0 0 3rem;
+    transform: translateX(2px);
   }
 
   .shellOverlay .menuButton {
@@ -204,6 +230,14 @@
     box-shadow: none;
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
+  }
+
+  .header .menuButton:hover,
+  .header .menuButton:focus-visible,
+  .shellOverlay .menuButton:hover,
+  .shellOverlay .menuButton:focus-visible {
+    background: transparent;
+    box-shadow: none;
   }
 
   .shellOverlay .header.header {
@@ -282,6 +316,7 @@
     background: transparent;
   }
 
+  .navLayer .mobileMenuSurface,
   .mobileMenuSurface {
     --platform-header-fg: var(--cw-platform-accent-contrast);
     --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
@@ -315,7 +350,8 @@
     content: none;
   }
 
-  .mobileProfileSlot {
+  .mobileMenuSurface > .mobileProfileSlot,
+  .navLayer .mobileProfileSlot {
     display: flex;
     justify-content: center;
     width: 100%;
@@ -330,7 +366,8 @@
     justify-content: center;
   }
 
-  .profileEntryMobile {
+  .mobileProfileSlot > .profileEntryMobile,
+  .mobileMenuSurface .profileEntryMobile {
     width: 100%;
     max-width: 22rem;
     min-height: 3.1rem;
@@ -394,7 +431,8 @@
     z-index: 2;
   }
 
-  .shellOverlay .mobileMenuSurface {
+  .shellOverlay .mobileMenuSurface,
+  .navLayer .mobileMenuSurface {
     background: var(--cw-shell-frost-bg);
     border-top-color: transparent;
     box-shadow: var(--cw-component-glass-shadow);
@@ -685,7 +723,11 @@
     border-radius: 0 0 clamp(1.05rem, 4vw, var(--cw-radius-lg)) clamp(1.05rem, 4vw, var(--cw-radius-lg));
   }
 
-  .videoSection {
+  .videoSection,
+  #signals .videoSection,
+  #signals [data-cw-hub-intro="layout"] {
+    display: flex;
+    flex-direction: column;
     gap: 0;
     overflow: hidden;
     border-radius: clamp(1.05rem, 4vw, var(--cw-radius-lg));
@@ -694,18 +736,37 @@
   }
 
   .videoPanel,
-  .videoAside {
+  .videoAside,
+  #signals [data-cw-hub-intro="layout"] > *,
+  #signals [data-cw-hub-intro="video"],
+  #signals [data-cw-hub-intro="aside"] {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
     box-shadow: none;
     background: transparent;
   }
 
-  .videoAside {
+  .videoAside,
+  #signals [data-cw-hub-intro="aside"] {
     margin-top: -1px;
     padding-top: 1.1rem;
+    gap: 0.95rem;
   }
 
-  .videoActionGrid {
+  .videoActionGrid,
+  #signals [data-cw-hub-intro="actions"] {
     gap: 0.75rem;
+  }
+
+  .videoDecisionRail {
+    padding: 0.8rem;
+    gap: 0.72rem;
+  }
+
+  .videoDecisionText {
+    font-size: 0.92rem;
+    line-height: 1.48;
   }
 
   .videoActionCard {
@@ -721,6 +782,10 @@
   .videoActionCard small {
     font-size: 0.95rem;
     line-height: 1.42;
+  }
+
+  .videoActionMeta {
+    font-size: 0.7rem;
   }
 
   .sectionHeader {
@@ -822,6 +887,49 @@
   .lead {
     font-size: 0.98rem;
     line-height: 1.55;
+  }
+
+  .videoSection,
+  #signals [data-cw-hub-intro="layout"] {
+    padding: 0.4rem;
+    border-radius: 1.35rem;
+  }
+
+  .videoPanel {
+    border-radius: 1.05rem 1.05rem 0 0;
+  }
+
+  .videoAside,
+  #signals [data-cw-hub-intro="aside"] {
+    border-radius: 0 0 1.05rem 1.05rem;
+    padding: 1rem 0.95rem 0.95rem;
+  }
+
+  .videoDecisionRail {
+    padding: 0.7rem;
+    border-radius: 1rem;
+  }
+
+  .videoDecisionIntro {
+    gap: 0.28rem;
+  }
+
+  .videoDecisionText {
+    font-size: 0.9rem;
+    line-height: 1.46;
+  }
+
+  .videoActionCard {
+    padding: 0.82rem 0.86rem 0.88rem;
+    gap: 0.72rem;
+  }
+
+  .videoActionContent {
+    gap: 0.14rem;
+  }
+
+  .videoActionMeta {
+    font-size: 0.68rem;
   }
 
   .hero > .programTile {
@@ -1077,6 +1185,19 @@
 
   .authorPanelStacked {
     grid-template-columns: 1fr;
+    gap: 0.85rem;
+  }
+
+  .authorPanelStacked > * {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
+  .authorPanelContent {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
   }
 
   .authorCardMedia {
