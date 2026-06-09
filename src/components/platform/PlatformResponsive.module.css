@@ -1230,6 +1230,23 @@
     padding-top: clamp(2.25rem, 7vw, 3rem);
   }
 
+  .footerBrandBlock,
+  .footerLegal,
+  .footerSocials {
+    width: 100%;
+    max-width: 100%;
+    justify-self: stretch;
+    justify-items: start;
+  }
+
+  .footerLead,
+  .footerLegal a,
+  .footerSocials > a:first-child,
+  .footerSocialsRow {
+    width: 100%;
+    max-width: 100%;
+  }
+
   .footerBrandText {
     font-size: 0.92rem;
     font-weight: 640;
@@ -1243,8 +1260,6 @@
   }
 
   .footerSocials {
-    justify-self: start;
-    justify-items: start;
     justify-content: flex-start;
     gap: 1rem;
     padding-right: 0;
@@ -1252,6 +1267,7 @@
   }
 
   .footerSocialsRow {
+    flex-wrap: wrap;
     justify-content: flex-start;
   }
 
@@ -1285,6 +1301,34 @@
     object-position: var(--hero-photo-x) var(--hero-photo-y);
     transform: translateY(var(--hero-photo-shift-y)) scale(var(--hero-photo-scale));
     transform-origin: var(--hero-photo-origin);
+  }
+
+  .footerBrandBlock,
+  .footerLegal,
+  .footerSocials {
+    width: 100%;
+    max-width: 100%;
+    justify-self: stretch;
+    justify-items: start;
+  }
+
+  .footerLead,
+  .footerLegal a,
+  .footerSocials > a:first-child,
+  .footerSocialsRow {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .footerSocials {
+    justify-content: flex-start;
+    padding-right: 0;
+    text-align: left;
+  }
+
+  .footerSocialsRow {
+    flex-wrap: wrap;
+    justify-content: flex-start;
   }
 }
 
@@ -1342,7 +1386,9 @@
   }
 
   main[data-cw-detail-template] .heroFeatureContent {
-    width: min(100% - 3rem, var(--cw-max-width));
+    width: min(100% - 3rem, 35rem);
+    max-width: 35rem;
+    margin-inline: clamp(3.5rem, 6vw, 5.5rem) auto;
     padding: clamp(6.2rem, 9vw, 8rem) 0 clamp(6rem, 8vw, 7.8rem);
     gap: 1.1rem;
   }
@@ -1373,7 +1419,9 @@
   }
 
   .heroFeature[data-cw-detail-template] .heroFeatureContent {
-    width: min(100% - 3rem, var(--cw-max-width));
+    width: min(100% - 3rem, 35rem);
+    max-width: 35rem;
+    margin-inline: clamp(3.5rem, 6vw, 5.5rem) auto;
     padding: clamp(6.2rem, 9vw, 8rem) 0 clamp(6rem, 8vw, 7.8rem);
     gap: 1.1rem;
   }
