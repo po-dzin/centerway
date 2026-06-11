@@ -15,6 +15,7 @@ export type CapiEventPayload = {
     event_name: "Purchase" | "Lead" | "InitiateCheckout" | "ViewContent" | "CompleteRegistration";
     event_id: string;
     event_time: number; // Unix timestamp in seconds
+    fbc_creation_time_seconds?: number | null;
     value?: number;
     currency?: string;
     order_ref?: string;
@@ -44,10 +45,14 @@ function buildUserData(payload: CapiEventPayload) {
         ud.ph = sha256(digits);
     }
     if (payload.fbp) ud.fbp = payload.fbp;
+    const fbcCreationTimeSeconds =
+        typeof payload.fbc_creation_time_seconds === "number" && Number.isFinite(payload.fbc_creation_time_seconds)
+            ? payload.fbc_creation_time_seconds
+            : payload.event_time;
     const fbc = resolveFbc({
         fbc: payload.fbc,
         fbclid: payload.fbclid,
-        creationTimeSeconds: payload.event_time,
+        creationTimeSeconds: fbcCreationTimeSeconds,
     });
     if (fbc) ud.fbc = fbc;
     // IP and UA are sent plain (Meta hashes internally)

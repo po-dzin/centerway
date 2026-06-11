@@ -13,6 +13,7 @@ type PendingPurchaseCapiJobPayload = {
     event_name: "Purchase";
     order_ref: string;
     payment_event_time?: number;
+    fbc_creation_time_seconds?: number;
     value?: number;
     currency?: string;
     email?: string | null;
@@ -45,13 +46,20 @@ function isTelegramSaleReportJobPayload(payload: unknown): payload is TelegramSa
     return typeof p.order_ref === "string" && p.order_ref.trim().length > 0;
 }
 
+function parseIsoToUnixSeconds(value: string | null | undefined): number | null {
+    if (!value) return null;
+    const parsed = Date.parse(value);
+    if (!Number.isFinite(parsed)) return null;
+    return Math.floor(parsed / 1000);
+}
+
 async function buildPurchaseCapiEventPayload(payload: PendingPurchaseCapiJobPayload): Promise<CapiEventPayload> {
     const db = adminClient();
     const orderRef = payload.order_ref.trim();
     const [orderTrackingRes, initiateCheckoutJobRes, checkoutStartedEventRes] = await Promise.all([
         db
             .from("orders")
-            .select("product_code, amount, currency, fbp, fbclid, client_ip, client_ua, page_url")
+            .select("product_code, amount, currency, fbp, fbclid, client_ip, client_ua, page_url, created_at")
             .eq("order_ref", orderRef)
             .maybeSingle(),
         db
@@ -90,6 +98,12 @@ async function buildPurchaseCapiEventPayload(payload: PendingPurchaseCapiJobPayl
         event_name: "Purchase",
         event_id: `purchase_${orderRef}`,
         event_time: payload.payment_event_time ?? Math.floor(Date.now() / 1000),
+        fbc_creation_time_seconds:
+            parseIsoToUnixSeconds(typeof orderTracking?.created_at === "string" ? orderTracking.created_at : null) ??
+            parseIsoToUnixSeconds(typeof initiateCheckoutJobRes.data?.created_at === "string" ? initiateCheckoutJobRes.data.created_at : null) ??
+            parseIsoToUnixSeconds(typeof checkoutStartedEventRes.data?.created_at === "string" ? checkoutStartedEventRes.data.created_at : null) ??
+            payload.payment_event_time ??
+            Math.floor(Date.now() / 1000),
         value: typeof orderTracking?.amount === "number" ? orderTracking.amount : payload.value,
         currency:
             normalizeTrackingString(orderTracking?.currency) ??
@@ -163,13 +177,14 @@ export function registerJobHandler(type: string, handler: JobHandler) {
 // Ensure the execution doesn't block forever and locks jobs
 export async function processPendingJobs(limit = 10) {
     const db = adminClient();
+    const nowIso = new Date().toISOString();
 
     // 1. Fetch pending jobs that are due
     const { data: jobs, error } = await db
         .from("jobs")
         .select("*")
         .in("status", ["pending", "failed"])
-        .lte("run_at", new Date().toISOString())
+        .or(`run_at.is.null,run_at.lte.${nowIso}`)
         .lt("attempts", 3) // max 3 attempts
         .order("run_at", { ascending: true })
         .limit(limit);
@@ -182,38 +197,44 @@ export async function processPendingJobs(limit = 10) {
 
     let processed = 0;
 
-    // 3. Process each job
-    for (const job of jobs) {
-        try {
-            const handler = handlers[job.type];
-            if (!handler) {
-                throw new Error(`No handler registered for job type: ${job.type}`);
-            }
+    // 3. Process jobs in parallel chunks (e.g. 10 at a time)
+    const chunkSize = 10;
+    for (let i = 0; i < jobs.length; i += chunkSize) {
+        const chunk = jobs.slice(i, i + chunkSize);
+        await Promise.allSettled(
+            chunk.map(async (job) => {
+                try {
+                    const handler = handlers[job.type];
+                    if (!handler) {
+                        throw new Error(`No handler registered for job type: ${job.type}`);
+                    }
 
-            await handler(job.payload);
+                    await handler(job.payload);
 
-            // Success
-            await db.from("jobs").update({
-                status: "success",
-                error_text: null
-            }).eq("id", job.id);
-            processed++;
+                    // Success
+                    await db.from("jobs").update({
+                        status: "success",
+                        error_text: null
+                    }).eq("id", job.id);
+                    processed++;
 
-        } catch (err: unknown) {
-            console.error(`Job [${job.id}] failed:`, err);
+                } catch (err: unknown) {
+                    console.error(`Job [${job.id}] failed:`, err);
 
-            // Calculate next attempt (exponential backoff)
-            const attempts = job.attempts + 1;
-            const nextRunAt = new Date();
-            nextRunAt.setMinutes(nextRunAt.getMinutes() + Math.pow(5, attempts)); // wait 5m, 25m, 125m
+                    // Calculate next attempt (exponential backoff)
+                    const attempts = job.attempts + 1;
+                    const nextRunAt = new Date();
+                    nextRunAt.setMinutes(nextRunAt.getMinutes() + Math.pow(5, attempts)); // wait 5m, 25m, 125m
 
-            await db.from("jobs").update({
-                status: attempts >= 3 ? "failed" : "pending",
-                attempts: attempts,
-                error_text: getErrorMessage(err),
-                run_at: nextRunAt.toISOString()
-            }).eq("id", job.id);
-        }
+                    await db.from("jobs").update({
+                        status: attempts >= 3 ? "failed" : "pending",
+                        attempts: attempts,
+                        error_text: getErrorMessage(err),
+                        run_at: nextRunAt.toISOString()
+                    }).eq("id", job.id);
+                }
+            })
+        );
     }
 
     return processed;

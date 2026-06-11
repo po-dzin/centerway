@@ -9,7 +9,7 @@ export async function GET(req: Request) {
     }
 
     try {
-        const processedCount = await processPendingJobs(20);
+        const processedCount = await processPendingJobs(100);
         return NextResponse.json({ success: true, processedCount });
     } catch (e: any) {
         console.error("Cron failed:", e);

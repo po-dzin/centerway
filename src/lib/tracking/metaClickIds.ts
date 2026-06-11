@@ -12,8 +12,12 @@ export function normalizeFbclid(value: unknown): string | null {
   return normalizeTrackingString(value);
 }
 
-export function buildFbcFromFbclid(fbclid: string, creationTimeSeconds: number): string {
-  return `fb.1.${Math.max(0, Math.floor(creationTimeSeconds))}.${fbclid}`;
+export function buildFbcFromFbclid(fbclid: string, creationTime: number): string {
+  let timeMs = Math.max(0, Math.floor(creationTime));
+  if (timeMs < 100000000000) {
+    timeMs *= 1000;
+  }
+  return `fb.1.${timeMs}.${fbclid}`;
 }
 
 export function extractFbclidFromFbc(value: unknown): string | null {
@@ -50,3 +54,4 @@ export function resolveFbc(input: {
 
   return buildFbcFromFbclid(fbclid, creationTimeSeconds);
 }
+

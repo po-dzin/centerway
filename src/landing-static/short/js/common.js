@@ -67,7 +67,7 @@
   }
 
   function buildFbcFromFbclid(fbclid) {
-    return "fb.1." + Math.floor(Date.now() / 1000) + "." + fbclid;
+    return "fb.1." + Date.now() + "." + fbclid;
   }
 
   function extractFbclidFromFbc(fbc) {
