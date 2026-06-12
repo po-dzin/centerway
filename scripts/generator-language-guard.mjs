@@ -31,6 +31,7 @@ function extractStringLiterals(source) {
 }
 
 function detectMixedLanguage(text) {
+  text = text.replace(/\$\{[^}]+\}/g, '');
   if (!CYRILLIC_RE.test(text) || !LATIN_RE.test(text)) return [];
   const words = text.match(LATIN_WORD_RE) ?? [];
   return words.filter((word) => !WHITELIST.has(word));

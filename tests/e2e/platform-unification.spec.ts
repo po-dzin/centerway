@@ -129,11 +129,12 @@ test.describe("platform unification wave 1 smoke", () => {
     }
 
     await gotoRoute(page, "/consult");
-    await page.getByRole("button", { name: "Відкрити меню" }).click();
-    await expect(page.getByRole("button", { name: "Закрити меню" })).toBeVisible();
+    const menuButton = page.locator('button[aria-controls="platform-mobile-menu"]');
+    await menuButton.click();
+    await expect(menuButton).toHaveAttribute("aria-expanded", "true");
     await expect(page.locator('#platform-mobile-menu a[aria-label="Профіль"]')).toBeVisible();
 
-    await page.getByRole("button", { name: "Закрити меню" }).click();
-    await expect(page.getByRole("button", { name: "Відкрити меню" })).toBeVisible();
+    await menuButton.click();
+    await expect(menuButton).toHaveAttribute("aria-expanded", "false");
   });
 });
