@@ -313,6 +313,7 @@ function buildPurchasePayload(input: {
     event_name: "Purchase",
     event_id: `purchase_${input.order.order_ref}`,
     event_time: eventTime,
+    fbc_creation_time_seconds: parseEventTimeSeconds(input.order.created_at) ?? eventTime,
     value:
       typeof input.order.amount === "number"
         ? input.order.amount

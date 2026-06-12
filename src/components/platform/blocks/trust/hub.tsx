@@ -9,7 +9,7 @@ export function HubSupport() {
     <section className={`${styles.container} ${styles.section} ${styles.sectionFlow}`} id="support-nature">
       <article className={styles.panel}>
         <div className={styles.panelStack}>
-          <div className={styles.panelIntro}>
+          <div className={`${styles.panelIntro} ${styles.panelIntroBalanced}`}>
             <h2 className={styles.title}>Природна підтримка процесу</h2>
           </div>
           <div className={`${styles.grid3} ${styles.relaxedGrid}`}>
@@ -41,7 +41,7 @@ export function HubProof() {
     <section className={`${styles.container} ${styles.section} ${styles.sectionFlow}`} id="stories">
       <article className={styles.panel}>
         <div className={styles.panelStack}>
-          <div className={styles.panelIntro}>
+          <div className={`${styles.panelIntro} ${styles.panelIntroBalanced}`}>
             <h2 className={styles.title}>Реальні зміни проходять як процес</h2>
           </div>
           <div className={`${styles.grid3} ${styles.relaxedGrid}`}>

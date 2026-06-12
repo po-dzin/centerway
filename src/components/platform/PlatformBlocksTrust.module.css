@@ -44,7 +44,7 @@
 
 .card p,
 .card li {
-  color: var(--cw-platform-muted);
+  color: color-mix(in srgb, var(--cw-platform-text) 72%, var(--cw-platform-muted) 28%);
   line-height: 1.55;
   overflow-wrap: anywhere;
 }
@@ -131,7 +131,7 @@
 .copyStack p {
   max-width: 52rem;
   margin: 0;
-  color: var(--cw-platform-muted);
+  color: color-mix(in srgb, var(--cw-platform-text) 72%, var(--cw-platform-muted) 28%);
   font-size: 1rem;
   line-height: 1.65;
 }
@@ -221,8 +221,8 @@
   margin: 0;
   padding: 1rem;
   border-radius: var(--cw-radius-sm);
-  color: var(--cw-platform-muted);
-  background: var(--cw-depth-proof-bg);
+  color: color-mix(in srgb, var(--cw-platform-text) 76%, var(--cw-platform-muted) 24%);
+  background: var(--cw-depth-support-bg);
   line-height: 1.55;
   box-shadow: var(--cw-depth-shadow-soft);
 }

@@ -42,26 +42,6 @@ export const cwGeneratorSnapshots = [
   },
   {
     "branch": "platform",
-    "experiment_key": "dosha_ui_variant_v1",
-    "id": "dosha-control",
-    "mode": "support",
-    "route_key": "dosha-test",
-    "screen_id": "screen.dosha-test.v1.control",
-    "screen_version": "1.3.0",
-    "variant_key": "control"
-  },
-  {
-    "branch": "platform",
-    "experiment_key": "dosha_ui_variant_v1",
-    "id": "dosha-routecopy",
-    "mode": "support",
-    "route_key": "dosha-test",
-    "screen_id": "screen.dosha-test.v1.routecopy",
-    "screen_version": "1.3.0",
-    "variant_key": "routecopy"
-  },
-  {
-    "branch": "platform",
     "experiment_key": null,
     "id": "lesson-pilot-control",
     "mode": "lesson",

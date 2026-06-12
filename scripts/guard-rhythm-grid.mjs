@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const DEFAULT_TARGET = path.join(ROOT, "public", "cw", "landing", "revork.css");
+const DEFAULT_TARGET = path.join(ROOT, "src", "landing-static", "cw", "landing", "revork.css");
 const STEP_PX = 4;
 
 const RHYTHM_PROP_RE =

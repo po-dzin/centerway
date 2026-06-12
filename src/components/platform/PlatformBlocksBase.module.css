@@ -29,6 +29,22 @@
   gap: 0.45rem;
 }
 
+.panelIntroBalanced {
+  width: min(100%, 58rem);
+  justify-self: start;
+}
+
+.panelIntroCentered {
+  width: min(100%, 58rem);
+  justify-self: center;
+  text-align: center;
+}
+
+.panelIntroBalanced.panelIntroBalanced :where(.title, .sectionTitle),
+.panelIntroCentered.panelIntroCentered :where(.title, .sectionTitle) {
+  max-width: 100%;
+}
+
 .panelStack {
   gap: clamp(1.2rem, 2.8vw, 1.7rem);
 }
@@ -115,6 +131,18 @@
 }
 
 @media (max-width: 900px) {
+  .panelIntroBalanced,
+  .panelIntroCentered {
+    width: 100%;
+    justify-self: stretch;
+    text-align: left;
+  }
+
+  .panelIntroBalanced.panelIntroBalanced :where(.title, .sectionTitle),
+  .panelIntroCentered.panelIntroCentered :where(.title, .sectionTitle) {
+    max-width: 100%;
+  }
+
   .productFocusSplit {
     grid-template-columns: 1fr;
   }

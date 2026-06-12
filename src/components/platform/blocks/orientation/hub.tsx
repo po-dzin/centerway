@@ -41,36 +41,20 @@ export function HubIntro() {
           />
         </div>
         <aside className={styles.videoAside} id="diagnostics" data-cw-hub-intro="aside">
-          <div className={styles.panelIntro}>
-            <p className={styles.eyebrow}>Орієнтація · перший крок</p>
+          <div className={styles.videoDecisionIntro}>
+            <p className={styles.label}>Орієнтація · перший крок</p>
             <h2 className={styles.title}>Спочатку - зрозуміти свій стан</h2>
-            <p className={styles.lead}>
-              Перед програмами, тестами і консультаціями важливо побачити систему цілком: як тіло, харчування, увага і звички формують процес відновлення.
-            </p>
+            <p className={styles.videoDecisionText}>Перед програмами, тестами і консультаціями важливо побачити систему цілком.</p>
           </div>
           <div className={styles.videoDecisionRail}>
-            <div className={styles.videoDecisionIntro}>
-              <p className={styles.label}>Два доречні входи</p>
-              <p className={styles.videoDecisionText}>Або спочатку спокійно пройти самодіагностику, або одразу піти в живий розбір стану з людиною.</p>
+            <div className={styles.videoActionGrid} data-cw-hub-intro="actions">
+              <Link className={styles.videoActionButton} href="/dosha-test" data-kind="primary">
+                Тест доши
+              </Link>
+              <Link className={styles.videoActionButton} href="/consult" data-kind="secondary">
+                Консультація
+              </Link>
             </div>
-          <div className={styles.videoActionGrid} data-cw-hub-intro="actions">
-            <Link className={styles.videoActionCard} href="/dosha-test" data-icon="focus">
-              <span className={styles.lineIcon} data-icon="focus" aria-hidden="true" />
-              <span className={styles.videoActionContent}>
-                <small className={styles.videoActionMeta}>Самостійний вхід</small>
-                <strong>Тест доши</strong>
-                <small>Коротка самодіагностика, щоб побачити конституцію, ритм і перший напрям.</small>
-              </span>
-            </Link>
-            <Link className={styles.videoActionCard} href="/consult" data-icon="guide">
-              <span className={styles.lineIcon} data-icon="guide" aria-hidden="true" />
-              <span className={styles.videoActionContent}>
-                <small className={styles.videoActionMeta}>Живий розбір</small>
-                <strong>Консультація</strong>
-                <small>Живий розбір стану, якщо потрібен персональний підхід і опора у виборі.</small>
-              </span>
-            </Link>
-          </div>
           </div>
         </aside>
       </div>
