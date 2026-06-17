@@ -78,7 +78,7 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
     },
     utility: {
       thanks: {
-        botUrl: "https://t.me/ShortRebootBot?start=ZGw6MjA1MTc3",
+        botUrl: "https://t.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07",
         siteUrl: "https://reboot.centerway.net.ua/",
       },
       payFailed: {

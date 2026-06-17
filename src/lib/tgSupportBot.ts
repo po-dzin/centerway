@@ -88,7 +88,7 @@ function accessLink(product: BotProductCode): string {
   if (product === "short") {
     return (
       process.env.SHORT_ACCESS_LINK ||
-      "https://t.me/ShortRebootBot?start=ZGw6MjA1MTc3"
+      "https://t.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07"
     );
   }
   return (
