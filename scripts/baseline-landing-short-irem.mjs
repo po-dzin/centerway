@@ -13,8 +13,8 @@ const stamp = new Date().toISOString().replace(/[:.]/g, "-");
 const outDir = path.join(process.cwd(), "artifacts", "landing-baseline", `${entry}-${stamp}`);
 
 const paths = {
-  next: { short: "/short", irem: "/irem" },
-  fallback: { short: "/short", irem: "/irem" },
+  next: { short: "/reboot", irem: "/irem" },
+  fallback: { short: "/reboot", irem: "/irem" },
 };
 
 const routes = [

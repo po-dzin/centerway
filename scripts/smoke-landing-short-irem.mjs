@@ -10,8 +10,8 @@ const timeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "20000", 10);
 const landingEntry = (process.env.SMOKE_LANDING_ENTRY || "next").toLowerCase();
 
 const routePathByEntry = {
-  next: { short: "/short", irem: "/irem" },
-  fallback: { short: "/short", irem: "/irem" },
+  next: { short: "/reboot", irem: "/irem" },
+  fallback: { short: "/reboot", irem: "/irem" },
 };
 
 const selectedPaths = routePathByEntry[landingEntry] || routePathByEntry.next;

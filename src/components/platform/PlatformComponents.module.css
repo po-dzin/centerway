@@ -9,10 +9,12 @@
   display: grid;
   align-items: center;
   justify-content: center;
+  justify-items: center;
 }
 
 .diagnosticHeroCard {
   width: min(100%, 42rem);
+  margin-inline: auto;
   display: grid;
   gap: clamp(1rem, 2.8vw, 1.5rem);
   padding: clamp(1.2rem, 3vw, 1.8rem);

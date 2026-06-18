@@ -9,9 +9,9 @@ const portBase = Number.parseInt(process.env.SMOKE_PORT_BASE || "8010", 10);
 const startupTimeoutMs = Number.parseInt(process.env.SMOKE_STARTUP_TIMEOUT_MS || "90000", 10);
 const requestTimeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "15000", 10);
 
-const entryRoutes = ["/short", "/irem"];
-const utilityRoutes = ["/short/thanks.html", "/irem/thanks.html", "/short/public-offer.html", "/irem/public-offer.html"];
-const utilityAliasRoutes = ["/reboot/thanks.html", "/reboot/public-offer.html"];
+const entryRoutes = ["/reboot", "/irem"];
+const utilityRoutes = ["/reboot/thanks", "/irem/thanks.html", "/reboot/public-offer", "/irem/public-offer.html"];
+const utilityAliasRoutes = ["/short/thanks", "/short/thanks.html", "/short/public-offer", "/short/public-offer.html"];
 const requiredNextSnippets = [
   'data-cw-runtime="next"',
   '/shared/css/landing.bridge.css',
@@ -211,7 +211,7 @@ async function assertMode(baseUrl, nextExpected, typedHeroEnabled) {
     if (!nextExpected) continue;
 
     if (typedHeroEnabled && heroStringsByProduct) {
-      const product = route === "/short" ? "short" : "irem";
+      const product = route === "/reboot" ? "short" : "irem";
       const heroStrings = heroStringsByProduct[product] ?? [];
       for (const { key, value } of heroStrings) {
         if (!html.includes(value)) {
@@ -304,7 +304,7 @@ async function runMode(nextEnabled, typedHeroEnabled, portOffset) {
 function assertEntryHeroParityBetweenTypedModes(typedOnResult, typedOffResult) {
   const heroStringsByProduct = parseTypedHeroStringsByProduct();
   for (const route of entryRoutes) {
-    const product = route === "/short" ? "short" : "irem";
+    const product = route === "/reboot" ? "short" : "irem";
     const heroStrings = heroStringsByProduct[product] ?? [];
     const typedOnHtml = typedOnResult.entryHtmlByRoute[route] ?? "";
     const typedOffHtml = typedOffResult.entryHtmlByRoute[route] ?? "";

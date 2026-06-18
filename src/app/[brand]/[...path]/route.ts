@@ -1,6 +1,7 @@
+import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { LANDING_CONTENT } from "@/lib/landing/content";
-import { getUtilityPageFromAssetPath, LANDING_STATIC_BRANDS } from "@/lib/landing/contracts";
+import { getUtilityPageByFile, getUtilityPageFromAssetPath, LANDING_STATIC_BRANDS } from "@/lib/landing/contracts";
 import { htmlResponse } from "@/lib/landing/http";
 import { resolveIremLandingOffer } from "@/lib/landing/offers";
 import { prepareLandingHtml } from "@/lib/landing/prepareLandingHtml";
@@ -14,6 +15,20 @@ export const revalidate = 3600;
 
 function isEntryAssetPath(assetPath: string[]): boolean {
   return assetPath.length === 0 || (assetPath.length === 1 && assetPath[0] === "index.html");
+}
+
+function getCanonicalRebootAliasTarget(assetPath: string[]): string | null {
+  if (assetPath.length !== 1) {
+    return null;
+  }
+
+  const [segment] = assetPath;
+  if (segment === "index.html" || segment === "index2.html") {
+    return "/reboot";
+  }
+
+  const utilityPage = getUtilityPageFromAssetPath(assetPath) ?? getUtilityPageByFile(segment);
+  return utilityPage ? `/reboot/${utilityPage}` : null;
 }
 
 const getPreparedUtilityLandingHtml = unstable_cache(
@@ -35,6 +50,15 @@ export async function GET(req: Request, context: { params: Promise<{ brand: stri
 
   if (!LANDING_STATIC_BRANDS.has(brand)) {
     return new Response("Not found", { status: 404 });
+  }
+
+  if (brand === "short") {
+    const canonicalTarget = getCanonicalRebootAliasTarget(assetPath);
+    if (canonicalTarget) {
+      const url = new URL(req.url);
+      url.pathname = canonicalTarget;
+      return NextResponse.redirect(url, 308);
+    }
   }
 
   const staticProduct = resolveStaticLandingProduct(brand);

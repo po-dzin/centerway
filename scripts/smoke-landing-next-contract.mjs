@@ -8,10 +8,10 @@ const requireNextLanding = (process.env.SMOKE_REQUIRE_NEXT_LANDING || "0").toLow
 
 // Contract:
 // - `short` is the canonical product key in code and assets
-// - `reboot` remains the public host/route alias for the short funnel entry + payment returns
+// - `reboot` is the canonical public host/route surface for the short funnel
 const publicEntryRoutes = ["/reboot", "/irem"];
-const utilityRoutes = ["/short/thanks.html", "/irem/thanks.html"];
-const utilityAliasRoutes = ["/reboot/thanks.html"];
+const utilityRoutes = ["/reboot/thanks", "/irem/thanks.html"];
+const utilityAliasRoutes = ["/short/thanks", "/short/thanks.html"];
 const requiredSnippets = [
   'data-cw-runtime="next"',
   '/shared/css/landing.bridge.css',

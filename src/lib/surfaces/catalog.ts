@@ -27,7 +27,7 @@ const PRODUCT_SURFACE_REGISTRY: Record<ProductKey, ProductSurfaceEntry> = {
     status: "active",
     funnelRuntime: "landing-app",
     internalFunnelRoute: "/reboot",
-    legacyAliases: ["short"],
+    legacyAliases: ["short", "reboot"],
   },
   irem: {
     productKey: "irem",

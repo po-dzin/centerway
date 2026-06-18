@@ -20,7 +20,11 @@ export function getUtilityPageFromAssetPath(assetPath: string[]): UtilityPage | 
   if (assetPath.length !== 1) {
     return null;
   }
-  return getUtilityPageByFile(assetPath[0]);
+  const [segment] = assetPath;
+  if (segment in UTILITY_FILE_BY_PAGE) {
+    return segment as UtilityPage;
+  }
+  return getUtilityPageByFile(segment);
 }
 
 export const ROOT_LANDING_PAGE_MAP: Record<string, string> = {
