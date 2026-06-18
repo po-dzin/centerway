@@ -5,16 +5,21 @@ Status: active local contract
 ## Canon
 
 - `short` is the canonical product key in code, analytics, payment payloads, and static asset prefixes.
-- `reboot` is a public route and host alias that remains in use for the Short Reboot landing entry and payment return surface.
+- `reboot` is the canonical public route and host-facing return surface.
+- `short` remains a runtime/product identity, asset namespace, and compatibility alias.
 
 ## Expected split
 
 - Product semantics:
   - `short`
-- Asset prefix and utility HTML:
+- Asset prefix:
   - `/short/*`
 - Public entry route for the short funnel:
   - `/reboot`
+- Public utility routes for the short funnel:
+  - `/reboot/thanks`
+  - `/reboot/pay-failed`
+  - `/reboot/public-offer`
 - Paid/failed return destination for the short funnel:
   - `https://reboot.centerway.net.ua/thanks`
   - `https://reboot.centerway.net.ua/pay-failed`
@@ -24,7 +29,9 @@ Status: active local contract
 This is an intentional split contract, not an incomplete migration:
 
 - internal product identity stays normalized to `short`
+- static source files and asset lookup remain rooted in `src/landing-static/short/**`
 - the public reboot host remains the stable external surface for entry and post-payment return flows
+- `/short` HTML routes are compatibility aliases and should redirect to their `/reboot` counterparts
 
 ## Naming rule for implementation
 
@@ -38,13 +45,11 @@ Avoid using names like `entryPage` when the value is only a public alias, becaus
 
 ## Smoke expectation
 
-The landing contract smoke should intentionally validate the mixed surface:
+The landing contract smoke should validate the canonical short surface first:
 
 - entry routes:
   - `/reboot`
   - `/irem`
 - utility Purchase routes:
-  - `/short/thanks.html`
+  - `/reboot/thanks`
   - `/irem/thanks.html`
-
-This is correct as long as the reboot domain remains the short funnel return surface.

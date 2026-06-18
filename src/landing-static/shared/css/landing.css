@@ -61,6 +61,14 @@ section:not(.section-hero) h2 {
 }
 
 @media (max-width: 37.5rem) {
+  :root[data-cw-landing],
+  [data-cw-landing] {
+    --landing-cta-min-height: 3.25rem;
+    --landing-cta-min-height-lg: var(--landing-cta-min-height);
+    --landing-size-cta-min-height: var(--landing-cta-min-height);
+    --landing-type-responsive-cta-mobile-min-height: var(--landing-cta-min-height);
+  }
+
   .section-hero,
   .section-problem,
   .section-solution,

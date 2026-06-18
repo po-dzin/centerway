@@ -121,8 +121,8 @@ It should not be used for digital mini-courses.
 
 Routes:
 
-- `/short`
 - `/reboot`
+- `/short` (compatibility alias for reboot funnel)
 - `/irem`
 - `/consult`
 - `/detox`
