@@ -662,10 +662,10 @@ img {
   font-size: var(--landing-type-hero-cta-size, 22px);
   font-weight: 700;
   text-transform: none;
-  border-radius: var(--landing-radius-cta-control, 14px);
+  border-radius: var(--ds-radius-sm, 0.75rem);
   box-shadow: var(--landing-shadow-cta);
   margin-top: var(--landing-space-rhythm-12);
-  min-height: var(--landing-size-cta-min-height, 40px);
+  min-height: var(--landing-size-cta-min-height, var(--ds-touch-target-min, 44px));
   white-space: nowrap;
 }
 
@@ -680,8 +680,8 @@ img {
   font-size: var(--landing-type-cta-secondary-size, 18px);
   font-weight: 700;
   text-transform: none;
-  border-radius: var(--landing-radius-cta-control, 14px);
-  min-height: var(--landing-size-cta-min-height, 40px);
+  border-radius: var(--ds-radius-sm, 0.75rem);
+  min-height: var(--landing-size-cta-min-height, var(--ds-touch-target-min, 44px));
   box-shadow: var(--landing-shadow-cta);
 }
 
@@ -1818,10 +1818,10 @@ body.modal-open {
   font-size: var(--landing-type-cta-secondary-size, 18px);
   font-weight: 700;
   text-transform: none;
-  border-radius: var(--landing-radius-cta-control, 14px);
+  border-radius: var(--ds-radius-sm, 0.75rem);
   box-shadow: var(--landing-shadow-cta);
   margin-top: 0;
-  min-height: var(--landing-size-cta-min-height, 40px);
+  min-height: var(--landing-size-cta-min-height, var(--ds-touch-target-min, 44px));
 }
 
 .section-offer .openModal::before {

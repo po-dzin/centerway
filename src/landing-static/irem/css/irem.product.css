@@ -601,10 +601,10 @@ img {
   font-size: var(--landing-type-hero-cta-size, 22px);
   font-weight: 700;
   text-transform: none;
-  border-radius: var(--landing-cta-control-radius, 14px);
+  border-radius: var(--ds-radius-sm, 0.75rem);
   box-shadow: var(--landing-shadow-cta);
   margin-top: 0;
-  min-height: var(--landing-cta-min-height-lg, 44px);
+  min-height: var(--landing-cta-min-height-lg, var(--ds-touch-target-min, 44px));
 }
 
 .section-hero #divprice .openModal::before {
@@ -618,8 +618,8 @@ img {
   font-size: var(--landing-type-cta-secondary-size, 18px);
   font-weight: 700;
   text-transform: none;
-  border-radius: var(--landing-cta-control-radius, 14px);
-  min-height: var(--landing-cta-min-height, 40px);
+  border-radius: var(--ds-radius-sm, 0.75rem);
+  min-height: var(--landing-cta-min-height, var(--ds-touch-target-min, 44px));
   box-shadow: var(--landing-shadow-cta);
 }
 
@@ -1681,10 +1681,10 @@ body.modal-open {
   font-size: var(--landing-type-cta-secondary-size, 18px);
   font-weight: 700;
   text-transform: none;
-  border-radius: var(--landing-cta-control-radius, 14px);
+  border-radius: var(--ds-radius-sm, 0.75rem);
   box-shadow: var(--landing-shadow-cta);
   margin: var(--landing-space-rhythm-12) auto 0;
-  min-height: var(--landing-cta-min-height, 40px);
+  min-height: var(--landing-cta-min-height, var(--ds-touch-target-min, 44px));
 }
 
 .section-offer .openModal::before {

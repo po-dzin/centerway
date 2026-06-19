@@ -12,6 +12,8 @@ import { resolveRequestBrand } from "@/lib/proxy/requestBrand";
 import { CW_SURFACE_KIND_HEADER } from "@/lib/surfaces/headers";
 import { getProductSurfaceEntry, isActiveFunnelProduct, type ProductKey } from "@/lib/surfaces/catalog";
 
+export const CW_HOST_UTILITY_REWRITE_HEADER = "x-cw-host-utility-rewrite";
+
 function rewriteSurfaceRoute(req: NextRequest, pathname: string, surfaceKind: "funnel" | "platform") {
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set(CW_SURFACE_KIND_HEADER, surfaceKind);
@@ -25,10 +27,10 @@ function rewriteSurfaceRoute(req: NextRequest, pathname: string, surfaceKind: "f
   return NextResponse.rewrite(url, { request: { headers: requestHeaders } });
 }
 
-function rewriteStaticLanding(req: NextRequest, staticPath: string) {
+function rewriteStaticLanding(req: NextRequest, staticPath: string, requestHeaders?: Headers) {
   const url = req.nextUrl.clone();
   url.pathname = staticPath;
-  return NextResponse.rewrite(url);
+  return NextResponse.rewrite(url, requestHeaders ? { request: { headers: requestHeaders } } : undefined);
 }
 
 function rewriteDisabledSurface(req: NextRequest) {
@@ -85,7 +87,9 @@ export function rewriteFunnelHostRequest(req: NextRequest): NextResponse | null 
     }
 
     if (entry.funnelRuntime === "landing-app") {
-      return rewriteStaticLanding(req, `${getLegacyStaticPrefix(product)}${mappedPage}`);
+      const requestHeaders = new Headers(req.headers);
+      requestHeaders.set(CW_HOST_UTILITY_REWRITE_HEADER, "1");
+      return rewriteStaticLanding(req, `${getLegacyStaticPrefix(product)}${mappedPage}`, requestHeaders);
     }
 
     if (
