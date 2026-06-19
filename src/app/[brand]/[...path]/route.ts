@@ -8,6 +8,7 @@ import { prepareLandingHtml } from "@/lib/landing/prepareLandingHtml";
 import { renderEntryHtmlDocument } from "@/lib/landing/renderEntryHtmlDocument";
 import { isNextLandingEnabled } from "@/lib/landing/routing";
 import { resolveStaticLandingProduct } from "@/lib/landing/types";
+import { CW_HOST_UTILITY_REWRITE_HEADER } from "@/lib/proxy/landing";
 import { serveStaticAsset } from "@/lib/staticAssets/serve";
 
 export const runtime = "nodejs";
@@ -52,7 +53,7 @@ export async function GET(req: Request, context: { params: Promise<{ brand: stri
     return new Response("Not found", { status: 404 });
   }
 
-  if (brand === "short") {
+  if (brand === "short" && req.headers.get(CW_HOST_UTILITY_REWRITE_HEADER) !== "1") {
     const canonicalTarget = getCanonicalRebootAliasTarget(assetPath);
     if (canonicalTarget) {
       const url = new URL(req.url);
