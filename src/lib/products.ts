@@ -61,7 +61,6 @@ export function normalizeProduct(input: unknown): ProductCode | null {
   if (typeof input === "string") {
     const s = input.trim().toLowerCase();
     if (s === "short" || s === "reboot") return "short";
-    if (s === "irem") return s;
     if (s === "irem") return "irem";
     if (s === "consult" || s === "consultation") return "consult";
     if (s === "ideal-body" || s === "ideal_body" || s === "idealne-tilo") return "ideal-body";
