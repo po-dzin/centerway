@@ -1,6 +1,6 @@
 export type UtilityPage = "thanks" | "pay-failed" | "public-offer";
 
-export const LANDING_STATIC_BRANDS = new Set(["short", "reboot", "irem", "consult", "detox", "herbs", "cw", "shared"]);
+export const LANDING_STATIC_BRANDS = new Set(["short", "reboot", "irem", "irem-v2", "consult", "detox", "herbs", "cw", "shared"]);
 
 export const UTILITY_FILE_BY_PAGE: Record<UtilityPage, string> = {
   thanks: "thanks.html",
