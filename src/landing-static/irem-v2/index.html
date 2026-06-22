@@ -69,7 +69,6 @@ body{
   line-height:1.6;
   -webkit-font-smoothing:antialiased;
   overflow-x:hidden;
-  padding-bottom:78px;
 }
 /* film grain + atmosphere */
 body::before{
@@ -119,13 +118,13 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 .brand:hover .brand-mark{opacity:.75}
 
 /* ============ HERO — text overlaid on full-width photo ============ */
-.hero{position:relative;padding-block:var(--sp-sec);overflow:hidden}
+.hero{position:relative;padding-top:clamp(18px,5vw,32px);padding-bottom:var(--sp-sec);overflow:hidden}
 
-/* mobile: badge on top, photo next (head visible), text over the lower part */
+/* mobile: photo first; badge sits ON the photo just above the title */
 .hero-grid{position:relative;display:flex;flex-direction:column}
-.hero-badge{order:1}
-.hero-visual{order:2;position:relative;z-index:1;width:100%;margin-top:0;pointer-events:none}
-.hero-copy{order:3;position:relative;z-index:2;display:flex;flex-direction:column;margin-top:-52%}
+.hero-visual{order:1;position:relative;z-index:1;width:100%;margin-top:0;pointer-events:none}
+.hero-badge{order:2;position:relative;z-index:2;margin-top:-62%}
+.hero-copy{order:3;position:relative;z-index:2;display:flex;flex-direction:column;margin-top:0}
 .hero-actions{order:4;position:relative;z-index:2;display:flex;flex-direction:column;gap:.85rem}
 
 .hero-badge,.hero-chips span{
@@ -134,7 +133,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
   padding:calc(var(--chip-py) + var(--chip-nudge)) var(--chip-px) calc(var(--chip-py) - var(--chip-nudge));border-radius:var(--r-pill);line-height:1;white-space:nowrap}
 .hero-badge{gap:.6em;margin-bottom:.85rem;align-self:flex-start}
 .hero-badge .dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto;background:var(--cta);box-shadow:0 0 0 3px rgba(221,109,12,.16)}
-.hero h1{font-size:clamp(1.8rem,6.4vw,2.5rem);margin-bottom:.65rem;line-height:1.1}
+.hero h1{font-size:clamp(2.1rem,4.6vw,3.4rem);margin-bottom:.65rem;line-height:1.1}
 .hero h1 em{font-style:normal;color:var(--indigo)}
 .hero-sub{font-size:clamp(.95rem,2.8vw,1.1rem);color:var(--text-muted);line-height:1.5;margin-bottom:1.25rem}
 
@@ -150,7 +149,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 .hero-trust svg{flex:0 0 auto;color:var(--indigo);margin-top:2px}
 
 /* photo stage — full-portrait hero photo */
-.hv-stage{position:relative;width:100%;max-width:none;aspect-ratio:2/3;
+.hv-stage{position:relative;width:100%;max-width:none;aspect-ratio:3/4;
   border-radius:var(--r-lg);overflow:hidden;background:var(--cream)}
 .hv-wave{display:none}
 .hv-glow{display:none}
@@ -158,8 +157,8 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
   position:absolute;inset:0;width:100%;height:100%;
   object-fit:cover;object-position:top center;
   z-index:1;
-  -webkit-mask-image:linear-gradient(to bottom,#000 38%,transparent 63%);
-  mask-image:linear-gradient(to bottom,#000 38%,transparent 63%);
+  -webkit-mask-image:linear-gradient(to bottom,#000 30%,transparent 52%);
+  mask-image:linear-gradient(to bottom,#000 30%,transparent 52%);
 }
 .hv-stat{display:none}
 
@@ -172,27 +171,28 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
     grid-template-rows:auto auto 1fr;
     column-gap:clamp(28px,4.5vw,56px);
     row-gap:0;
-    align-items:center;
+    align-items:start;
     min-height:0;
   }
-  .hero-badge{grid-area:badge;align-self:start;margin-bottom:1.1rem}
-  .hero-copy{grid-area:copy;margin-top:0;margin-bottom:1.4rem}
-  .hero-actions{grid-area:actions;align-self:start}
+  .hero{padding-top:var(--sp-sec)}
+  .hero-badge{grid-area:badge;align-self:start;justify-self:start;width:auto;margin-top:0;margin-bottom:1.4rem}
+  .hero-copy{grid-area:copy;margin-top:0;margin-bottom:1.6rem}
+  .hero-actions{grid-area:actions;align-self:start;gap:1rem}
   .hero-visual{
     grid-area:photo;
     position:relative;right:auto;top:auto;margin-top:0;
-    width:auto;height:auto;align-self:center;
-    display:flex;align-items:center;justify-content:center;
+    width:auto;height:100%;align-self:stretch;
+    display:flex;align-items:stretch;justify-content:center;
     pointer-events:auto;
     z-index:1;
   }
   .hero-visual::before{display:none}
-  .hv-stage{max-width:none;width:100%;height:auto;aspect-ratio:2/3;min-height:0;border-radius:var(--r-lg)}
+  .hv-stage{max-width:none;width:100%;height:100%;aspect-ratio:auto;min-height:0;border-radius:var(--r-lg)}
   .hv-wave{display:none}
   .hv-glow{display:none}
-  .hv-photo{object-fit:cover;object-position:center;-webkit-mask-image:none;mask-image:none}
-  .hero h1{font-size:clamp(2.2rem,3.5vw,3rem);margin-bottom:1rem;line-height:1.1}
-  .hero-sub{font-size:1.05rem;line-height:1.55}
+  .hv-photo{object-fit:cover;object-position:center 18%;-webkit-mask-image:none;mask-image:none}
+  .hero h1{font-size:clamp(2.3rem,5vw,3.7rem);margin-bottom:1.2rem;line-height:1.08}
+  .hero-sub{font-size:1.14rem;line-height:1.62}
   .hv-stat{
     display:block;position:absolute;z-index:2;
     background:rgba(255,255,255,.95);border:1px solid var(--line);
@@ -206,6 +206,17 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
   .hero-sub{max-width:52ch}
   .hero-actions .btn{width:auto}
   .hero-price b{font-size:2.2rem}
+}
+
+/* narrow desktop / landscape tablet — normal title + balanced columns */
+@media(min-width:881px) and (max-width:1199px){
+  .hero-grid{grid-template-columns:1fr 1fr;column-gap:clamp(24px,3.5vw,44px)}
+  .hero h1{font-size:clamp(2rem,3.6vw,2.6rem);margin-bottom:1.1rem;line-height:1.12}
+  .hero-sub{font-size:1.02rem;line-height:1.5;max-width:46ch}
+  .hero-badge{margin-bottom:1.2rem}
+  .hero-copy{margin-bottom:1.3rem}
+  .hero-actions{gap:.85rem}
+  .hero-price b{font-size:2rem}
 }
 
 /* ============ MARQUEE STRIP ============ */
@@ -250,12 +261,15 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 .shift-vs{display:grid;grid-template-columns:1fr auto 1fr;gap:1.4rem;align-items:center;margin-top:2.6rem}
 .vs-col{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);border-radius:var(--r-md);padding:1.5rem}
 .vs-col h5{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;margin-bottom:1rem}
-.vs-col.old h5{color:var(--irem-on-dark-muted)}.vs-col.new h5{color:var(--irem-gold-bright)}
+.vs-col.old h5{color:var(--irem-on-dark-muted)}.vs-col.new h5{color:var(--on-cta)}
+.vs-col.new{background:var(--cta);border-color:var(--cta-strong);box-shadow:var(--shadow-cta)}
 .vs-col li{list-style:none;font-size:.96rem;padding:.42em 0;color:rgba(255,255,255,.86);display:flex;gap:.6em}
+.vs-col.new li{color:var(--on-cta)}
 .vs-col.old li::before{content:"—";color:var(--irem-on-dark-faint)}
-.vs-col.new li::before{content:"→";color:var(--irem-gold-bright)}
-.vs-mid{font-family:var(--f-mono);font-size:.8rem;color:rgba(255,255,255,.5);writing-mode:vertical-rl;letter-spacing:.2em}
-@media(max-width:760px){.shift-vs{grid-template-columns:1fr}.vs-mid{writing-mode:horizontal-tb;text-align:center}}
+.vs-col.new li::before{content:"→";color:var(--on-cta)}
+.vs-mid{display:flex;align-items:center;justify-content:center;color:var(--cta)}
+.vs-mid svg{width:30px;height:30px;transform:rotate(-90deg)}
+@media(max-width:760px){.shift-vs{grid-template-columns:1fr}.vs-mid svg{transform:none}}
 
 /* ============ TRIAD / MECHANISM ============ */
 .triad{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;counter-reset:phase}
@@ -344,14 +358,16 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 .acc-item[open]{box-shadow:var(--shadow-med);border-color:var(--line-strong)}
 .acc-item summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:1.1rem;padding:1.25rem 1.5rem;font-weight:700;font-size:1.06rem;color:var(--ink)}
 .acc-item summary::-webkit-details-marker{display:none}
-.acc-item summary .num{font-family:var(--f-mono);font-size:.82rem;color:var(--indigo);width:1.8em;flex:0 0 auto}
+.acc-item summary .num{font-family:var(--f-mono);font-size:.82rem;line-height:1;color:var(--indigo);width:1.8em;flex:0 0 auto;align-self:center}
 .acc-item summary .chev{margin-left:auto;flex:0 0 auto;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;
   background:var(--chip-soft);border:1px solid var(--line);transition:transform .3s,background .3s;color:var(--indigo)}
 .acc-item[open] summary .chev{transform:rotate(180deg);background:var(--chip)}
-.acc-body{padding:0 1.5rem 1.4rem 4.4rem}
+.acc-body{padding:0 1.5rem 1.4rem 1.5rem}
 .acc-body ul{list-style:none;display:grid;gap:.5rem}
 .acc-body li{position:relative;padding-left:1.5rem;color:var(--text-muted);font-size:.97rem}
 .acc-body li::before{content:"";position:absolute;left:0;top:.6em;width:7px;height:7px;border-radius:50%;background:var(--cta)}
+.faq .acc-body li{padding-left:0}
+.faq .acc-body li::before{display:none}
 .med-note{margin-top:1.6rem;font-size:.88rem;color:var(--text-soft);max-width:840px;display:flex;gap:.6em;align-items:flex-start}
 
 /* ============ FOUNDATIONS ============ */
@@ -366,11 +382,14 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 /* ============ AUDIENCE ============ */
 .aud-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:1.2rem}
 .aud-yes,.aud-no{border-radius:var(--r-lg);padding:clamp(28px,3.5vw,40px)}
-.aud-yes{background:var(--surface);border:1px solid var(--line-strong)}
+.aud-yes{background:var(--cta);border:2px solid var(--cta-strong);box-shadow:var(--shadow-cta)}
 .aud-no{background:var(--surface-cool);border:1px solid var(--line)}
 .aud-yes h3,.aud-no h3{font-size:1.5rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:.6rem}
-.aud-yes .ti{color:var(--indigo)}.aud-no .ti{color:var(--text-soft)}
+.aud-yes h3{color:var(--on-cta)}
+.aud-yes .ti{color:var(--on-cta)}.aud-no .ti{color:var(--text-soft)}
 .aud-li{display:flex;gap:.8rem;padding:.6rem 0;font-size:1rem;color:var(--text-muted);border-top:1px solid var(--line)}
+.aud-yes .aud-li{color:var(--on-cta);border-top-color:rgba(255,249,244,.22)}
+.aud-yes .aud-li svg path{stroke:var(--on-cta)}
 .aud-li:first-of-type{border-top:0}
 .aud-li svg{flex:0 0 auto;margin-top:3px}
 @media(max-width:820px){.aud-grid{grid-template-columns:1fr}}
@@ -457,15 +476,18 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 .btn-tg{background:var(--indigo);color:#fff;box-shadow:0 4px 16px rgba(90,96,153,.28)}
 .btn-tg:hover{background:var(--indigo-bright);transform:translateY(-2px);box-shadow:0 10px 28px rgba(90,96,153,.38)}
 /* ============ SHORT ENTRY ============ */
-.short-block{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:2.2rem 2rem;display:flex;flex-direction:column;align-items:flex-start;gap:1.6rem}
+.short-block{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(2rem,4vw,2.8rem);display:flex;flex-direction:column;align-items:flex-start;gap:1.6rem}
 @media(min-width:700px){.short-block{flex-direction:row;align-items:center;gap:2.4rem}}
 .short-text{flex:1}
-.short-text h3{font-family:var(--f-display);font-size:clamp(1.5rem,3vw,2rem);color:var(--ink);margin:.5rem 0 .8rem;line-height:1.2}
+.short-text h3{font-family:var(--f-display);font-size:clamp(1.5rem,3vw,2rem);color:var(--ink);margin:.4rem 0 .8rem;line-height:1.2}
 .short-text p{font-size:.95rem;color:var(--text-muted);line-height:1.6;max-width:48ch}
 .short-text .notice{margin-top:.75rem;font-size:.86rem;color:var(--text-muted);opacity:.75;line-height:1.55;border-left:3px solid var(--line-strong);padding-left:.9rem}
-.short-cta{flex:0 0 auto;width:100%}
+.short-cta{flex:0 0 auto;width:100%;display:flex;flex-direction:column;gap:.9rem;align-items:flex-start}
 .short-cta .btn{width:100%;justify-content:center}
-@media(min-width:700px){.short-cta{width:auto}.short-cta .btn{width:auto}}
+.short-price-row{display:flex;align-items:baseline;gap:.45em}
+.short-price-row b{font-family:var(--f-display);font-size:1.9rem;font-weight:700;color:var(--ink);line-height:1}
+.short-price-row small{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;color:var(--text-soft)}
+@media(min-width:700px){.short-cta{width:auto;align-items:flex-start}.short-cta .btn{width:auto}}
 
 /* ---- audit cleanup: scoped rules replacing former inline styles ---- */
 .lead.lead-sm{font-size:.95rem}
@@ -487,7 +509,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 .faq{max-width:840px}
 
 /* ============ FOOTER ============ */
-.footer{background:var(--text);color:rgba(255,255,255,.66);padding:clamp(48px,6vw,72px) 0 2.4rem;position:relative;z-index:1}
+.footer{background:var(--text);color:rgba(255,255,255,.66);padding:clamp(48px,6vw,72px) 0 calc(2.4rem + 78px);position:relative;z-index:1}
 .footer-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2rem;padding-bottom:2.2rem;border-bottom:1px solid rgba(255,255,255,.1)}
 .footer .brand{color:#fff;display:flex;margin-bottom:1rem}
 .footer-col h5{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:1rem}
@@ -527,7 +549,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
       <span class="hero-badge"><span class="dot"></span>Інтегральна система саморегуляції</span>
       <div class="hero-copy">
         <h1>Одна практика <em>замість п'яти</em> — під ваші біоритми.</h1>
-        <p class="hero-sub">Сила, гнучкість, дихання й спокій — в одній 60-хвилинній практиці, що щодня змінює фокус під ваш стан. Тому її не кидають за два тижні.</p>
+        <p class="hero-sub">Сила, гнучкість, витривалість та відновлення — одна практика, яка щодня змінює фокус під ваш стан. Тому її не кидають.</p>
       </div>
 
       <div class="hero-visual">
@@ -617,9 +639,9 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
             <li>«Завтра почну спочатку»</li>
           </ul>
         </div>
-        <div class="vs-mid">ІВЕМ</div>
+        <div class="vs-mid" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v15M6 13l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <div class="vs-col new">
-          <h5>З ІВЕМ</h5>
+          <h5>Як з ІВЕМ</h5>
           <ul>
             <li>Одна система · 60 хв/день</li>
             <li>Ритм, який тримається роками</li>
@@ -852,11 +874,11 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
     <div class="aud-grid">
       <div class="aud-yes reveal">
         <h3><span class="ti">✓</span> Так, якщо ви</h3>
-        <div class="aud-li"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#5a6099" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Хочете щодня бути ефективними, без провалів енергії</div>
-        <div class="aud-li"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#5a6099" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Пробували зал/йогу/біг і кидали через 2–4 тижні</div>
-        <div class="aud-li"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#5a6099" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Цінуєте мобільність суглобів, спокій і ясність розуму</div>
-        <div class="aud-li"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#5a6099" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Хочете розуміти механізм, а не сліпо «вірити тренеру»</div>
-        <div class="aud-li"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#5a6099" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Готові 60 хвилин на день — стабільно, без поспіху</div>
+        <div class="aud-li"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#dd6d0c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Хочете щодня бути ефективними, без провалів енергії</div>
+        <div class="aud-li"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#dd6d0c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Пробували зал/йогу/біг і кидали через 2–4 тижні</div>
+        <div class="aud-li"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#dd6d0c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Цінуєте мобільність суглобів, спокій і ясність розуму</div>
+        <div class="aud-li"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#dd6d0c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Хочете розуміти механізм, а не сліпо «вірити тренеру»</div>
+        <div class="aud-li"><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#dd6d0c" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Готові 60 хвилин на день — стабільно, без поспіху</div>
       </div>
       <div class="aud-no reveal">
         <h3><span class="ti">—</span> Мабуть ні, якщо ви</h3>
@@ -878,7 +900,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
     <div class="inc-grid">
       <div class="inc-card reveal">
         <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="m10 9 5 3-5 3V9Z" fill="currentColor"/></svg></div>
-        <h4>7 відеоуроків</h4><p>Докладний комплекс вправ на кожен день тижня.</p>
+        <h4>Щоденні відеоуроки</h4><p>Докладний комплекс вправ на кожен день тижня.</p>
       </div>
       <div class="inc-card reveal">
         <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 4h14v16H5z" stroke="currentColor" stroke-width="2"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
@@ -963,7 +985,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
           <small>повний доступ</small>
         </div>
         <ul class="fc-features">
-          <li>7 відеоуроків повного циклу</li>
+          <li>Щоденні відеоуроки повного циклу</li>
           <li>Текстові пояснення до кожного дня</li>
           <li>Адаптація навантаження під ваш стан</li>
           <li>Доступ з будь-якого пристрою</li>
@@ -978,13 +1000,13 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
         <div class="fc-title">Індивідуальна програма</div>
         <div class="fc-price">
           <b>35 000 грн</b>
-          <small>на місяць</small>
+          <small>персональний супровід</small>
         </div>
         <ul class="fc-features">
-          <li>2 заняття на тиждень особисто з автором системи</li>
-          <li>Персональний маршрут під ваш ритм і стан</li>
-          <li>Щільний супровід і пряма відповідь куратора</li>
-          <li>Повна інтеграція системи у щоденне життя</li>
+          <li>2 заняття на тиждень протягом місяця особисто з автором системи</li>
+          <li>Розбір вашого стану й корекція техніки наживо</li>
+          <li>Щоденний супровід і прямий зв'язок з автором у телеграмі</li>
+          <li>Повна інтеграція системи у життя</li>
         </ul>
         <a href="https://t.me/E_Koriakin" class="btn btn-tg fc-cta">Написати в Telegram <span class="arr">→</span></a>
         <div class="fc-guarantee"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Максимальний результат</div>
@@ -997,15 +1019,22 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 <!-- ============ SHORT ENTRY ============ -->
 <section class="sec sec-alt">
   <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Ще не готові до ІВЕМ?</span>
+      <h2 class="sec-title">Якщо ви ще не готові займатися 60 хвилин на день</h2>
+    </div>
     <div class="short-block reveal">
       <div class="short-text">
-        <span class="kicker">Ще не готові до ІВЕМ?</span>
         <h3>Short-Перезавантаження</h3>
-        <p>7 простих вправ, що за 10 хвилин відновлюють тіло та розум. Компактний мікс руху, дихання й ментального ресету — повторюй у будь-який момент, коли треба швидко перезавантажитися.</p>
-        <p class="notice">Short — не рівноцінна альтернатива, а м'який вхід у метод. Повний ІВЕМ протокол запускає значно глибші й стійкіші зміни.</p>
+        <p>10 хвилин, 7 вправ. Рух, дихання й ментальний ресет у будь-який момент дня. Компактний мікс, який повертає фокус і знімає напругу.</p>
+        <p class="notice">Short — м'який вхід у метод, а не повноцінна альтернатива. Повний ІВЕМ протокол запускає значно глибші й стійкіші зміни.</p>
       </div>
       <div class="short-cta">
-        <a href="/reboot" class="btn btn-ghost">Почати з Short →</a>
+        <div class="short-price-row">
+          <b>795 грн</b>
+          <small>повний доступ</small>
+        </div>
+        <a href="/reboot" class="btn btn-ghost">Спробувати Short →</a>
       </div>
     </div>
   </div>
@@ -1100,6 +1129,20 @@ const io=new IntersectionObserver((es)=>{
 document.querySelectorAll('.reveal').forEach((el,i)=>{
   el.style.transitionDelay=(Math.min(i%4,3)*70)+'ms';
   io.observe(el);
+});
+
+// in-page anchor links: smooth-scroll directly.
+// <base href> turns bare "#id" into a cross-document URL (/irem-v2/#id),
+// so a native click reloads to top then jumps down. Intercept and scroll in place.
+document.querySelectorAll('a[href^="#"]').forEach(a=>{
+  a.addEventListener('click',(e)=>{
+    const id=a.getAttribute('href').slice(1);
+    if(!id) return;
+    const target=document.getElementById(id);
+    if(!target) return;
+    e.preventDefault();
+    target.scrollIntoView({behavior:'smooth',block:'start'});
+  });
 });
 
 // single-open accordion within each group
