@@ -66,17 +66,17 @@ const PRODUCT_LABELS: Record<BotProductCode, string> = {
 
 const FAQ_ANSWERS: Record<string, string> = {
   access_missing:
-    "Если доступ не пришел, нажмите «Получить доступ» и введите email или телефон, который использовали при оплате.",
+    "Якщо доступ не надійшов, натисніть «Отримати доступ» і введіть email або телефон, який використовували під час оплати.",
   login:
-    "Если бот/продукт не открывается, проверьте, что Telegram открыт в вашем аккаунте, и попробуйте перейти по ссылке еще раз.",
+    "Якщо бот/продукт не відкривається, перевірте, що Telegram відкритий у вашому акаунті, і спробуйте перейти за посиланням ще раз.",
   materials:
-    "Материалы находятся внутри бота продукта. После подтверждения оплаты я пришлю ссылку на нужный бот.",
+    "Матеріали знаходяться всередині бота продукту. Після підтвердження оплати я надішлю посилання на потрібний бот.",
   check_payment:
-    "Для проверки оплаты нажмите «Получить доступ» и отправьте email или номер телефона из заказа.",
+    "Для перевірки оплати натисніть «Отримати доступ» і надішліть email або номер телефону із замовлення.",
   payment_problem:
-    "Если оплата списалась, но доступ не найден, создайте обращение в поддержку. Приложите email/телефон и, если есть, номер платежа.",
+    "Якщо оплата пройшла, але доступ не знайдено, створіть звернення до підтримки. Додайте email/телефон і, якщо є, номер платежу.",
   other:
-    "Если вопрос не подходит под разделы FAQ, нажмите «Связаться с поддержкой» и опишите ситуацию.",
+    "Якщо питання не підходить під розділи FAQ, натисніть «Звʼязатися з підтримкою» й опишіть ситуацію.",
 };
 
 function assertProduct(value: string | null | undefined): BotProductCode | null {
@@ -146,11 +146,11 @@ function productKeyboard(): InlineKeyboardMarkup {
 function mainMenuKeyboard(): InlineKeyboardMarkup {
   return {
     inline_keyboard: [
-      [{ text: "Получить доступ", callback_data: "menu:access" }],
-      [{ text: "Частые вопросы", callback_data: "menu:faq" }],
-      [{ text: "Проблема с оплатой", callback_data: "menu:payment_problem" }],
-      [{ text: "Связаться с поддержкой", callback_data: "menu:support" }],
-      [{ text: "Сменить курс", callback_data: "menu:change_product" }],
+      [{ text: "Отримати доступ", callback_data: "menu:access" }],
+      [{ text: "Часті запитання", callback_data: "menu:faq" }],
+      [{ text: "Проблема з оплатою", callback_data: "menu:payment_problem" }],
+      [{ text: "Звʼязатися з підтримкою", callback_data: "menu:support" }],
+      [{ text: "Змінити курс", callback_data: "menu:change_product" }],
     ],
   };
 }
@@ -158,12 +158,12 @@ function mainMenuKeyboard(): InlineKeyboardMarkup {
 function faqKeyboard(): InlineKeyboardMarkup {
   return {
     inline_keyboard: [
-      [{ text: "Не пришел доступ", callback_data: "faq:access_missing" }],
-      [{ text: "Не могу войти", callback_data: "faq:login" }],
-      [{ text: "Где материалы", callback_data: "faq:materials" }],
-      [{ text: "Как проверить оплату", callback_data: "faq:check_payment" }],
-      [{ text: "Проблема с оплатой", callback_data: "faq:payment_problem" }],
-      [{ text: "Другое", callback_data: "faq:other" }],
+      [{ text: "Не надійшов доступ", callback_data: "faq:access_missing" }],
+      [{ text: "Не можу увійти", callback_data: "faq:login" }],
+      [{ text: "Де матеріали", callback_data: "faq:materials" }],
+      [{ text: "Як перевірити оплату", callback_data: "faq:check_payment" }],
+      [{ text: "Проблема з оплатою", callback_data: "faq:payment_problem" }],
+      [{ text: "Інше", callback_data: "faq:other" }],
       [{ text: "Назад", callback_data: "menu:back" }],
     ],
   };
@@ -172,8 +172,8 @@ function faqKeyboard(): InlineKeyboardMarkup {
 function retryKeyboard(): InlineKeyboardMarkup {
   return {
     inline_keyboard: [
-      [{ text: "Попробовать еще раз", callback_data: "menu:access" }],
-      [{ text: "Связаться с поддержкой", callback_data: "menu:support" }],
+      [{ text: "Спробувати ще раз", callback_data: "menu:access" }],
+      [{ text: "Звʼязатися з підтримкою", callback_data: "menu:support" }],
     ],
   };
 }
@@ -297,7 +297,7 @@ async function findPaidOrder(
 }
 
 async function sendProductPicker(chatId: number): Promise<void> {
-  await sendMessage(chatId, "Какой курс вас интересует?", productKeyboard());
+  await sendMessage(chatId, "Який курс вас цікавить?", productKeyboard());
 }
 
 async function sendMainMenu(
@@ -306,7 +306,7 @@ async function sendMainMenu(
 ): Promise<void> {
   await sendMessage(
     chatId,
-    `Выбран курс: ${PRODUCT_LABELS[product]}\nЧто нужно сделать?`,
+    `Обрано курс: ${PRODUCT_LABELS[product]}\nЩо потрібно зробити?`,
     mainMenuKeyboard()
   );
 }
@@ -347,14 +347,14 @@ async function handleMenuAction(
     });
     await sendMessage(
       chatId,
-      "Введите email или номер телефона, который использовали при оплате."
+      "Введіть email або номер телефону, який використовували під час оплати."
     );
     return;
   }
 
   if (action === "faq") {
     await saveSession(db, user, { state: "idle" });
-    await sendMessage(chatId, "Выберите вопрос:", faqKeyboard());
+    await sendMessage(chatId, "Оберіть запитання:", faqKeyboard());
     return;
   }
 
@@ -366,7 +366,7 @@ async function handleMenuAction(
     });
     await sendMessage(
       chatId,
-      "Отправьте email или телефон, по которому поддержка сможет найти оплату."
+      "Надішліть email або телефон, за яким підтримка зможе знайти оплату."
     );
     return;
   }
@@ -401,7 +401,7 @@ async function handleAccessLookup(
   if (found) {
     await sendMessage(
       chatId,
-      `Оплата найдена. Вот ссылка на доступ:\n${accessLink(session.selected_product)}`,
+      `Оплату знайдено. Ось посилання на доступ:\n${accessLink(session.selected_product)}`,
       mainMenuKeyboard()
     );
     return;
@@ -409,7 +409,7 @@ async function handleAccessLookup(
 
   await sendMessage(
     chatId,
-    "Не нашли оплату по этим данным. Проверьте email/телефон или создайте обращение в поддержку.",
+    "Не знайшли оплату за цими даними. Перевірте email/телефон або створіть звернення до підтримки.",
     retryKeyboard()
   );
 }
@@ -424,7 +424,7 @@ async function handleSupportContact(
     state: "awaiting_support_message",
     contact: contact.trim(),
   });
-  await sendMessage(chatId, "Опишите проблему одним сообщением.");
+  await sendMessage(chatId, "Опишіть проблему одним повідомленням.");
 }
 
 async function handleSupportMessage(
@@ -440,7 +440,7 @@ async function handleSupportMessage(
   if (!supportChatId) {
     await sendMessage(
       chatId,
-      "Поддержка временно не настроена. Попробуйте позже.",
+      "Підтримка тимчасово не налаштована. Спробуйте пізніше.",
       mainMenuKeyboard()
     );
     await saveSession(db, user, { state: "idle" });
@@ -448,12 +448,12 @@ async function handleSupportMessage(
   }
 
   const supportText = [
-    "Новая заявка поддержки",
-    `Курс: ${product ? PRODUCT_LABELS[product] : "не выбран"}`,
+    "Нове звернення до підтримки",
+    `Курс: ${product ? PRODUCT_LABELS[product] : "не обрано"}`,
     `Telegram ID: ${user.id}`,
     `Username: ${user.username ? `@${user.username}` : "-"}`,
     `Контакт: ${session.contact ?? "-"}`,
-    `Время: ${new Date().toISOString()}`,
+    `Час: ${new Date().toISOString()}`,
     "",
     message.trim(),
   ].join("\n");
@@ -470,7 +470,7 @@ async function handleSupportMessage(
   await saveSession(db, user, { state: "idle", contact: null });
   await sendMessage(
     chatId,
-    "Передали обращение в поддержку. Специалист ответит вам в Telegram.",
+    "Передали звернення до підтримки. Спеціаліст відповість вам у Telegram.",
     product ? mainMenuKeyboard() : undefined
   );
 }
