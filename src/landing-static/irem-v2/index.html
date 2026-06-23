@@ -149,13 +149,14 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 
 /* photo stage — full-portrait hero photo */
 .hv-stage{position:relative;width:100%;max-width:none;aspect-ratio:3/4;
-  border-radius:var(--r-lg);overflow:hidden;background:transparent}
+  background:transparent}
 .hv-wave{display:none}
 .hv-glow{display:none}
 .hv-photo{
   position:absolute;inset:0;width:100%;height:100%;
   object-fit:cover;object-position:top center;
   z-index:1;
+  border-radius:var(--r-lg) var(--r-lg) 0 0;
   -webkit-mask-image:linear-gradient(to bottom,#000 30%,transparent 52%);
   mask-image:linear-gradient(to bottom,#000 30%,transparent 52%);
 }
@@ -186,7 +187,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
     z-index:1;
   }
   .hero-visual::before{display:none}
-  .hv-stage{max-width:none;width:100%;height:100%;aspect-ratio:auto;min-height:0;border-radius:var(--r-lg)}
+  .hv-stage{max-width:none;width:100%;height:100%;aspect-ratio:auto;min-height:0;border-radius:var(--r-lg);overflow:hidden}
   .hv-wave{display:none}
   .hv-glow{display:none}
   .hv-photo{object-fit:cover;object-position:center 18%;-webkit-mask-image:none;mask-image:none}
