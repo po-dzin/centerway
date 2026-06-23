@@ -38,7 +38,7 @@ const PRODUCT_SURFACE_REGISTRY: Record<ProductKey, ProductSurfaceEntry> = {
     defaultDoshaEligibility: "none",
     status: "active",
     funnelRuntime: "landing-app",
-    internalFunnelRoute: "/irem",
+    internalFunnelRoute: "/irem-v2",
   },
   "mini-detox": {
     productKey: "mini-detox",
