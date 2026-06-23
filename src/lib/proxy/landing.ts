@@ -40,7 +40,9 @@ function rewriteDisabledSurface(req: NextRequest) {
 }
 
 function getLegacyStaticPrefix(product: ProductKey) {
-  return product === "reboot" ? "/short" : "/irem";
+  if (product === "reboot") return "/short";
+  if (product === "irem") return "/irem-v2";
+  return `/${product}`;
 }
 
 function rewriteGeneratedFunnelUtility(req: NextRequest, product: "consult" | "detox", mappedPage: string) {
