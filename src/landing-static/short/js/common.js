@@ -336,6 +336,17 @@
     var trigger = event.target.closest(".openModal");
     if (trigger) {
       event.preventDefault();
+      // Hero / sticky CTAs scroll to the offer section instead of paying directly;
+      // the actual WayForPay redirect happens from the final CTA inside the offer.
+      var scrollTarget = trigger.getAttribute("data-scroll-to");
+      if (scrollTarget) {
+        var dest = document.getElementById(scrollTarget) ||
+          document.querySelector('[data-section="' + scrollTarget + '"]');
+        if (dest) {
+          dest.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+        return;
+      }
       if (isRedirecting) {
         return;
       }
