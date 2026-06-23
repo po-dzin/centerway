@@ -11,7 +11,7 @@
   var REDIRECT_RESET_MS = 5000;
   var isRedirecting = false;
   var deferredScriptStarted = {};
-  var ROOT = document.querySelector('main[data-cw-landing="irem"]');
+  var ROOT = document.documentElement;
 
   function parsePositiveNumber(value, fallback) {
     var num = Number(value);

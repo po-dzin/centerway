@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<base href="/irem-v2/">
 <link rel="shortcut icon" href="img/cw-logo.png" type="image/png">
 <title>ІВЕМ-гімнастика — одна практика замість п'яти</title>
 <meta name="description" content="Інтегральна відновлювальна енергомодулююча гімнастика: одна щоденна 60-хвилинна практика, синхронізована з вашими біоритмами. Рух, дихання й увага в одній системі.">
@@ -148,8 +149,11 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 .hero-trust svg{flex:0 0 auto;color:var(--indigo);margin-top:2px}
 
 /* photo stage — full-portrait hero photo */
+/* mask on the CONTAINER, not on img — avoids white Safari compositing layer */
 .hv-stage{position:relative;width:100%;max-width:none;aspect-ratio:3/4;
-  background:transparent}
+  background:transparent;
+  -webkit-mask-image:linear-gradient(to bottom,#000 30%,transparent 52%);
+  mask-image:linear-gradient(to bottom,#000 30%,transparent 52%)}
 .hv-wave{display:none}
 .hv-glow{display:none}
 .hv-photo{
@@ -157,8 +161,6 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
   object-fit:cover;object-position:top center;
   z-index:1;
   border-radius:var(--r-lg) var(--r-lg) 0 0;
-  -webkit-mask-image:linear-gradient(to bottom,#000 30%,transparent 52%);
-  mask-image:linear-gradient(to bottom,#000 30%,transparent 52%);
 }
 .hv-stat{display:none}
 
@@ -187,7 +189,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
     z-index:1;
   }
   .hero-visual::before{display:none}
-  .hv-stage{max-width:none;width:100%;height:100%;aspect-ratio:auto;min-height:0;border-radius:var(--r-lg);overflow:hidden}
+  .hv-stage{max-width:none;width:100%;height:100%;aspect-ratio:auto;min-height:0;border-radius:var(--r-lg);overflow:hidden;-webkit-mask-image:none;mask-image:none}
   .hv-wave{display:none}
   .hv-glow{display:none}
   .hv-photo{object-fit:cover;object-position:center 18%;-webkit-mask-image:none;mask-image:none}
@@ -537,6 +539,12 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 .reveal.in{opacity:1;transform:none}
 @media(prefers-reduced-motion:reduce){.reveal{opacity:1;transform:none;transition:none}.strip-track{animation:none}}
 </style>
+<!-- Meta Pixel Code -->
+<script src="../shared/js/landing-pixel.js" data-cw-product="irem"></script>
+<noscript>
+  <img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=885125430564169&ev=PageView&noscript=1"/>
+</noscript>
+<!-- End Meta Pixel Code -->
 </head>
 <body>
 
