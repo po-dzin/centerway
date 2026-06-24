@@ -115,34 +115,28 @@ function formatNotification(body: SpWebhookBody): string {
 
   const lines: string[] = [header];
 
+  // Contact + source block (meta sits right under it; message goes last).
   lines.push(`Ім'я: ${fullName}`);
   if (username) lines.push(`Юзернейм: @${username.replace(/^@/, "")}`);
   lines.push(`Канал: ${source}`);
   if (email) lines.push(`Email: ${email}`);
   if (phone) lines.push(`Тел: ${phone}`);
 
-  for (const v of captured) {
-    lines.push("");
-    lines.push(`${v.icon} ${v.label}:`);
-    lines.push(clamp(v.value as string));
-  }
-
-  // Generic message only when no named variable was captured.
-  if (captured.length === 0 && messageText) {
-    lines.push("");
-    lines.push(clamp(messageText));
-  }
-
   const botName = str(body.bot?.name);
   const flowName = str(body.flow?.name);
   const event = str(body.event);
-  const meta: string[] = [];
-  if (botName) meta.push(`Бот: ${botName}`);
-  if (flowName) meta.push(`Flow: ${flowName}`);
-  if (event) meta.push(`Event: ${event}`);
-  if (meta.length) {
+  if (botName) lines.push(`Бот: ${botName}`);
+  if (flowName) lines.push(`Flow: ${flowName}`);
+  if (event) lines.push(`Event: ${event}`);
+
+  // Message content at the very bottom. Header already names the type for a
+  // single capture, so no per-section label/emoji (avoids duplicate emoji).
+  const bodyText = captured.length
+    ? captured.map((v) => (captured.length === 1 ? v.value : `${v.label}: ${v.value}`)).join("\n\n")
+    : messageText;
+  if (bodyText) {
     lines.push("");
-    lines.push(meta.join(" | "));
+    lines.push(clamp(bodyText));
   }
 
   return lines.join("\n");
