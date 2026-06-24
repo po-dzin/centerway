@@ -149,11 +149,14 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 .hero-trust svg{flex:0 0 auto;color:var(--indigo);margin-top:2px}
 
 /* photo stage — full-portrait hero photo */
-/* mask on the CONTAINER, not on img — avoids white Safari compositing layer */
-.hv-stage{position:relative;width:100%;max-width:none;aspect-ratio:3/4;
-  background:transparent;
-  -webkit-mask-image:linear-gradient(to bottom,#000 30%,transparent 52%);
-  mask-image:linear-gradient(to bottom,#000 30%,transparent 52%)}
+/* Fade the photo into the page with an OPAQUE cream overlay rather than an alpha
+   mask. iOS Safari rasterises a hairline at a mask gradient's transparent edge
+   (the bottom photo contour); painting cream over the lower photo avoids any mask
+   compositing. The 0%-alpha stop uses transparent-cream (not the `transparent`
+   keyword) so it doesn't interpolate through black and leave a dark fringe. */
+.hv-stage{position:relative;width:100%;max-width:none;aspect-ratio:3/4;background:transparent}
+.hv-stage::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:2;
+  background:linear-gradient(to bottom,rgba(255,253,247,0) 30%,var(--cream) 52%)}
 .hv-wave{display:none}
 .hv-glow{display:none}
 .hv-photo{
@@ -190,6 +193,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
   }
   .hero-visual::before{display:none}
   .hv-stage{max-width:none;width:100%;height:100%;aspect-ratio:auto;min-height:0;border-radius:var(--r-lg);overflow:hidden;-webkit-mask-image:none;mask-image:none}
+  .hv-stage::after{display:none}
   .hv-wave{display:none}
   .hv-glow{display:none}
   .hv-photo{object-fit:cover;object-position:center 18%;-webkit-mask-image:none;mask-image:none}
