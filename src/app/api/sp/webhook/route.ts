@@ -205,7 +205,9 @@ export async function POST(req: NextRequest) {
 
   try {
     const text = formatNotification(body);
-    await sendTelegramMessage(supportChatId, text);
+    const threadRaw = process.env.SUPPORT_THREAD_ID;
+    const messageThreadId = threadRaw && /^\d+$/.test(threadRaw) ? Number(threadRaw) : null;
+    await sendTelegramMessage(supportChatId, text, { messageThreadId });
     return NextResponse.json({ ok: true, forwarded: true });
   } catch {
     // Don't surface TG errors to SP

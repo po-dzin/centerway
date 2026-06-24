@@ -53,12 +53,14 @@ export async function callTelegramBotApi<T>(
 
 export async function sendTelegramMessage(
   chatId: number | string,
-  text: string
+  text: string,
+  options?: { messageThreadId?: number | null }
 ): Promise<void> {
   await callTelegramBotApi("sendMessage", {
     chat_id: normalizeTelegramChatId(chatId),
     text,
     disable_web_page_preview: true,
+    ...(options?.messageThreadId ? { message_thread_id: options.messageThreadId } : {}),
   });
 }
 

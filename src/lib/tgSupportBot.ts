@@ -458,7 +458,9 @@ async function handleSupportMessage(
     message.trim(),
   ].join("\n");
 
-  await sendMessage(supportChatId, supportText);
+  const threadRaw = process.env.SUPPORT_THREAD_ID;
+  const messageThreadId = threadRaw && /^\d+$/.test(threadRaw) ? Number(threadRaw) : null;
+  await sendTelegramMessage(supportChatId, supportText, { messageThreadId });
 
   await logEventBestEffort(db, "tg_bot_support_requested", {
     telegram_user_id: String(user.id),
