@@ -153,111 +153,10 @@ export async function createPaymentInvoiceWithDeps(
   const order_ref = makeOrderRef(input.product, deps.nowMs, deps.randomHex);
   const sb = deps.db;
 
-  const { error: orderErr } = await sb.from("orders").insert({
-    order_ref,
-    product_code: input.product,
-    amount,
-    currency: cfg.currency,
-    status: "created",
-    fbp: input.fbp,
-    fbclid: input.fbclid,
-    campaign: input.campaign,
-    client_ip: input.client_ip,
-    client_ua: input.client_ua,
-    page_url: input.page_url,
-  });
-
-  if (orderErr) {
-    return {
-      ok: false,
-      status: 500,
-      error: "db_order_insert_failed",
-      details: orderErr.message,
-    };
-  }
-
-  const clientEventId =
-    typeof input.event_id === "string" && input.event_id.trim()
-      ? input.event_id.trim()
-      : null;
-  const capiEventId = clientEventId ?? `checkout_${order_ref}`;
-  const [existingByEventIdRes, existingByOrderRefRes] = await Promise.all([
-    sb
-      .from("jobs")
-      .select("id")
-      .eq("type", "meta:capi")
-      .contains("payload", { event_name: "InitiateCheckout", event_id: capiEventId })
-      .limit(1)
-      .maybeSingle(),
-    sb
-      .from("jobs")
-      .select("id")
-      .eq("type", "meta:capi")
-      .contains("payload", { event_name: "InitiateCheckout", order_ref: order_ref })
-      .limit(1)
-      .maybeSingle(),
-  ]);
-
-  const hasExistingInitiateCheckoutJob =
-    Boolean(existingByEventIdRes.data?.id) || Boolean(existingByOrderRefRes.data?.id);
-
-  // Always ensure a server-side InitiateCheckout CAPI job exists for each created order.
-  // Use event_id dedupe key to stay compatible with client-side Pixel/CAPI deduplication.
-  if (!hasExistingInitiateCheckoutJob) {
-    const capiPayload: CapiEventPayload = {
-      event_name: "InitiateCheckout",
-      event_id: capiEventId,
-      event_time: Math.floor(deps.nowMs() / 1000),
-      value: amount,
-      currency: cfg.currency,
-      order_ref,
-      fbp: input.fbp ?? null,
-      fbc: input.fbc ?? null,
-      fbclid: input.fbclid ?? null,
-      ip_address: input.client_ip ?? null,
-      user_agent: input.client_ua ?? null,
-      event_source_url: input.page_url ?? null,
-      action_source: "website",
-      content_name: productHeading(input.product, input.locale),
-      content_type: "product",
-      content_ids: [input.product],
-    };
-    await sb.from("jobs").insert({
-      type: "meta:capi",
-      payload: capiPayload,
-      status: "pending",
-    });
-  }
-
-  void (async () => {
-    try {
-      const { error: checkoutStartedErr } = await sb.from("events").insert({
-        type: "checkout_started",
-        order_ref,
-        payload: {
-          source: input.source,
-          host: input.host ?? null,
-          product: input.product,
-          offer_id: input.offer_id ?? null,
-          event_id: clientEventId,
-          fbp: input.fbp ?? null,
-          fbc: input.fbc ?? null,
-          fbclid: input.fbclid ?? null,
-          campaign: input.campaign ?? null,
-          client_ip: input.client_ip ?? null,
-          client_ua: input.client_ua ?? null,
-          page_url: input.page_url ?? null,
-          ...(input.payload ?? {}),
-        },
-      });
-      if (checkoutStartedErr) {
-        console.warn("checkout_started_insert_failed", checkoutStartedErr.message, { order_ref });
-      }
-    } catch (checkoutStartedErr) {
-      console.warn("checkout_started_insert_failed", checkoutStartedErr, { order_ref });
-    }
-  })();
-
+  // The WayForPay CREATE_INVOICE round-trip is the slowest leg of this request and
+  // depends only on locally-computed values (order_ref, amount, signature). Kick it
+  // off first and let the order/analytics writes run concurrently underneath it
+  // instead of stacking them sequentially ahead of the external call.
   const returnUrl = buildReturnUrl(appBaseUrl, input.product, order_ref);
 
   const wfpPayload: {
@@ -305,11 +204,129 @@ export async function createPaymentInvoiceWithDeps(
 
   wfpPayload.merchantSignature = hmacMd5Hex(secretKey, signStr);
 
-  const resp = await deps.fetchFn("https://api.wayforpay.com/api", {
+  const wfpResponsePromise = deps.fetchFn("https://api.wayforpay.com/api", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(wfpPayload),
   });
+
+  const orderInsertPromise = sb.from("orders").insert({
+    order_ref,
+    product_code: input.product,
+    amount,
+    currency: cfg.currency,
+    status: "created",
+    fbp: input.fbp,
+    fbclid: input.fbclid,
+    campaign: input.campaign,
+    client_ip: input.client_ip,
+    client_ua: input.client_ua,
+    page_url: input.page_url,
+  });
+
+  const clientEventId =
+    typeof input.event_id === "string" && input.event_id.trim()
+      ? input.event_id.trim()
+      : null;
+  const capiEventId = clientEventId ?? `checkout_${order_ref}`;
+
+  // Ensure exactly one server-side InitiateCheckout CAPI job per order. This is pure
+  // analytics, so it runs alongside the WFP call and never blocks the redirect.
+  const capiJobPromise = (async () => {
+    try {
+      const [existingByEventIdRes, existingByOrderRefRes] = await Promise.all([
+        sb
+          .from("jobs")
+          .select("id")
+          .eq("type", "meta:capi")
+          .contains("payload", { event_name: "InitiateCheckout", event_id: capiEventId })
+          .limit(1)
+          .maybeSingle(),
+        sb
+          .from("jobs")
+          .select("id")
+          .eq("type", "meta:capi")
+          .contains("payload", { event_name: "InitiateCheckout", order_ref: order_ref })
+          .limit(1)
+          .maybeSingle(),
+      ]);
+
+      const hasExistingInitiateCheckoutJob =
+        Boolean(existingByEventIdRes.data?.id) || Boolean(existingByOrderRefRes.data?.id);
+
+      if (hasExistingInitiateCheckoutJob) {
+        return;
+      }
+
+      const capiPayload: CapiEventPayload = {
+        event_name: "InitiateCheckout",
+        event_id: capiEventId,
+        event_time: Math.floor(deps.nowMs() / 1000),
+        value: amount,
+        currency: cfg.currency,
+        order_ref,
+        fbp: input.fbp ?? null,
+        fbc: input.fbc ?? null,
+        fbclid: input.fbclid ?? null,
+        ip_address: input.client_ip ?? null,
+        user_agent: input.client_ua ?? null,
+        event_source_url: input.page_url ?? null,
+        action_source: "website",
+        content_name: productHeading(input.product, input.locale),
+        content_type: "product",
+        content_ids: [input.product],
+      };
+      await sb.from("jobs").insert({
+        type: "meta:capi",
+        payload: capiPayload,
+        status: "pending",
+      });
+    } catch (capiErr) {
+      console.warn("capi_initiate_checkout_failed", capiErr, { order_ref });
+    }
+  })();
+
+  void (async () => {
+    try {
+      const { error: checkoutStartedErr } = await sb.from("events").insert({
+        type: "checkout_started",
+        order_ref,
+        payload: {
+          source: input.source,
+          host: input.host ?? null,
+          product: input.product,
+          offer_id: input.offer_id ?? null,
+          event_id: clientEventId,
+          fbp: input.fbp ?? null,
+          fbc: input.fbc ?? null,
+          fbclid: input.fbclid ?? null,
+          campaign: input.campaign ?? null,
+          client_ip: input.client_ip ?? null,
+          client_ua: input.client_ua ?? null,
+          page_url: input.page_url ?? null,
+          ...(input.payload ?? {}),
+        },
+      });
+      if (checkoutStartedErr) {
+        console.warn("checkout_started_insert_failed", checkoutStartedErr.message, { order_ref });
+      }
+    } catch (checkoutStartedErr) {
+      console.warn("checkout_started_insert_failed", checkoutStartedErr, { order_ref });
+    }
+  })();
+
+  const [{ error: orderErr }, resp] = await Promise.all([orderInsertPromise, wfpResponsePromise]);
+  // Keep the CAPI job overlapped with the WFP call without dropping it on the floor.
+  await capiJobPromise;
+
+  if (orderErr) {
+    return {
+      ok: false,
+      status: 500,
+      error: "db_order_insert_failed",
+      details: orderErr.message,
+    };
+  }
 
   const text = await resp.text();
   let payUrl: string | null = null;

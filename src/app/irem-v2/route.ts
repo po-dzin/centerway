@@ -1,32 +1,49 @@
 import { NextRequest } from "next/server";
-import { resolveIremLandingOffer } from "@/lib/landing/offers";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
-import { serveStaticAsset } from "@/lib/staticAssets/serve";
+import { resolveIremLandingOffer, type LandingResolvedOffer } from "@/lib/landing/offers";
 
-// Self-contained alt/A-B landing (centerway.vercel.app/irem-v2).
-// Served as raw static HTML — it ships its own <html>/<head>/<base href="/irem-v2/">,
-// inline CSS and js/common.js, so it must NOT be wrapped in the platform layout.
-// Sub-assets (/irem-v2/img, /irem-v2/js, /irem-v2/fonts) are served by the
-// [brand]/[...path] catch-all because "irem-v2" is in LANDING_STATIC_BRANDS.
+// Canonical ІВЕМ landing — served at irem.centerway.net.ua via internalFunnelRoute="/irem-v2".
+// Raw static HTML with inline CSS and js/common.js; must NOT be wrapped in the platform layout.
+// Sub-assets (/irem-v2/img, /irem-v2/js, /irem-v2/fonts) bypass the proxy and are served by
+// the [brand]/[...path] catch-all because "irem-v2" is in LANDING_STATIC_BRANDS.
 export const runtime = "nodejs";
-export const revalidate = 0;
+// This handler reads the request query, so Next renders it dynamically. Cache policy
+// is therefore driven entirely by the per-response Cache-Control header set below:
+// organic traffic is CDN-cacheable, the personalized (offer_token) variant is private.
+
+const INDEX_PATH = path.join(process.cwd(), "src", "landing-static", "irem-v2", "index.html");
+
+// The base document is immutable between deploys, so read it once per lambda
+// instance instead of touching disk on every request.
+let baseHtmlPromise: Promise<string> | null = null;
+function readBaseHtml(): Promise<string> {
+  if (!baseHtmlPromise) {
+    baseHtmlPromise = readFile(INDEX_PATH, "utf-8");
+  }
+  return baseHtmlPromise;
+}
+
+// Organic page is identical for everyone → let the Vercel CDN serve it so the
+// function is only invoked on cache fills.
+const ORGANIC_CACHE = "public, max-age=300, s-maxage=86400, stale-while-revalidate=86400";
+// Personalized page carries a unique offer and a live countdown → never cache.
+const PERSONAL_CACHE = "private, no-store";
+
+function htmlResponse(html: string, cacheControl: string): Response {
+  return new Response(html, {
+    headers: {
+      "content-type": "text/html; charset=utf-8",
+      "cache-control": cacheControl,
+    },
+  });
+}
 
 function escapeAttr(value: string | number | null | undefined): string {
   return String(value ?? "").replace(/&/g, "&amp;").replace(/"/g, "&quot;");
 }
 
-export async function GET(req: NextRequest) {
-  const offer = await resolveIremLandingOffer(req.nextUrl.searchParams);
-
-  if (!offer || !offer.offerApplied) {
-    return serveStaticAsset("irem-v2", ["index.html"]);
-  }
-
-  const sourcePath = path.join(process.cwd(), "src", "landing-static", "irem-v2", "index.html");
-  let html = await readFile(sourcePath, "utf-8");
-
-  // Inject offer data-attributes onto <html> so common.js can read them
+function injectPersonalOffer(html: string, offer: LandingResolvedOffer): string {
   const attrs = [
     `data-cw-offer-id="${escapeAttr(offer.offerId)}"`,
     `data-cw-price-value="${escapeAttr(offer.amount)}"`,
@@ -35,40 +52,75 @@ export async function GET(req: NextRequest) {
     `data-cw-offer-state="${offer.offerExpired ? "expired" : "active"}"`,
     offer.issuedAt ? `data-cw-offer-issued-at="${escapeAttr(offer.issuedAt)}"` : "",
     offer.expiresAt ? `data-cw-offer-expires-at="${escapeAttr(offer.expiresAt)}"` : "",
-  ].filter(Boolean).join(" ");
-  html = html.replace(/<html([^>]*)>/i, `<html$1 ${attrs}>`);
+  ]
+    .filter(Boolean)
+    .join(" ");
 
-  // Inject promo-specific CSS (the standalone irem-v2 page doesn't ship these)
+  let out = html.replace(/<html([^>]*)>/i, `<html$1 ${attrs}>`);
+
   const promoCss = `<style>
-.promo-note{display:flex;flex-direction:column;gap:.35rem;align-items:center;text-align:center;margin-top:.75rem}
-.promo-note__label{font-size:.9rem;font-weight:600;line-height:1.25;color:var(--ink-soft,#3a3f63)}
-.promo-timer{color:var(--indigo,#5a6099);font-size:1.6rem;font-weight:800;line-height:1;font-variant-numeric:tabular-nums}
+/* Promo deadline cluster — left-aligned to the price column, warm DS accent.
+   Spacing leans on each surface's own rhythm instead of a fixed margin so it
+   reads as one block with the price rather than a detached line. */
+.promo-note{display:flex;flex-direction:column;gap:.18rem;align-items:flex-start;text-align:left}
+.promo-note__label{font-size:.8rem;font-weight:600;line-height:1.3;letter-spacing:.01em}
+.promo-timer{font-size:1.5rem;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums}
 .price-stack{display:flex;align-items:baseline;gap:.5em}
+/* Hero — light cream surface: strong gold for AA contrast */
+.hero-actions .promo-note{margin-top:-.35rem}
+.hero-actions .promo-note__label,.hero-actions .promo-timer{color:var(--cta-strong)}
+/* Self-study card — dark navy surface: on-dark gold, pulled tight under price */
+.fc-price+.promo-note{margin-top:-.95rem;margin-bottom:1.4rem}
+.fc-price+.promo-note .promo-note__label,.fc-price+.promo-note .promo-timer{color:var(--irem-gold-soft)}
+.format-card.premium .fc-price+.promo-note .promo-note__label,.format-card.premium .fc-price+.promo-note .promo-timer{color:var(--cta-strong)}
 </style>`;
-  html = html.replace(/<\/head>/i, `${promoCss}\n</head>`);
+  out = out.replace(/<\/head>/i, `${promoCss}\n</head>`);
 
-  // Build promo price block: old price (strikethrough) + new price
   const oldPriceHtml = offer.oldPriceLabel
     ? `<s style="color:var(--text-muted);font-weight:400;font-size:.85em">${offer.oldPriceLabel}</s> `
     : "";
   const promoTimerHtml = `<p class="promo-note" data-promo-note><span class="promo-note__label" data-promo-note-label>До завершення персональної ціни</span> <span class="promo-timer" data-promo-timer aria-live="polite">48:00:00</span></p>`;
 
-  // Replace hero price block (lines 584-587 in source)
-  html = html.replace(
-    /(<div class="hero-price">)\s*<b>4\s*100 грн<\/b>\s*<small>([^<]*)<\/small>\s*(<\/div>)/i,
+  const priceBlock = (wrapperClass: string) =>
+    new RegExp(
+      `(<div class="${wrapperClass}">)\\s*<b>4\\s*100 грн<\\/b>\\s*<small>([^<]*)<\\/small>\\s*(<\\/div>)`,
+      "i"
+    );
+
+  out = out.replace(
+    priceBlock("hero-price"),
+    `$1\n          ${oldPriceHtml}<b>${offer.amount} грн</b>\n          <small>$2</small>\n        $3\n        ${promoTimerHtml}`
+  );
+  out = out.replace(
+    priceBlock("fc-price"),
     `$1\n          ${oldPriceHtml}<b>${offer.amount} грн</b>\n          <small>$2</small>\n        $3\n        ${promoTimerHtml}`
   );
 
-  // Replace self-study card price block (lines 982-985 in source)
-  html = html.replace(
-    /(<div class="fc-price">)\s*<b>4\s*100 грн<\/b>\s*<small>([^<]*)<\/small>\s*(<\/div>)/i,
-    `$1\n          ${oldPriceHtml}<b>${offer.amount} грн</b>\n          <small>$2</small>\n        $3\n        ${promoTimerHtml}`
-  );
+  return out;
+}
 
-  return new Response(html, {
-    headers: {
-      "Content-Type": "text/html; charset=utf-8",
-      "Cache-Control": "public, max-age=0, s-maxage=0, must-revalidate",
-    },
-  });
+export async function GET(req: NextRequest) {
+  const offerToken = req.nextUrl.searchParams.get("offer_token");
+  const html = await readBaseHtml();
+
+  // Organic visitors (no personal offer) get the shared, CDN-cached document.
+  if (!offerToken) {
+    return htmlResponse(html, ORGANIC_CACHE);
+  }
+
+  let offer: LandingResolvedOffer;
+  try {
+    offer = await resolveIremLandingOffer(req.nextUrl.searchParams);
+  } catch (error) {
+    // A DB outage must not take the landing down — degrade to the organic page.
+    console.error("irem_offer_resolve_failed", error);
+    return htmlResponse(html, PERSONAL_CACHE);
+  }
+
+  if (!offer.offerApplied) {
+    // Unknown or expired token → fall back to the standard organic page.
+    return htmlResponse(html, ORGANIC_CACHE);
+  }
+
+  return htmlResponse(injectPersonalOffer(html, offer), PERSONAL_CACHE);
 }
