@@ -59,27 +59,37 @@ function injectPersonalOffer(html: string, offer: LandingResolvedOffer): string 
   let out = html.replace(/<html([^>]*)>/i, `<html$1 ${attrs}>`);
 
   const promoCss = `<style>
-/* Promo deadline cluster — left-aligned to the price column, warm DS accent.
-   Spacing leans on each surface's own rhythm instead of a fixed margin so it
-   reads as one block with the price rather than a detached line. */
-.promo-note{display:flex;flex-direction:column;gap:.18rem;align-items:flex-start;text-align:left}
-.promo-note__label{font-size:.8rem;font-weight:600;line-height:1.3;letter-spacing:.01em}
-.promo-timer{font-size:1.5rem;font-weight:800;line-height:1.05;font-variant-numeric:tabular-nums}
-.price-stack{display:flex;align-items:baseline;gap:.5em}
-/* Hero — light cream surface: strong gold for AA contrast */
-.hero-actions .promo-note{margin-top:-.35rem}
-.hero-actions .promo-note__label,.hero-actions .promo-timer{color:var(--cta-strong)}
-/* Self-study card — dark navy surface: on-dark gold, pulled tight under price */
-.fc-price+.promo-note{margin-top:-.95rem;margin-bottom:1.4rem}
+/* Personalized promo = struck base price + a compact urgency pill. The pill reuses
+   the site's chip/badge pattern (pill radius, status dot, warm tint) so it reads as
+   a native part of the layout rather than an injected line, and stays one tight
+   block under the price instead of skewing the column. Recoloured per surface:
+   cta-strong on the light hero, irem-gold-soft on the dark self-study card. */
+.price-stack{display:inline-flex;align-items:baseline;gap:.4em;flex-wrap:wrap}
+.price-old{font-family:var(--f-display);font-weight:400;font-size:.6em;text-decoration:line-through;color:var(--text-soft)}
+.format-card.self .price-old{color:rgba(255,255,255,.55)}
+.promo-note{display:inline-flex;align-items:center;gap:.5em;margin-top:.75rem;
+  padding:.5em .8em .5em .7em;border-radius:var(--r-pill);line-height:1;font-size:.8rem;
+  background:rgba(221,109,12,.10);border:1px solid rgba(221,109,12,.22)}
+.promo-note::before{content:"";flex:0 0 auto;width:6px;height:6px;border-radius:50%;
+  background:var(--cta);box-shadow:0 0 0 3px rgba(221,109,12,.16)}
+.promo-note__label{color:var(--cta-strong);font-weight:600}
+.promo-timer{color:var(--cta-strong);font-family:var(--f-mono);font-weight:700;
+  font-variant-numeric:tabular-nums;letter-spacing:.02em;font-size:.92rem}
+/* Self-study card — dark navy surface: warm gold pill */
+.fc-price+.promo-note{margin-top:1rem;margin-bottom:.2rem;
+  background:rgba(240,163,90,.12);border-color:rgba(240,163,90,.32)}
+.fc-price+.promo-note::before{background:var(--irem-gold-soft);box-shadow:0 0 0 3px rgba(240,163,90,.18)}
 .fc-price+.promo-note .promo-note__label,.fc-price+.promo-note .promo-timer{color:var(--irem-gold-soft)}
-.format-card.premium .fc-price+.promo-note .promo-note__label,.format-card.premium .fc-price+.promo-note .promo-timer{color:var(--cta-strong)}
 </style>`;
   out = out.replace(/<\/head>/i, `${promoCss}\n</head>`);
 
+  // Struck base price + new current price, wrapped in .price-stack with the
+  // .price-old / .price-current hooks the countdown script needs to revert the
+  // price in place once the personal offer expires.
   const oldPriceHtml = offer.oldPriceLabel
-    ? `<s style="color:var(--text-muted);font-weight:400;font-size:.85em">${offer.oldPriceLabel}</s> `
+    ? `<s class="price-old">${offer.oldPriceLabel}</s> `
     : "";
-  const promoTimerHtml = `<p class="promo-note" data-promo-note><span class="promo-note__label" data-promo-note-label>До завершення персональної ціни</span> <span class="promo-timer" data-promo-timer aria-live="polite">48:00:00</span></p>`;
+  const promoTimerHtml = `<p class="promo-note" data-promo-note><span class="promo-note__label" data-promo-note-label>Персональна ціна діє ще</span> <span class="promo-timer" data-promo-timer aria-live="polite">48:00:00</span></p>`;
 
   const priceBlock = (wrapperClass: string) =>
     new RegExp(
@@ -87,14 +97,11 @@ function injectPersonalOffer(html: string, offer: LandingResolvedOffer): string 
       "i"
     );
 
-  out = out.replace(
-    priceBlock("hero-price"),
-    `$1\n          ${oldPriceHtml}<b>${offer.amount} грн</b>\n          <small>$2</small>\n        $3\n        ${promoTimerHtml}`
-  );
-  out = out.replace(
-    priceBlock("fc-price"),
-    `$1\n          ${oldPriceHtml}<b>${offer.amount} грн</b>\n          <small>$2</small>\n        $3\n        ${promoTimerHtml}`
-  );
+  const priceReplacement =
+    `$1\n          <span class="price-stack">${oldPriceHtml}<b class="price-current">${offer.amount} грн</b></span>\n          <small>$2</small>\n        $3\n        ${promoTimerHtml}`;
+
+  out = out.replace(priceBlock("hero-price"), priceReplacement);
+  out = out.replace(priceBlock("fc-price"), priceReplacement);
 
   return out;
 }

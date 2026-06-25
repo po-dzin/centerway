@@ -149,12 +149,17 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 .hero-trust svg{flex:0 0 auto;color:var(--indigo);margin-top:2px}
 
 /* photo stage — full-portrait hero photo */
-/* Real <div class="hv-fade"> paints an opaque cream gradient over the lower photo.
-   Pseudo-elements (::after) with z-index inside aspect-ratio containers are
-   unreliable on iOS Safari — a real child element is the safe path. */
+/* Root cause of the iOS bottom hairline: the photo's square bottom edge sits at the
+   same Y as the fade overlay (both inset:0), and Safari's sub-pixel rounding of the
+   aspect-ratio height leaves a ~1px slice of the photo edge uncovered. Fix: extend
+   the cream fade a few px PAST the photo's bottom (bottom:-12px) so the edge is
+   always buried. The hero text sits in a higher stacking context (.hero-copy z:2 vs
+   .hero-visual z:1), so the overshoot never paints over copy — it lands on the cream
+   page below the photo. A real <div> is used instead of ::after because pseudo-
+   elements with z-index inside aspect-ratio boxes render unreliably on iOS Safari. */
 .hv-stage{position:relative;width:100%;max-width:none;aspect-ratio:3/4;background:transparent}
-.hv-fade{position:absolute;inset:0;pointer-events:none;z-index:2;
-  background:linear-gradient(to bottom,rgba(255,253,247,0) 28%,#fffdf7 55%)}
+.hv-fade{position:absolute;left:0;right:0;top:0;bottom:-12px;pointer-events:none;z-index:2;
+  background:linear-gradient(to bottom,rgba(255,253,247,0) 26%,#fffdf7 50%)}
 .hv-wave{display:none}
 .hv-glow{display:none}
 .hv-photo{
