@@ -6,6 +6,7 @@ node_modules/
 .vercel
 legacy/
 next-env.d.ts
+*.tsbuildinfo
 pnpm-workspace.yaml
 artifacts/
 output/

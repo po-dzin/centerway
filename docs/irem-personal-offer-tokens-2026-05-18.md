@@ -170,7 +170,7 @@ https://irem.centerway.net.ua/go/irem?email={{email}}&campaign=launch_may_2026_e
 
 ## Runtime Status
 
-- SQL draft promoted into runtime migration: `supabase/migrations/2026-05-18_personal_offer_tokens.sql`
+- SQL draft promoted into runtime migration: `docs/migration/sql/2026-05-18_personal_offer_tokens.sql`
 - Admin issue surface lives on: `src/app/(platform)/admin/orders/page.tsx`
 - Issue endpoint lives on: `src/app/api/admin/landing-offers/route.ts`
 - Dynamic bot route lives on: `src/app/go/irem/route.ts`

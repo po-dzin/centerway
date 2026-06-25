@@ -147,6 +147,31 @@ type PurchaseTransport = {
 
 type DiagnosticsPanelKey = "freshness" | "quality" | "purchase_transport";
 
+type DoshaCompletionByType = {
+  result_type: string;
+  count: number;
+  share_percent: number;
+};
+
+type DoshaCtaByType = {
+  result_type: string;
+  primary_clicks: number;
+  secondary_clicks: number;
+  total_clicks: number;
+  click_through_percent: number;
+};
+
+type DoshaAnalytics = {
+  period: { from: string; to: string };
+  total_completions: number;
+  total_cta_clicks: number;
+  cta_click_through_percent: number;
+  top_type: string | null;
+  completions_by_type: DoshaCompletionByType[];
+  cta_by_type: DoshaCtaByType[];
+  daily: Array<{ date: string; completions: number }>;
+};
+
 type AnalyticsResponse = {
   period?: {
     from: string;
@@ -723,8 +748,11 @@ export default function AnalyticsPage() {
     showAccessGrantedCard: false,
   });
   const [analyticsSection, setAnalyticsSection] = useState<
-    "overview" | "funnel" | "products" | "campaigns" | "capi" | "inputs_quality"
+    "overview" | "funnel" | "products" | "campaigns" | "capi" | "dosha" | "inputs_quality"
   >("overview");
+
+  const [doshaData, setDoshaData] = useState<DoshaAnalytics | null>(null);
+  const [doshaLoading, setDoshaLoading] = useState(false);
   const [diagnosticsPanels, setDiagnosticsPanels] = useState<Record<DiagnosticsPanelKey, boolean>>({
     freshness: false,
     quality: false,
@@ -1165,14 +1193,39 @@ export default function AnalyticsPage() {
     { key: "products", label: t("analytics_subtab_products") },
     { key: "campaigns", label: t("analytics_subtab_campaigns") },
     { key: "capi", label: t("analytics_subtab_capi") },
+    { key: "dosha", label: "Доша" },
     { key: "inputs_quality", label: t("analytics_subtab_inputs_quality") },
   ] as const;
+  const fetchDoshaAnalytics = async (period?: { from: string; to: string }) => {
+    setDoshaLoading(true);
+    try {
+      const { data: { session } } = await supabaseClient.auth.getSession();
+      const query = new URLSearchParams();
+      if (period?.from) query.set("from", period.from);
+      if (period?.to) query.set("to", period.to);
+      const res = await fetch(`/api/admin/analytics/dosha?${query.toString()}`, {
+        headers: session ? { Authorization: `Bearer ${session.access_token}` } : {},
+      });
+      if (res.ok) {
+        const data = (await res.json()) as DoshaAnalytics;
+        setDoshaData(data);
+      }
+    } catch {
+      // best-effort
+    } finally {
+      setDoshaLoading(false);
+    }
+  };
+
   const handleAnalyticsSectionChange = (key: string) => {
     flushSync(() => {
       setAnalyticsSection(
-        key as "overview" | "funnel" | "products" | "campaigns" | "capi" | "inputs_quality"
+        key as "overview" | "funnel" | "products" | "campaigns" | "capi" | "dosha" | "inputs_quality"
       );
     });
+    if (key === "dosha" && !doshaData) {
+      void fetchDoshaAnalytics({ from: fromDate, to: toDate });
+    }
   };
   const toggleDiagnosticsPanel = (key: DiagnosticsPanelKey) => {
     setDiagnosticsPanels((prev) => ({
@@ -2090,6 +2143,7 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
+
         <div className="cw-surface rounded-2xl border cw-border cw-shadow overflow-hidden">
           <div className="px-4 sm:px-5 md:px-6 py-4 md:py-5 border-b cw-border">
             <h2 className="text-lg font-medium cw-text">{t("analytics_products_breakdown")}</h2>
@@ -2149,6 +2203,130 @@ export default function AnalyticsPage() {
           </div>
         </div>
       </div>
+      )}
+
+      {analyticsSection === "dosha" && (
+        <div className="space-y-4 md:space-y-5">
+          <div className="flex items-center justify-between gap-3">
+            <h2 className="text-lg font-semibold cw-text">Доша-тест: аналітика</h2>
+            <button
+              type="button"
+              onClick={() => { void fetchDoshaAnalytics({ from: fromDate, to: toDate }); }}
+              disabled={doshaLoading}
+              className="px-4 py-2 text-sm font-medium cw-btn disabled:opacity-50"
+            >
+              {doshaLoading ? "Завантаження..." : t("analytics_refresh")}
+            </button>
+          </div>
+
+          {doshaLoading && !doshaData ? (
+            <div className="cw-panel p-6 text-center text-sm cw-muted">Завантаження...</div>
+          ) : doshaData ? (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 md:gap-4">
+                <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+                  <div className="text-sm font-medium cw-muted">Завершено тестів</div>
+                  <div className="text-3xl font-bold mt-2 cw-text">{doshaData.total_completions}</div>
+                </div>
+                <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+                  <div className="text-sm font-medium cw-muted">CTA-кліки</div>
+                  <div className="text-3xl font-bold mt-2 cw-text">{doshaData.total_cta_clicks}</div>
+                  <div className="text-xs cw-muted mt-1">Click-through: {doshaData.cta_click_through_percent}%</div>
+                </div>
+                <div className="cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
+                  <div className="text-sm font-medium cw-muted">Домінуючий тип</div>
+                  <div className="text-3xl font-bold mt-2 cw-text capitalize">{doshaData.top_type?.replace("_", " + ") ?? "—"}</div>
+                </div>
+              </div>
+
+              <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-4">
+                <h3 className="text-sm font-semibold cw-text">Розподіл по типу доші</h3>
+                <div className="space-y-2">
+                  {doshaData.completions_by_type.map((row) => (
+                    <div key={row.result_type} className="flex items-center gap-3">
+                      <div className="w-32 text-sm cw-text shrink-0">{row.result_type.replace(/_/g, " + ")}</div>
+                      <div className="flex-1 h-5 rounded-full overflow-hidden" style={{ background: "var(--cw-border)" }}>
+                        <div
+                          className="h-full rounded-full"
+                          style={{
+                            width: `${Math.max(row.share_percent, row.count > 0 ? 2 : 0)}%`,
+                            background: "var(--cw-interactive-active-border)",
+                          }}
+                        />
+                      </div>
+                      <div className="w-24 text-right text-sm cw-muted shrink-0">{row.count} ({row.share_percent}%)</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="cw-surface rounded-2xl border cw-border cw-shadow overflow-hidden">
+                <div className="px-4 sm:px-5 md:px-6 py-4 border-b cw-border">
+                  <h3 className="text-sm font-semibold cw-text">CTA-кліки по типу доші</h3>
+                  <p className="text-xs cw-muted mt-1">Primary = консультація, Secondary = програма</p>
+                </div>
+                <div className="overflow-x-auto">
+                  <table className="min-w-full text-sm">
+                    <thead className="cw-surface-2 border-b cw-border">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Тип</th>
+                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Тестів</th>
+                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Primary</th>
+                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">Secondary</th>
+                        <th className="px-4 py-2 text-left text-xs cw-muted uppercase">CTR</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {doshaData.cta_by_type.map((row) => {
+                        const completions = doshaData.completions_by_type.find((c) => c.result_type === row.result_type)?.count ?? 0;
+                        return (
+                          <tr key={row.result_type} className="border-t cw-border">
+                            <td className="px-4 py-3 cw-text">{row.result_type.replace(/_/g, " + ")}</td>
+                            <td className="px-4 py-3 cw-muted">{completions}</td>
+                            <td className="px-4 py-3 cw-text">{row.primary_clicks}</td>
+                            <td className="px-4 py-3 cw-muted">{row.secondary_clicks}</td>
+                            <td className="px-4 py-3 cw-muted">{row.click_through_percent}%</td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {doshaData.daily.some((row) => row.completions > 0) && (
+                <div className="cw-panel p-4 sm:p-5 md:p-6 space-y-3">
+                  <h3 className="text-sm font-semibold cw-text">Завершення по днях</h3>
+                  <div className="cw-surface rounded-xl border cw-border overflow-x-auto">
+                    <table className="min-w-full text-xs">
+                      <thead className="cw-surface-2 border-b cw-border">
+                        <tr>
+                          <th className="px-3 py-2 text-left cw-muted uppercase">{t("analytics_col_date")}</th>
+                          <th className="px-3 py-2 text-left cw-muted uppercase">Тестів завершено</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {doshaData.daily.filter((row) => row.completions > 0).map((row) => (
+                          <tr key={row.date} className="border-t cw-border">
+                            <td className="px-3 py-2 cw-text">{row.date}</td>
+                            <td className="px-3 py-2 cw-text">{row.completions}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="text-xs cw-muted">
+                    CAC по сегменту доші потребує зв&apos;язки test_attempts → orders через user_id (буде з LMS/auth).
+                  </p>
+                </div>
+              )}
+            </>
+          ) : (
+            <div className="cw-panel p-6 text-center text-sm cw-muted">
+              Натисніть &laquo;Оновити&raquo; для завантаження даних
+            </div>
+          )}
+        </div>
       )}
     </div>
   );

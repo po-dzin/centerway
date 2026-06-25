@@ -2,6 +2,7 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { resolveIremLandingOffer } from "@/lib/landing/offers";
+import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import { resolvePayableProduct } from "@/lib/products";
 import {
   createPaymentInvoice,
@@ -11,6 +12,9 @@ import {
 export const runtime = "nodejs";
 
 export async function GET(req: NextRequest) {
+  const rl = await enforceRateLimit(req, { name: "pay_start", limit: 30, windowSeconds: 60 });
+  if (!rl.allowed) return tooManyRequests(rl.retryAfter);
+
   const url = new URL(req.url);
   const product = resolvePayableProduct({
     product: url.searchParams.get("product") ?? undefined,
