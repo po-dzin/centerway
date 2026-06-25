@@ -2,6 +2,7 @@ import crypto from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { persistLeadBestEffort, type LeadRecord } from "@/lib/checkoutFlow";
 import { normalizeProduct, type ProductCode } from "@/lib/products";
+import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
@@ -55,6 +56,9 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
+  const rl = await enforceRateLimit(req, { name: "leads", limit: 15, windowSeconds: 60 });
+  if (!rl.allowed) return cors(tooManyRequests(rl.retryAfter));
+
   const body = (await req.json().catch(() => ({}))) as LeadRequestBody;
   const name = asString(body.name);
   const phone = asString(body.phone);
