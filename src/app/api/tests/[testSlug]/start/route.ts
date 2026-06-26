@@ -6,6 +6,7 @@ import {
   loadTestDefinitionBySlug,
 } from "@/lib/doshaTestRepo";
 import { DOSHA_TEST_SLUG } from "@/lib/doshaTest";
+import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -29,6 +30,9 @@ export async function POST(
   if (testSlug !== DOSHA_TEST_SLUG) {
     return NextResponse.json({ error: "test_not_found" }, { status: 404 });
   }
+
+  const rl = await enforceRateLimit(req, { name: "test_start", limit: 20, windowSeconds: 60 });
+  if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
   const body = (await req.json().catch(() => ({}))) as StartBody;
   const source = asString(body.source) ?? "dosha_test_landing";
