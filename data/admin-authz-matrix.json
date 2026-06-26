@@ -7,6 +7,11 @@
   {
     "kind": "read",
     "method": "GET",
+    "path": "/api/admin/analytics/dosha"
+  },
+  {
+    "kind": "read",
+    "method": "GET",
     "path": "/api/admin/audit"
   },
   {
