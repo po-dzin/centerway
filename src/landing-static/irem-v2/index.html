@@ -157,9 +157,9 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
    .hero-visual z:1), so the overshoot never paints over copy — it lands on the cream
    page below the photo. A real <div> is used instead of ::after because pseudo-
    elements with z-index inside aspect-ratio boxes render unreliably on iOS Safari. */
-.hv-stage{position:relative;width:100%;max-width:none;aspect-ratio:3/4;background:transparent}
+.hv-stage{position:relative;width:100%;max-width:none;aspect-ratio:3/4;background:#fffdf7}
 .hv-fade{position:absolute;left:0;right:0;top:0;bottom:-12px;pointer-events:none;z-index:2;
-  background:linear-gradient(to bottom,rgba(255,253,247,0) 26%,#fffdf7 50%)}
+  background:linear-gradient(to bottom,rgba(255,253,247,0) 18%,#fffdf7 46%)}
 .hv-wave{display:none}
 .hv-glow{display:none}
 .hv-photo{
