@@ -33,6 +33,57 @@ export const PRODUCTS = {
     approvedUrl: "https://irem.centerway.net.ua/thanks",
     declinedUrl: "https://irem.centerway.net.ua/pay-failed",
   },
+  way21: {
+    heading: {
+      ua: "Шлях 21 — інтегративна детокс-програма",
+      en: "Way 21 — integrative detox program",
+    },
+    description: {
+      ua:
+        "Оплата детокс-програми \"Шлях 21\" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
+      en:
+        "Detox program payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
+    },
+    amount: 3100,
+    currency: "UAH",
+    // TODO(placeholder): swap to the real way21 funnel subdomain + bot before launch.
+    approvedUrl: "https://way21.centerway.net.ua/thanks",
+    declinedUrl: "https://way21.centerway.net.ua/pay-failed",
+  },
+  "way21-support": {
+    heading: {
+      ua: "Шлях 21 — індивідуальний супровід",
+      en: "Way 21 — guided package",
+    },
+    description: {
+      ua:
+        "Оплата пакета \"Шлях 21 — індивідуальний супровід\" від Centerway: програма детоксу з 2 особистими консультаціями та персональним веденням. Після оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
+      en:
+        "Guided package payment by Centerway: the detox program with 2 personal consultations and individual guidance. After payment, a confirmation page opens with a Telegram bot entry button. Support: if you have questions, message us and we will help quickly.",
+    },
+    amount: 5200,
+    currency: "UAH",
+    // TODO(placeholder): swap to the real way21 funnel subdomain + bot before launch.
+    approvedUrl: "https://way21.centerway.net.ua/thanks",
+    declinedUrl: "https://way21.centerway.net.ua/pay-failed",
+  },
+  "reset-day": {
+    heading: {
+      ua: "Розвантажувальний день — міні-курс",
+      en: "Reset Day — mini course",
+    },
+    description: {
+      ua:
+        "Оплата міні-курсу \"Розвантажувальний день\" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
+      en:
+        "Mini course payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
+    },
+    amount: 795,
+    currency: "UAH",
+    // TODO(placeholder): swap to the real reset-day funnel subdomain + bot before launch.
+    approvedUrl: "https://resetday.centerway.net.ua/thanks",
+    declinedUrl: "https://resetday.centerway.net.ua/pay-failed",
+  },
 } as const;
 
 export const LEAD_PRODUCT_CODES = ["consult", "ideal-body", "platform", "herbs"] as const;
@@ -62,6 +113,9 @@ export function normalizeProduct(input: unknown): ProductCode | null {
     const s = input.trim().toLowerCase();
     if (s === "short" || s === "reboot") return "short";
     if (s === "irem") return "irem";
+    if (s === "way21-support" || s === "way21_support") return "way21-support";
+    if (s === "way21" || s === "shlyah21" || s === "detox21") return "way21";
+    if (s === "reset-day" || s === "reset_day" || s === "reset" || s === "rozvantazhennya") return "reset-day";
     if (s === "consult" || s === "consultation") return "consult";
     if (s === "ideal-body" || s === "ideal_body" || s === "idealne-tilo") return "ideal-body";
     if (s === "herbs") return "herbs";
@@ -92,7 +146,13 @@ export function resolveProduct(input: unknown): ProductCode {
 }
 
 export function isPayableProduct(product: ProductCode | string | null | undefined): product is PayableProductCode {
-  return product === "short" || product === "irem";
+  return (
+    product === "short" ||
+    product === "irem" ||
+    product === "way21" ||
+    product === "way21-support" ||
+    product === "reset-day"
+  );
 }
 
 export function normalizePayableProduct(input: unknown): PayableProductCode | null {

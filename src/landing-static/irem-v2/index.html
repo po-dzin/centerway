@@ -288,11 +288,13 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 .phase::after{content:"";position:absolute;left:0;top:0;height:4px;width:100%}
 .phase.p1::after{background:linear-gradient(90deg,var(--cta),var(--irem-gold-soft))}
 .phase.p2::after{background:linear-gradient(90deg,var(--indigo),var(--indigo-bright))}
-.phase.p3::after{background:linear-gradient(90deg,var(--irem-dark-2),var(--irem-indigo-soft))}
+.phase.p3::after{background:linear-gradient(90deg,var(--cta) 0%,var(--indigo) 100%)}
 .phase .ph-n{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.16em;color:var(--indigo);text-transform:uppercase}
 .phase .ph-ico{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;margin:.4rem 0 1.1rem;
   background:var(--chip);color:var(--indigo)}
 .phase.p1 .ph-ico{background:var(--irem-gold-tint);color:var(--cta)}
+/* phase 3 (integration) — slot blends p1 gold + p2 green/indigo tints */
+.phase.p3 .ph-ico{background:linear-gradient(135deg,var(--irem-gold-tint) 0%,var(--chip) 100%);color:var(--indigo)}
 .phase h3{font-size:1.55rem;margin-bottom:.7rem}
 .phase .dl{margin-top:1rem;border-top:1px dashed var(--line);padding-top:1rem}
 .phase .dl dt{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.1em;text-transform:uppercase;color:var(--text-soft);margin-top:.7rem}
