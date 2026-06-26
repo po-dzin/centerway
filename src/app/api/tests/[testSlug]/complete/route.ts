@@ -3,6 +3,7 @@ import { adminClient } from "@/lib/auth/adminClient";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { calculateDoshaResult, DOSHA_TEST_SLUG, isValidScoreInvariant } from "@/lib/doshaTest";
 import { DOSHA_PRIMARY_EXIT } from "@/lib/doshaRouting";
+import type { CapiEventPayload } from "@/lib/tracking/capi";
 import {
   createTestAttempt,
   emitDoshaTestEvent,
@@ -252,6 +253,23 @@ export async function POST(
 
     await emitDoshaTestEvent(db, "dosha_test_completed", eventPayload);
     await emitDoshaTestEvent(db, "dosha_result_calculated", eventPayload);
+
+    const capiLeadPayload: CapiEventPayload = {
+      event_name: "Lead",
+      event_id: `dosha_lead_${attempt.id}`,
+      event_time: Math.floor(Date.now() / 1000),
+      action_source: "website",
+      content_name: "dosha_test",
+      content_type: "lead",
+      content_ids: [resultType],
+      ip_address: req.headers.get("x-forwarded-for")?.split(",")[0].trim() ?? req.headers.get("x-real-ip") ?? null,
+      user_agent: req.headers.get("user-agent"),
+    };
+    try {
+      await db.from("jobs").insert({ type: "meta:capi", status: "pending", payload: capiLeadPayload });
+    } catch {
+      // fire-and-forget; test result already saved
+    }
 
     return NextResponse.json({
       attemptId: attempt.id,

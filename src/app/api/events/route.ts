@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 
 export const runtime = "nodejs";
@@ -92,6 +93,9 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
+  const rl = await enforceRateLimit(req, { name: "events", limit: 120, windowSeconds: 60 });
+  if (!rl.allowed) return cors(tooManyRequests(rl.retryAfter));
+
   const body = (await req.json().catch(() => ({}))) as EventsRequestBody;
   const eventName = asString(body.event_name) as AllowedEventName | null;
   const eventId = asString(body.event_id);
