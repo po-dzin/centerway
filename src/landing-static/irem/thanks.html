@@ -118,6 +118,33 @@
   // можно добросить атрибуцию (не обязательно)
   Object.assign(payload, attrib);
 
+  try {
+    fetch('/api/events', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      keepalive: true,
+      body: JSON.stringify({
+        event_name: 'PurchaseClientSignal',
+        event_id: orderRef ? ('purchase_client_' + orderRef) : ('purchase_client_' + (tid || Date.now())),
+        order_ref: orderRef || null,
+        product: product || 'irem',
+        value: payload.value,
+        currency: payload.currency,
+        content_name: content_name,
+        page_url: window.location.href,
+        fbp: attrib.fbp,
+        fbc: attrib.fbc,
+        fbclid: attrib.fbclid,
+        utm_source: attrib.utm_source,
+        utm_medium: attrib.utm_medium,
+        utm_campaign: attrib.utm_campaign,
+        utm_content: attrib.utm_content,
+        utm_term: attrib.utm_term
+      })
+    });
+  } catch (_) {}
+
   if (typeof fbq === 'function') {
     const eventId = orderRef ? ('purchase_' + orderRef) : '';
     if (eventId) {
@@ -131,7 +158,7 @@
   </script>
 
   <script>
-  // автопереход в бот через 1.2 сек (кнопка остаётся как запасной вариант)
+  // Даём браузерному пикселю короткое окно на отправку Purchase до перехода в бот.
   const isLocalPreview =
     window.location.hostname === "localhost" ||
     window.location.hostname === "127.0.0.1" ||
@@ -141,7 +168,7 @@
   if (!disableAutoRedirect) {
     setTimeout(() => {
       window.location.href = "https://t.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4";
-    }, 1200);
+    }, 2500);
   }
   </script>
 

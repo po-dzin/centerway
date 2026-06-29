@@ -238,8 +238,11 @@ export const translations = {
         analytics_purchase_transport_failed: "Purchase failed",
         analytics_purchase_transport_missing_job: "Paid без Purchase job",
         analytics_purchase_transport_stale_pending: "Зависшие pending Purchase",
+        analytics_purchase_transport_client_signal: "Thanks открыт в браузере",
+        analytics_purchase_transport_missing_client_signal: "Paid без thanks signal",
         analytics_purchase_transport_last_success: "Последний success",
         analytics_purchase_transport_coverage: "Покрытие success по paid orders:",
+        analytics_purchase_transport_client_signal_coverage: "Покрытие thanks signal по paid orders:",
         analytics_purchase_transport_no_data: "Нет данных transport по Purchase за выбранный период.",
 
         // System
@@ -630,8 +633,11 @@ export const translations = {
         analytics_purchase_transport_failed: "Purchase failed",
         analytics_purchase_transport_missing_job: "Paid missing Purchase job",
         analytics_purchase_transport_stale_pending: "Stale pending Purchase",
+        analytics_purchase_transport_client_signal: "Thanks opened in browser",
+        analytics_purchase_transport_missing_client_signal: "Paid missing thanks signal",
         analytics_purchase_transport_last_success: "Last success",
         analytics_purchase_transport_coverage: "Success coverage across paid orders:",
+        analytics_purchase_transport_client_signal_coverage: "Thanks signal coverage across paid orders:",
         analytics_purchase_transport_no_data: "No Purchase transport data for the selected period.",
 
         // System

@@ -142,6 +142,8 @@ type PurchaseTransport = {
   failed: number;
   missing_job: number;
   stale_pending: number;
+  client_signal: number;
+  missing_client_signal: number;
   last_success_at: string | null;
 };
 
@@ -1625,7 +1627,7 @@ export default function AnalyticsPage() {
         >
           {purchaseTransport ? (
             <div className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-7 gap-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-9 gap-2">
                 <div className="cw-surface-2 border cw-border rounded-lg p-3">
                   <p className="text-xs cw-muted">{t("analytics_purchase_transport_paid_total")}</p>
                   <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.total_paid_orders}</p>
@@ -1651,6 +1653,14 @@ export default function AnalyticsPage() {
                   <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.stale_pending}</p>
                 </div>
                 <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_client_signal")}</p>
+                  <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.client_signal}</p>
+                </div>
+                <div className="cw-surface-2 border cw-border rounded-lg p-3">
+                  <p className="text-xs cw-muted">{t("analytics_purchase_transport_missing_client_signal")}</p>
+                  <p className="text-lg font-semibold cw-text mt-1">{purchaseTransport.missing_client_signal}</p>
+                </div>
+                <div className="cw-surface-2 border cw-border rounded-lg p-3">
                   <p className="text-xs cw-muted">{t("analytics_purchase_transport_last_success")}</p>
                   <p className="text-sm font-semibold cw-text mt-1">
                     {purchaseTransport.last_success_at ? new Date(purchaseTransport.last_success_at).toLocaleString() : "—"}
@@ -1662,6 +1672,14 @@ export default function AnalyticsPage() {
                 <span className="cw-text font-medium">
                   {purchaseTransport.total_paid_orders > 0
                     ? `${Math.round((purchaseTransport.success / purchaseTransport.total_paid_orders) * 100)}%`
+                    : "0%"}
+                </span>
+              </div>
+              <div className="text-xs cw-muted">
+                {t("analytics_purchase_transport_client_signal_coverage")}{" "}
+                <span className="cw-text font-medium">
+                  {purchaseTransport.total_paid_orders > 0
+                    ? `${Math.round((purchaseTransport.client_signal / purchaseTransport.total_paid_orders) * 100)}%`
                     : "0%"}
                 </span>
               </div>

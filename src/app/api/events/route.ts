@@ -8,6 +8,7 @@ export const runtime = "nodejs";
 type EventsRequestBody = {
   event_name?: unknown;
   event_id?: unknown;
+  order_ref?: unknown;
   value?: unknown;
   currency?: unknown;
   page_url?: unknown;
@@ -31,7 +32,7 @@ type EventsRequestBody = {
   target?: unknown;
 };
 
-type LocalOnlyEventName = "ScrollDepth50" | "ConsultCTA" | "DetoxCTA";
+type LocalOnlyEventName = "ScrollDepth50" | "ConsultCTA" | "DetoxCTA" | "PurchaseClientSignal";
 type AllowedEventName = CapiEventPayload["event_name"] | LocalOnlyEventName;
 
 const CAPI_EVENT_NAMES = new Set<CapiEventPayload["event_name"]>([
@@ -39,7 +40,12 @@ const CAPI_EVENT_NAMES = new Set<CapiEventPayload["event_name"]>([
   "Lead",
   "InitiateCheckout",
 ]);
-const LOCAL_ONLY_EVENT_NAMES = new Set<LocalOnlyEventName>(["ScrollDepth50", "ConsultCTA", "DetoxCTA"]);
+const LOCAL_ONLY_EVENT_NAMES = new Set<LocalOnlyEventName>([
+  "ScrollDepth50",
+  "ConsultCTA",
+  "DetoxCTA",
+  "PurchaseClientSignal",
+]);
 
 function isCapiEventName(name: string): name is CapiEventPayload["event_name"] {
   return CAPI_EVENT_NAMES.has(name as CapiEventPayload["event_name"]);
@@ -99,6 +105,7 @@ export async function POST(req: NextRequest) {
   const body = (await req.json().catch(() => ({}))) as EventsRequestBody;
   const eventName = asString(body.event_name) as AllowedEventName | null;
   const eventId = asString(body.event_id);
+  const orderRef = asString(body.order_ref);
   if (!eventName || (!isCapiEventName(eventName) && !isLocalOnlyEventName(eventName))) {
     return cors(NextResponse.json({ ok: false, error: "invalid_event_name" }, { status: 400 }));
   }
@@ -139,10 +146,16 @@ export async function POST(req: NextRequest) {
 
   if (isLocalOnlyEventName(eventName)) {
     const localType =
-      eventName === "ConsultCTA" ? "consult_cta" : eventName === "DetoxCTA" ? "detox_cta" : "scroll_depth_50";
+      eventName === "ConsultCTA"
+        ? "consult_cta"
+        : eventName === "DetoxCTA"
+          ? "detox_cta"
+          : eventName === "PurchaseClientSignal"
+            ? "purchase_client_signal"
+            : "scroll_depth_50";
     const { error: insertErr } = await db.from("events").insert({
       type: localType,
-      order_ref: null,
+      order_ref: orderRef,
       payload: sharedPayload,
     });
     if (insertErr) {
