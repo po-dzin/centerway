@@ -88,6 +88,8 @@ type PurchaseTransportRow = {
     failed: number;
     missing_job: number;
     stale_pending: number;
+    client_signal: number;
+    missing_client_signal: number;
     last_success_at: string | null;
 };
 
@@ -1510,9 +1512,10 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
           }>
         = [];
     let purchaseJobByOrderRef = new Map<string, { status: string; created_at: string | null }>();
+    let purchaseClientSignalOrderRefs = new Set<string>();
 
     if (paidOrderRefs.length > 0) {
-        const [qualityOrdersRes, checkoutStartedRes] = await Promise.all([
+        const [qualityOrdersRes, checkoutStartedRes, purchaseClientSignalRes] = await Promise.all([
             db
                 .from("orders")
                 .select("order_ref, created_at, status, fbclid, fbp, page_url, client_ip, client_ua")
@@ -1526,6 +1529,14 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
                 .in("order_ref", paidOrderRefs)
                 .order("created_at", { ascending: false })
                 .limit(paidWindowFetchLimit),
+            db
+                .from("events")
+                .select("order_ref")
+                .eq("type", "purchase_client_signal")
+                .in("order_ref", paidOrderRefs)
+                .gte("created_at", range.fromTs)
+                .lt("created_at", range.toExclusiveTs)
+                .limit(paidWindowFetchLimit),
         ]);
         if (qualityOrdersRes.error) {
             console.warn("Analytics quality series warning:", qualityOrdersRes.error.message);
@@ -1536,6 +1547,15 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
             console.warn("Analytics checkout_started quality warning:", checkoutStartedRes.error.message);
         } else {
             checkoutStartedRows = (checkoutStartedRes.data ?? []) as typeof checkoutStartedRows;
+        }
+        if (purchaseClientSignalRes.error) {
+            console.warn("Analytics purchase client signal warning:", purchaseClientSignalRes.error.message);
+        } else {
+            purchaseClientSignalOrderRefs = new Set(
+                (purchaseClientSignalRes.data ?? [])
+                    .map((row) => (typeof row.order_ref === "string" ? row.order_ref : null))
+                    .filter((value): value is string => Boolean(value))
+            );
         }
         try {
             purchaseJobByOrderRef = await fetchLatestPurchaseJobsByOrderRefs(db, paidOrderRefs);
@@ -1606,23 +1626,27 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
             const status = purchaseJobByOrderRef.get(orderRef);
             if (!status) {
                 acc.missing_job += 1;
-                return acc;
-            }
-            if (status.status === "success") {
+            } else if (status.status === "success") {
                 acc.success += 1;
                 if (status.created_at && (!acc.last_success_at || status.created_at > acc.last_success_at)) {
                     acc.last_success_at = status.created_at;
                 }
-                return acc;
-            }
-            if (status.status === "pending") acc.pending += 1;
-            if (status.status === "running") acc.running += 1;
-            if (status.status === "failed") acc.failed += 1;
-            if ((status.status === "pending" || status.status === "running") && status.created_at) {
-                const lastPendingMs = Date.parse(status.created_at);
-                if (Number.isFinite(lastPendingMs) && nowMs - lastPendingMs >= stalePendingThresholdMs) {
-                    acc.stale_pending += 1;
+            } else {
+                if (status.status === "pending") acc.pending += 1;
+                if (status.status === "running") acc.running += 1;
+                if (status.status === "failed") acc.failed += 1;
+                if ((status.status === "pending" || status.status === "running") && status.created_at) {
+                    const lastPendingMs = Date.parse(status.created_at);
+                    if (Number.isFinite(lastPendingMs) && nowMs - lastPendingMs >= stalePendingThresholdMs) {
+                        acc.stale_pending += 1;
+                    }
                 }
+            }
+
+            if (purchaseClientSignalOrderRefs.has(orderRef)) {
+                acc.client_signal += 1;
+            } else {
+                acc.missing_client_signal += 1;
             }
             return acc;
         },
@@ -1634,6 +1658,8 @@ async function computeAnalyticsPayload(range: DateRange, campaignLevel: Campaign
             failed: 0,
             missing_job: 0,
             stale_pending: 0,
+            client_signal: 0,
+            missing_client_signal: 0,
             last_success_at: null,
         }
     );

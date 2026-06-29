@@ -5,6 +5,19 @@
   var data = {};
   var deferredStarted = false;
 
+  function getCurrentPage() {
+    var page = (document.documentElement && document.documentElement.dataset && document.documentElement.dataset.cwPage) || "";
+    return String(page || "").toLowerCase();
+  }
+
+  function isUtilityTrackingCriticalPage() {
+    var page = getCurrentPage();
+    if (page === "thanks" || page === "pay-failed") return true;
+
+    var pathname = (window.location && window.location.pathname ? window.location.pathname : "").toLowerCase();
+    return /\/(thanks|pay-failed)(?:\/|$)/.test(pathname);
+  }
+
   try {
     var stored = JSON.parse(localStorage.getItem("cw_user") || "{}");
     if (stored.em) data.em = stored.em;
@@ -72,7 +85,11 @@
 
   window.fbq("init", pixelId, data);
   window.fbq("track", "PageView");
-  scheduleDeferredScripts(loadFacebookPixel, { timeoutMs: 12000 });
+  if (isUtilityTrackingCriticalPage()) {
+    loadFacebookPixel();
+  } else {
+    scheduleDeferredScripts(loadFacebookPixel, { timeoutMs: 12000 });
+  }
 
   var ADS_TAG_ID = "AW-957636387";
   var ADS_CONVERSION_ID = "AW-957636387/THR-CKrbn54cEKO-0cgD";
