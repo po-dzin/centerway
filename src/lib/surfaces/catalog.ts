@@ -1,4 +1,4 @@
-export type ProductKey = "reboot" | "irem" | "mini-detox" | "detox" | "herbs" | "consult";
+export type ProductKey = "reboot" | "irem" | "mini-detox" | "detox" | "way21" | "reset-day" | "herbs" | "consult";
 export type SurfaceKind = "funnel" | "platform" | "utility";
 export type CtaMode = "lead" | "checkout" | "redirect";
 export type FunnelRuntime = "landing-app" | "generated-app" | "disabled";
@@ -54,13 +54,37 @@ const PRODUCT_SURFACE_REGISTRY: Record<ProductKey, ProductSurfaceEntry> = {
   detox: {
     productKey: "detox",
     surfaceKinds: ["funnel", "platform"],
-    host: "detox.centerway.net.ua",
+    host: null, // retired — superseded by the way21.centerway.net.ua funnel host
     platformRoute: "/programs/way21",
     ctaMode: "lead",
     defaultDoshaEligibility: "secondary",
     status: "active",
     funnelRuntime: "generated-app",
     internalFunnelRoute: "/funnel-entry/detox",
+  },
+  way21: {
+    productKey: "way21",
+    surfaceKinds: ["funnel"],
+    host: "way21.centerway.net.ua",
+    platformRoute: "/programs/way21",
+    ctaMode: "checkout",
+    defaultDoshaEligibility: "none",
+    status: "active",
+    funnelRuntime: "landing-app",
+    internalFunnelRoute: "/way21",
+    legacyAliases: ["way21", "shlyah21"],
+  },
+  "reset-day": {
+    productKey: "reset-day",
+    surfaceKinds: ["funnel"],
+    host: "resetday.centerway.net.ua",
+    platformRoute: null,
+    ctaMode: "checkout",
+    defaultDoshaEligibility: "none",
+    status: "active",
+    funnelRuntime: "landing-app",
+    internalFunnelRoute: "/reset-day",
+    legacyAliases: ["reset-day", "resetday", "rozvantazhennya"],
   },
   herbs: {
     productKey: "herbs",
