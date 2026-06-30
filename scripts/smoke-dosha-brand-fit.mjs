@@ -6,8 +6,8 @@ const timeoutMs = Number.parseInt(process.env.SMOKE_TIMEOUT_MS || "20000", 10);
 const useMockApi = process.env.SMOKE_DOSHA_MOCK !== "0";
 
 const componentPath = "src/components/dosha-test/DoshaTestClient.tsx";
-const contractPath = "docs/legacy/dosha_test_ui_contract_v1.md";
-const specPath = "docs/legacy/center_way_dosha_test_spec_agent_ready.md";
+const contractPath = "docs/legacy/product/dosha_test_ui_contract_v1.md";
+const specPath = "docs/legacy/product/center_way_dosha_test_spec_agent_ready.md";
 
 const score = {
   total: 0,

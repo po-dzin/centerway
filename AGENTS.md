@@ -141,8 +141,7 @@ If local evidence shows the canon is outdated, update the local doc first, then 
 These documents are intentionally local and are not part of the shared canon:
 
 - `docs/CANON.md`
-- `docs/landing-short-irem-product-palettes.md`
-- `docs/landing-short-irem-size-policy.md`
+- `docs/LOCAL_DOCS.md`
 - `docs/platform_agent_preflight.md`
 
 Keep them local unless their rules become stable cross-project canon.
