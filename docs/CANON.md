@@ -143,8 +143,7 @@ Agents should not read or edit `docs/legacy/**` by default. Use it only when:
 These local documents are intentionally not part of the shared canon:
 
 - `docs/CANON.md`
-- `docs/landing-short-irem-product-palettes.md`
-- `docs/landing-short-irem-size-policy.md`
+- `docs/LOCAL_DOCS.md`
 - `docs/platform_agent_preflight.md`
 
 They remain local unless their contents become durable cross-project canon.
