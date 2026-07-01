@@ -1,5 +1,10 @@
 # Funnel pair: Шлях 21 (`/way21`) + Розвантажувальний день (`/reset-day`)
 
+> Superseded for the network view by [`docs/landing-funnel-network.md`](../../landing-funnel-network.md):
+> `way21`/`reset-day` are now the core of the platform author's five-landing mini-network
+> (`way21`, `reset-day`, `consult`, `dosha`, `herbs`). Prices below are pre-`4100/9000`.
+> This note is kept for the pair's original build detail.
+
 Scope date: 2026-06-25
 Status: built, pre-launch (placeholder pay/bot wiring), `noindex` until launch.
 
