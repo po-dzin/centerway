@@ -1,6 +1,5 @@
 import { getLandingPublicRouteName, getLandingShellAssets } from "@/lib/landing/config";
 import { getLandingCriticalCss } from "@/lib/landing/config";
-import { LandingIremEnhancements } from "@/lib/landing/LandingIremEnhancements";
 import type { LandingResolvedOffer } from "@/lib/landing/offers";
 import type { StaticLandingProduct } from "@/lib/landing/types";
 import Script from "next/script";
@@ -43,7 +42,6 @@ export function LandingPageShell({ product, bodyHtml, offer }: LandingPageShellP
           />
         ))}
       <Script src={config.runtimeScript} strategy="afterInteractive" />
-      {product === "irem" ? <LandingIremEnhancements /> : null}
       <main
         data-cw-landing={product}
         data-cw-runtime="next"

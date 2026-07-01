@@ -584,54 +584,8 @@
   </div>
 </div>
 
-<script>
-// sticky CTA hides when a static CTA (hero / final offer) is in view
-(function(){
-  const sticky=document.getElementById('stickyCta');
-  const anchors=document.querySelectorAll('[data-cta-hero],[data-cta-final]');
-  if(sticky&&anchors.length){
-    const visible=new Set();
-    const ctaIo=new IntersectionObserver((es)=>{
-      es.forEach(e=>{e.isIntersecting?visible.add(e.target):visible.delete(e.target);});
-      sticky.classList.toggle('hidden',visible.size>0);
-    },{threshold:0});
-    anchors.forEach(a=>ctaIo.observe(a));
-  }
-})();
-
-// reveal on intersect
-const io=new IntersectionObserver((es)=>{
-  es.forEach(e=>{if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});
-},{threshold:.14,rootMargin:'0px 0px -8% 0px'});
-document.querySelectorAll('.reveal').forEach((el,i)=>{
-  el.classList.add('in');
-  el.style.transitionDelay=(Math.min(i%4,3)*70)+'ms';
-  io.observe(el);
-});
-
-// in-page anchor links: smooth-scroll directly.
-// <base href> turns bare "#id" into a cross-document URL (/irem/#id),
-// so a native click reloads to top then jumps down. Intercept and scroll in place.
-document.querySelectorAll('a[href^="#"]').forEach(a=>{
-  a.addEventListener('click',(e)=>{
-    const id=a.getAttribute('href').slice(1);
-    if(!id) return;
-    const target=document.getElementById(id);
-    if(!target) return;
-    e.preventDefault();
-    target.scrollIntoView({behavior:'smooth',block:'start'});
-  });
-});
-
-// single-open accordion within each group
-document.querySelectorAll('.acc').forEach(group=>{
-  group.querySelectorAll('details').forEach(d=>{
-    d.addEventListener('toggle',()=>{
-      if(d.open) group.querySelectorAll('details').forEach(o=>{if(o!==d)o.open=false;});
-    });
-  });
-});
-</script>
+<!-- reveal / sticky-CTA / anchor / accordion behaviour lives in js/irem-enhance.js
+     (loaded via config.scripts) because prepareLandingHtml strips inline script tags. -->
 <!-- checkout + attribution + pixel wiring (same flow as /irem): redirects .openModal → /api/pay/start -->
 <script src="js/common.js" async></script>
 </body>
