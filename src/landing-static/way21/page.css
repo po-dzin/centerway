@@ -100,7 +100,8 @@ img{max-width:100%;display:block}
   text-transform:uppercase;color:var(--indigo);display:inline-flex;align-items:center;gap:.6em;
 }
 .kicker::before{content:"";width:26px;height:1px;background:var(--line-strong)}
-h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
+h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
+.sci-grid h2.sec-title{max-width:none}
 .lead{font-size:clamp(1.05rem,1.7vw,1.22rem);color:var(--text-muted);max-width:62ch;line-height:1.66}
 
 /* ============ BUTTONS ============ */
@@ -413,6 +414,9 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
 .inc-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:1.6rem 1.5rem;transition:transform .3s,box-shadow .3s}
 .inc-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-med)}
 .inc-card .ic{width:48px;height:48px;border-radius:13px;background:var(--chip);color:var(--indigo);display:grid;place-items:center;margin-bottom:1rem}
+.inc-card.is-plus{border-color:var(--cta)}
+.inc-card.is-plus .ic{background:rgba(219,165,79,.13);color:var(--cta-strong)}
+.inc-card .plus-tag{display:inline-block;font-size:.7rem;font-weight:700;color:var(--cta-strong);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem}
 .inc-card h4{font-family:var(--f-ui);font-weight:700;font-size:1.05rem;color:var(--ink);margin-bottom:.4rem}
 .inc-card p{font-size:.93rem;color:var(--text-muted)}
 
