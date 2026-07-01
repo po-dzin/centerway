@@ -44,7 +44,7 @@ export const PRODUCTS = {
       en:
         "Detox program payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
     },
-    amount: 3100,
+    amount: 4100,
     currency: "UAH",
     // TODO(placeholder): swap to the real way21 funnel subdomain + bot before launch.
     approvedUrl: "https://way21.centerway.net.ua/thanks",
@@ -61,7 +61,7 @@ export const PRODUCTS = {
       en:
         "Guided package payment by Centerway: the detox program with 2 personal consultations and individual guidance. After payment, a confirmation page opens with a Telegram bot entry button. Support: if you have questions, message us and we will help quickly.",
     },
-    amount: 5200,
+    amount: 9000,
     currency: "UAH",
     // TODO(placeholder): swap to the real way21 funnel subdomain + bot before launch.
     approvedUrl: "https://way21.centerway.net.ua/thanks",
