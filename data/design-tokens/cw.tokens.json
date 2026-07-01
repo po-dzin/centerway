@@ -199,7 +199,7 @@
         "--cw-component-glass-blur": "84px",
         "--cw-component-glass-filter": "blur(var(--cw-component-glass-blur)) saturate(1.36) brightness(0.92)",
         "--cw-component-glass-shadow": "0 12px 28px color-mix(in srgb, var(--cw-platform-text) 20%, transparent)",
-        "--cw-component-glass-frost-image": "url(\"/cw/landing/img/consult-hero-evgeniy.jpeg\")",
+        "--cw-component-glass-frost-image": "url(\"/shared/img/consult-hero-evgeniy.jpeg\")",
         "--cw-component-glass-frost-position": "38% center"
       },
       "depth": {

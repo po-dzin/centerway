@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="../shared/css/tokens.css">
   <link rel="stylesheet" href="../shared/css/foundation.css">
   <link rel="stylesheet" href="../shared/css/pages.css">
-  <link rel="stylesheet" href="css/irem.product.css">
+  <link rel="stylesheet" href="css/irem.theme.css">
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-HV89HDP52T"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -69,6 +69,9 @@
   <script>
   (function () {
   const qs = new URLSearchParams(location.search);
+  const redirectTarget = "https://t.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4";
+  const redirectWaitTimeoutMs = 3500;
+  const postPixelBufferMs = 600;
 
   const product = (qs.get('product') || '').toLowerCase();
   const orderRef = qs.get('order_ref') || qs.get('orderReference') || '';
@@ -100,7 +103,7 @@
 
   // защита от двойного срабатывания (на конкретный заказ)
   const firedKey = 'cw_purchase_fired:' + (orderRef || tid || 'noid');
-  if (sessionStorage.getItem(firedKey) === '1') return;
+  const signalKey = 'cw_purchase_signal_sent:' + (orderRef || tid || 'noid');
 
   // атрибуция
   let attrib = {};
@@ -118,34 +121,78 @@
   // можно добросить атрибуцию (не обязательно)
   Object.assign(payload, attrib);
 
-  try {
-    fetch('/api/events', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      keepalive: true,
-      body: JSON.stringify({
-        event_name: 'PurchaseClientSignal',
-        event_id: orderRef ? ('purchase_client_' + orderRef) : ('purchase_client_' + (tid || Date.now())),
-        order_ref: orderRef || null,
-        product: product || 'irem',
-        value: payload.value,
-        currency: payload.currency,
-        content_name: content_name,
-        page_url: window.location.href,
-        fbp: attrib.fbp,
-        fbc: attrib.fbc,
-        fbclid: attrib.fbclid,
-        utm_source: attrib.utm_source,
-        utm_medium: attrib.utm_medium,
-        utm_campaign: attrib.utm_campaign,
-        utm_content: attrib.utm_content,
-        utm_term: attrib.utm_term
-      })
-    });
-  } catch (_) {}
+  const signalBody = JSON.stringify({
+    event_name: 'PurchaseClientSignal',
+    event_id: orderRef ? ('purchase_client_' + orderRef) : ('purchase_client_' + (tid || Date.now())),
+    order_ref: orderRef || null,
+    product: product || 'irem',
+    value: payload.value,
+    currency: payload.currency,
+    content_name: content_name,
+    page_url: window.location.href,
+    fbp: attrib.fbp,
+    fbc: attrib.fbc,
+    fbclid: attrib.fbclid,
+    utm_source: attrib.utm_source,
+    utm_medium: attrib.utm_medium,
+    utm_campaign: attrib.utm_campaign,
+    utm_content: attrib.utm_content,
+    utm_term: attrib.utm_term
+  });
+
+  function markSignalSent() {
+    try {
+      sessionStorage.setItem(signalKey, '1');
+    } catch (_) {}
+  }
+
+  function postPurchaseSignal() {
+    try {
+      if (sessionStorage.getItem(signalKey) === '1') {
+        return Promise.resolve(true);
+      }
+    } catch (_) {}
+
+    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      try {
+        const beaconPayload = new Blob([signalBody], { type: 'application/json' });
+        if (navigator.sendBeacon('/api/events', beaconPayload)) {
+          markSignalSent();
+          return Promise.resolve(true);
+        }
+      } catch (_) {}
+    }
+
+    try {
+      return fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        keepalive: true,
+        body: signalBody
+      }).then((response) => {
+        if (response.ok) {
+          markSignalSent();
+          return true;
+        }
+        return false;
+      }).catch(() => false);
+    } catch (_) {
+      return Promise.resolve(false);
+    }
+  }
+
+  const signalPromise = postPurchaseSignal();
+  window.CW_purchaseRedirectTarget = redirectTarget;
+  window.CW_purchaseRedirectGate = Promise.race([
+    signalPromise,
+    new Promise((resolve) => setTimeout(() => resolve(false), redirectWaitTimeoutMs))
+  ]).then(() => {
+    return new Promise((resolve) => setTimeout(resolve, postPixelBufferMs));
+  }).catch(() => undefined);
 
   if (typeof fbq === 'function') {
+    if (sessionStorage.getItem(firedKey) === '1') return;
     const eventId = orderRef ? ('purchase_' + orderRef) : '';
     if (eventId) {
       fbq('track', 'Purchase', payload, { eventID: eventId });
@@ -166,9 +213,11 @@
   const disableAutoRedirect = isLocalPreview || new URLSearchParams(window.location.search).get("no_redirect") === "1";
 
   if (!disableAutoRedirect) {
-    setTimeout(() => {
-      window.location.href = "https://t.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4";
-    }, 2500);
+    Promise.resolve(window.CW_purchaseRedirectGate)
+      .catch(() => undefined)
+      .finally(() => {
+        window.location.href = window.CW_purchaseRedirectTarget || "https://t.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4";
+      });
   }
   </script>
 
