@@ -21,8 +21,8 @@
 }
 
 .shell :where(a, button, input, select, textarea):focus-visible {
-  outline: 2px solid var(--cw-platform-accent);
-  outline-offset: 3px;
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
 }
 
 .header {
@@ -52,7 +52,7 @@
   --platform-utility-control-size: 3rem;
   --platform-utility-control-radius: var(--cw-radius-pill);
   --platform-utility-control-focus:
-    0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent);
+    0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   border: 0;
   border-radius: var(--platform-header-shell-radius);
   background: transparent;
@@ -262,7 +262,7 @@
 }
 
 .nav {
-  min-height: 2.9rem;
+  min-height: var(--ds-touch-target-min);
   padding: 0 0.2rem;
   border-radius: 0;
   background: transparent;
@@ -302,11 +302,11 @@
 }
 
 .nav a {
-  min-height: 2.5rem;
-  padding: 0 0.9rem;
+  min-height: var(--ds-touch-target-min);
+  padding: 0 1rem;
   color: var(--platform-header-nav-muted-fg);
   border-radius: var(--cw-radius-pill);
-  font-size: 0.98rem;
+  font-size: var(--ds-type-body-sm-size);
   white-space: nowrap;
   position: relative;
   font-weight: 680;
@@ -323,8 +323,9 @@
 
 .nav a:focus-visible {
   color: var(--platform-header-nav-active-fg);
-  background: transparent;
+  background: var(--platform-header-control-bg);
   outline: none;
+  box-shadow: var(--platform-utility-control-focus);
 }
 
 .nav a[aria-current="page"] {
@@ -499,14 +500,14 @@
   margin: 0;
   padding: 0.45rem 0.55rem 0.6rem;
   color: color-mix(in srgb, var(--platform-header-fg) 72%, transparent);
-  font-size: 0.84rem;
-  line-height: 1.35;
+  font-size: var(--ds-type-label-size);
+  line-height: var(--ds-type-label-line-height);
   overflow-wrap: anywhere;
 }
 
 .profileMenu a,
 .profileMenu button {
-  min-height: 2.55rem;
+  min-height: var(--ds-touch-target-min);
   display: flex;
   align-items: center;
   justify-content: flex-start;
@@ -562,7 +563,7 @@
 
 .menuButton:focus-visible {
   background: var(--platform-header-control-bg);
-  box-shadow: none;
+  box-shadow: var(--platform-utility-control-focus);
 }
 
 .menuButton span {
@@ -665,7 +666,15 @@
 .card,
 .formPanel {
   border: 0;
-  border-radius: var(--cw-radius-lg);
+  border-radius: var(--cw-card-radius);
   background: var(--cw-depth-card-bg);
   box-shadow: var(--cw-depth-shadow-soft);
+}
+
+.panel,
+.formPanel {
+  display: grid;
+  align-content: start;
+  gap: clamp(0.9rem, 2.4vw, 1.15rem);
+  min-width: 0;
 }

@@ -17,8 +17,8 @@ const routePathByEntry = {
 const selectedPaths = routePathByEntry[landingEntry] || routePathByEntry.next;
 
 const routes = [
-  { name: "short", path: selectedPaths.short, hasAddons: false },
-  { name: "irem", path: selectedPaths.irem, hasAddons: true },
+  { name: "short", path: selectedPaths.short, contract: "short" },
+  { name: "irem", path: selectedPaths.irem, contract: "irem" },
 ];
 
 const viewports = [
@@ -49,7 +49,7 @@ async function assertNoHorizontalOverflow(page, label) {
   }
 }
 
-async function assertCoreFlow(page, label) {
+async function assertShortCoreFlow(page, label) {
   const flow = await page.evaluate(() => {
     const sections = Array.from(document.querySelectorAll("section[data-flow-index][data-section]"));
     return sections.map((section) => ({
@@ -92,7 +92,7 @@ async function assertCoreFlow(page, label) {
   pass(`${label}: core flow s1..s9 contract`);
 }
 
-async function assertDataContract(page, label) {
+async function assertShortDataContract(page, label) {
   const contract = await page.evaluate(() => ({
     topCta: Boolean(document.querySelector("[data-cta-primary]")),
     finalCta: Boolean(document.querySelector("[data-cta-final]")),
@@ -108,12 +108,119 @@ async function assertDataContract(page, label) {
   pass(`${label}: sticky/cta data contract`);
 }
 
-async function assertAddonContract(page, label) {
-  const addonCount = await page.locator("section.section-addon-results, section.section-addon-foundations, section.section-addon-protocol, section.section-addon-guarantee").count();
-  if (addonCount < 1) {
-    fail(`${label}: expected addon sections`);
-  } else {
-    pass(`${label}: addon sections present (${addonCount})`);
+async function assertIremEntryContract(page, label) {
+  const contract = await page.evaluate(() => ({
+    sectionCount: document.querySelectorAll("section").length,
+    hero: Boolean(document.querySelector('main[data-cw-landing="irem"][data-cw-page="irem"] .hero')),
+    offer: Boolean(document.querySelector("section#offer")),
+    heroPrice: Boolean(document.querySelector(".hero-price")),
+    formatPrice: Boolean(document.querySelector(".format-card.self .fc-price")),
+    heroCta: Boolean(document.querySelector("[data-cta-hero]")),
+    finalCheckoutCta: Boolean(document.querySelector(".openModal[data-cta-final]")),
+    stickyCta: Boolean(document.querySelector(".sticky-cta")),
+    shortEntryBridge: Boolean(document.querySelector(".short-block")),
+    faqCount: document.querySelectorAll(".faq details").length,
+    legacyRef: document.documentElement.innerHTML.includes("/irem-v2"),
+  }));
+
+  if (contract.sectionCount < 12) {
+    fail(`${label}: expected promoted section stack, got ${contract.sectionCount} sections`);
+    return;
+  }
+
+  if (
+    !contract.hero ||
+    !contract.offer ||
+    !contract.heroPrice ||
+    !contract.formatPrice ||
+    !contract.heroCta ||
+    !contract.finalCheckoutCta ||
+    !contract.stickyCta ||
+    !contract.shortEntryBridge
+  ) {
+    fail(
+      `${label}: missing promoted contract (hero=${contract.hero}, offer=${contract.offer}, heroPrice=${contract.heroPrice}, formatPrice=${contract.formatPrice}, heroCta=${contract.heroCta}, finalCheckout=${contract.finalCheckoutCta}, sticky=${contract.stickyCta}, shortBridge=${contract.shortEntryBridge})`
+    );
+    return;
+  }
+
+  if (contract.faqCount < 5) {
+    fail(`${label}: expected faq contract, got ${contract.faqCount} items`);
+    return;
+  }
+
+  if (contract.legacyRef) {
+    fail(`${label}: found legacy /irem-v2 reference in rendered html`);
+    return;
+  }
+
+  pass(`${label}: promoted IREM entry contract`);
+}
+
+async function assertIremCheckoutRedirect(page, label) {
+  let payStartUrl = "";
+
+  await page.route("**/api/pay/start**", async (route) => {
+    payStartUrl = route.request().url();
+    await route.fulfill({
+      status: 200,
+      contentType: "text/plain; charset=utf-8",
+      body: "ok",
+    });
+  });
+
+  await page.waitForFunction(() => typeof window.CW_trackLead === "function");
+  await page.locator(".openModal[data-cta-final]").first().scrollIntoViewIfNeeded();
+  await page.locator(".openModal[data-cta-final]").first().evaluate((node) => {
+    node.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+  });
+  await page.waitForTimeout(200);
+
+  if (!payStartUrl) {
+    fail(`${label}: checkout CTA did not request /api/pay/start`);
+    return;
+  }
+
+  const parsed = new URL(payStartUrl);
+  if (parsed.pathname !== "/api/pay/start" || parsed.searchParams.get("product") !== "irem") {
+    fail(`${label}: checkout CTA requested unexpected URL ${payStartUrl}`);
+    return;
+  }
+
+  pass(`${label}: checkout CTA hits /api/pay/start for IREM`);
+}
+
+async function assertRouteStatus(browser, label, path, expectedStatus, verify) {
+  const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  const page = await context.newPage();
+
+  try {
+    const response = await page.goto(`${baseUrl}${path}`, {
+      waitUntil: "domcontentloaded",
+      timeout: timeoutMs,
+    });
+
+    if (!response) {
+      fail(`${label}: no response`);
+      return;
+    }
+
+    if (response.status() !== expectedStatus) {
+      fail(`${label}: expected status ${expectedStatus}, got ${response.status()}`);
+      return;
+    }
+
+    if (verify) {
+      const message = await verify(page);
+      if (message) {
+        fail(`${label}: ${message}`);
+        return;
+      }
+    }
+
+    pass(`${label}: status ${expectedStatus}`);
+  } finally {
+    await context.close();
   }
 }
 
@@ -147,15 +254,61 @@ async function main() {
         pass(`${prefix}: status ${response.status()}`);
 
         await assertNoHorizontalOverflow(page, prefix);
-        await assertCoreFlow(page, prefix);
-        await assertDataContract(page, prefix);
-        if (route.hasAddons) {
-          await assertAddonContract(page, prefix);
+        if (route.contract === "short") {
+          await assertShortCoreFlow(page, prefix);
+          await assertShortDataContract(page, prefix);
+        } else {
+          await assertIremEntryContract(page, prefix);
+          await assertIremCheckoutRedirect(page, prefix);
         }
 
         await context.close();
       }
     }
+
+    await assertRouteStatus(browser, "irem-v2 removal", "/irem-v2", 404);
+    await assertRouteStatus(browser, "irem thanks", "/irem/thanks", 200, async (page) => {
+      const ok = await page.evaluate(() => {
+        return Boolean(document.querySelector('link[href="/irem/css/irem.theme.css"]')) &&
+          Boolean(document.querySelector(".utility-status-card"));
+      });
+      return ok ? "" : "missing themed thanks utility contract";
+    });
+    await assertRouteStatus(browser, "irem pay-failed", "/irem/pay-failed", 200, async (page) => {
+      const ok = await page.evaluate(() => {
+        return Boolean(document.querySelector('link[href="/irem/css/irem.theme.css"]')) &&
+          Boolean(document.querySelector(".utility-status-card"));
+      });
+      return ok ? "" : "missing themed pay-failed utility contract";
+    });
+    await assertRouteStatus(browser, "irem public-offer", "/irem/public-offer.html", 200, async (page) => {
+      const ok = await page.evaluate(() => {
+        return Boolean(document.querySelector('link[href="/irem/css/irem.theme.css"]')) &&
+          Boolean(document.querySelector(".public-offer-page")) &&
+          Boolean(document.querySelector(".public-offer"));
+      });
+      return ok ? "" : "missing themed public-offer contract";
+    });
+    await assertRouteStatus(browser, "irem index2", "/irem/index2.html", 200, async (page) => {
+      const ok = await page.evaluate(() => {
+        return document.documentElement.getAttribute("data-cw-page") === "index2" &&
+          Boolean(document.querySelector('script[src="/shared/js/landing-runtime.js"]')) &&
+          Boolean(document.querySelector('link[href="css/irem.theme.css"], link[href="/irem/css/irem.theme.css"]')) &&
+          Boolean(document.querySelector(".public-offer-page")) &&
+          Boolean(document.querySelector(".cw-legal"));
+      });
+      return ok ? "" : "missing managed index2 contract";
+    });
+    await assertRouteStatus(browser, "reboot index2", "/reboot/index2.html", 200, async (page) => {
+      const ok = await page.evaluate(() => {
+        return document.documentElement.getAttribute("data-cw-page") === "index2" &&
+          Boolean(document.querySelector('script[src="/shared/js/landing-runtime.js"]')) &&
+          Boolean(document.querySelector('link[href="/shared/css/landing.bridge.css"]')) &&
+          Boolean(document.querySelector(".public-offer-page, body > h1")) &&
+          !document.documentElement.innerHTML.includes("/irem/css/irem.theme.css");
+      });
+      return ok ? "" : "missing managed reboot index2 contract";
+    });
   } finally {
     await browser.close();
   }

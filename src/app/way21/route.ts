@@ -10,10 +10,17 @@ export const runtime = "nodejs";
 
 const INDEX_PATH = path.join(process.cwd(), "src", "landing-static", "way21", "index.html");
 
-// The base document is immutable between deploys → read once per lambda instance.
+const IS_PROD = process.env.NODE_ENV === "production";
+
+// In production the document is immutable per deploy, but in local dev we need
+// fresh disk reads so route handlers reflect HTML/CSS refactors immediately.
 let baseHtmlPromise: Promise<string> | null = null;
 function readBaseHtml(): Promise<string> {
-  if (!baseHtmlPromise) {
+  if (!IS_PROD) {
+    return readFile(INDEX_PATH, "utf-8");
+  }
+
+  if (baseHtmlPromise === null) {
     baseHtmlPromise = readFile(INDEX_PATH, "utf-8");
   }
   return baseHtmlPromise;

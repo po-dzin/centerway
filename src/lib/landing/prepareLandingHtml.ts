@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { getLandingPublicRouteName, LANDING_ROUTE_CONFIG } from "@/lib/landing/config";
 import { LANDING_CONTENT } from "@/lib/landing/content";
-import { UTILITY_FILE_BY_PAGE, type UtilityPage } from "@/lib/landing/contracts";
+import { MANAGED_LANDING_FILE_BY_PAGE, type ManagedLandingPage } from "@/lib/landing/contracts";
 import type { LandingResolvedOffer } from "@/lib/landing/offers";
 import type { StaticLandingProduct } from "@/lib/landing/types";
 
@@ -15,7 +15,7 @@ type PrepareEntryOptions = {
 type PrepareUtilityOptions = {
   product: StaticLandingProduct;
   pageKind: "utility";
-  page: UtilityPage;
+  page: ManagedLandingPage;
 };
 
 export type PrepareLandingHtmlOptions = PrepareEntryOptions | PrepareUtilityOptions;
@@ -28,7 +28,7 @@ type PreparedEntryHtml = {
 
 type PreparedUtilityHtml = {
   pageKind: "utility";
-  page: UtilityPage;
+  page: ManagedLandingPage;
   html: string;
 };
 
@@ -214,16 +214,24 @@ function buildIremPromoNoteMarkup(offer: LandingResolvedOffer): string {
   return note ? `<p class="promo-note">${note}</p>` : "";
 }
 
-function buildIremPriceMarkup(offer: LandingResolvedOffer, includeNote: boolean): string {
+function buildIremPriceStack(offer: LandingResolvedOffer): string {
   const discountBadge =
     offer.offerApplied && !offer.offerExpired && offer.discountPercent && offer.discountPercent > 0
       ? `<span class="price-discount-badge">-${offer.discountPercent}%</span>`
       : "";
-  const stack = offer.oldPriceLabel
-    ? `<div class="price-stack"><span class="price-old">${offer.oldPriceLabel}</span><span class="price-current">${offer.currentPriceLabel}</span>${discountBadge}</div>`
-    : `<span class="price-current">${offer.currentPriceLabel}</span>`;
+  return offer.oldPriceLabel
+    ? `<span class="price-stack"><span class="price-old">${offer.oldPriceLabel}</span><b class="price-current">${offer.currentPriceLabel}</b>${discountBadge}</span>`
+    : `<b class="price-current">${offer.currentPriceLabel}</b>`;
+}
+
+function buildIremPriceMarkup(offer: LandingResolvedOffer, variant: "hero" | "format", includeNote: boolean): string {
+  const stack = buildIremPriceStack(offer);
   const note = includeNote ? buildIremPromoNoteMarkup(offer) : "";
-  return `<div class="price">${stack}</div>${note}`;
+  if (variant === "hero") {
+    return `<div class="hero-price">${stack}<small>повний доступ</small></div>${note}`;
+  }
+
+  return `<div class="fc-price">${stack}<small>повний доступ</small></div>${note}`;
 }
 
 function applyOfferReplacements(product: StaticLandingProduct, html: string, offer?: LandingResolvedOffer | null): string {
@@ -232,19 +240,19 @@ function applyOfferReplacements(product: StaticLandingProduct, html: string, off
   }
 
   let next = html;
-  const heroMarkup = buildIremPriceMarkup(offer, true);
-  const offerMarkup = buildIremPriceMarkup(offer, true);
+  const heroMarkup = buildIremPriceMarkup(offer, "hero", true);
+  const offerMarkup = buildIremPriceMarkup(offer, "format", true);
 
   next = replaceIfMatch(
     next,
-    /(<div id="divprice">)[\s\S]*?(<button class="openModal"\s+data-cta-primary>[\s\S]*?<\/button>)/i,
-    (match) => `${match[1]}${heroMarkup}${match[2]}`
+    /<div class="hero-price">\s*<b>[\s\S]*?<\/small>\s*<\/div>\s*/i,
+    () => `${heroMarkup}\n`
   );
 
   next = replaceIfMatch(
     next,
-    /(<div class="offer-cta">[\s\S]*?<p class="offer-lead">[\s\S]*?<\/p>)[\s\S]*?(<button class="openModal"\s+data-cta-final>[\s\S]*?<\/button>)/i,
-    (match) => `${match[1]}${offerMarkup}${match[2]}`
+    /<div class="fc-price">\s*<b>[\s\S]*?<\/small>\s*<\/div>\s*/i,
+    () => `${offerMarkup}\n`
   );
 
   return next;
@@ -291,7 +299,7 @@ function normalizeRelativeUrls(product: StaticLandingProduct, html: string): str
   });
 }
 
-function injectHtmlDataAttrs(html: string, product: StaticLandingProduct, page: UtilityPage): string {
+function injectHtmlDataAttrs(html: string, product: StaticLandingProduct, page: ManagedLandingPage): string {
   return html.replace(
     /<html([^>]*)>/i,
     `<html$1 data-cw-landing="${product}" data-cw-runtime="next" data-cw-page="${page}">`
@@ -321,7 +329,7 @@ function injectManagedRuntimeScript(html: string): string {
   return html.replace(/<\/body>/i, `${runtimeScript}</body>`);
 }
 
-function patchUtilityPageContent(html: string, product: StaticLandingProduct, page: UtilityPage): string {
+function patchManagedLandingPageContent(html: string, product: StaticLandingProduct, page: ManagedLandingPage): string {
   const content = LANDING_CONTENT[product].utility;
 
   if (page === "thanks") {
@@ -354,7 +362,7 @@ async function loadLandingHtml(product: StaticLandingProduct, options: PrepareLa
   const htmlPath =
     options.pageKind === "entry"
       ? LANDING_ROUTE_CONFIG[product].htmlPath
-      : path.join(LANDING_ROUTE_CONFIG[product].assetName, UTILITY_FILE_BY_PAGE[options.page]);
+      : path.join(LANDING_ROUTE_CONFIG[product].assetName, MANAGED_LANDING_FILE_BY_PAGE[options.page]);
 
   const sourcePath = path.join(process.cwd(), "src", "landing-static", htmlPath);
   return readFile(sourcePath, "utf-8");
@@ -385,7 +393,7 @@ export async function prepareLandingHtml(
   html = html.replace(MANAGED_HEAD_PATTERN, "");
   html = injectHtmlDataAttrs(html, product, options.page);
   html = injectManagedHead(html, product);
-  html = patchUtilityPageContent(html, product, options.page);
+  html = patchManagedLandingPageContent(html, product, options.page);
   html = injectManagedRuntimeScript(html);
 
   return {

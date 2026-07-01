@@ -20,7 +20,7 @@ type EffectiveRouteMetadata = {
   surfaceKind: SurfaceKind;
 };
 
-const REVORK_STYLESHEET = "/cw/landing/revork.css";
+const REVORK_STYLESHEET = "/shared/css/funnel-network.css";
 
 const ROUTE_RUNTIME: Record<ScreenRouteKey, RouteRuntimeConfig> = {
   consult: {

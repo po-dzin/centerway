@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getUtilityPageByFile } from "@/lib/landing/contracts";
 import {
   getLandingEntryProduct,
   getLandingFallbackPath,
@@ -17,7 +16,7 @@ export const CW_HOST_UTILITY_REWRITE_HEADER = "x-cw-host-utility-rewrite";
 function rewriteSurfaceRoute(req: NextRequest, pathname: string, surfaceKind: "funnel" | "platform") {
   const requestHeaders = new Headers(req.headers);
   requestHeaders.set(CW_SURFACE_KIND_HEADER, surfaceKind);
-  const routeKey = resolveExperimentAssignmentRoute(pathname);
+  const routeKey = resolveExperimentAssignmentRoute();
   if (routeKey) {
     return withExperimentAssignmentRewrite(req, pathname, routeKey, requestHeaders);
   }
@@ -41,17 +40,8 @@ function rewriteDisabledSurface(req: NextRequest) {
 
 function getLegacyStaticPrefix(product: ProductKey) {
   if (product === "reboot") return "/short";
-  if (product === "irem") return "/irem-v2";
+  if (product === "irem") return "/irem";
   return `/${product}`;
-}
-
-function rewriteGeneratedFunnelUtility(req: NextRequest, product: "consult" | "detox", mappedPage: string) {
-  const utilityPage = getUtilityPageByFile(mappedPage.replace(/^\//, ""));
-  if (!utilityPage) {
-    return rewriteDisabledSurface(req);
-  }
-
-  return rewriteSurfaceRoute(req, `/funnel-support/${product}/${utilityPage}`, "funnel");
 }
 
 export function rewriteLegacyLandingEntryRequest(req: NextRequest): NextResponse | null {
@@ -74,31 +64,20 @@ export function rewriteFunnelHostRequest(req: NextRequest): NextResponse | null 
   }
   const entry = getProductSurfaceEntry(product);
 
+  if (product === "dosha" && req.nextUrl.pathname.startsWith("/dosha-test")) {
+    return rewriteSurfaceRoute(req, "/dosha-test", "platform");
+  }
+
   const mappedPage = getLandingRootRewritePath(req.nextUrl.pathname);
   if (mappedPage) {
-    if (product === "mini-detox" && mappedPage === "/index.html") {
-      return rewriteSurfaceRoute(req, "/programs/mini-detox", "platform");
-    }
-
     if (!isActiveFunnelProduct(product)) {
       return rewriteDisabledSurface(req);
-    }
-
-    if (mappedPage === "/index.html" && entry.internalFunnelRoute) {
-      return rewriteSurfaceRoute(req, entry.internalFunnelRoute, "funnel");
     }
 
     if (entry.funnelRuntime === "landing-app") {
       const requestHeaders = new Headers(req.headers);
       requestHeaders.set(CW_HOST_UTILITY_REWRITE_HEADER, "1");
       return rewriteStaticLanding(req, `${getLegacyStaticPrefix(product)}${mappedPage}`, requestHeaders);
-    }
-
-    if (
-      entry.funnelRuntime === "generated-app" &&
-      (product === "consult" || product === "detox")
-    ) {
-      return rewriteGeneratedFunnelUtility(req, product, mappedPage);
     }
 
     return rewriteDisabledSurface(req);

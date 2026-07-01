@@ -26,11 +26,11 @@ export const contact = {
   email: "centertheway@gmail.com",
 };
 
-const detoxFunnelHref = getFunnelHostUrl("detox") ?? "/detox";
+const way21FunnelHref = getFunnelHostUrl("way21") ?? "/way21";
 const consultFunnelHref = getFunnelHostUrl("consult") ?? "/consult";
 const iremFunnelHref = getFunnelHostUrl("irem") ?? "/irem";
 const rebootFunnelHref = getFunnelHostUrl("reboot") ?? "/reboot";
-const miniDetoxFunnelHref = getFunnelHostUrl("mini-detox") ?? "/mini-detox";
+const resetDayFunnelHref = getFunnelHostUrl("reset-day") ?? "/reset-day";
 
 export type PlatformOfferSurfaceType = "program" | "mini-course" | "product";
 export type PlatformOfferConversionMode = "lead" | "direct-pay" | "hybrid" | "redirect";
@@ -78,8 +78,8 @@ export const programs = [
     primaryActionKind: "enroll" as PlatformOfferPrimaryActionKind,
     title: "Шлях 21",
     fullTitle: "Детокс Програма «Шлях 21»",
-    href: getPlatformRoute("detox") ?? "/programs/way21",
-    funnelHref: detoxFunnelHref,
+    href: getPlatformRoute("way21") ?? "/programs/way21",
+    funnelHref: way21FunnelHref,
     tag: "Очищення",
     duration: "21 день",
     visual: "water",
@@ -183,29 +183,29 @@ export const programs = [
     ],
   },
   {
-    slug: "mini-detox",
+    slug: "reset-day",
     surfaceType: "mini-course" as PlatformOfferSurfaceType,
     conversionMode: "direct-pay" as PlatformOfferConversionMode,
     primaryActionKind: "buy" as PlatformOfferPrimaryActionKind,
-    title: "Mini Detox",
-    fullTitle: "Mini Detox - короткий розвантажувальний маршрут",
-    href: getPlatformRoute("mini-detox") ?? "/programs/mini-detox",
-    funnelHref: miniDetoxFunnelHref,
+    title: "Reset Day",
+    fullTitle: "Reset Day - короткий розвантажувальний маршрут",
+    href: resetDayFunnelHref,
+    funnelHref: resetDayFunnelHref,
     tag: "Міні-курс детоксу",
-    duration: "3 дні",
+    duration: "1 день",
     visual: "stone",
     artwork: {
       desktop: "/cw/platform/programs/mini-detox-card-v1.png",
       desktopPosition: "center 14%",
       mobilePosition: "center 16%",
     },
-    description: "3 дні м'якого режиму, простого харчування і спостереження за сигналами тіла.",
+    description: "Один м'який день режиму, простого харчування і спостереження за сигналами тіла.",
     longDescription:
-      "Mini Detox дає м'який 3-денний формат, щоб знизити перевантаження, впорядкувати режим і спокійно побачити сигнали тіла без різких обіцянок та жорсткого тиску.",
+      "Reset Day дає м'який одноденний формат, щоб знизити перевантаження, впорядкувати режим і спокійно побачити сигнали тіла без різких обіцянок та жорсткого тиску.",
     results: [
       "спокійно увійти у практику без довгого зобов'язання",
       "побачити, як тіло реагує на прості зміни режиму",
-      "зменшити харчовий шум і перевантаження на кілька днів",
+      "зменшити харчовий шум і перевантаження на один день",
       "зафіксувати сигнали травлення, енергії і сну",
       "обрати наступний крок: консультація, Way 21 або підтримка",
     ],

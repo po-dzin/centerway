@@ -1,5 +1,6 @@
 import { getLandingPublicRouteName, getLandingShellAssets } from "@/lib/landing/config";
 import { getLandingCriticalCss } from "@/lib/landing/config";
+import { LandingIremEnhancements } from "@/lib/landing/LandingIremEnhancements";
 import type { LandingResolvedOffer } from "@/lib/landing/offers";
 import type { StaticLandingProduct } from "@/lib/landing/types";
 import Script from "next/script";
@@ -13,10 +14,21 @@ type LandingPageShellProps = {
 export function LandingPageShell({ product, bodyHtml, offer }: LandingPageShellProps) {
   const config = getLandingShellAssets(product);
   const criticalCss = getLandingCriticalCss(product);
+  const fontPreloads =
+    product === "irem"
+      ? [
+          "/irem/fonts/Formular.woff2",
+          "/irem/fonts/Formular-Bold.woff2",
+          "/irem/fonts/Formular-Black.woff2",
+        ]
+      : [];
 
   return (
     <>
       <style dangerouslySetInnerHTML={{ __html: criticalCss }} />
+      {fontPreloads.map((href) => (
+        <link key={href} rel="preload" href={href} as="font" type="font/woff2" crossOrigin="anonymous" />
+      ))}
       {config.styles.map((href) => (
         <link key={href} rel="stylesheet" href={href} />
       ))}
@@ -31,6 +43,7 @@ export function LandingPageShell({ product, bodyHtml, offer }: LandingPageShellP
           />
         ))}
       <Script src={config.runtimeScript} strategy="afterInteractive" />
+      {product === "irem" ? <LandingIremEnhancements /> : null}
       <main
         data-cw-landing={product}
         data-cw-runtime="next"

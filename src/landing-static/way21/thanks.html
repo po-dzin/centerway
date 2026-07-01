@@ -1,0 +1,180 @@
+<!doctype html>
+<html lang="uk" data-cw-landing="way21" data-cw-page="thanks">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <base href="/way21/">
+  <title>Дякуємо! Оплату успішно прийнято</title>
+  <link rel="stylesheet" href="../shared/css/pages.css">
+  <link rel="stylesheet" href="page.css">
+  <script src="/shared/js/landing-pixel.js" data-cw-product="way21"></script>
+</head>
+
+<body class="utility-page utility-page-success">
+  <div class="wrap utility-status-wrap">
+    <div class="card utility-status-card">
+      <p class="utility-status-kicker">Підтвердження оплати</p>
+      <h1 class="utility-status-title">✅ Дякуємо! Оплату успішно прийнято</h1>
+      <p class="utility-status-lead">Доступ до програми вже готується. Якщо Telegram не відкрився автоматично — натисніть кнопку нижче.</p>
+
+      <div class="btns utility-status-actions">
+        <a class="btn primary" href="https://t.me/E_Koriakin" target="_blank" rel="noopener">Відкрити бот</a>
+        <a class="btn" href="https://way21.centerway.net.ua/">Повернутися на сайт</a>
+      </div>
+
+      <div class="utility-status-meta">
+        <p class="muted" id="orderLine">Завантаження даних платежу…</p>
+        <p class="muted">Якщо щось пішло не так — напишіть у підтримку.</p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+  const qs = new URLSearchParams(location.search);
+  const redirectTarget = "https://t.me/E_Koriakin";
+  const redirectWaitTimeoutMs = 3500;
+  const postPixelBufferMs = 600;
+
+  const product = (qs.get('product') || 'way21').toLowerCase();
+  const orderRef = qs.get('order_ref') || qs.get('orderReference') || '';
+  const rrn = qs.get('payment_id') || qs.get('rrn') || '';
+  const amountRaw = qs.get('amount') || '';
+  const currency = (qs.get('currency') || 'UAH').toUpperCase();
+
+  const amount = amountRaw ? Number(String(amountRaw).replace(',', '.')) : NaN;
+
+  const contentByProduct = {
+    way21: 'Way21 Detox',
+    'way21-support': 'Way21 Support',
+    'reset-day': 'Reset Day'
+  };
+  const content_name = contentByProduct[product] || (product ? product.toUpperCase() : 'Purchase');
+
+  const tid = rrn || orderRef || '';
+
+  const orderLine = document.getElementById('orderLine');
+  if (orderLine) {
+    const meta = [
+      tid ? `Номер платежу: ${tid}` : `Номер платежу: (не передано в URL)`,
+      (!Number.isNaN(amount) && amount > 0) ? `${amount} ${currency}` : null,
+      content_name ? content_name : null
+    ].filter(Boolean).join(' • ');
+    orderLine.textContent = meta;
+  }
+
+  const firedKey = 'cw_purchase_fired:' + (orderRef || tid || 'noid');
+  const signalKey = 'cw_purchase_signal_sent:' + (orderRef || tid || 'noid');
+
+  let attrib = {};
+  try { attrib = JSON.parse(localStorage.getItem('cw_attrib') || '{}'); } catch (_) {}
+
+  const payload = {
+    value: (!Number.isNaN(amount) && amount > 0) ? amount : 0,
+    currency: currency,
+    content_name: content_name
+  };
+
+  if (tid) payload.transaction_id = tid;
+  Object.assign(payload, attrib);
+
+  const signalBody = JSON.stringify({
+    event_name: 'PurchaseClientSignal',
+    event_id: orderRef ? ('purchase_client_' + orderRef) : ('purchase_client_' + (tid || Date.now())),
+    order_ref: orderRef || null,
+    product: product || 'way21',
+    value: payload.value,
+    currency: payload.currency,
+    content_name: content_name,
+    page_url: window.location.href,
+    fbp: attrib.fbp,
+    fbc: attrib.fbc,
+    fbclid: attrib.fbclid,
+    utm_source: attrib.utm_source,
+    utm_medium: attrib.utm_medium,
+    utm_campaign: attrib.utm_campaign,
+    utm_content: attrib.utm_content,
+    utm_term: attrib.utm_term
+  });
+
+  function markSignalSent() {
+    try {
+      sessionStorage.setItem(signalKey, '1');
+    } catch (_) {}
+  }
+
+  function postPurchaseSignal() {
+    try {
+      if (sessionStorage.getItem(signalKey) === '1') {
+        return Promise.resolve(true);
+      }
+    } catch (_) {}
+
+    if (typeof navigator !== 'undefined' && typeof navigator.sendBeacon === 'function') {
+      try {
+        const beaconPayload = new Blob([signalBody], { type: 'application/json' });
+        if (navigator.sendBeacon('/api/events', beaconPayload)) {
+          markSignalSent();
+          return Promise.resolve(true);
+        }
+      } catch (_) {}
+    }
+
+    try {
+      return fetch('/api/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        keepalive: true,
+        body: signalBody
+      }).then((response) => {
+        if (response.ok) {
+          markSignalSent();
+          return true;
+        }
+        return false;
+      }).catch(() => false);
+    } catch (_) {
+      return Promise.resolve(false);
+    }
+  }
+
+  const signalPromise = postPurchaseSignal();
+  window.CW_purchaseRedirectTarget = redirectTarget;
+  window.CW_purchaseRedirectGate = Promise.race([
+    signalPromise,
+    new Promise((resolve) => setTimeout(() => resolve(false), redirectWaitTimeoutMs))
+  ]).then(() => {
+    return new Promise((resolve) => setTimeout(resolve, postPixelBufferMs));
+  }).catch(() => undefined);
+
+  if (typeof fbq === 'function') {
+    if (sessionStorage.getItem(firedKey) === '1') return;
+    const eventId = orderRef ? ('purchase_' + orderRef) : '';
+    if (eventId) {
+      fbq('track', 'Purchase', payload, { eventID: eventId });
+    } else {
+      fbq('track', 'Purchase', payload);
+    }
+    sessionStorage.setItem(firedKey, '1');
+  }
+  })();
+  </script>
+
+  <script>
+  const isLocalPreview =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1" ||
+    window.location.hostname === "::1";
+  const disableAutoRedirect = isLocalPreview || new URLSearchParams(window.location.search).get("no_redirect") === "1";
+
+  if (!disableAutoRedirect) {
+    Promise.resolve(window.CW_purchaseRedirectGate)
+      .catch(() => undefined)
+      .finally(() => {
+        window.location.href = window.CW_purchaseRedirectTarget || "https://t.me/E_Koriakin";
+      });
+  }
+  </script>
+</body>
+</html>

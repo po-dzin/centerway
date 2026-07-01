@@ -1,7 +1,13 @@
 import { NextResponse } from "next/server";
 import { unstable_cache } from "next/cache";
 import { LANDING_CONTENT } from "@/lib/landing/content";
-import { getUtilityPageByFile, getUtilityPageFromAssetPath, LANDING_STATIC_BRANDS } from "@/lib/landing/contracts";
+import {
+  MANAGED_LANDING_FILE_BY_PAGE,
+  getManagedLandingPageFromAssetPath,
+  getUtilityPageByFile,
+  getUtilityPageFromAssetPath,
+  LANDING_STATIC_BRANDS,
+} from "@/lib/landing/contracts";
 import { htmlResponse } from "@/lib/landing/http";
 import { resolveIremLandingOffer } from "@/lib/landing/offers";
 import { prepareLandingHtml } from "@/lib/landing/prepareLandingHtml";
@@ -24,8 +30,12 @@ function getCanonicalRebootAliasTarget(assetPath: string[]): string | null {
   }
 
   const [segment] = assetPath;
-  if (segment === "index.html" || segment === "index2.html") {
+  if (segment === "index.html") {
     return "/reboot";
+  }
+
+  if (segment === "index2.html") {
+    return "/reboot/index2.html";
   }
 
   const utilityPage = getUtilityPageFromAssetPath(assetPath) ?? getUtilityPageByFile(segment);
@@ -33,14 +43,14 @@ function getCanonicalRebootAliasTarget(assetPath: string[]): string | null {
 }
 
 const getPreparedUtilityLandingHtml = unstable_cache(
-  async (product: "short" | "irem", page: "thanks" | "pay-failed" | "public-offer") => {
+  async (product: "short" | "irem", page: "index2" | "thanks" | "pay-failed" | "public-offer") => {
     const prepared = await prepareLandingHtml({ product, pageKind: "utility", page });
     if (prepared.pageKind !== "utility") {
       throw new Error("expected_utility_landing_html");
     }
     return prepared;
   },
-  ["landing-utility-html-v1"],
+  ["landing-managed-secondary-html-v1"],
   { revalidate: 3600 }
 );
 
@@ -62,6 +72,7 @@ export async function GET(req: Request, context: { params: Promise<{ brand: stri
     }
   }
 
+  const managedPage = getManagedLandingPageFromAssetPath(assetPath);
   const staticProduct = resolveStaticLandingProduct(brand);
   if (staticProduct) {
     if (isNextLandingEnabled() && isEntryAssetPath(assetPath)) {
@@ -83,17 +94,22 @@ export async function GET(req: Request, context: { params: Promise<{ brand: stri
       );
     }
 
-    const utilityPage = getUtilityPageFromAssetPath(assetPath);
-    if (utilityPage) {
+    if (managedPage) {
       if (!isNextLandingEnabled()) {
-        // Full rollback mode serves original static utility HTML.
+        // Full rollback mode serves original static managed HTML.
         return serveStaticAsset(brand, assetPath);
       }
-      // Utility pages are generated from static assets plus canonized content.
+      // Managed secondary pages are generated from static assets plus canonized content.
       // Cache them at the route level so the catch-all handler does not stay fully dynamic.
-      const prepared = await getPreparedUtilityLandingHtml(staticProduct, utilityPage);
+      const prepared = await getPreparedUtilityLandingHtml(staticProduct, managedPage);
       return htmlResponse(prepared.html);
     }
+  }
+
+  if (managedPage) {
+    // Static-first funnels such as way21/reset-day keep their own authored utility HTML,
+    // but should still accept canonical clean routes like /thanks and /public-offer.
+    return serveStaticAsset(brand, [MANAGED_LANDING_FILE_BY_PAGE[managedPage]]);
   }
 
   return serveStaticAsset(brand, assetPath);

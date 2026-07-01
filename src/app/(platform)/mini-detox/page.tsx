@@ -1,12 +1,12 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import { permanentRedirect } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "Mini Detox - короткий маршрут CenterWay",
-  description: "Standalone-сторінка Mini Detox: 3 дні м'якого розвантаження, режиму і спостереження за сигналами тіла без медичних обіцянок.",
-  alternates: { canonical: "/programs/mini-detox" },
+  title: "Reset Day - короткий маршрут CenterWay",
+  description: "Legacy alias route for the Reset Day static funnel.",
+  alternates: { canonical: "https://resetday.centerway.net.ua/" },
 };
 
 export default function MiniDetoxPage() {
-  redirect("/programs/mini-detox");
+  permanentRedirect("https://resetday.centerway.net.ua/");
 }

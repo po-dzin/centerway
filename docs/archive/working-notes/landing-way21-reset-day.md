@@ -37,12 +37,14 @@ Funnel hosts resolve via the Next 16 middleware (`src/proxy.ts`) + the surface r
 - **`way21.centerway.net.ua`** → brand `way21` (`funnelRuntime: "landing-app"`, `internalFunnelRoute: "/way21"`) → serves the `/way21` route handler. **Replaces** the old detox subdomain.
 - **`resetday.centerway.net.ua`** (no hyphen) → brand `reset-day` → serves `/reset-day`.
 - Assets (`/way21/*`, `/reset-day/*`) bypass the proxy via `LANDING_STATIC_BRANDS` → `[brand]/[...path]` catch-all.
+- Utility pages now exist and resolve on clean funnel paths too: `/way21/thanks`, `/way21/pay-failed`, `/way21/public-offer`, `/way21/index2` and the matching `/reset-day/*` routes map to their authored static HTML (`thanks.html`, `pay-failed.html`, `public-offer.html`, `index2.html`) while preserving each landing's own `page.css`.
 - **`detox.centerway.net.ua`** retired: `detox.host` set to `null` + a **308 redirect → `https://way21.centerway.net.ua/`** in `proxy.ts` (`RETIRED_FUNNEL_HOST_REDIRECTS`).
 - Pay return URLs (`products.ts`): `way21`/`way21-support` → `way21.centerway.net.ua`, `reset-day` → `resetday.centerway.net.ua` (placeholder paths until thanks/pay-failed pages exist).
 
 **Infra (manual, outside repo):** add `way21.centerway.net.ua` and `resetday.centerway.net.ua` as domains in the Vercel project + DNS CNAME records; point/retire `detox.centerway.net.ua` DNS as desired (the app already 308s it).
 
 Verified via `curl -H "Host: …"`: way21/resetday serve their landings, detox host 308s to way21, irem/reboot unaffected, `npm run build` green.
+Verified 2026-06-30: clean utility routes for both funnels return `200`, and browser smoke confirms `thanks` starts `/api/events` before the Telegram redirect while keeping the manual bot CTA visible.
 
 ## way21 system/format depth (sources embedded)
 

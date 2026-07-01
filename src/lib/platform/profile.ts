@@ -23,9 +23,10 @@ export function getOfferMeta(productCode: string | null | undefined): {
       return { code: "platform", title: "Запит із платформи", kind: "lead" };
     case "detox":
     case "way21":
-      return { code: "detox", title: "Шлях 21", kind: "program" };
+      return { code: "way21", title: "Шлях 21", kind: "program" };
     case "mini-detox":
-      return { code: "mini-detox", title: "Mini Detox", kind: "mini-course" };
+    case "reset-day":
+      return { code: "reset-day", title: "Reset Day", kind: "mini-course" };
     default:
       return {
         code: code || "unknown",

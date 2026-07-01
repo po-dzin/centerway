@@ -1,4 +1,13 @@
-export type ProductKey = "reboot" | "irem" | "mini-detox" | "detox" | "way21" | "reset-day" | "herbs" | "consult";
+export type ProductKey =
+  | "reboot"
+  | "irem"
+  | "mini-detox"
+  | "detox"
+  | "way21"
+  | "reset-day"
+  | "dosha"
+  | "herbs"
+  | "consult";
 export type SurfaceKind = "funnel" | "platform" | "utility";
 export type CtaMode = "lead" | "checkout" | "redirect";
 export type FunnelRuntime = "landing-app" | "generated-app" | "disabled";
@@ -38,29 +47,29 @@ const PRODUCT_SURFACE_REGISTRY: Record<ProductKey, ProductSurfaceEntry> = {
     defaultDoshaEligibility: "none",
     status: "active",
     funnelRuntime: "landing-app",
-    internalFunnelRoute: "/irem-v2",
+    internalFunnelRoute: "/irem",
   },
   "mini-detox": {
     productKey: "mini-detox",
-    surfaceKinds: ["funnel", "platform"],
-    host: "mini-detox.centerway.net.ua",
+    surfaceKinds: ["platform"],
+    host: null,
     platformRoute: "/programs/mini-detox",
     ctaMode: "redirect",
     defaultDoshaEligibility: "none",
-    status: "active",
+    status: "disabled",
     funnelRuntime: "disabled",
     internalFunnelRoute: null,
   },
   detox: {
     productKey: "detox",
-    surfaceKinds: ["funnel", "platform"],
-    host: null, // retired — superseded by the way21.centerway.net.ua funnel host
+    surfaceKinds: ["platform"],
+    host: null,
     platformRoute: "/programs/way21",
     ctaMode: "lead",
     defaultDoshaEligibility: "secondary",
-    status: "active",
-    funnelRuntime: "generated-app",
-    internalFunnelRoute: "/funnel-entry/detox",
+    status: "disabled",
+    funnelRuntime: "disabled",
+    internalFunnelRoute: null,
   },
   way21: {
     productKey: "way21",
@@ -72,7 +81,7 @@ const PRODUCT_SURFACE_REGISTRY: Record<ProductKey, ProductSurfaceEntry> = {
     status: "active",
     funnelRuntime: "landing-app",
     internalFunnelRoute: "/way21",
-    legacyAliases: ["way21", "shlyah21"],
+    legacyAliases: ["way21", "shlyah21", "detox", "detox21"],
   },
   "reset-day": {
     productKey: "reset-day",
@@ -84,7 +93,19 @@ const PRODUCT_SURFACE_REGISTRY: Record<ProductKey, ProductSurfaceEntry> = {
     status: "active",
     funnelRuntime: "landing-app",
     internalFunnelRoute: "/reset-day",
-    legacyAliases: ["reset-day", "resetday", "rozvantazhennya"],
+    legacyAliases: ["reset-day", "resetday", "rozvantazhennya", "mini-detox", "mini_detox", "reset"],
+  },
+  dosha: {
+    productKey: "dosha",
+    surfaceKinds: ["funnel", "platform"],
+    host: "dosha.centerway.net.ua",
+    platformRoute: "/dosha-test",
+    ctaMode: "redirect",
+    defaultDoshaEligibility: "none",
+    status: "active",
+    funnelRuntime: "landing-app",
+    internalFunnelRoute: "/dosha-test",
+    legacyAliases: ["dosha", "dosha-test"],
   },
   herbs: {
     productKey: "herbs",
@@ -94,8 +115,8 @@ const PRODUCT_SURFACE_REGISTRY: Record<ProductKey, ProductSurfaceEntry> = {
     ctaMode: "redirect",
     defaultDoshaEligibility: "secondary",
     status: "active",
-    funnelRuntime: "generated-app",
-    internalFunnelRoute: "/funnel-entry/herbs",
+    funnelRuntime: "landing-app",
+    internalFunnelRoute: "/herbs/index.html",
   },
   consult: {
     productKey: "consult",
@@ -105,17 +126,27 @@ const PRODUCT_SURFACE_REGISTRY: Record<ProductKey, ProductSurfaceEntry> = {
     ctaMode: "lead",
     defaultDoshaEligibility: "primary",
     status: "active",
-    funnelRuntime: "generated-app",
-    internalFunnelRoute: "/funnel-entry/consult",
+    funnelRuntime: "landing-app",
+    internalFunnelRoute: "/consult/index.html",
   },
 };
 
 const HOST_TO_PRODUCT = new Map<string, ProductKey>();
+const ALIAS_TO_PRODUCT = new Map<string, ProductKey>();
 
 for (const entry of Object.values(PRODUCT_SURFACE_REGISTRY)) {
   if (!entry.host) continue;
   HOST_TO_PRODUCT.set(entry.host, entry.productKey);
   HOST_TO_PRODUCT.set(`www.${entry.host}`, entry.productKey);
+}
+
+for (const entry of Object.values(PRODUCT_SURFACE_REGISTRY)) {
+  if (entry.status === "active") {
+    ALIAS_TO_PRODUCT.set(entry.productKey, entry.productKey);
+  }
+  for (const alias of entry.legacyAliases ?? []) {
+    ALIAS_TO_PRODUCT.set(alias, entry.productKey);
+  }
 }
 
 function normalizeHost(raw: string | null): string {
@@ -134,11 +165,7 @@ export function getProductSurfaceEntry(productKey: ProductKey): ProductSurfaceEn
 export function getProductKeyByAlias(input: string | null | undefined): ProductKey | null {
   if (!input) return null;
   const normalized = input.trim().toLowerCase();
-  for (const entry of Object.values(PRODUCT_SURFACE_REGISTRY)) {
-    if (entry.productKey === normalized) return entry.productKey;
-    if (entry.legacyAliases?.includes(normalized)) return entry.productKey;
-  }
-  return null;
+  return ALIAS_TO_PRODUCT.get(normalized) ?? null;
 }
 
 export function getProductByHost(rawHost: string | null): ProductKey | null {
@@ -170,7 +197,6 @@ export function getMainDomainSitemapRoutes(): string[] {
     "/products/herbs",
     "/programs/ideal-body",
     "/programs/irem",
-    "/programs/mini-detox",
     "/consult",
     "/dosha-test",
     "/legal/public-offer",

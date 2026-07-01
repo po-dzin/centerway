@@ -8,7 +8,7 @@ export const routeLabels: Record<string, string> = {
   "program-ideal-body": "Ідеальне тіло",
   "program-irem": "IREM Гімнастика",
   "program-reboot": "Short Reboot",
-  "mini-detox": "Mini Detox",
+  "reset-day": "Reset Day",
 };
 
 export function currentProgram(programSlug?: PlatformProgramSlug) {

@@ -54,9 +54,10 @@
   margin: 0;
   color: var(--cw-platform-muted);
   font-family: var(--cw-font-data);
-  font-size: 0.74rem;
+  font-size: var(--ds-type-label-size);
   font-weight: 700;
   letter-spacing: 0;
+  line-height: var(--ds-type-label-line-height);
   text-transform: uppercase;
 }
 
@@ -74,12 +75,12 @@
 .heroTitle {
   max-width: 12ch;
   margin-top: 1.25rem;
-  font-size: clamp(3rem, 5.8vw, 5.2rem);
+  font-size: var(--ds-type-hero-size);
 }
 
 .sectionTitle,
 .title {
-  font-size: clamp(2.15rem, 4.9vw, 3.7rem);
+  font-size: var(--ds-type-title-size);
 }
 
 .panel :where(.title, .sectionTitle),
@@ -95,8 +96,8 @@
   max-width: 44rem;
   margin: 0;
   color: var(--cw-platform-muted);
-  font-size: clamp(1rem, 1.5vw, 1.18rem);
-  line-height: 1.65;
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-lead-line-height);
 }
 
 .heroFooter {

@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
-import { ProgramDetailPage } from "@/components/platform/ProgramDetailPage";
-import { programPageBySlug } from "@/lib/platform/content";
+import { permanentRedirect } from "next/navigation";
 
 export const metadata: Metadata = {
-  title: "Mini Detox - CenterWay",
-  description: "Платформена сторінка Mini Detox: короткий 3-денний вхід у ритм, харчування і спостереження за сигналами тіла.",
-  alternates: { canonical: "/programs/mini-detox" },
+  title: "Reset Day - CenterWay",
+  description: "Legacy alias route for the Reset Day static funnel.",
+  alternates: { canonical: "https://resetday.centerway.net.ua/" },
 };
 
 export default function MiniDetoxProgramPage() {
-  return <ProgramDetailPage program={programPageBySlug["mini-detox"]} />;
+  permanentRedirect("https://resetday.centerway.net.ua/");
 }

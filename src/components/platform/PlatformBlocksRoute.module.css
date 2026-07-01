@@ -23,7 +23,7 @@
   align-items: start;
   gap: 1rem;
   padding: clamp(0.95rem, 2.6vw, 1.2rem);
-  border-radius: var(--cw-radius-lg);
+  border-radius: var(--cw-card-radius);
   color: var(--cw-platform-text);
   text-decoration: none;
   background: var(--cw-depth-card-bg);
@@ -50,8 +50,8 @@
 
 .routeChoiceCard small {
   color: var(--cw-platform-muted);
-  font-size: 0.98rem;
-  line-height: 1.45;
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
 }
 
 .textImageCard {
@@ -61,7 +61,7 @@
   display: grid;
   gap: 1rem;
   padding: 1rem;
-  border-radius: var(--cw-radius-lg);
+  border-radius: var(--cw-card-radius);
   text-decoration: none;
   background: var(--cw-depth-card-bg);
   box-shadow: var(--cw-depth-shadow-soft);
@@ -84,7 +84,7 @@
   min-height: 12rem;
   position: relative;
   overflow: hidden;
-  border-radius: calc(var(--cw-radius-lg) - 0.35rem);
+  border-radius: calc(var(--cw-card-radius) - 0.35rem);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-surface-muted) 84%, transparent), color-mix(in srgb, var(--cw-platform-accent-strong) 16%, var(--cw-platform-surface-muted))),
     var(--cw-platform-surface-muted);

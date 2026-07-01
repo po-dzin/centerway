@@ -6,7 +6,7 @@ export function HubHero() {
     <section className={styles.heroFeature} id="center" data-cw-topbar-tone="dark">
       <div className={styles.heroPhotoLayer}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className={styles.expertImage} src="/cw/landing/img/consult-hero-evgeniy.jpeg" alt="Євгеній Корякін" />
+        <img className={styles.expertImage} src="/shared/img/consult-hero-evgeniy.jpeg" alt="Євгеній Корякін" />
       </div>
       <div className={styles.heroFeatureContent}>
         <p className={styles.heroBadge}>
