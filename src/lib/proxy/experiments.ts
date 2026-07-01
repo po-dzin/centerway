@@ -23,16 +23,12 @@ type ExperimentAssignmentContext = {
   themeFromQuery: string | null;
 };
 
-export function resolveExperimentAssignmentRoute(pathname: string): ScreenRouteKey | null {
-  if (pathname === "/funnel-entry/consult") return "consult";
-  if (pathname === "/funnel-entry/detox") return "detox";
-  if (pathname === "/funnel-entry/herbs") return "herbs";
-  if (pathname === "/lesson/pilot") return "lesson-pilot";
+export function resolveExperimentAssignmentRoute(): ScreenRouteKey | null {
   return null;
 }
 
 export function resolveExperimentAssignmentRouteForRequest(req: NextRequest): ScreenRouteKey | null {
-  const directRoute = resolveExperimentAssignmentRoute(req.nextUrl.pathname);
+  const directRoute = resolveExperimentAssignmentRoute();
   if (directRoute) {
     return directRoute;
   }
@@ -51,7 +47,7 @@ export function resolveExperimentAssignmentRouteForRequest(req: NextRequest): Sc
     return null;
   }
 
-  return resolveExperimentAssignmentRoute(entry.internalFunnelRoute);
+  return resolveExperimentAssignmentRoute();
 }
 
 function buildExperimentAssignmentContext(req: NextRequest, routeKey: ScreenRouteKey): ExperimentAssignmentContext {

@@ -45,7 +45,7 @@
 .card p,
 .card li {
   color: color-mix(in srgb, var(--cw-platform-text) 72%, var(--cw-platform-muted) 28%);
-  line-height: 1.55;
+  line-height: var(--ds-type-body-line-height);
   overflow-wrap: anywhere;
 }
 
@@ -74,7 +74,7 @@
 
 .authorPanel,
 .authorMedia {
-  border-radius: var(--cw-radius-lg);
+  border-radius: var(--cw-card-radius);
   background: var(--cw-depth-card-bg);
   box-shadow: var(--cw-depth-shadow-soft);
 }
@@ -120,7 +120,7 @@
   width: 100%;
   height: auto;
   display: block;
-  border-radius: calc(var(--cw-radius-lg) - 0.35rem);
+  border-radius: calc(var(--cw-card-radius) - 0.35rem);
 }
 
 .copyStack {
@@ -132,8 +132,8 @@
   max-width: 52rem;
   margin: 0;
   color: color-mix(in srgb, var(--cw-platform-text) 72%, var(--cw-platform-muted) 28%);
-  font-size: 1rem;
-  line-height: 1.65;
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line-height);
 }
 
 .factGrid {
@@ -195,6 +195,20 @@
 }
 
 @media (max-width: 900px) {
+  .authorGrid,
+  .consultGrid,
+  .supportPanelLayout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .authorGrid > *,
+  .consultGrid > *,
+  .supportPanelLayout > * {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+  }
+
   .authorPanelStacked {
     grid-template-columns: minmax(0, 1fr);
     gap: 0.85rem;
@@ -217,13 +231,21 @@
   }
 }
 
+@media (max-width: 560px) {
+  .authorGrid,
+  .consultGrid,
+  .supportPanelLayout {
+    gap: 0.75rem;
+  }
+}
+
 .proofNote {
   margin: 0;
   padding: 1rem;
   border-radius: var(--cw-radius-sm);
   color: color-mix(in srgb, var(--cw-platform-text) 76%, var(--cw-platform-muted) 24%);
   background: var(--cw-depth-support-bg);
-  line-height: 1.55;
+  line-height: var(--ds-type-body-line-height);
   box-shadow: var(--cw-depth-shadow-soft);
 }
 
@@ -246,7 +268,7 @@
 
 .collapsibleSummary {
   width: fit-content;
-  min-height: 2.5rem;
+  min-height: var(--ds-touch-target-min);
   display: inline-flex;
   align-items: center;
   padding: 0 0.95rem;
@@ -293,7 +315,7 @@
   min-height: 14.5rem;
   position: relative;
   overflow: hidden;
-  border-radius: calc(var(--cw-radius-lg) - 0.35rem);
+  border-radius: calc(var(--cw-card-radius) - 0.35rem);
   background:
     var(--support-photo-image, linear-gradient(135deg, transparent, transparent)),
     radial-gradient(circle at 23% 28%, color-mix(in srgb, var(--cw-platform-accent) 18%, transparent) 0 0.28rem, transparent 0.3rem),

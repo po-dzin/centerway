@@ -26,7 +26,7 @@
     --cw-interactive-active-bg: #e8e8e4;
     --cw-interactive-active-border: #b7b7b1;
     --cw-interactive-active-shadow: 0 0 0 1px rgba(183, 183, 177, 0.35);
-    --cw-focus-ring: rgba(183, 183, 177, 0.42);
+    --cw-focus-ring: color-mix(in srgb, var(--cw-accent-strong) 34%, transparent);
     --ds-radius-button-soft: 1rem;
     --cw-radius-btn: var(--ds-radius-button-soft);
     --cw-brand-hover-border: color-mix(in srgb, var(--cw-accent) 72%, var(--cw-border) 28%);
@@ -141,7 +141,7 @@
     --cw-component-glass-blur: 72px;
     --cw-component-glass-filter: blur(var(--cw-component-glass-blur)) saturate(1.28) brightness(0.96);
     --cw-component-glass-shadow: 0 14px 32px color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
-    --cw-component-glass-frost-image: url("/cw/landing/img/consult-hero-evgeniy.jpeg");
+    --cw-component-glass-frost-image: url("/shared/img/consult-hero-evgeniy.jpeg");
     --cw-component-glass-frost-position: 38% center;
     --cw-surface-glass-bg: var(--cw-component-glass-bg);
     --cw-surface-glass-bg-hover: var(--cw-component-glass-bg-hover);
@@ -215,7 +215,7 @@
     --cw-component-glass-blur: 84px;
     --cw-component-glass-filter: blur(var(--cw-component-glass-blur)) saturate(1.36) brightness(0.92);
     --cw-component-glass-shadow: 0 12px 28px color-mix(in srgb, var(--cw-platform-text) 20%, transparent);
-    --cw-component-glass-frost-image: url("/cw/landing/img/consult-hero-evgeniy.jpeg");
+    --cw-component-glass-frost-image: url("/shared/img/consult-hero-evgeniy.jpeg");
     --cw-component-glass-frost-position: 38% center;
     --cw-branch-grid-discipline: 1;
     /* CW_RUNTIME_TOKENS_END */
@@ -295,7 +295,7 @@
     --ds-breakpoint-tablet-max: 63.9375rem;
     --ds-breakpoint-desktop-min: 64rem;
     --ds-container-max: var(--cw-max-width);
-    --ds-touch-target-min: 2.75rem;
+    --ds-touch-target-min: 3rem;
     /* DS_ALIAS_LIGHT_END */
 
     /* Platform DS contract:
@@ -341,7 +341,7 @@
     --ds-breakpoint-tablet-max: 63.9375rem;
     --ds-breakpoint-desktop-min: 64rem;
     --ds-container-max: var(--cw-max-width);
-    --ds-touch-target-min: 2.75rem;
+    --ds-touch-target-min: 3rem;
     --ds-button-min-height: 3rem;
     --ds-button-padding-inline: 1.15rem;
     --ds-button-min-width: 10.5rem;
@@ -355,6 +355,23 @@
     --ds-offer-card-width-tablet: 21rem;
     --ds-offer-card-width-mobile: min(82vw, 19rem);
     --ds-offer-card-rail-width: var(--ds-offer-card-width-mobile);
+    --ds-focus-ring-width: 3px;
+    --ds-focus-ring-offset: 3px;
+    --ds-focus-ring-color: var(--cw-focus-ring);
+    --ds-type-label-size: 0.75rem;
+    --ds-type-label-line-height: 1rem;
+    --ds-type-body-size: 1rem;
+    --ds-type-body-line-height: 1.6;
+    --ds-type-body-sm-size: 0.9375rem;
+    --ds-type-body-sm-line-height: 1.5;
+    --ds-type-lead-size: clamp(1rem, 1.5vw, 1.125rem);
+    --ds-type-lead-line-height: 1.6;
+    --ds-type-title-size: clamp(2.25rem, 4.9vw, 3.75rem);
+    --ds-type-title-line-height: 1.04;
+    --ds-type-hero-size: clamp(3.25rem, 7.6vw, 6.75rem);
+    --ds-type-hero-line-height: 0.96;
+    --ds-type-display-size: clamp(1.5rem, 3vw, 2.2rem);
+    --ds-type-display-line-height: 1.08;
   }
 
   .dark {
@@ -378,7 +395,7 @@
     --cw-interactive-active-bg: #3c3c38;
     --cw-interactive-active-border: #6a6a64;
     --cw-interactive-active-shadow: 0 0 0 1px rgba(106, 106, 100, 0.38);
-    --cw-focus-ring: rgba(106, 106, 100, 0.52);
+    --cw-focus-ring: color-mix(in srgb, var(--cw-accent-contrast) 40%, transparent);
     --ds-radius-button-soft: 1rem;
     --cw-radius-btn: var(--ds-radius-button-soft);
     --cw-brand-hover-border: color-mix(in srgb, var(--cw-accent) 74%, var(--cw-border) 26%);
@@ -743,16 +760,16 @@ body {
   }
 
   .cw-page-title {
-    font-size: 1.875rem;
-    line-height: 2.25rem;
+    font-size: var(--ds-type-display-size);
+    line-height: var(--ds-type-display-line-height);
     font-weight: 700;
     letter-spacing: -0.02em;
     color: var(--cw-text);
   }
 
   .cw-page-subtitle {
-    font-size: 0.875rem;
-    line-height: 1.25rem;
+    font-size: var(--ds-type-body-sm-size);
+    line-height: var(--ds-type-body-sm-line-height);
     color: var(--cw-muted);
   }
 
@@ -781,13 +798,14 @@ body {
   .cw-input:focus,
   .cw-input:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--cw-focus-ring);
+    box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
     border-color: var(--cw-interactive-active-border);
   }
 
   .cw-btn {
     border: 1px solid var(--cw-border);
-    border-radius: 0.75rem;
+    min-height: var(--ds-touch-target-min);
+    border-radius: var(--cw-radius-btn);
     color: var(--cw-text);
     background-color: transparent;
     transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
@@ -800,14 +818,14 @@ body {
 
   .cw-btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--cw-focus-ring);
+    box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   }
 
   .cw-btn-sm {
     padding: 0.25rem 0.5rem;
-    border-radius: 0.5rem;
-    font-size: 0.75rem;
-    line-height: 1rem;
+    border-radius: var(--cw-radius-sm);
+    font-size: var(--ds-type-label-size);
+    line-height: var(--ds-type-label-line-height);
   }
 
   .cw-btn-muted {
@@ -832,7 +850,7 @@ body {
 
   .cw-interactive-outline:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--cw-focus-ring);
+    box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   }
 
   .cw-interactive-solid {
@@ -853,7 +871,7 @@ body {
 
   .cw-interactive-solid:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--cw-focus-ring), 0 8px 18px color-mix(in srgb, var(--cw-text) 22%, transparent);
+    box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color), 0 8px 18px color-mix(in srgb, var(--cw-text) 22%, transparent);
   }
 
   .cw-choice-btn {
@@ -878,7 +896,7 @@ body {
   .cw-choice-btn:focus-visible {
     outline: none;
     border-color: var(--cw-brand-hover-border);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-status-success) 28%, transparent);
+    box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   }
 
   .cw-choice-btn:active:not(:disabled) {
@@ -922,7 +940,7 @@ body {
   .cw-btn-primary:focus-visible {
     outline: none;
     border-color: var(--cw-btn-primary-border-hover);
-    box-shadow: 0 0 0 2px var(--cw-btn-primary-focus-ring), 0 8px 18px color-mix(in srgb, var(--cw-text) 22%, transparent);
+    box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--cw-btn-primary-focus-ring), 0 8px 18px color-mix(in srgb, var(--cw-text) 22%, transparent);
   }
 
   .cw-btn-primary:focus {
@@ -953,7 +971,7 @@ body {
   .cw-btn-outline:focus-visible {
     outline: none;
     border-color: var(--cw-brand-hover-border);
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-status-success) 28%, transparent);
+    box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   }
 
   .cw-btn-outline:focus {
@@ -1066,7 +1084,7 @@ body {
 
   .cw-icon-btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--cw-focus-ring);
+    box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   }
 
   .cw-list-item {
@@ -1104,7 +1122,7 @@ body {
     padding-top: 0;
     border-bottom: 1px solid var(--cw-border);
     overflow-y: hidden;
-    min-height: 2.75rem;
+    min-height: var(--ds-touch-target-min);
     scrollbar-width: thin;
     scrollbar-color: color-mix(in srgb, var(--cw-text) 20%, transparent) transparent;
   }
@@ -1180,7 +1198,7 @@ body {
   .cw-nav-link:focus-visible,
   .cw-tab:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--cw-focus-ring);
+    box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   }
 
   .cw-pagination {
@@ -1210,7 +1228,7 @@ body {
 
   .cw-page-btn:focus-visible {
     outline: none;
-    box-shadow: 0 0 0 2px var(--cw-focus-ring);
+    box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   }
 
   .cw-skeleton-row {

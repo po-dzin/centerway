@@ -48,17 +48,26 @@ export function getLandingPublicRouteName(product: StaticLandingProduct): Landin
 
 export function getLandingShellAssets(product: StaticLandingProduct) {
   const { assetPrefix, assetName } = LANDING_ROUTE_CONFIG[product];
-  const styles = [
-    `${assetPrefix}/js/themes/simple.css`,
-    ...SHARED_STYLES,
-    `${assetPrefix}/css/${assetName}.product.css`,
-    `${assetPrefix}/css/${assetName}.product.responsive.css`,
-  ];
+  const styles =
+    product === "irem"
+      ? [
+          ...SHARED_STYLES,
+          `${assetPrefix}/css/irem.theme.css`,
+        ]
+      : [
+          `${assetPrefix}/js/themes/simple.css`,
+          ...SHARED_STYLES,
+          `${assetPrefix}/css/${assetName}.product.css`,
+          `${assetPrefix}/css/${assetName}.product.responsive.css`,
+        ];
 
-  const scripts = [
-    `${assetPrefix}/js/lazysizes.min.js`,
-    `${assetPrefix}/js/common.js`,
-  ];
+  const scripts =
+    product === "irem"
+      ? [`${assetPrefix}/js/common.js`]
+      : [
+          `${assetPrefix}/js/lazysizes.min.js`,
+          `${assetPrefix}/js/common.js`,
+        ];
 
   return {
     styles,
@@ -70,6 +79,14 @@ export function getLandingShellAssets(product: StaticLandingProduct) {
 }
 
 export function getLandingCriticalCss(product: StaticLandingProduct) {
+  if (product === "irem") {
+    return `
+html,body{margin:0;padding:0;background:#fffdf7;color:#1b1d2e}
+body{font-family:"Formular","Segoe UI",Arial,sans-serif;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+main[data-cw-page="irem"]{display:block}
+`;
+  }
+
   const config = LANDING_ROUTE_CONFIG[product];
   const accent = product === "short" ? "#e87d73" : "#4f7e76";
   const accentStrong = product === "short" ? "#cf6a61" : "#1e3d34";

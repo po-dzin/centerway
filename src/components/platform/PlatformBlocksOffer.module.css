@@ -71,7 +71,7 @@
   display: flex;
   align-items: flex-end;
   overflow: hidden;
-  border-radius: var(--cw-radius-lg);
+  border-radius: var(--cw-card-radius);
   color: var(--program-tile-fg);
   background: var(--cw-platform-accent-strong);
   box-shadow: var(--program-tile-shadow);
@@ -87,7 +87,7 @@
   display: flex;
   align-items: flex-end;
   overflow: hidden;
-  border-radius: var(--cw-radius-lg);
+  border-radius: var(--cw-card-radius);
   color: var(--cw-platform-accent-contrast);
   background: var(--cw-platform-accent-strong);
   box-shadow: var(--cw-depth-shadow-soft);
@@ -141,14 +141,14 @@
 }
 
 .offerHeroVisualMeta h3 {
-  font-size: clamp(2rem, 3.2vw, 2.8rem);
-  line-height: 1.02;
+  font-size: var(--ds-type-display-size);
+  line-height: var(--ds-type-display-line-height);
 }
 
 .offerHeroVisualMeta p:not(.label) {
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 84%, transparent);
-  font-size: 1rem;
-  line-height: 1.48;
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line-height);
 }
 
 .detailHeroBody {
@@ -170,9 +170,10 @@
 .detailHeroLabel {
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 72%, transparent);
   font-family: var(--cw-font-data);
-  font-size: 0.78rem;
+  font-size: var(--ds-type-label-size);
   font-weight: 700;
   letter-spacing: 0.03em;
+  line-height: var(--ds-type-label-line-height);
   text-transform: uppercase;
 }
 
@@ -180,16 +181,16 @@
   max-width: 11ch;
   color: var(--cw-platform-accent-contrast);
   font-family: var(--cw-font-editorial);
-  font-size: clamp(3rem, 6vw, 5.3rem);
+  font-size: var(--ds-type-hero-size);
   font-weight: 700;
-  line-height: 0.96;
+  line-height: var(--ds-type-hero-line-height);
 }
 
 .detailHeroLead {
   max-width: 34rem;
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 86%, transparent);
-  font-size: clamp(1rem, 1.5vw, 1.14rem);
-  line-height: 1.55;
+  font-size: var(--ds-type-lead-size);
+  line-height: var(--ds-type-lead-line-height);
 }
 
 .offerHeroVisualCard[data-hero-visual="immersive"] {
@@ -471,13 +472,13 @@
 
 .programTileBody h3 {
   color: var(--program-tile-fg);
-  font-size: clamp(1.55rem, 3vw, 2.2rem);
-  line-height: 1;
+  font-size: var(--ds-type-display-size);
+  line-height: var(--ds-type-display-line-height);
 }
 
 .programTileBody p:not(.label) {
   color: var(--program-tile-copy);
-  line-height: 1.45;
+  line-height: var(--ds-type-body-line-height);
 }
 
 .programTile[data-size="compact"] .programTileBody p:not(.label) {
@@ -489,7 +490,7 @@
 
 .programLink {
   width: fit-content;
-  min-height: 2.85rem;
+  min-height: var(--ds-button-min-height);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -531,5 +532,5 @@
   color: var(--cw-platform-muted);
   background: var(--cw-depth-card-bg);
   box-shadow: var(--cw-depth-shadow-soft);
-  line-height: 1.45;
+  line-height: var(--ds-type-body-sm-line-height);
 }

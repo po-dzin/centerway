@@ -9,9 +9,9 @@ export const DOSHA_PRIMARY_EXIT = {
 } as const;
 
 export const DOSHA_SECONDARY_EXIT = {
-  productKey: "detox",
-  href: getFunnelHostUrl("detox") ?? "/detox",
-  target: "detox",
-  ctaTarget: "detox",
-  nextStep: "detox",
+  productKey: "way21",
+  href: getFunnelHostUrl("way21") ?? "/way21",
+  target: "way21",
+  ctaTarget: "way21",
+  nextStep: "way21",
 } as const;

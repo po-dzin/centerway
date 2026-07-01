@@ -13,7 +13,7 @@ export function SupportForm({ route }: Pick<PlatformRouteBlockProps, "route">) {
         <article className={`${styles.authorPanel} ${styles.authorPanelStacked}`}>
           <div className={styles.authorCardMedia} aria-label="Євгеній Корякін">
             {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className={styles.authorPortrait} src="/cw/landing/img/consult-hero-evgeniy.jpeg" alt="Євгеній Корякін" />
+            <img className={styles.authorPortrait} src="/shared/img/consult-hero-evgeniy.jpeg" alt="Євгеній Корякін" />
           </div>
           <div className={styles.authorPanelContent}>
             <h2 className={styles.title}>Про автора</h2>

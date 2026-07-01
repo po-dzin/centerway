@@ -121,7 +121,8 @@ export function LeadForm({
         <label htmlFor="lead-interest">Що цікавить</label>
         <select id="lead-interest" name="interest" defaultValue="consultation">
           <option value="consultation">Особиста консультація</option>
-          <option value="detox">Детокс / Шлях 21</option>
+          <option value="way21">Шлях 21</option>
+          <option value="reset-day">Reset Day</option>
           <option value="ideal-body">Ідеальне тіло з Аюрведою</option>
           <option value="irem">Відновлююча гімнастика</option>
           <option value="herbs">Трав&apos;яна підтримка</option>

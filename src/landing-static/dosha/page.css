@@ -1,0 +1,13 @@
+[data-cw-landing="dosha"] {
+  --cw-canvas: #f5f0ec;
+  --cw-ink: #2b313f;
+  --cw-text: #455066;
+  --cw-text-soft: #738097;
+  --cw-accent: #6a759b;
+  --cw-accent-strong: #434d70;
+  --cw-accent-soft: #eef0f8;
+  --cw-gold: #d2a569;
+  --cw-gold-strong: #b88749;
+  --cw-gold-ink: #2c313f;
+  --cw-hero-focus: center 12%;
+}

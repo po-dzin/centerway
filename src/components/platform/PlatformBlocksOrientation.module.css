@@ -132,8 +132,9 @@
   backdrop-filter: var(--cw-surface-glass-filter);
   -webkit-backdrop-filter: var(--cw-surface-glass-filter);
   font-family: var(--cw-font-data);
-  font-size: 0.75rem;
+  font-size: var(--ds-type-label-size);
   font-weight: 700;
+  line-height: var(--ds-type-label-line-height);
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }
@@ -149,9 +150,9 @@
   margin: 0;
   color: var(--cw-platform-accent-contrast);
   font-family: var(--cw-font-ui);
-  font-size: clamp(3.4rem, 8.3vw, 7.6rem);
+  font-size: var(--ds-type-hero-size);
   font-weight: 900;
-  line-height: 0.95;
+  line-height: var(--ds-type-hero-line-height);
   letter-spacing: 0.02em;
   text-transform: uppercase;
 }
@@ -160,18 +161,18 @@
   max-width: min(29rem, 100%);
   margin: 0;
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 82%, transparent);
-  font-size: clamp(1rem, 1.44vw, 1.12rem);
+  font-size: var(--ds-type-lead-size);
   font-weight: 560;
-  line-height: 1.6;
+  line-height: var(--ds-type-lead-line-height);
 }
 
 .heroSupportNote {
   max-width: 27rem;
   margin: 0;
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 68%, transparent);
-  font-size: 0.94rem;
+  font-size: var(--ds-type-body-sm-size);
   font-weight: 540;
-  line-height: 1.52;
+  line-height: var(--ds-type-body-sm-line-height);
 }
 
 .heroFeatureActions {
@@ -239,7 +240,7 @@
   min-width: 0;
   width: 100%;
   border: 0;
-  border-radius: var(--cw-radius-lg);
+  border-radius: var(--cw-card-radius);
   background: var(--cw-depth-card-bg);
   box-shadow: var(--cw-depth-shadow-soft);
 }
@@ -368,8 +369,8 @@
   }
 
   .videoDecisionText {
-    font-size: 0.92rem;
-    line-height: 1.45;
+    font-size: var(--ds-type-body-sm-size);
+    line-height: var(--ds-type-body-sm-line-height);
   }
 }
 

@@ -126,7 +126,7 @@ export function PlatformProgramsIndexPage() {
 export function PlatformProductsIndexPage() {
   const featuredProduct = platformProductOffers[0];
   const relatedPrograms = [...platformMiniCourses, ...platformProgramOffers].filter((program) =>
-    ["mini-detox", "way21", "ideal-body"].includes(program.slug),
+    ["reset-day", "way21", "ideal-body"].includes(program.slug),
   );
   const heroStyle = {
     "--hero-photo-x": "50%",

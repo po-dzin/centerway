@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="uk" data-cw-landing="reset-day" data-cw-page="pay-failed">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <base href="/reset-day/">
+  <title>❌ Оплату не завершено</title>
+  <link rel="stylesheet" href="../shared/css/pages.css">
+  <link rel="stylesheet" href="page.css">
+  <script src="/shared/js/landing-pixel.js" data-cw-product="reset-day"></script>
+</head>
+
+<body class="utility-page utility-page-failed">
+  <div class="wrap utility-status-wrap">
+    <div class="card utility-status-card">
+      <h1 class="utility-status-title">❌ Оплату не завершено</h1>
+      <p class="utility-status-lead">Схоже, платіж не пройшов або був скасований. Це буває — давайте просто спробуємо ще раз.</p>
+
+      <div class="btns utility-status-actions">
+        <a class="btn primary" href="https://resetday.centerway.net.ua/">Спробувати ще раз</a>
+      </div>
+
+      <div class="utility-status-meta">
+        <p class="muted" id="orderLine">Дані платежу: завантаження…</p>
+
+        <div class="hint">
+          <p class="muted" style="margin:0;">
+          Поради 🛠️<br/>
+          • Перевірте баланс / ліміт на карті<br/>
+          • Спробуйте Apple Pay / Google Pay або іншу картку<br/>
+          • Якщо відкривали оплату в Telegram — натисніть ⋮ → <b>Відкрити в браузері</b>
+          </p>
+        </div>
+
+        <p class="muted" style="margin-top:14px;">
+          Якщо проблема повторюється — напишіть у підтримку і надішліть скрін/час спроби оплати.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  (function () {
+  const qs = new URLSearchParams(location.search);
+
+  const product = (qs.get('product') || 'reset-day').toLowerCase();
+  const orderRef = qs.get('order_ref') || qs.get('orderReference') || '';
+  const rrn = qs.get('payment_id') || qs.get('rrn') || '';
+  const amountRaw = qs.get('amount') || '';
+  const currency = (qs.get('currency') || 'UAH').toUpperCase();
+
+  const amount = amountRaw ? Number(String(amountRaw).replace(',', '.')) : NaN;
+
+  const contentByProduct = {
+    'reset-day': 'Reset Day',
+    way21: 'Way21 Detox',
+    'way21-support': 'Way21 Support'
+  };
+  const content_name = contentByProduct[product] || (product ? product.toUpperCase() : 'Payment');
+
+  const tid = rrn || orderRef || '';
+
+  const orderLine = document.getElementById('orderLine');
+  if (orderLine) {
+    const meta = [
+      tid ? `Номер спроби: ${tid}` : `Номер спроби: (не передано в URL)`,
+      (!Number.isNaN(amount) && amount > 0) ? `${amount} ${currency}` : null,
+      content_name ? content_name : null
+    ].filter(Boolean).join(' • ');
+    orderLine.textContent = meta;
+  }
+
+  const firedKey = 'cw_failed_fired:' + (orderRef || tid || 'noid');
+  if (sessionStorage.getItem(firedKey) === '1') return;
+
+  let attrib = {};
+  try { attrib = JSON.parse(localStorage.getItem('cw_attrib') || '{}'); } catch (_) {}
+
+  const payload = {
+    value: (!Number.isNaN(amount) && amount > 0) ? amount : 0,
+    currency: currency,
+    content_name: content_name
+  };
+  if (tid) payload.transaction_id = tid;
+  Object.assign(payload, attrib);
+
+  if (typeof fbq === 'function') {
+    fbq('trackCustom', 'PurchaseFailed', payload);
+    sessionStorage.setItem(firedKey, '1');
+  }
+  })();
+  </script>
+</body>
+</html>

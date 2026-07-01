@@ -1,7 +1,7 @@
-export type LandingProduct = "short" | "irem" | "mini-detox" | "detox" | "consult";
+export type LandingProduct = "short" | "irem";
 export type StaticLandingProduct = "short" | "irem";
 
-const LANDING_PRODUCTS = new Set<LandingProduct>(["short", "irem", "mini-detox", "detox", "consult"]);
+const LANDING_PRODUCTS = new Set<LandingProduct>(["short", "irem"]);
 const STATIC_LANDING_PRODUCTS = new Set<StaticLandingProduct>(["short", "irem"]);
 const STATIC_LANDING_PRODUCT_ALIASES: Record<string, StaticLandingProduct> = {
   short: "short",

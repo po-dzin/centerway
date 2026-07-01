@@ -53,9 +53,9 @@
   margin: 0;
   color: var(--cw-platform-text);
   font-family: var(--cw-font-editorial);
-  font-size: clamp(2.15rem, 4.9vw, 3.7rem);
+  font-size: var(--ds-type-title-size);
   font-weight: 700;
-  line-height: 1.02;
+  line-height: var(--ds-type-title-line-height);
 }
 
 .authModalActions {
@@ -109,7 +109,7 @@
 
 .diagnosticTextButton {
   width: fit-content;
-  min-height: 2.8rem;
+  min-height: var(--ds-touch-target-min);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -117,7 +117,7 @@
   border: 0;
   color: var(--cw-platform-muted);
   background: transparent;
-  font-size: 0.98rem;
+  font-size: var(--ds-type-body-sm-size);
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 0.24em;
@@ -164,8 +164,8 @@
 }
 
 .diagnosticNumberList li {
-  font-size: 0.98rem;
-  line-height: 1.58;
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line-height);
 }
 
 .diagnosticNumberList li::marker {
@@ -185,7 +185,8 @@
 
 .field label {
   color: var(--cw-platform-muted);
-  font-size: 0.86rem;
+  font-size: var(--ds-type-label-size);
+  line-height: var(--ds-type-label-line-height);
   font-weight: 700;
 }
 
@@ -193,13 +194,14 @@
 .field select,
 .field textarea {
   width: 100%;
-  min-height: 3.15rem;
-  font-size: 1rem;
+  min-height: var(--ds-touch-target-min);
+  font-size: var(--ds-type-body-size);
   border: 1px solid var(--cw-platform-border);
   border-radius: var(--cw-radius-sm);
   padding: 0.8rem 0.9rem;
   color: var(--cw-platform-text);
   background: var(--cw-platform-surface);
+  line-height: var(--ds-type-body-line-height);
 }
 
 .field textarea {
@@ -210,7 +212,8 @@
 .status {
   min-height: 1.25rem;
   color: var(--cw-platform-muted);
-  font-size: 0.9rem;
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
 }
 
 .success {
@@ -273,9 +276,9 @@
 .footerSocials a:first-child {
   color: var(--cw-platform-muted);
   font-family: var(--cw-font-body);
-  font-size: 1rem;
+  font-size: var(--ds-type-body-size);
   font-weight: 500;
-  line-height: 1.55;
+  line-height: var(--ds-type-body-line-height);
   letter-spacing: 0;
 }
 
@@ -418,7 +421,7 @@
 
 .profileHeroIdentityCard {
   padding: clamp(1.05rem, 2.8vw, 1.4rem);
-  border-radius: var(--cw-radius-lg);
+  border-radius: var(--cw-card-radius);
   background: var(--cw-surface-glass-bg);
   box-shadow: var(--cw-surface-glass-shadow);
   backdrop-filter: var(--cw-surface-glass-filter);
@@ -436,8 +439,9 @@
   margin: 0 0 0.15rem;
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 72%, transparent);
   font-family: var(--cw-font-data);
-  font-size: 0.74rem;
+  font-size: var(--ds-type-label-size);
   font-weight: 700;
+  line-height: var(--ds-type-label-line-height);
   letter-spacing: 0.03em;
   text-transform: uppercase;
 }

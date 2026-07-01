@@ -16,7 +16,7 @@
   }
 
   .nav a {
-    min-height: 2.35rem;
+    min-height: var(--ds-touch-target-min);
     padding: 0 0.62rem;
     font-size: 0.92rem;
   }
@@ -26,13 +26,13 @@
   }
 
   .profileEntry {
-    min-height: 2.55rem;
+    min-height: var(--ds-touch-target-min);
     padding-right: 0.7rem;
   }
 
   .profileEntryCompact {
-    width: 2.55rem;
-    min-width: 2.55rem;
+    width: var(--ds-touch-target-min);
+    min-width: var(--ds-touch-target-min);
     padding-right: 0;
   }
 
@@ -205,7 +205,7 @@
   }
 
   .diagnosticTextButton {
-    min-height: 2.4rem;
+    min-height: var(--ds-touch-target-min);
     justify-content: flex-start;
     padding: 0;
   }
@@ -661,7 +661,7 @@
   .panel,
   .formPanel,
   .mediaPanel {
-    border-radius: clamp(1.05rem, 4vw, var(--cw-radius-lg));
+    border-radius: var(--cw-card-radius);
   }
 
   .heroFeature {
@@ -716,11 +716,11 @@
   .videoPanel {
     min-height: auto;
     aspect-ratio: 16 / 9;
-    border-radius: clamp(1.05rem, 4vw, var(--cw-radius-lg)) clamp(1.05rem, 4vw, var(--cw-radius-lg)) 0 0;
+    border-radius: var(--cw-card-radius) var(--cw-card-radius) 0 0;
   }
 
   .videoAside {
-    border-radius: 0 0 clamp(1.05rem, 4vw, var(--cw-radius-lg)) clamp(1.05rem, 4vw, var(--cw-radius-lg));
+    border-radius: 0 0 var(--cw-card-radius) var(--cw-card-radius);
   }
 
   .videoSection,
@@ -730,7 +730,7 @@
     flex-direction: column;
     gap: 0;
     overflow: hidden;
-    border-radius: clamp(1.05rem, 4vw, var(--cw-radius-lg));
+    border-radius: var(--cw-card-radius);
     background: var(--cw-depth-card-bg);
     box-shadow: var(--cw-depth-shadow-soft);
   }
@@ -796,7 +796,7 @@
 
   .sectionHeader .secondaryButton {
     width: fit-content;
-    min-height: 2.65rem;
+    min-height: var(--ds-touch-target-min);
   }
 
   .programLink {
@@ -885,8 +885,8 @@
 
   .heroPanel .lead,
   .lead {
-    font-size: 0.98rem;
-    line-height: 1.55;
+    font-size: var(--ds-type-body-sm-size);
+    line-height: var(--ds-type-body-sm-line-height);
   }
 
   .videoSection,
@@ -962,11 +962,11 @@
   }
 
   .offerHeroVisualMeta h3 {
-    font-size: 1.85rem;
+    font-size: var(--ds-type-display-size);
   }
 
   .offerHeroVisualMeta p:not(.label) {
-    font-size: 0.98rem;
+    font-size: var(--ds-type-body-sm-size);
   }
 
   .detailHeroBody {
@@ -982,8 +982,8 @@
 
   .detailHeroLead {
     max-width: 100%;
-    font-size: 0.98rem;
-    line-height: 1.52;
+    font-size: var(--ds-type-body-sm-size);
+    line-height: var(--ds-type-body-sm-line-height);
   }
 
   .heroFeature {
@@ -1010,12 +1010,12 @@
 
   .heroFeatureLead {
     max-width: 100%;
-    font-size: 0.98rem;
+    font-size: var(--ds-type-body-sm-size);
   }
 
   .heroSupportNote {
     max-width: 100%;
-    font-size: 0.84rem;
+    font-size: var(--ds-type-label-size);
   }
 
   .heroFeatureActions,
@@ -1031,7 +1031,7 @@
   .heroPrimaryButton,
   .heroSecondaryButton {
     width: 100%;
-    min-height: 3rem;
+    min-height: var(--ds-touch-target-min);
   }
 
   .heroProofGrid div {
@@ -1076,8 +1076,8 @@
 
   .heroFeatureLead,
   .lead {
-    font-size: 0.98rem;
-    line-height: 1.55;
+    font-size: var(--ds-type-body-sm-size);
+    line-height: var(--ds-type-body-sm-line-height);
   }
 
   .heroFeature[data-cw-profile-hero="true"] .heroFeatureContent {
@@ -1347,7 +1347,7 @@
 
   main[data-cw-detail-template] .heroFeatureLead,
   .heroFeature[data-cw-detail-template] .heroFeatureLead {
-    font-size: 0.94rem;
+    font-size: var(--ds-type-body-sm-size);
   }
 
   .heroFeatureTitle {
@@ -1476,8 +1476,8 @@
 
   main[data-cw-detail-template] .heroFeatureLead {
     max-width: 32rem;
-    font-size: 1.01rem;
-    line-height: 1.58;
+    font-size: var(--ds-type-body-size);
+    line-height: var(--ds-type-body-line-height);
   }
 
   main[data-cw-detail-template] .heroFeatureActions {
@@ -1515,8 +1515,8 @@
 
   .heroFeature[data-cw-detail-template] .heroFeatureLead {
     max-width: 32rem;
-    font-size: 1.01rem;
-    line-height: 1.58;
+    font-size: var(--ds-type-body-size);
+    line-height: var(--ds-type-body-line-height);
   }
 
   .heroFeature[data-cw-detail-template] .heroFeatureActions {
@@ -1565,8 +1565,8 @@
 
   main[data-cw-detail-template] .heroFeatureLead {
     max-width: 100%;
-    font-size: 0.98rem;
-    line-height: 1.54;
+    font-size: var(--ds-type-body-sm-size);
+    line-height: var(--ds-type-body-sm-line-height);
   }
 
   main[data-cw-detail-template] .heroFeatureActions {
@@ -1577,7 +1577,7 @@
 
   main[data-cw-detail-template] .heroPrimaryButton,
   main[data-cw-detail-template] .heroSecondaryButton {
-    min-height: 3.15rem;
+    min-height: var(--ds-touch-target-min);
   }
 
   main[data-cw-detail-template] .split,
@@ -1625,8 +1625,8 @@
 
   .heroFeature[data-cw-detail-template] .heroFeatureLead {
     max-width: 100%;
-    font-size: 0.98rem;
-    line-height: 1.54;
+    font-size: var(--ds-type-body-sm-size);
+    line-height: var(--ds-type-body-sm-line-height);
   }
 
   .heroFeature[data-cw-detail-template] .heroFeatureActions {
@@ -1646,6 +1646,6 @@
 
   .heroFeature[data-cw-detail-template] .heroPrimaryButton,
   .heroFeature[data-cw-detail-template] .heroSecondaryButton {
-    min-height: 3.15rem;
+    min-height: var(--ds-touch-target-min);
   }
 }
