@@ -86,7 +86,7 @@ export const PRODUCTS = {
   },
 } as const;
 
-export const LEAD_PRODUCT_CODES = ["consult", "ideal-body", "platform", "herbs"] as const;
+export const LEAD_PRODUCT_CODES = ["consult", "ideal-body", "platform", "herbs", "irem-individual"] as const;
 
 export type PayableProductCode = keyof typeof PRODUCTS;
 export type LeadProductCode = (typeof LEAD_PRODUCT_CODES)[number];
@@ -112,6 +112,7 @@ export function normalizeProduct(input: unknown): ProductCode | null {
   if (typeof input === "string") {
     const s = input.trim().toLowerCase();
     if (s === "short" || s === "reboot") return "short";
+    if (s === "irem-individual" || s === "irem_individual" || s === "irem-support") return "irem-individual";
     if (s === "irem") return "irem";
     if (s === "way21-support" || s === "way21_support") return "way21-support";
     if (s === "way21" || s === "shlyah21" || s === "detox21") return "way21";

@@ -485,7 +485,7 @@
           <li>Щоденний супровід і прямий зв'язок з автором у телеграмі</li>
           <li>Повна інтеграція системи у життя</li>
         </ul>
-        <a href="https://t.me/E_Koriakin" class="btn btn-tg fc-cta">Написати в Telegram <span class="arr">→</span></a>
+        <button type="button" class="btn btn-primary fc-cta" data-lead-open="irem-individual">Залишити заявку <span class="arr">→</span></button>
         <div class="fc-guarantee"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Максимальний результат</div>
       </div>
 
@@ -581,6 +581,25 @@
 <div class="sticky-cta" id="stickyCta">
   <div class="sticky-in">
     <a href="#offer" class="btn btn-primary">Почати практику →</a>
+  </div>
+</div>
+
+<!-- Premium (individual program) lead-capture modal. Program → product_code in /api/leads. -->
+<div class="lead-modal" data-lead-modal hidden>
+  <div class="lead-modal__backdrop" data-lead-close></div>
+  <div class="lead-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="leadModalTitle">
+    <button type="button" class="lead-modal__x" data-lead-close aria-label="Закрити">×</button>
+    <p class="lead-modal__program">ІВЕМ — індивідуальна програма</p>
+    <h3 id="leadModalTitle" class="lead-modal__title">Залиште заявку на супровід</h3>
+    <p class="lead-modal__sub">Ми зв'яжемось з вами, щоб узгодити старт персонального ведення з автором системи.</p>
+    <form data-lead-form data-lead-product="irem-individual" novalidate>
+      <input class="lead-modal__input" name="name" type="text" autocomplete="name" placeholder="Ім'я" required>
+      <input class="lead-modal__input" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="Телефон">
+      <input class="lead-modal__input" name="email" type="email" autocomplete="email" placeholder="Email">
+      <textarea class="lead-modal__input" name="message" rows="3" placeholder="Коментар (необов'язково)"></textarea>
+      <button type="submit" class="btn btn-primary lead-modal__submit">Надіслати заявку <span class="arr">→</span></button>
+      <p class="lead-modal__status" data-lead-status hidden></p>
+    </form>
   </div>
 </div>
 
