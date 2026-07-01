@@ -8,7 +8,7 @@
   <link rel="stylesheet" href="../shared/css/tokens.css">
   <link rel="stylesheet" href="../shared/css/foundation.css">
   <link rel="stylesheet" href="../shared/css/pages.css">
-  <link rel="stylesheet" href="css/irem.product.css">
+  <link rel="stylesheet" href="css/irem.theme.css">
   <script async src="https://www.googletagmanager.com/gtag/js?id=G-HV89HDP52T"></script>
   <script>
     window.dataLayer = window.dataLayer || [];
@@ -18,32 +18,32 @@
   </script>
 </head>
 
-<body>
-  <div class="wrap">
-    <div class="card">
-      <h1>❌ Оплату не завершено</h1>
-      <p>Схоже, платіж не пройшов або був скасований.
-      <br> Це буває — давайте просто спробуємо ще раз.</p>
+<body class="utility-page utility-page-failed">
+  <div class="wrap utility-status-wrap">
+    <div class="card utility-status-card">
+      <h1 class="utility-status-title">❌ Оплату не завершено</h1>
+      <p class="utility-status-lead">Схоже, платіж не пройшов або був скасований. Це буває — давайте просто спробуємо ще раз.</p>
 
-      <div class="btns">
-        <!-- ВАРИАНТ 1: просто вернуть на главную -->
+      <div class="btns utility-status-actions">
         <a class="btn primary" href="https://irem.centerway.net.ua/">Спробувати ще раз</a>
       </div>
 
-      <p class="muted" id="orderLine">Дані платежу: завантаження…</p>
+      <div class="utility-status-meta">
+        <p class="muted" id="orderLine">Дані платежу: завантаження…</p>
 
-      <div class="hint">
-        <p class="muted" style="margin:0;">
+        <div class="hint">
+          <p class="muted" style="margin:0;">
           Поради 🛠️<br/>
           • Перевірте баланс / ліміт на карті<br/>
           • Спробуйте Apple Pay / Google Pay або іншу картку<br/>
           • Якщо відкривали оплату в Telegram — натисніть ⋮ → <b>Відкрити в браузері</b>
+          </p>
+        </div>
+
+        <p class="muted" style="margin-top:14px;">
+          Якщо проблема повторюється — напишіть у підтримку і надішліть скрін/час спроби оплати.
         </p>
       </div>
-
-      <p class="muted" style="margin-top:14px;">
-        Якщо проблема повторюється — напишіть у підтримку і надішліть скрін/час спроби оплати.
-      </p>
     </div>
   </div>
 

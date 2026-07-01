@@ -2,7 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const ROOT = process.cwd();
-const DEFAULT_TARGET = path.join(ROOT, "src", "landing-static", "cw", "landing", "revork.css");
+const DEFAULT_TARGET = path.join(ROOT, "src", "landing-static", "shared", "css", "funnel-network.css");
 const STEP_PX = 4;
 
 const RHYTHM_PROP_RE =
@@ -65,4 +65,3 @@ main().catch((error) => {
   console.error("Rhythm grid guard crashed:", error instanceof Error ? error.message : String(error));
   process.exit(1);
 });
-
