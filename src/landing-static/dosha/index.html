@@ -11,17 +11,21 @@
   <meta property="og:title" content="Тест доші — дізнайтесь свою конституцію за 3 хвилини">
   <meta property="og:description" content="12 запитань, результат одразу. Зрозумійте свій тип обміну — і перестаньте вгадувати з дієтами.">
   <link rel="stylesheet" href="/shared/css/funnel-network.css">
+  <link rel="stylesheet" href="/shared/css/network-nav.css">
   <link rel="stylesheet" href="page.css">
 </head>
 <body>
   <div class="cw-shell">
-    <header class="cw-nav">
-      <div class="cw-wrap cw-nav__inner">
-        <a class="cw-brand" href="/">
+    <header class="cwn" data-cw-network-nav>
+      <div class="cwn__in">
+        <a class="cwn__brand" href="/">
           <img src="/way21/img/cw-logo.png" alt="" aria-hidden="true">
           <span>CenterWay</span>
         </a>
-        <nav class="cw-nav__links" aria-label="Навігація по мережі CenterWay">
+        <button class="cwn__toggle" type="button" aria-expanded="false" aria-controls="cwn-menu" aria-label="Меню мережі CenterWay">
+          <span></span><span></span><span></span>
+        </button>
+        <nav class="cwn__menu" id="cwn-menu" aria-label="Мережа CenterWay">
           <a href="https://way21.centerway.net.ua/">Шлях 21</a>
           <a href="https://resetday.centerway.net.ua/">Розвантажувальний день</a>
           <a href="https://dosha.centerway.net.ua/" aria-current="page">Тест доші</a>
@@ -230,5 +234,6 @@
   </div>
 
   <script src="/shared/js/funnel-network.js" defer></script>
+  <script src="/shared/js/network-nav.js" defer></script>
 </body>
 </html>

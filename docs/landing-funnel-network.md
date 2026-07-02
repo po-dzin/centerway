@@ -37,7 +37,7 @@ All five are `funnelRuntime: "landing-app"` static hosts in `src/landing-static/
 ## Implementation
 
 - Shared network runtime: `src/landing-static/shared/js/funnel-network.js` + `src/landing-static/shared/css/funnel-network.css` (reveal, sticky CTA, smooth anchors, cross-node nav block).
-- The cross-node nav block is carried by `consult`, `dosha`, `herbs` (human-readable Ukrainian labels: Шлях 21 / Розвантажувальний день / Тест доші / Фітозбори / Консультація); the `way21 ↔ reset-day` pair is linked directly both ways.
+- Cross-node navigation is carried by **all five nodes** via one shared component: `shared/css/network-nav.css` + `shared/js/network-nav.js` (burger below 760px, topbar at 760px+, `--cw-nav-*` component tokens with per-landing palette mapping; human-readable Ukrainian labels: Шлях 21 / Розвантажувальний день / Тест доші / Фітозбори / Консультація). The `way21 ↔ reset-day` pair is additionally linked by content bridges both ways.
 - `dosha`, `consult`, `herbs` are full marketing pages (visitor-facing Ukrainian copy: value proposition, method-depth section with bounded claims, author authority, FAQ), not internal "surface" placeholders.
 - Cross-prefix assets are safe on any funnel host: `/shared/**` and `/way21/**` are in `LANDING_STATIC_BRANDS`, bypass the proxy, and are served by the `[brand]/[...path]` catch-all (the three cw-pages reuse `/way21/img/cw-logo.png` and `/way21/img/curator-photo.webp`).
 - Host → route resolution: `src/proxy.ts` middleware + `src/lib/surfaces/catalog.ts` surface registry.
