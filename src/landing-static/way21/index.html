@@ -441,7 +441,7 @@
           <li>Персональний протокол і корекція по ходу</li>
           <li>Індивідуальне ведення та прямий зв'язок у Telegram</li>
         </ul>
-        <a href="#offer" class="btn btn-primary fc-cta openModal" data-cw-product="way21-support" data-cw-offer-id="way21_support_9000" data-cw-price-value="9000">Обрати супровід <span class="arr">→</span></a>
+        <button type="button" class="btn btn-primary fc-cta" data-lead-open="way21-support">Залишити заявку <span class="arr">→</span></button>
         <div class="fc-guarantee"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Максимальний результат</div>
       </div>
 
@@ -579,7 +579,27 @@ document.querySelectorAll('.acc').forEach(group=>{
   });
 });
 </script>
+<!-- Premium (individual supervision) lead-capture modal. Program → product_code in /api/leads. -->
+<div class="lead-modal" data-lead-modal hidden>
+  <div class="lead-modal__backdrop" data-lead-close></div>
+  <div class="lead-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="leadModalTitle">
+    <button type="button" class="lead-modal__x" data-lead-close aria-label="Закрити">×</button>
+    <p class="lead-modal__program">Шлях 21 — індивідуальний супровід</p>
+    <h3 id="leadModalTitle" class="lead-modal__title">Залиште заявку на супровід</h3>
+    <p class="lead-modal__sub">Ми зв'яжемось з вами, щоб узгодити старт і формат індивідуального ведення.</p>
+    <form data-lead-form data-lead-product="way21-support" novalidate>
+      <input class="lead-modal__input" name="name" type="text" autocomplete="name" placeholder="Ім'я" required>
+      <input class="lead-modal__input" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="Телефон">
+      <input class="lead-modal__input" name="email" type="email" autocomplete="email" placeholder="Email">
+      <textarea class="lead-modal__input" name="message" rows="3" placeholder="Коментар (необов'язково)"></textarea>
+      <button type="submit" class="btn btn-primary lead-modal__submit">Надіслати заявку <span class="arr">→</span></button>
+      <p class="lead-modal__status" data-lead-status hidden></p>
+    </form>
+  </div>
+</div>
+
 <!-- checkout + attribution wiring (same flow as /irem): .openModal -> /api/pay/start?product=way21 -->
 <script src="js/common.js" async></script>
+<script src="/shared/js/lead-form.js" defer></script>
 </body>
 </html>
