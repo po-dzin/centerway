@@ -14,8 +14,7 @@ const files = {
   landingContent: path.join(rootDir, "src/lib/landing/content.ts"),
   shortProduct: path.join(staticRootDir, "short/css/short.product.css"),
   shortResponsive: path.join(staticRootDir, "short/css/short.product.responsive.css"),
-  iremProduct: path.join(staticRootDir, "irem/css/irem.product.css"),
-  iremResponsive: path.join(staticRootDir, "irem/css/irem.product.responsive.css"),
+  iremTheme: path.join(staticRootDir, "irem/css/irem.theme.css"),
   shortIndex: path.join(staticRootDir, "short/index.html"),
   iremIndex: path.join(staticRootDir, "irem/index.html"),
   shortIndex2: path.join(staticRootDir, "short/index2.html"),
@@ -246,6 +245,18 @@ function assertSourceHtmlHealth() {
 function assertProductCssGuardrails(filePath, product) {
   const labelPrefix = path.relative(rootDir, filePath);
   assertNoRawHex(filePath, `${labelPrefix}: no raw hex in component rules`);
+  assertCrossLayerConsumptionGuardrails(filePath, product);
+}
+
+// Theme-layer files (irem.theme.css since 23b992a replaced irem.product.css)
+// own their local color primitives, so raw hex is allowed there — only
+// consumption of foreign token layers is forbidden.
+function assertThemeCssGuardrails(filePath, product) {
+  assertCrossLayerConsumptionGuardrails(filePath, product);
+}
+
+function assertCrossLayerConsumptionGuardrails(filePath, product) {
+  const labelPrefix = path.relative(rootDir, filePath);
   assertNoConsumptionPattern(filePath, /var\(--legacy-color-/g, `${labelPrefix}: no legacy-color consumption`);
   assertNoConsumptionPattern(filePath, /var\(--product-color-ref-/g, `${labelPrefix}: no product-color-ref consumption`);
   assertNoConsumptionPattern(filePath, /var\(--product-/g, `${labelPrefix}: no product-* consumption`);
@@ -396,8 +407,7 @@ function main() {
 
   assertProductCssGuardrails(files.shortProduct, "short");
   assertProductCssGuardrails(files.shortResponsive, "short");
-  assertProductCssGuardrails(files.iremProduct, "irem");
-  assertProductCssGuardrails(files.iremResponsive, "irem");
+  assertThemeCssGuardrails(files.iremTheme, "irem");
   assertHeroTypedContentParity();
 
   if (process.exitCode) {
