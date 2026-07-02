@@ -83,13 +83,8 @@
 
 .cwn__brand img {
   display: block;
-  box-sizing: border-box;
-  width: 2.1rem;
-  height: 2.1rem;
-  padding: 0.22rem;
-  border-radius: 999px;
-  /* The CW mark is white — keep it on an ink disc on light canvases. */
-  background: var(--cw-nav-ink);
+  width: 2.25rem;
+  height: 2.25rem;
 }
 
 .cwn__menu {
