@@ -55,11 +55,12 @@
 1. Удалены `landingBase` и `landingBrandOverrides` из `cw.tokens.json` (ноль потребителей; проверено гейтами после удаления). Если hex из этих секций требовался allowlist'у canon:guard — значение добавляется в живой токен-источник, а не в мёртвую секцию.
 2. Спека `design-system-spec-2026-05-17.md` получает пометку о нереализованных сущностях (7 brand modes, роль `organic`) — блок «Aspirational, not implemented». Спека описывает то, что есть.
 
-### Этап 2 — Один словарь «semantic» (≈1 день)
+### Этап 2 — Один словарь «semantic» ✅ применён 2026-07-03
 
-1. Развести имена по осям: визуальный тон = «semantic role» (токены `--cw-sem-*`); роль контента в манифестах → `content_role` (или таблица соответствия при сохранении имени); `semantic_family` vs `family` привести к одному набору значений.
-2. Одна таблица соответствия `content_role → визуальные semantic-токены → блоки-потребители` в живом доке ДС.
-3. Слить `design-system-spec-2026-05-17.md` + `design-system-brandbook-extract-2026-06-27.md` в один живой `docs/design-system.md` (вне archive); старые — заглушки-указатели.
+Поправка при верификации: `semantic_family` (block_manifests) и `family` (semantic_block_layer) оказались **согласованы по всем 33 блокам** — «третий словарь» из аудита не подтвердился. Реальных осей две с половиной: content role (`semantic_role`), block family (`semantic_family`/`family`, единый набор), visual tone (`primary_semantic`/`semantic_tags`/`token_recipes` = словарь `--cw-sem-*`). Переименование полей в данных не понадобилось — вместо churn'а зафиксирована таблица осей.
+
+1. Создан живой `docs/design-system.md`: таблица трёх осей + per-block mapping (12 типов блоков), карта токен-префиксов (source → consumers → guard), границы покрытия контрактного слоя, aspirational ledger, validation stack.
+2. Архивные `design-system-spec-2026-05-17.md` и `design-system-brandbook-extract-2026-06-27.md` получили superseded-баннеры; `docs/LOCAL_DOCS.md` включает новый док в active root set.
 
 ### Этап 3 — Сжать слои до трёх (2–3 дня)
 

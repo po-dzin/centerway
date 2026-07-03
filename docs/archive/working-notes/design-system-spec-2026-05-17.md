@@ -1,5 +1,8 @@
 # CenterWay Design System Spec — 2026-05-17
 
+> **Superseded (2026-07-03):** the living reference is `docs/design-system.md`.
+> This file is kept as a dated snapshot; do not update it for new work.
+
 ## Status
 
 Local repo spec.

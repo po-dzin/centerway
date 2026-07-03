@@ -1,5 +1,8 @@
 # CenterWay Design System Brandbook Extract
 
+> **Superseded (2026-07-03):** the living reference is `docs/design-system.md`.
+> This file is kept as a dated snapshot; do not update it for new work.
+
 ## Status
 
 Local operational extract from the current codebase as of 2026-06-27.

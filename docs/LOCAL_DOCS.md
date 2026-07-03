@@ -20,6 +20,7 @@ Keep only these files in the root of `docs/`:
 - `docs/CANON.md`
 - `docs/LOCAL_DOCS.md`
 - `docs/platform_agent_preflight.md`
+- `docs/design-system.md` (living DS reference; archived DS snapshots point here)
 
 Keep these root directories:
 
