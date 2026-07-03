@@ -95,17 +95,18 @@ The contract layer (`route_family_contracts.json` → `screen_manifests.json` �
 
 ## Validation Stack
 
-`npm run ds:qa` = canon:guard → tokens:check → guard:ds-contract → generator:validate → semantic:audit → lint → build.
+`npm run ds:qa` = canon:guard → tokens:check → guard:ds-contract → guard:contrast → generator:validate → semantic:audit → lint → build.
 
 | Gate | What it actually covers |
 |---|---|
-| `canon:guard` | canon files exist, preflight sentinels, raw-hex allowlist over platform CSS, manifest cross-references |
+| `canon:guard` | canon files exist, preflight sentinels, raw-hex allowlist + no local `--cw-*` defs over platform CSS, manifest cross-references |
 | `tokens:check` | codegen JSON→CSS is a no-op on a clean tree (drift gate) |
-| `guard:ds-contract` | legacy DS bridge tokens, landing token contracts, cross-layer consumption bans, hero content parity |
+| `guard:ds-contract` | `--ds-*` delivery + landing token contracts, required `--cw-sem-*`/`--cw-platform-*` floor, cross-layer consumption bans, no `--cw-color-*` reintroduction, hero content parity |
+| `guard:contrast` | WCAG contrast of text/CTA pairs resolved from `cw.tokens.json` (body ≥ 4.5, large/CTA fills ≥ 3.0) |
 | `generator:validate` + snapshot/determinism/language/rhythm | generator layer |
-| `semantic:audit` | route-family contracts, block order, route invariants (alias redirects) |
+| `semantic:audit` | route-family contracts, block order, route invariants (alias redirects exist + redirect correctly) |
 
-Known gaps (roadmap stage 4): no automated contrast check; `--cw-sem-*` / `--cw-platform-*` layer has no required-token guard.
+Contrast watch (`guard:contrast`): two CTA fills sit in the large-text tier below body AA — `accent-contrast` on `guide-primary` (4.34) and on `boundary` (4.17). They pass at 3.0 as large/semibold labels but are the first candidates if the palette is retuned for a stricter bar.
 
 ## Aspirational Ledger (not implemented)
 

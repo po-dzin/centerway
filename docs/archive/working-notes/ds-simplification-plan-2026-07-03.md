@@ -72,11 +72,14 @@
 
 Верификация эквивалентности: last-wins карта токенов `:root`/`.dark` против HEAD — удалены ровно 13 мёртвых `--cw-color-*` на селектор, добавлен `--cw-sem-trust`, два косметических эквивалента (кавычки font-family; `--cw-card-border` → напрямую `var(--cw-border)`). Полный гейт-сет + build зелёные.
 
-### Этап 4 — Guards под новую структуру (≈1 день)
+### Этап 4 — Guards под новую структуру ✅ применён 2026-07-03
 
-1. Расширить `guard-ds-contract.mjs` на семантический слой: required-список `--cw-sem-*`/`--cw-platform-*`; запрет потребления `--cw-color-*` вне легаси-allowlist; запрет raw hex в `src/components/**` (сейчас это делает только canon:guard по platform CSS).
-2. Контраст-чек WCAG AA на пары text/bg из `cw.tokens.json` + token packs; в `ds:qa`.
-3. В `semantic-audit.mjs` — обратная проверка «каждый физический route-инвариант существует в `src/app`», чтобы рефакторинги роутов больше не оставляли мёртвых проверок (частично закрыто на этапе 0 через existsSync-fail).
+1. `guard-ds-contract.mjs` расширен на семантический слой: required-floor `--cw-sem-*`/`--cw-platform-*` (18 токенов) на `globals.css`; `assertNoRepoPattern` запрещает реинтродукцию удалённого `--cw-color-*`. Raw-hex в компонентах **не дублируем** — уже покрыто canon:guard по `src/components/platform` (плюс запрет локальных `--cw-*` определений).
+2. Новый `scripts/guard-contrast.mjs` + `guard:contrast` в `ds:qa`: резолвит `var()`/`color-mix(in srgb,…)` из `cw.tokens.json` и проверяет WCAG на реальных парах text-on-surface. Порог: body/heading ≥ 4.5, CTA-заливки (крупный/полужирный лейбл) ≥ 3.0. Token-packs **не** покрываем — у них ноль потребителей (этап 3.3 отложен); добавить пары при активации первого пака.
+   - **Зафиксированный факт:** две CTA-заливки ниже body-AA — `accent-contrast` на `guide-primary` (4.34) и на `boundary` (4.17). Проходят large-tier 3.0, но это первые кандидаты на подтюнинг палитры. Оформлено явно, не занижением планки.
+3. Обратная route-проверка: считаем существенно закрытой этапом 0 (alias-инварианты в `semantic-audit.mjs` теперь падают через existsSync-fail, а не ENOENT). Полную проверку «каждый contract `route_path` существует в `src/app`» **не** вводим — funnel-entry пути внутренние для генератора, не файловые роуты; такой чек давал бы ложные фейлы.
+
+Гейт-сет после этапа 4: `canon:guard` · `tokens:check` · `guard:ds-contract` · `guard:contrast` · `generator:validate` · `semantic:audit` · lint · build — все зелёные.
 
 ## 3. Что осознанно НЕ делаем
 
