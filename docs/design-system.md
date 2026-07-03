@@ -23,6 +23,8 @@ generator manifests (contracts → screens → blocks → semantic blocks) ─�
 
 The generated CSS is intentionally flat: layering lives in the JSON source and in this document, not in the runtime artifact.
 
+Codegen-owned marker blocks in `globals.css` (never edit by hand — edit `cw.tokens.json` and run `tokens:build`): `CW_BASE_LIGHT`, `CW_BASE_DARK`, `CW_RUNTIME_TOKENS`, `DS_ALIAS_LIGHT`, `DS_ALIAS_DARK`. Hand-maintained remainder: `--cw-platform-visual-*` gradient stops and everything outside `@layer base` token blocks.
+
 ## Vocabulary — the one table
 
 The word "semantic" covers **three different axes** in this codebase. They are consistent with each other (verified per-block 2026-07-03), but they answer different questions. Never use one axis's values in another's field.
@@ -56,13 +58,15 @@ Target architecture is three layers (see roadmap stage 3). Current state, prefix
 
 | Prefix | Layer | Source of truth | Consumers | Guarded by |
 |---|---|---|---|---|
+| `--cw-bg/text/accent/status-*` etc. | app-chrome base (light `:root` + admin dark `.dark`) | `cw.tokens.json` → `base.light` / `base.dark` (codegen-owned since 2026-07-03) | app/admin components, DS delivery refs | tokens:check (drift), canon:guard (hex allowlist) |
 | `--cw-sem-*` | semantic (visual roles) | `cw.tokens.json` → `layers.semanticAliases` | platform component CSS | canon:guard (hex allowlist only) |
-| `--cw-platform-*` | mode alias over semantic | `cw.tokens.json` → `layers.modeOverrides.platform` | platform shell/blocks | canon:guard (hex allowlist only) |
+| `--cw-platform-*` | mode alias over semantic (`visual-*` gradients stay hand-maintained in `globals.css`) | `cw.tokens.json` → `layers.modeOverrides.platform` | platform shell/blocks | canon:guard (hex allowlist only) |
 | `--cw-depth-*`, `--cw-component-glass-*` | component recipes | `cw.tokens.json` → `layers.componentRecipes` | platform components | canon:guard |
-| `--ds-*` | delivery alias | `cw.tokens.json` → `delivery.dsAlias` + hand-maintained "Platform DS contract" block in `globals.css` | platform + landing bridge | guard:ds-contract (required-token list) |
-| `--cw-color-*` | **legacy** DS bridge | `cw.tokens.json` → `appAlias` | older components | guard:ds-contract; deprecation = roadmap stage 3.1 |
-| `--cw-role-*`, `--cw-cta-*` | generator theme packs | `token_packs.json` | **none yet** — wired into `themeCatalog.ts`, zero CSS consumers; official theming mechanism per roadmap stage 3.3 | generator:validate |
+| `--ds-*` | delivery alias | `cw.tokens.json` → `delivery.dsAlias` (full contract incl. type/button/offer-card scales; codegen-owned since 2026-07-03) | platform + landing bridge | guard:ds-contract (required-token list), tokens:check |
+| `--cw-role-*`, `--cw-cta-*` | generator theme packs | `token_packs.json` | **none yet** — wired into `themeCatalog.ts`, zero CSS consumers; designated per-author theming mechanism, activation deferred until a second real theme exists | generator:validate |
 | `--landing-*`, `--product-*`, irem `--color-*` | isolated landing themes | `src/landing-static/**` (hand-maintained) | Short/IREM landings only | guard:ds-contract (cross-layer consumption bans) |
+
+Removed layers: `--cw-color-*` (legacy DS bridge, `appAlias`) was deleted 2026-07-03 — it had zero component consumers. Do not reintroduce the prefix.
 
 Rules that hold today:
 
@@ -109,5 +113,5 @@ Kept out of the descriptive sections above on purpose:
 
 - **7 brand modes** (`sanctuary`, `guide`, `method`, `proof`, `practice`, `progress`, `community`) — concept only; no token, attribute, or class carries them.
 - **`organic` visual role** — named in old spec, no token exists.
-- **`trust` as a first-class token** — currently only the legacy alias `--cw-color-trust-info: var(--cw-status-running)`; honest `--cw-sem-trust` is roadmap stage 3.1.
+- ~~`trust` as a first-class token~~ — resolved 2026-07-03: `--cw-sem-trust: #35535f` exists in `layers.semanticAliases` (value carried over from the historic trust palette). Consumers migrate as they are touched.
 - **Per-author theming in production** — mechanism exists (`token_packs.json`), zero consumers; activation is stage 3.3.

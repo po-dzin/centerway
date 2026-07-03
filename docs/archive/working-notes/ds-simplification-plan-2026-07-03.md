@@ -62,11 +62,15 @@
 1. Создан живой `docs/design-system.md`: таблица трёх осей + per-block mapping (12 типов блоков), карта токен-префиксов (source → consumers → guard), границы покрытия контрактного слоя, aspirational ledger, validation stack.
 2. Архивные `design-system-spec-2026-05-17.md` и `design-system-brandbook-extract-2026-06-27.md` получили superseded-баннеры; `docs/LOCAL_DOCS.md` включает новый док в active root set.
 
-### Этап 3 — Сжать слои до трёх (2–3 дня)
+### Этап 3 — Сжать слои до трёх ✅ применён 2026-07-03
 
-1. Депрекация `--cw-color-*`: потребители переводятся на `--ds-*`/`--cw-sem-*`; guard запрещает новые потребления. Завести честный `--cw-sem-trust` вместо `--cw-color-trust-info: var(--cw-status-running)`.
-2. Дедупликация `DS_ALIAS_*` vs рукописного «Platform DS contract» в `globals.css`: одни и те же `--ds-*` имена не должны объявляться дважды в одном селекторе; победить должен один источник (кодоген), рукописный блок сокращается до токенов, которых нет в JSON.
-3. `token_packs.json` — официальный единственный механизм тем: platform-тема материализуется как pack (текущий `:root` ≈ `token_pack.living-mineral.v1`), кодоген собирает `:root` из пака. Автор №3 = новый pack + маршрутизация, ноль новых механизмов. Сущность `author` в данные НЕ вводится (решение 2026-06-20 в силе — до LMS); pack привязан к поверхности/бренду как `hostBrand`.
+Поправка при верификации: `--cw-color-*` имел **ноль потребителей** в компонентах (единственные ссылки — внутри самого `globals.css`), поэтому «депрекация с миграцией потребителей» превратилась в чистое удаление слоя.
+
+1. Слой `appAlias` (`--cw-color-*`, 13×2 токенов) удалён из `cw.tokens.json` и `globals.css`. Заведён честный `--cw-sem-trust: #35535f` (значение — исторический trust-цвет из landingBase) вместо `--cw-color-trust-info: var(--cw-status-running)`.
+2. Дедупликация выполнена в пользу кодогена: рукописный «Platform DS contract» блок (light, 70 токенов — включая type/button/offer-card шкалы) перенесён в `delivery.dsAlias.light`; рукописный dark-контракт (полный дубль `DS_ALIAS_DARK`) удалён; мёртвые рукописные копии `sem/depth/platform/glass/shell` в `:root` (затенённые `CW_RUNTIME`) удалены. `--ds-radius-button-soft` остался в base (button shape contract).
+3. Кодоген владеет базовым брендовым слоем: `:root`/`.dark` app-chrome токены (98 light + 82 dark) перенесены в `cw.tokens.json → base.light/base.dark`, эмитятся через маркеры `CW_BASE_LIGHT/DARK`. Рукописными в `@layer base` остались только `--cw-platform-visual-*` градиенты. «Тема = данные» теперь верно для всей поверхности токенов. Материализация как generator-pack НЕ сделана осознанно: пак в `data/generator/token_packs.json` попал бы в `themeCatalog` как тема генератора — вместо этого `base` живёт в `cw.tokens.json`; активация pack-механизма на автора — при появлении второй реальной темы. Сущность `author` не вводится (решение 2026-06-20 в силе).
+
+Верификация эквивалентности: last-wins карта токенов `:root`/`.dark` против HEAD — удалены ровно 13 мёртвых `--cw-color-*` на селектор, добавлен `--cw-sem-trust`, два косметических эквивалента (кавычки font-family; `--cw-card-border` → напрямую `var(--cw-border)`). Полный гейт-сет + build зелёные.
 
 ### Этап 4 — Guards под новую структуру (≈1 день)
 
