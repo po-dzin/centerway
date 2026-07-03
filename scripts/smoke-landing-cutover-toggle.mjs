@@ -82,10 +82,16 @@ function parseTypedHeroStringsByProduct() {
     for (const key of typedHeroKeys) {
       const keyRegex = new RegExp(`${escapeRegExp(key)}\\s*:\\s*"([^"]+)"`, "m");
       const keyMatch = heroBlock.match(keyRegex);
-      if (!keyMatch) {
-        throw new Error(`typed hero parse failed: missing key ${product}.hero.${key}`);
+      if (keyMatch) {
+        heroStrings.push({ key, value: keyMatch[1] });
+        continue;
       }
-      heroStrings.push({ key, value: keyMatch[1] });
+      // Nullable hero fields (lead, note, priceOld) carry no string to assert.
+      const nullRegex = new RegExp(`${escapeRegExp(key)}\\s*:\\s*null`, "m");
+      if (nullRegex.test(heroBlock)) {
+        continue;
+      }
+      throw new Error(`typed hero parse failed: missing key ${product}.hero.${key}`);
     }
 
     byProduct[product] = heroStrings;
