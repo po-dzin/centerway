@@ -1,13 +1,19 @@
+/* herbs — mineral green + gold, aligned to the platform-author premium network
+   (way21 / reset-day core). Values trace to the platform semantic palette in
+   data/design-tokens/cw.tokens.json: accent = --cw-sem-guide-primary /
+   --cw-sem-embodied family, gold = --cw-sem-warmth (#dba54f), canvas ≈
+   --cw-sem-calm-bg. herbs is the nature node, so it carries a slightly leafier
+   green (--cw-sem-embodied #6e8668 deepened) while staying inside the family. */
 [data-cw-landing="herbs"] {
-  --cw-canvas: #f6f3ea;
-  --cw-ink: #273529;
-  --cw-text: #415145;
-  --cw-text-soft: #718170;
-  --cw-accent: #658a4d;
-  --cw-accent-strong: #385425;
+  --cw-canvas: #f7f4ec;
+  --cw-ink: #22392b;
+  --cw-text: #2f4536;
+  --cw-text-soft: #63736a;
+  --cw-accent: #5f8757;
+  --cw-accent-strong: #2f4b24;
   --cw-accent-soft: #eef5e6;
-  --cw-gold: #d5aa5f;
-  --cw-gold-strong: #b98c35;
-  --cw-gold-ink: #283526;
+  --cw-gold: #dba54f;
+  --cw-gold-strong: #c2902f;
+  --cw-gold-ink: #22392b;
   --cw-hero-focus: center 12%;
 }

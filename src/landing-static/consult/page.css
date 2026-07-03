@@ -1,13 +1,19 @@
+/* consult — mineral green + gold, aligned to the platform-author premium network
+   (way21 / reset-day core). Values trace to the platform semantic palette in
+   data/design-tokens/cw.tokens.json: accent = --cw-sem-guide-primary (#4f7e76),
+   gold = --cw-sem-warmth (#dba54f), canvas ≈ --cw-sem-calm-bg. consult is the
+   personal-trust node, so it carries the bright mineral accent within the same
+   family (a touch lighter than the dosha diagnostic core). */
 [data-cw-landing="consult"] {
-  --cw-canvas: #f5f1ec;
-  --cw-ink: #253238;
-  --cw-text: #3e4d53;
-  --cw-text-soft: #6e7a80;
-  --cw-accent: #4c7487;
-  --cw-accent-strong: #294b5d;
-  --cw-accent-soft: #ebf3f7;
-  --cw-gold: #d7a56c;
-  --cw-gold-strong: #bc874d;
-  --cw-gold-ink: #26343a;
+  --cw-canvas: #f7f4ec;
+  --cw-ink: #1d3a30;
+  --cw-text: #2c4137;
+  --cw-text-soft: #5f6f66;
+  --cw-accent: #4f7e76;
+  --cw-accent-strong: #234b41;
+  --cw-accent-soft: #e9f1ec;
+  --cw-gold: #dba54f;
+  --cw-gold-strong: #c2902f;
+  --cw-gold-ink: #1d3a30;
   --cw-hero-focus: center 12%;
 }
