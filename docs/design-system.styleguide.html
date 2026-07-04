@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>CenterWay — Semantic Design System Styleguide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400&family=Manrope:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet" />
+<style>
+  /* ============================================================
+     CenterWay DS — this styleguide dogfoods the real token layers.
+     Values are copied verbatim from data/design-tokens/cw.tokens.json
+     (base.light + layers + delivery) and data/generator/token_packs.json.
+     Source of truth stays the JSON; this file is a rendered reference.
+     ============================================================ */
+  :root {
+    /* Layer 1 — primitives (layers.primitives.color) */
+    --p-mineral-air: #F6F2EA;
+    --p-mineral-ink: #31403E;
+    --p-route-teal: #4F7E76;
+    --p-life-green: #6E8668;
+    --p-warmth: #C1906B;
+    --p-boundary: #B76045;
+
+    /* Layer 2 — semantic aliases (layers.semanticAliases) */
+    --cw-sem-calm-bg: #f6f2ea;
+    --cw-sem-calm-surface: #fbfaf6;
+    --cw-sem-calm-surface-muted: #e9e2d6;
+    --cw-sem-method-ink: #31403e;
+    --cw-sem-guide-primary: #4f7e76;
+    --cw-sem-guide-strong: #1e3d34;
+    --cw-sem-embodied: #6e8668;
+    --cw-sem-progress: #c1906b;
+    --cw-sem-warmth: #dba54f;
+    --cw-sem-boundary: #b76045;
+    --cw-sem-trust: #35535f;
+
+    /* Layer 3 — platform mode override (layers.modeOverrides.platform) */
+    --cw-platform-bg: var(--cw-sem-calm-bg);
+    --cw-platform-surface: var(--cw-sem-calm-surface);
+    --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
+    --cw-platform-text: #0d1b17;
+    --cw-platform-muted: color-mix(in srgb, var(--cw-platform-text) 64%, var(--cw-platform-bg) 36%);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-progress) 38%, var(--cw-platform-bg) 62%);
+    --cw-platform-accent: var(--cw-sem-warmth);
+    --cw-platform-accent-strong: var(--cw-sem-guide-strong);
+    --cw-platform-accent-contrast: #fff8eb;
+
+    /* Layer 4 — component recipes: depth (layers.componentRecipes.depth) */
+    --cw-depth-card-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 92%, var(--cw-sem-calm-surface-muted) 8%);
+    --cw-depth-support-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 88%, var(--cw-sem-calm-surface-muted) 12%);
+    --cw-depth-proof-bg: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-sem-calm-surface) 38%);
+    --cw-depth-boundary-bg: color-mix(in srgb, var(--cw-sem-boundary) 10%, var(--cw-sem-calm-surface) 90%);
+    --cw-depth-icon-slot-bg: color-mix(in srgb, var(--cw-sem-warmth) 9%, var(--cw-sem-calm-surface) 91%);
+    --cw-depth-rail-color: var(--cw-sem-progress);
+    --cw-depth-shadow-soft: 0 14px 35px rgba(35, 29, 20, 0.08);
+    --cw-depth-shadow-medium: 0 18px 42px rgba(35, 29, 20, 0.12);
+    --cw-depth-shadow-strong: 0 24px 48px rgba(24, 20, 14, 0.16);
+
+    /* Layer 4 — component recipes: glass */
+    --cw-component-glass-bg: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+    --cw-component-glass-border: transparent;
+    --cw-component-glass-filter: blur(24px) saturate(1.36) brightness(0.92);
+    --cw-component-glass-shadow: 0 12px 28px color-mix(in srgb, var(--cw-platform-text) 20%, transparent);
+
+    /* Layer 5 — delivery --ds-* (delivery.dsAlias.light) */
+    --cw-font-ui: "Manrope", "Segoe UI", sans-serif;
+    --cw-font-editorial: "Cormorant Garamond", "Times New Roman", serif;
+    --cw-font-data: "IBM Plex Mono", ui-monospace, monospace;
+    --ds-font-family-base: var(--cw-font-ui);
+    --ds-space-1: 0.25rem; --ds-space-2: 0.5rem; --ds-space-3: 0.75rem;
+    --ds-space-4: 1rem; --ds-space-5: 1.5rem; --ds-space-6: 2rem; --ds-space-7: 3rem;
+    --ds-radius-sm: 0.75rem; --ds-radius-md: 1rem; --ds-radius-lg: 1.25rem; --ds-radius-pill: 62.4375rem;
+    --ds-touch-target-min: 3rem;
+    --ds-button-padding-inline: 1.15rem;
+    --ds-type-label-size: 0.75rem; --ds-type-label-line-height: 1rem;
+    --ds-type-body-size: 1rem; --ds-type-body-line-height: 1.6;
+    --ds-type-lead-size: clamp(1rem, 1.5vw, 1.125rem); --ds-type-lead-line-height: 1.6;
+    --ds-type-title-size: clamp(2.25rem, 4.9vw, 3.75rem); --ds-type-title-line-height: 1.04;
+    --ds-type-hero-size: clamp(3.25rem, 7.6vw, 6.75rem); --ds-type-hero-line-height: 0.96;
+    --ds-type-display-size: clamp(1.5rem, 3vw, 2.2rem); --ds-type-display-line-height: 1.08;
+
+    /* app-chrome base tokens the pack switcher overrides live */
+    --cw-bg: #F6F2EA; --cw-surface-solid: #FBF8F2; --cw-surface-muted: #F1ECE3;
+    --cw-text: #31403E; --cw-muted: #536360; --cw-border: #D3CFC6;
+    --cw-accent: #4F7E76; --cw-accent-soft: #D5E4DF; --cw-accent-strong: #3F6761; --cw-accent-contrast: #F7FCFA;
+    --cw-status-success: #6E8668; --cw-status-pending: #C1906B; --cw-danger: #A66A54;
+  }
+
+  /* Live pack switcher — proves per-author theming scales without
+     touching a single component. Overrides only chrome tokens. */
+  [data-pack="warm-mineral"]{--cw-bg:#F4EEE5;--cw-surface-solid:#FAF5EE;--cw-surface-muted:#F0E8DC;--cw-text:#353C3B;--cw-muted:#616867;--cw-border:#D8CCBC;--cw-accent:#A06F52;--cw-accent-soft:#E9D7C9;--cw-accent-strong:#8B5E45;--cw-accent-contrast:#FFF9F4;--cw-status-success:#6F7A63;--cw-status-pending:#C49A7A;--cw-danger:#A9605D;}
+  [data-pack="living-mineral"]{--cw-bg:#F6F2EA;--cw-surface-solid:#FBF8F2;--cw-surface-muted:#F1ECE3;--cw-text:#31403E;--cw-muted:#536360;--cw-border:#D3CFC6;--cw-accent:#4F7E76;--cw-accent-soft:#D5E4DF;--cw-accent-strong:#3F6761;--cw-accent-contrast:#F7FCFA;--cw-status-success:#6E8668;--cw-status-pending:#C1906B;--cw-danger:#A66A54;}
+  [data-pack="natural-premium"]{--cw-bg:#F3EEE6;--cw-surface-solid:#FAF6EF;--cw-surface-muted:#F0E9DE;--cw-text:#2F3534;--cw-muted:#596260;--cw-border:#D4CDC0;--cw-accent:#6D7E73;--cw-accent-soft:#DCE4DE;--cw-accent-strong:#55664E;--cw-accent-contrast:#F8FBF8;--cw-status-success:#55664E;--cw-status-pending:#B58363;--cw-danger:#9F6550;}
+  [data-pack="natural3"]{--cw-bg:#ECE3DA;--cw-surface-solid:#F7F1EA;--cw-surface-muted:#EFE5DB;--cw-text:#434F37;--cw-muted:#64715A;--cw-border:#CEC3B7;--cw-accent:#698C78;--cw-accent-soft:#D9E5DD;--cw-accent-strong:#557362;--cw-accent-contrast:#F6FBF8;--cw-status-success:#698C78;--cw-status-pending:#B6724F;--cw-danger:#975E47;}
+  [data-pack="curcuma"]{--cw-bg:#E8E2D4;--cw-surface-solid:#F4EEE2;--cw-surface-muted:#ECE3D2;--cw-text:#23120A;--cw-muted:#534237;--cw-border:#CFC3AE;--cw-accent:#BF6E26;--cw-accent-soft:#F0D9C4;--cw-accent-strong:#9E581A;--cw-accent-contrast:#FFF8F1;--cw-status-success:#698C78;--cw-status-pending:#BF785E;--cw-danger:#934F3B;}
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    background: var(--cw-bg);
+    color: var(--cw-text);
+    font-family: var(--cw-font-ui);
+    font-size: var(--ds-type-body-size);
+    line-height: var(--ds-type-body-line-height);
+    -webkit-font-smoothing: antialiased;
+    transition: background .4s ease, color .4s ease;
+  }
+  .wrap { max-width: 1160px; margin: 0 auto; padding: 0 var(--ds-space-6); }
+
+  /* ---- topbar ---- */
+  header.top {
+    position: sticky; top: 0; z-index: 50;
+    background: color-mix(in srgb, var(--cw-bg) 82%, transparent);
+    backdrop-filter: blur(14px) saturate(1.2);
+    border-bottom: 1px solid var(--cw-border);
+  }
+  .top-inner { display: flex; align-items: center; gap: var(--ds-space-5); padding: var(--ds-space-4) var(--ds-space-6); max-width: 1160px; margin: 0 auto; flex-wrap: wrap; }
+  .brand { font-family: var(--cw-font-editorial); font-size: 1.5rem; font-weight: 600; letter-spacing: .01em; }
+  .brand small { font-family: var(--cw-font-data); font-size: .7rem; letter-spacing: .08em; text-transform: uppercase; color: var(--cw-muted); display: block; line-height: 1; margin-top: 2px;}
+  .pack-switch { margin-left: auto; display: flex; align-items: center; gap: var(--ds-space-2); flex-wrap: wrap; }
+  .pack-switch span { font-family: var(--cw-font-data); font-size: .68rem; text-transform: uppercase; letter-spacing: .08em; color: var(--cw-muted); }
+  .pack-switch button {
+    font: inherit; font-size: .8rem; cursor: pointer;
+    padding: .35rem .7rem; border-radius: var(--ds-radius-pill);
+    border: 1px solid var(--cw-border); background: var(--cw-surface-solid); color: var(--cw-text);
+    transition: all .2s ease;
+  }
+  .pack-switch button[aria-pressed="true"] { background: var(--cw-accent); color: var(--cw-accent-contrast); border-color: var(--cw-accent); }
+
+  /* ---- hero ---- */
+  .hero { padding: var(--ds-space-7) 0 var(--ds-space-6); }
+  .hero h1 { font-family: var(--cw-font-editorial); font-size: var(--ds-type-title-size); line-height: var(--ds-type-title-line-height); font-weight: 600; margin: 0 0 var(--ds-space-4); }
+  .hero p.lead { font-size: var(--ds-type-lead-size); line-height: var(--ds-type-lead-line-height); max-width: 62ch; color: var(--cw-muted); margin: 0 0 var(--ds-space-5); }
+  .hero .chain { font-family: var(--cw-font-data); font-size: .82rem; color: var(--cw-text); background: var(--cw-surface-muted); border: 1px solid var(--cw-border); border-radius: var(--ds-radius-md); padding: var(--ds-space-4); overflow-x: auto; }
+  .hero .chain b { color: var(--cw-accent-strong); }
+
+  /* ---- section ---- */
+  section.block { padding: var(--ds-space-7) 0; border-top: 1px solid var(--cw-border); }
+  section.block > .wrap > .sec-head { margin-bottom: var(--ds-space-5); }
+  .sec-head .kicker { font-family: var(--cw-font-data); font-size: .7rem; text-transform: uppercase; letter-spacing: .1em; color: var(--cw-accent-strong); margin: 0 0 var(--ds-space-2); }
+  .sec-head h2 { font-family: var(--cw-font-editorial); font-size: var(--ds-type-display-size); line-height: var(--ds-type-display-line-height); font-weight: 600; margin: 0 0 var(--ds-space-3); }
+  .sec-head p { max-width: 70ch; color: var(--cw-muted); margin: 0; }
+
+  .grid { display: grid; gap: var(--ds-space-4); }
+  .g2 { grid-template-columns: repeat(2, 1fr); }
+  .g3 { grid-template-columns: repeat(3, 1fr); }
+  .g4 { grid-template-columns: repeat(4, 1fr); }
+  @media (max-width: 900px){ .g3,.g4 { grid-template-columns: repeat(2,1fr);} }
+  @media (max-width: 560px){ .g2,.g3,.g4 { grid-template-columns: 1fr;} .top-inner{gap:var(--ds-space-3);} }
+
+  /* swatch */
+  .swatch { border: 1px solid var(--cw-border); border-radius: var(--ds-radius-md); overflow: hidden; background: var(--cw-surface-solid); }
+  .swatch .chip { height: 84px; }
+  .swatch .meta { padding: var(--ds-space-3); }
+  .swatch .meta .name { font-weight: 600; font-size: .9rem; }
+  .swatch .meta .var { font-family: var(--cw-font-data); font-size: .72rem; color: var(--cw-muted); word-break: break-all; margin-top: 2px; }
+  .swatch .meta .role { font-size: .8rem; color: var(--cw-muted); margin-top: var(--ds-space-2); }
+
+  .card { background: var(--cw-surface-solid); border: 1px solid var(--cw-border); border-radius: var(--ds-radius-lg); padding: var(--ds-space-5); }
+  .muted { color: var(--cw-muted); }
+  code, .mono { font-family: var(--cw-font-data); font-size: .82rem; }
+  .pill { display:inline-block; font-family: var(--cw-font-data); font-size:.68rem; text-transform:uppercase; letter-spacing:.06em; padding:.2rem .55rem; border-radius: var(--ds-radius-pill); border:1px solid var(--cw-border); color: var(--cw-muted);}
+
+  /* type spec */
+  .type-row { display:flex; align-items: baseline; gap: var(--ds-space-5); padding: var(--ds-space-4) 0; border-bottom: 1px dashed var(--cw-border); flex-wrap: wrap;}
+  .type-row .spec { font-family: var(--cw-font-data); font-size:.72rem; color: var(--cw-muted); min-width: 200px; }
+
+  /* spacing viz */
+  .space-bar { background: var(--cw-accent-soft); border:1px solid var(--cw-accent); height: 20px; border-radius: 4px; }
+
+  /* buttons (CTA recipes) */
+  .btn { font: inherit; font-weight: 600; cursor: pointer; border-radius: var(--ds-radius-md); min-height: var(--ds-touch-target-min); padding: 0 var(--ds-button-padding-inline); display:inline-flex; align-items:center; justify-content:center; gap:.5rem; transition: all .2s ease; border: 1px solid transparent; }
+  .btn-primary { background: var(--cw-accent); color: var(--cw-accent-contrast); }
+  .btn-primary:hover { background: var(--cw-accent-strong); }
+  .btn-secondary { background: transparent; color: var(--cw-text); border-color: var(--cw-border); }
+  .btn-secondary:hover { background: var(--cw-surface-muted); }
+  .btn-ghost { background: transparent; color: var(--cw-accent-strong); }
+  .btn-ghost:hover { background: color-mix(in srgb, var(--cw-text) 8%, transparent); }
+
+  /* depth surfaces */
+  .depth-card { border-radius: var(--ds-radius-lg); padding: var(--ds-space-5); border:1px solid var(--cw-border); }
+
+  /* glass demo */
+  .glass-stage { position: relative; border-radius: var(--ds-radius-lg); overflow:hidden; min-height: 180px; display:flex; align-items:flex-end; padding: var(--ds-space-4);
+    background: linear-gradient(135deg, var(--cw-sem-guide-strong), var(--cw-sem-embodied) 60%, var(--cw-sem-progress)); }
+  .glass-panel { background: var(--cw-component-glass-bg); backdrop-filter: var(--cw-component-glass-filter); -webkit-backdrop-filter: var(--cw-component-glass-filter); box-shadow: var(--cw-component-glass-shadow); border: 1px solid var(--cw-component-glass-border); color: #fff; padding: var(--ds-space-3) var(--ds-space-4); border-radius: var(--ds-radius-md); font-size:.85rem; }
+
+  /* block vocab table */
+  table.vocab { width: 100%; border-collapse: collapse; font-size: .88rem; }
+  table.vocab th, table.vocab td { text-align: left; padding: var(--ds-space-3); border-bottom: 1px solid var(--cw-border); vertical-align: top; }
+  table.vocab th { font-family: var(--cw-font-data); font-size:.7rem; text-transform: uppercase; letter-spacing:.06em; color: var(--cw-muted); font-weight: 500;}
+  table.vocab .tone { display:inline-block; width:10px; height:10px; border-radius:50%; margin-right:6px; vertical-align: middle; }
+  table.vocab tr td .q { color: var(--cw-muted); font-style: italic; }
+
+  /* contrast */
+  .contrast-row { display:flex; align-items:center; gap: var(--ds-space-4); padding: var(--ds-space-3); border:1px solid var(--cw-border); border-radius: var(--ds-radius-md); margin-bottom: var(--ds-space-2); }
+  .contrast-chip { min-width: 120px; height: 48px; border-radius: 8px; display:flex; align-items:center; justify-content:center; font-weight:600; font-size:.85rem; }
+  .contrast-meta { font-family: var(--cw-font-data); font-size:.78rem; }
+  .badge-aa { color: var(--cw-status-success); font-weight:600;}
+  .badge-large { color: var(--cw-status-pending); font-weight:600;}
+
+  footer { padding: var(--ds-space-7) 0; border-top: 1px solid var(--cw-border); color: var(--cw-muted); font-size: .85rem; }
+  a { color: var(--cw-accent-strong); }
+  .anchor-nav { display:flex; flex-wrap: wrap; gap: var(--ds-space-2); margin-top: var(--ds-space-4); }
+  .anchor-nav a { font-family: var(--cw-font-data); font-size:.75rem; text-decoration: none; padding:.25rem .6rem; border:1px solid var(--cw-border); border-radius: var(--ds-radius-pill); }
+</style>
+</head>
+<body data-pack="living-mineral">
+
+<header class="top">
+  <div class="top-inner">
+    <div class="brand">CenterWay<small>semantic design system</small></div>
+    <div class="pack-switch" role="group" aria-label="Theme pack (author territory)">
+      <span>theme pack</span>
+      <button data-set="warm-mineral">warm</button>
+      <button data-set="living-mineral" aria-pressed="true">living</button>
+      <button data-set="natural-premium">premium</button>
+      <button data-set="natural3">natural3</button>
+      <button data-set="curcuma">curcuma</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap hero">
+  <h1>Семантическая ДС: смысл, а не мода</h1>
+  <p class="lead">Токены кодируют роль поверхности, а не её украшение. Компоненты опираются на смысловые алиасы — смена темы, режима или ветки автора не переписывает ни одного компонента. Ниже — все живые сущности и слои системы из <code>cw.tokens.json</code> + генераторных манифестов, отрендеренные реальными значениями.</p>
+  <div class="chain">
+    <b>primitive</b> → <b>semantic alias</b> → <b>mode / branch override</b> → <b>component recipe</b> → <b>delivery&nbsp;--ds-*</b> → <b>screen assembly</b>
+  </div>
+  <div class="anchor-nav">
+    <a href="#primitives">primitives</a>
+    <a href="#semantic">semantic roles</a>
+    <a href="#platform">platform mode</a>
+    <a href="#type">typography</a>
+    <a href="#space">spacing · radius</a>
+    <a href="#depth">depth</a>
+    <a href="#glass">glass</a>
+    <a href="#cta">CTA</a>
+    <a href="#vocab">block vocabulary</a>
+    <a href="#contrast">contrast gate</a>
+    <a href="#scaling">scaling · packs</a>
+    <a href="#governance">governance</a>
+  </div>
+</div>
+
+<!-- 1. PRIMITIVES -->
+<section class="block" id="primitives">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">layer 1 · layers.primitives</p>
+      <h2>Примитивы</h2>
+      <p>Шесть минеральных опор. Компоненты их <b>не</b> потребляют напрямую — только через смысловые алиасы. Это единственный слой с «сырым» цветом-источником.</p>
+    </div>
+    <div class="grid g3">
+      <div class="swatch"><div class="chip" style="background:#F6F2EA"></div><div class="meta"><div class="name">Mineral Air</div><div class="var">#F6F2EA · mineralAir</div><div class="role">выдох, тишина, пространство</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#31403E"></div><div class="meta"><div class="name">Mineral Ink</div><div class="var">#31403E · mineralInk</div><div class="role">структура, текст, ясность</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#4F7E76"></div><div class="meta"><div class="name">Route Teal</div><div class="var">#4F7E76 · routeTeal</div><div class="role">сопровождение, следующий шаг</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#6E8668"></div><div class="meta"><div class="name">Life Green</div><div class="var">#6E8668 · lifeGreen</div><div class="role">телесность, естественная жизнь</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#C1906B"></div><div class="meta"><div class="name">Warmth</div><div class="var">#C1906B · warmth</div><div class="role">прогресс, тепло, этапность</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#B76045"></div><div class="meta"><div class="name">Boundary</div><div class="var">#B76045 · boundary</div><div class="role">осторожность, противопоказания</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 2. SEMANTIC ROLES -->
+<section class="block" id="semantic">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">layer 2 · layers.semanticAliases</p>
+      <h2>Смысловые роли</h2>
+      <p>Одиннадцать <code>--cw-sem-*</code>: визуальный тон, привязанный к роли, а не к продукту. Непереговорное правило: <code>guide ≠ trust ≠ boundary</code>; <code>organic/embodied</code> не захватывают иерархию управления; trust и boundary остаются видимыми в рискованных сценариях.</p>
+    </div>
+    <div class="grid g4">
+      <div class="swatch"><div class="chip" style="background:#f6f2ea"></div><div class="meta"><div class="name">calm · bg</div><div class="var">--cw-sem-calm-bg</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#fbfaf6"></div><div class="meta"><div class="name">calm · surface</div><div class="var">--cw-sem-calm-surface</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#e9e2d6"></div><div class="meta"><div class="name">calm · muted</div><div class="var">--cw-sem-calm-surface-muted</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#31403e"></div><div class="meta"><div class="name">method · ink</div><div class="var">--cw-sem-method-ink</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#4f7e76"></div><div class="meta"><div class="name">guide · primary</div><div class="var">--cw-sem-guide-primary</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#1e3d34"></div><div class="meta"><div class="name">guide · strong</div><div class="var">--cw-sem-guide-strong</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#6e8668"></div><div class="meta"><div class="name">embodied</div><div class="var">--cw-sem-embodied</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#c1906b"></div><div class="meta"><div class="name">progress</div><div class="var">--cw-sem-progress</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#dba54f"></div><div class="meta"><div class="name">warmth</div><div class="var">--cw-sem-warmth</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#b76045"></div><div class="meta"><div class="name">boundary</div><div class="var">--cw-sem-boundary</div></div></div>
+      <div class="swatch"><div class="chip" style="background:#35535f"></div><div class="meta"><div class="name">trust</div><div class="var">--cw-sem-trust</div></div></div>
+      <div class="swatch" style="border-style:dashed;opacity:.65"><div class="chip" style="background:repeating-linear-gradient(45deg,#e9e2d6,#e9e2d6 8px,#f6f2ea 8px,#f6f2ea 16px)"></div><div class="meta"><div class="name">organic <span class="pill">aspirational</span></div><div class="var">— нет токена</div><div class="role">каноническая роль, ещё не материализована</div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 3. PLATFORM MODE -->
+<section class="block" id="platform">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">layer 3 · layers.modeOverrides.platform</p>
+      <h2>Platform-режим</h2>
+      <p>Режим меняет <b>акцент</b>, а не смысл. Платформенные алиасы разрешаются из смыслового слоя (часть — через <code>color-mix</code>), давая единый диалект основной платформы.</p>
+    </div>
+    <div class="grid g3">
+      <div class="card"><div class="mono muted">--cw-platform-bg</div><div style="height:44px;border-radius:8px;margin-top:8px;background:var(--cw-platform-bg);border:1px solid var(--cw-border)"></div><div class="mono" style="margin-top:6px">→ sem-calm-bg</div></div>
+      <div class="card"><div class="mono muted">--cw-platform-surface</div><div style="height:44px;border-radius:8px;margin-top:8px;background:var(--cw-platform-surface);border:1px solid var(--cw-border)"></div><div class="mono" style="margin-top:6px">→ sem-calm-surface</div></div>
+      <div class="card"><div class="mono muted">--cw-platform-text</div><div style="height:44px;border-radius:8px;margin-top:8px;background:var(--cw-platform-text)"></div><div class="mono" style="margin-top:6px">#0d1b17</div></div>
+      <div class="card"><div class="mono muted">--cw-platform-muted</div><div style="height:44px;border-radius:8px;margin-top:8px;background:var(--cw-platform-muted)"></div><div class="mono" style="margin-top:6px">mix(text 64% / bg)</div></div>
+      <div class="card"><div class="mono muted">--cw-platform-border</div><div style="height:44px;border-radius:8px;margin-top:8px;background:var(--cw-platform-border)"></div><div class="mono" style="margin-top:6px">mix(progress 38%)</div></div>
+      <div class="card"><div class="mono muted">--cw-platform-accent</div><div style="height:44px;border-radius:8px;margin-top:8px;background:var(--cw-platform-accent)"></div><div class="mono" style="margin-top:6px">→ sem-warmth</div></div>
+      <div class="card"><div class="mono muted">--cw-platform-accent-strong</div><div style="height:44px;border-radius:8px;margin-top:8px;background:var(--cw-platform-accent-strong)"></div><div class="mono" style="margin-top:6px">→ sem-guide-strong</div></div>
+      <div class="card"><div class="mono muted">--cw-platform-accent-contrast</div><div style="height:44px;border-radius:8px;margin-top:8px;background:var(--cw-platform-accent-contrast);border:1px solid var(--cw-border)"></div><div class="mono" style="margin-top:6px">#fff8eb</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 4. TYPOGRAPHY -->
+<section class="block" id="type">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">delivery · --ds-type-* / fonts</p>
+      <h2>Типографика</h2>
+      <p>Три семьи: UI <code>Manrope</code> (навигация, тело, контролы), editorial <code>Cormorant Garamond</code> (крупные заголовки истории), data <code>IBM Plex Mono</code> (лейблы, чипы, мета).</p>
+    </div>
+    <div class="type-row"><div class="spec">hero · clamp(3.25→6.75rem) / .96<br>editorial</div><div style="font-family:var(--cw-font-editorial);font-size:var(--ds-type-hero-size);line-height:var(--ds-type-hero-line-height);font-weight:600">Осознанное здоровье</div></div>
+    <div class="type-row"><div class="spec">title · clamp(2.25→3.75rem) / 1.04<br>editorial</div><div style="font-family:var(--cw-font-editorial);font-size:var(--ds-type-title-size);line-height:var(--ds-type-title-line-height);font-weight:600">Путь, а не каталог офферов</div></div>
+    <div class="type-row"><div class="spec">display · clamp(1.5→2.2rem) / 1.08<br>editorial</div><div style="font-family:var(--cw-font-editorial);font-size:var(--ds-type-display-size);line-height:var(--ds-type-display-line-height);font-weight:600">Минеральное спокойствие</div></div>
+    <div class="type-row"><div class="spec">lead · clamp(1→1.125rem) / 1.6<br>ui</div><div style="font-size:var(--ds-type-lead-size);line-height:var(--ds-type-lead-line-height);max-width:60ch">Ведущий абзац задаёт ритм чтения и держит спокойную плотность на входе в раздел.</div></div>
+    <div class="type-row"><div class="spec">body · 1rem / 1.6 · ui</div><div style="max-width:60ch">Базовый текст интерфейса. Читаемый контраст обязателен во всех паках — теперь проверяется гейтом guard:contrast.</div></div>
+    <div class="type-row"><div class="spec">label · 0.75rem / 1rem · data</div><div style="font-family:var(--cw-font-data);text-transform:uppercase;letter-spacing:.08em">route · stage · meta</div></div>
+  </div>
+</section>
+
+<!-- 5. SPACING + RADIUS -->
+<section class="block" id="space">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">delivery · --ds-space-* / --ds-radius-*</p>
+      <h2>Ритм и форма</h2>
+      <p>Единая шкала отступов (1–7) и радиусов. Никаких разовых значений в компонентах — гейт canon:guard запрещает локальные определения токенов и raw-значения.</p>
+    </div>
+    <div class="grid g2">
+      <div class="card">
+        <div class="mono muted" style="margin-bottom:12px">spacing scale · rem</div>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <div style="display:flex;align-items:center;gap:12px"><span class="mono" style="min-width:120px">1 · 0.25</span><div class="space-bar" style="width:.25rem"></div></div>
+          <div style="display:flex;align-items:center;gap:12px"><span class="mono" style="min-width:120px">2 · 0.5</span><div class="space-bar" style="width:.5rem"></div></div>
+          <div style="display:flex;align-items:center;gap:12px"><span class="mono" style="min-width:120px">3 · 0.75</span><div class="space-bar" style="width:.75rem"></div></div>
+          <div style="display:flex;align-items:center;gap:12px"><span class="mono" style="min-width:120px">4 · 1.0</span><div class="space-bar" style="width:1rem"></div></div>
+          <div style="display:flex;align-items:center;gap:12px"><span class="mono" style="min-width:120px">5 · 1.5</span><div class="space-bar" style="width:1.5rem"></div></div>
+          <div style="display:flex;align-items:center;gap:12px"><span class="mono" style="min-width:120px">6 · 2.0</span><div class="space-bar" style="width:2rem"></div></div>
+          <div style="display:flex;align-items:center;gap:12px"><span class="mono" style="min-width:120px">7 · 3.0</span><div class="space-bar" style="width:3rem"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="mono muted" style="margin-bottom:12px">radius · rem</div>
+        <div class="grid g2" style="gap:12px">
+          <div style="text-align:center"><div style="height:70px;background:var(--cw-accent-soft);border:1px solid var(--cw-accent);border-radius:.75rem"></div><div class="mono" style="margin-top:6px">sm · 0.75</div></div>
+          <div style="text-align:center"><div style="height:70px;background:var(--cw-accent-soft);border:1px solid var(--cw-accent);border-radius:1rem"></div><div class="mono" style="margin-top:6px">md · 1.0</div></div>
+          <div style="text-align:center"><div style="height:70px;background:var(--cw-accent-soft);border:1px solid var(--cw-accent);border-radius:1.25rem"></div><div class="mono" style="margin-top:6px">lg · 1.25</div></div>
+          <div style="text-align:center"><div style="height:70px;background:var(--cw-accent-soft);border:1px solid var(--cw-accent);border-radius:999px"></div><div class="mono" style="margin-top:6px">pill</div></div>
+        </div>
+        <div class="mono muted" style="margin-top:16px">container-max 1160px · touch-target-min 3rem · mobile ≤ 37.5rem · tablet → 63.9375rem · desktop ≥ 64rem</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 6. DEPTH -->
+<section class="block" id="depth">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">layer 4 · componentRecipes.depth</p>
+      <h2>Материальная глубина</h2>
+      <p>Базовый закон: фон карточек стабилен и сдержан, ролевое различие — через <b>тональный сдвиг</b> и опциональную рельсу, а не насыщенную статусную заливку. Тени: soft (карточки) → medium (next-step) → strong (только primary CTA).</p>
+    </div>
+    <div class="grid g3">
+      <div class="depth-card" style="background:var(--cw-depth-card-bg);box-shadow:var(--cw-depth-shadow-soft)"><b>card</b><div class="mono muted" style="margin-top:6px">depth-card-bg · shadow-soft</div></div>
+      <div class="depth-card" style="background:var(--cw-depth-support-bg);box-shadow:var(--cw-depth-shadow-medium)"><b>support</b><div class="mono muted" style="margin-top:6px">depth-support-bg · shadow-medium</div></div>
+      <div class="depth-card" style="background:var(--cw-depth-proof-bg);box-shadow:var(--cw-depth-shadow-soft)"><b>proof</b><div class="mono muted" style="margin-top:6px">depth-proof-bg</div></div>
+      <div class="depth-card" style="background:var(--cw-depth-boundary-bg);border-left:3px solid var(--cw-sem-boundary)"><b>boundary</b><div class="mono muted" style="margin-top:6px">depth-boundary-bg · rail</div></div>
+      <div class="depth-card" style="background:var(--cw-depth-icon-slot-bg)"><b>icon slot</b><div class="mono muted" style="margin-top:6px">depth-icon-slot-bg</div></div>
+      <div class="depth-card" style="background:var(--cw-sem-calm-surface);box-shadow:var(--cw-depth-shadow-strong)"><b>primary CTA depth</b><div class="mono muted" style="margin-top:6px">shadow-strong (reserved)</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- 7. GLASS -->
+<section class="block" id="glass">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">layer 4 · componentRecipes.glass</p>
+      <h2>Стекло</h2>
+      <p>Зарезервировано для топбара и выбранных атмосферных контролов. <b>Не</b> должно становиться дефолтным стилем карточек — это подменяет иерархию.</p>
+    </div>
+    <div class="glass-stage">
+      <div class="glass-panel">glass-bg = mix(platform-text 34% / transparent) · blur · saturate 1.36 · brightness .92</div>
+    </div>
+  </div>
+</section>
+
+<!-- 8. CTA -->
+<section class="block" id="cta">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">component · action geometry</p>
+      <h2>CTA</h2>
+      <p>Смысл CTA — не «купи сейчас», а «начать путь / увидеть план / выбрать поддержку / проверить пригодность». Один визуальный primary-класс для hero, pricing, next-step и sticky. Форма — soft rounded rect; min-height 3rem (touch target).</p>
+    </div>
+    <div class="card" style="display:flex;gap:var(--ds-space-4);flex-wrap:wrap;align-items:center">
+      <button class="btn btn-primary">Начать путь →</button>
+      <button class="btn btn-secondary">Как это работает</button>
+      <button class="btn btn-ghost">Проверить пригодность</button>
+      <span class="pill">primary-route</span>
+      <span class="pill">secondary-learn</span>
+      <span class="pill">support-action</span>
+    </div>
+  </div>
+</section>
+
+<!-- 9. BLOCK VOCABULARY -->
+<section class="block" id="vocab">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">generator · semantic_block_layer + block_manifests</p>
+      <h2>Словарь блоков</h2>
+      <p>Три оси на одно слово «semantic», согласованные по всем блокам: <b>content role</b> (роль в IA) · <b>family</b> (линия блока) · <b>visual tone</b> (токенное настроение). Покрывает generated funnel surfaces; <code>/programs</code>, дашборд, чекаут — вне контрактного слоя (до LMS).</p>
+    </div>
+    <div class="card" style="overflow-x:auto">
+    <table class="vocab">
+      <thead><tr><th>block type</th><th>content role</th><th>family</th><th>tone</th><th>tier</th><th>user question</th></tr></thead>
+      <tbody>
+        <tr><td>hero-entry-definition</td><td>orientation</td><td>orientation</td><td><span class="tone" style="background:#4f7e76"></span>guide</td><td>1</td><td class="q">Куда я попал и какой следующий шаг?</td></tr>
+        <tr><td>route-framing</td><td>method</td><td>orientation</td><td><span class="tone" style="background:#4f7e76"></span>guide</td><td>1</td><td class="q">Как устроен маршрут и где я сейчас?</td></tr>
+        <tr><td>route-choice</td><td>route-map</td><td>progress_pathway</td><td><span class="tone" style="background:#4f7e76"></span>guide</td><td>1</td><td class="q">Какой маршрут выбрать дальше?</td></tr>
+        <tr><td>offer-definition</td><td>offer</td><td>offer_route</td><td><span class="tone" style="background:#4f7e76"></span>guide</td><td>1</td><td class="q">Что это за оффер и для кого он?</td></tr>
+        <tr><td>offer-includes</td><td>offer</td><td>offer_route</td><td><span class="tone" style="background:#31403e"></span>method</td><td>1</td><td class="q">Что конкретно входит в предложение?</td></tr>
+        <tr><td>format-duration-price</td><td>offer</td><td>offer_route</td><td><span class="tone" style="background:#35535f"></span>trust</td><td>1</td><td class="q">Сколько длится, в каком формате и сколько стоит?</td></tr>
+        <tr><td>how-it-works</td><td>method</td><td>method_explanation</td><td><span class="tone" style="background:#31403e"></span>method</td><td>1</td><td class="q">Как это работает по шагам?</td></tr>
+        <tr><td>proof-block</td><td>proof</td><td>trust_proof_expectation</td><td><span class="tone" style="background:#35535f"></span>trust</td><td>1</td><td class="q">Почему этому можно доверять?</td></tr>
+        <tr><td>boundary-block</td><td>boundary</td><td>boundary_caution</td><td><span class="tone" style="background:#b76045"></span>boundary</td><td>1</td><td class="q">Где границы метода и что важно учитывать?</td></tr>
+        <tr><td>next-step</td><td>progress</td><td>progress_pathway</td><td><span class="tone" style="background:#4f7e76"></span>guide</td><td>1</td><td class="q">Какой следующий шаг после текущего блока?</td></tr>
+        <tr><td>current-step</td><td>orientation</td><td>orientation</td><td><span class="tone" style="background:#c1906b"></span>progress</td><td>2</td><td class="q">На каком шаге процесса я нахожусь?</td></tr>
+        <tr><td>practice-unit</td><td>method</td><td>method_explanation</td><td><span class="tone" style="background:#31403e"></span>method</td><td>2</td><td class="q">Что конкретно делать в практическом блоке?</td></tr>
+      </tbody>
+    </table>
+    </div>
+  </div>
+</section>
+
+<!-- 10. CONTRAST -->
+<section class="block" id="contrast">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">gate · guard:contrast (WCAG)</p>
+      <h2>Контраст</h2>
+      <p>Гейт резолвит <code>var()</code>/<code>color-mix</code> из токенов и проверяет реальные пары text/CTA: тело ≥ 4.5, крупный/CTA ≥ 3.0. Две заливки держатся на large-tier — первые кандидаты на подтюнинг палитры.</p>
+    </div>
+    <div class="contrast-row"><div class="contrast-chip" style="background:var(--cw-platform-bg);color:var(--cw-platform-text)">Aa текст</div><div class="contrast-meta">platform-text / platform-bg — <span class="badge-aa">15.85 · AA</span></div></div>
+    <div class="contrast-row"><div class="contrast-chip" style="background:var(--cw-platform-bg);color:var(--cw-platform-muted)">Aa muted</div><div class="contrast-meta">platform-muted / platform-bg — <span class="badge-aa">5.13 · AA</span></div></div>
+    <div class="contrast-row"><div class="contrast-chip" style="background:var(--cw-sem-calm-surface);color:var(--cw-sem-method-ink)">заголовок</div><div class="contrast-meta">method-ink / calm-surface — <span class="badge-aa">10.40 · AA</span></div></div>
+    <div class="contrast-row"><div class="contrast-chip" style="background:var(--cw-sem-guide-strong);color:var(--cw-platform-accent-contrast)">CTA</div><div class="contrast-meta">accent-contrast / guide-strong — <span class="badge-aa">11.22 · AA</span></div></div>
+    <div class="contrast-row"><div class="contrast-chip" style="background:var(--cw-sem-guide-primary);color:var(--cw-platform-accent-contrast)">CTA</div><div class="contrast-meta">accent-contrast / guide-primary — <span class="badge-large">4.34 · large-tier</span></div></div>
+    <div class="contrast-row"><div class="contrast-chip" style="background:var(--cw-sem-boundary);color:var(--cw-platform-accent-contrast)">label</div><div class="contrast-meta">accent-contrast / boundary — <span class="badge-large">4.17 · large-tier</span></div></div>
+  </div>
+</section>
+
+<!-- 11. SCALING -->
+<section class="block" id="scaling">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">generator · token_packs.json</p>
+      <h2>Масштабирование: территория автора = token pack</h2>
+      <p>Пять именованных тем-паков. Каждый — 30 chrome-токенов (<code>--cw-*</code> + <code>--cw-role-*</code> + <code>--cw-cta-*</code>). Механизм даёт будущему автору/бренду собственную визуальную территорию <b>без правки компонентов</b> — переключатель вверху меняет только токены. <span class="pill">activation deferred → LMS</span> сейчас у паков ноль потребителей; активируется вместе с первым автором.</p>
+    </div>
+    <div class="grid g3" id="pack-grid"></div>
+    <p class="muted" style="margin-top:var(--ds-space-4);font-size:.85rem">Правило изоляции: territories авторов не ссылаются друг на друга на лендингах — это <b>граница авторов</b>, а не только конверсионная дисциплина. Кросс-авторские переходы — marketplace-механика (revenue-share, согласие автора), только через email/сегмент по доша-тесту.</p>
+  </div>
+</section>
+
+<!-- 12. GOVERNANCE -->
+<section class="block" id="governance">
+  <div class="wrap">
+    <div class="sec-head">
+      <p class="kicker">validation · npm run ds:qa</p>
+      <h2>Governance</h2>
+      <p>Восемь гейтов защищают систему. Источник правды — <code>data/design-tokens/cw.tokens.json</code>; <code>globals.css</code> — слой доставки, кодоген владеет base/delivery.</p>
+    </div>
+    <div class="grid g2">
+      <div class="card"><b>canon:guard</b><div class="muted" style="margin-top:6px;font-size:.88rem">canon-файлы, preflight-sentinels, raw-hex allowlist + запрет локальных <code>--cw-*</code> в platform CSS, кросс-ссылки манифестов</div></div>
+      <div class="card"><b>tokens:check</b><div class="muted" style="margin-top:6px;font-size:.88rem">кодоген JSON→CSS — no-op на чистом дереве (drift-гейт)</div></div>
+      <div class="card"><b>guard:ds-contract</b><div class="muted" style="margin-top:6px;font-size:.88rem"><code>--ds-*</code> + landing контракты, required-floor <code>--cw-sem-*</code>/<code>--cw-platform-*</code>, запрет реинтродукции <code>--cw-color-*</code>, hero parity</div></div>
+      <div class="card"><b>guard:contrast</b><div class="muted" style="margin-top:6px;font-size:.88rem">WCAG на парах text/CTA из токенов (body ≥ 4.5, large ≥ 3.0)</div></div>
+      <div class="card"><b>generator:validate + snapshot/determinism/language/rhythm</b><div class="muted" style="margin-top:6px;font-size:.88rem">детерминизм генератора экранов</div></div>
+      <div class="card"><b>semantic:audit</b><div class="muted" style="margin-top:6px;font-size:.88rem">route-family контракты, порядок блоков, alias-инварианты (existsSync-fail)</div></div>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p><b>CenterWay Semantic Design System</b> — сгенерировано из <code>data/design-tokens/cw.tokens.json</code>, <code>data/generator/*.json</code>, <code>docs/design-system.md</code>. Значения верны на момент сборки; источник правды — JSON + RAverse-канон <code>Дизайн-токены.md</code>.</p>
+    <p class="muted">Пять правил: 1) токены выражают метод, а не настроение · 2) экосистема — система путей, а не каталог офферов · 3) визуал = минеральное спокойствие + ясность маршрута + телесная достоверность · 4) доверие — отдельный токенный слой · 5) у каждого контекста свой режим.</p>
+  </div>
+</footer>
+
+<script>
+  // Pack switcher — live per-author theming demo.
+  const body = document.body;
+  document.querySelectorAll('.pack-switch button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const pack = btn.dataset.set;
+      body.setAttribute('data-pack', pack);
+      document.querySelectorAll('.pack-switch button').forEach(b => b.setAttribute('aria-pressed', b === btn ? 'true' : 'false'));
+    });
+  });
+
+  // Pack swatch grid — render all 5 packs as static territory cards.
+  const packs = {
+    "warm-mineral":   {accent:"#A06F52", bg:"#F4EEE5", text:"#353C3B", note:"тёплая минеральная"},
+    "living-mineral": {accent:"#4F7E76", bg:"#F6F2EA", text:"#31403E", note:"дефолт платформы"},
+    "natural-premium":{accent:"#6D7E73", bg:"#F3EEE6", text:"#2F3534", note:"премиальная сдержанная"},
+    "natural3":       {accent:"#698C78", bg:"#ECE3DA", text:"#434F37", note:"насыщенная природная"},
+    "curcuma":        {accent:"#BF6E26", bg:"#E8E2D4", text:"#23120A", note:"куркума / тёплый акцент"},
+  };
+  const grid = document.getElementById('pack-grid');
+  for (const [name, p] of Object.entries(packs)) {
+    const el = document.createElement('div');
+    el.className = 'swatch';
+    el.style.cursor = 'pointer';
+    el.innerHTML = `
+      <div class="chip" style="background:${p.bg};display:flex;align-items:center;justify-content:center">
+        <span style="width:38px;height:38px;border-radius:50%;background:${p.accent};box-shadow:0 4px 12px rgba(0,0,0,.15)"></span>
+        <span style="width:22px;height:38px;background:${p.text};margin-left:8px;border-radius:4px"></span>
+      </div>
+      <div class="meta">
+        <div class="name">${name}</div>
+        <div class="var">accent ${p.accent} · bg ${p.bg}</div>
+        <div class="role">${p.note}</div>
+      </div>`;
+    el.addEventListener('click', () => {
+      body.setAttribute('data-pack', name);
+      document.querySelectorAll('.pack-switch button').forEach(b => b.setAttribute('aria-pressed', b.dataset.set === name ? 'true' : 'false'));
+      window.scrollTo({top:0, behavior:'smooth'});
+    });
+    grid.appendChild(el);
+  }
+</script>
+</body>
+</html>

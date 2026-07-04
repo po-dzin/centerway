@@ -9,7 +9,9 @@ Living operational reference. Supersedes the archived snapshots:
 
 Authority order: RAverse canon (`/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/**`) > this file > archived notes. This file describes the system **as implemented**; aspirational concepts are listed explicitly in the ledger at the bottom, never mixed into the descriptive sections.
 
-Simplification roadmap: `docs/archive/working-notes/ds-simplification-plan-2026-07-03.md` (stages 0–2 applied; stages 3–4 pending).
+Simplification roadmap: `docs/archive/working-notes/ds-simplification-plan-2026-07-03.md` (all stages applied).
+
+Rendered styleguide: `docs/design-system.styleguide.html` — self-contained HTML showing every layer live (primitives → semantic → platform → recipes → delivery), the block vocabulary, the contrast-gate results, and a live 5-pack theme switcher demonstrating per-author scaling. Values are copied from `cw.tokens.json` + generator manifests; regenerate when tokens change.
 
 ## System Definition
 
