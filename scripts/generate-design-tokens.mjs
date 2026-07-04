@@ -13,6 +13,10 @@ const LIGHT_START = "/* DS_ALIAS_LIGHT_START */";
 const LIGHT_END = "/* DS_ALIAS_LIGHT_END */";
 const DARK_START = "/* DS_ALIAS_DARK_START */";
 const DARK_END = "/* DS_ALIAS_DARK_END */";
+const BASE_LIGHT_START = "/* CW_BASE_LIGHT_START */";
+const BASE_LIGHT_END = "/* CW_BASE_LIGHT_END */";
+const BASE_DARK_START = "/* CW_BASE_DARK_START */";
+const BASE_DARK_END = "/* CW_BASE_DARK_END */";
 const RUNTIME_START = "/* CW_RUNTIME_TOKENS_START */";
 const RUNTIME_END = "/* CW_RUNTIME_TOKENS_END */";
 
@@ -63,11 +67,16 @@ async function main() {
 
   const globals = await readFile(GLOBALS_CSS_PATH, "utf8");
   const dsAlias = tokens.delivery?.dsAlias ?? {};
-  const lightDecls = toDecls({ ...tokens.appAlias.light, ...(dsAlias.light ?? {}) }, "    ");
-  const darkDecls = toDecls({ ...tokens.appAlias.dark, ...(dsAlias.dark ?? {}) }, "    ");
+  const lightDecls = toDecls(dsAlias.light ?? {}, "    ");
+  const darkDecls = toDecls(dsAlias.dark ?? {}, "    ");
   const runtimeDecls = toDecls(flattenRuntimeLayers(tokens.layers), "    ");
 
-  let nextGlobals = upsertBefore(globals, RUNTIME_START, RUNTIME_END, "/* Platform DS contract:", runtimeDecls);
+  const baseLightDecls = toDecls(tokens.base?.light ?? {}, "    ");
+  const baseDarkDecls = toDecls(tokens.base?.dark ?? {}, "    ");
+
+  let nextGlobals = upsertBefore(globals, BASE_LIGHT_START, BASE_LIGHT_END, RUNTIME_START, baseLightDecls);
+  nextGlobals = upsertBefore(nextGlobals, BASE_DARK_START, BASE_DARK_END, DARK_START, baseDarkDecls);
+  nextGlobals = upsertBefore(nextGlobals, RUNTIME_START, RUNTIME_END, "/* Platform DS contract:", runtimeDecls);
   nextGlobals = upsertBefore(nextGlobals, LIGHT_START, LIGHT_END, "/* Platform DS contract:", lightDecls);
   nextGlobals = upsertBefore(nextGlobals, DARK_START, DARK_END, "/* Platform DS contract, dark theme */", darkDecls);
 

@@ -25,6 +25,7 @@ Current required files:
 Local implementation references are derived / implementation-only:
 
 - `docs/CANON.md`
+- `docs/design-system.md` (living DS reference: vocabulary axes, token layer map, coverage boundary)
 - `README.md` / `Token Contract`
 - `src/app/globals.css`
 - `data/design-tokens/cw.tokens.json`
