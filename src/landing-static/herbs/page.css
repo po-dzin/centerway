@@ -1,6 +1,0 @@
-/* herbs — palette now lives in the shared network token contract
-   (shared/css/network-tokens.css, skin block [data-cw-landing="herbs"]).
-   Only page-local layout knobs remain here. */
-[data-cw-landing="herbs"] {
-  --cw-hero-focus: center 12%;
-}
