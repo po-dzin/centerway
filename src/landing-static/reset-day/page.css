@@ -10,25 +10,25 @@
    :root and cannot collide with the semantic DS (--cw-* / --ds-*). */
 [data-cw-landing="reset-day"]{
   /* Розвантажувальний день palette — light sage green + honey gold (lighter/emotional) */
-  --ink:#284a3b;            /* soft mineral green ink */
-  --ink-soft:#3a5e4d;
-  --indigo:#588a72;         /* light sage route */
-  --indigo-bright:#6fa085;
-  --indigo-tint:#eef5f0;
-  --chip:#e7f1ea;
-  --chip-soft:#f2f8f3;
-  --cta:#dba54f;            /* platform gold accent (--cw-sem-warmth) */
-  --cta-strong:#c2902f;
-  --on-cta:#22382e;        /* deep sage ink on gold (AA) */
-  --cream:#f9f7ef;          /* brighter warm canvas, more air */
-  --surface:#ffffff;
-  --surface-cool:#f3f7f1;
-  --line:#e0eadf;
-  --line-strong:#c5d6c6;
-  --text:#243530;
-  --text-muted:#4d5b54;
-  --text-soft:#74807a;
-  --gold:#dba54f;
+  --ink:var(--cw-net-ink,#284a3b);            /* soft mineral green ink */
+  --ink-soft:var(--cw-net-ink-soft,#3a5e4d);
+  --indigo:var(--cw-net-route,#588a72);         /* light sage route */
+  --indigo-bright:var(--cw-net-route-bright,#6fa085);
+  --indigo-tint:var(--cw-net-route-soft,#eef5f0);
+  --chip:var(--cw-net-chip,#e7f1ea);
+  --chip-soft:var(--cw-net-chip-soft,#f2f8f3);
+  --cta:var(--cw-net-gold,#dba54f);            /* platform gold accent (--cw-sem-warmth) */
+  --cta-strong:var(--cw-net-gold-strong,#c2902f);
+  --on-cta:var(--cw-net-on-gold,#22382e);        /* deep sage ink on gold (AA) */
+  --cream:var(--cw-net-canvas,#f9f7ef);          /* brighter warm canvas, more air */
+  --surface:var(--cw-net-surface,#ffffff);
+  --surface-cool:var(--cw-net-surface-cool,#f3f7f1);
+  --line:var(--cw-net-line,#e0eadf);
+  --line-strong:var(--cw-net-line-strong,#c5d6c6);
+  --text:var(--cw-net-text,#243530);
+  --text-muted:var(--cw-net-text-muted,#4d5b54);
+  --text-soft:var(--cw-net-text-soft,#74807a);
+  --gold:var(--cw-net-gold,#dba54f);
   /* dark surfaces + on-dark palette */
   --irem-dark-1:#23463a; --irem-dark-2:#356152;
   --irem-grad-dark:linear-gradient(165deg,var(--irem-dark-1),var(--irem-dark-2));

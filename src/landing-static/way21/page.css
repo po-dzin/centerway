@@ -10,25 +10,25 @@
    :root and cannot collide with the semantic DS (--cw-* / --ds-*). */
 [data-cw-landing="way21"]{
   /* Шлях 21 palette — deep mineral green + warm gold (premium) */
-  --ink:#1d3a30;            /* deep mineral forest ink */
-  --ink-soft:#2c4c40;
-  --indigo:#3f6f63;         /* primary mineral route (deepened #4f7e76 for AA) */
-  --indigo-bright:#4f7e76;
-  --indigo-tint:#e9f1ec;
-  --chip:#e4efe7;
-  --chip-soft:#f0f6f1;
-  --cta:#dba54f;            /* platform gold accent (--cw-sem-warmth) */
-  --cta-strong:#c2902f;
-  --on-cta:#1d3a30;        /* deep mineral ink on gold (AA) */
-  --cream:#f7f5ec;          /* warm mineral canvas */
-  --surface:#ffffff;
-  --surface-cool:#f1f5f0;
-  --line:#dbe6dc;
-  --line-strong:#bccfbf;
-  --text:#1b2a24;
-  --text-muted:#45544c;
-  --text-soft:#6a7770;
-  --gold:#dba54f;
+  --ink:var(--cw-net-ink,#1d3a30);            /* deep mineral forest ink */
+  --ink-soft:var(--cw-net-ink-soft,#2c4c40);
+  --indigo:var(--cw-net-route,#3f6f63);         /* primary mineral route (deepened #4f7e76 for AA) */
+  --indigo-bright:var(--cw-net-route-bright,#4f7e76);
+  --indigo-tint:var(--cw-net-route-soft,#e9f1ec);
+  --chip:var(--cw-net-chip,#e4efe7);
+  --chip-soft:var(--cw-net-chip-soft,#f0f6f1);
+  --cta:var(--cw-net-gold,#dba54f);            /* platform gold accent (--cw-sem-warmth) */
+  --cta-strong:var(--cw-net-gold-strong,#c2902f);
+  --on-cta:var(--cw-net-on-gold,#1d3a30);        /* deep mineral ink on gold (AA) */
+  --cream:var(--cw-net-canvas,#f7f5ec);          /* warm mineral canvas */
+  --surface:var(--cw-net-surface,#ffffff);
+  --surface-cool:var(--cw-net-surface-cool,#f1f5f0);
+  --line:var(--cw-net-line,#dbe6dc);
+  --line-strong:var(--cw-net-line-strong,#bccfbf);
+  --text:var(--cw-net-text,#1b2a24);
+  --text-muted:var(--cw-net-text-muted,#45544c);
+  --text-soft:var(--cw-net-text-soft,#6a7770);
+  --gold:var(--cw-net-gold,#dba54f);
   /* dark surfaces + on-dark palette */
   --irem-dark-1:#173027; --irem-dark-2:#274a3c;
   --irem-grad-dark:linear-gradient(165deg,var(--irem-dark-1),var(--irem-dark-2));

@@ -1,0 +1,193 @@
+/* CenterWay funnel-network navigation (component recipe `nav` in the canon
+   token chain: primitive -> semantic alias -> per-landing override -> recipe).
+   Scoped to `.cwn` — safe to load next to any landing dialect (funnel --cw-*,
+   way21/reset-day local vars). Burger below 760px, topbar at 760px+. */
+
+.cwn {
+  /* Component tokens (--cw-nav-*): neutral defaults, overridden per landing. */
+  --cw-nav-surface: rgb(250 247 240 / 0.86);
+  --cw-nav-ink: #22352e;
+  --cw-nav-text: #5b6a62;
+  --cw-nav-accent: #264e44;
+  --cw-nav-active-bg: #e9f1ec;
+  --cw-nav-border: rgb(34 53 46 / 0.12);
+  --cw-nav-panel: #ffffff;
+  --cw-nav-shadow: 0 18px 48px rgb(23 38 31 / 0.14);
+  --cw-nav-radius: 1rem;
+
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  border-bottom: 1px solid var(--cw-nav-border);
+  background: var(--cw-nav-surface);
+  backdrop-filter: blur(18px) saturate(150%);
+  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  font-size: 0.95rem;
+  line-height: 1.2;
+}
+
+/* Per-landing semantic mapping — the funnel cw-pages expose --cw-*. */
+[data-cw-landing="dosha"] .cwn,
+[data-cw-landing="consult"] .cwn,
+[data-cw-landing="herbs"] .cwn {
+  --cw-nav-surface: rgb(250 246 239 / 0.86);
+  --cw-nav-ink: var(--cw-ink);
+  --cw-nav-text: var(--cw-text-soft);
+  --cw-nav-accent: var(--cw-accent-strong);
+  --cw-nav-active-bg: var(--cw-accent-soft);
+  --cw-nav-border: color-mix(in srgb, var(--cw-accent) 16%, transparent);
+  --cw-nav-panel: var(--cw-surface-strong, #ffffff);
+  --cw-nav-shadow: var(--cw-shadow-card, 0 18px 48px rgb(23 38 31 / 0.14));
+}
+
+/* way21 / reset-day premium pattern exposes its own local vars. */
+[data-cw-landing="way21"] .cwn,
+[data-cw-landing="reset-day"] .cwn {
+  --cw-nav-surface: rgb(247 245 236 / 0.88);
+  --cw-nav-ink: var(--ink);
+  --cw-nav-text: var(--text-muted);
+  --cw-nav-accent: var(--indigo);
+  --cw-nav-active-bg: var(--chip-soft);
+  --cw-nav-border: var(--line);
+  --cw-nav-panel: var(--surface, #ffffff);
+  --cw-nav-shadow: var(--shadow-med, 0 18px 48px rgb(23 48 39 / 0.14));
+}
+
+/* Slim mode for paid-traffic sessions: brand only, no cross-node exits. */
+.cwn--slim .cwn__menu,
+.cwn--slim .cwn__toggle {
+  display: none !important;
+}
+
+.cwn__in {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  width: min(1180px, calc(100% - 2rem));
+  margin: 0 auto;
+  min-height: 3.6rem;
+  padding: 0.45rem 0;
+}
+
+.cwn__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--cw-nav-ink);
+  text-decoration: none;
+}
+
+.cwn__brand img {
+  display: block;
+  width: 2.25rem;
+  height: 2.25rem;
+}
+
+.cwn__menu {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.4rem;
+}
+
+.cwn__menu a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.9rem;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--cw-nav-text);
+  text-decoration: none;
+  transition: color 160ms ease, background-color 160ms ease, border-color 160ms ease;
+}
+
+.cwn__menu a:hover {
+  color: var(--cw-nav-accent);
+  border-color: var(--cw-nav-border);
+}
+
+.cwn__menu a:focus-visible,
+.cwn__toggle:focus-visible {
+  outline: 2px solid var(--cw-nav-accent);
+  outline-offset: 2px;
+}
+
+.cwn__menu a[aria-current="page"] {
+  color: var(--cw-nav-accent);
+  background: var(--cw-nav-active-bg);
+  border-color: color-mix(in srgb, var(--cw-nav-accent) 30%, transparent);
+  font-weight: 700;
+}
+
+/* Burger toggle — hidden on topbar widths. */
+.cwn__toggle {
+  display: none;
+  position: relative;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 1px solid var(--cw-nav-border);
+  border-radius: 0.8rem;
+  background: transparent;
+  cursor: pointer;
+}
+
+.cwn__toggle span {
+  position: absolute;
+  left: 0.7rem;
+  right: 0.7rem;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--cw-nav-ink);
+  transition: transform 200ms ease, opacity 160ms ease, top 200ms ease;
+}
+
+.cwn__toggle span:nth-child(1) { top: 0.95rem; }
+.cwn__toggle span:nth-child(2) { top: 1.32rem; }
+.cwn__toggle span:nth-child(3) { top: 1.69rem; }
+
+.cwn__toggle[aria-expanded="true"] span:nth-child(1) { top: 1.32rem; transform: rotate(45deg); }
+.cwn__toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.cwn__toggle[aria-expanded="true"] span:nth-child(3) { top: 1.32rem; transform: rotate(-45deg); }
+
+@media (max-width: 979px) and (min-width: 760px) {
+  /* Tablet topbar: logo-only brand so all five links hold one row. */
+  .cwn__brand span { display: none; }
+  .cwn__menu { gap: 0.25rem; }
+  .cwn__menu a { padding: 0.45rem 0.65rem; font-size: 0.88rem; }
+}
+
+@media (max-width: 759px) {
+  .cwn__toggle { display: block; }
+
+  .cwn__menu {
+    position: absolute;
+    top: calc(100% + 0.5rem);
+    right: 0;
+    left: 0;
+    z-index: 61;
+    display: none;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.15rem;
+    padding: 0.5rem;
+    border: 1px solid var(--cw-nav-border);
+    border-radius: var(--cw-nav-radius);
+    background: var(--cw-nav-panel);
+    box-shadow: var(--cw-nav-shadow);
+  }
+
+  .cwn.is-open .cwn__menu { display: flex; }
+
+  .cwn__menu a {
+    min-height: 3rem;
+    padding: 0.7rem 0.9rem;
+    border-radius: 0.75rem;
+    font-size: 1rem;
+  }
+}

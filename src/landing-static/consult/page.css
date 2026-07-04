@@ -1,13 +1,6 @@
+/* consult — palette now lives in the shared network token contract
+   (shared/css/network-tokens.css, skin block [data-cw-landing="consult"]).
+   Only page-local layout knobs remain here. */
 [data-cw-landing="consult"] {
-  --cw-canvas: #f5f1ec;
-  --cw-ink: #253238;
-  --cw-text: #3e4d53;
-  --cw-text-soft: #6e7a80;
-  --cw-accent: #4c7487;
-  --cw-accent-strong: #294b5d;
-  --cw-accent-soft: #ebf3f7;
-  --cw-gold: #d7a56c;
-  --cw-gold-strong: #bc874d;
-  --cw-gold-ink: #26343a;
   --cw-hero-focus: center 12%;
 }

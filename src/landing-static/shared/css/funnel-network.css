@@ -38,9 +38,13 @@
   src: url("/way21/fonts/Formular-Black.woff2") format("woff2");
 }
 
+/* Palette primitives now come from the shared network token contract
+   (shared/css/network-tokens.css → --cw-net-*). This block only maps them onto
+   the funnel dialect's names and keeps the funnel-only derived tokens. Fallbacks
+   preserve the pre-unification values if network-tokens.css is ever absent. */
 :root,
 [data-cw-landing] {
-  --cw-font: "Formular", "Segoe UI", Arial, sans-serif;
+  --cw-font: var(--cw-net-font, "Formular", "Segoe UI", Arial, sans-serif);
   --cw-maxw: 1180px;
   --cw-radius-sm: 1rem;
   --cw-radius-md: 1.5rem;
@@ -48,19 +52,19 @@
   --cw-shadow-soft: 0 18px 48px rgb(23 38 31 / 0.08);
   --cw-shadow-card: 0 18px 48px rgb(23 38 31 / 0.12);
   --cw-border: color-mix(in srgb, var(--cw-accent) 14%, #ffffff 86%);
-  --cw-canvas: #f7f3ea;
+  --cw-canvas: var(--cw-net-canvas, #f7f3ea);
   --cw-surface: rgb(255 255 255 / 0.88);
-  --cw-surface-strong: #ffffff;
+  --cw-surface-strong: var(--cw-net-surface, #ffffff);
   --cw-surface-muted: color-mix(in srgb, var(--cw-accent-soft) 18%, #ffffff 82%);
-  --cw-ink: #22352e;
-  --cw-text: #31463e;
-  --cw-text-soft: #607169;
-  --cw-accent: #4f7e76;
-  --cw-accent-strong: #264e44;
-  --cw-accent-soft: #e9f1ec;
-  --cw-gold: #dba54f;
-  --cw-gold-strong: #c2902f;
-  --cw-gold-ink: #23352f;
+  --cw-ink: var(--cw-net-ink, #22352e);
+  --cw-text: var(--cw-net-text, #31463e);
+  --cw-text-soft: var(--cw-net-text-soft, #607169);
+  --cw-accent: var(--cw-net-route, #4f7e76);
+  --cw-accent-strong: var(--cw-net-route-strong, #264e44);
+  --cw-accent-soft: var(--cw-net-route-soft, #e9f1ec);
+  --cw-gold: var(--cw-net-gold, #dba54f);
+  --cw-gold-strong: var(--cw-net-gold-strong, #c2902f);
+  --cw-gold-ink: var(--cw-net-on-gold, #23352f);
   --cw-danger: #9f5648;
 }
 
