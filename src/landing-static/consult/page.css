@@ -1,6 +1,0 @@
-/* consult — palette now lives in the shared network token contract
-   (shared/css/network-tokens.css, skin block [data-cw-landing="consult"]).
-   Only page-local layout knobs remain here. */
-[data-cw-landing="consult"] {
-  --cw-hero-focus: center 12%;
-}
