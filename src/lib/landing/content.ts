@@ -62,8 +62,8 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
       note: "Цей метод розроблений та практикується моїм вчителем протягом 44 років",
       ctaPrimaryLabel: "Хочу на курс",
       ctaStickyLabel: "Хочу на курс",
-      priceCurrent: "359 грн",
-      priceOld: "799 грн",
+      priceCurrent: "795 грн",
+      priceOld: null,
       cta: {
         primary: "Хочу на курс",
         sticky: "Хочу на курс",
@@ -71,8 +71,8 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
       },
       price: {
         preface: "Почніть вже сьогодні 👇",
-        old: "799 грн",
-        current: "359 грн",
+        old: null,
+        current: "795 грн",
         notes: ["Доступ назавжди", "300+ людей пройшли курс"],
       },
     },
@@ -91,20 +91,20 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
     description:
       "Інтегральна відновлювальна енергомодулююча гімнастика для енергії, тонусу та стабільного стану.",
     hero: {
-      badge: "Авторська методика",
-      title: "ІВЕМ гімнастика",
+      badge: "Інтегральна система саморегуляції",
+      title: "Одна практика <em>замість п'яти</em> — під ваші біоритми.",
       subtitle:
-        "Інтегральна відновлювальна енергомодулююча гімнастика (‘ІВЕМ-гімнастика’) – система щоденних вправ для енергії, тонусу та стабільного стану",
-      lead: "Ключові переваги",
-      chips: ["Універсальний інструмент", "Без спеціальної підготовки", "Підходить для будь-якого віку"],
-      note: "🌀 Система поєднує рух, дихання й відновлення без перевантаження",
-      ctaPrimaryLabel: "Приєднатися",
-      ctaStickyLabel: "Приєднатися",
+        "Сила, гнучкість, витривалість та відновлення — одна практика, яка щодня змінює фокус під ваш стан. Тому її не кидають.",
+      lead: null,
+      chips: ["Без спеціальної підготовки", "Будь-який вік", "60 хв удома", "Рух · дихання · увага"],
+      note: "Гарантія результату 14 днів або повернення коштів",
+      ctaPrimaryLabel: "Почати практику",
+      ctaStickyLabel: "Почати практику",
       priceCurrent: "4100 грн",
       priceOld: null,
       cta: {
-        primary: "Приєднатися",
-        sticky: "Приєднатися",
+        primary: "Почати практику",
+        sticky: "Почати практику",
         note: null,
       },
       price: {

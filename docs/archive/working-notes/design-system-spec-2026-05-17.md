@@ -1,5 +1,8 @@
 # CenterWay Design System Spec — 2026-05-17
 
+> **Superseded (2026-07-03):** the living reference is `docs/design-system.md`.
+> This file is kept as a dated snapshot; do not update it for new work.
+
 ## Status
 
 Local repo spec.
@@ -67,6 +70,12 @@ Base roles:
 - `progress`
 - `boundary`
 
+> **Implementation status (2026-07-03):** runtime tokens (`--cw-sem-*`) implement
+> `calm`, `method`, `guide`, `embodied`, `progress`, `boundary` plus `warmth`
+> (not listed above). `organic` has no token. `trust` exists only as the legacy
+> alias `--cw-color-trust-info: var(--cw-status-running)`. See
+> `ds-simplification-plan-2026-07-03.md`, stage 3.
+
 Operational rule:
 
 - `guide != trust != boundary`
@@ -74,6 +83,11 @@ Operational rule:
 - trust and boundary remain visible in risky flows
 
 ## Brand Modes
+
+> **Aspirational, not implemented (2026-07-03):** none of these modes exist in
+> runtime — no token, `data-*` attribute, or class carries them.
+> `layers.modeOverrides` in `cw.tokens.json` has a single `platform` key. Treat
+> this section as a conceptual target, not a description of the codebase.
 
 Current brand modes:
 

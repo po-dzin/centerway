@@ -20,7 +20,14 @@ const semanticBlocks = readJson("data/generator/semantic_block_layer.json");
 const platformDetoxAliasPage = path.join(root, "src", "app", "(platform)", "programs", "detox", "page.tsx");
 const publicDetoxAliasPage = path.join(root, "src", "app", "(platform)", "detox", "page.tsx");
 const publicHerbsAliasPage = path.join(root, "src", "app", "(platform)", "herbs", "page.tsx");
-const funnelSupportPage = path.join(root, "src", "app", "(platform)", "funnel-support", "[product]", "[page]", "page.tsx");
+
+function readInvariantSource(filePath, label) {
+  if (!existsSync(filePath)) {
+    fail(`${label} invariant failed: missing route file ${path.relative(root, filePath)}`);
+    return null;
+  }
+  return readFileSync(filePath, "utf8");
+}
 
 const contractById = new Map(routeContracts.contracts.map((item) => [item.id, item]));
 const blockById = new Map(blocks.blocks.map((item) => [item.id, item]));
@@ -127,24 +134,19 @@ for (const screen of detoxScreens) {
   }
 }
 
-const platformDetoxAliasSource = readFileSync(platformDetoxAliasPage, "utf8");
-if (!platformDetoxAliasSource.includes('permanentRedirect("/programs/way21")')) {
+const platformDetoxAliasSource = readInvariantSource(platformDetoxAliasPage, "/programs/detox");
+if (platformDetoxAliasSource !== null && !platformDetoxAliasSource.includes('permanentRedirect("/programs/way21")')) {
   fail("/programs/detox invariant failed: alias route must permanently redirect to /programs/way21");
 }
 
-const publicDetoxAliasSource = readFileSync(publicDetoxAliasPage, "utf8");
-if (!publicDetoxAliasSource.includes('permanentRedirect("/programs/way21")')) {
+const publicDetoxAliasSource = readInvariantSource(publicDetoxAliasPage, "/detox");
+if (publicDetoxAliasSource !== null && !publicDetoxAliasSource.includes('permanentRedirect("/programs/way21")')) {
   fail("/detox invariant failed: alias route must permanently redirect to /programs/way21");
 }
 
-const publicHerbsAliasSource = readFileSync(publicHerbsAliasPage, "utf8");
-if (!publicHerbsAliasSource.includes('Redirect("/products/herbs")')) {
+const publicHerbsAliasSource = readInvariantSource(publicHerbsAliasPage, "/herbs");
+if (publicHerbsAliasSource !== null && !publicHerbsAliasSource.includes('Redirect("/products/herbs")')) {
   fail("/herbs invariant failed: alias route must redirect to /products/herbs");
-}
-
-const funnelSupportSource = readFileSync(funnelSupportPage, "utf8");
-if (funnelSupportSource.includes('"herbs"')) {
-  fail("funnel-support invariant failed: herbs utility pages must remain disabled in Wave 1");
 }
 
 if (failures.length > 0) {

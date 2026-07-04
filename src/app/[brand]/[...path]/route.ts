@@ -63,7 +63,11 @@ export async function GET(req: Request, context: { params: Promise<{ brand: stri
     return new Response("Not found", { status: 404 });
   }
 
-  if (brand === "short" && req.headers.get(CW_HOST_UTILITY_REWRITE_HEADER) !== "1") {
+  // Canonical /short/* → /reboot/* aliasing only applies while the next-landing
+  // runtime owns /reboot. In full rollback mode the proxy rewrites /reboot back
+  // to /short/index.html, so redirecting here would form a 308 loop — legacy
+  // serves the original static HTML directly instead.
+  if (brand === "short" && req.headers.get(CW_HOST_UTILITY_REWRITE_HEADER) !== "1" && isNextLandingEnabled()) {
     const canonicalTarget = getCanonicalRebootAliasTarget(assetPath);
     if (canonicalTarget) {
       const url = new URL(req.url);
@@ -96,8 +100,10 @@ export async function GET(req: Request, context: { params: Promise<{ brand: stri
 
     if (managedPage) {
       if (!isNextLandingEnabled()) {
-        // Full rollback mode serves original static managed HTML.
-        return serveStaticAsset(brand, assetPath);
+        // Full rollback mode serves original static managed HTML. Map through
+        // MANAGED_LANDING_FILE_BY_PAGE so clean routes (e.g. /thanks) resolve
+        // to the actual file (thanks.html), same as the static-first branch below.
+        return serveStaticAsset(brand, [MANAGED_LANDING_FILE_BY_PAGE[managedPage]]);
       }
       // Managed secondary pages are generated from static assets plus canonized content.
       // Cache them at the route level so the catch-all handler does not stay fully dynamic.

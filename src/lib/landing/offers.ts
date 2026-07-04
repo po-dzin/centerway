@@ -114,7 +114,10 @@ function asPositiveInteger(value: number | string | null | undefined): number | 
 }
 
 function formatPriceLabel(amount: number, currency: string): string {
-  return `${amount.toLocaleString("uk-UA")} ${currency === "UAH" ? "грн" : currency}`;
+  // No thousands separator: toLocaleString("uk-UA") inserts a non-breaking
+  // space (4100 -> "4 100"), breaking every other landing's plain "4100 грн"
+  // convention (way21, reset-day) and this exact string match in typed hero.
+  return `${amount} ${currency === "UAH" ? "грн" : currency}`;
 }
 
 function formatDeadlineLabel(iso: string | null): string | null {

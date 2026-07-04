@@ -662,3 +662,22 @@ body:not(.utility-page) h2{
   border:1px solid var(--line);
   border-radius:var(--r-md);
 }
+
+/* ============ Premium lead-form modal ============ */
+.lead-modal{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;padding:20px}
+.lead-modal[hidden]{display:none}
+.lead-modal__backdrop{position:absolute;inset:0;background:rgba(27,29,46,.55);backdrop-filter:blur(3px)}
+.lead-modal__dialog{position:relative;width:100%;max-width:30rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-med);padding:clamp(1.4rem,4vw,2rem);max-height:90vh;overflow:auto}
+.lead-modal__x{position:absolute;top:.7rem;right:.9rem;width:2rem;height:2rem;border:0;background:transparent;font-size:1.5rem;line-height:1;color:var(--text-soft);cursor:pointer;border-radius:50%}
+.lead-modal__x:hover{background:var(--surface-cool);color:var(--ink)}
+.lead-modal__program{font-family:var(--f-ui);font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--cta-strong);margin:0 0 .3rem}
+.lead-modal__title{font-family:var(--f-display);font-size:1.4rem;color:var(--ink);margin:0 0 .4rem}
+.lead-modal__sub{font-size:.95rem;color:var(--text-muted);margin:0 0 1.1rem;line-height:1.5}
+.lead-modal__input{width:100%;box-sizing:border-box;margin-bottom:.7rem;padding:.8rem .95rem;font:inherit;font-size:1rem;color:var(--ink);background:var(--surface-cool);border:1px solid var(--line-strong);border-radius:var(--r-sm)}
+.lead-modal__input:focus{outline:2px solid var(--cta);outline-offset:1px;border-color:var(--cta)}
+textarea.lead-modal__input{resize:vertical;min-height:3.2rem}
+.lead-modal__submit{width:100%;margin-top:.3rem;justify-content:center}
+.lead-modal__status{margin:.7rem 0 0;font-size:.9rem;line-height:1.4}
+.lead-modal__status[data-lead-status-kind="error"]{color:#b3402a}
+.lead-modal__status[data-lead-status-kind="pending"]{color:var(--text-muted)}
+.lead-modal__done{font-size:1rem;color:var(--ink);line-height:1.55;margin:.4rem 0 1.1rem}

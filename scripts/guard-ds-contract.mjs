@@ -14,8 +14,7 @@ const files = {
   landingContent: path.join(rootDir, "src/lib/landing/content.ts"),
   shortProduct: path.join(staticRootDir, "short/css/short.product.css"),
   shortResponsive: path.join(staticRootDir, "short/css/short.product.responsive.css"),
-  iremProduct: path.join(staticRootDir, "irem/css/irem.product.css"),
-  iremResponsive: path.join(staticRootDir, "irem/css/irem.product.responsive.css"),
+  iremTheme: path.join(staticRootDir, "irem/css/irem.theme.css"),
   shortIndex: path.join(staticRootDir, "short/index.html"),
   iremIndex: path.join(staticRootDir, "irem/index.html"),
   shortIndex2: path.join(staticRootDir, "short/index2.html"),
@@ -51,6 +50,32 @@ const requiredLandingTokens = [
   "--landing-radius-card",
   "--landing-space-section-padding-y",
   "--landing-type-scale-32",
+];
+
+// Semantic layer floor: the visual-role and platform-mode tokens the DS is
+// built on. tokens:check catches hand-edit drift; this catches silent removal
+// from the JSON source (which would regenerate a clean but incomplete
+// globals.css). Keep in sync with cw.tokens.json layers.semanticAliases +
+// layers.modeOverrides.platform and docs/design-system.md.
+const requiredSemanticTokens = [
+  "--cw-sem-calm-bg",
+  "--cw-sem-calm-surface",
+  "--cw-sem-method-ink",
+  "--cw-sem-guide-primary",
+  "--cw-sem-guide-strong",
+  "--cw-sem-embodied",
+  "--cw-sem-progress",
+  "--cw-sem-warmth",
+  "--cw-sem-boundary",
+  "--cw-sem-trust",
+  "--cw-platform-bg",
+  "--cw-platform-surface",
+  "--cw-platform-text",
+  "--cw-platform-muted",
+  "--cw-platform-border",
+  "--cw-platform-accent",
+  "--cw-platform-accent-strong",
+  "--cw-platform-accent-contrast",
 ];
 
 function readFile(filePath) {
@@ -246,6 +271,18 @@ function assertSourceHtmlHealth() {
 function assertProductCssGuardrails(filePath, product) {
   const labelPrefix = path.relative(rootDir, filePath);
   assertNoRawHex(filePath, `${labelPrefix}: no raw hex in component rules`);
+  assertCrossLayerConsumptionGuardrails(filePath, product);
+}
+
+// Theme-layer files (irem.theme.css since 23b992a replaced irem.product.css)
+// own their local color primitives, so raw hex is allowed there — only
+// consumption of foreign token layers is forbidden.
+function assertThemeCssGuardrails(filePath, product) {
+  assertCrossLayerConsumptionGuardrails(filePath, product);
+}
+
+function assertCrossLayerConsumptionGuardrails(filePath, product) {
+  const labelPrefix = path.relative(rootDir, filePath);
   assertNoConsumptionPattern(filePath, /var\(--legacy-color-/g, `${labelPrefix}: no legacy-color consumption`);
   assertNoConsumptionPattern(filePath, /var\(--product-color-ref-/g, `${labelPrefix}: no product-color-ref consumption`);
   assertNoConsumptionPattern(filePath, /var\(--product-/g, `${labelPrefix}: no product-* consumption`);
@@ -371,7 +408,15 @@ function main() {
 
   assertTokens(files.sharedTokens, requiredDsTokens, "Shared DS token contract");
   assertTokens(files.appGlobals, requiredDsTokens.filter((token) => !token.startsWith("--ds-color-product-")), "App globals DS bridge contract");
+  assertTokens(files.appGlobals, requiredSemanticTokens, "App globals semantic layer contract");
   assertTokens(files.landingBridge, requiredLandingTokens, "Landing bridge semantic token contract");
+
+  // Stage 3 deleted the legacy --cw-color-* bridge; keep it deleted.
+  assertNoRepoPattern({
+    pattern: /--cw-color-[A-Za-z0-9_-]+/g,
+    label: "No legacy --cw-color-* token reintroduction",
+    ignore: ["scripts/guard-ds-contract.mjs"],
+  });
 
   assertContains(
     files.landingConfig,
@@ -396,8 +441,7 @@ function main() {
 
   assertProductCssGuardrails(files.shortProduct, "short");
   assertProductCssGuardrails(files.shortResponsive, "short");
-  assertProductCssGuardrails(files.iremProduct, "irem");
-  assertProductCssGuardrails(files.iremResponsive, "irem");
+  assertThemeCssGuardrails(files.iremTheme, "irem");
   assertHeroTypedContentParity();
 
   if (process.exitCode) {
