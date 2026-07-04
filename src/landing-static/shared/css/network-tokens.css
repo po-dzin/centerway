@@ -1,0 +1,139 @@
+/* ============================================================================
+   CenterWay landing network — single semantic token source (one DS for all 5).
+
+   Per the ReOS canon (`Дизайн-токени.md`), the design system IS the token
+   contract, not any one component stylesheet. This file is that contract for
+   the platform-author network (way21 / reset-day / dosha / consult / herbs):
+
+     platform --cw-sem-* (data/design-tokens/cw.tokens.json)   ← base of record
+        │  values mirrored here as the network's --cw-net-* semantic layer
+        ▼
+     --cw-net-*  (defaults below = the mineral "core" = way21 palette)
+        │  per-landing skin blocks override only the values that differ
+        ▼
+     local dialects map onto --cw-net-*:
+        · way21 / reset-day page.css : --ink/--indigo/--cta/… → var(--cw-net-*)
+        · funnel-network.css (dosha/consult/herbs) : --cw-accent/--cw-gold/… → var(--cw-net-*)
+
+   Change a value here → all five landings move together, and the whole network
+   stays traceable to platform canon. Loaded before funnel-network.css / page.css
+   on every landing. Custom properties resolve at use-time, so file order only
+   needs to keep this before the consumers for clarity.
+
+   Trace map (network → platform semantic → primitive):
+     --cw-net-route        ≈ --cw-sem-guide-primary  (#4f7e76, AA-deepened #3f6f63)
+     --cw-net-route-strong ≈ --cw-sem-guide-strong   (#1e3d34)
+     --cw-net-gold         =  --cw-sem-warmth         (#dba54f)
+     --cw-net-canvas       ≈ --cw-sem-calm-bg         (#f6f2ea)
+     --cw-net-ink          ≈ --cw-sem-method-ink      (#31403e, network core #1d3a30)
+   ============================================================================ */
+
+[data-cw-landing] {
+  /* --- palette primitives: default = way21 mineral core --- */
+  --cw-net-canvas: #f7f5ec;
+  --cw-net-surface: #ffffff;
+  --cw-net-surface-cool: #f1f5f0;
+  --cw-net-ink: #1d3a30;
+  --cw-net-ink-soft: #2c4c40;
+  --cw-net-text: #1b2a24;
+  --cw-net-text-muted: #45544c;
+  --cw-net-text-soft: #6a7770;
+
+  --cw-net-route: #3f6f63;         /* primary green a landing leads with */
+  --cw-net-route-bright: #4f7e76;  /* = --cw-sem-guide-primary */
+  --cw-net-route-strong: #264e44;
+  --cw-net-route-soft: #e9f1ec;    /* soft accent tint (backgrounds) */
+  --cw-net-chip: #e4efe7;
+  --cw-net-chip-soft: #f0f6f1;
+
+  --cw-net-gold: #dba54f;          /* = --cw-sem-warmth */
+  --cw-net-gold-strong: #c2902f;
+  --cw-net-on-gold: #1d3a30;       /* ink on gold (AA) */
+
+  --cw-net-line: #dbe6dc;
+  --cw-net-line-strong: #bccfbf;
+
+  /* --- shared scale (shape / type) --- */
+  --cw-net-font: "Formular", "Segoe UI", Arial, sans-serif;
+}
+
+/* ============ Per-landing skins (override palette only) ============ */
+
+/* way21 — deep mineral core (= defaults; declared explicitly for clarity) */
+[data-cw-landing="way21"] {
+  --cw-net-route: #3f6f63;
+  --cw-net-route-bright: #4f7e76;
+  --cw-net-route-strong: #264e44;
+  --cw-net-route-soft: #e9f1ec;
+  --cw-net-chip: #e4efe7;
+  --cw-net-chip-soft: #f0f6f1;
+  --cw-net-ink: #1d3a30;
+  --cw-net-ink-soft: #2c4c40;
+  --cw-net-text: #1b2a24;
+  --cw-net-text-muted: #45544c;
+  --cw-net-text-soft: #6a7770;
+  --cw-net-canvas: #f7f5ec;
+  --cw-net-surface-cool: #f1f5f0;
+  --cw-net-line: #dbe6dc;
+  --cw-net-line-strong: #bccfbf;
+  --cw-net-on-gold: #1d3a30;
+}
+
+/* reset-day — light sage (lighter / emotional variant of the core) */
+[data-cw-landing="reset-day"] {
+  --cw-net-route: #588a72;
+  --cw-net-route-bright: #6fa085;
+  --cw-net-route-strong: #35604f;
+  --cw-net-route-soft: #eef5f0;
+  --cw-net-chip: #e7f1ea;
+  --cw-net-chip-soft: #f2f8f3;
+  --cw-net-ink: #284a3b;
+  --cw-net-ink-soft: #3a5e4d;
+  --cw-net-text: #243530;
+  --cw-net-text-muted: #4d5b54;
+  --cw-net-text-soft: #74807a;
+  --cw-net-canvas: #f9f7ef;
+  --cw-net-surface-cool: #f3f7f1;
+  --cw-net-line: #e0eadf;
+  --cw-net-line-strong: #c5d6c6;
+  --cw-net-on-gold: #22382e;
+}
+
+/* dosha — deep diagnostic core (mirrors way21 route) */
+[data-cw-landing="dosha"] {
+  --cw-net-route: #3f6f63;
+  --cw-net-route-bright: #4f7e76;
+  --cw-net-route-strong: #1d3a30;
+  --cw-net-route-soft: #e9f1ec;
+  --cw-net-ink: #1d3a30;
+  --cw-net-text: #2c4137;
+  --cw-net-text-soft: #5f6f66;
+  --cw-net-canvas: #f7f4ec;
+  --cw-net-on-gold: #1d3a30;
+}
+
+/* consult — bright mineral trust */
+[data-cw-landing="consult"] {
+  --cw-net-route: #4f7e76;
+  --cw-net-route-bright: #4f7e76;
+  --cw-net-route-strong: #234b41;
+  --cw-net-route-soft: #e9f1ec;
+  --cw-net-ink: #1d3a30;
+  --cw-net-text: #2c4137;
+  --cw-net-text-soft: #5f6f66;
+  --cw-net-canvas: #f7f4ec;
+  --cw-net-on-gold: #1d3a30;
+}
+
+/* herbs — leafier nature (still inside the family) */
+[data-cw-landing="herbs"] {
+  --cw-net-route: #5f8757;
+  --cw-net-route-bright: #5f8757;
+  --cw-net-route-strong: #2f4b24;
+  --cw-net-route-soft: #eef5e6;
+  --cw-net-ink: #22392b;
+  --cw-net-text: #2f4536;
+  --cw-net-text-soft: #63736a;
+  --cw-net-canvas: #f7f4ec;
+  --cw-net-on-gold: #22392b;
+}
