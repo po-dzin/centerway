@@ -372,6 +372,8 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .inc-card .plus-tag{display:inline-block;font-size:.7rem;font-weight:700;color:var(--cta-strong);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.5rem}
 .inc-card h4{font-family:var(--f-ui);font-weight:700;font-size:1.05rem;color:var(--ink);margin-bottom:.4rem}
 .inc-card p{font-size:.93rem;color:var(--text-muted)}
+.inc-link{display:inline-block;margin-top:.5rem;font-weight:700;color:var(--indigo);font-size:.93rem}
+.inc-link:hover{color:var(--ink)}
 
 /* ============ AUTHOR ============ */
 .author{display:grid;grid-template-columns:.85fr 1.15fr;gap:clamp(28px,4vw,56px);align-items:center;

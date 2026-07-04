@@ -67,6 +67,30 @@
   --f-ui: "Formular", "Segoe UI", Arial, sans-serif;
   --f-mono: "Formular", "Segoe UI", Arial, sans-serif;
   --chip-py: .55em; --chip-px: .95em; --chip-fs: .78rem; --chip-nudge: .09em;
+
+  /* --- local dialect map: the premium component DS (landing.css) reads
+     --ink/--indigo/--cta/… ; bind them to the --cw-net-* contract once here so
+     every landing resolves them from its skin. way21/reset-day page.css also
+     declare these (redundantly) alongside their --irem-*/--landing-* extras. --- */
+  --ink: var(--cw-net-ink);
+  --ink-soft: var(--cw-net-ink-soft);
+  --indigo: var(--cw-net-route);
+  --indigo-bright: var(--cw-net-route-bright);
+  --indigo-tint: var(--cw-net-route-soft);
+  --chip: var(--cw-net-chip);
+  --chip-soft: var(--cw-net-chip-soft);
+  --cta: var(--cw-net-gold);
+  --cta-strong: var(--cw-net-gold-strong);
+  --on-cta: var(--cw-net-on-gold);
+  --cream: var(--cw-net-canvas);
+  --surface: var(--cw-net-surface);
+  --surface-cool: var(--cw-net-surface-cool);
+  --line: var(--cw-net-line);
+  --line-strong: var(--cw-net-line-strong);
+  --text: var(--cw-net-text);
+  --text-muted: var(--cw-net-text-muted);
+  --text-soft: var(--cw-net-text-soft);
+  --gold: var(--cw-net-gold);
 }
 
 /* ============ Per-landing skins (override palette only) ============ */
