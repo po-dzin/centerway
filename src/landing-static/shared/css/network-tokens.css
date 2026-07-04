@@ -91,6 +91,14 @@
   --text-muted: var(--cw-net-text-muted);
   --text-soft: var(--cw-net-text-soft);
   --gold: var(--cw-net-gold);
+
+  /* dark-section palette (used by .offer and other dark blocks in landing.css).
+     Default = mineral-dark; way21/reset-day page.css override per skin. */
+  --irem-dark-1: #173027; --irem-dark-2: #274a3c;
+  --irem-grad-dark: linear-gradient(165deg, var(--irem-dark-1), var(--irem-dark-2));
+  --irem-gold-bright: #e0b25c; --irem-gold-soft: #e6b863; --irem-gold-tint: #f3ead4;
+  --irem-on-dark-soft: #cfe0d3; --irem-on-dark-muted: #b3c8b9; --irem-on-dark-faint: #7e9587; --irem-on-dark-label: #a7c1ad;
+  --irem-indigo-soft: #6f9a86;
 }
 
 /* ============ Per-landing skins (override palette only) ============ */
