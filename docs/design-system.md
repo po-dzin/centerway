@@ -77,6 +77,19 @@ Rules that hold today:
 - `tokens:build` must be a no-op on a clean tree (`tokens:check` in `ds:qa`); edit `cw.tokens.json`, never the generated blocks in `globals.css`.
 - Landing isolation (Short/IREM own their theme files) is an **author boundary**, not tech debt — do not "unify" it.
 
+### Consumption contract (which tier a component may read)
+
+Platform components legitimately consume **three** tiers, and that is by design — not drift. Measured today: `--cw-platform-*` in 9 modules, `--ds-*` in 8, `--cw-sem-*` in 6.
+
+| Tier | A component may read it when… |
+|---|---|
+| `--cw-platform-*` | it needs the platform's resolved surface/text/accent (the default for platform chrome). |
+| `--cw-sem-*` | it needs a specific visual *role* the platform alias doesn't expose (e.g. `boundary`, `progress`, `embodied` accents inside a block). |
+| `--ds-*` | it needs a delivery-level primitive shared with landings (type scale, spacing, radius, touch target). |
+| `--cw-*` chrome (`--cw-bg/text/accent/…`) | admin/dark surfaces only — the base theme layer. |
+
+Forbidden from components regardless of tier: `layers.primitives.*` (raw mineral colors), raw hex, and any locally-defined `--cw-*` token (canon:guard enforces the last two on platform CSS). The rule of thumb: reach for the **highest** tier that already answers the need; drop a tier only when the one above doesn't expose the role.
+
 ## Theming
 
 - Public platform: single light theme in `:root`.
@@ -104,11 +117,18 @@ The contract layer (`route_family_contracts.json` → `screen_manifests.json` �
 | `canon:guard` | canon files exist, preflight sentinels, raw-hex allowlist + no local `--cw-*` defs over platform CSS, manifest cross-references |
 | `tokens:check` | codegen JSON→CSS is a no-op on a clean tree (drift gate) |
 | `guard:ds-contract` | `--ds-*` delivery + landing token contracts, required `--cw-sem-*`/`--cw-platform-*` floor, cross-layer consumption bans, no `--cw-color-*` reintroduction, hero content parity |
-| `guard:contrast` | WCAG contrast of text/CTA pairs resolved from `cw.tokens.json` (body ≥ 4.5, large/CTA fills ≥ 3.0) |
+| `guard:contrast` | WCAG contrast of rendered text/CTA pairs resolved from `cw.tokens.json`, both themes — platform light + admin dark (body ≥ 4.5, large/CTA fills ≥ 3.0) |
 | `generator:validate` + snapshot/determinism/language/rhythm | generator layer |
 | `semantic:audit` | route-family contracts, block order, route invariants (alias redirects exist + redirect correctly) |
 
-Contrast watch (`guard:contrast`): two CTA fills sit in the large-text tier below body AA — `accent-contrast` on `guide-primary` (4.34) and on `boundary` (4.17). They pass at 3.0 as large/semibold labels but are the first candidates if the palette is retuned for a stricter bar.
+Contrast watch (`guard:contrast`): two light CTA fills sit in the large-text tier below body AA — `accent-contrast` on `guide-primary` (4.34) and on `boundary` (4.17). They pass at 3.0 as large/semibold labels but are the first candidates if the palette is retuned for a stricter bar. Dark admin text pairs all pass AA; the gate deliberately skips the dark accent/button fills because those tokens have no consumers (see Orphan tokens).
+
+### Orphan tokens (defined, no consumers)
+
+Tracked so no one assumes they render:
+
+- `--cw-role-*`, `--cw-cta-*` (in `token_packs.json`) — carried by packs for the dormant generated-app runtime; zero CSS consumers.
+- `--cw-btn-primary-*` (in `globals.css`, both themes) — defined but not consumed by any button; **note:** its dark pairing computes to ~2.06 contrast, so it must be retuned before it is ever wired to a rendered button.
 
 ## Aspirational Ledger (not implemented)
 
