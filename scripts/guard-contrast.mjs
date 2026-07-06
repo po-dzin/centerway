@@ -40,12 +40,11 @@ const darkMap = buildMap(tokens.base?.dark);
 // silent: two current fills sit at ~4.2-4.3 (below body AA) and are flagged
 // for future palette tuning rather than grandfathered without a trace.
 //
-// Only pairs that actually render as text-on-surface are asserted. The dark
-// theme's accent/button fills (--cw-accent-contrast on --cw-accent,
-// --cw-btn-primary-*) are intentionally NOT listed: those tokens have zero
-// component consumers, so asserting them would fail on dead tokens. If the
-// admin primary button is ever wired to --cw-btn-primary-*, its dark pairing
-// currently computes to ~2.06 and must be retuned before it renders.
+// Only pairs that actually render as text-on-surface are asserted. The
+// `.cw-btn-primary` label/fill IS a rendered pair in both themes (the class is
+// defined in globals.css from --cw-btn-primary-*, consumed by RouteAuthGate
+// and the dosha test), so it is checked below at body AA — its label is 14px
+// semibold, which is not WCAG "large", so 4.5 applies.
 const AA_BODY = 4.5;
 const AA_LARGE = 3.0;
 
@@ -62,12 +61,19 @@ const pairs = [
   { theme: "light", fg: "--cw-platform-accent-contrast", bg: "--cw-sem-guide-primary", min: AA_LARGE, context: "CTA label on guide primary (large/semibold)" },
   { theme: "light", fg: "--cw-platform-accent-contrast", bg: "--cw-sem-boundary", min: AA_LARGE, context: "label on boundary fill (large/semibold)" },
   { theme: "light", fg: "--cw-platform-accent-contrast", bg: "--cw-sem-trust", min: AA_LARGE, context: "label on trust fill (large/semibold)" },
+  // .cw-btn-primary — rendered primary button (RouteAuthGate, dosha test), 14px semibold label => body AA
+  { theme: "light", fg: "--cw-btn-primary-text", bg: "--cw-btn-primary-bg", min: AA_BODY, context: "primary button label on fill" },
+  { theme: "light", fg: "--cw-btn-primary-text-hover", bg: "--cw-btn-primary-bg-hover", min: AA_BODY, context: "primary button label on hover fill" },
+  { theme: "light", fg: "--cw-btn-primary-text-active", bg: "--cw-btn-primary-bg-active", min: AA_BODY, context: "primary button label on active fill" },
   // admin dark (.dark) — real rendered text pairs only
   { theme: "dark", fg: "--cw-text", bg: "--cw-bg", min: AA_BODY, context: "admin body text on page" },
   { theme: "dark", fg: "--cw-text", bg: "--cw-surface-solid", min: AA_BODY, context: "admin body text on panel" },
   { theme: "dark", fg: "--cw-muted", bg: "--cw-bg", min: AA_BODY, context: "admin secondary text on page" },
   { theme: "dark", fg: "--cw-muted", bg: "--cw-surface-solid", min: AA_BODY, context: "admin secondary text on panel" },
   { theme: "dark", fg: "--cw-text", bg: "--cw-choice-bg-selected", min: AA_BODY, context: "admin text on selected choice" },
+  { theme: "dark", fg: "--cw-btn-primary-text", bg: "--cw-btn-primary-bg", min: AA_BODY, context: "primary button label on fill" },
+  { theme: "dark", fg: "--cw-btn-primary-text-hover", bg: "--cw-btn-primary-bg-hover", min: AA_BODY, context: "primary button label on hover fill" },
+  { theme: "dark", fg: "--cw-btn-primary-text-active", bg: "--cw-btn-primary-bg-active", min: AA_BODY, context: "primary button label on active fill" },
 ];
 
 const maps = { light: lightMap, dark: darkMap };
