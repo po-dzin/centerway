@@ -53,8 +53,52 @@
   --cw-net-line: #dbe6dc;
   --cw-net-line-strong: #bccfbf;
 
-  /* --- shared scale (shape / type) --- */
+  /* --- shared scale (shape / type / rhythm) — consumed by the shared
+     component DS (shared/css/landing.css). One scale for the whole network;
+     landings no longer carry per-page radius/spacing/shadow. --- */
   --cw-net-font: "Formular", "Segoe UI", Arial, sans-serif;
+  --maxw: 1160px;
+  --r-sm: .7rem; --r-md: 1rem; --r-lg: 1.4rem; --r-pill: 999px;
+  --sp-sec: clamp(64px, 9vw, 132px);
+  --shadow-soft: 0 1px 2px rgba(23,48,39,.05), 0 8px 24px rgba(23,48,39,.07);
+  --shadow-med: 0 2px 6px rgba(23,48,39,.08), 0 20px 48px rgba(23,48,39,.13);
+  --shadow-cta: 0 8px 22px rgba(219,165,79,.32);
+  --f-display: "Formular", "Segoe UI", Arial, sans-serif;
+  --f-ui: "Formular", "Segoe UI", Arial, sans-serif;
+  --f-mono: "Formular", "Segoe UI", Arial, sans-serif;
+  --chip-py: .55em; --chip-px: .95em; --chip-fs: .78rem; --chip-nudge: .09em;
+
+  /* --- local dialect map: the premium component DS (landing.css) reads
+     --ink/--indigo/--cta/… ; bind them to the --cw-net-* contract once here so
+     every landing resolves them from its skin. way21/reset-day page.css also
+     declare these (redundantly) alongside their --irem-*/--landing-* extras. --- */
+  --ink: var(--cw-net-ink);
+  --ink-soft: var(--cw-net-ink-soft);
+  --indigo: var(--cw-net-route);
+  --indigo-bright: var(--cw-net-route-bright);
+  --indigo-tint: var(--cw-net-route-soft);
+  --chip: var(--cw-net-chip);
+  --chip-soft: var(--cw-net-chip-soft);
+  --cta: var(--cw-net-gold);
+  --cta-strong: var(--cw-net-gold-strong);
+  --on-cta: var(--cw-net-on-gold);
+  --cream: var(--cw-net-canvas);
+  --surface: var(--cw-net-surface);
+  --surface-cool: var(--cw-net-surface-cool);
+  --line: var(--cw-net-line);
+  --line-strong: var(--cw-net-line-strong);
+  --text: var(--cw-net-text);
+  --text-muted: var(--cw-net-text-muted);
+  --text-soft: var(--cw-net-text-soft);
+  --gold: var(--cw-net-gold);
+
+  /* dark-section palette (used by .offer and other dark blocks in landing.css).
+     Default = mineral-dark; way21/reset-day page.css override per skin. */
+  --irem-dark-1: #173027; --irem-dark-2: #274a3c;
+  --irem-grad-dark: linear-gradient(165deg, var(--irem-dark-1), var(--irem-dark-2));
+  --irem-gold-bright: #e0b25c; --irem-gold-soft: #e6b863; --irem-gold-tint: #f3ead4;
+  --irem-on-dark-soft: #cfe0d3; --irem-on-dark-muted: #b3c8b9; --irem-on-dark-faint: #7e9587; --irem-on-dark-label: #a7c1ad;
+  --irem-indigo-soft: #6f9a86;
 }
 
 /* ============ Per-landing skins (override palette only) ============ */
