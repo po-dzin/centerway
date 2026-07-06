@@ -29,9 +29,9 @@
     --ds-radius-button-soft: 1rem;
     --cw-radius-btn: var(--ds-radius-button-soft);
     --cw-brand-hover-border: color-mix(in srgb, var(--cw-accent) 72%, var(--cw-border) 28%);
-    --cw-btn-primary-bg: color-mix(in srgb, var(--cw-accent) 70%, var(--cw-status-success) 30%);
-    --cw-btn-primary-bg-hover: color-mix(in srgb, var(--cw-accent) 76%, var(--cw-status-success) 24%);
-    --cw-btn-primary-bg-active: color-mix(in srgb, var(--cw-accent) 64%, var(--cw-status-success) 36%);
+    --cw-btn-primary-bg: color-mix(in srgb, var(--cw-status-success) 55%, var(--cw-text) 45%);
+    --cw-btn-primary-bg-hover: color-mix(in srgb, var(--cw-status-success) 60%, var(--cw-text) 40%);
+    --cw-btn-primary-bg-active: color-mix(in srgb, var(--cw-status-success) 50%, var(--cw-text) 50%);
     --cw-btn-primary-text: var(--cw-accent-contrast);
     --cw-btn-primary-text-hover: var(--cw-accent-contrast);
     --cw-btn-primary-text-active: var(--cw-accent-contrast);
@@ -274,9 +274,9 @@
     --ds-radius-button-soft: 1rem;
     --cw-radius-btn: var(--ds-radius-button-soft);
     --cw-brand-hover-border: color-mix(in srgb, var(--cw-accent) 74%, var(--cw-border) 26%);
-    --cw-btn-primary-bg: color-mix(in srgb, var(--cw-accent) 72%, var(--cw-status-success) 28%);
-    --cw-btn-primary-bg-hover: color-mix(in srgb, var(--cw-accent) 78%, var(--cw-status-success) 22%);
-    --cw-btn-primary-bg-active: color-mix(in srgb, var(--cw-accent) 66%, var(--cw-status-success) 34%);
+    --cw-btn-primary-bg: color-mix(in srgb, var(--cw-status-success) 44%, var(--cw-bg) 56%);
+    --cw-btn-primary-bg-hover: color-mix(in srgb, var(--cw-status-success) 49%, var(--cw-bg) 51%);
+    --cw-btn-primary-bg-active: color-mix(in srgb, var(--cw-status-success) 39%, var(--cw-bg) 61%);
     --cw-btn-primary-text: var(--cw-accent-contrast);
     --cw-btn-primary-text-hover: var(--cw-accent-contrast);
     --cw-btn-primary-text-active: var(--cw-accent-contrast);

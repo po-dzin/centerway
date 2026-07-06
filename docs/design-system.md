@@ -121,14 +121,15 @@ The contract layer (`route_family_contracts.json` → `screen_manifests.json` �
 | `generator:validate` + snapshot/determinism/language/rhythm | generator layer |
 | `semantic:audit` | route-family contracts, block order, route invariants (alias redirects exist + redirect correctly) |
 
-Contrast watch (`guard:contrast`): two light CTA fills sit in the large-text tier below body AA — `accent-contrast` on `guide-primary` (4.34) and on `boundary` (4.17). They pass at 3.0 as large/semibold labels but are the first candidates if the palette is retuned for a stricter bar. Dark admin text pairs all pass AA; the gate deliberately skips the dark accent/button fills because those tokens have no consumers (see Orphan tokens).
+Contrast watch (`guard:contrast`): two light CTA fills sit in the large-text tier below body AA — `accent-contrast` on `guide-primary` (4.34) and on `boundary` (4.17). They pass at 3.0 as large/semibold labels but are the first candidates if the palette is retuned for a stricter bar. All `.cw-btn-primary` states and every dark admin text pair pass body AA.
 
 ### Orphan tokens (defined, no consumers)
 
 Tracked so no one assumes they render:
 
 - `--cw-role-*`, `--cw-cta-*` (in `token_packs.json`) — carried by packs for the dormant generated-app runtime; zero CSS consumers.
-- `--cw-btn-primary-*` (in `globals.css`, both themes) — defined but not consumed by any button; **note:** its dark pairing computes to ~2.06 contrast, so it must be retuned before it is ever wired to a rendered button.
+
+Note — `--cw-btn-primary-*` was previously listed here as orphan; that was wrong. `.cw-btn-primary` (globals.css) is a rendered class consumed by `RouteAuthGate` and the dosha test. Its fill was retuned 2026-07-06 (gray-accent mix → success/ink mix) because the old dark pairing was ~2.06; it now clears body AA in both themes and is asserted by `guard:contrast`.
 
 ## Aspirational Ledger (not implemented)
 
