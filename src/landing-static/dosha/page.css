@@ -1,6 +1,0 @@
-/* dosha — palette now lives in the shared network token contract
-   (shared/css/network-tokens.css, skin block [data-cw-landing="dosha"]).
-   Only page-local layout knobs remain here. */
-[data-cw-landing="dosha"] {
-  --cw-hero-focus: center 12%;
-}

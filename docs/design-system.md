@@ -9,7 +9,9 @@ Living operational reference. Supersedes the archived snapshots:
 
 Authority order: RAverse canon (`/Users/G/Documents/RAverse/ReOS/Projects/CenterWay/**`) > this file > archived notes. This file describes the system **as implemented**; aspirational concepts are listed explicitly in the ledger at the bottom, never mixed into the descriptive sections.
 
-Simplification roadmap: `docs/archive/working-notes/ds-simplification-plan-2026-07-03.md` (stages 0–2 applied; stages 3–4 pending).
+Simplification roadmap: `docs/archive/working-notes/ds-simplification-plan-2026-07-03.md` (all stages applied).
+
+Rendered styleguide: `docs/design-system.styleguide.html` — self-contained HTML showing every layer live (primitives → semantic → platform → recipes → delivery), the block vocabulary, the contrast-gate results, and a live 5-pack theme switcher demonstrating per-author scaling. Values are copied from `cw.tokens.json` + generator manifests; regenerate when tokens change.
 
 ## System Definition
 
@@ -75,6 +77,19 @@ Rules that hold today:
 - `tokens:build` must be a no-op on a clean tree (`tokens:check` in `ds:qa`); edit `cw.tokens.json`, never the generated blocks in `globals.css`.
 - Landing isolation (Short/IREM own their theme files) is an **author boundary**, not tech debt — do not "unify" it.
 
+### Consumption contract (which tier a component may read)
+
+Platform components legitimately consume **three** tiers, and that is by design — not drift. Measured today: `--cw-platform-*` in 9 modules, `--ds-*` in 8, `--cw-sem-*` in 6.
+
+| Tier | A component may read it when… |
+|---|---|
+| `--cw-platform-*` | it needs the platform's resolved surface/text/accent (the default for platform chrome). |
+| `--cw-sem-*` | it needs a specific visual *role* the platform alias doesn't expose (e.g. `boundary`, `progress`, `embodied` accents inside a block). |
+| `--ds-*` | it needs a delivery-level primitive shared with landings (type scale, spacing, radius, touch target). |
+| `--cw-*` chrome (`--cw-bg/text/accent/…`) | admin/dark surfaces only — the base theme layer. |
+
+Forbidden from components regardless of tier: `layers.primitives.*` (raw mineral colors), raw hex, and any locally-defined `--cw-*` token (canon:guard enforces the last two on platform CSS). The rule of thumb: reach for the **highest** tier that already answers the need; drop a tier only when the one above doesn't expose the role.
+
 ## Theming
 
 - Public platform: single light theme in `:root`.
@@ -102,11 +117,19 @@ The contract layer (`route_family_contracts.json` → `screen_manifests.json` �
 | `canon:guard` | canon files exist, preflight sentinels, raw-hex allowlist + no local `--cw-*` defs over platform CSS, manifest cross-references |
 | `tokens:check` | codegen JSON→CSS is a no-op on a clean tree (drift gate) |
 | `guard:ds-contract` | `--ds-*` delivery + landing token contracts, required `--cw-sem-*`/`--cw-platform-*` floor, cross-layer consumption bans, no `--cw-color-*` reintroduction, hero content parity |
-| `guard:contrast` | WCAG contrast of text/CTA pairs resolved from `cw.tokens.json` (body ≥ 4.5, large/CTA fills ≥ 3.0) |
+| `guard:contrast` | WCAG contrast of rendered text/CTA pairs resolved from `cw.tokens.json`, both themes — platform light + admin dark (body ≥ 4.5, large/CTA fills ≥ 3.0) |
 | `generator:validate` + snapshot/determinism/language/rhythm | generator layer |
 | `semantic:audit` | route-family contracts, block order, route invariants (alias redirects exist + redirect correctly) |
 
-Contrast watch (`guard:contrast`): two CTA fills sit in the large-text tier below body AA — `accent-contrast` on `guide-primary` (4.34) and on `boundary` (4.17). They pass at 3.0 as large/semibold labels but are the first candidates if the palette is retuned for a stricter bar.
+Contrast watch (`guard:contrast`): two light CTA fills sit in the large-text tier below body AA — `accent-contrast` on `guide-primary` (4.34) and on `boundary` (4.17). They pass at 3.0 as large/semibold labels but are the first candidates if the palette is retuned for a stricter bar. All `.cw-btn-primary` states and every dark admin text pair pass body AA.
+
+### Orphan tokens (defined, no consumers)
+
+Tracked so no one assumes they render:
+
+- `--cw-role-*`, `--cw-cta-*` (in `token_packs.json`) — carried by packs for the dormant generated-app runtime; zero CSS consumers.
+
+Note — `--cw-btn-primary-*` was previously listed here as orphan; that was wrong. `.cw-btn-primary` (globals.css) is a rendered class consumed by `RouteAuthGate` and the dosha test. Its fill was retuned 2026-07-06 (gray-accent mix → success/ink mix) because the old dark pairing was ~2.06; it now clears body AA in both themes and is asserted by `guard:contrast`.
 
 ## Aspirational Ledger (not implemented)
 

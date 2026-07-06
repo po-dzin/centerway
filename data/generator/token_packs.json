@@ -1,5 +1,6 @@
 {
   "schema_version": "1.0.0",
+  "_status": "DORMANT — reserved for the generated-app runtime. No product is funnelRuntime:'generated-app' today, so these packs (incl. --cw-role-* and --cw-cta-* tokens) have zero CSS consumers. Kept schema-valid via generator:validate; activated with the first generated-app surface (LMS / second author). See docs/design-system.md Orphan tokens.",
   "packs": [
     {
       "id": "token_pack.warm-mineral.v1",
