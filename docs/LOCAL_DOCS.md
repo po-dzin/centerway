@@ -21,6 +21,7 @@ Keep only these files in the root of `docs/`:
 - `docs/LOCAL_DOCS.md`
 - `docs/platform_agent_preflight.md`
 - `docs/design-system.md` (living DS reference; archived DS snapshots point here)
+- `docs/design-system.styleguide.html` (self-contained rendered styleguide; regenerate from cw.tokens.json + generator manifests when tokens change)
 
 Keep these root directories:
 

@@ -14,36 +14,63 @@ const root = process.cwd();
 const tokensPath = path.join(root, "data", "design-tokens", "cw.tokens.json");
 const tokens = JSON.parse(readFileSync(tokensPath, "utf8"));
 
-const resolveMap = new Map();
-const ingest = (obj) => {
-  for (const [key, value] of Object.entries(obj ?? {})) resolveMap.set(key, value);
-};
-ingest(tokens.base?.light);
-ingest(tokens.layers?.semanticAliases);
-ingest(tokens.layers?.modeOverrides?.platform);
-ingest(tokens.layers?.componentRecipes?.depth);
+// Two rendered themes: platform light (:root) and admin dark (.dark).
+// Each theme resolves against its own token map. The light map layers the
+// semantic/platform/recipe tokens over base.light; the dark map is the admin
+// chrome (base.dark) — it does not use --cw-sem-*/--cw-platform-*.
+function buildMap(...objs) {
+  const map = new Map();
+  for (const obj of objs) {
+    for (const [key, value] of Object.entries(obj ?? {})) map.set(key, value);
+  }
+  return map;
+}
+
+const lightMap = buildMap(
+  tokens.base?.light,
+  tokens.layers?.semanticAliases,
+  tokens.layers?.modeOverrides?.platform,
+  tokens.layers?.componentRecipes?.depth,
+);
+const darkMap = buildMap(tokens.base?.dark);
 
 // AA (4.5) is the default for body/heading text. Primary-CTA fills carry
 // large/semibold labels (>=16px) and are held to the WCAG large-text tier
 // (3.0). Each large-tier pair is annotated so the lower bar is explicit, not
 // silent: two current fills sit at ~4.2-4.3 (below body AA) and are flagged
 // for future palette tuning rather than grandfathered without a trace.
+//
+// Only pairs that actually render as text-on-surface are asserted. The dark
+// theme's accent/button fills (--cw-accent-contrast on --cw-accent,
+// --cw-btn-primary-*) are intentionally NOT listed: those tokens have zero
+// component consumers, so asserting them would fail on dead tokens. If the
+// admin primary button is ever wired to --cw-btn-primary-*, its dark pairing
+// currently computes to ~2.06 and must be retuned before it renders.
 const AA_BODY = 4.5;
 const AA_LARGE = 3.0;
 
 const pairs = [
-  { fg: "--cw-platform-text", bg: "--cw-platform-bg", min: AA_BODY, context: "body text on page" },
-  { fg: "--cw-platform-text", bg: "--cw-platform-surface", min: AA_BODY, context: "body text on card" },
-  { fg: "--cw-platform-text", bg: "--cw-platform-surface-muted", min: AA_BODY, context: "body text on muted surface" },
-  { fg: "--cw-platform-muted", bg: "--cw-platform-bg", min: AA_BODY, context: "secondary text on page" },
-  { fg: "--cw-platform-muted", bg: "--cw-platform-surface", min: AA_BODY, context: "secondary text on card" },
-  { fg: "--cw-sem-method-ink", bg: "--cw-sem-calm-surface", min: AA_BODY, context: "heading ink on calm surface" },
-  { fg: "--cw-sem-method-ink", bg: "--cw-sem-calm-bg", min: AA_BODY, context: "heading ink on calm bg" },
-  { fg: "--cw-platform-accent-contrast", bg: "--cw-platform-accent-strong", min: AA_LARGE, context: "CTA label on strong accent (large/semibold)" },
-  { fg: "--cw-platform-accent-contrast", bg: "--cw-sem-guide-primary", min: AA_LARGE, context: "CTA label on guide primary (large/semibold)" },
-  { fg: "--cw-platform-accent-contrast", bg: "--cw-sem-boundary", min: AA_LARGE, context: "label on boundary fill (large/semibold)" },
-  { fg: "--cw-platform-accent-contrast", bg: "--cw-sem-trust", min: AA_LARGE, context: "label on trust fill (large/semibold)" },
+  // platform light (:root)
+  { theme: "light", fg: "--cw-platform-text", bg: "--cw-platform-bg", min: AA_BODY, context: "body text on page" },
+  { theme: "light", fg: "--cw-platform-text", bg: "--cw-platform-surface", min: AA_BODY, context: "body text on card" },
+  { theme: "light", fg: "--cw-platform-text", bg: "--cw-platform-surface-muted", min: AA_BODY, context: "body text on muted surface" },
+  { theme: "light", fg: "--cw-platform-muted", bg: "--cw-platform-bg", min: AA_BODY, context: "secondary text on page" },
+  { theme: "light", fg: "--cw-platform-muted", bg: "--cw-platform-surface", min: AA_BODY, context: "secondary text on card" },
+  { theme: "light", fg: "--cw-sem-method-ink", bg: "--cw-sem-calm-surface", min: AA_BODY, context: "heading ink on calm surface" },
+  { theme: "light", fg: "--cw-sem-method-ink", bg: "--cw-sem-calm-bg", min: AA_BODY, context: "heading ink on calm bg" },
+  { theme: "light", fg: "--cw-platform-accent-contrast", bg: "--cw-platform-accent-strong", min: AA_LARGE, context: "CTA label on strong accent (large/semibold)" },
+  { theme: "light", fg: "--cw-platform-accent-contrast", bg: "--cw-sem-guide-primary", min: AA_LARGE, context: "CTA label on guide primary (large/semibold)" },
+  { theme: "light", fg: "--cw-platform-accent-contrast", bg: "--cw-sem-boundary", min: AA_LARGE, context: "label on boundary fill (large/semibold)" },
+  { theme: "light", fg: "--cw-platform-accent-contrast", bg: "--cw-sem-trust", min: AA_LARGE, context: "label on trust fill (large/semibold)" },
+  // admin dark (.dark) — real rendered text pairs only
+  { theme: "dark", fg: "--cw-text", bg: "--cw-bg", min: AA_BODY, context: "admin body text on page" },
+  { theme: "dark", fg: "--cw-text", bg: "--cw-surface-solid", min: AA_BODY, context: "admin body text on panel" },
+  { theme: "dark", fg: "--cw-muted", bg: "--cw-bg", min: AA_BODY, context: "admin secondary text on page" },
+  { theme: "dark", fg: "--cw-muted", bg: "--cw-surface-solid", min: AA_BODY, context: "admin secondary text on panel" },
+  { theme: "dark", fg: "--cw-text", bg: "--cw-choice-bg-selected", min: AA_BODY, context: "admin text on selected choice" },
 ];
+
+const maps = { light: lightMap, dark: darkMap };
 
 function hexToRgb(hex) {
   let h = hex.replace("#", "");
@@ -52,20 +79,23 @@ function hexToRgb(hex) {
   return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
 }
 
-function resolve(value, depth = 0) {
+function resolve(value, map, depth = 0) {
   if (depth > 12 || value == null) return null;
   const val = String(value).trim();
   if (/^#([0-9a-fA-F]{3,8})$/.test(val)) return hexToRgb(val);
 
+  const rgbMatch = val.match(/^rgba?\(\s*(\d+)[\s,]+(\d+)[\s,]+(\d+)/);
+  if (rgbMatch) return [Number(rgbMatch[1]), Number(rgbMatch[2]), Number(rgbMatch[3])];
+
   const varMatch = val.match(/^var\(\s*(--[\w-]+)\s*\)$/);
-  if (varMatch) return resolve(resolveMap.get(varMatch[1]), depth + 1);
+  if (varMatch) return resolve(map.get(varMatch[1]), map, depth + 1);
 
   const mixMatch = val.match(
     /^color-mix\(in srgb,\s*(.+?)\s+(\d+(?:\.\d+)?)%\s*,\s*(.+?)\s+(\d+(?:\.\d+)?)%\s*\)$/,
   );
   if (mixMatch) {
-    const a = resolve(mixMatch[1], depth + 1);
-    const b = resolve(mixMatch[3], depth + 1);
+    const a = resolve(mixMatch[1], map, depth + 1);
+    const b = resolve(mixMatch[3], map, depth + 1);
     if (!a || !b) return null;
     const wa = parseFloat(mixMatch[2]) / 100;
     const wb = parseFloat(mixMatch[4]) / 100;
@@ -95,18 +125,19 @@ function contrastRatio(fg, bg) {
 const failures = [];
 const lines = [];
 
-for (const { fg, bg, min, context } of pairs) {
-  const fgRgb = resolve(resolveMap.get(fg));
-  const bgRgb = resolve(resolveMap.get(bg));
+for (const { theme, fg, bg, min, context } of pairs) {
+  const map = maps[theme];
+  const fgRgb = resolve(map.get(fg), map);
+  const bgRgb = resolve(map.get(bg), map);
   if (!fgRgb || !bgRgb) {
-    failures.push(`Unresolved contrast pair ${fg} on ${bg} (values: ${resolveMap.get(fg)} / ${resolveMap.get(bg)})`);
+    failures.push(`Unresolved ${theme} contrast pair ${fg} on ${bg} (values: ${map.get(fg)} / ${map.get(bg)})`);
     continue;
   }
   const ratio = contrastRatio(fgRgb, bgRgb);
   const ok = ratio >= min;
-  lines.push(`${ok ? "  ok" : "FAIL"} ${ratio.toFixed(2)} (min ${min}) ${fg} on ${bg} — ${context}`);
+  lines.push(`${ok ? "  ok" : "FAIL"} [${theme}] ${ratio.toFixed(2)} (min ${min}) ${fg} on ${bg} — ${context}`);
   if (!ok) {
-    failures.push(`${fg} on ${bg} = ${ratio.toFixed(2)}, below required ${min} (${context})`);
+    failures.push(`[${theme}] ${fg} on ${bg} = ${ratio.toFixed(2)}, below required ${min} (${context})`);
   }
 }
 
