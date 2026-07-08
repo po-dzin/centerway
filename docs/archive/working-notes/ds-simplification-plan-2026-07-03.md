@@ -1,7 +1,7 @@
 # План упрощения семантической дизайн-системы CenterWay
 
 - Дата: 2026-07-03
-- Статус: local operational plan (docs-first); этапы 0–1 применены в этой же ветке
+- Статус: архив — все этапы 0–4 применены (PR #108), петля закрыта тёмным contrast-гейтом + tier-контрактом (PR #110); канон-триггер частично применён (см. §4)
 - База: мета-аудит ДС от 2026-07-03 (сессионный, поверх `docs/archive/working-notes/meta-audit-ecosystem-2026-06-20.md`, слой L3)
 - Гейты на момент среза: `canon:guard` PASS · `guard:ds-contract` PASS · **`semantic:audit` CRASH (ENOENT)** — см. этап 0
 
