@@ -1,6 +1,7 @@
 import { getLandingCriticalCss, getLandingPublicRouteName, getLandingShellAssets } from "@/lib/landing/config";
 import type { LandingResolvedOffer } from "@/lib/landing/offers";
 import type { StaticLandingProduct } from "@/lib/landing/types";
+import { VERCEL_WEB_ANALYTICS_SNIPPET } from "@/lib/landing/vercelAnalytics";
 
 type RenderEntryHtmlDocumentInput = {
   product: StaticLandingProduct;
@@ -64,6 +65,7 @@ export function renderEntryHtmlDocument(input: RenderEntryHtmlDocumentInput): st
   ${description ? `<meta name="description" content="${escapeHtml(description)}">` : ""}
   <style>${criticalCss}</style>
   ${styles}
+  ${VERCEL_WEB_ANALYTICS_SNIPPET}
 </head>
 <body>
   <script src="${config.pixelScript}" data-cw-product="${product}"></script>
