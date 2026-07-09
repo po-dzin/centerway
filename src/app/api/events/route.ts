@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
+import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
 
 export const runtime = "nodejs";
 
@@ -99,6 +100,12 @@ export async function OPTIONS() {
 }
 
 export async function POST(req: NextRequest) {
+  // Staff opt-out: internal / QA browsers carry cw_staff=1 (set by landing-pixel.js).
+  // Drop their events entirely so nothing reaches Meta (CAPI) or our funnel analytics.
+  if (req.cookies.get("cw_staff")?.value === "1") {
+    return cors(NextResponse.json({ ok: true, staff: true }));
+  }
+
   const rl = await enforceRateLimit(req, { name: "events", limit: 120, windowSeconds: 60 });
   if (!rl.allowed) return cors(tooManyRequests(rl.retryAfter));
 
@@ -215,11 +222,15 @@ export async function POST(req: NextRequest) {
     },
   });
 
-  const { error } = await db.from("jobs").insert({
-    type: "meta:capi",
-    payload,
-    status: "pending",
-  });
+  const { data: job, error } = await db
+    .from("jobs")
+    .insert({
+      type: "meta:capi",
+      payload,
+      status: "pending",
+    })
+    .select("id")
+    .maybeSingle();
   if (error) {
     return cors(
       NextResponse.json(
@@ -227,6 +238,12 @@ export async function POST(req: NextRequest) {
         { status: 500 }
       )
     );
+  }
+
+  // Send to Meta immediately instead of waiting for the daily cron; the job row above
+  // stays the durable fallback if the inline send fails.
+  if (job?.id) {
+    dispatchCapiEventInline(db, job.id, payload);
   }
 
   return cors(NextResponse.json({ ok: true }));
