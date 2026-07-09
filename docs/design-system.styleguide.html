@@ -412,6 +412,15 @@
       <span class="pill">secondary-learn</span>
       <span class="pill">support-action</span>
     </div>
+    <div class="card" style="margin-top:var(--ds-space-4)">
+      <div class="mono muted" style="margin-bottom:8px">.cw-btn-primary · app chrome (base light / base dark) — не следует за пак-переключателем; фикс 2026-07-06: success/ink mix вместо gray-accent, body AA в обеих темах</div>
+      <div style="display:flex;gap:var(--ds-space-4);flex-wrap:wrap;align-items:center">
+        <button class="btn" style="background:#2e6c4a;color:#ffffff;border-color:#2e6c4a">Начать путь → <span style="opacity:.7;font-size:.78rem">light</span></button>
+        <button class="btn" style="background:#39624a;color:#f2f2ef;border-color:#39624a">Начать путь → <span style="opacity:.7;font-size:.78rem">dark</span></button>
+        <span class="pill">RouteAuthGate</span>
+        <span class="pill">dosha-test</span>
+      </div>
+    </div>
   </div>
 </section>
 
@@ -451,14 +460,22 @@
     <div class="sec-head">
       <p class="kicker">gate · guard:contrast (WCAG)</p>
       <h2>Контраст</h2>
-      <p>Гейт резолвит <code>var()</code>/<code>color-mix</code> из токенов и проверяет реальные пары text/CTA: тело ≥ 4.5, крупный/CTA ≥ 3.0. Две заливки держатся на large-tier — первые кандидаты на подтюнинг палитры.</p>
+      <p>Гейт резолвит <code>var()</code>/<code>color-mix</code> из токенов и проверяет реальные пары text/CTA <b>в обеих темах</b> (platform light + admin dark), 22 пары: тело ≥ 4.5, крупный/CTA ≥ 3.0. Две светлые заливки держатся на large-tier — первые кандидаты на подтюнинг палитры. Чипы ниже для app-chrome-пар вшиты статикой (base-тема не переключается паками).</p>
     </div>
+    <h3 style="font-family:var(--cw-font-ui);font-size:1rem;margin:var(--ds-space-4) 0 var(--ds-space-2)">Platform light</h3>
     <div class="contrast-row"><div class="contrast-chip" style="background:var(--cw-platform-bg);color:var(--cw-platform-text)">Aa текст</div><div class="contrast-meta">platform-text / platform-bg — <span class="badge-aa">15.85 · AA</span></div></div>
     <div class="contrast-row"><div class="contrast-chip" style="background:var(--cw-platform-bg);color:var(--cw-platform-muted)">Aa muted</div><div class="contrast-meta">platform-muted / platform-bg — <span class="badge-aa">5.13 · AA</span></div></div>
     <div class="contrast-row"><div class="contrast-chip" style="background:var(--cw-sem-calm-surface);color:var(--cw-sem-method-ink)">заголовок</div><div class="contrast-meta">method-ink / calm-surface — <span class="badge-aa">10.40 · AA</span></div></div>
     <div class="contrast-row"><div class="contrast-chip" style="background:var(--cw-sem-guide-strong);color:var(--cw-platform-accent-contrast)">CTA</div><div class="contrast-meta">accent-contrast / guide-strong — <span class="badge-aa">11.22 · AA</span></div></div>
     <div class="contrast-row"><div class="contrast-chip" style="background:var(--cw-sem-guide-primary);color:var(--cw-platform-accent-contrast)">CTA</div><div class="contrast-meta">accent-contrast / guide-primary — <span class="badge-large">4.34 · large-tier</span></div></div>
     <div class="contrast-row"><div class="contrast-chip" style="background:var(--cw-sem-boundary);color:var(--cw-platform-accent-contrast)">label</div><div class="contrast-meta">accent-contrast / boundary — <span class="badge-large">4.17 · large-tier</span></div></div>
+    <div class="contrast-row"><div class="contrast-chip" style="background:#2e6c4a;color:#ffffff">кнопка</div><div class="contrast-meta">btn-primary-text / btn-primary-bg (rest·hover·active) — <span class="badge-aa">6.25 · 5.86 · 6.76 · AA</span></div></div>
+    <h3 style="font-family:var(--cw-font-ui);font-size:1rem;margin:var(--ds-space-5) 0 var(--ds-space-2)">Admin dark</h3>
+    <div class="contrast-row"><div class="contrast-chip" style="background:#141414;color:#e4e4e1">Aa текст</div><div class="contrast-meta">text / bg — <span class="badge-aa">14.46 · AA</span></div></div>
+    <div class="contrast-row"><div class="contrast-chip" style="background:#1f1f1d;color:#e4e4e1">Aa панель</div><div class="contrast-meta">text / surface-solid — <span class="badge-aa">12.96 · AA</span></div></div>
+    <div class="contrast-row"><div class="contrast-chip" style="background:#141414;color:#a9a9a3">Aa muted</div><div class="contrast-meta">muted / bg — <span class="badge-aa">7.80 · AA</span> · muted / surface-solid — <span class="badge-aa">6.99 · AA</span></div></div>
+    <div class="contrast-row"><div class="contrast-chip" style="background:#353532;color:#e4e4e1">выбор</div><div class="contrast-meta">text / choice-bg-selected — <span class="badge-aa">9.66 · AA</span></div></div>
+    <div class="contrast-row"><div class="contrast-chip" style="background:#39624a;color:#f2f2ef">кнопка</div><div class="contrast-meta">btn-primary-text / btn-primary-bg (rest·hover·active) — <span class="badge-aa">6.20 · 5.48 · 7.03 · AA</span></div></div>
   </div>
 </section>
 
