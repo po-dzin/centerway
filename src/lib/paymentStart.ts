@@ -10,6 +10,7 @@ import {
 } from "@/lib/products";
 import { buildReturnUrl, buildWfpProductName } from "@/lib/pay";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
+import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
 
 export type PaymentStartSuccess = {
   ok: true;
@@ -46,6 +47,7 @@ export type PaymentStartInput = {
   client_ua?: string | null;   // User-Agent браузера
   page_url?: string | null;    // URL лендинга (event_source_url для CAPI)
   event_id?: string | null;    // event_id для dedupe Pixel + CAPI (InitiateCheckout)
+  staff?: boolean;             // internal/QA traffic — skip Meta CAPI (InitiateCheckout)
 };
 
 type PaymentDb = ReturnType<typeof supabaseAdmin>;
@@ -232,7 +234,8 @@ export async function createPaymentInvoiceWithDeps(
 
   // Ensure exactly one server-side InitiateCheckout CAPI job per order. This is pure
   // analytics, so it runs alongside the WFP call and never blocks the redirect.
-  const capiJobPromise = (async () => {
+  // Staff / QA traffic is excluded so it never reaches Meta.
+  const capiJobPromise = input.staff ? Promise.resolve() : (async () => {
     try {
       const [existingByEventIdRes, existingByOrderRefRes] = await Promise.all([
         sb
@@ -276,17 +279,27 @@ export async function createPaymentInvoiceWithDeps(
         content_type: "product",
         content_ids: [input.product],
       };
-      await sb.from("jobs").insert({
-        type: "meta:capi",
-        payload: capiPayload,
-        status: "pending",
-      });
+      const { data: job } = await sb
+        .from("jobs")
+        .insert({
+          type: "meta:capi",
+          payload: capiPayload,
+          status: "pending",
+        })
+        .select("id")
+        .maybeSingle();
+
+      // Fire InitiateCheckout to Meta immediately (alongside the browser Pixel event);
+      // the job row stays the durable fallback for the daily cron.
+      if (job?.id) {
+        dispatchCapiEventInline(sb, job.id, capiPayload);
+      }
     } catch (capiErr) {
       console.warn("capi_initiate_checkout_failed", capiErr, { order_ref });
     }
   })();
 
-  void (async () => {
+  if (!input.staff) void (async () => {
     try {
       const { error: checkoutStartedErr } = await sb.from("events").insert({
         type: "checkout_started",

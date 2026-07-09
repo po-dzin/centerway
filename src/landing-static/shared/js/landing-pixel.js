@@ -1,6 +1,34 @@
 (function () {
   if (typeof window === "undefined" || typeof document === "undefined") return;
 
+  // Staff opt-out: keep internal / QA traffic out of Meta. Visiting any landing with
+  // `?cw_staff=1` stores a durable flag (cookie + localStorage); `?cw_staff=0` clears it.
+  // The cookie is also read server-side by /api/events and /api/pay/start to drop CAPI.
+  (function () {
+    try {
+      var param = new URLSearchParams(window.location.search).get("cw_staff");
+      if (param === "1") {
+        try { localStorage.setItem("cw_staff", "1"); } catch (_) {}
+        document.cookie = "cw_staff=1; path=/; max-age=" + (10 * 365 * 24 * 60 * 60) + "; SameSite=Lax";
+      } else if (param === "0") {
+        try { localStorage.removeItem("cw_staff"); } catch (_) {}
+        document.cookie = "cw_staff=; path=/; max-age=0; SameSite=Lax";
+      }
+    } catch (_) {}
+  })();
+
+  var isStaff = false;
+  try { isStaff = localStorage.getItem("cw_staff") === "1"; } catch (_) {}
+  if (!isStaff) isStaff = /(?:^|;\s*)cw_staff=1(?:;|$)/.test(document.cookie || "");
+  if (isStaff) {
+    window.CW_STAFF = true;
+    // No-op fbq so every downstream fbq(...) call (PageView here, ViewContent /
+    // InitiateCheckout in common.js, Purchase on thanks) does nothing and the real
+    // Meta SDK is never loaded. Google Ads / Clarity below are skipped by the return.
+    if (!window.fbq) { window.fbq = window._fbq = function () {}; }
+    return;
+  }
+
   var pixelId = window.CW_PIXEL_ID || "885125430564169";
   var data = {};
   var deferredStarted = false;

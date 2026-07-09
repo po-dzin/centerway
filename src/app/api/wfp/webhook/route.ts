@@ -2,7 +2,12 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendConfirmedSaleTelegramReport } from "@/lib/reporting/analyticsReports";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { extractPaymentMeta } from "@/lib/paymentMeta";
-import { isWfpApproved, wfpEventTypeFromStatus } from "@/lib/wfp";
+import { isWfpApproved, verifyWfpCallbackSignature, wfpEventTypeFromStatus } from "@/lib/wfp";
+import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
+import {
+  buildPurchaseCapiEventPayload,
+  type PendingPurchaseCapiJobPayload,
+} from "@/lib/jobs/worker";
 
 export const runtime = "nodejs";
 
@@ -212,6 +217,20 @@ export async function POST(req: NextRequest) {
   const status = paid ? "paid" : "created"; // твоя бинарная модель
   const eventType = wfpEventTypeFromStatus(payload);
 
+  // SHADOW MODE: verify the WayForPay callback signature but do NOT change behaviour yet.
+  // This measures how many real callbacks arrive with a missing/invalid signature before
+  // we start enforcing (which would close the forged-webhook → phantom-Purchase vector).
+  // Grep Vercel logs for `[wfp-sig-shadow]` to see the match/mismatch ratio.
+  try {
+    const sig = verifyWfpCallbackSignature(payload);
+    console.log(
+      "[wfp-sig-shadow]",
+      JSON.stringify({ orderRef, paid, ok: sig.ok, reason: sig.reason, present: sig.present })
+    );
+  } catch (sigErr) {
+    console.warn("[wfp-sig-shadow] check errored:", sigErr instanceof Error ? sigErr.message : String(sigErr));
+  }
+
   const sb = supabaseAdmin();
 
   // мета из payload: rrn/email/phone/amount/currency и т.д.
@@ -328,17 +347,21 @@ export async function POST(req: NextRequest) {
           .limit(1)
           .maybeSingle();
         if (!existingPurchaseJob?.id) {
-          const capiPayload = {
+          const amountNumber =
+            meta.amount != null && Number.isFinite(Number(meta.amount))
+              ? Number(meta.amount)
+              : undefined;
+          const capiPayload: PendingPurchaseCapiJobPayload = {
             event_name: "Purchase",
             order_ref: orderRef,
             payment_event_time: resolvePaymentEventTime(payload),
-            value: meta.amount ?? undefined,
+            value: amountNumber,
             currency: meta.currency ?? "UAH",
             email: meta.email ?? null,
             phone: meta.phone ?? null,
           };
 
-          const { error: purchaseJobInsertErr } = await sb
+          const { data: purchaseJob, error: purchaseJobInsertErr } = await sb
             .from("jobs")
             .insert({
               type: "meta:capi",
@@ -350,6 +373,15 @@ export async function POST(req: NextRequest) {
 
           if (purchaseJobInsertErr) {
             throw purchaseJobInsertErr;
+          }
+
+          // Send Purchase to Meta immediately (in sync with the browser Pixel on `thanks`)
+          // instead of waiting for the daily cron. The thin job row stays the durable
+          // fallback; the enriched payload is built lazily off the request path.
+          if (purchaseJob?.id) {
+            dispatchCapiEventInline(sb, purchaseJob.id, () =>
+              buildPurchaseCapiEventPayload(capiPayload)
+            );
           }
         }
       } catch (capiErr) {
