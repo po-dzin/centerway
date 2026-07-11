@@ -79,80 +79,117 @@ function extractMeta(raw: any): { rrn?: string; amount?: string; currency?: stri
   return { rrn, amount, currency };
 }
 
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+// orders.status is written by the server-to-server WFP webhook, which races the browser
+// return. When the return carries no status param we can read the row before the webhook
+// commits `paid`; retry briefly so a real payment is not mislabelled as failed. Each read
+// is guarded so a transient DB error degrades to a retry instead of a 500.
 async function statusFromDb(orderRef: string): Promise<"paid" | "failed"> {
-  const sb = supabaseAdmin();
-
-  // orders.status — главный источник
-  const { data: order } = await sb
-    .from("orders")
-    .select("status")
-    .eq("order_ref", orderRef)
-    .maybeSingle();
-
-  if (order?.status === "paid") return "paid";
-
+  const attempts = 4;
+  const delayMs = 350;
+  for (let attempt = 0; attempt < attempts; attempt++) {
+    try {
+      const sb = supabaseAdmin();
+      const { data: order } = await sb
+        .from("orders")
+        .select("status")
+        .eq("order_ref", orderRef)
+        .maybeSingle();
+      if (order?.status === "paid") return "paid";
+    } catch (err) {
+      console.warn("pay_return_status_read_failed", {
+        orderRef,
+        attempt,
+        error: err instanceof Error ? err.message : String(err),
+      });
+    }
+    if (attempt < attempts - 1) {
+      await sleep(delayMs);
+    }
+  }
   return "failed";
 }
 
 async function latestPaymentMeta(orderRef: string) {
-  const sb = supabaseAdmin();
-  const { data } = await sb
-    .from("payments")
-    .select("raw_payload, created_at")
-    .eq("order_ref", orderRef)
-    .order("created_at", { ascending: false })
-    .limit(1)
-    .maybeSingle();
+  try {
+    const sb = supabaseAdmin();
+    const { data } = await sb
+      .from("payments")
+      .select("raw_payload, created_at")
+      .eq("order_ref", orderRef)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
 
-  return extractMeta(data?.raw_payload);
+    return extractMeta(data?.raw_payload);
+  } catch (err) {
+    console.warn("pay_return_meta_read_failed", {
+      orderRef,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return {};
+  }
+}
+
+function pickMeta(body: Record<string, string>, sp: URLSearchParams) {
+  const rrn = body.rrn || sp.get("rrn") || body.payment_id || sp.get("payment_id") || "";
+  const amount = body.amount || sp.get("amount") || "";
+  const currency = body.currency || sp.get("currency") || "";
+  return { rrn: rrn || null, amount: amount || null, currency: currency || null };
 }
 
 async function handler(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
-  const body = await readBody(req);
+  // Resolve product up front (no DB) so the backstop can always route to a real page.
+  let product: ProductCode = productFrom(norm(sp.get("order_ref")) || norm(sp.get("orderReference")), norm(sp.get("product")));
 
-  const orderRef =
-    norm(sp.get("order_ref")) ||
-    norm(sp.get("orderReference")) ||
-    norm(body["order_ref"]) ||
-    norm(body["orderReference"]);
+  try {
+    const body = await readBody(req);
 
-  const productRaw = norm(sp.get("product")) || norm(body["product"]);
-  const product = productFrom(orderRef, productRaw);
+    const orderRef =
+      norm(sp.get("order_ref")) ||
+      norm(sp.get("orderReference")) ||
+      norm(body["order_ref"]) ||
+      norm(body["orderReference"]);
 
-  // Если order_ref не пришел — не можем понять что делать
-  if (!orderRef) {
+    const productRaw = norm(sp.get("product")) || norm(body["product"]);
+    product = productFrom(orderRef, productRaw);
+
+    // Если order_ref не пришел — не можем понять что делать
+    if (!orderRef) {
+      return NextResponse.redirect(PRODUCTS[product].declinedUrl, { status: 302 });
+    }
+
+    // 1) пробуем понять из параметров, 2) иначе смотрим БД (с ретраем на гонку webhook)
+    const byParams = statusFromParams(body, sp);
+    const finalStatus = byParams ?? (await statusFromDb(orderRef));
+
+    // мета платежа (rrn/amount/currency) — берём из payments.raw_payload если есть
+    const metaFromParams = pickMeta(body, sp);
+    const metaFromDb = await latestPaymentMeta(orderRef);
+
+    const meta = metaFromParams.rrn || metaFromParams.amount ? metaFromParams : metaFromDb;
+
+    const destination = buildReturnDestination(
+      finalStatus,
+      product,
+      orderRef,
+      { rrn: meta.rrn ?? null, amount: meta.amount ?? null, currency: meta.currency ?? null },
+      Date.now()
+    );
+
+    return NextResponse.redirect(destination, { status: 302 });
+  } catch (err) {
+    // Never 500 the post-payment page. Fall back to pay-failed (never thanks — we must not
+    // show a success page / fire the browser Purchase without a confirmed payment).
+    console.error("pay_return_failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
     return NextResponse.redirect(PRODUCTS[product].declinedUrl, { status: 302 });
   }
-
-  // 1) пробуем понять из параметров, 2) иначе смотрим БД
-  const byParams = statusFromParams(body, sp);
-  const finalStatus = byParams ?? (await statusFromDb(orderRef));
-
-  // мета платежа (rrn/amount/currency) — берём из payments.raw_payload если есть
-  const metaFromParams = pickMeta(body, sp);
-  const metaFromDb = await latestPaymentMeta(orderRef);
-
-  const meta = metaFromParams.rrn || metaFromParams.amount
-  ? metaFromParams
-  : metaFromDb;
-
-  function pickMeta(body: Record<string,string>, sp: URLSearchParams) {
-    const rrn = body.rrn || sp.get("rrn") || body.payment_id || sp.get("payment_id") || "";
-    const amount = body.amount || sp.get("amount") || "";
-    const currency = body.currency || sp.get("currency") || "";
-    return { rrn: rrn || null, amount: amount || null, currency: currency || null };
-  }
-
-  const destination = buildReturnDestination(
-    finalStatus,
-    product,
-    orderRef,
-    { rrn: meta.rrn ?? null, amount: meta.amount ?? null, currency: meta.currency ?? null },
-    Date.now()
-  );
-
-  return NextResponse.redirect(destination, { status: 302 });
 }
 
 export async function GET(req: NextRequest) {
