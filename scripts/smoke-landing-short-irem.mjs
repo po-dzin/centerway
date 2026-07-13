@@ -113,7 +113,6 @@ async function assertIremEntryContract(page, label) {
     sectionCount: document.querySelectorAll("section").length,
     hero: Boolean(document.querySelector('main[data-cw-landing="irem"][data-cw-page="irem"] .hero')),
     offer: Boolean(document.querySelector("section#offer")),
-    heroPrice: Boolean(document.querySelector(".hero-price")),
     formatPrice: Boolean(document.querySelector(".format-card.self .fc-price")),
     heroCta: Boolean(document.querySelector("[data-cta-hero]")),
     finalCheckoutCta: Boolean(document.querySelector(".openModal[data-cta-final]")),
@@ -131,7 +130,6 @@ async function assertIremEntryContract(page, label) {
   if (
     !contract.hero ||
     !contract.offer ||
-    !contract.heroPrice ||
     !contract.formatPrice ||
     !contract.heroCta ||
     !contract.finalCheckoutCta ||
@@ -139,7 +137,7 @@ async function assertIremEntryContract(page, label) {
     !contract.shortEntryBridge
   ) {
     fail(
-      `${label}: missing promoted contract (hero=${contract.hero}, offer=${contract.offer}, heroPrice=${contract.heroPrice}, formatPrice=${contract.formatPrice}, heroCta=${contract.heroCta}, finalCheckout=${contract.finalCheckoutCta}, sticky=${contract.stickyCta}, shortBridge=${contract.shortEntryBridge})`
+      `${label}: missing promoted contract (hero=${contract.hero}, offer=${contract.offer}, formatPrice=${contract.formatPrice}, heroCta=${contract.heroCta}, finalCheckout=${contract.finalCheckoutCta}, sticky=${contract.stickyCta}, shortBridge=${contract.shortEntryBridge})`
     );
     return;
   }

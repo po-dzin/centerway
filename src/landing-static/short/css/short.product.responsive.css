@@ -517,11 +517,6 @@
     padding: var(--landing-space-responsive-card-padding, 18px);
   }
 
-  .section-program .lesson {
-    padding: var(--landing-space-responsive-lesson-padding, 5px 10px);
-    font-size: var(--landing-type-responsive-program-lesson-mobile-size, 14px);
-  }
-
   .section-program .items {
     padding: var(--landing-space-responsive-card-padding, 18px);
     width: 100%;
