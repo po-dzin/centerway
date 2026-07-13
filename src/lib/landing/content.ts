@@ -48,11 +48,13 @@ export type LandingProductContent = {
 export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent> = {
   short: {
     title: "Short-Перезавантаження",
-    description: "7 простих вправ, що за 10 хвилин відновлюють тіло та розум.",
+    description:
+      "3 комплекси вправ. Швидко відновлюють тіло та розум. Всього 15 хвилин на день.",
     hero: {
       badge: "АВТОРСЬКИЙ КУРС",
       title: "Short-Перезавантаження",
-      subtitle: "7 простих вправ, що за 10 хвилин відновлюють тіло та розум",
+      subtitle:
+        "3 комплекси вправ. Швидко відновлюють тіло та розум. Всього 15 хвилин на день.",
       lead: "Інтегруйте цей метод в своє життя і ви отримаєте:",
       chips: [
         "Зниження стресу та покращення сну",
@@ -73,7 +75,7 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
         preface: "Почніть вже сьогодні 👇",
         old: null,
         current: "795 грн",
-        notes: ["Доступ назавжди", "300+ людей пройшли курс"],
+        notes: ["500+ людей вже придбали курс і почали відновлення"],
       },
     },
     utility: {
@@ -91,7 +93,7 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
     description:
       "Інтегральна відновлювальна енергомодулююча гімнастика для енергії, тонусу та стабільного стану.",
     hero: {
-      badge: "Інтегральна система саморегуляції",
+      badge: "Ця система розроблена та практикується моїм вчителем щодня протягом 44 років",
       title: "Одна практика <em>замість п'яти</em> — під ваші біоритми.",
       subtitle:
         "Сила, гнучкість, витривалість та відновлення — одна практика, яка щодня змінює фокус під ваш стан. Тому її не кидають.",
@@ -100,7 +102,7 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
       note: "Гарантія результату 14 днів або повернення коштів",
       ctaPrimaryLabel: "Почати практику",
       ctaStickyLabel: "Почати практику",
-      priceCurrent: "4100 грн",
+      priceCurrent: "3950 грн",
       priceOld: null,
       cta: {
         primary: "Почати практику",
@@ -110,7 +112,7 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
       price: {
         preface: null,
         old: null,
-        current: "4100 грн",
+        current: "3950 грн",
         notes: [],
       },
     },

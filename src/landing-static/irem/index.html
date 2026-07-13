@@ -22,9 +22,9 @@
 <section class="hero">
   <div class="wrap">
     <div class="hero-grid">
-      <span class="hero-badge"><span class="dot"></span>Інтегральна система саморегуляції</span>
+      <span class="hero-badge"><span class="dot"></span>Ця система розроблена та практикується моїм вчителем щодня протягом 44 років</span>
       <div class="hero-copy">
-        <h1>Одна практика <em>замість п'яти</em> — під ваші біоритми.</h1>
+        <h1>Унікальна інтегральна система <em>психофізичної саморегуляції</em></h1>
         <p class="hero-sub">Сила, гнучкість, витривалість та відновлення — одна практика, яка щодня змінює фокус під ваш стан. Тому її не кидають.</p>
       </div>
 
@@ -58,10 +58,6 @@
           <span>Будь-який вік</span>
           <span>60 хв удома</span>
           <span>Рух · дихання · увага</span>
-        </div>
-        <div class="hero-price">
-          <b>4100 грн</b>
-          <small>повний доступ</small>
         </div>
         <a href="#offer" class="btn btn-primary" data-cta-hero>Почати практику <span class="arr">→</span></a>
         <div class="hero-trust">
@@ -327,16 +323,16 @@
       <p class="lead">ІВЕМ органічно об'єднує західний силовий підхід, східну мобілізацію, йогічні й бойові традиції та медитативну візуалізацію — без внутрішніх протиріч.</p>
     </div>
     <div class="found">
-      <div class="found-item reveal"><span class="ficon"><img src="img/tai-chi.webp" alt="" loading="lazy" decoding="async"></span><span>Гімнастика У-шу</span></div>
-      <div class="found-item reveal"><span class="ficon"><img src="img/qigong.webp" alt="" loading="lazy" decoding="async"></span><span>Китайська система Цигун</span></div>
-      <div class="found-item reveal"><span class="ficon"><img src="img/detox.webp" alt="" loading="lazy" decoding="async"></span><span>Тілесно-орієнтована психотерапія</span></div>
-      <div class="found-item reveal"><span class="ficon"><img src="img/yoga3.webp" alt="" loading="lazy" decoding="async"></span><span>Тибетська гімнастика</span></div>
-      <div class="found-item reveal"><span class="ficon"><img src="img/taekwondo.webp" alt="" loading="lazy" decoding="async"></span><span>Підготовчі техніки єдиноборств</span></div>
-      <div class="found-item reveal"><span class="ficon"><img src="img/chakras.webp" alt="" loading="lazy" decoding="async"></span><span>Індійська йога</span></div>
-      <div class="found-item reveal"><span class="ficon"><img src="img/natural-medicine.webp" alt="" loading="lazy" decoding="async"></span><span>Система центру Харуміті Хіда</span></div>
-      <div class="found-item reveal"><span class="ficon"><img src="img/retreat.webp" alt="" loading="lazy" decoding="async"></span><span>Дихальні практики Сходу</span></div>
-      <div class="found-item reveal"><span class="ficon"><img src="img/therapy.webp" alt="" loading="lazy" decoding="async"></span><span>Су-джок терапія</span></div>
-      <div class="found-item reveal"><span class="ficon"><img src="img/visualization.webp" alt="" loading="lazy" decoding="async"></span><span>Візуалізація й енергонаповнення</span></div>
+      <div class="found-item reveal"><span class="ficon"><img src="img/tai-chi.webp" alt="" decoding="async"></span><span>Гімнастика У-шу</span></div>
+      <div class="found-item reveal"><span class="ficon"><img src="img/qigong.webp" alt="" decoding="async"></span><span>Китайська система Цигун</span></div>
+      <div class="found-item reveal"><span class="ficon"><img src="img/detox.webp" alt="" decoding="async"></span><span>Тілесно-орієнтована психотерапія</span></div>
+      <div class="found-item reveal"><span class="ficon"><img src="img/yoga3.webp" alt="" decoding="async"></span><span>Тибетська гімнастика</span></div>
+      <div class="found-item reveal"><span class="ficon"><img src="img/taekwondo.webp" alt="" decoding="async"></span><span>Підготовчі техніки єдиноборств</span></div>
+      <div class="found-item reveal"><span class="ficon"><img src="img/chakras.webp" alt="" decoding="async"></span><span>Індійська йога</span></div>
+      <div class="found-item reveal"><span class="ficon"><img src="img/natural-medicine.webp" alt="" decoding="async"></span><span>Система центру Харуміті Хіда</span></div>
+      <div class="found-item reveal"><span class="ficon"><img src="img/retreat.webp" alt="" decoding="async"></span><span>Дихальні практики Сходу</span></div>
+      <div class="found-item reveal"><span class="ficon"><img src="img/therapy.webp" alt="" decoding="async"></span><span>Су-джок терапія</span></div>
+      <div class="found-item reveal"><span class="ficon"><img src="img/visualization.webp" alt="" decoding="async"></span><span>Візуалізація й енергонаповнення</span></div>
     </div>
   </div>
 </section>
@@ -458,7 +454,7 @@
         <span class="fc-badge">Основний курс</span>
         <div class="fc-title">ІВЕМ самостійний</div>
         <div class="fc-price">
-          <b>4100 грн</b>
+          <b>3950 грн</b>
           <small>повний доступ</small>
         </div>
         <ul class="fc-features">
@@ -603,9 +599,12 @@
   </div>
 </div>
 
-<!-- reveal / sticky-CTA / anchor / accordion behaviour lives in js/irem-enhance.js
-     (loaded via config.scripts) because prepareLandingHtml strips inline script tags. -->
+<!-- reveal / sticky-CTA / anchor / accordion behaviour. On the managed render path
+     prepareLandingHtml strips these tags and re-injects the same files via config.scripts;
+     on the raw static host path these tags are what actually load. irem-enhance.js is
+     idempotent (window.__iremEnhanceInit guard), so double-injection is safe. -->
 <!-- checkout + attribution + pixel wiring (same flow as /irem): redirects .openModal → /api/pay/start -->
 <script src="js/common.js" async></script>
+<script src="js/irem-enhance.js"></script>
 </body>
 </html>
