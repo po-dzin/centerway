@@ -77,7 +77,7 @@ Brand-canon notes honored: prices visible in main flow; one dominant primary CTA
 ## TODO before launch (next step — platform/LMS phase)
 
 - Real WayForPay merchant for `way21` / `reset-day`; real `approvedUrl`/`declinedUrl` subdomains (currently placeholder `way21.centerway.net.ua` / `reset-day.centerway.net.ua` in `PRODUCTS`).
-- Real Telegram bot URLs (way21 premium card currently → `t.me/E_Koriakin`); thanks / pay-failed / public-offer pages.
+- Real Telegram bot URLs (way21 premium card currently → `telegram.me/E_Koriakin`); thanks / pay-failed / public-offer pages.
 - Meta Pixel + Clarity head block (dropped as placeholder; see irem head). Remove `noindex` when promoting.
 - Real product photos/video (currently irem-v2 + platform placeholders).
 - Premium card price for way21 "Індивідуальний супровід" (currently "індивідуально" → Telegram).

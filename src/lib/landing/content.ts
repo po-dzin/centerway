@@ -80,7 +80,7 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
     },
     utility: {
       thanks: {
-        botUrl: "https://t.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07",
+        botUrl: "https://telegram.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07",
         siteUrl: "https://reboot.centerway.net.ua/",
       },
       payFailed: {
@@ -118,7 +118,7 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
     },
     utility: {
       thanks: {
-        botUrl: "https://t.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4",
+        botUrl: "https://telegram.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4",
         siteUrl: "https://irem.centerway.net.ua/",
       },
       payFailed: {

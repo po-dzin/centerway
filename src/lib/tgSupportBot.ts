@@ -88,12 +88,12 @@ function accessLink(product: BotProductCode): string {
   if (product === "short") {
     return (
       process.env.SHORT_ACCESS_LINK ||
-      "https://t.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07"
+      "https://telegram.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07"
     );
   }
   return (
     process.env.IREM_ACCESS_LINK ||
-    "https://t.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4"
+    "https://telegram.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4"
   );
 }
 

@@ -54,7 +54,7 @@ Principles that follow:
 Close the gaps that block paid traffic; nothing new gets built. **Phases 2–3 do not start until Phase 0/1 numbers exist** — the whole ladder strategy rests on an ascension rate (test → 795 → 4100) that is currently unobservable.
 
 - Wire Meta Pixel + Clarity on `way21`/`reset-day` (TODO placeholders in both heads); confirm `CW_trackLead` fires on the three lead forms.
-- Replace placeholder pay wiring (`TODO(placeholder)` in `products.ts` approved/declined URLs) and the personal `t.me/E_Koriakin` contact with the support bot (blocked on the bot handle — open question from the previous session).
+- Replace placeholder pay wiring (`TODO(placeholder)` in `products.ts` approved/declined URLs) and the personal `telegram.me/E_Koriakin` contact with the support bot (blocked on the bot handle — open question from the previous session).
 - Remove `noindex` on `way21`/`reset-day` when subdomains go live; add `robots` policy for the three cw-pages deliberately.
 - Baseline analytics per node: sessions → primary-CTA clicks → checkout/lead. Without this, no later phase can be judged.
 - **Trust/proof upgrade (buyer-council input):** named, dated, specific testimonials (symptom → change), author credentials verifiable at a glance, one free "sample day" of the way21 protocol as a downloadable/preview, and an explicit ladder bridge — the 795 reset-day price credits toward way21 ("апгрейд-залік") so the taster reads as a first installment, not a second purchase.
