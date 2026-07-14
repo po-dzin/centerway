@@ -1,6 +1,7 @@
 (function () {
   var nav = document.querySelector("[data-cw-network-nav]");
   if (!nav) return;
+  if (nav.classList.contains("cwn--suspended")) return;
 
   // Paid-traffic sessions get a slim header (brand only): the funnel invariant
   // is one decision per node, so cross-node exits stay hidden for ad clicks
@@ -61,23 +62,18 @@
     mq.addListener(onChange);
   }
 
-  // Keep the first screen dedicated to the offer. Beyond the hero, the header
-  // stays out of the way while reading downward and returns only on an upward
-  // scroll. It remains fixed only for the time it is actually visible.
-  var hero = document.querySelector(".hero");
+  // The header does not take space on the initial hero. As soon as the visitor
+  // reverses upward — including within that hero — it returns as a fixed layer,
+  // then hides again while reading down.
   var frame = null;
   var lastScrollY = window.scrollY;
   var directionThreshold = 8;
   function updateHeaderPosition() {
     frame = null;
     var currentScrollY = window.scrollY;
-    var heroExitY = hero
-      ? Math.max(nav.offsetHeight + 32, hero.offsetHeight - nav.offsetHeight)
-      : nav.offsetHeight + 32;
-    var isPastHero = currentScrollY >= heroExitY;
     var distance = currentScrollY - lastScrollY;
 
-    if (!isPastHero) {
+    if (currentScrollY <= 0) {
       nav.classList.remove("cwn--floating");
       setOpen(false);
     } else if (distance <= -directionThreshold) {

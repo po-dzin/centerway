@@ -33,6 +33,12 @@
   transition: transform 180ms ease-out, opacity 160ms ease-out, visibility 0s linear 180ms;
 }
 
+/* Temporary network pause: keep the common component in every landing, while
+   removing it completely from the active interface and tab order. */
+.cwn.cwn--suspended {
+  display: none;
+}
+
 /* The first screen is entirely dedicated to the offer. Beyond its hero,
    navigation returns as a fixed top layer only while the visitor scrolls up. */
 .cwn.cwn--floating {

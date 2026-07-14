@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="/shared/css/network-tokens.css">
 <link rel="stylesheet" href="/shared/css/landing.css">
 <link rel="stylesheet" href="page.css">
-<link rel="stylesheet" href="/shared/css/network-nav.css?v=20260713-3">
+<link rel="stylesheet" href="/shared/css/network-nav.css?v=20260714-4">
 <!-- TODO(placeholder): wire Meta Pixel + Clarity before ad traffic. -->
 </head>
 <body>
@@ -27,7 +27,7 @@
 <a id="top"></a>
 
 <!-- ============ NETWORK NAV (burger < 760px, topbar 760px+) ============ -->
-<header class="cwn" data-cw-network-nav>
+<header class="cwn cwn--suspended" data-cw-network-nav>
   <div class="cwn__in">
     <a class="cwn__brand" href="#top">
       <img src="/shared/img/cw-logo-ink.png" alt="" aria-hidden="true">
@@ -39,9 +39,6 @@
     <nav class="cwn__menu" id="cwn-menu" aria-label="Мережа CenterWay">
       <a href="https://way21.centerway.net.ua/">Шлях 21</a>
       <a href="https://resetday.centerway.net.ua/" aria-current="page">Розвантажувальний день</a>
-      <a href="https://dosha.centerway.net.ua/">Тест доші</a>
-      <a href="https://herbs.centerway.net.ua/">Фітозбори</a>
-      <a href="https://consult.centerway.net.ua/">Консультація</a>
     </nav>
   </div>
 </header>
@@ -121,7 +118,7 @@
   <div class="wrap">
     <div class="shift reveal">
       <span class="kicker">Рішення</span>
-      <h2>3 дні, в центрі яких один <em>розвантажувальний день</em></h2>
+      <h2>Повернути собі <em>легкість</em></h2>
       <p>Розвантажувальний день — це не голодування на силі волі. Це 3-денна м'яка стратегія: полегшений вхід напередодні, основний день умовного голодування та м'який вихід, щоб тіло відпочило від їжі, а ти повернув собі контроль — спокійно й без насильства.</p>
       <div class="shift-vs">
         <div class="vs-col old">
@@ -197,7 +194,7 @@
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Що входить</span>
-      <h2 class="sec-title">Усе, щоб пройти 3 дні легко й упевнено</h2>
+      <h2 class="sec-title">Усе для м'якого проходження</h2>
     </div>
     <div class="inc-grid">
       <div class="inc-card reveal">
@@ -276,9 +273,22 @@
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Відгуки</span>
-      <h2 class="sec-title">Три дні — і щось зрушується</h2>
+      <h2 class="sec-title">Малий крок — відчутні зміни</h2>
     </div>
-    <div class="proof-grid">
+    <div class="testimonial-carousel reveal" data-testimonial-carousel>
+      <p class="lead lead-sm testimonial-carousel__intro">Швидка легкість, менше харчового шуму, відсутність голоду, більше спокою й відчуття контролю над їжею вже після першого короткого циклу.</p>
+      <div class="testimonial-carousel__stage">
+        <button class="testimonial-carousel__nav testimonial-carousel__nav--prev" type="button" data-carousel-prev aria-label="Попередній відгук"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="m15 18-6-6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="testimonial-carousel__track" data-carousel-track>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/no-hunger-20221119.jpg" alt="Відгук: очікування голоду, який не настав." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/food-freedom-20220209.jpg" alt="Відгук: менше напруги навколо їжі та добре самопочуття." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/repeat-program-20240719.jpg" alt="Відгук: програму хочеться повторити." loading="lazy" decoding="async"></figure>
+        </div>
+        <button class="testimonial-carousel__nav testimonial-carousel__nav--next" type="button" data-carousel-next aria-label="Наступний відгук"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <div class="testimonial-carousel__dots" data-carousel-dots aria-label="Пагінація відгуків"></div>
+    </div>
+    <div class="proof-grid" hidden>
       <div class="review reveal">
         <div class="stars">★★★★★</div>
         <p>«Воно наче дає швидкий прилив енергії і відчувається, що виділяються гормони задоволення.»</p>
@@ -295,7 +305,7 @@
         <div class="who"><span class="av">У</span><div><b>Учасниця</b><small>фініш протоколу · мовою оригіналу</small></div></div>
       </div>
     </div>
-    <div class="car reveal" data-car>
+    <div class="car reveal" data-car hidden>
       <button type="button" class="car-nav prev" aria-label="Попередні відгуки"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <div class="car-track">
         <figure class="shot-card"><img src="/shared/img/feedback/screenshot_20220713-153956_telegram.webp" width="720" height="1227" loading="lazy" decoding="async" alt="Відгук у Telegram про ранкову практику"><figcaption>telegram</figcaption></figure>
@@ -305,7 +315,7 @@
       </div>
       <button type="button" class="car-nav next" aria-label="Наступні відгуки"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
-    <p class="proof-note reveal">Скріншоти реальних повідомлень учасників — мовою оригіналу. Натисніть, щоб збільшити.</p>
+    <p class="proof-note reveal">Скріншоти реальних повідомлень учасників — мовою оригіналу. Гортайте, щоб подивитися далі.</p>
   </div>
 </section>
 
@@ -316,7 +326,10 @@
       <span class="guard">Гарантія м'якого старту</span>
       <h2>Подаруй собі <em>3 дні</em> турботи про себе</h2>
       <p>За ціною однієї вечері в кафе ти отримуєш 3-денний маршрут, який можна повторювати все життя — щоразу, коли треба перезавантажитись.</p>
-      <div class="offer-price"><b><s style="opacity:.5;font-weight:400;font-size:.58em">1200 грн</s> 795 грн</b><small>повний доступ · назавжди</small></div>
+      <div class="offer-price">
+        <div class="offer-price__amount"><s>1200 грн</s><b>795 грн</b></div>
+        <small>повний доступ · назавжди</small>
+      </div>
       <a href="#offer" class="btn btn-primary openModal" data-cta-final>Почати розвантаження →</a>
       <div class="offer-pay"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Гарантія результату</div>
     </div>
@@ -361,7 +374,6 @@
       <div class="short-text">
         <h3>Шлях 21 — повна програма очищення</h3>
         <p>Розвантажувальний день — це перший подих. Шлях 21 — це 21-денний інтегративний протокол під твою конституцію: фітозбори, процедури, харчування й супровід. Те саме відчуття легкості — але глибше й назавжди.</p>
-        <p class="notice">Сумніваєшся, чи тобі туди? Пройди безкоштовний <a href="https://dosha.centerway.net.ua" style="color:inherit;text-decoration:underline">тест доші (3 хвилини)</a> — він підкаже, який крок доречний саме для твого типу.</p>
       </div>
       <div class="short-cta">
         <div class="short-price-row">
@@ -454,7 +466,8 @@ document.querySelectorAll('.acc').forEach(group=>{
 </script>
 <!-- checkout + attribution wiring (same flow as /irem): .openModal -> /api/pay/start?product=reset-day -->
 <script src="js/common.js" async></script>
-<script src="/shared/js/network-nav.js?v=20260713-3" defer></script>
+<script src="/shared/js/testimonial-carousel.js?v=20260714-1" defer></script>
+<script src="/shared/js/network-nav.js?v=20260714-4" defer></script>
 <script src="/shared/js/proof.js" defer></script>
 </body>
 </html>
