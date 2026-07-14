@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="/shared/css/network-tokens.css">
 <link rel="stylesheet" href="/shared/css/landing.css">
 <link rel="stylesheet" href="page.css">
-<link rel="stylesheet" href="/shared/css/network-nav.css?v=20260713-3">
+<link rel="stylesheet" href="/shared/css/network-nav.css?v=20260714-4">
 <!-- TODO(placeholder): wire Meta Pixel + Clarity before ad traffic (see irem head). -->
 </head>
 <body>
@@ -27,7 +27,7 @@
 <a id="top"></a>
 
 <!-- ============ NETWORK NAV (burger < 760px, topbar 760px+) ============ -->
-<header class="cwn" data-cw-network-nav>
+<header class="cwn cwn--suspended" data-cw-network-nav>
   <div class="cwn__in">
     <a class="cwn__brand" href="#top">
       <img src="/shared/img/cw-logo-ink.png" alt="" aria-hidden="true">
@@ -39,9 +39,6 @@
     <nav class="cwn__menu" id="cwn-menu" aria-label="Мережа CenterWay">
       <a href="https://way21.centerway.net.ua/" aria-current="page">Шлях 21</a>
       <a href="https://resetday.centerway.net.ua/">Розвантажувальний день</a>
-      <a href="https://dosha.centerway.net.ua/">Тест доші</a>
-      <a href="https://herbs.centerway.net.ua/">Фітозбори</a>
-      <a href="https://consult.centerway.net.ua/">Консультація</a>
     </nav>
   </div>
 </header>
@@ -189,18 +186,6 @@
     </div>
     <div class="triad-flow reveal"><b>Підготовка</b><span class="ar">→</span><b>Очищення</b><span class="ar">→</span><b>Інтеграція</b></div>
 
-    <!-- herbs cross-sell: the blends live here in the phases, so the "want them separately" route starts here too -->
-    <div class="herbs-cross reveal">
-      <div class="herbs-cross__photo">
-        <img src="/shared/img/herbs/way21-herbs.webp" width="1400" height="933" loading="lazy" decoding="async" alt="Авторські фітозбори CenterWay — упаковки та трави зборів програми">
-      </div>
-      <div class="herbs-cross__body">
-        <span class="kicker">Ті самі збори — окремо</span>
-        <h3>Фітозбори програми можна отримати й без курсу</h3>
-        <p>Дренаж, м'яке очищення та клітковина — три авторські збори, на яких побудований Шлях 21, доступні окремо: після програми для повторного циклу або як перший м'який крок. Підбір — під ваш стан і конституцію, а не «банка всліпу».</p>
-        <a href="https://herbs.centerway.net.ua/" class="btn btn-ghost">Дізнатись про фітозбори →</a>
-      </div>
-    </div>
   </div>
 </section>
 
@@ -237,7 +222,7 @@
         <h2 class="sec-title">Аюрведа, перевірена сучасною дієтологією</h2>
         <p class="lead">Шлях 21 побудований на аюрведі — системі здоров'я віком понад 5000 років — і пропущений крізь призму сучасних знань та особистої практики. Кожна методика перевірена автором особисто.</p>
         <div class="sci-points">
-          <div class="sci-point"><span class="tag">Конституція (доші)</span><p>Немає однієї дієти для всіх. Вата, Пітта, Капха — три типи обміну; те, що зцілює один тип, шкодить іншому. Протокол будується під вашу <b>дошу</b>, клімат і ритм життя. Не знаєте свій тип? <a href="https://dosha.centerway.net.ua" style="color:inherit;font-weight:700;text-decoration:underline">Пройдіть безкоштовний тест доші (3 хв)</a>.</p></div>
+          <div class="sci-point"><span class="tag">Конституція (доші)</span><p>Немає однієї дієти для всіх. Вата, Пітта, Капха — три типи обміну; те, що зцілює один тип, шкодить іншому. Протокол будується під вашу <b>дошу</b>, клімат і ритм життя.</p></div>
           <div class="sci-point"><span class="tag">Тіло-розум-емоції</span><p>Очищення йде не лише на фізичному, а й на <b>ментальному та емоційному</b> рівні. Тіло, розум і емоції — єдина структура.</p></div>
           <div class="sci-point"><span class="tag">М'яко й до кінця</span><p>Прибираємо <b>аму</b> — метаболічні токсини, що накопичуються від неправильного травлення. Працюємо пролонговано, без агресивних чисток.</p></div>
         </div>
@@ -415,7 +400,29 @@
       <span class="kicker">Відгуки</span>
       <h2 class="sec-title">Що змінюється в людей після Шлях 21</h2>
     </div>
-    <div class="proof-grid">
+    <div class="testimonial-carousel reveal" data-testimonial-carousel>
+      <p class="lead lead-sm testimonial-carousel__intro">Мінус у вазі, легкість у тілі, спокійніший сон, краще травлення, більше фокусу й відчуття, що нові звички справді закріплюються.</p>
+      <div class="testimonial-carousel__stage">
+        <button class="testimonial-carousel__nav testimonial-carousel__nav--prev" type="button" data-carousel-prev aria-label="Попередній відгук"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="m15 18-6-6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <div class="testimonial-carousel__track" data-carousel-track>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/focus-weight-20250927.jpg" alt="Відгук про Шлях 21: зниження ваги з 62 до 58 кг, кращий фокус, продуктивність і сон." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/minus3-sleep-20230320.jpg" alt="Відгук про Шлях 21: мінус 3 кг, легкість і кращий сон." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/no-hunger-20221119.jpg" alt="Відгук про Шлях 21: без голоду порівняно з попередніми дієтами." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/food-freedom-20220209.jpg" alt="Відгук: свобода в їжі та хороше самопочуття." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/comfort-minus4-20220215.jpg" alt="Відгук про Шлях 21: мінус 4 кг за три тижні без голоду." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/minus55-20241211.jpg" alt="Відгук: мінус 5,5 кг за два тижні." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/minus6-day21-20220209.jpg" alt="Відгук: на 21 день мінус 6 кг і хороше самопочуття." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/repeat-program-20240719.jpg" alt="Відгук: програму хочеться повторити." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/lightness-sleep-inshot-1.jpg" alt="Відгук про Шлях 21, частина 1: початок історії про зміни у харчуванні." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/lightness-sleep-inshot-2.jpg" alt="Відгук про Шлях 21, частина 2: легкість у тілі, менше тяги та підтримка." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/weight-cravings-inshot-1.jpg" alt="Відгук про Шлях 21, частина 1: зміни у вазі та самопочутті." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/weight-cravings-inshot-2.jpg" alt="Відгук про Шлях 21, частина 2: нові звички та усвідомлений вибір їжі." loading="lazy" decoding="async"></figure>
+        </div>
+        <button class="testimonial-carousel__nav testimonial-carousel__nav--next" type="button" data-carousel-next aria-label="Наступний відгук"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      </div>
+      <div class="testimonial-carousel__dots" data-carousel-dots aria-label="Пагінація відгуків"></div>
+    </div>
+    <div class="proof-grid" hidden>
       <div class="review reveal">
         <div class="stars">★★★★★</div>
         <p>«Зашла в программу с весом 68,3 (цель была 60–62). На выходе — 64,7. Продолжаю питаться по правилам, и через 6 дней после программы вес уже 62,0. Лёгкость в теле, нету тяги к вредностям.»</p>
@@ -434,7 +441,7 @@
     </div>
 
     <!-- live screenshots: click → enlarge (proof.js lightbox) -->
-    <div class="car reveal" data-car>
+    <div class="car reveal" data-car hidden>
       <button type="button" class="car-nav prev" aria-label="Попередні відгуки"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       <div class="car-track">
         <figure class="shot-card"><img src="/shared/img/feedback/inshot_20220713_161913227_a.webp" width="720" height="1093" loading="lazy" decoding="async" alt="Відгук Оксани про програму Шлях 21 — частина 1"><figcaption>відгук · сайт</figcaption></figure>
@@ -454,7 +461,7 @@
       </div>
       <button type="button" class="car-nav next" aria-label="Наступні відгуки"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
     </div>
-    <p class="proof-note reveal">Скріншоти реальних повідомлень і відгуків учасників — мовою оригіналу. Натисніть, щоб збільшити.</p>
+    <p class="proof-note reveal">Скріншоти реальних повідомлень і відгуків учасників — мовою оригіналу. Гортайте, щоб подивитися далі.</p>
 
     <!-- Video testimonials ("on request"): uncomment a card, set data-video to a
          YouTube/Shorts URL or a direct .mp4 link, and give it a poster image.
@@ -471,7 +478,7 @@
     </div>
     -->
 
-    <p class="lead lead-sm reveal">Понад <b>1000 людей</b> уже пройшли Шлях 21. Більше живих відгуків — на сторінках мережі та каналі CenterWay.</p>
+    <p class="lead lead-sm reveal">Понад <b>1000 людей</b> уже пройшли Шлях 21.</p>
   </div>
 </section>
 
@@ -676,7 +683,8 @@ document.querySelectorAll('.acc').forEach(group=>{
 <!-- checkout + attribution wiring (same flow as /irem): .openModal -> /api/pay/start?product=way21 -->
 <script src="js/common.js" async></script>
 <script src="/shared/js/lead-form.js" defer></script>
-<script src="/shared/js/network-nav.js?v=20260713-3" defer></script>
+<script src="/shared/js/testimonial-carousel.js?v=20260714-1" defer></script>
+<script src="/shared/js/network-nav.js?v=20260714-4" defer></script>
 <script src="/shared/js/proof.js" defer></script>
 </body>
 </html>

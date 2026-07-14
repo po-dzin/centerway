@@ -51,6 +51,16 @@
   --landing-type-button-size:1rem;
 }
 
+/* Reset Day offer answers one decision; align its content with the surrounding
+   reading column instead of centering a separate visual island. */
+[data-cw-landing="reset-day"] .offer{text-align:left}
+[data-cw-landing="reset-day"] .offer h2,
+[data-cw-landing="reset-day"] .offer p{margin-inline:0}
+[data-cw-landing="reset-day"] .offer-price,
+[data-cw-landing="reset-day"] .offer-pay{text-align:center}
+[data-cw-landing="reset-day"] .offer-price__amount{display:flex;align-items:baseline;justify-content:center;gap:.55rem}
+[data-cw-landing="reset-day"] .offer-price__amount s{font-family:var(--f-display);font-size:clamp(1.35rem,5vw,1.7rem);font-weight:400;color:var(--irem-on-dark-muted)}
+
 /* ============ HERO EXPERIMENT — portrait stripe ============ */
 .hero--photo-stripe .hero-grid{
   display:flex;
@@ -309,4 +319,3 @@
     transform:translateX(-21%);
   }
 }
-
