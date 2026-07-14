@@ -5,6 +5,7 @@ import { LANDING_CONTENT } from "@/lib/landing/content";
 import { MANAGED_LANDING_FILE_BY_PAGE, type ManagedLandingPage } from "@/lib/landing/contracts";
 import type { LandingResolvedOffer } from "@/lib/landing/offers";
 import type { StaticLandingProduct } from "@/lib/landing/types";
+import { VERCEL_WEB_ANALYTICS_SNIPPET } from "@/lib/landing/vercelAnalytics";
 
 type PrepareEntryOptions = {
   product: StaticLandingProduct;
@@ -312,6 +313,7 @@ function injectManagedHead(html: string, product: StaticLandingProduct): string 
     `    <base href="${assetPrefix}/">`,
     `    <link rel="stylesheet" href="/shared/css/landing.bridge.css">`,
     `    <script src="/shared/js/landing-pixel.js" data-cw-product="${product}"></script>`,
+    `    ${VERCEL_WEB_ANALYTICS_SNIPPET}`,
   ].join("\n");
 
   if (/<meta name="viewport" content="width=device-width,\s*initial-scale=1(?:\.0)?"\s*\/?>/i.test(html)) {

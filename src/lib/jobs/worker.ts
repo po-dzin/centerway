@@ -9,7 +9,7 @@ import { processDoshaReminderJob } from "@/lib/doshaReminder";
 // Simple job registry
 type JobHandler = (payload: unknown) => Promise<void>;
 
-type PendingPurchaseCapiJobPayload = {
+export type PendingPurchaseCapiJobPayload = {
     event_name: "Purchase";
     order_ref: string;
     payment_event_time?: number;
@@ -53,7 +53,7 @@ function parseIsoToUnixSeconds(value: string | null | undefined): number | null 
     return Math.floor(parsed / 1000);
 }
 
-async function buildPurchaseCapiEventPayload(payload: PendingPurchaseCapiJobPayload): Promise<CapiEventPayload> {
+export async function buildPurchaseCapiEventPayload(payload: PendingPurchaseCapiJobPayload): Promise<CapiEventPayload> {
     const db = adminClient();
     const orderRef = payload.order_ref.trim();
     const [orderTrackingRes, initiateCheckoutJobRes, checkoutStartedEventRes] = await Promise.all([

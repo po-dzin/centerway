@@ -59,6 +59,7 @@ export async function GET(req: NextRequest) {
       undefined,
     client_ua: req.headers.get("user-agent") ?? undefined,
     page_url: req.headers.get("referer") ?? undefined,
+    staff: req.cookies.get("cw_staff")?.value === "1",
   });
 
   if (!started.ok) {
