@@ -3,7 +3,7 @@ import type { ProductCode } from "@/lib/products";
 import { callTelegramBotApi, sendTelegramMessage } from "@/lib/tg";
 
 type Supabase = ReturnType<typeof supabaseAdmin>;
-type BotProductCode = Extract<ProductCode, "short" | "irem">;
+type BotProductCode = Extract<ProductCode, "short" | "irem" | "way21" | "reset-day">;
 
 type BotState =
   | "idle"
@@ -62,6 +62,8 @@ type InlineKeyboardMarkup = {
 const PRODUCT_LABELS: Record<BotProductCode, string> = {
   short: "Short Reboot",
   irem: "IREM",
+  way21: "Шлях 21",
+  "reset-day": "Розвантажувальний день",
 };
 
 const FAQ_ANSWERS: Record<string, string> = {
@@ -81,20 +83,38 @@ const FAQ_ANSWERS: Record<string, string> = {
 
 function assertProduct(value: string | null | undefined): BotProductCode | null {
   if (value === "short" || value === "reboot") return "short";
-  return value === "irem" ? value : null;
+  if (value === "irem") return "irem";
+  if (value === "way21" || value === "shlyah21" || value === "detox21") return "way21";
+  if (
+    value === "reset-day" ||
+    value === "reset_day" ||
+    value === "reset" ||
+    value === "rozvantazhennya"
+  ) {
+    return "reset-day";
+  }
+  return null;
 }
 
-function accessLink(product: BotProductCode): string {
+// Direct course-bot deep link, when the program has its own bot. way21 and
+// reset-day have no dedicated bot yet (direct links land here once ready via
+// WAY21_ACCESS_LINK / RESET_DAY_ACCESS_LINK) — until then access is delivered
+// by support, so accessLink returns null and the caller shows a graceful note.
+function accessLink(product: BotProductCode): string | null {
   if (product === "short") {
     return (
       process.env.SHORT_ACCESS_LINK ||
       "https://telegram.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07"
     );
   }
-  return (
-    process.env.IREM_ACCESS_LINK ||
-    "https://telegram.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4"
-  );
+  if (product === "irem") {
+    return (
+      process.env.IREM_ACCESS_LINK ||
+      "https://telegram.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4"
+    );
+  }
+  if (product === "way21") return process.env.WAY21_ACCESS_LINK || null;
+  return process.env.RESET_DAY_ACCESS_LINK || null;
 }
 
 export function normalizeEmail(input: string): string | null {
@@ -136,8 +156,12 @@ function productKeyboard(): InlineKeyboardMarkup {
   return {
     inline_keyboard: [
       [
-        { text: "Short Reboot", callback_data: "product:short" },
-        { text: "IREM", callback_data: "product:irem" },
+        { text: PRODUCT_LABELS.short, callback_data: "product:short" },
+        { text: PRODUCT_LABELS.irem, callback_data: "product:irem" },
+      ],
+      [
+        { text: PRODUCT_LABELS.way21, callback_data: "product:way21" },
+        { text: PRODUCT_LABELS["reset-day"], callback_data: "product:reset-day" },
       ],
     ],
   };
@@ -399,9 +423,12 @@ async function handleAccessLookup(
   await saveSession(db, user, { state: "idle", contact: null });
 
   if (found) {
+    const link = accessLink(session.selected_product);
     await sendMessage(
       chatId,
-      `Оплату знайдено. Ось посилання на доступ:\n${accessLink(session.selected_product)}`,
+      link
+        ? `Оплату знайдено. Ось посилання на доступ:\n${link}`
+        : "Оплату знайдено. Доступ до курсу надішлемо найближчим часом — за потреби натисніть «Звʼязатися з підтримкою».",
       mainMenuKeyboard()
     );
     return;
