@@ -119,17 +119,19 @@
     --cw-sem-warmth: #dba54f;
     --cw-sem-boundary: #b76045;
     --cw-sem-trust: #35535f;
-    --cw-brand-asset-logo-symbol: url("/cw/brand/cw-symbol-gold.svg");
+    /* Symbol stays the original CenterWay figure emblem; the wordmark carries
+       the new identity's "CenterWay" + MOVE · BALANCE · GROW tagline.
+       Wordmark aspect 541.3:129.3 ≈ 4.19 — keep width/height in that ratio. */
+    --cw-brand-asset-logo-symbol: url("/cw/brand/cw-symbol-centered-v9.png");
     --cw-brand-asset-logo-symbol-header: url("/cw/brand/cw-symbol-centered-v9.png");
-    --cw-brand-asset-lockup-header: url("/cw/brand/cw-lockup-exact.png");
     --cw-brand-asset-wordmark-dark: url("/cw/brand/cw-wordmark-dark.svg");
     --cw-brand-asset-wordmark-light: url("/cw/brand/cw-wordmark-light.svg");
     --cw-brand-size-symbol-header: 2rem;
     --cw-brand-size-wordmark-header-width: 8.1rem;
-    --cw-brand-size-wordmark-header-height: 1.66rem;
+    --cw-brand-size-wordmark-header-height: 1.93rem;
     --cw-brand-size-symbol-footer: 2rem;
     --cw-brand-size-wordmark-footer-width: 8.6rem;
-    --cw-brand-size-wordmark-footer-height: 1.45rem;
+    --cw-brand-size-wordmark-footer-height: 2.05rem;
     --cw-sem-symbol-center: var(--cw-brand-asset-logo-symbol);
     --cw-sem-symbol-path: linear-gradient(110deg, transparent 8%, color-mix(in srgb, var(--cw-sem-warmth) 78%, transparent) 9% 11%, transparent 12% 44%, color-mix(in srgb, var(--cw-sem-warmth) 62%, transparent) 45% 47%, transparent 48%);
     --cw-sem-symbol-body: radial-gradient(circle at 32% 34%, color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent), transparent 44%), radial-gradient(circle at 70% 68%, color-mix(in srgb, var(--cw-sem-embodied) 16%, transparent), transparent 48%);
