@@ -7,13 +7,13 @@ const thanksCases = [
     name: "way21",
     path: "/way21/thanks?product=way21&order_ref=smoke-way21&payment_id=rrn-way21&amount=3100&currency=UAH",
     pageAttr: "thanks",
-    botHref: "https://t.me/E_Koriakin",
+    botHref: "https://telegram.me/E_Koriakin",
   },
   {
     name: "reset-day",
     path: "/reset-day/thanks?product=reset-day&order_ref=smoke-reset&payment_id=rrn-reset&amount=795&currency=UAH",
     pageAttr: "thanks",
-    botHref: "https://t.me/E_Koriakin",
+    botHref: "https://telegram.me/E_Koriakin",
   },
 ] as const;
 
@@ -27,7 +27,7 @@ test.describe("thanks redirect order smoke", () => {
         if (url.includes("/api/events")) {
           events.push({ type: "signal", url, method: request.method(), ts: Date.now() });
         }
-        if (url.startsWith("https://t.me/")) {
+        if (url.startsWith("https://telegram.me/")) {
           events.push({ type: "redirect", url, method: request.method(), ts: Date.now() });
         }
       });

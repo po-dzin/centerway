@@ -1838,3 +1838,22 @@ body.modal-open {
   margin-bottom: 0;
   text-align: center;
 }
+
+/* Utility pages (thanks / pay-failed) primary CTA — pin to short's brand
+   primary. In the managed pipeline an empty --product-primary poisons the
+   --landing-color-primary / --ds-color-primary chain, so the shared rule (and
+   any var()-based override) is invalid at computed-value time → the background
+   drops to transparent and the border falls back to currentColor (white).
+   Use literal short-red so «Відкрити бот» always renders in brand colour. */
+.utility-status-actions a.btn.primary,
+.utility-status-actions a.btn.primary:visited {
+  background: #c90008 !important;
+  border-color: #c90008 !important;
+  color: #fff !important;
+}
+
+.utility-status-actions a.btn.primary:hover,
+.utility-status-actions a.btn.primary:focus-visible {
+  background: #a40006 !important;
+  border-color: #a40006 !important;
+}

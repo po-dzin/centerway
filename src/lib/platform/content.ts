@@ -12,7 +12,7 @@ export const platformNav = [
 
 export const socialLinks = [
   { label: "YouTube", network: "youtube", href: "https://www.youtube.com/channel/UC0VPHLWTIXD3Rad5XkcyliA" },
-  { label: "Telegram", network: "telegram", href: "https://t.me/E_Koriakin" },
+  { label: "Telegram", network: "telegram", href: "https://telegram.me/E_Koriakin" },
   {
     label: "Facebook",
     network: "facebook",

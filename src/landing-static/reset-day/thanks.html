@@ -18,7 +18,7 @@
       <p class="utility-status-lead">Доступ до міні-курсу вже готується. Якщо Telegram не відкрився автоматично — натисніть кнопку нижче.</p>
 
       <div class="btns utility-status-actions">
-        <a class="btn primary" href="https://t.me/E_Koriakin" target="_blank" rel="noopener">Відкрити бот</a>
+        <a class="btn primary" href="https://telegram.me/E_Koriakin" target="_blank" rel="noopener">Відкрити бот</a>
         <a class="btn" href="https://resetday.centerway.net.ua/">Повернутися на сайт</a>
       </div>
 
@@ -32,7 +32,7 @@
   <script>
   (function () {
   const qs = new URLSearchParams(location.search);
-  const redirectTarget = "https://t.me/E_Koriakin";
+  const redirectTarget = "https://telegram.me/E_Koriakin";
   const redirectWaitTimeoutMs = 3500;
   const postPixelBufferMs = 600;
 
@@ -172,7 +172,7 @@
     Promise.resolve(window.CW_purchaseRedirectGate)
       .catch(() => undefined)
       .finally(() => {
-        window.location.href = window.CW_purchaseRedirectTarget || "https://t.me/E_Koriakin";
+        window.location.href = window.CW_purchaseRedirectTarget || "https://telegram.me/E_Koriakin";
       });
   }
   </script>
