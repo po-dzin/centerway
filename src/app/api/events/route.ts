@@ -2,7 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
-import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
+import { dispatchCapiEventDirect, dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
+import { isMetaTestModeEnabled } from "@/lib/tracking/mode";
 
 export const runtime = "nodejs";
 
@@ -120,6 +121,7 @@ export async function POST(req: NextRequest) {
     return cors(NextResponse.json({ ok: false, error: "event_id_required" }, { status: 400 }));
   }
 
+  const testMode = isMetaTestModeEnabled();
   const db = supabaseAdmin();
   const sharedPayload = {
     event_name: eventName,
@@ -152,6 +154,11 @@ export async function POST(req: NextRequest) {
   };
 
   if (isLocalOnlyEventName(eventName)) {
+    if (testMode) {
+      // Local-only events exist purely to feed the admin funnel view; in test mode
+      // nothing derived from tracking should reach our DB, so just no-op.
+      return cors(NextResponse.json({ ok: true, mode: "test_skipped" }));
+    }
     const localType =
       eventName === "ConsultCTA"
         ? "consult_cta"
@@ -176,7 +183,7 @@ export async function POST(req: NextRequest) {
     return cors(NextResponse.json({ ok: true, mode: "local_only" }));
   }
 
-  if (eventName === "ViewContent") {
+  if (eventName === "ViewContent" && !testMode) {
     const { error: insertErr } = await db.from("events").insert({
       type: "view_content",
       order_ref: null,
@@ -211,6 +218,12 @@ export async function POST(req: NextRequest) {
     content_type: sharedPayload.content_type,
     content_ids: sharedPayload.content_ids,
   };
+
+  if (testMode) {
+    // No DB record at all — straight to Meta, no durable fallback.
+    dispatchCapiEventDirect(payload);
+    return cors(NextResponse.json({ ok: true, mode: "test_direct" }));
+  }
 
   await db.from("events").insert({
     type: "meta_event_enqueued",

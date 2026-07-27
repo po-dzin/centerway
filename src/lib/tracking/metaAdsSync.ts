@@ -1,4 +1,5 @@
 import { adminClient } from "@/lib/auth/adminClient";
+import { isMetaTestModeEnabled } from "@/lib/tracking/mode";
 
 type MetaInsightsAction = {
   action_type?: string;
@@ -265,6 +266,13 @@ async function fetchInsightsPage(url: string): Promise<MetaInsightsResponse> {
 }
 
 export async function syncMetaAdsInsights(options?: { since?: string | null; until?: string | null }): Promise<MetaSyncResult> {
+  if (isMetaTestModeEnabled()) {
+    // Admin ingestion from Meta is disabled for the CW_META_TEST_MODE test: no API call,
+    // no DB writes. Outbound pixel/CAPI tracking is unaffected.
+    const { since, until } = resolveSyncWindow(options?.since, options?.until);
+    return { syncedRows: 0, dayCount: 0, since, until, accountId: "" };
+  }
+
   const token = process.env.META_ADS_ACCESS_TOKEN || process.env.META_ACCESS_TOKEN;
   const rawAccount = process.env.META_AD_ACCOUNT_ID;
   const rawPixelId = process.env.META_PIXEL_ID || process.env.META_AD_PIXEL_ID || process.env.META_PIXEL;
