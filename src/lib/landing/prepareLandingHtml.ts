@@ -235,6 +235,15 @@ function buildIremPriceMarkup(offer: LandingResolvedOffer, variant: "hero" | "fo
   return `<div class="fc-price">${stack}<small>повний доступ</small></div>${note}`;
 }
 
+// The interstitial micro-CTA cards (`.microcta-price`) hard-code the base
+// price in the static markup, same as hero-price/fc-price used to. Keep the
+// same plain `<b>price</b><small>note</small>` shape they already have
+// (no discount badge/old-price strike — those cards are compact banners,
+// not the full offer breakdown) so the CSS built for that shape keeps working.
+function buildIremMicroctaPriceMarkup(offer: LandingResolvedOffer): string {
+  return `<div class="microcta-price"><b>${offer.currentPriceLabel}</b><small>повний доступ</small></div>`;
+}
+
 function applyOfferReplacements(product: StaticLandingProduct, html: string, offer?: LandingResolvedOffer | null): string {
   if (product !== "irem" || !offer) {
     return html;
@@ -243,6 +252,7 @@ function applyOfferReplacements(product: StaticLandingProduct, html: string, off
   let next = html;
   const heroMarkup = buildIremPriceMarkup(offer, "hero", true);
   const offerMarkup = buildIremPriceMarkup(offer, "format", true);
+  const microctaMarkup = buildIremMicroctaPriceMarkup(offer);
 
   next = replaceIfMatch(
     next,
@@ -254,6 +264,13 @@ function applyOfferReplacements(product: StaticLandingProduct, html: string, off
     next,
     /<div class="fc-price">\s*<b>[\s\S]*?<\/small>\s*<\/div>\s*/i,
     () => `${offerMarkup}\n`
+  );
+
+  // Two identical micro-CTA blocks on the page — replace every occurrence,
+  // unlike the single hero/offer price blocks above.
+  next = next.replace(
+    /<div class="microcta-price">\s*<b>[\s\S]*?<\/small>\s*<\/div>/gi,
+    () => microctaMarkup
   );
 
   return next;
