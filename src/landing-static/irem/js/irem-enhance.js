@@ -15,7 +15,7 @@
   function init() {
     (function () {
       const sticky = document.getElementById("stickyCta");
-      const anchors = document.querySelectorAll("[data-cta-hero],[data-cta-final]");
+      const anchors = document.querySelectorAll("[data-cta-hero],[data-cta-final],[data-cta-suppress-sticky]");
       if (sticky && anchors.length) {
         const visible = new Set();
         const ctaIo = new IntersectionObserver(

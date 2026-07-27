@@ -33,6 +33,30 @@
     grid-column: 2;
   }
 
+  /* Video hero is single-column: the footage owns the full width, so the copy
+     just gets a readable measure at the left rather than a second column.
+     Desktop centers the column vertically — the bottom-anchored composition
+     that works on a tall mobile viewport just strands the text near the
+     floor once the hero is a short, ultra-wide 100svh band. */
+  .section-hero.has-video-bg .container {
+    grid-template-columns: minmax(0, 1fr);
+    align-content: center;
+    align-items: center;
+  }
+
+  .section-hero.has-video-bg .content {
+    max-width: 640px;
+  }
+
+  /* Details section picks up the two-column split the hero used to have. */
+  .section-hero-details .container {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: center;
+    column-gap: var(--landing-space-responsive-hero-columns-gap, 56px);
+    row-gap: 0;
+  }
+
 }
 
 /* Tablet */
@@ -59,7 +83,8 @@
     gap: 0;
   }
 
-  .section-hero .img {
+  .section-hero .img,
+  .section-hero-details .img {
     margin-top: var(--landing-space-responsive-hero-image-margin-top, 32px);
   }
 
@@ -122,7 +147,8 @@
     display: block !important;
   }
 
-  .section-hero .img.mob {
+  .section-hero .img.mob,
+  .section-hero-details .img.mob {
     position: relative;
     width: 100%;
     height: auto;
@@ -133,7 +159,8 @@
     background: transparent;
   }
 
-  .section-hero iframe.img.mob {
+  .section-hero iframe.img.mob,
+  .section-hero-details iframe.img.mob {
     max-height: none;
     aspect-ratio: 16 / 9;
   }
@@ -151,7 +178,8 @@
     font-size: 13px;
   }
 
-  .section-hero .img {
+  .section-hero .img,
+  .section-hero-details .img {
     width: 100%;
     max-width: 448px;
     margin-left: auto;
@@ -187,10 +215,6 @@
     max-width: 100%;
     text-align: left;
     padding: var(--landing-space-responsive-quote-padding, 10px 12px);
-  }
-
-  .section-hero .section-hero-preprice {
-    text-align: center;
   }
 
   .section-hero .benefits-block > p {

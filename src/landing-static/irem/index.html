@@ -18,6 +18,44 @@
 </head>
 <body>
 
+<!-- ============ BURGER NAV (shared mechanism, irem structure) ============ -->
+<header class="cw-nav" id="top" data-cw-nav>
+  <a class="cw-nav__brand" href="#top" aria-label="CenterWay — на початок">
+    <img class="cw-nav__mark" src="/shared/img/cw-logo-ink.png" alt="" aria-hidden="true" decoding="async">
+    <span class="cw-nav__wordmark">CenterWay</span>
+  </a>
+  <nav class="cw-nav__desktop" aria-label="Навігація сторінкою">
+    <a href="#about">Про практику</a>
+    <a href="#structure">Структура</a>
+    <a href="#protocol">30 днів</a>
+    <a href="#author">Про куратора</a>
+    <a href="#results">Результати</a>
+    <a href="#offer">Формати</a>
+    <a href="#faq">Питання</a>
+  </nav>
+  <button class="cw-nav__burger" type="button" data-cw-nav-toggle aria-label="Меню" aria-expanded="false" aria-controls="cwNavPanel">
+    <span></span><span></span><span></span>
+  </button>
+</header>
+<div class="cw-nav__drawer" data-cw-nav-drawer>
+  <div class="cw-nav__backdrop" data-cw-nav-close aria-hidden="true"></div>
+  <nav class="cw-nav__panel" id="cwNavPanel" aria-label="Меню" data-cw-nav-panel>
+    <button class="cw-nav__close" type="button" data-cw-nav-close aria-label="Закрити меню">&times;</button>
+    <ul class="cw-nav__list">
+      <li><a href="#about">Про практику</a></li>
+      <li><a href="#structure">Структура</a></li>
+      <li><a href="#protocol">Протокол 30 днів</a></li>
+      <li><a href="#author">Про куратора</a></li>
+      <li><a href="#results">Результати</a></li>
+      <li><a href="#offer">Формати</a></li>
+      <li><a href="#faq">Питання</a></li>
+    </ul>
+    <div class="cw-nav__cta">
+      <a href="#offer" class="btn btn-primary">Почати практику →</a>
+    </div>
+  </nav>
+</div>
+
 <!-- ============ HERO ============ -->
 <section class="hero">
   <div class="wrap">
@@ -96,7 +134,7 @@
 </section>
 
 <!-- ============ SHIFT ============ -->
-<section class="sec sec-alt">
+<section class="sec sec-alt" id="about">
   <div class="wrap">
     <div class="shift reveal">
       <span class="kicker">Зрушення</span>
@@ -127,8 +165,20 @@
   </div>
 </section>
 
+<!-- ============ MICRO CTA: MONDAY ============ -->
+<section class="sec microcta">
+  <div class="wrap">
+    <div class="microcta-card reveal">
+      <h3 class="microcta-title">Досить починати «з понеділка»</h3>
+      <p class="microcta-text">Кожен пропущений тиждень — це ще один цикл виснаження замість відновлення. Почніть новий цикл вже сьогодні.</p>
+      <div class="microcta-price"><b>3950 грн</b><small>повний доступ</small></div>
+      <a href="#offer" class="btn btn-primary" data-cta-suppress-sticky>Почати практику <span class="arr">→</span></a>
+    </div>
+  </div>
+</section>
+
 <!-- ============ MECHANISM / TRIAD ============ -->
-<section class="sec">
+<section class="sec" id="structure">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Як це працює · Механізм</span>
@@ -300,7 +350,7 @@
 </section>
 
 <!-- ============ PROTOCOL ============ -->
-<section class="sec sec-alt">
+<section class="sec sec-alt" id="protocol">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Ваш шлях</span>
@@ -363,6 +413,18 @@
   </div>
 </section>
 
+<!-- ============ MICRO CTA: QUALIFICATION ============ -->
+<section class="sec microcta">
+  <div class="wrap">
+    <div class="microcta-card reveal">
+      <h3 class="microcta-title">Впізнали себе в цьому списку?</h3>
+      <p class="microcta-text">Значить, ІВЕМ — саме ваш формат. Приєднуйтесь і почніть перший цикл вже цього тижня.</p>
+      <div class="microcta-price"><b>3950 грн</b><small>повний доступ</small></div>
+      <a href="#offer" class="btn btn-primary" data-cta-suppress-sticky>Почати практику <span class="arr">→</span></a>
+    </div>
+  </div>
+</section>
+
 <!-- ============ INCLUDED ============ -->
 <section class="sec">
   <div class="wrap">
@@ -392,7 +454,7 @@
 </section>
 
 <!-- ============ AUTHOR ============ -->
-<section class="sec sec-alt">
+<section class="sec sec-alt" id="author">
   <div class="wrap">
     <div class="author reveal">
       <div class="author-photo"><img src="img/curator-photo.webp" width="800" height="1200" loading="lazy" decoding="async" alt="Євгеній Корякін — засновник центру CenterWay"></div>
@@ -413,7 +475,7 @@
 </section>
 
 <!-- ============ PROOF ============ -->
-<section class="sec">
+<section class="sec" id="results">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Відгуки</span>
@@ -514,7 +576,7 @@
 </section>
 
 <!-- ============ FAQ ============ -->
-<section class="sec">
+<section class="sec" id="faq">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Питання й відповіді</span>

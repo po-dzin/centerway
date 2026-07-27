@@ -273,6 +273,17 @@ button::before {
   transform: scale(0.95);
 }
 
+/* Directional cue on the hero CTA only — matches the arrow affordance already
+   proven on the /reboot-b hero button. */
+.cta-arrow {
+  display: inline-block;
+  margin-left: 0.3em;
+  transition: transform 0.25s;
+}
+.openModal:hover .cta-arrow {
+  transform: translateX(3px);
+}
+
 section {
   padding: var(--landing-space-section-padding-y, 32px) 0;
   position: relative;
@@ -333,6 +344,157 @@ img {
   background: transparent;
   border-bottom-left-radius: 0;
   z-index: 0;
+}
+
+/* The shared `.cw-nav` header is `position: sticky` by default, which still
+   reserves its own height in flow — pushing the `min-height: 100svh` video
+   hero below a full viewport. Fixed removes it from flow so the hero fills
+   the whole first screen and the (translucent, blurred) header floats on
+   top of the footage instead of taking a bite out of it. Scoped to short
+   only: irem/other landings don't have a full-bleed hero to float over. */
+[data-cw-landing="short"] .cw-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+}
+
+/* Cinematic hero (short only, `.has-video-bg`): the footage is the hero, with
+   only the short copy — badge, H1, subtitle, price, CTA — riding the bottom of
+   the frame. The dense half (benefits, quote, YouTube intro) lives in
+   `.section-hero-details` right below, on the normal cream surface. That split
+   is what makes the video actually visible: keeping it all here meant a ~909px
+   text panel over a ~700px viewport, so no amount of scrim tuning could have
+   shown the video underneath.
+
+   Legibility comes from the bottom-weighted gradient, not from a panel: text
+   sits in the lower band where the scrim is heaviest, while the top of the
+   frame stays clear. */
+.section-hero.has-video-bg {
+  display: flex;
+  min-height: 100svh;
+  padding: 0;
+}
+.section-hero.has-video-bg .hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: var(--landing-color-surface-strong, #1b1714);
+}
+.section-hero.has-video-bg .hero-bg__video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 48%;
+}
+/* Transparent across the top third so the room reads clearly, ramping to near
+   opaque under the copy. The mid stop keeps the falloff from banding. */
+.section-hero.has-video-bg .hero-bg__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(18, 14, 11, 0.12) 0%,
+    rgba(18, 14, 11, 0.24) 32%,
+    rgba(18, 14, 11, 0.62) 55%,
+    rgba(18, 14, 11, 0.88) 75%,
+    rgba(18, 14, 11, 0.95) 100%
+  );
+}
+.section-hero.has-video-bg .container {
+  align-content: end;
+  align-items: end;
+  padding-top: var(--landing-space-rhythm-48, 48px);
+  padding-bottom: var(--landing-space-rhythm-40, 40px);
+}
+.section-hero.has-video-bg .content {
+  justify-content: flex-end;
+}
+/* Light-on-dark overrides — the base hero tokens are all tuned for the cream
+   surface, so only the pieces that now sit on footage get remapped. Selectors
+   here have to out-specify the base hero rules further down the file (several
+   of which go through `#divprice`), hence the id and the doubled classes. */
+.section-hero.has-video-bg h1,
+.section-hero.has-video-bg .price .price-current {
+  color: #fff;
+}
+.section-hero.has-video-bg h3,
+.section-hero.has-video-bg .section-hero-preprice,
+.section-hero.has-video-bg #divprice .price-note,
+.section-hero.has-video-bg #divprice .cta-note {
+  color: rgba(255, 255, 255, 0.88);
+}
+.section-hero.has-video-bg .badge {
+  background: rgba(255, 255, 255, 0.22);
+  color: #fff;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  /* Smaller than the shared 14px/8x16 badge default: over footage a
+     full-size badge competes with the H1 for attention. */
+  padding: 6px 12px;
+  font-size: 12px;
+}
+/* Drop shadow rather than a plate: keeps the copy readable over the brighter
+   patches of floor without putting a box between the viewer and the footage. */
+.section-hero.has-video-bg h1,
+.section-hero.has-video-bg h3,
+.section-hero.has-video-bg .section-hero-preprice,
+.section-hero.has-video-bg .price .price-current,
+.section-hero.has-video-bg #divprice .price-note,
+.section-hero.has-video-bg #divprice .cta-note {
+  text-shadow: 0 1px 2px rgba(12, 9, 7, 0.5), 0 2px 16px rgba(12, 9, 7, 0.65);
+}
+
+/* Badge and H1 stay flush left against the video, full column width — tried
+   fully centering both (see PR discussion) but it read as a bigger change
+   than wanted. The subtitle alone gets a mixed treatment: its own text stays
+   ragged-left (a centered 3-line sentence looked worse than left), but the
+   block itself is narrower than the column and inset toward the middle,
+   landing visually between the left-flush H1 above and the centered price
+   block below instead of sharing the H1's exact left edge. */
+.section-hero.has-video-bg h3 {
+  text-align: left;
+  max-width: 30ch;
+  margin-inline: auto;
+}
+
+/* The hero's former second half, now its own section on the cream surface. */
+.section-hero-details {
+  background: var(--landing-color-surface-base);
+}
+.section-hero-details .container {
+  display: flex;
+  flex-direction: column;
+  gap: var(--landing-space-rhythm-24, 24px);
+  margin: 0 auto;
+  padding-left: var(--landing-space-rhythm-48);
+  padding-right: var(--landing-space-rhythm-48);
+}
+.section-hero-details__copy {
+  display: flex;
+  flex-direction: column;
+  gap: var(--landing-space-rhythm-24, 24px);
+}
+.section-hero-details__copy h2 {
+  margin-bottom: var(--landing-space-rhythm-8, 8px);
+}
+.section-hero-details .benefits-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--landing-space-rhythm-16);
+}
+.section-hero-details .benefits-block > p {
+  font-size: var(--landing-type-hero-benefits-size, 18px);
+  line-height: var(--landing-type-hero-benefits-line-height, 1.6);
+  color: var(--landing-color-text);
+  margin: 0;
+  font-weight: var(--landing-type-hero-benefits-weight, 500);
+  text-align: left;
+}
+.section-hero-details .hero-proof__quote {
+  margin: 0;
 }
 
 .section-hero .container {
@@ -474,7 +636,8 @@ img {
   line-height: var(--landing-line-reset, 1);
 }
 
-.section-hero .img.desk {
+.section-hero .img.desk,
+.section-hero-details .img.desk {
   position: relative;
   width: 100%;
   max-width: none;
@@ -488,7 +651,8 @@ img {
   filter: drop-shadow(var(--landing-shadow-hero-image));
 }
 
-.section-hero iframe.img {
+.section-hero iframe.img,
+.section-hero-details iframe.img {
   display: block;
   width: 100%;
   height: auto;
@@ -573,7 +737,8 @@ img {
   text-align: left;
 }
 
-.section-hero iframe.img.desk {
+.section-hero iframe.img.desk,
+.section-hero-details iframe.img.desk {
   max-height: none;
 }
 
@@ -588,8 +753,13 @@ img {
 }
 
 .section-hero .section-hero-preprice {
-  margin-top: var(--landing-space-rhythm-24);
-  text-align: left;
+  /* Was rhythm-24 stacked on top of the subtitle's own margin — read as two
+     loosely related halves instead of one continuous pitch. rhythm-8 keeps a
+     breath between the subtitle and the price without the dead gap. */
+  margin-top: var(--landing-space-rhythm-8);
+  /* Centered like the price/CTA block right below it, not left like the
+     paragraph copy above — this line is its own short call-out, not body text. */
+  text-align: center;
 }
 
 .section-hero #divprice p {
@@ -1518,12 +1688,14 @@ body.modal-open {
 
 .section-hero .openModal,
 .section-offer .openModal,
+.section-microcta .openModal,
 [data-sticky-menu] .openModal {
   background: var(--landing-color-primary);
 }
 
 .section-hero .openModal:hover,
 .section-offer .openModal:hover,
+.section-microcta .openModal:hover,
 [data-sticky-menu] .openModal:hover {
   background: var(--landing-color-primary-strong);
 }
@@ -1797,7 +1969,8 @@ body.modal-open {
   line-height: var(--landing-line-body, 1.5);
 }
 
-.section-offer .price {
+.section-offer .price,
+.section-microcta .price {
   font-size: var(--landing-type-offer-price-size, 20px);
   font-weight: 900;
   margin-bottom: 0;
@@ -1805,7 +1978,8 @@ body.modal-open {
   text-transform: uppercase;
 }
 
-.section-offer .price span {
+.section-offer .price span,
+.section-microcta .price span {
   background: var(--landing-color-accent);
   background-clip: text;
   -webkit-background-clip: text;
@@ -1813,7 +1987,8 @@ body.modal-open {
   font-size: var(--landing-type-offer-price-value-size, 30px);
 }
 
-.section-offer .openModal {
+.section-offer .openModal,
+.section-microcta .openModal {
   width: 100%;
   max-width: 360px;
   padding: var(--landing-space-cta-compact-padding, 10px 32px);
@@ -1826,8 +2001,33 @@ body.modal-open {
   min-height: var(--landing-size-cta-min-height, var(--ds-touch-target-min, 44px));
 }
 
-.section-offer .openModal::before {
+.section-offer .openModal::before,
+.section-microcta .openModal::before {
   display: none;
+}
+
+.section-microcta {
+  text-align: center;
+}
+
+.section-microcta .container {
+  max-width: var(--landing-size-section-reading-max-width);
+  margin: 0 auto;
+  background: var(--landing-color-card-trust);
+  border-radius: var(--landing-radius-card-unified);
+  padding: var(--landing-space-rhythm-24, 24px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--landing-space-rhythm-12, 12px);
+}
+
+.section-microcta .microcta-text {
+  margin: 0;
+  max-width: var(--landing-size-section-reading-max-width);
+  font-size: var(--landing-type-offer-lead-size, 20px);
+  font-weight: 500;
+  line-height: var(--landing-line-body, 1.5);
 }
 
 .section-faq {

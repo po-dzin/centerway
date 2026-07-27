@@ -673,3 +673,236 @@
   --landing-type-responsive-hero-price-current-mobile-size: var(--landing-type-scale-28);
   --landing-type-responsive-hero-price-old-mobile-size: var(--landing-type-scale-28);
 }
+
+/* ============================================================
+   Shared burger navigation — entry landings (short + irem).
+   Markup lives in each index.html (adapted per site); the toggle
+   behaviour lives in shared/js/landing-runtime.js. Class-prefixed
+   `cw-nav` to stay clear of per-product styles. Both files load on
+   the served entry path via config.styles / config.runtimeScript.
+   ============================================================ */
+/* NB: `body { overflow-x: hidden }` (irem's theme) turns the body into a scroll
+   container and silently kills `position: sticky` on this header. It is swapped
+   to `overflow-x: clip` from landing-runtime.js — not here, because on the served
+   entry path `data-cw-landing` lands on <main>, so no selector in this file can
+   reach <body> per-site. */
+.cw-nav {
+  position: sticky;
+  top: 0;
+  z-index: var(--ds-z-sticky, 999);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 10px clamp(16px, 4vw, 32px);
+  background: rgba(255, 253, 247, 0.82);
+  backdrop-filter: saturate(1.4) blur(12px);
+  -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid var(--ds-color-border-soft, #e7eaf0);
+  transition: transform 0.3s ease;
+  /* NB: no `transform`/`will-change` in the base state on purpose — either would
+     make .cw-nav a containing block for the fixed drawer panel nested inside it,
+     breaking the panel's viewport positioning. The hide transform is applied
+     only via .cw-nav--hidden (when the drawer is closed). */
+}
+/* Hide on scroll-down, reveal on scroll-up (toggled from landing-runtime.js). */
+.cw-nav.cw-nav--hidden { transform: translateY(-100%); }
+.cw-nav__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 17px;
+  line-height: 1;
+  color: var(--ds-color-text, #111);
+  text-decoration: none;
+}
+.cw-nav__mark {
+  display: block;
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  /* Brand mark ships in ink green; render it solid black per request. */
+  filter: brightness(0);
+}
+.cw-nav__wordmark {
+  /* No font-family here on purpose: inherits the site body font (DS). */
+  font-weight: 700;
+  font-size: 18px;
+  letter-spacing: 0.01em;
+  color: var(--ds-color-text, #111);
+}
+/* Desktop inline nav — hidden on mobile, shown as a row >= 900px. */
+.cw-nav__desktop { display: none; }
+.cw-nav__desktop a {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ds-color-text, #111);
+  text-decoration: none;
+  border-radius: var(--ds-radius-sm, 12px);
+}
+.cw-nav__desktop a:hover { background: rgba(17, 17, 17, 0.05); }
+.cw-nav__burger {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  width: 44px;
+  height: 44px;
+  padding: 0 10px;
+  margin: 0;
+  border: 0;
+  border-radius: var(--ds-radius-sm, 12px);
+  background: transparent;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+}
+.cw-nav__burger span {
+  display: block;
+  width: 100%;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--ds-color-text, #111);
+  transition: transform 0.25s ease, opacity 0.2s ease;
+}
+/* Short's global `button::before` injects an arrow image on every button; kill it
+   on the burger and close so no stray arrow bleeds onto the nav controls. */
+.cw-nav__burger::before,
+.cw-nav__close::before { content: none; display: none; }
+.cw-nav__burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+.cw-nav__burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
+.cw-nav__burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+/* Mobile drawer: a full-viewport fixed wrapper with overflow:hidden. It clips the
+   sliding panel so the closed (translateX 100%) panel never extends the page's
+   scroll width — which was inflating fixed `width:100%` CTAs (the sticky button). */
+.cw-nav__drawer {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ds-z-modal, 1200);
+  overflow: hidden;
+  visibility: hidden;
+  pointer-events: none;
+}
+body.cw-nav-open .cw-nav__drawer { visibility: visible; pointer-events: auto; }
+.cw-nav__backdrop {
+  position: absolute;
+  inset: 0;
+  background: transparent;
+}
+.cw-nav__panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(86vw, 360px);
+  height: 100%;
+  padding: 84px 24px 28px;
+  background: var(--ds-color-bg-canvas, #fffdf7);
+  box-shadow: var(--ds-shadow-md, 0 6px 16px rgba(17, 17, 17, 0.12));
+  transform: translateX(100%);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.cw-nav__close {
+  position: absolute;
+  /* Mirror the burger exactly: same 44px box, same offset from the top-right
+     corner (header has padding: 10px clamp(16px,4vw,32px)), so the × sits where
+     the burger was. */
+  top: 10px;
+  right: clamp(16px, 4vw, 32px);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  /* Reset the global `button { padding: 17px 90px 17px 32px }` on short, which
+     with border-box otherwise inflates this to ~122px and shoves the × left. */
+  padding: 0;
+  margin: 0;
+  border: 0;
+  border-radius: var(--ds-radius-sm, 12px);
+  background: transparent;
+  font-size: 26px;
+  line-height: 1;
+  text-transform: none;
+  color: var(--ds-color-text, #111);
+  cursor: pointer;
+}
+.cw-nav__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+}
+.cw-nav__list a {
+  display: block;
+  padding: 14px 8px;
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--ds-color-text, #111);
+  text-decoration: none;
+  border-bottom: 1px solid var(--ds-color-border-soft, #e7eaf0);
+}
+.cw-nav__list a:active { opacity: 0.6; }
+.cw-nav__cta { margin-top: 22px; }
+.cw-nav__cta .openModal,
+.cw-nav__cta .btn { width: 100%; }
+/* Short's base .openModal is coral/uppercase/arrowed (the generic `button` rule);
+   its real CTAs (hero/offer/sticky `#menu .openModal`) override all of that to a
+   compact red pill with no arrow. Copy that override here 1:1 so the drawer CTA
+   is the same button, not a different-looking one. */
+[data-cw-landing="short"] .cw-nav__cta .openModal {
+  max-width: 360px;
+  padding: var(--landing-space-cta-compact-padding, 10px 32px);
+  font-size: var(--landing-type-cta-secondary-size, 18px);
+  font-weight: 700;
+  text-transform: none;
+  background: var(--landing-color-primary, #c90008);
+  border-radius: var(--ds-radius-sm, 12px);
+  box-shadow: var(--landing-shadow-cta);
+  min-height: var(--landing-size-cta-min-height, var(--ds-touch-target-min, 44px));
+}
+[data-cw-landing="short"] .cw-nav__cta .openModal::before { display: none; }
+[data-cw-landing="short"] .cw-nav__cta .openModal:hover {
+  background: var(--landing-color-primary-strong, #c90008);
+}
+
+body.cw-nav-open { overflow: hidden; }
+body.cw-nav-open .cw-nav__panel { transform: translateX(0); }
+
+[data-section],
+section[id],
+main[id] { scroll-margin-top: 72px; }
+
+/* Desktop: single-row nav — brand left, links right; burger drawer off. */
+@media (min-width: 900px) {
+  /* Bar spans full width; its content aligns to each site's own content
+     wrapper (max-width + inner padding), so the row lines up with the hero. */
+  [data-cw-landing="short"] .cw-nav { padding-inline: calc(max(0px, (100% - 1200px) / 2) + 48px); }
+  [data-cw-landing="irem"] .cw-nav { padding-inline: calc(max(0px, (100% - 1160px) / 2) + 40px); }
+  .cw-nav__burger { display: none; }
+  .cw-nav__drawer { display: none; }
+  .cw-nav__desktop { display: flex; align-items: center; gap: 4px; }
+  body.cw-nav-open { overflow: visible; }
+}
+
+/* Narrow desktops: six links + brand need tighter cells to stay on one row. */
+@media (min-width: 900px) and (max-width: 1180px) {
+  .cw-nav__desktop { gap: 0; }
+  .cw-nav__desktop a { padding: 8px 9px; font-size: 14px; white-space: nowrap; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cw-nav,
+  .cw-nav__panel,
+  .cw-nav__burger span { transition: none; }
+}
