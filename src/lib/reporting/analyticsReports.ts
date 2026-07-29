@@ -1,5 +1,6 @@
 import { adminClient } from "@/lib/auth/adminClient";
 import { sendTelegramMessageWithToken } from "@/lib/tg";
+import { isMetaTestModeEnabled } from "@/lib/tracking/mode";
 
 const REPORTS_TIME_ZONE = process.env.ANALYTICS_REPORTS_TIMEZONE || "Europe/Kyiv";
 const REPORTS_CHAT_ID = process.env.ANALYTICS_REPORTS_CHAT_ID;
@@ -607,6 +608,9 @@ export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise
   sent: boolean;
   reason?: string;
 }> {
+  if (isMetaTestModeEnabled()) {
+    return { sent: false, reason: "test_mode_disabled" };
+  }
   if (!REPORTS_CHAT_ID) {
     return { sent: false, reason: "missing_reports_chat_id" };
   }
