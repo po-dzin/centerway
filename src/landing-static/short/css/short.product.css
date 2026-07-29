@@ -447,18 +447,10 @@ img {
   text-shadow: 0 1px 2px rgba(12, 9, 7, 0.5), 0 2px 16px rgba(12, 9, 7, 0.65);
 }
 
-/* Badge and H1 stay flush left against the video, full column width — tried
-   fully centering both (see PR discussion) but it read as a bigger change
-   than wanted. The subtitle alone gets a mixed treatment: its own text stays
-   ragged-left (a centered 3-line sentence looked worse than left), but the
-   block itself is narrower than the column and inset toward the middle,
-   landing visually between the left-flush H1 above and the centered price
-   block below instead of sharing the H1's exact left edge. */
-.section-hero.has-video-bg h3 {
-  text-align: left;
-  max-width: 30ch;
-  margin-inline: auto;
-}
+/* Badge, H1 and (on tablet/desktop) the subtitle stay flush left against the
+   video, full column width — tried fully centering all three but it read as
+   a bigger change than wanted. The subtitle is centered on phone widths only;
+   see the max-width:600px block in short.product.responsive.css. */
 
 /* The hero's former second half, now its own section on the cream surface. */
 .section-hero-details {
@@ -513,6 +505,14 @@ img {
   width: auto;
   display: flex;
   flex-direction: column;
+  /* Flex/grid items default to min-width:auto, which sizes them to their
+     content's min-content width regardless of the parent's actual space —
+     at OS-level "larger text" accessibility scaling, an unbreakable-looking
+     word (H1/H3) then forces this column itself wider than the viewport,
+     which `overflow-wrap: break-word` on the text alone can't fix since it
+     doesn't affect intrinsic sizing here. min-width:0 lets the column
+     actually shrink to the grid track's width so wrapping can kick in. */
+  min-width: 0;
 }
 
 .badge {
@@ -530,7 +530,7 @@ img {
 
 .section-hero h1 {
   font-size: var(--landing-type-hero-h1-size, 56px);
-  margin: var(--landing-space-rhythm-24) 0 0;
+  margin: var(--landing-space-rhythm-12) 0 0;
   text-transform: none;
   font-weight: var(--landing-type-hero-h1-weight, 600);
   line-height: var(--landing-type-hero-h1-line-height, 1.05);
@@ -544,7 +544,7 @@ img {
 }
 
 .section-hero h3 {
-  margin-top: var(--landing-space-rhythm-24);
+  margin-top: var(--landing-space-rhythm-12);
   font-size: var(--landing-type-hero-h3-size, 20px);
   font-weight: var(--landing-type-hero-h3-weight, 500);
   color: var(--landing-color-text-muted);
@@ -757,9 +757,11 @@ img {
      loosely related halves instead of one continuous pitch. rhythm-8 keeps a
      breath between the subtitle and the price without the dead gap. */
   margin-top: var(--landing-space-rhythm-8);
-  /* Centered like the price/CTA block right below it, not left like the
-     paragraph copy above — this line is its own short call-out, not body text. */
-  text-align: center;
+  /* Left by default, matching the rest of the tablet/desktop hero (H1, price,
+     button are all flush left there). Centered only on phone widths — see
+     the max-width:600px block in short.product.responsive.css — to match
+     mobile's centered price/CTA block underneath it. */
+  text-align: left;
 }
 
 .section-hero #divprice p {
@@ -836,7 +838,10 @@ img {
   box-shadow: var(--landing-shadow-cta);
   margin-top: var(--landing-space-rhythm-12);
   min-height: var(--landing-size-cta-min-height, var(--ds-touch-target-min, 44px));
-  white-space: nowrap;
+  /* No white-space:nowrap: at a fixed 360px max-width, a nowrap label plus
+     the arrow overflows the button box once OS-level text scaling is on
+     (confirmed live: the arrow rendered ~34px past the button edge). Two
+     lines at extreme scale reads far better than clipped/overflowing text. */
 }
 
 .section-hero #divprice .openModal::before {

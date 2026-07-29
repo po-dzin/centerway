@@ -1,6 +1,10 @@
-/* Promoted IREM funnel theme extracted from the former irem-v2 entry.
-   This file now owns both the entry landing styling and the utility/legal
-   surface compatibility layer for the active /irem runtime. */
+/* Short-Перезавантаження — variant B theme (A/B test against /reboot).
+   Forked from irem/css/irem.theme.css so the Short funnel can be tested in the
+   newer CenterWay landing look (dark-navy + gold/amber CTA, kicker/sec-head
+   rhythm, reveal animations) without touching the live /irem theme.
+   Shared DS layers (tokens / foundation / pages / landing.bridge) are linked
+   before this file, exactly as on the managed /irem render path.
+   Short-specific components live at the bottom of this file. */
 
 @font-face{font-family:"Formular";font-weight:300;font-style:normal;font-display:swap;src:url("../fonts/Formular-Light.woff2") format("woff2")}
 @font-face{font-family:"Formular";font-weight:400;font-style:normal;font-display:swap;src:url("../fonts/Formular.woff2") format("woff2")}
@@ -9,7 +13,7 @@
 @font-face{font-family:"Formular";font-weight:700;font-style:normal;font-display:swap;src:url("../fonts/Formular-Black.woff2") format("woff2")}
 
 :root,
-[data-cw-landing="irem"]{
+[data-cw-landing="short-b"]{
   --ink:#23264a;
   --ink-soft:#3a3f63;
   --indigo:#5a6099;
@@ -125,7 +129,9 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:18ch}
   transition:transform .25s cubic-bezier(.2,.8,.2,1),box-shadow .25s,background .25s;
   text-align:center;
   line-height:1.1;
-  white-space:nowrap;
+  /* No white-space:nowrap: at OS-level "larger text" scaling the label+arrow
+     overflowed a few px past fixed-width buttons (confirmed live). Wrapping
+     to 2 lines at that scale beats clipped/overflowing text. */
 }
 .btn-primary{background:var(--cta);color:var(--on-cta);box-shadow:var(--shadow-cta)}
 .btn-primary:hover{background:var(--cta-strong);transform:translateY(-2px);box-shadow:0 12px 30px rgba(221,109,12,.36)}
@@ -191,12 +197,6 @@ a.btn.btn-ghost:visited{
 .hero-sub{font-size:clamp(.95rem,2.8vw,1.1rem);color:var(--text-muted);line-height:1.5;margin-bottom:1.25rem}
 
 .hero-chips{display:flex;flex-wrap:wrap;gap:.45rem}
-/* The longest chip ("Без спеціальної підготовки") is alone on its own wrapped
-   row at extreme OS text-scaling, so flex-wrap can't shrink it against a
-   sibling — it's simply wider than the column while nowrap. Letting just the
-   chip text wrap (not the badge, which tested fine) avoids a few px of
-   overflow at that scale without changing normal-size rendering. */
-.hero-chips span{white-space:normal;max-width:100%}
 .hero-price{display:flex;align-items:baseline;gap:.5em}
 .hero-price b{font-family:var(--f-display);font-size:2.1rem;font-weight:700;color:var(--ink);line-height:1}
 .hero-price small{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;color:var(--text-soft);text-transform:uppercase}
@@ -452,7 +452,7 @@ a.btn.btn-ghost:visited{
 
 .author{display:grid;grid-template-columns:.85fr 1.15fr;gap:clamp(28px,4vw,56px);align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(28px,4vw,52px);box-shadow:var(--shadow-soft)}
 .author-photo{aspect-ratio:3/4;border-radius:var(--r-md);position:relative;overflow:hidden;background:var(--surface)}
-.author-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;-webkit-mask-image:linear-gradient(to bottom,#000 35%,transparent 100%);mask-image:linear-gradient(to bottom,#000 35%,transparent 100%)}
+.author-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top}
 .author-photo .ph-cap{position:absolute;left:12px;bottom:12px;z-index:2;background:rgba(255,255,255,.86);border:1px solid var(--line);border-radius:var(--r-pill);padding:.35em .8em;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.1em;color:var(--indigo);text-transform:uppercase}
 .author h2{font-size:clamp(1.8rem,3.4vw,2.6rem);margin-bottom:.4rem}
 .author .role{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.1em;text-transform:uppercase;color:var(--indigo);margin-bottom:1.2rem}
@@ -617,8 +617,8 @@ a.btn.btn-ghost:visited{
 .fc-price + .promo-note .promo-note__label,
 .fc-price + .promo-note .promo-timer{color:var(--irem-gold-soft)}
 
-/* Utility + legal compatibility */
-[data-cw-landing="irem"]{
+/* Bridge variable mapping consumed by /shared/css/landing.bridge.css */
+[data-cw-landing="short-b"]{
   --product-primary:var(--cta);
   --product-primary-strong:var(--cta-strong);
   --landing-color-primary:var(--cta);
@@ -653,66 +653,202 @@ a.btn.btn-ghost:visited{
   --ds-touch-target-min:44px;
 }
 
-body.utility-page{
-  background:
-    radial-gradient(circle at top,rgba(221,109,12,.12) 0,transparent 42%),
-    linear-gradient(180deg,var(--chip-soft) 0%,var(--cream) 100%);
-}
-.card,
-.utility-status-card,
-.public-offer,
-.cw-legal{
-  border-radius:var(--r-lg);
-  border:1px solid var(--line);
-  box-shadow:var(--shadow-soft);
-  background:rgba(255,255,255,.96);
-}
-.public-offer-page,
-.cw-legal-page{
-  max-width:min(74rem,100%);
-  padding:clamp(1.25rem,3vw,2rem);
-}
-.public-offer,
-.cw-legal{
-  padding:clamp(1.5rem,3vw,2.5rem);
-}
-.public-offer h1,
-.public-offer h2,
-.cw-legal h1,
-.cw-legal h2,
-body:not(.utility-page) h1,
-body:not(.utility-page) h2{
-  font-family:var(--f-display);
-  color:var(--ink);
-}
-/* Dark-panel headings must stay light. The blanket rule above (specificity 0,1,2)
-   otherwise beats the section rules `.shift h2` / `.offer h2` (0,1,1) and paints
-   them ink-on-dark. Re-assert white with matching specificity. */
-body:not(.utility-page) .shift h2,
-body:not(.utility-page) .offer h2{
-  color:#fff;
-}
-.hint{
-  background:var(--chip-soft);
-  border:1px solid var(--line);
-  border-radius:var(--r-md);
+
+/* ============================================================
+   Short-specific components (no equivalent in the IREM source)
+   ============================================================ */
+
+/* Hero visual is Short's looping room footage instead of IREM's portrait. */
+video.hv-photo{object-position:center 40%;background:var(--surface-cool)}
+@media(min-width:881px){video.hv-photo{object-position:center 42%}}
+
+/* Problem cards keep Short's pictograms above the copy. */
+.prob-card .prob-ico{width:52px;height:52px;border-radius:14px;background:var(--chip);display:grid;place-items:center;margin-bottom:.9rem}
+.prob-card .prob-ico img{width:30px;height:30px;object-fit:contain}
+
+/* Program: 4 modules, each with a still from the lesson. */
+.prog-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:1.2rem}
+@media(max-width:820px){.prog-grid{grid-template-columns:1fr}}
+.prog-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);overflow:hidden;display:flex;flex-direction:column;transition:transform .3s,box-shadow .3s}
+.prog-card:hover{transform:translateY(-4px);box-shadow:var(--shadow-med)}
+.prog-media{position:relative;aspect-ratio:16/9;background:var(--surface-cool);overflow:hidden}
+.prog-media img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.prog-body{padding:1.6rem 1.5rem 1.8rem;display:flex;flex-direction:column;flex:1}
+.prog-n{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--indigo)}
+.prog-card h3{font-size:1.35rem;margin:.5rem 0 .5rem;line-height:1.2}
+.prog-sub{font-size:.95rem;color:var(--text-muted);margin-bottom:1rem}
+.prog-card ul{list-style:none;display:grid;gap:.45rem;margin:0;padding:0}
+.prog-card li{position:relative;padding-left:1.4rem;font-size:.94rem;color:var(--text-muted);line-height:1.5}
+.prog-card li::before{content:"";position:absolute;left:0;top:.62em;width:6px;height:6px;border-radius:50%;background:var(--cta)}
+
+/* Social proof: real screenshots + a video review. */
+.shots{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1rem}
+.shot{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:.6rem;overflow:hidden;transition:transform .3s,box-shadow .3s}
+.shot:hover{transform:translateY(-3px);box-shadow:var(--shadow-med)}
+.shot img{width:100%;height:auto;border-radius:var(--r-sm)}
+.proof-video{margin-top:1.6rem;position:relative;aspect-ratio:16/9;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow-soft);background:var(--surface-cool)}
+.proof-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+
+/* Intro video sits next to "Що ви отримаєте". */
+.intro-grid{display:grid;grid-template-columns:1fr 1fr;gap:clamp(28px,4vw,56px);align-items:center}
+@media(max-width:880px){.intro-grid{grid-template-columns:1fr}}
+.intro-list{list-style:none;display:grid;gap:.8rem;margin-top:1.4rem;padding:0}
+.intro-list li{display:flex;gap:.7rem;align-items:flex-start;font-size:1rem;color:var(--text-muted);line-height:1.5}
+.intro-list li::before{content:"✓";color:var(--cta);font-weight:700;flex:0 0 auto;margin-top:.05em}
+.intro-video{position:relative;aspect-ratio:16/9;border-radius:var(--r-lg);overflow:hidden;border:1px solid var(--line);box-shadow:var(--shadow-soft);background:var(--surface-cool)}
+.intro-video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+
+/* Offer block: single price, single payment button. */
+.offer .btn.openModal:disabled{opacity:.7;cursor:progress}
+.offer-note{margin-top:1.2rem;font-size:.86rem;color:rgba(255,255,255,.6)}
+.offer-pay-mark{height:34px;margin:1.4rem auto 0;opacity:.9}
+
+/* ============================================================
+   Short palette — variant B keeps the Short brand colours,
+   icons and imagery; only the layout system comes from the new
+   landing shell. Everything below re-points the theme variables
+   (and the few hardcoded rgba() spots that bypass them).
+   ============================================================ */
+:root,
+[data-cw-landing="short-b"]{
+  --ink:#2d2d2b;
+  --ink-soft:#4a4844;
+  /* secondary accent = Short's coral, where the source theme used indigo */
+  --indigo:#b85850;
+  --indigo-bright:#e87d73;
+  --indigo-tint:#fdeeec;
+  --chip:#fdeae7;
+  --chip-soft:#fdf6f4;
+  --cta:#c90008;
+  --cta-strong:#a30006;
+  --on-cta:#ffffff;
+  --cream:#fffdf7;
+  --surface:#ffffff;
+  --surface-cool:#faf4f2;
+  --line:#f0dedb;
+  --line-strong:#e0bdb8;
+  --text:#2d2d2b;
+  --text-muted:#55534f;
+  --text-soft:#7a7772;
+  --gold:#e87d73;
+  /* dark panels follow the hero footage scrim (warm charcoal), not navy */
+  --irem-dark-1:#221b18;
+  --irem-dark-2:#3d302b;
+  --irem-gold-bright:#ef9a92;
+  --irem-gold-soft:#e87d73;
+  --irem-gold-tint:#fdeeec;
+  --irem-on-dark-soft:#efe4e1;
+  --irem-on-dark-muted:#d9c9c5;
+  --irem-on-dark-faint:#9c8a85;
+  --irem-on-dark-label:#d1bcb7;
+  --irem-indigo-soft:#c98d86;
+  --shadow-soft:0 1px 2px rgba(45,45,43,.05),0 8px 24px rgba(45,45,43,.06);
+  --shadow-med:0 2px 6px rgba(45,45,43,.08),0 20px 48px rgba(45,45,43,.12);
+  --shadow-cta:0 8px 22px rgba(201,0,8,.24);
 }
 
-/* ============ Premium lead-form modal ============ */
-.lead-modal{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;padding:20px}
-.lead-modal[hidden]{display:none}
-.lead-modal__backdrop{position:absolute;inset:0;background:rgba(27,29,46,.55);backdrop-filter:blur(3px)}
-.lead-modal__dialog{position:relative;width:100%;max-width:30rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-med);padding:clamp(1.4rem,4vw,2rem);max-height:90vh;overflow:auto}
-.lead-modal__x{position:absolute;top:.7rem;right:.9rem;width:2rem;height:2rem;border:0;background:transparent;font-size:1.5rem;line-height:1;color:var(--text-soft);cursor:pointer;border-radius:50%}
-.lead-modal__x:hover{background:var(--surface-cool);color:var(--ink)}
-.lead-modal__program{font-family:var(--f-ui);font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--cta-strong);margin:0 0 .3rem}
-.lead-modal__title{font-family:var(--f-display);font-size:1.4rem;color:var(--ink);margin:0 0 .4rem}
-.lead-modal__sub{font-size:.95rem;color:var(--text-muted);margin:0 0 1.1rem;line-height:1.5}
-.lead-modal__input{width:100%;box-sizing:border-box;margin-bottom:.7rem;padding:.8rem .95rem;font:inherit;font-size:1rem;color:var(--ink);background:var(--surface-cool);border:1px solid var(--line-strong);border-radius:var(--r-sm)}
-.lead-modal__input:focus{outline:2px solid var(--cta);outline-offset:1px;border-color:var(--cta)}
-textarea.lead-modal__input{resize:vertical;min-height:3.2rem}
-.lead-modal__submit{width:100%;margin-top:.3rem;justify-content:center}
-.lead-modal__status{margin:.7rem 0 0;font-size:.9rem;line-height:1.4}
-.lead-modal__status[data-lead-status-kind="error"]{color:#b3402a}
-.lead-modal__status[data-lead-status-kind="pending"]{color:var(--text-muted)}
-.lead-modal__done{font-size:1rem;color:var(--ink);line-height:1.55;margin:.4rem 0 1.1rem}
+body::before{
+  background:
+    radial-gradient(1100px 620px at 78% -8%,rgba(232,125,115,.14),transparent 60%),
+    radial-gradient(900px 520px at -6% 22%,rgba(201,0,8,.05),transparent 55%),
+    radial-gradient(800px 800px at 110% 90%,rgba(232,125,115,.09),transparent 60%);
+}
+.btn-primary:hover{box-shadow:0 12px 30px rgba(201,0,8,.32)}
+.hero-badge .dot{box-shadow:0 0 0 3px rgba(201,0,8,.16)}
+.shift::before{
+  background:
+    radial-gradient(600px 400px at 88% 10%,rgba(232,125,115,.35),transparent 60%),
+    radial-gradient(500px 360px at 6% 100%,rgba(201,0,8,.24),transparent 60%);
+}
+.offer::before{
+  background:
+    radial-gradient(520px 360px at 50% -10%,rgba(201,0,8,.34),transparent 60%),
+    radial-gradient(600px 420px at 90% 120%,rgba(232,125,115,.3),transparent 60%);
+}
+.microcta-card::before,
+.format-card.self::before,
+.ai-card::before{background:radial-gradient(ellipse at 70% 0%,rgba(232,125,115,.18) 0%,transparent 60%)}
+.offer .guard{border-color:rgba(239,154,146,.45)}
+.btn-tg{background:var(--indigo);box-shadow:0 4px 16px rgba(184,88,80,.28)}
+.btn-tg:hover{background:var(--indigo-bright);box-shadow:0 10px 28px rgba(184,88,80,.38)}
+.promo-note{background:rgba(201,0,8,.08);border-color:rgba(201,0,8,.2)}
+.promo-note::before{background:var(--cta);box-shadow:0 0 0 3px rgba(201,0,8,.16)}
+
+/* ============================================================
+   Cinematic hero — kept from variant A: the footage is the hero,
+   with only badge / H1 / subtitle / price / CTA riding on it.
+   ============================================================ */
+.hero.hero-video{display:flex;min-height:100svh;padding:0;align-items:flex-end;color:#fff}
+.hero.hero-video .hero-bg{position:absolute;inset:0;z-index:0;overflow:hidden;background:#1b1714}
+.hero.hero-video .hero-bg__video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center 40%}
+.hero.hero-video .hero-bg__scrim{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,
+    rgba(18,14,11,.12) 0%,
+    rgba(18,14,11,.24) 32%,
+    rgba(18,14,11,.62) 55%,
+    rgba(18,14,11,.88) 75%,
+    rgba(18,14,11,.95) 100%);
+}
+.hero-video__inner{
+  position:relative;z-index:1;width:100%;
+  display:flex;flex-direction:column;align-items:flex-start;gap:.9rem;
+  padding-top:clamp(72px,14vh,140px);padding-bottom:clamp(32px,6vh,56px);
+}
+/* The stacked-hero source rules give .hero-badge/.hero-copy/.hero-actions
+   explicit flex orders and a negative top margin for the photo overlap —
+   neutralise both, this hero is a plain top-to-bottom stack over footage. */
+.hero-video__inner>*{order:0;margin-top:0}
+.hero-video__inner>.hero-badge{
+  align-self:flex-start;
+  width:auto;
+  max-width:none;
+  margin:0;
+  padding:.5em .9em;
+  font-size:.72rem;
+  white-space:nowrap;
+  background:rgba(255,255,255,.14);
+  border-color:rgba(255,255,255,.28);
+  color:#fff;
+  backdrop-filter:blur(6px);
+}
+.hero-video__inner>.hero-badge .dot{display:none}
+.hero-video__inner h1{color:#fff;margin:0;max-width:16ch}
+.hero-video__inner h1 em{color:var(--irem-gold-soft)}
+.hero-video__inner .hero-sub{color:rgba(255,255,255,.86);margin:0;max-width:none;font-size:clamp(1.15rem,3.6vw,1.4rem);line-height:1.4}
+.hero-video__inner .hero-chips span{background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.26);color:#fff}
+.hero-video__inner .hero-price{margin:.2rem 0 0}
+.hero-video__inner .hero-price b{color:#fff;font-size:clamp(2rem,7vw,2.4rem)}
+.hero-video__inner .hero-price small{color:rgba(255,255,255,.7)}
+.hero-video__inner .hero-trust{color:rgba(255,255,255,.78)}
+.hero-video__inner .hero-trust svg{color:var(--irem-gold-soft)}
+/* Variant A's hero micro-copy: pre-price line, price note, CTA note. */
+.hero-preprice{margin:0;font-size:clamp(1rem,3vw,1.15rem);font-weight:600;color:#fff;line-height:1.35}
+.hero-pricenote,.hero-ctanote{margin:0;font-size:.86rem;line-height:1.4;color:rgba(255,255,255,.72)}
+.hero-video__inner{gap:.7rem}
+.hero-video__inner .btn-primary{width:100%;max-width:420px}
+@media(min-width:881px){
+  .hero.hero-video{align-items:center}
+  .hero-video__inner{max-width:var(--maxw);gap:.9rem;padding-top:clamp(96px,12vh,150px);padding-bottom:clamp(48px,8vh,90px)}
+  .hero-video__inner h1{font-size:clamp(2.6rem,5.2vw,3.9rem)}
+  .hero-video__inner .hero-sub{font-size:clamp(1.2rem,1.6vw,1.45rem)}
+  .hero-video__inner .btn-primary{width:auto}
+}
+@media(prefers-reduced-motion:reduce){.hero.hero-video .hero-bg__video{display:none}}
+
+/* Phase icons are Short's own illustrations, not glyphs. */
+.phase .ph-ico{width:76px;height:76px;border-radius:18px;background:var(--chip-soft);padding:6px;overflow:hidden}
+.phase .ph-ico img{width:100%;height:100%;object-fit:contain}
+.phase.p3 .ph-ico{background:var(--chip-soft)}
+
+/* Header floats over the hero video instead of sitting in flow above it —
+   same fixed-over-cinematic-hero treatment as [data-cw-landing="short"]
+   .cw-nav in short.product.css. Sticky (the shared default) reserves its own
+   height, pushing the 100svh video hero down and wasting a band of footage
+   under a solid bar; fixed removes it from flow so the translucent header
+   blends over the top of the frame instead. */
+[data-cw-landing="short-b"] .cw-nav{
+  position:fixed;
+  left:0;
+  right:0;
+}
