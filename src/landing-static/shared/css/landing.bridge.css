@@ -295,9 +295,9 @@
   --landing-space-responsive-hero-columns-gap: 56px;
   --landing-space-responsive-hero-image-margin-top: 32px;
   --landing-radius-responsive-hero-image: var(--landing-radius-scale-xl);
-  --landing-space-responsive-hero-title-margin-top: 24px;
+  --landing-space-responsive-hero-title-margin-top: 12px;
   --landing-space-responsive-hero-title-margin-top-compact: 16px;
-  --landing-space-responsive-hero-subtitle-margin-top: 24px;
+  --landing-space-responsive-hero-subtitle-margin-top: 12px;
   --landing-space-responsive-hero-subtitle-margin-top-compact: 12px;
   --landing-space-responsive-hero-proof-margin-top: 16px;
   --landing-space-responsive-hero-highlights-gap: 12px;

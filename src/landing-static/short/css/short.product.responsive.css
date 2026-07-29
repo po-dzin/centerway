@@ -225,7 +225,10 @@
   }
 
   .section-hero .benefits-block {
-    margin-top: var(--landing-space-responsive-hero-subtitle-margin-top, 24px);
+    /* Was reusing the hero subtitle's margin-top token, which now means
+       something different (tightened hero rhythm) — kept this section's own
+       spacing unchanged by giving it its own explicit rhythm value. */
+    margin-top: var(--landing-space-rhythm-24);
   }
 
   .benefits__item {
@@ -309,6 +312,10 @@
 
   .section-hero #divprice .price-note,
   .section-hero #divprice .cta-note {
+    text-align: center;
+  }
+
+  .section-hero .section-hero-preprice {
     text-align: center;
   }
 
