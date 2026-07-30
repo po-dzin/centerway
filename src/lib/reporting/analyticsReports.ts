@@ -946,6 +946,9 @@ export async function dispatchDueTelegramPeriodicReports(now = new Date()): Prom
   sent: Array<{ kind: ReportKind; label: string }>;
   skipped: Array<{ kind: ReportKind; reason: string }>;
 }> {
+  if (isMetaTestModeEnabled()) {
+    return { checked: 0, sent: [], skipped: [{ kind: "daily", reason: "test_mode_disabled" }] };
+  }
   if (!REPORTS_CHAT_ID) {
     return {
       checked: 0,
