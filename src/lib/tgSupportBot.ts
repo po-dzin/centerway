@@ -60,10 +60,10 @@ type InlineKeyboardMarkup = {
 };
 
 const PRODUCT_LABELS: Record<BotProductCode, string> = {
-  short: "Short Reboot",
+  short: "Шот",
   irem: "IREM",
   way21: "Шлях 21",
-  "reset-day": "Розвантажувальний день",
+  "reset-day": "Легкий день",
 };
 
 const FAQ_ANSWERS: Record<string, string> = {
