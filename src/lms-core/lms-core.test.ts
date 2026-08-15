@@ -1,0 +1,401 @@
+import { describe, expect, it } from "vitest";
+
+import { validateLessonBlock, collectRequiredChecklistItemIds } from "./blocks";
+import { validateCourse, flattenLessons, type Course } from "./course";
+import { calendarDaysBetween, enrollmentDayNumber, localHour, resolveTimeZone } from "./time";
+import { foldProgress, checklistSatisfied, type ProgressEvent } from "./progress";
+import {
+  buildOutline,
+  canCompleteLesson,
+  decideDailyReminder,
+  lessonAvailability,
+  resolveCurrentLesson,
+} from "./schedule";
+import { resolveEntitlement } from "./access";
+
+function dailyCourse(): Course {
+  const course = {
+    id: "course-test",
+    slug: "test-course",
+    title: "Test course",
+    programSlug: "reset-day",
+    brand: "centerway",
+    locale: "uk",
+    translationGroupId: "grp-test",
+    status: "published",
+    version: 1,
+    schedule: { mode: "daily", start: "purchase", reminderHour: 9 },
+    entitlementProductCodes: ["reset-day", "mini-detox"],
+    modules: [
+      {
+        id: "m1",
+        slug: "m1",
+        title: "Module 1",
+        order: 1,
+        lessons: [
+          {
+            id: "l1",
+            slug: "day-1",
+            title: "Day 1",
+            order: 1,
+            dayIndex: 1,
+            blocks: [
+              { id: "b1", type: "lesson_objective", text: "Objective" },
+              {
+                id: "b2",
+                type: "checklist",
+                requiredForCompletion: true,
+                items: [
+                  { id: "c1", text: "First" },
+                  { id: "c2", text: "Second" },
+                ],
+              },
+            ],
+          },
+          {
+            id: "l2",
+            slug: "day-2",
+            title: "Day 2",
+            order: 2,
+            dayIndex: 2,
+            blocks: [{ id: "b3", type: "lesson_objective", text: "Objective 2" }],
+          },
+        ],
+      },
+    ],
+  };
+  validateCourse(course);
+  return course;
+}
+
+describe("block validation", () => {
+  it("accepts a well-formed rich_text block", () => {
+    expect(() =>
+      validateLessonBlock(
+        {
+          id: "b",
+          type: "rich_text",
+          content: [
+            { kind: "p", text: "plain" },
+            { kind: "p", text: [{ text: "bold bit", bold: true }] },
+            { kind: "ul", items: ["one", "two"] },
+          ],
+        },
+        "test"
+      )
+    ).not.toThrow();
+  });
+
+  it("rejects an image without alt text", () => {
+    expect(() => validateLessonBlock({ id: "b", type: "image", src: "/a.webp" }, "test")).toThrow(
+      /lms_block_missing_image_alt/
+    );
+  });
+
+  it("rejects an unknown block type", () => {
+    expect(() => validateLessonBlock({ id: "b", type: "iframe_embed" }, "test")).toThrow(
+      /lms_block_unknown_type/
+    );
+  });
+
+  it("rejects duplicate checklist item ids", () => {
+    expect(() =>
+      validateLessonBlock(
+        { id: "b", type: "checklist", items: [{ id: "x", text: "a" }, { id: "x", text: "b" }] },
+        "test"
+      )
+    ).toThrow(/lms_block_checklist_duplicate_item_id/);
+  });
+
+  it("rejects a non-youtube video provider while the decision stands", () => {
+    expect(() => validateLessonBlock({ id: "b", type: "video", provider: "mux", videoId: "x" }, "t")).toThrow(
+      /lms_block_unsupported_video_provider/
+    );
+  });
+});
+
+describe("course validation", () => {
+  it("requires a dayIndex on every lesson of a daily course", () => {
+    const course = dailyCourse() as unknown as Record<string, unknown>;
+    const modules = course.modules as Array<{ lessons: Array<Record<string, unknown>> }>;
+    delete modules[0].lessons[1].dayIndex;
+    expect(() => validateCourse(course)).toThrow(/lms_lesson_missing_day_index/);
+  });
+
+  it("rejects duplicate lesson slugs across modules", () => {
+    const course = dailyCourse() as unknown as Record<string, unknown>;
+    const modules = course.modules as Array<{ lessons: Array<Record<string, unknown>> }>;
+    modules[0].lessons[1].slug = "day-1";
+    expect(() => validateCourse(course)).toThrow(/lms_lesson_duplicate_slug/);
+  });
+
+  it("walks lessons in module then lesson order", () => {
+    expect(flattenLessons(dailyCourse()).map((entry) => entry.lesson.slug)).toEqual(["day-1", "day-2"]);
+  });
+});
+
+describe("timezone math", () => {
+  it("falls back to Kyiv for an unknown zone", () => {
+    expect(resolveTimeZone("Mars/Olympus")).toBe("Europe/Kyiv");
+    expect(resolveTimeZone("")).toBe("Europe/Kyiv");
+    expect(resolveTimeZone("America/Vancouver")).toBe("America/Vancouver");
+  });
+
+  it("counts calendar days, not elapsed hours", () => {
+    // 23:30 Kyiv to 00:30 Kyiv is one calendar day, though only an hour passed.
+    const from = new Date("2026-08-15T20:30:00Z"); // 23:30 Kyiv (UTC+3)
+    const to = new Date("2026-08-15T21:30:00Z"); // 00:30 Kyiv, next day
+    expect(calendarDaysBetween(from, to, "Europe/Kyiv")).toBe(1);
+  });
+
+  it("gives different day numbers in different zones for the same instant", () => {
+    // Start maps to Aug 15 in BOTH zones (15:00 Kyiv / 05:00 Vancouver)…
+    const startedAt = new Date("2026-08-15T12:00:00Z");
+    // …but by this instant only Kyiv has rolled over to the 16th (00:30 vs 14:30).
+    const now = new Date("2026-08-15T21:30:00Z");
+    expect(enrollmentDayNumber(startedAt, now, "Europe/Kyiv")).toBe(2);
+    expect(enrollmentDayNumber(startedAt, now, "America/Vancouver")).toBe(1);
+  });
+
+  it("treats the start day as day 1", () => {
+    const startedAt = new Date("2026-08-15T06:00:00Z");
+    expect(enrollmentDayNumber(startedAt, startedAt, "Europe/Kyiv")).toBe(1);
+  });
+
+  it("reads the local hour per zone", () => {
+    const instant = new Date("2026-08-15T06:00:00Z");
+    expect(localHour(instant, "Europe/Kyiv")).toBe(9);
+    expect(localHour(instant, "America/Vancouver")).toBe(23);
+  });
+});
+
+describe("progress fold", () => {
+  const events: ProgressEvent[] = [
+    { clientId: "e1", type: "lesson.started", lessonId: "l1", occurredAt: "2026-08-15T06:00:00Z" },
+    {
+      clientId: "e2",
+      type: "checklist.toggled",
+      lessonId: "l1",
+      occurredAt: "2026-08-15T06:05:00Z",
+      payload: { itemId: "c1", checked: true },
+    },
+    { clientId: "e3", type: "lesson.completed", lessonId: "l1", occurredAt: "2026-08-15T06:10:00Z" },
+  ];
+
+  it("folds events into lesson state", () => {
+    const progress = foldProgress(events);
+    expect(progress.lessons.l1.status).toBe("completed");
+    expect(progress.lessons.l1.checklist.c1).toBe(true);
+    expect(progress.completedLessonIds).toEqual(["l1"]);
+  });
+
+  it("is idempotent — a replayed offline flush changes nothing", () => {
+    expect(foldProgress([...events, ...events])).toEqual(foldProgress(events));
+  });
+
+  it("is order-independent", () => {
+    expect(foldProgress([...events].reverse())).toEqual(foldProgress(events));
+  });
+
+  it("never un-completes a lesson that is reopened", () => {
+    const progress = foldProgress([
+      ...events,
+      { clientId: "e4", type: "lesson.started", lessonId: "l1", occurredAt: "2026-08-16T06:00:00Z" },
+    ]);
+    expect(progress.lessons.l1.status).toBe("completed");
+  });
+
+  it("applies last-write-wins per checklist item", () => {
+    const progress = foldProgress([
+      {
+        clientId: "a",
+        type: "checklist.toggled",
+        lessonId: "l1",
+        occurredAt: "2026-08-15T07:00:00Z",
+        payload: { itemId: "c1", checked: true },
+      },
+      {
+        clientId: "b",
+        type: "checklist.toggled",
+        lessonId: "l1",
+        occurredAt: "2026-08-15T08:00:00Z",
+        payload: { itemId: "c1", checked: false },
+      },
+    ]);
+    expect(progress.lessons.l1.checklist.c1).toBe(false);
+  });
+
+  it("treats an empty requirement list as satisfied", () => {
+    expect(checklistSatisfied(foldProgress([]), "l1", [])).toBe(true);
+  });
+});
+
+describe("drip availability", () => {
+  const course = dailyCourse();
+  const startedAt = new Date("2026-08-15T06:00:00Z");
+
+  it("unlocks day 1 immediately and locks day 2", () => {
+    const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
+    const progress = foldProgress([]);
+    const [day1, day2] = flattenLessons(course).map((entry) => entry.lesson);
+
+    expect(lessonAvailability(course, day1, progress, context).available).toBe(true);
+    const locked = lessonAvailability(course, day2, progress, context);
+    expect(locked).toEqual({ available: false, reason: "locked_by_day", unlocksOnDay: 2, daysRemaining: 1 });
+  });
+
+  it("unlocks day 2 once the learner's local date rolls over", () => {
+    const context = {
+      startedAt,
+      timeZone: "Europe/Kyiv",
+      now: new Date("2026-08-16T06:00:00Z"),
+    };
+    const day2 = flattenLessons(course)[1].lesson;
+    expect(lessonAvailability(course, day2, foldProgress([]), context).available).toBe(true);
+  });
+
+  it("blocks completion until required checklist items are ticked", () => {
+    const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
+    const day1 = flattenLessons(course)[0].lesson;
+
+    expect(canCompleteLesson(course, day1, foldProgress([]), context)).toEqual({
+      allowed: false,
+      reason: "checklist_incomplete",
+    });
+
+    const ticked = foldProgress([
+      {
+        clientId: "t1",
+        type: "checklist.toggled",
+        lessonId: "l1",
+        occurredAt: "2026-08-15T06:01:00Z",
+        payload: { itemId: "c1", checked: true },
+      },
+      {
+        clientId: "t2",
+        type: "checklist.toggled",
+        lessonId: "l1",
+        occurredAt: "2026-08-15T06:02:00Z",
+        payload: { itemId: "c2", checked: true },
+      },
+    ]);
+    expect(canCompleteLesson(course, day1, ticked, context)).toEqual({ allowed: true });
+  });
+
+  it("points a fresh learner at day 1", () => {
+    const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
+    expect(resolveCurrentLesson(course, foldProgress([]), context)?.slug).toBe("day-1");
+  });
+
+  it("builds an outline carrying lock and completion state", () => {
+    const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
+    const outline = buildOutline(course, foldProgress([]), context);
+    expect(outline).toHaveLength(2);
+    expect(outline[0].availability.available).toBe(true);
+    expect(outline[1].availability.available).toBe(false);
+  });
+
+  it("collects checklist items that gate completion", () => {
+    const day1 = flattenLessons(course)[0].lesson;
+    expect(collectRequiredChecklistItemIds(day1.blocks)).toEqual(["c1", "c2"]);
+  });
+});
+
+describe("daily reminder decision", () => {
+  const course = dailyCourse();
+  const startedAt = new Date("2026-08-15T06:00:00Z");
+
+  it("fires at the learner's local reminder hour, not the server's", () => {
+    // 06:00Z is 09:00 in Kyiv — the configured reminder hour.
+    const decision = decideDailyReminder(course, foldProgress([]), {
+      startedAt,
+      timeZone: "Europe/Kyiv",
+      now: new Date("2026-08-15T06:00:00Z"),
+    });
+    expect(decision).toMatchObject({ send: true, dayNumber: 1 });
+  });
+
+  it("stays silent at the same instant for a learner in another zone", () => {
+    // The same instant is 23:00 in Vancouver — nobody gets woken up.
+    const decision = decideDailyReminder(course, foldProgress([]), {
+      startedAt,
+      timeZone: "America/Vancouver",
+      now: new Date("2026-08-15T06:00:00Z"),
+    });
+    expect(decision).toEqual({ send: false, reason: "wrong_hour" });
+  });
+
+  it("stays silent when the day's lesson is already done", () => {
+    const progress = foldProgress([
+      { clientId: "d1", type: "lesson.completed", lessonId: "l1", occurredAt: "2026-08-15T05:00:00Z" },
+    ]);
+    expect(
+      decideDailyReminder(course, progress, {
+        startedAt,
+        timeZone: "Europe/Kyiv",
+        now: new Date("2026-08-15T06:00:00Z"),
+      })
+    ).toEqual({ send: false, reason: "already_done" });
+  });
+
+  it("reports the course as finished past the last day", () => {
+    expect(
+      decideDailyReminder(course, foldProgress([]), {
+        startedAt,
+        timeZone: "Europe/Kyiv",
+        now: new Date("2026-08-20T06:00:00Z"),
+      })
+    ).toEqual({ send: false, reason: "finished" });
+  });
+});
+
+describe("entitlement", () => {
+  const now = new Date("2026-08-15T06:00:00Z");
+  const base = { courseProductCodes: ["reset-day", "mini-detox"], courseSlug: "reset-day", now };
+
+  it("grants access from a paid order under a legacy product code", () => {
+    const result = resolveEntitlement({
+      ...base,
+      orders: [{ orderRef: "o1", productCode: "Mini-Detox", status: "paid", createdAt: "2026-08-01T10:00:00Z" }],
+      tokens: [],
+    });
+    expect(result).toMatchObject({ entitled: true, source: "order", orderRef: "o1" });
+  });
+
+  it("refuses access without a paid order", () => {
+    const result = resolveEntitlement({
+      ...base,
+      orders: [{ orderRef: "o1", productCode: "reset-day", status: "created", createdAt: "2026-08-01T10:00:00Z" }],
+      tokens: [],
+    });
+    expect(result).toEqual({ entitled: false, reason: "no_paid_order" });
+  });
+
+  it("ignores an unrelated product", () => {
+    const result = resolveEntitlement({
+      ...base,
+      orders: [{ orderRef: "o1", productCode: "herbs", status: "paid", createdAt: "2026-08-01T10:00:00Z" }],
+      tokens: [],
+    });
+    expect(result).toEqual({ entitled: false, reason: "no_paid_order" });
+  });
+
+  it("treats an expired token as expired access", () => {
+    const result = resolveEntitlement({
+      ...base,
+      orders: [{ orderRef: "o1", productCode: "reset-day", status: "paid", createdAt: "2026-08-01T10:00:00Z" }],
+      tokens: [{ orderRef: "o1", used: true, expiresAt: "2026-08-10T00:00:00Z" }],
+    });
+    expect(result).toEqual({ entitled: false, reason: "expired" });
+  });
+
+  it("honours a manual grant without any order", () => {
+    const result = resolveEntitlement({
+      ...base,
+      orders: [],
+      tokens: [],
+      manualGrants: [{ courseSlug: "reset-day", grantedAt: "2026-08-05T00:00:00Z" }],
+    });
+    expect(result).toMatchObject({ entitled: true, source: "manual" });
+  });
+});

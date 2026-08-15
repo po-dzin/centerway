@@ -1,0 +1,469 @@
+/* LMS learner surfaces — course map and lesson player.
+   Mobile-first: every rule below is the phone layout; wider viewports only add.
+   Tokens only — no local palettes, per AGENTS.md canon preflight. */
+
+.wrap {
+  width: min(100% - 2rem, 46rem);
+  margin: 0 auto;
+  padding-block: var(--cw-space-xl) var(--cw-space-3xl);
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-ui);
+}
+
+/* ── State / feedback ─────────────────────────────── */
+
+.notice {
+  border: 1px solid var(--cw-border);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-surface);
+  padding: var(--cw-space-lg);
+  display: grid;
+  gap: var(--cw-space-sm);
+}
+
+.noticeTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.noticeText {
+  margin: 0;
+  color: var(--cw-muted);
+  line-height: 1.55;
+}
+
+/* ── Course header ────────────────────────────────── */
+
+.eyebrow {
+  margin: 0 0 var(--cw-space-2xs);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cw-muted);
+}
+
+.title {
+  margin: 0 0 var(--cw-space-sm);
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(1.7rem, 6vw, 2.4rem);
+  line-height: 1.15;
+  font-weight: 500;
+}
+
+.lead {
+  margin: 0 0 var(--cw-space-lg);
+  color: var(--cw-muted);
+  line-height: 1.6;
+}
+
+.standing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+  margin-bottom: var(--cw-space-lg);
+}
+
+.chip {
+  border: 1px solid var(--cw-border);
+  border-radius: var(--cw-radius-pill);
+  padding: 0.4rem 0.8rem;
+  font-size: 0.82rem;
+  color: var(--cw-muted);
+  background: var(--cw-surface-2);
+}
+
+.progressTrack {
+  height: 0.4rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-surface-muted);
+  overflow: hidden;
+  margin-bottom: var(--cw-space-xl);
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-accent);
+  transition: width 240ms ease;
+}
+
+/* ── Outline ──────────────────────────────────────── */
+
+.outline {
+  display: grid;
+  gap: var(--cw-space-sm);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.outlineItem {
+  border: 1px solid var(--cw-border);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-surface);
+}
+
+.outlineLink {
+  /* Whole row is the tap target; ≥48px tall on the smallest phone. */
+  display: grid;
+  grid-template-columns: 2.5rem 1fr auto;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-md);
+  text-decoration: none;
+  color: inherit;
+  border-radius: inherit;
+}
+
+.outlineLocked {
+  composes: outlineLink;
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.dayBadge {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--cw-radius-pill);
+  border: 1px solid var(--cw-border);
+  background: var(--cw-surface-2);
+  font-family: var(--cw-font-data);
+  font-size: 0.9rem;
+}
+
+.dayBadgeDone {
+  composes: dayBadge;
+  border-color: transparent;
+  background: var(--cw-platform-accent);
+  color: var(--cw-accent-contrast);
+}
+
+.outlineTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.outlineMeta {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  color: var(--cw-muted);
+}
+
+.outlineState {
+  font-size: 0.78rem;
+  color: var(--cw-muted);
+  text-align: right;
+}
+
+/* ── Lesson player ────────────────────────────────── */
+
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ds-touch-target-min);
+  gap: 0.4rem;
+  color: var(--cw-muted);
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
+.blocks {
+  display: grid;
+  gap: var(--cw-space-lg);
+}
+
+.objective {
+  border-left: 3px solid var(--cw-platform-accent);
+  padding-left: var(--cw-space-md);
+  font-size: 1.08rem;
+  line-height: 1.55;
+}
+
+.paragraph {
+  margin: 0;
+  line-height: 1.65;
+}
+
+.heading {
+  margin: var(--cw-space-sm) 0 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+}
+
+.list {
+  margin: 0;
+  padding-left: 1.2rem;
+  display: grid;
+  gap: 0.4rem;
+  line-height: 1.6;
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: var(--cw-space-sm);
+  align-items: start;
+}
+
+.stepNumber {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-surface-muted);
+  font-family: var(--cw-font-data);
+  font-size: 0.85rem;
+}
+
+.stepTiming {
+  display: block;
+  font-size: 0.78rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cw-muted);
+  margin-bottom: 0.15rem;
+}
+
+.stepTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.stepText {
+  margin: 0.3rem 0 0;
+  line-height: 1.6;
+  color: var(--cw-muted);
+}
+
+.practice {
+  border: 1px solid var(--cw-border);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-surface-2);
+  padding: var(--cw-space-md);
+}
+
+.practiceHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.boundary {
+  border: 1px solid var(--cw-border);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-surface-muted);
+  padding: var(--cw-space-md);
+  line-height: 1.6;
+  font-size: 0.94rem;
+}
+
+.checklist {
+  display: grid;
+  gap: var(--cw-space-xs);
+  border: 1px solid var(--cw-border);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-surface);
+  padding: var(--cw-space-md);
+}
+
+.checklistTitle {
+  margin: 0 0 var(--cw-space-2xs);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.checkItem {
+  /* Full-row tap target — thumbs, not cursors. */
+  display: grid;
+  grid-template-columns: 1.5rem 1fr;
+  gap: var(--cw-space-sm);
+  align-items: start;
+  min-height: var(--ds-touch-target-min);
+  padding: 0.5rem 0;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.checkBox {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+  accent-color: var(--cw-platform-accent);
+}
+
+.checkItemDone {
+  composes: checkItem;
+  color: var(--cw-muted);
+}
+
+.media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: var(--cw-radius-md);
+  overflow: hidden;
+  background: var(--cw-surface-muted);
+}
+
+.image {
+  width: 100%;
+  height: auto;
+  border-radius: var(--cw-radius-md);
+  display: block;
+}
+
+.caption {
+  margin: var(--cw-space-2xs) 0 0;
+  font-size: 0.84rem;
+  color: var(--cw-muted);
+}
+
+.quote {
+  margin: 0;
+  padding-left: var(--cw-space-md);
+  border-left: 2px solid var(--cw-border);
+  font-family: var(--cw-font-editorial);
+  font-size: 1.15rem;
+  line-height: 1.5;
+}
+
+.quoteAuthor {
+  display: block;
+  margin-top: var(--cw-space-2xs);
+  font-family: var(--cw-font-ui);
+  font-size: 0.85rem;
+  color: var(--cw-muted);
+}
+
+.faqItem {
+  border-bottom: 1px solid var(--cw-border);
+  padding: var(--cw-space-sm) 0;
+}
+
+.faqItem:last-child {
+  border-bottom: 0;
+}
+
+.faqQuestion {
+  min-height: var(--ds-touch-target-min);
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.faqAnswer {
+  margin: var(--cw-space-2xs) 0 0;
+  color: var(--cw-muted);
+  line-height: 1.6;
+}
+
+.ctaBlock {
+  display: grid;
+  gap: var(--cw-space-xs);
+}
+
+.ctaLink {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-lg);
+  border-radius: var(--cw-radius-btn);
+  border: 1px solid var(--cw-border);
+  background: var(--cw-surface-2);
+  color: inherit;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+/* ── Completion bar ───────────────────────────────── */
+
+.completionBar {
+  position: sticky;
+  /* Sits above the home indicator, inside thumb reach. */
+  bottom: max(var(--cw-space-md), env(safe-area-inset-bottom));
+  margin-top: var(--cw-space-xl);
+  display: grid;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-md);
+  border: 1px solid var(--cw-border);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-surface-solid);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--cw-text) 10%, transparent);
+}
+
+.completeButton {
+  min-height: var(--ds-touch-target-min);
+  width: 100%;
+  border: 0;
+  border-radius: var(--cw-radius-btn);
+  background: var(--cw-btn-primary-bg);
+  color: var(--cw-btn-primary-text);
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.completeButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.completeHint {
+  margin: 0;
+  font-size: 0.84rem;
+  color: var(--cw-muted);
+  text-align: center;
+}
+
+.completedState {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  min-height: var(--ds-touch-target-min);
+  font-weight: 600;
+}
+
+.nextLink {
+  composes: ctaLink;
+  background: var(--cw-btn-primary-bg);
+  color: var(--cw-btn-primary-text);
+  border-color: transparent;
+}
+
+/* ── Wider viewports: additive only ───────────────── */
+
+@media (min-width: 48rem) {
+  .wrap {
+    padding-block: var(--cw-space-2xl) var(--cw-space-3xl);
+  }
+
+  .completionBar {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+
+  .completeButton {
+    width: auto;
+    padding-inline: var(--cw-space-2xl);
+    justify-self: end;
+  }
+
+  .completeHint {
+    text-align: left;
+  }
+}
