@@ -8,7 +8,7 @@
 import { describe, expect, it } from "vitest";
 
 import { listCourses, getCourse, getCourseByProgram } from "./catalog";
-import { countLessons, flattenLessons } from "@/lms-core";
+import { countLessons, flattenLessons, flattenReference, flattenSteps } from "@/lms-core";
 
 describe("course catalog", () => {
   it("loads and validates every authored course", () => {
@@ -63,8 +63,43 @@ describe("course catalog", () => {
   it("resolves reset-day by slug and by program", () => {
     const bySlug = getCourse("reset-day");
     expect(bySlug).not.toBeNull();
-    expect(countLessons(bySlug!)).toBe(3);
     expect(getCourseByProgram("reset-day")?.slug).toBe("reset-day");
+  });
+
+  it("keeps the three reset-day stages, whatever reference lessons surround them", () => {
+    // The protocol is three stages: preparation, the day itself, the exit.
+    // Reference lessons (intro, routine) may come and go — the stages may not.
+    const course = getCourse("reset-day")!;
+    const slugs = flattenLessons(course).map((entry) => entry.lesson.slug);
+    expect(slugs).toEqual(expect.arrayContaining(["day-1", "day-2", "day-3"]));
+    expect(countLessons(course)).toBeGreaterThanOrEqual(3);
+  });
+
+  it("keeps recipes out of the protocol flow", () => {
+    // Reference material must never become "the next step": finishing stage 3
+    // has to end the course, not hand the learner a recipe list.
+    const course = getCourse("reset-day")!;
+    const stepSlugs = flattenSteps(course).map((entry) => entry.lesson.slug);
+    const referenceSlugs = flattenReference(course).map((entry) => entry.lesson.slug);
+
+    expect(referenceSlugs).toContain("recipes");
+    expect(stepSlugs).not.toContain("recipes");
+    expect(stepSlugs[stepSlugs.length - 1]).toBe("day-3");
+    // Progress counts steps only.
+    expect(countLessons(course)).toBe(stepSlugs.length);
+  });
+
+  it("offers exactly six ways through the reset-day fasting day", () => {
+    // Six variants is the author's protocol, not an arbitrary number: dropping
+    // one silently would leave learners without the option they were sold.
+    const course = getCourse("reset-day")!;
+    const day2 = flattenLessons(course).find((entry) => entry.lesson.slug === "day-2");
+    const variants = (day2?.lesson.blocks ?? []).filter(
+      (block) => block.type === "practice_block" && /^\d\./.test(
+        typeof block.title === "string" ? block.title : block.title.map((span) => span.text).join("")
+      )
+    );
+    expect(variants).toHaveLength(6);
   });
 
   it("returns null for an unknown slug instead of throwing", () => {

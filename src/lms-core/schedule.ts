@@ -7,7 +7,14 @@
  */
 
 import { collectRequiredChecklistItemIds } from "./blocks";
-import { countLessons, flattenLessons, type Course, type Lesson } from "./course";
+import {
+  countLessons,
+  flattenLessons,
+  flattenSteps,
+  isReferenceLesson,
+  type Course,
+  type Lesson,
+} from "./course";
 import {
   checklistSatisfied,
   isLessonCompleted,
@@ -42,10 +49,14 @@ export function lessonAvailability(
 ): LessonAvailability {
   const mode = course.schedule.mode;
 
+  // Reference material is a lookup, available whenever it is needed — gating a
+  // recipe behind a drip schedule would be absurd.
+  if (isReferenceLesson(course, lesson.slug)) return { available: true };
+
   if (mode === "open") return { available: true };
 
   if (mode === "sequential") {
-    const walk = flattenLessons(course);
+    const walk = flattenSteps(course);
     const index = walk.findIndex((entry) => entry.lesson.id === lesson.id);
     if (index <= 0) return { available: true };
 
@@ -93,7 +104,8 @@ export function resolveCurrentLesson(
   progress: CourseProgress,
   context: LearnerContext
 ): Lesson | null {
-  const walk = flattenLessons(course);
+  // Steps only: "continue where you left off" must never point at a recipe list.
+  const walk = flattenSteps(course);
   if (walk.length === 0) return null;
 
   for (const entry of walk) {
@@ -107,6 +119,8 @@ export function resolveCurrentLesson(
 export type CourseOutlineEntry = {
   moduleId: string;
   moduleTitle: string;
+  /** Reference material — shown apart from the flow, not counted as a step. */
+  isReference: boolean;
   lesson: Lesson;
   availability: LessonAvailability;
   completed: boolean;
@@ -121,6 +135,7 @@ export function buildOutline(
   return flattenLessons(course).map(({ module, lesson }) => ({
     moduleId: module.id,
     moduleTitle: module.title,
+    isReference: module.reference === true,
     lesson,
     availability: lessonAvailability(course, lesson, progress, context),
     completed: isLessonCompleted(progress, lesson.id),
@@ -174,7 +189,7 @@ export function decideDailyReminder(
   if (localHour(context.now, zone) !== reminderHour) return { send: false, reason: "wrong_hour" };
 
   const dayNumber = enrollmentDayNumber(context.startedAt, context.now, zone);
-  const walk = flattenLessons(course);
+  const walk = flattenSteps(course);
 
   const dueToday = walk.find((entry) => (entry.lesson.dayIndex ?? 1) === dayNumber);
   if (!dueToday) {

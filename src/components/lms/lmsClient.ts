@@ -26,6 +26,8 @@ export type LmsFailure =
 export type CourseOutlineEntryDto = {
   moduleId: string;
   moduleTitle: string;
+  /** Reference material — outside the numbered flow. */
+  isReference: boolean;
   lessonId: string;
   slug: string;
   title: string;
@@ -50,6 +52,26 @@ export type CourseViewDto = {
   outline: CourseOutlineEntryDto[];
 };
 
+/** One course on the cabinet shelf — outline-free, just enough to decide where to go next. */
+export type LearnerShelfCourseDto = {
+  slug: string;
+  title: string;
+  programSlug: string;
+  status: "draft" | "published";
+  scheduleMode: "open" | "sequential" | "daily";
+  summary: string | null;
+  access: "enrolled" | "available" | "locked";
+  lockReason: "not_entitled" | "expired" | null;
+  startedAt: string | null;
+  standing: CourseViewDto["standing"] | null;
+  currentLessonSlug: string | null;
+  currentLessonTitle: string | null;
+};
+
+export type LearnerShelfDto = { courses: LearnerShelfCourseDto[] };
+
+export type LessonNeighbour = { slug: string; title: string; available: boolean } | null;
+
 export type LessonViewDto = {
   lesson: {
     id: string;
@@ -65,6 +87,16 @@ export type LessonViewDto = {
   progress: { status: "started" | "completed"; checklist: Record<string, boolean>; completedAt: string | null };
   requiredChecklistItemIds: string[];
   completion: { allowed: true } | { allowed: false; reason: "unavailable" | "checklist_incomplete" };
+  isReference: boolean;
+  nav: {
+    /** null on reference pages — they hold no position in the sequence. */
+    position: number | null;
+    total: number;
+    previous: LessonNeighbour;
+    next: LessonNeighbour;
+  };
+  /** The whole course map, so the contents drawer needs no extra request. */
+  outline: CourseOutlineEntryDto[];
 };
 
 export type ProgressAck = {
@@ -156,6 +188,10 @@ export async function ensureTimeZoneSynced(): Promise<void> {
       // Nothing to do — the sync simply repeats next navigation.
     }
   }
+}
+
+export function fetchMyCourses(): Promise<LmsResult<LearnerShelfDto>> {
+  return request<LearnerShelfDto>("/api/lms/me/courses");
 }
 
 export function fetchCourse(slug: string): Promise<LmsResult<CourseViewDto>> {

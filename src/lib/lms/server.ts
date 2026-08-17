@@ -13,18 +13,60 @@ import { adminClient } from "@/lib/auth/adminClient";
 import {
   DEFAULT_TIMEZONE,
   foldProgress,
+  resolveCurrentLesson,
   resolveEntitlement,
   resolveTimeZone,
+  summarizeStanding,
   type Course,
   type CourseProgress,
+  type CourseStandingSummary,
   type ProgressEvent,
   type ProgressEventType,
 } from "@/lms-core";
-import { getCourse } from "./catalog";
+import { linkPurchasesToAccount } from "@/lib/platform/linkPurchases";
+import { getCourse, listCourses } from "./catalog";
+
+const STAFF_ROLES = new Set(["admin", "support", "coach"]);
+
+/** Staff may open draft courses; buyers may not. */
+export async function isStaff(authUserId: string): Promise<boolean> {
+  const db = adminClient();
+  const { data } = await db
+    .from("platform_users")
+    .select("role")
+    .eq("auth_user_id", authUserId)
+    .maybeSingle();
+
+  return STAFF_ROLES.has((data?.role ?? "user").trim().toLowerCase());
+}
+
+/**
+ * Whether this account holds a hand-issued grant for the course.
+ * Used to let reviewers open a draft without granting them admin rights.
+ */
+async function hasManualGrant(authUserId: string, courseId: string): Promise<boolean> {
+  const db = adminClient();
+  const { data } = await db
+    .from("lms_enrollments")
+    .select("source")
+    .eq("auth_user_id", authUserId)
+    .eq("course_id", courseId)
+    .maybeSingle();
+
+  return data?.source === "manual";
+}
 
 export type LearnerIdentity = {
   authUserId: string;
   email: string | null;
+  /**
+   * Whether the identity provider verified this email.
+   *
+   * Load-bearing for access: purchases are matched by email as a fallback, so an
+   * unverified address would let anyone claim someone else's paid course simply
+   * by signing up with their address.
+   */
+  emailVerified: boolean;
 };
 
 export type EnrollmentRecord = {
@@ -58,9 +100,10 @@ async function findCustomerIds(identity: LearnerIdentity): Promise<string[]> {
   const byAuth = await db.from("customers").select("id").eq("auth_user_id", identity.authUserId);
   for (const row of byAuth.data ?? []) ids.add(row.id);
 
-  // Purchases made before the account existed are matched by email — the same
-  // fallback the profile API uses.
-  if (identity.email) {
+  // Purchases made before the account existed carry no auth_user_id, so they are
+  // matched by email — but ONLY when the provider verified that email, otherwise
+  // claiming a stranger's courses would be as easy as typing their address.
+  if (identity.email && identity.emailVerified) {
     const byEmail = await db.from("customers").select("id").ilike("email", identity.email.trim().toLowerCase());
     for (const row of byEmail.data ?? []) ids.add(row.id);
   }
@@ -264,6 +307,82 @@ export async function recordProgressEvent(input: RecordEventInput): Promise<void
   }
 }
 
+export type LearnerShelfEntry = {
+  course: Course;
+  /** `enrolled` — already started; `available` — paid but never opened; `locked` — not owned. */
+  access: "enrolled" | "available" | "locked";
+  lockReason: "not_entitled" | "expired" | null;
+  startedAt: string | null;
+  standing: CourseStandingSummary | null;
+  currentLessonSlug: string | null;
+  currentLessonTitle: string | null;
+};
+
+/**
+ * Every course this account can see, for the cabinet shelf.
+ *
+ * Deliberately READ-ONLY: unlike `loadLearnerCourse`, it never creates an
+ * enrollment. Day 1 starts when the learner opens the course, so merely landing
+ * on the cabinet must not start the clock (decision 2026-08-15).
+ */
+export async function listLearnerCourses(
+  identity: LearnerIdentity,
+  now = new Date()
+): Promise<LearnerShelfEntry[]> {
+  const db = adminClient();
+
+  const [{ data: enrollmentRows }, staff, settings] = await Promise.all([
+    db
+      .from("lms_enrollments")
+      .select("id, course_id, started_at, source, order_ref")
+      .eq("auth_user_id", identity.authUserId),
+    isStaff(identity.authUserId),
+    getLearnerSettings(identity.authUserId),
+  ]);
+
+  const enrollmentByCourse = new Map((enrollmentRows ?? []).map((row) => [row.course_id, row]));
+
+  const entries = await Promise.all(
+    listCourses().map(async (course): Promise<LearnerShelfEntry | null> => {
+      const enrollment = enrollmentByCourse.get(course.id);
+
+      // A draft is visible to staff, and to anyone holding a manual grant — the
+      // grant IS the enrollment row, so its presence is the check.
+      if (course.status !== "published" && !enrollment && !staff) return null;
+
+      if (enrollment) {
+        const progress = await loadProgress(enrollment.id);
+        const learner = { startedAt: new Date(enrollment.started_at), timeZone: settings.timeZone, now };
+        const current = resolveCurrentLesson(course, progress, learner);
+
+        return {
+          course,
+          access: "enrolled",
+          lockReason: null,
+          startedAt: enrollment.started_at,
+          standing: summarizeStanding(course, progress, learner),
+          currentLessonSlug: current?.slug ?? null,
+          currentLessonTitle: current?.title ?? null,
+        };
+      }
+
+      const entitlement = await checkEntitlement(identity, course, now);
+
+      return {
+        course,
+        access: entitlement.entitled ? "available" : "locked",
+        lockReason: entitlement.entitled ? null : entitlement.reason === "expired" ? "expired" : "not_entitled",
+        startedAt: null,
+        standing: null,
+        currentLessonSlug: null,
+        currentLessonTitle: null,
+      };
+    })
+  );
+
+  return entries.filter((entry): entry is LearnerShelfEntry => entry !== null);
+}
+
 export type LearnerCourseContext = {
   course: Course;
   enrollment: EnrollmentRecord;
@@ -285,7 +404,34 @@ export async function loadLearnerCourse(
 > {
   const course = getCourse(courseSlug);
   if (!course) return { ok: false, reason: "course_not_found" };
-  if (course.status !== "published") return { ok: false, reason: "not_published" };
+
+  if (course.status !== "published") {
+    // A draft opens for two kinds of people: staff, and anyone who was handed an
+    // explicit manual grant. The manual grant IS the act of authorising a
+    // preview, so reviewing unpublished content never requires making a
+    // reviewer an admin (`npm run lms:grant`).
+    const [staff, granted] = await Promise.all([
+      isStaff(identity.authUserId),
+      hasManualGrant(identity.authUserId, course.id),
+    ]);
+    if (!staff && !granted) return { ok: false, reason: "not_published" };
+  }
+
+  // Claim any purchases still keyed only by email. Cheap, idempotent, and it
+  // makes the LMS self-sufficient rather than depending on the sign-in surface
+  // having called /api/platform/users/sync first.
+  try {
+    await linkPurchasesToAccount({
+      authUserId: identity.authUserId,
+      email: identity.email,
+      emailVerified: identity.emailVerified,
+    });
+  } catch (error) {
+    // Entitlement still resolves through the email fallback below.
+    console.warn("lms_link_purchases_failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 
   const result = await ensureEnrollment(identity, course, now);
   if (!result.enrollment) return { ok: false, reason: result.reason };

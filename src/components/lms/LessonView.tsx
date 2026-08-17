@@ -8,11 +8,12 @@
  * with every write, so a rejected event self-corrects rather than drifting.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 import { inlineToPlainText } from "@/lms-core";
 import { BlockRenderer } from "./LessonBlocks";
+import { CourseContentsDrawer } from "./CourseContentsDrawer";
 import { LmsNotice } from "./LmsNotice";
 import {
   ensureTimeZoneSynced,
@@ -34,7 +35,9 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const [completed, setCompleted] = useState(false);
   const [pending, setPending] = useState(false);
-  const [nextLessonSlug, setNextLessonSlug] = useState<string | null>(null);
+  const [contentsOpen, setContentsOpen] = useState(false);
+  const [readingRatio, setReadingRatio] = useState(0);
+  const bodyRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
     const result = await fetchLesson(courseSlug, lessonSlug);
@@ -68,6 +71,34 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
       cancelled = true;
     };
   }, [courseSlug, lessonSlug]);
+
+  // Reading position for the current lesson, driven by how far the body has
+  // scrolled past the viewport — a progress bar for THIS step, distinct from
+  // course completion.
+  useEffect(() => {
+    if (state.status !== "ready") return;
+
+    const update = () => {
+      const body = bodyRef.current;
+      if (!body) return;
+      const start = body.offsetTop;
+      const scrollable = body.offsetHeight - window.innerHeight;
+      if (scrollable <= 0) {
+        setReadingRatio(1);
+        return;
+      }
+      const scrolled = window.scrollY - start;
+      setReadingRatio(Math.min(1, Math.max(0, scrolled / scrollable)));
+    };
+
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    window.addEventListener("resize", update);
+    return () => {
+      window.removeEventListener("scroll", update);
+      window.removeEventListener("resize", update);
+    };
+  }, [state.status, lessonSlug]);
 
   const lesson = state.status === "ready" ? state.data.lesson : null;
 
@@ -131,48 +162,80 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
 
     setCompleted(true);
 
-    const index = result.data.outline.findIndex((entry) => entry.slug === lesson.slug);
-    const next = index >= 0 ? result.data.outline[index + 1] : undefined;
-    setNextLessonSlug(next && next.availability.available ? next.slug : null);
+    // Refresh so the drawer, the pager and the outline reflect the new state —
+    // completing a step can unlock the next one.
+    void load();
   }, [courseSlug, lesson, pending, load]);
 
   if (state.status === "loading") {
     return (
-      <div className={styles.wrap}>
+      <main className={styles.wrap} data-cw-platform-template="learn-lesson">
         <p className={styles.lead}>Завантажуємо урок…</p>
-      </div>
+      </main>
     );
   }
 
   if (state.status === "error") {
     return (
-      <div className={styles.wrap}>
-        <LmsNotice failure={state.error} onRetry={load} />
-        <p>
-          <Link className={styles.backLink} href={`/learn/${courseSlug}`}>
-            ← До курсу
+      <main className={styles.wrap} data-cw-platform-template="learn-lesson">
+        <div className={styles.lessonTopBar}>
+          <Link className={styles.backButton} href={`/learn/${courseSlug}`}>
+            <span aria-hidden="true">←</span> До курсу
           </Link>
-        </p>
-      </div>
+        </div>
+        <LmsNotice failure={state.error} onRetry={load} />
+      </main>
     );
   }
 
   const data = state.data;
+  const { nav } = data;
 
   return (
-    <div className={styles.wrap}>
-      <Link className={styles.backLink} href={`/learn/${courseSlug}`}>
-        ← До курсу
-      </Link>
+    <main className={styles.wrap} data-cw-platform-template="learn-lesson">
+      <div className={styles.readingTrack} aria-hidden="true">
+        <div className={styles.readingFill} style={{ width: `${Math.round(readingRatio * 100)}%` }} />
+      </div>
 
-      <p className={styles.eyebrow}>
-        {data.lesson.dayIndex ? `День ${data.lesson.dayIndex}` : data.module.title}
-        {data.lesson.durationMin ? ` · ${data.lesson.durationMin} хв` : ""}
+      <div className={styles.lessonTopBar}>
+        <Link className={styles.backButton} href={`/learn/${courseSlug}`}>
+          <span aria-hidden="true">←</span> До курсу
+        </Link>
+        <span className={styles.topBarSpacer} />
+        <button
+          className={styles.iconButton}
+          type="button"
+          onClick={() => setContentsOpen(true)}
+          aria-haspopup="dialog"
+        >
+          <span aria-hidden="true">☰</span> Зміст
+        </button>
+      </div>
+
+      {/* Position in the course sits next to the duration, so "where am I / how
+          long is this" is answered in one glance. Reference pages get a label
+          instead of a counter — they hold no place in the sequence. */}
+      <p className={styles.stepMarker}>
+        {nav.position !== null ? (
+          <span className={styles.stepCount}>
+            {nav.position} / {nav.total}
+          </span>
+        ) : (
+          <span className={styles.referenceTag}>Довідник</span>
+        )}
+        <span>{data.module.title}</span>
+        {data.lesson.durationMin ? (
+          <>
+            <span className={styles.stepDivider} aria-hidden="true">·</span>
+            <span>{data.lesson.durationMin} хв</span>
+          </>
+        ) : null}
       </p>
+
       <h1 className={styles.title}>{data.lesson.title}</h1>
       {data.lesson.summary ? <p className={styles.lead}>{inlineToPlainText(data.lesson.summary)}</p> : null}
 
-      <div className={styles.blocks}>
+      <div className={styles.blocks} ref={bodyRef}>
         {data.lesson.blocks.map((block) => (
           <BlockRenderer
             key={block.id}
@@ -184,38 +247,91 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
         ))}
       </div>
 
+      {data.isReference ? (
+        // A lookup page is never "completed" — the only action is going back.
+        <div className={styles.completionBar}>
+          <p className={styles.completeHint}>Довідкова сторінка — повертайся сюди будь-коли.</p>
+          <Link className={styles.nextLinkQuiet} href={`/learn/${courseSlug}`}>
+            <span>До курсу</span>
+            <span className={styles.nextArrow} aria-hidden="true">→</span>
+          </Link>
+        </div>
+      ) : (
       <div className={styles.completionBar}>
+        <label
+          className={
+            completed
+              ? styles.completeToggleDone
+              : checklistSatisfied
+                ? styles.completeToggle
+                : styles.completeToggleDisabled
+          }
+        >
+          <input
+            type="checkbox"
+            checked={completed}
+            /* Completion is monotonic in lms-core, so a finished step cannot be
+               un-ticked here — the control locks once done. */
+            disabled={completed || !checklistSatisfied || pending}
+            onChange={completeLesson}
+          />
+          <span>{completed ? "Крок пройдено" : pending ? "Зберігаємо…" : "Позначити крок пройденим"}</span>
+        </label>
+
         {completed ? (
-          <>
-            <p className={styles.completedState}>✓ Крок пройдено</p>
-            {nextLessonSlug ? (
-              <Link className={styles.nextLink} href={`/learn/${courseSlug}/${nextLessonSlug}`}>
-                Наступний крок
-              </Link>
-            ) : (
-              <Link className={styles.ctaLink} href={`/learn/${courseSlug}`}>
-                До курсу
-              </Link>
-            )}
-          </>
+          nav.next?.available ? (
+            <Link className={styles.nextLink} href={`/learn/${courseSlug}/${nav.next.slug}`}>
+              <span>Наступний крок</span>
+              <span className={styles.nextArrow} aria-hidden="true">→</span>
+            </Link>
+          ) : (
+            <Link className={styles.nextLinkQuiet} href={`/learn/${courseSlug}`}>
+              <span>До курсу</span>
+              <span className={styles.nextArrow} aria-hidden="true">→</span>
+            </Link>
+          )
         ) : (
-          <>
-            <p className={styles.completeHint}>
-              {checklistSatisfied
-                ? "Познач крок як пройдений, коли завершиш."
-                : "Відзнач пункти чек-листа, щоб завершити крок."}
-            </p>
-            <button
-              className={styles.completeButton}
-              type="button"
-              onClick={completeLesson}
-              disabled={!checklistSatisfied || pending}
-            >
-              {pending ? "Зберігаємо…" : "Крок пройдено"}
-            </button>
-          </>
+          <p className={styles.completeHint}>
+            {checklistSatisfied
+              ? "Познач крок, коли завершиш — і йди далі."
+              : "Відзнач пункти чек-листа, щоб завершити крок."}
+          </p>
         )}
       </div>
-    </div>
+      )}
+
+      {/* Always reachable, whether or not the step is finished: re-reading a
+          previous lesson must never require going back to the course page. */}
+      {data.isReference ? null : (
+      <nav className={styles.pager} aria-label="Навігація по уроках">
+        {nav.previous?.available ? (
+          <Link className={styles.pagerLink} href={`/learn/${courseSlug}/${nav.previous.slug}`}>
+            <span className={styles.pagerLabel}>← Попередній</span>
+            <span className={styles.pagerTitle}>{nav.previous.title}</span>
+          </Link>
+        ) : (
+          <span className={styles.pagerEmpty} aria-hidden="true" />
+        )}
+
+        {nav.next?.available ? (
+          <Link className={styles.pagerLinkNext} href={`/learn/${courseSlug}/${nav.next.slug}`}>
+            <span className={styles.pagerLabel}>Наступний →</span>
+            <span className={styles.pagerTitle}>{nav.next.title}</span>
+          </Link>
+        ) : (
+          <span className={styles.pagerEmpty} aria-hidden="true" />
+        )}
+      </nav>
+      )}
+
+      {contentsOpen ? (
+        <CourseContentsDrawer
+          courseSlug={courseSlug}
+          outline={data.outline}
+          currentSlug={data.lesson.slug}
+          onClose={() => setContentsOpen(false)}
+        />
+      ) : null}
+    </main>
   );
 }

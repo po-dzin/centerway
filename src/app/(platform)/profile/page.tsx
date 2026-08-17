@@ -1,17 +1,18 @@
 import type { Metadata } from "next";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
-import { UserProfilePageClient } from "@/components/platform/UserProfilePageClient";
+import { CabinetClient } from "@/components/platform/cabinet/CabinetClient";
 
 export const metadata: Metadata = {
-  title: "Мій профіль - CenterWay",
-  description: "Персональний профіль користувача CenterWay: доша, покупки, доступи і стан маршруту на платформі.",
+  title: "Мій кабінет - CenterWay",
+  description:
+    "Кабінет користувача CenterWay: навчання і уроки, результати тестів, куплені програми та продукти, контактні дані.",
   alternates: { canonical: "/profile" },
 };
 
 export default function PlatformProfilePage() {
   return (
     <PlatformShell headerMode="overlay">
-      <UserProfilePageClient />
+      <CabinetClient />
     </PlatformShell>
   );
 }

@@ -64,7 +64,7 @@ export async function POST(req: NextRequest) {
   }
 
   const now = new Date();
-  const result = await loadLearnerCourse({ authUserId: user.id, email: user.email ?? null }, courseSlug, now);
+  const result = await loadLearnerCourse({ authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) }, courseSlug, now);
   if (!result.ok) {
     return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
   }

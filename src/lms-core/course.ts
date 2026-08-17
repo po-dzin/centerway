@@ -62,6 +62,16 @@ export type CourseModule = {
   slug: string;
   title: string;
   order: number;
+  /**
+   * Reference material (recipes, glossaries, handbooks) rather than a step of
+   * the protocol.
+   *
+   * Reference modules are always open, are excluded from the linear walk — so
+   * "next step" never lands on a lookup table — and do not count toward course
+   * completion. They are reached from a link in the content or from the contents
+   * drawer, whenever the learner needs them.
+   */
+  reference?: boolean;
   summary?: InlineText;
   lessons: Lesson[];
 };
@@ -151,6 +161,9 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
       typeof module.order === "number" && Number.isInteger(module.order) && module.order > 0,
       `lms_module_invalid_order:${modulePath}`
     );
+    if (module.reference !== undefined) {
+      assert(typeof module.reference === "boolean", `lms_module_invalid_reference:${modulePath}`);
+    }
     if (module.summary !== undefined) validateInlineText(module.summary, `${modulePath}.summary`);
     assert(Array.isArray(module.lessons) && module.lessons.length > 0, `lms_module_empty_lessons:${modulePath}`);
 
@@ -171,7 +184,9 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
 
       if (lesson.summary !== undefined) validateInlineText(lesson.summary, `${lessonPath}.summary`);
 
-      if (schedule.mode === "daily") {
+      // Reference material has no place in the day sequence — a recipe list is
+      // not "day 4".
+      if (schedule.mode === "daily" && module.reference !== true) {
         assert(
           typeof lesson.dayIndex === "number" && Number.isInteger(lesson.dayIndex) && lesson.dayIndex > 0,
           `lms_lesson_missing_day_index:${lessonPath}`
@@ -188,7 +203,7 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
   });
 }
 
-/** Flattens the course into lesson order — the order a learner walks it. */
+/** Every lesson in the course, reference material included. */
 export function flattenLessons(course: Course): Array<{ module: CourseModule; lesson: Lesson }> {
   return [...course.modules]
     .sort((a, b) => a.order - b.order)
@@ -199,10 +214,28 @@ export function flattenLessons(course: Course): Array<{ module: CourseModule; le
     );
 }
 
+/**
+ * The steps a learner actually walks, in order — reference modules excluded.
+ * This is the sequence behind "крок 3 з 5", prev/next, and completion.
+ */
+export function flattenSteps(course: Course): Array<{ module: CourseModule; lesson: Lesson }> {
+  return flattenLessons(course).filter((entry) => !entry.module.reference);
+}
+
+/** Reference lessons, in order — rendered apart from the flow. */
+export function flattenReference(course: Course): Array<{ module: CourseModule; lesson: Lesson }> {
+  return flattenLessons(course).filter((entry) => entry.module.reference === true);
+}
+
 export function findLesson(course: Course, lessonSlug: string): { module: CourseModule; lesson: Lesson } | null {
   return flattenLessons(course).find((entry) => entry.lesson.slug === lessonSlug) ?? null;
 }
 
+export function isReferenceLesson(course: Course, lessonSlug: string): boolean {
+  return findLesson(course, lessonSlug)?.module.reference === true;
+}
+
+/** Counts steps only: looking up a recipe is not course progress. */
 export function countLessons(course: Course): number {
-  return course.modules.reduce((total, module) => total + module.lessons.length, 0);
+  return flattenSteps(course).length;
 }

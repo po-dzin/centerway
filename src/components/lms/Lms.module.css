@@ -4,8 +4,15 @@
 
 .wrap {
   width: min(100% - 2rem, 46rem);
-  margin: 0 auto;
-  padding-block: var(--cw-space-xl) var(--cw-space-3xl);
+  /* Top breathing room is a MARGIN, not padding: the shell sets
+     `.shellOverlay > main { padding-top: --platform-topbar-clearance }`, which
+     out-specifies this rule. Margin stacks with that clearance instead of being
+     silently overridden by it. */
+  margin: var(--cw-space-xl) auto 0;
+  padding-block: 0 var(--cw-space-3xl);
+  /* Short states (loading, "курс ще готується") would otherwise let the footer
+     ride up under the header. */
+  min-height: 60svh;
   color: var(--cw-platform-text);
   font-family: var(--cw-font-ui);
 }
@@ -161,16 +168,275 @@
   text-align: right;
 }
 
+/* Handbook, listed after the protocol and visually set apart from it. */
+.referenceSection {
+  margin-top: var(--cw-space-2xl);
+  padding-top: var(--cw-space-lg);
+  border-top: 1px solid var(--cw-border);
+}
+
+.referenceHeading {
+  margin: 0 0 var(--cw-space-2xs);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.referenceLead {
+  margin: 0 0 var(--cw-space-md);
+  font-size: 0.88rem;
+  color: var(--cw-muted);
+}
+
 /* ── Lesson player ────────────────────────────────── */
 
-.backLink {
+/* ── Lesson top bar ───────────────────────────────── */
+
+/* Reading position for the current lesson. Sits under the app header so it
+   stays visible while the body scrolls. */
+.readingTrack {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  height: 0.2rem;
+  margin-bottom: var(--cw-space-md);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-surface-muted);
+  overflow: hidden;
+}
+
+.readingFill {
+  height: 100%;
+  background: var(--cw-platform-accent);
+  transition: width 90ms linear;
+}
+
+.lessonTopBar {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  margin-bottom: var(--cw-space-md);
+}
+
+/* Real controls, not text links: both are thumb-sized and read as buttons. */
+.iconButton {
   display: inline-flex;
   align-items: center;
-  min-height: var(--ds-touch-target-min);
+  justify-content: center;
   gap: 0.4rem;
-  color: var(--cw-muted);
-  text-decoration: none;
+  min-height: var(--ds-touch-target-min);
+  min-width: var(--ds-touch-target-min);
+  padding-inline: var(--cw-space-sm);
+  border: 1px solid var(--cw-border);
+  border-radius: var(--cw-radius-btn);
+  background: var(--cw-surface);
+  color: inherit;
+  font: inherit;
   font-size: 0.9rem;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.iconButton:hover {
+  background: var(--cw-interactive-hover-bg);
+  border-color: var(--cw-interactive-hover-border);
+}
+
+.iconButton:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.backButton {
+  composes: iconButton;
+}
+
+.topBarSpacer {
+  flex: 1;
+}
+
+/* ── Step marker ──────────────────────────────────── */
+
+.stepMarker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0 0 var(--cw-space-2xs);
+  font-size: 0.82rem;
+  color: var(--cw-muted);
+}
+
+.stepCount {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-accent);
+  color: var(--cw-accent-contrast);
+  font-family: var(--cw-font-data);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.stepDivider {
+  opacity: 0.5;
+}
+
+/* Reference pages carry a label instead of a step counter, so a recipe list
+   never looks like part of the protocol sequence. */
+.referenceTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--cw-border);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-surface-2);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+/* ── Contents drawer ──────────────────────────────── */
+
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ds-z-modal, 60);
+  background: color-mix(in srgb, var(--cw-text) 38%, transparent);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.drawer {
+  width: min(100%, 34rem);
+  max-height: 82svh;
+  overflow-y: auto;
+  padding: var(--cw-space-md) var(--cw-space-md) max(var(--cw-space-lg), env(safe-area-inset-bottom));
+  border-radius: var(--cw-radius-lg) var(--cw-radius-lg) 0 0;
+  background: var(--cw-surface-solid);
+  box-shadow: 0 -12px 40px color-mix(in srgb, var(--cw-text) 18%, transparent);
+}
+
+.drawerHandle {
+  width: 2.5rem;
+  height: 0.25rem;
+  margin: 0 auto var(--cw-space-sm);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-border);
+}
+
+.drawerHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  margin-bottom: var(--cw-space-sm);
+}
+
+.drawerTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.drawerModule {
+  margin: var(--cw-space-md) 0 var(--cw-space-2xs);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cw-muted);
+}
+
+.drawerItem {
+  display: grid;
+  grid-template-columns: 1.75rem 1fr;
+  gap: var(--cw-space-sm);
+  align-items: center;
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-xs) var(--cw-space-2xs);
+  border-radius: var(--cw-radius-sm);
+  color: inherit;
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.drawerItemCurrent {
+  composes: drawerItem;
+  background: var(--cw-surface-2);
+  font-weight: 600;
+}
+
+.drawerItemLocked {
+  composes: drawerItem;
+  opacity: 0.5;
+}
+
+.drawerMark {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--cw-radius-pill);
+  border: 1px solid var(--cw-border);
+  font-family: var(--cw-font-data);
+  font-size: 0.78rem;
+}
+
+.drawerMarkDone {
+  composes: drawerMark;
+  border-color: transparent;
+  background: var(--cw-platform-accent);
+  color: var(--cw-accent-contrast);
+}
+
+.drawerMeta {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--cw-muted);
+}
+
+/* ── Prev / next pager ────────────────────────────── */
+
+.pager {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--cw-space-xs);
+  margin-top: var(--cw-space-lg);
+}
+
+.pagerLink {
+  display: grid;
+  gap: 0.15rem;
+  align-content: center;
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border: 1px solid var(--cw-border);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-surface);
+  color: inherit;
+  text-decoration: none;
+}
+
+.pagerLinkNext {
+  composes: pagerLink;
+  text-align: right;
+}
+
+.pagerLabel {
+  font-size: 0.76rem;
+  color: var(--cw-muted);
+}
+
+.pagerTitle {
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.pagerEmpty {
+  /* Keeps the grid balanced when there is no neighbour on one side. */
+  visibility: hidden;
 }
 
 .blocks {
@@ -404,21 +670,40 @@
   box-shadow: 0 10px 30px color-mix(in srgb, var(--cw-text) 10%, transparent);
 }
 
-.completeButton {
+/* The completion control is a CHECKBOX, not a button: marking a step done is a
+   state you own and can undo, not a one-way action. */
+.completeToggle {
+  display: grid;
+  grid-template-columns: 1.6rem 1fr;
+  gap: var(--cw-space-sm);
+  align-items: center;
   min-height: var(--ds-touch-target-min);
-  width: 100%;
-  border: 0;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border: 1px solid var(--cw-border);
   border-radius: var(--cw-radius-btn);
-  background: var(--cw-btn-primary-bg);
-  color: var(--cw-btn-primary-text);
-  font-family: inherit;
-  font-size: 1rem;
-  font-weight: 600;
+  background: var(--cw-surface);
   cursor: pointer;
+  font-weight: 600;
 }
 
-.completeButton:disabled {
-  opacity: 0.5;
+.completeToggleDone {
+  composes: completeToggle;
+  border-color: transparent;
+  background: var(--cw-btn-primary-bg);
+  color: var(--cw-btn-primary-text);
+}
+
+.completeToggle input,
+.completeToggleDone input {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+  accent-color: var(--cw-platform-accent);
+}
+
+.completeToggleDisabled {
+  composes: completeToggle;
+  opacity: 0.55;
   cursor: not-allowed;
 }
 
@@ -426,30 +711,42 @@
   margin: 0;
   font-size: 0.84rem;
   color: var(--cw-muted);
-  text-align: center;
 }
 
-.completedState {
-  display: flex;
+/* Advancing is a separate, clearly-labelled action so "done" and "go on" never
+   collapse into one ambiguous button. */
+.nextLink {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
   min-height: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-md);
+  border: 1px solid transparent;
+  border-radius: var(--cw-radius-btn);
+  background: var(--cw-btn-primary-bg);
+  color: var(--cw-btn-primary-text);
+  text-decoration: none;
   font-weight: 600;
 }
 
-.nextLink {
-  composes: ctaLink;
-  background: var(--cw-btn-primary-bg);
-  color: var(--cw-btn-primary-text);
-  border-color: transparent;
+.nextLinkQuiet {
+  composes: nextLink;
+  border-color: var(--cw-border);
+  background: var(--cw-surface-2);
+  color: inherit;
+}
+
+.nextArrow {
+  font-size: 1.1rem;
+  line-height: 1;
 }
 
 /* ── Wider viewports: additive only ───────────────── */
 
 @media (min-width: 48rem) {
   .wrap {
-    padding-block: var(--cw-space-2xl) var(--cw-space-3xl);
+    margin-block-start: var(--cw-space-2xl);
   }
 
   .completionBar {
@@ -457,13 +754,19 @@
     align-items: center;
   }
 
-  .completeButton {
-    width: auto;
-    padding-inline: var(--cw-space-2xl);
+  .nextLink,
+  .nextLinkQuiet {
     justify-self: end;
+    padding-inline: var(--cw-space-xl);
   }
 
-  .completeHint {
-    text-align: left;
+  /* The drawer becomes a centred dialog once there is room for one. */
+  .drawerBackdrop {
+    align-items: center;
+  }
+
+  .drawer {
+    border-radius: var(--cw-radius-lg);
+    max-height: 78svh;
   }
 }

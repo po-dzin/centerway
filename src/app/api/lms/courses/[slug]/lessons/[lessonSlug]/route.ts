@@ -11,6 +11,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { loadLearnerCourse, recordProgressEvent } from "@/lib/lms/server";
 import {
+  buildOutline,
   canCompleteLesson,
   collectRequiredChecklistItemIds,
   findLesson,
@@ -37,7 +38,7 @@ export async function GET(
   const { slug, lessonSlug } = await params;
   const now = new Date();
 
-  const result = await loadLearnerCourse({ authUserId: user.id, email: user.email ?? null }, slug, now);
+  const result = await loadLearnerCourse({ authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) }, slug, now);
   if (!result.ok) {
     return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
   }
@@ -55,6 +56,26 @@ export async function GET(
   }
 
   const lessonProgress = lessonProgressOf(progress, found.lesson.id);
+
+  // The whole course map travels with the lesson: the player needs it for the
+  // contents drawer and for prev/next, and a course is small enough that a
+  // second round trip would cost more than the payload.
+  const outline = buildOutline(course, progress, learner);
+
+  // prev/next and "крок N з M" walk the STEPS only. Reference material sits
+  // outside the flow, so opening a recipe never renumbers the protocol.
+  const steps = outline.filter((entry) => !entry.isReference);
+  const index = steps.findIndex((entry) => entry.lesson.id === found.lesson.id);
+  const isReference = found.module.reference === true;
+
+  const asNeighbour = (entry: (typeof outline)[number] | undefined) =>
+    entry
+      ? {
+          slug: entry.lesson.slug,
+          title: entry.lesson.title,
+          available: entry.availability.available,
+        }
+      : null;
 
   if (lessonProgress.status === "not_started") {
     await recordProgressEvent({
@@ -86,5 +107,28 @@ export async function GET(
     },
     requiredChecklistItemIds: collectRequiredChecklistItemIds(found.lesson.blocks),
     completion: canCompleteLesson(course, found.lesson, progress, learner),
+    isReference,
+    nav: isReference
+      ? // Reference pages have no place in the sequence: no counter, no pager.
+        { position: null, total: steps.length, previous: null, next: null }
+      : {
+          // 1-based so the UI can say "крок 3 з 5" without arithmetic.
+          position: index + 1,
+          total: steps.length,
+          previous: asNeighbour(index > 0 ? steps[index - 1] : undefined),
+          next: asNeighbour(steps[index + 1]),
+        },
+    outline: outline.map((entry) => ({
+      moduleId: entry.moduleId,
+      moduleTitle: entry.moduleTitle,
+      isReference: entry.isReference,
+      lessonId: entry.lesson.id,
+      slug: entry.lesson.slug,
+      title: entry.lesson.title,
+      dayIndex: entry.lesson.dayIndex ?? null,
+      durationMin: entry.lesson.durationMin ?? null,
+      completed: entry.completed,
+      availability: entry.availability,
+    })),
   });
 }

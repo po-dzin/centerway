@@ -40,25 +40,30 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
 
   if (state.status === "loading") {
     return (
-      <div className={styles.wrap}>
+      <main className={styles.wrap} data-cw-platform-template="learn-course">
         <p className={styles.lead}>Завантажуємо курс…</p>
-      </div>
+      </main>
     );
   }
 
   if (state.status === "error") {
     return (
-      <div className={styles.wrap}>
+      <main className={styles.wrap} data-cw-platform-template="learn-course">
         <LmsNotice failure={state.error} onRetry={load} />
-      </div>
+      </main>
     );
   }
 
   const { course, standing, outline, currentLessonSlug } = state.data;
   const ratio = standing.totalLessons > 0 ? standing.completedLessons / standing.totalLessons : 0;
 
+  // Reference material is listed apart from the protocol: it is a handbook you
+  // consult, not a step you complete.
+  const steps = outline.filter((entry) => !entry.isReference);
+  const reference = outline.filter((entry) => entry.isReference);
+
   return (
-    <div className={styles.wrap}>
+    <main className={styles.wrap} data-cw-platform-template="learn-course">
       <p className={styles.eyebrow}>Мій маршрут</p>
       <h1 className={styles.title}>{course.title}</h1>
       {course.summary ? <p className={styles.lead}>{inlineToPlainText(course.summary)}</p> : null}
@@ -83,7 +88,7 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
       </div>
 
       <ul className={styles.outline}>
-        {outline.map((entry) => {
+        {steps.map((entry) => {
           const href = `/learn/${course.slug}/${entry.slug}`;
           const badgeLabel = entry.dayIndex ?? "•";
           const isCurrent = entry.slug === currentLessonSlug;
@@ -137,6 +142,33 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
           );
         })}
       </ul>
-    </div>
+
+      {reference.length > 0 ? (
+        <section className={styles.referenceSection}>
+          <h2 className={styles.referenceHeading}>Довідкові матеріали</h2>
+          <p className={styles.referenceLead}>
+            Не входять у проходження — відкривай, коли знадобиться.
+          </p>
+          <ul className={styles.outline}>
+            {reference.map((entry) => (
+              <li key={entry.lessonId} className={styles.outlineItem}>
+                <Link className={styles.outlineLink} href={`/learn/${course.slug}/${entry.slug}`}>
+                  <span className={styles.dayBadge} aria-hidden="true">
+                    ★
+                  </span>
+                  <div>
+                    <h3 className={styles.outlineTitle}>{entry.title}</h3>
+                    {entry.durationMin ? (
+                      <p className={styles.outlineMeta}>{entry.durationMin} хв</p>
+                    ) : null}
+                  </div>
+                  <span className={styles.outlineState}>відкрити</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+    </main>
   );
 }

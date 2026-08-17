@@ -31,7 +31,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const { slug } = await params;
   const now = new Date();
 
-  const result = await loadLearnerCourse({ authUserId: user.id, email: user.email ?? null }, slug, now);
+  const result = await loadLearnerCourse({ authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) }, slug, now);
   if (!result.ok) {
     return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
   }
@@ -42,6 +42,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
   const outline = buildOutline(course, progress, learner).map((entry) => ({
     moduleId: entry.moduleId,
     moduleTitle: entry.moduleTitle,
+    isReference: entry.isReference,
     lessonId: entry.lesson.id,
     slug: entry.lesson.slug,
     title: entry.lesson.title,
