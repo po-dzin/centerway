@@ -189,7 +189,10 @@ export const programs = [
     primaryActionKind: "buy" as PlatformOfferPrimaryActionKind,
     title: "Reset Day",
     fullTitle: "Reset Day - короткий розвантажувальний маршрут",
-    href: resetDayFunnelHref,
+    // Catalog cards lead to the platform page, checkout stays on the funnel —
+    // the same split `reboot` uses. It also gives a buyer somewhere to land
+    // that can tell them they already own the course.
+    href: getPlatformRoute("reset-day") ?? "/programs/reset-day",
     funnelHref: resetDayFunnelHref,
     tag: "Міні-курс детоксу",
     duration: "1 день",

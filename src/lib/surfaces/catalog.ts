@@ -1,7 +1,6 @@
 export type ProductKey =
   | "reboot"
   | "irem"
-  | "mini-detox"
   | "detox"
   | "way21"
   | "reset-day"
@@ -49,17 +48,6 @@ const PRODUCT_SURFACE_REGISTRY: Record<ProductKey, ProductSurfaceEntry> = {
     funnelRuntime: "landing-app",
     internalFunnelRoute: "/irem",
   },
-  "mini-detox": {
-    productKey: "mini-detox",
-    surfaceKinds: ["platform"],
-    host: null,
-    platformRoute: "/programs/mini-detox",
-    ctaMode: "redirect",
-    defaultDoshaEligibility: "none",
-    status: "disabled",
-    funnelRuntime: "disabled",
-    internalFunnelRoute: null,
-  },
   detox: {
     productKey: "detox",
     surfaceKinds: ["platform"],
@@ -85,9 +73,13 @@ const PRODUCT_SURFACE_REGISTRY: Record<ProductKey, ProductSurfaceEntry> = {
   },
   "reset-day": {
     productKey: "reset-day",
-    surfaceKinds: ["funnel"],
+    surfaceKinds: ["funnel", "platform"],
     host: "resetday.centerway.net.ua",
-    platformRoute: null,
+    // Absorbed the retired "mini-detox" surface (2026-08-17). That entry was a
+    // disabled duplicate of this product under its old name, and "mini-detox"
+    // was already listed below as a legacy alias — so the route moves here
+    // rather than living on a second key for the same thing.
+    platformRoute: "/programs/reset-day",
     ctaMode: "checkout",
     defaultDoshaEligibility: "none",
     status: "active",
