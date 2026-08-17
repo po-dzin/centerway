@@ -167,6 +167,68 @@ export function summarizeStanding(
   };
 }
 
+/**
+ * When to nudge someone who paid and never opened the course, counted in the
+ * BUYER's calendar days since purchase.
+ *
+ * Two nudges, then silence. A purchase on Friday should survive the weekend
+ * untouched, which is why the first one waits until day 2; a second at day 7
+ * catches the "meant to, forgot" case. Anyone still unstarted after that has
+ * decided, and a third message would be nagging rather than helping.
+ */
+export const UNSTARTED_NUDGE_DAYS = [2, 7] as const;
+
+export type UnstartedReminderDecision =
+  | { send: false; reason: "not_published" | "wrong_hour" | "all_sent" | "too_early" }
+  | { send: true; nudgeNumber: number; dayNumber: number };
+
+/**
+ * Called by the hourly cron for one PAID BUT UNOPENED course.
+ *
+ * Deliberately separate from `decideDailyReminder`: that one answers "today's
+ * step is waiting", this one answers "you own something you have never opened".
+ * They differ in trigger (enrollment vs purchase), in cadence, and in the fact
+ * that this one has no enrollment to hang off at all — a learner who never
+ * opened the course has no `lms_enrollments` row, which is exactly why the
+ * enrollment-driven scan could never see them.
+ */
+export function decideUnstartedReminder(
+  course: Course,
+  context: {
+    /** When the course was paid for. UTC instant. */
+    purchasedAt: Date;
+    timeZone: string;
+    now: Date;
+    /** Nudge numbers already delivered for this purchase. */
+    sentNudgeNumbers: number[];
+  }
+): UnstartedReminderDecision {
+  // Never push someone toward a course that is not open to them yet.
+  if (course.status !== "published") return { send: false, reason: "not_published" };
+
+  const zone = resolveTimeZone(context.timeZone);
+  const reminderHour = course.schedule.reminderHour ?? 9;
+  if (localHour(context.now, zone) !== reminderHour) return { send: false, reason: "wrong_hour" };
+
+  const dayNumber = enrollmentDayNumber(context.purchasedAt, context.now, zone);
+  const sent = new Set(context.sentNudgeNumbers);
+
+  for (let index = 0; index < UNSTARTED_NUDGE_DAYS.length; index += 1) {
+    const nudgeNumber = index + 1;
+    if (sent.has(nudgeNumber)) continue;
+
+    // `>=`, not `===`: a cron hour missed to a deploy or an outage must delay
+    // the nudge to the next day, not drop it for good.
+    if (dayNumber >= UNSTARTED_NUDGE_DAYS[index]) {
+      return { send: true, nudgeNumber, dayNumber };
+    }
+
+    return { send: false, reason: "too_early" };
+  }
+
+  return { send: false, reason: "all_sent" };
+}
+
 export type ReminderDecision =
   | { send: false; reason: "not_daily" | "wrong_hour" | "finished" | "nothing_due" | "already_done" }
   | { send: true; lesson: Lesson; dayNumber: number };

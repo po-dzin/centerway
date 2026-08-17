@@ -8,6 +8,7 @@ import {
   buildOutline,
   canCompleteLesson,
   decideDailyReminder,
+  decideUnstartedReminder,
   lessonAvailability,
   resolveCurrentLesson,
 } from "./schedule";
@@ -378,6 +379,74 @@ describe("daily reminder decision", () => {
         now: new Date("2026-08-20T06:00:00Z"),
       })
     ).toEqual({ send: false, reason: "finished" });
+  });
+});
+
+describe("unstarted nudge decision", () => {
+  const course = dailyCourse();
+  // 06:00Z is 09:00 in Kyiv — the configured reminder hour.
+  const purchasedAt = new Date("2026-08-15T06:00:00Z");
+  const base = { purchasedAt, timeZone: "Europe/Kyiv", sentNudgeNumbers: [] as number[] };
+
+  it("stays silent on the purchase day and the day after", () => {
+    expect(decideUnstartedReminder(course, { ...base, now: new Date("2026-08-15T06:00:00Z") })).toEqual({
+      send: false,
+      reason: "too_early",
+    });
+    // Day 2 in this codebase's counting is the calendar day AFTER the start,
+    // so a Friday purchase is still untouched on Friday.
+    expect(decideUnstartedReminder(course, { ...base, now: new Date("2026-08-16T06:00:00Z") })).toMatchObject({
+      send: true,
+      nudgeNumber: 1,
+    });
+  });
+
+  it("fires the second nudge only after the first is recorded", () => {
+    const atDay7 = { ...base, now: new Date("2026-08-21T06:00:00Z") };
+    // Nothing sent yet: the FIRST unsent nudge wins, never the latest due one.
+    expect(decideUnstartedReminder(course, atDay7)).toMatchObject({ send: true, nudgeNumber: 1 });
+    expect(decideUnstartedReminder(course, { ...atDay7, sentNudgeNumbers: [1] })).toMatchObject({
+      send: true,
+      nudgeNumber: 2,
+    });
+  });
+
+  it("goes quiet for good after the last nudge", () => {
+    expect(
+      decideUnstartedReminder(course, {
+        ...base,
+        now: new Date("2026-09-30T06:00:00Z"),
+        sentNudgeNumbers: [1, 2],
+      })
+    ).toEqual({ send: false, reason: "all_sent" });
+  });
+
+  it("recovers a nudge whose cron hour was missed", () => {
+    // Day 4: the day-2 slot came and went while the job was down. The nudge is
+    // late rather than lost.
+    expect(decideUnstartedReminder(course, { ...base, now: new Date("2026-08-18T06:00:00Z") })).toMatchObject({
+      send: true,
+      nudgeNumber: 1,
+    });
+  });
+
+  it("respects the buyer's clock, not the server's", () => {
+    // Same instant, Vancouver — 23:00 locally, nobody gets woken up.
+    expect(
+      decideUnstartedReminder(course, {
+        ...base,
+        timeZone: "America/Vancouver",
+        now: new Date("2026-08-16T06:00:00Z"),
+      })
+    ).toEqual({ send: false, reason: "wrong_hour" });
+  });
+
+  it("never pushes a draft course", () => {
+    const draft = { ...dailyCourse(), status: "draft" as const };
+    expect(decideUnstartedReminder(draft, { ...base, now: new Date("2026-08-16T06:00:00Z") })).toEqual({
+      send: false,
+      reason: "not_published",
+    });
   });
 });
 
