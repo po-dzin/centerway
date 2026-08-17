@@ -173,5 +173,5 @@
   border-radius: var(--cw-radius-sm);
   color: var(--cw-platform-muted);
   background: var(--cw-platform-surface);
-  box-shadow: var(--cw-depth-shadow-soft);
+  box-shadow: var(--cw-mat-shadow-soft);
 }

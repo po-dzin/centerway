@@ -2,11 +2,12 @@ import Link from "next/link";
 import styles from "@/components/platform/PlatformRouteStyles";
 import { currentProgram, routeLabels } from "@/components/platform/blocks/route/context";
 import type { PlatformRouteBlockProps } from "@/components/platform/blocks/types";
+import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 
 export function NextStep({ route, programSlug }: Pick<PlatformRouteBlockProps, "route" | "programSlug">) {
   const program = currentProgram(programSlug);
-  const primaryHref = program ? "#program-enroll" : "/dosha-test";
-  const secondaryHref = program ? "/expert" : "/dosha-test";
+  const primaryHref = program ? "#program-enroll" : DOSHA_TEST_ROUTE;
+  const secondaryHref = program ? "/expert" : DOSHA_TEST_ROUTE;
   const secondaryLabel = program ? "Поставити питання автору" : "Пройти діагностику";
 
   return (

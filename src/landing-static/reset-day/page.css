@@ -51,6 +51,9 @@
   --landing-type-button-size:1rem;
 }
 
+/* Photos shown plain — no fade/gradient overlay on the author photo. */
+[data-cw-landing="reset-day"] .author-photo img{-webkit-mask-image:none;mask-image:none}
+
 /* Reset Day offer answers one decision; align its content with the surrounding
    reading column instead of centering a separate visual island. */
 [data-cw-landing="reset-day"] .offer{text-align:left}
@@ -221,29 +224,25 @@
 }
 
 @media(min-width:768px){
+  /* Grid instead of flex: the photo is much taller than the text (min-height
+     640px vs its natural content height), so the text+CTA column is centered
+     against it as one balanced group via align-content — rather than pinned
+     to the top with a large dead gap before the price/CTA (the old flex-row
+     layout let hero-actions start only after the photo's full height). */
   .hero--photo-stripe .hero-grid{
     --reset-hero-col-gap:clamp(28px,4.2vw,52px);
-    display:flex;
-    flex-direction:column;
-    gap:1.2rem;
-    min-height:0;
-    align-items:stretch;
-  }
-  .hero--photo-stripe .hero-top{
     display:grid;
     grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-    gap:var(--reset-hero-col-gap);
-    align-items:stretch;
-    width:100%;
+    grid-template-rows:auto auto;
+    column-gap:var(--reset-hero-col-gap);
+    row-gap:1.2rem;
+    align-content:center;
+    min-height:0;
   }
-  .hero--photo-stripe .hero-visual,
-  .hero--photo-stripe .hero-main,
-  .hero--photo-stripe .hero-actions,
-  .hero--photo-stripe .hero-badge,
-  .hero--photo-stripe .hero-copy{
-    grid-area:auto;
-  }
+  .hero--photo-stripe .hero-top{display:contents}
   .hero--photo-stripe .hero-visual{
+    grid-column:1;
+    grid-row:1 / 3;
     order:0;
     position:relative;
     right:auto;
@@ -256,17 +255,21 @@
     pointer-events:none;
   }
   .hero--photo-stripe .hero-main{
+    grid-column:2;
+    grid-row:1;
     order:0;
     justify-content:flex-start;
-    align-self:start;
+    align-self:end;
     min-height:0;
-    padding-top:clamp(20px,2vw,34px);
+    padding-top:0;
   }
   .hero--photo-stripe .hero-badge{margin-bottom:.8rem}
   .hero--photo-stripe .hero-copy{margin-bottom:0;padding-right:0}
   .hero--photo-stripe .hero-actions{
-    width:calc((100% - var(--reset-hero-col-gap)) / 2);
-    margin-left:auto;
+    grid-column:2;
+    grid-row:2;
+    width:100%;
+    margin-left:0;
     margin-top:0;
     padding-inline:0;
     align-self:start;
@@ -297,11 +300,10 @@
 @media(min-width:768px) and (max-width:1199px){
   .hero--photo-stripe .hero-grid{
     --reset-hero-col-gap:clamp(24px,3.5vw,40px);
-    gap:1rem;
+    row-gap:1rem;
   }
   .hero--photo-stripe h1{font-size:clamp(1.92rem,3.5vw,2.65rem);line-height:1.08}
   .hero--photo-stripe .hero-sub{max-width:30ch;line-height:1.48}
-  .hero--photo-stripe .hero-main{padding-top:16px}
   .hero--photo-stripe .hv-stage{min-height:560px}
 }
 
@@ -317,5 +319,73 @@
   .hero--photo-stripe .hv-photo{
     width:184%;
     transform:translateX(-21%);
+  }
+}
+
+/* ============ PHOTO HERO (mobile) — stripe experiment retired ============
+   The portrait-stripe hero above (photo left, 52% text column right) was this
+   landing's own experiment. With data-cw-hero="photo" the network recipe in
+   shared/css/landing.css owns the mobile hero instead: full-bleed photograph,
+   copy anchored to the bottom on its scrim. These rules only dissolve the
+   stripe's geometry so the shared recipe is unobstructed — no new layout of
+   their own. Desktop (>=881px) still runs the stripe's two-column grid. */
+@media(max-width:880px){
+  [data-cw-hero="photo"] .hero--photo-stripe .wrap{
+    max-width:var(--maxw);
+    padding-inline:clamp(14px,4vw,40px);
+  }
+  [data-cw-hero="photo"] .hero--photo-stripe .hero-grid{
+    position:static;
+    overflow:visible;
+    min-height:0;
+    gap:0;
+  }
+  /* display:contents dissolves the stripe's photo/text split: .hero-visual and
+     .hero-main become direct children of the grid, which is what the shared
+     recipe expects. */
+  [data-cw-hero="photo"] .hero--photo-stripe .hero-top{display:contents}
+  [data-cw-hero="photo"] .hero--photo-stripe .hero-main{
+    position:static;
+    z-index:auto;
+    width:auto;
+    min-height:0;
+    margin-left:0;
+    padding:0;
+  }
+  [data-cw-hero="photo"] .hero--photo-stripe .hero-badge{
+    margin-bottom:.85rem;
+    background:var(--cw-net-mat-tint-media);
+    border-color:var(--cw-net-mat-stroke);
+    backdrop-filter:var(--cw-net-mat-filter);
+    -webkit-backdrop-filter:var(--cw-net-mat-filter);
+  }
+  [data-cw-hero="photo"] .hero--photo-stripe .hv-stage{
+    min-height:0;
+    height:100%;
+    aspect-ratio:auto;
+    border-radius:0;
+    box-shadow:none;
+  }
+  /* This master is a tight head-and-shoulders portrait (1040x1280). Covering
+     the full 100svh box would crop 43% of its width and blow the face up to
+     nearly twice life size, so the photo layer is given a height close to the
+     master's own aspect instead; the hero's scrim colour owns the rest of the
+     screen, which the copy band covers anyway. */
+  [data-cw-hero="photo"] .hero--photo-stripe{--cw-hero-photo-height:66svh}
+  [data-cw-hero="photo"] .hero--photo-stripe .hv-photo{
+    --cw-hero-photo-y:center;
+    inset:0;
+    width:100%;
+    border-radius:0;
+  }
+  [data-cw-hero="photo"] .hero--photo-stripe h1{
+    max-width:none;
+    font-size:clamp(1.85rem,7.4vw,2.5rem);
+    line-height:1.06;
+  }
+  [data-cw-hero="photo"] .hero--photo-stripe .hero-actions{
+    margin-top:1rem;
+    padding-inline:0;
+    padding-bottom:0;
   }
 }

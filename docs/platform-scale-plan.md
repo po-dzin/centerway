@@ -13,7 +13,7 @@ Two layers exist and they are complementary, not competing:
 **Platform core — the Next.js app.** Already further along than "landing backend":
 
 - catalog pages for **six** programs (`reboot`, `way21`, `ideal-body`, `irem`, `herbs`, `reset-day`) in `src/lib/platform/content.ts`;
-- dosha test engine with API, attempts, reminders (`/dosha-test`, `api/tests`, `api/cron/dosha-reminders`);
+- dosha test engine with API, attempts, reminders (tests hub `/tests` + surface `/tests/dosha`, `api/tests`, `api/cron/dosha-reminders`);
 - user identity: Supabase auth, `api/platform/users/me` + `sync`, a 500-line profile client (dosha, purchases, accesses);
 - orders/analytics/admin APIs, Telegram integration (`api/tg`);
 - a canonical 8-layer design-token system (ReOS `Дизайн-токены.md`, runtime `data/design-tokens/cw.tokens.json`, guards `tokens:build` / `guard:ds-contract` / `ds:qa`).

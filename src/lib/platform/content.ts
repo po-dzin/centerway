@@ -4,7 +4,7 @@ export const platformHomeHref = "/";
 
 export const platformNav = [
   { label: "Головна", href: "/", match: "exact" as const },
-  { label: "Діагностика", href: "/dosha-test", match: "exact" as const },
+  { label: "Діагностика", href: "/tests", match: "prefix" as const },
   { label: "Програми", href: "/programs", match: "prefix" as const },
   { label: "Продукти", href: "/products", match: "prefix" as const },
   { label: "Про автора", href: "/expert", match: "exact" as const },
@@ -195,7 +195,7 @@ export const programs = [
     duration: "1 день",
     visual: "stone",
     artwork: {
-      desktop: "/cw/platform/programs/mini-detox-card-v1.png",
+      desktop: "/cw/platform/programs/reset-day-card-v1.png",
       desktopPosition: "center 14%",
       mobilePosition: "center 16%",
     },

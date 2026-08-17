@@ -5,12 +5,13 @@ import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { PlatformAuthModal } from "@/components/platform/PlatformAuthModal";
-import styles from "@/components/platform/PlatformHeroStyles";
+import styles from "@/components/platform/PlatformDiagnosticStyles";
 import type { DoshaResultType } from "@/lib/doshaTest";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
 import { CW_THEME_QUERY_KEYS } from "@/lib/generator/theme";
 import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT } from "@/lib/doshaRouting";
 import { platformPageArtwork } from "@/lib/platform/content";
+import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
 import { supabaseClient } from "@/lib/supabaseClient";
 
 type TestOption = {
@@ -138,6 +139,18 @@ const RESULT_COPY: Record<
     weekVector: "7-денний вектор: щодня перевіряйте енергію та гнучко коригуйте інтенсивність дня.",
   },
 };
+
+const HOW_IT_WORKS_STEPS = [
+  "Відповідаєте на 12 коротких питань про ритм, енергію, травлення, сон і напругу.",
+  "Отримуєте профіль доші як робочу гіпотезу для читання свого поточного стану.",
+  "Бачите наступний крок: консультація, програма або самостійний старт без зайвої абстракції.",
+];
+
+const BOUNDARY_NOTE =
+  "Це оздоровчий орієнтир, а не медичний діагноз. Результат не є медичним діагнозом і не замінює лікаря: якщо симптоми стійкі або гострі, спочатку варто пройти обстеження.";
+
+const DOSHA_DISCLOSURE =
+  "У підході CenterWay доші описують природні патерни енергії, ритму й відновлення. Тест допомагає обрати релевантний маршрут практик і контенту в платформі.";
 
 function resolveHeroPosition(position?: string) {
   if (!position) {
@@ -576,313 +589,280 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     <>
       {phase === "intro" ? (
         <section
-      className={styles.heroFeature}
-      data-cw-topbar-tone="dark"
-      data-cw-detail-template="dosha"
-      data-cw-semantic-role="diagnostic-entry"
-      data-cw-semantic-family="guide-progress"
-      data-cw-token-source="global-app-ds"
-      data-dosha-test="true"
-      data-dosha-phase="intro"
-      style={heroStyle}
-    >
-      <div className={styles.heroPhotoLayer}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className={styles.expertImage} src={doshaHeroArtwork.desktop} alt="Доша-тест CenterWay" />
-      </div>
-      <div
-        className={`${styles.heroFeatureContent} ${styles.diagnosticHeroContent}`}
-        style={{
-          fontFamily: testFontFamily,
-          userSelect: "none",
-          WebkitUserSelect: "none",
-        }}
-      >
-        <article className={`${styles.panel} ${styles.diagnosticHeroCard}`}>
-          <div className={styles.panelStack}>
-            <div className={styles.panelIntro}>
-              <p className={styles.heroBadge}>
-                <span>{topbarBadge}</span>
-              </p>
-              <p className={styles.label}>CenterWay • Діагностика стану</p>
-              <h1 className={styles.title}>Тест доші</h1>
-              <p className={styles.lead}>
-                Швидка самодіагностика ритму, енергії, травлення і напруги, щоб побачити свій поточний стан і зрозуміти
-                перший доречний маршрут у платформі.
-              </p>
-            </div>
-
-            <div className={styles.card} data-tone="proof">
-              <p className={styles.label}>Що ви отримаєте</p>
-              <ol className={styles.diagnosticNumberList}>
-                <li>Короткий профіль доші як робочу гіпотезу для читання свого стану.</li>
-                <li>Практичний вектор на найближчі 7 днів без зайвої абстракції.</li>
-                <li>Зрозумілий наступний крок: консультація, програма або самостійний старт.</li>
-              </ol>
-            </div>
-
-            {error ? (
-              <p
-                className={styles.proofNote}
-                style={{
-                  color: "var(--cw-danger)",
-                  background: "color-mix(in srgb, var(--cw-danger) 8%, var(--cw-platform-surface) 92%)",
-                }}
-              >
-                {error}
-              </p>
-            ) : null}
-
-            <div className={styles.diagnosticActions}>
-              <button
-                type="button"
-                onClick={() => {
-                  void requestStartTest();
-                }}
-                disabled={isBusy}
-                className={styles.heroPrimaryButton}
-              >
-                {isBusy ? "Запускаємо..." : "Почати тест"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsDoshaInfoOpen((prev) => !prev)}
-                className={styles.heroSecondaryButton}
-                aria-expanded={isDoshaInfoOpen}
-                aria-controls="what-is-dosha"
-              >
-                <span>{isDoshaInfoOpen ? "Сховати опис доші" : "Що таке доші?"}</span>
-              </button>
-            </div>
-
-            {isDoshaInfoOpen ? (
-              <div className={styles.card} data-tone="support" id="what-is-dosha">
-                <p>У підході CenterWay доші описують природні патерни енергії, ритму й відновлення. Тест допомагає обрати релевантний маршрут практик і контенту в платформі.</p>
-              </div>
-            ) : null}
+          className={styles.heroFeature}
+          data-cw-topbar-tone="dark"
+          data-cw-detail-template="dosha"
+          data-cw-semantic-role="diagnostic-entry"
+          data-cw-semantic-family="guide-progress"
+          data-cw-token-source="global-app-ds"
+          data-dosha-test="true"
+          data-dosha-phase="intro"
+          style={heroStyle}
+        >
+          <div className={styles.heroPhotoLayer}>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className={styles.expertImage} src={doshaHeroArtwork.desktop} alt="Доша-тест CenterWay" />
           </div>
-        </article>
-      </div>
+          <div
+            className={`${styles.heroFeatureContent} ${styles.diagnosticHeroContent}`}
+            style={{
+              fontFamily: testFontFamily,
+              userSelect: "none",
+              WebkitUserSelect: "none",
+            }}
+          >
+            <article className={`${styles.panel} ${styles.diagnosticHeroCard}`}>
+              <div className={styles.panelStack}>
+                <div className={styles.panelIntro}>
+                  <p className={styles.heroBadge}>
+                    <span>{topbarBadge}</span>
+                  </p>
+                  <p className={styles.label}>CenterWay • Діагностика стану</p>
+                  <h1 className={styles.title}>Тест доші</h1>
+                  <p className={styles.lead}>
+                    Швидка самодіагностика ритму, енергії, травлення і напруги, щоб побачити свій поточний стан і зрозуміти
+                    перший доречний маршрут у платформі.
+                  </p>
+                </div>
+
+                <div className={styles.card} data-tone="proof">
+                  <p className={styles.label}>Як це працює</p>
+                  <ol className={styles.diagnosticNumberList}>
+                    {HOW_IT_WORKS_STEPS.map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+
+                <div className={styles.card} data-tone="policy">
+                  <p className={styles.label}>Межі методу</p>
+                  <p>{BOUNDARY_NOTE}</p>
+                </div>
+
+                {error ? <p className={styles.diagnosticErrorNote}>{error}</p> : null}
+
+                <div className={styles.diagnosticActions}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void requestStartTest();
+                    }}
+                    disabled={isBusy}
+                    className={styles.heroPrimaryButton}
+                  >
+                    {isBusy ? "Запускаємо..." : "Почати тест"}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setIsDoshaInfoOpen((prev) => !prev)}
+                    className={styles.heroSecondaryButton}
+                    aria-expanded={isDoshaInfoOpen}
+                    aria-controls="what-is-dosha"
+                  >
+                    <span>{isDoshaInfoOpen ? "Сховати опис доші" : "Що таке доша?"}</span>
+                  </button>
+                </div>
+
+                {isDoshaInfoOpen ? (
+                  <div className={styles.card} data-tone="support" id="what-is-dosha">
+                    <p>{DOSHA_DISCLOSURE}</p>
+                    <p>{BOUNDARY_NOTE}</p>
+                  </div>
+                ) : null}
+
+                <Link className={styles.diagnosticTextButton} href={TESTS_HUB_ROUTE}>
+                  Усі тести
+                </Link>
+              </div>
+            </article>
+          </div>
         </section>
       ) : (
         <section
-      className={`${styles.container} ${styles.section}`}
-      data-cw-semantic-role="diagnostic-flow"
-      data-cw-semantic-family="method-progress"
-      data-cw-token-source="global-app-ds"
-      data-dosha-test="true"
-      data-dosha-phase={phase}
-      style={{
-        fontFamily: testFontFamily,
-        userSelect: "none",
-        WebkitUserSelect: "none",
-      }}
-    >
-      <div className={styles.diagnosticStage}>
-        <article className={`${styles.panel} ${styles.diagnosticPanel}`}>
-          {phase === "question" && currentQuestion ? (
-            <div className="space-y-6">
-              <div className="flex items-start justify-between gap-3">
-                <span
-                  className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
-                  style={{
-                    borderColor: "var(--cw-border)",
-                    background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
-                    color: "var(--cw-text)",
-                  }}
-                >
-                  {topbarBadge}
-                </span>
-              </div>
+          className={`${styles.container} ${styles.section}`}
+          data-cw-semantic-role="diagnostic-flow"
+          data-cw-semantic-family="method-progress"
+          data-cw-token-source="global-app-ds"
+          data-dosha-test="true"
+          data-dosha-phase={phase}
+          style={{
+            fontFamily: testFontFamily,
+            userSelect: "none",
+            WebkitUserSelect: "none",
+          }}
+        >
+          <div className={styles.diagnosticStage}>
+            <article className={`${styles.panel} ${styles.diagnosticPanel}`}>
+              {phase === "question" && currentQuestion ? (
+                <div className={styles.diagnosticFlowStack}>
+                  <div className={styles.diagnosticFlowHead}>
+                    {/* The step lives in the progress row below, so the chip names the test. */}
+                    <span className={styles.diagnosticStepChip}>Тест доші</span>
+                    <Link className={styles.diagnosticTextButton} href={TESTS_HUB_ROUTE}>
+                      Усі тести
+                    </Link>
+                  </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--cw-muted)" }}>
-                  <span>Питання {currentQuestion.orderIndex} з {totalQuestions}</span>
-                  <span>Прогрес {progress}%</span>
-                </div>
-                <div className={styles.diagnosticProgressTrack}>
-                  <div
-                    className={styles.diagnosticProgressBar}
-                    style={{
-                      width: `${progress}%`,
-                    }}
-                  />
-                </div>
-              </div>
+                  <div className={styles.diagnosticProgressRow}>
+                    <div className={styles.diagnosticProgressMeta}>
+                      <span>Питання {currentQuestion.orderIndex} з {totalQuestions}</span>
+                      <span>Прогрес {progress}%</span>
+                    </div>
+                    <div className={styles.diagnosticProgressTrack}>
+                      <div
+                        className={styles.diagnosticProgressBar}
+                        style={{
+                          width: `${progress}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
 
-              <div className="space-y-2">
-                <h2 className={styles.title}>{currentQuestion.text}</h2>
-                <p className={styles.lead}>Оберіть варіант, який найточніше описує ваш поточний стан.</p>
-              </div>
+                  <div className={styles.diagnosticQuestionIntro}>
+                    <h2 className={styles.title}>{currentQuestion.text}</h2>
+                    <p className={styles.lead}>Оберіть варіант, який найточніше описує ваш поточний стан.</p>
+                  </div>
 
-              <div className="space-y-3">
-                {currentQuestion.options.map((option) => {
-                  const selected = answers[currentQuestion.id] === option.id;
+                  <div className={styles.diagnosticOptionList}>
+                    {currentQuestion.options.map((option) => {
+                      const selected = answers[currentQuestion.id] === option.id;
 
-                  return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      aria-pressed={selected}
-                      disabled={isBusy || Boolean(answers[currentQuestion.id])}
-                      onClick={() => {
-                        void submitAnswer(currentQuestion.id, option.id);
-                      }}
-                      className="cw-choice-btn w-full min-h-11 px-4 py-2.5 text-left text-[0.95rem] font-semibold leading-snug motion-reduce:transition-none"
-                      style={{
-                        color: "var(--cw-text)",
-                        opacity: isBusy ? 0.86 : 1,
-                        outlineColor: "transparent",
-                      }}
-                    >
-                      {option.text}
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          data-dosha-option={option.code}
+                          aria-pressed={selected}
+                          disabled={isBusy || Boolean(answers[currentQuestion.id])}
+                          onClick={() => {
+                            void submitAnswer(currentQuestion.id, option.id);
+                          }}
+                          className={`cw-choice-btn ${styles.diagnosticOption}`}
+                        >
+                          {option.text}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {error ? <p className={styles.diagnosticErrorNote}>{error}</p> : null}
+
+                  <div className={styles.diagnosticFlowFoot}>
+                    <button type="button" onClick={() => setPhase("intro")} className={styles.diagnosticTextButton}>
+                      До опису тесту
                     </button>
-                  );
-                })}
-              </div>
-
-              {error ? (
-                <p
-                  className={styles.proofNote}
-                  style={{
-                    color: "var(--cw-danger)",
-                    background: "color-mix(in srgb, var(--cw-danger) 8%, var(--cw-platform-surface) 92%)",
-                  }}
-                >
-                  {error}
-                </p>
+                    <span>Режим v1: попередню відповідь змінити не можна.</span>
+                  </div>
+                </div>
               ) : null}
 
-              <div className="flex items-center justify-between gap-3 text-xs" style={{ color: "var(--cw-muted)" }}>
-                <button
-                  type="button"
-                  onClick={() => setPhase("intro")}
-                  className="cw-btn-outline inline-flex min-h-11 select-none items-center justify-center px-3 text-xs font-semibold motion-reduce:transition-none"
-                  style={{
-                    color: "var(--cw-text)",
-                  }}
-                >
-                  На головну
-                </button>
-                <span>Режим v1: попередню відповідь змінити не можна.</span>
-              </div>
-            </div>
-          ) : null}
+              {phase === "loading" ? (
+                <div className={styles.diagnosticFlowStack}>
+                  <div className={styles.diagnosticFlowHead}>
+                    <span className={styles.diagnosticStepChip}>{topbarBadge}</span>
+                  </div>
 
-          {phase === "loading" ? (
-            <div className="space-y-4 py-10 text-center">
-              <div className="flex justify-start">
-                <span
-                  className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
-                  style={{
-                    borderColor: "var(--cw-border)",
-                    background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
-                    color: "var(--cw-text)",
-                  }}
-                >
-                  {topbarBadge}
-                </span>
-              </div>
-
-              <div
-                className="mx-auto h-12 w-12 rounded-full border-4 animate-spin motion-reduce:animate-none"
-                style={{ borderColor: "var(--cw-border)", borderTopColor: "var(--cw-status-success)" }}
-              />
-              <h2 className={styles.title}>Аналізуємо ваш профіль...</h2>
-              <p className={styles.lead}>Формуємо практичний вектор і наступний маршрут у платформі.</p>
-            </div>
-          ) : null}
-
-          {phase === "result" && resultType && resultCopy ? (
-            <div className="space-y-6">
-              <div className="flex justify-start">
-                <span
-                  className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
-                  style={{
-                    borderColor: "var(--cw-border)",
-                    background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
-                    color: "var(--cw-text)",
-                  }}
-                >
-                  {topbarBadge}
-                </span>
-              </div>
-
-              <div className={styles.card} data-tone="support">
-                <p className={styles.label}>Ваш профіль</p>
-                <h2>{resultCopy.title}</h2>
-                <p>{resultCopy.summary}</p>
-                <p>{resultCopy.recommendation}</p>
-              </div>
-
-              <div className={styles.card} data-tone="proof">
-                <h2>Що це означає у практиці</h2>
-                <p>{resultCopy.weekVector}</p>
-                <p>Рахунок: Вата {scores.vata} • Пітта {scores.pitta} • Капха {scores.kapha}</p>
-              </div>
-
-              <div className="space-y-3">
-                <p className={styles.label}>Наступний крок</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Link
-                    href={DOSHA_PRIMARY_EXIT.href}
-                    onClick={() => {
-                      void emitAttemptEvent("dosha_followup_clicked", {
-                        target: DOSHA_PRIMARY_EXIT.target,
-                        ctaTarget: DOSHA_PRIMARY_EXIT.ctaTarget,
-                        screen: "result",
-                        step: totalQuestions,
-                        uiVariant,
-                        resultType,
-                        scores,
-                        completedAt,
-                        nextStep: DOSHA_PRIMARY_EXIT.nextStep,
-                      });
-                    }}
-                    className="cw-btn-primary inline-flex w-full min-h-11 items-center justify-center px-4 py-3 text-sm font-semibold motion-reduce:transition-none"
-                  >
-                    Отримати персональні рекомендації
-                  </Link>
-                  <Link
-                    href={DOSHA_SECONDARY_EXIT.href}
-                    onClick={() => {
-                      void emitAttemptEvent("dosha_followup_clicked", {
-                        target: DOSHA_SECONDARY_EXIT.target,
-                        ctaTarget: DOSHA_SECONDARY_EXIT.ctaTarget,
-                        screen: "result",
-                        step: totalQuestions,
-                        uiVariant,
-                        resultType,
-                        scores,
-                        completedAt,
-                        nextStep: DOSHA_SECONDARY_EXIT.nextStep,
-                      });
-                    }}
-                    className="cw-btn-outline inline-flex w-full min-h-11 items-center justify-center px-4 py-3 text-sm font-semibold motion-reduce:transition-none"
-                    style={{ color: "var(--cw-text)" }}
-                  >
-                    Переглянути програму
-                  </Link>
+                  <div className={styles.diagnosticLoadingStack}>
+                    <div className={styles.diagnosticSpinner} aria-hidden="true" />
+                    <h2 className={styles.title}>Аналізуємо ваш профіль...</h2>
+                    <p className={styles.lead}>Формуємо практичний вектор і наступний маршрут у платформі.</p>
+                  </div>
                 </div>
+              ) : null}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    saveAttemptId(null);
-                    setAttemptId(null);
-                    setPhase("intro");
-                    setResultViewedSent(false);
-                  }}
-                  className={styles.heroSecondaryButton}
-                >
-                  <span>Пройти тест ще раз</span>
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </article>
-      </div>
+              {phase === "result" && resultType && resultCopy ? (
+                <div className={styles.diagnosticFlowStack}>
+                  <div className={styles.diagnosticFlowHead}>
+                    <span className={styles.diagnosticStepChip}>{topbarBadge}</span>
+                  </div>
+
+                  <div className={styles.card} data-tone="support">
+                    <p className={styles.label}>Ваш профіль</p>
+                    <h2>{resultCopy.title}</h2>
+                    <p>{resultCopy.summary}</p>
+                    <p>{resultCopy.recommendation}</p>
+                  </div>
+
+                  <div className={styles.card} data-tone="proof">
+                    <h2>Що це означає у практиці</h2>
+                    <p>{resultCopy.weekVector}</p>
+                    <p className={styles.diagnosticScoreRow}>
+                      Рахунок: Вата {scores.vata} • Пітта {scores.pitta} • Капха {scores.kapha}
+                    </p>
+                  </div>
+
+                  <div className={styles.card} data-tone="policy">
+                    <p className={styles.label}>Межі методу</p>
+                    <p>{BOUNDARY_NOTE}</p>
+                  </div>
+
+                  <div className={styles.panelIntro}>
+                    <p className={styles.label}>Наступний крок</p>
+                  </div>
+
+                  <div className={styles.diagnosticResultActions}>
+                    <Link
+                      href={DOSHA_PRIMARY_EXIT.href}
+                      onClick={() => {
+                        void emitAttemptEvent("dosha_followup_clicked", {
+                          target: DOSHA_PRIMARY_EXIT.target,
+                          ctaTarget: DOSHA_PRIMARY_EXIT.ctaTarget,
+                          screen: "result",
+                          step: totalQuestions,
+                          uiVariant,
+                          resultType,
+                          scores,
+                          completedAt,
+                          nextStep: DOSHA_PRIMARY_EXIT.nextStep,
+                        });
+                      }}
+                      className={styles.primaryButton}
+                    >
+                      Отримати персональні рекомендації
+                    </Link>
+                    <Link
+                      href={DOSHA_SECONDARY_EXIT.href}
+                      onClick={() => {
+                        void emitAttemptEvent("dosha_followup_clicked", {
+                          target: DOSHA_SECONDARY_EXIT.target,
+                          ctaTarget: DOSHA_SECONDARY_EXIT.ctaTarget,
+                          screen: "result",
+                          step: totalQuestions,
+                          uiVariant,
+                          resultType,
+                          scores,
+                          completedAt,
+                          nextStep: DOSHA_SECONDARY_EXIT.nextStep,
+                        });
+                      }}
+                      className={styles.secondaryButton}
+                    >
+                      Переглянути програму
+                    </Link>
+                  </div>
+
+                  <div className={styles.diagnosticFlowFoot}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        saveAttemptId(null);
+                        setAttemptId(null);
+                        setPhase("intro");
+                        setResultViewedSent(false);
+                      }}
+                      className={styles.diagnosticTextButton}
+                    >
+                      Пройти тест ще раз
+                    </button>
+                    <Link className={styles.diagnosticTextButton} href={TESTS_HUB_ROUTE}>
+                      Усі тести
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
+            </article>
+          </div>
         </section>
       )}
 

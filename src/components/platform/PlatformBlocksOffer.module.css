@@ -63,7 +63,7 @@
   --program-tile-copy: color-mix(in srgb, var(--cw-platform-accent-contrast) 82%, transparent);
   --program-tile-button-bg: color-mix(in srgb, var(--cw-platform-accent) 76%, var(--cw-platform-accent-strong) 24%);
   --program-tile-button-border: color-mix(in srgb, var(--cw-platform-accent) 56%, transparent);
-  --program-tile-shadow: var(--cw-depth-shadow-soft);
+  --program-tile-shadow: var(--cw-mat-shadow-soft);
   --program-photo-active-image: var(--program-photo-image);
   --program-photo-position: center center;
   min-height: var(--ds-offer-card-min-height-desktop);
@@ -90,7 +90,7 @@
   border-radius: var(--cw-card-radius);
   color: var(--cw-platform-accent-contrast);
   background: var(--cw-platform-accent-strong);
-  box-shadow: var(--cw-depth-shadow-soft);
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
 .offerHeroVisualCard .programPhoto {
@@ -511,6 +511,49 @@
   box-shadow: 0 16px 28px color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
 }
 
+/* Tests hub: a tile can carry a format line and can describe a surface that does
+   not exist yet. A planned tile keeps the tile rhythm but never offers an action. */
+.programTileBody[data-has-meta="true"] {
+  grid-template-rows: auto auto auto 1fr auto;
+}
+
+.programTileMeta {
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.programTileMeta.programTileMeta {
+  color: color-mix(in srgb, var(--program-tile-fg) 84%, transparent);
+}
+
+.programTileStatus {
+  width: fit-content;
+  min-height: var(--ds-button-min-height);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 1rem;
+  border: 1px dashed color-mix(in srgb, var(--program-tile-fg) 44%, transparent);
+  border-radius: var(--ds-radius-button-soft);
+  color: var(--program-tile-fg);
+  background: transparent;
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.programTile[data-status="planned"] {
+  --program-tile-shadow: var(--cw-mat-shadow-soft);
+}
+
+.programTile[data-status="planned"] .programPhoto {
+  filter: saturate(0.72);
+}
+
 .programOfferDetailsGrid {
   align-items: start;
 }
@@ -530,7 +573,18 @@
   padding: 0.95rem 1rem;
   border-radius: var(--cw-card-radius);
   color: var(--cw-platform-muted);
-  background: var(--cw-depth-card-bg);
-  box-shadow: var(--cw-depth-shadow-soft);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
   line-height: var(--ds-type-body-sm-line-height);
+}
+
+/* Reduced motion: offer/test tiles keep the hover surface change, lose the lift. */
+@media (prefers-reduced-motion: reduce) {
+  .programLink {
+    transition: none;
+  }
+
+  .programLink:hover {
+    transform: none;
+  }
 }

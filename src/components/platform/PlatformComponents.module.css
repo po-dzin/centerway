@@ -19,8 +19,8 @@
   gap: clamp(1rem, 2.8vw, 1.5rem);
   padding: clamp(1.2rem, 3vw, 1.8rem);
   border: 0;
-  background: var(--cw-depth-card-bg);
-  box-shadow: var(--cw-depth-shadow-medium);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-raised);
 }
 
 .diagnosticStage {
@@ -91,13 +91,13 @@
 
 .authModalClose:hover {
   color: var(--cw-platform-text);
-  background: var(--cw-surface-shell-hover-bg);
+  background: var(--cw-mat-tint-hover);
 }
 
 .authModalClose:focus-visible {
   outline: none;
   color: var(--cw-platform-text);
-  background: var(--cw-surface-shell-hover-bg);
+  background: var(--cw-mat-tint-hover);
   box-shadow: var(--platform-utility-control-focus);
 }
 
@@ -153,6 +153,158 @@
 .diagnosticHeroCard .card[data-tone="proof"] p,
 .diagnosticHeroCard .card[data-tone="proof"] li {
   color: color-mix(in srgb, var(--cw-platform-text) 70%, var(--cw-platform-muted) 30%);
+}
+
+/* Diagnostic flow (question -> loading -> result) shares the platform section
+   rhythm: one stage panel, one chip, one progress row, one action grid. */
+.diagnosticFlowStack {
+  display: grid;
+  gap: clamp(1.2rem, 2.8vw, 1.5rem);
+}
+
+.diagnosticFlowHead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* Chips are glass, cards are matte — this one was on the matte proof tone and
+   read as a flat sticker next to the hero badge's glass. */
+.diagnosticStepChip {
+  min-height: var(--ds-touch-target-min);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 1rem;
+  border: 0;
+  border-radius: 999px;
+  color: var(--cw-platform-text);
+  background-color: var(--cw-mat-tint);
+  background-image: var(--cw-mat-grain-image);
+  backdrop-filter: var(--cw-mat-filter);
+  box-shadow: var(--cw-mat-shadow-soft);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+  line-height: var(--ds-type-label-line-height);
+  text-transform: uppercase;
+}
+
+.diagnosticProgressRow {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.diagnosticProgressMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+  line-height: var(--ds-type-label-line-height);
+  /* Deliberately not uppercased: in the data font an uppercase "З" is
+     indistinguishable from "3", so "Питання 1 з 12" would read as "1 3 12". */
+}
+
+.diagnosticQuestionIntro {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.diagnosticOptionList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.diagnosticOption {
+  width: 100%;
+  min-height: var(--ds-touch-target-min);
+  padding: 0.75rem 1rem;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+  line-height: var(--ds-type-body-line-height);
+  text-align: left;
+}
+
+.diagnosticFlowFoot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.diagnosticLoadingStack {
+  display: grid;
+  justify-items: start;
+  gap: 1rem;
+  padding: 1.5rem 0;
+}
+
+.diagnosticSpinner {
+  width: 3rem;
+  height: 3rem;
+  border: 4px solid var(--cw-platform-border);
+  border-top-color: var(--cw-status-success);
+  border-radius: 999px;
+  animation: diagnosticSpin 900ms linear infinite;
+}
+
+@keyframes diagnosticSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diagnosticSpinner {
+    animation: none;
+  }
+
+  .diagnosticProgressBar {
+    transition: none;
+  }
+}
+
+.diagnosticResultActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.diagnosticResultActions > * {
+  width: 100%;
+}
+
+.diagnosticScoreRow {
+  font-family: var(--cw-font-data);
+  font-weight: 700;
+}
+
+.diagnosticErrorNote {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: var(--cw-radius-sm);
+  color: var(--cw-danger);
+  background: color-mix(in srgb, var(--cw-danger) 8%, var(--cw-platform-surface) 92%);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-line-height);
+}
+
+@media (max-width: 640px) {
+  .diagnosticResultActions {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .diagnosticNumberList {
@@ -422,10 +574,10 @@
 .profileHeroIdentityCard {
   padding: clamp(1.05rem, 2.8vw, 1.4rem);
   border-radius: var(--cw-card-radius);
-  background: var(--cw-surface-glass-bg);
-  box-shadow: var(--cw-surface-glass-shadow);
-  backdrop-filter: var(--cw-surface-glass-filter);
-  -webkit-backdrop-filter: var(--cw-surface-glass-filter);
+  background-color: var(--cw-mat-tint);
+  background-image: var(--cw-mat-grain-image);
+  box-shadow: var(--cw-mat-shadow-soft);
+  backdrop-filter: var(--cw-mat-filter);
 }
 
 .profileHeroIdentity {
@@ -457,7 +609,7 @@
   background:
     radial-gradient(circle at 36% 24%, color-mix(in srgb, var(--cw-sem-warmth) 44%, transparent), transparent 46%),
     color-mix(in srgb, var(--cw-platform-accent-contrast) 86%, transparent);
-  box-shadow: var(--cw-depth-shadow-strong);
+  box-shadow: var(--cw-mat-shadow-deep);
   font-family: var(--cw-font-data);
   font-size: 1.15rem;
   font-weight: 800;
@@ -481,8 +633,8 @@
   padding: 1rem 1.1rem;
   border-radius: var(--cw-radius-sm);
   color: var(--cw-platform-text);
-  background: var(--cw-depth-card-bg);
-  box-shadow: var(--cw-depth-shadow-soft);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
   border: 1px solid color-mix(in srgb, var(--cw-platform-border) 74%, transparent);
 }
 
@@ -491,15 +643,15 @@
 }
 
 .profileStatCard[data-tone="guide"] {
-  background: color-mix(in srgb, var(--cw-depth-support-bg) 84%, var(--cw-platform-surface) 16%);
+  background: color-mix(in srgb, var(--cw-mat-tone-support) 84%, var(--cw-platform-surface) 16%);
 }
 
 .profileStatCard[data-tone="support"] {
-  background: var(--cw-depth-card-bg);
+  background: var(--cw-mat-surface);
 }
 
 .profileStatCard[data-tone="proof"] {
-  background: var(--cw-depth-proof-bg);
+  background: var(--cw-mat-tone-proof);
 }
 
 .profileHeroActions {
@@ -526,7 +678,7 @@
   border-radius: var(--cw-radius-sm);
   color: var(--cw-platform-muted);
   background: var(--cw-platform-surface);
-  box-shadow: var(--cw-depth-shadow-soft);
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
 .profileSummaryList strong {

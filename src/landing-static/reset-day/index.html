@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<html lang="uk" data-cw-landing="reset-day" data-cw-page="reset-day">
+<html lang="uk" data-cw-landing="reset-day" data-cw-page="reset-day" data-cw-hero="photo">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <base href="/reset-day/">
-<link rel="preload" href="fonts/Formular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/Formular-Black.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="shortcut icon" href="img/cw-logo.png" type="image/png">
 <title>Розвантажувальний день — 3-денний міні-курс CenterWay</title>
 <meta name="description" content="Розвантажувальний день — 3-денний міні-курс: полегшений вечір, 1 основний день м'якого умовного голодування та м'який вихід. Щоб вийти з кола «стрес → їжа → провина», відчути легкість і повернути радість до їжі.">
@@ -14,12 +12,14 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Розвантажувальний день — 3-денний міні-курс CenterWay">
 <meta property="og:description" content="3 дні уваги до себе: полегшений вечір, основний розвантажувальний день і м'який вихід.">
-<meta property="og:image" content="https://centerway.net.ua/reset-day/img/hero-resetday-2026-06-27.jpeg">
+<meta property="og:image" content="https://centerway.net.ua/reset-day/img/hero-resetday-2026-08.jpg">
 <link rel="canonical" href="https://centerway.net.ua/reset-day">
+<link rel="stylesheet" href="/shared/css/platform-fonts.css">
+<link rel="stylesheet" href="/shared/css/cw-tokens.generated.css">
 <link rel="stylesheet" href="/shared/css/network-tokens.css">
 <link rel="stylesheet" href="/shared/css/landing.css">
 <link rel="stylesheet" href="page.css">
-<link rel="stylesheet" href="/shared/css/network-nav.css?v=20260714-4">
+<link rel="stylesheet" href="/shared/css/network-nav.css?v=20260817-1">
 <!-- TODO(placeholder): wire Meta Pixel + Clarity before ad traffic. -->
 </head>
 <body>
@@ -27,7 +27,7 @@
 <a id="top"></a>
 
 <!-- ============ NETWORK NAV (burger < 760px, topbar 760px+) ============ -->
-<header class="cwn cwn--suspended" data-cw-network-nav>
+<header class="cwn cwn--anchored" data-cw-network-nav>
   <div class="cwn__in">
     <a class="cwn__brand" href="#top">
       <img src="/shared/img/cw-logo-ink.png" alt="" aria-hidden="true">
@@ -36,9 +36,14 @@
     <button class="cwn__toggle" type="button" aria-expanded="false" aria-controls="cwn-menu" aria-label="Меню мережі CenterWay">
       <span></span><span></span><span></span>
     </button>
-    <nav class="cwn__menu" id="cwn-menu" aria-label="Мережа CenterWay">
-      <a href="https://way21.centerway.net.ua/">Шлях 21</a>
-      <a href="https://resetday.centerway.net.ua/" aria-current="page">Розвантажувальний день</a>
+    <nav class="cwn__menu" id="cwn-menu" aria-label="Навігація сторінкою">
+      <a href="#route">Маршрут</a>
+      <a href="#includes">Що входить</a>
+      <a href="#result">Результат</a>
+      <a href="#author">Автор</a>
+      <a href="#offer">Формат</a>
+      <a href="#faq">Питання</a>
+      <a class="cwn__sibling" href="#way21">Шлях 21</a>
     </nav>
   </div>
 </header>
@@ -51,7 +56,7 @@
         <div class="hero-visual">
           <div class="hv-stage">
             <span class="hv-glow"></span>
-            <img class="hv-photo hv-photo--stripe-focus" src="img/hero-resetday-2026-06-27.jpeg" width="1040" height="1280" loading="eager" fetchpriority="high" decoding="async" alt="Євгеній Корякін — м'який вхід у розвантажувальний день CenterWay">
+            <img class="hv-photo hv-photo--stripe-focus" src="img/hero-resetday-2026-08.webp" width="1040" height="1280" loading="eager" fetchpriority="high" decoding="async" alt="Євгеній Корякін — м'який вхід у розвантажувальний день CenterWay">
             <div class="hv-stat s1"><div class="lab">Формат</div><div class="val">3 дні</div></div>
             <div class="hv-stat s2"><div class="lab">Доступ</div><div class="val">назавжди</div></div>
           </div>
@@ -60,7 +65,7 @@
           <span class="hero-badge"><span class="dot"></span>Міні-курс · 3 дні</span>
           <div class="hero-copy">
             <h1>3 дні уваги до себе, щоб вийти з кола <em>стрес → їжа → провина</em></h1>
-            <p class="hero-sub">Розвантажувальний день — це 3-денний маршрут: полегшений вечір, один основний розвантажувальний день і м'який вихід. Ти видихаєш, прибираєш харчовий шум і повертаєш собі легкість без зривів та жорстких заборон.</p>
+            <p class="hero-sub">Полегшений вечір, один розвантажувальний день і м'який вихід — без зривів і жорстких заборон.</p>
           </div>
         </div>
       </div>
@@ -68,7 +73,6 @@
       <div class="hero-actions">
         <div class="hero-chips">
           <span>Без голоду й стресу</span>
-          <span>3 дні уваги до себе</span>
           <span>6 варіантів адаптації</span>
           <span>Підходить новачкам</span>
         </div>
@@ -116,7 +120,7 @@
 <!-- ============ SHIFT / SOLUTION ============ -->
 <section class="sec sec-alt">
   <div class="wrap">
-    <div class="shift reveal">
+    <div class="shift reveal" data-cw-nav-dark>
       <span class="kicker">Рішення</span>
       <h2>Повернути собі <em>легкість</em></h2>
       <p>Розвантажувальний день — це не голодування на силі волі. Це 3-денна м'яка стратегія: полегшений вхід напередодні, основний день умовного голодування та м'який вихід, щоб тіло відпочило від їжі, а ти повернув собі контроль — спокійно й без насильства.</p>
@@ -146,7 +150,7 @@
 </section>
 
 <!-- ============ 3 STEPS ============ -->
-<section class="sec">
+<section id="route" class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Маршрут міні-курсу · 3 дні</span>
@@ -190,7 +194,7 @@
 </section>
 
 <!-- ============ INCLUDED ============ -->
-<section class="sec sec-alt">
+<section id="includes" class="sec sec-alt">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Що входить</span>
@@ -222,7 +226,7 @@
 </section>
 
 <!-- ============ RESULTS ============ -->
-<section class="sec">
+<section id="result" class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Що ти відчуєш</span>
@@ -248,10 +252,10 @@
 </section>
 
 <!-- ============ AUTHOR ============ -->
-<section class="sec sec-alt">
+<section id="author" class="sec sec-alt">
   <div class="wrap">
     <div class="author reveal">
-      <div class="author-photo"><img src="img/curator-photo.webp" width="800" height="1200" loading="lazy" decoding="async" alt="Євгеній Корякін — засновник центру CenterWay"></div>
+      <div class="author-photo"><img src="/shared/img/author-evgeniy-2026-08.webp" width="1040" height="1280" loading="lazy" decoding="async" alt="Євгеній Корякін — засновник центру CenterWay"></div>
       <div>
         <span class="kicker">Автор методу</span>
         <h2 class="a-name">Євгеній Корякін</h2>
@@ -283,6 +287,9 @@
           <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/no-hunger-20221119.jpg" alt="Відгук: очікування голоду, який не настав." loading="lazy" decoding="async"></figure>
           <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/food-freedom-20220209.jpg" alt="Відгук: менше напруги навколо їжі та добре самопочуття." loading="lazy" decoding="async"></figure>
           <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/repeat-program-20240719.jpg" alt="Відгук: програму хочеться повторити." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/energy-20260118.jpg" alt="Відгук: швидкий приплив енергії та гарний настрій після ранкової практики." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/screenshot_20221119-094959_telegram.webp" alt="Щоденник учасниці: чекала на відчуття голоду, а його не було." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/screenshot_20220713-154637_chrome.webp" alt="Відгук: після однієї практики — приплив енергії та відчуття полегшення." loading="lazy" decoding="async"></figure>
         </div>
         <button class="testimonial-carousel__nav testimonial-carousel__nav--next" type="button" data-carousel-next aria-label="Наступний відгук"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
       </div>
@@ -322,7 +329,7 @@
 <!-- ============ OFFER ============ -->
 <section class="sec sec-alt" id="offer">
   <div class="wrap">
-    <div class="offer reveal">
+    <div class="offer reveal" data-cw-nav-dark>
       <span class="guard">Гарантія м'якого старту</span>
       <h2>Подаруй собі <em>3 дні</em> турботи про себе</h2>
       <p>За ціною однієї вечері в кафе ти отримуєш 3-денний маршрут, який можна повторювати все життя — щоразу, коли треба перезавантажитись.</p>
@@ -337,7 +344,7 @@
 </section>
 
 <!-- ============ FAQ ============ -->
-<section class="sec">
+<section id="faq" class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Питання й відповіді</span>
@@ -364,7 +371,7 @@
 </section>
 
 <!-- ============ WAY21 NEXT STEP (network bridge — after FAQ, before footer) ============ -->
-<section class="sec sec-alt">
+<section id="way21" class="sec sec-alt">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Що далі</span>
@@ -387,12 +394,12 @@
 </section>
 
 <!-- ============ FOOTER ============ -->
-<footer class="footer">
+<footer class="footer" data-cw-nav-dark>
   <div class="wrap">
     <div class="footer-top">
       <div class="footer-col">
         <a href="#top" class="brand">
-          <img src="/shared/img/cw-logo-gold.png" alt="" class="brand-mark" width="38" height="38" loading="lazy" decoding="async" aria-hidden="true">
+          <img src="/shared/img/cw-logo-gold.png" alt="" class="brand-mark" width="36" height="36" loading="lazy" decoding="async" aria-hidden="true">
           CenterWay
         </a>
         <p>Розвантажувальний день — 3-денний міні-курс, щоб вийти з кола стрес–їжа–провина й повернути собі легкість.</p>
@@ -468,7 +475,7 @@ document.querySelectorAll('.acc').forEach(group=>{
 <!-- checkout + attribution wiring (same flow as /irem): .openModal -> /api/pay/start?product=reset-day -->
 <script src="js/common.js" async></script>
 <script src="/shared/js/testimonial-carousel.js?v=20260714-1" defer></script>
-<script src="/shared/js/network-nav.js?v=20260714-4" defer></script>
+<script src="/shared/js/network-nav.js?v=20260817-1" defer></script>
 <script src="/shared/js/proof.js" defer></script>
 </body>
 </html>

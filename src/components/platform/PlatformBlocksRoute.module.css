@@ -26,14 +26,14 @@
   border-radius: var(--cw-card-radius);
   color: var(--cw-platform-text);
   text-decoration: none;
-  background: var(--cw-depth-card-bg);
-  box-shadow: var(--cw-depth-shadow-soft);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
   transition: transform 160ms ease, box-shadow 160ms ease;
 }
 
 .routeChoiceCard:hover {
   transform: translateY(-1px);
-  box-shadow: var(--cw-depth-shadow-medium);
+  box-shadow: var(--cw-mat-shadow-raised);
 }
 
 .routeChoiceCard strong,
@@ -63,8 +63,8 @@
   padding: 1rem;
   border-radius: var(--cw-card-radius);
   text-decoration: none;
-  background: var(--cw-depth-card-bg);
-  box-shadow: var(--cw-depth-shadow-soft);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
 .textImageCard h3 {
@@ -146,7 +146,7 @@
 .mockVisual[data-visual="method"] {
   background:
     var(--cw-sem-symbol-body),
-    linear-gradient(135deg, var(--cw-platform-surface-muted), var(--cw-depth-support-bg));
+    linear-gradient(135deg, var(--cw-platform-surface-muted), var(--cw-mat-tone-support));
 }
 
 .lineIcon {
@@ -155,7 +155,7 @@
   display: block;
   border: 1px solid color-mix(in srgb, var(--cw-platform-accent) 54%, transparent);
   border-radius: 50%;
-  background-color: var(--cw-depth-icon-slot-bg);
+  background-color: var(--cw-mat-tone-icon);
   box-shadow:
     inset 0 0 0 1px color-mix(in srgb, var(--cw-platform-accent-contrast) 22%, transparent),
     0 10px 24px color-mix(in srgb, var(--cw-platform-text) 7%, transparent);
@@ -199,7 +199,7 @@
     linear-gradient(var(--cw-platform-accent), var(--cw-platform-accent)) 50% 78% / 1px 18% no-repeat,
     linear-gradient(90deg, var(--cw-platform-accent), var(--cw-platform-accent)) 22% 50% / 18% 1px no-repeat,
     linear-gradient(90deg, var(--cw-platform-accent), var(--cw-platform-accent)) 78% 50% / 18% 1px no-repeat,
-    var(--cw-depth-icon-slot-bg);
+    var(--cw-mat-tone-icon);
 }
 
 .lineIcon[data-icon="guide"] {
@@ -210,5 +210,5 @@
     linear-gradient(135deg, transparent 46%, var(--cw-platform-accent) 47% 51%, transparent 52%) 58% 76% / 20% 18% no-repeat,
     radial-gradient(circle at 38% 38%, var(--cw-platform-accent) 0 0.06rem, transparent 0.08rem),
     radial-gradient(circle at 64% 52%, var(--cw-platform-accent) 0 0.06rem, transparent 0.08rem),
-    var(--cw-depth-icon-slot-bg);
+    var(--cw-mat-tone-icon);
 }

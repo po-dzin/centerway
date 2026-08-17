@@ -32,21 +32,27 @@
   width: min(100% - 2rem, var(--cw-max-width));
   margin: 0 auto;
   overflow: clip;
-  isolation: isolate;
+  /* No `isolation: isolate` here, and it must not come back. Per spec, isolation
+     creates a Backdrop Root, which makes any backdrop-filter inside this element
+     sample nothing — one of the two reasons the topbar's frost never actually
+     rendered and a blurred photo was once faked behind it. (The other: a
+     hand-written `-webkit-backdrop-filter` line, which lightningcss collapsed
+     the standard property into, and Blink no longer honours that alias. Never
+     hand-write the prefix; the build adds it when a target needs it.) */
   --platform-header-fg: var(--cw-platform-text);
-  --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-text) 72%, transparent);
-  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-text) 62%, var(--cw-platform-bg) 38%);
+  --platform-header-muted-fg: var(--cw-platform-text);
+  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-text) 86%, transparent);
   --platform-header-nav-active-fg: var(--cw-platform-text);
   --platform-header-nav-marker: var(--cw-platform-accent);
   --platform-header-nav-marker-shadow:
     0 0 0 0.36rem color-mix(in srgb, var(--cw-platform-accent) 14%, transparent);
   --platform-header-symbol-filter: brightness(0) saturate(100%) opacity(0.96);
-  --platform-header-hover-bg: var(--cw-surface-shell-hover-bg);
-  --platform-header-band-bg: var(--cw-surface-shell-band-bg);
-  --platform-header-control-bg: var(--cw-surface-shell-control-bg);
-  --platform-header-popover-bg: var(--cw-surface-shell-popover-bg);
-  --platform-header-sheet-shadow: 0 12px 30px color-mix(in srgb, var(--cw-platform-text) 7%, transparent);
-  --platform-header-sheet-filter: blur(20px) saturate(1.08) brightness(1.02);
+  --platform-header-hover-bg: var(--cw-mat-tint-hover);
+  --platform-header-band-bg: var(--cw-mat-tint-chrome);
+  --platform-header-control-bg: var(--cw-mat-tint-chrome);
+  --platform-header-popover-bg: var(--cw-mat-surface);
+  --platform-header-sheet-shadow: var(--cw-mat-shadow-soft);
+  --platform-header-sheet-filter: var(--cw-mat-filter);
   --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-dark);
   --platform-header-shell-radius: clamp(1.45rem, 2vw, 1.7rem);
   --platform-utility-control-size: 3rem;
@@ -55,46 +61,47 @@
     0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
   border: 0;
   border-radius: var(--platform-header-shell-radius);
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  box-shadow: var(--platform-header-sheet-shadow);
 }
 
+/* The topbar is tone-managed: headerTone samples what is actually behind it and
+   flips the palette at luminance 0.34. Its backdrop is therefore bounded, not
+   arbitrary, so it keeps the transparent chrome tint instead of the media floor —
+   and pays for that by running its labels at full strength rather than
+   translucent. Both halves are asserted in scripts/guard-contrast.mjs. */
 .header[data-cw-header-tone="dark"] {
+  --platform-header-band-bg: var(--cw-mat-tint-chrome);
+  --platform-header-control-bg: var(--cw-mat-tint-chrome);
   --platform-header-fg: var(--cw-platform-accent-contrast);
-  --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
-  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 74%, transparent);
+  --platform-header-muted-fg: var(--cw-platform-accent-contrast);
+  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 90%, transparent);
   --platform-header-nav-active-fg: var(--cw-platform-accent-contrast);
   --platform-header-nav-marker: var(--cw-platform-accent);
   --platform-header-nav-marker-shadow:
     0 0 0 0.42rem color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
   --platform-header-symbol-filter: none;
-  --platform-header-hover-bg: color-mix(in srgb, var(--cw-platform-text) 28%, transparent);
-  --platform-header-band-bg: color-mix(in srgb, var(--cw-platform-text) 14%, transparent);
-  --platform-header-control-bg: color-mix(in srgb, var(--cw-platform-text) 20%, transparent);
-  --platform-header-popover-bg: color-mix(in srgb, var(--cw-platform-text) 34%, var(--cw-platform-surface) 66%);
-  --platform-header-sheet-shadow: 0 14px 30px color-mix(in srgb, var(--cw-platform-text) 11%, transparent);
-  --platform-header-sheet-filter: blur(22px) saturate(1.1) brightness(0.99);
+  --platform-header-hover-bg: var(--cw-mat-tint-hover);
+  --platform-header-popover-bg: var(--cw-mat-surface);
+  --platform-header-sheet-shadow: var(--cw-mat-shadow-soft);
   --platform-header-wordmark-image: var(--cw-brand-asset-wordmark-light);
 }
 
-.header[data-cw-glass="shell"]::before,
-.header[data-cw-glass="shell"]::after {
+/* The band lives on ::before, not on .header, and that placement is load-bearing:
+   backdrop-filter makes an element a containing block for fixed-position
+   descendants, and the mobile menu is a fixed layer inside this header. Put the
+   blur on .header and the full-screen menu collapses to the height of the bar.
+   A pseudo-element blurs the same pixels without becoming that containing block.
+   The grain rides in the same layer so the material stays matte, not plastic. */
+.header[data-cw-glass="shell"]::before {
   content: "";
   position: absolute;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
-  box-shadow: var(--platform-header-sheet-shadow);
-  backdrop-filter: var(--platform-header-sheet-filter);
-  -webkit-backdrop-filter: var(--platform-header-sheet-filter);
-}
-
-.header[data-cw-glass="shell"]::before {
-  inset: 0;
-  height: 100%;
   border-radius: inherit;
-  background: var(--platform-header-band-bg);
+  background-color: var(--platform-header-band-bg);
+  background-image: var(--cw-mat-grain-image);
+  backdrop-filter: var(--platform-header-sheet-filter);
 }
 
 .header[data-cw-glass="shell"]::after {
@@ -108,37 +115,34 @@
   left: 0;
   width: min(100% - 2rem, var(--cw-max-width));
   --platform-header-fg: var(--cw-platform-accent-contrast);
-  --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
-  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 74%, transparent);
+  --platform-header-muted-fg: var(--cw-platform-accent-contrast);
+  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 90%, transparent);
   --platform-header-nav-active-fg: var(--cw-platform-accent-contrast);
   --platform-header-nav-marker: var(--cw-platform-accent);
   --platform-header-nav-marker-shadow:
     0 0 0 0.42rem color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
   --platform-header-symbol-filter: none;
-  --platform-header-hover-bg: color-mix(in srgb, var(--cw-platform-text) 28%, transparent);
-  --platform-header-band-bg: color-mix(in srgb, var(--cw-platform-text) 14%, transparent);
-  --platform-header-control-bg: color-mix(in srgb, var(--cw-platform-text) 20%, transparent);
-  --platform-header-popover-bg: color-mix(in srgb, var(--cw-platform-text) 34%, var(--cw-platform-surface) 66%);
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  --platform-header-hover-bg: var(--cw-mat-tint-hover);
+  /* Overlay mode always floats over hero media, so both tones take the media
+     tint floor; only the palette differs, which the tone scope supplies. */
+  --platform-header-band-bg: var(--cw-mat-tint-chrome);
+  --platform-header-control-bg: var(--cw-mat-tint-chrome);
+  --platform-header-popover-bg: var(--cw-mat-surface);
 }
 
 .shellOverlay .header[data-cw-header-tone="light"] {
   --platform-header-fg: var(--cw-platform-text);
-  --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-text) 72%, transparent);
-  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-text) 62%, var(--cw-platform-bg) 38%);
+  --platform-header-muted-fg: var(--cw-platform-text);
+  --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-text) 86%, transparent);
   --platform-header-nav-active-fg: var(--cw-platform-text);
   --platform-header-nav-marker: var(--cw-platform-accent);
   --platform-header-nav-marker-shadow:
     0 0 0 0.36rem color-mix(in srgb, var(--cw-platform-accent) 14%, transparent);
   --platform-header-symbol-filter: brightness(0) saturate(100%) opacity(0.96);
-  --platform-header-hover-bg: var(--cw-surface-shell-hover-bg);
-  --platform-header-band-bg: var(--cw-surface-shell-band-bg);
-  --platform-header-control-bg: var(--cw-surface-shell-control-bg);
-  --platform-header-popover-bg: var(--cw-surface-shell-popover-bg);
+  --platform-header-hover-bg: var(--cw-mat-tint-hover);
+  --platform-header-band-bg: var(--cw-mat-tint-chrome);
+  --platform-header-control-bg: var(--cw-mat-tint-chrome);
+  --platform-header-popover-bg: var(--cw-mat-surface);
 }
 
 .shellOverlay > main:not(:has(> [class*="heroFeature"]:first-child)) {
@@ -167,7 +171,7 @@
 .shellOverlay .ghostButton {
   border-color: color-mix(in srgb, var(--cw-platform-accent-contrast) 36%, transparent);
   color: var(--cw-platform-accent-contrast);
-  background: var(--cw-surface-shell-control-bg);
+  background: var(--cw-mat-inverse-control);
 }
 
 .headerInner {
@@ -200,7 +204,6 @@
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
 }
 
 .brandSymbol {
@@ -226,7 +229,6 @@
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
 }
 
 .brand[data-surface="footer"] .brandSymbol {
@@ -268,7 +270,6 @@
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
 }
 
 .nav a,
@@ -403,7 +404,6 @@
   background: transparent;
   box-shadow: none;
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
   font: inherit;
   font-weight: 750;
   text-decoration: none;
@@ -493,7 +493,6 @@
   background: var(--platform-header-popover-bg);
   box-shadow: var(--platform-header-sheet-shadow);
   backdrop-filter: var(--platform-header-sheet-filter);
-  -webkit-backdrop-filter: var(--platform-header-sheet-filter);
 }
 
 .profileMenu p {
@@ -549,7 +548,6 @@
   background-image: none;
   box-shadow: none;
   backdrop-filter: none;
-  -webkit-backdrop-filter: none;
   outline: none;
   transition:
     color 180ms ease,
@@ -603,22 +601,23 @@
   border: 0;
   color: var(--cw-platform-text);
   background: var(--cw-platform-surface);
-  box-shadow: var(--cw-depth-shadow-soft);
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
+/* Gold family end to end — the ramp used to run into --cw-platform-accent-strong
+   (the dark green), which is what made this read as a different, older yellow.
+   Both stops and the ink label are asserted in guard-contrast.mjs. */
 .primaryButton {
   border: 0;
-  color: var(--cw-platform-accent-contrast);
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--cw-platform-accent) 78%, var(--cw-platform-accent-strong) 22%),
-    var(--cw-platform-accent-strong)
-  );
+  color: var(--cw-platform-on-accent);
+  background: linear-gradient(135deg, var(--cw-platform-accent), var(--cw-platform-accent-pressed));
   box-shadow: 0 16px 30px color-mix(in srgb, var(--cw-platform-accent) 20%, transparent);
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
 .primaryButton:hover {
   transform: translateY(-1px);
+  background: linear-gradient(135deg, var(--cw-platform-accent-pressed), color-mix(in srgb, var(--cw-platform-accent-pressed) 86%, var(--cw-platform-on-accent)));
   box-shadow: 0 20px 32px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent);
 }
 
@@ -633,14 +632,14 @@
   outline: none;
   box-shadow:
     0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 28%, transparent),
-    var(--cw-depth-shadow-soft);
+    var(--cw-mat-shadow-soft);
 }
 
 .secondaryButton:hover,
 .ghostButton:hover {
   transform: translateY(-1px);
   background: color-mix(in srgb, var(--cw-platform-surface) 72%, var(--cw-platform-surface-muted) 28%);
-  box-shadow: var(--cw-depth-shadow-medium);
+  box-shadow: var(--cw-mat-shadow-raised);
 }
 
 .secondaryButton:active,
@@ -667,8 +666,8 @@
 .formPanel {
   border: 0;
   border-radius: var(--cw-card-radius);
-  background: var(--cw-depth-card-bg);
-  box-shadow: var(--cw-depth-shadow-soft);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
 .panel,
@@ -677,4 +676,20 @@
   align-content: start;
   gap: clamp(0.9rem, 2.4vw, 1.15rem);
   min-width: 0;
+}
+
+/* Reduced motion: platform buttons keep their colour/shadow states, lose the lift. */
+@media (prefers-reduced-motion: reduce) {
+  .ghostButton,
+  .primaryButton,
+  .secondaryButton {
+    transition: none;
+  }
+
+  .primaryButton:hover,
+  .primaryButton:active,
+  .secondaryButton:hover,
+  .ghostButton:hover {
+    transform: none;
+  }
 }

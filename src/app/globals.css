@@ -117,11 +117,10 @@
     --cw-sem-embodied: #6e8668;
     --cw-sem-progress: #c1906b;
     --cw-sem-warmth: #dba54f;
+    --cw-sem-warmth-strong: #c2902f;
+    --cw-sem-on-warmth: #0d1b17;
     --cw-sem-boundary: #b76045;
     --cw-sem-trust: #35535f;
-    /* Symbol stays the original CenterWay figure emblem; the wordmark carries
-       the new identity's "CenterWay" + MOVE · BALANCE · GROW tagline.
-       Wordmark aspect 541.3:129.3 ≈ 4.19 — keep width/height in that ratio. */
     --cw-brand-asset-logo-symbol: url("/cw/brand/cw-symbol-centered-v9.png");
     --cw-brand-asset-logo-symbol-header: url("/cw/brand/cw-symbol-centered-v9.png");
     --cw-brand-asset-wordmark-dark: url("/cw/brand/cw-wordmark-dark.svg");
@@ -137,26 +136,6 @@
     --cw-sem-symbol-body: radial-gradient(circle at 32% 34%, color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent), transparent 44%), radial-gradient(circle at 70% 68%, color-mix(in srgb, var(--cw-sem-embodied) 16%, transparent), transparent 48%);
     --cw-sem-symbol-cleansing: linear-gradient(180deg, color-mix(in srgb, var(--cw-sem-calm-surface) 62%, transparent), color-mix(in srgb, var(--cw-sem-calm-bg) 88%, transparent));
     --cw-sem-symbol-integration: linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-warmth) 16%, transparent), color-mix(in srgb, var(--cw-sem-calm-surface-muted) 92%, transparent));
-    --cw-surface-glass-bg: var(--cw-component-glass-bg);
-    --cw-surface-glass-bg-hover: var(--cw-component-glass-bg-hover);
-    --cw-surface-glass-border: var(--cw-component-glass-border);
-    --cw-surface-glass-filter: var(--cw-component-glass-filter);
-    --cw-surface-glass-shadow: var(--cw-component-glass-shadow);
-    --cw-surface-shell-band-bg: var(--cw-surface-glass-bg);
-    --cw-surface-shell-control-bg: var(--cw-surface-glass-bg);
-    --cw-surface-shell-hover-bg: var(--cw-surface-glass-bg-hover);
-    --cw-surface-shell-popover-bg: color-mix(in srgb, var(--cw-surface-glass-bg) 86%, var(--cw-platform-surface) 14%);
-    --cw-shell-frost-bg: var(--cw-component-glass-bg);
-    --cw-shell-frost-filter: var(--cw-component-glass-filter);
-    --cw-depth-card-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 92%, var(--cw-sem-calm-surface-muted) 8%);
-    --cw-depth-support-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 88%, var(--cw-sem-calm-surface-muted) 12%);
-    --cw-depth-proof-bg: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-sem-calm-surface) 38%);
-    --cw-depth-boundary-bg: color-mix(in srgb, var(--cw-sem-boundary) 10%, var(--cw-sem-calm-surface) 90%);
-    --cw-depth-icon-slot-bg: color-mix(in srgb, var(--cw-sem-warmth) 9%, var(--cw-sem-calm-surface) 91%);
-    --cw-depth-rail-color: var(--cw-sem-progress);
-    --cw-depth-shadow-soft: 0 14px 35px rgba(35, 29, 20, 0.08);
-    --cw-depth-shadow-medium: 0 18px 42px rgba(35, 29, 20, 0.12);
-    --cw-depth-shadow-strong: 0 24px 48px rgba(24, 20, 14, 0.16);
     --cw-platform-bg: var(--cw-sem-calm-bg);
     --cw-platform-surface: var(--cw-sem-calm-surface);
     --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
@@ -165,15 +144,38 @@
     --cw-platform-border: color-mix(in srgb, var(--cw-sem-progress) 38%, var(--cw-platform-bg) 62%);
     --cw-platform-accent: var(--cw-sem-warmth);
     --cw-platform-accent-strong: var(--cw-sem-guide-strong);
+    --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
+    --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8eb;
-    --cw-component-glass-bg: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
-    --cw-component-glass-bg-hover: color-mix(in srgb, var(--cw-platform-text) 42%, transparent);
-    --cw-component-glass-border: transparent;
-    --cw-component-glass-blur: 84px;
-    --cw-component-glass-filter: blur(var(--cw-component-glass-blur)) saturate(1.36) brightness(0.92);
-    --cw-component-glass-shadow: 0 12px 28px color-mix(in srgb, var(--cw-platform-text) 20%, transparent);
-    --cw-component-glass-frost-image: url("/shared/img/consult-hero-evgeniy.jpeg");
-    --cw-component-glass-frost-position: 38% center;
+    --cw-mat-surface: color-mix(in srgb, var(--cw-sem-calm-surface) 94%, var(--cw-sem-warmth) 6%);
+    --cw-mat-surface-sunk: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-mat-surface) 38%);
+    --cw-mat-tint: color-mix(in srgb, var(--cw-mat-surface) 76%, transparent);
+    --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
+    --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 86%, transparent);
+    --cw-mat-tint-chrome: color-mix(in srgb, var(--cw-mat-surface) 55%, transparent);
+    --cw-mat-tint-floor: 76%;
+    --cw-mat-tint-media-floor: 86%;
+    --cw-mat-tint-chrome-floor: 55%;
+    --cw-mat-blur: 34px;
+    --cw-mat-saturate: 1.18;
+    --cw-mat-filter: blur(var(--cw-mat-blur)) saturate(var(--cw-mat-saturate));
+    --cw-mat-stroke: color-mix(in srgb, #ffffff 55%, transparent);
+    --cw-mat-stroke-inner: color-mix(in srgb, #0d1b17 8%, transparent);
+    --cw-mat-shadow-soft: 0 1px 2px rgba(35, 29, 20, 0.05), 0 10px 28px rgba(35, 29, 20, 0.07);
+    --cw-mat-shadow-raised: 0 2px 6px rgba(35, 29, 20, 0.07), 0 24px 56px rgba(35, 29, 20, 0.12);
+    --cw-mat-shadow-deep: 0 3px 8px rgba(24, 20, 14, 0.09), 0 32px 64px rgba(24, 20, 14, 0.16);
+    --cw-mat-tone-support: color-mix(in srgb, var(--cw-mat-surface) 88%, var(--cw-sem-calm-surface-muted) 12%);
+    --cw-mat-tone-proof: color-mix(in srgb, var(--cw-mat-surface) 62%, var(--cw-sem-calm-surface-muted) 38%);
+    --cw-mat-tone-boundary: color-mix(in srgb, var(--cw-mat-surface) 90%, var(--cw-sem-boundary) 10%);
+    --cw-mat-tone-icon: color-mix(in srgb, var(--cw-mat-surface) 91%, var(--cw-sem-warmth) 9%);
+    --cw-mat-grain-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    --cw-mat-inverse-bg: linear-gradient(165deg, #173027, #274a3c);
+    --cw-mat-inverse-glass: color-mix(in srgb, #ffffff 8%, transparent);
+    --cw-mat-inverse-control: color-mix(in srgb, #0d1b17 34%, transparent);
+    --cw-mat-inverse-control-hover: color-mix(in srgb, #0d1b17 44%, transparent);
+    --cw-mat-inverse-stroke: color-mix(in srgb, #ffffff 18%, transparent);
+    --cw-mat-inverse-text: #f3efe6;
+    --cw-mat-inverse-text-muted: color-mix(in srgb, #f3efe6 78%, transparent);
     --cw-branch-grid-discipline: 1;
     /* CW_RUNTIME_TOKENS_END */
 
@@ -354,6 +356,75 @@
     /* DS_ALIAS_DARK_END */
 
   }
+
+  /* Dark theme scopes — deliberately two selectors, not one.
+
+     `.dark` is admin chrome. ThemeSwitcher writes it onto <html> and persists it
+     in localStorage, so during a client-side session it survives navigation out
+     of /admin onto public routes. Public surfaces therefore must NOT key their
+     palette off `.dark`, or an admin visit would silently darken the whole site.
+
+     `[data-cw-theme="dark"]` is the public platform's own dark scope. Nothing
+     sets it yet — the palette is authored and gated, not shipped half-on.
+
+     The material is shared by both: admin and public render the same surfaces.
+
+     `[data-cw-header-tone="dark"]` is the third selector and not a theme at all —
+     it is a local context. The topbar measures what it floats over and, when
+     that is a dark hero, switches its own material to the night side while the
+     page around it stays light. One material, scoped; not a second recipe. */
+  .dark,
+  [data-cw-theme="dark"],
+  [data-cw-header-tone="dark"] {
+    /* CW_MATERIAL_DARK_START */
+    --cw-mat-surface: color-mix(in srgb, #16261f 94%, var(--cw-sem-warmth) 6%);
+    --cw-mat-surface-sunk: color-mix(in srgb, #0f1c18 62%, var(--cw-mat-surface) 38%);
+    --cw-mat-tint: color-mix(in srgb, var(--cw-mat-surface) 76%, transparent);
+    --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
+    --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 86%, transparent);
+    --cw-mat-tint-chrome: color-mix(in srgb, var(--cw-mat-surface) 55%, transparent);
+    --cw-mat-tint-floor: 76%;
+    --cw-mat-tint-media-floor: 86%;
+    --cw-mat-tint-chrome-floor: 55%;
+    --cw-mat-blur: 34px;
+    --cw-mat-saturate: 1.18;
+    --cw-mat-filter: blur(var(--cw-mat-blur)) saturate(var(--cw-mat-saturate));
+    --cw-mat-stroke: color-mix(in srgb, #ffffff 14%, transparent);
+    --cw-mat-stroke-inner: color-mix(in srgb, #ffffff 4%, transparent);
+    --cw-mat-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+    --cw-mat-shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.35), 0 28px 60px rgba(0, 0, 0, 0.5);
+    --cw-mat-shadow-deep: 0 3px 8px rgba(0, 0, 0, 0.4), 0 32px 68px rgba(0, 0, 0, 0.55);
+    --cw-mat-tone-support: color-mix(in srgb, var(--cw-mat-surface) 88%, #ffffff 12%);
+    --cw-mat-tone-proof: color-mix(in srgb, var(--cw-mat-surface) 78%, #ffffff 22%);
+    --cw-mat-tone-boundary: color-mix(in srgb, var(--cw-mat-surface) 84%, var(--cw-sem-boundary) 16%);
+    --cw-mat-tone-icon: color-mix(in srgb, var(--cw-mat-surface) 86%, var(--cw-sem-warmth) 14%);
+    --cw-mat-grain-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    --cw-mat-inverse-bg: linear-gradient(165deg, #173027, #274a3c);
+    --cw-mat-inverse-glass: color-mix(in srgb, #ffffff 8%, transparent);
+    --cw-mat-inverse-control: color-mix(in srgb, #0d1b17 34%, transparent);
+    --cw-mat-inverse-control-hover: color-mix(in srgb, #0d1b17 44%, transparent);
+    --cw-mat-inverse-stroke: color-mix(in srgb, #ffffff 22%, transparent);
+    --cw-mat-inverse-text: #f3efe6;
+    --cw-mat-inverse-text-muted: color-mix(in srgb, #f3efe6 78%, transparent);
+    /* CW_MATERIAL_DARK_END */
+  }
+
+  /* Public platform dark palette. Scoped away from `.dark` on purpose (above). */
+  [data-cw-theme="dark"] {
+    /* CW_PLATFORM_DARK_START */
+    --cw-platform-bg: #0f1c18;
+    --cw-platform-surface: #16261f;
+    --cw-platform-surface-muted: #1e3128;
+    --cw-platform-text: #eef2ec;
+    --cw-platform-muted: color-mix(in srgb, var(--cw-platform-text) 68%, var(--cw-platform-bg) 32%);
+    --cw-platform-border: color-mix(in srgb, var(--cw-platform-text) 16%, var(--cw-platform-bg) 84%);
+    --cw-platform-accent: var(--cw-sem-warmth);
+    --cw-platform-accent-strong: #7ea593;
+    --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
+    --cw-platform-on-accent: var(--cw-sem-on-warmth);
+    --cw-platform-accent-contrast: #0d1b17;
+    /* CW_PLATFORM_DARK_END */
+  }
 }
 
 body {
@@ -364,87 +435,119 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-[data-cw-glass] {
+/* ── Material (M0 matte / M1 glass) ───────────────────────────────────────────
+   The tactile surface layer. Values come from cw.tokens.json → layers.material
+   (light in :root, dark in .dark); this recipe is the hand-maintained shape of
+   the material, not its palette. Nothing renders it until a component opts in
+   with data-cw-material, so adding it changes no existing surface.
+
+     data-cw-material="matte"       M0 — opaque warm ground. Reading surfaces,
+                                    forms, dense text. No blur, no cost.
+     data-cw-material="glass"       M1 over the page canvas. Topbar, cards,
+                                    chips. Carries body and muted text.
+     data-cw-material="glass-media" M1 over a photo. Higher tint floor; muted
+                                    text here must be large/semibold
+                                    (see scripts/guard-contrast.mjs).
+     data-cw-material="inverse"     the dark mineral panel (offer blocks) —
+                                    same material, night side.
+
+   Rules that keep it honest: one glass depth only (no nesting glass in glass),
+   and every glass degrades to its own opaque tint when the browser can't blur
+   or the reader asked for less transparency. */
+[data-cw-material] {
   position: relative;
   isolation: isolate;
-  backdrop-filter: blur(var(--cw-component-glass-blur)) saturate(1.28) brightness(0.96);
-  -webkit-backdrop-filter: blur(var(--cw-component-glass-blur)) saturate(1.28) brightness(0.96);
+  border: 1px solid var(--cw-mat-stroke);
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
-[data-cw-glass]::before {
+[data-cw-material="matte"] {
+  background-color: var(--cw-mat-surface);
+}
+
+[data-cw-material="glass"],
+[data-cw-material="glass-media"] {
+  backdrop-filter: var(--cw-mat-filter);
+}
+
+[data-cw-material="glass"] {
+  background-color: var(--cw-mat-tint);
+}
+
+[data-cw-material="glass-media"] {
+  background-color: var(--cw-mat-tint-media);
+  box-shadow: var(--cw-mat-shadow-raised);
+}
+
+[data-cw-material="glass"]:where(a, button):hover,
+[data-cw-material="glass"]:where(a, button):focus-visible {
+  background-color: var(--cw-mat-tint-hover);
+}
+
+[data-cw-material="inverse"] {
+  background: var(--cw-mat-inverse-bg);
+  border-color: var(--cw-mat-inverse-stroke);
+  box-shadow: var(--cw-mat-shadow-raised);
+  color: var(--cw-mat-inverse-text);
+}
+
+/* Grain — what reads as "matte" rather than "plastic". Sits above the surface
+   and below the content, never intercepts pointer events. */
+[data-cw-material]::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   border-radius: inherit;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--cw-platform-text) 12%, transparent) 0%,
-      color-mix(in srgb, var(--cw-platform-text) 6%, transparent) 42%,
-      transparent 100%
-    ),
-    radial-gradient(
-      circle at 18% 0%,
-      color-mix(in srgb, var(--cw-platform-accent) 10%, transparent) 0%,
-      transparent 58%
-    );
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cw-platform-accent-contrast) 10%, transparent);
+  background-image: var(--cw-mat-grain-image);
+  box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-inner);
 }
 
-[data-cw-glass]::after {
-  content: none;
-}
-
-[data-cw-glass="menu"]::after {
-  content: "";
-  position: absolute;
-  inset: -16px;
+[data-cw-material] > * {
+  position: relative;
   z-index: 1;
-  pointer-events: none;
-  border-radius: inherit;
-  opacity: 0.2;
-  background-image: var(--cw-component-glass-frost-image);
-  background-size: cover;
-  background-position: var(--cw-component-glass-frost-position);
-  filter: blur(26px) saturate(1.08);
-  transform: scale(1.06);
 }
 
-[data-cw-glass="menu"]::before {
-  content: none;
+/* Degrade to the opaque tint wherever the blur can't be paid for or isn't
+   wanted. The tint floors are chosen so text contrast holds either way. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-cw-material="glass"],
+  [data-cw-material="glass-media"] {
+    background-color: var(--cw-mat-surface);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  [data-cw-material="glass"],
+  [data-cw-material="glass-media"] {
+    backdrop-filter: none;
+    background-color: var(--cw-mat-surface);
+  }
+}
+
+/* ── Legacy shell glass ───────────────────────────────────────────────────────
+   Superseded by [data-cw-material]. What remains is the sheen and the stacking
+   contract for the two surfaces still carrying data-cw-glass="shell" (header,
+   mobile menu); both now paint their band from the material tokens.
+
+   Removed 2026-08-15 as verified-dead code: the [data-cw-glass="menu"] rules
+   (no markup ever set that value) and the frost-image layer — a blurred copy of
+   a photo pinned behind the header. It was a workaround for backdrop-filter not
+   rendering, and its ::after was already cancelled on every consumer, so it had
+   stopped drawing anything long ago. The real cause is fixed in
+   PlatformShell.module.css; see the note on .header. */
+[data-cw-glass] {
+  position: relative;
 }
 
 [data-cw-glass="shell"]::before {
-  content: none;
-}
-
-[data-cw-glass="shell"]::after {
   content: "";
   position: absolute;
-  inset: -12px;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
   border-radius: inherit;
-  opacity: 0.14;
-  background-image: var(--cw-component-glass-frost-image);
-  background-size: cover;
-  background-position: center;
-  filter: blur(24px) saturate(1.06);
-  transform: scale(1.02);
-}
-
-@media (max-width: 900px) {
-  [data-cw-glass="shell"]::after {
-    opacity: 0.18;
-  }
-}
-
-@media (min-width: 901px) {
-  [data-cw-glass="menu"]::after {
-    content: none;
-  }
 }
 
 [data-cw-glass] > * {
@@ -888,9 +991,9 @@ body {
     --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-progress) 14%, transparent);
     --cw-status-failed: var(--cw-sem-boundary);
     --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-boundary) 12%, transparent);
-    --cw-shadow: var(--cw-depth-shadow-soft);
-    --cw-shadow-soft: var(--cw-depth-shadow-soft);
-    --cw-shadow-strong: var(--cw-depth-shadow-medium);
+    --cw-shadow: var(--cw-mat-shadow-soft);
+    --cw-shadow-soft: var(--cw-mat-shadow-soft);
+    --cw-shadow-strong: var(--cw-mat-shadow-raised);
   }
 
   [data-dosha-test="true"][data-dosha-phase="intro"] {

@@ -48,3 +48,72 @@
   --landing-type-body-size:1rem;
   --landing-type-button-size:1rem;
 }
+
+/* Author photo shown plain — no fade/gradient overlay. (The hero-photo gradient
+   is kept: it's a legibility scrim under the headline that overlaps the photo
+   on mobile — margin-top:-62% in landing.css — not decorative.) */
+[data-cw-landing="way21"] .author-photo img{-webkit-mask-image:none;mask-image:none}
+
+/* Phyto protocol: phase cards keep only the short reference; the full herb
+   composition lives in the #phyto collapsible below the triad. */
+[data-cw-landing="way21"] .phase .dl-link{
+  display:inline-block;white-space:nowrap;color:var(--indigo);
+  border-bottom:1px dashed currentColor;text-decoration:none;font-size:.88em;
+}
+[data-cw-landing="way21"] .phase .dl-link:hover{color:var(--ink)}
+[data-cw-landing="way21"] .ai-card--phyto{scroll-margin-top:7rem}
+/* The phyto card has NO photo ground any more. It used to carry a duotone of
+   the herb flat-lay, graded down to 0.051 relative luminance so the text over it
+   would still clear AA — i.e. the picture had to be destroyed to stay legible,
+   which is the whole argument against putting imagery behind body copy. The
+   photography now sits ABOVE the copy in the phase cards (.ph-shot), where it
+   can carry the full CenterWay v1 grade. Same rule as the dot/path/orbit layer:
+   imagery never enters a text column. */
+
+/* Phase photo band — full-bleed against the card padding. The card already
+   clips (overflow:hidden + radius), and the 4px phase stripe (.phase::after)
+   paints over the image, so the accent colour survives. */
+[data-cw-landing="way21"] .phase .ph-shot{
+  margin:-2rem -1.7rem 1.4rem;background:var(--chip-soft);
+}
+/* With a photo band the 4px accent stripe becomes a fourth opener stacked on
+   photo + kicker + title, and it cuts the image with a colour the photograph
+   does not contain. The phase is already named in the kicker. */
+[data-cw-landing="way21"] .phase:has(.ph-shot)::after{content:none}
+[data-cw-landing="way21"] .phase .ph-shot img{
+  width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;display:block;
+}
+
+/* Herb names are longer than the mono labels this row was built for. */
+[data-cw-landing="way21"] .ai-card--phyto .ai-lab{white-space:normal}
+@media(min-width:601px){
+  [data-cw-landing="way21"] .ai-card--phyto .ai-lab{max-width:15ch}
+}
+[data-cw-landing="way21"] .ai-cta{margin-top:1rem}
+/* Shared default is rgba(255,255,255,.45) = 3.36:1 on the panel — under AA even
+   before the photo ground. Scoped bump to .62 (4.91:1); other brands unchanged. */
+[data-cw-landing="way21"] .ai-disclaim{color:color-mix(in srgb, #fff 62%, transparent)}
+[data-cw-landing="way21"] .ai-cta .btn{display:inline-flex}
+
+/* ============ CARRIER PASS (2026-08-17) ============
+   way21 is the reference organism for "one carrier per block". What changed
+   here is subtraction plus one substitution — see
+   docs/archive/working-notes/ds-carrier-map-2026-08-17.md. */
+
+/* #author: the portrait is the carrier. The regalia list lost its four
+   repeated shield glyphs (one glyph repeated is decoration, not information);
+   a typographic node keeps the list scannable without adding a second carrier. */
+[data-cw-landing="way21"] .author .reg li{position:relative;padding-left:1.1rem}
+[data-cw-landing="way21"] .author .reg li::before{
+  content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;
+  background:var(--cta);
+}
+
+/* The boundary note carries the one glyph its sentence is about. */
+[data-cw-landing="way21"] .med-note .ico{margin-top:.1em;color:var(--cta-strong)}
+
+
+/* The rail is only a rail if the nodes line up. Day names wrap to two lines in
+   four of seven cards, which put the node at four different heights; a
+   two-line floor on the name holds the row flat. */
+@media(min-width:981px){[data-cw-landing="way21"] .day .d-name{min-height:2.63rem}}

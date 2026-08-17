@@ -13,7 +13,9 @@ function isPlatformRootRoute(pathname: string): boolean {
     pathname === "/programs" ||
     pathname === "/products" ||
     pathname === "/expert" ||
-    pathname === "/dosha-test"
+    pathname === "/dosha-test" ||
+    pathname === "/tests" ||
+    pathname.startsWith("/tests/")
   );
 }
 
@@ -43,6 +45,7 @@ function brandFromReferer(rawReferer: string | null, requestHost: string, reques
     if (pathname === "/detox" || pathname.startsWith("/detox/")) return "way21";
     if (pathname === "/dosha" || pathname.startsWith("/dosha/")) return "dosha";
     if (pathname === "/dosha-test" || pathname.startsWith("/dosha-test/")) return "dosha";
+    if (pathname === "/tests/dosha" || pathname.startsWith("/tests/dosha/")) return "dosha";
     if (pathname === "/herbs" || pathname.startsWith("/herbs/")) return "herbs";
   } catch {
     return null;
@@ -76,6 +79,7 @@ export function resolveRequestBrandFromPath(pathname: string): HostBrand | null 
   if (clean === "/detox" || clean.startsWith("/detox/")) return "way21";
   if (clean === "/dosha" || clean.startsWith("/dosha/")) return "dosha";
   if (clean === "/dosha-test" || clean.startsWith("/dosha-test/")) return "dosha";
+  if (clean === "/tests/dosha" || clean.startsWith("/tests/dosha/")) return "dosha";
   if (clean === "/consult" || clean.startsWith("/consult/")) return "consult";
   if (clean === "/herbs" || clean.startsWith("/herbs/")) return "herbs";
   return getProductKeyByAlias(clean.replace(/^\//, ""));

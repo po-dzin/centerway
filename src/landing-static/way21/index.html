@@ -1,11 +1,9 @@
 <!DOCTYPE html>
-<html lang="uk" data-cw-landing="way21" data-cw-page="way21">
+<html lang="uk" data-cw-landing="way21" data-cw-page="way21" data-cw-hero="photo">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <base href="/way21/">
-<link rel="preload" href="fonts/Formular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/Formular-Black.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="shortcut icon" href="img/cw-logo.png" type="image/png">
 <title>Шлях 21 — інтегративна детокс-програма CenterWay</title>
 <meta name="description" content="Шлях 21 — авторська 21-денна інтегративна детокс-програма на основі аюрведи та сучасної дієтології: глибоке очищення тіла, розуму й емоцій, −3–7 кг токсинів, фітозбори, процедури та індивідуальний супровід.">
@@ -14,12 +12,14 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Шлях 21 — інтегративна детокс-програма CenterWay">
 <meta property="og:description" content="Глибоке очищення тіла, розуму й емоцій за 21 день: аюрведа + сучасна дієтологія, фітозбори, процедури, супровід.">
-<meta property="og:image" content="https://centerway.net.ua/way21/img/hero-way21-2026-06-27.jpeg">
+<meta property="og:image" content="https://centerway.net.ua/way21/img/hero-way21-2026-08.jpg">
 <link rel="canonical" href="https://centerway.net.ua/way21">
+<link rel="stylesheet" href="/shared/css/platform-fonts.css">
+<link rel="stylesheet" href="/shared/css/cw-tokens.generated.css">
 <link rel="stylesheet" href="/shared/css/network-tokens.css">
 <link rel="stylesheet" href="/shared/css/landing.css">
 <link rel="stylesheet" href="page.css">
-<link rel="stylesheet" href="/shared/css/network-nav.css?v=20260714-4">
+<link rel="stylesheet" href="/shared/css/network-nav.css?v=20260817-1">
 <!-- TODO(placeholder): wire Meta Pixel + Clarity before ad traffic (see irem head). -->
 </head>
 <body>
@@ -27,7 +27,7 @@
 <a id="top"></a>
 
 <!-- ============ NETWORK NAV (burger < 760px, topbar 760px+) ============ -->
-<header class="cwn cwn--suspended" data-cw-network-nav>
+<header class="cwn cwn--anchored" data-cw-network-nav>
   <div class="cwn__in">
     <a class="cwn__brand" href="#top">
       <img src="/shared/img/cw-logo-ink.png" alt="" aria-hidden="true">
@@ -36,9 +36,15 @@
     <button class="cwn__toggle" type="button" aria-expanded="false" aria-controls="cwn-menu" aria-label="Меню мережі CenterWay">
       <span></span><span></span><span></span>
     </button>
-    <nav class="cwn__menu" id="cwn-menu" aria-label="Мережа CenterWay">
-      <a href="https://way21.centerway.net.ua/" aria-current="page">Шлях 21</a>
-      <a href="https://resetday.centerway.net.ua/">Розвантажувальний день</a>
+    <nav class="cwn__menu" id="cwn-menu" aria-label="Навігація сторінкою">
+      <a href="#how">Як працює</a>
+      <a href="#method">Метод</a>
+      <a href="#includes">Що входить</a>
+      <a href="#result">Результат</a>
+      <a href="#author">Автор</a>
+      <a href="#offer">Формати</a>
+      <a class="cwn__sibling" href="#reset-day">Розвантажувальний день</a>
+      <a href="#faq">Питання</a>
     </nav>
   </div>
 </header>
@@ -50,13 +56,13 @@
       <span class="hero-badge"><span class="dot"></span>Шлях 21 · Авторська детокс-програма</span>
       <div class="hero-copy">
         <h1>Глибоке очищення тіла, <em>розуму й емоцій</em> за 21 день</h1>
-        <p class="hero-sub">Інтегративний детокс на основі аюрведи та сучасної дієтології. Не дієта на силі волі, а індивідуальний протокол: прибирає 3–7 кг токсинів і вибудовує спосіб життя, який лишається з вами.</p>
+        <p class="hero-sub">Не дієта на силі волі, а індивідуальний протокол: аюрведа плюс сучасна дієтологія.</p>
       </div>
 
       <div class="hero-visual">
         <div class="hv-stage">
           <span class="hv-glow"></span>
-          <img class="hv-photo" src="img/hero-way21-2026-06-27.jpeg" width="853" height="1280" loading="eager" fetchpriority="high" decoding="async" alt="Євгеній Корякін — автор детокс-програми Шлях 21">
+          <img class="hv-photo" src="img/hero-way21-2026-08.webp" width="853" height="1280" loading="eager" fetchpriority="high" decoding="async" alt="Євгеній Корякін — автор детокс-програми Шлях 21">
           <div class="hv-stat s1"><div class="lab">Тривалість</div><div class="val">21 день</div></div>
           <div class="hv-stat s2"><div class="lab">Структура</div><div class="val">3 фази</div></div>
         </div>
@@ -67,7 +73,6 @@
           <span>−3–7 кг токсинів</span>
           <span>21 день супроводу</span>
           <span>Індивідуально</span>
-          <span>Фітозбори + процедури</span>
         </div>
         <div class="hero-price">
           <b>4100 грн</b>
@@ -75,7 +80,7 @@
         </div>
         <a href="#offer" class="btn btn-primary" data-cta-hero>Почати Шлях 21 <span class="arr">→</span></a>
         <div class="hero-trust">
-          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="ico ico-chrome" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-check"/></svg>
           Гарантія: не буде ефекту — повернемо кошти
         </div>
       </div>
@@ -112,7 +117,7 @@
 <!-- ============ SHIFT ============ -->
 <section class="sec sec-alt">
   <div class="wrap">
-    <div class="shift reveal">
+    <div class="shift reveal" data-cw-nav-dark>
       <span class="kicker">Зрушення</span>
       <h2>Що, якби очищення було <em>протоколом</em>, а не покаранням?</h2>
       <p>Не заборони й сила волі, а індивідуальний 21-денний протокол: харчування під вашу конституцію, фітозбори, м'які процедури й супровід. Тіло очищається природньо — спокійно й до кінця.</p>
@@ -126,7 +131,7 @@
             <li>Втома й важкість</li>
           </ul>
         </div>
-        <div class="vs-mid" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M12 4v15M6 13l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="vs-mid" aria-hidden="true"><svg class="ico" width="22" height="22" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></div>
         <div class="vs-col new">
           <h5>Як зі Шлях 21</h5>
           <ul>
@@ -142,7 +147,7 @@
 </section>
 
 <!-- ============ MECHANISM / 3 PHASES ============ -->
-<section class="sec">
+<section id="how" class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Як це працює · 3 фази</span>
@@ -151,40 +156,99 @@
     </div>
     <div class="triad">
       <div class="phase p1 reveal">
+        <figure class="ph-shot"><img src="/shared/img/herbs/way21-week1-2026-08.webp" width="1080" height="720" loading="lazy" decoding="async" alt="Фітозбір №1 — дренажний збір першого тижня"></figure>
         <div class="ph-n">Тиждень 01 · Пурва Карма</div>
-        <div class="ph-ico"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M20 4C9 4 4 11 5 20c9 1 16-4 16-16Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 19c1.5-4.5 4.5-7.5 9-9" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
         <h3>Підготовка</h3>
         <p>М'яке розвантаження, режим дня й перший фітозбір. Готуємо тіло до глибокого очищення без стресу.</p>
         <dl class="dl">
-          <dt>Фітозбір №1</dt><dd>Ромашка, календула, шипшина, пустирник, кукурудзяні рильця</dd>
+          <dt>Фітозбір</dt><dd>Збір №1 — дренажний, п'ять рослин <a class="dl-link" href="#phyto">повний склад ↓</a></dd>
           <dt>Завдання</dt><dd>Декомпресія жовчних проток, лімфодренаж, зняття спазмів</dd>
           <dt>Після</dt><dd>Легкість, рівне травлення, м'який старт</dd>
         </dl>
       </div>
       <div class="phase p2 reveal">
+        <figure class="ph-shot"><img src="/shared/img/herbs/way21-week2-2026-08.webp" width="1080" height="720" loading="lazy" decoding="async" alt="Збори №2 і №3 — фітозбір і клітковина другого тижня"></figure>
         <div class="ph-n">Тиждень 02 · Прадхана Карма</div>
-        <div class="ph-ico"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M3 5h18l-7 8v6l-4 2v-8L3 5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
         <h3>Глибоке очищення</h3>
-        <p>Фітозбір №2 виводить токсини з крові, лімфи та ШКТ. Процедурний блок підсилює ефект.</p>
+        <p>Збори №2 і №3 працюють паралельно: один знімає бродіння і запускає лімфу, другий сорбує й виводить під захистом рослинних слизів.</p>
         <dl class="dl">
-          <dt>Фітозбори №2–3</dt><dd>Меліса, фенхель, цикорій + овес, льон, сенна, клітковина, кульбаба</dd>
+          <dt>Фітозбори</dt><dd>Збір №2 + Збір №3, рівно 7 днів <a class="dl-link" href="#phyto">повний склад ↓</a></dd>
           <dt>Завдання</dt><dd>Ентеросорбція, мукопротекція, стимуляція лімфотоку</dd>
           <dt>Після</dt><dd>Менше набряків, чиста шкіра, енергія</dd>
         </dl>
       </div>
       <div class="phase p3 reveal">
+        <figure class="ph-shot"><img src="/shared/img/herbs/way21-week3-2026-08.webp" width="1080" height="720" loading="lazy" decoding="async" alt="Напій спецій третього тижня — імбир, куркума, чорний перець"></figure>
         <div class="ph-n">Тиждень 03 · Пашчат Карма</div>
-        <div class="ph-ico"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="4.2" stroke="currentColor" stroke-width="2"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.2 5.2l1.6 1.6M17.2 17.2l1.6 1.6M18.8 5.2l-1.6 1.6M6.8 17.2l-1.6 1.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
         <h3>Інтеграція</h3>
         <p>Закріплення нового способу життя й формула харчування на майбутнє. Розбір на другій консультації.</p>
         <dl class="dl">
-          <dt>Напій спецій</dt><dd>Імбир, куркума, чорний перець (трави поступово скасовуємо)</dd>
+          <dt>Без трав</dt><dd>Напій спецій: імбир, куркума, чорний перець <a class="dl-link" href="#phyto">як готувати ↓</a></dd>
           <dt>Завдання</dt><dd>Загоєння епітелію, активація ферментів, метаболічний тонус</dd>
           <dt>Після</dt><dd>Стійкі звички, що лишаються з вами</dd>
         </dl>
       </div>
     </div>
     <div class="triad-flow reveal"><b>Підготовка</b><span class="ar">→</span><b>Очищення</b><span class="ar">→</span><b>Інтеграція</b></div>
+
+    <details class="ai-card ai-card--phyto reveal" id="phyto" data-cw-nav-dark>
+      <summary>
+        <span class="ai-head">
+          <span class="ai-kick">Фітопротокол</span>
+          <span class="ai-title">Повний склад трьох зборів — і навіщо кожна рослина</span>
+        </span>
+        <span class="ai-chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span>
+      </summary>
+      <div class="ai-body">
+        <p class="ai-intro">Три збори — це три модулі з різними завданнями. Тиждень 1 розвантажує жовчні протоки, тиждень 2 очищує кишківник під захистом рослинних слизів, на тижні 3 трави повністю скасовуються й лишається напій спецій. Склад може коригуватися під вашу конституцію, стан і сезон.</p>
+
+        <div class="ai-part">
+          <h4><span class="ai-num">Збір №1</span> Тиждень 1 · дренаж</h4>
+          <p class="ai-sub">Розвантаження жовчних проток, лімфодренаж, зняття спазмів.</p>
+          <div class="ai-row"><span class="ai-lab">Кукурудзяні рильця</span><span class="ai-txt">Розріджують жовч і підтримують її плавне виведення в дванадцятипалу кишку, знімаючи <b>застій у жовчному міхурі</b>.</span></div>
+          <div class="ai-row"><span class="ai-lab">Ромашка й календула</span><span class="ai-txt">Хамазулен і каротиноїди мʼяко заспокоюють слизову ШКТ, знімають локальні мікрозапалення й готують шлунок до грубої клітковини наступного тижня.</span></div>
+          <div class="ai-row"><span class="ai-lab">Шипшина (плоди)</span><span class="ai-txt">Вітамінний комплекс <b>C, P, K</b> і ниркова фільтрація: первинний дренаж тканин і виведення водорозчинних токсинів з міжклітинного простору.</span></div>
+          <div class="ai-row"><span class="ai-lab">Пустирник</span><span class="ai-txt">Знімає нейровегетативну напругу й спазм сфінктера Одді — тому старт курсу проходить без спастичного болю, нудоти чи печії.</span></div>
+        </div>
+
+        <div class="ai-part">
+          <h4><span class="ai-num">Збір №2</span> Тиждень 2 · лімфа й антибродіння</h4>
+          <p class="ai-sub">Приймається паралельно зі Збором №3 — знімає побічні процеси й живить флору.</p>
+          <div class="ai-row"><span class="ai-lab">Цикорій</span><span class="ai-txt">Природний <b>інулін</b> — пребіотик, живильний субстрат для біфідо- та лактобактерій. Захищає мікробіом під час інтенсивного очищення.</span></div>
+          <div class="ai-row"><span class="ai-lab">Бузина (квіти)</span><span class="ai-txt">Головний лімфотонік програми: активує дренаж лімфи малого таза й черевної порожнини, скидаючи міжклітинні токсини в просвіт кишківника для сорбції.</span></div>
+          <div class="ai-row"><span class="ai-lab">Фенхель, укріп, тмин</span><span class="ai-txt">Ефіроолійна вітрогінна група. Руйнує газові бульбашки в піні, знімає метеоризм і бродіння, які виникають при розщепленні великих обʼємів клітковини.</span></div>
+          <div class="ai-row"><span class="ai-lab">Валеріана й меліса</span><span class="ai-txt">Працюють як мʼякі міорелаксанти: роблять перистальтику плавною, запобігають колькам і спазмам.</span></div>
+          <div class="ai-row"><span class="ai-lab">Фіалка триколірна</span><span class="ai-txt">Прискорює обмін речовин, додає очисне навантаження на нирки й шкіру як допоміжні шляхи виведення.</span></div>
+        </div>
+
+        <div class="ai-part">
+          <h4><span class="ai-num">Збір №3</span> Тиждень 2 · сорбція й захист слизової</h4>
+          <p class="ai-sub">Евакуаторний модуль: працює лише в парі з мукопротекцією.</p>
+          <div class="ai-row"><span class="ai-lab">Овес і насіння льону</span><span class="ai-txt">Головний щит слизової: у воді виділяють <b>мукополісахаридні слизи</b>, що утворюють захисний ковзний гель уздовж усього ШКТ.</span></div>
+          <div class="ai-row"><span class="ai-lab">Псиліум</span><span class="ai-txt">Гідрофільна розчинна клітковина. Набухає в десятки разів, формує мʼякий гелеподібний болюс і запускає фізіологічний рефлекс випорожнення.</span></div>
+          <div class="ai-row"><span class="ai-lab">Клітковина яблука</span><span class="ai-txt">Розчинний пектин — глибокий ентеросорбент: звʼязує в просвіті кишківника важкі метали, залишки медикаментів і токсичні метаболіти.</span></div>
+          <div class="ai-row"><span class="ai-lab">Клітковина буряку</span><span class="ai-txt">Грубі нерозчинні волокна працюють як делікатна «губка-щітка» для складок і крипт товстого кишківника.</span></div>
+          <div class="ai-row"><span class="ai-lab">Сенна (касія)</span><span class="ai-txt">Джерело антраглікозидів, що прискорюють евакуацію мас. Завдяки слизам вівса й льону діє мʼяко, без болісних спазмів.</span></div>
+          <div class="ai-row"><span class="ai-lab">Стальник, солодка</span><span class="ai-txt">За можливості й показаннями: протизапальна дія, менша набряклість вен, загоєння мікроерозій слизової.</span></div>
+        </div>
+
+        <div class="ai-part">
+          <h4><span class="ai-num">Тиждень 3</span> Напій спецій · трави скасовуються</h4>
+          <p class="ai-sub">Відновлення бар'єрів і повернення власних ферментів.</p>
+          <div class="ai-row"><span class="ai-lab">Куркума + перець</span><span class="ai-txt">Куркумін відновлює щільні контакти між клітинами епітелію після сорбційного навантаження, а <b>піперин</b> чорного перцю різко підвищує його біодоступність.</span></div>
+          <div class="ai-row"><span class="ai-lab">Імбир</span><span class="ai-txt">Гінгерол розпалює «травний вогонь»: стимулює шлунковий сік і панкреатичні ферменти, повертаючи ШКТ до самостійної роботи без синдрому відміни.</span></div>
+          <div class="ai-row"><span class="ai-lab">Приготування</span><span class="ai-txt">Заварювати водою <b>60–70 °C</b>, не окропом — щоб не зруйнувати ефірні сполуки. Куркумін жиророзчинний: додайте кілька крапель кокосової олії чи гхі або пийте одразу після сніданку з корисними жирами.</span></div>
+        </div>
+
+        <div class="ai-concl">
+          <p><b>Правила безпеки другого тижня.</b> Псиліум і клітковина потребують води: <b>2–2.5 л</b> чистої води на добу, інакше комплекс дасть зворотний ефект. Одночасний прийом Зборів №2 і №3 триває рівно <b>7 днів</b> — довше не можна.</p>
+          <p>Збори не потрібно шукати самому: склад підбирається під вашу дошу й стан, а готові збори можна замовити окремо.</p>
+          <p class="ai-cta"><a class="btn btn-primary" href="https://herbs.centerway.net.ua/">Подивитися фітозбори<span class="arr"> →</span></a></p>
+        </div>
+
+        <p class="ai-disclaim">Фітопідтримка — оздоровчий інструмент, а не лікування: вона доповнює, а не замінює діагностику й терапію. За хронічних станів, вагітності, лактації та прийому препаратів склад узгоджується з вашим лікарем.</p>
+      </div>
+    </details>
 
   </div>
 </section>
@@ -198,23 +262,22 @@
       <p class="lead">Детокс — це не лише їжа. Це режим, фітозбори, процедури й дихання, складені в єдиний ритм, який легко вбудувати в робочий графік.</p>
     </div>
     <div class="week">
-      <div class="day reveal"><div class="d-lab">Ранок</div><div class="d-name">Дихання</div><div class="d-bar"><i style="width:35%"></i></div><div class="d-focus">Очисне дихання, насья, тепла вода. М'який старт обміну.</div></div>
-      <div class="day reveal"><div class="d-lab">+30 хв</div><div class="d-name">Фітозбір</div><div class="d-bar"><i style="width:70%"></i></div><div class="d-focus">Трав'яний збір дня за схемою: дренаж і виведення токсинів.</div></div>
-      <div class="day reveal"><div class="d-lab">Сніданок</div><div class="d-name">Легкий старт</div><div class="d-bar"><i style="width:50%"></i></div><div class="d-focus">Тепла їжа під вашу конституцію. Об'єм «скільки терпить око».</div></div>
-      <div class="day reveal"><div class="d-lab">Обід</div><div class="d-name">Головний прийом</div><div class="d-bar"><i style="width:85%"></i></div><div class="d-focus">Найбільший прийом їжі в пік травлення. Без переїдання.</div></div>
-      <div class="day reveal"><div class="d-lab">День</div><div class="d-name">Процедури</div><div class="d-bar"><i style="width:65%"></i></div><div class="d-focus">Олійний самомасаж, інгаляції, мінеральна ванна для релаксу.</div></div>
-      <div class="day reveal"><div class="d-lab">Вечеря</div><div class="d-name">М'який вихід</div><div class="d-bar"><i style="width:45%"></i></div><div class="d-focus">Ранній легкий вечерь. Розвантажуємо нічне травлення.</div></div>
-      <div class="day reveal"><div class="d-lab">Ніч</div><div class="d-name">Відновлення</div><div class="d-bar"><i style="width:30%"></i></div><div class="d-focus">Режим сну за аюрведою. Тіло чиститься, поки ви відпочиваєте.</div></div>
+      <div class="day reveal"><div class="d-lab">Ранок</div><div class="d-name">Дихання</div><div class="d-node" style="--i:0.35"></div><div class="d-focus">Очисне дихання, насья, тепла вода. М'який старт обміну.</div></div>
+      <div class="day reveal"><div class="d-lab">+30 хв</div><div class="d-name">Фітозбір</div><div class="d-node" style="--i:0.70"></div><div class="d-focus">Трав'яний збір дня за схемою: дренаж і виведення токсинів.</div></div>
+      <div class="day reveal"><div class="d-lab">Сніданок</div><div class="d-name">Легкий старт</div><div class="d-node" style="--i:0.50"></div><div class="d-focus">Тепла їжа під вашу конституцію. Об'єм «скільки терпить око».</div></div>
+      <div class="day reveal"><div class="d-lab">Обід</div><div class="d-name">Головний прийом</div><div class="d-node" style="--i:0.85"></div><div class="d-focus">Найбільший прийом їжі в пік травлення. Без переїдання.</div></div>
+      <div class="day reveal"><div class="d-lab">День</div><div class="d-name">Процедури</div><div class="d-node" style="--i:0.65"></div><div class="d-focus">Олійний самомасаж, інгаляції, мінеральна ванна для релаксу.</div></div>
+      <div class="day reveal"><div class="d-lab">Вечеря</div><div class="d-name">М'який вихід</div><div class="d-node" style="--i:0.45"></div><div class="d-focus">Ранній легкий вечерь. Розвантажуємо нічне травлення.</div></div>
+      <div class="day reveal"><div class="d-lab">Ніч</div><div class="d-name">Відновлення</div><div class="d-node" style="--i:0.30"></div><div class="d-focus">Режим сну за аюрведою. Тіло чиститься, поки ви відпочиваєте.</div></div>
     </div>
     <div class="week-note reveal">
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/><path d="M12 7v6M12 16h.01" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
       <p>Схема <b>харчування → фітозбір → процедура → дихання</b> зберігається всі 21 день — змінюється лише глибина. Тому результат закріплюється, а не відкочується.</p>
     </div>
   </div>
 </section>
 
 <!-- ============ METHOD / SCIENCE ============ -->
-<section class="sec">
+<section id="method" class="sec">
   <div class="wrap">
     <div class="sci-grid">
       <div class="reveal">
@@ -233,34 +296,33 @@
         <cite>— основа методики Шлях 21</cite>
       </div>
     </div>
-    <details class="ai-card reveal">
+    <details class="ai-card reveal" data-cw-nav-dark>
       <summary>
-        <span class="ai-ico"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none"><path d="M12 3v3m0 12v3m9-9h-3M6 12H3m13.5-6.5-2 2m-7 7-2 2m11 0-2-2m-7-7-2-2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><circle cx="12" cy="12" r="3.2" stroke="currentColor" stroke-width="1.6"/></svg></span>
         <span class="ai-head">
           <span class="ai-kick">Наукове підґрунтя</span>
           <span class="ai-title">Чому трифазний протокол працює — глибше про метод</span>
         </span>
-        <span class="ai-chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+        <span class="ai-chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span>
       </summary>
       <div class="ai-body">
         <p class="ai-intro">Шлях 21 — авторська адаптація аюрведичної <b>Панчакарми</b> до середніх широт і ритму сучасного життя. 21 день — період, достатній, щоб запустити глибокі фізіологічні зміни й сформувати нові звички, без кризів очищення.</p>
 
         <div class="ai-part">
-          <h4><span class="ai-num">Фаза 1</span> Підготовка · 1–7 день</h4>
+          <h4><span class="ai-num">Фаза 1</span> Пурва Карма · 1–7 день</h4>
           <p class="ai-sub">Пурвакарма — мобілізація токсинів перед виведенням.</p>
           <div class="ai-row"><span class="ai-lab">Замащення</span><span class="ai-txt"><b>Внутрішнє «замащення»</b> розщеплює жиророзчинні токсини, що депонуються в жировій тканині й мембранах клітин.</span></div>
           <div class="ai-row"><span class="ai-lab">Канали</span><span class="ai-txt">Розкриваються канали елімінації (<b>шроти</b>). Без цього кроку агресивне очищення дало б реінтоксикацію — коли вивільнені речовини знову потрапляють у кров.</span></div>
         </div>
 
         <div class="ai-part">
-          <h4><span class="ai-num">Фаза 2</span> Елімінація · 8–14 день</h4>
+          <h4><span class="ai-num">Фаза 2</span> Прадхана Карма · 8–14 день</h4>
           <p class="ai-sub">Виведення розчинених токсинів із травної та лімфатичної систем.</p>
           <div class="ai-row"><span class="ai-lab">Очищення</span><span class="ai-txt">Налагодження циркуляції енергії, повітря й рідин. Сорбенти й клітковина м’яко зв’язують і виводять токсини, слиз захищає слизову.</span></div>
           <div class="ai-row"><span class="ai-lab">Відгук тіла</span><span class="ai-txt">Саме тут люди відзначають нормалізацію <b>ендокринної системи</b>, кращий сон, чистішу шкіру та зникнення хронічних болів у шлунку.</span></div>
         </div>
 
         <div class="ai-part">
-          <h4><span class="ai-num">Фаза 3</span> Стабілізація · 15–21 день</h4>
+          <h4><span class="ai-num">Фаза 3</span> Пашчат Карма · 15–21 день</h4>
           <p class="ai-sub">Розпалювання «агні» — вогню травлення — і закріплення результату.</p>
           <div class="ai-row"><span class="ai-lab">Агні</span><span class="ai-txt">Відновлюємо силу травлення, щоб <b>ама</b> (метаболічні токсини) не накопичувалася знову. Впроваджуємо раціон, від якого не набираєш зайвого.</span></div>
           <div class="ai-row"><span class="ai-lab">Результат</span><span class="ai-txt">Після циклу дихання стає спокійним і амплітудним, а травлення — сильним і стабільним.</span></div>
@@ -278,70 +340,184 @@
 </section>
 
 <!-- ============ INCLUDED ============ -->
-<section class="sec sec-alt">
+<section id="includes" class="sec sec-alt">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Що входить</span>
       <h2 class="sec-title">Повна система для очищення — а не просто меню</h2>
       <p class="lead">Усе, що зазвичай збирають по шматках у різних спеціалістів, тут зведено в один супроводжуваний протокол на 21 день. У форматі з супроводом до цього додається особиста робота з автором.</p>
     </div>
-    <div class="inc-grid">
-      <div class="inc-card reveal">
-        <div class="ic"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 21c5-2 7-5 7-10V6l-7-3-7 3v5c0 5 2 8 7 10Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 8v6M9 11h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
-        <h4>3 авторські фітозбори</h4><p>Трави нашої широти: дренаж, виведення токсинів і функціональна клітковина.</p>
-      </div>
-      <div class="inc-card reveal">
-        <div class="ic"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="m10 9 5 3-5 3V9Z" fill="currentColor"/></svg></div>
-        <h4>3 вебінари + відео</h4><p>Основи аюрведи, сезонні очищення, жіноче здоров'я. Відеоінструкції до процедур.</p>
-      </div>
-      <div class="inc-card reveal">
-        <div class="ic"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 3c2.5 3 4 5 4 8a4 4 0 1 1-8 0c0-3 1.5-5 4-8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
-        <h4>Процедурний блок</h4><p>Самомасаж, інгаляції, насья, мінеральні ванни та очисна дихальна гімнастика.</p>
-      </div>
-      <div class="inc-card reveal">
-        <div class="ic"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="5" y="4" width="14" height="16" rx="2" stroke="currentColor" stroke-width="2"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
-        <h4>Інструкції на 3 тижні</h4><p>Покрокові протоколи харчування, режиму й процедур на кожен тиждень.</p>
-      </div>
-      <div class="inc-card is-plus reveal">
-        <div class="ic"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="7" r="4" stroke="currentColor" stroke-width="2"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
-        <span class="plus-tag">+ у супроводі</span>
-        <h4>2 консультації з автором</h4><p>Аюрведична діагностика конституції на старті й підсумковий розбір результатів у кінці.</p>
-      </div>
-      <div class="inc-card is-plus reveal">
-        <div class="ic"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M21 11.5a8.5 8.5 0 0 1-12 7.7L3 21l1.8-6A8.5 8.5 0 1 1 21 11.5Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
-        <span class="plus-tag">+ у супроводі</span>
-        <h4>Персональний протокол і ведення</h4><p>Протокол під вашу дошу, корекція по ходу й прямий зв'язок з автором у Telegram 21 день.</p>
-      </div>
+    <div class="inc-acc">
+      <details class="inc-item reveal" open>
+        <summary>
+          <span class="ic"><svg class="ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-leaf"/></svg></span>
+          <span class="inc-head"><span class="inc-t">3 авторські фітозбори</span><span class="inc-teaser">Дренаж, глибоке очищення, функціональна клітковина</span></span>
+          <span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span>
+        </summary>
+        <div class="inc-body">
+          <div class="inc-copy">
+            <p>Три різні збори під три тижні програми — трави нашої широти, зібрані у синергійні композиції, а не «одна чарівна рослина». За потреби (інша країна, індивідуальні реакції) підбираються аналоги.</p>
+            <ul>
+              <li><b>Тиждень 1</b> — дренажний збір: жовчовиділення, лімфа, зняття спазмів</li>
+              <li><b>Тиждень 2</b> — два збори паралельно: антибродіння й лімфа + сорбція під захистом рослинних слизів</li>
+              <li><b>Тиждень 3</b> — трави скасовуються, лишається метаболічний напій спецій</li>
+            </ul>
+            <p class="inc-links"><a class="inc-link" href="#phyto">Повний склад зборів ↓</a><a class="inc-link" href="https://herbs.centerway.net.ua/">Сторінка фітозборів →</a></p>
+          </div>
+        </div>
+      </details>
+
+      <details class="inc-item reveal">
+        <summary>
+          <span class="ic"><svg class="ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-play"/></svg></span>
+          <span class="inc-head"><span class="inc-t">3 вебінари + відеоінструкції</span><span class="inc-teaser">Теорія, якої вистачає надовго після курсу</span></span>
+          <span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span>
+        </summary>
+        <div class="inc-body">
+          <div class="inc-copy">
+            <p>Живі зустрічі з автором у записі: не «лекції про користь води», а розбір логіки методу, щоб ви розуміли, навіщо кожен крок протоколу.</p>
+            <ul>
+              <li><b>Основи аюрведи</b> — доші, агні, ама: як влаштована ваша конституція</li>
+              <li><b>Сезонні очищення</b> — коли й навіщо повторювати цикл</li>
+              <li><b>Жіноче здоров'я</b> — цикл, гормональний фон, відновлення</li>
+              <li>Плюс відеоінструкції до кожної процедури — можна вмикати й повторювати</li>
+            </ul>
+          </div>
+        </div>
+      </details>
+
+      <details class="inc-item reveal">
+        <summary>
+          <span class="ic"><svg class="ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-water"/></svg></span>
+          <span class="inc-head"><span class="inc-t">Процедурний блок</span><span class="inc-teaser">Те, що підсилює трави: тіло, дихання, тепло</span></span>
+          <span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span>
+        </summary>
+        <div class="inc-body">
+          <div class="inc-copy">
+            <p>Детокс — це не лише їжа. Процедури розганяють лімфу й циркуляцію, тому збори працюють м'якше та швидше. Усе робиться вдома, без обладнання.</p>
+            <ul>
+              <li><b>Олійний самомасаж</b> — розгін лімфи, зняття сухості й напруги</li>
+              <li><b>Насья та інгаляції</b> — робота з верхніми шляхами й головою</li>
+              <li><b>Мінеральні ванни</b> — розслаблення й виведення через шкіру</li>
+              <li><b>Очисне дихання</b> — ранковий запуск обміну, вечірнє заспокоєння</li>
+            </ul>
+          </div>
+        </div>
+      </details>
+
+      <details class="inc-item reveal">
+        <summary>
+          <span class="ic"><svg class="ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-guide"/></svg></span>
+          <span class="inc-head"><span class="inc-t">Інструкції на всі 21 день</span><span class="inc-teaser">Щодня зрозуміло, що робити — без здогадок</span></span>
+          <span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span>
+        </summary>
+        <div class="inc-body">
+          <div class="inc-copy">
+            <p>Покрокові протоколи на кожен тиждень: що їсти, коли пити збір, які процедури й у якому порядку. Схема <b>харчування → фітозбір → процедура → дихання</b> тримається всі три тижні — змінюється лише глибина.</p>
+            <ul>
+              <li>Меню й принципи харчування під вашу конституцію, а не єдиний список «можна/не можна»</li>
+              <li>Режим дня: час прийомів їжі, зборів і процедур</li>
+              <li>Правила безпеки — зокрема питний режим 2–2.5 л на другому тижні, без якого клітковина працює проти вас</li>
+              <li>Що робити при відкатах, поїздках і робочому графіку</li>
+            </ul>
+          </div>
+        </div>
+      </details>
+
+      <details class="inc-item is-plus reveal">
+        <summary>
+          <span class="ic"><svg class="ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-user"/></svg></span>
+          <span class="inc-head"><span class="plus-tag">+ у супроводі</span><span class="inc-t">2 консультації з автором</span><span class="inc-teaser">Діагностика на старті й розбір результатів у фіналі</span></span>
+          <span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span>
+        </summary>
+        <div class="inc-body">
+          <div class="inc-copy">
+            <p>Саме тут програма перестає бути «курсом для всіх». Автор дивиться на вашу конституцію, стан і історію — і під це збирається протокол.</p>
+            <ul>
+              <li><b>Старт</b> — аюрведична діагностика доші, розбір скарг, протипоказань і мети</li>
+              <li><b>Фінал</b> — підсумковий розбір: що змінилося й яку схему харчування лишаємо далі</li>
+            </ul>
+          </div>
+        </div>
+      </details>
+
+      <details class="inc-item is-plus reveal">
+        <summary>
+          <span class="ic"><svg class="ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-support"/></svg></span>
+          <span class="inc-head"><span class="plus-tag">+ у супроводі</span><span class="inc-t">Персональний протокол і ведення</span><span class="inc-teaser">Зв'язок з автором у Telegram усі 21 день</span></span>
+          <span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span>
+        </summary>
+        <div class="inc-body">
+          <div class="inc-copy">
+            <p>Протокол під вашу дошу — і жива корекція по ходу, а не «розбирайтеся самі». Тіло реагує по-різному, і другий тиждень майже завжди потребує підстроювання.</p>
+            <ul>
+              <li>Коригування харчування, зборів і процедур під ваші реакції</li>
+              <li>Прямий зв'язок у Telegram протягом усієї програми</li>
+              <li>Відповіді на питання «чи так іде», коли з'являються сумніви</li>
+            </ul>
+          </div>
+        </div>
+      </details>
     </div>
   </div>
 </section>
 
 <!-- ============ RESULTS ============ -->
-<section class="sec">
+<section id="result" class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Ваш результат</span>
       <h2 class="sec-title">Що змінюється — рівень за рівнем</h2>
       <p class="lead">Очищення йде на всіх рівнях одразу. У кожного більше працюють ті системи, що цього потребують — це залежить від вашої конституції.</p>
     </div>
-    <div class="acc">
-      <details class="acc-item reveal" open><summary><span class="num">01</span>Травлення та вага<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
-        <div class="acc-body"><ul><li>Сильне, стабільне травлення без важкості після їжі</li><li>−3–7 кг токсинів; вага рухається до норми</li><li>Чітке розуміння, як їсти й тримати результат далі</li></ul></div>
-      </details>
-      <details class="acc-item reveal"><summary><span class="num">02</span>Енергія та тіло<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
-        <div class="acc-body"><ul><li>Зникає важкість, набряки й мішки під очима</li><li>Тіло гнучкіше й менш болісне</li><li>Шкіра чистіша та еластичніша</li></ul></div>
-      </details>
-      <details class="acc-item reveal"><summary><span class="num">03</span>Сон і нервова система<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
-        <div class="acc-body"><ul><li>Стабільний сон і легке засинання</li><li>Психоемоційна стабільність, менше тривоги</li><li>Спокійний, рівний стан протягом дня</li></ul></div>
-      </details>
-      <details class="acc-item reveal"><summary><span class="num">04</span>Гормони та цикл<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
-        <div class="acc-body"><ul><li>Злагодженіша робота ендокринної системи</li><li>Менш болісний і стабільніший цикл</li><li>Спадають запальні процеси</li></ul></div>
-      </details>
-      <details class="acc-item reveal"><summary><span class="num">05</span>Спосіб життя<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
-        <div class="acc-body"><ul><li>Якісні харчові звички, що лишаються після курсу</li><li>Розуміння своєї природи замість модних дієт</li><li>Часто — відмова від зайвого сама собою</li></ul></div>
-      </details>
+    <div class="res-grid">
+      <div class="res-card reveal">
+        <div class="res-top"><span class="res-n">01</span><span class="res-ic"><svg class="ico" width="22" height="22" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-food"/></svg></span></div>
+        <h3>Травлення та вага</h3>
+        <ul>
+          <li>Сильне, стабільне травлення без важкості після їжі</li>
+          <li>−3–7 кг токсинів; вага рухається до норми</li>
+          <li>Чітке розуміння, як їсти й тримати результат далі</li>
+        </ul>
+      </div>
+      <div class="res-card reveal">
+        <div class="res-top"><span class="res-n">02</span><span class="res-ic"><svg class="ico" width="22" height="22" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-motion"/></svg></span></div>
+        <h3>Енергія та тіло</h3>
+        <ul>
+          <li>Зникає важкість, набряки й мішки під очима</li>
+          <li>Тіло гнучкіше й менш болісне</li>
+          <li>Шкіра чистіша та еластичніша</li>
+        </ul>
+      </div>
+      <div class="res-card reveal">
+        <div class="res-top"><span class="res-n">03</span><span class="res-ic"><svg class="ico" width="22" height="22" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-sleep"/></svg></span></div>
+        <h3>Сон і нервова система</h3>
+        <ul>
+          <li>Стабільний сон і легке засинання</li>
+          <li>Психоемоційна стабільність, менше тривоги</li>
+          <li>Спокійний, рівний стан протягом дня</li>
+        </ul>
+      </div>
+      <div class="res-card reveal">
+        <div class="res-top"><span class="res-n">04</span><span class="res-ic"><svg class="ico" width="22" height="22" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-rhythm"/></svg></span></div>
+        <h3>Гормони та цикл</h3>
+        <ul>
+          <li>Злагодженіша робота ендокринної системи</li>
+          <li>Менш болісний і стабільніший цикл</li>
+          <li>Спадають запальні процеси</li>
+        </ul>
+      </div>
+      <div class="res-card reveal">
+        <div class="res-top"><span class="res-n">05</span><span class="res-ic"><svg class="ico" width="22" height="22" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-leaf"/></svg></span></div>
+        <h3>Спосіб життя</h3>
+        <ul>
+          <li>Якісні харчові звички, що лишаються після курсу</li>
+          <li>Розуміння своєї природи замість модних дієт</li>
+          <li>Часто — відмова від зайвого сама собою</li>
+        </ul>
+      </div>
     </div>
-    <p class="med-note reveal">☝️ Програма не є медичною діагностикою чи лікуванням. За хронічних станів і прийому препаратів індивідуальні протипоказання обговорюються на консультації.</p>
+    <p class="med-note reveal"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-boundary"/></svg>Програма не є медичною діагностикою чи лікуванням. За хронічних станів і прийому препаратів індивідуальні протипоказання обговорюються на консультації.</p>
   </div>
 </section>
 
@@ -354,39 +530,39 @@
     </div>
     <div class="aud-grid">
       <div class="aud-yes reveal">
-        <h3><span class="ti">✓</span> Так, якщо ви</h3>
-        <div class="aud-li"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#1d3a30" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Ведете активний спосіб життя або прагнете до нього</div>
-        <div class="aud-li"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#1d3a30" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Хочете керувати вагою — у бік зниження чи набору</div>
-        <div class="aud-li"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#1d3a30" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Маєте втому, важкість чи проблеми з травленням</div>
-        <div class="aud-li"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#1d3a30" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Готуєтесь до вагітності або відновлюєтесь після пологів</div>
-        <div class="aud-li"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="#1d3a30" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>Хочете перейти на усвідомлене харчування під свою природу</div>
+        <h3>Так, якщо ви</h3>
+        <div class="aud-li"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-check"/></svg>Ведете активний спосіб життя або прагнете до нього</div>
+        <div class="aud-li"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-check"/></svg>Хочете керувати вагою — у бік зниження чи набору</div>
+        <div class="aud-li"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-check"/></svg>Маєте втому, важкість чи проблеми з травленням</div>
+        <div class="aud-li"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-check"/></svg>Готуєтесь до вагітності або відновлюєтесь після пологів</div>
+        <div class="aud-li"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-check"/></svg>Хочете перейти на усвідомлене харчування під свою природу</div>
       </div>
       <div class="aud-no reveal">
-        <h3><span class="ti">—</span> Мабуть ні, якщо ви</h3>
-        <div class="aud-li"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="#9aa89e" stroke-width="2.2" stroke-linecap="round"/></svg>Шукаєте «−10 кг за тиждень» без зусиль</div>
-        <div class="aud-li"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="#9aa89e" stroke-width="2.2" stroke-linecap="round"/></svg>Не готові 21 день тримати режим і протокол</div>
-        <div class="aud-li"><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M6 6l12 12M18 6 6 18" stroke="#9aa89e" stroke-width="2.2" stroke-linecap="round"/></svg>Чекаєте чарівну пігулку замість зміни звичок</div>
+        <h3>Мабуть ні, якщо ви</h3>
+        <div class="aud-li"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg>Шукаєте «−10 кг за тиждень» без зусиль</div>
+        <div class="aud-li"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg>Не готові 21 день тримати режим і протокол</div>
+        <div class="aud-li"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg>Чекаєте чарівну пігулку замість зміни звичок</div>
       </div>
     </div>
   </div>
 </section>
 
 <!-- ============ AUTHOR ============ -->
-<section class="sec">
+<section id="author" class="sec">
   <div class="wrap">
     <div class="author reveal">
-      <div class="author-photo"><img src="img/curator-photo.webp" width="800" height="1200" loading="lazy" decoding="async" alt="Євгеній Корякін — засновник центру CenterWay"></div>
+      <div class="author-photo"><img src="/shared/img/author-evgeniy-2026-08.webp" width="1040" height="1280" loading="lazy" decoding="async" alt="Євгеній Корякін — засновник центру CenterWay"></div>
       <div>
         <span class="kicker">Автор програми Шлях 21</span>
         <h2 class="a-name">Євгеній Корякін</h2>
         <div class="role">Засновник центру CenterWay</div>
-        <p class="lead">👋 Я — Євгеній Корякін, дослідник і практик аюрведи та сучасної дієтології. Усі методики, які я даю людям, перевірені мною особисто.</p>
+        <p class="lead">Я — Євгеній Корякін, дослідник і практик аюрведи та сучасної дієтології. Усі методики, які я даю людям, перевірені мною особисто.</p>
         <blockquote class="author-quote">"Аюрведа бачить людину як індивідуальність. Тому не може бути однієї дієти, одного препарату й однієї дози для всіх."</blockquote>
         <ul class="reg">
-          <li><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Магістр комплементарної медицини, 15+ років професійного досвіду</li>
-          <li><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Автор методик з дієтології та детоксикації, розробник оздоровчих програм</li>
-          <li><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Йога- та аюрведа-терапевт, переможець змагань «Битва титанів»</li>
-          <li><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>«Заслужений натуропат Європи» (2017); навчання в Кералі — аюрведична дієтологія й марма-терапія</li>
+          <li>Магістр комплементарної медицини, 15+ років професійного досвіду</li>
+          <li>Автор методик з дієтології та детоксикації, розробник оздоровчих програм</li>
+          <li>Йога- та аюрведа-терапевт, переможець змагань «Битва титанів»</li>
+          <li>«Заслужений натуропат Європи» (2017); навчання в Кералі — аюрведична дієтологія й марма-терапія</li>
         </ul>
       </div>
     </div>
@@ -403,7 +579,7 @@
     <div class="testimonial-carousel reveal" data-testimonial-carousel>
       <p class="lead lead-sm testimonial-carousel__intro">Мінус у вазі, легкість у тілі, спокійніший сон, краще травлення, більше фокусу й відчуття, що нові звички справді закріплюються.</p>
       <div class="testimonial-carousel__stage">
-        <button class="testimonial-carousel__nav testimonial-carousel__nav--prev" type="button" data-carousel-prev aria-label="Попередній відгук"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="m15 18-6-6 6-6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="testimonial-carousel__nav testimonial-carousel__nav--prev" type="button" data-carousel-prev aria-label="Попередній відгук"><svg class="ico ico-flip" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
         <div class="testimonial-carousel__track" data-carousel-track>
           <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/focus-weight-20250927.jpg" alt="Відгук про Шлях 21: зниження ваги з 62 до 58 кг, кращий фокус, продуктивність і сон." loading="lazy" decoding="async"></figure>
           <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/minus3-sleep-20230320.jpg" alt="Відгук про Шлях 21: мінус 3 кг, легкість і кращий сон." loading="lazy" decoding="async"></figure>
@@ -417,8 +593,11 @@
           <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/lightness-sleep-inshot-2.jpg" alt="Відгук про Шлях 21, частина 2: легкість у тілі, менше тяги та підтримка." loading="lazy" decoding="async"></figure>
           <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/weight-cravings-inshot-1.jpg" alt="Відгук про Шлях 21, частина 1: зміни у вазі та самопочутті." loading="lazy" decoding="async"></figure>
           <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/weight-cravings-inshot-2.jpg" alt="Відгук про Шлях 21, частина 2: нові звички та усвідомлений вибір їжі." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/screenshot_20220713-154905_chrome.webp" alt="Відгук про Шлях 21: два цикли очищення, ясність сприйняття і зникнення зайвих кілограмів." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/easy-structured-20220713.jpg" alt="Відгук про Шлях 21: легко, продумано і неймовірний результат." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/screenshot_20220713-154916_chrome.webp" alt="Відгук про онлайн-детокс: відновлення балансу після хвороби." loading="lazy" decoding="async"></figure>
         </div>
-        <button class="testimonial-carousel__nav testimonial-carousel__nav--next" type="button" data-carousel-next aria-label="Наступний відгук"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="m9 6 6 6-6 6" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+        <button class="testimonial-carousel__nav testimonial-carousel__nav--next" type="button" data-carousel-next aria-label="Наступний відгук"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
       </div>
       <div class="testimonial-carousel__dots" data-carousel-dots aria-label="Пагінація відгуків"></div>
     </div>
@@ -442,7 +621,7 @@
 
     <!-- live screenshots: click → enlarge (proof.js lightbox) -->
     <div class="car reveal" data-car hidden>
-      <button type="button" class="car-nav prev" aria-label="Попередні відгуки"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button type="button" class="car-nav prev" aria-label="Попередні відгуки"><svg class="ico ico-flip" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
       <div class="car-track">
         <figure class="shot-card"><img src="/shared/img/feedback/inshot_20220713_161913227_a.webp" width="720" height="1093" loading="lazy" decoding="async" alt="Відгук Оксани про програму Шлях 21 — частина 1"><figcaption>відгук · сайт</figcaption></figure>
         <figure class="shot-card"><img src="/shared/img/feedback/inshot_20220713_161913227_b.webp" width="720" height="1132" loading="lazy" decoding="async" alt="Відгук Оксани про програму Шлях 21 — частина 2"><figcaption>відгук · сайт</figcaption></figure>
@@ -459,22 +638,22 @@
         <figure class="shot-card"><img src="/shared/img/feedback/inshot_20220713_162807946_b.webp" width="720" height="1132" loading="lazy" decoding="async" alt="Відгук учасниці програми — частина 2"><figcaption>відгук · сайт</figcaption></figure>
         <figure class="shot-card"><img src="/shared/img/feedback/screenshot_20220713-155000_chrome.webp" width="720" height="1120" loading="lazy" decoding="async" alt="Відгук учасниці про програми CenterWay"><figcaption>відгук · сайт</figcaption></figure>
       </div>
-      <button type="button" class="car-nav next" aria-label="Наступні відгуки"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button type="button" class="car-nav next" aria-label="Наступні відгуки"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
     </div>
     <p class="proof-note reveal">Скріншоти реальних повідомлень і відгуків учасників — мовою оригіналу. Гортайте, щоб подивитися далі.</p>
 
     <!-- Video testimonials ("on request"): uncomment a card, set data-video to a
          YouTube/Shorts URL or a direct .mp4 link, and give it a poster image.
     <div class="car reveal" data-car style="margin-top:1.6rem">
-      <button type="button" class="car-nav prev" aria-label="Попередні відео"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button type="button" class="car-nav prev" aria-label="Попередні відео"><svg class="ico ico-flip" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
       <div class="car-track">
         <button type="button" class="vid-card" data-video="https://youtube.com/shorts/XXXXXXXX">
           <img src="/shared/img/feedback/poster-1.webp" loading="lazy" decoding="async" alt="">
-          <span class="vp"><span><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></span></span>
+          <span class="vp"><span><svg class="ico ico-chrome" width="22" height="22" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-play"/></svg></span></span>
           <span class="vl">Ім'я · результат</span>
         </button>
       </div>
-      <button type="button" class="car-nav next" aria-label="Наступні відео"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button type="button" class="car-nav next" aria-label="Наступні відео"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
     </div>
     -->
 
@@ -492,7 +671,7 @@
     <div class="format-grid">
 
       <!-- Self-guided -->
-      <div class="format-card self reveal">
+      <div class="format-card self reveal" data-cw-nav-dark>
         <span class="fc-badge">Програма</span>
         <div class="fc-title">Шлях 21 — самостійно</div>
         <div class="fc-price">
@@ -506,7 +685,7 @@
           <li>Текстова підтримка 21 день</li>
         </ul>
         <a href="#offer" class="btn btn-primary fc-cta openModal" data-cta-final data-cw-product="way21" data-cw-offer-id="way21_self_4100" data-cw-price-value="4100">Почати Шлях 21 <span class="arr">→</span></a>
-        <div class="fc-guarantee"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Гарантія повернення коштів</div>
+        <div class="fc-guarantee"><svg class="ico" width="13" height="13" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-shield-check"/></svg>Гарантія повернення коштів</div>
       </div>
 
       <!-- Individual -->
@@ -524,7 +703,7 @@
           <li>Індивідуальне ведення та прямий зв'язок у Telegram</li>
         </ul>
         <button type="button" class="btn btn-primary fc-cta" data-lead-open="way21-support">Залишити заявку <span class="arr">→</span></button>
-        <div class="fc-guarantee"><svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Максимальний результат</div>
+        <div class="fc-guarantee"><svg class="ico" width="13" height="13" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-shield-check"/></svg>Максимальний результат</div>
       </div>
 
     </div>
@@ -532,7 +711,7 @@
 </section>
 
 <!-- ============ RESET-DAY ENTRY (soft next route — after offer, before FAQ; brand exception v1) ============ -->
-<section class="sec sec-alt">
+<section id="reset-day" class="sec sec-alt">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Ще не готові до 21 дня?</span>
@@ -556,26 +735,26 @@
 </section>
 
 <!-- ============ FAQ ============ -->
-<section class="sec">
+<section id="faq" class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Питання й відповіді</span>
       <h2 class="sec-title">Що ще варто знати</h2>
     </div>
     <div class="acc faq">
-      <details class="acc-item reveal" open><summary><span class="num">01</span>Чи безпечне таке очищення?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal" open><summary><span class="num">01</span>Чи безпечне таке очищення?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Так. Інтегративний детокс працює м'яко й пролонговано, без агресивних чисток. Усе вибудовано під вашу конституцію, а індивідуальні протипоказання враховуються на консультації.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">02</span>Чи доведеться голодувати?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">02</span>Чи доведеться голодувати?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Ні. Ви їсте — але правильно: тепла їжа під вашу природу, об'єм «скільки терпить око», три тижні за чіткою формулою. Це не голод, а перебудова харчування.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">03</span>Я живу не в Україні. Як щодо трав?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">03</span>Я живу не в Україні. Як щодо трав?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Фітозбори зібрані з трав нашої широти, але за потреби замінюються аюрведичними аналогами з доставкою — програма працює з будь-якої країни.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">04</span>Скільки часу це забирає щодня?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">04</span>Скільки часу це забирає щодня?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Програма вбудовується в робочий графік: ранкове дихання, фітозбір, харчування за режимом і вечірні процедури. Робочий графік міняти не треба.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">05</span>А якщо не спрацює?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">05</span>А якщо не спрацює?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Діє гарантія: за умови виконання протоколу ви отримаєте результат — або ми повернемо кошти. До того ж на продуктах ви заощадите приблизно стільки, скільки коштує курс.</li></ul></div>
       </details>
     </div>
@@ -584,12 +763,12 @@
 
 
 <!-- ============ FOOTER ============ -->
-<footer class="footer">
+<footer class="footer" data-cw-nav-dark>
   <div class="wrap">
     <div class="footer-top">
       <div class="footer-col">
         <a href="#top" class="brand">
-          <img src="/shared/img/cw-logo-gold.png" alt="" class="brand-mark" width="38" height="38" loading="lazy" decoding="async" aria-hidden="true">
+          <img src="/shared/img/cw-logo-gold.png" alt="" class="brand-mark" width="36" height="36" loading="lazy" decoding="async" aria-hidden="true">
           CenterWay
         </a>
         <p>Шлях 21 — інтегративна детокс-програма на основі аюрведи та сучасної дієтології. Очищення тіла, розуму й емоцій.</p>
@@ -685,7 +864,19 @@ document.querySelectorAll('.acc').forEach(group=>{
 <script src="js/common.js" async></script>
 <script src="/shared/js/lead-form.js" defer></script>
 <script src="/shared/js/testimonial-carousel.js?v=20260714-1" defer></script>
-<script src="/shared/js/network-nav.js?v=20260714-4" defer></script>
+<script src="/shared/js/network-nav.js?v=20260817-1" defer></script>
 <script src="/shared/js/proof.js" defer></script>
+<script>
+/* Links to #phyto open the phyto-protocol collapsible, not just scroll to it. */
+(function(){
+  var card=document.getElementById('phyto');
+  if(!card) return;
+  var open=function(){ if(!card.open) card.open=true; };
+  document.querySelectorAll('a[href="#phyto"]').forEach(function(a){
+    a.addEventListener('click',open);
+  });
+  if(location.hash==='#phyto') open();
+})();
+</script>
 </body>
 </html>
