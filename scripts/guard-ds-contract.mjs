@@ -219,6 +219,15 @@ function assertNoRawHex(filePath, label) {
   const content = readFile(filePath);
   const hexPattern = /#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})(?![0-9a-zA-Z_-])/g;
   const allowedRefPattern = /--product-color-ref-[0-9a-f]{6,8}\s*:\s*#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\s*;/;
+  // A hex in var() fallback position is not a raw colour: the token still
+  // governs, the literal only covers the case where the file that defines it
+  // failed to load. It is the documented network pattern — see
+  // docs/design-system.md, "The landing network reads the platform's tokens".
+  const varFallbackPattern = /var\(\s*--[\w-]+\s*,\s*#(?:[0-9a-fA-F]{6}|[0-9a-fA-F]{8})\s*\)/;
+  // Deliberate, reasoned exceptions opt out on the declaration itself rather
+  // than in a list here, so the waiver cannot outlive the line it was granted
+  // for. Same line only — no block scoping to reason about.
+  const optOutMarker = "ds-allow-raw-hex";
   const offenders = [];
 
   for (const match of content.matchAll(hexPattern)) {
@@ -226,9 +235,12 @@ function assertNoRawHex(filePath, label) {
     const lineStart = content.lastIndexOf("\n", start) + 1;
     const lineEnd = content.indexOf("\n", start);
     const line = content.slice(lineStart, lineEnd === -1 ? content.length : lineEnd).trim();
-    if (!allowedRefPattern.test(line)) {
-      offenders.push(line);
-    }
+
+    if (allowedRefPattern.test(line)) continue;
+    if (varFallbackPattern.test(line)) continue;
+    if (line.includes(optOutMarker)) continue;
+
+    offenders.push(line);
   }
 
   if (offenders.length > 0) {
