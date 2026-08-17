@@ -95,6 +95,47 @@
   transition: width 240ms ease;
 }
 
+/* ── Restart (a finished, repeatable protocol) ────── */
+
+.restartRow {
+  display: grid;
+  gap: var(--cw-space-xs);
+  margin-bottom: var(--cw-space-xl);
+  padding: var(--cw-space-md);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-surface-2);
+}
+
+.restartHint {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--cw-muted);
+  line-height: 1.5;
+}
+
+.restartButton {
+  justify-self: start;
+  min-height: var(--ds-touch-target-min);
+  padding-inline: var(--cw-space-lg);
+  border: 1px solid var(--cw-border);
+  border-radius: var(--cw-radius-btn);
+  background: var(--cw-surface);
+  color: inherit;
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.restartButton:hover:not(:disabled) {
+  background: var(--cw-interactive-hover-bg);
+  border-color: var(--cw-interactive-hover-border);
+}
+
+.restartButton:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
 /* ── Outline ──────────────────────────────────────── */
 
 .outline {

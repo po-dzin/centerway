@@ -138,34 +138,49 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
     [courseSlug, lesson]
   );
 
-  const completeLesson = useCallback(async () => {
-    if (!lesson || pending) return;
-    setPending(true);
+  /**
+   * Marks the step done, or takes that mark back.
+   *
+   * Both directions go through the same append-only log. The `stamp` matters:
+   * without it the clientId would be stable per lesson, so completing again
+   * after un-completing would be swallowed as a duplicate and the checkbox
+   * would silently refuse to re-tick.
+   */
+  const setLessonCompleted = useCallback(
+    async (next: boolean) => {
+      if (!lesson || pending) return;
+      setPending(true);
 
-    const result = await postProgress(courseSlug, [
-      {
-        clientId: progressClientId({ lessonId: lesson.id, kind: "complete" }),
-        type: "lesson.completed",
-        lessonSlug: lesson.slug,
-        occurredAt: new Date().toISOString(),
-      },
-    ]);
+      const result = await postProgress(courseSlug, [
+        {
+          clientId: progressClientId({
+            lessonId: lesson.id,
+            kind: next ? "complete" : "uncomplete",
+            stamp: String(Date.now()),
+          }),
+          type: next ? "lesson.completed" : "lesson.uncompleted",
+          lessonSlug: lesson.slug,
+          occurredAt: new Date().toISOString(),
+        },
+      ]);
 
-    setPending(false);
-    if (!result.ok) return;
+      setPending(false);
+      if (!result.ok) return;
 
-    if (result.data.rejected.length > 0) {
-      // The gate said no (e.g. checklist changed under us) — resync from server.
+      if (result.data.rejected.length > 0) {
+        // The gate said no (e.g. checklist changed under us) — resync from server.
+        void load();
+        return;
+      }
+
+      setCompleted(next);
+
+      // Refresh so the drawer, the pager and the outline reflect the new state —
+      // completing a step can unlock the next one, and un-completing can close it.
       void load();
-      return;
-    }
-
-    setCompleted(true);
-
-    // Refresh so the drawer, the pager and the outline reflect the new state —
-    // completing a step can unlock the next one.
-    void load();
-  }, [courseSlug, lesson, pending, load]);
+    },
+    [courseSlug, lesson, pending, load]
+  );
 
   if (state.status === "loading") {
     return (
@@ -270,10 +285,11 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
           <input
             type="checkbox"
             checked={completed}
-            /* Completion is monotonic in lms-core, so a finished step cannot be
-               un-ticked here — the control locks once done. */
-            disabled={completed || !checklistSatisfied || pending}
-            onChange={completeLesson}
+            /* A finished step CAN be un-ticked: the protocol is repeatable, and
+               the checklist gate guards claiming the step is done, not
+               withdrawing that claim — hence `completed ||` on the gate. */
+            disabled={pending || (!completed && !checklistSatisfied)}
+            onChange={(event) => void setLessonCompleted(event.target.checked)}
           />
           <span>{completed ? "Крок пройдено" : pending ? "Зберігаємо…" : "Позначити крок пройденим"}</span>
         </label>

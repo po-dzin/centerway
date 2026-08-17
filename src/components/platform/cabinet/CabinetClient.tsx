@@ -149,6 +149,7 @@ export function CabinetClient() {
   const [section, setSection] = useState<CabinetSection>("overview");
   const [shelf, setShelf] = useState<LearnerShelfCourseDto[] | null>(null);
   const [shelfFailed, setShelfFailed] = useState(false);
+  const [reach, setReach] = useState<{ linked: boolean; linkUrl: string | null } | null>(null);
 
   const doshaTestHref = usePlatformHref(DOSHA_TEST_ROUTE);
   const testsHubHref = usePlatformHref(TESTS_HUB_ROUTE);
@@ -236,6 +237,19 @@ export function CabinetClient() {
     }
   }, []);
 
+  /** Whether a course reminder can actually be delivered to this learner. */
+  const loadReach = useCallback(async (token: string) => {
+    try {
+      const res = await fetch("/api/platform/users/me/telegram", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return;
+      setReach((await res.json()) as { linked: boolean; linkUrl: string | null });
+    } catch {
+      // Non-fatal: the account section simply omits the reachability card.
+    }
+  }, []);
+
   useEffect(() => {
     if (!isAuthEnabled) return;
 
@@ -273,6 +287,7 @@ export function CabinetClient() {
       setError(null);
       setLoading(false);
       void loadShelf();
+      void loadReach(data.session.access_token);
     };
 
     void boot();
@@ -282,7 +297,7 @@ export function CabinetClient() {
     } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
 
     return () => subscription.unsubscribe();
-  }, [isAuthEnabled, loadShelf]);
+  }, [isAuthEnabled, loadShelf, loadReach]);
 
   const selectSection = useCallback((next: CabinetSection) => {
     setSection(next);
@@ -799,6 +814,34 @@ export function CabinetClient() {
               <h2 className={styles.sectionTitle}>{cab.accountTitle}</h2>
               <p className={styles.sectionLead}>{cab.accountLead}</p>
             </div>
+            {/* Reachability is stated before the contact fields: a learner who
+                cannot receive a reminder should learn it here, not by missing
+                one. */}
+            {reach ? (
+              <article className={reach.linked ? styles.card : styles.notice}>
+                <h3 className={styles.cardTitle}>{cab.notificationsTitle}</h3>
+                <p className={styles.cardText}>
+                  {reach.linked
+                    ? cab.notificationsLinked
+                    : reach.linkUrl
+                      ? cab.notificationsMissing
+                      : cab.notificationsUnavailable}
+                </p>
+                {!reach.linked && reach.linkUrl ? (
+                  <div className={styles.actions}>
+                    <a
+                      className={styles.actionPrimary}
+                      href={reach.linkUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {cab.connectTelegram}
+                    </a>
+                  </div>
+                ) : null}
+              </article>
+            ) : null}
+
             <article className={styles.card}>
               <h3 className={styles.cardTitle}>{copy.contactsTitle}</h3>
               <ul className={styles.metaList}>

@@ -10,7 +10,7 @@
  */
 
 import { supabaseClient } from "@/lib/supabaseClient";
-import type { LessonAvailability, LessonBlock, InlineText } from "@/lms-core";
+import type { LessonAvailability, LessonBlock, InlineText, ProgressEventType } from "@/lms-core";
 
 export type LmsFailure =
   | "unauthenticated"
@@ -206,7 +206,9 @@ export function fetchLesson(courseSlug: string, lessonSlug: string): Promise<Lms
 
 export type OutgoingProgressEvent = {
   clientId: string;
-  type: "lesson.started" | "lesson.completed" | "checklist.toggled";
+  /** Derived from the core union rather than re-listed: a new event type must
+      not need to be remembered in two places. */
+  type: ProgressEventType;
   lessonSlug: string;
   occurredAt: string;
   payload?: { itemId?: string; checked?: boolean };

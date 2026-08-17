@@ -205,6 +205,38 @@ describe("progress fold", () => {
     expect(progress.lessons.l1.status).toBe("completed");
   });
 
+  it("un-completes on an explicit event, keeping the checklist intact", () => {
+    const progress = foldProgress([
+      ...events,
+      { clientId: "e5", type: "lesson.uncompleted", lessonId: "l1", occurredAt: "2026-08-16T06:00:00Z" },
+    ]);
+    expect(progress.lessons.l1.status).toBe("started");
+    expect(progress.lessons.l1.completedAt).toBeNull();
+    expect(progress.completedLessonIds).toEqual([]);
+    // Un-ticking the step must not silently discard the learner's answers.
+    expect(progress.lessons.l1.checklist.c1).toBe(true);
+  });
+
+  it("re-completes after un-completing, and re-stamps completedAt", () => {
+    const progress = foldProgress([
+      ...events,
+      { clientId: "e5", type: "lesson.uncompleted", lessonId: "l1", occurredAt: "2026-08-16T06:00:00Z" },
+      { clientId: "e6", type: "lesson.completed", lessonId: "l1", occurredAt: "2026-08-17T06:00:00Z" },
+    ]);
+    expect(progress.lessons.l1.status).toBe("completed");
+    // The second pass reports when IT finished, not when the first one did.
+    expect(progress.lessons.l1.completedAt).toBe("2026-08-17T06:00:00Z");
+  });
+
+  it("resolves completion by occurredAt, not by arrival order", () => {
+    const log: ProgressEvent[] = [
+      ...events,
+      { clientId: "e5", type: "lesson.uncompleted", lessonId: "l1", occurredAt: "2026-08-16T06:00:00Z" },
+    ];
+    // An offline client flushing out of order must converge on the same state.
+    expect(foldProgress([...log].reverse())).toEqual(foldProgress(log));
+  });
+
   it("applies last-write-wins per checklist item", () => {
     const progress = foldProgress([
       {

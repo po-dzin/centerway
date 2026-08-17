@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { ProductCode } from "@/lib/products";
 import { callTelegramBotApi, sendTelegramMessage } from "@/lib/tg";
+import { verifyTelegramLinkToken } from "@/lib/platform/telegramLink";
 
 type Supabase = ReturnType<typeof supabaseAdmin>;
 type BotProductCode = Extract<ProductCode, "short" | "irem" | "way21" | "reset-day">;
@@ -504,6 +505,72 @@ async function handleSupportMessage(
   );
 }
 
+/**
+ * Handles a `/start` payload issued by the cabinet's "connect Telegram" link.
+ *
+ * Returns false when the payload is not one of ours, so every other deep link
+ * keeps its existing behaviour. Returns true once it has answered the user,
+ * including for an expired or forged token — those are ours to explain.
+ */
+async function tryLinkAccount(
+  db: Supabase,
+  chatId: number,
+  user: TelegramUser,
+  payload: string
+): Promise<boolean> {
+  const verdict = verifyTelegramLinkToken(payload);
+
+  if (!verdict.ok) {
+    if (verdict.reason === "malformed") return false;
+    await sendMessage(
+      chatId,
+      verdict.reason === "expired"
+        ? "Посилання застаріло. Відкрий кабінет і натисни «Підключити Telegram» ще раз."
+        : "Не вдалося перевірити посилання. Спробуй ще раз із кабінету."
+    );
+    return true;
+  }
+
+  const { data: profile } = await db
+    .from("platform_users")
+    .select("email, full_name")
+    .eq("auth_user_id", verdict.authUserId)
+    .maybeSingle();
+
+  const { data: existing } = await db
+    .from("customers")
+    .select("id")
+    .eq("auth_user_id", verdict.authUserId)
+    .limit(1)
+    .maybeSingle();
+
+  const tgId = String(user.id);
+
+  // One chat belongs to one account: a chat previously linked elsewhere must
+  // stop receiving that account's course reminders the moment it is re-linked.
+  await db.from("customers").update({ tg_id: null }).eq("tg_id", tgId).neq("auth_user_id", verdict.authUserId);
+
+  if (existing?.id) {
+    await db.from("customers").update({ tg_id: tgId }).eq("id", existing.id);
+  } else {
+    // A registered learner who asks to be notified becomes a contact even
+    // without a purchase — otherwise there is no row to hold the address.
+    await db.from("customers").insert({
+      auth_user_id: verdict.authUserId,
+      email: profile?.email ?? null,
+      display_name: profile?.full_name ?? null,
+      tg_id: tgId,
+    });
+  }
+
+  await saveSession(db, user, { state: "idle", contact: null });
+  await sendMessage(
+    chatId,
+    "Готово — акаунт CenterWay підключено. Нагадування про кроки курсу приходитимуть сюди."
+  );
+  return true;
+}
+
 async function handleTextMessage(
   db: Supabase,
   message: TelegramMessage
@@ -515,6 +582,12 @@ async function handleTextMessage(
   const chatId = message.chat.id;
 
   if (text === "/start" || text.startsWith("/start ")) {
+    // A deep link from the cabinet carries a signed account token. Anything
+    // else — including the product bots' own payloads — falls through to the
+    // picker exactly as before, so the sales path is untouched.
+    const payload = text.slice("/start".length).trim();
+    if (payload && (await tryLinkAccount(db, chatId, user, payload))) return;
+
     await saveSession(db, user, { state: "idle", contact: null });
     await sendProductPicker(chatId);
     return;

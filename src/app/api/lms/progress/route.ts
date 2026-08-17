@@ -23,7 +23,14 @@ import {
 
 export const runtime = "nodejs";
 
-const ALLOWED_TYPES: ProgressEventType[] = ["lesson.started", "lesson.completed", "checklist.toggled"];
+const ALLOWED_TYPES: ProgressEventType[] = [
+  "lesson.started",
+  "lesson.completed",
+  // Un-completing carries no checklist gate: the gate guards claiming a step is
+  // done, not withdrawing that claim. Availability still applies below.
+  "lesson.uncompleted",
+  "checklist.toggled",
+];
 const MAX_EVENTS_PER_BATCH = 100;
 
 const FAILURE_STATUS: Record<string, number> = {

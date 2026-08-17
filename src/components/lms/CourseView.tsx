@@ -8,7 +8,14 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { inlineToPlainText } from "@/lms-core";
-import { ensureTimeZoneSynced, fetchCourse, type CourseViewDto, type LmsFailure } from "./lmsClient";
+import {
+  ensureTimeZoneSynced,
+  fetchCourse,
+  postProgress,
+  progressClientId,
+  type CourseViewDto,
+  type LmsFailure,
+} from "./lmsClient";
 import { LmsNotice } from "./LmsNotice";
 import styles from "./Lms.module.css";
 
@@ -17,10 +24,44 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
     { status: "loading" } | { status: "ready"; data: CourseViewDto } | { status: "error"; error: LmsFailure }
   >({ status: "loading" });
 
+  const [restarting, setRestarting] = useState(false);
+
   const load = useCallback(async () => {
     const result = await fetchCourse(courseSlug);
     setState(result.ok ? { status: "ready", data: result.data } : { status: "error", error: result.error });
   }, [courseSlug]);
+
+  /**
+   * Takes a finished course back to step one.
+   *
+   * One batch of `lesson.uncompleted`, which is exactly why the endpoint is a
+   * batch: the server folds progress once up front, so every step is still
+   * unlocked when its own event is validated — un-completing step 1 does not
+   * lock step 2 out of the same request.
+   */
+  const restart = useCallback(
+    async (entries: CourseViewDto["outline"]) => {
+      if (restarting) return;
+      const done = entries.filter((entry) => entry.completed && !entry.isReference);
+      if (done.length === 0) return;
+
+      setRestarting(true);
+      const stamp = String(Date.now());
+      const result = await postProgress(
+        courseSlug,
+        done.map((entry) => ({
+          clientId: progressClientId({ lessonId: entry.lessonId, kind: "uncomplete", stamp }),
+          type: "lesson.uncompleted" as const,
+          lessonSlug: entry.slug,
+          occurredAt: new Date().toISOString(),
+        }))
+      );
+      setRestarting(false);
+
+      if (result.ok) void load();
+    },
+    [courseSlug, restarting, load]
+  );
 
   useEffect(() => {
     // Guarded so a course switch cannot land a stale response.
@@ -86,6 +127,22 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
       >
         <div className={styles.progressFill} style={{ width: `${Math.round(ratio * 100)}%` }} />
       </div>
+
+      {/* A finished protocol is meant to be repeated, so the end of the course
+          offers the beginning of it rather than a dead end. */}
+      {standing.isFinished ? (
+        <div className={styles.restartRow}>
+          <p className={styles.restartHint}>Протокол можна проходити повторно — коли відчуєш потребу.</p>
+          <button
+            className={styles.restartButton}
+            type="button"
+            disabled={restarting}
+            onClick={() => void restart(outline)}
+          >
+            {restarting ? "Скидаємо…" : "Пройти заново"}
+          </button>
+        </div>
+      ) : null}
 
       <ul className={styles.outline}>
         {steps.map((entry) => {

@@ -9,14 +9,23 @@
  * See docs/lms-research-2026-08-15.md §5A.
  *
  * Fold invariants:
- * - completion is monotonic — a later `lesson.started` never un-completes a lesson;
+ * - completion changes only through an explicit completion event — a later
+ *   `lesson.started` never un-completes a lesson, but `lesson.uncompleted`
+ *   does, and the two are resolved last-write-wins by `occurredAt`;
  * - checklist ticks are last-write-wins per item, ordered by `occurredAt`;
  * - events are deduplicated by `clientId`, so a retried offline flush is safe.
+ *
+ * Completion used to be strictly monotonic. That was wrong for a repeatable
+ * protocol: reset-day is explicitly "повторюй тоді, коли відчуваєш потребу",
+ * and a course you can never un-finish can never be taken a second time.
+ * Un-completing is an event rather than a deletion so the log stays append-only
+ * and an offline replay still converges (2026-08-17).
  */
 
 export type ProgressEventType =
   | "lesson.started"
   | "lesson.completed"
+  | "lesson.uncompleted"
   | "checklist.toggled";
 
 export type ProgressEvent = {
@@ -96,7 +105,21 @@ export function foldProgress(events: ProgressEvent[]): CourseProgress {
           ...current,
           status: "completed",
           startedAt: current.startedAt ?? event.occurredAt,
-          completedAt: current.completedAt ?? event.occurredAt,
+          // Re-stamped on every completion: taking a repeatable protocol a
+          // second time should report when THIS pass finished, not the first.
+          completedAt: event.occurredAt,
+        };
+        break;
+
+      case "lesson.uncompleted":
+        lessons[event.lessonId] = {
+          ...current,
+          // Back to `started`, never to `not_started`: the learner has been
+          // here, and the checklist they ticked is deliberately left intact so
+          // un-ticking a completion does not silently wipe their answers.
+          status: "started",
+          startedAt: current.startedAt ?? event.occurredAt,
+          completedAt: null,
         };
         break;
 

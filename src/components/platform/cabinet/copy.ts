@@ -52,6 +52,12 @@ export type CabinetCopy = {
   accountTitle: string;
   accountLead: string;
 
+  notificationsTitle: string;
+  notificationsLinked: string;
+  notificationsMissing: string;
+  connectTelegram: string;
+  notificationsUnavailable: string;
+
   shelfErrorTitle: string;
   shelfErrorLead: string;
   retry: string;
@@ -116,6 +122,13 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       accountTitle: "Account and contacts",
       accountLead: "The fields orders and access notifications are matched against.",
 
+      notificationsTitle: "Course reminders",
+      notificationsLinked: "Telegram is connected — step reminders arrive there.",
+      notificationsMissing:
+        "No delivery channel is connected, so course reminders will not reach you. Connect Telegram in one tap.",
+      connectTelegram: "Connect Telegram",
+      notificationsUnavailable: "Reminder delivery is temporarily unavailable. Nothing is lost — try again later.",
+
       shelfErrorTitle: "Could not load your courses",
       shelfErrorLead: "The rest of the profile is shown — try loading the courses again.",
       retry: "Try again",
@@ -168,6 +181,13 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     accountLabel: "Акаунт",
     accountTitle: "Акаунт і контакти",
     accountLead: "Поля, за якими зіставляються замовлення і повідомлення про доступ.",
+
+    notificationsTitle: "Нагадування про курс",
+    notificationsLinked: "Telegram підключено — нагадування про кроки приходять туди.",
+    notificationsMissing:
+      "Канал доставки не підключено, тому нагадування про кроки курсу до вас не дійдуть. Підключити Telegram — один дотик.",
+    connectTelegram: "Підключити Telegram",
+    notificationsUnavailable: "Доставка нагадувань тимчасово недоступна. Нічого не втрачено — спробуйте пізніше.",
 
     shelfErrorTitle: "Не вдалося завантажити курси",
     shelfErrorLead: "Решта профілю показана — спробуйте завантажити курси ще раз.",
