@@ -1,0 +1,12 @@
+# Supabase
+.branches
+.temp
+
+# dotenvx
+.env.keys
+.env.local
+.env.*.local
+
+# Staged by scripts/db-stage-migration.mjs from docs/migration/sql (canonical record).
+# Generated artifact — never edit here, never commit.
+migrations/

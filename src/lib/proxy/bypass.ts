@@ -1,6 +1,19 @@
 import { LANDING_STATIC_BRANDS } from "@/lib/landing/contracts";
 
-const INFRA_BYPASS_PREFIXES = ["/api/", "/v1/", "/_next/", "/_vercel/", "/pay/return", "/go/"] as const;
+// "/cw/" and "/shared/" are platform asset roots served straight from static output.
+// They must never enter brand resolution: an asset request carries the embedding page
+// as its referer, so a page whose path maps to a funnel brand (/consult, /dosha-test,
+// /tests/dosha) turned its own images into disabled-surface 404s.
+const INFRA_BYPASS_PREFIXES = [
+  "/api/",
+  "/v1/",
+  "/_next/",
+  "/_vercel/",
+  "/pay/return",
+  "/go/",
+  "/cw/",
+  "/shared/",
+] as const;
 
 const LANDING_BRAND_PREFIXES = Array.from(LANDING_STATIC_BRANDS, (brand) => `/${brand}/`);
 

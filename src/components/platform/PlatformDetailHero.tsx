@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { CSSProperties } from "react";
 import styles from "@/components/platform/PlatformHeroStyles";
+import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 
 type DetailHeroAction = {
@@ -46,9 +47,12 @@ export function PlatformDetailHero({
 }: PlatformDetailHeroProps) {
   const desktopFocus = resolveHeroPosition(artwork?.desktopPosition);
   const mobileFocus = resolveHeroPosition(artwork?.mobilePosition ?? artwork?.desktopPosition);
+  /* Only the -desktop/-mobile pair is set inline. The unsuffixed
+     --hero-photo-x/y are deliberately left to PlatformResponsive.module.css,
+     which picks the right one per breakpoint: setting them here too would win
+     on specificity (inline beats every selector) and the mobile focal point
+     would never apply. */
   const heroStyle = {
-    "--hero-photo-x": desktopFocus.x,
-    "--hero-photo-y": desktopFocus.y,
     "--hero-photo-x-desktop": desktopFocus.x,
     "--hero-photo-y-desktop": desktopFocus.y,
     "--hero-photo-x-mobile": mobileFocus.x,
@@ -70,12 +74,7 @@ export function PlatformDetailHero({
       style={heroStyle}
     >
       <div className={styles.heroPhotoLayer}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          className={styles.expertImage}
-          src={artwork?.desktop}
-          alt={imageAlt}
-        />
+        <PlatformHeroPhoto artwork={artwork} alt={imageAlt} className={styles.expertImage} eager />
       </div>
       <div className={styles.heroFeatureContent}>
         <p className={styles.heroBadge}>

@@ -4,7 +4,7 @@ export const platformHomeHref = "/";
 
 export const platformNav = [
   { label: "Головна", href: "/", match: "exact" as const },
-  { label: "Діагностика", href: "/dosha-test", match: "exact" as const },
+  { label: "Діагностика", href: "/tests", match: "prefix" as const },
   { label: "Програми", href: "/programs", match: "prefix" as const },
   { label: "Продукти", href: "/products", match: "prefix" as const },
   { label: "Про автора", href: "/expert", match: "exact" as const },
@@ -189,13 +189,16 @@ export const programs = [
     primaryActionKind: "buy" as PlatformOfferPrimaryActionKind,
     title: "Reset Day",
     fullTitle: "Reset Day - короткий розвантажувальний маршрут",
-    href: resetDayFunnelHref,
+    // Catalog cards lead to the platform page, checkout stays on the funnel —
+    // the same split `reboot` uses. It also gives a buyer somewhere to land
+    // that can tell them they already own the course.
+    href: getPlatformRoute("reset-day") ?? "/programs/reset-day",
     funnelHref: resetDayFunnelHref,
     tag: "Міні-курс детоксу",
     duration: "1 день",
     visual: "stone",
     artwork: {
-      desktop: "/cw/platform/programs/mini-detox-card-v1.png",
+      desktop: "/cw/platform/programs/reset-day-card-v1.png",
       desktopPosition: "center 14%",
       mobilePosition: "center 16%",
     },
@@ -233,9 +236,15 @@ export const platformAggregateArtwork = {
 
 export const platformPageArtwork = {
   dosha: {
-    desktop: "/cw/platform/pages/dosha-hero-v1.png",
-    desktopPosition: "center 18%",
-    mobilePosition: "center 16%",
+    /* Three doshas as three materials under one light: dry grass in matte
+       ceramic, resin in patinated copper, still water and a leaf in dark
+       stoneware. The portrait master is not a crop of the landscape one — it
+       restages the same three centres tall, because a portrait viewport shows
+       only about a third of a 16:10 plate and would drop two of the three. */
+    desktop: "/shared/img/dosha-tridosha-2026-08.webp",
+    mobile: "/shared/img/dosha-tridosha-portrait-2026-08.webp",
+    desktopPosition: "center 42%",
+    mobilePosition: "center 34%",
   },
   consult: {
     desktop: "/cw/platform/pages/consult-hero-v1.png",

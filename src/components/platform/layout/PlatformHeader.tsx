@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { platformHomeHref, platformNav } from "@/lib/platform/content";
 import styles from "@/components/platform/PlatformShellStyles";
 import { PlatformProfileEntry } from "./PlatformProfileEntry";
@@ -15,6 +15,8 @@ export function PlatformHeader({
   initialTone?: "light" | "dark";
 }) {
   const [openMenuPath, setOpenMenuPath] = useState<string | null>(null);
+  const headerRef = useRef<HTMLElement | null>(null);
+  const toggleRef = useRef<HTMLButtonElement | null>(null);
   const pathname = usePathname();
   const headerTone = useHeaderTone(initialTone, pathname);
   const isBrandedHost = useIsBrandedHost();
@@ -26,29 +28,34 @@ export function PlatformHeader({
   const currentPath = pathname ?? null;
   const menuOpen = openMenuPath !== null && openMenuPath === currentPath;
 
+  // The mobile menu is a drawer hung off the bar, not a full-screen sheet, so
+  // the page behind it stays live: no scroll lock, and the two ways out of a
+  // drawer — click away, press Escape — have to exist. Same contract as the
+  // network bar (shared/js/network-nav.js).
   useEffect(() => {
-    if (typeof document === "undefined") return;
-    const { body, documentElement } = document;
+    if (!menuOpen || typeof document === "undefined") return;
 
-    if (menuOpen) {
-      body.style.overflow = "hidden";
-      body.style.touchAction = "none";
-      documentElement.style.overflow = "hidden";
-      documentElement.style.touchAction = "none";
-    } else {
-      body.style.overflow = "";
-      body.style.touchAction = "";
-      documentElement.style.overflow = "";
-      documentElement.style.touchAction = "";
+    function onPointerDown(event: MouseEvent | TouchEvent) {
+      const target = event.target;
+      if (target instanceof Node && headerRef.current?.contains(target)) return;
+      setOpenMenuPath(null);
     }
 
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key !== "Escape") return;
+      setOpenMenuPath(null);
+      toggleRef.current?.focus();
+    }
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("touchstart", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
     return () => {
-      body.style.overflow = "";
-      body.style.touchAction = "";
-      documentElement.style.overflow = "";
-      documentElement.style.touchAction = "";
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("touchstart", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
     };
-  }, [menuOpen, pathname]);
+  }, [menuOpen]);
 
   function closeMenu() {
     setOpenMenuPath(null);
@@ -62,6 +69,7 @@ export function PlatformHeader({
 
   return (
     <header
+      ref={headerRef}
       className={styles.header}
       data-cw-glass="shell"
       data-cw-header-tone={headerTone}
@@ -95,6 +103,7 @@ export function PlatformHeader({
           <PlatformProfileEntry compact />
         </div>
         <button
+          ref={toggleRef}
           className={styles.menuButton}
           type="button"
           aria-label={menuOpen ? "Закрити меню" : "Відкрити меню"}

@@ -3,6 +3,7 @@ import {
   PlatformOfferResultList,
   PlatformOfferSurfaceTemplate,
 } from "@/components/platform/PlatformOfferSurfaceTemplate";
+import { OwnedCourseNotice } from "@/components/platform/OwnedCourseNotice";
 import type { programs } from "@/lib/platform/content";
 
 type Program = (typeof programs)[number];
@@ -50,6 +51,7 @@ export function ProgramDetailPage({ program }: { program: Program }) {
           label: isMiniCourse ? "Подивитися формат" : "Подивитися деталі",
         },
       }}
+      afterHero={<OwnedCourseNotice programSlug={program.slug} />}
       detailSectionId="program-results"
       detailSemanticFamily="method-progress"
       detailLeft={{

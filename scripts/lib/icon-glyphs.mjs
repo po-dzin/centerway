@@ -1,0 +1,345 @@
+/**
+ * CenterWay icon + hand-graphics geometry — the single source of truth.
+ *
+ * Contract (docs/design-system.md § Icons):
+ *   - 24 grid, stroke 1.5, round caps and joins, no fills except accent dots;
+ *   - monoline character shared with the dot/path/orbit graphics language;
+ *   - the "hand" character is NOT authored here — it is baked from this clean
+ *     geometry by scripts/icons-bake.mjs (preset hand2). Keep these paths
+ *     editable and geometric.
+ *
+ * `d` entries are plain path data. `dots` entries are filled accent circles
+ * (the one exception to "stroke only" — a dot is a node, not a shape).
+ */
+
+/** Icons live on a 24x24 grid. */
+export const ICON_VIEWBOX = "0 0 24 24";
+
+/** Hand-graphics primitives live on a 36x36 grid (thinner relative stroke). */
+export const GRAPHIC_VIEWBOX = "0 0 36 36";
+
+/**
+ * Baking presets, carried over from the approved character study
+ * (docs/archive/working-notes/ds-icon-character-study-2026-08-15.html).
+ * `hand2` is the author-approved character.
+ */
+export const HAND_PRESETS = {
+  base: { frequency: 0, scale: 0, seed: 0 },
+  hand1: { frequency: 0.03, scale: 1.4, seed: 7 },
+  hand2: { frequency: 0.05, scale: 2.4, seed: 3 },
+  hand3: { frequency: 0.08, scale: 3.6, seed: 11 },
+};
+
+export const DEFAULT_PRESET = "hand2";
+
+/**
+ * Icon set v1. Grouped only for the preview/docs — the sprite is flat.
+ */
+export const ICONS = {
+  // ── Route: where I am / what is next ────────────────────────────────────
+  "arrow-right": {
+    group: "Route",
+    d: ["M4 12h14", "M12.8 6.4 18.4 12l-5.6 5.6"],
+  },
+  "arrow-left": {
+    group: "Route",
+    d: ["M20 12H6", "M11.2 6.4 5.6 12l5.6 5.6"],
+  },
+  "chevron-right": {
+    group: "Route",
+    d: ["M9.5 5.5 16 12l-6.5 6.5"],
+  },
+  "chevron-down": {
+    group: "Route",
+    d: ["M5.5 9.5 12 16l6.5-6.5"],
+  },
+
+  // ── Tagline trio: тело / ритм / опора ──────────────────────────────────
+  body: {
+    group: "Tagline",
+    d: [
+      "M12 4.2a2 2 0 1 0 0 4 2 2 0 0 0 0-4z",
+      "M12 8.6v6.2",
+      "M7.4 11.2c2 1.1 3.1 1.6 4.6 1.6s2.6-.5 4.6-1.6",
+      "M12 14.8 9.2 20",
+      "M12 14.8 14.8 20",
+    ],
+  },
+  rhythm: {
+    group: "Tagline",
+    d: ["M3.2 12h3.4l2.2-5.2 2.6 10.4L13.8 12h7"],
+  },
+  // Опора: a ground line with a low arch resting on it and the bearing point
+  // marked. Deliberately NOT an arrow into a bar — that reads as "upload".
+  support: {
+    group: "Tagline",
+    d: ["M3.6 19.4h16.8", "M4.6 15.6C7.4 9.6 9.8 6.6 12 6.6s4.6 3 7.4 9"],
+    dots: [{ cx: 12, cy: 19.4, r: 1.3, accent: true }],
+  },
+
+  // ── Rhythm of time ─────────────────────────────────────────────────────
+  day: {
+    group: "Rhythm",
+    d: [
+      "M6.4 16.6a5.6 5.6 0 0 1 11.2 0",
+      "M3 16.6h18",
+      "M12 3.4v2.2",
+      "M5.2 6.2l1.6 1.6",
+      "M18.8 6.2l-1.6 1.6",
+    ],
+  },
+  phase: {
+    group: "Rhythm",
+    d: ["M12 3.6a8.4 8.4 0 1 0 0 16.8 8.4 8.4 0 0 0 0-16.8z", "M12 3.6c3.4 3 3.4 13.8 0 16.8"],
+  },
+  // Seven days as dots on a rail — the dot/path language, not a bar. Pitch and
+  // radius are tuned so the dots stay separate at 24px (they merged at r 1.1).
+  week: {
+    group: "Rhythm",
+    d: [{ path: "M3.2 12h17.6", dash: "0.5 2.7" }],
+    dots: [
+      { cx: 3.2, cy: 12, r: 1.4, accent: true },
+      { cx: 6.1, cy: 12, r: 0.95 },
+      { cx: 9.1, cy: 12, r: 0.95 },
+      { cx: 12, cy: 12, r: 0.95 },
+      { cx: 14.9, cy: 12, r: 0.95 },
+      { cx: 17.9, cy: 12, r: 0.95 },
+      { cx: 20.8, cy: 12, r: 0.95 },
+    ],
+  },
+  clock: {
+    group: "Rhythm",
+    d: ["M12 3.6a8.4 8.4 0 1 0 0 16.8 8.4 8.4 0 0 0 0-16.8z", "M12 7.4V12l3.4 2.2"],
+  },
+
+  // ── Proof / trust ──────────────────────────────────────────────────────
+  check: {
+    group: "Proof",
+    d: ["M4.6 12.8l4.6 4.4L19.4 6.6"],
+  },
+  "shield-check": {
+    group: "Proof",
+    d: [
+      "M12 3.4 4.8 6.2v5.4c0 4.2 2.9 7.4 7.2 9 4.3-1.6 7.2-4.8 7.2-9V6.2z",
+      "M8.8 11.6 11.4 14.2l4-4.4",
+    ],
+  },
+  star: {
+    group: "Proof",
+    d: ["M12 3.8l2.6 5.4 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.6 10l5.8-.8z"],
+  },
+  price: {
+    group: "Proof",
+    d: [
+      "M12.6 3.8H20V11.2l-8.4 8.4a1.6 1.6 0 0 1-2.3 0L4 14.3a1.6 1.6 0 0 1 0-2.3z",
+    ],
+    dots: [{ cx: 16.2, cy: 7.6, r: 1.2 }],
+  },
+
+  // ── Elements / practice ────────────────────────────────────────────────
+  water: {
+    group: "Elements",
+    d: ["M12 3.5c3.6 4.4 5.6 7.4 5.6 10a5.6 5.6 0 1 1-11.2 0c0-2.6 2-5.6 5.6-10z"],
+  },
+  leaf: {
+    group: "Elements",
+    d: ["M5 19c0-7 4-12 14-14 0 8-4 13-11 14", "M5 19c3-4 6-6 9-7"],
+  },
+  bowl: {
+    group: "Elements",
+    d: [
+      "M3.5 10.5h17c0 5-3.8 8.5-8.5 8.5S3.5 15.5 3.5 10.5z",
+      "M9 6.5c1.2-1 1.2-2 .4-3",
+      "M13.5 6.5c1.2-1 1.2-2 .4-3",
+    ],
+  },
+  stone: {
+    group: "Elements",
+    d: ["M4 13.5c1-4.5 4.5-7 8.5-7s7.5 3 7.5 6.5-3 6-8 6-9-1-8-5.5z", "M8 8.5c2 2.5 5.5 4 10.5 4.5"],
+  },
+  breath: {
+    group: "Elements",
+    d: ["M12 3.8a8.2 8.2 0 1 0 0 16.4 8.2 8.2 0 0 0 0-16.4z", "M12 3.8v4M12 16.2v4M3.8 12h4M16.2 12h4"],
+  },
+  sleep: {
+    group: "Elements",
+    d: ["M19.6 14.4A8.4 8.4 0 0 1 9.6 4.4a8.4 8.4 0 1 0 10 10z"],
+    dots: [
+      { cx: 17.2, cy: 5.2, r: 1.1, accent: true },
+      { cx: 20.4, cy: 8.2, r: 0.9 },
+    ],
+  },
+  // Fork + spoon. The spoon is an explicit bowl on a stem; the earlier single
+  // curve read as an unidentifiable blob.
+  food: {
+    group: "Elements",
+    d: [
+      "M6.2 3.8v6.6a2.5 2.5 0 0 0 5 0V3.8",
+      "M8.7 10.6v9.6",
+      "M17.4 3.8a2.6 3.4 0 1 0 0 6.8 2.6 3.4 0 0 0 0-6.8z",
+      "M17.4 10.6v9.6",
+    ],
+  },
+  // Движение: a dot travelling along a curved path. Reads as motion rather than
+  // as text alignment (the earlier three-lines-plus-arc did), and it borrows the
+  // dot/path primitives so it sits inside the graphics language.
+  motion: {
+    group: "Elements",
+    d: ["M3.4 18.6C7.4 8.6 12.6 5 19.4 6.2", "M15.6 4.2l3.8 2-1.6 3.8"],
+    dots: [{ cx: 3.4, cy: 18.6, r: 1.5, accent: true }],
+  },
+
+  // ── Content: what the programme hands you ──────────────────────────────
+  // Added 2026-08-17 when way21 became the reference organism: the two rows
+  // of `#includes` that had no glyph in v1 (webinars, day-by-day instructions).
+  play: {
+    group: "Content",
+    d: ["M9.2 6.2 17.8 12l-8.6 5.8z"],
+  },
+  guide: {
+    group: "Content",
+    d: ["M6.6 3.8h10.8v16.4H6.6z", "M9.4 8.6h5.2", "M9.4 12h5.2", "M9.4 15.4h3.4"],
+  },
+
+  // ── Interface / meta ───────────────────────────────────────────────────
+  question: {
+    group: "Meta",
+    d: [
+      "M12 3.6a8.4 8.4 0 1 0 0 16.8 8.4 8.4 0 0 0 0-16.8z",
+      "M9.4 9.2c.2-1.6 1.3-2.5 2.7-2.5 1.5 0 2.6 1 2.6 2.4 0 1.3-.8 1.9-1.9 2.6-.7.5-.9 1-.9 1.9",
+    ],
+    dots: [{ cx: 11.9, cy: 16.6, r: 1 }],
+  },
+  boundary: {
+    group: "Meta",
+    d: ["M12 4.2 3.4 19.2h17.2z", "M12 9.6v4.4"],
+    dots: [{ cx: 12, cy: 16.8, r: 1 }],
+  },
+  user: {
+    group: "Meta",
+    d: ["M12 4.2a3.6 3.6 0 1 0 0 7.2 3.6 3.6 0 0 0 0-7.2z", "M4.8 20c.9-3.8 3.6-5.8 7.2-5.8s6.3 2 7.2 5.8"],
+  },
+  lock: {
+    group: "Meta",
+    d: ["M5.4 10.6h13.2v9.2H5.4z", "M8.4 10.6V7.8a3.6 3.6 0 0 1 7.2 0v2.8"],
+    dots: [{ cx: 12, cy: 15.2, r: 1.1 }],
+  },
+  globe: {
+    group: "Meta",
+    d: [
+      "M12 3.6a8.4 8.4 0 1 0 0 16.8 8.4 8.4 0 0 0 0-16.8z",
+      "M3.6 12h16.8",
+      "M12 3.6c2.6 2.6 2.6 13.8 0 16.8-2.6-3-2.6-14.2 0-16.8z",
+    ],
+  },
+  sun: {
+    group: "Meta",
+    d: [
+      "M12 7.8a4.2 4.2 0 1 0 0 8.4 4.2 4.2 0 0 0 0-8.4z",
+      "M12 2.6V5M12 19v2.4M2.6 12H5M19 12h2.4M5.3 5.3 7 7M17 17l1.7 1.7M18.7 5.3 17 7M7 17l-1.7 1.7",
+    ],
+  },
+  moon: {
+    group: "Meta",
+    d: ["M19.6 14.4A8.4 8.4 0 0 1 9.6 4.4a8.4 8.4 0 1 0 10 10z"],
+  },
+  mail: {
+    group: "Meta",
+    d: ["M3.6 6.2h16.8v11.6H3.6z", "M3.6 7 12 13.2 20.4 7"],
+  },
+  phone: {
+    group: "Meta",
+    d: [
+      "M8.2 3.8H6.4A2.4 2.4 0 0 0 4 6.4c0 7.6 6 13.6 13.6 13.6a2.4 2.4 0 0 0 2.4-2.4v-1.8l-4.2-1.6-2 2.2c-2.4-1.3-4.3-3.2-5.6-5.6l2.2-2z",
+    ],
+  },
+  telegram: {
+    group: "Meta",
+    d: ["M20.4 4.6 3.8 11.2l4.6 1.8 1.4 5.4 2.6-3.4 4.2 3.2z", "M8.4 13 20.4 4.6l-8 10.4"],
+  },
+  menu: {
+    group: "Meta",
+    d: ["M4 7.4h16", "M4 12h16", "M4 16.6h16"],
+  },
+  close: {
+    group: "Meta",
+    d: ["M6 6l12 12", "M18 6 6 18"],
+  },
+
+  // ── Dosha glyphs ───────────────────────────────────────────────────────
+  vata: {
+    group: "Dosha",
+    d: ["M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z", "M4.6 9.5c4 2 11 2 15 0M4.6 14.5c4-2 11-2 15 0"],
+  },
+  pitta: {
+    group: "Dosha",
+    d: [
+      "M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z",
+      "M12 6.5c2.6 3 3.8 4.8 3.8 6.6a3.8 3.8 0 1 1-7.6 0c0-1.8 1.2-3.6 3.8-6.6z",
+    ],
+  },
+  kapha: {
+    group: "Dosha",
+    d: ["M12 3.5a8.5 8.5 0 1 0 0 17 8.5 8.5 0 0 0 0-17z", "M12 7.6a4.4 4.4 0 1 0 0 8.8 4.4 4.4 0 0 0 0-8.8z"],
+  },
+};
+
+/**
+ * Hand-graphics primitives — dot / path / orbit, and the two composed patterns
+ * (rail, connector) that carry them across a page. Same baking pass, so icons
+ * and graphics read as one hand.
+ *
+ * `dashed: true` marks a stroke that keeps its dash pattern in the sprite.
+ */
+export const GRAPHICS = {
+  dot: {
+    group: "Graphics",
+    dots: [
+      { cx: 18, cy: 18, r: 3, accent: true },
+      { cx: 18, cy: 18, r: 7, ring: true },
+    ],
+  },
+  // Nodes on a travelled path are FILLED, never rings: the dashed path runs
+  // underneath them, and an open ring lets it show through as a hook that reads
+  // like a rendering defect. Rings are only for `dot`, where nothing crosses.
+  orbit: {
+    group: "Graphics",
+    d: [{ path: "M18 4a14 14 0 1 0 0 28 14 14 0 0 0 0-28z", dash: "1 4" }],
+    dots: [
+      { cx: 18, cy: 4, r: 2.4, accent: true },
+      { cx: 30.4, cy: 24.4, r: 2.2 },
+    ],
+  },
+  rail: {
+    group: "Graphics",
+    d: [{ path: "M18 2v32", dash: "1.5 4" }],
+    dots: [
+      { cx: 18, cy: 8, r: 2.4, accent: true },
+      { cx: 18, cy: 19, r: 2.2 },
+      { cx: 18, cy: 29, r: 2.2 },
+    ],
+  },
+  connector: {
+    group: "Graphics",
+    d: [{ path: "M3 28C10 7 26 7 33 28", dash: "1.5 4" }],
+    dots: [
+      { cx: 3, cy: 28, r: 2.4, accent: true },
+      { cx: 33, cy: 28, r: 2.2 },
+    ],
+  },
+};
+
+/** Stable, sorted glyph names — sprite order and preview order. */
+export const ICON_NAMES = Object.keys(ICONS);
+export const GRAPHIC_NAMES = Object.keys(GRAPHICS);
+
+/** Grouping used by the preview pages and the Design System cards. */
+export function groupsOf(set) {
+  const out = new Map();
+  for (const [name, spec] of Object.entries(set)) {
+    const group = spec.group ?? "Other";
+    if (!out.has(group)) out.set(group, []);
+    out.get(group).push(name);
+  }
+  return out;
+}

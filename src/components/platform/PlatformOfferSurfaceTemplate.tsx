@@ -30,6 +30,14 @@ type BoundaryConfig = {
 type PlatformOfferSurfaceTemplateProps = {
   templateKind: "consult" | "program" | "product";
   hero: HeroProps;
+  /**
+   * Rendered directly under the hero, before the sales detail.
+   *
+   * Exists so a per-visitor notice (e.g. "you already own this") can sit above
+   * the pitch without this template having to know what that notice is — the
+   * template stays a server component, the slot can be a client one.
+   */
+  afterHero?: ReactNode;
   detailSectionId?: string;
   detailSemanticFamily: string;
   detailLeft: PanelSlot;
@@ -94,6 +102,7 @@ function renderPanel(panel: PanelSlot) {
 export function PlatformOfferSurfaceTemplate({
   templateKind,
   hero,
+  afterHero,
   detailSectionId,
   detailSemanticFamily,
   detailLeft,
@@ -107,6 +116,8 @@ export function PlatformOfferSurfaceTemplate({
     <PlatformShell headerMode="overlay">
       <main data-cw-detail-template={templateKind}>
         <PlatformDetailHero {...hero} />
+
+        {afterHero}
 
         <section
           className={`${styles.container} ${styles.section}`}

@@ -1,10 +1,8 @@
-import { PlatformDoshaTestPage } from "@/components/platform/PlatformStandalonePages";
+import { permanentRedirect } from "next/navigation";
+import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 
-export const metadata = {
-  title: "CenterWay Dosha Test",
-  description: "12-question dosha test for CenterWay onboarding and personalization",
-};
-
-export default function DoshaTestPage() {
-  return <PlatformDoshaTestPage />;
+// Legacy route. The dosha test now lives inside the tests hub (/tests/dosha);
+// this stays a redirect because older links and the dosha funnel host still use it.
+export default function LegacyDoshaTestPage() {
+  permanentRedirect(DOSHA_TEST_ROUTE);
 }

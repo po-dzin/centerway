@@ -4,33 +4,94 @@
    way21/reset-day local vars). Burger below 760px, topbar at 760px+. */
 
 .cwn {
-  /* Component tokens (--cw-nav-*): neutral defaults, overridden per landing. */
-  --cw-nav-surface: rgb(250 247 240 / 0.86);
+  /* Component tokens (--cw-nav-*): text/ink dialect, overridden per landing.
+     The glass material itself (tint/blur/stroke/shadow) comes from the shared
+     --cw-net-mat-* recipe in network-tokens.css — the same one the platform
+     shell's own topbar uses — so this reads as one material, not a
+     landing-specific invention. */
   --cw-nav-ink: #22352e;
-  --cw-nav-text: #5b6a62;
+  /* Full strength, not a muted grey — see the tint note on .cwn::before. The
+     active item is still distinguished by --cw-nav-accent plus its border, so
+     the hierarchy survives without leaning on a lighter inactive colour. */
+  --cw-nav-text: #22352e;
   --cw-nav-accent: #264e44;
   --cw-nav-active-bg: #e9f1ec;
-  --cw-nav-border: rgb(34 53 46 / 0.12);
+  --cw-nav-border: var(--cw-net-mat-stroke, rgb(34 53 46 / 0.12));
   --cw-nav-panel: #ffffff;
-  --cw-nav-shadow: 0 18px 48px rgb(23 38 31 / 0.14);
-  --cw-nav-radius: 1rem;
+  --cw-nav-shadow: var(--cw-net-mat-shadow-raised, 0 18px 48px rgb(23 38 31 / 0.14));
+  --cw-nav-radius: 1.6rem;
 
   position: fixed;
-  top: 0;
+  top: 0.95rem;
   right: 0;
   left: 0;
   z-index: 60;
-  border-bottom: 1px solid var(--cw-nav-border);
-  background: var(--cw-nav-surface);
-  backdrop-filter: blur(18px) saturate(150%);
-  -webkit-backdrop-filter: blur(18px) saturate(150%);
+  width: min(100% - 2rem, var(--maxw, 1160px));
+  margin-inline: auto;
+  border-radius: var(--cw-nav-radius);
+  /* No CSS border here. An absolutely positioned pseudo insets against the
+     PADDING box, so a 1px border on .cwn left a ring the glass layer never
+     covered: over a light page it was invisible, over a dark hero it read as a
+     hairline slit around the bar. The stroke moved onto .cwn::before as an
+     inset shadow, i.e. onto the same painted layer as the tint and the blur. */
+  border: 0;
+  box-shadow: var(--cw-net-mat-shadow, 0 10px 28px rgb(23 38 31 / 0.12));
   font-size: 0.95rem;
   line-height: 1.2;
   opacity: 0;
   pointer-events: none;
-  transform: translateY(-100%);
+  transform: translateY(-10px);
   visibility: hidden;
-  transition: transform 180ms ease-out, opacity 160ms ease-out, visibility 0s linear 180ms;
+  transition: transform 220ms ease-out, opacity 180ms ease-out, visibility 0s linear 220ms;
+}
+
+/* Blur lives on its own layer, not on .cwn: backdrop-filter makes an element a
+   containing block for fixed-position descendants, and putting it directly on
+   the header would trap the mobile dropdown to the pill's own height instead
+   of letting it sit below at its intended position. The grain texture rides
+   in the same layer so the glass stays matte, not plastic. */
+.cwn::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  border-radius: inherit;
+  /* One material for the bar and the drawer it opens into — they used to run
+     two tints (chrome 55% on the bar, 84% on the panel) and read as two glasses
+     stacked the moment the menu opened. Both sit on the chrome tint: see-through
+     enough that the page reads underneath, dense enough (with the blur) that ink
+     labels stay legible. That transparency is only affordable because the bar's
+     backdrop here is bounded — it steps aside over a photo hero, and anything
+     else that is not the light canvas declares itself with data-cw-nav-dark and
+     flips the whole bar to the night tone. */
+  background-color: var(--cw-net-mat-tint-chrome, rgb(250 247 240 / 0.55));
+  background-image: var(--cw-net-mat-grain);
+  backdrop-filter: var(--cw-net-mat-filter, blur(28px) saturate(1.18));
+  -webkit-backdrop-filter: var(--cw-net-mat-filter, blur(28px) saturate(1.18));
+  box-shadow: inset 0 0 0 1px var(--cw-nav-border);
+}
+
+/* Without a working backdrop-filter the tint is all there is, and at chrome
+   density the page's own text reads straight through the bar and the drawer.
+   Blur is missing in more places than old browsers — Firefox with the feature
+   off, "reduce transparency" accessibility settings, some in-app webviews — so
+   the fallback is not a nicety: it is what those users actually get. */
+@supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
+  .cwn::before {
+    background-color: color-mix(in srgb, var(--cw-net-mat-surface, #fbf9f2) 94%, transparent);
+  }
+  .cwn[data-cw-nav-tone="dark"]::before {
+    background-color: color-mix(in srgb, var(--cw-net-hero-scrim, #173027) 94%, transparent);
+  }
+  @media (max-width: 759px) {
+    .cwn__menu {
+      background-color: color-mix(in srgb, var(--cw-net-mat-surface, #fbf9f2) 97%, transparent);
+    }
+    .cwn[data-cw-nav-tone="dark"] .cwn__menu {
+      background-color: color-mix(in srgb, var(--cw-net-hero-scrim, #173027) 97%, transparent);
+    }
+  }
 }
 
 /* Temporary network pause: keep the common component in every landing, while
@@ -39,24 +100,58 @@
   display: none;
 }
 
+/* Anchored mode (way21 / reset-day): the bar carries in-page section links, so
+   it has to be reachable from the first screen rather than appearing only on a
+   scroll-up reversal — the same always-present header short/irem use. Landings
+   that stay purely cross-network keep the floating behaviour below.
+   `.cwn--anchored` also opts out of the scroll logic in network-nav.js. */
+.cwn.cwn--anchored {
+  opacity: 1;
+  pointer-events: auto;
+  transform: none;
+  visibility: visible;
+  transition: none;
+}
+
+/* The bar is fixed, so anchor jumps would land the section heading underneath
+   it; and the hero needs the same clearance since the bar no longer waits for a
+   scroll-up to appear. 4.85rem is the bar's own footprint (0.95rem offset +
+   3.9rem inner) — the rest is breathing room. */
+.cwn--anchored ~ [id] {
+  scroll-margin-top: 5.5rem;
+}
+
+.cwn--anchored ~ .hero {
+  padding-top: 5.5rem;
+}
+
+@media (min-width: 881px) {
+  .cwn--anchored ~ .hero {
+    padding-top: max(5.5rem, var(--sp-sec));
+  }
+}
+
+/* The sibling-landing exit used to carry a permanent outline to mark it as a
+   different kind of destination. In the drawer it read as a stray boxed item
+   rather than a distinction, so the outline is gone: the link's own wording
+   ("Шлях 21", "Розвантажувальний день") already says it leaves the page. */
+
 /* The first screen is entirely dedicated to the offer. Beyond its hero,
-   navigation returns as a fixed top layer only while the visitor scrolls up. */
+   navigation returns as a floating glass layer only while the visitor scrolls up. */
 .cwn.cwn--floating {
   opacity: 1;
   pointer-events: auto;
-  box-shadow: 0 10px 28px rgb(23 38 31 / 0.12);
   transform: translateY(0);
   visibility: visible;
-  transition: transform 180ms ease-out, opacity 160ms ease-out, visibility 0s;
+  transition: transform 220ms ease-out, opacity 180ms ease-out, visibility 0s;
 }
 
 /* Per-landing semantic mapping — the funnel cw-pages expose --cw-*. */
 [data-cw-landing="dosha"] .cwn,
 [data-cw-landing="consult"] .cwn,
 [data-cw-landing="herbs"] .cwn {
-  --cw-nav-surface: rgb(250 246 239 / 0.86);
   --cw-nav-ink: var(--cw-ink);
-  --cw-nav-text: var(--cw-text-soft);
+  --cw-nav-text: var(--cw-ink);
   --cw-nav-accent: var(--cw-accent-strong);
   --cw-nav-active-bg: var(--cw-accent-soft);
   --cw-nav-border: color-mix(in srgb, var(--cw-accent) 16%, transparent);
@@ -67,14 +162,80 @@
 /* way21 / reset-day premium pattern exposes its own local vars. */
 [data-cw-landing="way21"] .cwn,
 [data-cw-landing="reset-day"] .cwn {
-  --cw-nav-surface: rgb(247 245 236 / 0.88);
   --cw-nav-ink: var(--ink);
-  --cw-nav-text: var(--text-muted);
+  --cw-nav-text: var(--ink);
   --cw-nav-accent: var(--indigo);
   --cw-nav-active-bg: var(--chip-soft);
   --cw-nav-border: var(--line);
   --cw-nav-panel: var(--surface, #ffffff);
   --cw-nav-shadow: var(--shadow-med, 0 18px 48px rgb(23 48 39 / 0.14));
+}
+
+/* The anchored bar never moves, so it carries `transition: none`. On a photo
+   hero it does move — hidden over the hero, back afterwards — so the motion is
+   handed back to it there. */
+[data-cw-hero="photo"] .cwn.cwn--anchored {
+  transition: transform 220ms ease-out, opacity 180ms ease-out, visibility 0s;
+}
+
+/* Over a photo hero the bar steps aside (see network-nav.js). It overrides the
+   anchored mode's always-visible state, so it has to come after it in source
+   order — which it does. */
+.cwn.cwn--hero-hidden,
+.cwn.cwn--anchored.cwn--hero-hidden {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-12px);
+  visibility: hidden;
+  transition: transform 220ms ease-out, opacity 180ms ease-out, visibility 0s linear 220ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cwn.cwn--hero-hidden,
+  .cwn.cwn--anchored.cwn--hero-hidden { transition: none; }
+}
+
+/* Dark tone — the landing counterpart of the platform's [data-cw-header-tone].
+   The platform samples the backdrop; a landing declares it instead: sections
+   that are dark carry data-cw-nav-dark, and network-nav.js flips the tone while
+   one of them is under the bar. The tint moves to the night side of the material
+   and the labels invert. It can stay this transparent (42%) precisely because
+   the backdrop is declared, not guessed: the worst ground a marked section can
+   present is the lightest stop of a skin's dark gradient (#356152 on reset-day),
+   and that is the pair asserted in scripts/guard-contrast.mjs. */
+.cwn[data-cw-nav-tone="dark"] {
+  --cw-nav-ink: var(--cw-net-hero-ink, #ffffff);
+  --cw-nav-text: var(--cw-net-hero-ink-soft, #cfe0d3);
+  --cw-nav-accent: var(--cw-net-hero-accent, #e0b25c);
+  --cw-nav-active-bg: color-mix(in srgb, var(--cw-net-hero-ink, #fff) 12%, transparent);
+  --cw-nav-border: color-mix(in srgb, var(--cw-net-hero-ink, #fff) 18%, transparent);
+  --cw-nav-panel: color-mix(in srgb, var(--cw-net-hero-scrim, #173027) 52%, transparent);
+}
+
+.cwn[data-cw-nav-tone="dark"]::before {
+  background-color: color-mix(in srgb, var(--cw-net-hero-scrim, #173027) 42%, transparent);
+}
+
+.cwn[data-cw-nav-tone="dark"] .cwn__brand img {
+  /* The ink logo is drawn for light chrome; on the night tone it flips to the
+     gold mark the dark blocks already use. The gold file is a tighter crop, so
+     it takes the compensated box (see --cw-net-brand-mark-gold) — otherwise the
+     lockup visibly grows every time the bar crosses a dark section. */
+  content: url("/shared/img/cw-logo-gold.png");
+  box-sizing: border-box;
+  padding: var(--cw-net-brand-mark-gold-inset, 0.24rem);
+}
+
+/* The wordmark follows the mark: gold mark, gold word. On the light tone it
+   stays ink — there the mark is ink too. */
+.cwn[data-cw-nav-tone="dark"] .cwn__brand {
+  color: var(--cw-nav-accent);
+}
+
+@media (max-width: 759px) {
+  .cwn[data-cw-nav-tone="dark"] .cwn__menu {
+    background-color: color-mix(in srgb, var(--cw-net-hero-scrim, #173027) 66%, transparent);
+  }
 }
 
 /* Slim mode for paid-traffic sessions: brand only, no cross-node exits. */
@@ -85,14 +246,13 @@
 
 .cwn__in {
   position: relative;
+  z-index: 1;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 1rem;
-  width: min(1180px, calc(100% - 2rem));
-  margin: 0 auto;
-  min-height: 3.6rem;
-  padding: 0.45rem 0;
+  min-height: 3.9rem;
+  padding: 0.5rem 1.15rem;
 }
 
 .cwn__brand {
@@ -107,8 +267,8 @@
 
 .cwn__brand img {
   display: block;
-  width: 2.25rem;
-  height: 2.25rem;
+  width: var(--cw-net-brand-mark, 2.25rem);
+  height: var(--cw-net-brand-mark, 2.25rem);
 }
 
 .cwn__menu {
@@ -155,7 +315,10 @@
   width: 2.75rem;
   height: 2.75rem;
   padding: 0;
-  border: 1px solid var(--cw-nav-border);
+  /* No outline: inside a glass bar the boxed icon read as a second control on
+     top of a control. The 44px hit area stays, and focus-visible still draws a
+     ring — the affordance that actually matters for keyboard users. */
+  border: 0;
   border-radius: 0.8rem;
   background: transparent;
   cursor: pointer;
@@ -189,24 +352,74 @@
 @media (max-width: 759px) {
   .cwn__toggle { display: block; }
 
+  /* The panel is the bar continued downward, not a second card floating under
+     it: it starts at the bar's own bottom edge, drops its top corners and its
+     top stroke, and the bar squares its bottom corners while open. The old
+     `top: calc(100% + .5rem)` left a strip of hero visible between the two,
+     which is what made it read as two objects. */
   .cwn__menu {
     position: absolute;
-    top: calc(100% + 0.5rem);
+    top: 100%;
     right: 0;
     left: 0;
     z-index: 61;
-    display: none;
+    display: flex;
     flex-direction: column;
     align-items: stretch;
     gap: 0.15rem;
-    padding: 0.5rem;
+    padding: 0 0.5rem;
     border: 1px solid var(--cw-nav-border);
-    border-radius: var(--cw-nav-radius);
-    background: var(--cw-nav-panel);
+    border-top: 0;
+    border-radius: 0 0 var(--cw-nav-radius) var(--cw-nav-radius);
+    /* One material, two depths — the bar stays on the chrome tint so the page
+       reads through it, the drawer sits on the canvas floor. It is not a second
+       glass: same tint family, same stroke, same silhouette. The extra density
+       is doing a job the bar never has to do — the panel lies over body copy,
+       and at chrome density the text underneath competes with the labels. */
+    background-color: var(--cw-net-mat-tint-floor, var(--cw-nav-panel));
+    background-image: var(--cw-net-mat-grain);
+    backdrop-filter: var(--cw-net-mat-filter, blur(28px) saturate(1.18));
+    -webkit-backdrop-filter: var(--cw-net-mat-filter, blur(28px) saturate(1.18));
     box-shadow: var(--cw-nav-shadow);
+    /* Closed state. max-height rather than display:none so the open is an
+       animation; visibility keeps the links out of the tab order until then. */
+    max-height: 0;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      max-height 280ms cubic-bezier(.2, .8, .2, 1),
+      padding 280ms cubic-bezier(.2, .8, .2, 1),
+      opacity 160ms ease,
+      visibility 0s linear 280ms;
   }
 
-  .cwn.is-open .cwn__menu { display: flex; }
+  .cwn.is-open .cwn__menu {
+    max-height: min(72svh, 34rem);
+    overflow-y: auto;
+    padding: 0.5rem;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    transition:
+      max-height 280ms cubic-bezier(.2, .8, .2, 1),
+      padding 280ms cubic-bezier(.2, .8, .2, 1),
+      opacity 160ms ease 40ms,
+      visibility 0s;
+  }
+
+  /* Bar and panel share one silhouette while open. */
+  .cwn.is-open,
+  .cwn.is-open::before {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .cwn__menu,
+    .cwn.is-open .cwn__menu { transition: none; }
+  }
 
   .cwn__menu a {
     min-height: 3rem;

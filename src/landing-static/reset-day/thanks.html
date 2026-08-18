@@ -15,14 +15,17 @@
     <div class="card utility-status-card">
       <p class="utility-status-kicker">Підтвердження оплати</p>
       <h1 class="utility-status-title">✅ Дякуємо! Оплату успішно прийнято</h1>
-      <p class="utility-status-lead">Доступ до міні-курсу вже готується. Якщо Telegram не відкрився автоматично — натисніть кнопку нижче.</p>
+      <p class="utility-status-lead">Курс уже ваш. Увійдіть у кабінет — саме там усі матеріали практикуму.</p>
 
       <div class="btns utility-status-actions">
-        <a class="btn primary" href="https://telegram.me/E_Koriakin" target="_blank" rel="noopener">Відкрити бот</a>
-        <a class="btn" href="https://resetday.centerway.net.ua/">Повернутися на сайт</a>
+        <a class="btn primary" href="https://centerway.net.ua/learn/reset-day">Увійти в кабінет</a>
+        <a class="btn" href="https://telegram.me/E_Koriakin" target="_blank" rel="noopener">Написати в Telegram</a>
       </div>
 
       <div class="utility-status-meta">
+        <!-- Access is matched by the email used at checkout, so this instruction is
+             load-bearing: signing in with a different address finds no purchase. -->
+        <p class="muted"><strong>Важливо:</strong> входьте тим самим email, який вказали під час оплати — за ним відкривається доступ.</p>
         <p class="muted" id="orderLine">Завантаження даних платежу…</p>
         <p class="muted">Якщо щось пішло не так — напишіть у підтримку.</p>
       </div>
@@ -32,7 +35,8 @@
   <script>
   (function () {
   const qs = new URLSearchParams(location.search);
-  const redirectTarget = "https://telegram.me/E_Koriakin";
+  // Post-purchase destination: the platform cabinet, where the course lives.
+  const redirectTarget = "https://centerway.net.ua/learn/reset-day";
   const redirectWaitTimeoutMs = 3500;
   const postPixelBufferMs = 600;
 
@@ -168,11 +172,14 @@
     window.location.hostname === "::1";
   const disableAutoRedirect = isLocalPreview || new URLSearchParams(window.location.search).get("no_redirect") === "1";
 
+  // Course delivery moved onto the platform, so the buyer is sent to the cabinet
+  // rather than bounced into Telegram. Telegram stays available as a support
+  // channel via the secondary button above.
   if (!disableAutoRedirect) {
     Promise.resolve(window.CW_purchaseRedirectGate)
       .catch(() => undefined)
       .finally(() => {
-        window.location.href = window.CW_purchaseRedirectTarget || "https://telegram.me/E_Koriakin";
+        window.location.href = window.CW_purchaseRedirectTarget || "https://centerway.net.ua/learn/reset-day";
       });
   }
   </script>

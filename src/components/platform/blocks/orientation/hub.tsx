@@ -1,12 +1,17 @@
 import Link from "next/link";
 import styles from "@/components/platform/PlatformHeroStyles";
+import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 
 export function HubHero() {
   return (
     <section className={styles.heroFeature} id="center" data-cw-topbar-tone="dark">
       <div className={styles.heroPhotoLayer}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className={styles.expertImage} src="/shared/img/consult-hero-evgeniy.jpeg" alt="Євгеній Корякін" />
+        <img
+          className={styles.expertImage}
+          src="/shared/img/home-hero-threshold-2026-08.webp"
+          alt="Поріг: вхід у практику CenterWay"
+        />
       </div>
       <div className={styles.heroFeatureContent}>
         <p className={styles.heroBadge}>
@@ -48,7 +53,7 @@ export function HubIntro() {
           </div>
           <div className={styles.videoDecisionRail}>
             <div className={styles.videoActionGrid} data-cw-hub-intro="actions">
-              <Link className={styles.videoActionButton} href="/dosha-test" data-kind="primary">
+              <Link className={styles.videoActionButton} href={DOSHA_TEST_ROUTE} data-kind="primary">
                 Тест доши
               </Link>
               <Link className={styles.videoActionButton} href="/consult" data-kind="secondary">

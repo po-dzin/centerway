@@ -96,30 +96,30 @@ async function main() {
     for (const viewport of viewports) {
       await page.setViewportSize(viewport);
 
-      const response = await page.goto(`${baseUrl}/dosha-test`, {
+      const response = await page.goto(`${baseUrl}/tests/dosha`, {
         waitUntil: "domcontentloaded",
         timeout: timeoutMs,
       });
 
       if (!response) {
-        fail(`/dosha-test @${viewport.width}: no response`);
+        fail(`/tests/dosha @${viewport.width}: no response`);
         continue;
       }
 
       if (response.status() >= 500) {
-        fail(`/dosha-test @${viewport.width}: status ${response.status()}`);
+        fail(`/tests/dosha @${viewport.width}: status ${response.status()}`);
         continue;
       }
-      pass(`/dosha-test @${viewport.width}: status ${response.status()}`);
+      pass(`/tests/dosha @${viewport.width}: status ${response.status()}`);
 
       const hasMain = await page.locator("main").count();
       if (hasMain < 1) {
-        fail(`/dosha-test @${viewport.width}: missing <main>`);
+        fail(`/tests/dosha @${viewport.width}: missing <main>`);
       } else {
-        pass(`/dosha-test @${viewport.width}: main present`);
+        pass(`/tests/dosha @${viewport.width}: main present`);
       }
 
-      await assertNoHorizontalOverflow(page, `/dosha-test intro @${viewport.width}`);
+      await assertNoHorizontalOverflow(page, `/tests/dosha intro @${viewport.width}`);
 
       // Question flow is covered by dedicated userflow smoke; responsive gate focuses on layout stability.
     }

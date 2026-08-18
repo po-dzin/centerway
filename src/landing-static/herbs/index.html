@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk" data-cw-landing="herbs" data-cw-page="herbs">
+<html lang="uk" data-cw-landing="herbs" data-cw-page="herbs" data-cw-hero="photo">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,16 +12,18 @@
 <meta property="og:title" content="Фітозбори CenterWay — трав'яна підтримка під ваш стан">
 <meta property="og:description" content="Авторські збори з трав нашої широти: дренаж, м'яке очищення, підтримка травлення. Підбір під запит.">
 <link rel="canonical" href="https://herbs.centerway.net.ua/">
+<link rel="stylesheet" href="/shared/css/platform-fonts.css">
+<link rel="stylesheet" href="/shared/css/cw-tokens.generated.css">
 <link rel="stylesheet" href="/shared/css/network-tokens.css">
 <link rel="stylesheet" href="/shared/css/landing.css">
-<link rel="stylesheet" href="/shared/css/network-nav.css?v=20260714-4">
+<link rel="stylesheet" href="/shared/css/network-nav.css?v=20260817-1">
 </head>
 <body>
 
 <a id="top"></a>
 
 <!-- ============ NETWORK NAV (temporarily suspended) ============ -->
-<header class="cwn cwn--suspended" data-cw-network-nav>
+<header class="cwn" data-cw-network-nav>
   <div class="cwn__in">
     <a class="cwn__brand" href="#top"><img src="/shared/img/cw-logo-ink.png" alt="" aria-hidden="true"><span>CenterWay</span></a>
     <button class="cwn__toggle" type="button" aria-expanded="false" aria-controls="cwn-menu" aria-label="Меню CenterWay"><span></span><span></span><span></span></button>
@@ -45,7 +47,7 @@
       <div class="hero-visual">
         <div class="hv-stage">
           <span class="hv-glow"></span>
-          <img class="hv-photo" src="/shared/img/herbs/herbs-hero.webp" width="1040" height="1300" loading="eager" fetchpriority="high" decoding="async" alt="Фітозбори CenterWay — упаковки зборів і трави">
+          <img class="hv-photo" src="/shared/img/herbs/herbs-hero-author-2026-08.webp" width="1040" height="1300" loading="eager" fetchpriority="high" decoding="async" alt="Євгеній Корякін збирає замовлення фітозборів — крафтові пакети зборів на столі">
           <div class="hv-stat s1"><div class="lab">Основа</div><div class="val">3 збори</div></div>
           <div class="hv-stat s2"><div class="lab">Підхід</div><div class="val">під конституцію</div></div>
         </div>
@@ -60,7 +62,7 @@
         <a href="#lead" class="btn btn-primary" data-cta-hero>Запит на підбір зборів</a>
         <a href="https://consult.centerway.net.ua/" class="btn btn-ghost">Спершу розібрати стан</a>
         <div class="hero-trust">
-          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="ico ico-chrome" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-check"/></svg>
           Залишаєте запит — ми уточнюємо стан і підказуємо, який збір доречний
         </div>
       </div>
@@ -226,13 +228,13 @@
       </div>
     </div>
     <div class="car reveal" data-car>
-      <button type="button" class="car-nav prev" aria-label="Попередні відгуки"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M15 5l-7 7 7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button type="button" class="car-nav prev" aria-label="Попередні відгуки"><svg class="ico ico-flip" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
       <div class="car-track">
         <figure class="shot-card"><img src="/shared/img/feedback/screenshot_20221119-094959_telegram.webp" width="720" height="1227" loading="lazy" decoding="async" alt="Повідомлення в Telegram про дію трав і процесу"><figcaption>telegram</figcaption></figure>
         <figure class="shot-card"><img src="/shared/img/feedback/screenshot_20241211_133917_viber.webp" width="720" height="1227" loading="lazy" decoding="async" alt="Замовлення зборів у Viber"><figcaption>viber</figcaption></figure>
         <figure class="shot-card"><img src="/shared/img/feedback/screenshot_20220713-153956_telegram.webp" width="720" height="1227" loading="lazy" decoding="async" alt="Відгук про трав'яний протокол у Telegram"><figcaption>telegram</figcaption></figure>
       </div>
-      <button type="button" class="car-nav next" aria-label="Наступні відгуки"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M9 5l7 7-7 7" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+      <button type="button" class="car-nav next" aria-label="Наступні відгуки"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
     </div>
     <p class="proof-note reveal">Скріншоти реальних повідомлень — мовою оригіналу. Натисніть, щоб збільшити.</p>
   </div>
@@ -246,16 +248,16 @@
       <h2 class="sec-title">Що варто знати</h2>
     </div>
     <div class="acc faq">
-      <details class="acc-item reveal" open><summary><span class="num">01</span>Чи можна брати збори без програми?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal" open><summary><span class="num">01</span>Чи можна брати збори без програми?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Так, це самостійний крок. Але саме тому ми починаємо із запиту, а не з кошика: спершу коротко уточнюємо стан, щоб збір відповідав завданню, а не був «травою навмання».</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">02</span>Чи є протипоказання?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">02</span>Чи є протипоказання?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Як і будь-яка фітотерапія — так. Вагітність, хронічні стани, прийом препаратів — усе це враховується під час підбору; за потреби радимо спершу консультацію або узгодження з вашим лікарем.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">03</span>Я не в Україні. Як з доставкою?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">03</span>Я не в Україні. Як з доставкою?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Базові збори зібрані з трав нашої широти; для інших країн підбираються аюрведичні аналоги з доставкою — так само, як це працює для учасників програми Шлях 21 за кордоном.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">04</span>Як відбувається підбір?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">04</span>Як відбувається підбір?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Ви залишаєте запит через форму, ми уточнюємо стан і завдання — і пропонуємо доречний варіант: конкретний збір, комбінацію або, якщо картина складна, спершу консультацію.</li></ul></div>
       </details>
     </div>
@@ -263,12 +265,12 @@
 </section>
 
 <!-- ============ FOOTER ============ -->
-<footer class="footer">
+<footer class="footer" data-cw-nav-dark>
   <div class="wrap">
     <div class="footer-top">
       <div class="footer-col">
         <a href="#top" class="brand">
-          <img src="/shared/img/cw-logo-gold.png" alt="" class="brand-mark" width="38" height="38" loading="lazy" decoding="async" aria-hidden="true">
+          <img src="/shared/img/cw-logo-gold.png" alt="" class="brand-mark" width="36" height="36" loading="lazy" decoding="async" aria-hidden="true">
           CenterWay
         </a>
         <p>Авторська трав'яна підтримка з трав нашої широти — підібрана під ваш стан і конституцію.</p>
@@ -350,7 +352,7 @@
   });
 })();
 </script>
-<script src="/shared/js/network-nav.js?v=20260714-4" defer></script>
+<script src="/shared/js/network-nav.js?v=20260817-1" defer></script>
 <script src="/shared/js/proof.js" defer></script>
 </body>
 </html>

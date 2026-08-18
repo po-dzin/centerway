@@ -2052,13 +2052,13 @@ body.modal-open {
    Use literal short-red so «Відкрити бот» always renders in brand colour. */
 .utility-status-actions a.btn.primary,
 .utility-status-actions a.btn.primary:visited {
-  background: #c90008 !important;
-  border-color: #c90008 !important;
+  background: #c90008 !important; /* ds-allow-raw-hex: token chain is invalid here, see note above */
+  border-color: #c90008 !important; /* ds-allow-raw-hex: token chain is invalid here, see note above */
   color: #fff !important;
 }
 
 .utility-status-actions a.btn.primary:hover,
 .utility-status-actions a.btn.primary:focus-visible {
-  background: #a40006 !important;
-  border-color: #a40006 !important;
+  background: #a40006 !important; /* ds-allow-raw-hex: token chain is invalid here, see note above */
+  border-color: #a40006 !important; /* ds-allow-raw-hex: token chain is invalid here, see note above */
 }

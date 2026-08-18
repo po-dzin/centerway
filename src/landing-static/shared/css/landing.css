@@ -1,8 +1,6 @@
-@font-face{font-family:"Formular";font-weight:300;font-style:normal;font-display:swap;src:url("/way21/fonts/Formular-Light.woff2") format("woff2")}
-@font-face{font-family:"Formular";font-weight:400;font-style:normal;font-display:swap;src:url("/way21/fonts/Formular.woff2") format("woff2")}
-@font-face{font-family:"Formular";font-weight:500;font-style:normal;font-display:swap;src:url("/way21/fonts/Formular-Medium.woff2") format("woff2")}
-@font-face{font-family:"Formular";font-weight:600;font-style:normal;font-display:swap;src:url("/way21/fonts/Formular-Bold.woff2") format("woff2")}
-@font-face{font-family:"Formular";font-weight:700;font-style:normal;font-display:swap;src:url("/way21/fonts/Formular-Black.woff2") format("woff2")}
+/* Type comes from /shared/css/platform-fonts.css (Manrope / Cormorant Garamond /
+   IBM Plex Mono), linked ahead of this file on every landing. Formular was
+   retired from the network on 2026-08-15 and now belongs to Short/IREM only. */
 /* ============================================================================
    CenterWay landing component DS — ONE shared component system for the whole
    platform-author network (way21 / reset-day / dosha / consult / herbs).
@@ -43,7 +41,7 @@ body::after{
 }
 .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:clamp(20px,5vw,40px);position:relative;z-index:1}
 section{position:relative;z-index:1}
-h1,h2,h3{font-family:var(--f-display);font-weight:700;line-height:1.08;letter-spacing:-.025em;color:var(--ink)}
+h1,h2,h3{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-weight:var(--f-display-weight,700);line-height:var(--f-display-leading,1.08);letter-spacing:var(--f-display-track,-.025em);color:var(--ink)}
 a{color:inherit;text-decoration:none}
 img{max-width:100%;display:block}
 
@@ -61,7 +59,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .btn{
   display:inline-flex;align-items:center;justify-content:center;gap:.6em;
   font-family:var(--f-ui);font-weight:700;font-size:1.02rem;
-  padding:1.05em 2em;border-radius:var(--r-md);border:0;cursor:pointer;
+  padding:1.05em 2em;border-radius:var(--r-btn);border:0;cursor:pointer;
   transition:transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s, background .25s;
   text-align:center;line-height:1.1;white-space:nowrap;
 }
@@ -73,8 +71,8 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .btn-ghost:hover{border-color:var(--indigo);color:var(--indigo);background:var(--chip-soft)}
 
 /* ============ BRAND ROW ============ */
-.brand{display:flex;align-items:center;gap:.55rem;font-family:var(--f-display);font-size:1.3rem;font-weight:700;color:var(--ink);letter-spacing:-.02em}
-.brand-mark{width:38px;height:38px;flex:0 0 auto;transition:opacity .25s}
+.brand{display:flex;align-items:center;gap:.55rem;font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.3rem;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+.brand-mark{width:var(--cw-net-brand-mark,2.25rem);height:var(--cw-net-brand-mark,2.25rem);flex:0 0 auto;transition:opacity .25s}
 .brand:hover .brand-mark{opacity:.75}
 
 /* ============ HERO — text overlaid on full-width photo ============ */
@@ -87,10 +85,20 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .hero-copy{order:3;position:relative;z-index:2;display:flex;flex-direction:column;margin-top:0}
 .hero-actions{order:4;position:relative;z-index:2;display:flex;flex-direction:column;gap:.85rem}
 
+/* One glass recipe for badge and chips alike — same warm tint, same ink text,
+   whether it sits on the cream page (chips, desktop badge) or on the photo
+   (mobile badge, see the negative margin below). No separate light/dark
+   variant: the media floor (86%) is dense enough that dark ink text holds
+   contrast over the darkest or brightest photo content, so nothing needs to
+   switch when the badge moves from beside the photo to on top of it. */
 .hero-badge,.hero-chips span{
   display:inline-flex;align-items:center;font-size:var(--chip-fs);font-weight:600;
-  color:var(--indigo);background:var(--chip);border:1px solid var(--line);
+  position:relative;isolation:isolate;overflow:hidden;
+  color:var(--ink);background:var(--cw-net-mat-tint-media);
+  backdrop-filter:var(--cw-net-mat-filter);-webkit-backdrop-filter:var(--cw-net-mat-filter);
+  border:1px solid var(--cw-net-mat-stroke);box-shadow:var(--cw-net-mat-shadow-raised);
   padding:calc(var(--chip-py) + var(--chip-nudge)) var(--chip-px) calc(var(--chip-py) - var(--chip-nudge));border-radius:var(--r-pill);line-height:1;white-space:nowrap}
+.hero-badge::before,.hero-chips span::before{content:"";position:absolute;inset:0;background-image:var(--cw-net-mat-grain);opacity:.6;pointer-events:none;z-index:-1}
 .hero-badge{gap:.6em;margin-bottom:.85rem;align-self:flex-start}
 .hero-badge .dot{width:6px;height:6px;border-radius:50%;flex:0 0 auto;background:var(--cta);box-shadow:0 0 0 3px rgba(219,165,79,.16)}
 .hero h1{font-size:clamp(2.1rem,4.6vw,3.4rem);margin-bottom:.65rem;line-height:1.1}
@@ -100,7 +108,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .hero-chips{display:flex;flex-wrap:wrap;gap:.45rem}
 
 .hero-price{display:flex;align-items:baseline;gap:.5em}
-.hero-price b{font-family:var(--f-display);font-size:2.1rem;font-weight:700;color:var(--ink);line-height:1}
+.hero-price b{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:2.1rem;font-weight:700;color:var(--ink);line-height:1}
 .hero-price small{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;color:var(--text-soft);text-transform:uppercase}
 
 .hero-actions .btn{width:100%;justify-content:center}
@@ -121,6 +129,11 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
   background:linear-gradient(to bottom,color-mix(in srgb, var(--cream) 0%, transparent) 24%,color-mix(in srgb, var(--cream) 55%, transparent) 47%,var(--cream) 66%)}
 .hv-wave{display:none}
 .hv-glow{display:none}
+/* The photo may be wrapped in <picture> to serve a portrait master to the
+   full-bleed mobile hero. The wrapper is an inline box with no in-flow content
+   (its img is absolutely positioned), so it is taken out of the flow entirely
+   rather than left to generate a stray line box inside the stage. */
+.hv-stage picture{display:contents}
 .hv-photo{
   position:absolute;inset:0;width:100%;height:100%;
   object-fit:cover;object-position:top center;
@@ -128,6 +141,147 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
   border-radius:var(--r-lg) var(--r-lg) 0 0;
 }
 .hv-stat{display:none}
+
+/* ============ PHOTO HERO — mobile only, opt-in ============
+   `data-cw-hero="photo"` swaps the mobile hero from "photo card, copy on cream"
+   to a full-bleed photograph with the copy anchored to the bottom. Desktop
+   (>=881px) is untouched: the two-column card layout below still owns it, so
+   the portrait masters keep working without landscape re-shoots.
+
+   Contrast is not left to the photo. The copy never sits on the image itself:
+   it sits on .wrap::before, an opaque-enough scrim (92% of the brand dark) that
+   composites to 0.045 relative luminance even over a pure white pixel — darker
+   than the inverse panel ground the rest of the DS already asserts. That is the
+   pair checked in scripts/guard-contrast.mjs; lower the 92% and it fails.
+   The badge and chips need no variant here: they are the same media-floor glass
+   with dark ink that the comment above already covers. */
+@media(max-width:880px){
+  [data-cw-hero="photo"] .hero,
+  [data-cw-hero="photo"] .cwn--anchored ~ .hero{
+    min-height:100svh;
+    display:flex;align-items:flex-end;
+    padding-top:0;padding-bottom:0;
+    /* Ground for the part of the screen the photo layer does not cover — see
+       --cw-hero-photo-height. With the default (full height) it never shows. */
+    background-color:var(--cw-net-hero-scrim);
+  }
+  [data-cw-hero="photo"] .hero .wrap{position:relative;z-index:2;width:100%}
+  /* The scrim under the copy: uniform, so every line has the same ground
+     regardless of what the photograph does behind it. */
+  [data-cw-hero="photo"] .hero .wrap::before{
+    content:"";position:absolute;left:0;right:0;top:0;bottom:-1px;z-index:1;
+    background:color-mix(in srgb, var(--cw-net-hero-scrim) 92%, transparent);
+  }
+  /* …and a fade strip above it, so the band does not start on a hard edge. */
+  [data-cw-hero="photo"] .hero .wrap::after{
+    content:"";position:absolute;left:0;right:0;bottom:100%;z-index:1;
+    height:clamp(128px,24vh,224px);
+    background:linear-gradient(to bottom,
+      color-mix(in srgb, var(--cw-net-hero-scrim) 0%, transparent),
+      color-mix(in srgb, var(--cw-net-hero-scrim) 52%, transparent) 62%,
+      color-mix(in srgb, var(--cw-net-hero-scrim) 92%, transparent));
+  }
+  /* The band hugs its copy: the nav floats over the photograph, not over the
+     text, so it needs no clearance here — and every idle pixel of dark band is
+     a pixel the photograph does not get. The transition is the fade strip. */
+  [data-cw-hero="photo"] .hero .hero-grid{padding:1.25rem 0 calc(1.75rem + env(safe-area-inset-bottom))}
+  /* The photo layer lives inside .hero-grid in the markup, so it cannot simply
+     inset:0 against the section. It is pinned to the wrap's bottom edge — which
+     is the hero's bottom edge, since the hero carries no bottom padding here —
+     and given the viewport's own width and height. That reaches full bleed
+     without moving the element in the HTML. */
+  [data-cw-hero="photo"] .hero .hero-visual{
+    position:absolute;z-index:0;margin:0;
+    left:50%;margin-left:-50vw;width:100vw;
+    top:auto;bottom:0;height:100svh;
+  }
+  [data-cw-hero="photo"] .hero .hv-stage{position:absolute;inset:0;width:100%;aspect-ratio:auto}
+  /* Art direction per landing. A portrait master fills the full height of this
+     box (cover crops it horizontally, not vertically), so object-position alone
+     cannot move the subject up out of the copy band — that needs a scale and a
+     shift, the same two knobs the platform hero exposes. Defaults are neutral;
+     a skin sets them when its crop needs it. */
+  /* --cw-hero-photo-height shortens the image itself, not its layer: a tight
+     portrait master covered into the full 100svh box gets cropped to 46% of its
+     aspect and the face blows up. Held nearer the master's own proportion, the
+     crop stays gentle and the hero's scrim colour fills the strip below — which
+     the copy band covers anyway. */
+  [data-cw-hero="photo"] .hero .hv-photo{
+    border-radius:0;
+    top:0;bottom:auto;height:var(--cw-hero-photo-height,100%);
+    object-position:var(--cw-hero-photo-x,center) var(--cw-hero-photo-y,22%);
+    transform:translateY(var(--cw-hero-photo-shift-y,0)) scale(var(--cw-hero-photo-scale,1));
+    transform-origin:center top;
+  }
+  [data-cw-hero="photo"] .hero .hv-stage::after{
+    background:linear-gradient(to bottom,
+      color-mix(in srgb, var(--cw-net-hero-scrim) 34%, transparent) 0%,
+      color-mix(in srgb, var(--cw-net-hero-scrim) 0%, transparent) 30%);
+  }
+  [data-cw-hero="photo"] .hero .hero-badge{margin-top:0}
+  [data-cw-hero="photo"] .hero h1{color:var(--cw-net-hero-ink)}
+  [data-cw-hero="photo"] .hero h1 em{color:var(--cw-net-hero-accent)}
+  [data-cw-hero="photo"] .hero .hero-sub{color:var(--cw-net-hero-ink-soft)}
+  [data-cw-hero="photo"] .hero .hero-price b{color:var(--cw-net-hero-ink)}
+  [data-cw-hero="photo"] .hero .hero-price small{color:var(--cw-net-hero-ink-label)}
+  [data-cw-hero="photo"] .hero .hero-trust{color:var(--cw-net-hero-ink-soft)}
+  [data-cw-hero="photo"] .hero .hero-trust svg{color:var(--cw-net-hero-accent)}
+  /* .btn-ghost is drawn for the cream page: ink text inside a light-grey rule.
+     In the photo hero it lands on a dark photograph and falls to roughly 1.2:1
+     — the secondary CTA was effectively invisible on consult, dosha and herbs
+     (way21 and reset-day keep theirs further down the page, on cream). It gets
+     the same treatment as the rest of the hero copy: hero ink, with the rule
+     derived from it so the button stays a quiet second option. */
+  [data-cw-hero="photo"] .hero .btn-ghost{
+    color:var(--cw-net-hero-ink);
+    border-color:color-mix(in srgb, var(--cw-net-hero-ink) 42%, transparent)}
+  [data-cw-hero="photo"] .hero .btn-ghost:hover{
+    color:var(--cw-net-hero-ink);
+    border-color:color-mix(in srgb, var(--cw-net-hero-ink) 72%, transparent);
+    background:color-mix(in srgb, var(--cw-net-hero-ink) 10%, transparent)}
+  /* The band is sized by its copy, so copy length decides how much photograph
+     is left. At the shared type scale a five-line sub-head took ~70% of the
+     viewport on consult, herbs and dosha and the "atmosphere first" idea
+     collapsed into a dark card with a strip of image above it. The photo hero
+     therefore runs its own tighter scale on every mobile screen, not only on
+     short ones — the copy is the same, it is set smaller and closer. Nothing is
+     dropped or clamped: a hero's promise has to be readable in full. */
+  [data-cw-hero="photo"] .hero h1{font-size:clamp(1.7rem,6.4vw,2.15rem);line-height:1.14;margin-bottom:.5rem}
+  [data-cw-hero="photo"] .hero .hero-sub{font-size:.9rem;line-height:1.46;margin-bottom:.9rem}
+  [data-cw-hero="photo"] .hero .hero-badge{margin-bottom:.6rem}
+  [data-cw-hero="photo"] .hero .hero-chips{gap:.35rem;margin-bottom:.15rem}
+  [data-cw-hero="photo"] .hero .hero-actions{gap:.55rem}
+  [data-cw-hero="photo"] .hero .hero-trust{font-size:.78rem;line-height:1.4}
+  [data-cw-hero="photo"] .hero .hero-price b{font-size:1.85rem}
+  /* Art direction per skin. --cw-hero-photo-height is the lever that decides how
+     much of the frame lands in the visible strip: the copy band covers the
+     bottom of the layer, so a SHORTER image box puts more of the composition
+     above the band, not less. way21 and reset-day keep the full-height default
+     (their masters are portraits whose subject is already high in frame).
+       herbs   — the packets and hands are the product and they sit mid-frame;
+                 at full height only the head cleared the band.
+       consult — portrait master, subject high, needs only a small lift.
+       dosha   — got its own portrait master on 2026-08-18, so the horizontal
+                 nudge that chased the group across the old 16:10 plate is gone.
+                 The height knob stays and is doing the opposite of shrinking:
+                 at 50svh the box turns square, cover crops the tall plate to
+                 its middle, and the three centres land in the visible strip —
+                 at full height they sit behind the copy band with nothing but
+                 the grass showing above it.
+     If a skin ever gets its own mobile master, revisit its line rather than
+     stacking a second knob on top. */
+  [data-cw-landing="herbs"] .hero{--cw-hero-photo-height:50svh}
+  [data-cw-landing="consult"] .hero{--cw-hero-photo-height:72svh}
+  [data-cw-landing="dosha"] .hero{--cw-hero-photo-height:50svh}
+
+  /* Short viewports get one more step down. The price and CTA stay put. */
+  @media(max-height:700px){
+    [data-cw-hero="photo"] .hero h1{font-size:clamp(1.6rem,6vw,1.95rem);margin-bottom:.4rem}
+    [data-cw-hero="photo"] .hero .hero-sub{font-size:.86rem;line-height:1.4;margin-bottom:.75rem}
+    [data-cw-hero="photo"] .hero .hero-actions{gap:.5rem}
+    [data-cw-hero="photo"] .hero .hero-grid{padding-top:.75rem}
+  }
+}
 
 /* desktop — switch to side-by-side grid */
 @media(min-width:881px){
@@ -161,14 +315,20 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
   .hv-photo{object-fit:cover;object-position:center 18%;-webkit-mask-image:none;mask-image:none}
   .hero h1{font-size:clamp(2.3rem,5vw,3.7rem);margin-bottom:1.2rem;line-height:1.08}
   .hero-sub{font-size:1.14rem;line-height:1.62}
+  /* Sits directly on the photo — same glass family as the badge/chips, at the
+     media floor: dark ink text holds contrast over any photo content, so this
+     needs no separate dark variant. */
   .hv-stat{
-    display:block;position:absolute;z-index:2;
-    background:rgba(255,255,255,.95);border:1px solid var(--line);
+    display:block;position:absolute;z-index:2;isolation:isolate;overflow:hidden;
+    background:var(--cw-net-mat-tint-media);
+    backdrop-filter:var(--cw-net-mat-filter);-webkit-backdrop-filter:var(--cw-net-mat-filter);
+    border:1px solid var(--cw-net-mat-stroke);
     border-radius:var(--r-md);padding:.65rem .9rem;
-    box-shadow:var(--shadow-med);backdrop-filter:blur(6px)
+    box-shadow:var(--shadow-med)
   }
+  .hv-stat::before{content:"";position:absolute;inset:0;background-image:var(--cw-net-mat-grain);opacity:.6;pointer-events:none;z-index:-1}
   .hv-stat .lab{font-family:var(--f-mono);font-size:.58rem;letter-spacing:.1em;color:var(--indigo);text-transform:uppercase}
-  .hv-stat .val{font-family:var(--f-display);font-size:1.3rem;font-weight:700;color:var(--ink);line-height:1}
+  .hv-stat .val{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.3rem;font-weight:700;color:var(--ink);line-height:1}
   .hv-stat.s1{top:4%;right:2%}
   .hv-stat.s2{bottom:6%;left:2%}
   .hero-sub{max-width:52ch}
@@ -204,14 +364,14 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 
 /* ============ PROBLEM ============ */
 .prob-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.1rem;margin-bottom:2.4rem}
-.prob-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:1.5rem 1.4rem;
+.prob-card{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);padding:1.5rem 1.4rem;
   position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s}
 .prob-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-med)}
 .prob-card .n{font-family:var(--f-mono);font-size:.74rem;color:var(--text-soft);letter-spacing:.1em}
 .prob-card h4{font-family:var(--f-ui);font-weight:700;font-size:1.08rem;color:var(--ink);margin:.6rem 0 .4rem}
 .prob-card p{font-size:.95rem;color:var(--text-muted)}
 .prob-card .x{position:absolute;top:1.2rem;right:1.3rem;color:var(--line-strong);font-size:1.1rem}
-.prob-punch{font-family:var(--f-display);font-weight:700;letter-spacing:-.02em;font-size:clamp(1.5rem,3vw,2.1rem);color:var(--ink);
+.prob-punch{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-weight:700;letter-spacing:-.02em;font-size:clamp(1.5rem,3vw,2.1rem);color:var(--ink);
   max-width:24ch;line-height:1.22;border-left:3px solid var(--cta);padding-left:1.4rem}
 
 /* ============ SHIFT ============ */
@@ -241,13 +401,18 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 
 /* ============ TRIAD / MECHANISM ============ */
 .triad{display:grid;grid-template-columns:repeat(3,1fr);gap:1.2rem;counter-reset:phase}
-.phase{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:2rem 1.7rem;
+.phase{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-lg);padding:2rem 1.7rem;
   position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s}
 .phase:hover{transform:translateY(-4px);box-shadow:var(--shadow-med)}
 .phase::after{content:"";position:absolute;left:0;top:0;height:4px;width:100%}
 .phase.p1::after{background:linear-gradient(90deg,var(--cta),var(--irem-gold-soft))}
 .phase.p2::after{background:linear-gradient(90deg,var(--indigo),var(--indigo-bright))}
 .phase.p3::after{background:linear-gradient(90deg,var(--cta) 0%,var(--indigo) 100%)}
+/* A phase card that opens with a photograph or a rail node does not get the
+   stripe too: two horizontal openers stacked a few pixels apart, and over a
+   photo the accent cuts the image with a colour it does not contain. The phase
+   is already named in the kicker underneath. */
+.phase:has(.ph-shot)::after,.phase:has(.ph-photo)::after,.phase:has(.rail-node)::after{content:none}
 .phase .ph-n{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.16em;color:var(--indigo);text-transform:uppercase}
 .phase .ph-ico{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;margin:.4rem 0 1.1rem;
   background:var(--chip);color:var(--indigo)}
@@ -265,14 +430,29 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 
 /* ============ WEEKLY RHYTHM ============ */
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:.7rem}
-.day{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:1.2rem 1rem;
+.day{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);padding:1.2rem 1rem;
   display:flex;flex-direction:column;gap:.7rem;transition:transform .3s,box-shadow .3s,border-color .3s;cursor:default}
 .day:hover{transform:translateY(-4px);box-shadow:var(--shadow-med);border-color:var(--line-strong)}
 .day .d-lab{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--indigo)}
-.day .d-name{font-family:var(--f-display);font-size:1.25rem;font-weight:600;color:var(--ink);line-height:1.05}
+.day .d-name{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.25rem;font-weight:600;color:var(--ink);line-height:1.05}
 .day .d-focus{font-size:.85rem;color:var(--text-muted);margin-top:auto}
-.day .d-bar{height:4px;border-radius:2px;background:var(--line);overflow:hidden}
-.day .d-bar i{display:block;height:100%;border-radius:2px;background:linear-gradient(90deg,var(--cta),var(--indigo-bright))}
+/* The rail primitive: one dashed line through a row of nodes, node size
+   carrying whatever intensity the row encodes. Built in CSS rather than the
+   sprite `rail` symbol because these rows reflow (7 → 2 → 1 columns on way21,
+   3 → 1 elsewhere) and a fixed-viewBox SVG cannot follow that without
+   stretching its dots. The line bleeds to the card edges, so only the grid gap
+   interrupts it and the eye completes the run — --rail-bleed is the host card's
+   own inline padding. */
+.rail-node{position:relative;height:16px;flex:0 0 auto;--rail-bleed:1rem}
+.rail-node::before{content:"";position:absolute;top:50%;left:calc(-1 * var(--rail-bleed));right:calc(-1 * var(--rail-bleed));
+  border-top:1.5px dashed color-mix(in srgb, var(--indigo) 42%, transparent)}
+.rail-node::after{content:"";position:absolute;top:50%;left:50%;
+  width:calc(7px + var(--i,.5) * 7px);aspect-ratio:1;border-radius:50%;
+  background:var(--cta);transform:translate(-50%,-50%)}
+/* .phase cards carry more inline padding than .day cards. */
+.phase .rail-node{--rail-bleed:1.7rem;margin-bottom:1rem}
+@media(prefers-reduced-motion:no-preference){
+  .day:hover .rail-node::after,.phase:hover .rail-node::after{transform:translate(-50%,-50%) scale(1.15);transition:transform .3s}}
 .week-note{margin-top:1.6rem;display:flex;gap:.8rem;align-items:flex-start;background:var(--chip-soft);
   border:1px solid var(--line);border-radius:var(--r-md);padding:1.1rem 1.3rem;font-size:.96rem;color:var(--text-muted)}
 .week-note svg{flex:0 0 auto;color:var(--indigo);margin-top:2px}
@@ -283,14 +463,20 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 /* ============ SCIENCE ============ */
 .sci-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(28px,4vw,56px);align-items:center}
 .sci-points{display:grid;gap:1rem;margin-top:1.8rem}
-.sci-point{display:flex;gap:1rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:1.1rem 1.3rem}
-.sci-point .tag{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--indigo);
-  background:var(--chip);border-radius:var(--r-pill);padding:.4em .8em;height:fit-content;white-space:nowrap;align-self:flex-start;flex:0 0 auto}
+.sci-point{display:flex;gap:1rem;background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);padding:1.1rem 1.3rem}
+/* Badge = glass, same recipe as the hero chips (see .hero-badge above). */
+.sci-point .tag{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);
+  position:relative;isolation:isolate;overflow:hidden;
+  background:var(--cw-net-mat-tint);
+  backdrop-filter:var(--cw-net-mat-filter);-webkit-backdrop-filter:var(--cw-net-mat-filter);
+  border:1px solid var(--cw-net-mat-stroke);box-shadow:var(--cw-net-mat-shadow);
+  border-radius:var(--r-pill);padding:.4em .8em;height:fit-content;white-space:nowrap;align-self:flex-start;flex:0 0 auto}
+.sci-point .tag::before{content:"";position:absolute;inset:0;background-image:var(--cw-net-mat-grain);opacity:.6;pointer-events:none;z-index:-1}
 .sci-point p{font-size:.97rem;color:var(--text-muted)}
 .sci-point p b{color:var(--ink)}
-.sci-quote{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(28px,4vw,42px);box-shadow:var(--shadow-soft);position:relative}
-.sci-quote .mark{font-family:var(--f-display);font-size:5rem;line-height:.6;color:var(--line-strong);position:absolute;top:24px;left:24px}
-.sci-quote blockquote{font-family:var(--f-display);font-weight:600;letter-spacing:-.015em;font-size:clamp(1.3rem,2.4vw,1.7rem);color:var(--ink);line-height:1.32;position:relative;z-index:1;padding-top:1.4rem}
+.sci-quote{background:var(--surface);border:0;border-radius:var(--r-lg);padding:clamp(28px,4vw,42px);box-shadow:var(--shadow-soft);position:relative}
+.sci-quote .mark{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:5rem;line-height:.6;color:var(--line-strong);position:absolute;top:24px;left:24px}
+.sci-quote blockquote{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-weight:600;letter-spacing:-.015em;font-size:clamp(1.3rem,2.4vw,1.7rem);color:var(--ink);line-height:1.32;position:relative;z-index:1;padding-top:1.4rem}
 .sci-quote cite{display:block;margin-top:1.4rem;font-style:normal;font-family:var(--f-mono);font-size:.78rem;letter-spacing:.06em;color:var(--text-soft)}
 @media(max-width:880px){.sci-grid{grid-template-columns:1fr}}
 @media(max-width:560px){.sci-point{flex-direction:column;gap:.7rem}}
@@ -303,13 +489,13 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .ai-card .ai-ico{flex:0 0 auto;width:46px;height:46px;border-radius:13px;display:grid;place-items:center;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.16);color:var(--irem-on-dark-soft)}
 .ai-card .ai-head{flex:1;min-width:0;display:flex;flex-direction:column;gap:.35rem}
 .ai-card .ai-kick{display:block;font-family:var(--f-mono);font-size:.68rem;letter-spacing:.16em;text-transform:uppercase;color:rgba(207,211,245,.75)}
-.ai-card .ai-title{display:block;font-family:var(--f-display);font-weight:700;font-size:clamp(1.15rem,2.6vw,1.4rem);line-height:1.2}
+.ai-card .ai-title{display:block;font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-weight:700;font-size:clamp(1.15rem,2.6vw,1.4rem);line-height:1.2}
 .ai-card .ai-chev{flex:0 0 auto;display:grid;place-items:center;width:34px;height:34px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.18);transition:transform .3s;color:#fff}
 .ai-card[open] .ai-chev{transform:rotate(180deg)}
 .ai-body{position:relative;z-index:1;padding:0 clamp(1.3rem,3vw,2rem) clamp(1.6rem,3vw,2.2rem);border-top:1px solid rgba(255,255,255,.1)}
 .ai-body>.ai-intro{font-size:1rem;line-height:1.7;color:rgba(255,255,255,.82);margin:1.5rem 0 .5rem}
 .ai-part{margin-top:1.8rem}
-.ai-part>h4{font-family:var(--f-display);font-size:1.18rem;color:#fff;margin-bottom:.3rem;line-height:1.3}
+.ai-part>h4{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.18rem;color:#fff;margin-bottom:.3rem;line-height:1.3}
 .ai-part>h4 .ai-num{display:inline-block;margin-right:.55rem;font-family:var(--f-mono);font-size:.78rem;letter-spacing:.1em;color:var(--irem-on-dark-soft);white-space:nowrap}
 .ai-part>p.ai-sub{font-size:.92rem;color:rgba(255,255,255,.6);margin-bottom:1rem;font-style:italic}
 .ai-row{display:grid;grid-template-columns:auto 1fr;gap:.5rem 1rem;padding:.7rem 0;border-top:1px solid rgba(255,255,255,.07)}
@@ -324,7 +510,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 
 /* ============ RESULTS ACCORDION ============ */
 .acc{display:grid;gap:.7rem;max-width:840px}
-.acc-item{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);overflow:hidden;transition:box-shadow .3s,border-color .3s}
+.acc-item{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);overflow:hidden;transition:box-shadow .3s,border-color .3s}
 .acc-item[open]{box-shadow:var(--shadow-med);border-color:var(--line-strong)}
 .acc-item summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:1.1rem;padding:1.25rem 1.5rem;font-weight:700;font-size:1.06rem;color:var(--ink)}
 .acc-item summary::-webkit-details-marker{display:none}
@@ -339,6 +525,13 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .faq .acc-body li{padding-left:0}
 .faq .acc-body li::before{display:none}
 .med-note{margin-top:1.6rem;font-size:.88rem;color:var(--text-soft);max-width:840px;display:flex;gap:.6em;align-items:flex-start}
+
+/* ============ ICON / GRAPHIC PRIMITIVES ============ */
+/* One <use> into /shared/img/cw-icons.svg. The glyph inherits currentColor;
+   accent dots read --cw-icon-accent and fall back to currentColor when unset. */
+.ico{flex:0 0 auto;display:block;color:inherit}
+.ico-flip{transform:scaleX(-1)}
+.gfx{flex:0 0 auto;display:block;color:var(--indigo);opacity:.5}
 
 /* ============ FOUNDATIONS ============ */
 .found{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:.8rem}
@@ -356,7 +549,6 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .aud-no{background:var(--surface-cool);border:1px solid var(--line)}
 .aud-yes h3,.aud-no h3{font-size:1.5rem;margin-bottom:1.2rem;display:flex;align-items:center;gap:.6rem}
 .aud-yes h3{color:var(--on-cta)}
-.aud-yes .ti{color:var(--on-cta)}.aud-no .ti{color:var(--text-soft)}
 .aud-li{display:flex;gap:.8rem;padding:.6rem 0;font-size:1rem;color:var(--text-muted);border-top:1px solid var(--line)}
 .aud-yes .aud-li{color:var(--on-cta);border-top-color:rgba(255,249,244,.22)}
 .aud-yes .aud-li svg path{stroke:var(--on-cta)}
@@ -366,7 +558,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 
 /* ============ INCLUDED ============ */
 .inc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem}
-.inc-card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:1.6rem 1.5rem;transition:transform .3s,box-shadow .3s}
+.inc-card{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);padding:1.6rem 1.5rem;transition:transform .3s,box-shadow .3s}
 .inc-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-med)}
 .inc-card .ic{width:48px;height:48px;border-radius:13px;background:var(--chip);color:var(--indigo);display:grid;place-items:center;margin-bottom:1rem}
 .inc-card.is-plus{border-color:var(--cta)}
@@ -377,13 +569,51 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .inc-link{display:inline-block;margin-top:.5rem;font-weight:700;color:var(--indigo);font-size:.93rem}
 .inc-link:hover{color:var(--ink)}
 
+/* Collapsible variant of "what's included": same card material as .acc-item,
+   but each row carries a teaser, a detail body and (optionally) a photo. */
+.inc-acc{display:grid;gap:.75rem}
+.inc-item{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);overflow:hidden;transition:box-shadow .3s}
+.inc-item[open]{box-shadow:var(--shadow-med)}
+.inc-item summary{list-style:none;cursor:pointer;display:flex;align-items:center;gap:1rem;padding:1.25rem 1.5rem}
+.inc-item summary::-webkit-details-marker{display:none}
+.inc-item .ic{flex:0 0 auto;width:48px;height:48px;border-radius:13px;background:var(--chip);color:var(--indigo);display:grid;place-items:center}
+.inc-item.is-plus .ic{background:color-mix(in srgb, var(--cta) 14%, transparent);color:var(--cta-strong)}
+.inc-head{flex:1;min-width:0;display:flex;flex-direction:column;gap:.25rem}
+.inc-head .plus-tag{font-size:.7rem;font-weight:700;color:var(--cta-strong);text-transform:uppercase;letter-spacing:.05em}
+.inc-t{font-family:var(--f-ui);font-weight:700;font-size:1.06rem;color:var(--ink);line-height:1.3}
+.inc-teaser{font-size:.92rem;color:var(--text-muted);line-height:1.4}
+.inc-item summary .chev{margin-left:auto;flex:0 0 auto;display:grid;place-items:center;width:32px;height:32px;border-radius:50%;
+  background:var(--chip-soft);color:var(--indigo);transition:transform .3s,background .3s}
+.inc-item[open] summary .chev{transform:rotate(180deg);background:var(--chip)}
+.inc-body{padding:0 1.5rem 1.5rem 1.5rem;border-top:1px solid var(--line);margin-top:.25rem;padding-top:1.25rem}
+.inc-copy p{font-size:.97rem;color:var(--text-muted);line-height:1.6}
+.inc-copy ul{list-style:none;display:grid;gap:.5rem;margin-top:1rem}
+.inc-copy li{position:relative;padding-left:1.5rem;color:var(--text-muted);font-size:.95rem;line-height:1.55}
+.inc-copy li::before{content:"";position:absolute;left:0;top:.6em;width:7px;height:7px;border-radius:50%;background:var(--cta)}
+.inc-copy li b{color:var(--ink)}
+.inc-links{display:flex;flex-wrap:wrap;gap:1.25rem}
+@media(max-width:760px){
+  .inc-item summary{padding:1rem 1.25rem;gap:.75rem}
+  .inc-body{padding:1rem 1.25rem 1.25rem}
+}
+
+/* ============ RESULT CARDS ============ */
+.res-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(268px,1fr));gap:1rem}
+.res-card{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);padding:1.5rem;transition:transform .3s,box-shadow .3s}
+.res-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-med)}
+.res-top{display:flex;align-items:center;justify-content:space-between;gap:1rem}
+.res-n{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.1em;color:var(--text-soft)}
+.res-ic{width:40px;height:40px;border-radius:12px;background:var(--chip);color:var(--indigo);display:grid;place-items:center}
+.res-card h3{font-family:var(--f-ui);font-weight:700;font-size:1.08rem;color:var(--ink);margin:1rem 0 .75rem}
+.res-card ul{list-style:none;display:grid;gap:.5rem}
+.res-card li{position:relative;padding-left:1.5rem;font-size:.95rem;line-height:1.55;color:var(--text-muted)}
+.res-card li::before{content:"";position:absolute;left:0;top:.6em;width:7px;height:7px;border-radius:50%;background:var(--cta)}
+
 /* ============ AUTHOR ============ */
 .author{display:grid;grid-template-columns:.85fr 1.15fr;gap:clamp(28px,4vw,56px);align-items:center;
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(28px,4vw,52px);box-shadow:var(--shadow-soft)}
+  background:var(--surface);border:0;border-radius:var(--r-lg);padding:clamp(28px,4vw,52px);box-shadow:var(--shadow-soft)}
 .author-photo{aspect-ratio:3/4;border-radius:var(--r-md);position:relative;overflow:hidden;background:var(--surface)}
-.author-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top;
-  -webkit-mask-image:linear-gradient(to bottom,#000 35%,transparent 100%);
-  mask-image:linear-gradient(to bottom,#000 35%,transparent 100%)}
+.author-photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:center top}
 .author-photo .ph-cap{position:absolute;left:12px;bottom:12px;z-index:2;background:rgba(255,255,255,.86);border:1px solid var(--line);
   border-radius:var(--r-pill);padding:.35em .8em;font-family:var(--f-mono);font-size:.62rem;letter-spacing:.1em;color:var(--indigo);text-transform:uppercase}
 .author h2{font-size:clamp(1.8rem,3.4vw,2.6rem);margin-bottom:.4rem}
@@ -391,12 +621,15 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .author-quote{margin:1.1rem 0;padding:.9rem 1.1rem;border-left:3px solid var(--indigo);background:var(--chip);border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:.98rem;color:var(--ink-soft);font-style:italic;line-height:1.5}
 .author .reg{display:grid;gap:.7rem;margin-top:1.2rem}
 .author .reg li{list-style:none;display:flex;gap:.8rem;font-size:.98rem;color:var(--text-muted)}
-.author .reg svg{flex:0 0 auto;margin-top:3px;color:var(--indigo)}
+/* One glyph repeated down a list is decoration, not information — the shields
+   came out 2026-08-17 and a typographic node keeps the list scannable. */
+.author .reg li{position:relative;padding-left:1.1rem}
+.author .reg li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--cta)}
 @media(max-width:760px){.author{grid-template-columns:1fr}.author-photo{max-width:300px}}
 
 /* ============ PROOF ============ */
 .proof-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-bottom:1.8rem}
-.review{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:1.5rem;display:flex;flex-direction:column;gap:1rem;transition:transform .3s,box-shadow .3s}
+.review{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);padding:1.5rem;display:flex;flex-direction:column;gap:1rem;transition:transform .3s,box-shadow .3s}
 .review:hover{transform:translateY(-3px);box-shadow:var(--shadow-med)}
 .review .stars{color:var(--gold);letter-spacing:.15em;font-size:.95rem}
 .review p{font-size:.98rem;color:var(--text);line-height:1.55}
@@ -439,7 +672,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .offer h2 em{font-style:normal;color:var(--irem-gold-bright)}
 .offer p{color:rgba(255,255,255,.84);max-width:54ch;margin-inline:auto;font-size:1.08rem;margin-bottom:2rem}
 .offer-price{display:flex;flex-direction:column;align-items:center;gap:.25rem;margin-bottom:1.6rem}
-.offer-price b{font-family:var(--f-display);font-size:clamp(2.6rem,9vw,3rem);font-weight:700;color:#fff;line-height:1}
+.offer-price b{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:clamp(2.6rem,9vw,3rem);font-weight:700;color:#fff;line-height:1}
 .offer-price small{font-family:var(--f-mono);font-size:.8rem;letter-spacing:.08em;color:rgba(255,255,255,.6);text-transform:uppercase}
 .offer .btn-primary{display:flex;font-size:1.05rem;padding:1.05em 2.4em;width:100%;justify-content:center}
 .offer-pay{display:flex;align-items:center;justify-content:center;gap:.7rem;margin-top:1.4rem;font-family:var(--f-mono);font-size:.74rem;letter-spacing:.06em;color:rgba(255,255,255,.6)}
@@ -452,13 +685,19 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .format-card>*{position:relative;z-index:1}
 .format-card.self{background:var(--irem-grad-dark);color:#fff}
 .format-card.self::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 70% 10%,rgba(232,162,90,.12) 0%,transparent 60%);pointer-events:none}
-.format-card.premium{background:var(--surface);border:1px solid var(--line)}
+.format-card.premium{background:var(--surface);border:0;box-shadow:var(--shadow-soft)}
 .fc-badge{display:inline-flex;align-items:center;font-family:var(--f-mono);font-size:var(--chip-fs);letter-spacing:.16em;text-transform:uppercase;margin-bottom:1.1rem;padding:calc(var(--chip-py) + var(--chip-nudge)) var(--chip-px) calc(var(--chip-py) - var(--chip-nudge));border-radius:var(--r-pill);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.65);line-height:1}
-.format-card.premium .fc-badge{border-color:var(--line);color:var(--indigo);background:var(--chip)}
-.fc-title{font-family:var(--f-display);font-size:1.65rem;font-weight:700;color:#fff;line-height:1.15;margin-bottom:1.2rem}
+/* Only the premium card sits on a light ground, so only it takes the glass; the
+   badge on the dark card keeps its outline treatment. */
+.format-card.premium .fc-badge{position:relative;isolation:isolate;overflow:hidden;color:var(--ink);
+  border-color:var(--cw-net-mat-stroke);background:var(--cw-net-mat-tint);
+  backdrop-filter:var(--cw-net-mat-filter);-webkit-backdrop-filter:var(--cw-net-mat-filter);
+  box-shadow:var(--cw-net-mat-shadow)}
+.format-card.premium .fc-badge::before{content:"";position:absolute;inset:0;background-image:var(--cw-net-mat-grain);opacity:.6;pointer-events:none;z-index:-1}
+.fc-title{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.65rem;font-weight:700;color:#fff;line-height:1.15;margin-bottom:1.2rem}
 .format-card.premium .fc-title{color:var(--ink)}
 .fc-price{margin-bottom:1.5rem}
-.fc-price b{display:block;font-family:var(--f-display);font-size:2.6rem;font-weight:700;color:#fff;line-height:1}
+.fc-price b{display:block;font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:2.6rem;font-weight:700;color:#fff;line-height:1}
 .format-card.premium .fc-price b{color:var(--ink)}
 .fc-price small{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-top:.2rem;display:block}
 .format-card.premium .fc-price small{color:var(--text-muted)}
@@ -472,16 +711,16 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .btn-tg{background:var(--indigo);color:#fff;box-shadow:0 4px 16px rgba(90,96,153,.28)}
 .btn-tg:hover{background:var(--indigo-bright);transform:translateY(-2px);box-shadow:0 10px 28px rgba(90,96,153,.38)}
 /* ============ SHORT ENTRY ============ */
-.short-block{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(2rem,4vw,2.8rem);display:flex;flex-direction:column;align-items:flex-start;gap:1.6rem}
+.short-block{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-lg);padding:clamp(2rem,4vw,2.8rem);display:flex;flex-direction:column;align-items:flex-start;gap:1.6rem}
 @media(min-width:700px){.short-block{flex-direction:row;align-items:center;gap:2.4rem}}
 .short-text{flex:1}
-.short-text h3{font-family:var(--f-display);font-size:clamp(1.5rem,3vw,2rem);color:var(--ink);margin:.4rem 0 .8rem;line-height:1.2}
+.short-text h3{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:clamp(1.5rem,3vw,2rem);color:var(--ink);margin:.4rem 0 .8rem;line-height:1.2}
 .short-text p{font-size:.95rem;color:var(--text-muted);line-height:1.6;max-width:48ch}
 .short-text .notice{margin-top:.75rem;font-size:.86rem;color:var(--text-muted);opacity:.75;line-height:1.55;border-left:3px solid var(--line-strong);padding-left:.9rem}
 .short-cta{flex:0 0 auto;width:100%;display:flex;flex-direction:column;gap:.9rem;align-items:flex-start}
 .short-cta .btn{width:100%;justify-content:center}
 .short-price-row{display:flex;align-items:baseline;gap:.45em}
-.short-price-row b{font-family:var(--f-display);font-size:1.9rem;font-weight:700;color:var(--ink);line-height:1}
+.short-price-row b{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.9rem;font-weight:700;color:var(--ink);line-height:1}
 .short-price-row small{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;color:var(--text-soft)}
 @media(min-width:700px){.short-cta{width:auto;align-items:flex-start}.short-cta .btn{width:auto}}
 
@@ -495,9 +734,9 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 
 /* ============ PROTOCOL ============ */
 .proto{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;position:relative}
-.proto-step{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-md);padding:1.8rem 1.6rem;position:relative}
+.proto-step{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);padding:1.8rem 1.6rem;position:relative}
 .proto-step .ph{font-family:var(--f-mono);font-size:.78rem;letter-spacing:.12em;color:var(--cta);text-transform:uppercase;margin-bottom:.7rem}
-.proto-step h4{font-family:var(--f-display);font-size:1.4rem;color:var(--ink);margin-bottom:.5rem}
+.proto-step h4{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.4rem;color:var(--ink);margin-bottom:.5rem}
 .proto-step p{font-size:.95rem;color:var(--text-muted)}
 @media(max-width:760px){.proto{grid-template-columns:1fr}}
 
@@ -508,6 +747,30 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .footer{background:var(--text);color:rgba(255,255,255,.66);padding:clamp(48px,6vw,72px) 0 calc(2.4rem + 78px);position:relative;z-index:1}
 .footer-top{display:flex;flex-wrap:wrap;justify-content:space-between;gap:2rem;padding-bottom:2.2rem;border-bottom:1px solid rgba(255,255,255,.1)}
 .footer .brand{color:#fff;display:flex;margin-bottom:1rem}
+/* The footer lockup is the nav lockup: same mark size, same wordmark face and
+   scale. It used to run the display face at 1.3rem beside a 38px mark, which
+   read as a second, larger logo rather than the same one. Scoped to the five
+   platform-author landings — irem/short-b are a different author's pages that
+   share this stylesheet. */
+[data-cw-landing="way21"] .footer .brand,
+[data-cw-landing="reset-day"] .footer .brand,
+[data-cw-landing="herbs"] .footer .brand,
+[data-cw-landing="consult"] .footer .brand,
+[data-cw-landing="dosha"] .footer .brand{
+  font-family:var(--f-ui);font-size:1rem;font-weight:700;letter-spacing:-.02em;gap:.6rem;align-items:center;
+  /* Same lockup as the bar's night tone: gold mark, gold word. */
+  color:var(--cw-net-hero-accent,#e0b25c)
+}
+/* The footer mark is the gold file — the tighter crop — so it takes the
+   compensated box, same as the bar does on its dark tone. Scoped alongside the
+   rule above: irem/short-b share this stylesheet and keep their own lockup. */
+[data-cw-landing="way21"] .footer .brand-mark,
+[data-cw-landing="reset-day"] .footer .brand-mark,
+[data-cw-landing="herbs"] .footer .brand-mark,
+[data-cw-landing="consult"] .footer .brand-mark,
+[data-cw-landing="dosha"] .footer .brand-mark{
+  box-sizing:border-box;padding:var(--cw-net-brand-mark-gold-inset,.24rem)
+}
 .footer-col h5{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:1rem}
 .footer-col p,.footer-col a{font-size:.95rem;display:block;margin-bottom:.5rem;color:rgba(255,255,255,.7)}
 .footer-col a:hover{color:var(--irem-gold-bright)}
@@ -519,8 +782,9 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 /* ============ STICKY CTA (replaces header on all viewports) ============ */
 .sticky-cta{position:fixed;left:0;right:0;bottom:0;z-index:60;
   display:flex;
-  background:rgba(255,253,247,.96);backdrop-filter:saturate(140%) blur(14px);-webkit-backdrop-filter:saturate(140%) blur(14px);
-  border-top:1px solid var(--line);box-shadow:0 -6px 24px color-mix(in srgb, var(--ink) .10%, transparent);
+  background-color:var(--cw-net-mat-tint);background-image:var(--cw-net-mat-grain);
+  backdrop-filter:var(--cw-net-mat-filter);-webkit-backdrop-filter:var(--cw-net-mat-filter);
+  border-top:0;box-shadow:var(--cw-net-mat-shadow-raised);
   /* GPU layer — prevents jitter on scroll in Safari */
   will-change:transform;transform:translateZ(0);
   transition:transform .35s cubic-bezier(.2,.8,.2,1)}
@@ -590,7 +854,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 
 /* ============ HERBS CROSS-SELL SUB-BLOCK (phases → /herbs) ============ */
 .herbs-cross{margin-top:clamp(28px,4vw,44px);display:grid;grid-template-columns:.9fr 1.1fr;
-  background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);
+  background:var(--surface);border:0;border-radius:var(--r-lg);
   overflow:hidden;box-shadow:var(--shadow-soft)}
 .herbs-cross__photo{position:relative;min-height:240px}
 .herbs-cross__photo img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
@@ -729,11 +993,11 @@ body[data-cw-landing].utility-page{
 .lead-modal{position:fixed;inset:0;z-index:120;display:flex;align-items:center;justify-content:center;padding:20px}
 .lead-modal[hidden]{display:none}
 .lead-modal__backdrop{position:absolute;inset:0;background:color-mix(in srgb, var(--ink) .520%, transparent);backdrop-filter:blur(3px)}
-.lead-modal__dialog{position:relative;width:100%;max-width:30rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-med);padding:clamp(1.4rem,4vw,2rem);max-height:90vh;overflow:auto}
+.lead-modal__dialog{position:relative;width:100%;max-width:30rem;background:var(--surface);border:0;border-radius:var(--r-lg);box-shadow:var(--shadow-med);padding:clamp(1.4rem,4vw,2rem);max-height:90vh;overflow:auto}
 .lead-modal__x{position:absolute;top:.7rem;right:.9rem;width:2rem;height:2rem;border:0;background:transparent;font-size:1.5rem;line-height:1;color:var(--text-soft);cursor:pointer;border-radius:50%}
 .lead-modal__x:hover{background:var(--surface-cool);color:var(--ink)}
 .lead-modal__program{font-family:var(--f-ui);font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--cta-strong);margin:0 0 .3rem}
-.lead-modal__title{font-family:var(--f-display);font-size:1.4rem;color:var(--ink);margin:0 0 .4rem}
+.lead-modal__title{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.4rem;color:var(--ink);margin:0 0 .4rem}
 .lead-modal__sub{font-size:.95rem;color:var(--text-muted);margin:0 0 1.1rem;line-height:1.5}
 .lead-modal__input{width:100%;box-sizing:border-box;margin-bottom:.7rem;padding:.8rem .95rem;font:inherit;font-size:1rem;color:var(--ink);background:var(--surface-cool);border:1px solid var(--line-strong);border-radius:var(--r-sm)}
 .lead-modal__input:focus{outline:2px solid var(--cta);outline-offset:1px;border-color:var(--cta)}
@@ -745,8 +1009,8 @@ textarea.lead-modal__input{resize:vertical;min-height:3.2rem}
 .lead-modal__done{font-size:1rem;color:var(--ink);line-height:1.55;margin:.4rem 0 1.1rem}
 
 /* ============ INLINE LEAD FORM (consult / herbs) ============ */
-.lead-form{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(1.5rem,3vw,2.2rem);box-shadow:var(--shadow-soft)}
-.lead-form h3{font-family:var(--f-display);font-size:clamp(1.3rem,2.6vw,1.75rem);line-height:1.15;color:var(--ink);margin-bottom:.45rem}
+.lead-form{background:var(--surface);border:0;border-radius:var(--r-lg);padding:clamp(1.5rem,3vw,2.2rem);box-shadow:var(--shadow-soft)}
+.lead-form h3{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:clamp(1.3rem,2.6vw,1.75rem);line-height:1.15;color:var(--ink);margin-bottom:.45rem}
 .lead-form__note{color:var(--text-muted);font-size:.95rem;line-height:1.5;margin-bottom:1.2rem}
 .lead-field{display:block;margin-bottom:.85rem}
 .lead-field label{display:block;font-size:.85rem;font-weight:600;color:var(--ink);margin-bottom:.35rem}
@@ -759,7 +1023,7 @@ select.lead-input{appearance:none;-webkit-appearance:none}
 .lead-form__status[data-tone="success"]{color:var(--indigo)}
 .lead-form__status[data-tone="error"]{color:#a8321f}
 .lead-aside{display:flex;flex-direction:column;gap:.7rem}
-.lead-aside h3{font-family:var(--f-display);font-size:1.25rem;color:var(--ink)}
+.lead-aside h3{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.25rem;color:var(--ink)}
 .lead-aside a{color:var(--indigo);font-weight:700}
 .lead-aside a:hover{color:var(--ink)}
 .lead-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:1.4rem;align-items:start}

@@ -1,0 +1,293 @@
+/* User cabinet — sectioned dashboard over profile + LMS data.
+
+   Mobile-first: every rule is the phone layout, wider viewports only add.
+   Surfaces are the material (matte, no border — the material carries the edge,
+   see docs/design-system.md "Material layer"). Tokens only, no raw hex. */
+
+/* ── Identity header ──────────────────────────────── */
+
+/* The cabinet reuses the platform's hero surface but NOT its proportions: a
+   full-viewport photo would push every control the cabinet exists for below the
+   fold. Class + attribute keeps specificity above the platform's own
+   `.heroFeature` rule deterministically, rather than relying on module order. */
+.hero[data-cw-profile-hero="true"] {
+  min-height: 0;
+}
+
+.hero .heroContent {
+  padding-block: calc(var(--platform-topbar-clearance, 5.5rem) + var(--cw-space-md)) var(--cw-space-2xl);
+}
+
+/* Your own name is an identity label here, not a landing headline. */
+.hero .heroName {
+  font-size: clamp(1.75rem, 5vw, 2.6rem);
+  line-height: 1.1;
+}
+
+.shell {
+  width: min(100% - 2rem, var(--cw-max-width));
+  margin: 0 auto;
+  padding-block: var(--cw-space-lg) var(--cw-space-3xl);
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-ui);
+}
+
+/* ── Section navigation ───────────────────────────── */
+
+/* A scroll strip, not a wrapping row: five labels must stay on one line on a
+   360px phone without the tallest one pushing the content down. */
+.tabs {
+  display: flex;
+  gap: var(--cw-space-2xs);
+  margin-bottom: var(--cw-space-lg);
+  padding-bottom: var(--cw-space-2xs);
+  overflow-x: auto;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+.tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ds-touch-target-min);
+  padding-inline: var(--cw-space-md);
+  border: 0;
+  border-radius: var(--cw-radius-btn);
+  background: var(--cw-mat-surface-sunk);
+  box-shadow: var(--cw-mat-shadow-soft);
+  color: var(--cw-platform-muted);
+  font: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.tab:hover {
+  color: var(--cw-platform-text);
+}
+
+.tabActive {
+  composes: tab;
+  background: var(--cw-platform-text);
+  color: var(--cw-platform-bg);
+}
+
+/* ── Section scaffolding ──────────────────────────── */
+
+.section {
+  display: grid;
+  gap: var(--cw-space-md);
+}
+
+.sectionHead {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.sectionLabel {
+  margin: 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.sectionLead {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  line-height: 1.6;
+}
+
+.card {
+  display: grid;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-lg);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.cardGrid {
+  display: grid;
+  gap: var(--cw-space-md);
+}
+
+.cardTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.cardText {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  line-height: 1.6;
+}
+
+/* ── Continue card (the cabinet's single most important control) ── */
+
+.continueCard {
+  composes: card;
+  background: var(--cw-mat-tone-support);
+}
+
+.continueNext {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+/* ── Chips, meters, meta ──────────────────────────── */
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-2xs);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  font-size: 0.8rem;
+  color: var(--cw-platform-muted);
+}
+
+.chipDone {
+  composes: chip;
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-on-accent);
+  font-weight: 600;
+}
+
+.meter {
+  height: 0.4rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  overflow: hidden;
+}
+
+.meterFill {
+  height: 100%;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-accent);
+  transition: width 240ms ease;
+}
+
+.metaList {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+  color: var(--cw-platform-muted);
+  line-height: 1.5;
+}
+
+.metaList strong {
+  color: var(--cw-platform-text);
+  font-weight: 600;
+}
+
+/* ── Actions ──────────────────────────────────────── */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+}
+
+.actionPrimary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: var(--ds-touch-target-min);
+  padding-inline: var(--cw-space-lg);
+  border: 0;
+  border-radius: var(--cw-radius-btn);
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-on-accent);
+  font: inherit;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.actionGhost {
+  composes: actionPrimary;
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+}
+
+/* ── Score bars (dosha) ───────────────────────────── */
+
+.scoreList {
+  display: grid;
+  gap: var(--cw-space-sm);
+}
+
+.scoreRow {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.scoreMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  font-size: 0.9rem;
+}
+
+.scoreMeta strong {
+  font-family: var(--cw-font-data);
+}
+
+/* ── Locked / muted states ────────────────────────── */
+
+.cardMuted {
+  composes: card;
+  background: var(--cw-mat-surface-sunk);
+  box-shadow: none;
+}
+
+.notice {
+  display: grid;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-md);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-tone-boundary);
+  line-height: 1.55;
+}
+
+/* ── Wider viewports: additive only ───────────────── */
+
+@media (min-width: 48rem) {
+  .shell {
+    padding-block-start: var(--cw-space-xl);
+  }
+
+  /* auto-fit, not a fixed pair: a lone course card reading as a half-width tile
+     with dead space beside it looks like a layout bug, not a shelf. */
+  .cardGrid {
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  }
+}

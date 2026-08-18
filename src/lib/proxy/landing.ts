@@ -64,8 +64,14 @@ export function rewriteFunnelHostRequest(req: NextRequest): NextResponse | null 
   }
   const entry = getProductSurfaceEntry(product);
 
-  if (product === "dosha" && req.nextUrl.pathname.startsWith("/dosha-test")) {
-    return rewriteSurfaceRoute(req, "/dosha-test", "platform");
+  if (product === "dosha") {
+    const doshaPathname = req.nextUrl.pathname;
+    if (doshaPathname === "/dosha-test" || doshaPathname.startsWith("/dosha-test/")) {
+      return rewriteSurfaceRoute(req, "/tests/dosha", "platform");
+    }
+    if (doshaPathname === "/tests" || doshaPathname.startsWith("/tests/")) {
+      return rewriteSurfaceRoute(req, doshaPathname, "platform");
+    }
   }
 
   const mappedPage = getLandingRootRewritePath(req.nextUrl.pathname);

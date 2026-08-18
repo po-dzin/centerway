@@ -1,0 +1,229 @@
+<!doctype html><html lang="uk"><head><meta charset="utf-8"><title>CW hero material study</title>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&family=Cormorant+Garamond:wght@500;600&family=IBM+Plex+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+:root{
+  /* network baseline (network-tokens.css defaults) */
+  --cream:#f7f5ec; --ink:#1d3a30; --gold:#dba54f; --gold-strong:#c2902f;
+  --chip:#e4efe7; --chip-soft:#f0f6f1; --line:#dbe6dc; --line-strong:#bccfbf;
+  --f-display:"Cormorant Garamond",serif; --f-ui:"Manrope",sans-serif; --f-mono:"IBM Plex Mono",monospace;
+
+  /* --cw-mat-* (light) — copied from src/app/globals.css / cw-tokens.generated.css */
+  --mat-surface:#fbf9f2;
+  --mat-tint: rgba(251,249,242,.76);
+  --mat-blur: 34px;
+  --mat-stroke: rgba(255,255,255,.55);
+  --mat-shadow: 0 1px 2px rgba(35,29,20,.05), 0 10px 28px rgba(35,29,20,.07);
+  --mat-grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+
+  /* --cw-mat-inverse-control — exists on the platform, NOT yet bridged to --cw-net-* (see note) */
+  --mat-inverse: rgba(13,27,23,.34);
+  --mat-inverse-hover: rgba(13,27,23,.44);
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:var(--f-ui);color:var(--ink);background:#efece1;padding:32px 20px 80px}
+h1,h2,h3{font-family:var(--f-display);font-weight:600;margin:0}
+.wrap{max-width:1180px;margin:0 auto}
+.intro{max-width:74ch;margin-bottom:36px}
+.intro h1{font-size:26px;margin-bottom:10px}
+.intro p{font-size:14.5px;line-height:1.6;color:color-mix(in srgb,var(--ink) 78%,transparent);margin:0 0 8px}
+.intro code{background:var(--chip-soft);padding:.1em .4em;border-radius:5px;font-family:var(--f-mono);font-size:.85em}
+
+.section-label{display:flex;align-items:baseline;gap:10px;margin:44px 0 14px}
+.section-label b{font-family:var(--f-mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-strong)}
+.section-label span{font-size:13px;color:color-mix(in srgb,var(--ink) 60%,transparent)}
+
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+@media(max-width:880px){.pair{grid-template-columns:1fr}}
+.panel{border-radius:20px;overflow:hidden;background:var(--cream);box-shadow:0 1px 2px rgba(35,29,20,.06),0 14px 30px rgba(35,29,20,.08)}
+.panel-head{display:flex;align-items:center;justify-content:space-between;padding:12px 18px;border-bottom:1px solid var(--line)}
+.panel-head b{font-size:13px}
+.tag{font-family:var(--f-mono);font-size:10px;letter-spacing:.1em;text-transform:uppercase;padding:.3em .6em;border-radius:6px}
+.tag.old{background:#f2e4d8;color:#8a5a2b}
+.tag.new{background:color-mix(in srgb,var(--mat-surface) 60%,var(--gold) 12%);color:var(--gold-strong);border:1px solid var(--mat-stroke)}
+
+/* ---- desktop hero mock (badge beside photo, on cream) ---- */
+.hero-mock{position:relative;padding:26px;display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start;background:var(--cream)}
+.hero-copy-col{display:flex;flex-direction:column;align-items:flex-start;gap:.7rem}
+.hero-mock h2{font-size:22px;line-height:1.15;max-width:14ch}
+.hero-mock .sub{font-size:12.5px;line-height:1.5;color:color-mix(in srgb,var(--ink) 70%,transparent);max-width:30ch;margin:0}
+.photo-col{position:relative;border-radius:14px;overflow:hidden;aspect-ratio:4/5;background:#333}
+.photo-col img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+
+/* badge — current */
+.badge-old{display:inline-flex;align-items:center;gap:.5em;font-size:12px;font-weight:600;color:var(--ink);background:var(--chip);border:1px solid var(--line);padding:.5em .85em;border-radius:999px}
+.badge-old .dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+
+/* badge — proposed: M1 glass on cream */
+.badge-new{display:inline-flex;align-items:center;gap:.5em;font-size:12px;font-weight:600;color:var(--ink);
+  position:relative;isolation:isolate;overflow:hidden;
+  background:var(--mat-tint);backdrop-filter:blur(var(--mat-blur)) saturate(1.18);-webkit-backdrop-filter:blur(var(--mat-blur)) saturate(1.18);
+  border:1px solid var(--mat-stroke);box-shadow:var(--mat-shadow);
+  padding:.5em .85em;border-radius:999px}
+.badge-new::before{content:"";position:absolute;inset:0;background-image:var(--mat-grain);opacity:.6;pointer-events:none;z-index:-1}
+.badge-new .dot{width:6px;height:6px;border-radius:50%;background:var(--gold)}
+
+/* chips row — current */
+.chips-old{display:flex;flex-wrap:wrap;gap:.4rem}
+.chips-old span{font-size:11.5px;font-weight:600;color:var(--ink);background:var(--chip);border:1px solid var(--line);padding:.42em .8em;border-radius:999px}
+
+/* chips row — proposed */
+.chips-new{display:flex;flex-wrap:wrap;gap:.4rem}
+.chips-new span{font-size:11.5px;font-weight:600;color:var(--ink);position:relative;isolation:isolate;overflow:hidden;
+  background:var(--mat-tint);backdrop-filter:blur(var(--mat-blur)) saturate(1.18);-webkit-backdrop-filter:blur(var(--mat-blur)) saturate(1.18);
+  border:1px solid var(--mat-stroke);box-shadow:var(--mat-shadow);padding:.42em .8em;border-radius:999px}
+.chips-new span::before{content:"";position:absolute;inset:0;background-image:var(--mat-grain);opacity:.6;pointer-events:none;z-index:-1}
+
+.btn-mock{margin-top:.3rem;display:inline-flex;align-items:center;font-size:12.5px;font-weight:700;color:#fff8eb;background:var(--gold);padding:.6em 1.1em;border-radius:10px}
+
+/* ---- hv-stat photo-card badges ---- */
+.stat-stage{position:relative;border-radius:14px;overflow:hidden;aspect-ratio:4/5;background:#333}
+.stat-stage img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+.hv-stat{position:absolute;padding:.6rem .85rem;border-radius:10px;font-size:12px}
+.hv-stat .lab{font-family:var(--f-mono);font-size:.56rem;letter-spacing:.1em;text-transform:uppercase}
+.hv-stat .val{font-family:var(--f-display);font-size:1.05rem;font-weight:700;line-height:1;margin-top:.15rem}
+
+.hv-stat.old{background:rgba(255,255,255,.95);border:1px solid var(--line);box-shadow:0 8px 20px rgba(20,20,10,.14);backdrop-filter:blur(6px)}
+.hv-stat.old .lab{color:var(--ink)}
+.hv-stat.old .val{color:var(--ink)}
+
+.hv-stat.new{position:absolute;isolation:isolate;overflow:hidden;color:#fdfbf4;
+  background:var(--mat-inverse);backdrop-filter:blur(20px) saturate(1.1);-webkit-backdrop-filter:blur(20px) saturate(1.1);
+  border:1px solid rgba(255,255,255,.16);box-shadow:0 10px 26px rgba(0,0,0,.28)}
+.hv-stat.new .lab{color:rgba(253,251,244,.72)}
+.hv-stat.new .val{color:#fdfbf4}
+
+.s1{top:5%;right:5%}
+.s2{bottom:6%;left:5%}
+
+/* ---- mobile hero mock (badge over photo) ---- */
+.mobile-mock{width:260px;margin:0 auto;border-radius:18px;overflow:hidden;background:var(--cream);box-shadow:0 10px 26px rgba(20,20,10,.12)}
+.mobile-photo{position:relative;aspect-ratio:3/4}
+.mobile-photo img{width:100%;height:100%;object-fit:cover;object-position:top center;display:block}
+.mobile-photo::after{content:"";position:absolute;inset:0;background:linear-gradient(to bottom,transparent 55%,var(--cream) 92%)}
+.mobile-badge-wrap{position:absolute;left:14px;bottom:16px;z-index:2}
+.mobile-copy{padding:0 16px 18px}
+.mobile-copy h2{font-size:16px;line-height:1.2;margin-bottom:6px}
+.mobile-copy .sub{font-size:11px;line-height:1.5;color:color-mix(in srgb,var(--ink) 70%,transparent);margin:0}
+
+.callout{margin-top:14px;padding:12px 14px;border-radius:10px;background:var(--chip-soft);font-size:12px;line-height:1.55;color:color-mix(in srgb,var(--ink) 82%,transparent)}
+.callout b{color:var(--ink)}
+
+.gap-note{max-width:74ch;margin:56px 0 0;padding:16px 18px;border-radius:12px;background:#fbeee0;border:1px solid #ecd3b0;font-size:13px;line-height:1.6}
+.gap-note b{font-family:var(--f-mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#8a5a2b;display:block;margin-bottom:6px}
+</style></head>
+<body><div class="wrap">
+
+<div class="intro">
+  <h1>Hero material study — consult (light-split)</h1>
+  <p>Три елемента героя <code>consult / herbs / dosha</code> зараз стоять на своїх ad-hoc токенах, окремо від матеріального шару платформи: <code>.hero-badge</code>, <code>.hero-chips span</code>, <code>.hv-stat</code>. Нижче — поточний стан поруч із пропозицією на <code>--cw-mat-*</code>, у двох контекстах, де опиняється бейдж: на кремовому фоні (десктоп) і поверх фото (мобіла + фото-картки).</p>
+  <p>Значення взяті напряму з <code>src/app/globals.css</code> / <code>cw-tokens.generated.css</code> — це не ілюстрація «в дусі», а реальні токени.</p>
+</div>
+
+<div class="gap-note" style="margin-top:0;margin-bottom:36px;background:#e7f1ea;border-color:#bccfbf">
+<b>Вирішено 2026-08-17 — інакше, ніж на цій сторінці</b>
+Далі в роботі виявилось два уточнення від автора: (1) прибрати верхній inset-блік з усього матеріального шару (тут нижче цей блік ще присутній у CSS-змінних <code>--mat-shadow</code>/старих значеннях — не орієнтуйся на нього); (2) не заводити окремий тьмяний варіант для <code>.hv-stat</code>/мобільного <code>.hero-badge</code> — замість <code>--cw-mat-inverse-control</code> (34% темний скрим, який на світлих ділянках фото провалював контраст ~2.0 при потрібних 4.5) усе, що сидить на фото, тепер їде на тому самому теплому склі, просто на щільнішому floor (<code>--cw-mat-tint-media</code>, 86%) з тим самим тёмним ink-текстом — перевірено і на чорному, і на білому фото (8.5–11.8). Реалізовано в <code>src/landing-static/shared/css/landing.css</code> (<code>.hero-badge</code>, <code>.hero-chips span</code>, <code>.hv-stat</code>) і <code>network-tokens.css</code> (<code>--cw-net-mat-tint-media</code>). Ця сторінка лишається як історія рішення, не як специфікація.
+</div>
+
+<div class="section-label"><b>Контекст 1</b><span>бейдж і чипи на кремовому фоні — десктопний layout</span></div>
+<div class="pair">
+  <div class="panel">
+    <div class="panel-head"><b>Поточний стан</b><span class="tag old">landing.css</span></div>
+    <div class="hero-mock">
+      <div class="hero-copy-col">
+        <span class="badge-old"><span class="dot"></span>Персональна консультація · онлайн</span>
+        <h2>Коли поради суперечать одна одній</h2>
+        <p class="sub">Розбираємо стан цілком: конституція, травлення, ритм дня, стрес.</p>
+        <div class="chips-old">
+          <span>Онлайн, з будь-якої країни</span>
+          <span>Оцінка конституції</span>
+          <span>Конкретний план дій</span>
+        </div>
+        <span class="btn-mock">Залишити запит</span>
+      </div>
+      <div class="photo-col"><img src="../../../src/landing-static/shared/img/consult-hero-evgeniy.jpeg" alt=""></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><b>Пропозиція</b><span class="tag new">--cw-mat-tint / M1 glass</span></div>
+    <div class="hero-mock">
+      <div class="hero-copy-col">
+        <span class="badge-new"><span class="dot"></span>Персональна консультація · онлайн</span>
+        <h2>Коли поради суперечать одна одній</h2>
+        <p class="sub">Розбираємо стан цілком: конституція, травлення, ритм дня, стрес.</p>
+        <div class="chips-new">
+          <span>Онлайн, з будь-якої країни</span>
+          <span>Оцінка конституції</span>
+          <span>Конкретний план дій</span>
+        </div>
+        <span class="btn-mock">Залишити запит</span>
+      </div>
+      <div class="photo-col"><img src="../../../src/landing-static/shared/img/consult-hero-evgeniy.jpeg" alt=""></div>
+    </div>
+  </div>
+</div>
+<div class="callout"><b>Що змінюється:</b> той самий вигляд, що вже несуть картки/топбар мережі — тінт 76% + blur 34px + грейн + м'яка тінь замість плаского <code>--chip</code>. На кремовому тлі контраст без проблем: це саме той контекст, для якого М1 і проектувався.</div>
+
+<div class="section-label"><b>Контекст 2</b><span>hv-stat — фото-картки, що лежать прямо на фотографії</span></div>
+<div class="pair">
+  <div class="panel">
+    <div class="panel-head"><b>Поточний стан</b><span class="tag old">rgba(255,255,255,.95) + blur(6px)</span></div>
+    <div style="padding:20px">
+      <div class="stat-stage">
+        <img src="../../../src/landing-static/shared/img/consult-hero-evgeniy.jpeg" alt="">
+        <div class="hv-stat old s1"><div class="lab">Формат</div><div class="val">особистий розбір</div></div>
+        <div class="hv-stat old s2"><div class="lab">Результат</div><div class="val">ясний план дій</div></div>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><b>Пропозиція</b><span class="tag new">--cw-mat-inverse-control</span></div>
+    <div style="padding:20px">
+      <div class="stat-stage">
+        <img src="../../../src/landing-static/shared/img/consult-hero-evgeniy.jpeg" alt="">
+        <div class="hv-stat new s1"><div class="lab">Формат</div><div class="val">особистий розбір</div></div>
+        <div class="hv-stat new s2"><div class="lab">Результат</div><div class="val">ясний план дій</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="callout"><b>Чому інший токен, а не те саме скло:</b> <code>.hv-stat</code> лежить прямо на фото — світлому в одних ділянках, темному в інших. Світле М1-скло (як у контексті 1) на світлій ділянці фото злилося б у нечитабельну пляму. <code>--cw-mat-inverse-control</code> — вже існуючий токен саме для цього випадку (34% темного скла, світлий текст): платформа так само рятує <code>.heroBadge</code> поверх фото героя в <code>PlatformBlocksOrientation.module.css</code>.</div>
+
+<div class="section-label"><b>Контекст 3</b><span>мобільна розкладка — бейдж їде на фото (не поруч)</span></div>
+<div class="pair">
+  <div class="panel">
+    <div class="panel-head"><b>Поточний стан</b><span class="tag old">.hero-badge (той самий, що й десктоп)</span></div>
+    <div style="padding:20px">
+      <div class="mobile-mock">
+        <div class="mobile-photo">
+          <img src="../../../src/landing-static/shared/img/consult-hero-evgeniy.jpeg" alt="">
+          <div class="mobile-badge-wrap"><span class="badge-old"><span class="dot"></span>Консультація · онлайн</span></div>
+        </div>
+        <div class="mobile-copy">
+          <h2>Коли поради суперечать одна одній</h2>
+          <p class="sub">Розбираємо стан цілком і збираємо маршрут під вас.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><b>Пропозиція</b><span class="tag new">.hero-badge перемикається на inverse-control</span></div>
+    <div style="padding:20px">
+      <div class="mobile-mock">
+        <div class="mobile-photo">
+          <img src="../../../src/landing-static/shared/img/consult-hero-evgeniy.jpeg" alt="">
+          <div class="mobile-badge-wrap"><span class="badge-new" style="background:var(--mat-inverse);color:#fdfbf4;border-color:rgba(255,255,255,.16)"><span class="dot"></span>Консультація · онлайн</span></div>
+        </div>
+        <div class="mobile-copy">
+          <h2>Коли поради суперечать одна одній</h2>
+          <p class="sub">Розбираємо стан цілком і збираємо маршрут під вас.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="callout"><b>Наслідок для реалізації:</b> <code>.hero-badge</code> — не один токен, а перемикач за контекстом: <code>--cw-mat-tint</code> на десктопі (стоїть на кремовому тлі поруч з фото), <code>--cw-mat-inverse-control</code> нижче 881px (стоїть на фото). Це відповідає тому, як сам layout уже перемикає <code>.hero-badge</code> між grid-area <code>badge</code> і позицією над фото — просто до цього перемикання додається токен фону.</div>
+
+<div class="gap-note"><b>Прогалина в кодогені</b>
+<code>--cw-mat-inverse-control</code> існує в <code>globals.css</code> (платформа), але не прокинутий у <code>cw-tokens.generated.css</code> як <code>--cw-net-mat-inverse-control</code> — на відміну від <code>--cw-net-mat-tint</code>/<code>-surface</code>/<code>-stroke</code>, які вже є. У цьому етюді значення просто вписані напряму (<code>rgba(13,27,23,.34)</code>). Перш ніж чіпати <code>.hv-stat</code>/мобільний <code>.hero-badge</code> в реальному CSS, треба додати цей міст у <code>generate-design-tokens.mjs</code> — інакше мережа знову скопіює число замість посилання, і ми повторимо той самий дрейф, який чинили token-check перед цією сесією.</div>
+
+</div></body></html>

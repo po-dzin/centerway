@@ -49,10 +49,6 @@
 }
 
 @media (min-width: 901px) {
-  .header[data-cw-glass="shell"]::after {
-    inset: 0 0 -0.7rem;
-  }
-
   .offerHeroVisualCard[data-has-art="true"] {
     --program-photo-position: var(--program-photo-position-desktop, center 20%);
   }
@@ -77,7 +73,6 @@
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 }
 
@@ -87,25 +82,25 @@
     padding-bottom: 0;
   }
 
+  /* Mobile topbar = the network bar (shared/css/network-nav.css). It used to be
+     a full-bleed square band pinned to the top edge with a fade below it; the
+     network runs a floating soft-rect pill inset from all three edges, and the
+     two surfaces are one product. Same geometry, same material split, and the
+     menu below is a drawer hung off this bar rather than a full-screen sheet.
+     Positioning semantics stay the platform's own (sticky in flow, fixed only
+     when a hero is under it) — that part already worked. */
   .header.header {
     position: sticky;
-    inset: 0 0 auto 0;
-    top: 0 !important;
+    top: 0.75rem;
     right: 0;
     left: 0;
-    width: auto !important;
-    max-width: none !important;
+    width: min(100% - 2rem, var(--cw-max-width));
     display: block;
-    margin: 0 !important;
+    margin: 0 auto;
+    /* The drawer hangs outside the bar's own box — clip would cut it off. */
     overflow: visible;
     border: 0;
     border-bottom: 0;
-    border-radius: 0;
-    background: transparent;
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    --platform-header-shell-radius: 0px;
   }
 
   .shell:has(.heroFeature) .header.header {
@@ -113,49 +108,44 @@
   }
 
   .shellOverlay .header.header {
-    inset: 0 0 auto 0;
-    top: 0 !important;
+    top: 0.95rem;
     right: 0;
     left: 0;
-    width: auto !important;
-    max-width: none !important;
-    margin: 0 !important;
+    width: min(100% - 2rem, var(--cw-max-width));
+    margin: 0 auto;
   }
 
   .headerInner,
   .headerInner.container {
-    min-height: 4.1rem;
+    min-height: 3.9rem;
     display: flex;
     align-items: center;
     justify-content: space-between;
     width: 100% !important;
     max-width: none !important;
     margin: 0;
-    padding: 0.62rem 1rem;
+    padding: 0.5rem 1.15rem;
     box-sizing: border-box;
   }
 
   .header[data-cw-glass="shell"]::before {
     inset: 0;
     height: 100%;
-    border-radius: 0;
+    border-radius: inherit;
   }
 
+  /* No edge fade: that gradient existed to soften a band that ran to the
+     viewport edge. A floating pill has nothing to soften into. */
   .header[data-cw-glass="shell"]::after {
-    content: "";
-    inset: auto 0 -2.4rem;
-    height: 2.5rem;
-    border-radius: 0;
-    box-shadow: none;
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--platform-header-band-bg) 88%, transparent) 0%,
-        color-mix(in srgb, var(--platform-header-band-bg) 52%, transparent) 36%,
-        transparent 100%
-      );
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    content: none;
+  }
+
+  /* Bar and drawer share one silhouette while open — the drawer is the bar
+     continued downward, so the bar squares off where they meet. */
+  .header[data-menu-open="true"],
+  .header[data-menu-open="true"][data-cw-glass="shell"]::before {
+    border-bottom-left-radius: 0;
+    border-bottom-right-radius: 0;
   }
 
   .headerInner > .brand,
@@ -171,27 +161,33 @@
     border-radius: 0;
   }
 
+  /* The lockup is the network's: mark plus wordmark, not a bare symbol. The
+     wordmark was hidden here because the old square brand button had no room
+     for it; the floating bar does. */
   .header .brand:not([data-surface="footer"]) {
-    width: 3rem;
+    width: auto;
     height: 3rem;
     padding: 0;
-    display: grid;
-    place-items: center;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
     box-shadow: none;
     backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 
-  .brandWordmark {
-    display: none !important;
-  }
-
-  .brandSymbol {
-    width: 2.36rem;
-    height: 2.36rem;
-    margin: auto;
-    justify-self: center;
+  /* Doubled up on .header because PlatformShell.module.css is emitted after this
+     sheet — a bare .brandSymbol here loses to the base rule. */
+  .header .brandSymbol {
+    width: 2.25rem;
+    height: 2.25rem;
+    margin: 0;
+    justify-self: start;
     align-self: center;
+  }
+
+  .header .brandWordmark {
+    width: 8.1rem;
+    height: 1.94rem;
   }
 
   .diagnosticHeroCard {
@@ -229,7 +225,6 @@
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 
   .header .menuButton:hover,
@@ -242,21 +237,23 @@
 
   .shellOverlay .header.header {
     border-bottom-color: transparent;
-    background: transparent;
-    box-shadow: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 
+  /* The menu is a drawer hung off the bar's bottom edge, not a full-screen
+     sheet: it starts at the bar's own bottom edge, keeps only the bottom
+     corners, and the page stays visible and scrollable behind it. The sheet
+     took over the whole viewport for five links and a profile row, and needed a
+     scrim, a scroll lock and its own safe-area padding to do it. */
   .navLayer.navLayer {
-    position: fixed;
-    top: 0;
+    position: absolute;
+    top: 100%;
     right: 0;
     left: 0;
-    bottom: 0;
+    bottom: auto;
+    transform: none;
     margin-left: 0;
     z-index: 2;
-    display: none;
+    display: block;
     flex: initial;
     overflow: hidden;
     padding: 0;
@@ -264,86 +261,91 @@
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-    isolation: isolate;
+    width: auto;
+    max-width: none;
+    /* Closed state. max-height rather than display:none so opening animates;
+       visibility keeps the links out of the tab order until then. */
+    max-height: 0;
     opacity: 0;
+    visibility: hidden;
     pointer-events: none;
-    transform: translateY(-0.5rem);
-    transition: opacity 160ms ease, transform 160ms ease;
-    width: 100%;
-    max-width: 100%;
+    transition:
+      max-height 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 160ms ease,
+      visibility 0s linear 280ms;
   }
 
   .navLayer.navLayer::before {
-    content: "";
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    background:
-      linear-gradient(
-        180deg,
-        color-mix(in srgb, var(--cw-platform-text) 56%, transparent) 0%,
-        color-mix(in srgb, var(--cw-platform-text) 68%, transparent) 100%
-      );
-    backdrop-filter: var(--cw-shell-frost-filter);
-    -webkit-backdrop-filter: var(--cw-shell-frost-filter);
-    opacity: 0;
-    transition: opacity 160ms ease;
+    content: none;
   }
 
   .header[data-menu-open="true"] .navLayer,
   .navLayerOpen {
-    --platform-header-fg: var(--cw-platform-accent-contrast);
-    --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
-    display: block;
+    max-height: min(72svh, 34rem);
+    overflow-y: auto;
     opacity: 1;
+    visibility: visible;
     pointer-events: auto;
-    transform: translateY(0);
+    transition:
+      max-height 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
+      opacity 160ms ease 40ms,
+      visibility 0s;
   }
 
+  @media (prefers-reduced-motion: reduce) {
+    .navLayer.navLayer,
+    .header[data-menu-open="true"] .navLayer,
+    .navLayerOpen {
+      transition: none;
+    }
+  }
+
+  /* Follows the same tone as the panel it sits on, for the same reason. */
   .header[data-menu-open="true"] .menuButton {
-    color: var(--cw-platform-accent-contrast);
-  }
-
-  .header[data-menu-open="true"] .navLayer::before,
-  .navLayerOpen::before {
-    opacity: 1;
+    color: var(--platform-header-fg);
   }
 
   .shellOverlay .navLayer {
-    top: 0;
+    top: 100%;
     background: transparent;
   }
 
   .navLayer .mobileMenuSurface,
   .mobileMenuSurface {
-    --platform-header-fg: var(--cw-platform-accent-contrast);
-    --platform-header-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
-    --mobile-menu-item-accent-bg:
-      linear-gradient(135deg, color-mix(in srgb, var(--cw-platform-accent) 74%, var(--cw-platform-accent-strong) 26%), var(--cw-platform-accent-strong));
-    --mobile-menu-item-accent-fg: var(--cw-platform-accent-contrast);
+    /* Deliberately does NOT set --platform-header-fg. The panel paints
+       --cw-mat-tint-media, and the material resolves to its dark half inside
+       [data-cw-header-tone="dark"] — so the panel is dark over a photo hero and
+       light on an ordinary page. Pinning the label colour to one of those (it
+       used to be hardcoded cream) left cream-on-cream — an apparently blank
+       menu — on every light-tone page. Let both follow the same tone scope. */
+    --mobile-menu-item-accent-bg: linear-gradient(135deg, var(--cw-platform-accent), var(--cw-platform-accent-pressed));
+    --mobile-menu-item-accent-fg: var(--cw-platform-on-accent);
     position: relative;
     z-index: 1;
     width: 100%;
-    min-height: 100svh;
+    min-height: 0;
     display: grid;
-    grid-template-rows: auto auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
     gap: 0.28rem;
     margin: 0;
-    padding: calc(4rem + 0.55rem) 1rem max(1.25rem, env(safe-area-inset-bottom));
+    padding: 0.5rem;
     border: 0;
     border-top: 0;
-    border-radius: 0;
-    background: var(--cw-shell-frost-bg);
-    box-shadow: none;
-    backdrop-filter: var(--cw-shell-frost-filter);
-    -webkit-backdrop-filter: var(--cw-shell-frost-filter);
+    border-radius: 0 0 var(--platform-header-shell-radius) var(--platform-header-shell-radius);
+    /* One material, two depths — same split the network bar runs. The bar keeps
+       the chrome tint so the page reads through it; the drawer sits on the
+       canvas floor, because it lies over body copy and at chrome density that
+       copy competes with the labels. Same tint family, same stroke. */
+    background-color: var(--cw-mat-tint);
+    background-image: var(--cw-mat-grain-image);
+    box-shadow: var(--cw-mat-shadow-raised);
+    backdrop-filter: var(--cw-mat-filter);
     color: var(--platform-header-fg);
     justify-items: stretch;
     justify-content: stretch;
     align-content: start;
     overflow: hidden;
+    box-sizing: border-box;
   }
 
   .mobileMenuSurface[data-cw-glass="shell"]::after {
@@ -353,31 +355,30 @@
   .mobileMenuSurface > .mobileProfileSlot,
   .navLayer .mobileProfileSlot {
     display: flex;
-    justify-content: center;
+    justify-content: stretch;
     width: 100%;
     align-self: start;
-    padding: 0.35rem 1rem 0;
+    padding: 0.15rem 0 0;
     box-sizing: border-box;
   }
 
   .profileWrapMobile {
     width: 100%;
-    max-width: 22rem;
-    justify-content: center;
+    max-width: none;
+    justify-content: stretch;
   }
 
   .mobileProfileSlot > .profileEntryMobile,
   .mobileMenuSurface .profileEntryMobile {
     width: 100%;
-    max-width: 22rem;
-    min-height: 3.1rem;
-    justify-content: center;
-    padding: 0.24rem 0.95rem;
+    max-width: none;
+    min-height: 3rem;
+    justify-content: flex-start;
+    padding: 0.24rem 0.9rem;
     color: var(--platform-header-fg);
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
-    -webkit-backdrop-filter: none;
     border-radius: var(--cw-radius-sm);
   }
 
@@ -431,85 +432,101 @@
     z-index: 2;
   }
 
-  .shellOverlay .mobileMenuSurface,
   .navLayer .mobileMenuSurface {
-    background: var(--cw-shell-frost-bg);
+    background-color: var(--cw-mat-tint);
+    background-image: var(--cw-mat-grain-image);
     border-top-color: transparent;
-    box-shadow: var(--cw-component-glass-shadow);
-    backdrop-filter: var(--cw-shell-frost-filter);
-    -webkit-backdrop-filter: var(--cw-shell-frost-filter);
+    box-shadow: var(--cw-mat-shadow-raised);
+    backdrop-filter: var(--cw-mat-filter);
+  }
+
+  /* Overlay mode drops the drawer straight onto hero photography, where the
+     canvas floor is not enough — an arbitrary photo pixel can be anything. It
+     takes the media floor there, the density guard-contrast asserts against
+     black and white. Everywhere else the backdrop is the page canvas and the
+     drawer stays on the floor tint, level with the bar's own material. */
+  .shellOverlay .mobileMenuSurface,
+  .shellOverlay .navLayer .mobileMenuSurface {
+    background-color: var(--cw-mat-tint-media);
+  }
+
+  /* Without a working backdrop-filter the tint is all the drawer has, and at
+     this density the page's own copy reads straight through it. Blur is missing
+     in more places than old browsers — reduce-transparency settings, some
+     in-app webviews — so this is what those users actually get. Mirrors the
+     same fallback in shared/css/network-nav.css. */
+  @supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
+    .mobileMenuSurface,
+    .shellOverlay .mobileMenuSurface,
+    .navLayer .mobileMenuSurface {
+      background-color: color-mix(in srgb, var(--cw-mat-surface) 97%, transparent);
+    }
+
+    .header[data-cw-glass="shell"]::before {
+      background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+    }
   }
 
   .shellOverlay .mobileMenuSurface::before {
     content: none;
   }
 
+  /* Drawer rows, network-style: full-bleed inside the panel's own 0.5rem
+     padding, left-aligned, soft-rect. The old centred 22rem column was a
+     full-screen-sheet layout — it has nothing to centre in a drawer. */
   .navLayer .nav {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     justify-content: flex-start;
-    gap: 0.12rem;
+    gap: 0.15rem;
     width: 100%;
     max-width: 100%;
-    min-width: 100%;
-    margin: 0 auto;
-    justify-self: center;
+    min-width: 0;
+    margin: 0;
+    justify-self: stretch;
     align-self: start;
-    padding: 0 1rem;
+    padding: 0;
     box-sizing: border-box;
     min-height: 0;
     border-radius: 0;
     background: transparent;
     box-shadow: none;
     backdrop-filter: none;
-    -webkit-backdrop-filter: none;
   }
 
   .navLayer .nav a {
     min-height: 3rem;
-    justify-content: center;
-    padding: 0 1.1rem;
+    justify-content: flex-start;
+    padding: 0.7rem 0.9rem;
     border: 0;
-    border-radius: 0;
+    border-radius: 0.75rem;
     background: transparent;
     color: var(--platform-header-muted-fg);
     font-size: 1rem;
     box-shadow: none;
-    text-align: center;
+    text-align: left;
     width: 100%;
-    max-width: 22rem;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
     font-weight: 700;
   }
 
+  /* The underline marker belongs to the topbar row, where items sit side by
+     side. Stacked rows mark the current page with colour and weight instead. */
   .navLayer .nav a::after {
-    left: 50%;
-    right: auto;
-    width: clamp(4.4rem, 22vw, 5.8rem);
-    height: 0.12rem;
-    bottom: 0.58rem;
-    transform: translateX(-50%) scaleX(0.56);
-  }
-
-  .navLayer .nav a:hover::after,
-  .navLayer .nav a:focus-visible::after {
-    transform: translateX(-50%) scaleX(0.82);
-  }
-
-  .navLayer .nav a[aria-current="page"]::after {
-    transform: translateX(-50%) scaleX(1);
+    content: none;
   }
 
   .navLayer .nav a:hover,
   .navLayer .nav a:focus-visible {
     color: var(--platform-header-fg);
-    background: transparent;
+    background: var(--platform-header-hover-bg);
     outline: none;
   }
 
   .navLayer .nav a[aria-current="page"] {
-    color: var(--platform-header-fg);
+    color: var(--platform-header-nav-marker);
     background: transparent;
     box-shadow: none;
     font-weight: 800;
@@ -526,31 +543,31 @@
   .shellOverlay .navLayer .nav a:hover,
   .shellOverlay .navLayer .nav a:focus-visible {
     color: var(--platform-header-fg);
-    background: transparent;
+    background: var(--platform-header-hover-bg);
   }
 
   .shellOverlay .navLayer .nav a[aria-current="page"] {
-    color: var(--platform-header-fg);
+    color: var(--platform-header-nav-marker);
   }
 
   .mobileMenuNav {
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
     align-self: stretch;
     justify-content: flex-start;
-    gap: 0.12rem;
+    gap: 0.15rem;
     width: 100%;
     max-width: 100%;
-    min-width: 100%;
-    padding: 0 1rem;
+    min-width: 0;
+    padding: 0;
     box-sizing: border-box;
   }
 
   .mobileMenuNav a {
     width: 100%;
-    max-width: 22rem;
-    margin: 0 auto;
+    max-width: none;
+    margin: 0;
   }
 
   .mobileMenuActions {
@@ -671,16 +688,39 @@
     margin-top: 0;
   }
 
+  /* Mobile stacks the text over the photo rather than beside it, so the scrim
+     runs top-down. It stays light across the upper third — the old flat 60%
+     wash over the whole frame is what greyed the image out. */
   .heroPhotoLayer::after {
     background:
-      linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 60%, transparent) 0%, color-mix(in srgb, var(--cw-platform-text) 54%, transparent) 38%, color-mix(in srgb, var(--cw-platform-text) 26%, transparent) 100%),
-      linear-gradient(90deg, color-mix(in srgb, var(--cw-platform-accent-strong) 28%, transparent), transparent 64%);
+      linear-gradient(180deg,
+        color-mix(in srgb, var(--cw-platform-text) 18%, transparent) 0%,
+        color-mix(in srgb, var(--cw-platform-text) 24%, transparent) 26%,
+        color-mix(in srgb, var(--cw-platform-text) 64%, transparent) 50%,
+        color-mix(in srgb, var(--cw-platform-text) 82%, transparent) 100%),
+      linear-gradient(150deg,
+        color-mix(in srgb, var(--cw-sem-guide-strong) 9%, transparent),
+        transparent 55%,
+        color-mix(in srgb, var(--cw-sem-warmth) 6%, transparent));
   }
 
+  /* Bottom-anchored, the same photo-hero recipe the landing network runs on
+     mobile: the scrim is bottom-weighted (see .heroPhotoLayer::after above),
+     so packing the copy against the bottom padding puts it on the darkest,
+     most legible part of the photo instead of splitting the difference in the
+     vertical middle. The generous bottom padding already reserved room for
+     this — it was fighting a centred box, not sized for one. Detail-template
+     heroes (product/program/dosha) size their own content box to the full
+     viewport and pack internally, so this is a no-op for them; the profile
+     cabinet's short, non-viewport hero is pinned back to its own layout below. */
   .heroFeatureContent {
     width: 100%;
-    align-self: center;
+    align-self: end;
     padding: clamp(4.8rem, 14vw, 6rem) 1rem clamp(9.8rem, 28vw, 12.4rem);
+  }
+
+  .heroFeature[data-cw-profile-hero="true"] .heroFeatureContent {
+    align-self: center;
   }
 
   .heroFeature .heroFeatureActions,
@@ -731,8 +771,8 @@
     gap: 0;
     overflow: hidden;
     border-radius: var(--cw-card-radius);
-    background: var(--cw-depth-card-bg);
-    box-shadow: var(--cw-depth-shadow-soft);
+    background: var(--cw-mat-surface);
+    box-shadow: var(--cw-mat-shadow-soft);
   }
 
   .videoPanel,
@@ -990,11 +1030,17 @@
     min-height: 100vh;
     min-height: 100svh;
     border-radius: 0;
-    --hero-photo-x: 79%;
-    --hero-photo-y: 4%;
-    --hero-photo-shift-y: -8%;
-    --hero-photo-scale: 1.08;
-    --hero-photo-origin: center top;
+    /* A 16:10 plate in a portrait viewport crops hard on the sides: at 390x780
+       cover shows only ~31% of the plate width. On the threshold plate the whole
+       scene — doorway edge, kintsugi bowl, planting strip — sits right of 55%,
+       so a centred window would show bare stone and the door jamb and nothing
+       else. 82% lands that window on 56%..88%. Vertical position is inert here:
+       a portrait frame crops width only, so the full plate height is shown. */
+    --hero-photo-x: 82%;
+    --hero-photo-y: 50%;
+    --hero-photo-shift-y: 0%;
+    --hero-photo-scale: 1;
+    --hero-photo-origin: center center;
   }
 
   .heroPhotoLayer .expertImage {
@@ -1290,10 +1336,11 @@
 
 @media (min-width: 561px) and (max-width: 900px) {
   .heroFeature {
-    --hero-photo-x: 73%;
-    --hero-photo-y: 42%;
-    --hero-photo-shift-y: -8%;
-    --hero-photo-scale: 1.17;
+    /* Same plate as ≤560px, wider frame — less side crop, same centred leader. */
+    --hero-photo-x: 52%;
+    --hero-photo-y: 48%;
+    --hero-photo-shift-y: 0%;
+    --hero-photo-scale: 1.01;
     --hero-photo-origin: center center;
   }
 
@@ -1647,5 +1694,26 @@
   .heroFeature[data-cw-detail-template] .heroPrimaryButton,
   .heroFeature[data-cw-detail-template] .heroSecondaryButton {
     min-height: var(--ds-touch-target-min);
+  }
+}
+
+/* Diagnostic entry hero (the dosha test) is a centred card, not a detail hero's
+   left-hand text column — but it carries data-cw-detail-template, so the rules
+   above were narrowing its wrapper to 35rem and offsetting it left. That both
+   clamped the 42rem card and stopped it centring. The hero's default
+   `align-items: center` is the other half: this card is taller than the
+   viewport, so centring it pushed its top edge up under the topbar and clipped
+   the badge. Scoped by semantic role so program/product detail heroes keep
+   their own framing. Last in the file to win over the breakpoint blocks. */
+@media (min-width: 561px) {
+  .heroFeature[data-cw-semantic-role="diagnostic-entry"] {
+    align-items: start;
+  }
+
+  main[data-cw-detail-template] [data-cw-semantic-role="diagnostic-entry"] .heroFeatureContent {
+    width: min(100% - 2rem, var(--cw-max-width));
+    max-width: var(--cw-max-width);
+    margin-inline: auto;
+    padding: clamp(6.5rem, 9vw, 8.5rem) 0 clamp(4rem, 6vw, 5.5rem);
   }
 }

@@ -30,42 +30,79 @@
 
 [data-cw-landing] {
   /* --- palette primitives: default = way21 mineral core --- */
-  --cw-net-canvas: #f7f5ec;
-  --cw-net-surface: #ffffff;
+  --cw-net-canvas: var(--cw-sem-calm-bg, #f7f5ec);
+  --cw-net-surface: var(--cw-mat-surface, #ffffff);
   --cw-net-surface-cool: #f1f5f0;
-  --cw-net-ink: #1d3a30;
+  --cw-net-ink: var(--cw-sem-guide-strong, #1d3a30);
   --cw-net-ink-soft: #2c4c40;
-  --cw-net-text: #1b2a24;
+  --cw-net-text: var(--cw-sem-method-ink, #1b2a24);
   --cw-net-text-muted: #45544c;
   --cw-net-text-soft: #6a7770;
 
   --cw-net-route: #3f6f63;         /* primary green a landing leads with */
-  --cw-net-route-bright: #4f7e76;  /* = --cw-sem-guide-primary */
+  --cw-net-route-bright: var(--cw-sem-guide-primary, #4f7e76);  /* = --cw-sem-guide-primary */
   --cw-net-route-strong: #264e44;
   --cw-net-route-soft: #e9f1ec;    /* soft accent tint (backgrounds) */
   --cw-net-chip: #e4efe7;
   --cw-net-chip-soft: #f0f6f1;
 
-  --cw-net-gold: #dba54f;          /* = --cw-sem-warmth */
-  --cw-net-gold-strong: #c2902f;
+  --cw-net-gold: var(--cw-sem-warmth, #dba54f);          /* = --cw-sem-warmth */
+  --cw-net-gold-strong: var(--cw-sem-warmth-strong, #c2902f);
   --cw-net-on-gold: #1d3a30;       /* ink on gold (AA) */
 
   --cw-net-line: #dbe6dc;
   --cw-net-line-strong: #bccfbf;
 
+  /* --- material: references, not copies. The values live in
+     data/design-tokens/cw.tokens.json and arrive via cw-tokens.generated.css,
+     which every landing loads first. Editing the platform palette moves the
+     network with it; the literal fallbacks only cover a missing file. --- */
+  --cw-net-mat-surface: var(--cw-mat-surface, #fbf9f2);
+  --cw-net-mat-tint: var(--cw-mat-tint, rgba(251, 249, 242, .76));
+  --cw-net-mat-tint-hover: var(--cw-mat-tint-hover, rgba(251, 249, 242, .84));
+  --cw-net-mat-tint-chrome: var(--cw-mat-tint-chrome, rgba(251, 249, 242, .55));
+  /* Canvas floor — the density ink text needs over the page itself. The nav bar
+     and its drawer both sit here so they read as one glass, not two. */
+  --cw-net-mat-tint-floor: var(--cw-mat-tint, rgba(251, 249, 242, .76));
+  /* Denser floor for glass sitting over photo media rather than the page canvas
+     — same warm tint family, just less see-through, so dark ink text stays
+     legible over any photo content (verified against black and white). */
+  --cw-net-mat-tint-media: var(--cw-mat-tint-media, rgba(251, 249, 242, .86));
+  --cw-net-mat-blur: var(--cw-mat-blur, 34px);
+  --cw-net-mat-filter: var(--cw-mat-filter, blur(34px) saturate(1.18));
+  --cw-net-mat-stroke: var(--cw-mat-stroke, rgba(255, 255, 255, .55));
+  --cw-net-mat-shadow: var(--cw-mat-shadow-soft, 0 1px 2px rgba(35, 29, 20, .05), 0 10px 28px rgba(35, 29, 20, .07));
+  --cw-net-mat-shadow-raised: var(--cw-mat-shadow-raised, 0 2px 6px rgba(35, 29, 20, .07), 0 24px 56px rgba(35, 29, 20, .12));
+  --cw-net-mat-grain: var(--cw-mat-grain-image, none);
+
   /* --- shared scale (shape / type / rhythm) — consumed by the shared
      component DS (shared/css/landing.css). One scale for the whole network;
      landings no longer carry per-page radius/spacing/shadow. --- */
-  --cw-net-font: "Formular", "Segoe UI", Arial, sans-serif;
+  /* One brand mark for every lockup — nav bar, drawer header, footer. The
+     wordmark's own size differs by context, the mark does not. */
+  --cw-net-brand-mark: 2.25rem;
+  /* Optical, not geometric. The two mark files are not drawn to the same
+     margin: cw-logo-ink.png is a 256px canvas with the glyph inset to 78.5%,
+     cw-logo-gold.png is a 128px canvas the glyph fills edge to edge. Given the
+     same box the gold one reads ~27% larger — which is exactly what the dark
+     bar and the footer showed. Everywhere the gold file is used, it gets this
+     box instead, so both marks land on the same drawn size. Re-crop either
+     PNG and this figure is what changes. Applied as padding rather than a
+     smaller box so the lockup keeps its width — the bar swaps marks mid-scroll,
+     and a narrower box would slide the wordmark sideways on every flip. */
+  --cw-net-brand-mark-gold-inset: calc(var(--cw-net-brand-mark, 2.25rem) * 0.1075);
+
   --maxw: 1160px;
   --r-sm: .7rem; --r-md: 1rem; --r-lg: 1.4rem; --r-pill: 999px;
+  /* Single button shape across platform and network: soft rect, never pill.
+     Mirrors --ds-radius-button-soft in the platform token source. */
+  --r-btn: 1rem;
   --sp-sec: clamp(64px, 9vw, 132px);
-  --shadow-soft: 0 1px 2px rgba(23,48,39,.05), 0 8px 24px rgba(23,48,39,.07);
-  --shadow-med: 0 2px 6px rgba(23,48,39,.08), 0 20px 48px rgba(23,48,39,.13);
+  /* Depth is the platform's, not the network's own: these two feed every
+     card, panel and hover state in landing.css. */
+  --shadow-soft: var(--cw-net-mat-shadow);
+  --shadow-med: var(--cw-net-mat-shadow-raised);
   --shadow-cta: 0 8px 22px rgba(219,165,79,.32);
-  --f-display: "Formular", "Segoe UI", Arial, sans-serif;
-  --f-ui: "Formular", "Segoe UI", Arial, sans-serif;
-  --f-mono: "Formular", "Segoe UI", Arial, sans-serif;
   --chip-py: .55em; --chip-px: .95em; --chip-fs: .78rem; --chip-nudge: .09em;
 
   /* --- local dialect map: the premium component DS (landing.css) reads
@@ -95,10 +132,46 @@
   /* dark-section palette (used by .offer and other dark blocks in landing.css).
      Default = mineral-dark; way21/reset-day page.css override per skin. */
   --irem-dark-1: #173027; --irem-dark-2: #274a3c;
-  --irem-grad-dark: linear-gradient(165deg, var(--irem-dark-1), var(--irem-dark-2));
+  /* The dark offer block is the material's night side, same gradient the
+     platform's inverse panels use. */
+  --irem-grad-dark: var(--cw-mat-inverse-bg, linear-gradient(165deg, var(--irem-dark-1), var(--irem-dark-2)));
   --irem-gold-bright: #e0b25c; --irem-gold-soft: #e6b863; --irem-gold-tint: #f3ead4;
   --irem-on-dark-soft: #cfe0d3; --irem-on-dark-muted: #b3c8b9; --irem-on-dark-faint: #7e9587; --irem-on-dark-label: #a7c1ad;
   --irem-indigo-soft: #6f9a86;
+
+  /* --- photo hero (mobile, data-cw-hero="photo") ---
+     The copy band over a photograph runs the night side of the palette: the
+     same dark ground the offer block uses, and the same on-dark ink. A skin
+     that wants a warmer or cooler hero overrides these four, not the recipe. */
+  /* The scrim is deliberately NOT --irem-dark-1: a skin whose dark side is
+     lighter (reset-day's #23463a) would drop the hero labels under AA. It is
+     one fixed depth for the whole network, and it is the value the contrast
+     gate asserts — a skin that overrides it owes the gate a new pair. */
+  --cw-net-hero-scrim: #173027;
+  --cw-net-hero-ink: #ffffff;
+  --cw-net-hero-ink-soft: var(--irem-on-dark-soft);
+  --cw-net-hero-ink-label: var(--irem-on-dark-label);
+  --cw-net-hero-accent: var(--irem-gold-bright);
+}
+
+/* ============ Platform type (whole network) ============
+   All five landings run the platform's own faces instead of Formular:
+   editorial Cormorant Garamond for display, Manrope for UI, IBM Plex Mono for
+   data. Formular now belongs to Short/IREM only — a different author.
+
+   The metrics move with the family. Formular is a sans that wants tight
+   negative tracking; a serif at display size does not, so --f-display-track
+   and --f-display-leading come along with the switch rather than leaving the
+   old sans values on a face that reads cramped under them. */
+[data-cw-landing] {
+  --cw-net-font: "Manrope", "Segoe UI", Arial, sans-serif;
+  --f-display: "Cormorant Garamond", "Times New Roman", Georgia, serif;
+  --f-ui: "Manrope", "Segoe UI", Arial, sans-serif;
+  --f-mono: "IBM Plex Mono", ui-monospace, SFMono-Regular, monospace;
+  --f-display-track: -0.005em;
+  --f-display-leading: 1.06;
+  --f-display-weight: 600;
+  --f-display-nums: lining-nums;
 }
 
 /* ============ Per-landing skins (override palette only) ============ */

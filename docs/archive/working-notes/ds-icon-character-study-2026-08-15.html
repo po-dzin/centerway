@@ -1,0 +1,67 @@
+<!doctype html><html><head><meta charset="utf-8"><title>CW icon character test</title>
+<style>
+body{margin:0;background:#f6f2ea;color:#0d1b17;font:400 14px Manrope,system-ui,sans-serif;padding:28px}
+h2{font:600 15px system-ui;margin:26px 0 10px;letter-spacing:.02em}
+.row{display:flex;gap:26px;flex-wrap:wrap;align-items:flex-start}
+.cell{width:96px;text-align:center}
+.cell small{display:block;margin-top:6px;font-size:10px;opacity:.55}
+svg{display:block;margin:0 auto}
+.ico{stroke:#1e3d34;stroke-width:1.5;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.w1{filter:url(#hand1)} .w2{filter:url(#hand2)} .w3{filter:url(#hand3)}
+.note{max-width:70ch;line-height:1.6;opacity:.75;font-size:13px}
+</style></head><body>
+<svg width="0" height="0" style="position:absolute">
+ <filter id="hand1" x="-25%" y="-25%" width="150%" height="150%">
+  <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="7" result="n"/>
+  <feDisplacementMap in="SourceGraphic" in2="n" scale="1.4" xChannelSelector="R" yChannelSelector="G"/>
+ </filter>
+ <filter id="hand2" x="-25%" y="-25%" width="150%" height="150%">
+  <feTurbulence type="fractalNoise" baseFrequency="0.05" numOctaves="2" seed="3" result="n"/>
+  <feDisplacementMap in="SourceGraphic" in2="n" scale="2.4" xChannelSelector="R" yChannelSelector="G"/>
+ </filter>
+ <filter id="hand3" x="-25%" y="-25%" width="150%" height="150%">
+  <feTurbulence type="fractalNoise" baseFrequency="0.08" numOctaves="3" seed="11" result="n"/>
+  <feDisplacementMap in="SourceGraphic" in2="n" scale="3.6" xChannelSelector="R" yChannelSelector="G"/>
+ </filter>
+</svg>
+
+<h2>Ряд A — геометрическая база (без фильтра)</h2>
+<div class="row" id="rA"></div>
+<h2>Ряд B — hand1 (scale 1.4) — «чуть от руки»</h2>
+<div class="row" id="rB"></div>
+<h2>Ряд C — hand2 (scale 2.4) — этно-рука</h2>
+<div class="row" id="rC"></div>
+<h2>Ряд D — hand3 (scale 3.6) — уже разваливается</h2>
+<div class="row" id="rD"></div>
+
+<h2>Ручная графика (dot / path / orbit) с тем же фильтром</h2>
+<div class="row" id="rG"></div>
+
+<script>
+const icons = {
+ 'leaf':'<path d="M5 19c0-7 4-12 14-14 0 8-4 13-11 14"/><path d="M5 19c3-4 6-6 9-7"/>',
+ 'bowl':'<path d="M3.5 10.5h17c0 5-3.8 8.5-8.5 8.5S3.5 15.5 3.5 10.5z"/><path d="M9 6.5c1.2-1 1.2-2 .4-3"/><path d="M13.5 6.5c1.2-1 1.2-2 .4-3"/>',
+ 'water':'<path d="M12 3.5c3.6 4.4 5.6 7.4 5.6 10a5.6 5.6 0 1 1-11.2 0c0-2.6 2-5.6 5.6-10z"/>',
+ 'stone':'<path d="M4 13.5c1-4.5 4.5-7 8.5-7s7.5 3 7.5 6.5-3 6-8 6-9-1-8-5.5z"/><path d="M8 8.5c2 2.5 5.5 4 10.5 4.5"/>',
+ 'breath':'<circle cx="12" cy="12" r="8.2"/><path d="M12 3.8v4M12 16.2v4M3.8 12h4M16.2 12h4"/>',
+ 'day':'<circle cx="12" cy="12" r="4.2"/><path d="M12 2.6v2.4M12 19v2.4M2.6 12h2.4M19 12h2.4M5.3 5.3l1.7 1.7M17 17l1.7 1.7M18.7 5.3L17 7M7 17l-1.7 1.7"/>',
+ 'check':'<path d="M4.5 12.8l4.6 4.4L19.5 6.6"/>',
+ 'arrow':'<path d="M4 12h15"/><path d="M13 6.2l6 5.8-6 5.8"/>',
+ 'vata':'<circle cx="12" cy="12" r="8.5"/><path d="M4.6 9.5c4 2 11 2 15 0M4.6 14.5c4-2 11-2 15 0"/>',
+ 'pitta':'<circle cx="12" cy="12" r="8.5"/><path d="M12 6.5c2.6 3 3.8 4.8 3.8 6.6a3.8 3.8 0 1 1-7.6 0c0-1.8 1.2-3.6 3.8-6.6z"/>',
+ 'kapha':'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.4"/>',
+};
+const graphics = {
+ 'orbit':'<circle cx="18" cy="18" r="14" stroke-dasharray="1 5"/><circle cx="18" cy="4" r="2.2" fill="#dba54f" stroke="none"/><circle cx="30" cy="24" r="1.6"/>',
+ 'rail':'<path d="M18 2v32" stroke-dasharray="2 6"/><circle cx="18" cy="8" r="2.4" fill="#dba54f" stroke="none"/><circle cx="18" cy="20" r="2"/><circle cx="18" cy="30" r="2"/>',
+ 'connector':'<path d="M2 28C10 6 26 6 34 28" stroke-dasharray="2 5"/><circle cx="2" cy="28" r="2" fill="#dba54f" stroke="none"/><circle cx="34" cy="28" r="2"/>',
+};
+const mk = (body, cls, vb='0 0 24 24', size=44) =>
+ `<svg viewBox="${vb}" width="${size}" height="${size}"><g class="ico ${cls}">${body}</g></svg>`;
+for (const [id, cls] of [['rA',''],['rB','w1'],['rC','w2'],['rD','w3']]) {
+ document.getElementById(id).innerHTML = Object.entries(icons)
+  .map(([n,b]) => `<div class="cell">${mk(b,cls)}<small>${n}</small></div>`).join('');
+}
+document.getElementById('rG').innerHTML = Object.entries(graphics)
+ .map(([n,b]) => ['','w1','w2'].map(c=>`<div class="cell">${mk(b,c,'0 0 36 36',72)}<small>${n} ${c||'base'}</small></div>`).join('')).join('');
+</script></body></html>
