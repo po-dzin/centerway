@@ -18,14 +18,14 @@
  * those declare themselves with `class="ico ico-chrome"`. That is a
  * declaration, not a loophole — it is one grep away from review.
  *
- * Scope: --surface limits the check. Only way21 is enforced today because only
- * way21 has been through the carrier pass; the other four are still on inline
- * SVG and show up in --report as the backlog they are. Widen the npm script as
- * each landing is converted.
+ * Scope: all five CenterWay landings are enforced (2026-08-17 — way21 first as
+ * the reference organism, then the other four the same day). --surface narrows
+ * the check to one while working on it.
  *
  * Usage:
- *   node scripts/guard-carriers.mjs --surface way21   # fail on violations
- *   node scripts/guard-carriers.mjs --report          # the whole network
+ *   node scripts/guard-carriers.mjs                   # fail on violations
+ *   node scripts/guard-carriers.mjs --report          # print every block
+ *   node scripts/guard-carriers.mjs --surface dosha   # one landing
  */
 
 import fs from "node:fs";
@@ -116,7 +116,7 @@ function carriersOf(section) {
 
   // CSS-drawn primitives declare themselves with a class, since there is no
   // element to inspect.
-  if (/class="[^"]*\bd-node\b/.test(section)) add("graphic", "d-node rail");
+  if (/class="[^"]*\brail-node\b/.test(section)) add("graphic", "rail");
 
   const emoji = section.match(EMOJI) || [];
   if (emoji.length) add("emoji", [...new Set(emoji)].join(""));

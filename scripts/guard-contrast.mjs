@@ -195,6 +195,23 @@ const glassPairs = [
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-media-floor", over: "#ffffff" },
     min: AA_LARGE, context: "muted label on M1 glass over worst-case photo (large/semibold only)",
   },
+  // .heroBadge / .heroSecondaryButton (PlatformBlocksOrientation.module.css):
+  // ink text on the topbar's own chrome tint (55%), not the denser media floor.
+  // Unlike the topbar itself these aren't tone-managed — they always run ink,
+  // never the dark-tone light label — so the true worst case is checked
+  // directly: a black photo pixel with zero scrim contribution. Even there,
+  // chrome (55% of a near-white surface) over black composites to a mid-grey
+  // light enough for near-black ink to clear body AA.
+  {
+    theme: "light", fg: "--cw-platform-text",
+    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#000000" },
+    min: AA_BODY, context: "ink text on hero badge/button chrome glass over worst-case photo (black)",
+  },
+  {
+    theme: "platform-dark", fg: "--cw-platform-text",
+    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#000000" },
+    min: AA_BODY, context: "ink text on hero badge/button chrome glass over worst-case photo (black)",
+  },
   // --- Tone-managed chrome (the topbar) ------------------------------------
   // The topbar is not "glass over arbitrary media": headerTone samples what is
   // actually behind it and flips the palette at luminance 0.34. Its backdrop is

@@ -208,6 +208,11 @@ Two rules, both learned by undoing the opposite (2026-08-17, when the hub hero m
 1. **No CSS `filter` on hero photos.** The files under `src/landing-static/shared/img/` ship already graded — the "CenterWay v1" pass (desaturate, warm recomb, lifted black), applied once at export and carrying an embedded sRGB profile. The hero used to run `saturate(.82) contrast(1.08) brightness(.9) sepia(.08) hue-rotate(-6deg)` *on top* of that. Two grades stacked is what read as muddy rather than warm. Grade belongs in the asset; CSS does layout and legibility only.
 2. **The tint is partial and directional, not a wash.** The old scrim was three full-coverage gradients — a 90° ink ramp, a 28% ink→28% accent layer over the whole frame, and a third guide/warmth wash — which together sat at roughly 45% opacity even on the side with no text. It is now one gradient shaped to where the text actually is (left column on desktop, top-down on mobile, transparent past ~74%), plus a single ≤9% brand hue to seat the image in the palette. Where a long title outruns the scrim, a tight low-alpha `text-shadow` buys the separation — cheaper than darkening the photograph.
 
+**The mobile hero is the photograph, on all five landings** (2026-08-17 — way21 and reset-day had it, `data-cw-hero="photo"` on `<html>` turned it on for consult, herbs and dosha). Below 881px the hero goes full-bleed: the photo fills the viewport, the copy sits on an opaque scrim band at the bottom, and the band is sized by its own copy. Two consequences worth knowing before touching it:
+
+- **Copy length decides how much photograph is left.** At the shared type scale a five-line sub-head took ~70% of the viewport on the three landings with longer copy, and the hero collapsed into a dark card with a strip of image above it. The photo hero therefore runs its own tighter type scale on *every* mobile screen, not only short ones, with a second step down under `max-height:700px`. Nothing is clamped or hidden — a hero's promise has to be readable in full.
+- **`--cw-hero-photo-height` works backwards from the intuition.** It shortens the image box, and because the copy band covers the *bottom* of that box, a **shorter** box puts **more** of the composition above the band. herbs runs 50svh (the packets are mid-frame and only the head cleared the band at full height), consult 72svh, dosha 50svh plus an `x` shift (a 16:10 master in a portrait box loses ~70% of its width to the cover crop; holding the box nearer its own proportion keeps the group readable). way21 and reset-day keep the full-height default — their masters put the subject high in frame already.
+
 **One hero plate at every breakpoint.** A first pass swapped in a vertical portrait below 900px via `<picture>`; that was reverted — the hero is a single shared image and the breakpoints only re-frame it (`--hero-photo-x/y/scale`). The portrait is not hero furniture: it belongs to the author sections (platform "Про автора", the landings' author block) and to the consultation hero, where the subject *is* the author. Mixing the two put a different photograph behind the same headline depending on window width.
 
 Photo roles, as wired:
@@ -263,9 +268,11 @@ Role decides which one:
 | proof (testimonials) | document |
 | pain, reframe, commerce, faq | typography — no carrier is the correct answer |
 
+**Three photo blocks per landing is the base budget** (2026-08-17), hero included. It is a budget, not a cap — the reason to hold it is that a photograph stops carrying weight when the page is full of them, not that four is forbidden. A phase card that opens with a photograph also drops the 4px accent stripe (`.phase:has(.ph-photo)::after{content:none}`): two openers stacked, and the accent cuts the image with a colour the photograph does not contain.
+
 Two things that are *not* carriers. **Chrome**: chevrons, carousel arrows, the arrow inside a button. Excluded by glyph name; the few affordances that reuse a content glyph (a play badge on a video thumbnail, a check on a guarantee line) declare themselves with `class="ico ico-chrome"`. **Typography**: `★`, `✓`, `—` are characters — they take the type colour and metrics and stay. An emoji is a picture with its own palette that no stylesheet can reach, so `👋` and `☝️` are never carriers and the guard fails on them.
 
-`npm run guard:carriers` enforces this per `<section>`. It runs on way21 only, because way21 is the one landing that has been through the pass; `node scripts/guard-carriers.mjs --report` prints the whole network, and the failures there are the backlog, not noise. Widen the npm script's `--surface` as each landing is converted.
+`npm run guard:carriers` enforces this per `<section>` across all five CenterWay landings. `--report` prints every block with what it carries; `--surface <name>` narrows to one while working on it. Short and IREM are out of scope — other authors, own stylesheets.
 
 The full role/carrier map across all five landings and the platform is in [ds-carrier-map-2026-08-17](archive/working-notes/ds-carrier-map-2026-08-17.md).
 
@@ -277,7 +284,7 @@ The full role/carrier map across all five landings and the platform is in [ds-ca
 
 The glyph inherits `currentColor`, so colour is the call site's job and dark panels need no override. The carrier guard counts any inline `<svg>` that is not a brand mark as an icon — pasting a path back in does not get past it. Brand marks (YouTube, Telegram, Instagram, Facebook in the footer) stay inline on purpose: they are somebody else's trademark, not our icon language.
 
-**One connective layer, two implementations.** The `dot / orbit / rail / connector` primitives ship as sprite symbols for fixed-size inline marks. A rail that has to span a responsive row is CSS instead — way21's seven-card day rhythm reflows 7 → 2 → 1 columns, and a fixed-`viewBox` SVG cannot follow that without stretching its dots. The CSS version keeps the same terms (1.5px dashed line, filled nodes, accent on `--cta`) and bleeds to the card edges so only the grid gap interrupts the run.
+**One connective layer, two implementations.** The `dot / orbit / rail / connector` primitives ship as sprite symbols for fixed-size inline marks. A rail that has to span a responsive row is CSS instead — `.rail-node`, one node per card, dashed line bleeding to the card edges by `--rail-bleed` (the host card's own inline padding) so only the grid gap interrupts the run. It is CSS because these rows reflow (7 → 2 → 1 columns on way21's day rhythm, 3 → 1 on the step triads) and a fixed-`viewBox` SVG cannot follow that without stretching its dots. It carries the same terms as the symbols: 1.5px dashed line, filled nodes, accent on `--cta`. In use on way21 (the day), reset-day (`#route`), consult and dosha (the three steps).
 
 #### Network surfaces on the material
 
@@ -290,7 +297,7 @@ Card faces dropped their hairline and take the platform's treatment instead: mat
 
 Note the pipeline asymmetry with the platform: landing CSS is served **raw**, not through lightningcss, so the hand-written `-webkit-backdrop-filter` lines there are harmless (they are fatal on the platform — see the two backdrop-filter rules above). Do not "fix" them by symmetry without checking which pipeline the file goes through.
 
-Note for local checking: only `/way21` and `/reset-day` resolve to the static landings on `localhost`. `/consult`, `/herbs` and `/dosha-test` are **Next platform routes** there; the static versions are reachable only through their brand host (in a browser, map `*.centerway.net.ua` to `127.0.0.1`).
+Note for local checking: `/way21`, `/reset-day` and `/herbs` resolve to the static landings on `localhost` — each is a route handler under `src/app/<name>/route.ts` that reads `src/landing-static/<name>/index.html` off disk (fresh read in dev, cached in prod). `/herbs` joined them 2026-08-17, replacing a `permanentRedirect` to `/products/herbs`; the catalogue page still lives at its own URL, but the funnel entry now serves the funnel. `/consult` and `/dosha-test` are still **Next platform routes** locally; those static versions are reachable only through their brand host (in a browser, map `*.centerway.net.ua` to `127.0.0.1`).
 
 ## Theming
 

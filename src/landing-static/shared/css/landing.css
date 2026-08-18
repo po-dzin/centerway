@@ -129,6 +129,11 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
   background:linear-gradient(to bottom,color-mix(in srgb, var(--cream) 0%, transparent) 24%,color-mix(in srgb, var(--cream) 55%, transparent) 47%,var(--cream) 66%)}
 .hv-wave{display:none}
 .hv-glow{display:none}
+/* The photo may be wrapped in <picture> to serve a portrait master to the
+   full-bleed mobile hero. The wrapper is an inline box with no in-flow content
+   (its img is absolutely positioned), so it is taken out of the flow entirely
+   rather than left to generate a stray line box inside the stage. */
+.hv-stage picture{display:contents}
 .hv-photo{
   position:absolute;inset:0;width:100%;height:100%;
   object-fit:cover;object-position:top center;
@@ -221,14 +226,59 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
   [data-cw-hero="photo"] .hero .hero-price small{color:var(--cw-net-hero-ink-label)}
   [data-cw-hero="photo"] .hero .hero-trust{color:var(--cw-net-hero-ink-soft)}
   [data-cw-hero="photo"] .hero .hero-trust svg{color:var(--cw-net-hero-accent)}
-  /* Short viewports: the band is sized by its copy, so on a 640px-tall screen it
-     would leave the photograph ~85px and the "atmosphere first" idea collapses.
-     Tighten the type rather than drop content — the price and CTA stay put. */
+  /* .btn-ghost is drawn for the cream page: ink text inside a light-grey rule.
+     In the photo hero it lands on a dark photograph and falls to roughly 1.2:1
+     — the secondary CTA was effectively invisible on consult, dosha and herbs
+     (way21 and reset-day keep theirs further down the page, on cream). It gets
+     the same treatment as the rest of the hero copy: hero ink, with the rule
+     derived from it so the button stays a quiet second option. */
+  [data-cw-hero="photo"] .hero .btn-ghost{
+    color:var(--cw-net-hero-ink);
+    border-color:color-mix(in srgb, var(--cw-net-hero-ink) 42%, transparent)}
+  [data-cw-hero="photo"] .hero .btn-ghost:hover{
+    color:var(--cw-net-hero-ink);
+    border-color:color-mix(in srgb, var(--cw-net-hero-ink) 72%, transparent);
+    background:color-mix(in srgb, var(--cw-net-hero-ink) 10%, transparent)}
+  /* The band is sized by its copy, so copy length decides how much photograph
+     is left. At the shared type scale a five-line sub-head took ~70% of the
+     viewport on consult, herbs and dosha and the "atmosphere first" idea
+     collapsed into a dark card with a strip of image above it. The photo hero
+     therefore runs its own tighter scale on every mobile screen, not only on
+     short ones — the copy is the same, it is set smaller and closer. Nothing is
+     dropped or clamped: a hero's promise has to be readable in full. */
+  [data-cw-hero="photo"] .hero h1{font-size:clamp(1.7rem,6.4vw,2.15rem);line-height:1.14;margin-bottom:.5rem}
+  [data-cw-hero="photo"] .hero .hero-sub{font-size:.9rem;line-height:1.46;margin-bottom:.9rem}
+  [data-cw-hero="photo"] .hero .hero-badge{margin-bottom:.6rem}
+  [data-cw-hero="photo"] .hero .hero-chips{gap:.35rem;margin-bottom:.15rem}
+  [data-cw-hero="photo"] .hero .hero-actions{gap:.55rem}
+  [data-cw-hero="photo"] .hero .hero-trust{font-size:.78rem;line-height:1.4}
+  [data-cw-hero="photo"] .hero .hero-price b{font-size:1.85rem}
+  /* Art direction per skin. --cw-hero-photo-height is the lever that decides how
+     much of the frame lands in the visible strip: the copy band covers the
+     bottom of the layer, so a SHORTER image box puts more of the composition
+     above the band, not less. way21 and reset-day keep the full-height default
+     (their masters are portraits whose subject is already high in frame).
+       herbs   — the packets and hands are the product and they sit mid-frame;
+                 at full height only the head cleared the band.
+       consult — portrait master, subject high, needs only a small lift.
+       dosha   — got its own portrait master on 2026-08-18, so the horizontal
+                 nudge that chased the group across the old 16:10 plate is gone.
+                 The height knob stays and is doing the opposite of shrinking:
+                 at 50svh the box turns square, cover crops the tall plate to
+                 its middle, and the three centres land in the visible strip —
+                 at full height they sit behind the copy band with nothing but
+                 the grass showing above it.
+     If a skin ever gets its own mobile master, revisit its line rather than
+     stacking a second knob on top. */
+  [data-cw-landing="herbs"] .hero{--cw-hero-photo-height:50svh}
+  [data-cw-landing="consult"] .hero{--cw-hero-photo-height:72svh}
+  [data-cw-landing="dosha"] .hero{--cw-hero-photo-height:50svh}
+
+  /* Short viewports get one more step down. The price and CTA stay put. */
   @media(max-height:700px){
-    [data-cw-hero="photo"] .hero h1{font-size:clamp(1.75rem,7vw,2.1rem);margin-bottom:.5rem}
-    [data-cw-hero="photo"] .hero .hero-sub{font-size:.92rem;line-height:1.45;margin-bottom:1rem}
-    [data-cw-hero="photo"] .hero .hero-actions{gap:.6rem}
-    [data-cw-hero="photo"] .hero .hero-badge{margin-bottom:.6rem}
+    [data-cw-hero="photo"] .hero h1{font-size:clamp(1.6rem,6vw,1.95rem);margin-bottom:.4rem}
+    [data-cw-hero="photo"] .hero .hero-sub{font-size:.86rem;line-height:1.4;margin-bottom:.75rem}
+    [data-cw-hero="photo"] .hero .hero-actions{gap:.5rem}
     [data-cw-hero="photo"] .hero .hero-grid{padding-top:.75rem}
   }
 }
@@ -358,6 +408,11 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .phase.p1::after{background:linear-gradient(90deg,var(--cta),var(--irem-gold-soft))}
 .phase.p2::after{background:linear-gradient(90deg,var(--indigo),var(--indigo-bright))}
 .phase.p3::after{background:linear-gradient(90deg,var(--cta) 0%,var(--indigo) 100%)}
+/* A phase card that opens with a photograph or a rail node does not get the
+   stripe too: two horizontal openers stacked a few pixels apart, and over a
+   photo the accent cuts the image with a colour it does not contain. The phase
+   is already named in the kicker underneath. */
+.phase:has(.ph-shot)::after,.phase:has(.ph-photo)::after,.phase:has(.rail-node)::after{content:none}
 .phase .ph-n{font-family:var(--f-mono);font-size:.74rem;letter-spacing:.16em;color:var(--indigo);text-transform:uppercase}
 .phase .ph-ico{width:52px;height:52px;border-radius:14px;display:grid;place-items:center;margin:.4rem 0 1.1rem;
   background:var(--chip);color:var(--indigo)}
@@ -381,19 +436,23 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .day .d-lab{font-family:var(--f-mono);font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--indigo)}
 .day .d-name{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.25rem;font-weight:600;color:var(--ink);line-height:1.05}
 .day .d-focus{font-size:.85rem;color:var(--text-muted);margin-top:auto}
-/* The rhythm of the day drawn as the rail primitive: one dashed line through
-   seven nodes, node size carrying the intensity the old progress bar carried.
-   Built in CSS rather than the sprite `rail` symbol because this row reflows
-   7 → 2 → 1 columns, and a fixed-viewBox SVG cannot follow that without
-   stretching its dots. The line bleeds to the card edges (padding is 1rem), so
-   only the grid gap interrupts it and the eye completes the run. */
-.day .d-node{position:relative;height:16px;flex:0 0 auto}
-.day .d-node::before{content:"";position:absolute;top:50%;left:-1rem;right:-1rem;
+/* The rail primitive: one dashed line through a row of nodes, node size
+   carrying whatever intensity the row encodes. Built in CSS rather than the
+   sprite `rail` symbol because these rows reflow (7 → 2 → 1 columns on way21,
+   3 → 1 elsewhere) and a fixed-viewBox SVG cannot follow that without
+   stretching its dots. The line bleeds to the card edges, so only the grid gap
+   interrupts it and the eye completes the run — --rail-bleed is the host card's
+   own inline padding. */
+.rail-node{position:relative;height:16px;flex:0 0 auto;--rail-bleed:1rem}
+.rail-node::before{content:"";position:absolute;top:50%;left:calc(-1 * var(--rail-bleed));right:calc(-1 * var(--rail-bleed));
   border-top:1.5px dashed color-mix(in srgb, var(--indigo) 42%, transparent)}
-.day .d-node::after{content:"";position:absolute;top:50%;left:50%;
+.rail-node::after{content:"";position:absolute;top:50%;left:50%;
   width:calc(7px + var(--i,.5) * 7px);aspect-ratio:1;border-radius:50%;
   background:var(--cta);transform:translate(-50%,-50%)}
-@media(prefers-reduced-motion:no-preference){.day:hover .d-node::after{transform:translate(-50%,-50%) scale(1.15);transition:transform .3s}}
+/* .phase cards carry more inline padding than .day cards. */
+.phase .rail-node{--rail-bleed:1.7rem;margin-bottom:1rem}
+@media(prefers-reduced-motion:no-preference){
+  .day:hover .rail-node::after,.phase:hover .rail-node::after{transform:translate(-50%,-50%) scale(1.15);transition:transform .3s}}
 .week-note{margin-top:1.6rem;display:flex;gap:.8rem;align-items:flex-start;background:var(--chip-soft);
   border:1px solid var(--line);border-radius:var(--r-md);padding:1.1rem 1.3rem;font-size:.96rem;color:var(--text-muted)}
 .week-note svg{flex:0 0 auto;color:var(--indigo);margin-top:2px}
@@ -562,7 +621,10 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .author-quote{margin:1.1rem 0;padding:.9rem 1.1rem;border-left:3px solid var(--indigo);background:var(--chip);border-radius:0 var(--r-sm) var(--r-sm) 0;font-size:.98rem;color:var(--ink-soft);font-style:italic;line-height:1.5}
 .author .reg{display:grid;gap:.7rem;margin-top:1.2rem}
 .author .reg li{list-style:none;display:flex;gap:.8rem;font-size:.98rem;color:var(--text-muted)}
-.author .reg svg{flex:0 0 auto;margin-top:3px;color:var(--indigo)}
+/* One glyph repeated down a list is decoration, not information — the shields
+   came out 2026-08-17 and a typographic node keeps the list scannable. */
+.author .reg li{position:relative;padding-left:1.1rem}
+.author .reg li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--cta)}
 @media(max-width:760px){.author{grid-template-columns:1fr}.author-photo{max-width:300px}}
 
 /* ============ PROOF ============ */

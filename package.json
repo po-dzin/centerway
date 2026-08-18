@@ -18,7 +18,7 @@
     "guard:ds-contract": "node scripts/guard-ds-contract.mjs",
     "semantic:audit": "node scripts/semantic-audit.mjs",
     "guard:contrast": "node scripts/guard-contrast.mjs",
-    "guard:carriers": "node scripts/guard-carriers.mjs --surface way21",
+    "guard:carriers": "node scripts/guard-carriers.mjs",
     "guard:lms-core": "node scripts/guard-lms-core.mjs",
     "db:stage": "node scripts/db-stage-migration.mjs",
     "db:push:dry": "supabase db push --db-url \"$SUPABASE_DB_URL\" --dry-run",

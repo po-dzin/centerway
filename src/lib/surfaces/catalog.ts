@@ -108,7 +108,9 @@ const PRODUCT_SURFACE_REGISTRY: Record<ProductKey, ProductSurfaceEntry> = {
     defaultDoshaEligibility: "secondary",
     status: "active",
     funnelRuntime: "landing-app",
-    internalFunnelRoute: "/herbs/index.html",
+    // Route handler at src/app/herbs/route.ts, same as way21 and reset-day.
+    // Was "/herbs/index.html" while /herbs redirected to the catalogue page.
+    internalFunnelRoute: "/herbs",
   },
   consult: {
     productKey: "consult",
