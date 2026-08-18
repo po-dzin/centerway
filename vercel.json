@@ -15,10 +15,6 @@
     {
       "path": "/api/cron/analytics-reports",
       "schedule": "15 4 * * *"
-    },
-    {
-      "path": "/api/cron/lms-reminders",
-      "schedule": "0 * * * *"
     }
   ]
 }

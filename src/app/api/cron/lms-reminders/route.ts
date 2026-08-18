@@ -1,6 +1,13 @@
 /**
  * Hourly learner reminders.
  *
+ * NOT CURRENTLY SCHEDULED. The vercel.json entry was removed because Vercel's
+ * Hobby plan allows daily crons only, and this job cannot be run daily (see
+ * below) — a daily run would silently serve one timezone and leave everyone
+ * else on reason "wrong_hour". Nothing here is disabled: the endpoint still
+ * works and re-enabling is one entry in vercel.json on a plan that permits
+ * hourly crons, or any external scheduler calling it hourly with CRON_SECRET.
+ *
  * Runs every hour by design: each learner is nudged at the reminder hour on
  * THEIR clock, so a single daily run at a Kyiv hour would be wrong for everyone
  * outside that zone (docs/lms-research-2026-08-15.md §3A.4).
