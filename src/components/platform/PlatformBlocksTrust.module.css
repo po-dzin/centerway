@@ -390,3 +390,40 @@
   height: 4.1rem;
   transform: rotate(-8deg);
 }
+
+/* Proof photo. Sits between the section heading and the three notes: the
+   claim is that change happens as a process, and the group shot is the only
+   evidence on this page that real people and a real author stand behind it.
+   Ratio is fixed rather than intrinsic so the panel keeps its rhythm when the
+   plate is swapped. */
+.proofMedia {
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--cw-card-radius);
+  background: var(--cw-platform-surface-muted);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.proofMediaImage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  object-position: center 42%;
+}
+
+.proofMediaCaption {
+  padding: 0.85rem 1rem;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+@media (max-width: 560px) {
+  /* A 16:9 strip is too thin to read as a room full of people once it is only
+     ~340px wide — the bodies become a band. Squarer crop keeps the group. */
+  .proofMediaImage {
+    aspect-ratio: 4 / 3;
+    object-position: center 46%;
+  }
+}

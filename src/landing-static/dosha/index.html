@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="uk" data-cw-landing="dosha" data-cw-page="dosha">
+<html lang="uk" data-cw-landing="dosha" data-cw-page="dosha" data-cw-hero="photo">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -47,7 +47,14 @@
       <div class="hero-visual">
         <div class="hv-stage">
           <span class="hv-glow"></span>
-          <img class="hv-photo" src="/shared/img/practice-group-2026-08.webp" width="1600" height="1000" loading="eager" fetchpriority="high" decoding="async" alt="Практика CenterWay">
+          <picture>
+            <!-- Below 881px the hero goes full-bleed portrait (data-cw-hero="photo"),
+                 where a 16:10 plate crops to a band and loses two of the three
+                 centres. The portrait master holds all three plus an empty lower
+                 third for the copy. -->
+            <source media="(max-width: 880px)" srcset="/shared/img/dosha-tridosha-portrait-2026-08.webp" width="768" height="1376">
+            <img class="hv-photo" src="/shared/img/dosha-tridosha-2026-08.webp" width="1312" height="816" loading="eager" fetchpriority="high" decoding="async" alt="Три доші: суха, гаряча і волога природа — три матеріали в одному кадрі">
+          </picture>
           <div class="hv-stat s1"><div class="lab">Формат</div><div class="val">12 питань</div></div>
           <div class="hv-stat s2"><div class="lab">Результат</div><div class="val">одразу</div></div>
         </div>
@@ -62,7 +69,7 @@
         <a href="/dosha-test?entry=dosha-funnel" class="btn btn-primary" data-cta-hero>Пройти тест безкоштовно <span class="arr">→</span></a>
         <a href="https://consult.centerway.net.ua/" class="btn btn-ghost">Хочу живий розбір, а не тест</a>
         <div class="hero-trust">
-          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="ico ico-chrome" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-check"/></svg>
           Без реєстрації карти й зобов'язань. Тест не ставить діагнозів
         </div>
       </div>
@@ -94,16 +101,19 @@
     </div>
     <div class="triad">
       <div class="phase p1 reveal">
+        <div class="ph-ico"><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-vata"/></svg></div>
         <div class="ph-n">Вата · рух</div>
         <h3>Повітря і простір</h3>
         <p>Керує нервовою системою, диханням і всім, що рухається в тілі. У балансі — легкість, творчість, швидкість. У дисбалансі — тривожність, безсоння, сухість, нестабільне травлення і «стрибки» енергії.</p>
       </div>
       <div class="phase p2 reveal">
+        <div class="ph-ico"><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-pitta"/></svg></div>
         <div class="ph-n">Пітта · трансформація</div>
         <h3>Вогонь і вода</h3>
         <p>Керує травленням, метаболізмом і температурою тіла. У балансі — сильне травлення, ясний розум, цілеспрямованість. У дисбалансі — печія, запалення, дратівливість і перегрів на всіх рівнях.</p>
       </div>
       <div class="phase p3 reveal">
+        <div class="ph-ico"><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-kapha"/></svg></div>
         <div class="ph-n">Капха · структура</div>
         <h3>Земля і вода</h3>
         <p>Керує тканинами, імунітетом і стабільністю. У балансі — витривалість, спокій, міцне здоров'я. У дисбалансі — важкість, набряки, зайва вага, млявість і «залипання» у звичках.</p>
@@ -125,16 +135,19 @@
     </div>
     <div class="triad">
       <div class="phase p1 reveal">
+        <div class="rail-node" style="--i:.5"></div>
         <div class="ph-n">Крок 01</div>
         <h3>Відповідаєте на 12 запитань</h3>
         <p>Про тіло, травлення, сон, енергію та реакції на стрес. Без «правильних» відповідей — тільки як є насправді.</p>
       </div>
       <div class="phase p2 reveal">
+        <div class="rail-node" style="--i:.5"></div>
         <div class="ph-n">Крок 02</div>
         <h3>Отримуєте профіль доші</h3>
         <p>Ваш переважний тип або пара типів — з поясненням, що це означає для харчування, режиму й енергії.</p>
       </div>
       <div class="phase p3 reveal">
+        <div class="rail-node" style="--i:.5"></div>
         <div class="ph-n">Крок 03</div>
         <h3>Бачите свій наступний крок</h3>
         <p>Рекомендація маршруту під ваш результат: м'який старт, глибока програма чи персональний розбір.</p>
@@ -205,16 +218,16 @@
       <h2 class="sec-title">Перед тим як почати</h2>
     </div>
     <div class="acc faq">
-      <details class="acc-item reveal" open><summary><span class="num">01</span>Це безкоштовно? У чому каверза?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal" open><summary><span class="num">01</span>Це безкоштовно? У чому каверза?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Так, тест повністю безкоштовний, без прихованих умов. Нам вигідно, щоб ви обрали правильний перший крок: людина, яка почала з відповідного їй формату, отримує результат — і повертається.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">02</span>Скільки часу займає?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">02</span>Скільки часу займає?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Близько 3 хвилин: 12 коротких запитань про тіло, сон, травлення та реакції на стрес. Результат з'являється одразу.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">03</span>Це медичний діагноз?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">03</span>Це медичний діагноз?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Ні. Це структуроване самоспостереження на основі аюрведичної типології. Тест не діагностує захворювань і не замінює лікаря — він допомагає обрати доречний оздоровчий маршрут.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">04</span>Що я отримаю в результаті?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">04</span>Що я отримаю в результаті?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Ваш переважний тип конституції (або пару типів) з поясненням, що це означає на практиці, — і конкретну рекомендацію наступного кроку під ваш стан.</li></ul></div>
       </details>
     </div>

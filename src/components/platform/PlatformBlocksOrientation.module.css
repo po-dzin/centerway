@@ -60,13 +60,17 @@
   box-shadow: none;
   isolation: isolate;
   scroll-margin-top: 5.25rem;
-  /* Framing for the 16:10 group-practice shot: the composition is symmetric
-     around the leader, so it stays centred and barely scaled — the old 74%/1.15
-     values were pushing a portrait subject to the right and are wrong here. */
-  --hero-photo-x: 50%;
-  --hero-photo-y: 44%;
+  /* Framing for the 16:10 threshold plate. The plate ratio (1.61) all but
+     matches a 16:10 desktop viewport, so cover barely crops there; these values
+     only bite on off-ratio viewports. Taller viewports crop the sides, so x
+     leans right to protect the doorway, bowl and planting strip while the left
+     still keeps far more dark stone than the scrim needs. Wider-than-16:10
+     viewports crop top and bottom instead, so y leans low — everything that
+     carries the scene lives in the bottom half and the upper wall is empty. */
+  --hero-photo-x: 60%;
+  --hero-photo-y: 62%;
   --hero-photo-shift-y: 0%;
-  --hero-photo-scale: 1.03;
+  --hero-photo-scale: 1.02;
   --hero-photo-origin: center center;
 }
 
@@ -89,6 +93,13 @@
   z-index: 0;
   overflow: hidden;
   background: var(--cw-platform-text);
+}
+
+/* Heroes that carry a portrait master wrap the photo in <picture>. The wrapper
+   must not sit between the layer and the image, or the image's 100% height
+   resolves against an inline box instead of the layer. */
+.heroPhotoLayer picture {
+  display: contents;
 }
 
 /* No CSS filter here on purpose. The files in /shared/img are already graded
@@ -145,14 +156,18 @@
   padding: 0.48rem 0.74rem;
   border: 0;
   border-radius: var(--cw-radius-pill);
-  /* Same warm glass as every other card, at the media floor (86%) rather than
-     the canvas floor (76%): sitting on the hero photo, not the page. Dark ink
-     text holds contrast over any photo content at that floor — see the
-     glass-media pairs in guard-contrast.mjs. --cw-mat-inverse-control (a dark
-     scrim + light text) used to sit here; over a bright photo region it
-     measured ~2.0 against a 4.5 requirement. */
+  /* Same chrome tint the topbar runs — the badge used to sit on the denser
+     media floor (86%) and read as a second, opaque-white material next to the
+     topbar's see-through one. Dark ink text holds contrast against chrome (55%)
+     regardless of what the photo underneath does: even the limit case, a pure
+     black photo with no scrim at all, still clears body AA (~4.97:1) — see the
+     chrome-floor glass-media pairs in guard-contrast.mjs. --cw-mat-inverse-control
+     (a dark scrim + light text, matching the topbar's own dark-tone state) used
+     to sit here before that; over a bright photo region it measured ~2.0
+     against a 4.5 requirement, which is why this runs the topbar's light-tone
+     recipe (chrome tint + ink) rather than its dark-tone one. */
   color: var(--cw-platform-text);
-  background-color: var(--cw-mat-tint-media);
+  background-color: var(--cw-mat-tint-chrome);
   background-image: var(--cw-mat-grain-image);
   backdrop-filter: var(--cw-mat-filter);
   box-shadow: var(--cw-mat-shadow-raised);
@@ -247,13 +262,16 @@
   box-shadow: 0 20px 32px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent);
 }
 
+/* Same chrome tint + ink recipe as .heroBadge and the topbar — one material
+   across the hero instead of the badge/button pair running the opaque media
+   floor while the bar above them stays see-through chrome. */
 .heroSecondaryButton {
   position: relative;
   overflow: hidden;
   isolation: isolate;
   border: 0;
   color: var(--cw-platform-text);
-  background-color: var(--cw-mat-tint-media);
+  background-color: var(--cw-mat-tint-chrome);
   background-image: var(--cw-mat-grain-image);
   backdrop-filter: var(--cw-mat-filter);
   box-shadow: var(--cw-mat-shadow-raised);

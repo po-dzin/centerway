@@ -704,10 +704,23 @@
         color-mix(in srgb, var(--cw-sem-warmth) 6%, transparent));
   }
 
+  /* Bottom-anchored, the same photo-hero recipe the landing network runs on
+     mobile: the scrim is bottom-weighted (see .heroPhotoLayer::after above),
+     so packing the copy against the bottom padding puts it on the darkest,
+     most legible part of the photo instead of splitting the difference in the
+     vertical middle. The generous bottom padding already reserved room for
+     this — it was fighting a centred box, not sized for one. Detail-template
+     heroes (product/program/dosha) size their own content box to the full
+     viewport and pack internally, so this is a no-op for them; the profile
+     cabinet's short, non-viewport hero is pinned back to its own layout below. */
   .heroFeatureContent {
     width: 100%;
-    align-self: center;
+    align-self: end;
     padding: clamp(4.8rem, 14vw, 6rem) 1rem clamp(9.8rem, 28vw, 12.4rem);
+  }
+
+  .heroFeature[data-cw-profile-hero="true"] .heroFeatureContent {
+    align-self: center;
   }
 
   .heroFeature .heroFeatureActions,
@@ -1017,10 +1030,13 @@
     min-height: 100vh;
     min-height: 100svh;
     border-radius: 0;
-    /* A 16:10 plate in a portrait viewport crops hard on the sides. The leader
-       sits at 51% of the plate width; solving cover's crop window for a portrait
-       frame puts object-position at ~51% to land him dead centre. */
-    --hero-photo-x: 51%;
+    /* A 16:10 plate in a portrait viewport crops hard on the sides: at 390x780
+       cover shows only ~31% of the plate width. On the threshold plate the whole
+       scene — doorway edge, kintsugi bowl, planting strip — sits right of 55%,
+       so a centred window would show bare stone and the door jamb and nothing
+       else. 82% lands that window on 56%..88%. Vertical position is inert here:
+       a portrait frame crops width only, so the full plate height is shown. */
+    --hero-photo-x: 82%;
     --hero-photo-y: 50%;
     --hero-photo-shift-y: 0%;
     --hero-photo-scale: 1;

@@ -9,8 +9,8 @@ export function HubHero() {
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           className={styles.expertImage}
-          src="/shared/img/practice-group-2026-08.webp"
-          alt="Практика CenterWay"
+          src="/shared/img/home-hero-threshold-2026-08.webp"
+          alt="Поріг: вхід у практику CenterWay"
         />
       </div>
       <div className={styles.heroFeatureContent}>

@@ -4,6 +4,7 @@ import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
 import heroStyles from "@/components/platform/PlatformHeroStyles";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
+import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { platformAggregateArtwork, platformMiniCourses, platformPageArtwork, platformProductOffers, platformProgramOffers } from "@/lib/platform/content";
 import { activePlatformTests, plannedPlatformTests, testsHubCopy } from "@/lib/platform/tests";
 import { getPlatformRoute } from "@/lib/surfaces/catalog";
@@ -148,8 +149,12 @@ export function PlatformTestsHubPage() {
           style={heroStyle}
         >
           <div className={heroStyles.heroPhotoLayer}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className={heroStyles.expertImage} src={heroArtwork.desktop} alt="Діагностика CenterWay" />
+            <PlatformHeroPhoto
+              artwork={heroArtwork}
+              alt="Діагностика CenterWay: три доші — три матеріали"
+              className={heroStyles.expertImage}
+              eager
+            />
           </div>
           <div className={heroStyles.heroFeatureContent}>
             <p className={heroStyles.heroBadge}>

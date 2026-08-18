@@ -10,6 +10,7 @@ import type { DoshaResultType } from "@/lib/doshaTest";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
 import { CW_THEME_QUERY_KEYS } from "@/lib/generator/theme";
 import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT } from "@/lib/doshaRouting";
+import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { platformPageArtwork } from "@/lib/platform/content";
 import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
 import { supabaseClient } from "@/lib/supabaseClient";
@@ -573,9 +574,12 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
   const doshaHeroArtwork = platformPageArtwork.dosha;
   const desktopFocus = resolveHeroPosition(doshaHeroArtwork.desktopPosition);
   const mobileFocus = resolveHeroPosition(doshaHeroArtwork.mobilePosition ?? doshaHeroArtwork.desktopPosition);
+  /* Only the -desktop/-mobile pair is set inline. The unsuffixed
+     --hero-photo-x/y are deliberately left to PlatformResponsive.module.css,
+     which picks the right one per breakpoint: setting them here too would win
+     on specificity (inline beats every selector) and the mobile focal point
+     would never apply. */
   const heroStyle = {
-    "--hero-photo-x": desktopFocus.x,
-    "--hero-photo-y": desktopFocus.y,
     "--hero-photo-x-desktop": desktopFocus.x,
     "--hero-photo-y-desktop": desktopFocus.y,
     "--hero-photo-x-mobile": mobileFocus.x,
@@ -600,8 +604,12 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
           style={heroStyle}
         >
           <div className={styles.heroPhotoLayer}>
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className={styles.expertImage} src={doshaHeroArtwork.desktop} alt="Доша-тест CenterWay" />
+            <PlatformHeroPhoto
+              artwork={doshaHeroArtwork}
+              alt="Доша-тест CenterWay: три доші — три матеріали"
+              className={styles.expertImage}
+              eager
+            />
           </div>
           <div
             className={`${styles.heroFeatureContent} ${styles.diagnosticHeroContent}`}
