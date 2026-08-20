@@ -17,7 +17,7 @@ import {
   resolveTimeZone,
   type Course,
 } from "@/lms-core";
-import { getCourse, listPublishedCourses } from "./catalog";
+import { listPublishedCourses } from "./catalog";
 import { loadProgress } from "./server";
 import { notifyLearner } from "./notify";
 
@@ -38,12 +38,19 @@ function bump(counter: Record<string, number>, key: string): void {
   counter[key] = (counter[key] ?? 0) + 1;
 }
 
-/** Courses that opt into reminders at all. */
+/**
+ * Courses that opt into day-N reminders at all.
+ *
+ * Driven by the catalog, not by a hand-kept slug list. The list used to name
+ * `reset-day` alone, which quietly excluded way21 — the FIRST course to be both
+ * `daily` and `published`, i.e. the first one these reminders were built for.
+ * A schedule mode is a property of the course; nothing should have to be
+ * remembered in a second place for it to take effect.
+ */
 function dailyCourseIds(): Map<string, Course> {
   const map = new Map<string, Course>();
-  for (const slug of ["reset-day"]) {
-    const course = getCourse(slug);
-    if (course && course.schedule.mode === "daily" && course.status === "published") {
+  for (const course of listPublishedCourses()) {
+    if (course.schedule.mode === "daily") {
       map.set(course.id, course);
     }
   }
@@ -185,7 +192,7 @@ export async function runUnstartedReminders(limit = 500, now = new Date()): Prom
         authUserId,
         text:
           decision.nudgeNumber === 1
-            ? `«${course.title}» вже відкритий у твоєму кабінеті. Перший крок можна зробити тоді, коли буде зручно.`
+            ? `«${course.title}» вже відкритий у твоєму кабінеті. Перший урок можна пройти тоді, коли буде зручно.`
             : `Нагадуємо: «${course.title}» чекає в кабінеті. Проходження рахується від першого відкриття, тож нічого не згоріло.`,
         href: `/learn/${course.slug}`,
       });
@@ -269,7 +276,7 @@ export async function runDailyReminders(limit = 500, now = new Date()): Promise<
 
     const result = await notifyLearner({
       authUserId: enrollment.auth_user_id,
-      text: `День ${decision.dayNumber}: ${decision.lesson.title}. Крок готовий — заходь, коли буде зручно.`,
+      text: `День ${decision.dayNumber}: ${decision.lesson.title}. Урок готовий — заходь, коли буде зручно.`,
       href: `/learn/${course.slug}/${decision.lesson.slug}`,
     });
 
