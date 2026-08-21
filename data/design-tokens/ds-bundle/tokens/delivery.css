@@ -35,10 +35,10 @@
   --ds-shadow-md: var(--cw-shadow-strong);
   --ds-z-base: 1;
   --ds-z-sticky: 999;
-  --ds-breakpoint-mobile-max: 37.5rem;
-  --ds-breakpoint-tablet-min: 37.5625rem;
-  --ds-breakpoint-tablet-max: 63.9375rem;
-  --ds-breakpoint-desktop-min: 64rem;
+  --ds-breakpoint-mobile-max: 35rem;
+  --ds-breakpoint-tablet-min: 35.0625rem;
+  --ds-breakpoint-tablet-max: 56.25rem;
+  --ds-breakpoint-desktop-min: 56.3125rem;
   --ds-container-max: var(--cw-max-width);
   --ds-touch-target-min: 3rem;
   --ds-button-min-height: var(--ds-touch-target-min);
