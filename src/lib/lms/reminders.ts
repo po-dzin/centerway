@@ -45,6 +45,39 @@ function bump(counter: Record<string, number>, key: string): void {
 }
 
 /**
+ * Pages through every row a query matches, not just the first slice.
+ *
+ * Both passes below used to take a single `.limit(500)` with no cursor. Under
+ * an hourly cadence that was a soft cap — most courses have far fewer
+ * enrollments than that between runs. Once the cron went daily (see the module
+ * doc), it stopped being soft: a course past 500 enrollments has the SAME 500
+ * rows returned on every run (Postgres has no ordering guarantee without an
+ * ORDER BY, but in practice an unordered scan is stable run to run), so anyone
+ * outside that slice is never scanned, decided for, or reminded — permanently,
+ * not just "later than others". Paging removes the cap; the row count a course
+ * actually has is now the only bound.
+ */
+async function fetchAllRows<T>(
+  pageSize: number,
+  // PromiseLike, not Promise: Supabase's query builder is thenable but is not
+  // typed as a real Promise (same mismatch builder.ts's StructureWriter cast
+  // works around) — `await` accepts either, but the parameter type has to say
+  // so or every call site fails to typecheck against the builder it passes in.
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
+): Promise<T[]> {
+  const all: T[] = [];
+  let from = 0;
+  for (;;) {
+    const { data, error } = await page(from, from + pageSize - 1);
+    if (error) throw new Error(`lms_reminders_page_failed:${error.message}`);
+    const rows = data ?? [];
+    all.push(...rows);
+    if (rows.length < pageSize) return all;
+    from += pageSize;
+  }
+}
+
+/**
  * Courses that opt into day-N reminders at all.
  *
  * Driven by the catalog, not by a hand-kept slug list. The list used to name
@@ -89,17 +122,22 @@ export async function runUnstartedReminders(
   for (const course of listPublishedCourses()) {
     if (course.entitlementProductCodes.length === 0) continue;
 
-    const { data: orderRows, error: ordersError } = await db
-      .from("orders")
-      .select("order_ref, customer_id, created_at")
-      .eq("status", "paid")
-      .in("product_code", course.entitlementProductCodes)
-      .order("created_at", { ascending: false })
-      .limit(limit);
+    // Paged, ascending on a column pair that is stable under concurrent
+    // inserts — not `.limit(limit)` on its own, which silently re-served the
+    // same newest 500 orders forever once a course passed that count and left
+    // every older buyer permanently unreachable.
+    const orderRows = await fetchAllRows(limit, (from, to) =>
+      db
+        .from("orders")
+        .select("order_ref, customer_id, created_at")
+        .eq("status", "paid")
+        .in("product_code", course.entitlementProductCodes)
+        .order("created_at", { ascending: true })
+        .order("order_ref", { ascending: true })
+        .range(from, to)
+    );
 
-    if (ordersError) throw new Error(`lms_unstarted_orders_read_failed:${ordersError.message}`);
-
-    const orders = (orderRows ?? []).filter((order) => order.order_ref && order.customer_id);
+    const orders = orderRows.filter((order) => order.order_ref && order.customer_id);
     if (orders.length === 0) continue;
 
     // Only buyers with a platform account can be addressed: notification
@@ -240,15 +278,18 @@ export async function runDailyReminders(
     return { scanned: 0, sent: 0, skipped: { no_daily_courses: 1 } };
   }
 
-  const { data, error } = await db
-    .from("lms_enrollments")
-    .select("id, course_id, auth_user_id, started_at")
-    .in("course_id", [...courses.keys()])
-    .limit(limit);
-
-  if (error) throw new Error(`lms_reminders_read_failed:${error.message}`);
-
-  const enrollments = (data ?? []) as EnrollmentRow[];
+  // Paged the same way, on the enrollment's own id: without an ORDER BY a
+  // `.limit()` has no contract to return the same rows twice, so a course past
+  // the cap could return a DIFFERENT arbitrary 500 each run — scanning some
+  // learners repeatedly while others were never reached at all.
+  const enrollments = await fetchAllRows<EnrollmentRow>(limit, (from, to) =>
+    db
+      .from("lms_enrollments")
+      .select("id, course_id, auth_user_id, started_at")
+      .in("course_id", [...courses.keys()])
+      .order("id", { ascending: true })
+      .range(from, to)
+  );
   let sent = 0;
 
   for (const enrollment of enrollments) {
