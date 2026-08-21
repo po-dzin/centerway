@@ -174,7 +174,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         <span className={styles.saveState}>
           {note ?? (dirty ? "Є незбережені зміни" : "Змін немає")}
         </span>
-        <button className={styles.barAction} type="button" onClick={save} disabled={busy || !dirty}>
+        <button className={styles.commitAction} type="button" onClick={save} disabled={busy || !dirty}>
           {busy ? "Зберігаємо…" : "Зберегти"}
         </button>
       </div>

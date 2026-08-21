@@ -84,7 +84,7 @@ type InlineKeyboardMarkup = {
   inline_keyboard: InlineKeyboardButton[][];
 };
 
-const PRODUCT_LABELS: Record<BotProductCode, string> = {
+export const PRODUCT_LABELS: Record<BotProductCode, string> = {
   short: "Шот",
   irem: "IREM",
   way21: "Шлях 21",
@@ -101,7 +101,9 @@ const PRODUCT_LABELS: Record<BotProductCode, string> = {
  */
 type Delivery = { kind: "platform"; courseSlug: string } | { kind: "bot" };
 
-const PRODUCT_DELIVERY: Record<BotProductCode, Delivery> = {
+export type FaqKey = keyof typeof botCopy.faq;
+
+export const PRODUCT_DELIVERY: Record<BotProductCode, Delivery> = {
   short: { kind: "bot" },
   irem: { kind: "bot" },
   way21: { kind: "platform", courseSlug: "way21" },
@@ -109,7 +111,7 @@ const PRODUCT_DELIVERY: Record<BotProductCode, Delivery> = {
 };
 
 
-function assertProduct(value: string | null | undefined): BotProductCode | null {
+export function assertProduct(value: string | null | undefined): BotProductCode | null {
   if (value === "short" || value === "reboot") return "short";
   if (value === "irem") return "irem";
   if (value === "way21" || value === "shlyah21" || value === "detox21") return "way21";
@@ -180,19 +182,19 @@ function phoneLookupVariants(input: string): string[] {
   return Array.from(variants);
 }
 
+/* Two per row, derived from the label map, so adding a product to the bot is
+   one entry and not three places that must agree. */
 function productKeyboard(): InlineKeyboardMarkup {
-  return {
-    inline_keyboard: [
-      [
-        { text: PRODUCT_LABELS.short, callback_data: "product:short" },
-        { text: PRODUCT_LABELS.irem, callback_data: "product:irem" },
-      ],
-      [
-        { text: PRODUCT_LABELS.way21, callback_data: "product:way21" },
-        { text: PRODUCT_LABELS["reset-day"], callback_data: "product:reset-day" },
-      ],
-    ],
-  };
+  const buttons = (Object.keys(PRODUCT_LABELS) as BotProductCode[]).map((code) => ({
+    text: PRODUCT_LABELS[code],
+    callback_data: `product:${code}`,
+  }));
+
+  const rows: InlineKeyboardButton[][] = [];
+  for (let index = 0; index < buttons.length; index += 2) {
+    rows.push(buttons.slice(index, index + 2));
+  }
+  return { inline_keyboard: rows };
 }
 
 /* Ordered by how often it is the reason someone opened the bot. "Мої курси"
@@ -209,19 +211,14 @@ function mainMenuKeyboard(): InlineKeyboardMarkup {
   };
 }
 
+/* Built FROM the answers, not alongside them. A hand-kept list of buttons and a
+   hand-kept map of answers drift, and the drift is silent: the button still
+   renders and quietly serves the "інше" fallback. */
 function faqKeyboard(): InlineKeyboardMarkup {
-  return {
-    inline_keyboard: [
-      [{ text: "Де мій курс", callback_data: "faq:where_course" }],
-      [{ text: "Курс не з'явився в кабінеті", callback_data: "faq:access_missing" }],
-      [{ text: "Не можу увійти", callback_data: "faq:login" }],
-      [{ text: "Розклад і нагадування", callback_data: "faq:schedule" }],
-      [{ text: "Як перевірити оплату", callback_data: "faq:check_payment" }],
-      [{ text: "Проблема з оплатою", callback_data: "faq:payment_problem" }],
-      [{ text: "Інше", callback_data: "faq:other" }],
-      [{ text: "Назад", callback_data: "menu:back" }],
-    ],
-  };
+  const rows = (Object.keys(botCopy.faqLabels) as FaqKey[]).map((key) => [
+    { text: botCopy.faqLabels[key], callback_data: `faq:${key}` },
+  ]);
+  return { inline_keyboard: [...rows, [{ text: "Назад", callback_data: "menu:back" }]] };
 }
 
 function retryKeyboard(): InlineKeyboardMarkup {
@@ -693,7 +690,7 @@ async function handleCallbackQuery(
   }
 
   if (data.startsWith("faq:")) {
-    const key = data.slice("faq:".length) as keyof typeof botCopy.faq;
+    const key = data.slice("faq:".length) as FaqKey;
     await sendMessage(chatId, botCopy.faq[key] ?? botCopy.faq.other, backKeyboard());
     return;
   }

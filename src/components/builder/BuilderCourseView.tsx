@@ -123,12 +123,12 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         <div className={styles.saveBar}>
           <span className={styles.saveState}>{note ?? (published ? "Курс відкритий учням" : "Курс у роботі")}</span>
           {published ? (
-            <button className={styles.barAction} type="button" onClick={() => setStatus("draft")} disabled={busy}>
+            <button className={styles.retreatAction} type="button" onClick={() => setStatus("draft")} disabled={busy}>
               Зняти з публікації
             </button>
           ) : (
             <button
-              className={styles.barAction}
+              className={styles.commitAction}
               type="button"
               onClick={() => setStatus("published")}
               disabled={busy || !readiness.ready}

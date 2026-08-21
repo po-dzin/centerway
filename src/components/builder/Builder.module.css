@@ -73,30 +73,28 @@
   font-size: 0.88rem;
 }
 
+/* Composed, not redrawn. An earlier pass hand-rolled this control — its own
+   radius, padding, weight and size — which is exactly the drift the contract
+   exists to stop, and `guard:buttons` failed the build on it. `chrome` is the
+   role for nav and utility on its own row: back, crumb, drawer close.
+
+   Two roles, because the bar carries two kinds of control. Going BACK is
+   chrome. Saving and publishing move the author's work forward and are the one
+   action of their view — that is `primary`, and the contract says at most one
+   per view, which holds: the editor has a save and the course page a publish. */
 .barAction {
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-sm);
-  border: 0;
-  border-radius: var(--cw-radius-btn);
-  background: transparent;
-  color: var(--cw-platform-muted);
-  font: inherit;
-  font-size: 0.9rem;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
+  composes: chrome from "../platform/PlatformButtons.module.css";
 }
 
-.barAction:hover {
-  color: var(--cw-platform-text);
-  background: var(--cw-mat-surface-sunk);
+.commitAction {
+  composes: primary from "../platform/PlatformButtons.module.css";
 }
 
-.barAction:focus-visible {
-  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: var(--ds-focus-ring-offset);
+/* Unpublishing is not the same act as publishing. It is a retreat, and dressing
+   it in the gold that means "this advances your work" would make the loudest
+   control on a published course the one that takes it away from learners. */
+.retreatAction {
+  composes: secondary from "../platform/PlatformButtons.module.css";
 }
 
 /* ── Page ─────────────────────────────────────────── */

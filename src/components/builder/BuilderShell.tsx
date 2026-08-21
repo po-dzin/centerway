@@ -71,7 +71,7 @@ export function BuilderSignIn() {
   };
 
   return (
-    <button className={styles.barAction} type="button" onClick={signIn}>
+    <button className={styles.commitAction} type="button" onClick={signIn}>
       Увійти через Google
     </button>
   );

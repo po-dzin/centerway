@@ -75,6 +75,10 @@ export const botCopy = {
 
   faqPrompt: "Оберіть питання:",
 
+  /* Keys here ARE the callback data, and the keyboard is built from this object
+     (see faqKeyboard) rather than from a parallel list. A button whose key had
+     no entry would answer with the "інше" fallback — a dead button that looks
+     alive, and the kind of mismatch a hand-kept second list produces eventually. */
   faq: {
     where_course: [
       "Курс відкривається в кабінеті на сайті, у розділі «Навчання»:",
@@ -106,6 +110,17 @@ export const botCopy = {
       "Додайте email або телефон із замовлення і, якщо є, номер платежу: так знайдемо швидше.",
     ].join("\n"),
     other: "Якщо питання не підходить під жоден розділ — натисніть «Написати підтримці» й опишіть ситуацію.",
+  } as const,
+
+  /** Button labels, keyed by the same union — so the two cannot drift. */
+  faqLabels: {
+    where_course: "Де мій курс",
+    access_missing: "Курс не з'явився в кабінеті",
+    login: "Не можу увійти",
+    schedule: "Розклад і нагадування",
+    check_payment: "Як перевірити оплату",
+    payment_problem: "Проблема з оплатою",
+    other: "Інше",
   } as const,
 
   supportAskContact: "Надішліть email або телефон, за яким підтримка знайде ваше замовлення.",
