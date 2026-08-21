@@ -70,6 +70,8 @@
     "gate:landing:short-irem": "node scripts/landing-gate-short-irem.mjs",
     "baseline:landing:short-irem": "node scripts/baseline-landing-short-irem.mjs",
     "tg:webhook:set": "node scripts/set-telegram-webhook.mjs",
+    "tg:doctor": "node scripts/tg-doctor.mjs",
+    "tg:profile": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/tg-bot-profile.mjs",
     "smoke:landing:qa": "npm run smoke:landing:short-irem",
     "ds:qa": "npm run canon:guard && npm run tokens:check && npm run ds:sync:check && npm run brand:check && npm run guard:ds-contract && npm run guard:contrast && npm run guard:buttons && npm run generator:validate && npm run semantic:audit && npm run lint && npm run build",
     "ds:qa:landing": "npm run guard:ds-contract && npm run smoke:landing:qa",

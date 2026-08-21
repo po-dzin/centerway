@@ -1,3 +1,19 @@
+/**
+ * The platform's own origin, server-safe.
+ *
+ * `usePlatformHref` re-exports this rather than declaring a second copy: that
+ * module is `"use client"`, so anything running on the server — the Telegram
+ * bot, reminders, emails — could not import the origin from it and would have
+ * had to hardcode the domain a second time.
+ */
+export const PLATFORM_ORIGIN = "https://www.centerway.net.ua";
+
+/** Absolute platform URL for a site-relative path, for use off-origin. */
+export function platformUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${PLATFORM_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 export type ProductKey =
   | "reboot"
   | "irem"

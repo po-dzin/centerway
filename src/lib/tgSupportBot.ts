@@ -1,13 +1,35 @@
+/**
+ * CenterWay support bot.
+ *
+ * SHAPE (rewritten 2026-08-21). The bot used to open by asking "which course
+ * interests you?" and refuse to do anything until one was picked — a product
+ * picker as the front door, for people who mostly arrive with one question:
+ * "where is the thing I paid for?". The course is now a PARAMETER of the one
+ * task that needs it (checking a payment), not a prerequisite for the bot.
+ *
+ * WHERE COURSES LIVE. way21 and reset-day run on the platform, at /learn/*,
+ * and are reached through the cabinet. Only the two legacy programs still have
+ * their own Telegram bots. Everything here says so; the previous copy told
+ * every learner their materials were "inside the product bot", which for the
+ * newer courses was simply untrue.
+ *
+ * All strings are in ./tgSupportBotCopy.ts — see its header for the voice.
+ */
+
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { ProductCode } from "@/lib/products";
 import { callTelegramBotApi, sendTelegramMessage } from "@/lib/tg";
 import { verifyTelegramLinkToken } from "@/lib/platform/telegramLink";
+import { botCopy, CABINET_URL } from "@/lib/tgSupportBotCopy";
 
 type Supabase = ReturnType<typeof supabaseAdmin>;
 type BotProductCode = Extract<ProductCode, "short" | "irem" | "way21" | "reset-day">;
 
 type BotState =
   | "idle"
+  /* The picker is now a step inside the access task, so the bot has to remember
+     that it is mid-task while the buttons are on screen. */
+  | "choosing_product_access"
   | "awaiting_access_lookup"
   | "awaiting_support_contact"
   | "awaiting_support_message";
@@ -51,10 +73,12 @@ export type TelegramUpdate = {
   callback_query?: TelegramCallbackQuery;
 };
 
-type InlineKeyboardButton = {
-  text: string;
-  callback_data: string;
-};
+/* Telegram requires exactly one of these per button. `url` buttons matter here:
+   the cabinet is a web page, and a url button opens it directly instead of
+   making the reader long-press a link in the message body. */
+type InlineKeyboardButton =
+  | { text: string; callback_data: string; url?: never }
+  | { text: string; url: string; callback_data?: never };
 
 type InlineKeyboardMarkup = {
   inline_keyboard: InlineKeyboardButton[][];
@@ -67,20 +91,23 @@ const PRODUCT_LABELS: Record<BotProductCode, string> = {
   "reset-day": "Легкий день",
 };
 
-const FAQ_ANSWERS: Record<string, string> = {
-  access_missing:
-    "Якщо доступ не надійшов, натисніть «Отримати доступ» і введіть email або телефон, який використовували під час оплати.",
-  login:
-    "Якщо бот/продукт не відкривається, перевірте, що Telegram відкритий у вашому акаунті, і спробуйте перейти за посиланням ще раз.",
-  materials:
-    "Матеріали знаходяться всередині бота продукту. Після підтвердження оплати я надішлю посилання на потрібний бот.",
-  check_payment:
-    "Для перевірки оплати натисніть «Отримати доступ» і надішліть email або номер телефону із замовлення.",
-  payment_problem:
-    "Якщо оплата пройшла, але доступ не знайдено, створіть звернення до підтримки. Додайте email/телефон і, якщо є, номер платежу.",
-  other:
-    "Якщо питання не підходить під розділи FAQ, натисніть «Звʼязатися з підтримкою» й опишіть ситуацію.",
+/**
+ * Where a paid learner is actually sent.
+ *
+ * `platform` — the course runs in the LMS; access is the cabinet, and there is
+ * nothing to hand over but a link and the reason it might look empty (wrong
+ * sign-in address). `bot` — one of the two legacy programs that still live in
+ * their own Telegram bot.
+ */
+type Delivery = { kind: "platform"; courseSlug: string } | { kind: "bot" };
+
+const PRODUCT_DELIVERY: Record<BotProductCode, Delivery> = {
+  short: { kind: "bot" },
+  irem: { kind: "bot" },
+  way21: { kind: "platform", courseSlug: "way21" },
+  "reset-day": { kind: "platform", courseSlug: "reset-day" },
 };
+
 
 function assertProduct(value: string | null | undefined): BotProductCode | null {
   if (value === "short" || value === "reboot") return "short";
@@ -168,14 +195,16 @@ function productKeyboard(): InlineKeyboardMarkup {
   };
 }
 
+/* Ordered by how often it is the reason someone opened the bot. "Мої курси"
+   first, because for a paying learner the answer is almost always "it is in the
+   cabinet" — and that answer costs one tap instead of a payment lookup. */
 function mainMenuKeyboard(): InlineKeyboardMarkup {
   return {
     inline_keyboard: [
-      [{ text: "Отримати доступ", callback_data: "menu:access" }],
-      [{ text: "Часті запитання", callback_data: "menu:faq" }],
-      [{ text: "Проблема з оплатою", callback_data: "menu:payment_problem" }],
-      [{ text: "Звʼязатися з підтримкою", callback_data: "menu:support" }],
-      [{ text: "Змінити курс", callback_data: "menu:change_product" }],
+      [{ text: "Мої курси", callback_data: "menu:cabinet" }],
+      [{ text: "Не бачу доступ", callback_data: "menu:access" }],
+      [{ text: "Часті питання", callback_data: "menu:faq" }],
+      [{ text: "Написати підтримці", callback_data: "menu:support" }],
     ],
   };
 }
@@ -183,9 +212,10 @@ function mainMenuKeyboard(): InlineKeyboardMarkup {
 function faqKeyboard(): InlineKeyboardMarkup {
   return {
     inline_keyboard: [
-      [{ text: "Не надійшов доступ", callback_data: "faq:access_missing" }],
+      [{ text: "Де мій курс", callback_data: "faq:where_course" }],
+      [{ text: "Курс не з'явився в кабінеті", callback_data: "faq:access_missing" }],
       [{ text: "Не можу увійти", callback_data: "faq:login" }],
-      [{ text: "Де матеріали", callback_data: "faq:materials" }],
+      [{ text: "Розклад і нагадування", callback_data: "faq:schedule" }],
       [{ text: "Як перевірити оплату", callback_data: "faq:check_payment" }],
       [{ text: "Проблема з оплатою", callback_data: "faq:payment_problem" }],
       [{ text: "Інше", callback_data: "faq:other" }],
@@ -197,10 +227,16 @@ function faqKeyboard(): InlineKeyboardMarkup {
 function retryKeyboard(): InlineKeyboardMarkup {
   return {
     inline_keyboard: [
-      [{ text: "Спробувати ще раз", callback_data: "menu:access" }],
-      [{ text: "Звʼязатися з підтримкою", callback_data: "menu:support" }],
+      [{ text: "Спробувати інший контакт", callback_data: "menu:access" }],
+      [{ text: "Написати підтримці", callback_data: "menu:support" }],
     ],
   };
+}
+
+/* Appended to a delivered answer instead of redrawing the whole menu: a reply
+   that ends in five buttons reads as a new question, not as an answer. */
+function backKeyboard(): InlineKeyboardMarkup {
+  return { inline_keyboard: [[{ text: "У меню", callback_data: "menu:back" }]] };
 }
 
 async function sendMessage(
@@ -322,81 +358,58 @@ async function findPaidOrder(
 }
 
 async function sendProductPicker(chatId: number): Promise<void> {
-  await sendMessage(chatId, "Який курс вас цікавить?", productKeyboard());
+  await sendMessage(chatId, botCopy.accessPickProduct, productKeyboard());
 }
 
-async function sendMainMenu(
-  chatId: number,
-  product: BotProductCode
-): Promise<void> {
-  await sendMessage(
-    chatId,
-    `Обрано курс: ${PRODUCT_LABELS[product]}\nЩо потрібно зробити?`,
-    mainMenuKeyboard()
-  );
+/**
+ * The bot's home screen. Takes no product: the menu is the same whoever is
+ * reading it, and there is nothing to "choose" before asking a question.
+ */
+async function sendMainMenu(chatId: number, prompt: string = botCopy.menuPrompt): Promise<void> {
+  await sendMessage(chatId, prompt, mainMenuKeyboard());
 }
 
+/**
+ * Every menu branch is reachable from a cold start — none of them waits on a
+ * previously chosen course. Only `access` asks for one, and asks for it itself.
+ */
 async function handleMenuAction(
   db: Supabase,
   chatId: number,
   user: TelegramUser,
-  session: BotSession,
   action: string
 ): Promise<void> {
-  if (action === "change_product") {
-    await saveSession(db, user, {
-      selected_product: null,
-      state: "idle",
-      contact: null,
-    });
-    await sendProductPicker(chatId);
-    return;
-  }
-
-  if (!session.selected_product) {
-    await sendProductPicker(chatId);
-    return;
-  }
-
   if (action === "back") {
-    await saveSession(db, user, { state: "idle" });
-    await sendMainMenu(chatId, session.selected_product);
+    await saveSession(db, user, { state: "idle", contact: null });
+    await sendMainMenu(chatId);
+    return;
+  }
+
+  if (action === "cabinet") {
+    await saveSession(db, user, { state: "idle", contact: null });
+    await sendMessage(chatId, botCopy.cabinet, backKeyboard());
     return;
   }
 
   if (action === "access") {
-    await saveSession(db, user, {
-      selected_product: session.selected_product,
-      state: "awaiting_access_lookup",
-      contact: null,
-    });
-    await sendMessage(
-      chatId,
-      "Введіть email або номер телефону, який використовували під час оплати."
-    );
+    await saveSession(db, user, { state: "choosing_product_access", contact: null });
+    await sendProductPicker(chatId);
     return;
   }
 
   if (action === "faq") {
     await saveSession(db, user, { state: "idle" });
-    await sendMessage(chatId, "Оберіть запитання:", faqKeyboard());
+    await sendMessage(chatId, botCopy.faqPrompt, faqKeyboard());
     return;
   }
 
-  if (action === "payment_problem" || action === "support") {
-    await saveSession(db, user, {
-      selected_product: session.selected_product,
-      state: "awaiting_support_contact",
-      contact: null,
-    });
-    await sendMessage(
-      chatId,
-      "Надішліть email або телефон, за яким підтримка зможе знайти оплату."
-    );
+  if (action === "support") {
+    await saveSession(db, user, { state: "awaiting_support_contact", contact: null });
+    await sendMessage(chatId, botCopy.supportAskContact);
     return;
   }
 
-  await sendMainMenu(chatId, session.selected_product);
+  await sendMainMenu(chatId);
 }
 
 async function handleAccessLookup(
@@ -424,22 +437,52 @@ async function handleAccessLookup(
   await saveSession(db, user, { state: "idle", contact: null });
 
   if (found) {
-    const link = accessLink(session.selected_product);
-    await sendMessage(
-      chatId,
-      link
-        ? `Оплату знайдено. Ось посилання на доступ:\n${link}`
-        : "Оплату знайдено. Доступ до курсу надішлемо найближчим часом — за потреби натисніть «Звʼязатися з підтримкою».",
-      mainMenuKeyboard()
-    );
+    await sendAccessAnswer(chatId, session.selected_product);
     return;
   }
 
-  await sendMessage(
-    chatId,
-    "Не знайшли оплату за цими даними. Перевірте email/телефон або створіть звернення до підтримки.",
-    retryKeyboard()
-  );
+  await sendMessage(chatId, botCopy.accessNotFound, retryKeyboard());
+}
+
+/**
+ * What "you have access" means depends on where the course runs.
+ *
+ * For a platform course there is no secret link to hand over — the course is
+ * simply in the cabinet — so the useful answer is the cabinet plus the one
+ * thing that makes it look empty when it is not: signing in with a different
+ * address than the order was placed on.
+ */
+async function sendAccessAnswer(chatId: number, product: BotProductCode): Promise<void> {
+  const title = PRODUCT_LABELS[product];
+  const delivery = PRODUCT_DELIVERY[product];
+
+  if (delivery.kind === "platform") {
+    await sendMessage(chatId, botCopy.accessFoundPlatform(title), {
+      inline_keyboard: [
+        [{ text: "Відкрити кабінет", url: CABINET_URL }],
+        [{ text: "У меню", callback_data: "menu:back" }],
+      ],
+    });
+    return;
+  }
+
+  const link = accessLink(product);
+  if (!link) {
+    await sendMessage(chatId, botCopy.accessFoundNoTarget(title), {
+      inline_keyboard: [
+        [{ text: "Написати підтримці", callback_data: "menu:support" }],
+        [{ text: "У меню", callback_data: "menu:back" }],
+      ],
+    });
+    return;
+  }
+
+  await sendMessage(chatId, botCopy.accessFoundBot(title), {
+    inline_keyboard: [
+      [{ text: `Відкрити «${title}»`, url: link }],
+      [{ text: "У меню", callback_data: "menu:back" }],
+    ],
+  });
 }
 
 async function handleSupportContact(
@@ -452,7 +495,7 @@ async function handleSupportContact(
     state: "awaiting_support_message",
     contact: contact.trim(),
   });
-  await sendMessage(chatId, "Опишіть проблему одним повідомленням.");
+  await sendMessage(chatId, botCopy.supportAskMessage);
 }
 
 async function handleSupportMessage(
@@ -466,11 +509,7 @@ async function handleSupportMessage(
   const product = session.selected_product;
 
   if (!supportChatId) {
-    await sendMessage(
-      chatId,
-      "Підтримка тимчасово не налаштована. Спробуйте пізніше.",
-      mainMenuKeyboard()
-    );
+    await sendMessage(chatId, botCopy.supportUnavailable, mainMenuKeyboard());
     await saveSession(db, user, { state: "idle" });
     return;
   }
@@ -498,11 +537,7 @@ async function handleSupportMessage(
   }).catch(() => undefined);
 
   await saveSession(db, user, { state: "idle", contact: null });
-  await sendMessage(
-    chatId,
-    "Передали звернення до підтримки. Спеціаліст відповість вам у Telegram.",
-    product ? mainMenuKeyboard() : undefined
-  );
+  await sendMessage(chatId, botCopy.supportSent, backKeyboard());
 }
 
 /**
@@ -524,9 +559,7 @@ async function tryLinkAccount(
     if (verdict.reason === "malformed") return false;
     await sendMessage(
       chatId,
-      verdict.reason === "expired"
-        ? "Посилання застаріло. Відкрий кабінет і натисни «Підключити Telegram» ще раз."
-        : "Не вдалося перевірити посилання. Спробуй ще раз із кабінету."
+      verdict.reason === "expired" ? botCopy.linkExpired : botCopy.linkBroken
     );
     return true;
   }
@@ -564,10 +597,7 @@ async function tryLinkAccount(
   }
 
   await saveSession(db, user, { state: "idle", contact: null });
-  await sendMessage(
-    chatId,
-    "Готово — акаунт CenterWay підключено. Нагадування про уроки курсу приходитимуть сюди."
-  );
+  await sendMessage(chatId, botCopy.linkedOk, backKeyboard());
   return true;
 }
 
@@ -584,21 +614,30 @@ async function handleTextMessage(
   if (text === "/start" || text.startsWith("/start ")) {
     // A deep link from the cabinet carries a signed account token. Anything
     // else — including the product bots' own payloads — falls through to the
-    // picker exactly as before, so the sales path is untouched.
+    // greeting, so the sales path is untouched.
     const payload = text.slice("/start".length).trim();
     if (payload && (await tryLinkAccount(db, chatId, user, payload))) return;
 
     await saveSession(db, user, { state: "idle", contact: null });
-    await sendProductPicker(chatId);
+    await sendMessage(chatId, botCopy.greeting);
+    await sendMainMenu(chatId);
+    return;
+  }
+
+  // The commands registered on the bot profile. Each is a shortcut into the
+  // same branch its menu button opens — a command that answered differently
+  // from the button with the same name would be a second bot.
+  const command = text.startsWith("/") ? text.slice(1).split(/[@\s]/)[0] : null;
+  if (command) {
+    if (command === "courses") return handleMenuAction(db, chatId, user, "cabinet");
+    if (command === "access") return handleMenuAction(db, chatId, user, "access");
+    if (command === "help") return handleMenuAction(db, chatId, user, "faq");
+    if (command === "support") return handleMenuAction(db, chatId, user, "support");
+    await sendMainMenu(chatId, botCopy.fallback);
     return;
   }
 
   const session = await getSession(db, user);
-
-  if (!session.selected_product) {
-    await sendProductPicker(chatId);
-    return;
-  }
 
   if (session.state === "awaiting_access_lookup") {
     await handleAccessLookup(db, chatId, user, session, text);
@@ -615,7 +654,9 @@ async function handleTextMessage(
     return;
   }
 
-  await sendMainMenu(chatId, session.selected_product);
+  // Free text with no task running. Previously this fell into the product
+  // picker, which read as the bot ignoring what was just typed.
+  await sendMainMenu(chatId, botCopy.fallback);
 }
 
 async function handleCallbackQuery(
@@ -628,6 +669,8 @@ async function handleCallbackQuery(
 
   await answerCallbackQuery(callbackQuery.id);
 
+  // Picking a course is a step of the access task and finishes that step —
+  // it no longer parks the whole bot in a per-product mode.
   if (data.startsWith("product:")) {
     const product = assertProduct(data.split(":")[1]);
     if (!product) {
@@ -637,41 +680,25 @@ async function handleCallbackQuery(
 
     await saveSession(db, callbackQuery.from, {
       selected_product: product,
-      state: "idle",
+      state: "awaiting_access_lookup",
       contact: null,
     });
-    await sendMainMenu(chatId, product);
+    await sendMessage(chatId, botCopy.accessAskContact);
     return;
   }
 
-  const session = await getSession(db, callbackQuery.from);
-
   if (data.startsWith("menu:")) {
-    await handleMenuAction(
-      db,
-      chatId,
-      callbackQuery.from,
-      session,
-      data.slice("menu:".length)
-    );
+    await handleMenuAction(db, chatId, callbackQuery.from, data.slice("menu:".length));
     return;
   }
 
   if (data.startsWith("faq:")) {
-    const key = data.slice("faq:".length);
-    await sendMessage(
-      chatId,
-      FAQ_ANSWERS[key] ?? FAQ_ANSWERS.other,
-      mainMenuKeyboard()
-    );
+    const key = data.slice("faq:".length) as keyof typeof botCopy.faq;
+    await sendMessage(chatId, botCopy.faq[key] ?? botCopy.faq.other, backKeyboard());
     return;
   }
 
-  if (session.selected_product) {
-    await sendMainMenu(chatId, session.selected_product);
-  } else {
-    await sendProductPicker(chatId);
-  }
+  await sendMainMenu(chatId);
 }
 
 export async function handleTgSupportBotUpdate(

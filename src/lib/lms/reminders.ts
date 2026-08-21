@@ -203,7 +203,7 @@ export async function runUnstartedReminders(
         authUserId,
         text:
           decision.nudgeNumber === 1
-            ? `«${course.title}» вже відкритий у твоєму кабінеті. Перший урок можна пройти тоді, коли буде зручно.`
+            ? `«${course.title}» вже відкритий у вашому кабінеті. Перший урок можна пройти тоді, коли буде зручно.`
             : `Нагадуємо: «${course.title}» чекає в кабінеті. Проходження рахується від першого відкриття, тож нічого не згоріло.`,
         href: `/learn/${course.slug}`,
       });
@@ -292,7 +292,7 @@ export async function runDailyReminders(
 
     const result = await notifyLearner({
       authUserId: enrollment.auth_user_id,
-      text: `День ${decision.dayNumber}: ${decision.lesson.title}. Урок готовий — заходь, коли буде зручно.`,
+      text: `День ${decision.dayNumber}: ${decision.lesson.title}. Урок готовий — заходьте, коли буде зручно.`,
       href: `/learn/${course.slug}/${decision.lesson.slug}`,
     });
 
