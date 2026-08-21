@@ -10,6 +10,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { isStaffRole } from "@/lib/platform/adminRole";
 import {
   DEFAULT_TIMEZONE,
   foldProgress,
@@ -26,18 +27,28 @@ import {
 import { linkPurchasesToAccount } from "@/lib/platform/linkPurchases";
 import { getCourse, listCourses } from "./catalog";
 
-const STAFF_ROLES = new Set(["admin", "support", "coach"]);
-
-/** Staff may open draft courses; buyers may not. */
+/**
+ * Staff may open draft courses; buyers may not.
+ *
+ * Reads `user_roles`, like every other authorisation in this codebase. It used
+ * to read `platform_users.role` — the other, unsynchronised store — which made
+ * this the single place where "who is staff" could answer differently from
+ * "who is admin". Nothing kept the two columns in step, so an account elevated
+ * in one was silently ordinary in the other, in whichever direction.
+ *
+ * Switching it changed access for nobody: at the time of the change the two
+ * stores agreed for every account that held any elevated role. That is what
+ * made it safe to do rather than something to schedule.
+ */
 export async function isStaff(authUserId: string): Promise<boolean> {
   const db = adminClient();
   const { data } = await db
-    .from("platform_users")
+    .from("user_roles")
     .select("role")
-    .eq("auth_user_id", authUserId)
+    .eq("user_id", authUserId)
     .maybeSingle();
 
-  return STAFF_ROLES.has((data?.role ?? "user").trim().toLowerCase());
+  return isStaffRole(data?.role);
 }
 
 /**

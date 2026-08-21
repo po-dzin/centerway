@@ -90,6 +90,24 @@ function fmtMoney(amount: number | null | undefined, currency: string | null | u
   return `${amount} ${currency ?? ""}`.trim();
 }
 
+/**
+ * How a linked Telegram account is addressed in the profile.
+ *
+ * The @handle when there is one, because a numeric id ("849575647") tells the
+ * reader nothing about which account is connected — which is the only question
+ * this row exists to answer. Not every Telegram account has a public username,
+ * so the id remains the fallback rather than being hidden: "connected, but I
+ * cannot name it" beats an em dash that reads as "not connected".
+ */
+function formatTelegram(
+  contacts: ProfileResponse["profile"]["contacts"],
+  emptyValue: string,
+): string {
+  if (contacts?.telegramUsername) return `@${contacts.telegramUsername}`;
+  if (contacts?.telegram) return contacts.telegram;
+  return emptyValue;
+}
+
 function getUserInitial(session: Session | null, fullName: string | null | undefined) {
   const source =
     fullName ||
@@ -893,7 +911,7 @@ export function CabinetClient() {
                   {copy.phone}: <strong>{contacts?.phone ?? copy.emptyValue}</strong>
                 </li>
                 <li>
-                  {copy.telegram}: <strong>{contacts?.telegram ?? copy.emptyValue}</strong>
+                  {copy.telegram}: <strong>{formatTelegram(contacts, copy.emptyValue)}</strong>
                 </li>
               </ul>
               <div className={styles.actions}>

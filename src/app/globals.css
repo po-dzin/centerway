@@ -232,6 +232,7 @@
     --ds-button-min-height: var(--ds-touch-target-min);
     --ds-button-padding-inline: 1.15rem;
     --ds-button-min-width: 10.5rem;
+    --ds-button-max-width: 22rem;
     --ds-button-radius: var(--cw-radius-btn);
     --ds-button-font-weight: 700;
     --ds-button-font-size: 1rem;

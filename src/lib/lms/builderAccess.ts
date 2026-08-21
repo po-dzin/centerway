@@ -17,6 +17,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { isAdminRole } from "@/lib/platform/adminRole";
 
 export type BuilderIdentity = {
   authUserId: string;
@@ -24,20 +25,17 @@ export type BuilderIdentity = {
   isAdmin: boolean;
 };
 
-const ADMIN_ROLES = new Set(["admin", "support"]);
-
 export async function resolveBuilderIdentity(user: {
   id: string;
   email?: string | null;
 }): Promise<BuilderIdentity> {
   const db = adminClient();
   const { data } = await db.from("user_roles").select("role").eq("user_id", user.id).maybeSingle();
-  const role = typeof data?.role === "string" ? data.role.toLowerCase() : null;
 
   return {
     authUserId: user.id,
     email: user.email ?? null,
-    isAdmin: role !== null && ADMIN_ROLES.has(role),
+    isAdmin: isAdminRole(data?.role),
   };
 }
 

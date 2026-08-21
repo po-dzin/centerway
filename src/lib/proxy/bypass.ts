@@ -19,14 +19,30 @@ const LANDING_BRAND_PREFIXES = Array.from(LANDING_STATIC_BRANDS, (brand) => `/${
 
 const BYPASS_EXACT_PATHS = new Set(["/favicon.ico"]);
 
-export function shouldBypassProxy(pathname: string): boolean {
-  if (BYPASS_EXACT_PATHS.has(pathname)) {
-    return true;
-  }
+/**
+ * Framework, API and asset paths. Host-independent: these bypass everywhere,
+ * on every host, and nothing may be routed ahead of them.
+ */
+export function isInfraBypassPath(pathname: string): boolean {
+  if (BYPASS_EXACT_PATHS.has(pathname)) return true;
+  return INFRA_BYPASS_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
 
-  if (INFRA_BYPASS_PREFIXES.some((prefix) => pathname.startsWith(prefix))) {
-    return true;
-  }
-
+/**
+ * Paths owned by a static landing bundle, by first segment: `/way21/...`,
+ * `/irem/...`, `/shared/...`.
+ *
+ * Host-DEPENDENT in effect, and that distinction is load-bearing. These names
+ * are product slugs, and a course carries its product's slug — so on the
+ * builder host `/way21/intro` is a LESSON, not a landing asset. Bypassing it
+ * there 404s every lesson-editor URL the builder has, which is exactly what
+ * shipped: `/way21` resolved (the prefixes carry a trailing slash) and
+ * `/way21/intro` did not.
+ */
+export function isLandingBundlePath(pathname: string): boolean {
   return LANDING_BRAND_PREFIXES.some((prefix) => pathname.startsWith(prefix));
+}
+
+export function shouldBypassProxy(pathname: string): boolean {
+  return isInfraBypassPath(pathname) || isLandingBundlePath(pathname);
 }

@@ -56,6 +56,108 @@
     min-width: 100%;
   }
 
+  /* Programs scroll instead of stacking or splitting. Two-up on a 375px phone
+     gave each card ~163px: the title broke mid-word, the copy clamped to a
+     fragment and "Деталі курсу" wrapped onto two lines inside the button. One
+     per row would be honest but turns six offers into six screens of scrolling.
+     A snap rail at 78% keeps the card readable and lets the cut edge of the
+     next one say, without a control, that there is more. */
+  .programShowcase,
+  .programShowcase[data-layout="mini"] {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 78%;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    /* The rail bleeds to both edges of the screen while its items stay on the
+       container's own margin — hence the negative margin and the matching
+       padding, and scroll-padding so a snapped card lands on that margin. */
+    margin-inline: calc(var(--cw-space-md) * -1);
+    padding-inline: var(--cw-space-md);
+    scroll-padding-inline: var(--cw-space-md);
+    scrollbar-width: none;
+  }
+
+  .programShowcase::-webkit-scrollbar {
+    display: none;
+  }
+
+  .programShowcase > * {
+    scroll-snap-align: start;
+  }
+
+  /* One height for every card on every rail. Cards used to size to their copy —
+     384px for mini-courses, 464px two blocks down — so scrolling the home page
+     felt like passing three different catalogues. Fixed, not min-height: the
+     point is that they match, and the copy is clamped to fit rather than the
+     card growing to hold it. */
+  .programShowcase > .programTile,
+  .aggregateRail > .programTile {
+    height: var(--ds-offer-card-height-rail);
+    min-height: 0;
+  }
+
+  .programShowcase .programTileBody p:not(.label),
+  .aggregateRail .programTileBody p:not(.label) {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+}
+
+/* ── The tablet band ──────────────────────────────────
+
+   A rail is a phone answer: it trades a control for a cut edge because there
+   is only room for one card. From 561px there is room for two, and the rail
+   became the wrong shape — an 834px iPad showed a single 626px card with the
+   next one clipped, where 905px showed the same offers two-up at 428px. The
+   cliff was the layout, not the width.
+
+   Card height, clamps and gaps stay the rail's: the cards are matched objects
+   here for the same reason they are on a phone. Only the carrier changes.
+
+   This block sits in the same file as the base grid and the phone rail, and
+   after both, so the cascade is decided by source order inside one stylesheet.
+   These rules used to live in PlatformResponsive.module.css, where the winner
+   depended on the order a given route bundled the two files in — /programs and
+   the home page resolved the same rail differently. */
+@media (min-width: 561px) and (max-width: 900px) {
+  .programShowcase,
+  .programShowcase[data-layout="mini"],
+  .aggregateRail,
+  .aggregateRail[data-layout="single"] {
+    display: grid;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-columns: auto;
+    gap: 1rem;
+    overflow: visible;
+    /* Undo the phone rail's edge bleed — a grid has no cut edge to show. */
+    margin: 0;
+    padding: 0;
+    scroll-padding-inline: 0;
+    scroll-snap-type: none;
+  }
+
+  /* One product is one card, not a card and an empty cell beside it. */
+  .aggregateRail[data-layout="single"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The phone rails size their items as flex tracks; a grid cell sizes itself. */
+  .programShowcase > *,
+  .aggregateRail > *,
+  .aggregateRail[data-layout="single"] > * {
+    flex: initial;
+    width: auto;
+    min-width: 0;
+    flex-basis: auto;
+    scroll-snap-align: none;
+  }
 }
 
 .programTile {

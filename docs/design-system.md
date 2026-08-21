@@ -40,10 +40,37 @@ Geometry has **one source**: `data/brand/cw-mark-f2.json`, lifted from the appro
 | `public/cw/brand/cw-mark.svg` | platform header + footer, as a **CSS mask** |
 | `public/cw/brand/cw-mark-compact.svg` | the 20–24px build (two arcs, 86° gaps, floored weight) |
 | `public/cw/brand/cw-mark-{ink,gold}.svg`, mirrored into `shared/img/` | `<img>` consumers — the landing navs and footers |
-| `src/app/icon.svg`, `favicon.ico`, `apple-icon.png` | tab and touch icons, compact build on the calm ground |
+| `src/app/icon.svg`, mirrored into `shared/img/cw-icon-tab.svg` | the tab icon — one file for the platform and all eight landings, theme-adaptive |
+| `src/app/favicon.ico` | raster fallback for browsers without SVG favicons |
+| `src/app/apple-icon.png`, mirrored into `shared/img/cw-apple-touch.png` | iOS home screen, 180px |
 | `public/cw/brand/cw-icon-{192,512}.png`, `cw-icon-maskable-512.png` | installed app, via `src/app/manifest.ts` |
 | `public/cw/brand/cw-og-cover.png`, mirrored into `shared/img/` | link previews, 1200×630 |
 | `src/components/brand/markGeometry.ts` | `LogoMark`, the animated states |
+
+#### One fit table, and why the old numbers lied (2026-08-21)
+
+The mark does not fill its viewBox and is not centred in it: the full build's ink runs 7.03–52.95 across and 8.43–57.27 down a 64 square. So it covers **76%** of the box and sits up and to the left of the middle. Every icon used to be made by scaling the viewBox, which meant a stated `inset` was multiplied by that 76% before it reached the tile — `inset: 0.9` shipped a mark covering 69%, `inset: 0.72` shipped one covering **48%**. That is why the favicon read as a speck in Vercel's project list next to real app icons.
+
+The ink box is now recorded in the geometry file (`full.box` / `compact.box`) and every tile is *fitted* to it — scaled by the longer side, centred on the ink, not on the square. `fit` is therefore the honest number: the fraction of the tile the mark covers. The bake re-measures the box against a render each run and fails if the geometry moved without it, so the compensation cannot go stale the way the old hand-measured 10.75% padding in `network-tokens.css` did.
+
+| tile | `fit` | bounded by |
+| --- | --- | --- |
+| `launcher` — dock, taskbar, installed PWA, `purpose: any` | 0.78 | nothing crops it |
+| `maskable` | 0.62 | Android's 80% safe zone, with room for a circle |
+| `touch` — iOS home screen | 0.72 | the OS rounds the corners itself |
+| `tab` — favicon, address bar, search suggestions | 0.78 | nothing crops it |
+
+These only mean anything next to each other. An app icon and a favicon that disagree read as two different products, which is what 69%-vs-48% was.
+
+#### The tab icon flips with the viewer's colour scheme (2026-08-21)
+
+A fixed pairing cannot win both surfaces, and we had already proved one half of it. Ink on cream measures 12.09 and still vanished in a light tab strip, because at 16px the contrast that matters is the **tile against the browser's own chrome**. Swapping to a dark tile fixed the light strip and lost the other one — on Vercel's dark dashboard the deep tile disappeared into the row it sat in.
+
+So `icon.svg` carries a `prefers-color-scheme` rule: deep tile + gold mark on a light UI (6.92), cream tile + ink mark on a dark one (12.09). Gold on cream is never the pair — that is 1.75. `favicon.ico` cannot flip, so it ships the light-UI pairing; the browsers that need it are the ones least likely to be running dark chrome.
+
+**The tile stays.** A bare transparent glyph is the other way to solve this, but the mark is a thin open spiral: at 16px on a busy toolbar it reads as a smudge where a tile reads as an icon. That matters most exactly where the favicon sits inline with text — the address bar and the search suggestion list.
+
+**App icons cannot flip.** A manifest icon is a PNG and there is one of it, so the launcher tile stays ink on cream: a light tile has its own edge on a dark dock and holds against a light one. Adaptivity in the app itself is a separate mechanism and already works — `cw-mark.svg` is consumed as a CSS mask, so the in-app tone is a `background-color`.
 
 `favicon.ico` wraps a PNG payload, and that PNG has to be **RGBA** — Next's ICO decoder rejects RGB, which is why `rasterise` calls `ensureAlpha()` after flattening. The webpack production build tolerates it; the dev server does not, so a bad one only shows up when you actually run the app.
 
@@ -148,14 +175,17 @@ That is the rule this section encodes: **an axis with no token is an axis that w
 | icon gap | `--ds-button-gap` | 0.5rem |
 | hover lift | `--ds-button-lift` | −1px (`:active` inverts it) |
 | standalone width | `--ds-button-min-width` | 10.5rem — **opt-in via `wide`** |
+| ceiling | `--ds-button-max-width` | 22rem (352px) — **always on, no opt-out** |
 
 Colour is deliberately *not* in this table. `--ds-*` is the delivery alias layer; fills come from `--cw-platform-*` / `--cw-mat-*` inside the contract file. A program tile paints its own theme and therefore composes `base` rather than `primary` — a themed control still owes the system its size, weight and corner.
 
 `wide` is opt-in because card actions are full width instead (see "Card actions are full width"); a min-width inside a card fights the grid.
 
+The ceiling is the other half of that rule, and it is **not** opt-in (2026-08-21). "Card actions are full width" was written when a card was a card; it stopped being true once the card could be the width of a maximised window — the cabinet's "Вийти" came out a metre-long plate, and the LMS course CTA the same. So `width: 100%` still means "fill your footer, do not float in it", and the contract caps what filling can mean. 22rem is above every phone's content width (343px at 375px), so the mobile full-width button is untouched; the cap only bites where the container got wider than a hand. A capped button sits at the start of its cell, which is where the card's own text starts.
+
 ### What the gate enforces
 
-`guard:buttons` fails when a stylesheet other than the contract declares `min-height`, `padding-inline`, `border-radius`, `font-weight`, `font-size` or `min-width` on a button-named selector without the matching token — or repeats the gold ramp. Layout (`width`, `justify-self`, grid placement) and locally themed colour stay the component's business.
+`guard:buttons` fails when a stylesheet other than the contract declares `min-height`, `padding-inline`, `border-radius`, `font-weight`, `font-size`, `min-width` or `max-width` on a button-named selector without the matching token — or repeats the gold ramp. Layout (`width`, `justify-self`, grid placement) and locally themed colour stay the component's business.
 
 Three things are named exemptions in the guard, each with its reason in the source: `.completeToggle` is a checkbox, not a button; `.menuButton` is utility chrome with its own square-ish radius; and a handful of containers (`*Actions`, `videoActionCard`) match the name pattern without being controls. An exemption is a statement, one grep from review — not a silencer.
 
@@ -573,6 +603,11 @@ The contract layer (`route_family_contracts.json` → `screen_manifests.json` �
   This replaced **three** overlapping scales that shipped at once: `--cw-radius-*` (12/18/28), an unused `--ds-radius-*` delivery alias (12/16/20), and a standalone `--cw-card-radius` (20). `md` therefore meant 18 in one file and 16 in another, and a single mobile screen rendered six different corners (12, 14.4, 16, 16.8, 20, 21.6 px). Viewport-interpolated radii (`clamp(1rem, 4vw, …)`) are gone for the same reason: a corner that changes with the window cannot belong to a scale.
 - Touch target minimum `--ds-touch-target-min: 3rem` (canonical since e0c7dbc).
 - Breakpoints: mobile ≤ 560px, tablet 561–900px, desktop ≥ 901px.
+- **The tablet band gets desktop content and phone chrome (2026-08-21).** The three names above were real in the token file and not in the CSS: `561–900` carried a handful of hero and footer tweaks, and everything else fell through to the phone. An 834px iPad therefore rendered a snap carousel of 626px offer cards — one visible, the next cut at the edge — and body copy running the full 800px. Five pixels wider, at 905px, the same content came out two-up in a 428px grid. The cliff was the layout, not the width.
+
+  The band now takes the desktop's *content* shape and keeps the phone's *chrome*: `programShowcase` / `aggregateRail` become a two-column grid (no snap, no edge bleed), and `grid2` / `grid3` / `relaxedGrid` / `videoActionGrid` go two-up. The topbar stays a drawer, because the full nav needs ~790px before the wordmark and the avatar are placed — more than an iPad in portrait has — and a drawer is the better touch target anyway. `split` and the author panel stay stacked: both set a portrait beside prose, and at 800px the text column comes out narrower than the photograph.
+
+  Card height, copy clamps and gaps stay the rail's values. The cards are matched objects on a tablet for the same reason they are on a phone.
 - **Stat tiles take values, not sentences.** A tile in a column row (cabinet identity: доша / навчання / продукти) holds a name, a count, or `—`. An empty state is the em dash; the sentence that explains it belongs to the card below, with the action that resolves it. The row reserves two lines of value so a compound result (`Вата-Пітта`, which wraps at 320px) cannot shove the rest of the page down, and breaking is at the hyphen — never `overflow-wrap: anywhere`, which splits words mid-letter.
 
 ## Installed-app chrome (PWA)
@@ -581,11 +616,16 @@ The platform is installable, and an installed launch is a different surface from
 
 | Piece | Where | Rule |
 |---|---|---|
-| manifest | `src/app/manifest.ts` | `standalone`, ground colours track the default gamma (`#faefe0`) — they are hardcoded, so they move by hand when the gamma moves |
+| manifest | `src/app/manifest.ts` | `standalone`; `background_color` / `theme_color` both read `PLATFORM_GROUND` |
+| browser chrome | `src/lib/platform/chrome.ts` → `viewport.themeColor` in all three route-group roots | one literal `#faefe0`, mirroring `--cw-sem-calm-bg`. Next serialises `<head>` on the server, where no custom property has resolved yet — so it is a literal, and the one copy lives in that module so the manifest and the roots cannot drift |
 | worker | `public/sw.js` | precaches exactly one document (`public/offline.html`) and serves it only when a navigation fails. **No content caching** — a deploy must never be shadowed by a stale copy |
 | offline page | `public/offline.html` | fully inline (no hashed Next asset can be referenced), colours copied from the default ground by hand |
 | runtime | `PwaRuntime` | registers the worker after `load`, and stamps `data-cw-standalone` on `<html>` — `@media (display-mode: standalone)` is iOS 16.4+, `navigator.standalone` covers older home-screen launches |
 | install offer | cabinet → Акаунт | Chrome's parked `beforeinstallprompt` or, on iOS Safari, the two-tap instruction. Neither renders once standalone |
+
+**`theme-color` paints the browser's surround, not the tab strip (2026-08-21).** It tints Android Chrome's address bar, iOS's status bar, and — the case it was added for — the title bar of the installed standalone window, which otherwise opens in the OS grey the app uses nowhere else. Desktop Chrome's tab strip follows the browser theme and no page can repaint it; that is a browser rule, not a gap here.
+
+One value, no `prefers-color-scheme` pair, because the platform ships one theme: the dark palette exists under `[data-cw-theme="dark"]` and nothing sets that attribute (see "Public dark mode"). A dark `theme-color` would hand a dark-OS user a dark title bar over a page that is still cream. When dark is switched on this becomes a keyed pair — and, because the choice will be a toggle rather than the OS setting, a runtime meta update rather than a media query. The 26 static landings carry no `theme-color` yet; they are a separate head and a separate author's skin.
 
 **There is deliberately no bottom tab bar.** One was built and removed on 2026-08-20: on a handheld the platform's own topbar already carries the same five destinations one thumb-reach away, so a second bar was a duplicate of it rather than app chrome. If it ever comes back it needs a job the topbar cannot do — not the same nav in a second place. (Recoverable from git if that job appears; it sat at the media floor, 86%, because a bar pinned to the bottom of the viewport gets whatever the page scrolled under it, including a hero photograph.)
 

@@ -48,6 +48,7 @@ const NOT_BUTTONS = new Map([
   ["videoActionCard", "the plate the video rail's buttons sit in"],
   ["mobileMenuSurface", "the menu bar itself; its children are the controls"],
   ["mobileMenuActions", "a row that holds controls"],
+  ["heroFeatureActions", "the hero's action row — a container, its children are the controls"],
   [
     "completeToggle",
     "a CHECKBOX, not a button — marking a lesson done is a state you own and can " +
@@ -70,6 +71,7 @@ const OWNED = {
   "font-weight": "--ds-button-font-weight",
   "font-size": "--ds-button-font-size",
   "min-width": "--ds-button-min-width",
+  "max-width": "--ds-button-max-width",
 };
 
 /* The accent ramp has exactly one home. */
@@ -119,10 +121,15 @@ for (const file of walk(componentsDir)) {
       .map((s) => s.trim())
       .some((s) => BUTTON_SELECTOR.test(s));
     if (!isButton) continue;
+    /* Only the parts that actually read as a button selector can carry the
+       rule, so only those decide the exemption. A grouped rule that also names
+       a descendant (`.heroFeature .heroFeatureActions, .heroFeatureActions`)
+       used to defeat the map, because the descendant part is not a key. */
     const exempt = selector
       .split(",")
-      .map((x) => x.trim().replace(/^\./, ""))
-      .every((x) => NOT_BUTTONS.has(x));
+      .map((s) => s.trim())
+      .filter((s) => BUTTON_SELECTOR.test(s))
+      .every((s) => NOT_BUTTONS.has(s.replace(/^\./, "")));
     if (exempt) continue;
 
     const composes = /composes:\s*([^;]+);/.exec(body)?.[1] ?? "";

@@ -31,6 +31,15 @@
   justify-content: center;
   gap: var(--ds-button-gap);
   min-height: var(--ds-button-min-height);
+  /* A button never grows past a hand's reach. Card and hero actions are set to
+     `width: 100%` on purpose — that is how a stub stops floating in its own
+     footer — but "100% of the card" stopped meaning "a button" once the card
+     itself got wide: in a maximised window the cabinet's "Вийти" came out a
+     1.5m-long gold band, and the LMS course CTA the same. The cap is the
+     contract's job, not each caller's, so it lives here and is owned by
+     guard:buttons. Uncapped below ~352px, which is every phone — the mobile
+     full-width button is unchanged. */
+  max-width: var(--ds-button-max-width);
   padding-inline: var(--ds-button-padding-inline);
   border: 0;
   border-radius: var(--ds-button-radius);
@@ -196,6 +205,8 @@
 .text {
   composes: base;
   min-width: 0;
+  /* A sentence, not a plate — capping it would wrap the label mid-phrase. */
+  max-width: none;
   padding-inline: 0;
   color: var(--cw-platform-muted);
   background: transparent;

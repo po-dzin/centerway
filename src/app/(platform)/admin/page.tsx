@@ -4,11 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Session, AuthChangeEvent } from "@supabase/supabase-js";
 import { supabaseClient } from "@/lib/supabaseClient";
+import { isAdminRole } from "@/lib/platform/adminRole";
 import { useI18n } from "@/components/I18nProvider";
 
-function isAdminRole(role: string | null): boolean {
-    return role === "admin" || role === "support" || role === "Admin" || role === "Support";
-}
 
 export default function AdminRootPage() {
     const { t } = useI18n();

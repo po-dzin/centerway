@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <base href="/herbs/">
-<link rel="icon" href="/shared/img/cw-mark-ink.svg" type="image/svg+xml">
+<meta name="theme-color" content="#faefe0">
+<link rel="icon" href="/shared/img/cw-icon-tab.svg" type="image/svg+xml">
 <link rel="icon" href="/shared/img/cw-icon-192.png" sizes="192x192" type="image/png">
 <link rel="apple-touch-icon" href="/shared/img/cw-apple-touch.png">
 <title>Фітозбори CenterWay — трав'яна підтримка під ваш стан</title>
@@ -61,11 +62,14 @@
           <span>Трави нашої широти</span>
           <span>Підбір під запит</span>
         </div>
-        <a href="#lead" class="btn btn-primary" data-cta-hero>Запит на підбір зборів</a>
+        <!-- No price in the label: this product has no agreed price yet. When it
+             gets one, put it here AND in PRODUCTS.herbs.amount — the label is
+             display only, the charge always comes from the server. -->
+        <a href="#lead" class="btn btn-primary" data-cta-hero data-cw-checkout data-cw-product="herbs" data-cw-offer-id="herbs_single" data-cw-content-name="Herbal Blend">Замовити збір</a>
         <a href="https://consult.centerway.net.ua/" class="btn btn-ghost">Спершу розібрати стан</a>
         <div class="hero-trust">
           <svg class="ico ico-chrome" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-check"/></svg>
-          Залишаєте запит — ми уточнюємо стан і підказуємо, який збір доречний
+          Після оплати ми уточнюємо стан і збираємо склад під ваш запит
         </div>
       </div>
     </div>
@@ -167,7 +171,7 @@
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Форма запиту</span>
-      <h2 class="sec-title">Підібрати трав'яну підтримку</h2>
+      <h2 class="sec-title">Поставити запитання перед замовленням</h2>
     </div>
     <div class="lead-grid reveal">
       <form class="lead-form" data-cw-lead-form data-product-code="herbs" data-source="static_herbs_form" data-cta-place="herbs_primary_form">
@@ -302,7 +306,7 @@
 <!-- ============ STICKY CTA ============ -->
 <div class="sticky-cta" id="stickyCta">
   <div class="sticky-in">
-    <a href="#lead" class="btn btn-primary">Запит на підбір зборів →</a>
+    <a href="#lead" class="btn btn-primary" data-cw-checkout data-cw-product="herbs" data-cw-offer-id="herbs_single" data-cw-content-name="Herbal Blend">Замовити збір →</a>
   </div>
 </div>
 
@@ -358,6 +362,7 @@
   });
 })();
 </script>
+<script src="/shared/js/checkout.js" defer></script>
 <script src="/shared/js/network-nav.js?v=20260817-1" defer></script>
 <script src="/shared/js/proof.js" defer></script>
 </body>

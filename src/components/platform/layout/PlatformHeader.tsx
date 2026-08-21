@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { LEARNING_SHELF_HREF, learningNavItem, platformHomeHref, platformNav } from "@/lib/platform/content";
+import { LEARNING_SHELF_HREF, adminNavItem, learningNavItem, platformHomeHref, platformNav } from "@/lib/platform/content";
 import styles from "@/components/platform/PlatformShellStyles";
 import { Icon } from "@/components/Icon";
 import { PlatformProfileEntry } from "./PlatformProfileEntry";
 import { useHeaderTone } from "./headerTone";
 import { PLATFORM_SITE_ORIGIN, useIsBrandedHost } from "./usePlatformHref";
 import { usePlatformSession } from "./usePlatformSession";
+import { usePlatformRole } from "./usePlatformRole";
+import { isAdminRole } from "@/lib/platform/adminRole";
 
 /**
  * `learn` is not a skin — it is a different job for the same bar.
@@ -45,9 +47,24 @@ export function PlatformHeader({
      what is missing and links to the programmes. Advertising it to a signed-out
      visitor would be the actual mistake, and that is what this excludes. */
   const session = usePlatformSession();
+  /* The one exception to "the header does not fetch": the admin entry cannot be
+     derived from the session, because the role lives in `user_roles` and the JWT
+     does not carry it. The read is cached per tab and shared with the admin
+     shell, so it costs one request per session — see usePlatformRole. */
+  const role = usePlatformRole(session);
+  const showAdmin = isAdminRole(role);
   const brandTarget = learnMode ? LEARNING_SHELF_HREF : platformHomeHref;
   const homeHref = isBrandedHost ? `${PLATFORM_SITE_ORIGIN}${brandTarget}` : brandTarget;
-  const navSource = learnMode ? [] : session ? [learningNavItem, ...platformNav] : platformNav;
+  /* Admin goes last: it is a way out of the product, not a part of it.
+     Learn mode still gets nothing — an admin inside a lesson is a learner
+     inside a lesson, and the reason that nav is empty (every link out is a way
+     to not finish) does not stop applying because of who is reading. The way
+     back to the panel from there is the brand, then the header. */
+  const navSource = learnMode
+    ? []
+    : session
+      ? [learningNavItem, ...platformNav, ...(showAdmin ? [adminNavItem] : [])]
+      : platformNav;
   const navItems = navSource.map((item) => ({
     ...item,
     resolvedHref: isBrandedHost ? `${PLATFORM_SITE_ORIGIN}${item.href}` : item.href,
