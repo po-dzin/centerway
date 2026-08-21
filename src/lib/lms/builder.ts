@@ -169,6 +169,48 @@ export type SaveOutcome = {
 };
 
 /**
+ * The ownership boundary `writeCourseStructure` cannot enforce on its own.
+ *
+ * That function upserts modules and lessons by the `id` the payload declares
+ * (`onConflict: "id"`), which is what makes a resubmit idempotent — and what
+ * makes an id from someone else's course dangerous. Course A's author is
+ * authorized because `existing.authorId` matched THEM, but nothing then
+ * stopped their payload from naming a module or lesson id that belongs to
+ * course B: the upsert would match that row by primary key and rewrite its
+ * `course_id` to A, silently stealing it out of B. Every nested id in the
+ * payload has to already belong to `ownerCourseId` (or not exist yet) before
+ * a write is allowed to happen at all.
+ */
+async function assertNestedIdsAreOwned(
+  db: ReturnType<typeof adminClient>,
+  course: Course,
+  ownerCourseId: string
+): Promise<void> {
+  const moduleIds = course.modules.map((module) => module.id);
+  const lessonIds = course.modules.flatMap((module) => module.lessons.map((lesson) => lesson.id));
+
+  if (moduleIds.length > 0) {
+    const { data, error } = await db.from("lms_modules").select("id, course_id").in("id", moduleIds);
+    if (error) throw new Error(`lms_builder_ownership_check_failed:${error.message}`);
+    for (const row of (data ?? []) as { id: string; course_id: string }[]) {
+      if (row.course_id !== ownerCourseId) {
+        throw new Error(`lms_authoring_id_conflict:module:${row.id}`);
+      }
+    }
+  }
+
+  if (lessonIds.length > 0) {
+    const { data, error } = await db.from("lms_lessons").select("id, course_id").in("id", lessonIds);
+    if (error) throw new Error(`lms_builder_ownership_check_failed:${error.message}`);
+    for (const row of (data ?? []) as { id: string; course_id: string }[]) {
+      if (row.course_id !== ownerCourseId) {
+        throw new Error(`lms_authoring_id_conflict:lesson:${row.id}`);
+      }
+    }
+  }
+}
+
+/**
  * Saves an edited course.
  *
  * Everything the builder writes goes through `writeCourseStructure`, the same
@@ -187,11 +229,21 @@ export async function saveBuilderCourse(input: unknown): Promise<SaveOutcome> {
   const existing = await readCourseRow(incoming.slug);
   const nextVersion = existing ? Number(existing.version ?? 1) + 1 : incoming.version;
 
+  // The id this write is authorized for: the existing row's own id when
+  // editing (the caller checked `canEditCourse` against THIS row), or the
+  // payload's own id the one time a course is created fresh. Pinned onto the
+  // outgoing course the same way route.ts pins the slug — a body cannot claim
+  // a different top-level course id than the one just authorized either.
+  const ownerCourseId = existing ? (existing.id as string) : incoming.id;
+
+  const db = adminClient();
+  await assertNestedIdsAreOwned(db, incoming, ownerCourseId);
+
   // `StructureWriter` is the narrow shape authoring.ts needs, so it stays
   // testable without a Supabase client. The real client's builder is thenable
   // rather than a Promise, which satisfies the contract at runtime and not the
   // type — the same cast the CLI does implicitly by being untyped JS.
-  const writer = adminClient() as unknown as Parameters<typeof writeCourseStructure>[0];
-  const result = await writeCourseStructure(writer, { ...incoming, version: nextVersion });
+  const writer = db as unknown as Parameters<typeof writeCourseStructure>[0];
+  const result = await writeCourseStructure(writer, { ...incoming, id: ownerCourseId, version: nextVersion });
   return { slug: result.slug, status: result.status, blockers: result.blockers };
 }
