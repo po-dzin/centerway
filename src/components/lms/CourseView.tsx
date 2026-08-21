@@ -164,7 +164,7 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
           offers the beginning of it rather than a dead end. */}
       {standing.isFinished ? (
         <div className={styles.restartRow}>
-          <p className={styles.restartHint}>Протокол можна проходити повторно — коли відчуєш потребу.</p>
+          <p className={styles.restartHint}>Протокол можна проходити повторно — коли відчуєте потребу.</p>
           <button
             className={styles.restartButton}
             type="button"

@@ -2,6 +2,13 @@ import { getFunnelHostUrl, getPlatformRoute } from "@/lib/surfaces/catalog";
 
 export const platformHomeHref = "/";
 
+/**
+ * The learner's shelf. One constant, because it is now referenced from four
+ * places that must not drift: the header's learning entry, the header's brand
+ * link in learning mode, the support bot, and the installed app's start_url.
+ */
+export const LEARNING_SHELF_HREF = "/profile#learning";
+
 export const platformNav = [
   { label: "Головна", href: "/", match: "exact" as const },
   { label: "Діагностика", href: "/tests", match: "prefix" as const },
@@ -9,6 +16,26 @@ export const platformNav = [
   { label: "Продукти", href: "/products", match: "prefix" as const },
   { label: "Про автора", href: "/expert", match: "exact" as const },
 ];
+
+/**
+ * Shown only to someone who has courses.
+ *
+ * Deliberately NOT a sixth item in `platformNav`: that list is the showcase,
+ * addressed to everybody, and it is the same for a signed-out visitor as for a
+ * buyer. Learning is the opposite — it exists only if you own something, and
+ * for the people it exists for it outranks every other item. Putting it in the
+ * same array would either advertise an empty shelf to strangers or make the
+ * showcase nav conditional on a fetch.
+ *
+ * Until this landed, the only route into a purchased course was avatar →
+ * profile → the "Навчання" tab → the card → the lesson: four steps to the thing
+ * that was paid for, and none of them named on the bar.
+ */
+export const learningNavItem = {
+  label: "Навчання",
+  href: LEARNING_SHELF_HREF,
+  match: "prefix" as const,
+};
 
 export const socialLinks = [
   { label: "YouTube", network: "youtube", href: "https://www.youtube.com/channel/UC0VPHLWTIXD3Rad5XkcyliA" },

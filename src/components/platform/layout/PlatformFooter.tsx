@@ -1,15 +1,42 @@
 "use client";
 
 import Link from "next/link";
-import { contact, platformHomeHref, socialLinks } from "@/lib/platform/content";
+import { LEARNING_SHELF_HREF, contact, platformHomeHref, socialLinks } from "@/lib/platform/content";
 import styles from "@/components/platform/PlatformShellStyles";
+import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
 import { PLATFORM_SITE_ORIGIN, useIsBrandedHost } from "./usePlatformHref";
 
-export function PlatformFooter() {
+/**
+ * `minimal` is the learning footer.
+ *
+ * The full footer is a storefront close: brand promise, phone number, four
+ * social networks, legal. Under a lesson it was the loudest thing on the page
+ * and every item in it led away — a reader who scrolled past the last block of
+ * day 8 landed in Instagram links. The minimal variant keeps only what someone
+ * mid-course can actually need: back to the shelf, support, and the legal pair
+ * we are obliged to carry on every page.
+ */
+export function PlatformFooter({ variant = "full" }: { variant?: "full" | "minimal" }) {
   const isBrandedHost = useIsBrandedHost();
   const homeHref = isBrandedHost ? `${PLATFORM_SITE_ORIGIN}${platformHomeHref}` : platformHomeHref;
+  const shelfHref = isBrandedHost ? `${PLATFORM_SITE_ORIGIN}${LEARNING_SHELF_HREF}` : LEARNING_SHELF_HREF;
   const publicOfferHref = isBrandedHost ? `${PLATFORM_SITE_ORIGIN}/legal/public-offer` : "/legal/public-offer";
   const privacyHref = isBrandedHost ? `${PLATFORM_SITE_ORIGIN}/legal/privacy` : "/legal/privacy";
+
+  if (variant === "minimal") {
+    return (
+      <footer className={styles.footer} data-platform-footer="minimal">
+        <div className={`${styles.container} ${styles.footerLearnRow}`}>
+          <Link href={shelfHref}>Мої курси</Link>
+          <a href={SUPPORT_BOT_URL} target="_blank" rel="noopener noreferrer">
+            Підтримка
+          </a>
+          <Link href={publicOfferHref}>Публічний договір</Link>
+          <Link href={privacyHref}>Політика конфіденційності</Link>
+        </div>
+      </footer>
+    );
+  }
 
   return (
     <footer className={styles.footer} data-platform-footer="true">

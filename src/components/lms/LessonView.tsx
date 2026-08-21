@@ -312,7 +312,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
           </label>
 
           {!completed && !checklistSatisfied ? (
-            <p className={styles.completeHint}>Відзнач пункти чек-листа, щоб завершити урок.</p>
+            <p className={styles.completeHint}>Відзначте пункти чек-листа, щоб завершити урок.</p>
           ) : null}
         </>
       )}

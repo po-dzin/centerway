@@ -25,7 +25,7 @@ export default async function LearnLessonPage({
   if (!found || !findLesson(found, lesson)) notFound();
 
   return (
-    <PlatformShell headerMode="overlay">
+    <PlatformShell headerMode="learn">
       <LessonView courseSlug={course} lessonSlug={lesson} />
     </PlatformShell>
   );

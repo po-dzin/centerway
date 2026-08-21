@@ -1,12 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
 import type { MouseEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { supabaseClient } from "@/lib/supabaseClient";
 import styles from "@/components/platform/PlatformShellStyles";
 import { usePlatformHref } from "./usePlatformHref";
+import { isAuthConfigured, usePlatformSession } from "./usePlatformSession";
 
 function getUserInitial(session: Session | null) {
   const name = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email;
@@ -22,27 +22,9 @@ export function PlatformProfileEntry({
   compact?: boolean;
   onNavigate?: () => void;
 }) {
-  const [session, setSession] = useState<Session | null>(null);
-  const isAuthEnabled = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
+  const session = usePlatformSession();
+  const isAuthEnabled = isAuthConfigured();
   const profileHref = usePlatformHref("/profile");
-
-  useEffect(() => {
-    if (!isAuthEnabled) return;
-
-    const boot = async () => {
-      const { data } = await supabaseClient.auth.getSession();
-      setSession(data.session);
-    };
-    void boot();
-
-    const {
-      data: { subscription },
-    } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => {
-      setSession(nextSession);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [isAuthEnabled]);
 
   const signInWithGoogle = async () => {
     const redirectTo = typeof window !== "undefined" ? window.location.href : undefined;

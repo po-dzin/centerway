@@ -400,7 +400,7 @@
 /* Full width, stacked. `flex-wrap` sized each button to its own label, so
    "Продовжити" and "Карта курсу" came out two different widths and neither
    reached the card edge — two stubs floating in a card rather than the card's
-   own footer. They go side by side at 48rem, where the card is at least 22rem
+   own footer. They go side by side at 561px, where the card is at least 22rem
    and there is room for both. */
 .actions {
   display: grid;
@@ -467,7 +467,13 @@
 
 /* ── Wider viewports: additive only ───────────────── */
 
-@media (min-width: 48rem) {
+/* 561px is the platform's tablet boundary (docs/design-system.md: mobile ≤ 560,
+   tablet 561–900, desktop ≥ 901). It used to be 48rem here — a third system,
+   in neither the shell's nor the canon's set, which left a 768–900px band where
+   the content had already gone wide while the header was still in its mobile
+   lockup. Kept in px, like every other breakpoint on the platform: these are
+   viewport sizes, not type-relative measures. */
+@media (min-width: 561px) {
   .shell {
     padding-block-start: var(--cw-space-xl);
   }

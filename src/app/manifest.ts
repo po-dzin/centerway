@@ -1,5 +1,7 @@
 import type { MetadataRoute } from "next";
 
+import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
+
 /**
  * Installed-app identity. Without this the desktop browser falls back to a
  * screenshot of the page and the tab's own favicon when the platform is added
@@ -17,7 +19,20 @@ export default function manifest(): MetadataRoute.Manifest {
     short_name: "CenterWay",
     description: "Курси, практики та супровід — тіло, ритм і опора у власному темпі.",
     lang: "uk",
-    start_url: "/",
+    /**
+     * The installed app opens on the SHELF, not the storefront.
+     *
+     * Someone who added CenterWay to their home screen has almost certainly
+     * bought something — the install prompt lives in the cabinet — and what they
+     * tap the icon for is the course they are in the middle of, not the
+     * programmes page they already bought from. A signed-out visitor still gets
+     * the profile's own auth wall, which is a working destination.
+     *
+     * Scope stays "/" so links out of the shelf (a programme page, the legal
+     * pages) stay inside the installed window instead of kicking out to the
+     * browser.
+     */
+    start_url: LEARNING_SHELF_HREF,
     scope: "/",
     display: "standalone",
     // The calm ground, so the splash and the window chrome open on the same

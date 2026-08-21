@@ -216,6 +216,16 @@
     display: none;
   }
 
+  /* …except in learning mode, where there IS no drawer to hold the mobile copy.
+     Hiding the slot below 900px is correct while the burger exists — the
+     profile entry lives inside the sheet the burger opens. Learning mode drops
+     the sheet, so without this the bar would carry the mark and nothing else,
+     and "which account am I in" would have no answer on a phone. */
+  .header[data-cw-header-mode="learn"] .profileSlot {
+    display: flex;
+    margin-left: auto;
+  }
+
   .headerInner > .menuButton,
   .header .menuButton {
     display: grid;

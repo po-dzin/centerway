@@ -19,7 +19,7 @@ export default async function LearnCoursePage({ params }: { params: Promise<{ co
   if (!getCourse(course)) notFound();
 
   return (
-    <PlatformShell headerMode="overlay">
+    <PlatformShell headerMode="learn">
       <CourseView courseSlug={course} />
     </PlatformShell>
   );
