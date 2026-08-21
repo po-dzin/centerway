@@ -44,6 +44,33 @@ export type LearnerContext = {
 };
 
 /**
+ * How the reminder hour is enforced — a property of the SCHEDULER, not of the
+ * course.
+ *
+ * `learner-local` is the design: the job wakes every hour and each learner is
+ * nudged at the reminder hour on their own clock, so a Kyiv-scheduled run never
+ * reaches Vancouver at 3am.
+ *
+ * `single-daily-run` is the deployment we actually have. Vercel's Hobby plan
+ * permits daily crons only, and under a daily job the local-hour test is not a
+ * safeguard — it is a mute button: at any single instant almost nobody is at
+ * their reminder hour, so nearly every learner resolves to `wrong_hour` and the
+ * reminder never goes out at all. This policy drops the test and delivers on
+ * the run's own hour, accepting that the message lands at whatever local time
+ * that is. Explicitly worse than `learner-local`, and explicitly better than
+ * silence (decision 2026-08-21).
+ *
+ * Timezone still governs which DAY the learner is on — `enrollmentDayNumber`
+ * reads their zone under both policies. Only the hour-of-day is given up.
+ */
+export type ReminderHourPolicy = "learner-local" | "single-daily-run";
+
+function isReminderHour(course: Course, now: Date, zone: string, policy: ReminderHourPolicy): boolean {
+  if (policy === "single-daily-run") return true;
+  return localHour(now, zone) === (course.schedule.reminderHour ?? 9);
+}
+
+/**
  * Can this learner open this lesson right now?
  *
  * Two questions live here and they are deliberately separate:
@@ -237,14 +264,17 @@ export function decideUnstartedReminder(
     now: Date;
     /** Nudge numbers already delivered for this purchase. */
     sentNudgeNumbers: number[];
+    /** Defaults to the designed hourly behaviour; the cron overrides it. */
+    hourPolicy?: ReminderHourPolicy;
   }
 ): UnstartedReminderDecision {
   // Never push someone toward a course that is not open to them yet.
   if (course.status !== "published") return { send: false, reason: "not_published" };
 
   const zone = resolveTimeZone(context.timeZone);
-  const reminderHour = course.schedule.reminderHour ?? 9;
-  if (localHour(context.now, zone) !== reminderHour) return { send: false, reason: "wrong_hour" };
+  if (!isReminderHour(course, context.now, zone, context.hourPolicy ?? "learner-local")) {
+    return { send: false, reason: "wrong_hour" };
+  }
 
   const dayNumber = enrollmentDayNumber(context.purchasedAt, context.now, zone);
   const sent = new Set(context.sentNudgeNumbers);
@@ -278,13 +308,14 @@ export type ReminderDecision =
 export function decideDailyReminder(
   course: Course,
   progress: CourseProgress,
-  context: LearnerContext
+  context: LearnerContext & { hourPolicy?: ReminderHourPolicy }
 ): ReminderDecision {
   if (course.schedule.mode !== "daily") return { send: false, reason: "not_daily" };
 
   const zone = resolveTimeZone(context.timeZone);
-  const reminderHour = course.schedule.reminderHour ?? 9;
-  if (localHour(context.now, zone) !== reminderHour) return { send: false, reason: "wrong_hour" };
+  if (!isReminderHour(course, context.now, zone, context.hourPolicy ?? "learner-local")) {
+    return { send: false, reason: "wrong_hour" };
+  }
 
   const dayNumber = enrollmentDayNumber(context.startedAt, context.now, zone);
   const walk = flattenSteps(course);

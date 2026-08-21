@@ -421,6 +421,57 @@ describe("daily reminder decision", () => {
       })
     ).toEqual({ send: false, reason: "finished" });
   });
+
+  // The daily-cron policy. Under it the Vancouver learner above IS reminded at
+  // the same instant, because a once-a-day job that keeps the local-hour test
+  // reminds almost nobody — the point of the policy is that it is loud, not
+  // that it is polite.
+  it("under a single daily run, delivers regardless of the learner's local hour", () => {
+    const decision = decideDailyReminder(course, foldProgress([]), {
+      startedAt,
+      timeZone: "America/Vancouver",
+      now: new Date("2026-08-15T06:00:00Z"),
+      hourPolicy: "single-daily-run",
+    });
+    expect(decision).toMatchObject({ send: true });
+  });
+
+  it("under a single daily run, still counts the day in the learner's own zone", () => {
+    // One instant, two learners, two different days of the same course.
+    // Access began 2026-08-15T06:00Z — the 15th in Kyiv, still the evening of
+    // the 14th in Vancouver. At 20:00Z on the 15th it is late on the 15th in
+    // Kyiv (day 1) but midday on the 15th in Vancouver, whose day 1 was the
+    // 14th (day 2). Dropping the hour must not drag the calendar with it.
+    const at = new Date("2026-08-15T20:00:00Z");
+    const vancouver = decideDailyReminder(course, foldProgress([]), {
+      startedAt,
+      timeZone: "America/Vancouver",
+      now: at,
+      hourPolicy: "single-daily-run",
+    });
+    const kyiv = decideDailyReminder(course, foldProgress([]), {
+      startedAt,
+      timeZone: "Europe/Kyiv",
+      now: at,
+      hourPolicy: "single-daily-run",
+    });
+    expect(vancouver).toMatchObject({ send: true, dayNumber: 2, lesson: { slug: "day-2" } });
+    expect(kyiv).toMatchObject({ send: true, dayNumber: 1, lesson: { slug: "day-1" } });
+  });
+
+  it("still honours an already-done lesson under the daily policy", () => {
+    const progress = foldProgress([
+      { clientId: "d1", type: "lesson.completed", lessonId: "l1", occurredAt: "2026-08-15T05:00:00Z" },
+    ]);
+    expect(
+      decideDailyReminder(course, progress, {
+        startedAt,
+        timeZone: "America/Vancouver",
+        now: new Date("2026-08-15T06:00:00Z"),
+        hourPolicy: "single-daily-run",
+      })
+    ).toEqual({ send: false, reason: "already_done" });
+  });
 });
 
 describe("unstarted nudge decision", () => {
@@ -482,8 +533,26 @@ describe("unstarted nudge decision", () => {
     ).toEqual({ send: false, reason: "wrong_hour" });
   });
 
-  it("never pushes a draft course", () => {
+  it("under a single daily run, reaches the buyer outside the reminder hour", () => {
+    expect(
+      decideUnstartedReminder(course, {
+        ...base,
+        timeZone: "America/Vancouver",
+        now: new Date("2026-08-16T06:00:00Z"),
+        hourPolicy: "single-daily-run",
+      })
+    ).toMatchObject({ send: true, nudgeNumber: 1 });
+  });
+
+  it("never pushes a draft course, daily policy included", () => {
     const draft = { ...dailyCourse(), status: "draft" as const };
+    expect(
+      decideUnstartedReminder(draft, {
+        ...base,
+        now: new Date("2026-08-16T06:00:00Z"),
+        hourPolicy: "single-daily-run",
+      })
+    ).toEqual({ send: false, reason: "not_published" });
     expect(decideUnstartedReminder(draft, { ...base, now: new Date("2026-08-16T06:00:00Z") })).toEqual({
       send: false,
       reason: "not_published",

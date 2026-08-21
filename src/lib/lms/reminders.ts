@@ -1,13 +1,18 @@
 /**
  * Day-N reminders for daily courses.
  *
- * Runs HOURLY and asks, per learner: "is it the reminder hour on YOUR clock,
- * and is today's step still undone?" That is why the cron cannot be a single
- * daily job at a Kyiv hour — the same instant is morning for one learner and
- * the middle of the night for another (docs/lms-research-2026-08-15.md §3A.4).
+ * Asks, per learner: "is today's step still undone?" — and, under the designed
+ * hourly cadence, "is it the reminder hour on YOUR clock?" too.
+ *
+ * That second question is now the CALLER's to choose, via `hourPolicy`. On the
+ * plan we deploy to, crons run once a day, and a once-a-day run that still
+ * insists on each learner's local hour reminds nobody: see `ReminderHourPolicy`
+ * in the core for why the hour is the part we give up rather than the day.
  *
  * Idempotency: `lms_reminder_log` is unique on (enrollment, day, channel), so a
- * retried or overlapping cron run cannot nudge the same learner twice.
+ * retried or overlapping cron run cannot nudge the same learner twice — which
+ * is also what makes a coarse cadence safe. Fire the job twice in one day and
+ * the second pass claims nothing.
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
@@ -16,6 +21,7 @@ import {
   decideUnstartedReminder,
   resolveTimeZone,
   type Course,
+  type ReminderHourPolicy,
 } from "@/lms-core";
 import { listPublishedCourses } from "./catalog";
 import { loadProgress } from "./server";
@@ -70,7 +76,11 @@ function dailyCourseIds(): Map<string, Course> {
  * (decision 2026-08-15), and a reminder must not start a clock the learner
  * has not started themselves.
  */
-export async function runUnstartedReminders(limit = 500, now = new Date()): Promise<ReminderRunResult> {
+export async function runUnstartedReminders(
+  limit = 500,
+  now = new Date(),
+  hourPolicy: ReminderHourPolicy = "learner-local"
+): Promise<ReminderRunResult> {
   const db = adminClient();
   const skipped: Record<string, number> = {};
   let scanned = 0;
@@ -165,6 +175,7 @@ export async function runUnstartedReminders(limit = 500, now = new Date()): Prom
         timeZone: resolveTimeZone(profile?.timezone),
         now,
         sentNudgeNumbers: sentByOrder.get(orderRef) ?? [],
+        hourPolicy,
       });
 
       if (!decision.send) {
@@ -216,7 +227,11 @@ export async function runUnstartedReminders(limit = 500, now = new Date()): Prom
   return { scanned, sent, skipped };
 }
 
-export async function runDailyReminders(limit = 500, now = new Date()): Promise<ReminderRunResult> {
+export async function runDailyReminders(
+  limit = 500,
+  now = new Date(),
+  hourPolicy: ReminderHourPolicy = "learner-local"
+): Promise<ReminderRunResult> {
   const db = adminClient();
   const courses = dailyCourseIds();
   const skipped: Record<string, number> = {};
@@ -253,6 +268,7 @@ export async function runDailyReminders(limit = 500, now = new Date()): Promise<
       startedAt: new Date(enrollment.started_at),
       timeZone,
       now,
+      hourPolicy,
     });
 
     if (!decision.send) {
