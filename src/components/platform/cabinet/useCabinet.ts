@@ -1,0 +1,238 @@
+"use client";
+
+/**
+ * The reads behind "mine", split so each page takes only what it renders.
+ *
+ * `/learn` needs the session and the shelf. `/profile` needs the session, the
+ * profile and — for one card — the shelf. When both lived in one component the
+ * shelf page could not exist without also waiting on the profile endpoint; now
+ * the split is the point of the split.
+ *
+ * The two reads stay independent in failure, too: a broken LMS read must not
+ * blank the dashboard, so it surfaces as a card, not a page state.
+ */
+
+import { useCallback, useEffect, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
+
+import { supabaseClient } from "@/lib/supabaseClient";
+import { fetchMyCourses, type LearnerShelfCourseDto } from "@/components/lms/lmsClient";
+import type { ProfileLang, ProfileResponse } from "@/components/platform/profile/types";
+
+const LANG_EVENT = "cw-lang-change";
+
+export const isAuthEnabled = Boolean(
+  process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+);
+
+function resolveProfileLang(): ProfileLang {
+  if (typeof window !== "undefined") {
+    try {
+      if (window.localStorage.getItem("lang") === "en") return "en";
+    } catch {
+      // ignore storage read errors
+    }
+  }
+
+  if (typeof document !== "undefined" && document.documentElement.lang.toLowerCase().startsWith("en")) {
+    return "en";
+  }
+
+  return "uk";
+}
+
+export function useProfileLang(): ProfileLang {
+  const [lang, setLang] = useState<ProfileLang>("uk");
+
+  useEffect(() => {
+    const sync = () => setLang(resolveProfileLang());
+    sync();
+    window.addEventListener("storage", sync);
+    window.addEventListener(LANG_EVENT, sync);
+    return () => {
+      window.removeEventListener("storage", sync);
+      window.removeEventListener(LANG_EVENT, sync);
+    };
+  }, []);
+
+  return lang;
+}
+
+export type CabinetSessionState = {
+  session: Session | null;
+  loading: boolean;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
+};
+
+export function useCabinetSession(): CabinetSessionState {
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(isAuthEnabled);
+
+  useEffect(() => {
+    if (!isAuthEnabled) return;
+
+    void supabaseClient.auth.getSession().then(({ data }) => {
+      setSession(data.session);
+      setLoading(false);
+    });
+
+    const {
+      data: { subscription },
+    } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const signInWithGoogle = useCallback(async () => {
+    const redirectTo = typeof window !== "undefined" ? window.location.href : undefined;
+    await supabaseClient.auth.signInWithOAuth({ provider: "google", options: { redirectTo } });
+  }, []);
+
+  const signOut = useCallback(async () => {
+    await supabaseClient.auth.signOut();
+    setSession(null);
+  }, []);
+
+  return { session, loading, signInWithGoogle, signOut };
+}
+
+/**
+ * Reads an endpoint with the session token, refreshing once on a 401.
+ *
+ * A token that expired between restore and first read returns 401 exactly
+ * once. Refreshing and retrying beats showing "could not assemble the profile"
+ * to a signed-in user whose session is perfectly valid.
+ */
+async function readWithToken(url: string, session: Session): Promise<Response | null> {
+  const read = (token: string) => fetch(url, { headers: { Authorization: `Bearer ${token}` } });
+
+  if (!session.access_token) return null;
+  let res = await read(session.access_token);
+
+  if (res.status === 401) {
+    const { data: refreshed } = await supabaseClient.auth.refreshSession();
+    if (refreshed.session?.access_token) res = await read(refreshed.session.access_token);
+  }
+
+  return res;
+}
+
+/**
+ * Data is stamped with the user it was read for, and the stamp is compared on
+ * render rather than cleared in an effect. Clearing would be a setState inside
+ * the effect body — a cascading render — and worse, it would leave one frame in
+ * which the previous account's profile is still on screen after a switch.
+ */
+export function useProfileData(session: Session | null) {
+  const userId = session?.user?.id ?? null;
+  const [state, setState] = useState<{ userId: string | null; profile: ProfileResponse | null }>({
+    userId: null,
+    profile: null,
+  });
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+
+    let cancelled = false;
+
+    void (async () => {
+      const res = await readWithToken("/api/platform/users/me/profile", session);
+      if (cancelled) return;
+
+      if (!res?.ok) {
+        setError("Не вдалося завантажити профіль.");
+        return;
+      }
+
+      setState({ userId: session.user?.id ?? null, profile: (await res.json()) as ProfileResponse });
+      // Clears a failure left by an earlier attempt — React runs this effect
+      // twice in dev, and the first pass can lose a token-refresh race.
+      setError(null);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
+
+  const profile = state.userId === userId ? state.profile : null;
+  const clear = useCallback(() => setState({ userId: null, profile: null }), []);
+
+  /* Derived, not a third piece of state: "signed in, no profile yet, nothing
+     failed" IS the loading condition, and a boolean kept beside it could only
+     ever disagree with it. */
+  return { profile, loading: Boolean(session) && !profile && !error, error, clear };
+}
+
+export function useLearnerShelf(session: Session | null) {
+  const userId = session?.user?.id ?? null;
+  const [state, setState] = useState<{ userId: string | null; courses: LearnerShelfCourseDto[] | null }>({
+    userId: null,
+    courses: null,
+  });
+  const [failed, setFailed] = useState(false);
+  /* The retry button asks for a re-read by bumping this, rather than by calling
+     the loader directly: the read belongs to the effect that owns the session,
+     and one loader with one owner cannot race a second copy of itself. */
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+
+    let cancelled = false;
+    void (async () => {
+      const result = await fetchMyCourses();
+      if (cancelled) return;
+      if (result.ok) {
+        setState({ userId: session.user?.id ?? null, courses: result.data.courses });
+        setFailed(false);
+      } else {
+        setFailed(true);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session, attempt]);
+
+  return {
+    shelf: state.userId === userId ? state.courses : null,
+    failed,
+    reload: useCallback(() => setAttempt((value) => value + 1), []),
+  };
+}
+
+export type TelegramReach = { linked: boolean; linkUrl: string | null };
+
+/** Whether a course reminder can actually be delivered to this learner. */
+export function useTelegramReach(session: Session | null) {
+  const userId = session?.user?.id ?? null;
+  const [state, setState] = useState<{ userId: string | null; reach: TelegramReach | null }>({
+    userId: null,
+    reach: null,
+  });
+
+  useEffect(() => {
+    if (!session?.access_token) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const res = await readWithToken("/api/platform/users/me/telegram", session);
+        if (cancelled || !res?.ok) return;
+        setState({ userId: session.user?.id ?? null, reach: (await res.json()) as TelegramReach });
+      } catch {
+        // Non-fatal: the account section simply omits the reachability card.
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [session]);
+
+  return state.userId === userId ? state.reach : null;
+}

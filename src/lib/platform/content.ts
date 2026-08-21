@@ -3,11 +3,17 @@ import { getFunnelHostUrl, getPlatformRoute } from "@/lib/surfaces/catalog";
 export const platformHomeHref = "/";
 
 /**
- * The learner's shelf. One constant, because it is now referenced from four
- * places that must not drift: the header's learning entry, the header's brand
- * link in learning mode, the support bot, and the installed app's start_url.
+ * The learner's shelf. One constant, because it is referenced from six places
+ * that must not drift: the header's learning entry, the header's brand link in
+ * learning mode, the footer, the course view, the support bot, and the
+ * installed app's start_url.
+ *
+ * A ROUTE since the shelf left the profile. It was `/profile#learning` — a hash
+ * standing in for a page, which the back button did not step through, which
+ * could not be prefetched, and which made `/learn` the one missing node in a
+ * tree that already had `/learn/<course>/<lesson>`.
  */
-export const LEARNING_SHELF_HREF = "/profile#learning";
+export const LEARNING_SHELF_HREF = "/learn";
 
 export const platformNav = [
   { label: "Головна", href: "/", match: "exact" as const },
