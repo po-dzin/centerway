@@ -4,6 +4,7 @@ import type { ReactNode } from "react";
 import styles from "./PlatformShellStyles";
 import { PlatformFooter } from "./layout/PlatformFooter";
 import { PlatformHeader } from "./layout/PlatformHeader";
+import { PwaRuntime } from "./pwa/PwaRuntime";
 
 export function PlatformShell({
   children,
@@ -17,6 +18,7 @@ export function PlatformShell({
       <PlatformHeader initialTone={headerMode === "overlay" ? "dark" : "light"} />
       {children}
       <PlatformFooter />
+      <PwaRuntime />
     </div>
   );
 }

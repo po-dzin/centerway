@@ -6,9 +6,24 @@ import "../globals.css";
 
 const GOOGLE_TAG_ID = "G-HV89HDP52T";
 
+/** Baked by scripts/brand-mark-bake.mjs — the mark and wordmark on the deep ground. */
+const BRAND_COVER = "/cw/brand/cw-og-cover.png";
+
 export const metadata: Metadata = {
+  // Needed for the OG/Twitter image below: Next resolves relative asset paths
+  // against this, and a scraper is handed an absolute URL or nothing.
+  metadataBase: new URL("https://www.centerway.net.ua"),
   title: "CenterWay Platform",
   description: "Unified platform for CenterWay products",
+  openGraph: {
+    type: "website",
+    siteName: "CenterWay",
+    images: [{ url: BRAND_COVER, width: 1200, height: 630, alt: "CenterWay" }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: [BRAND_COVER],
+  },
 };
 
 export const viewport: Viewport = {
