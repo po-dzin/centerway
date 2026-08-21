@@ -1,0 +1,203 @@
+/* Motion for the F2 mark. Durations and easings are the approved ones from the
+   design system's LogoMark; the geometry they drive lives in markGeometry.ts.
+
+   The mark never rotates. A spinning spiral reads as a generic system spinner
+   and stops being the brand — waiting is carried by density (`wait`) or by the
+   turns breathing (`breath`) instead. */
+
+.root {
+  display: block;
+  flex: none;
+}
+
+/* ── A · draw ─────────────────────────────────────────
+   Written from the core outward, one pass, stays in the finished state.
+   Loading the app, first paint of a page. */
+
+.core {
+  transform-origin: 32px 32px;
+}
+
+.drawMask .core {
+  animation: coreIn 2.4s ease-out 1 forwards;
+}
+
+.drawStroke {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 9;
+  stroke-linecap: round;
+  animation-duration: 2.4s;
+  animation-timing-function: cubic-bezier(0.34, 0.06, 0.2, 1);
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+
+/* One keyframe set per arc: each starts where the previous is 56% through, so
+   the strokes overlap rather than queue. The dashoffset seeds are the measured
+   path lengths (markGeometry `lens`) — change a path and they change with it,
+   which is why they are set inline from the data and only the timing is here. */
+.drawStroke0 {
+  animation-name: draw0;
+}
+.drawStroke1 {
+  animation-name: draw1;
+}
+.drawStroke2 {
+  animation-name: draw2;
+}
+
+@keyframes draw0 {
+  0% {
+    stroke-dashoffset: var(--cw-mark-len);
+  }
+  46%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes draw1 {
+  0%,
+  26% {
+    stroke-dashoffset: var(--cw-mark-len);
+  }
+  72%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes draw2 {
+  0%,
+  52% {
+    stroke-dashoffset: var(--cw-mark-len);
+  }
+  98%,
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+@keyframes coreIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  14%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ── B · breath ───────────────────────────────────────
+   Turns expand and contract, outer further than inner, core drawing in on the
+   inhale. Empty states, the practice screen, background presence. */
+
+.breathBody,
+.breathBody .arc,
+.breathBody .core {
+  transform-origin: 32px 32px;
+  animation-duration: 3.6s;
+  animation-timing-function: cubic-bezier(0.4, 0, 0.4, 1);
+  animation-iteration-count: infinite;
+}
+
+.breathBody {
+  animation-name: breath;
+}
+.breathBody .arc0 {
+  animation-name: breathArc0;
+}
+.breathBody .arc1 {
+  animation-name: breathArc1;
+}
+.breathBody .arc2 {
+  animation-name: breathArc2;
+}
+.breathBody .core {
+  animation-name: breathCore;
+}
+
+@keyframes breath {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+@keyframes breathArc0 {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+@keyframes breathArc1 {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.045);
+  }
+}
+
+@keyframes breathArc2 {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.07);
+  }
+}
+
+@keyframes breathCore {
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  50% {
+    transform: scale(0.82);
+    opacity: 0.72;
+  }
+}
+
+/* ── C · wait ─────────────────────────────────────────
+   Turns gain density in turn and fall back; the form does not move. This is the
+   spinner replacement — the delay per arc is set inline from its index. */
+
+.waitBody .arc {
+  animation: wait 2.1s ease-in-out infinite;
+}
+
+@keyframes wait {
+  0%,
+  100% {
+    opacity: 0.28;
+  }
+  45% {
+    opacity: 1;
+  }
+}
+
+/* Motion is the whole point of these three states, so reduced motion does not
+   get a slower version — it gets the finished mark, fully drawn and opaque. */
+@media (prefers-reduced-motion: reduce) {
+  .root *,
+  .root {
+    animation: none !important;
+    stroke-dashoffset: 0 !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
