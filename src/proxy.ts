@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { shouldBypassProxy } from "@/lib/proxy/bypass";
 import { resolveExperimentAssignmentRouteForRequest, withExperimentAssignmentNext } from "@/lib/proxy/experiments";
+import { rewriteBuilderHostRequest } from "@/lib/proxy/builder";
 import { rewriteFunnelHostRequest, rewriteLegacyLandingEntryRequest } from "@/lib/proxy/landing";
 
 const RETIRED_FUNNEL_HOST_REDIRECTS: Record<string, string> = {
@@ -47,6 +48,14 @@ export function proxy(req: NextRequest) {
 
   if (shouldBypassProxy(pathname)) {
     return NextResponse.next();
+  }
+
+  // Before the landing rules: the builder host is not a funnel host and must
+  // not be handed to brand resolution, which would fail to resolve it and let
+  // the request fall through to the platform's own routes.
+  const builderResponse = rewriteBuilderHostRequest(req);
+  if (builderResponse) {
+    return builderResponse;
   }
 
   const landingEntryResponse = rewriteLegacyLandingEntryRequest(req);

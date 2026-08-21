@@ -1,0 +1,435 @@
+/* CenterWay Builder — authoring surfaces.
+
+   Mobile-first, like the learner surfaces: every rule below is the phone
+   layout and wider viewports only add. That is not symmetry for its own sake.
+   The one thing an author does away from a desk is READ their own course back —
+   check a day's wording, see what is still blocking a publish — and a tool that
+   is unusable on a phone simply does not get that check.
+
+   Tokens only. The builder is a separate application on a separate host, but it
+   is a CenterWay surface: same material, same type, same spacing scale. What it
+   does not share is the platform's chrome (docs/design-system.md).
+
+   Breakpoints follow the canon — mobile ≤ 560, tablet 561–900, desktop ≥ 901. */
+
+.shell {
+  min-height: 100svh;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: var(--cw-platform-bg);
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-ui);
+}
+
+/* ── Bar ──────────────────────────────────────────── */
+
+/* Static, not sticky. The editor's own save control is the thing that must stay
+   reachable while scrolling a long lesson, and two competing sticky layers on a
+   phone leave almost no room for the content between them. */
+.bar {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.barBrand {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  min-height: var(--ds-touch-target-min);
+  color: var(--cw-platform-text);
+  text-decoration: none;
+  font-family: var(--cw-font-data);
+  font-size: 0.82rem;
+  font-weight: 680;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* The word that says which application this is. It is the whole reason the
+   builder has its own bar: an author who lands here from a link must never have
+   to work out whether they are looking at the platform. */
+.barKind {
+  color: var(--cw-platform-muted);
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
+.barSpacer {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.barCrumb {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--cw-platform-muted);
+  font-size: 0.88rem;
+}
+
+.barAction {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ds-touch-target-min);
+  padding-inline: var(--cw-space-sm);
+  border: 0;
+  border-radius: var(--cw-radius-btn);
+  background: transparent;
+  color: var(--cw-platform-muted);
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.barAction:hover {
+  color: var(--cw-platform-text);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.barAction:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+/* ── Page ─────────────────────────────────────────── */
+
+.page {
+  width: min(100% - 2rem, 52rem);
+  margin: 0 auto;
+  padding-block: var(--cw-space-lg) var(--cw-space-3xl);
+  display: grid;
+  gap: var(--cw-space-lg);
+  align-content: start;
+}
+
+.pageTitle {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(1.6rem, 6vw, 2.2rem);
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.pageLead {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  line-height: 1.55;
+}
+
+.panel {
+  padding: var(--cw-space-lg);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+  display: grid;
+  gap: var(--cw-space-sm);
+}
+
+.panelTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.panelText {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  line-height: 1.55;
+}
+
+/* ── Course list ──────────────────────────────────── */
+
+.courseGrid {
+  display: grid;
+  gap: var(--cw-space-md);
+}
+
+.courseCard {
+  composes: panel;
+  gap: var(--cw-space-xs);
+  color: inherit;
+  text-decoration: none;
+}
+
+.courseCard:hover {
+  box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
+}
+
+.courseCard:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.courseTitleRow {
+  display: flex;
+  align-items: baseline;
+  gap: var(--cw-space-sm);
+  flex-wrap: wrap;
+}
+
+.courseTitle {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: 1.3rem;
+  font-weight: 500;
+}
+
+.courseMeta {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.88rem;
+}
+
+/* ── Status pills ─────────────────────────────────── */
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.6rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Published is the only state that gets colour. A draft is the normal state of
+   a course being written, and colouring it would read as a warning about the
+   most ordinary thing in the tool. */
+.pillPublished {
+  composes: pill;
+  background: color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
+  color: var(--cw-platform-text);
+}
+
+.pillBlocked {
+  composes: pill;
+  background: var(--cw-mat-tone-boundary, var(--cw-mat-surface-sunk));
+  color: var(--cw-platform-text);
+}
+
+/* ── Structure ────────────────────────────────────── */
+
+.moduleBlock {
+  display: grid;
+  gap: var(--cw-space-xs);
+}
+
+.moduleTitle {
+  margin: 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
+}
+
+.lessonRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  color: inherit;
+  text-decoration: none;
+}
+
+.lessonRow:hover {
+  background: color-mix(in srgb, var(--cw-platform-accent) 10%, var(--cw-mat-surface-sunk));
+}
+
+.lessonRow:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.lessonDay {
+  flex: 0 0 auto;
+  min-width: 3.2rem;
+  font-family: var(--cw-font-data);
+  font-size: 0.78rem;
+  color: var(--cw-platform-muted);
+}
+
+.lessonName {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-weight: 500;
+}
+
+.lessonFlag {
+  flex: 0 0 auto;
+  font-family: var(--cw-font-data);
+  font-size: 0.75rem;
+  color: var(--cw-platform-muted);
+}
+
+/* ── Editor ───────────────────────────────────────── */
+
+.blockList {
+  display: grid;
+  gap: var(--cw-space-md);
+}
+
+.blockCard {
+  display: grid;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-md);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.blockHead {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+}
+
+.blockType {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--cw-font-data);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
+}
+
+.field {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.fieldLabel {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--cw-platform-muted);
+}
+
+.input,
+.textarea {
+  width: 100%;
+  padding: 0.7rem 0.85rem;
+  border: 1px solid var(--cw-mat-stroke-inner);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+/* 16px minimum, always: anything smaller makes iOS Safari zoom the page on
+   focus and leaves the author scrolled sideways in their own lesson. */
+.textarea {
+  min-height: 6rem;
+  resize: vertical;
+}
+
+.input:focus-visible,
+.textarea:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: 1px;
+}
+
+/* A field holding an unresolved [ЗАПОВНИ] marker. Marked in the editor, not
+   only in the readiness list, so the author sees the hole while they are in the
+   place that can fill it. */
+.inputTodo {
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 55%, var(--cw-mat-stroke-inner));
+}
+
+.readOnlyNote {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.85rem;
+  line-height: 1.5;
+}
+
+/* ── Save bar ─────────────────────────────────────── */
+
+/* This one IS sticky: it is the only control in the editor whose absence loses
+   work, and a lesson is long enough that a save at the bottom is a save the
+   author has to go looking for. */
+.saveBar {
+  position: sticky;
+  bottom: max(var(--cw-space-md), env(safe-area-inset-bottom));
+  z-index: var(--ds-z-sticky);
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-sm);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
+}
+
+.saveState {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+/* ── Blockers ─────────────────────────────────────── */
+
+.blockerList {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--cw-space-xs);
+}
+
+.blockerItem {
+  display: grid;
+  gap: 0.15rem;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.blockerPath {
+  font-family: var(--cw-font-data);
+  font-size: 0.75rem;
+  color: var(--cw-platform-muted);
+  overflow-wrap: anywhere;
+}
+
+.blockerDetail {
+  font-size: 0.9rem;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+/* ── Wider viewports: additive only ───────────────── */
+
+@media (min-width: 561px) {
+  .bar {
+    padding-inline: var(--cw-space-lg);
+  }
+
+  .page {
+    padding-block-start: var(--cw-space-xl);
+  }
+
+  .courseGrid {
+    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  }
+}
