@@ -7,6 +7,7 @@ import {
   isNextLandingEnabled,
 } from "@/lib/landing/routing";
 import { resolveExperimentAssignmentRoute, withExperimentAssignmentRewrite } from "@/lib/proxy/experiments";
+import { isPlatformEscapePath, redirectToPlatformOrigin } from "@/lib/proxy/platformEscape";
 import { resolveRequestBrand } from "@/lib/proxy/requestBrand";
 import { CW_SURFACE_KIND_HEADER } from "@/lib/surfaces/headers";
 import { getProductSurfaceEntry, isActiveFunnelProduct, type ProductKey } from "@/lib/surfaces/catalog";
@@ -94,6 +95,14 @@ export function rewriteFunnelHostRequest(req: NextRequest): NextResponse | null 
       return rewriteStaticLanding(req, `${getLegacyStaticPrefix(product)}${req.nextUrl.pathname}`);
     }
     return rewriteDisabledSurface(req);
+  }
+
+  /* Last, and only for what the landing did not claim: a platform route asked
+     for on a funnel host goes to the platform, not to a 404. The order is the
+     whole point — the dosha host still serves /tests itself, because that case
+     returned above. See ./platformEscape.ts. */
+  if (isPlatformEscapePath(req.nextUrl.pathname)) {
+    return redirectToPlatformOrigin(req);
   }
 
   return rewriteDisabledSurface(req);
