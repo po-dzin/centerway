@@ -109,7 +109,7 @@
   --landing-cta-padding: var(--landing-space-scale-17) var(--landing-space-scale-32);
   --landing-cta-padding-compact: var(--landing-space-scale-10) var(--landing-space-scale-32);
   --landing-cta-control-radius: var(--landing-radius-scale-14);
-  --landing-cta-min-height: var(--ds-touch-target-min, 44px);
+  --landing-cta-min-height: var(--ds-button-min-height, var(--ds-touch-target-min, 3rem));
   --landing-cta-min-height-lg: var(--landing-cta-min-height);
 
   --landing-modal-viewport-padding: 16px;
@@ -748,13 +748,12 @@
 .cw-nav__burger {
   position: relative;
   z-index: 2;
-  display: inline-flex;
-  flex-direction: column;
-  justify-content: center;
-  gap: 5px;
+  display: grid;
+  place-items: center;
+  color: var(--ds-color-text, #111);
   width: 44px;
   height: 44px;
-  padding: 0 10px;
+  padding: 0;
   margin: 0;
   border: 0;
   border-radius: var(--ds-radius-sm, 12px);
@@ -762,21 +761,27 @@
   cursor: pointer;
   -webkit-tap-highlight-color: transparent;
 }
-.cw-nav__burger span {
-  display: block;
-  width: 100%;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--ds-color-text, #111);
-  transition: transform 0.25s ease, opacity 0.2s ease;
+/* The burger is the sprite glyph now, not three divs: three rules and a core,
+   carrying the same baked hand as every other icon on the page and reading at
+   the brand mark's scale rather than a heavier one of its own. */
+.cw-nav__burger-ico {
+  grid-area: 1 / 1;
+  color: currentColor;
+  transition: opacity 0.2s ease, transform 0.25s ease;
+}
+.cw-nav__burger-ico--close,
+.cw-nav__burger[aria-expanded="true"] .cw-nav__burger-ico {
+  opacity: 0;
+  transform: scale(0.88);
+}
+.cw-nav__burger[aria-expanded="true"] .cw-nav__burger-ico--close {
+  opacity: 1;
+  transform: none;
 }
 /* Short's global `button::before` injects an arrow image on every button; kill it
    on the burger and close so no stray arrow bleeds onto the nav controls. */
 .cw-nav__burger::before,
 .cw-nav__close::before { content: none; display: none; }
-.cw-nav__burger[aria-expanded="true"] span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
-.cw-nav__burger[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
-.cw-nav__burger[aria-expanded="true"] span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
 
 /* Mobile drawer: a full-viewport fixed wrapper with overflow:hidden. It clips the
    sliding panel so the closed (translateX 100%) panel never extends the page's
@@ -814,8 +819,8 @@ body.cw-nav-open .cw-nav__drawer { visibility: visible; pointer-events: auto; }
 .cw-nav__close {
   position: absolute;
   /* Mirror the burger exactly: same 44px box, same offset from the top-right
-     corner (header has padding: 10px clamp(16px,4vw,32px)), so the × sits where
-     the burger was. */
+     corner (header has padding: 10px clamp(16px,4vw,32px)), so the glyph sits
+     where the burger was. */
   top: 10px;
   right: clamp(16px, 4vw, 32px);
   display: inline-flex;
@@ -824,13 +829,12 @@ body.cw-nav-open .cw-nav__drawer { visibility: visible; pointer-events: auto; }
   width: 44px;
   height: 44px;
   /* Reset the global `button { padding: 17px 90px 17px 32px }` on short, which
-     with border-box otherwise inflates this to ~122px and shoves the × left. */
+     with border-box otherwise inflates this to ~122px and shoves the glyph left. */
   padding: 0;
   margin: 0;
   border: 0;
   border-radius: var(--ds-radius-sm, 12px);
   background: transparent;
-  font-size: 26px;
   line-height: 1;
   text-transform: none;
   color: var(--ds-color-text, #111);
@@ -869,7 +873,7 @@ body.cw-nav-open .cw-nav__drawer { visibility: visible; pointer-events: auto; }
   background: var(--landing-color-primary, #c90008);
   border-radius: var(--ds-radius-sm, 12px);
   box-shadow: var(--landing-shadow-cta);
-  min-height: var(--landing-size-cta-min-height, var(--ds-touch-target-min, 44px));
+  min-height: var(--landing-size-cta-min-height, var(--ds-button-min-height, var(--ds-touch-target-min, 3rem)));
 }
 [data-cw-landing="short"] .cw-nav__cta .openModal::before { display: none; }
 [data-cw-landing="short"] .cw-nav__cta .openModal:hover {
@@ -904,5 +908,5 @@ main[id] { scroll-margin-top: 72px; }
 @media (prefers-reduced-motion: reduce) {
   .cw-nav,
   .cw-nav__panel,
-  .cw-nav__burger span { transition: none; }
+  .cw-nav__burger-ico { transition: none; }
 }

@@ -15,9 +15,17 @@
      the hierarchy survives without leaning on a lighter inactive colour. */
   --cw-nav-text: #22352e;
   --cw-nav-accent: #264e44;
-  --cw-nav-active-bg: #e9f1ec;
+  /* The active/hover label colour, held apart from --cw-nav-accent on purpose.
+     Accent still marks the brand and the focus ring, where it sits on its own
+     backing; a nav marker has to clear 3:1 against the bar's own glass, and on
+     the thinned chrome material the gold night-tone accent does not (it
+     measured 1.05–2.34 on the platform bar, which is why the platform's active
+     marker carries weight instead of colour). On the light tone the two are the
+     same value — there is nothing to fix there. */
+  --cw-nav-active-ink: #1f2e24;
+  --cw-nav-active-bg: #f0ece2;
   --cw-nav-border: var(--cw-net-mat-stroke, rgb(34 53 46 / 0.12));
-  --cw-nav-panel: #ffffff;
+  --cw-nav-panel: #fff8ef;
   --cw-nav-shadow: var(--cw-net-mat-shadow-raised, 0 18px 48px rgb(23 38 31 / 0.14));
   --cw-nav-radius: 1.6rem;
 
@@ -35,7 +43,10 @@
      hairline slit around the bar. The stroke moved onto .cwn::before as an
      inset shadow, i.e. onto the same painted layer as the tint and the blur. */
   border: 0;
-  box-shadow: var(--cw-net-mat-shadow, 0 10px 28px rgb(23 38 31 / 0.12));
+  /* The drop shadow lives on ::before with the tint and the stroke, not here:
+     while the mobile drawer is open ::before is the whole sheet, and a shadow
+     on .cwn would draw a hard edge straight across the middle of it. */
+  box-shadow: none;
   font-size: 0.95rem;
   line-height: 1.2;
   opacity: 0;
@@ -67,9 +78,15 @@
      flips the whole bar to the night tone. */
   background-color: var(--cw-net-mat-tint-chrome, rgb(250 247 240 / 0.55));
   background-image: var(--cw-net-mat-grain);
-  backdrop-filter: var(--cw-net-mat-filter, blur(28px) saturate(1.18));
-  -webkit-backdrop-filter: var(--cw-net-mat-filter, blur(28px) saturate(1.18));
-  box-shadow: inset 0 0 0 1px var(--cw-nav-border);
+  backdrop-filter: var(--cw-net-mat-filter, blur(20px) saturate(1.08));
+  -webkit-backdrop-filter: var(--cw-net-mat-filter, blur(20px) saturate(1.08));
+  box-shadow:
+    inset 0 0 0 1px var(--cw-nav-border),
+    var(--cw-net-mat-shadow-chrome, 0 1px 2px rgb(23 38 31 / 0.06), 0 14px 34px rgb(23 38 31 / 0.10));
+  /* Grows downward to cover the open drawer — see the single-sheet rule in the
+     mobile block. 0px while closed, so this is inert at every other moment. */
+  bottom: calc(-1 * var(--cwn-sheet-h, 0px));
+  transition: bottom 40ms linear;
 }
 
 /* Without a working backdrop-filter the tint is all there is, and at chrome
@@ -84,14 +101,8 @@
   .cwn[data-cw-nav-tone="dark"]::before {
     background-color: color-mix(in srgb, var(--cw-net-hero-scrim, #173027) 94%, transparent);
   }
-  @media (max-width: 759px) {
-    .cwn__menu {
-      background-color: color-mix(in srgb, var(--cw-net-mat-surface, #fbf9f2) 97%, transparent);
-    }
-    .cwn[data-cw-nav-tone="dark"] .cwn__menu {
-      background-color: color-mix(in srgb, var(--cw-net-hero-scrim, #173027) 97%, transparent);
-    }
-  }
+  /* The drawer needs no fallback of its own: it stopped painting glass, and the
+     bar's ::before — opaque here — is the sheet behind both. */
 }
 
 /* Temporary network pause: keep the common component in every landing, while
@@ -205,37 +216,41 @@
    and that is the pair asserted in scripts/guard-contrast.mjs. */
 .cwn[data-cw-nav-tone="dark"] {
   --cw-nav-ink: var(--cw-net-hero-ink, #ffffff);
-  --cw-nav-text: var(--cw-net-hero-ink-soft, #cfe0d3);
-  --cw-nav-accent: var(--cw-net-hero-accent, #e0b25c);
+  --cw-nav-text: var(--cw-net-hero-ink-soft, #d7e0d2);
+  --cw-nav-accent: var(--cw-net-hero-accent, #e5ae65);
+  /* Full-strength ink, not the gold accent: see --cw-nav-active-ink above. */
+  --cw-nav-active-ink: var(--cw-net-hero-ink, #ffffff);
   --cw-nav-active-bg: color-mix(in srgb, var(--cw-net-hero-ink, #fff) 12%, transparent);
   --cw-nav-border: color-mix(in srgb, var(--cw-net-hero-ink, #fff) 18%, transparent);
   --cw-nav-panel: color-mix(in srgb, var(--cw-net-hero-scrim, #173027) 52%, transparent);
 }
 
 .cwn[data-cw-nav-tone="dark"]::before {
-  background-color: color-mix(in srgb, var(--cw-net-hero-scrim, #173027) 42%, transparent);
+  /* Same 30% the light tone runs, so the two tones are one material seen against
+     two grounds rather than two densities. It survives the thinning because the
+     dark backdrop is declared, not guessed — the worst ground a marked section
+     can present is the lightest stop of a skin's dark gradient (#356152 on
+     reset-day), which is the pair asserted in scripts/guard-contrast.mjs. */
+  background-color: color-mix(in srgb, var(--cw-net-hero-scrim, #173027) 30%, transparent);
 }
 
 .cwn[data-cw-nav-tone="dark"] .cwn__brand img {
-  /* The ink logo is drawn for light chrome; on the night tone it flips to the
-     gold mark the dark blocks already use. The gold file is a tighter crop, so
-     it takes the compensated box (see --cw-net-brand-mark-gold) — otherwise the
-     lockup visibly grows every time the bar crosses a dark section. */
-  content: url("/shared/img/cw-logo-gold.png");
-  box-sizing: border-box;
-  padding: var(--cw-net-brand-mark-gold-inset, 0.24rem);
+  /* The ink mark is drawn for light chrome; on the night tone it flips to the
+     gold one the dark blocks already use. Both files are baked from the same
+     viewBox (scripts/brand-mark-bake.mjs), so the swap is now a pure colour
+     change — the box compensation the two old PNG crops needed is gone. */
+  content: url("/shared/img/cw-mark-gold.svg");
 }
 
-/* The wordmark follows the mark: gold mark, gold word. On the light tone it
-   stays ink — there the mark is ink too. */
+/* The word does not follow the mark any more. The mark swaps to the gold file
+   because the ink one is unreadable on a dark ground — a legibility swap, not a
+   colour statement — but the word is live text, and on the thinned night sheet
+   gold measures 4.46 against the worst declared dark ground: under the 4.5 it
+   cleared at the old 42% tint. So it takes the hero ink, at 8.75. This is the
+   same call the platform header made when its own glass was thinned: gold stays
+   where it sits on its own dark backing (CTAs, the mark), not on glass. */
 .cwn[data-cw-nav-tone="dark"] .cwn__brand {
-  color: var(--cw-nav-accent);
-}
-
-@media (max-width: 759px) {
-  .cwn[data-cw-nav-tone="dark"] .cwn__menu {
-    background-color: color-mix(in srgb, var(--cw-net-hero-scrim, #173027) 66%, transparent);
-  }
+  color: var(--cw-nav-ink);
 }
 
 /* Slim mode for paid-traffic sessions: brand only, no cross-node exits. */
@@ -291,7 +306,7 @@
 }
 
 .cwn__menu a:hover {
-  color: var(--cw-nav-accent);
+  color: var(--cw-nav-active-ink);
   border-color: var(--cw-nav-border);
 }
 
@@ -302,15 +317,16 @@
 }
 
 .cwn__menu a[aria-current="page"] {
-  color: var(--cw-nav-accent);
+  color: var(--cw-nav-active-ink);
   background: var(--cw-nav-active-bg);
-  border-color: color-mix(in srgb, var(--cw-nav-accent) 30%, transparent);
+  border-color: color-mix(in srgb, var(--cw-nav-active-ink) 30%, transparent);
   font-weight: 700;
 }
 
 /* Burger toggle — hidden on topbar widths. */
 .cwn__toggle {
   display: none;
+  place-items: center;
   position: relative;
   width: 2.75rem;
   height: 2.75rem;
@@ -324,33 +340,44 @@
   cursor: pointer;
 }
 
-.cwn__toggle span {
-  position: absolute;
-  left: 0.7rem;
-  right: 0.7rem;
-  height: 2px;
-  border-radius: 2px;
-  background: var(--cw-nav-ink);
-  transition: transform 200ms ease, opacity 160ms ease, top 200ms ease;
+/* The burger is the sprite glyph, not three spans: it has to carry the same
+   baked hand as every other icon in the bar, and at 32 its 1.5 stroke lands on
+   the brand mark's weight instead of a heavier one of its own. Three rules and
+   a core — the mark's grammar in the one control every page shows. */
+.cwn__toggle-ico {
+  grid-area: 1 / 1;
+  color: var(--cw-nav-ink);
+  transition: transform 200ms ease, opacity 160ms ease;
 }
 
-.cwn__toggle span:nth-child(1) { top: 0.95rem; }
-.cwn__toggle span:nth-child(2) { top: 1.32rem; }
-.cwn__toggle span:nth-child(3) { top: 1.69rem; }
+.cwn__toggle-ico--close,
+.cwn__toggle[aria-expanded="true"] .cwn__toggle-ico {
+  opacity: 0;
+  transform: scale(0.88);
+}
 
-.cwn__toggle[aria-expanded="true"] span:nth-child(1) { top: 1.32rem; transform: rotate(45deg); }
-.cwn__toggle[aria-expanded="true"] span:nth-child(2) { opacity: 0; }
-.cwn__toggle[aria-expanded="true"] span:nth-child(3) { top: 1.32rem; transform: rotate(-45deg); }
+.cwn__toggle[aria-expanded="true"] .cwn__toggle-ico--close {
+  opacity: 1;
+  transform: none;
+}
+
+/* Symbol-only brand below the desktop topbar — the same call the platform
+   header makes. The mark is a finished thing on its own; the word next to it is
+   ~40% of a phone-width bar spent on something nobody taps for information, and
+   the page it belongs to already names itself in the hero. The full lockup stays
+   on the desktop bar and in the footer. */
+@media (max-width: 979px) {
+  .cwn__brand span { display: none; }
+}
 
 @media (max-width: 979px) and (min-width: 760px) {
-  /* Tablet topbar: logo-only brand so all five links hold one row. */
-  .cwn__brand span { display: none; }
+  /* Tablet topbar: tighter link rhythm so all five hold one row. */
   .cwn__menu { gap: 0.25rem; }
   .cwn__menu a { padding: 0.45rem 0.65rem; font-size: 0.88rem; }
 }
 
 @media (max-width: 759px) {
-  .cwn__toggle { display: block; }
+  .cwn__toggle { display: grid; }
 
   /* The panel is the bar continued downward, not a second card floating under
      it: it starts at the bar's own bottom edge, drops its top corners and its
@@ -368,19 +395,18 @@
     align-items: stretch;
     gap: 0.15rem;
     padding: 0 0.5rem;
-    border: 1px solid var(--cw-nav-border);
-    border-top: 0;
-    border-radius: 0 0 var(--cw-nav-radius) var(--cw-nav-radius);
-    /* One material, two depths — the bar stays on the chrome tint so the page
-       reads through it, the drawer sits on the canvas floor. It is not a second
-       glass: same tint family, same stroke, same silhouette. The extra density
-       is doing a job the bar never has to do — the panel lies over body copy,
-       and at chrome density the text underneath competes with the labels. */
-    background-color: var(--cw-net-mat-tint-floor, var(--cw-nav-panel));
-    background-image: var(--cw-net-mat-grain);
-    backdrop-filter: var(--cw-net-mat-filter, blur(28px) saturate(1.18));
-    -webkit-backdrop-filter: var(--cw-net-mat-filter, blur(28px) saturate(1.18));
-    box-shadow: var(--cw-nav-shadow);
+    /* The drawer paints nothing. Two adjacent backdrop-filter layers can never
+       meet cleanly at their shared edge — each blurs its own slice of the page,
+       so the join shows up as a step in Chrome and a hairline in Safari, and the
+       two rounded corners underneath collect a dark wedge. Instead the bar's own
+       ::before grows down over the drawer's measured height (--cwn-sheet-h, set
+       by network-nav.js) and the whole thing is one rectangle, one blur, one
+       radius. The platform header solves the same problem the same way. */
+    border: 0;
+    background: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: none;
     /* Closed state. max-height rather than display:none so the open is an
        animation; visibility keeps the links out of the tab order until then. */
     max-height: 0;
@@ -409,9 +435,11 @@
       visibility 0s;
   }
 
-  /* Bar and panel share one silhouette while open. */
-  .cwn.is-open,
-  .cwn.is-open::before {
+  /* Bar and panel are one silhouette while open — literally one box now. The
+     sheet keeps its rounded bottom corners, they just sit at the drawer's foot
+     instead of the bar's; .cwn itself squares off so nothing of its own box
+     (focus rings, future borders) cuts across the middle of the sheet. */
+  .cwn.is-open {
     border-bottom-left-radius: 0;
     border-bottom-right-radius: 0;
   }

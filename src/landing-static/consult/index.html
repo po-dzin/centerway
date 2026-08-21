@@ -4,9 +4,11 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <base href="/consult/">
-<link rel="shortcut icon" href="/way21/img/cw-logo.png" type="image/png">
-<title>Персональна консультація — розбір стану і ваш маршрут | CenterWay</title>
-<meta name="description" content="Персональна онлайн-консультація Євгенія Корякіна: аюрведична оцінка конституції, розбір харчування, сну та енергії — і зрозумілий особистий маршрут замість місяців вгадування.">
+<link rel="icon" href="/shared/img/cw-mark-ink.svg" type="image/svg+xml">
+<link rel="icon" href="/shared/img/cw-icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="/shared/img/cw-apple-touch.png">
+<title>Персональна консультація — розбір стану і ваш план | CenterWay</title>
+<meta name="description" content="Персональна онлайн-консультація Євгенія Корякіна: аюрведична оцінка конституції, розбір харчування, сну та енергії — і зрозумілий особистий план замість місяців вгадування.">
 <meta name="robots" content="noindex,nofollow">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Персональна консультація CenterWay">
@@ -25,8 +27,8 @@
 <!-- ============ NETWORK NAV (temporarily suspended) ============ -->
 <header class="cwn" data-cw-network-nav>
   <div class="cwn__in">
-    <a class="cwn__brand" href="#top"><img src="/shared/img/cw-logo-ink.png" alt="" aria-hidden="true"><span>CenterWay</span></a>
-    <button class="cwn__toggle" type="button" aria-expanded="false" aria-controls="cwn-menu" aria-label="Меню CenterWay"><span></span><span></span><span></span></button>
+    <a class="cwn__brand" href="#top"><img src="/shared/img/cw-mark-ink.svg" alt="" aria-hidden="true"><span>CenterWay</span></a>
+    <button class="cwn__toggle" type="button" aria-expanded="false" aria-controls="cwn-menu" aria-label="Меню CenterWay"><svg class="cwn__toggle-ico" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-menu"/></svg><svg class="cwn__toggle-ico cwn__toggle-ico--close" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg></button>
     <nav class="cwn__menu" id="cwn-menu" aria-label="Мережа CenterWay">
       <a href="https://way21.centerway.net.ua/">Шлях 21</a>
       <a href="https://resetday.centerway.net.ua/">Розвантажувальний день</a>
@@ -38,10 +40,10 @@
 <section class="hero">
   <div class="wrap">
     <div class="hero-grid">
-      <span class="hero-badge"><span class="dot"></span>Персональна консультація · онлайн</span>
+      <span class="hero-badge"><span class="dot"></span>Персональна консультація</span>
       <div class="hero-copy">
-        <h1>Коли поради суперечать одна одній — потрібен <em>розбір, а не ще один курс</em></h1>
-        <p class="hero-sub">Втома, важкість, збитий сон, вага, що не рухається, — і десятки порад, які працюють «у когось». На консультації ми дивимось на ваш стан цілком: конституція, травлення, ритм дня, стрес — і збираємо маршрут під вас, а не під шаблон.</p>
+        <h1>Не ще один курс, а <em>розбір вашого стану</em></h1>
+        <p class="hero-sub">Дивимось на стан цілком: конституція, травлення, ритм дня, стрес — і ваш план.</p>
       </div>
 
       <div class="hero-visual">
@@ -85,6 +87,8 @@
   </div>
 </section>
 
+<div class="seam" aria-hidden="true"><svg class="ico" width="42" height="42" focusable="false"><use href="/shared/img/cw-icons.svg#cw-connector"/></svg></div>
+
 <!-- ============ HOW ============ -->
 <section class="sec sec-alt">
   <div class="wrap">
@@ -108,7 +112,7 @@
       <div class="phase p3 reveal">
         <div class="rail-node" style="--i:.5"></div>
         <div class="ph-n">Крок 03</div>
-        <h3>Особистий маршрут</h3>
+        <h3>Особистий план</h3>
         <p>Ви йдете з конкретним планом: що змінити вже зараз і який наступний крок доречний — програма, м'який старт, трав'яна підтримка чи взагалі інший шлях.</p>
       </div>
     </div>
@@ -138,7 +142,7 @@
 
 <!-- ============ WHY IT WORKS ============ -->
 <!-- ============ PROOF ============ -->
-<section class="sec">
+<section class="sec sec-alt">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Відгуки</span>
@@ -170,7 +174,7 @@
   </div>
 </section>
 
-<section class="sec sec-alt">
+<section class="sec">
   <div class="wrap">
     <div class="offer reveal" data-cw-nav-dark>
       <span class="guard">Чому це працює</span>
@@ -181,8 +185,10 @@
   </div>
 </section>
 
+<div class="seam" aria-hidden="true"><svg class="ico" width="42" height="42" focusable="false"><use href="/shared/img/cw-icons.svg#cw-connector"/></svg></div>
+
 <!-- ============ LEAD FORM ============ -->
-<section class="sec" id="lead">
+<section class="sec sec-alt" id="lead">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Форма запиту</span>
@@ -205,7 +211,7 @@
         <div class="lead-field">
           <label for="c-interest">Що хочете прояснити</label>
           <select class="lead-input" id="c-interest" name="interest">
-            <option value="consultation">Свій стан і маршрут загалом</option>
+            <option value="consultation">Свій стан і план загалом</option>
             <option value="way21">Чи підходить мені Шлях 21</option>
             <option value="reset-day">Чи починати з розвантажувального дня</option>
             <option value="herbs">Чи доречна трав'яна підтримка</option>
@@ -231,7 +237,7 @@
 </section>
 
 <!-- ============ FAQ ============ -->
-<section class="sec sec-alt">
+<section class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Питання й відповіді</span>
@@ -248,7 +254,7 @@
         <div class="acc-body"><ul><li>Ні. Це оздоровча консультація: оцінка конституції, розбір способу життя й харчування. Вона доповнює, а не замінює конвенційну медицину — за хронічних станів ми враховуємо рекомендації вашого лікаря.</li></ul></div>
       </details>
       <details class="acc-item reveal"><summary><span class="num">04</span>А якщо мені не потрібна жодна з програм?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
-        <div class="acc-body"><ul><li>Тоді ви так і почуєте. Завдання консультації — точний маршрут, а не продаж: іноді наступний крок — це кілька змін у режимі, а не курс.</li></ul></div>
+        <div class="acc-body"><ul><li>Тоді ви так і почуєте. Завдання консультації — точний план, а не продаж: іноді наступний крок — це кілька змін у режимі, а не курс.</li></ul></div>
       </details>
     </div>
   </div>
@@ -260,7 +266,7 @@
     <div class="footer-top">
       <div class="footer-col">
         <a href="#top" class="brand">
-          <img src="/shared/img/cw-logo-gold.png" alt="" class="brand-mark" width="36" height="36" loading="lazy" decoding="async" aria-hidden="true">
+          <img src="/shared/img/cw-mark-gold.svg" alt="" class="brand-mark" width="36" height="36" loading="lazy" decoding="async" aria-hidden="true">
           CenterWay
         </a>
         <p>Персональний розбір стану з практиком аюрведи та сучасної дієтології — і зрозумілий наступний крок.</p>

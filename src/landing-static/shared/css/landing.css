@@ -56,19 +56,41 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .lead{font-size:clamp(1.05rem,1.7vw,1.22rem);color:var(--text-muted);max-width:62ch;line-height:1.66}
 
 /* ============ BUTTONS ============ */
+/* The button contract, network side. Every axis here is the platform's token
+   (see docs/design-system.md → "Buttons"); only the colours are the skin's.
+   This used to be padding-driven with NO min-height, at 1.02rem and a -2px
+   lift, against the platform's 3rem / 1rem / -1px — four axes apart on what is
+   meant to be one button. Height is a min, not a fixed: a wrapped label on a
+   narrow phone still grows the control instead of clipping. */
 .btn{
-  display:inline-flex;align-items:center;justify-content:center;gap:.6em;
-  font-family:var(--f-ui);font-weight:700;font-size:1.02rem;
-  padding:1.05em 2em;border-radius:var(--r-btn);border:0;cursor:pointer;
+  display:inline-flex;align-items:center;justify-content:center;gap:var(--btn-gap);
+  font-family:var(--f-ui);font-weight:var(--btn-weight);font-size:var(--btn-fs);
+  min-height:var(--btn-h);padding:0 var(--btn-px);
+  border-radius:var(--r-btn);border:0;cursor:pointer;
   transition:transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s, background .25s;
   text-align:center;line-height:1.1;white-space:nowrap;
 }
-.btn-primary{background:var(--cta);color:var(--on-cta);box-shadow:var(--shadow-cta)}
-.btn-primary:hover{background:var(--cta-strong);transform:translateY(-2px);box-shadow:0 12px 30px rgba(219,165,79,.36)}
+/* Gold ramp, not a flat fill — the same accent → accent-pressed the platform
+   runs. It stays inside the gold family: an older ramp ran into the deep green
+   and muddied into olive. */
+.btn-primary{background:linear-gradient(135deg,var(--cta),var(--cta-strong));color:var(--on-cta);box-shadow:var(--shadow-cta)}
+.btn-primary:hover{transform:translateY(var(--btn-lift));box-shadow:var(--shadow-cta-hover)}
 .btn-primary .arr{transition:transform .25s}
 .btn-primary:hover .arr{transform:translateX(4px)}
-.btn-ghost{background:transparent;color:var(--ink);border:1.5px solid var(--line-strong)}
-.btn-ghost:hover{border-color:var(--indigo);color:var(--indigo);background:var(--chip-soft)}
+/* The contract's `quiet`, not `secondary` — and the distinction is measured,
+   not stylistic. `secondary` is a surface plate, which works on the platform
+   because its canvas and its surface are different colours. Here they are the
+   same: a plate measured **1.00** against the ground behind it, the button
+   simply not there. That is the documented 1.08 failure again, so this takes
+   the sunk fill plus --cw-mat-stroke-control, the one stroke token held to
+   WCAG 1.4.11's 3:1 in both themes.
+
+   The old recipe had the right instinct — it drew a boundary — with arbitrary
+   parts: a 1.5px --line-strong, and a hover that swapped border, text AND
+   background to the route green, a colour change no second action makes
+   anywhere else in the product. */
+.btn-ghost{background:var(--cw-mat-surface-sunk);color:var(--ink);border:1px solid var(--cw-mat-stroke-control)}
+.btn-ghost:hover{transform:translateY(var(--btn-lift));box-shadow:var(--shadow-soft)}
 
 /* ============ BRAND ROW ============ */
 .brand{display:flex;align-items:center;gap:.55rem;font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.3rem;font-weight:700;color:var(--ink);letter-spacing:-.02em}
@@ -85,12 +107,12 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .hero-copy{order:3;position:relative;z-index:2;display:flex;flex-direction:column;margin-top:0}
 .hero-actions{order:4;position:relative;z-index:2;display:flex;flex-direction:column;gap:.85rem}
 
-/* One glass recipe for badge and chips alike — same warm tint, same ink text,
-   whether it sits on the cream page (chips, desktop badge) or on the photo
-   (mobile badge, see the negative margin below). No separate light/dark
-   variant: the media floor (86%) is dense enough that dark ink text holds
-   contrast over the darkest or brightest photo content, so nothing needs to
-   switch when the badge moves from beside the photo to on top of it. */
+/* One glass recipe for badge and chips alike — same warm tint, same ink text.
+   This is the DAY tone: it applies wherever they sit on the cream page, which
+   since the photo-hero rollout means desktop only. On mobile every landing runs
+   the photo hero, where the same two components take the night tone instead —
+   see the [data-cw-hero="photo"] block further down. The media floor (86%) is
+   what lets this one hold dark ink over any photo content behind it. */
 .hero-badge,.hero-chips span{
   display:inline-flex;align-items:center;font-size:var(--chip-fs);font-weight:600;
   position:relative;isolation:isolate;overflow:hidden;
@@ -153,8 +175,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
    composites to 0.045 relative luminance even over a pure white pixel — darker
    than the inverse panel ground the rest of the DS already asserts. That is the
    pair checked in scripts/guard-contrast.mjs; lower the 92% and it fails.
-   The badge and chips need no variant here: they are the same media-floor glass
-   with dark ink that the comment above already covers. */
+   The badge and chips DO get a variant here — the night tone, see below. */
 @media(max-width:880px){
   [data-cw-hero="photo"] .hero,
   [data-cw-hero="photo"] .cwn--anchored ~ .hero{
@@ -215,10 +236,24 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
   }
   [data-cw-hero="photo"] .hero .hv-stage::after{
     background:linear-gradient(to bottom,
-      color-mix(in srgb, var(--cw-net-hero-scrim) 34%, transparent) 0%,
-      color-mix(in srgb, var(--cw-net-hero-scrim) 0%, transparent) 30%);
+      color-mix(in srgb, var(--cw-net-photo-scrim) 34%, transparent) 0%,
+      color-mix(in srgb, var(--cw-net-photo-scrim) 0%, transparent) 30%);
   }
   [data-cw-hero="photo"] .hero .hero-badge{margin-top:0}
+  /* Badge and chips on the night tone — the same material as the nav bar, the
+     other side of it. The day tone (cream at the 86% media floor + dark ink)
+     was drawn to sit ON a photograph; on this band it sits on the 92% scrim
+     instead, where an opaque warm pill reads as a sticker laid over the glass
+     rather than as more of it — and, being the lightest thing on the screen,
+     out-shouts the headline it is supposed to support. The night tone is a lift
+     (see --cw-net-hero-glass), not a tint, because the band is already darker
+     than any tint would take it. Ink follows the rest of the hero copy. */
+  [data-cw-hero="photo"] .hero .hero-badge,
+  [data-cw-hero="photo"] .hero .hero-chips span{
+    color:var(--cw-net-hero-ink-soft);
+    background:var(--cw-net-hero-glass);
+    border-color:var(--cw-net-hero-glass-stroke);
+    box-shadow:none}
   [data-cw-hero="photo"] .hero h1{color:var(--cw-net-hero-ink)}
   [data-cw-hero="photo"] .hero h1 em{color:var(--cw-net-hero-accent)}
   [data-cw-hero="photo"] .hero .hero-sub{color:var(--cw-net-hero-ink-soft)}
@@ -362,6 +397,56 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .sec-alt{background:
   linear-gradient(180deg,var(--surface-cool),rgba(246,248,255,0)),var(--cream)}
 
+/* ============ SEAM CONNECTOR ============ */
+/* The only thing drawn between two blocks. Everything else in the gap is air —
+   --sp-sec on each side, up to 264px of it — and the band underneath, which
+   draws the seam but says nothing about it. This says something: the two blocks
+   are one thought at two scales, so the reader should carry the first into the
+   second rather than start over.
+   Placed by hand, never by rule, and the rule it follows is not "every seam"
+   but "the argument". Each landing opens by making one continuous case — the
+   pain, the reframe that answers it, the structure that delivers the reframe,
+   the structure at the next scale down — and the connector traces exactly that
+   run and then lets go. Two or three per landing, at the top; everything below
+   is evidence, author, proof, commerce and FAQ, where each block changes the
+   subject and a connector would claim a continuity that is not there. herbs
+   joins "three blends" to "why a blend at all" and its scenarios to the form;
+   nothing joins proof to offer, however conventional that flow is.
+   That is also what keeps it clear of the standing decision that the rail stays
+   inside structural blocks and does not run the length of the page: a thread
+   through the opening case is not a spine down the page, and one mark on all
+   thirteen seams would be.
+   Not a carrier either — it sits outside every <section>, which is exactly why
+   scripts/guard-carriers.mjs (which splits on section boundaries) does not see
+   it and should not.
+   The glyph is drawn as a horizontal bridge: two ends joined by a dashed arc.
+   Turned ninety degrees the ends become one above and one below, which is the
+   direction the reader is actually travelling, and the arc bulges into the page
+   rather than out into the margin. Centred on the page rather than on the left
+   type axis: the seam it marks is full-bleed — the band changes across the whole
+   width — so the mark belongs on the axis of the band, not on the axis of the
+   text inside the blocks. On the left it read as something dropped at the edge
+   of the page. Ink is the rail's dashed line at the same weight, so the two
+   connective marks are visibly one language; it assumes a light band on both
+   sides, which is true of all four placements. */
+/* The seam stays at zero height so the band edge runs through the middle of the
+   mark, and it adds no spacing of its own: the block rhythm between two blocks
+   is --sp-sec on each side and nothing else, everywhere on the network.
+   The mark is sized FROM that rhythm rather than in fixed rem. That is the whole
+   rule, and it is the one thing this needed: --sp-sec is fluid and halves on a
+   phone (132px -> 64px), so a fixed mark kept its size while the gap around it
+   collapsed — at 390 a 48px mark left the blocks 14-31px of clearance and read
+   as wedged between them rather than passing through. At 0.45 of the rhythm the
+   mark is 58px against a 260px gap on a desktop and 29px against 128px on a
+   phone: the clearance-to-mark ratio is 1.7 at both ends, so the thread sits the
+   same way in the gap at every width, with no breakpoint and no second token. */
+.seam{position:relative;height:0;z-index:2;pointer-events:none;
+  max-width:var(--maxw);margin-inline:auto}
+.seam .ico{position:absolute;top:0;left:50%;
+  width:calc(var(--sp-sec) * 0.45);height:calc(var(--sp-sec) * 0.45);
+  transform:translate(-50%,-50%) rotate(90deg);
+  color:color-mix(in srgb,var(--indigo) 55%,transparent)}
+
 /* ============ PROBLEM ============ */
 .prob-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:1.1rem;margin-bottom:2.4rem}
 .prob-card{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);padding:1.5rem 1.4rem;
@@ -372,7 +457,15 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .prob-card p{font-size:.95rem;color:var(--text-muted)}
 .prob-card .x{position:absolute;top:1.2rem;right:1.3rem;color:var(--line-strong);font-size:1.1rem}
 .prob-punch{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-weight:700;letter-spacing:-.02em;font-size:clamp(1.5rem,3vw,2.1rem);color:var(--ink);
-  max-width:24ch;line-height:1.22;border-left:3px solid var(--cta);padding-left:1.4rem}
+  /* 24ch was inherited from h2.sec-title, and it does not transfer: the heading
+     sits inside .sec-head (760px) with a lead underneath, so a short measure
+     reads as a title. This is a standalone punch line closing the block, and at
+     24ch it took 33% of a 1160px row and broke into four lines — a column
+     stranded in the left third rather than a statement across the block. 44ch
+     is still a readable measure at 33px display type (~700px, two lines), and
+     on a phone it exceeds the column, so the line simply fills the width there
+     instead of wrapping short of it. */
+  max-width:44ch;line-height:1.22;border-left:3px solid var(--cta);padding-left:1.4rem}
 
 /* ============ SHIFT ============ */
 .shift{background:var(--irem-grad-dark);color:#fff;border-radius:var(--r-lg);
@@ -383,7 +476,13 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .shift>*{position:relative;z-index:1}
 .shift .kicker{color:var(--irem-on-dark-muted)}
 .shift .kicker::before{background:rgba(255,255,255,.35)}
-.shift h2{color:#fff;font-size:clamp(2rem,4.4vw,3.2rem);max-width:20ch;margin:1.1rem 0 1.2rem}
+/* 20ch is a fine measure for a display heading, but only relative to its own
+   container. h2.sec-title carries the same idea inside .sec-head (760px), where
+   24ch fills 82% and reads as a title. .shift h2 sits in a 1080px block, where
+   20ch is 45% — way21's reframe, the most load-bearing line on the page, broke
+   into three lines stranded in the left half. 26ch puts it at ~63%, two lines,
+   and lines it up with the 60ch paragraph underneath. */
+.shift h2{color:#fff;font-size:clamp(2rem,4.4vw,3.2rem);max-width:26ch;margin:1.1rem 0 1.2rem}
 .shift h2 em{font-style:normal;color:var(--irem-gold-bright)}
 .shift p{color:rgba(255,255,255,.82);max-width:60ch;font-size:1.1rem}
 .shift-vs{display:grid;grid-template-columns:1fr auto 1fr;gap:1.4rem;align-items:center;margin-top:2.6rem}
@@ -428,6 +527,22 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .triad-flow b{color:var(--indigo)}.triad-flow .ar{color:var(--cta)}
 @media(max-width:820px){.triad{grid-template-columns:1fr}}
 
+/* One column, so the run turns vertical and the rail turns with it. A row rail
+   collapsed into a stack leaves each card holding its own short horizontal dash
+   with a dot in the middle of it — three of those stacked read as decoration
+   applied three times, not as one sequence passing through three stops, which is
+   the entire job of the primitive. Turned ninety degrees it does the job again:
+   the line runs down the card's left margin past the node, stops at the card's
+   own top and bottom edges (the card clips it), and the eye completes it across
+   the grid gap — the same completion the row version already relies on. */
+@media(max-width:820px){
+  .triad .phase:has(.rail-node){padding-left:3.2rem}
+  .triad .rail-node{position:absolute;top:0;bottom:0;left:1.55rem;width:16px;height:auto;margin:0}
+  .triad .rail-node::before{top:-2.5rem;bottom:-2.5rem;left:50%;right:auto;
+    border-top:0;border-left:1.5px dashed color-mix(in srgb, var(--indigo) 42%, transparent)}
+  .triad .rail-node::after{top:2.5rem;left:50%}
+}
+
 /* ============ WEEKLY RHYTHM ============ */
 .week{display:grid;grid-template-columns:repeat(7,1fr);gap:.7rem}
 .day{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);padding:1.2rem 1rem;
@@ -460,18 +575,36 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 @media(max-width:980px){.week{grid-template-columns:repeat(2,1fr)}}
 @media(max-width:560px){.week{grid-template-columns:1fr}}
 
+/* The day rhythm stacks at 560px and the rail turns with it, for the same reason
+   the triad's does — see the note there. Seven stranded dashes is a worse case
+   than three: the run is the whole point of the block. The .day card has to take
+   the positioning context and the clip here, since in the row version it needs
+   neither. */
+@media(max-width:560px){
+  .week .day{position:relative;overflow:hidden;padding-left:3rem}
+  .week .rail-node{position:absolute;top:0;bottom:0;left:1.4rem;width:16px;height:auto;margin:0}
+  .week .rail-node::before{top:-1.4rem;bottom:-1.4rem;left:50%;right:auto;
+    border-top:0;border-left:1.5px dashed color-mix(in srgb, var(--indigo) 42%, transparent)}
+  .week .rail-node::after{top:50%;left:50%}
+}
+
 /* ============ SCIENCE ============ */
 .sci-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:clamp(28px,4vw,56px);align-items:center}
 .sci-points{display:grid;gap:1rem;margin-top:1.8rem}
-.sci-point{display:flex;gap:1rem;background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);padding:1.1rem 1.3rem}
+.sci-point{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);padding:1.15rem 1.3rem}
 /* Badge = glass, same recipe as the hero chips (see .hero-badge above). */
-.sci-point .tag{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.1em;text-transform:uppercase;color:var(--ink);
-  position:relative;isolation:isolate;overflow:hidden;
-  background:var(--cw-net-mat-tint);
-  backdrop-filter:var(--cw-net-mat-filter);-webkit-backdrop-filter:var(--cw-net-mat-filter);
-  border:1px solid var(--cw-net-mat-stroke);box-shadow:var(--cw-net-mat-shadow);
-  border-radius:var(--r-pill);padding:.4em .8em;height:fit-content;white-space:nowrap;align-self:flex-start;flex:0 0 auto}
-.sci-point .tag::before{content:"";position:absolute;inset:0;background-image:var(--cw-net-mat-grain);opacity:.6;pointer-events:none;z-index:-1}
+/* The label was a glass pill, and glass was the wrong material for it twice
+   over. Materially: it sat on a solid card, so there was nothing behind it to
+   see through — the blur cost real paint and bought nothing, and the tint (a
+   warm off-white at 76%) landed within a hair of the card it sat on, so the
+   pill had no edge and the label floated in a smudge. Structurally: a boxed
+   label inside a card is a second container for one piece of text, and the card
+   is already the container. Every other card type in the network names itself
+   with a bare mono line — .ph-n on the phase, .d-lab on the day — so this one
+   does too, at the kicker's size rather than two steps under it. */
+.sci-point .tag{display:block;margin-bottom:.55rem;
+  font-family:var(--f-mono);font-size:.72rem;letter-spacing:.14em;
+  text-transform:uppercase;color:var(--indigo)}
 .sci-point p{font-size:.97rem;color:var(--text-muted)}
 .sci-point p b{color:var(--ink)}
 .sci-quote{background:var(--surface);border:0;border-radius:var(--r-lg);padding:clamp(28px,4vw,42px);box-shadow:var(--shadow-soft);position:relative}
@@ -479,7 +612,6 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .sci-quote blockquote{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-weight:600;letter-spacing:-.015em;font-size:clamp(1.3rem,2.4vw,1.7rem);color:var(--ink);line-height:1.32;position:relative;z-index:1;padding-top:1.4rem}
 .sci-quote cite{display:block;margin-top:1.4rem;font-style:normal;font-family:var(--f-mono);font-size:.78rem;letter-spacing:.06em;color:var(--text-soft)}
 @media(max-width:880px){.sci-grid{grid-template-columns:1fr}}
-@media(max-width:560px){.sci-point{flex-direction:column;gap:.7rem}}
 
 /* ============ AI ANALYSIS CARD ============ */
 .ai-card{margin-top:clamp(28px,4vw,44px);background:var(--irem-grad-dark);border-radius:var(--r-lg);overflow:hidden;color:#fff;position:relative}
@@ -558,6 +690,9 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 
 /* ============ INCLUDED ============ */
 .inc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:1rem}
+/* Five cards in an auto-fit grid land as 4 + 1 orphan. Once there is room for
+   all five, put them on one row instead. */
+@media(min-width:1060px){.inc-grid--5{grid-template-columns:repeat(5,1fr)}}
 .inc-card{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);padding:1.6rem 1.5rem;transition:transform .3s,box-shadow .3s}
 .inc-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-med)}
 .inc-card .ic{width:48px;height:48px;border-radius:13px;background:var(--chip);color:var(--indigo);display:grid;place-items:center;margin-bottom:1rem}
@@ -625,10 +760,19 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
    came out 2026-08-17 and a typographic node keeps the list scannable. */
 .author .reg li{position:relative;padding-left:1.1rem}
 .author .reg li::before{content:"";position:absolute;left:0;top:.62em;width:5px;height:5px;border-radius:50%;background:var(--cta)}
+/* consult's author block lost its portrait (it repeated the hero frame), which
+   left the copy alone in a two-column grid with a dead right half. With no
+   photo the block is one column, and the regalia use the width instead. */
+.author:not(:has(.author-photo)){grid-template-columns:1fr}
+@media(min-width:900px){.author:not(:has(.author-photo)) .reg{grid-template-columns:1fr 1fr;column-gap:2.4rem}}
 @media(max-width:760px){.author{grid-template-columns:1fr}.author-photo{max-width:300px}}
 
 /* ============ PROOF ============ */
 .proof-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:1rem;margin-bottom:1.8rem}
+/* A row of quote cards should share a height. Mix a screenshot in (dosha) and
+   stretching drags the short quotes to the screenshot's height, leaving each
+   one with a hand's width of empty card under the text. */
+.proof-grid:has(.shot-card){align-items:start}
 .review{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-md);padding:1.5rem;display:flex;flex-direction:column;gap:1rem;transition:transform .3s,box-shadow .3s}
 .review:hover{transform:translateY(-3px);box-shadow:var(--shadow-med)}
 .review .stars{color:var(--gold);letter-spacing:.15em;font-size:.95rem}
@@ -674,7 +818,9 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .offer-price{display:flex;flex-direction:column;align-items:center;gap:.25rem;margin-bottom:1.6rem}
 .offer-price b{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:clamp(2.6rem,9vw,3rem);font-weight:700;color:#fff;line-height:1}
 .offer-price small{font-family:var(--f-mono);font-size:.8rem;letter-spacing:.08em;color:rgba(255,255,255,.6);text-transform:uppercase}
-.offer .btn-primary{display:flex;font-size:1.05rem;padding:1.05em 2.4em;width:100%;justify-content:center}
+/* Full width in the offer block; size and padding stay the contract's — this
+   ran 1.05rem/2.4em, a third button size on the same page. */
+.offer .btn-primary{display:flex;width:100%;justify-content:center}
 .offer-pay{display:flex;align-items:center;justify-content:center;gap:.7rem;margin-top:1.4rem;font-family:var(--f-mono);font-size:.74rem;letter-spacing:.06em;color:rgba(255,255,255,.6)}
 .offer-pay .pill{border:1px solid rgba(255,255,255,.2);border-radius:6px;padding:.3em .6em}
 
@@ -686,30 +832,40 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .format-card.self{background:var(--irem-grad-dark);color:#fff}
 .format-card.self::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 70% 10%,rgba(232,162,90,.12) 0%,transparent 60%);pointer-events:none}
 .format-card.premium{background:var(--surface);border:0;box-shadow:var(--shadow-soft)}
-.fc-badge{display:inline-flex;align-items:center;font-family:var(--f-mono);font-size:var(--chip-fs);letter-spacing:.16em;text-transform:uppercase;margin-bottom:1.1rem;padding:calc(var(--chip-py) + var(--chip-nudge)) var(--chip-px) calc(var(--chip-py) - var(--chip-nudge));border-radius:var(--r-pill);border:1px solid rgba(255,255,255,.18);color:rgba(255,255,255,.65);line-height:1}
-/* Only the premium card sits on a light ground, so only it takes the glass; the
-   badge on the dark card keeps its outline treatment. */
-.format-card.premium .fc-badge{position:relative;isolation:isolate;overflow:hidden;color:var(--ink);
-  border-color:var(--cw-net-mat-stroke);background:var(--cw-net-mat-tint);
-  backdrop-filter:var(--cw-net-mat-filter);-webkit-backdrop-filter:var(--cw-net-mat-filter);
-  box-shadow:var(--cw-net-mat-shadow)}
-.format-card.premium .fc-badge::before{content:"";position:absolute;inset:0;background-image:var(--cw-net-mat-grain);opacity:.6;pointer-events:none;z-index:-1}
+/* Same call as .sci-point .tag: the format card names itself with a bare mono
+   line, not with a pill. Both pills were failing, each in its own way. On the
+   dark card the pill was an 18%-white hairline around an inline-flex box that,
+   as a flex item in a column card, stretched to the full width — an empty
+   outlined field with the label parked at its left end, which is what an input
+   looks like, not a label. On the light card it was the glass recipe over a
+   solid surface: nothing behind it to see through, so the blur cost paint and
+   bought nothing, and the tint landed within a hair of the card underneath.
+   Ink moved onto the tokens actually asserted for these grounds — the on-dark
+   label on the gradient card, the route green on the light one. */
+.fc-badge{display:block;margin-bottom:1.1rem;line-height:1;
+  font-family:var(--f-mono);font-size:.72rem;letter-spacing:.16em;text-transform:uppercase;
+  color:var(--irem-on-dark-label)}
+.format-card.premium .fc-badge{color:var(--indigo)}
 .fc-title{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.65rem;font-weight:700;color:#fff;line-height:1.15;margin-bottom:1.2rem}
 .format-card.premium .fc-title{color:var(--ink)}
 .fc-price{margin-bottom:1.5rem}
 .fc-price b{display:block;font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:2.6rem;font-weight:700;color:#fff;line-height:1}
 .format-card.premium .fc-price b{color:var(--ink)}
-.fc-price small{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.09em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-top:.2rem;display:block}
+.fc-price small{font-family:var(--f-mono);font-size:.75rem;letter-spacing:.09em;text-transform:uppercase;color:var(--irem-on-dark-label);margin-top:.2rem;display:block}
 .format-card.premium .fc-price small{color:var(--text-muted)}
 .fc-features{list-style:none;padding:0;margin:0 0 1.8rem;display:flex;flex-direction:column;gap:.6rem;flex:1}
 .fc-features li{display:flex;align-items:flex-start;gap:.55rem;font-size:.93rem;color:rgba(255,255,255,.8);line-height:1.45}
 .format-card.premium .fc-features li{color:var(--text-muted)}
 .fc-features li::before{content:"✓";color:var(--irem-gold-bright);font-weight:700;flex:0 0 auto;font-size:.85rem;margin-top:.12em}
 .format-card.premium .fc-features li::before{color:var(--indigo)}
-.fc-cta{display:flex;width:100%;justify-content:center;font-size:1rem;padding:1em 1.6em}
-.fc-guarantee{display:flex;align-items:center;justify-content:center;gap:.4em;margin-top:1rem;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;color:rgba(255,255,255,.45)}
-.btn-tg{background:var(--indigo);color:#fff;box-shadow:0 4px 16px rgba(90,96,153,.28)}
-.btn-tg:hover{background:var(--indigo-bright);transform:translateY(-2px);box-shadow:0 10px 28px rgba(90,96,153,.38)}
+.fc-cta{display:flex;width:100%;justify-content:center}
+.fc-guarantee{display:flex;align-items:center;justify-content:center;gap:.4em;margin-top:1rem;font-family:var(--f-mono);font-size:.72rem;letter-spacing:.1em;color:var(--irem-on-dark-label)}
+/* The Telegram action keeps its own fill — it names a destination, not a role —
+   but its depth is the material's and its lift is the contract's. The two rgba
+   literals it carried were a blue-grey mixed for an indigo this skin no longer
+   uses: --indigo resolves to the route green. */
+.btn-tg{background:var(--indigo);color:var(--cw-net-on-route);box-shadow:var(--shadow-soft)}
+.btn-tg:hover{background:var(--indigo-bright);transform:translateY(var(--btn-lift));box-shadow:var(--shadow-med)}
 /* ============ SHORT ENTRY ============ */
 .short-block{background:var(--surface);border:0;box-shadow:var(--shadow-soft);border-radius:var(--r-lg);padding:clamp(2rem,4vw,2.8rem);display:flex;flex-direction:column;align-items:flex-start;gap:1.6rem}
 @media(min-width:700px){.short-block{flex-direction:row;align-items:center;gap:2.4rem}}
@@ -759,17 +915,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 [data-cw-landing="dosha"] .footer .brand{
   font-family:var(--f-ui);font-size:1rem;font-weight:700;letter-spacing:-.02em;gap:.6rem;align-items:center;
   /* Same lockup as the bar's night tone: gold mark, gold word. */
-  color:var(--cw-net-hero-accent,#e0b25c)
-}
-/* The footer mark is the gold file — the tighter crop — so it takes the
-   compensated box, same as the bar does on its dark tone. Scoped alongside the
-   rule above: irem/short-b share this stylesheet and keep their own lockup. */
-[data-cw-landing="way21"] .footer .brand-mark,
-[data-cw-landing="reset-day"] .footer .brand-mark,
-[data-cw-landing="herbs"] .footer .brand-mark,
-[data-cw-landing="consult"] .footer .brand-mark,
-[data-cw-landing="dosha"] .footer .brand-mark{
-  box-sizing:border-box;padding:var(--cw-net-brand-mark-gold-inset,.24rem)
+  color:var(--cw-net-hero-accent,#e5ae65)
 }
 .footer-col h5{font-family:var(--f-mono);font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:rgba(255,255,255,.5);margin-bottom:1rem}
 .footer-col p,.footer-col a{font-size:.95rem;display:block;margin-bottom:.5rem;color:rgba(255,255,255,.7)}
@@ -790,7 +936,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
   transition:transform .35s cubic-bezier(.2,.8,.2,1)}
 .sticky-cta.hidden{transform:translateY(110%)}
 .sticky-in{max-width:var(--maxw);margin-inline:auto;width:100%;padding:.6rem clamp(14px,4vw,40px)}
-.sticky-cta .btn{width:100%;font-size:1rem;text-align:center}
+.sticky-cta .btn{width:100%;text-align:center}
 
 /* ============ SOCIAL PROOF — carousels + lightbox ============ */
 /* Generic scroll-snap carousel. Works without JS (native swipe/scroll);
@@ -994,7 +1140,7 @@ body[data-cw-landing].utility-page{
 .lead-modal[hidden]{display:none}
 .lead-modal__backdrop{position:absolute;inset:0;background:color-mix(in srgb, var(--ink) .520%, transparent);backdrop-filter:blur(3px)}
 .lead-modal__dialog{position:relative;width:100%;max-width:30rem;background:var(--surface);border:0;border-radius:var(--r-lg);box-shadow:var(--shadow-med);padding:clamp(1.4rem,4vw,2rem);max-height:90vh;overflow:auto}
-.lead-modal__x{position:absolute;top:.7rem;right:.9rem;width:2rem;height:2rem;border:0;background:transparent;font-size:1.5rem;line-height:1;color:var(--text-soft);cursor:pointer;border-radius:50%}
+.lead-modal__x{position:absolute;top:.7rem;right:.9rem;display:grid;place-items:center;width:2rem;height:2rem;padding:0;border:0;background:transparent;line-height:1;color:var(--text-soft);cursor:pointer;border-radius:50%}
 .lead-modal__x:hover{background:var(--surface-cool);color:var(--ink)}
 .lead-modal__program{font-family:var(--f-ui);font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--cta-strong);margin:0 0 .3rem}
 .lead-modal__title{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-size:1.4rem;color:var(--ink);margin:0 0 .4rem}

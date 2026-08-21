@@ -5,13 +5,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <base href="/short/">
-    <link rel="shortcut icon" href="img/cw-logo.png" type="image/png">
+    <link rel="icon" href="../shared/img/cw-mark-ink.svg" type="image/svg+xml">
+    <link rel="icon" href="../shared/img/cw-icon-192.png" sizes="192x192" type="image/png">
+    <link rel="apple-touch-icon" href="../shared/img/cw-apple-touch.png">
     <meta property="og:title" content="Short-Перезавантаження">
     <meta property="og:description" content="7 простих вправ, що за 10 хвилин відновлюють тіло та розум">
-    <meta property="og:image" content="https://reboot.centerway.net.ua/img/Centerway_logo.jpg">
+    <meta property="og:image" content="https://reboot.centerway.net.ua/shared/img/cw-og-cover.png">
     <meta property="og:image:alt" content="Short-Перезавантаження">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://reboot.centerway.net.ua/img/Centerway_logo.jpg">
+    <meta name="twitter:image" content="https://reboot.centerway.net.ua/shared/img/cw-og-cover.png">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -59,7 +61,7 @@
 <body>
     <header class="cw-nav" id="top" data-cw-nav>
         <a class="cw-nav__brand" href="#top" aria-label="CenterWay — на початок">
-            <img class="cw-nav__mark" src="../shared/img/cw-logo-ink.png" alt="" aria-hidden="true" decoding="async">
+            <img class="cw-nav__mark" src="../shared/img/cw-mark-ink.svg" alt="" aria-hidden="true" decoding="async">
             <span class="cw-nav__wordmark">CenterWay</span>
         </a>
         <nav class="cw-nav__desktop" aria-label="Навігація сторінкою">
@@ -71,13 +73,13 @@
             <a href="#faq">Питання</a>
         </nav>
         <button class="cw-nav__burger" type="button" data-cw-nav-toggle aria-label="Меню" aria-expanded="false" aria-controls="cwNavPanel">
-            <span></span><span></span><span></span>
+            <svg class="cw-nav__burger-ico" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-menu"/></svg><svg class="cw-nav__burger-ico cw-nav__burger-ico--close" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg>
         </button>
     </header>
     <div class="cw-nav__drawer" data-cw-nav-drawer>
         <div class="cw-nav__backdrop" data-cw-nav-close aria-hidden="true"></div>
         <nav class="cw-nav__panel" id="cwNavPanel" aria-label="Меню" data-cw-nav-panel>
-            <button class="cw-nav__close" type="button" data-cw-nav-close aria-label="Закрити меню">&times;</button>
+            <button class="cw-nav__close" type="button" data-cw-nav-close aria-label="Закрити меню"><svg class="cw-nav__close-ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg></button>
             <ul class="cw-nav__list">
                 <li><a href="#program">Про курс</a></li>
                 <li><a href="#format">Що входить</a></li>
@@ -464,7 +466,7 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section" id="footer-left">
-                    <img src="../shared/img/cw-logo-ink.png" alt="Логотип CenterWay" class="footer-logo" width="74" height="74" decoding="async">
+                    <img src="../shared/img/cw-mark-ink.svg" alt="Логотип CenterWay" class="footer-logo" width="74" height="74" decoding="async">
 
                     <div class="footer-logo-payments">
                         <img data-src="img/visa-mc.png" alt="Visa/Mastercard" class="lazyload">
