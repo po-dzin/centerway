@@ -419,7 +419,18 @@ function main() {
   });
 
   assertTokens(files.sharedTokens, requiredDsTokens, "Shared DS token contract");
-  assertTokens(files.appGlobals, requiredDsTokens.filter((token) => !token.startsWith("--ds-color-product-")), "App globals DS bridge contract");
+  // App globals no longer carry the `--ds-radius-*` delivery alias: the radius
+  // refactor (2026-08-21) collapsed three overlapping scales onto `--cw-radius-*`
+  // and retired that one as unused. It survives in the landings' own
+  // hand-maintained tokens.css, which is an isolated layer, so it stays required
+  // there and only there.
+  assertTokens(
+    files.appGlobals,
+    requiredDsTokens.filter(
+      (token) => !token.startsWith("--ds-color-product-") && !token.startsWith("--ds-radius-"),
+    ),
+    "App globals DS bridge contract",
+  );
   assertTokens(files.appGlobals, requiredSemanticTokens, "App globals semantic layer contract");
   assertTokens(files.landingBridge, requiredLandingTokens, "Landing bridge semantic token contract");
 
