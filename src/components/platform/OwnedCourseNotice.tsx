@@ -62,7 +62,7 @@ export function OwnedCourseNotice({ programSlug }: { programSlug: string }) {
               : finished
                 ? "Ви вже пройшли цей курс. Протокол можна повторити будь-коли."
                 : owned.currentLessonTitle
-                  ? `Наступний крок: ${owned.currentLessonTitle}`
+                  ? `Наступний урок: ${owned.currentLessonTitle}`
                   : "Курс уже відкритий у вашому кабінеті."}
           </p>
         </div>

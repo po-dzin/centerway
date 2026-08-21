@@ -3,6 +3,7 @@
 import { useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 import styles from "@/components/platform/PlatformSurfaceStyles";
+import { Icon } from "@/components/Icon";
 
 type PlatformAuthModalProps = {
   open: boolean;
@@ -53,7 +54,9 @@ export function PlatformAuthModal({
           onClick={onClose}
           aria-label="Закрити вікно входу"
         >
-          <span aria-hidden="true">×</span>
+          {/* The set's glyph, not the multiplication sign: × renders in whatever
+              weight the system font gives it and never matched the icons around it. */}
+          <Icon name="close" size={18} />
         </button>
         <div className={styles.panelIntro}>
           <p className={styles.label}>Вхід</p>
