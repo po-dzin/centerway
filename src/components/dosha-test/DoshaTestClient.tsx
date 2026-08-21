@@ -5,6 +5,7 @@ import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { PlatformAuthModal } from "@/components/platform/PlatformAuthModal";
+import { Icon } from "@/components/Icon";
 import styles from "@/components/platform/PlatformDiagnosticStyles";
 import type { DoshaResultType } from "@/lib/doshaTest";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
@@ -141,17 +142,20 @@ const RESULT_COPY: Record<
   },
 };
 
+/* One line each. They used to run two to three lines apiece, which put the
+   start button below the fold on a phone — the steps were reassurance, and
+   reassurance that costs the CTA its place stops reassuring anyone. */
 const HOW_IT_WORKS_STEPS = [
-  "Відповідаєте на 12 коротких питань про ритм, енергію, травлення, сон і напругу.",
-  "Отримуєте профіль доші як робочу гіпотезу для читання свого поточного стану.",
-  "Бачите наступний крок: консультація, програма або самостійний старт без зайвої абстракції.",
+  "12 коротких питань про ритм, енергію, травлення, сон і напругу.",
+  "Профіль доші як робоча гіпотеза про ваш поточний стан.",
+  "Наступний крок: консультація, програма або самостійний старт.",
 ];
 
 const BOUNDARY_NOTE =
   "Це оздоровчий орієнтир, а не медичний діагноз. Результат не є медичним діагнозом і не замінює лікаря: якщо симптоми стійкі або гострі, спочатку варто пройти обстеження.";
 
 const DOSHA_DISCLOSURE =
-  "У підході CenterWay доші описують природні патерни енергії, ритму й відновлення. Тест допомагає обрати релевантний маршрут практик і контенту в платформі.";
+  "У підході CenterWay доші описують природні патерни енергії, ритму й відновлення. Тест допомагає обрати доречні практики і матеріали в платформі.";
 
 function resolveHeroPosition(position?: string) {
   if (!position) {
@@ -187,7 +191,6 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
   const [resultViewedSent, setResultViewedSent] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const [isDoshaInfoOpen, setIsDoshaInfoOpen] = useState(false);
   const isAuthEnabled = useMemo(
     () => Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
     []
@@ -538,30 +541,55 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     await runStartFlow();
   }, [isAuthEnabled, runStartFlow, session, syncPlatformUser]);
 
-  const submitAnswer = useCallback((questionId: string, optionId: string) => {
+  /* Choosing and moving on are two acts, and they used to be one: tapping an
+     option wrote the answer, advanced the question and locked the choice, so a
+     misplaced thumb cost you an answer you could never revisit ("режим v1:
+     попередню відповідь змінити не можна"). Selection is now local state and
+     nothing else; the step moves when the reader says so, in either direction.
+     Nothing reaches the server until the last answer — `completeTest` posts the
+     whole set — so going back costs no request and no consistency problem. */
+  const selectAnswer = useCallback((questionId: string, optionId: string) => {
     if (isBusy) return;
-    if (answers[questionId]) return;
 
     const nextAnswers = { ...answers, [questionId]: optionId };
-    const answeredCount = Object.keys(nextAnswers).length;
-    const nextIndex = Math.min(answeredCount + 1, totalQuestions);
-
     setAnswers(nextAnswers);
-    setCurrentQuestionIndex(nextIndex);
     setError(null);
     saveDraft({
       answers: nextAnswers,
-      currentQuestionIndex: nextIndex,
+      currentQuestionIndex,
       sessionId: getOrCreateSessionId(),
       updatedAt: new Date().toISOString(),
     });
+  }, [answers, currentQuestionIndex, getOrCreateSessionId, isBusy, saveDraft]);
 
-    if (answeredCount >= totalQuestions) {
-      void completeTest(nextAnswers);
+  const goToStep = useCallback((nextIndex: number) => {
+    const bounded = Math.min(Math.max(nextIndex, 1), totalQuestions);
+    setCurrentQuestionIndex(bounded);
+    setError(null);
+    saveDraft({
+      answers,
+      currentQuestionIndex: bounded,
+      sessionId: getOrCreateSessionId(),
+      updatedAt: new Date().toISOString(),
+    });
+  }, [answers, getOrCreateSessionId, saveDraft, totalQuestions]);
+
+  const answeredCount = Object.keys(answers).length;
+  const isLastQuestion = currentQuestionIndex >= totalQuestions;
+  const currentAnswered = currentQuestion ? Boolean(answers[currentQuestion.id]) : false;
+
+  const goForward = useCallback(() => {
+    if (!currentQuestion || !answers[currentQuestion.id]) return;
+    if (isLastQuestion) {
+      void completeTest(answers);
+      return;
     }
-  }, [answers, completeTest, getOrCreateSessionId, isBusy, saveDraft, totalQuestions]);
+    goToStep(currentQuestionIndex + 1);
+  }, [answers, completeTest, currentQuestion, currentQuestionIndex, goToStep, isLastQuestion]);
 
-  const progress = Math.min(100, Math.round((Math.max(0, currentQuestionIndex - 1) / totalQuestions) * 100));
+  /* Progress is what is answered, not what is on screen: stepping back through
+     finished questions must not walk the bar backwards. */
+  const progress = Math.min(100, Math.round((answeredCount / totalQuestions) * 100));
   const resultCopy = resultType ? RESULT_COPY[resultType] : null;
   const testFontFamily = "var(--cw-font-ui), 'Manrope', 'Segoe UI', sans-serif";
   const topbarBadge = phase === "intro"
@@ -619,17 +647,24 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
               WebkitUserSelect: "none",
             }}
           >
+            {/* Order is the whole point of this card. It used to read badge →
+                eyebrow → title → four-line lead → a card of long steps → a card
+                of legal boundaries, and only then the button — a page about
+                starting something where starting was the last thing offered.
+                Now: what it costs, what it is, start. Everything a person may
+                want *before* deciding sits in one disclosure under the button,
+                and the boundary note lives inside it rather than as its own
+                panel — it was already repeated there. */}
             <article className={`${styles.panel} ${styles.diagnosticHeroCard}`}>
               <div className={styles.panelStack}>
                 <div className={styles.panelIntro}>
                   <p className={styles.heroBadge}>
                     <span>{topbarBadge}</span>
                   </p>
-                  <p className={styles.label}>CenterWay • Діагностика стану</p>
                   <h1 className={styles.title}>Тест доші</h1>
                   <p className={styles.lead}>
-                    Швидка самодіагностика ритму, енергії, травлення і напруги, щоб побачити свій поточний стан і зрозуміти
-                    перший доречний маршрут у платформі.
+                    Швидка самодіагностика ритму, енергії, травлення і напруги — щоб побачити поточний стан і
+                    зрозуміти, з чого почати.
                   </p>
                 </div>
 
@@ -640,11 +675,6 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                       <li key={step}>{step}</li>
                     ))}
                   </ol>
-                </div>
-
-                <div className={styles.card} data-tone="policy">
-                  <p className={styles.label}>Межі методу</p>
-                  <p>{BOUNDARY_NOTE}</p>
                 </div>
 
                 {error ? <p className={styles.diagnosticErrorNote}>{error}</p> : null}
@@ -660,27 +690,26 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                   >
                     {isBusy ? "Запускаємо..." : "Почати тест"}
                   </button>
-
-                  <button
-                    type="button"
-                    onClick={() => setIsDoshaInfoOpen((prev) => !prev)}
-                    className={styles.heroSecondaryButton}
-                    aria-expanded={isDoshaInfoOpen}
-                    aria-controls="what-is-dosha"
-                  >
-                    <span>{isDoshaInfoOpen ? "Сховати опис доші" : "Що таке доша?"}</span>
-                  </button>
                 </div>
 
-                {isDoshaInfoOpen ? (
-                  <div className={styles.card} data-tone="support" id="what-is-dosha">
+                {/* The DS collapsible (`details` + the surface summary with its
+                    +/− marker), not a text button: a disclosure and a link to
+                    another page were rendering as the same underlined line, so
+                    nothing said which one leaves the page. */}
+                <details className={styles.collapsibleBlock}>
+                  <summary className={styles.collapsibleSummary}>
+                    <span>Що таке доша і межі методу</span>
+                    <Icon name="chevron-down" size={18} className={styles.collapsibleMarker} />
+                  </summary>
+                  <div className={styles.card} data-tone="support">
                     <p>{DOSHA_DISCLOSURE}</p>
                     <p>{BOUNDARY_NOTE}</p>
                   </div>
-                ) : null}
+                </details>
 
-                <Link className={styles.diagnosticTextButton} href={TESTS_HUB_ROUTE}>
-                  Усі тести
+                <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE}>
+                  <Icon name="arrow-left" size={16} className={styles.diagnosticBackIcon} />
+                  <span>Усі тести</span>
                 </Link>
               </div>
             </article>
@@ -705,10 +734,14 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
               {phase === "question" && currentQuestion ? (
                 <div className={styles.diagnosticFlowStack}>
                   <div className={styles.diagnosticFlowHead}>
-                    {/* The step lives in the progress row below, so the chip names the test. */}
-                    <span className={styles.diagnosticStepChip}>Тест доші</span>
-                    <Link className={styles.diagnosticTextButton} href={TESTS_HUB_ROUTE}>
-                      Усі тести
+                    {/* A title, not a control. It was a glass pill with a touch
+                        target's height — the same shape the answer options and
+                        the buttons use — so it read as something you could
+                        press, and nothing happened when you did. */}
+                    <p className={styles.label}>Тест доші</p>
+                    <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE}>
+                      <Icon name="arrow-left" size={16} className={styles.diagnosticBackIcon} />
+                      <span>Усі тести</span>
                     </Link>
                   </div>
 
@@ -742,9 +775,9 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                           type="button"
                           data-dosha-option={option.code}
                           aria-pressed={selected}
-                          disabled={isBusy || Boolean(answers[currentQuestion.id])}
+                          disabled={isBusy}
                           onClick={() => {
-                            void submitAnswer(currentQuestion.id, option.id);
+                            selectAnswer(currentQuestion.id, option.id);
                           }}
                           className={`cw-choice-btn ${styles.diagnosticOption}`}
                         >
@@ -756,11 +789,26 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
 
                   {error ? <p className={styles.diagnosticErrorNote}>{error}</p> : null}
 
-                  <div className={styles.diagnosticFlowFoot}>
-                    <button type="button" onClick={() => setPhase("intro")} className={styles.diagnosticTextButton}>
-                      До опису тесту
+                  <div className={styles.diagnosticStepActions}>
+                    <button
+                      type="button"
+                      onClick={() => (currentQuestionIndex > 1 ? goToStep(currentQuestionIndex - 1) : setPhase("intro"))}
+                      className={styles.secondaryButton}
+                      disabled={isBusy}
+                    >
+                      <span>{currentQuestionIndex > 1 ? "Назад" : "До опису"}</span>
                     </button>
-                    <span>Режим v1: попередню відповідь змінити не можна.</span>
+                    <button
+                      type="button"
+                      onClick={goForward}
+                      className={styles.heroPrimaryButton}
+                      /* Off until there is something to move on from — the
+                         button is the answer to "what now", and lighting up is
+                         how it says the question is done. */
+                      disabled={isBusy || !currentAnswered}
+                    >
+                      {isLastQuestion ? "Завершити тест" : "Далі"}
+                    </button>
                   </div>
                 </div>
               ) : null}
@@ -774,7 +822,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                   <div className={styles.diagnosticLoadingStack}>
                     <div className={styles.diagnosticSpinner} aria-hidden="true" />
                     <h2 className={styles.title}>Аналізуємо ваш профіль...</h2>
-                    <p className={styles.lead}>Формуємо практичний вектор і наступний маршрут у платформі.</p>
+                    <p className={styles.lead}>Формуємо практичний вектор і наступний крок у платформі.</p>
                   </div>
                 </div>
               ) : null}
@@ -863,8 +911,9 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                     >
                       Пройти тест ще раз
                     </button>
-                    <Link className={styles.diagnosticTextButton} href={TESTS_HUB_ROUTE}>
-                      Усі тести
+                    <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE}>
+                      <Icon name="arrow-left" size={16} className={styles.diagnosticBackIcon} />
+                      <span>Усі тести</span>
                     </Link>
                   </div>
                 </div>
