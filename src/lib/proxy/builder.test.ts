@@ -105,4 +105,12 @@ describe("builder host, through the full proxy", () => {
   it("keeps /build 404ing on a funnel host", () => {
     expect(proxy(request("way21.centerway.net.ua", "/build"))?.status).toBe(404);
   });
+
+  it("308s www.build to the bare host instead of serving a second copy", () => {
+    // isBuilderHost accepts the www form, so without this the builder would
+    // answer on two origins — the thing the /build 404 rule exists to prevent.
+    const res = proxy(request(`www.${BUILDER_HOST}`, "/way21/intro"));
+    expect(res?.status).toBe(308);
+    expect(res?.headers.get("location")).toBe(`https://${BUILDER_HOST}/way21/intro`);
+  });
 });

@@ -3,12 +3,17 @@ import { isInfraBypassPath, shouldBypassProxy } from "@/lib/proxy/bypass";
 import { resolveExperimentAssignmentRouteForRequest, withExperimentAssignmentNext } from "@/lib/proxy/experiments";
 import { rewriteBuilderHostRequest } from "@/lib/proxy/builder";
 import { rewriteFunnelHostRequest, rewriteLegacyLandingEntryRequest } from "@/lib/proxy/landing";
+import { BUILDER_HOST } from "@/lib/surfaces/catalog";
 
 const RETIRED_FUNNEL_HOST_REDIRECTS: Record<string, string> = {
   "detox.centerway.net.ua": "https://way21.centerway.net.ua/",
   "www.detox.centerway.net.ua": "https://way21.centerway.net.ua/",
 };
 
+/* Hosts that own their bare form: `www.<host>` 308s to it. The builder is in
+   the set for the same reason the funnels are, and for one more — its own rule
+   ACCEPTS `www.build`, so without the redirect the "one canonical origin" this
+   whole design turns on would be two. */
 const CANONICAL_FUNNEL_HOSTS = new Set([
   "consult.centerway.net.ua",
   "dosha.centerway.net.ua",
@@ -17,6 +22,7 @@ const CANONICAL_FUNNEL_HOSTS = new Set([
   "reboot.centerway.net.ua",
   "resetday.centerway.net.ua",
   "way21.centerway.net.ua",
+  BUILDER_HOST,
 ]);
 
 function retiredHostRedirect(req: NextRequest): NextResponse | null {
