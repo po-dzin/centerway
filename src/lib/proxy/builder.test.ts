@@ -114,3 +114,39 @@ describe("builder host, through the full proxy", () => {
     expect(res?.headers.get("location")).toBe(`https://${BUILDER_HOST}/way21/intro`);
   });
 });
+
+describe("the platform's own host pair", () => {
+  it("308s the apex to www, the host everything else already names", () => {
+    // sitemap.ts, robots.ts, metadataBase and WFP_MERCHANT_DOMAIN all say www.
+    const res = proxy(request("centerway.net.ua", "/programs"));
+    expect(res?.status).toBe(308);
+    expect(res?.headers.get("location")).toBe("https://www.centerway.net.ua/programs");
+  });
+
+  it("leaves www alone — it is the destination, not a source", () => {
+    // The funnel rule redirects www→bare. The platform's direction is the
+    // opposite, so www must not be caught by it and bounced to the apex.
+    const res = proxy(request("www.centerway.net.ua", "/programs"));
+    expect(res?.status).not.toBe(308);
+  });
+
+  it("serves platform routes on www rather than resolving it as a funnel", () => {
+    // Every funnel host is `<product>.centerway.net.ua`, and the registry also
+    // registers each one's www form. The platform's own www must not fall into
+    // that lookup, or the root would resolve to a brand and serve a landing.
+    for (const path of ["/", "/programs", "/profile", "/learn/way21"]) {
+      const res = proxy(request("www.centerway.net.ua", path));
+      expect(res?.status, path).not.toBe(404);
+      expect(res?.headers.get("location") ?? "", path).not.toContain("centerway.net.ua/way21");
+    }
+  });
+
+  it("does not drag funnel hosts to www", () => {
+    // Every funnel host ends in centerway.net.ua; only an exact apex match may
+    // redirect, or way21.centerway.net.ua would land on www.
+    for (const host of ["way21.centerway.net.ua", "irem.centerway.net.ua", BUILDER_HOST]) {
+      const location = proxy(request(host, "/"))?.headers.get("location") ?? "";
+      expect(location, host).not.toContain("www.centerway.net.ua");
+    }
+  });
+});

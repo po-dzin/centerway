@@ -25,11 +25,32 @@ const CANONICAL_FUNNEL_HOSTS = new Set([
   BUILDER_HOST,
 ]);
 
+/**
+ * The platform's own pair. Canonical is `www`, and not by preference: the
+ * sitemap, robots, the OG metadataBase and WFP_MERCHANT_DOMAIN all already name
+ * it, and a payment provider's registered merchant domain is not a thing to
+ * change for tidiness.
+ *
+ * Note the direction is the OPPOSITE of the funnel hosts above, which are
+ * canonical bare. That asymmetry is inherited, not chosen, and it is why the
+ * apex is matched exactly rather than folded into the www→bare rule.
+ */
+const PLATFORM_APEX_HOST = "centerway.net.ua";
+const PLATFORM_CANONICAL_HOST = `www.${PLATFORM_APEX_HOST}`;
+
 function retiredHostRedirect(req: NextRequest): NextResponse | null {
   const host = (req.headers.get("x-forwarded-host") ?? req.headers.get("host") ?? "")
     .split(":")[0]
     .trim()
     .toLowerCase();
+
+  // Exact match only: every funnel host ends in this domain and must not be
+  // dragged to www.
+  if (host === PLATFORM_APEX_HOST) {
+    const url = req.nextUrl.clone();
+    url.host = PLATFORM_CANONICAL_HOST;
+    return NextResponse.redirect(url, 308);
+  }
 
   if (host.startsWith("www.")) {
     const bareHost = host.slice(4);
