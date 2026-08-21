@@ -9,6 +9,7 @@ import { I18nProvider, useI18n } from "@/components/I18nProvider";
 import { UserMenu } from "@/components/UserMenu";
 import { ToastProvider } from "@/components/ToastProvider";
 import { supabaseClient } from "@/lib/supabaseClient";
+import { isAdminRole } from "@/lib/platform/adminRole";
 import { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 const icons = {
@@ -21,9 +22,6 @@ const icons = {
     system: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none" /><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none" /><circle cx="11" cy="18" r="2" fill="currentColor" stroke="none" /></svg>,
 };
 
-function isAdminRole(role: string | null): boolean {
-    return role === "admin" || role === "support" || role === "Admin" || role === "Support";
-}
 
 function AdminShell({ children }: { children: ReactNode }) {
     const { t } = useI18n();

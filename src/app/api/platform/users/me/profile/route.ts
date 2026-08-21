@@ -45,6 +45,30 @@ export async function GET(req: NextRequest) {
   const [customerByAuth, customerByEmail] = await Promise.all([customerQuery, customerFallbackQuery]);
   const customer = customerByAuth.data ?? customerByEmail.data ?? null;
 
+  /* The @handle, read through the bot's own record of the chat rather than
+     copied onto the customer.
+
+     Telegram usernames are MUTABLE — someone can change their handle tomorrow.
+     A denormalised copy on `customers` would be a value that is correct once
+     and then quietly wrong, with nothing to refresh it. `support_bot_sessions`
+     is upserted on every interaction with the bot, including the link itself,
+     so the row exists for every linked account and carries the freshest handle
+     the bot has seen. The numeric id stays the join key, because that is the
+     part Telegram guarantees is stable.
+
+     Not everyone has one: a Telegram account without a public username is
+     ordinary, and the id remains the only address for it. */
+  let telegramUsername: string | null = null;
+  if (customer?.tg_id) {
+    const { data: botSession } = await db
+      .from("support_bot_sessions")
+      .select("telegram_username")
+      .eq("telegram_user_id", String(customer.tg_id))
+      .maybeSingle();
+    const handle = typeof botSession?.telegram_username === "string" ? botSession.telegram_username.trim() : "";
+    telegramUsername = handle.length > 0 ? handle.replace(/^@/, "") : null;
+  }
+
   const doshaProfile =
     !doshaViewError && doshaView
       ? {
@@ -136,6 +160,7 @@ export async function GET(req: NextRequest) {
         ? {
             phone: customer.phone ?? null,
             telegram: customer.tg_id ?? null,
+            telegramUsername,
           }
         : null,
       dosha: doshaProfile,

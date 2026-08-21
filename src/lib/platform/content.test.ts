@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { LEARNING_SHELF_HREF, learningNavItem, platformNav } from "./content";
+import { LEARNING_SHELF_HREF, adminNavItem, learningNavItem, platformNav } from "./content";
 import manifest from "@/app/manifest";
 import { botCopy } from "@/lib/tgSupportBotCopy";
 
@@ -41,5 +41,27 @@ describe("the learning entry", () => {
     // with `match: "exact"` against the raw href it could never read as current.
     expect(learningNavItem.match).toBe("prefix");
     expect(LEARNING_SHELF_HREF.split("#")[0]).toBe("/profile");
+  });
+});
+
+describe("the admin entry", () => {
+  it("is not part of the showcase nav", () => {
+    // platformNav renders for signed-out visitors. An admin item in it would be
+    // a link everyone sees and almost nobody may follow.
+    expect(platformNav.map((item) => item.href)).not.toContain(adminNavItem.href);
+    expect(platformNav.some((item) => item.label === adminNavItem.label)).toBe(false);
+  });
+
+  it("points at the admin surface, and matches its sub-routes", () => {
+    expect(adminNavItem.href).toBe("/admin");
+    // `exact` would leave the entry looking inactive everywhere inside the panel.
+    expect(adminNavItem.match).toBe("prefix");
+  });
+
+  it("is a plain path, so a branded host can prefix it with the platform origin", () => {
+    // The header rewrites nav hrefs to ${PLATFORM_SITE_ORIGIN}${href} off-origin.
+    // An absolute URL here would come out doubled.
+    expect(adminNavItem.href.startsWith("/")).toBe(true);
+    expect(adminNavItem.href).not.toMatch(/^https?:/);
   });
 });

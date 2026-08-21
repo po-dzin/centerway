@@ -37,6 +37,21 @@ export const learningNavItem = {
   match: "prefix" as const,
 };
 
+/**
+ * The admin entry. Rendered only for `user_roles.role` in {admin, support} —
+ * see `isAdminRole`. Kept out of `platformNav` on purpose: that array is the
+ * public showcase and is rendered for signed-out visitors, so an admin item in
+ * it would be a link everyone sees and almost nobody may follow.
+ *
+ * `prefix`, because /admin has sub-routes and the entry should read as current
+ * throughout them.
+ */
+export const adminNavItem = {
+  label: "Адмінка",
+  href: "/admin",
+  match: "prefix" as const,
+};
+
 export const socialLinks = [
   { label: "YouTube", network: "youtube", href: "https://www.youtube.com/channel/UC0VPHLWTIXD3Rad5XkcyliA" },
   { label: "Telegram", network: "telegram", href: "https://telegram.me/E_Koriakin" },

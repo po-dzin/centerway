@@ -8,7 +8,12 @@ export type ProfileResponse = {
     };
     contacts: {
       phone: string | null;
+      /** The numeric Telegram id — the stable join key, and the only address
+          for an account that has no public @handle. */
       telegram: string | null;
+      /** The @handle without its "@", when the account has one. Mutable, so it
+          is read fresh rather than stored on the customer. */
+      telegramUsername: string | null;
     } | null;
     dosha: {
       attemptId: string;
