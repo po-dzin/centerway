@@ -2,6 +2,7 @@ import { NextRequest } from "next/server";
 import { describe, expect, it } from "vitest";
 
 import { isBuilderHost, rewriteBuilderHostRequest } from "./builder";
+import { proxy } from "@/proxy";
 import { BUILDER_HOST } from "@/lib/surfaces/catalog";
 
 function request(host: string, path: string): NextRequest {
@@ -61,5 +62,47 @@ describe("builder host routing", () => {
   it("does not mistake a lookalike host for the builder", () => {
     expect(isBuilderHost(request("build.centerway.net.ua.evil.com", "/"))).toBe(false);
     expect(rewriteBuilderHostRequest(request("build.centerway.net.ua.evil.com", "/build"))?.status).toBe(404);
+  });
+});
+
+/**
+ * The unit tests above exercise the builder rule alone, which is why they all
+ * passed while production 404'd: the bug was in the ORDER the proxy applies its
+ * rules, not in the rule. These drive the whole proxy.
+ */
+describe("builder host, through the full proxy", () => {
+  const rewriteOf = (res: ReturnType<typeof proxy>) => res?.headers.get("x-middleware-rewrite") ?? null;
+
+  it("routes a lesson path whose first segment is also a product slug", () => {
+    // The shipped bug. `/way21/` and `/reset-day/` are landing-bundle prefixes,
+    // and a course carries its product's slug, so every lesson-editor URL was
+    // bypassed to the static bundle and 404'd.
+    for (const path of ["/way21/intro", "/reset-day/intro", "/irem/x"]) {
+      const res = proxy(request(BUILDER_HOST, path));
+      expect(rewriteOf(res), path).toContain(`/build${path}`);
+    }
+  });
+
+  it("routes a course path and the root", () => {
+    expect(rewriteOf(proxy(request(BUILDER_HOST, "/way21")))).toContain("/build/way21");
+    expect(rewriteOf(proxy(request(BUILDER_HOST, "/")))).toContain("/build");
+  });
+
+  it("still lets framework and API paths through untouched on the builder host", () => {
+    for (const path of ["/api/lms/authoring/courses", "/_next/static/x.js", "/favicon.ico"]) {
+      expect(rewriteOf(proxy(request(BUILDER_HOST, path))), path).toBeNull();
+    }
+  });
+
+  it("leaves the landing bundles alone on their own hosts", () => {
+    // The reordering must not steal static landing paths from funnel hosts.
+    for (const host of ["way21.centerway.net.ua", "www.centerway.net.ua"]) {
+      const res = proxy(request(host, "/way21/js/common.js"));
+      expect(rewriteOf(res), host).toBeNull();
+    }
+  });
+
+  it("keeps /build 404ing on a funnel host", () => {
+    expect(proxy(request("way21.centerway.net.ua", "/build"))?.status).toBe(404);
   });
 });

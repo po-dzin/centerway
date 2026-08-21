@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { shouldBypassProxy } from "@/lib/proxy/bypass";
+import { isInfraBypassPath, shouldBypassProxy } from "@/lib/proxy/bypass";
 import { resolveExperimentAssignmentRouteForRequest, withExperimentAssignmentNext } from "@/lib/proxy/experiments";
 import { rewriteBuilderHostRequest } from "@/lib/proxy/builder";
 import { rewriteFunnelHostRequest, rewriteLegacyLandingEntryRequest } from "@/lib/proxy/landing";
@@ -46,16 +46,27 @@ export function proxy(req: NextRequest) {
 
   const { pathname } = req.nextUrl;
 
-  if (shouldBypassProxy(pathname)) {
+  // Framework, API and asset paths first, on every host. Nothing routes ahead
+  // of these.
+  if (isInfraBypassPath(pathname)) {
     return NextResponse.next();
   }
 
-  // Before the landing rules: the builder host is not a funnel host and must
-  // not be handed to brand resolution, which would fail to resolve it and let
-  // the request fall through to the platform's own routes.
+  // The builder host BEFORE the landing-bundle bypass, not after.
+  //
+  // That bypass matches by first segment — `/way21/`, `/reset-day/` — and those
+  // are product slugs, which are also COURSE slugs. Running it first meant
+  // every lesson URL on the builder host (`/way21/intro`) was handed to the
+  // static landing bundle and 404'd, while `/way21` resolved because the
+  // prefixes carry a trailing slash. The builder was unusable for the one thing
+  // it exists to do, and only on production, where the host exists.
   const builderResponse = rewriteBuilderHostRequest(req);
   if (builderResponse) {
     return builderResponse;
+  }
+
+  if (shouldBypassProxy(pathname)) {
+    return NextResponse.next();
   }
 
   const landingEntryResponse = rewriteLegacyLandingEntryRequest(req);
