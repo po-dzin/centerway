@@ -12,6 +12,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 import { inlineToPlainText } from "@/lms-core";
+import { Icon } from "@/components/Icon";
+import { LogoMark } from "@/components/brand/LogoMark";
 import { BlockRenderer } from "./LessonBlocks";
 import { CourseContentsDrawer } from "./CourseContentsDrawer";
 import { LmsNotice } from "./LmsNotice";
@@ -185,7 +187,10 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
   if (state.status === "loading") {
     return (
       <main className={styles.wrap} data-cw-platform-template="learn-lesson">
-        <p className={styles.lead}>Завантажуємо урок…</p>
+        <div className={styles.loading}>
+          <LogoMark size={30} animate="wait" />
+          <p className={styles.lead}>Завантажуємо урок…</p>
+        </div>
       </main>
     );
   }
@@ -195,7 +200,8 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
       <main className={styles.wrap} data-cw-platform-template="learn-lesson">
         <div className={styles.lessonTopBar}>
           <Link className={styles.backButton} href={`/learn/${courseSlug}`}>
-            <span aria-hidden="true">←</span> До курсу
+            <Icon name="arrow-left" size={18} />
+            <span>До курсу</span>
           </Link>
         </div>
         <LmsNotice failure={state.error} onRetry={load} />
@@ -204,6 +210,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
   }
 
   const data = state.data;
+  const hasObjective = data.lesson.blocks.some((block) => block.type === "lesson_objective");
   const { nav } = data;
 
   return (
@@ -214,7 +221,8 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
 
       <div className={styles.lessonTopBar}>
         <Link className={styles.backButton} href={`/learn/${courseSlug}`}>
-          <span aria-hidden="true">←</span> До курсу
+          <Icon name="arrow-left" size={18} />
+          <span>До курсу</span>
         </Link>
         <span className={styles.topBarSpacer} />
         <button
@@ -223,7 +231,8 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
           onClick={() => setContentsOpen(true)}
           aria-haspopup="dialog"
         >
-          <span aria-hidden="true">☰</span> Зміст
+          <Icon name="menu" size={18} />
+          <span>Зміст</span>
         </button>
       </div>
 
@@ -248,7 +257,16 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
       </p>
 
       <h1 className={styles.title}>{data.lesson.title}</h1>
-      {data.lesson.summary ? <p className={styles.lead}>{inlineToPlainText(data.lesson.summary)}</p> : null}
+      {/* One abstract under the title, never two. Every lesson carries both a
+          `summary` and a `lesson_objective`, and in practice they paraphrase
+          each other — "Задача етапу — увійти в процес та підготувати органи"
+          against "Увійти в процес і підготувати органи". Stacked, they read as
+          a choice the page failed to make. The objective wins: it is the more
+          specific and the more actionable of the two, and it is already the
+          first block. The summary only renders when a lesson has no objective. */}
+      {data.lesson.summary && !hasObjective ? (
+        <p className={styles.lead}>{inlineToPlainText(data.lesson.summary)}</p>
+      ) : null}
 
       <div className={styles.blocks} ref={bodyRef}>
         {data.lesson.blocks.map((block) => (
@@ -262,83 +280,86 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
         ))}
       </div>
 
+      {/* One control in the bar, and only one. Advancing lives in the pager
+          below, with the next lesson's real title — two competing buttons in a
+          sticky strip is how the reader loses the thing they came for. */}
       {data.isReference ? (
-        // A lookup page is never "completed" — the only action is going back.
-        <div className={styles.completionBar}>
-          <p className={styles.completeHint}>Довідкова сторінка — повертайся сюди будь-коли.</p>
-          <Link className={styles.nextLinkQuiet} href={`/learn/${courseSlug}`}>
-            <span>До курсу</span>
-            <span className={styles.nextArrow} aria-hidden="true">→</span>
-          </Link>
-        </div>
+        // A lookup page is never "completed", so it has nothing to stick to the
+        // bottom of the screen. It used to float a card holding a hint and a
+        // second "До курсу" — over a pager that already offers the course map
+        // one scroll below. The hint stays, in the flow, at its real weight.
+        <p className={styles.completeHint}>Довідкова сторінка — повертайся сюди будь-коли.</p>
       ) : (
-      <div className={styles.completionBar}>
-        <label
-          className={
-            completed
-              ? styles.completeToggleDone
-              : checklistSatisfied
-                ? styles.completeToggle
-                : styles.completeToggleDisabled
-          }
-        >
-          <input
-            type="checkbox"
-            checked={completed}
-            /* A finished step CAN be un-ticked: the protocol is repeatable, and
-               the checklist gate guards claiming the step is done, not
-               withdrawing that claim — hence `completed ||` on the gate. */
-            disabled={pending || (!completed && !checklistSatisfied)}
-            onChange={(event) => void setLessonCompleted(event.target.checked)}
-          />
-          <span>{completed ? "Крок пройдено" : pending ? "Зберігаємо…" : "Позначити крок пройденим"}</span>
-        </label>
+        <>
+          <label
+            className={completed ? styles.completeToggleDone : styles.completeToggle}
+            data-blocked={!completed && !checklistSatisfied ? "" : undefined}
+          >
+            <input
+              type="checkbox"
+              className={styles.completeInput}
+              checked={completed}
+              /* A finished lesson CAN be un-ticked: the protocol is repeatable,
+                 and the checklist gate guards claiming the lesson is done, not
+                 withdrawing that claim. */
+              disabled={pending || (!completed && !checklistSatisfied)}
+              onChange={(event) => void setLessonCompleted(event.target.checked)}
+            />
+            <span className={styles.completeMark} aria-hidden="true">
+              <Icon name="check" size={16} />
+            </span>
+            <span>{completed ? "Урок пройдено" : pending ? "Зберігаємо…" : "Позначити урок пройденим"}</span>
+          </label>
 
-        {completed ? (
-          nav.next?.available ? (
-            <Link className={styles.nextLink} href={`/learn/${courseSlug}/${nav.next.slug}`}>
-              <span>Наступний крок</span>
-              <span className={styles.nextArrow} aria-hidden="true">→</span>
-            </Link>
-          ) : (
-            <Link className={styles.nextLinkQuiet} href={`/learn/${courseSlug}`}>
-              <span>До курсу</span>
-              <span className={styles.nextArrow} aria-hidden="true">→</span>
-            </Link>
-          )
-        ) : (
-          <p className={styles.completeHint}>
-            {checklistSatisfied
-              ? "Познач крок, коли завершиш — і йди далі."
-              : "Відзнач пункти чек-листа, щоб завершити крок."}
-          </p>
-        )}
-      </div>
+          {!completed && !checklistSatisfied ? (
+            <p className={styles.completeHint}>Відзнач пункти чек-листа, щоб завершити урок.</p>
+          ) : null}
+        </>
       )}
 
-      {/* Always reachable, whether or not the step is finished: re-reading a
-          previous lesson must never require going back to the course page. */}
-      {data.isReference ? null : (
+      {/* Always reachable, whether or not the lesson is finished: re-reading a
+          previous lesson must never require going back to the course page. The
+          next cell takes the accent once this one is done — the momentum moves
+          rather than duplicating itself.
+
+          One line per cell: the arrow and the side it sits on already say
+          "previous" and "next", so the words that used to say it again are
+          gone. The lesson title is the only thing here a reader cannot infer,
+          and it now gets the whole cell. Direction still reaches screen readers
+          through aria-label. */}
       <nav className={styles.pager} aria-label="Навігація по уроках">
-        {nav.previous?.available ? (
-          <Link className={styles.pagerLink} href={`/learn/${courseSlug}/${nav.previous.slug}`}>
-            <span className={styles.pagerLabel}>← Попередній</span>
+        {nav.previous ? (
+          <Link
+            className={styles.pagerLink}
+            href={`/learn/${courseSlug}/${nav.previous.slug}`}
+            aria-label={`Попередній урок: ${nav.previous.title}`}
+          >
+            <Icon name="arrow-left" size={16} className={styles.pagerArrow} />
             <span className={styles.pagerTitle}>{nav.previous.title}</span>
           </Link>
         ) : (
-          <span className={styles.pagerEmpty} aria-hidden="true" />
+          <Link className={styles.pagerLink} href={`/learn/${courseSlug}`}>
+            <Icon name="arrow-left" size={16} className={styles.pagerArrow} />
+            <span className={styles.pagerTitle}>Карта курсу</span>
+          </Link>
         )}
 
-        {nav.next?.available ? (
-          <Link className={styles.pagerLinkNext} href={`/learn/${courseSlug}/${nav.next.slug}`}>
-            <span className={styles.pagerLabel}>Наступний →</span>
+        {nav.next ? (
+          <Link
+            className={completed ? styles.pagerLinkNextAccent : styles.pagerLinkNext}
+            href={`/learn/${courseSlug}/${nav.next.slug}`}
+            aria-label={`Наступний урок: ${nav.next.title}`}
+          >
             <span className={styles.pagerTitle}>{nav.next.title}</span>
+            <Icon name="arrow-right" size={16} className={styles.pagerArrow} />
           </Link>
         ) : (
-          <span className={styles.pagerEmpty} aria-hidden="true" />
+          <Link className={styles.pagerLinkNext} href={`/learn/${courseSlug}`}>
+            <span className={styles.pagerTitle}>Карта курсу</span>
+            <Icon name="arrow-right" size={16} className={styles.pagerArrow} />
+          </Link>
         )}
       </nav>
-      )}
 
       {contentsOpen ? (
         <CourseContentsDrawer

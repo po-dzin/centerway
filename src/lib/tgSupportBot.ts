@@ -566,7 +566,7 @@ async function tryLinkAccount(
   await saveSession(db, user, { state: "idle", contact: null });
   await sendMessage(
     chatId,
-    "Готово — акаунт CenterWay підключено. Нагадування про кроки курсу приходитимуть сюди."
+    "Готово — акаунт CenterWay підключено. Нагадування про уроки курсу приходитимуть сюди."
   );
   return true;
 }

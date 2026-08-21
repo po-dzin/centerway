@@ -55,7 +55,7 @@ const COPY: Record<LmsFailure, { title: string; text: string; href?: string; cta
   },
   lesson_locked: {
     title: "Урок ще закритий",
-    text: "Цей крок відкриється за розкладом курсу — повернись, коли він стане доступним.",
+    text: "Цей урок відкриється за розкладом курсу — повернись, коли він стане доступним.",
   },
   network: {
     title: "Не вдалося завантажити",

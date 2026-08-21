@@ -20,9 +20,10 @@
 /* ── State / feedback ─────────────────────────────── */
 
 .notice {
-  border: 1px solid var(--cw-border);
-  border-radius: var(--cw-radius-md);
-  background: var(--cw-surface);
+  border: 0;
+  border-radius: var(--cw-card-radius);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
   padding: var(--cw-space-lg);
   display: grid;
   gap: var(--cw-space-sm);
@@ -36,7 +37,7 @@
 
 .noticeText {
   margin: 0;
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
   line-height: 1.55;
 }
 
@@ -47,7 +48,7 @@
   font-size: 0.78rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
 }
 
 .title {
@@ -60,8 +61,22 @@
 
 .lead {
   margin: 0 0 var(--cw-space-lg);
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
   line-height: 1.6;
+}
+
+/* Waiting is carried by the mark, not by a spinner: the brand sits at muted
+   strength and its turns pulse in place. `wait` never rotates, so the row does
+   not read as a system control. */
+.loading {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  color: var(--cw-platform-muted);
+}
+
+.loading .lead {
+  margin: 0;
 }
 
 .standing {
@@ -72,27 +87,17 @@
 }
 
 .chip {
-  border: 1px solid var(--cw-border);
+  border: 0;
   border-radius: var(--cw-radius-pill);
   padding: 0.4rem 0.8rem;
   font-size: 0.82rem;
-  color: var(--cw-muted);
-  background: var(--cw-surface-2);
+  color: var(--cw-platform-muted);
+  background: var(--cw-mat-surface-sunk);
 }
 
-.progressTrack {
-  height: 0.4rem;
-  border-radius: var(--cw-radius-pill);
-  background: var(--cw-surface-muted);
-  overflow: hidden;
+/* Geometry lives in ProgressRail.module.css; the page only owns the gap under it. */
+.courseProgress {
   margin-bottom: var(--cw-space-xl);
-}
-
-.progressFill {
-  height: 100%;
-  border-radius: var(--cw-radius-pill);
-  background: var(--cw-platform-accent);
-  transition: width 240ms ease;
 }
 
 /* ── Restart (a finished, repeatable protocol) ────── */
@@ -103,37 +108,19 @@
   margin-bottom: var(--cw-space-xl);
   padding: var(--cw-space-md);
   border-radius: var(--cw-radius-md);
-  background: var(--cw-surface-2);
+  background: var(--cw-mat-surface-sunk);
 }
 
 .restartHint {
   margin: 0;
   font-size: 0.88rem;
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
   line-height: 1.5;
 }
 
 .restartButton {
+  composes: secondary from "../platform/PlatformButtons.module.css";
   justify-self: start;
-  min-height: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-lg);
-  border: 1px solid var(--cw-border);
-  border-radius: var(--cw-radius-btn);
-  background: var(--cw-surface);
-  color: inherit;
-  font: inherit;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.restartButton:hover:not(:disabled) {
-  background: var(--cw-interactive-hover-bg);
-  border-color: var(--cw-interactive-hover-border);
-}
-
-.restartButton:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
 }
 
 /* ── Outline ──────────────────────────────────────── */
@@ -147,15 +134,28 @@
 }
 
 .outlineItem {
-  border: 1px solid var(--cw-border);
-  border-radius: var(--cw-radius-md);
-  background: var(--cw-surface);
+  border: 0;
+  border-radius: var(--cw-card-radius);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.outlineItem:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--cw-mat-shadow-raised);
+}
+
+/* The lesson the schedule has arrived at wears the accent on its edge — the one
+   row worth returning to, without a second button competing for the eye. */
+.outlineItem[data-current] {
+  box-shadow: inset 3px 0 0 0 var(--cw-platform-accent), var(--cw-mat-shadow-soft);
 }
 
 .outlineLink {
   /* Whole row is the tap target; ≥48px tall on the smallest phone. */
   display: grid;
-  grid-template-columns: 2.5rem 1fr auto;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--cw-space-sm);
   min-height: var(--ds-touch-target-min);
@@ -165,10 +165,26 @@
   border-radius: inherit;
 }
 
+.outlineLink:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 40%, transparent);
+}
+
 .outlineLocked {
   composes: outlineLink;
   cursor: not-allowed;
   opacity: 0.62;
+}
+
+.outlineBody {
+  min-width: 0;
+}
+
+/* Chevron: chrome, not a carrier — it says "row opens", nothing more. A word
+   like "відкрити" in this slot only repeats what the whole row already is. */
+.outlineGlyph {
+  color: var(--cw-platform-muted);
+  flex: none;
 }
 
 .dayBadge {
@@ -176,18 +192,18 @@
   place-items: center;
   width: 2.5rem;
   height: 2.5rem;
-  border-radius: var(--cw-radius-pill);
-  border: 1px solid var(--cw-border);
-  background: var(--cw-surface-2);
+  border-radius: var(--cw-radius-sm);
+  border: 0;
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
   font-family: var(--cw-font-data);
   font-size: 0.9rem;
 }
 
 .dayBadgeDone {
   composes: dayBadge;
-  border-color: transparent;
   background: var(--cw-platform-accent);
-  color: var(--cw-accent-contrast);
+  color: var(--cw-platform-on-accent);
 }
 
 .outlineTitle {
@@ -200,20 +216,14 @@
 .outlineMeta {
   margin: 0.15rem 0 0;
   font-size: 0.82rem;
-  color: var(--cw-muted);
-}
-
-.outlineState {
-  font-size: 0.78rem;
-  color: var(--cw-muted);
-  text-align: right;
+  color: var(--cw-platform-muted);
 }
 
 /* Handbook, listed after the protocol and visually set apart from it. */
 .referenceSection {
   margin-top: var(--cw-space-2xl);
   padding-top: var(--cw-space-lg);
-  border-top: 1px solid var(--cw-border);
+  border-top: 1px solid var(--cw-platform-border);
 }
 
 .referenceHeading {
@@ -225,7 +235,7 @@
 .referenceLead {
   margin: 0 0 var(--cw-space-md);
   font-size: 0.88rem;
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
 }
 
 /* ── Lesson player ────────────────────────────────── */
@@ -241,7 +251,7 @@
   height: 0.2rem;
   margin-bottom: var(--cw-space-md);
   border-radius: var(--cw-radius-pill);
-  background: var(--cw-surface-muted);
+  background: var(--cw-mat-surface-sunk);
   overflow: hidden;
 }
 
@@ -258,37 +268,19 @@
   margin-bottom: var(--cw-space-md);
 }
 
-/* Real controls, not text links: both are thumb-sized and read as buttons. */
+/* Real controls, not text links: both are thumb-sized and read as buttons.
+   Chrome, not content — transparent at rest, the surface arrives on hover and
+   focus where it means something. */
 .iconButton {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.4rem;
-  min-height: var(--ds-touch-target-min);
-  min-width: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-sm);
-  border: 1px solid var(--cw-border);
-  border-radius: var(--cw-radius-btn);
-  background: var(--cw-surface);
-  color: inherit;
-  font: inherit;
-  font-size: 0.9rem;
-  text-decoration: none;
-  cursor: pointer;
+  composes: chrome from "../platform/PlatformButtons.module.css";
 }
 
-.iconButton:hover {
-  background: var(--cw-interactive-hover-bg);
-  border-color: var(--cw-interactive-hover-border);
-}
-
-.iconButton:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.iconButtonBare {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
 }
 
 .backButton {
-  composes: iconButton;
+  composes: chrome from "../platform/PlatformButtons.module.css";
 }
 
 .topBarSpacer {
@@ -304,7 +296,7 @@
   gap: 0.5rem;
   margin: 0 0 var(--cw-space-2xs);
   font-size: 0.82rem;
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
 }
 
 .stepCount {
@@ -313,7 +305,7 @@
   padding: 0.2rem 0.55rem;
   border-radius: var(--cw-radius-pill);
   background: var(--cw-platform-accent);
-  color: var(--cw-accent-contrast);
+  color: var(--cw-platform-on-accent);
   font-family: var(--cw-font-data);
   font-size: 0.76rem;
   font-weight: 600;
@@ -329,9 +321,9 @@
   display: inline-flex;
   align-items: center;
   padding: 0.2rem 0.55rem;
-  border: 1px solid var(--cw-border);
+  border: 1px solid var(--cw-platform-border);
   border-radius: var(--cw-radius-pill);
-  background: var(--cw-surface-2);
+  background: var(--cw-mat-surface-sunk);
   font-size: 0.76rem;
   font-weight: 600;
 }
@@ -342,7 +334,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--ds-z-modal, 60);
-  background: color-mix(in srgb, var(--cw-text) 38%, transparent);
+  background: color-mix(in srgb, var(--cw-platform-text) 38%, transparent);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -353,9 +345,9 @@
   max-height: 82svh;
   overflow-y: auto;
   padding: var(--cw-space-md) var(--cw-space-md) max(var(--cw-space-lg), env(safe-area-inset-bottom));
-  border-radius: var(--cw-radius-lg) var(--cw-radius-lg) 0 0;
-  background: var(--cw-surface-solid);
-  box-shadow: 0 -12px 40px color-mix(in srgb, var(--cw-text) 18%, transparent);
+  border-radius: var(--cw-radius-xl) var(--cw-radius-xl) 0 0;
+  background: var(--cw-mat-surface);
+  box-shadow: 0 -12px 40px color-mix(in srgb, var(--cw-platform-text) 18%, transparent);
 }
 
 .drawerHandle {
@@ -363,7 +355,7 @@
   height: 0.25rem;
   margin: 0 auto var(--cw-space-sm);
   border-radius: var(--cw-radius-pill);
-  background: var(--cw-border);
+  background: var(--cw-platform-border);
 }
 
 .drawerHead {
@@ -385,7 +377,7 @@
   font-size: 0.76rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
 }
 
 .drawerItem {
@@ -403,7 +395,7 @@
 
 .drawerItemCurrent {
   composes: drawerItem;
-  background: var(--cw-surface-2);
+  background: var(--cw-mat-surface-sunk);
   font-weight: 600;
 }
 
@@ -418,7 +410,7 @@
   width: 1.75rem;
   height: 1.75rem;
   border-radius: var(--cw-radius-pill);
-  border: 1px solid var(--cw-border);
+  border: 1px solid var(--cw-platform-border);
   font-family: var(--cw-font-data);
   font-size: 0.78rem;
 }
@@ -427,14 +419,14 @@
   composes: drawerMark;
   border-color: transparent;
   background: var(--cw-platform-accent);
-  color: var(--cw-accent-contrast);
+  color: var(--cw-platform-on-accent);
 }
 
 .drawerMeta {
   display: block;
   font-size: 0.78rem;
   font-weight: 400;
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
 }
 
 /* ── Prev / next pager ────────────────────────────── */
@@ -447,37 +439,77 @@
 }
 
 .pagerLink {
-  display: grid;
-  gap: 0.15rem;
-  align-content: center;
+  /* One row, not two: arrow and title on a single baseline. The cell used to
+     stack a direction word over the title; the arrow says the direction and the
+     side says it again, so the row is all that is left. */
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
   min-height: var(--ds-touch-target-min);
-  padding: var(--cw-space-sm) var(--cw-space-md);
-  border: 1px solid var(--cw-border);
-  border-radius: var(--cw-radius-md);
-  background: var(--cw-surface);
-  color: inherit;
+  padding: var(--cw-space-md);
+  border: 0;
+  border-radius: var(--cw-card-radius);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+  color: var(--cw-platform-text);
   text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.pagerLink:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--cw-mat-shadow-raised);
+}
+
+.pagerLink:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 40%, transparent), var(--cw-mat-shadow-soft);
 }
 
 .pagerLinkNext {
   composes: pagerLink;
+  justify-content: flex-end;
   text-align: right;
 }
 
+/* The arrow is orientation, not content — it sits back so the title carries the
+   cell. It holds its size when a long title wraps. */
+.pagerArrow {
+  flex: none;
+  opacity: 0.5;
+}
+
+.pagerLinkNextAccent .pagerArrow {
+  opacity: 0.7;
+}
+
+/* Once the lesson is done, forward momentum moves HERE rather than adding a
+   second button to the sticky bar. One accent on screen at a time. */
+.pagerLinkNextAccent {
+  composes: pagerLinkNext;
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-on-accent);
+}
+
+/* Left over from the pager, now only the drawer's "Пройдено N з M" line. */
 .pagerLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
   font-size: 0.76rem;
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
 }
 
 .pagerTitle {
   font-size: 0.92rem;
   font-weight: 600;
   line-height: 1.3;
-}
-
-.pagerEmpty {
-  /* Keeps the grid balanced when there is no neighbour on one side. */
-  visibility: hidden;
+  /* Two lines is enough to recognise the lesson; a four-line wrap on a phone
+     turns the pager into a wall. */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .blocks {
@@ -485,11 +517,16 @@
   gap: var(--cw-space-lg);
 }
 
+/* The lesson's one abstract, and it sits in the text column like everything
+   else. It used to be a gold-barred pull-quote directly under the summary —
+   two openings saying the same thing, one of them shouting. The summary is
+   gone (see LessonView) and the bar with it: nothing on this page needs an
+   accent to be found, it is the first thing after the title. */
 .objective {
-  border-left: 3px solid var(--cw-platform-accent);
-  padding-left: var(--cw-space-md);
+  margin: 0 0 var(--cw-space-sm);
   font-size: 1.08rem;
   line-height: 1.55;
+  color: var(--cw-platform-muted);
 }
 
 .paragraph {
@@ -503,12 +540,61 @@
   font-weight: 600;
 }
 
-.list {
+/* Markers hang in the margin, so list text starts on the SAME left edge as the
+   paragraphs above and below it. The old rule padded the list in by 1.2rem and
+   set `display: grid`, which blockifies the items and drops their ::marker —
+   an indent with nothing in it, which is what made running text look like it
+   kept changing its mind about where the page begins. */
+.list,
+.listOrdered {
   margin: 0;
-  padding-left: 1.2rem;
+  padding: 0;
+  list-style: none;
   display: grid;
-  gap: 0.4rem;
+  /* Wider than the 0.4rem it was. These items are "term — definition" and most
+     of them wrap to two or three lines at 1.6; at 0.4rem the space between two
+     items was smaller than the space between two lines of the same item, so the
+     list read as one paragraph with bold words scattered through it. */
+  gap: 0.7rem;
   line-height: 1.6;
+}
+
+.list > li,
+.listOrdered > li {
+  position: relative;
+}
+
+.list > li::before {
+  content: "";
+  position: absolute;
+  left: -0.85rem;
+  /* Optical, not geometric: 0.62em lands the dot on the x-height of the first
+     line rather than its box, which is where the eye expects it. */
+  top: 0.62em;
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cw-platform-accent) 68%, transparent);
+}
+
+.listOrdered {
+  counter-reset: cw-item;
+}
+
+.listOrdered > li {
+  counter-increment: cw-item;
+}
+
+.listOrdered > li::before {
+  content: counter(cw-item) ".";
+  position: absolute;
+  left: -1.35rem;
+  width: 1.1rem;
+  text-align: right;
+  font-family: var(--cw-font-data);
+  font-size: 0.82rem;
+  line-height: 1.95;
+  color: var(--cw-platform-muted);
 }
 
 .step {
@@ -524,7 +610,7 @@
   width: 2rem;
   height: 2rem;
   border-radius: var(--cw-radius-pill);
-  background: var(--cw-surface-muted);
+  background: var(--cw-mat-surface-sunk);
   font-family: var(--cw-font-data);
   font-size: 0.85rem;
 }
@@ -534,7 +620,7 @@
   font-size: 0.78rem;
   letter-spacing: 0.05em;
   text-transform: uppercase;
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
   margin-bottom: 0.15rem;
 }
 
@@ -547,13 +633,15 @@
 .stepText {
   margin: 0.3rem 0 0;
   line-height: 1.6;
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
 }
 
+/* No outline. A card mid-paragraph already separates itself with its surface
+   and its padding; the 1px rule on top of that is what made running text hitting
+   a card read as a jump rather than a change of register. */
 .practice {
-  border: 1px solid var(--cw-border);
   border-radius: var(--cw-radius-md);
-  background: var(--cw-surface-2);
+  background: var(--cw-mat-surface-sunk);
   padding: var(--cw-space-md);
 }
 
@@ -565,9 +653,8 @@
 }
 
 .boundary {
-  border: 1px solid var(--cw-border);
   border-radius: var(--cw-radius-md);
-  background: var(--cw-surface-muted);
+  background: var(--cw-mat-surface-sunk);
   padding: var(--cw-space-md);
   line-height: 1.6;
   font-size: 0.94rem;
@@ -576,9 +663,8 @@
 .checklist {
   display: grid;
   gap: var(--cw-space-xs);
-  border: 1px solid var(--cw-border);
   border-radius: var(--cw-radius-md);
-  background: var(--cw-surface);
+  background: var(--cw-mat-surface);
   padding: var(--cw-space-md);
 }
 
@@ -609,7 +695,7 @@
 
 .checkItemDone {
   composes: checkItem;
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
 }
 
 .media {
@@ -619,7 +705,7 @@
   border: 0;
   border-radius: var(--cw-radius-md);
   overflow: hidden;
-  background: var(--cw-surface-muted);
+  background: var(--cw-mat-surface-sunk);
 }
 
 .image {
@@ -632,13 +718,13 @@
 .caption {
   margin: var(--cw-space-2xs) 0 0;
   font-size: 0.84rem;
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
 }
 
 .quote {
   margin: 0;
   padding-left: var(--cw-space-md);
-  border-left: 2px solid var(--cw-border);
+  border-left: 2px solid var(--cw-platform-border);
   font-family: var(--cw-font-editorial);
   font-size: 1.15rem;
   line-height: 1.5;
@@ -649,11 +735,11 @@
   margin-top: var(--cw-space-2xs);
   font-family: var(--cw-font-ui);
   font-size: 0.85rem;
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
 }
 
 .faqItem {
-  border-bottom: 1px solid var(--cw-border);
+  border-bottom: 1px solid var(--cw-platform-border);
   padding: var(--cw-space-sm) 0;
 }
 
@@ -672,7 +758,7 @@
 
 .faqAnswer {
   margin: var(--cw-space-2xs) 0 0;
-  color: var(--cw-muted);
+  color: var(--cw-platform-muted);
   line-height: 1.6;
 }
 
@@ -682,105 +768,112 @@
 }
 
 .ctaLink {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--ds-touch-target-min);
-  padding: 0 var(--cw-space-lg);
-  border-radius: var(--cw-radius-btn);
-  border: 1px solid var(--cw-border);
-  background: var(--cw-surface-2);
-  color: inherit;
-  text-decoration: none;
-  font-weight: 600;
+  composes: quiet from "../platform/PlatformButtons.module.css";
 }
 
 /* ── Completion bar ───────────────────────────────── */
 
+/* Stickiness and reach, nothing else. There is no wrapper card any more: the
+   bar used to be a raised surface whose only child was a filled pill — two
+   containers, two shadows and two radii for one checkbox. The control itself
+   is now the sticky element. */
 .completionBar {
   position: sticky;
   /* Sits above the home indicator, inside thumb reach. */
   bottom: max(var(--cw-space-md), env(safe-area-inset-bottom));
+  z-index: var(--ds-z-sticky);
   margin-top: var(--cw-space-xl);
-  display: grid;
-  gap: var(--cw-space-xs);
-  padding: var(--cw-space-md);
-  border: 1px solid var(--cw-border);
-  border-radius: var(--cw-radius-lg);
-  background: var(--cw-surface-solid);
-  box-shadow: 0 10px 30px color-mix(in srgb, var(--cw-text) 10%, transparent);
 }
 
-/* The completion control is a CHECKBOX, not a button: marking a step done is a
-   state you own and can undo, not a one-way action. */
+/* The completion control is a CHECKBOX, not a button: marking a lesson done is
+   a state you own and can undo, not a one-way action. It is also the ONLY
+   control in this bar — going forward lives in the pager, with the next
+   lesson's real title, so a sticky strip never hides the thing it sits over. */
 .completeToggle {
+  composes: completionBar;
   display: grid;
-  grid-template-columns: 1.6rem 1fr;
+  grid-template-columns: auto minmax(0, 1fr);
   gap: var(--cw-space-sm);
   align-items: center;
   min-height: var(--ds-touch-target-min);
-  padding: var(--cw-space-xs) var(--cw-space-sm);
-  border: 1px solid var(--cw-border);
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border: 0;
   border-radius: var(--cw-radius-btn);
-  background: var(--cw-surface);
+  background: var(--cw-platform-accent);
+  /* It floats over the lesson text now that nothing sits behind it, so it takes
+     the lift the wrapper used to carry. */
+  box-shadow: var(--cw-mat-shadow-raised);
+  color: var(--cw-platform-on-accent);
   cursor: pointer;
   font-weight: 600;
+  font-size: 0.95rem;
 }
 
+/* Done: the accent is spent, so the control steps back to a quiet surface and
+   the check alone carries the state. */
 .completeToggleDone {
   composes: completeToggle;
-  border-color: transparent;
-  background: var(--cw-btn-primary-bg);
-  color: var(--cw-btn-primary-text);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
 }
 
-.completeToggle input,
-.completeToggleDone input {
-  width: 1.5rem;
-  height: 1.5rem;
-  margin: 0;
-  accent-color: var(--cw-platform-accent);
-}
-
-.completeToggleDisabled {
-  composes: completeToggle;
-  opacity: 0.55;
+/* Nothing to mark yet — the checklist above is the actual next action. */
+.completeToggle[data-blocked] {
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-muted);
   cursor: not-allowed;
+}
+
+/* The native box is replaced by a compact mark: a 1.5rem control inside a
+   full-width label read as a giant checkbox and swallowed the row. */
+/* Visually hidden, NOT hidden: the input stays in the accessibility tree and
+   keeps keyboard focus — `opacity: 0` / `display: none` would take the control
+   away from anyone not using a mouse. */
+.completeInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.completeMark {
+  display: grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 0.45rem;
+  /* Unticked: an empty box. The glyph is transparent rather than absent so the
+     mark never resizes when it fills in. */
+  background: transparent;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cw-platform-on-accent) 65%, transparent);
+  color: transparent;
+}
+
+.completeToggleDone .completeMark {
+  background: var(--cw-platform-accent);
+  box-shadow: none;
+  color: var(--cw-platform-on-accent);
+}
+
+.completeToggle[data-blocked] .completeMark {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
+}
+
+.completeInput:focus-visible + .completeMark {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: 2px;
 }
 
 .completeHint {
   margin: 0;
+  padding-inline: var(--cw-space-2xs);
   font-size: 0.84rem;
-  color: var(--cw-muted);
-}
-
-/* Advancing is a separate, clearly-labelled action so "done" and "go on" never
-   collapse into one ambiguous button. */
-.nextLink {
-  display: inline-flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--cw-space-sm);
-  min-height: var(--ds-touch-target-min);
-  padding: 0 var(--cw-space-md);
-  border: 1px solid transparent;
-  border-radius: var(--cw-radius-btn);
-  background: var(--cw-btn-primary-bg);
-  color: var(--cw-btn-primary-text);
-  text-decoration: none;
-  font-weight: 600;
-}
-
-.nextLinkQuiet {
-  composes: nextLink;
-  border-color: var(--cw-border);
-  background: var(--cw-surface-2);
-  color: inherit;
-}
-
-.nextArrow {
-  font-size: 1.1rem;
-  line-height: 1;
+  color: var(--cw-platform-muted);
 }
 
 /* ── Wider viewports: additive only ───────────────── */
@@ -790,24 +883,13 @@
     margin-block-start: var(--cw-space-2xl);
   }
 
-  .completionBar {
-    grid-template-columns: 1fr auto;
-    align-items: center;
-  }
-
-  .nextLink,
-  .nextLinkQuiet {
-    justify-self: end;
-    padding-inline: var(--cw-space-xl);
-  }
-
   /* The drawer becomes a centred dialog once there is room for one. */
   .drawerBackdrop {
     align-items: center;
   }
 
   .drawer {
-    border-radius: var(--cw-radius-lg);
+    border-radius: var(--cw-radius-xl);
     max-height: 78svh;
   }
 }
