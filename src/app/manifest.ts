@@ -1,5 +1,6 @@
 import type { MetadataRoute } from "next";
 
+import { PLATFORM_GROUND } from "@/lib/platform/chrome";
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
 
 /**
@@ -37,8 +38,8 @@ export default function manifest(): MetadataRoute.Manifest {
     display: "standalone",
     // The calm ground, so the splash and the window chrome open on the same
     // surface the platform actually renders on rather than flashing white.
-    background_color: "#faefe0",
-    theme_color: "#faefe0",
+    background_color: PLATFORM_GROUND,
+    theme_color: PLATFORM_GROUND,
     icons: [
       { src: "/cw/brand/cw-icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
       { src: "/cw/brand/cw-icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },

@@ -1,6 +1,6 @@
 {
   "$source": "claude.ai/design · CenterWay DS · components/brand/Logo.jsx (F2), read 2026-08-20",
-  "$note": "One continuous brush spiral: 2.75 counter-clockwise turns, three arcs with 48-degree gaps, each tucking back toward the core. Weight rises over the first tenth of an arc and tapers to zero over the last forty percent. viewBox 0 0 64 64. arcs = filled brush outlines. mids = centrelines, stroked at width 9 behind a mask, used only by the draw animation. lens = path lengths of mids, the dasharray/dashoffset seed.",
+  "$note": "One continuous brush spiral: 2.75 counter-clockwise turns, three arcs with 48-degree gaps, each tucking back toward the core. Weight rises over the first tenth of an arc and tapers to zero over the last forty percent. viewBox 0 0 64 64. arcs = filled brush outlines. mids = centrelines, stroked at width 9 behind a mask, used only by the draw animation. lens = path lengths of mids, the dasharray/dashoffset seed. box = the ink's bounding box inside that viewBox [x, y, w, h]; the mark neither fills nor centres the square, so every tile that draws it has to fit and centre on this rather than on the viewBox. Verified against a render on every bake.",
   "viewBox": "0 0 64 64",
   "full": {
     "arcs": [
@@ -18,7 +18,13 @@
       85.09,
       116.07
     ],
-    "coreR": 3.0
+    "coreR": 3.0,
+    "box": [
+      7.03,
+      8.43,
+      45.92,
+      48.84
+    ]
   },
   "compact": {
     "arcs": [
@@ -34,6 +40,12 @@
       77.09
     ],
     "coreR": 4.4,
-    "$note": "20-24px build: 1.6 turns over two arcs with 86-degree gaps and a weight floor, so the gap stays wider than the line. Below 20px the mark is not used."
+    "$note": "20-24px build: 1.6 turns over two arcs with 86-degree gaps and a weight floor, so the gap stays wider than the line. Below 20px the mark is not used.",
+    "box": [
+      6.95,
+      9.06,
+      40.52,
+      42.75
+    ]
   }
 }
