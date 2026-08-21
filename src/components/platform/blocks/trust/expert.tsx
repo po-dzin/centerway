@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import styles from "@/components/platform/PlatformTrustStyles";
+import { Icon } from "@/components/Icon";
 import { educationTimeline, expertFacts, expertStory, personalFacts, platformPageArtwork } from "@/lib/platform/content";
 
 function CollapsibleTimeline({
@@ -24,7 +25,10 @@ function CollapsibleTimeline({
       </ul>
       {hidden.length > 0 ? (
         <details className={styles.collapsibleBlock}>
-          <summary className={styles.collapsibleSummary}>{summaryLabel}</summary>
+          <summary className={styles.collapsibleSummary}>
+            <span>{summaryLabel}</span>
+            <Icon name="chevron-down" size={18} className={styles.collapsibleMarker} />
+          </summary>
           <ul className={`${styles.timeline} ${styles.timelineCompact} ${styles.collapsibleList}`}>
             {hidden.map((item) => (
               <li key={item}>{item}</li>

@@ -108,33 +108,27 @@
 }
 
 .diagnosticTextButton {
+  composes: text from "./PlatformButtons.module.css";
   width: fit-content;
-  min-height: var(--ds-touch-target-min);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 0.15rem;
-  border: 0;
-  color: var(--cw-platform-muted);
-  background: transparent;
-  font-size: var(--ds-type-body-sm-size);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 0.24em;
-  cursor: pointer;
 }
+
 
 .diagnosticProgressTrack {
   height: 0.5rem;
   overflow: hidden;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--cw-platform-border) 72%, var(--cw-platform-surface) 28%);
+  background: var(--cw-mat-meter-track);
 }
 
+/* Brand greens, not status colours. The original ramp was
+   success → pending-mixed-with-success, which measured 2.75 and 2.65 against
+   this track — below the 3:1 a bar you have to read needs, and the reason the
+   same recipe rendered as a grey hairline in the cabinet. guide-primary →
+   guide-strong keeps the gradient and clears it at 4.92 / 11.26. */
 .diagnosticProgressBar {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--cw-status-success) 0%, color-mix(in srgb, var(--cw-status-pending) 75%, var(--cw-status-success) 25%) 100%);
+  background: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
   transition: width 0.3s ease;
 }
 
@@ -232,6 +226,46 @@
   font-weight: 600;
   line-height: var(--ds-type-body-line-height);
   text-align: left;
+}
+
+/* Leaving the test is a way back, not another link in the row. The arrow says
+   where it goes before the words do — the same reason a back control anywhere
+   else carries one. */
+.diagnosticBackLink {
+  composes: text from "./PlatformButtons.module.css";
+  gap: 0.4rem;
+  text-decoration: none;
+}
+
+
+.diagnosticBackLink:hover {
+  color: var(--cw-platform-text);
+}
+
+.diagnosticBackLink span {
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+}
+
+.diagnosticBackIcon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Step controls: back on the left, forward on the right, forward twice the
+   weight. On a phone they share the row rather than stacking — the pair is one
+   decision, and splitting it over two lines reads as two. */
+.diagnosticStepActions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.diagnosticStepActions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 .diagnosticFlowFoot {
@@ -571,126 +605,6 @@
   flex: 0 0 auto;
 }
 
-.profileHeroIdentityCard {
-  padding: clamp(1.05rem, 2.8vw, 1.4rem);
-  border-radius: var(--cw-card-radius);
-  background-color: var(--cw-mat-tint);
-  background-image: var(--cw-mat-grain-image);
-  box-shadow: var(--cw-mat-shadow-soft);
-  backdrop-filter: var(--cw-mat-filter);
-}
-
-.profileHeroIdentity {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: clamp(1rem, 2.4vw, 1.35rem);
-}
-
-.profileHeroKicker {
-  margin: 0 0 0.15rem;
-  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 72%, transparent);
-  font-family: var(--cw-font-data);
-  font-size: var(--ds-type-label-size);
-  font-weight: 700;
-  line-height: var(--ds-type-label-line-height);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.profileHeroAvatar {
-  width: clamp(4.4rem, 12vw, 5.4rem);
-  height: clamp(4.4rem, 12vw, 5.4rem);
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border-radius: 999px;
-  color: var(--cw-platform-text);
-  background:
-    radial-gradient(circle at 36% 24%, color-mix(in srgb, var(--cw-sem-warmth) 44%, transparent), transparent 46%),
-    color-mix(in srgb, var(--cw-platform-accent-contrast) 86%, transparent);
-  box-shadow: var(--cw-mat-shadow-deep);
-  font-family: var(--cw-font-data);
-  font-size: 1.15rem;
-  font-weight: 800;
-}
-
-.profileHeroAvatar img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-.profileStatGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.profileStatCard {
-  min-height: 5.4rem;
-  padding: 1rem 1.1rem;
-  border-radius: var(--cw-radius-sm);
-  color: var(--cw-platform-text);
-  background: var(--cw-mat-surface);
-  box-shadow: var(--cw-mat-shadow-soft);
-  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 74%, transparent);
-}
-
-.profileStatCard .label {
-  color: var(--cw-platform-muted);
-}
-
-.profileStatCard[data-tone="guide"] {
-  background: color-mix(in srgb, var(--cw-mat-tone-support) 84%, var(--cw-platform-surface) 16%);
-}
-
-.profileStatCard[data-tone="support"] {
-  background: var(--cw-mat-surface);
-}
-
-.profileStatCard[data-tone="proof"] {
-  background: var(--cw-mat-tone-proof);
-}
-
-.profileHeroActions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.profileHeroActions > * {
-  flex: 0 0 auto;
-}
-
-.profileSummaryList {
-  display: grid;
-  gap: 0.75rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.profileSummaryList li {
-  padding: 0.95rem 1rem;
-  border-radius: var(--cw-radius-sm);
-  color: var(--cw-platform-muted);
-  background: var(--cw-platform-surface);
-  box-shadow: var(--cw-mat-shadow-soft);
-}
-
-.profileSummaryList strong {
-  display: block;
-  margin-top: 0.18rem;
-  color: var(--cw-platform-text);
-  font-family: var(--cw-font-editorial);
-  font-size: clamp(1.25rem, 2vw, 1.55rem);
-  font-weight: 700;
-  line-height: 1.08;
-}
-
 .profileGridPair {
   align-items: start;
 }
@@ -699,51 +613,3 @@
   min-width: 0;
 }
 
-.profileMain .profileSummaryList li {
-  min-height: 0;
-}
-
-.profileStatCard strong {
-  display: block;
-  margin-top: 0.22rem;
-  color: var(--cw-platform-text);
-  font-family: var(--cw-font-editorial);
-  font-size: clamp(1.2rem, 2vw, 1.65rem);
-  font-weight: 700;
-  line-height: 1.02;
-  overflow-wrap: anywhere;
-}
-
-.profileScoreList {
-  display: grid;
-  gap: 0.85rem;
-}
-
-.profileScoreRow {
-  display: grid;
-  gap: 0.4rem;
-}
-
-.profileScoreMeta {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  color: var(--cw-platform-text);
-  font-weight: 700;
-}
-
-.profileScoreTrack {
-  width: 100%;
-  height: 0.7rem;
-  overflow: hidden;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--cw-platform-border) 72%, var(--cw-platform-surface) 28%);
-}
-
-.profileScoreFill {
-  height: 100%;
-  display: block;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--cw-sem-guide-strong), var(--cw-platform-accent));
-}

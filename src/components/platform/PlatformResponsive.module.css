@@ -161,9 +161,8 @@
     border-radius: 0;
   }
 
-  /* The lockup is the network's: mark plus wordmark, not a bare symbol. The
-     wordmark was hidden here because the old square brand button had no room
-     for it; the floating bar does. */
+  /* The floating bar carries the symbol alone (see .brandWordmark below), so the
+     brand link is sized by the mark, not by a lockup. */
   .header .brand:not([data-surface="footer"]) {
     width: auto;
     height: 3rem;
@@ -185,9 +184,17 @@
     align-self: center;
   }
 
+  /* Symbol only. The lockup is drawn as one unit — the word sits over a tagline
+     of matching width, and the pair makes a stable rectangle that balances the
+     circular symbol. Cropping the tagline off to save width left a 5.4:1 strip
+     that read as an offcut next to the circle, so the choice is the whole
+     lockup or none of it. On a 358px bar the whole lockup is 146px — 41% of the
+     width for something that never changes and is never tapped for information.
+     None of it, then: the circle is a finished mark with nothing to balance, the
+     page name is already set in the hero at display size on every route, and the
+     full lockup with its tagline still opens the footer. */
   .header .brandWordmark {
-    width: 8.1rem;
-    height: 1.94rem;
+    display: none;
   }
 
   .diagnosticHeroCard {
@@ -201,9 +208,7 @@
   }
 
   .diagnosticTextButton {
-    min-height: var(--ds-touch-target-min);
     justify-content: flex-start;
-    padding: 0;
   }
 
   .headerInner > .profileSlot,
@@ -336,10 +341,13 @@
        the chrome tint so the page reads through it; the drawer sits on the
        canvas floor, because it lies over body copy and at chrome density that
        copy competes with the labels. Same tint family, same stroke. */
-    background-color: var(--cw-mat-tint);
-    background-image: var(--cw-mat-grain-image);
-    box-shadow: var(--cw-mat-shadow-raised);
-    backdrop-filter: var(--cw-mat-filter);
+    /* No tint, no grain, no blur, no shadow: the sheet above paints all of it.
+       Anything here would be a second layer over the first and put the seam
+       back. */
+    background-color: transparent;
+    background-image: none;
+    box-shadow: none;
+    backdrop-filter: none;
     color: var(--platform-header-fg);
     justify-items: stretch;
     justify-content: stretch;
@@ -352,14 +360,52 @@
     content: none;
   }
 
+  /* Open, the bar's band grows down over the drawer and becomes the whole sheet:
+     one rectangle, one blur, one radius. Matching the two densities was the
+     previous attempt and it was not enough — two backdrop-filter layers clamp at
+     their shared edge whatever their tint, so the seam survived and the drawer's
+     rounded corners still read as holes punched in a plate.
+     --cw-menu-sheet-height is measured in PlatformHeader, because the drawer
+     sizes to its content and CSS cannot see that.
+
+     The sheet takes the media floor rather than the bar's 30% chrome. Different
+     job: the bar is something the page reads through, the sheet covers content
+     and carries a list of links over whatever happens to be behind it. Density
+     is the only thing legible over an arbitrary pixel, and unlike the bar the
+     sheet has no sampler bounding what that pixel can be. */
+  .header[data-menu-open="true"][data-cw-glass="shell"]::before {
+    background-color: var(--cw-mat-tint-media);
+    /* height:auto is not tidying — the closed-state rule above pins height:100%,
+       and with a height set the box is over-constrained, so `bottom` is thrown
+       away and the band silently stays the size of the bar. */
+    height: auto;
+    bottom: calc(-1 * var(--cw-menu-sheet-height, 0px));
+    border-radius: var(--platform-header-shell-radius);
+  }
+
+  /* Profile is not a sixth nav item — it is where the list stops and the account
+     begins. A hairline says that in the space the list already had, without a
+     heading or a gap wide enough to read as a missing row. */
   .mobileMenuSurface > .mobileProfileSlot,
   .navLayer .mobileProfileSlot {
     display: flex;
     justify-content: stretch;
     width: 100%;
     align-self: start;
-    padding: 0.15rem 0 0;
+    margin-top: 0.4rem;
+    padding: 0.5rem 0 0;
+    border-top: 1px solid color-mix(in srgb, var(--platform-header-fg) 13%, transparent);
     box-sizing: border-box;
+  }
+
+  /* The avatar is a 2.1rem disc in a row of plain text labels, which made the
+     account row read as the heaviest thing in the menu. Down to the label's own
+     line-box so it sits in the row instead of setting its height. */
+  .mobileMenuSurface .profileEntryMobile .profileAvatar,
+  .navLayer .profileEntryMobile .profileAvatar {
+    width: 1.5rem;
+    height: 1.5rem;
+    font-size: 0.66rem;
   }
 
   .profileWrapMobile {
@@ -405,24 +451,6 @@
     margin-top: 0.35rem;
   }
 
-  .profileHeroIdentity {
-    grid-template-columns: 1fr;
-    justify-items: start;
-  }
-
-  .profileStatGrid {
-    grid-template-columns: 1fr;
-  }
-
-  .profileHeroActions {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .profileHeroActions > * {
-    width: 100%;
-  }
-
   .mobileMenuSurface::before {
     content: none;
   }
@@ -433,21 +461,20 @@
   }
 
   .navLayer .mobileMenuSurface {
-    background-color: var(--cw-mat-tint);
-    background-image: var(--cw-mat-grain-image);
+    background-color: transparent;
+    background-image: none;
     border-top-color: transparent;
-    box-shadow: var(--cw-mat-shadow-raised);
-    backdrop-filter: var(--cw-mat-filter);
+    box-shadow: none;
+    backdrop-filter: none;
   }
 
-  /* Overlay mode drops the drawer straight onto hero photography, where the
-     canvas floor is not enough — an arbitrary photo pixel can be anything. It
-     takes the media floor there, the density guard-contrast asserts against
-     black and white. Everywhere else the backdrop is the page canvas and the
-     drawer stays on the floor tint, level with the bar's own material. */
+  /* Overlay mode used to give the drawer the media floor of its own, because an
+     arbitrary photo pixel can be anything. It no longer paints a surface at all
+     — the sheet above does — and that sheet is bounded by the sampler rather
+     than by density. */
   .shellOverlay .mobileMenuSurface,
   .shellOverlay .navLayer .mobileMenuSurface {
-    background-color: var(--cw-mat-tint-media);
+    background-color: transparent;
   }
 
   /* Without a working backdrop-filter the tint is all the drawer has, and at
@@ -456,12 +483,6 @@
      in-app webviews — so this is what those users actually get. Mirrors the
      same fallback in shared/css/network-nav.css. */
   @supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
-    .mobileMenuSurface,
-    .shellOverlay .mobileMenuSurface,
-    .navLayer .mobileMenuSurface {
-      background-color: color-mix(in srgb, var(--cw-mat-surface) 97%, transparent);
-    }
-
     .header[data-cw-glass="shell"]::before {
       background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
     }
@@ -500,7 +521,7 @@
     justify-content: flex-start;
     padding: 0.7rem 0.9rem;
     border: 0;
-    border-radius: 0.75rem;
+    border-radius: var(--cw-radius-sm);
     background: transparent;
     color: var(--platform-header-muted-fg);
     font-size: 1rem;
@@ -586,11 +607,84 @@
   .authorGrid,
   .consultGrid,
   .supportPanelLayout,
-  .programShowcase,
   .grid2,
   .grid3,
   .footerGrid {
     grid-template-columns: 1fr;
+  }
+
+  /* Offers scroll instead of stacking or splitting. Two-up on a 375px phone
+     gave each card ~163px: the title broke mid-word, the copy clamped to a
+     fragment and "Деталі курсу" wrapped onto two lines inside the button. One
+     per row would be honest but turns six offers into six screens of scrolling.
+     A snap rail at 78% keeps the card readable and lets the cut edge of the
+     next one say, without a control, that there is more. */
+  .programShowcase,
+  .programShowcase[data-layout="mini"] {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 78%;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    /* The rail bleeds to both edges of the screen while its items stay on the
+       container's own margin — hence the negative margin and the matching
+       padding, and scroll-padding so a snapped card lands on that margin. */
+    margin-inline: calc(var(--cw-space-md) * -1);
+    padding-inline: var(--cw-space-md);
+    scroll-padding-inline: var(--cw-space-md);
+    scrollbar-width: none;
+  }
+
+  .programShowcase::-webkit-scrollbar {
+    display: none;
+  }
+
+  .programShowcase > *,
+  .aggregateRail > * {
+    scroll-snap-align: start;
+  }
+
+  /* Products ride the same rail as programs — a single product card that
+     stretched the full width while its neighbours in the next block were 78%
+     read as a different kind of object rather than the same catalogue. */
+  .aggregateRail,
+  .aggregateRail[data-layout="single"] {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 78%;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    margin-inline: calc(var(--cw-space-md) * -1);
+    padding-inline: var(--cw-space-md);
+    scroll-padding-inline: var(--cw-space-md);
+    scrollbar-width: none;
+  }
+
+  .aggregateRail::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* One height for every card on every rail. Cards used to size to their copy —
+     384px for mini-courses, 464px two blocks down — so scrolling the home page
+     felt like passing three different catalogues. Fixed, not min-height: the
+     point is that they match, and the copy is clamped to fit rather than the
+     card growing to hold it. */
+  .programShowcase > .programTile,
+  .aggregateRail > .programTile {
+    height: var(--ds-offer-card-height-rail);
+    min-height: 0;
+  }
+
+  .programShowcase .programTileBody p:not(.label),
+  .aggregateRail .programTileBody p:not(.label) {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
   }
 
   .hero {
@@ -612,10 +706,6 @@
     width: 100%;
     max-width: 100%;
     min-height: var(--ds-offer-card-min-height-tablet);
-  }
-
-  .aggregateRail[data-layout="single"] {
-    grid-template-columns: minmax(0, 1fr);
   }
 
   .hero > .heroPanel {
@@ -692,14 +782,16 @@
      runs top-down. It stays light across the upper third — the old flat 60%
      wash over the whole frame is what greyed the image out. */
   .heroPhotoLayer::after {
+    /* Same neutral ink as the desktop ramp — see the note there. */
+    --hero-scrim-ink: var(--cw-mat-scrim-ink);
     background:
       linear-gradient(180deg,
-        color-mix(in srgb, var(--cw-platform-text) 18%, transparent) 0%,
-        color-mix(in srgb, var(--cw-platform-text) 24%, transparent) 26%,
-        color-mix(in srgb, var(--cw-platform-text) 64%, transparent) 50%,
-        color-mix(in srgb, var(--cw-platform-text) 82%, transparent) 100%),
+        color-mix(in srgb, var(--hero-scrim-ink) 18%, transparent) 0%,
+        color-mix(in srgb, var(--hero-scrim-ink) 24%, transparent) 26%,
+        color-mix(in srgb, var(--hero-scrim-ink) 64%, transparent) 50%,
+        color-mix(in srgb, var(--hero-scrim-ink) 82%, transparent) 100%),
       linear-gradient(150deg,
-        color-mix(in srgb, var(--cw-sem-guide-strong) 9%, transparent),
+        color-mix(in srgb, var(--cw-sem-guide-strong) 5%, transparent),
         transparent 55%,
         color-mix(in srgb, var(--cw-sem-warmth) 6%, transparent));
   }
@@ -713,14 +805,35 @@
      heroes (product/program/dosha) size their own content box to the full
      viewport and pack internally, so this is a no-op for them; the profile
      cabinet's short, non-viewport hero is pinned back to its own layout below. */
-  .heroFeatureContent {
+  /* Doubled class on purpose. This file and PlatformBlocksOrientation both
+     define .heroFeatureContent, both land on the element through
+     mergeStyleModules, and both are single-class selectors — so which one wins
+     is decided by stylesheet order, which Next resolves per route chunk. It
+     came out this way on / and the other way on /tests, /programs and
+     /products, where the base desktop padding won and the copy sat 102px off
+     the bottom instead of the 157px this rule asks for. Specificity, not luck.
+     Any other override in this file that reads as "sometimes applies" wants the
+     same treatment. */
+  .heroFeatureContent.heroFeatureContent {
     width: 100%;
     align-self: end;
-    padding: clamp(4.8rem, 14vw, 6rem) 1rem clamp(9.8rem, 28vw, 12.4rem);
+    /* Bottom step matched to the detail heroes below (clamp(5rem, 16vw,
+       6.5rem) — 80px at 390). The old 28vw/12.4rem was left over from the
+       centred box this rule replaced: once the copy is packed against the
+       bottom, that much padding is not breathing room, it is a 157px band of
+       empty photograph under the CTA — and it put the plain heroes 77px lower
+       than the product and program heroes on the same phone. */
+    padding: clamp(4.8rem, 14vw, 6rem) 1rem clamp(5rem, 16vw, 6.5rem);
   }
 
-  .heroFeature[data-cw-profile-hero="true"] .heroFeatureContent {
-    align-self: center;
+  /* One unbreakable word in the title (ДІАГНОСТИКА at 52px) sets the grid
+     column's min-content, and the column takes it over the container width —
+     which pushed the lead and the CTA 28px past the viewport, where the
+     section's overflow:hidden cut them off. Grid items must be allowed to
+     shrink below their content, and the title must be allowed to break rather
+     than be clipped. */
+  .heroFeatureContent.heroFeatureContent > * {
+    min-width: 0;
   }
 
   .heroFeature .heroFeatureActions,
@@ -733,13 +846,13 @@
   .heroPrimaryButton,
   .heroSecondaryButton {
     width: 100%;
-    min-height: 3.1rem;
   }
 
-  .heroFeatureTitle {
+  .heroFeatureTitle.heroFeatureTitle {
     width: 100%;
     max-width: 100%;
-    font-size: clamp(3.1rem, 14vw, 4.25rem);
+    font-size: clamp(2.6rem, 12.2vw, 4.25rem);
+    overflow-wrap: anywhere;
   }
 
   .heroProofGrid {
@@ -799,8 +912,16 @@
     gap: 0.75rem;
   }
 
+  /* No padding on the rail itself at any mobile width (this rule and the
+     ≤560px one below): .videoAside already pads the whole card, and the rail
+     sits directly inside it as a plain wrapper — a sibling of
+     .videoDecisionIntro, not a nested card of its own (no background is ever
+     set on it). The base recipe already knows this (PlatformBlocksOrientation
+     .videoDecisionRail at ≤900px sets padding: 0); these two rules were
+     re-adding it and inset the two buttons ~11px narrower than the
+     heading/paragraph above them. */
   .videoDecisionRail {
-    padding: 0.8rem;
+    padding: 0;
     gap: 0.72rem;
   }
 
@@ -891,20 +1012,12 @@
     grid-template-columns: 1fr;
   }
 
-  .profileMain .profileSummaryList {
-    gap: 0.65rem;
-  }
-
   .profileEmptySection {
     min-height: calc(100svh - clamp(11rem, 18vw, 14rem));
   }
 }
 
 @media (max-width: 560px) {
-  .heroFeature[data-cw-profile-hero="true"] {
-    overflow-x: clip;
-  }
-
   .container {
     width: min(100% - 1.2rem, var(--cw-max-width));
   }
@@ -932,22 +1045,21 @@
   .videoSection,
   #signals [data-cw-hub-intro="layout"] {
     padding: 0.4rem;
-    border-radius: 1.35rem;
+    border-radius: var(--cw-radius-xl);
   }
 
   .videoPanel {
-    border-radius: 1.05rem 1.05rem 0 0;
+    border-radius: var(--cw-radius-lg) var(--cw-radius-lg) 0 0;
   }
 
   .videoAside,
   #signals [data-cw-hub-intro="aside"] {
-    border-radius: 0 0 1.05rem 1.05rem;
+    border-radius: 0 0 var(--cw-radius-lg) var(--cw-radius-lg);
     padding: 1rem 0.95rem 0.95rem;
   }
 
   .videoDecisionRail {
-    padding: 0.7rem;
-    border-radius: 1rem;
+    padding: 0;
   }
 
   .videoDecisionIntro {
@@ -976,17 +1088,28 @@
     min-height: var(--ds-offer-card-min-height-mobile);
   }
 
+  /* A lone product used to be told to fill the row. On the rail it keeps the
+     rail's own column width instead, so one product and three programmes are
+     the same object at the same size. */
   .aggregateRail[data-layout="single"] > * {
-    flex-basis: 100%;
-    min-width: 100%;
+    flex-basis: auto;
+    min-width: 0;
   }
 
   .programTileBody {
     padding: 1rem;
   }
 
+  /* The type step is set by the longest real name, not by the widest available
+     one. "Розвантажувальний" is a single 17-character word: at the old 8vw step
+     it measured 287px inside a 228px column and simply ran out of the card.
+     Ukrainian compounds are the normal case here, so the card sizes for them
+     and hyphenation is the safety net rather than the plan. */
   .programTileBody h3 {
-    font-size: clamp(1.7rem, 8vw, 2.2rem);
+    font-size: clamp(1.35rem, 5.6vw, 1.75rem);
+    line-height: 1.16;
+    hyphens: auto;
+    overflow-wrap: break-word;
   }
 
   .offerHeroVisualCard {
@@ -1077,13 +1200,12 @@
   .heroPrimaryButton,
   .heroSecondaryButton {
     width: 100%;
-    min-height: var(--ds-touch-target-min);
   }
 
   .heroProofGrid div {
     min-height: 3.75rem;
     padding: 0.6rem 0.5rem;
-    border-radius: 0.9rem;
+    border-radius: var(--cw-radius-md);
   }
 
   .heroProofGrid strong {
@@ -1106,45 +1228,15 @@
     width: 100%;
   }
 
-  .brand {
-    gap: 0;
-  }
-
   .brandSymbol {
     width: calc(var(--cw-brand-size-symbol-header) - 0.1rem);
     height: calc(var(--cw-brand-size-symbol-header) - 0.1rem);
-  }
-
-  .brandWordmark {
-    width: calc(var(--cw-brand-size-wordmark-header-width) - 0.85rem);
-    height: calc(var(--cw-brand-size-wordmark-header-height) - 0.15rem);
   }
 
   .heroFeatureLead,
   .lead {
     font-size: var(--ds-type-body-sm-size);
     line-height: var(--ds-type-body-sm-line-height);
-  }
-
-  .heroFeature[data-cw-profile-hero="true"] .heroFeatureContent {
-    width: 100%;
-    max-width: 100%;
-    min-width: 0;
-    padding-inline: 1rem;
-    overflow-x: clip;
-  }
-
-  .heroFeature[data-cw-profile-hero="true"] .profileHeroIdentity,
-  .heroFeature[data-cw-profile-hero="true"] .profileStatGrid,
-  .heroFeature[data-cw-profile-hero="true"] .profileHeroActions {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .heroFeature[data-cw-profile-hero="true"] .profileHeroIdentityCard,
-  .heroFeature[data-cw-profile-hero="true"] .panelIntro,
-  .heroFeature[data-cw-profile-hero="true"] .profileStatCard {
-    min-width: 0;
   }
 
   .profileMain .grid2,
@@ -1186,26 +1278,8 @@
     gap: 0.65rem;
   }
 
-  .profileMain .timeline li,
-  .profileMain .profileSummaryList li {
+  .profileMain .timeline li {
     padding: 0.85rem 0.9rem;
-  }
-
-  .profileMain .profileSummaryList strong {
-    font-size: clamp(1.1rem, 6vw, 1.38rem);
-    line-height: 1.12;
-  }
-
-  .heroFeature[data-cw-profile-hero="true"] .detailHeroTitle {
-    max-width: 100%;
-    font-size: clamp(2.5rem, 12vw, 3.7rem);
-    line-height: 0.94;
-    overflow-wrap: anywhere;
-  }
-
-  .heroFeature[data-cw-profile-hero="true"] .heroFeatureLead {
-    max-width: 100%;
-    overflow-wrap: anywhere;
   }
 
   .heroBadge,
@@ -1682,12 +1756,30 @@
     gap: 0.78rem;
   }
 
+  /* The photograph is pinned to the first screen; the layer behind it still
+     covers the whole section. Before this, the image stretched with the section,
+     so opening the disclosure inside the card made the section taller and the
+     `cover` crop re-solved against the new height — the photo visibly shifted
+     under a card the reader had just touched. Fixing the image's height holds
+     the crop still, and the layer's own ground fills whatever the card grows
+     past, so nothing shows through underneath. */
+  main[data-cw-detail-template="dosha"] .heroPhotoLayer .expertImage,
+  .heroFeature[data-cw-detail-template="dosha"] .heroPhotoLayer .expertImage {
+    height: 100svh;
+    top: 0;
+    bottom: auto;
+  }
+
   main[data-cw-detail-template="dosha"] .diagnosticHeroContent,
   .heroFeature[data-cw-detail-template="dosha"] .diagnosticHeroContent {
     min-height: 100svh;
     align-content: start;
     justify-items: stretch;
-    padding-top: clamp(4.7rem, 14vw, 5.8rem);
+    /* Clears the floating topbar with air to spare. The old floor was 4.7rem
+       (75px) against a bar whose bottom edge sits at 79px, so the card started
+       four pixels *under* it — the hero is allowed to run beneath the bar, the
+       card it carries is not. */
+    padding-top: clamp(6.2rem, 18vw, 7rem);
     padding-bottom: 1rem;
   }
 

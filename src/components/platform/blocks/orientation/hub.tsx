@@ -53,10 +53,10 @@ export function HubIntro() {
           </div>
           <div className={styles.videoDecisionRail}>
             <div className={styles.videoActionGrid} data-cw-hub-intro="actions">
-              <Link className={styles.videoActionButton} href={DOSHA_TEST_ROUTE} data-kind="primary">
-                Тест доши
+              <Link className={styles.videoActionPrimary} href={DOSHA_TEST_ROUTE}>
+                Тест доші
               </Link>
-              <Link className={styles.videoActionButton} href="/consult" data-kind="secondary">
+              <Link className={styles.videoActionSecondary} href="/consult">
                 Консультація
               </Link>
             </div>

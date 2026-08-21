@@ -84,7 +84,7 @@
   min-height: 12rem;
   position: relative;
   overflow: hidden;
-  border-radius: calc(var(--cw-card-radius) - 0.35rem);
+  border-radius: calc(var(--cw-card-radius) - var(--cw-radius-inset));
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-surface-muted) 84%, transparent), color-mix(in srgb, var(--cw-platform-accent-strong) 16%, var(--cw-platform-surface-muted))),
     var(--cw-platform-surface-muted);

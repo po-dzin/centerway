@@ -1,15 +1,16 @@
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
+import { PlatformBlock } from "@/components/platform/PlatformBlock";
 import styles from "@/components/platform/PlatformOfferStyles";
 import { featuredPrograms, miniCourses } from "@/lib/platform/content";
 
 export function HubMini() {
   return (
-    <section className={`${styles.container} ${styles.section} ${styles.sectionFlow}`} id="mini-courses">
-      <div className={styles.sectionHeader}>
-        <div>
-          <h2 className={styles.sectionTitle}>М&apos;який вхід без довгого зобов&apos;язання</h2>
-        </div>
-      </div>
+    <PlatformBlock
+      id="mini-courses"
+      label="Міні-курси"
+      title="М&apos;який вхід без довгого зобов&apos;язання"
+      lead="Кілька днів практики, щоб спробувати підхід без довгого зобов'язання."
+    >
       <div className={styles.programShowcase} data-layout="mini">
         {miniCourses.map((program) => (
           <PlatformOfferCard
@@ -26,18 +27,18 @@ export function HubMini() {
           />
         ))}
       </div>
-    </section>
+    </PlatformBlock>
   );
 }
 
 export function HubPrograms() {
   return (
-    <section className={`${styles.container} ${styles.section} ${styles.sectionFlow}`} id="programs">
-      <div className={styles.sectionHeader}>
-        <div>
-          <h2 className={styles.sectionTitle}>Глибші програми для тіла, харчування і ритму</h2>
-        </div>
-      </div>
+    <PlatformBlock
+      id="programs"
+      label="Програми"
+      title="Глибші програми для тіла, харчування і ритму"
+      lead="Яка програма підходить моєму поточному стану?"
+    >
       <div className={styles.programShowcase}>
         {featuredPrograms.map((program) => (
           <PlatformOfferCard
@@ -53,6 +54,6 @@ export function HubPrograms() {
           />
         ))}
       </div>
-    </section>
+    </PlatformBlock>
   );
 }
