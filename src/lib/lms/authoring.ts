@@ -21,6 +21,9 @@ type DbResult<T> = Promise<{ data: T | null; error: { message: string } | null }
 export type StructureWriter = {
   from: (table: string) => {
     upsert: (rows: Row[], options: { onConflict: string }) => Promise<{ error: { message: string } | null }>;
+    update: (values: Row) => {
+      eq: (column: string, value: unknown) => Promise<{ error: { message: string } | null }>;
+    };
     select: (columns: string) => {
       eq: (column: string, value: unknown) => DbResult<Row[]>;
       in: (column: string, values: unknown[]) => DbResult<Row[]>;
@@ -248,18 +251,34 @@ export async function writeCourseStructure(
     if (error) throw new Error(`lms_authoring_write_failed:${table}:${error.message}`);
   };
 
+  /**
+   * UPDATE, not a partial upsert.
+   *
+   * The status flip below used to be `upsert([{ id, status, version }])` on the
+   * theory that an upsert "only touches the columns a payload names". That
+   * holds for the DO UPDATE branch and not for the statement: Postgres builds
+   * the proposed tuple and enforces NOT NULL on it BEFORE resolving the
+   * conflict, so a partial row raises 23502 on `slug` even when the row plainly
+   * exists. Every write through this function failed on it — seed, import, and
+   * the builder's own save and publish.
+   */
+  const updateById = async (table: string, id: string, values: Row) => {
+    const { error } = await db.from(table).update(values).eq("id", id);
+    if (error) throw new Error(`lms_authoring_write_failed:${table}:${error.message}`);
+  };
+
   // No cross-table transaction exists here — three independent requests, no
   // Postgres RPC — so this cannot be made fully atomic without one. What
   // ordering CAN bound is the one harm that actually matters: a publish that
   // reports success while the structure behind it is broken. `status` and
   // `version` are held back into their own write, last, so:
   //
-  //  1. The course row is ensured first WITHOUT status/version — Supabase's
-  //     upsert only touches the columns a payload names, so on an existing row
-  //     this changes nothing yet, and on a brand-new row the table defaults
-  //     (`status DEFAULT 'draft'`) apply. Either way `lms_modules`/`lms_lessons`
-  //     get a valid `course_id` to reference (their FK is NOT NULL) before the
-  //     next step needs it.
+  //  1. The course row is ensured first WITHOUT status/version. This one IS a
+  //     full-row upsert, so it is legal: every NOT NULL column is present. On an
+  //     existing row the named columns are refreshed and status/version are left
+  //     alone; on a brand-new row the table defaults (`status DEFAULT 'draft'`)
+  //     apply. Either way `lms_modules`/`lms_lessons` get a valid `course_id` to
+  //     reference (their FK is NOT NULL) before the next step needs it.
   //  2. Modules, then lessons. If either fails, the course row's status is
   //     whatever it already was — never advanced to reflect content that never
   //     actually landed.
@@ -276,7 +295,10 @@ export async function writeCourseStructure(
   await write("lms_courses", [courseWithoutStatus]);
   await write("lms_modules", rows.modules);
   await write("lms_lessons", rows.lessons);
-  await write("lms_courses", [{ id: rows.course.id, status: rows.course.status, version: rows.course.version }]);
+  await updateById("lms_courses", rows.course.id as string, {
+    status: rows.course.status,
+    version: rows.course.version,
+  });
 
   // Reconciliation only after every upsert above has succeeded: it deletes by
   // diffing the database against the payload, and running it first — or
