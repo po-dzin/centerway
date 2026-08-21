@@ -401,7 +401,17 @@ async function handleMenuAction(
   }
 
   if (action === "support") {
-    await saveSession(db, user, { state: "awaiting_support_contact", contact: null });
+    // `selected_product` is cleared, not carried: the support branch no longer
+    // asks which course a request concerns, so anything still in the session is
+    // left over from an earlier access lookup. Kept, it labels the ticket and
+    // the `tg_bot_support_requested` event with a course the person may not be
+    // writing about at all — support triage reading a wrong course name is
+    // worse than reading "не обрано", which is at least true.
+    await saveSession(db, user, {
+      state: "awaiting_support_contact",
+      contact: null,
+      selected_product: null,
+    });
     await sendMessage(chatId, botCopy.supportAskContact);
     return;
   }
