@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { platformHomeHref, platformNav } from "@/lib/platform/content";
 import styles from "@/components/platform/PlatformShellStyles";
+import { Icon } from "@/components/Icon";
 import { PlatformProfileEntry } from "./PlatformProfileEntry";
 import { useHeaderTone } from "./headerTone";
 import { PLATFORM_SITE_ORIGIN, useIsBrandedHost } from "./usePlatformHref";
@@ -16,6 +17,7 @@ export function PlatformHeader({
 }) {
   const [openMenuPath, setOpenMenuPath] = useState<string | null>(null);
   const headerRef = useRef<HTMLElement | null>(null);
+  const navLayerRef = useRef<HTMLDivElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
   const pathname = usePathname();
   const headerTone = useHeaderTone(initialTone, pathname);
@@ -57,6 +59,36 @@ export function PlatformHeader({
     };
   }, [menuOpen]);
 
+  /* Bar and drawer are one sheet of glass, and that has to be literally true:
+     two adjacent backdrop-filter layers can never meet cleanly, because each
+     blurs only its own rectangle and clamps at the edge. Chrome shows a couple
+     of units of step at the seam; Safari shows a visible line. So the bar's band
+     grows downward to cover the drawer and the drawer paints nothing — one
+     filtered rectangle, one set of rounded corners. The height cannot be
+     expressed in CSS (the drawer sizes to its content), so it is measured here
+     and handed over as a custom property. */
+  useEffect(() => {
+    const header = headerRef.current;
+    const navLayer = navLayerRef.current;
+    if (!header) return;
+
+    if (!menuOpen || !navLayer) {
+      header.style.removeProperty("--cw-menu-sheet-height");
+      return;
+    }
+
+    const publish = () => {
+      header.style.setProperty("--cw-menu-sheet-height", `${Math.round(navLayer.offsetHeight)}px`);
+    };
+
+    publish();
+
+    if (typeof ResizeObserver === "undefined") return;
+    const observer = new ResizeObserver(publish);
+    observer.observe(navLayer);
+    return () => observer.disconnect();
+  }, [menuOpen]);
+
   function closeMenu() {
     setOpenMenuPath(null);
   }
@@ -80,7 +112,7 @@ export function PlatformHeader({
           <span className={styles.brandSymbol} aria-hidden="true" />
           <span className={styles.brandWordmark} aria-hidden="true" />
         </Link>
-        <div className={`${styles.navLayer} ${menuOpen ? styles.navLayerOpen : ""}`} id="platform-mobile-menu">
+        <div ref={navLayerRef} className={`${styles.navLayer} ${menuOpen ? styles.navLayerOpen : ""}`} id="platform-mobile-menu">
           <div className={styles.mobileMenuSurface} data-cw-glass="shell">
             <nav className={`${styles.nav} ${styles.mobileMenuNav}`} aria-label="Основна навігація">
               {navItems.map((item) => (
@@ -111,9 +143,12 @@ export function PlatformHeader({
           aria-controls="platform-mobile-menu"
           onClick={() => setOpenMenuPath(menuOpen ? null : currentPath)}
         >
-          <span />
-          <span />
-          <span />
+          {/* The sprite glyph, not three CSS rules: the burger is part of the
+              icon set and has to carry the same baked hand as everything else
+              in the bar. Both states render and crossfade, so the control does
+              not blink through an empty frame on the swap. */}
+          <Icon name="menu" size={32} className={styles.menuGlyph} />
+          <Icon name="close" size={32} className={styles.menuGlyphClose} />
         </button>
       </div>
     </header>

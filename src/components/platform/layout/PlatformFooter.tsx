@@ -19,7 +19,11 @@ export function PlatformFooter() {
             <span className={styles.brandSymbol} aria-hidden="true" />
             <span className={styles.footerBrandText}>CENTERWAY</span>
           </Link>
-          <p className={styles.footerLead}>Аюрведичні програми, консультації та практики відновлення.</p>
+          {/* Placeholder wording pending the owner's line. The old one named
+              ayurveda and consultations only, which stopped describing the
+              platform once the LMS, the dosha test and the product shelf landed;
+              this one names the shape of the offer instead of one modality. */}
+          <p className={styles.footerLead}>Курси, практики та супровід — тіло, ритм і опора у власному темпі.</p>
         </div>
         <div className={`${styles.footerLinks} ${styles.footerLegal}`}>
           <Link href={publicOfferHref}>Публічний договір</Link>
