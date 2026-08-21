@@ -2,7 +2,7 @@ import { permanentRedirect } from "next/navigation";
 
 export const metadata = {
   title: "Detox - CenterWay",
-  description: "Платформена сторінка Detox: м'яке очищення, травлення, ритм і 21-денний маршрут без медичних обіцянок.",
+  description: "Платформена сторінка Detox: м'яке очищення, травлення, ритм і 21-денна програма без медичних обіцянок.",
   robots: {
     index: false,
     follow: false,
