@@ -29,7 +29,7 @@ import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
 import { usePwaInstall } from "../pwa/usePwaInstall";
 import { cabinetGate } from "./CabinetGate";
-import { courseAction, matte } from "./CourseCard";
+import { ShelfErrorCard, courseAction, matte } from "./CourseCard";
 import {
   dateLocaleFor,
   fmtDate,
@@ -90,7 +90,7 @@ export function CabinetClient() {
   const pwaInstall = usePwaInstall();
   const { session, loading: sessionLoading, signInWithGoogle, signOut } = useCabinetSession();
   const { profile, loading: profileLoading, error, clear: clearProfile } = useProfileData(session);
-  const { shelf } = useLearnerShelf(session);
+  const { shelf, failed: shelfFailed, reload: reloadShelf } = useLearnerShelf(session);
   const reach = useTelegramReach(session);
 
   const purchases = useMemo(() => profile?.profile.purchases ?? [], [profile]);
@@ -258,6 +258,11 @@ export function CabinetClient() {
                 </Link>
               </div>
             </article>
+          ) : shelfFailed ? (
+            /* Not "no courses yet" — the shelf just could not be read. Those
+               look identical without this branch, and a learner who paid for
+               something would be told to go buy it again. */
+            <ShelfErrorCard copy={cab} onRetry={() => void reloadShelf()} />
           ) : (
             <article className={styles.card} {...matte}>
               <h3 className={styles.cardTitle}>{cab.learningEmptyTitle}</h3>
