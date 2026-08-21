@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { GoogleTagProvider } from "@/lib/tracking/GoogleTagProvider";
 import { Suspense } from "react";
+import { PLATFORM_GROUND } from "@/lib/platform/chrome";
 
 const GOOGLE_TAG_ID = "G-HV89HDP52T";
 
@@ -20,10 +21,12 @@ export const metadata: Metadata = {
   },
 };
 
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: PLATFORM_GROUND,
 };
 
 export default function FunnelsRootLayout({

@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 
 import "../globals.css";
+import { PLATFORM_GROUND } from "@/lib/platform/chrome";
 
 /**
  * The builder's own root.
@@ -22,10 +23,12 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
+
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
   viewportFit: "cover",
+  themeColor: PLATFORM_GROUND,
 };
 
 export default function BuilderRootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

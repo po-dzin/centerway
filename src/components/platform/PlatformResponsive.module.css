@@ -623,79 +623,11 @@
     grid-template-columns: 1fr;
   }
 
-  /* Offers scroll instead of stacking or splitting. Two-up on a 375px phone
-     gave each card ~163px: the title broke mid-word, the copy clamped to a
-     fragment and "Деталі курсу" wrapped onto two lines inside the button. One
-     per row would be honest but turns six offers into six screens of scrolling.
-     A snap rail at 78% keeps the card readable and lets the cut edge of the
-     next one say, without a control, that there is more. */
-  .programShowcase,
-  .programShowcase[data-layout="mini"] {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 78%;
-    grid-template-columns: none;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
-    /* The rail bleeds to both edges of the screen while its items stay on the
-       container's own margin — hence the negative margin and the matching
-       padding, and scroll-padding so a snapped card lands on that margin. */
-    margin-inline: calc(var(--cw-space-md) * -1);
-    padding-inline: var(--cw-space-md);
-    scroll-padding-inline: var(--cw-space-md);
-    scrollbar-width: none;
-  }
-
-  .programShowcase::-webkit-scrollbar {
-    display: none;
-  }
-
-  .programShowcase > *,
-  .aggregateRail > * {
-    scroll-snap-align: start;
-  }
-
-  /* Products ride the same rail as programs — a single product card that
-     stretched the full width while its neighbours in the next block were 78%
-     read as a different kind of object rather than the same catalogue. */
-  .aggregateRail,
-  .aggregateRail[data-layout="single"] {
-    display: grid;
-    grid-auto-flow: column;
-    grid-auto-columns: 78%;
-    grid-template-columns: none;
-    overflow-x: auto;
-    overscroll-behavior-x: contain;
-    scroll-snap-type: x mandatory;
-    margin-inline: calc(var(--cw-space-md) * -1);
-    padding-inline: var(--cw-space-md);
-    scroll-padding-inline: var(--cw-space-md);
-    scrollbar-width: none;
-  }
-
-  .aggregateRail::-webkit-scrollbar {
-    display: none;
-  }
-
-  /* One height for every card on every rail. Cards used to size to their copy —
-     384px for mini-courses, 464px two blocks down — so scrolling the home page
-     felt like passing three different catalogues. Fixed, not min-height: the
-     point is that they match, and the copy is clamped to fit rather than the
-     card growing to hold it. */
-  .programShowcase > .programTile,
-  .aggregateRail > .programTile {
-    height: var(--ds-offer-card-height-rail);
-    min-height: 0;
-  }
-
-  .programShowcase .programTileBody p:not(.label),
-  .aggregateRail .programTileBody p:not(.label) {
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-  }
+  /* The offer rails live with their recipe, in PlatformBlocksOffer.module.css:
+     base grid, phone rail and tablet grid in one file and one order. They were
+     here as well, in two conflicting copies, and which one won depended on the
+     order the route happened to bundle the two stylesheets in — /programs and
+     the home page resolved the same rail differently. */
 
   .hero {
     display: grid;
@@ -745,29 +677,6 @@
   .offerHeroVisualCard[data-has-art="true"] {
     --program-photo-image: var(--program-photo-image-mobile, var(--program-photo-image));
     --program-photo-position: var(--program-photo-position-mobile, center 42%);
-  }
-
-  .aggregateRail {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 0.85rem;
-    overflow-x: auto;
-    overflow-y: visible;
-    margin: 0 -0.05rem;
-    padding: 0.1rem 0.35rem 0.35rem 0.05rem;
-    scroll-snap-type: x proximity;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-  }
-
-  .aggregateRail::-webkit-scrollbar {
-    display: none;
-  }
-
-  .aggregateRail > * {
-    flex: 0 0 var(--ds-offer-card-rail-width);
-    min-width: var(--ds-offer-card-rail-width);
-    scroll-snap-align: start;
   }
 
   .hero {
@@ -1419,6 +1328,32 @@
 }
 
 @media (min-width: 561px) and (max-width: 900px) {
+  /* ── The tablet band ───────────────────────────
+
+     Everything from 561px to 900px used to inherit the phone wholesale: one
+     column of content and a snap carousel of 78%-wide cards. On an 834px iPad
+     that rendered a single 626px offer card at a time with the next one cut at
+     the edge, and body copy running the full 800px — the 375px page blown up,
+     not a tablet page. Five pixels further, at 905px, the same content came out
+     two-up in a 428px grid. The cliff was the layout, not the width.
+
+     So the band gets the desktop's *content* shape (two of everything) while
+     keeping the phone's *chrome* (the drawer topbar): the full nav needs about
+     790px before the wordmark and the avatar are placed, which is more than an
+     iPad in portrait has, and a drawer is the better touch target regardless.
+     Card heights, clamps and gaps stay the rail's — the cards are matched
+     objects here as much as they are on a phone. */
+
+  /* Two-up for every stacked content grid. `.split` and the author panel stay
+     stacked on purpose: both put a portrait beside prose, and at 800px the
+     text column comes out narrower than the photograph. */
+  .grid2,
+  .grid3,
+  .relaxedGrid,
+  .videoActionGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .heroFeature {
     /* Same plate as ≤560px, wider frame — less side crop, same centred leader. */
     --hero-photo-x: 52%;
