@@ -10,7 +10,7 @@
   display: grid;
   gap: var(--cw-space-md);
   padding: var(--cw-space-lg);
-  border-radius: var(--cw-radius-lg);
+  border-radius: var(--cw-radius-xl);
   /* The support tone: this is a reassurance, not another offer — it must not
      compete visually with the page's own CTA. */
   background: var(--cw-mat-tone-support);
@@ -53,7 +53,7 @@
   text-decoration: none;
 }
 
-@media (min-width: 48rem) {
+@media (min-width: 561px) {
   .card {
     grid-template-columns: 1fr auto;
     align-items: center;

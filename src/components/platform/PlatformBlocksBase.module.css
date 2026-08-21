@@ -175,3 +175,112 @@
   background: var(--cw-platform-surface);
   box-shadow: var(--cw-mat-shadow-soft);
 }
+
+/* ── Block frame (PlatformBlock) ──────────────────── */
+
+/* Head and body, one gap between them, no surface of its own. */
+.blockFlow {
+  display: grid;
+  gap: var(--cw-space-lg);
+}
+
+.blockHead {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--cw-space-md);
+  scroll-margin-top: 5.25rem;
+}
+
+.blockHeadText {
+  display: grid;
+  gap: 0.4rem;
+  /* A measure, not the full width: a title that runs the whole viewport on a
+     desktop reads as a banner rather than a heading. */
+  width: min(100%, 58rem);
+}
+
+.blockHeadCentered {
+  justify-content: center;
+  text-align: center;
+}
+
+.blockHeadCentered .blockHeadText {
+  justify-items: center;
+  justify-self: center;
+}
+
+.blockTitle {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(1.65rem, 4.2vw, 2.4rem);
+  font-weight: 500;
+  line-height: 1.12;
+}
+
+.blockLead {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line-height);
+}
+
+.blockHeadActions {
+  flex: none;
+}
+
+@media (max-width: 560px) {
+  /* The action drops under the head rather than squeezing the title into a
+     column two words wide. */
+  .blockHead {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--cw-space-sm);
+  }
+}
+
+/* An optional brand mark behind a block's body — the same symbol gradients the
+   route visuals use, at a weight that registers as texture rather than as an
+   image. This is the "something alive" answer for blocks that are otherwise a
+   column of text plates: it belongs to the block, not to each card, so three
+   notes do not become three decorated objects. */
+.blockGraphic {
+  position: relative;
+  isolation: isolate;
+  /* `clip`, not `hidden`: the mark is deliberately bled past the block's right
+     edge, and without this it widened the document — which on a phone gave the
+     whole page a horizontal scroll and made the sticky topbar behave as if the
+     viewport had moved. `hidden` would fix the width too, but it also makes the
+     element a scroll container, and that is what breaks `position: sticky`
+     inside it. `clip` cuts without scrolling. */
+  overflow: clip;
+}
+
+.blockGraphic::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  /* Anchored to the head, where there is open ground. Behind the body it only
+     shows through the gaps between cards, which reads as a stray artefact
+     rather than as texture. */
+  top: -2rem;
+  right: -1.5rem;
+  width: min(15rem, 48%);
+  aspect-ratio: 1;
+  pointer-events: none;
+  /* Texture, not an illustration. At half opacity the mark competed with the
+     heading it sits behind; this is the level where it reads as paper. */
+  opacity: 0.16;
+  background: var(--cw-sem-texture-arcs);
+}
+
+.blockGraphicPath::before {
+  background: var(--cw-sem-texture-rings);
+}
+
+@media (max-width: 560px) {
+  .blockGraphic::before {
+    width: min(10rem, 46%);
+    opacity: 0.12;
+  }
+}

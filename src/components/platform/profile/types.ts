@@ -49,6 +49,9 @@ export type ProfileLang = "uk" | "en";
 
 export type ProfileCopy = {
   profile: string;
+  /** Used when the auth provider returned no name / no email for the account. */
+  fallbackName: string;
+  fallbackEmail: string;
   loadingTitle: string;
   loadingLead: string;
   authTitle: string;

@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <base href="/way21/">
-<link rel="shortcut icon" href="img/cw-logo.png" type="image/png">
+<link rel="icon" href="/shared/img/cw-mark-ink.svg" type="image/svg+xml">
+<link rel="icon" href="/shared/img/cw-icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="/shared/img/cw-apple-touch.png">
 <title>Шлях 21 — інтегративна детокс-програма CenterWay</title>
 <meta name="description" content="Шлях 21 — авторська 21-денна інтегративна детокс-програма на основі аюрведи та сучасної дієтології: глибоке очищення тіла, розуму й емоцій, −3–7 кг токсинів, фітозбори, процедури та індивідуальний супровід.">
 <!-- Pre-launch funnel: noindex until the way21 subdomain goes live (placeholder pay wiring). -->
@@ -30,11 +32,12 @@
 <header class="cwn cwn--anchored" data-cw-network-nav>
   <div class="cwn__in">
     <a class="cwn__brand" href="#top">
-      <img src="/shared/img/cw-logo-ink.png" alt="" aria-hidden="true">
+      <img src="/shared/img/cw-mark-ink.svg" alt="" aria-hidden="true">
       <span>CenterWay</span>
     </a>
     <button class="cwn__toggle" type="button" aria-expanded="false" aria-controls="cwn-menu" aria-label="Меню мережі CenterWay">
-      <span></span><span></span><span></span>
+      <svg class="cwn__toggle-ico" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-menu"/></svg>
+      <svg class="cwn__toggle-ico cwn__toggle-ico--close" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg>
     </button>
     <nav class="cwn__menu" id="cwn-menu" aria-label="Навігація сторінкою">
       <a href="#how">Як працює</a>
@@ -114,6 +117,8 @@
   </div>
 </section>
 
+<div class="seam" aria-hidden="true"><svg class="ico" width="42" height="42" focusable="false"><use href="/shared/img/cw-icons.svg#cw-connector"/></svg></div>
+
 <!-- ============ SHIFT ============ -->
 <section class="sec sec-alt">
   <div class="wrap">
@@ -145,6 +150,8 @@
     </div>
   </div>
 </section>
+
+<div class="seam" aria-hidden="true"><svg class="ico" width="42" height="42" focusable="false"><use href="/shared/img/cw-icons.svg#cw-connector"/></svg></div>
 
 <!-- ============ MECHANISM / 3 PHASES ============ -->
 <section id="how" class="sec">
@@ -252,6 +259,8 @@
 
   </div>
 </section>
+
+<div class="seam" aria-hidden="true"><svg class="ico" width="42" height="42" focusable="false"><use href="/shared/img/cw-icons.svg#cw-connector"/></svg></div>
 
 <!-- ============ DAILY RHYTHM ============ -->
 <section class="sec sec-alt">
@@ -769,7 +778,7 @@
     <div class="footer-top">
       <div class="footer-col">
         <a href="#top" class="brand">
-          <img src="/shared/img/cw-logo-gold.png" alt="" class="brand-mark" width="36" height="36" loading="lazy" decoding="async" aria-hidden="true">
+          <img src="/shared/img/cw-mark-gold.svg" alt="" class="brand-mark" width="36" height="36" loading="lazy" decoding="async" aria-hidden="true">
           CenterWay
         </a>
         <p>Шлях 21 — інтегративна детокс-програма на основі аюрведи та сучасної дієтології. Очищення тіла, розуму й емоцій.</p>
@@ -846,7 +855,7 @@ document.querySelectorAll('.acc').forEach(group=>{
 <div class="lead-modal" data-lead-modal hidden>
   <div class="lead-modal__backdrop" data-lead-close></div>
   <div class="lead-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="leadModalTitle">
-    <button type="button" class="lead-modal__x" data-lead-close aria-label="Закрити">×</button>
+    <button type="button" class="lead-modal__x" data-lead-close aria-label="Закрити"><svg class="lead-modal__x-ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg></button>
     <p class="lead-modal__program">Шлях 21 — індивідуальний супровід</p>
     <h3 id="leadModalTitle" class="lead-modal__title">Залиште заявку на супровід</h3>
     <p class="lead-modal__sub">Ми зв'яжемось з вами, щоб узгодити старт і формат індивідуального ведення.</p>

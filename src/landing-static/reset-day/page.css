@@ -7,7 +7,7 @@
   /* Розвантажувальний день palette — light sage green + honey gold (lighter/emotional) */
   --ink:var(--cw-net-ink,#284a3b);            /* soft mineral green ink */
   --ink-soft:var(--cw-net-ink-soft,#3a5e4d);
-  --indigo:var(--cw-net-route,#588a72);         /* light sage route */
+  --indigo:var(--cw-net-route,#55806a);         /* lighter warm route */
   --indigo-bright:var(--cw-net-route-bright,#6fa085);
   --indigo-tint:var(--cw-net-route-soft,#eef5f0);
   --chip:var(--cw-net-chip,#e7f1ea);
@@ -15,7 +15,7 @@
   --cta:var(--cw-net-gold,#dba54f);            /* platform gold accent (--cw-sem-warmth) */
   --cta-strong:var(--cw-net-gold-strong,#c2902f);
   --on-cta:var(--cw-net-on-gold,#22382e);        /* deep sage ink on gold (AA) */
-  --cream:var(--cw-net-canvas,#f9f7ef);          /* brighter warm canvas, more air */
+  --cream:var(--cw-net-canvas,#fdf6ec);          /* brighter warm canvas, more air */
   --surface:var(--cw-net-surface,#ffffff);
   --surface-cool:var(--cw-net-surface-cool,#f3f7f1);
   --line:var(--cw-net-line,#e0eadf);
@@ -25,7 +25,7 @@
   --text-soft:var(--cw-net-text-soft,#74807a);
   --gold:var(--cw-net-gold,#dba54f);
   /* dark surfaces + on-dark palette */
-  --irem-dark-1:#23463a; --irem-dark-2:#356152;
+  --irem-dark-1:#24392c; --irem-dark-2:#3a5c48;
   --irem-grad-dark:linear-gradient(165deg,var(--irem-dark-1),var(--irem-dark-2));
   --irem-gold-bright:#e8bd6a; --irem-gold-soft:#edc371; --irem-gold-tint:#f6eedb;
   --irem-on-dark-soft:#d6e6da; --irem-on-dark-muted:#bcd0c1; --irem-on-dark-faint:#86a08e; --irem-on-dark-label:#b0c8b6;
@@ -45,7 +45,8 @@
   --landing-shadow-card-unified:0 18px 52px rgba(40,74,59,.1);
   --landing-shadow-cta:0 12px 28px rgba(40,74,59,.14);
   --landing-radius-card-unified:1.65rem;
-  --landing-radius-cta-control:1.05rem;
+  /* the button corner is the contract's; see docs/design-system.md "Buttons" */
+  --landing-radius-cta-control:var(--r-btn,1rem);
   --landing-type-caption-size:.76rem;
   --landing-type-body-size:1rem;
   --landing-type-button-size:1rem;
@@ -57,8 +58,13 @@
 /* Reset Day offer answers one decision; align its content with the surrounding
    reading column instead of centering a separate visual island. */
 [data-cw-landing="reset-day"] .offer{text-align:left}
+/* Switching the block to the left rail also changes what its measure has to do.
+   Centred, the shared 20ch reads as a balanced 45%-wide statement; left-aligned
+   it becomes a column stranded in the left half of an 1080px card — the same
+   thing 24ch was doing to .prob-punch. The measure moves with the alignment. */
 [data-cw-landing="reset-day"] .offer h2,
 [data-cw-landing="reset-day"] .offer p{margin-inline:0}
+[data-cw-landing="reset-day"] .offer h2{max-width:26ch}
 [data-cw-landing="reset-day"] .offer-price,
 [data-cw-landing="reset-day"] .offer-pay{text-align:center}
 [data-cw-landing="reset-day"] .offer-price__amount{display:flex;align-items:baseline;justify-content:center;gap:.55rem}
@@ -388,4 +394,20 @@
     padding-inline:0;
     padding-bottom:0;
   }
+}
+
+/* #day-look is the only object photograph on the page — the middle otherwise
+   runs three screens of cards on beige, and the reader never sees the thing
+   itself. Master is a portrait frame (the glass sits low in it), so the band
+   crops from the lower two thirds rather than the centre. Third photo block
+   after the hero portrait and the author portrait: the base budget. */
+[data-cw-landing="reset-day"] .day-shot{
+  margin:2.4rem 0 0;border-radius:var(--r-lg);overflow:hidden;background:var(--chip-soft);
+  box-shadow:var(--shadow-soft);
+}
+[data-cw-landing="reset-day"] .day-shot img{
+  width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;object-position:50% 68%;display:block;
+}
+@media(max-width:760px){
+  [data-cw-landing="reset-day"] .day-shot img{aspect-ratio:4/3}
 }

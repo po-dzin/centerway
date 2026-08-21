@@ -27,7 +27,165 @@ The generated CSS is intentionally flat: layering lives in the JSON source and i
 
 Codegen-owned marker blocks in `globals.css` (never edit by hand — edit `cw.tokens.json` and run `tokens:build`): `CW_BASE_LIGHT`, `CW_BASE_DARK`, `CW_RUNTIME_TOKENS`, `CW_MATERIAL_DARK`, `DS_ALIAS_LIGHT`, `DS_ALIAS_DARK`. Hand-maintained remainder: `--cw-platform-visual-*` gradient stops, the `[data-cw-material]` / `[data-cw-glass]` recipes, and everything outside `@layer base` token blocks.
 
-The generator emits `name: value` pairs only — **comments cannot round-trip through it**. Notes that used to live inside a marker block belong here instead. Carried over 2026-08-15: the brand symbol stays the original CenterWay figure emblem, while the wordmark carries the new identity's "CenterWay" + MOVE · BALANCE · GROW tagline; wordmark aspect is 541.3:129.3 ≈ 4.19 — keep `--cw-brand-size-wordmark-*-width/height` in that ratio.
+The generator emits `name: value` pairs only — **comments cannot round-trip through it**. Notes that used to live inside a marker block belong here instead. Carried over 2026-08-15: the wordmark carries the identity's "CenterWay" + MOVE · BALANCE · GROW tagline; wordmark aspect is 541.3:129.3 ≈ 4.19 — keep `--cw-brand-size-wordmark-*-width/height` in that ratio.
+
+### The mark (F2, 2026-08-20)
+
+The figure emblem is gone. The mark is **F2**: one continuous brush spiral — 2.75 counter-clockwise turns, three arcs with 48° gaps, each tucking back toward the core, weight rising over the first tenth of an arc and tapering to nothing over the last forty percent. `viewBox 0 0 64 64`.
+
+Geometry has **one source**: `data/brand/cw-mark-f2.json`, lifted from the approved `LogoMark` in the Claude Design system. `npm run brand:build` bakes it into every shipped file; `npm run brand:check` (wired into `ds:qa`) fails if any of them drifts. Never hand-edit the baked output.
+
+| Output | Consumer |
+| --- | --- |
+| `public/cw/brand/cw-mark.svg` | platform header + footer, as a **CSS mask** |
+| `public/cw/brand/cw-mark-compact.svg` | the 20–24px build (two arcs, 86° gaps, floored weight) |
+| `public/cw/brand/cw-mark-{ink,gold}.svg`, mirrored into `shared/img/` | `<img>` consumers — the landing navs and footers |
+| `src/app/icon.svg`, `favicon.ico`, `apple-icon.png` | tab and touch icons, compact build on the calm ground |
+| `public/cw/brand/cw-icon-{192,512}.png`, `cw-icon-maskable-512.png` | installed app, via `src/app/manifest.ts` |
+| `public/cw/brand/cw-og-cover.png`, mirrored into `shared/img/` | link previews, 1200×630 |
+| `src/components/brand/markGeometry.ts` | `LogoMark`, the animated states |
+
+`favicon.ico` wraps a PNG payload, and that PNG has to be **RGBA** — Next's ICO decoder rejects RGB, which is why `rasterise` calls `ensureAlpha()` after flattening. The webpack production build tolerates it; the dev server does not, so a bad one only shows up when you actually run the app.
+
+`manifest.ts` lives at the **app root**, not inside a route group — Next does not pick up a manifest from `app/(platform)/`. Two icon purposes ship on purpose: `any` fills the square because desktop launchers draw the file as given, `maskable` keeps the mark inside the 80% safe zone Android's launcher shapes will not crop.
+
+The OG card is gold on the deep ground rather than ink on cream: a preview renders inside someone else's chat or feed, and the dark card holds its edges against both light and dark hosts. The wordmark goes in as the outlined paths `cw-wordmark-light.svg` already carries, so the bake needs no font and cannot come out different on another machine. `getLandingMetadata` uses it as the **floor** — a landing with its own hero shot (way21, reset-day) still overrides it.
+
+**Masked, not filtered.** The header used to flip one PNG between tones with `brightness(0)`, which can only produce black — so the light tone got a black mark instead of the header ink. `--cw-brand-asset-logo-symbol-header` is now a mask source and `--platform-header-symbol-color` names the fill per tone: header ink at 96% on light, `--cw-platform-accent` on dark.
+
+**Both tones share a viewBox**, so `--cw-net-brand-mark-gold-inset` is gone. It existed only because the two old PNGs were cropped differently (256px inset to 78.5% versus 128px edge to edge) and the gold one read ~27% larger in the same box. Baked marks cannot drift apart that way, so there is nothing left to compensate.
+
+**Motion** — `LogoMark` (`src/components/brand/LogoMark.tsx`), three states, none of which rotate. A spinning spiral reads as a system spinner and stops being the brand.
+
+| `animate` | Shape | Where |
+| --- | --- | --- |
+| `draw` | written from the core outward, 2.4s, one pass, stays | app load, first open of a page (cabinet) |
+| `breath` | turns expand and contract, outer further than inner, 3.6s loop | empty states, practice screen, background presence |
+| `wait` | turns gain density in turn, form stands still, 2.1s loop, 0.26s stagger | the spinner replacement — LMS course/lesson loading |
+
+`draw` cannot run the outlines themselves: a variable-width outline has no single dash direction. It strokes the `mids` centrelines at width 9 inside a mask and wipes the filled arcs in behind it. `prefers-reduced-motion` gets the finished mark, not a slower animation.
+
+**The burger is a sprite glyph, `menu`, not CSS rules** — three strokes through the same `icons-bake` hand as every other icon, which is the whole reason it is a glyph and not three divs.
+
+**It carried a fourth element — a core under the three rules — from the mark's grammar, and that was reverted on 2026-08-20.** The reasoning had been that the one control every page shows should echo the mark; in place it read as one thing too many two inches under the mark itself. `menu-core` is retired: platform and all eight static landings render `menu`.
+
+Rendered at **32**, not the set's usual 24, so it reads at the mark's scale: the rules span 16 of 24 units, which at 32 draws 21px against the mark's 25px, and the 1.5 stroke lands at 2px against the brush's ~2.2px. Every burger in the network is this glyph — `.menuButton` (platform), `.cwn__toggle` (network nav), `.cw-nav__burger` (the older short/irem nav) — each stacking `menu` and `close` in one grid cell and crossfading.
+
+### Utility controls carry no label (2026-08-20)
+
+A control whose whole job is obvious from its glyph does **not** get a word next to it. Close, previous, next: the icon says it, and the word repeats it. The accessible name moves to `aria-label`, so nothing is lost for screen readers — only the visual load goes.
+
+This is about redundancy, not about stripping text. A label that names a **destination or a panel** stays: the lesson bar keeps `← До курсу` and `☰ Зміст`, because the arrow says "back" but only the word says *back to what*, and the glyph says "list" but only the word says *which list*. Two bare icons there would be a guessing game, not restraint.
+
+Applied: the contents drawer's close button (was the word "Закрити", with no accessible name at all); the lesson pager, which stacked a direction word over the lesson title in each cell and is now one row of arrow + title.
+
+Literal characters — `×`, `✕`, `✓`, `&times;` — are not icons. They render in whatever weight the system font supplies and never match the baked set. Every one of them is now a sprite glyph: the contents drawer's lock and check marks, the auth modal's close, and the nav and lead-modal closes on irem, short, short-b and way21. The `font-size` hacks that existed only to size those characters went with them.
+
+### One text column, and cards behind it (2026-08-20)
+
+Running text starts on **one** left edge. The lesson player had three: paragraphs flush, the objective indented behind a gold rule, and `ul`/`ol` padded in by 1.2rem — with `display: grid` on the list, which blockifies the items and drops their `::marker`, so that indent held nothing at all. List markers now **hang in the margin** (accent dot for `ul`, a data-font counter for `ol`) and the text lands on the paragraph edge.
+
+Cards keep their own inset — that is a change of register, not a stray indent — but they lost their 1px outline. A surface and its padding already separate a card from the paragraph above it; the rule on top of that was what made running text hitting a card read as a jump. (It was also `--cw-border`, an admin-tier token: all ten uses in the LMS module moved to `--cw-platform-border`.)
+
+**One abstract under a title, never two.** Every way21 lesson carries a `summary` and a `lesson_objective` that paraphrase each other — "Задача етапу — увійти в процес та підготувати органи" against "Увійти в процес і підготувати органи". Stacked, and with the objective wearing a gold rule, they read as a choice the page failed to make. The objective wins and renders flush at lead weight; the summary only appears on lessons that have no objective. Lesson summaries now have no other consumer in the UI — decide whether they belong on the drawer row before authoring more of them.
+
+### Progress is a dashed rail, not a filled bar (2026-08-20)
+
+`ProgressRail` (`src/components/platform/ProgressRail.tsx`) draws **one dash per lesson**: completed in accent, remaining in `--cw-platform-border`. A filled bar answers "roughly how far", which for an 11-lesson protocol is less than the reader wants; dashes answer "how many, and how many left", and they are the same dash language the icon graphics and the landing rails already speak.
+
+Each dash takes a small tilt and length variance from a **seeded** function of its index — same principle as the icon bake, never `Math.random`, so the rail is identical on the server, on the client, and on every visit. Above 32 dashes it falls back to a repeating gradient: the per-dash hand is lost, but a 90-dash rail was never countable.
+
+In use on the course page and both cabinet course meters. The dosha score bars stay solid — they are proportions of a whole, not countable steps.
+
+### Utility chrome is transparent at rest (2026-08-20)
+
+`.iconButton` and everything that composes it (`backButton`, `iconButtonBare`) render with no background and no shadow until hover or focus. They are chrome sitting on their own row with nothing to separate from; two filled pills there read as objects competing with the lesson.
+
+### Cabinet tabs, card actions, one container (2026-08-20)
+
+**Tabs mark, they do not fill.** Five filled chips in a row is five objects competing before the reader has chosen anything, and the active one — `--cw-platform-text` as a background — read as a button not yet pressed. Active is now the foreground at full weight plus a 2px accent underline, the same call the platform header made and for the same reason. The row still scrolls, so it takes a right-edge mask below 34rem: the scrollbar is hidden, and without the fade the last tab ended flush against the viewport and "Акаунт" did not appear to exist.
+
+**Card actions are full width.** `flex-wrap` sized each button to its own label, so two buttons came out two different widths and neither reached the card edge — stubs floating in a card rather than its footer. Stacked and full width by default; `grid-auto-flow: column` at 48rem, where the card is at least 22rem and both fit on one row.
+
+**One container per control.** The lesson's completion bar was a raised surface card whose only child was a filled pill: two shadows, two radii and two paddings for one checkbox. `.completionBar` now carries stickiness and reach only, and `.completeToggle` composes it — the control *is* the bar. The reference-page variant is gone entirely: it floated a card holding a hint and a second "До курсу" over a pager that already offers the course map one scroll below.
+
+**List gap 0.7rem, not 0.4rem.** Lesson list items are "term — definition" and most wrap to two or three lines at 1.6 line-height; at 0.4rem the space between items was smaller than the space between two lines of the same item, so the list read as one paragraph with bold words scattered through it.
+
+## Buttons — the one contract (2026-08-21)
+
+Source: `src/components/platform/PlatformButtons.module.css`. Gate: `guard:buttons`.
+
+The same button had been written five times — platform shell, hero, cabinet, LMS, offer tiles — and the copies drifted on **every axis that was not a token**: label weight came out 600 / 700 / 800, the gold ramp was duplicated verbatim in three files and flattened to a solid fill in two others, inline padding took four values (`--ds-button-padding-inline`, `--cw-space-md`, `--cw-space-lg`, `2em`). Height was 3rem everywhere but expressed through **two different tokens** that merely happened to be equal, so the next edit to either would have split them. Radius was the only axis that held — because it was a token from the start.
+
+That is the rule this section encodes: **an axis with no token is an axis that will diverge**, and a document alone does not stop it. Hence a contract file that owns the recipe, tokens for every axis, and a gate that fails the build when a component stylesheet reaches for one.
+
+### Six roles, and there is no seventh
+
+| role | where | fill | stroke | elevation |
+|---|---|---|---|---|
+| `primary` | the one action that advances money or progress — **max one per view** | gold ramp `accent → accent-pressed` | — | gold-tinted, lifts on hover |
+| `secondary` | an alternative of the same weight, standing on the page canvas | `--cw-platform-surface` | — | `--cw-mat-shadow-soft` → `raised` |
+| `quiet` | a tertiary action **inside** a card or on sunk ground | `--cw-mat-surface-sunk` | `--cw-mat-stroke-control` | none |
+| `chrome` | nav/utility on its own row — back, pager, drawer close | transparent at rest | — | arrives on hover/focus |
+| `onMedia` | a control over hero photography | night glass at the chrome floor | `--cw-mat-stroke` | `raised` |
+| `text` | an underlined text control — no plate, still a full touch target | transparent | — | none |
+
+`quiet` carries a stroke and `secondary` does not, and that is not decoration: a soft fill on a soft surface is not a control. The cabinet's sunk buttons measured **1.08** against the card behind them — readable label, no button. See "The control stroke".
+
+`onMedia` is the night glass, not the media tint: on the day surface it was the one light plate on the page and read as a *disabled* control beside the gold CTA.
+
+**One action per card gets `primary`.** Two gold buttons side by side is two answers to "what do I do here".
+
+### The axes, and where each lives
+
+| axis | token | value |
+|---|---|---|
+| height | `--ds-button-min-height` | → `--ds-touch-target-min` (3rem). **One number, one name.** |
+| inline padding | `--ds-button-padding-inline` | 1.15rem |
+| corner | `--ds-button-radius` | → `--cw-radius-btn` → `--cw-radius-md` (16px) |
+| label weight | `--ds-button-font-weight` | **700** |
+| label size | `--ds-button-font-size` | 1rem (`text` overrides to the small body size) |
+| icon gap | `--ds-button-gap` | 0.5rem |
+| hover lift | `--ds-button-lift` | −1px (`:active` inverts it) |
+| standalone width | `--ds-button-min-width` | 10.5rem — **opt-in via `wide`** |
+
+Colour is deliberately *not* in this table. `--ds-*` is the delivery alias layer; fills come from `--cw-platform-*` / `--cw-mat-*` inside the contract file. A program tile paints its own theme and therefore composes `base` rather than `primary` — a themed control still owes the system its size, weight and corner.
+
+`wide` is opt-in because card actions are full width instead (see "Card actions are full width"); a min-width inside a card fights the grid.
+
+### What the gate enforces
+
+`guard:buttons` fails when a stylesheet other than the contract declares `min-height`, `padding-inline`, `border-radius`, `font-weight`, `font-size` or `min-width` on a button-named selector without the matching token — or repeats the gold ramp. Layout (`width`, `justify-self`, grid placement) and locally themed colour stay the component's business.
+
+Three things are named exemptions in the guard, each with its reason in the source: `.completeToggle` is a checkbox, not a button; `.menuButton` is utility chrome with its own square-ish radius; and a handful of containers (`*Actions`, `videoActionCard`) match the name pattern without being controls. An exemption is a statement, one grep from review — not a silencer.
+
+### The network is on the contract too (2026-08-21)
+
+The five landings paint from their own `--cw-net-*` skin and cannot compose a CSS Module, so the contract reaches them **as tokens**. `cw-tokens.generated.css` now carries the button geometry alongside the palette and material — `--cw-radius-md/btn`, `--ds-touch-target-min`, the `--ds-button-*` set — listed explicitly in the generator (`NETWORK_BUTTON_TOKENS`) rather than by prefix, so widening a scale does not silently enlarge the network payload. `network-tokens.css` binds them to short `--btn-*` aliases and `--r-btn` now *resolves from* `--ds-button-radius` instead of restating 1rem.
+
+What that closed:
+
+| | was | now |
+|---|---|---|
+| `.btn` height | **none** — padding-driven `1.05em 2em` | `min-height: var(--btn-h)` (3rem) |
+| `.btn` label | 1.02rem, overridden to 1.05rem in `.offer` and 1rem in `.fc-cta` | one size, no overrides |
+| `.btn` lift | −2px | `var(--btn-lift)` (−1px) |
+| `.btn-primary` | flat `--cta`, hover shadow hardcoded `rgba(219,165,79,.36)` | the gold ramp, shadow mixed off the skin's own gold |
+| `.btn-ghost` | 1.5px `--line-strong`, hover swapping border + text + background to the route green | the contract's `quiet`: sunk fill + `--cw-mat-stroke-control` |
+| `.cw-btn` (generator runtime) | `3.35rem` tall, **`border-radius: 999px`** — a pill — gradient at 180° | contract axes, soft rect, 135° |
+| utility pages (`pages.css`) | own 0.75rem corner, own padding | contract axes as fallbacks |
+| touch target | `2.75rem` in `tokens.css`, `44px` in two bridge fallbacks | 3rem everywhere — the canonical value |
+| `--landing-radius-cta-control` | 1rem (way21) vs **1.05rem** (reset-day) | `var(--r-btn)` |
+
+**`quiet`, not `secondary`, is the network's second action** — and that was settled by measuring, not by taste. `secondary` is a surface plate, which reads on the platform because its canvas and its surface are different colours. On a landing they are the same: the plate measured **1.09** against the ground behind it, which is the documented 1.08 failure over again. So the second action keeps a drawn boundary, now the control stroke rather than an arbitrary 1.5px line — measured in place at **3.37** against the canvas and **3.10** against its own fill, both past WCAG 1.4.11's 3:1, with the label at 8.70.
+
+The lesson generalises: **`secondary` is only available where the canvas and the surface differ.** Everywhere else the tertiary role is `quiet`, and the stroke is not decoration.
+
+The pill is the one worth naming: the doc had said "soft rect everywhere, never pill" since the type-and-shape migration, and a live generator surface had been running a 999px CTA the whole time. A rule nothing checks is a rule that is already broken somewhere.
+
+Fallbacks are expected in these sheets — `funnel-network.css` and `pages.css` are self-contained by design — so `guard:buttons` also asserts that **every fallback agrees with the token it stands in for**. A fallback that disagrees renders correctly in dev and wrong behind a stale cache.
+
+**Still not covered:** Short and IREM. Different authors, isolated themes — a separate product surface, not this system's coverage. They share `pages.css` and `tokens.css`, so the touch-target correction reaches them; nothing else does.
 
 ## Vocabulary — the one table
 
@@ -65,15 +223,39 @@ Target architecture is three layers (see roadmap stage 3). Current state, prefix
 | `--cw-bg/text/accent/status-*` etc. | app-chrome base (light `:root` + admin dark `.dark`) | `cw.tokens.json` → `base.light` / `base.dark` (codegen-owned since 2026-07-03) | app/admin components, DS delivery refs | tokens:check (drift), canon:guard (hex allowlist) |
 | `--cw-sem-*` | semantic (visual roles) | `cw.tokens.json` → `layers.semanticAliases` | platform component CSS | canon:guard (hex allowlist only) |
 | `--cw-platform-*` | mode alias over semantic (`visual-*` gradients stay hand-maintained in `globals.css`) | `cw.tokens.json` → `layers.modeOverrides.platform` | platform shell/blocks | canon:guard (hex allowlist only) |
-| `--cw-depth-*`, `--cw-component-glass-*` | component recipes | `cw.tokens.json` → `layers.componentRecipes` | platform components | canon:guard |
 | `--cw-mat-*` | **material** (tactile surface layer; light + dark halves) | `cw.tokens.json` → `layers.material.{light,dark}` (codegen-owned: `CW_RUNTIME_TOKENS` / `CW_MATERIAL_DARK`) | `[data-cw-material]` recipe in `globals.css`; platform shell (topbar, mobile menu, profile card, hero controls) | guard:contrast (glass pairs), canon:guard |
 | `--cw-platform-*` dark half | public dark palette | `cw.tokens.json` → `layers.modeOverrides.platformDark` (codegen-owned: `CW_PLATFORM_DARK`) | `[data-cw-theme="dark"]` — authored, no switch wired | guard:contrast (`platform-dark` theme) |
 | `--ds-*` | delivery alias | `cw.tokens.json` → `delivery.dsAlias` (full contract incl. type/button/offer-card scales; codegen-owned since 2026-07-03) | platform + landing bridge | guard:ds-contract (required-token list), tokens:check |
+| `--cw-sem-*` pack override | program/author pack | `cw.tokens.json` → `layers.packs.mineral` (codegen-owned: `CW_PACK_MINERAL`) | `.cw-pack-mineral` scopes | canon:guard (hex allowlist) |
 | `--cw-role-*`, `--cw-cta-*` | generator theme packs | `token_packs.json` | **none yet** — wired into `themeCatalog.ts`, zero CSS consumers; designated per-author theming mechanism, activation deferred until a second real theme exists | generator:validate |
 | `--cw-net-*` | platform-author network skin | `shared/css/network-tokens.css` — **references** `--cw-sem-*` / `--cw-mat-*`, no longer copies their values | the five landings | tokens:check (drift of the generated source) |
 | `--landing-*`, `--product-*`, irem `--color-*` | isolated landing themes | `src/landing-static/**` (hand-maintained) | Short/IREM landings only | guard:ds-contract (cross-layer consumption bans) |
 
 Removed layers: `--cw-color-*` (legacy DS bridge, `appAlias`) was deleted 2026-07-03 — it had zero component consumers. Do not reintroduce the prefix.
+
+### Palette (gamma chosen 2026-08-20)
+
+The default gamma is the **brand sheet**: warm orange over deep green, cream ground. It replaced the mineral gamma that had been the default until 2026-08-20; mineral did not go away, it became a pack (below). Both cleared `guard:contrast` in full before the swap, so the choice was aesthetic, not accessibility-driven.
+
+| Role | Value | Note |
+|---|---|---|
+| `calm-bg` / `calm-surface` / `calm-surface-muted` | `#faefe0` / `#fff8ef` / `#f3e4d0` | cream ground instead of white |
+| `method-ink`, `guide-strong` | `#203126` | deep green — headings, strong fills |
+| `guide-primary` | `#456b58` | muted green, the route voice. The brand sheet's own `#588768` was too bright as a fill and sat at 3.64 against the CTA label; deepening it clears body AA at 5.29 |
+| `embodied` | `#7a9b78` | the living green — practice marks, progress. Split off `guide` on 2026-08-20: the brand sheet had both roles on one value, so two roles spoke with one voice |
+| `trust` | `#4a6577` | soft slate blue. The only cool tone in the system, and deliberately **not** a button colour — it carries proof panels, badges, curator links |
+| `warmth` / `warmth-strong` | `#e5ae65` / `#c8913f` | gold and deep gold; the CTA gradient runs between them |
+| `progress` | `#edc693` | light gold |
+| `boundary` | `#b76045` | terracotta — the one value both gammas share |
+| `muted-ink` | `#48544c` | body ink on light grounds. A mix off `platform-text` lands at 4.19 on cream, below body AA — hence a token, not a formula |
+| `platform-text` | `#18261d` | one step deeper than `method-ink`: at `#203126` the topbar label on chrome glass falls to 4.00 at the tone bound |
+| `platform-accent-contrast` | `#fff8ef` | label on fills. `#faefe0` reads 4.44 on the dark-tone chrome glass, just under the bar |
+
+**The landing network moved with the platform.** All five skins (`way21`, `reset-day`, `dosha`, `consult`, `herbs`) were repainted into the brand family on 2026-08-20, keeping the axis they already varied on — way21/dosha deepest (`#3f6350`), consult brighter (`#456b58`), reset-day lighter and warmer (`#55806a` on a `#fdf6ec` canvas), herbs the leaf green (`#56804f`). Soft tints are derived, not hand-picked: `route` mixed into the cream surface at 6/8/12% for chip-soft/soft/chip, and into the canvas at 18/30% for the two hairlines — a green tint over a cream ground goes khaki fast, so the mixes stay low. The night side (`--irem-dark-1/2`, `--cw-net-hero-scrim`) now matches the platform's inverse gradient. Every literal the contrast gate asserted moved with them; `guard:contrast` covers the network at the same bar as before.
+
+Admin dark (`base.dark`) stays neutral grey — the brand sheet's green admin shell was not adopted, and its own rule ("never green on a dark ground") argues against it.
+
+**Packs.** `layers.packs.mineral` re-points the same `--cw-sem-*` role names to the warm-mineral gamma (`#f6f2ea` / `#31403e` / `#4f7e76` / `#c1906b`) for individual programs and author landings. A scope opts in with `class="cw-pack-mineral"`; because only values move and never names, no component changes. This is the mechanism the dormant `token_packs.json` was always meant to prove.
 
 Rules that hold today:
 
@@ -93,7 +275,25 @@ Platform components legitimately consume **three** tiers, and that is by design 
 | `--ds-*` | it needs a delivery-level primitive shared with landings (type scale, spacing, radius, touch target). |
 | `--cw-*` chrome (`--cw-bg/text/accent/…`) | admin/dark surfaces only — the base theme layer. |
 
-Forbidden from components regardless of tier: `layers.primitives.*` (raw mineral colors), raw hex, and any locally-defined `--cw-*` token (canon:guard enforces the last two on platform CSS). The rule of thumb: reach for the **highest** tier that already answers the need; drop a tier only when the one above doesn't expose the role.
+Forbidden from components regardless of tier: `layers.primitives.*` (raw brand/mineral colors), raw hex, and any locally-defined `--cw-*` token (canon:guard enforces the last two on platform CSS). The rule of thumb: reach for the **highest** tier that already answers the need; drop a tier only when the one above doesn't expose the role.
+
+## Block frame (2026-08-21)
+
+Every content block on the platform is `PlatformBlock`: **head + body, and no surface of its own.**
+
+```
+<PlatformBlock id label title lead graphic?>  →  <section class="container section blockFlow">
+                                                   <header class="blockHead"> label / title / lead
+                                                   {body}
+```
+
+- **`label`** is the eyebrow — which part of the journey this is. **`title`** is the block. **`lead`** is one sentence, ideally the question the block answers (the `journeySteps` wording in `content.ts` is written for exactly this).
+- **The frame never draws a panel.** Cards, rails and media inside the body carry their own material. This is the rule that removes the triple container: the herb block used to be `section → article.panel → div.panelStack → div.panelIntro → h2`, so a grid of surfaces sat inside a surface inside a surface.
+- **`graphic`** paints `--cw-sem-texture-arcs` / `--cw-sem-texture-rings` behind the head at 0.16 (0.12 on a phone). These are **derived from the mark's grammar — concentric arcs — not the mark itself**: the logo behind a heading reads as a watermark on a document, while its geometry reads as paper. It belongs to the block, so three notes do not become three decorated objects.
+- The block clips (`overflow: clip`, never `hidden`): the texture is bled past the right edge, and unclipped it widened the document — which on a phone gives the whole page a horizontal scroll and unsettles the fixed topbar. `hidden` would also fix the width, but it makes the element a scroll container and that breaks `position: sticky` inside it.
+- Text notes inside a block carry **a glyph in a toned slot** (`--cw-mat-tone-icon`), not just a sentence: three plates in a column read as a wall of paragraphs, and the icon is what separates them before a word is read.
+
+Before this, blocks were assembled three different ways on one page — a bare `h2` and a grid; an `h2` inside a flex row beside an empty `div`; and the panel-in-panel stack above. On a phone that reads as the page changing its mind every screen.
 
 ## Material layer (tactile surfaces)
 
@@ -118,6 +318,30 @@ The grain is **one token, `--cw-mat-grain-image`, carrying its own strength** (a
 - muted/secondary text on `glass-media` must be **large/semibold** (WCAG large tier, the same treatment CTA fills already get);
 - `--cw-mat-tint-floor` (76%) and `--cw-mat-tint-media-floor` (86%) are tokens precisely so `guard:contrast` can assert them. Lowering either fails the gate — verified by regression test.
 
+### The hero scrim's ink is neutral (2026-08-20)
+
+The photo hero darkens with `--cw-mat-scrim-ink` (`#171817`), not with `--cw-platform-text`. The old ink was `#18261d` — a green-black — and the ramp runs to 82% on mobile and 84% on desktop. At that strength a green-black does not darken a photograph, it repaints it. Turning the scrim off is the proof: the platform's hero image is warm — brown wood, warm light — and every part of the green cast was coming from the scrim.
+
+The opacities did not change (they are what the copy's contrast is asserted against in `guard:contrast`); only the hue did. The brand-tint layer beneath it dropped from 9% to 5%, since seating the image in the palette and darkening it are two jobs and the ramp was doing both.
+
+The landing network still scrims with `--cw-net-hero-scrim` (`#182a20`) at up to 92% — the same green-black, deliberately left for now because there the scrim also serves as the brand band under the copy.
+
+### Meters are one recipe (2026-08-21)
+
+Every bar the platform draws — the dosha scores in the cabinet, the diagnostic progress row — uses `--cw-mat-meter-track` and a `guide-primary → guide-strong` fill. The gradient's two ends are asserted against the track in `guard:contrast` (4.92 / 11.26 against a 3:1 bar for a graphic that carries meaning).
+
+The original diagnostic ramp was `status-success → status-pending` and measured **2.75 / 2.65** against the same track: under the bar, and the reason the identical recipe read as a grey hairline once it was reused. Status colours are for status; a meter is not one.
+
+### The control stroke (2026-08-20)
+
+The material is all soft edges, and a control that is only a soft fill on a soft surface is not a control. The cabinet's secondary buttons were `--cw-mat-surface-sunk` on a card: measured **1.08** against the card behind them. The label was perfectly readable; the button was not there.
+
+`--cw-mat-stroke-control` is the one token in the layer built for a drawn boundary — translucent ink in light, translucent cream in dark — and it is the only stroke held to a contrast bar. WCAG 1.4.11 puts a UI boundary at 3:1, so `guard:contrast` asserts it composited over **both** surfaces it is drawn on (card material and page ground) in **both** themes: 3.38 / 3.34 / 3.38 / 3.71. Thin the mix and the gate fails instead of the control quietly going flat again.
+
+It is not decoration and not a divider — `--cw-mat-stroke` (the light top edge) and `--cw-mat-stroke-inner` (the hairline that divides one surface) keep those jobs and stay unmeasured, because neither claims to be a boundary you can press.
+
+**What it is deliberately not used for: state.** An outlined chip was tried for the cabinet's active tab and removed the same day — the strip sits straight on the page ground, so outlining the chosen tab turned a quiet row into five objects. "You are here" stays the foreground at full weight plus the gold marker.
+
 Degradation is part of the contract: `@supports not (backdrop-filter)` and `prefers-reduced-transparency: reduce` both fall back to the opaque `--cw-mat-surface`, whose contrast is strictly better than the glass it replaces. One glass depth only — never nest glass in glass.
 
 ### The chrome tint, and why the topbar is not held to the media floor
@@ -137,6 +361,27 @@ Both were live defects found while migrating the topbar (2026-08-15). Neither is
 2. **`backdrop-filter` makes an element a containing block for `position: fixed` descendants**, and `isolation: isolate` makes it a Backdrop Root that neuters any blur inside it. The topbar is caught between the two: it contains a fixed full-screen mobile menu, so the blur cannot live on `.header` (the menu collapses to bar height), and it cannot live on a pseudo-element under `isolation` (nothing renders). The band therefore sits on `.header::before` with no `isolation` above it. Both constraints are commented at the rule.
 
 Together these explain the retired frost-image hack: a blurred copy of a photo pinned behind the header, faking the effect that the build was stripping. It was dead code by the time it was removed (`content: none` on every consumer).
+
+### The profile is on the recipe, not beside it (2026-08-20)
+
+The user cabinet (`/profile`) was the last platform surface carrying a **private component set** instead of consuming `[data-cw-material]`. It rendered as two design systems stitched at the fold, and the split was structural rather than cosmetic:
+
+| | Above the fold | Below the fold |
+|---|---|---|
+| surface | hand-rolled: `--cw-mat-tint` + grain + blur (identity card), opaque `--cw-mat-surface` + a **1px `--cw-platform-border`** (stat tiles) | hand-rolled: `--cw-mat-surface` + soft shadow, **no** stroke, **no** grain |
+| radius | `--cw-card-radius` (20px) / `--cw-radius-sm` (12px) | `--cw-radius-lg` (28px) |
+| value type | editorial Cormorant 700 | UI 600 |
+| label type | mono, `--cw-font-data` | uppercase UI |
+
+Neither half was wrong on its own; they were simply two different answers to "what is a card here", eight inches apart. The fix was not to reconcile them but to delete both and declare `data-cw-material="matte"` on every panel — the recipe owns stroke, grain and shadow, and `Cabinet.module.css` sets layout and radius only. Three rules now hold the page together, and they are cheap to check in review:
+
+- **one radius per job** — `lg` = panel, `md` = nested in a panel, `btn`/`pill` = control;
+- **serif has exactly one job** — titles. Values are UI 600, never editorial;
+- **one label idiom** — the uppercase UI label; the mono/data variant is gone from this surface.
+
+The landing-style photo hero went with it. A full-bleed photo block pushed the controls the cabinet exists for below the fold, and it was the thing forcing a second surface vocabulary in the first place: cards over photography need the media tint, cards over the canvas do not, so the page could not have one answer while the hero stood. The profile's header is now the first panel of the page in the page's own material.
+
+168 lines of profile-only CSS were deleted from `PlatformComponents.module.css` and `PlatformResponsive.module.css` (`profileHero*`, `profileStat*`, `profileSummaryList`, `profileScore*`, and the `[data-cw-profile-hero]` responsive overrides). Removing the hero also restored the shell's automatic topbar clearance — `.shellOverlay > main:not(:has(> [class*="heroFeature"]:first-child))` — so the page no longer hand-computes it.
 
 ### Public dark mode: authored, scoped, not switched on
 
@@ -313,9 +558,58 @@ The contract layer (`route_family_contracts.json` → `screen_manifests.json` �
 
 - Fonts: UI `Manrope`, editorial `Cormorant Garamond`, data `IBM Plex Mono`.
 - Spacing scale `--cw-space-{2xs..3xl}` + `--cw-space-section-y`; container `--cw-max-width: 1160px`.
-- Radii `--cw-radius-{sm,md,lg,pill}`; primary CTA shape `--cw-radius-btn: var(--ds-radius-button-soft)` (soft rounded rect — see `docs/archive/working-notes/platform-button-shape-contract-2026-05-14.md` if archived).
+- **Radii: one scale, chosen by the size of the object** (2026-08-21). `--cw-radius-sm` 12 · `--cw-radius-md` 16 · `--cw-radius-lg` 20 · `--cw-radius-xl` 28 · `--cw-radius-pill`.
+
+  | ступень | for |
+  |---|---|
+  | `sm` 12 | chips, small plates, list inputs |
+  | `md` 16 | buttons, inputs, list rows — `--cw-radius-btn` is an alias of it |
+  | `lg` 20 | cards and the topbar — `--cw-card-radius` is an alias of it |
+  | `xl` 28 | large panels, covers, the profile header |
+  | `pill` | anything genuinely round |
+
+  Nesting: an inner radius is the outer one minus the padding between them (`calc(var(--cw-card-radius) - …)`), never the same value — concentric corners with equal radii read as a mistake.
+
+  This replaced **three** overlapping scales that shipped at once: `--cw-radius-*` (12/18/28), an unused `--ds-radius-*` delivery alias (12/16/20), and a standalone `--cw-card-radius` (20). `md` therefore meant 18 in one file and 16 in another, and a single mobile screen rendered six different corners (12, 14.4, 16, 16.8, 20, 21.6 px). Viewport-interpolated radii (`clamp(1rem, 4vw, …)`) are gone for the same reason: a corner that changes with the window cannot belong to a scale.
 - Touch target minimum `--ds-touch-target-min: 3rem` (canonical since e0c7dbc).
 - Breakpoints: mobile ≤ 560px, tablet 561–900px, desktop ≥ 901px.
+- **Stat tiles take values, not sentences.** A tile in a column row (cabinet identity: доша / навчання / продукти) holds a name, a count, or `—`. An empty state is the em dash; the sentence that explains it belongs to the card below, with the action that resolves it. The row reserves two lines of value so a compound result (`Вата-Пітта`, which wraps at 320px) cannot shove the rest of the page down, and breaking is at the hyphen — never `overflow-wrap: anywhere`, which splits words mid-letter.
+
+## Installed-app chrome (PWA)
+
+The platform is installable, and an installed launch is a different surface from a browser tab: there is no address bar, no back gesture affordance on Android's gesture nav, and the bottom edge belongs to the app.
+
+| Piece | Where | Rule |
+|---|---|---|
+| manifest | `src/app/manifest.ts` | `standalone`, ground colours track the default gamma (`#faefe0`) — they are hardcoded, so they move by hand when the gamma moves |
+| worker | `public/sw.js` | precaches exactly one document (`public/offline.html`) and serves it only when a navigation fails. **No content caching** — a deploy must never be shadowed by a stale copy |
+| offline page | `public/offline.html` | fully inline (no hashed Next asset can be referenced), colours copied from the default ground by hand |
+| runtime | `PwaRuntime` | registers the worker after `load`, and stamps `data-cw-standalone` on `<html>` — `@media (display-mode: standalone)` is iOS 16.4+, `navigator.standalone` covers older home-screen launches |
+| install offer | cabinet → Акаунт | Chrome's parked `beforeinstallprompt` or, on iOS Safari, the two-tap instruction. Neither renders once standalone |
+
+**There is deliberately no bottom tab bar.** One was built and removed on 2026-08-20: on a handheld the platform's own topbar already carries the same five destinations one thumb-reach away, so a second bar was a duplicate of it rather than app chrome. If it ever comes back it needs a job the topbar cannot do — not the same nav in a second place. (Recoverable from git if that job appears; it sat at the media floor, 86%, because a bar pinned to the bottom of the viewport gets whatever the page scrolled under it, including a hero photograph.)
+
+## Mirror protocol (claude.ai Design project)
+
+The design system is mirrored as a Claude Design project — `CenterWay Design System`, projectId `216f0b49-cc48-417f-9194-2c6c5be6d11b` — used as a live specimen surface and a prototyping sandbox.
+
+**Direction is one-way: repo → project.** Authority runs canon → this file → the project. When they disagree, the project is stale, not right.
+
+The token layer is machine-owned, so it can no longer drift by hand:
+
+| Step | Command | What it does |
+|---|---|---|
+| export | `npm run ds:export` | derives `data/design-tokens/ds-bundle/**` from `cw.tokens.json` — primitives, colors, geometry, material (values *and* recipe), delivery, `styles.css`, plus `_sync.json` |
+| gate | `npm run ds:sync:check` | re-derives and fails if the committed bundle is stale or was hand-edited. Runs inside `ds:qa` |
+| push | agent, via the `DesignSync` tool | `finalize_plan` → `write_files` with the bundle's files at the project's own paths |
+
+`_sync.json` carries a sha256 per file plus a hash of the token source. Reading that single small file from the project tells you whether the mirror is current — no need to download and diff every file. If `tokensSource` there differs from the one `ds:export` writes locally, the project is behind.
+
+**What is *not* machine-owned:** components, `ui_kits`, guideline cards, templates and the readme are hand-authored in the project. They are synced by hand when the behaviour they describe changes — the export deliberately does not overwrite them.
+
+**Specimens belong in the project, not in one-off pages.** A comparison, a palette study, a state matrix: author it as a `@dsCard` guideline card in the project so it lives beside the system it argues about, instead of as a standalone HTML that nobody finds again.
+
+Legacy names retired in the product (`--cw-depth-*`, `--cw-component-glass-*`) survive in the project only as a marked compatibility block in `tokens/material.css`, kept until its components migrate. They must not come back here.
 
 ## Validation Stack
 
@@ -328,6 +622,7 @@ The contract layer (`route_family_contracts.json` → `screen_manifests.json` �
 | `guard:ds-contract` | `--ds-*` delivery + landing token contracts, required `--cw-sem-*`/`--cw-platform-*` floor, cross-layer consumption bans, no `--cw-color-*` reintroduction, hero content parity |
 | `guard:contrast` | WCAG contrast of rendered text/CTA pairs resolved from `cw.tokens.json`, both themes — platform light + admin dark (body ≥ 4.5, large/CTA fills ≥ 3.0). Since 2026-08-15 also composites the translucent material: 10 glass/inverse pairs checked against the worst backdrop each context allows |
 | `generator:validate` + snapshot/determinism/language/rhythm | generator layer |
+| `guard:buttons` | The button contract: no component stylesheet may declare button geometry, type or the gold ramp — it composes a role from `PlatformButtons.module.css`. 42 rules checked; named exemptions carry their reason in the source |
 | `semantic:audit` | route-family contracts, block order, route invariants (alias redirects exist + redirect correctly) |
 
 Contrast watch (`guard:contrast`): two light CTA fills sit in the large-text tier below body AA — `accent-contrast` on `guide-primary` (4.34) and on `boundary` (4.17). They pass at 3.0 as large/semibold labels but are the first candidates if the palette is retuned for a stricter bar. All `.cw-btn-primary` states and every dark admin text pair pass body AA.

@@ -1,28 +1,20 @@
 /* User cabinet — sectioned dashboard over profile + LMS data.
 
    Mobile-first: every rule is the phone layout, wider viewports only add.
-   Surfaces are the material (matte, no border — the material carries the edge,
-   see docs/design-system.md "Material layer"). Tokens only, no raw hex. */
 
-/* ── Identity header ──────────────────────────────── */
+   One surface language, and it is the canonical one. Every panel here declares
+   `data-cw-material="matte"` in the markup and inherits stroke + grain + shadow
+   from the recipe in globals.css (see docs/design-system.md "Material layer").
+   Nothing in this file hand-rolls a surface: an earlier pass had the profile
+   carrying its own private card set — bordered stat tiles at one radius over a
+   photo hero, borderless cards at another radius below it — and the page read
+   as two design systems stitched together. Rules here set layout and radius
+   only; the material is not ours to redefine.
 
-/* The cabinet reuses the platform's hero surface but NOT its proportions: a
-   full-viewport photo would push every control the cabinet exists for below the
-   fold. Class + attribute keeps specificity above the platform's own
-   `.heroFeature` rule deterministically, rather than relying on module order. */
-.hero[data-cw-profile-hero="true"] {
-  min-height: 0;
-}
-
-.hero .heroContent {
-  padding-block: calc(var(--platform-topbar-clearance, 5.5rem) + var(--cw-space-md)) var(--cw-space-2xl);
-}
-
-/* Your own name is an identity label here, not a landing headline. */
-.hero .heroName {
-  font-size: clamp(1.75rem, 5vw, 2.6rem);
-  line-height: 1.1;
-}
+   Radius has exactly three jobs: `lg` = panel, `md` = something nested inside a
+   panel, `btn`/`pill` = a control. Serif (`--cw-font-editorial`) has exactly
+   one: titles. Values are UI weight 600, never editorial — that split was the
+   other half of the seam. Tokens only, no raw hex. */
 
 .shell {
   width: min(100% - 2rem, var(--cw-max-width));
@@ -30,6 +22,146 @@
   padding-block: var(--cw-space-lg) var(--cw-space-3xl);
   color: var(--cw-platform-text);
   font-family: var(--cw-font-ui);
+}
+
+/* ── Identity ─────────────────────────────────────── */
+
+/* The profile's own header, not a landing hero: no photo, no full-viewport
+   block. It is the first panel of the page in the same material as the rest,
+   so there is no seam between "header" and "content" to reconcile. */
+.identity {
+  display: grid;
+  gap: var(--cw-space-md);
+  padding: var(--cw-space-lg);
+  border-radius: var(--cw-radius-xl);
+  margin-bottom: var(--cw-space-lg);
+}
+
+.identityMain {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--cw-space-md);
+}
+
+.avatar {
+  width: 3.75rem;
+  height: 3.75rem;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.identityText {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.identityName {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(1.6rem, 6vw, 2.2rem);
+  font-weight: 500;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+.identityEmail {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+/* Settings live behind the identity, not beside the route. A gear and nothing
+   else: the word is on aria-label, where it costs no space and is still read
+   aloud. Sized to the touch minimum and pulled up to the card's own top edge so
+   it sits with the identity rather than floating in the middle of it. */
+.identityAccountEntry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  align-self: start;
+  width: var(--ds-touch-target-min);
+  height: var(--ds-touch-target-min);
+  margin: -0.35rem -0.35rem 0 0;
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  background: transparent;
+  color: var(--cw-platform-muted);
+  cursor: pointer;
+}
+
+.identityAccountEntry:hover {
+  color: var(--cw-platform-text);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.identityAccountEntry:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.identityAccountIcon {
+  width: 1.4rem;
+  height: 1.4rem;
+}
+
+/* Three facts about the account, as a meta row rather than three tiles. They
+   are context for the sections below, not cards competing with them. */
+.identityStats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--cw-space-sm);
+  margin: 0;
+  padding-top: var(--cw-space-md);
+  /* The material's own inner hairline, not a page border: this is one surface
+     divided, not two surfaces meeting. --cw-platform-border is a warm cream that
+     vanishes against --cw-mat-surface. */
+  border-top: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.identityStat {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+/* A tile holds a value, never a sentence: a dosha name, a count, or the em
+   dash. Two rules follow from that, and both are here to stop the row from
+   moving what is under it.
+
+   The row reserves two lines. Compound dosha results ("Вата-Пітта") are the one
+   legal value that wraps, and if the row sized to its content the whole cabinet
+   below would shift by a line depending on which result a person happens to
+   have. Reserved, it never does — and the three columns keep their baselines.
+
+   The break is at the hyphen, not anywhere. `overflow-wrap: anywhere` was
+   splitting words mid-letter ("Вата-Пітт|а"), which reads as a rendering bug.
+   Nothing longer than a compound name may be put in this slot: long states —
+   "no test taken yet", "nothing purchased" — belong to the cards below, which
+   already carry them with their own call to action. */
+.identityStat dd {
+  margin: 0;
+  min-height: 2.5em;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: normal;
 }
 
 /* ── Section navigation ───────────────────────────── */
@@ -44,6 +176,23 @@
   overflow-x: auto;
   scrollbar-width: none;
   -webkit-overflow-scrolling: touch;
+  /* The scrollbar is hidden, so the last tab used to end flush against the
+     viewport edge with nothing to say the row continues — "Акаунт" simply did
+     not exist as far as the reader could tell. The mask fades the final 2rem so
+     a clipped tab looks clipped. */
+  -webkit-mask: linear-gradient(90deg, #000 calc(100% - 2rem), transparent);
+  mask: linear-gradient(90deg, #000 calc(100% - 2rem), transparent);
+}
+
+/* Once every tab fits there is nothing to fade, and the fade would just eat the
+   last one's right edge. Four labels measure ~333px, which clears the container
+   from 368px of viewport up; below that — a 360px or 320px phone — the row does
+   scroll and the fade is telling the truth. */
+@media (min-width: 23rem) {
+  .tabs {
+    -webkit-mask: none;
+    mask: none;
+  }
 }
 
 .tabs::-webkit-scrollbar {
@@ -52,14 +201,16 @@
 
 .tab {
   flex: 0 0 auto;
+  position: relative;
   display: inline-flex;
   align-items: center;
   min-height: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-md);
+  /* No fill at rest. Five filled chips in a row on a calm page is five objects
+     competing before the reader has chosen anything. */
+  padding-inline: var(--cw-space-sm);
   border: 0;
   border-radius: var(--cw-radius-btn);
-  background: var(--cw-mat-surface-sunk);
-  box-shadow: var(--cw-mat-shadow-soft);
+  background: transparent;
   color: var(--cw-platform-muted);
   font: inherit;
   font-size: 0.92rem;
@@ -70,12 +221,34 @@
 
 .tab:hover {
   color: var(--cw-platform-text);
+  background: var(--cw-mat-surface-sunk);
 }
 
+.tab:focus-visible {
+  outline: none;
+  background: var(--cw-mat-surface-sunk);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 32%, transparent);
+}
+
+/* "You are here" is the foreground at full weight plus the gold marker, and
+   nothing else. A fill was tried here and removed: the sunk material measured
+   1.04 against the page ground, so it read as a half-drawn box rather than a
+   chip, and outlining it properly turned a quiet strip into five objects. The
+   rest-state fill stays off; the marker carries the state. */
 .tabActive {
   composes: tab;
-  background: var(--cw-platform-text);
-  color: var(--cw-platform-bg);
+  color: var(--cw-platform-text);
+}
+
+.tabActive::after {
+  content: "";
+  position: absolute;
+  left: var(--cw-space-sm);
+  right: var(--cw-space-sm);
+  bottom: 0.35rem;
+  height: 2px;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-accent);
 }
 
 /* ── Section scaffolding ──────────────────────────── */
@@ -90,6 +263,8 @@
   gap: 0.15rem;
 }
 
+/* The page's single label idiom. The hero used to run a second one (mono, in
+   the data face) two inches above this one; there is now only this. */
 .sectionLabel {
   margin: 0;
   font-size: 0.76rem;
@@ -116,9 +291,7 @@
   display: grid;
   gap: var(--cw-space-sm);
   padding: var(--cw-space-lg);
-  border-radius: var(--cw-radius-lg);
-  background: var(--cw-mat-surface);
-  box-shadow: var(--cw-mat-shadow-soft);
+  border-radius: var(--cw-radius-xl);
 }
 
 .cardGrid {
@@ -141,9 +314,14 @@
 
 /* ── Continue card (the cabinet's single most important control) ── */
 
+/* Tone shifts, material does not. Class + attribute outranks the recipe's bare
+   attribute selector deterministically, rather than relying on sheet order. */
 .continueCard {
   composes: card;
-  background: var(--cw-mat-tone-support);
+}
+
+.continueCard[data-cw-material] {
+  background-color: var(--cw-mat-tone-support);
 }
 
 .continueNext {
@@ -178,17 +356,26 @@
   font-weight: 600;
 }
 
+/* One meter recipe with the dosha test's, which is where it was designed: the
+   same track and the same success→pending gradient, so a bar means the same
+   thing wherever the platform draws one. Before this the cabinet had its own
+   pair — a track at 1.08 against the card and a gold fill at 1.75 against the
+   track — which rendered as three grey hairlines. Both legs of the gradient are
+   asserted against the track in scripts/guard-contrast.mjs. */
 .meter {
-  height: 0.4rem;
+  height: 0.5rem;
   border-radius: var(--cw-radius-pill);
-  background: var(--cw-mat-surface-sunk);
+  background: var(--cw-mat-meter-track);
   overflow: hidden;
 }
 
 .meterFill {
+  /* It is a <span>: without this the fill is an inline box, `width` does
+     nothing, and the bar renders empty at every score. */
+  display: block;
   height: 100%;
   border-radius: var(--cw-radius-pill);
-  background: var(--cw-platform-accent);
+  background: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
   transition: width 240ms ease;
 }
 
@@ -210,32 +397,26 @@
 
 /* ── Actions ──────────────────────────────────────── */
 
+/* Full width, stacked. `flex-wrap` sized each button to its own label, so
+   "Продовжити" and "Карта курсу" came out two different widths and neither
+   reached the card edge — two stubs floating in a card rather than the card's
+   own footer. They go side by side at 561px, where the card is at least 22rem
+   and there is room for both. */
 .actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
   gap: var(--cw-space-xs);
 }
 
+.actions > * {
+  width: 100%;
+}
+
 .actionPrimary {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-lg);
-  border: 0;
-  border-radius: var(--cw-radius-btn);
-  background: var(--cw-platform-accent);
-  color: var(--cw-platform-on-accent);
-  font: inherit;
-  font-weight: 600;
-  text-decoration: none;
-  cursor: pointer;
+  composes: primary from "../PlatformButtons.module.css";
 }
 
 .actionGhost {
-  composes: actionPrimary;
-  background: var(--cw-mat-surface-sunk);
-  color: var(--cw-platform-text);
+  composes: quiet from "../PlatformButtons.module.css";
 }
 
 /* ── Score bars (dosha) ───────────────────────────── */
@@ -265,29 +446,72 @@
 
 .cardMuted {
   composes: card;
-  background: var(--cw-mat-surface-sunk);
+}
+
+.cardMuted[data-cw-material] {
+  background-color: var(--cw-mat-surface-sunk);
   box-shadow: none;
 }
 
+/* A panel like any other, tinted by the boundary tone — not a differently
+   shaped callout. Same material, same radius, same padding; only the hue says
+   "read this before you rely on a reminder arriving". */
 .notice {
-  display: grid;
-  gap: var(--cw-space-xs);
-  padding: var(--cw-space-md);
-  border-radius: var(--cw-radius-md);
-  background: var(--cw-mat-tone-boundary);
+  composes: card;
   line-height: 1.55;
+}
+
+.notice[data-cw-material] {
+  background-color: var(--cw-mat-tone-boundary);
 }
 
 /* ── Wider viewports: additive only ───────────────── */
 
-@media (min-width: 48rem) {
+/* 561px is the platform's tablet boundary (docs/design-system.md: mobile ≤ 560,
+   tablet 561–900, desktop ≥ 901). It used to be 48rem here — a third system,
+   in neither the shell's nor the canon's set, which left a 768–900px band where
+   the content had already gone wide while the header was still in its mobile
+   lockup. Kept in px, like every other breakpoint on the platform: these are
+   viewport sizes, not type-relative measures. */
+@media (min-width: 561px) {
   .shell {
     padding-block-start: var(--cw-space-xl);
+  }
+
+  .identity {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: var(--cw-space-xl);
+    padding: var(--cw-space-xl);
+  }
+
+  /* Side by side once there is room: identity left, the three facts right,
+     with the hairline turning from a horizontal rule into a vertical one. */
+  /* No two-line reserve once the columns can grow: a compound name fits on one
+     line here, so the space would be dead. */
+  .identityStat dd {
+    min-height: 0;
+  }
+
+  .identityStats {
+    grid-template-columns: repeat(3, minmax(6rem, auto));
+    gap: var(--cw-space-lg);
+    padding-top: 0;
+    padding-inline-start: var(--cw-space-lg);
+    border-top: 0;
+    border-inline-start: 1px solid var(--cw-mat-stroke-inner);
   }
 
   /* auto-fit, not a fixed pair: a lone course card reading as a half-width tile
      with dead space beside it looks like a layout bug, not a shelf. */
   .cardGrid {
     grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  }
+
+  /* One row. The card is at least 22rem here, so two full-width buttons sit
+     side by side without either one truncating. */
+  .actions {
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
   }
 }

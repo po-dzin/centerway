@@ -49,6 +49,7 @@ export type CabinetCopy = {
   testOpen: string;
 
   accountLabel: string;
+  accountEntry: string;
   accountTitle: string;
   accountLead: string;
 
@@ -57,6 +58,12 @@ export type CabinetCopy = {
   notificationsMissing: string;
   connectTelegram: string;
   notificationsUnavailable: string;
+
+  installTitle: string;
+  installLead: string;
+  installAction: string;
+  installIosLead: string;
+  installIosSteps: string[];
 
   shelfErrorTitle: string;
   shelfErrorLead: string;
@@ -86,7 +93,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       navAria: "Cabinet sections",
 
       continueTitle: "Continue where you stopped",
-      continueLead: "The next step of your route is already open.",
+      continueLead: "Your next step is already open.",
       continueAction: "Continue",
       startAction: "Start the course",
       openCourseMap: "Course map",
@@ -113,12 +120,13 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
 
       testsLabel: "Tests",
       testsTitle: "Diagnostics and results",
-      testsLead: "Your results stay in the profile and shape which route is suggested next.",
+      testsLead: "Your results stay in the profile and shape what is suggested next.",
       testPlanned: "In preparation",
       testPassed: "Completed",
       testOpen: "Open the test",
 
       accountLabel: "Account",
+      accountEntry: "Account settings",
       accountTitle: "Account and contacts",
       accountLead: "The fields orders and access notifications are matched against.",
 
@@ -128,6 +136,13 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
         "No delivery channel is connected, so course reminders will not reach you. Connect Telegram in one tap.",
       connectTelegram: "Connect Telegram",
       notificationsUnavailable: "Reminder delivery is temporarily unavailable. Nothing is lost — try again later.",
+
+      installTitle: "Add CenterWay to your home screen",
+      installLead:
+        "It opens as an app — full screen, with its own icon, and your courses stay one tap away.",
+      installAction: "Add",
+      installIosLead: "On iPhone and iPad the browser adds it, in two steps:",
+      installIosSteps: ["Tap Share in the Safari toolbar.", "Choose “Add to Home Screen”."],
 
       shelfErrorTitle: "Could not load your courses",
       shelfErrorLead: "The rest of the profile is shown — try loading the courses again.",
@@ -146,7 +161,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     navAria: "Розділи кабінету",
 
     continueTitle: "Продовжити з місця зупинки",
-    continueLead: "Наступний крок маршруту вже відкритий.",
+    continueLead: "Наступний урок уже відкритий.",
     continueAction: "Продовжити",
     startAction: "Почати курс",
     openCourseMap: "Карта курсу",
@@ -155,10 +170,10 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     learningTitle: "Мої курси",
     learningLabel: "Навчання",
     learningEmptyTitle: "У профілі ще немає курсів",
-    learningEmptyLead: "Після придбання програма відкривається тут — з уроками, поступом і наступним кроком.",
+    learningEmptyLead: "Після придбання програма відкривається тут — з уроками, поступом і наступним уроком.",
     browsePrograms: "Подивитися програми",
 
-    stepsOf: (done, total) => `${done} з ${total} кроків`,
+    stepsOf: (done, total) => `${done} з ${total} уроків`,
     coursesCount: (count) => `${count} ${ukPlural(count, "курс", "курси", "курсів")}`,
     productsCount: (count) => `${count} ${ukPlural(count, "продукт", "продукти", "продуктів")}`,
     dayNumber: (day) => `День ${day}`,
@@ -167,27 +182,35 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     courseDraft: "Чернетка — доступ на перегляд",
     courseLocked: "Доступу поки немає",
     courseExpired: "Термін доступу минув",
-    nextStepLabel: "Наступний крок",
+    nextStepLabel: "Наступний урок",
     startedAtLabel: "Старт",
     openProgramPage: "Про програму",
 
     testsLabel: "Тести",
     testsTitle: "Діагностика і результати",
-    testsLead: "Результати лишаються в профілі і впливають на те, який маршрут пропонується далі.",
+    testsLead: "Результати лишаються в профілі і впливають на те, що пропонується далі.",
     testPlanned: "Готується",
     testPassed: "Пройдено",
     testOpen: "Пройти тест",
 
     accountLabel: "Акаунт",
+    accountEntry: "Налаштування акаунта",
     accountTitle: "Акаунт і контакти",
     accountLead: "Поля, за якими зіставляються замовлення і повідомлення про доступ.",
 
     notificationsTitle: "Нагадування про курс",
-    notificationsLinked: "Telegram підключено — нагадування про кроки приходять туди.",
+    notificationsLinked: "Telegram підключено — нагадування про уроки приходять туди.",
     notificationsMissing:
-      "Канал доставки не підключено, тому нагадування про кроки курсу до вас не дійдуть. Підключити Telegram — один дотик.",
+      "Канал доставки не підключено, тому нагадування про уроки курсу до вас не дійдуть. Підключити Telegram — один дотик.",
     connectTelegram: "Підключити Telegram",
     notificationsUnavailable: "Доставка нагадувань тимчасово недоступна. Нічого не втрачено — спробуйте пізніше.",
+
+    installTitle: "Додати CenterWay на екран телефона",
+    installLead:
+      "Відкриватиметься як застосунок — на весь екран, з власною іконкою, і шлях лишається за один дотик.",
+    installAction: "Додати",
+    installIosLead: "На iPhone та iPad застосунок додає сам браузер, у два кроки:",
+    installIosSteps: ["Натисніть «Поділитися» на панелі Safari.", "Оберіть «На початковий екран»."],
 
     shelfErrorTitle: "Не вдалося завантажити курси",
     shelfErrorLead: "Решта профілю показана — спробуйте завантажити курси ще раз.",

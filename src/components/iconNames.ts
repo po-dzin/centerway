@@ -38,6 +38,7 @@ export const CW_ICON_NAMES = [
   "phone",
   "telegram",
   "menu",
+  "settings",
   "close",
   "vata",
   "pitta",

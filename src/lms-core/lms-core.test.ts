@@ -267,14 +267,54 @@ describe("drip availability", () => {
   const course = dailyCourse();
   const startedAt = new Date("2026-08-15T06:00:00Z");
 
-  it("unlocks day 1 immediately and locks day 2", () => {
+  it("opens day 2 ahead of its day, and says how far ahead it is", () => {
+    // The default gate is soft: the schedule paces the course, it does not lock
+    // it. Someone on day 1 must be able to read week 3 — that is how they know
+    // what to order before it is needed.
     const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
     const progress = foldProgress([]);
     const [day1, day2] = flattenLessons(course).map((entry) => entry.lesson);
 
-    expect(lessonAvailability(course, day1, progress, context).available).toBe(true);
-    const locked = lessonAvailability(course, day2, progress, context);
-    expect(locked).toEqual({ available: false, reason: "locked_by_day", unlocksOnDay: 2, daysRemaining: 1 });
+    expect(lessonAvailability(course, day1, progress, context)).toEqual({ available: true });
+    expect(lessonAvailability(course, day2, progress, context)).toEqual({
+      available: true,
+      ahead: { reason: "before_day", scheduledDay: 2, daysAhead: 1 },
+    });
+  });
+
+  it("locks day 2 when the course asks for a hard gate", () => {
+    const strict = { ...course, schedule: { ...course.schedule, gate: "hard" as const } };
+    const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
+    const progress = foldProgress([]);
+    const [day1, day2] = flattenLessons(strict).map((entry) => entry.lesson);
+
+    expect(lessonAvailability(strict, day1, progress, context).available).toBe(true);
+    expect(lessonAvailability(strict, day2, progress, context)).toEqual({
+      available: false,
+      reason: "locked_by_day",
+      unlocksOnDay: 2,
+      daysRemaining: 1,
+    });
+  });
+
+  it("keeps `continue` on the day the learner has actually reached", () => {
+    // Day 2 is open (soft gate) but it is not where the protocol says to be, so
+    // the course entry point must still point at day 1.
+    const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
+    expect(resolveCurrentLesson(course, foldProgress([]), context)?.slug).toBe("day-1");
+  });
+
+  it("points ahead once everything the schedule opened is done", () => {
+    const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
+    const done = foldProgress([
+      {
+        clientId: "d1",
+        type: "lesson.completed",
+        lessonId: "l1",
+        occurredAt: "2026-08-15T07:00:00Z",
+      },
+    ]);
+    expect(resolveCurrentLesson(course, done, context)?.slug).toBe("day-2");
   });
 
   it("unlocks day 2 once the learner's local date rolls over", () => {
@@ -320,12 +360,13 @@ describe("drip availability", () => {
     expect(resolveCurrentLesson(course, foldProgress([]), context)?.slug).toBe("day-1");
   });
 
-  it("builds an outline carrying lock and completion state", () => {
+  it("builds an outline carrying schedule position and completion state", () => {
     const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
     const outline = buildOutline(course, foldProgress([]), context);
     expect(outline).toHaveLength(2);
-    expect(outline[0].availability.available).toBe(true);
-    expect(outline[1].availability.available).toBe(false);
+    expect(outline[0].availability).toEqual({ available: true });
+    expect(outline[1].availability.available).toBe(true);
+    expect(outline[1].availability.available && outline[1].availability.ahead?.reason).toBe("before_day");
   });
 
   it("collects checklist items that gate completion", () => {
@@ -379,6 +420,57 @@ describe("daily reminder decision", () => {
         now: new Date("2026-08-20T06:00:00Z"),
       })
     ).toEqual({ send: false, reason: "finished" });
+  });
+
+  // The daily-cron policy. Under it the Vancouver learner above IS reminded at
+  // the same instant, because a once-a-day job that keeps the local-hour test
+  // reminds almost nobody — the point of the policy is that it is loud, not
+  // that it is polite.
+  it("under a single daily run, delivers regardless of the learner's local hour", () => {
+    const decision = decideDailyReminder(course, foldProgress([]), {
+      startedAt,
+      timeZone: "America/Vancouver",
+      now: new Date("2026-08-15T06:00:00Z"),
+      hourPolicy: "single-daily-run",
+    });
+    expect(decision).toMatchObject({ send: true });
+  });
+
+  it("under a single daily run, still counts the day in the learner's own zone", () => {
+    // One instant, two learners, two different days of the same course.
+    // Access began 2026-08-15T06:00Z — the 15th in Kyiv, still the evening of
+    // the 14th in Vancouver. At 20:00Z on the 15th it is late on the 15th in
+    // Kyiv (day 1) but midday on the 15th in Vancouver, whose day 1 was the
+    // 14th (day 2). Dropping the hour must not drag the calendar with it.
+    const at = new Date("2026-08-15T20:00:00Z");
+    const vancouver = decideDailyReminder(course, foldProgress([]), {
+      startedAt,
+      timeZone: "America/Vancouver",
+      now: at,
+      hourPolicy: "single-daily-run",
+    });
+    const kyiv = decideDailyReminder(course, foldProgress([]), {
+      startedAt,
+      timeZone: "Europe/Kyiv",
+      now: at,
+      hourPolicy: "single-daily-run",
+    });
+    expect(vancouver).toMatchObject({ send: true, dayNumber: 2, lesson: { slug: "day-2" } });
+    expect(kyiv).toMatchObject({ send: true, dayNumber: 1, lesson: { slug: "day-1" } });
+  });
+
+  it("still honours an already-done lesson under the daily policy", () => {
+    const progress = foldProgress([
+      { clientId: "d1", type: "lesson.completed", lessonId: "l1", occurredAt: "2026-08-15T05:00:00Z" },
+    ]);
+    expect(
+      decideDailyReminder(course, progress, {
+        startedAt,
+        timeZone: "America/Vancouver",
+        now: new Date("2026-08-15T06:00:00Z"),
+        hourPolicy: "single-daily-run",
+      })
+    ).toEqual({ send: false, reason: "already_done" });
   });
 });
 
@@ -441,8 +533,26 @@ describe("unstarted nudge decision", () => {
     ).toEqual({ send: false, reason: "wrong_hour" });
   });
 
-  it("never pushes a draft course", () => {
+  it("under a single daily run, reaches the buyer outside the reminder hour", () => {
+    expect(
+      decideUnstartedReminder(course, {
+        ...base,
+        timeZone: "America/Vancouver",
+        now: new Date("2026-08-16T06:00:00Z"),
+        hourPolicy: "single-daily-run",
+      })
+    ).toMatchObject({ send: true, nudgeNumber: 1 });
+  });
+
+  it("never pushes a draft course, daily policy included", () => {
     const draft = { ...dailyCourse(), status: "draft" as const };
+    expect(
+      decideUnstartedReminder(draft, {
+        ...base,
+        now: new Date("2026-08-16T06:00:00Z"),
+        hourPolicy: "single-daily-run",
+      })
+    ).toEqual({ send: false, reason: "not_published" });
     expect(decideUnstartedReminder(draft, { ...base, now: new Date("2026-08-16T06:00:00Z") })).toEqual({
       send: false,
       reason: "not_published",

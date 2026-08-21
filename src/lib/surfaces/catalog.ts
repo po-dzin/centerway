@@ -1,3 +1,42 @@
+/**
+ * The platform's own origin, server-safe.
+ *
+ * `usePlatformHref` re-exports this rather than declaring a second copy: that
+ * module is `"use client"`, so anything running on the server — the Telegram
+ * bot, reminders, emails — could not import the origin from it and would have
+ * had to hardcode the domain a second time.
+ */
+export const PLATFORM_ORIGIN = "https://www.centerway.net.ua";
+
+/**
+ * The builder's own host.
+ *
+ * A separate origin, on purpose. The builder is not a section of the platform
+ * the way the cabinet is — it is a different application for a different person
+ * doing a different job, and the two share nothing but the course contract. On
+ * one host it would have had to answer, on every route, "is this reader a
+ * learner or an author?", which is exactly the question the platform got wrong
+ * for the LMS itself (docs/lms-authoring-pipeline-2026-08-19.md).
+ *
+ * Cost, stated plainly: a separate origin means a separate Supabase session, so
+ * an author signs in here once even if they are signed in on the platform, and
+ * this host must be added to the project's auth redirect allowlist. That is
+ * acceptable for a tool used by a handful of people, and it is exactly why the
+ * LEARNER surface did NOT get its own host — a learner shares identity, session
+ * and installed-app scope with the buyer, and splitting them would break the
+ * cabinet's sign-in and the PWA's scope for no gain.
+ */
+export const BUILDER_HOST = "build.centerway.net.ua";
+
+/** Route prefix the builder host maps onto, and its path on the platform host. */
+export const BUILDER_PATH_PREFIX = "/build";
+
+/** Absolute platform URL for a site-relative path, for use off-origin. */
+export function platformUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${PLATFORM_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
 export type ProductKey =
   | "reboot"
   | "irem"

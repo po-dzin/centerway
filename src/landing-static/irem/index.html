@@ -4,7 +4,9 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <base href="/irem/">
-<link rel="shortcut icon" href="img/cw-logo.png" type="image/png">
+<link rel="icon" href="/shared/img/cw-mark-ink.svg" type="image/svg+xml">
+<link rel="icon" href="/shared/img/cw-icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="/shared/img/cw-apple-touch.png">
 <title>ІВЕМ-гімнастика — одна практика замість п'яти</title>
 <meta name="description" content="Інтегральна відновлювальна енергомодулююча гімнастика: одна щоденна 60-хвилинна практика, синхронізована з вашими біоритмами. Рух, дихання й увага в одній системі.">
 <link rel="canonical" href="https://irem.centerway.net.ua/">
@@ -21,7 +23,7 @@
 <!-- ============ BURGER NAV (shared mechanism, irem structure) ============ -->
 <header class="cw-nav" id="top" data-cw-nav>
   <a class="cw-nav__brand" href="#top" aria-label="CenterWay — на початок">
-    <img class="cw-nav__mark" src="/shared/img/cw-logo-ink.png" alt="" aria-hidden="true" decoding="async">
+    <img class="cw-nav__mark" src="/shared/img/cw-mark-ink.svg" alt="" aria-hidden="true" decoding="async">
     <span class="cw-nav__wordmark">CenterWay</span>
   </a>
   <nav class="cw-nav__desktop" aria-label="Навігація сторінкою">
@@ -34,13 +36,13 @@
     <a href="#faq">Питання</a>
   </nav>
   <button class="cw-nav__burger" type="button" data-cw-nav-toggle aria-label="Меню" aria-expanded="false" aria-controls="cwNavPanel">
-    <span></span><span></span><span></span>
+    <svg class="cw-nav__burger-ico" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-menu"/></svg><svg class="cw-nav__burger-ico cw-nav__burger-ico--close" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg>
   </button>
 </header>
 <div class="cw-nav__drawer" data-cw-nav-drawer>
   <div class="cw-nav__backdrop" data-cw-nav-close aria-hidden="true"></div>
   <nav class="cw-nav__panel" id="cwNavPanel" aria-label="Меню" data-cw-nav-panel>
-    <button class="cw-nav__close" type="button" data-cw-nav-close aria-label="Закрити меню">&times;</button>
+    <button class="cw-nav__close" type="button" data-cw-nav-close aria-label="Закрити меню"><svg class="cw-nav__close-ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg></button>
     <ul class="cw-nav__list">
       <li><a href="#about">Про практику</a></li>
       <li><a href="#structure">Структура</a></li>
@@ -608,7 +610,7 @@
     <div class="footer-top">
       <div class="footer-col">
         <a href="#top" class="brand">
-          <img src="/shared/img/cw-logo-gold.png" alt="" class="brand-mark" aria-hidden="true">
+          <img src="/shared/img/cw-mark-gold.svg" alt="" class="brand-mark" aria-hidden="true">
           CenterWay
         </a>
         <p>Інтегральна відновлювальна енергомодулююча гімнастика. Рух, дихання й увага — в одній системі.</p>
@@ -647,7 +649,7 @@
 <div class="lead-modal" data-lead-modal hidden>
   <div class="lead-modal__backdrop" data-lead-close></div>
   <div class="lead-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="leadModalTitle">
-    <button type="button" class="lead-modal__x" data-lead-close aria-label="Закрити">×</button>
+    <button type="button" class="lead-modal__x" data-lead-close aria-label="Закрити"><svg class="lead-modal__x-ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg></button>
     <p class="lead-modal__program">ІВЕМ — індивідуальна програма</p>
     <h3 id="leadModalTitle" class="lead-modal__title">Залиште заявку на супровід</h3>
     <p class="lead-modal__sub">Ми зв'яжемось з вами, щоб узгодити старт персонального ведення з автором системи.</p>

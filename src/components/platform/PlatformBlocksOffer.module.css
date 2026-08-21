@@ -440,10 +440,17 @@
   text-shadow: 0 1px 1px color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
 }
 
+/* Restored 2026-08-21: these went missing together with the button-contract
+   rewrite of .programLink, and their loss is what emptied the offer cards —
+   the photo layer is absolutely positioned, so without `position: relative;
+   z-index: 1` here the body renders *under* it. The title, the copy and the
+   CTA were all in the DOM, in cream, behind a photograph. */
 .programTile[data-has-art="true"] .programTileBody .label {
   color: var(--program-label-fg);
 }
 
+/* With real art the generated texture comes off and the scrim gets stronger:
+   cream type over a photograph needs a floor to sit on. */
 .programTile[data-has-art="true"] .programPhoto::before,
 .offerHeroVisualCard[data-has-art="true"] .programPhoto::before {
   background: none;
@@ -488,25 +495,21 @@
   -webkit-line-clamp: 4;
 }
 
+/* Geometry, type and focus come from the contract; only the fill is local,
+   because a program tile paints its own theme (--program-tile-*). Composing
+   `base` rather than `primary` is the point — a themed control still owes the
+   system its size, weight and corner. */
 .programLink {
+  composes: base from "./PlatformButtons.module.css";
   width: fit-content;
-  min-height: var(--ds-button-min-height);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 1rem;
   border: 1px solid var(--program-tile-button-border);
-  border-radius: var(--ds-radius-button-soft);
   color: var(--program-tile-fg);
   background: var(--program-tile-button-bg);
   box-shadow: 0 12px 24px color-mix(in srgb, var(--cw-platform-text) 18%, transparent);
-  font-weight: 800;
-  text-decoration: none;
-  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
 }
 
 .programLink:hover {
-  transform: translateY(-1px);
+  transform: translateY(var(--ds-button-lift));
   background: color-mix(in srgb, var(--program-tile-button-bg) 88%, var(--cw-platform-surface) 12%);
   box-shadow: 0 16px 28px color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
 }
@@ -536,7 +539,7 @@
   justify-content: center;
   padding: 0 1rem;
   border: 1px dashed color-mix(in srgb, var(--program-tile-fg) 44%, transparent);
-  border-radius: var(--ds-radius-button-soft);
+  border-radius: var(--cw-radius-btn);
   color: var(--program-tile-fg);
   background: transparent;
   font-family: var(--cw-font-data);

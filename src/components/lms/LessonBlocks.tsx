@@ -60,7 +60,7 @@ function RichNode({ node }: { node: RichTextNode }) {
       );
     case "ol":
       return (
-        <ol className={styles.list}>
+        <ol className={styles.listOrdered}>
           {node.items.map((item, index) => (
             <li key={index}>
               <Inline value={item} />

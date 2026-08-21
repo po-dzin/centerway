@@ -1,13 +1,20 @@
 "use client";
 
 /**
- * Course map: where the learner is, what is open, what unlocks when.
+ * Course map: where the learner is, what the rhythm suggests next.
+ *
+ * Nothing here is a lock screen. On a soft-gated course (the default) every
+ * lesson is reachable from day one and the schedule speaks as a plan — "за
+ * планом: день 8" — because a learner has to see week three to prepare for it.
  */
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { inlineToPlainText } from "@/lms-core";
+import { Icon } from "@/components/Icon";
+import { LogoMark } from "@/components/brand/LogoMark";
+import { ProgressRail } from "@/components/platform/ProgressRail";
 import {
   ensureTimeZoneSynced,
   fetchCourse,
@@ -18,6 +25,33 @@ import {
 } from "./lmsClient";
 import { LmsNotice } from "./LmsNotice";
 import styles from "./Lms.module.css";
+
+type Availability = CourseViewDto["outline"][number]["availability"];
+
+/**
+ * What the rhythm says about a lesson the learner has run ahead of.
+ *
+ * Deliberately phrased as a plan ("за планом"), never as a refusal: the lesson
+ * opens either way, and the only thing worth saying is where it belongs.
+ */
+function scheduleNote(availability: Availability): string | null {
+  if (!availability.available || !availability.ahead) return null;
+  const ahead = availability.ahead;
+  if (ahead.reason === "before_sequence") return "за планом — далі по порядку";
+  if (ahead.daysAhead === 1) return "за планом — завтра";
+  return `за планом — день ${ahead.scheduledDay}`;
+}
+
+/** Only reachable on a hard-gated course, where the schedule really does shut the door. */
+function lockNote(availability: Availability): string {
+  if (availability.available) return "";
+  if (availability.reason === "locked_by_day") {
+    return availability.daysRemaining === 1
+      ? "відкриється завтра"
+      : `відкриється через ${availability.daysRemaining} дн.`;
+  }
+  return "спершу заверши попередній урок";
+}
 
 export function CourseView({ courseSlug }: { courseSlug: string }) {
   const [state, setState] = useState<
@@ -82,7 +116,10 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
   if (state.status === "loading") {
     return (
       <main className={styles.wrap} data-cw-platform-template="learn-course">
-        <p className={styles.lead}>Завантажуємо курс…</p>
+        <div className={styles.loading}>
+          <LogoMark size={30} animate="wait" />
+          <p className={styles.lead}>Завантажуємо курс…</p>
+        </div>
       </main>
     );
   }
@@ -96,7 +133,6 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
   }
 
   const { course, standing, outline, currentLessonSlug } = state.data;
-  const ratio = standing.totalLessons > 0 ? standing.completedLessons / standing.totalLessons : 0;
 
   // Reference material is listed apart from the protocol: it is a handbook you
   // consult, not a step you complete.
@@ -105,7 +141,7 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
 
   return (
     <main className={styles.wrap} data-cw-platform-template="learn-course">
-      <p className={styles.eyebrow}>Мій маршрут</p>
+      <p className={styles.eyebrow}>Мій курс</p>
       <h1 className={styles.title}>{course.title}</h1>
       {course.summary ? <p className={styles.lead}>{inlineToPlainText(course.summary)}</p> : null}
 
@@ -117,22 +153,18 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
         {standing.isFinished ? <span className={styles.chip}>Курс завершено</span> : null}
       </div>
 
-      <div
-        className={styles.progressTrack}
-        role="progressbar"
-        aria-valuemin={0}
-        aria-valuemax={standing.totalLessons}
-        aria-valuenow={standing.completedLessons}
-        aria-label="Прогрес курсу"
-      >
-        <div className={styles.progressFill} style={{ width: `${Math.round(ratio * 100)}%` }} />
-      </div>
+      <ProgressRail
+        value={standing.completedLessons}
+        total={standing.totalLessons}
+        label="Прогрес курсу"
+        className={styles.courseProgress}
+      />
 
       {/* A finished protocol is meant to be repeated, so the end of the course
           offers the beginning of it rather than a dead end. */}
       {standing.isFinished ? (
         <div className={styles.restartRow}>
-          <p className={styles.restartHint}>Протокол можна проходити повторно — коли відчуєш потребу.</p>
+          <p className={styles.restartHint}>Протокол можна проходити повторно — коли відчуєте потребу.</p>
           <button
             className={styles.restartButton}
             type="button"
@@ -152,48 +184,42 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
 
           const meta = [
             entry.durationMin ? `${entry.durationMin} хв` : null,
+            scheduleNote(entry.availability),
             isCurrent && !entry.completed ? "продовжити" : null,
           ]
             .filter(Boolean)
             .join(" · ");
 
+          // A hard-gated course still exists in the model; it renders as a row
+          // that states its date instead of opening.
           if (!entry.availability.available) {
-            const lockText =
-              entry.availability.reason === "locked_by_day"
-                ? entry.availability.daysRemaining === 1
-                  ? "відкриється завтра"
-                  : `через ${entry.availability.daysRemaining} дн.`
-                : "спершу заверши попередній крок";
-
             return (
               <li key={entry.lessonId} className={styles.outlineItem}>
                 <div className={styles.outlineLocked} aria-disabled="true">
                   <span className={styles.dayBadge} aria-hidden="true">
                     {badgeLabel}
                   </span>
-                  <div>
+                  <div className={styles.outlineBody}>
                     <h2 className={styles.outlineTitle}>{entry.title}</h2>
-                    <p className={styles.outlineMeta}>{lockText}</p>
+                    <p className={styles.outlineMeta}>{lockNote(entry.availability)}</p>
                   </div>
-                  <span className={styles.outlineState} aria-label="Закрито">
-                    ✕
-                  </span>
+                  <Icon name="lock" size={20} className={styles.outlineGlyph} />
                 </div>
               </li>
             );
           }
 
           return (
-            <li key={entry.lessonId} className={styles.outlineItem}>
+            <li key={entry.lessonId} className={styles.outlineItem} data-current={isCurrent || undefined}>
               <Link className={styles.outlineLink} href={href}>
                 <span className={entry.completed ? styles.dayBadgeDone : styles.dayBadge} aria-hidden="true">
-                  {badgeLabel}
+                  {entry.completed ? <Icon name="check" size={18} /> : badgeLabel}
                 </span>
-                <div>
+                <div className={styles.outlineBody}>
                   <h2 className={styles.outlineTitle}>{entry.title}</h2>
                   {meta ? <p className={styles.outlineMeta}>{meta}</p> : null}
                 </div>
-                <span className={styles.outlineState}>{entry.completed ? "готово" : "відкрити"}</span>
+                <Icon name="chevron-right" size={20} className={styles.outlineGlyph} />
               </Link>
             </li>
           );
@@ -211,15 +237,15 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
               <li key={entry.lessonId} className={styles.outlineItem}>
                 <Link className={styles.outlineLink} href={`/learn/${course.slug}/${entry.slug}`}>
                   <span className={styles.dayBadge} aria-hidden="true">
-                    ★
+                    <Icon name="star" size={18} />
                   </span>
-                  <div>
+                  <div className={styles.outlineBody}>
                     <h3 className={styles.outlineTitle}>{entry.title}</h3>
                     {entry.durationMin ? (
                       <p className={styles.outlineMeta}>{entry.durationMin} хв</p>
                     ) : null}
                   </div>
-                  <span className={styles.outlineState}>відкрити</span>
+                  <Icon name="chevron-right" size={20} className={styles.outlineGlyph} />
                 </Link>
               </li>
             ))}

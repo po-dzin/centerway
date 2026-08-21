@@ -2,6 +2,13 @@ import { getFunnelHostUrl, getPlatformRoute } from "@/lib/surfaces/catalog";
 
 export const platformHomeHref = "/";
 
+/**
+ * The learner's shelf. One constant, because it is now referenced from four
+ * places that must not drift: the header's learning entry, the header's brand
+ * link in learning mode, the support bot, and the installed app's start_url.
+ */
+export const LEARNING_SHELF_HREF = "/profile#learning";
+
 export const platformNav = [
   { label: "Головна", href: "/", match: "exact" as const },
   { label: "Діагностика", href: "/tests", match: "prefix" as const },
@@ -9,6 +16,26 @@ export const platformNav = [
   { label: "Продукти", href: "/products", match: "prefix" as const },
   { label: "Про автора", href: "/expert", match: "exact" as const },
 ];
+
+/**
+ * Shown only to someone who has courses.
+ *
+ * Deliberately NOT a sixth item in `platformNav`: that list is the showcase,
+ * addressed to everybody, and it is the same for a signed-out visitor as for a
+ * buyer. Learning is the opposite — it exists only if you own something, and
+ * for the people it exists for it outranks every other item. Putting it in the
+ * same array would either advertise an empty shelf to strangers or make the
+ * showcase nav conditional on a fetch.
+ *
+ * Until this landed, the only route into a purchased course was avatar →
+ * profile → the "Навчання" tab → the card → the lesson: four steps to the thing
+ * that was paid for, and none of them named on the bar.
+ */
+export const learningNavItem = {
+  label: "Навчання",
+  href: LEARNING_SHELF_HREF,
+  match: "prefix" as const,
+};
 
 export const socialLinks = [
   { label: "YouTube", network: "youtube", href: "https://www.youtube.com/channel/UC0VPHLWTIXD3Rad5XkcyliA" },
@@ -49,8 +76,12 @@ export const programs = [
     surfaceType: "mini-course" as PlatformOfferSurfaceType,
     conversionMode: "direct-pay" as PlatformOfferConversionMode,
     primaryActionKind: "buy" as PlatformOfferPrimaryActionKind,
-    title: "Short Reboot",
-    fullTitle: "Short Reboot",
+    // The names people actually meet: the funnel landing has run
+    // "Short-Перезавантаження" as its h1 all along, and the course catalogue
+    // (data/courses/reset-day.json) calls the other one "Розвантажувальний
+    // день". The English placeholders on the platform were the odd ones out.
+    title: "Short-Перезавантаження",
+    fullTitle: "Short-Перезавантаження — тілесний міні-курс",
     href: getPlatformRoute("reboot") ?? "/programs/reboot",
     funnelHref: rebootFunnelHref,
     tag: "Міні-курс руху",
@@ -63,12 +94,12 @@ export const programs = [
     },
     description: "Короткий тілесний міні-курс: розігрів, увага, дихання і м'яке повернення енергії.",
     longDescription:
-      "Short Reboot - це компактний вхід у тілесну практику CenterWay. На платформі сторінка пояснює логіку маршруту, а основна funnel-версія залишається окремою швидкою поверхнею для конверсії.",
+      "Short Reboot - це компактний вхід у тілесну практику CenterWay. На платформі сторінка пояснює логіку програми, а основна funnel-версія залишається окремою швидкою поверхнею для конверсії.",
     results: [
       "почати з короткого безпечного входу без перевантаження",
       "зрозуміти базову логіку руху, уваги і дихання",
       "повернути відчуття енергії через коротку практику",
-      "отримати ясний наступний крок для глибшого маршруту",
+      "отримати ясний наступний крок до глибшої програми",
     ],
   },
   {
@@ -90,12 +121,12 @@ export const programs = [
     },
     description: "21-денна аюрведична програма розвантаження: харчування, трави, режим і щоденні опори без жорсткого тиску.",
     longDescription:
-      "Програма перекладає принципи аюрведичного очищення у структурований 21-денний маршрут: підготовка, м'яке виведення перевантаження, підтримка травлення, трав'яний супровід і повернення до стабільного ритму. Це wellness-освіта і направлена практика, а не медичне лікування.",
+      "Програма перекладає принципи аюрведичного очищення у структуровану 21-денну програму: підготовка, м'яке виведення перевантаження, підтримка травлення, трав'яний супровід і повернення до стабільного ритму. Це wellness-освіта і направлена практика, а не медичне лікування.",
     results: [
       "зрозуміти особистий ритм розвантаження і харчування",
       "підтримати травлення без крайніх обмежень",
       "зібрати простий режим сну, їжі, води і руху",
-      "пройти маршрут з видимими межами методу і підтримкою",
+      "пройти програму з видимими межами методу і підтримкою",
       "вийти з програми з планом м'якого продовження",
     ],
   },
@@ -146,7 +177,7 @@ export const programs = [
     },
     description: "12-тижнева рухова практика для контакту з тілом, м'якшої мобільності, енергії і зняття побутової напруги.",
     longDescription:
-      "IREM збирає прості рухові техніки у послідовний маршрут: розігрів, дихання, мобільність, робота з напруженням і повернення уваги до сигналів тіла. Сторінка платформи пояснює програму, а основна воронка IREM залишається окремим маршрутом.",
+      "IREM збирає прості рухові техніки у послідовну практику: розігрів, дихання, мобільність, робота з напруженням і повернення уваги до сигналів тіла. Сторінка платформи пояснює програму, а основна воронка IREM залишається окремою воронкою.",
     results: [
       "зрозуміти, як вбудувати коротку практику руху в день",
       "помічати напруження раніше і м'якше з ним працювати",
@@ -172,7 +203,7 @@ export const programs = [
       desktopPosition: "center 24%",
       mobilePosition: "center 22%",
     },
-    description: "Трав'яні формули і м'яка природна підтримка, яку обирають за станом, ритмом і поточним маршрутом відновлення.",
+    description: "Трав'яні формули і м'яка природна підтримка, яку обирають за станом, ритмом і поточним етапом відновлення.",
     longDescription:
       "Трав'яна підтримка може бути доречною, коли потрібно м'яко підтримати травлення, ритм і щоденне самопочуття. Її важливо розглядати не окремо від життя, а разом із харчуванням, сном, практикою і вашим поточним станом — тоді продукт не стає випадковою покупкою без сенсу.",
     results: [
@@ -187,8 +218,8 @@ export const programs = [
     surfaceType: "mini-course" as PlatformOfferSurfaceType,
     conversionMode: "direct-pay" as PlatformOfferConversionMode,
     primaryActionKind: "buy" as PlatformOfferPrimaryActionKind,
-    title: "Reset Day",
-    fullTitle: "Reset Day - короткий розвантажувальний маршрут",
+    title: "Розвантажувальний день",
+    fullTitle: "Розвантажувальний день — практикум з умовного голодування",
     // Catalog cards lead to the platform page, checkout stays on the funnel —
     // the same split `reboot` uses. It also gives a buyer somewhere to land
     // that can tell them they already own the course.
@@ -269,11 +300,11 @@ export const journeySteps = [
   { id: "signals", title: "Сигнали тіла", text: "Які симптоми є мовою перевантаження, а не «поломкою»?" },
   { id: "method", title: "Метод", text: "Як працює м'яке відновлення через тіло, харчування і ритм?" },
   { id: "diagnostics", title: "Діагностика", text: "З якого персонального кроку варто почати саме мені?" },
-  { id: "programs", title: "Програми", text: "Який маршрут підходить моєму поточному стану?" },
+  { id: "programs", title: "Програми", text: "Яка програма підходить моєму поточному стану?" },
   { id: "guide", title: "Провідник", text: "Хто веде цей процес і як відбувається супровід?" },
   { id: "stories", title: "Історії", text: "Які зміни проходять інші люди в реальних умовах?" },
   { id: "support-nature", title: "Природна підтримка", text: "Як трави і побутові ритуали підтримують процес?" },
-  { id: "consultation", title: "Консультація", text: "Як отримати індивідуальний маршрут і чіткий план?" },
+  { id: "consultation", title: "Консультація", text: "Як отримати індивідуальні рекомендації і чіткий план?" },
 ];
 
 export const bodySignals = [
@@ -293,7 +324,7 @@ export const platformEntryCards = [
   {
     label: "Метод",
     title: "Побачити свою конституцію",
-    text: "Тест доши і консультація допомагають перекласти симптоми в зрозумілу мову ритму, харчування і практики.",
+    text: "Тест доші і консультація допомагають перекласти симптоми в зрозумілу мову ритму, харчування і практики.",
     visual: "method",
   },
   {
@@ -304,11 +335,15 @@ export const platformEntryCards = [
   },
 ];
 
+/* Glyph names from the baked set (scripts/lib/icon-glyphs.mjs). They used to be
+   four hand-written Material-style paths inlined as CSS mask data-URIs — a
+   second icon set, in a second hand, on the one block that is meant to read as
+   the person behind the platform. */
 export const expertFacts = [
-  { label: "12 років практики", icon: "practice" },
-  { label: "Магістр комплементарної медицини та інтегративної психології", icon: "degree" },
-  { label: "Інструктор з йоги та практикуючий йогін", icon: "embodiment" },
-  { label: "Засновник центру Centerway", icon: "center" },
+  { label: "12 років практики", icon: "clock" as const },
+  { label: "Магістр комплементарної медицини та інтегративної психології", icon: "shield-check" as const },
+  { label: "Інструктор з йоги та практикуючий йогін", icon: "body" as const },
+  { label: "Засновник центру Centerway", icon: "support" as const },
 ];
 
 export const educationTimeline = [
@@ -357,19 +392,22 @@ export const doshas = [
 
 export const consultationCopy = {
   title: "Особиста консультація з Євгенієм Корякіним",
-  text: "Не «просто порада», а персональний маршрут відновлення: стан, конституція, харчування, очищення, ритм і наступні кроки без зайвого тиску.",
+  text: "Не «просто порада», а персональний план відновлення: стан, конституція, харчування, очищення, ритм і наступні кроки без зайвого тиску.",
 };
 
+/* Each note carries its own glyph. A column of three text plates reads as a
+   wall — the icon is what lets the eye tell them apart before reading, and it
+   comes from the baked set so it is the same hand as everything else. */
 export const proofItems = [
-  "Коли з'являється ясний маршрут, легше втримувати харчування, сон і щоденний ритм без самокритики.",
-  "Практики працюють не як одноразовий ривок, а як повторювані дії, які поступово повертають опору.",
-  "Найціннішим для учасників часто стає не швидкий результат, а розуміння, що робити далі у звичайному житті.",
+  { icon: "day" as const, text: "Коли з'являється ясний план, легше втримувати харчування, сон і щоденний ритм без самокритики." },
+  { icon: "rhythm" as const, text: "Практики працюють не як одноразовий ривок, а як повторювані дії, які поступово повертають опору." },
+  { icon: "support" as const, text: "Найціннішим для учасників часто стає не швидкий результат, а розуміння, що робити далі у звичайному житті." },
 ];
 
 export const naturalSupportItems = [
-  "Трави - не «магічний продукт», а природна підтримка процесу очищення і відновлення.",
-  "Підбір має спиратися на стан, конституцію і поточний ритм, а не на універсальну схему для всіх.",
-  "Трави доречні тоді, коли вони підтримують маршрут, а не замінюють харчування, сон і практику.",
+  { icon: "leaf" as const, text: "Трави - не «магічний продукт», а природна підтримка процесу очищення і відновлення." },
+  { icon: "vata" as const, text: "Підбір має спиратися на стан, конституцію і поточний ритм, а не на універсальну схему для всіх." },
+  { icon: "bowl" as const, text: "Трави доречні тоді, коли вони підтримують основне, а не замінюють харчування, сон і практику." },
 ];
 
 export const legal = {

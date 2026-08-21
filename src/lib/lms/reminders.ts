@@ -1,13 +1,18 @@
 /**
  * Day-N reminders for daily courses.
  *
- * Runs HOURLY and asks, per learner: "is it the reminder hour on YOUR clock,
- * and is today's step still undone?" That is why the cron cannot be a single
- * daily job at a Kyiv hour — the same instant is morning for one learner and
- * the middle of the night for another (docs/lms-research-2026-08-15.md §3A.4).
+ * Asks, per learner: "is today's step still undone?" — and, under the designed
+ * hourly cadence, "is it the reminder hour on YOUR clock?" too.
+ *
+ * That second question is now the CALLER's to choose, via `hourPolicy`. On the
+ * plan we deploy to, crons run once a day, and a once-a-day run that still
+ * insists on each learner's local hour reminds nobody: see `ReminderHourPolicy`
+ * in the core for why the hour is the part we give up rather than the day.
  *
  * Idempotency: `lms_reminder_log` is unique on (enrollment, day, channel), so a
- * retried or overlapping cron run cannot nudge the same learner twice.
+ * retried or overlapping cron run cannot nudge the same learner twice — which
+ * is also what makes a coarse cadence safe. Fire the job twice in one day and
+ * the second pass claims nothing.
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
@@ -16,8 +21,9 @@ import {
   decideUnstartedReminder,
   resolveTimeZone,
   type Course,
+  type ReminderHourPolicy,
 } from "@/lms-core";
-import { getCourse, listPublishedCourses } from "./catalog";
+import { listPublishedCourses } from "./catalog";
 import { loadProgress } from "./server";
 import { notifyLearner } from "./notify";
 
@@ -38,12 +44,52 @@ function bump(counter: Record<string, number>, key: string): void {
   counter[key] = (counter[key] ?? 0) + 1;
 }
 
-/** Courses that opt into reminders at all. */
+/**
+ * Pages through every row a query matches, not just the first slice.
+ *
+ * Both passes below used to take a single `.limit(500)` with no cursor. Under
+ * an hourly cadence that was a soft cap — most courses have far fewer
+ * enrollments than that between runs. Once the cron went daily (see the module
+ * doc), it stopped being soft: a course past 500 enrollments has the SAME 500
+ * rows returned on every run (Postgres has no ordering guarantee without an
+ * ORDER BY, but in practice an unordered scan is stable run to run), so anyone
+ * outside that slice is never scanned, decided for, or reminded — permanently,
+ * not just "later than others". Paging removes the cap; the row count a course
+ * actually has is now the only bound.
+ */
+async function fetchAllRows<T>(
+  pageSize: number,
+  // PromiseLike, not Promise: Supabase's query builder is thenable but is not
+  // typed as a real Promise (same mismatch builder.ts's StructureWriter cast
+  // works around) — `await` accepts either, but the parameter type has to say
+  // so or every call site fails to typecheck against the builder it passes in.
+  page: (from: number, to: number) => PromiseLike<{ data: T[] | null; error: { message: string } | null }>
+): Promise<T[]> {
+  const all: T[] = [];
+  let from = 0;
+  for (;;) {
+    const { data, error } = await page(from, from + pageSize - 1);
+    if (error) throw new Error(`lms_reminders_page_failed:${error.message}`);
+    const rows = data ?? [];
+    all.push(...rows);
+    if (rows.length < pageSize) return all;
+    from += pageSize;
+  }
+}
+
+/**
+ * Courses that opt into day-N reminders at all.
+ *
+ * Driven by the catalog, not by a hand-kept slug list. The list used to name
+ * `reset-day` alone, which quietly excluded way21 — the FIRST course to be both
+ * `daily` and `published`, i.e. the first one these reminders were built for.
+ * A schedule mode is a property of the course; nothing should have to be
+ * remembered in a second place for it to take effect.
+ */
 function dailyCourseIds(): Map<string, Course> {
   const map = new Map<string, Course>();
-  for (const slug of ["reset-day"]) {
-    const course = getCourse(slug);
-    if (course && course.schedule.mode === "daily" && course.status === "published") {
+  for (const course of listPublishedCourses()) {
+    if (course.schedule.mode === "daily") {
       map.set(course.id, course);
     }
   }
@@ -63,7 +109,11 @@ function dailyCourseIds(): Map<string, Course> {
  * (decision 2026-08-15), and a reminder must not start a clock the learner
  * has not started themselves.
  */
-export async function runUnstartedReminders(limit = 500, now = new Date()): Promise<ReminderRunResult> {
+export async function runUnstartedReminders(
+  limit = 500,
+  now = new Date(),
+  hourPolicy: ReminderHourPolicy = "learner-local"
+): Promise<ReminderRunResult> {
   const db = adminClient();
   const skipped: Record<string, number> = {};
   let scanned = 0;
@@ -72,17 +122,22 @@ export async function runUnstartedReminders(limit = 500, now = new Date()): Prom
   for (const course of listPublishedCourses()) {
     if (course.entitlementProductCodes.length === 0) continue;
 
-    const { data: orderRows, error: ordersError } = await db
-      .from("orders")
-      .select("order_ref, customer_id, created_at")
-      .eq("status", "paid")
-      .in("product_code", course.entitlementProductCodes)
-      .order("created_at", { ascending: false })
-      .limit(limit);
+    // Paged, ascending on a column pair that is stable under concurrent
+    // inserts — not `.limit(limit)` on its own, which silently re-served the
+    // same newest 500 orders forever once a course passed that count and left
+    // every older buyer permanently unreachable.
+    const orderRows = await fetchAllRows(limit, (from, to) =>
+      db
+        .from("orders")
+        .select("order_ref, customer_id, created_at")
+        .eq("status", "paid")
+        .in("product_code", course.entitlementProductCodes)
+        .order("created_at", { ascending: true })
+        .order("order_ref", { ascending: true })
+        .range(from, to)
+    );
 
-    if (ordersError) throw new Error(`lms_unstarted_orders_read_failed:${ordersError.message}`);
-
-    const orders = (orderRows ?? []).filter((order) => order.order_ref && order.customer_id);
+    const orders = orderRows.filter((order) => order.order_ref && order.customer_id);
     if (orders.length === 0) continue;
 
     // Only buyers with a platform account can be addressed: notification
@@ -158,6 +213,7 @@ export async function runUnstartedReminders(limit = 500, now = new Date()): Prom
         timeZone: resolveTimeZone(profile?.timezone),
         now,
         sentNudgeNumbers: sentByOrder.get(orderRef) ?? [],
+        hourPolicy,
       });
 
       if (!decision.send) {
@@ -185,7 +241,7 @@ export async function runUnstartedReminders(limit = 500, now = new Date()): Prom
         authUserId,
         text:
           decision.nudgeNumber === 1
-            ? `«${course.title}» вже відкритий у твоєму кабінеті. Перший крок можна зробити тоді, коли буде зручно.`
+            ? `«${course.title}» вже відкритий у вашому кабінеті. Перший урок можна пройти тоді, коли буде зручно.`
             : `Нагадуємо: «${course.title}» чекає в кабінеті. Проходження рахується від першого відкриття, тож нічого не згоріло.`,
         href: `/learn/${course.slug}`,
       });
@@ -209,7 +265,11 @@ export async function runUnstartedReminders(limit = 500, now = new Date()): Prom
   return { scanned, sent, skipped };
 }
 
-export async function runDailyReminders(limit = 500, now = new Date()): Promise<ReminderRunResult> {
+export async function runDailyReminders(
+  limit = 500,
+  now = new Date(),
+  hourPolicy: ReminderHourPolicy = "learner-local"
+): Promise<ReminderRunResult> {
   const db = adminClient();
   const courses = dailyCourseIds();
   const skipped: Record<string, number> = {};
@@ -218,15 +278,18 @@ export async function runDailyReminders(limit = 500, now = new Date()): Promise<
     return { scanned: 0, sent: 0, skipped: { no_daily_courses: 1 } };
   }
 
-  const { data, error } = await db
-    .from("lms_enrollments")
-    .select("id, course_id, auth_user_id, started_at")
-    .in("course_id", [...courses.keys()])
-    .limit(limit);
-
-  if (error) throw new Error(`lms_reminders_read_failed:${error.message}`);
-
-  const enrollments = (data ?? []) as EnrollmentRow[];
+  // Paged the same way, on the enrollment's own id: without an ORDER BY a
+  // `.limit()` has no contract to return the same rows twice, so a course past
+  // the cap could return a DIFFERENT arbitrary 500 each run — scanning some
+  // learners repeatedly while others were never reached at all.
+  const enrollments = await fetchAllRows<EnrollmentRow>(limit, (from, to) =>
+    db
+      .from("lms_enrollments")
+      .select("id, course_id, auth_user_id, started_at")
+      .in("course_id", [...courses.keys()])
+      .order("id", { ascending: true })
+      .range(from, to)
+  );
   let sent = 0;
 
   for (const enrollment of enrollments) {
@@ -246,6 +309,7 @@ export async function runDailyReminders(limit = 500, now = new Date()): Promise<
       startedAt: new Date(enrollment.started_at),
       timeZone,
       now,
+      hourPolicy,
     });
 
     if (!decision.send) {
@@ -269,7 +333,7 @@ export async function runDailyReminders(limit = 500, now = new Date()): Promise<
 
     const result = await notifyLearner({
       authUserId: enrollment.auth_user_id,
-      text: `День ${decision.dayNumber}: ${decision.lesson.title}. Крок готовий — заходь, коли буде зручно.`,
+      text: `День ${decision.dayNumber}: ${decision.lesson.title}. Урок готовий — заходьте, коли буде зручно.`,
       href: `/learn/${course.slug}/${decision.lesson.slug}`,
     });
 

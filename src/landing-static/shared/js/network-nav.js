@@ -26,7 +26,45 @@
   function setOpen(open) {
     nav.classList.toggle("is-open", open);
     toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    syncSheet();
   }
+
+  // The open drawer is not its own glass — the bar's ::before grows down over it
+  // so bar and drawer are one blurred rectangle (see network-nav.css). That
+  // needs the drawer's live height, and "live" is the point: the height is
+  // animated open and closed, and it changes again when the viewport rotates or
+  // a link wraps to two lines. A ResizeObserver tracks all of that; the closed
+  // drawer measures 0, which parks the sheet back at the bar's own edge.
+  var sheetMq = window.matchMedia("(max-width: 759px)");
+  function syncSheet() {
+    // Gated on the open class as well as the width: a height left behind by a
+    // rotation or a window drag would hang the sheet 400px below a topbar that
+    // has no drawer at all.
+    var mobile = sheetMq.matches && window.innerWidth < 760;
+    var h = mobile && nav.classList.contains("is-open") ? menu.offsetHeight : 0;
+    nav.style.setProperty("--cwn-sheet-h", h + "px");
+  }
+  // Held in a variable on purpose: an observer with no live reference is
+  // eligible for collection, and a collected one stops reporting — which showed
+  // up as the sheet staying at 0 on one landing and not another.
+  var sheetObserver = null;
+  if (typeof window.ResizeObserver === "function") {
+    sheetObserver = new window.ResizeObserver(syncSheet);
+    sheetObserver.observe(menu);
+  } else {
+    // No observer: settle for the endpoints. The sheet then snaps rather than
+    // following the drawer open, which is the correct degradation — the seam it
+    // exists to prevent is still gone.
+    toggle.addEventListener("click", function () {
+      window.setTimeout(syncSheet, 300);
+    });
+  }
+  menu.addEventListener("transitionend", function (event) {
+    if (event.propertyName === "max-height") syncSheet();
+  });
+  window.addEventListener("resize", syncSheet, { passive: true });
+  window.addEventListener("orientationchange", syncSheet);
+  syncSheet();
 
   toggle.addEventListener("click", function () {
     setOpen(toggle.getAttribute("aria-expanded") !== "true");

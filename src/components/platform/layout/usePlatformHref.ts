@@ -1,9 +1,12 @@
 "use client";
 
 import { hostBrandFromHost } from "@/lib/hostBrand";
+import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 import { useEffect, useState, useSyncExternalStore } from "react";
 
-export const PLATFORM_SITE_ORIGIN = "https://www.centerway.net.ua";
+/** Re-export, not a second declaration — the origin is owned by the surface
+    registry so server code (bot, reminders) can read it too. */
+export const PLATFORM_SITE_ORIGIN = PLATFORM_ORIGIN;
 
 function normalizeHost(rawHost: string | null | undefined): string {
   if (!rawHost) return "";

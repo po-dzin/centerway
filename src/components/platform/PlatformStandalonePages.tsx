@@ -65,7 +65,7 @@ export function PlatformConsultPage() {
       }}
       detailRight={{
         label: "Що відбувається далі",
-        title: "Живий маршрут на 2-4 тижні",
+        title: "Жива програма на 2-4 тижні",
         body: <PlatformOfferCopyStack items={consultJourney.map((step) => ({ id: step.id, title: step.title, text: step.text }))} />,
       }}
       supportSectionId="consult-request"

@@ -7,7 +7,7 @@ import { getCourse } from "@/lib/lms/catalog";
 
 export const metadata: Metadata = {
   title: "Мій курс - CenterWay",
-  description: "Проходження курсу на платформі CenterWay: маршрут, кроки і прогрес.",
+  description: "Проходження курсу на платформі CenterWay: кроки і прогрес.",
   // Learner surfaces are private — they must never reach an index.
   robots: { index: false, follow: false },
 };
@@ -19,7 +19,7 @@ export default async function LearnCoursePage({ params }: { params: Promise<{ co
   if (!getCourse(course)) notFound();
 
   return (
-    <PlatformShell headerMode="overlay">
+    <PlatformShell headerMode="learn">
       <CourseView courseSlug={course} />
     </PlatformShell>
   );

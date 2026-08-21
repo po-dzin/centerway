@@ -1,0 +1,36 @@
+<!doctype html>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>CenterWay — немає зʼєднання</title>
+<!-- Served by public/sw.js as the navigation fallback. Everything is inline on
+     purpose: this page has to render with nothing on the network, so it cannot
+     reference a hashed Next asset. Colours are copied from the default ground
+     (--cw-sem-calm-bg / --cw-platform-text) and the dark inverse; keep them in
+     step with globals.css by hand if the gamma moves again. -->
+<style>
+  :root { color-scheme: light dark; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    display: grid; place-items: center;
+    padding: 2rem calc(1.5rem + env(safe-area-inset-left)) 2rem calc(1.5rem + env(safe-area-inset-right));
+    background: #faefe0; color: #18261d;
+    font: 400 1rem/1.55 "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
+    text-align: center;
+  }
+  main { max-width: 26rem; }
+  h1 { margin: 0 0 0.75rem; font-size: 1.5rem; letter-spacing: -0.01em; }
+  p { margin: 0 0 1.75rem; color: #48544c; }
+  button {
+    min-height: 3rem; padding: 0 1.5rem; border: 0; border-radius: 0.9rem;
+    background: #e5ae65; color: #18261d; font: inherit; font-weight: 600; cursor: pointer;
+  }
+  @media (prefers-color-scheme: dark) {
+    body { background: #131e17; color: #f5ece0; }
+    p { color: #b9c2b4; }
+  }
+</style>
+<main>
+  <h1>Немає зʼєднання</h1>
+  <p>Сторінка недоступна офлайн. Перевірте інтернет і спробуйте ще раз — усе, що ви вже пройшли, збережено.</p>
+  <button onclick="location.reload()">Спробувати ще раз</button>
+</main>

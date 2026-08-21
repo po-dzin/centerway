@@ -4,7 +4,7 @@ import { PlatformProgramsIndexPage } from "@/components/platform/PlatformCatalog
 export const metadata: Metadata = {
   title: "Програми CenterWay",
   description:
-    "Усі програми CenterWay в одному маршруті: міні-курси, довші практики відновлення, рухові та детокс-формати.",
+    "Усі програми CenterWay в одному місці: міні-курси, довші практики відновлення, рухові та детокс-формати.",
   alternates: { canonical: "/programs" },
 };
 

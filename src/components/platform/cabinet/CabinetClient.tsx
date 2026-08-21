@@ -21,16 +21,32 @@ import type { Session } from "@supabase/supabase-js";
 
 import { supabaseClient } from "@/lib/supabaseClient";
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
+import { ProgressRail } from "@/components/platform/ProgressRail";
+import { Icon } from "@/components/Icon";
 import { resolvePlatformHref, usePlatformHref } from "@/components/platform/layout/usePlatformHref";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import type { ProfileLang, ProfileResponse } from "@/components/platform/profile/types";
-import { DOSHA_TEST_ROUTE, TESTS_HUB_ROUTE, platformTests } from "@/lib/platform/tests";
+import { DOSHA_TEST_ROUTE, TESTS_HUB_ROUTE, activePlatformTests } from "@/lib/platform/tests";
 import { fetchMyCourses, type LearnerShelfCourseDto } from "@/components/lms/lmsClient";
+import { usePwaInstall } from "../pwa/usePwaInstall";
 import { getCabinetCopy, type CabinetSection } from "./copy";
 import styles from "./Cabinet.module.css";
 
 const LANG_EVENT = "cw-lang-change";
+
+/* Every panel on this page is the same canonical surface. Spread rather than
+   written out per element so a panel cannot be added without one: the recipe
+   in globals.css owns stroke, grain and shadow, and the cabinet's own CSS is
+   layout only. See docs/design-system.md "Material layer". */
+const matte = { "data-cw-material": "matte" } as const;
 const SECTIONS: CabinetSection[] = ["overview", "learning", "tests", "products", "account"];
+
+/* The strip shows four of them. "Акаунт" is not a section of the route the way
+   the other four are — it is the settings behind the identity, so it hangs off
+   the profile card instead. Four labels also fit a 375px phone at the full type
+   step, which five never did without squeezing the row until it read as one
+   crowded object. It stays in SECTIONS so `/profile#account` still resolves. */
+const TAB_SECTIONS: CabinetSection[] = ["overview", "learning", "tests", "products"];
 
 function resolveProfileLang(): ProfileLang {
   if (typeof window !== "undefined") {
@@ -96,17 +112,25 @@ function isAccessActive(expiresAt: string | null | undefined) {
 
 function formatDoshaResult(resultType: string | null | undefined, lang: ProfileLang) {
   const raw = (resultType ?? "").trim().toLowerCase();
-  if (!raw) return lang === "en" ? "Not defined yet" : "Ще не визначено";
+  // The em dash, not a phrase: this value only ever renders in the identity
+  // tile, and that slot takes values. "No test taken yet" is said properly in
+  // the dosha card below, where it comes with the button that fixes it.
+  if (!raw) return "—";
 
   const dictionary =
     lang === "en"
       ? { vata: "Vata", pitta: "Pitta", kapha: "Kapha", tridosha: "Tridosha", tridoshic: "Tridoshic" }
       : { vata: "Вата", pitta: "Пітта", kapha: "Капха", tridosha: "Тридоша", tridoshic: "Тридоша" };
 
-  return raw.replace(
-    /\b(vata|pitta|kapha|tridosha|tridoshic)\b/g,
-    (token) => dictionary[token as keyof typeof dictionary] ?? token,
-  );
+  /* Split on the separators the codes actually use, rather than matching word
+     boundaries: `_` is a word character in JS regex, so `\b(vata)\b` never
+     matched inside `vata_pitta` and a dual result rendered as its raw code.
+     Joined with a hyphen, which is also the break the identity tile relies on. */
+  return raw
+    .split(/[_\-\s]+/)
+    .filter(Boolean)
+    .map((token) => dictionary[token as keyof typeof dictionary] ?? token)
+    .join("-");
 }
 
 function formatAccessStatus(used: boolean, expiresAt: string | null | undefined, lang: ProfileLang) {
@@ -139,6 +163,7 @@ function courseAction(course: LearnerShelfCourseDto, copy: ReturnType<typeof get
 }
 
 export function CabinetClient() {
+  const pwaInstall = usePwaInstall();
   const isAuthEnabled = Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY);
 
   const [session, setSession] = useState<Session | null>(null);
@@ -332,25 +357,29 @@ export function CabinetClient() {
 
   if (!isAuthEnabled) {
     return (
-      <section className={`${surfaceStyles.container} ${surfaceStyles.section}`}>
-        <article className={surfaceStyles.panel}>
-          <p className={surfaceStyles.label}>{copy.profile}</p>
-          <h1 className={surfaceStyles.title}>{copy.unavailableTitle}</h1>
-          <p className={surfaceStyles.lead}>{copy.unavailableLead}</p>
-        </article>
-      </section>
+      <main className={surfaceStyles.profileEmptyMain} data-cw-platform-template="profile-empty">
+        <section className={`${surfaceStyles.container} ${surfaceStyles.section} ${surfaceStyles.profileEmptySection}`}>
+          <article className={`${surfaceStyles.panel} ${surfaceStyles.profileEmptyPanel}`}>
+            <p className={surfaceStyles.label}>{copy.profile}</p>
+            <h1 className={surfaceStyles.title}>{copy.unavailableTitle}</h1>
+            <p className={surfaceStyles.lead}>{copy.unavailableLead}</p>
+          </article>
+        </section>
+      </main>
     );
   }
 
   if (loading) {
     return (
-      <section className={`${surfaceStyles.container} ${surfaceStyles.section}`}>
-        <article className={surfaceStyles.panel}>
-          <p className={surfaceStyles.label}>{copy.profile}</p>
-          <h1 className={surfaceStyles.title}>{copy.loadingTitle}</h1>
-          <p className={surfaceStyles.lead}>{copy.loadingLead}</p>
-        </article>
-      </section>
+      <main className={surfaceStyles.profileEmptyMain} data-cw-platform-template="profile-empty">
+        <section className={`${surfaceStyles.container} ${surfaceStyles.section} ${surfaceStyles.profileEmptySection}`}>
+          <article className={`${surfaceStyles.panel} ${surfaceStyles.profileEmptyPanel}`}>
+            <p className={surfaceStyles.label}>{copy.profile}</p>
+            <h1 className={surfaceStyles.title}>{copy.loadingTitle}</h1>
+            <p className={surfaceStyles.lead}>{copy.loadingLead}</p>
+          </article>
+        </section>
+      </main>
     );
   }
 
@@ -378,13 +407,15 @@ export function CabinetClient() {
 
   if (error || !profile) {
     return (
-      <section className={`${surfaceStyles.container} ${surfaceStyles.section}`}>
-        <article className={surfaceStyles.panel}>
-          <p className={surfaceStyles.label}>{copy.profile}</p>
-          <h1 className={surfaceStyles.title}>{copy.errorTitle}</h1>
-          <p className={surfaceStyles.lead}>{error ?? copy.errorFallback}</p>
-        </article>
-      </section>
+      <main className={surfaceStyles.profileEmptyMain} data-cw-platform-template="profile-empty">
+        <section className={`${surfaceStyles.container} ${surfaceStyles.section} ${surfaceStyles.profileEmptySection}`}>
+          <article className={`${surfaceStyles.panel} ${surfaceStyles.profileEmptyPanel}`}>
+            <p className={surfaceStyles.label}>{copy.profile}</p>
+            <h1 className={surfaceStyles.title}>{copy.errorTitle}</h1>
+            <p className={surfaceStyles.lead}>{error ?? copy.errorFallback}</p>
+          </article>
+        </section>
+      </main>
     );
   }
 
@@ -394,7 +425,6 @@ export function CabinetClient() {
     const action = courseAction(course, cab);
     const done = course.standing?.completedLessons ?? 0;
     const total = course.standing?.totalLessons ?? 0;
-    const ratio = total > 0 ? done / total : 0;
 
     const stateChip =
       course.access === "locked"
@@ -408,7 +438,7 @@ export function CabinetClient() {
             : null;
 
     return (
-      <article key={course.slug} className={course.access === "locked" ? styles.cardMuted : styles.card}>
+      <article key={course.slug} className={course.access === "locked" ? styles.cardMuted : styles.card} {...matte}>
         <div className={styles.chipRow}>
           {stateChip ? (
             <span className={course.standing?.isFinished ? styles.chipDone : styles.chip}>{stateChip}</span>
@@ -426,16 +456,7 @@ export function CabinetClient() {
         {course.summary ? <p className={styles.cardText}>{course.summary}</p> : null}
 
         {course.access === "enrolled" && total > 0 ? (
-          <div
-            className={styles.meter}
-            role="progressbar"
-            aria-valuemin={0}
-            aria-valuemax={total}
-            aria-valuenow={done}
-            aria-label={course.title}
-          >
-            <div className={styles.meterFill} style={{ width: `${Math.round(ratio * 100)}%` }} />
-          </div>
+          <ProgressRail value={done} total={total} label={course.title} />
         ) : null}
 
         <ul className={styles.metaList}>
@@ -469,7 +490,7 @@ export function CabinetClient() {
   };
 
   const shelfNotice = shelfFailed ? (
-    <article className={styles.card}>
+    <article className={styles.card} {...matte}>
       <h3 className={styles.cardTitle}>{cab.shelfErrorTitle}</h3>
       <p className={styles.cardText}>{cab.shelfErrorLead}</p>
       <div className={styles.actions}>
@@ -481,7 +502,7 @@ export function CabinetClient() {
   ) : null;
 
   const learningEmpty = (
-    <article className={styles.card}>
+    <article className={styles.card} {...matte}>
       <h3 className={styles.cardTitle}>{cab.learningEmptyTitle}</h3>
       <p className={styles.cardText}>{cab.learningEmptyLead}</p>
       <div className={styles.actions}>
@@ -494,63 +515,58 @@ export function CabinetClient() {
 
   return (
     <main className={surfaceStyles.profileMain} data-cw-platform-template="cabinet">
-      <section
-        className={`${surfaceStyles.heroFeature} ${styles.hero}`}
-        data-cw-profile-hero="true"
-        data-cw-topbar-tone="dark"
-        data-cw-semantic-role="progress"
-        data-cw-semantic-family="guide-trust"
-        data-cw-token-source="global-app-ds"
-      >
-        <div className={surfaceStyles.heroPhotoLayer} aria-hidden="true" />
-        <div className={`${surfaceStyles.heroFeatureContent} ${styles.heroContent}`}>
-          <p className={surfaceStyles.heroBadge}>
-            <span>{copy.badge}</span>
-          </p>
-          <article className={surfaceStyles.profileHeroIdentityCard}>
-            <div className={surfaceStyles.profileHeroIdentity}>
-              <span className={surfaceStyles.profileHeroAvatar} aria-hidden="true">
-                {account.avatarUrl ? (
-                  // Remote auth avatars stay on plain img to avoid introducing image config coupling into platform profile.
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={account.avatarUrl} alt="" referrerPolicy="no-referrer" />
-                ) : (
-                  getUserInitial(session, account.fullName)
-                )}
-              </span>
-              <div className={surfaceStyles.panelIntro}>
-                <p className={surfaceStyles.profileHeroKicker}>{copy.profile}</p>
-                <h1 className={`${surfaceStyles.detailHeroTitle} ${styles.heroName}`}>
-                  {account.fullName ?? "Ваш профіль CenterWay"}
-                </h1>
-                <p className={surfaceStyles.heroFeatureLead}>
-                  {account.email ?? "Google-профіль підключено до CenterWay"}
-                </p>
-              </div>
-            </div>
-          </article>
-          <div className={surfaceStyles.profileStatGrid}>
-            <article className={surfaceStyles.profileStatCard} data-tone="guide">
-              <p className={surfaceStyles.label}>{copy.dosha}</p>
-              <strong>{formatDoshaResult(dosha?.resultType, lang)}</strong>
-            </article>
-            <article className={surfaceStyles.profileStatCard} data-tone="support">
-              <p className={surfaceStyles.label}>{cab.learningLabel}</p>
-              <strong>{ownedCourses.length > 0 ? cab.coursesCount(ownedCourses.length) : copy.noPrograms}</strong>
-            </article>
-            <article className={surfaceStyles.profileStatCard} data-tone="proof">
-              <p className={surfaceStyles.label}>{copy.products}</p>
-              <strong>
-                {productPurchases.length > 0 ? cab.productsCount(productPurchases.length) : copy.noProducts}
-              </strong>
-            </article>
-          </div>
-        </div>
-      </section>
-
       <div className={styles.shell}>
+        {/* The profile's header is the first panel of the page, in the page's
+            own material. It used to be a landing-style photo hero carrying a
+            translucent identity card and three bordered stat tiles — a second
+            surface vocabulary two inches above the first. */}
+        <header className={styles.identity} {...matte}>
+          <div className={styles.identityMain}>
+            <span className={styles.avatar} aria-hidden="true">
+              {account.avatarUrl ? (
+                // Remote auth avatars stay on plain img to avoid introducing image config coupling into platform profile.
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={account.avatarUrl} alt="" referrerPolicy="no-referrer" />
+              ) : (
+                getUserInitial(session, account.fullName)
+              )}
+            </span>
+            <div className={styles.identityText}>
+              <p className={styles.sectionLabel}>{copy.profile}</p>
+              <h1 className={styles.identityName}>{account.fullName ?? copy.fallbackName}</h1>
+              <p className={styles.identityEmail}>{account.email ?? copy.fallbackEmail}</p>
+            </div>
+            {/* Settings live behind the identity, not beside the route: the
+                gear is the whole control, and its name is on aria-label. */}
+            <button
+              className={styles.identityAccountEntry}
+              type="button"
+              aria-label={cab.accountEntry}
+              title={cab.accountEntry}
+              onClick={() => selectSection("account")}
+            >
+              <Icon name="settings" size={22} className={styles.identityAccountIcon} />
+            </button>
+          </div>
+
+          <dl className={styles.identityStats}>
+            <div className={styles.identityStat}>
+              <dt className={styles.sectionLabel}>{copy.dosha}</dt>
+              <dd>{formatDoshaResult(dosha?.resultType, lang)}</dd>
+            </div>
+            <div className={styles.identityStat}>
+              <dt className={styles.sectionLabel}>{cab.learningLabel}</dt>
+              <dd>{ownedCourses.length > 0 ? cab.coursesCount(ownedCourses.length) : copy.emptyValue}</dd>
+            </div>
+            <div className={styles.identityStat}>
+              <dt className={styles.sectionLabel}>{copy.products}</dt>
+              <dd>{productPurchases.length > 0 ? cab.productsCount(productPurchases.length) : copy.emptyValue}</dd>
+            </div>
+          </dl>
+        </header>
+
         <nav className={styles.tabs} aria-label={cab.navAria}>
-          {SECTIONS.map((key) => (
+          {TAB_SECTIONS.map((key) => (
             <button
               key={key}
               type="button"
@@ -566,7 +582,7 @@ export function CabinetClient() {
         {section === "overview" ? (
           <div className={styles.section}>
             {resumeCourse ? (
-              <article className={styles.continueCard}>
+              <article className={styles.continueCard} {...matte}>
                 <p className={styles.sectionLabel}>{cab.continueTitle}</p>
                 <h2 className={styles.cardTitle}>{resumeCourse.title}</h2>
                 {resumeCourse.currentLessonTitle && !resumeCourse.standing?.isFinished ? (
@@ -576,23 +592,11 @@ export function CabinetClient() {
                 )}
                 {resumeCourse.standing && resumeCourse.standing.totalLessons > 0 ? (
                   <>
-                    <div
-                      className={styles.meter}
-                      role="progressbar"
-                      aria-valuemin={0}
-                      aria-valuemax={resumeCourse.standing.totalLessons}
-                      aria-valuenow={resumeCourse.standing.completedLessons}
-                      aria-label={resumeCourse.title}
-                    >
-                      <div
-                        className={styles.meterFill}
-                        style={{
-                          width: `${Math.round(
-                            (resumeCourse.standing.completedLessons / resumeCourse.standing.totalLessons) * 100,
-                          )}%`,
-                        }}
-                      />
-                    </div>
+                    <ProgressRail
+                      value={resumeCourse.standing.completedLessons}
+                      total={resumeCourse.standing.totalLessons}
+                      label={resumeCourse.title}
+                    />
                     <p className={styles.cardText}>
                       {cab.stepsOf(resumeCourse.standing.completedLessons, resumeCourse.standing.totalLessons)}
                     </p>
@@ -615,7 +619,7 @@ export function CabinetClient() {
             )}
 
             <div className={styles.cardGrid}>
-              <article className={styles.card}>
+              <article className={styles.card} {...matte}>
                 <p className={styles.sectionLabel}>{copy.dosha}</p>
                 <h2 className={styles.cardTitle}>{copy.doshaCurrent}</h2>
                 {dosha ? (
@@ -648,7 +652,7 @@ export function CabinetClient() {
                 </div>
               </article>
 
-              <article className={styles.card}>
+              <article className={styles.card} {...matte}>
                 <p className={styles.sectionLabel}>{copy.routeSummaryLabel}</p>
                 <h2 className={styles.cardTitle}>{copy.routeSummaryTitle}</h2>
                 <ul className={styles.metaList}>
@@ -697,12 +701,15 @@ export function CabinetClient() {
               <p className={styles.sectionLead}>{cab.testsLead}</p>
             </div>
             <div className={styles.cardGrid}>
-              {platformTests.map((test) => {
+              {/* Active tests only. A card that says "готується" is a roadmap
+                  note, and the cabinet is where a person looks at what is
+                  theirs — the planned ones live on the tests hub. */}
+              {activePlatformTests.map((test) => {
                 const isDosha = test.slug === "dosha";
                 const passed = isDosha && Boolean(dosha);
 
                 return (
-                  <article key={test.slug} className={test.status === "planned" ? styles.cardMuted : styles.card}>
+                  <article key={test.slug} className={test.status === "planned" ? styles.cardMuted : styles.card} {...matte}>
                     <div className={styles.chipRow}>
                       <span className={styles.chip}>{test.tag}</span>
                       {test.status === "planned" ? <span className={styles.chip}>{cab.testPlanned}</span> : null}
@@ -768,7 +775,7 @@ export function CabinetClient() {
             {purchases.length > 0 ? (
               <div className={styles.cardGrid}>
                 {purchases.map((purchase) => (
-                  <article key={purchase.orderRef} className={styles.card}>
+                  <article key={purchase.orderRef} className={styles.card} {...matte}>
                     <div className={styles.chipRow}>
                       <span className={styles.chip}>
                         {isProgramKind(purchase.offerKind) ? copy.programsLabel : copy.productLabel}
@@ -795,7 +802,7 @@ export function CabinetClient() {
                 ))}
               </div>
             ) : (
-              <article className={styles.card}>
+              <article className={styles.card} {...matte}>
                 <p className={styles.cardText}>{copy.noProductsLead}</p>
                 <div className={styles.actions}>
                   <Link className={styles.actionPrimary} href={programsHref}>
@@ -818,7 +825,7 @@ export function CabinetClient() {
                 cannot receive a reminder should learn it here, not by missing
                 one. */}
             {reach ? (
-              <article className={reach.linked ? styles.card : styles.notice}>
+              <article className={reach.linked ? styles.card : styles.notice} {...matte}>
                 <h3 className={styles.cardTitle}>{cab.notificationsTitle}</h3>
                 <p className={styles.cardText}>
                   {reach.linked
@@ -842,7 +849,38 @@ export function CabinetClient() {
               </article>
             ) : null}
 
-            <article className={styles.card}>
+            {/* Only ever one of the two branches, and neither renders once the
+                platform is already running installed: Chrome parks a real
+                prompt, Safari never fires one and has to be told the two taps
+                instead. */}
+            {pwaInstall.canPrompt || pwaInstall.needsIosInstructions ? (
+              <article className={styles.card} {...matte}>
+                <h3 className={styles.cardTitle}>{cab.installTitle}</h3>
+                <p className={styles.cardText}>{cab.installLead}</p>
+                {pwaInstall.canPrompt ? (
+                  <div className={styles.actions}>
+                    <button
+                      className={styles.actionPrimary}
+                      type="button"
+                      onClick={() => void pwaInstall.install()}
+                    >
+                      {cab.installAction}
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <p className={styles.cardText}>{cab.installIosLead}</p>
+                    <ul className={styles.metaList}>
+                      {cab.installIosSteps.map((step) => (
+                        <li key={step}>{step}</li>
+                      ))}
+                    </ul>
+                  </>
+                )}
+              </article>
+            ) : null}
+
+            <article className={styles.card} {...matte}>
               <h3 className={styles.cardTitle}>{copy.contactsTitle}</h3>
               <ul className={styles.metaList}>
                 <li>

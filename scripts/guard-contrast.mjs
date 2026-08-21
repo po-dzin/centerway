@@ -135,6 +135,23 @@ const pairs = [
 // Translucent foregrounds (the muted inverse label) are composited too, over the
 // panel they live on, rather than being compared as if they were opaque.
 const glassPairs = [
+  // Meters (dosha scores, the diagnostic progress bar). Not text either: the
+  // filled part of a bar has to be distinguishable from its track or the
+  // graphic carries no information. The fill is a gradient, so both ends are
+  // asserted against the track — the lighter one binds.
+  { theme: "light", fg: "--cw-sem-guide-primary", glass: { plain: "--cw-mat-meter-track" }, min: AA_LARGE, context: "meter fill (start of gradient) against its track (UI bound, not text)" },
+  { theme: "light", fg: "--cw-sem-guide-strong", glass: { plain: "--cw-mat-meter-track" }, min: AA_LARGE, context: "meter fill (end of gradient) against its track (UI bound, not text)" },
+  // The material's control stroke. Not text: this is the boundary that makes a
+  // secondary button and the chosen cabinet tab exist as objects at all, and
+  // WCAG 1.4.11 puts a UI boundary at 3:1. It is translucent ink (light) and
+  // translucent cream (dark), so it is composited over each surface it is drawn
+  // on before being compared to that same surface. Thin the mix and this fails
+  // instead of the control quietly going flat again.
+  { theme: "light", fg: "--cw-mat-stroke-control", glass: { plain: "--cw-mat-surface" }, min: AA_LARGE, context: "control outline on card material (UI bound, not text)" },
+  { theme: "light", fg: "--cw-mat-stroke-control", glass: { plain: "--cw-platform-bg" }, min: AA_LARGE, context: "control outline on the page ground (UI bound, not text)" },
+  { theme: "dark", fg: "--cw-mat-stroke-control", glass: { plain: "--cw-mat-surface" }, min: AA_LARGE, context: "control outline on card material (UI bound, not text)" },
+  { theme: "platform-dark", fg: "--cw-mat-stroke-control", glass: { plain: "--cw-platform-bg" }, min: AA_LARGE, context: "control outline on the page ground (UI bound, not text)" },
+
   {
     theme: "light", fg: "--cw-platform-text",
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-floor", over: "--cw-sem-calm-surface-muted" },
@@ -195,94 +212,129 @@ const glassPairs = [
     glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-media-floor", over: "#ffffff" },
     min: AA_LARGE, context: "muted label on M1 glass over worst-case photo (large/semibold only)",
   },
-  // .heroBadge / .heroSecondaryButton (PlatformBlocksOrientation.module.css):
-  // ink text on the topbar's own chrome tint (55%), not the denser media floor.
-  // Unlike the topbar itself these aren't tone-managed — they always run ink,
-  // never the dark-tone light label — so the true worst case is checked
-  // directly: a black photo pixel with zero scrim contribution. Even there,
-  // chrome (55% of a near-white surface) over black composites to a mid-grey
-  // light enough for near-black ink to clear body AA.
+  // .heroBadge / .heroSecondaryButton used to be checked here as ink on the day
+  // surface over a black photo pixel. That recipe is gone — both now run the
+  // night side with a light label, asserted by the pair below against the hero
+  // scrim. The old pair was left in place for one commit after the switch and
+  // failed at 2.00, which is the guard doing its job: it was describing a
+  // surface that no longer exists.
+  //
+  // .heroBadge runs the night side of the same material, so that it reads as
+  // the topbar's glass rather than as a white plate on the same photograph.
+  // Unlike the topbar it has no sampler, so its bound is not measured but built:
+  // every badge sits inside .heroPhotoLayer::after, whose weakest point under
+  // the copy is 64% of near-black (the mobile scrim at the badge's height; the
+  // desktop scrim is 78%+ across the copy column). The backdrop below is that
+  // scrim over the brightest pixel a photograph can supply.
   {
-    theme: "light", fg: "--cw-platform-text",
-    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#000000" },
-    min: AA_BODY, context: "ink text on hero badge/button chrome glass over worst-case photo (black)",
-  },
-  {
-    theme: "platform-dark", fg: "--cw-platform-text",
-    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#000000" },
-    min: AA_BODY, context: "ink text on hero badge/button chrome glass over worst-case photo (black)",
+    theme: "light", fg: "--cw-platform-accent-contrast",
+    glass: {
+      tint: "--cw-mat-surface-night", alpha: "--cw-mat-tint-chrome-floor",
+      over: "color-mix(in srgb, var(--cw-platform-text) 64%, #ffffff 36%)",
+    },
+    min: AA_BODY, context: "hero badge & secondary-button label on night chrome glass over the hero scrim at its weakest",
   },
   // --- Tone-managed chrome (the topbar) ------------------------------------
   // The topbar is not "glass over arbitrary media": headerTone samples what is
-  // actually behind it and flips the palette at luminance 0.34. Its backdrop is
-  // therefore bounded, and holding it to the media floor would be false rigour —
-  // it would force an opaque bar for a risk that cannot occur. The bound used
-  // here is #b0b0b0 (luminance ~0.42), a margin past the switch point to cover a
-  // backdrop that is mixed under different parts of the bar.
+  // actually behind it and flips the palette when the backdrop crosses
+  // ENTER_LIGHT. Its backdrop is therefore bounded, and holding it to the media
+  // floor would be false rigour — it would force an opaque bar for a risk that
+  // cannot occur. The bound is #8a8a8a (luminance 0.26), which *is* ENTER_LIGHT
+  // in headerTone.ts: the brightest thing a dark bar is allowed to sit on. The
+  // two are one decision written in two files; change one and this pair fails.
   //
   // The trade is explicit: a transparent tint is paid for with full-strength
   // labels. The nav's secondary state runs at 86-90% of the foreground, not the
   // 62-78% a solid surface would allow, and that is what these pairs assert.
   {
     theme: "light", fg: "--cw-platform-text",
-    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#b0b0b0" },
+    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#8a8a8a" },
     min: AA_BODY, context: "topbar label on chrome glass, light tone, at the tone bound",
   },
   {
     theme: "header-dark", fg: "--cw-platform-accent-contrast",
-    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#b0b0b0" },
+    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#8a8a8a" },
     min: AA_BODY, context: "topbar label on chrome glass, dark tone, at the tone bound",
   },
   {
     theme: "header-dark",
-    // the nav's secondary state, written inline in PlatformShell.module.css
-    fg: "color-mix(in srgb, var(--cw-platform-accent-contrast) 90%, transparent)",
-    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#b0b0b0" },
+    // the nav's secondary state, written inline in PlatformShell.module.css —
+    // full strength in dark tone, see the note beside it
+    fg: "--cw-platform-accent-contrast",
+    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#8a8a8a" },
     min: AA_BODY, context: "topbar secondary nav label on chrome glass, dark tone",
   },
   {
     theme: "light",
     fg: "color-mix(in srgb, var(--cw-platform-text) 86%, transparent)",
-    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#b0b0b0" },
+    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#8a8a8a" },
     min: AA_BODY, context: "topbar secondary nav label on chrome glass, light tone",
+  },
+  // The active nav item, in the bar and in the open sheet. It used to be gold and
+  // was never asserted; on the dense light sheet that measured about 2.0 as a
+  // label. It now follows the foreground, which is what these two pairs pin.
+  {
+    theme: "light", fg: "--cw-platform-text",
+    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-media-floor", over: "#ffffff" },
+    min: AA_BODY, context: "active nav label on the open sheet, light tone",
+  },
+  {
+    theme: "header-dark", fg: "--cw-platform-accent-contrast",
+    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-media-floor", over: "#ffffff" },
+    min: AA_BODY, context: "active nav label on the open sheet, dark tone",
+  },
+  // The light tone has a bound too, and it is the dark end: ENTER_DARK in
+  // headerTone.ts, luminance 0.18 (#767676). Below that the sampler flips to the
+  // dark tone, or — for the open sheet, where both ends can break at once —
+  // declares the ground mixed and lets density take over.
+  {
+    theme: "light", fg: "--cw-platform-text",
+    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#767676" },
+    min: AA_BODY, context: "topbar/sheet label on chrome glass, light tone, at the dark end of the bound",
+  },
+  {
+    theme: "light",
+    fg: "color-mix(in srgb, var(--cw-platform-text) 86%, transparent)",
+    glass: { tint: "--cw-mat-surface", alpha: "--cw-mat-tint-chrome-floor", over: "#767676" },
+    min: AA_BODY, context: "topbar secondary nav label, light tone, at the dark end of the bound",
   },
   // Inverse panel: the gradient's lighter stop is the harder ground for its text.
   {
     theme: "light", fg: "--cw-mat-inverse-text",
-    glass: { plain: "#274a3c" },
+    glass: { plain: "#2c4635" },
     min: AA_BODY, context: "text on inverse mineral panel (lighter gradient stop)",
   },
   {
-    theme: "light", fg: "--cw-mat-inverse-text-muted", fgOver: "#274a3c",
-    glass: { plain: "#274a3c" },
+    theme: "light", fg: "--cw-mat-inverse-text-muted", fgOver: "#2c4635",
+    glass: { plain: "#2c4635" },
     min: AA_BODY, context: "muted label on inverse mineral panel (lighter gradient stop)",
   },
   // --- way21 phyto card -----------------------------------------------------
   // These pairs predate the photo ground and outlive it: the card once carried a
   // duotone photo crushed to 0.051 luminance so it would stay under the panel's
-  // lighter gradient stop #274a3c (0.057). The photo is gone (2026-08-17) — the
-  // imagery moved to the phase cards, above the copy — but #274a3c is still the
+  // lighter gradient stop #2c4635 (0.057). The photo is gone (2026-08-17) — the
+  // imagery moved to the phase cards, above the copy — but #2c4635 is still the
   // real ground, because it is the panel's own gradient. So the pairs stand as
   // written. The card's text is literal rgba() in landing.css, restated here as
   // color-mix so the gate composites it.
   {
-    theme: "light", fg: "color-mix(in srgb, #ffffff 82%, transparent)", fgOver: "#274a3c",
-    glass: { plain: "#274a3c" },
+    theme: "light", fg: "color-mix(in srgb, #ffffff 82%, transparent)", fgOver: "#2c4635",
+    glass: { plain: "#2c4635" },
     min: AA_BODY, context: "way21 phyto card body text on graded photo ground",
   },
   {
-    theme: "light", fg: "color-mix(in srgb, #ffffff 60%, transparent)", fgOver: "#274a3c",
-    glass: { plain: "#274a3c" },
+    theme: "light", fg: "color-mix(in srgb, #ffffff 60%, transparent)", fgOver: "#2c4635",
+    glass: { plain: "#2c4635" },
     min: AA_BODY, context: "way21 phyto card phase subtitle on graded photo ground",
   },
   {
-    theme: "light", fg: "#a7c1ad",
-    glass: { plain: "#274a3c" },
+    theme: "light", fg: "#aec0a9",
+    glass: { plain: "#2c4635" },
     min: AA_BODY, context: "way21 phyto card mono row label on graded photo ground",
   },
   {
-    theme: "light", fg: "color-mix(in srgb, #ffffff 62%, transparent)", fgOver: "#274a3c",
-    glass: { plain: "#274a3c" },
+    theme: "light", fg: "color-mix(in srgb, #ffffff 62%, transparent)", fgOver: "#2c4635",
+    glass: { plain: "#2c4635" },
     min: AA_BODY, context: "way21 card fine print (scoped bump from the shared .45 default)",
   },
   // --- network photo hero (data-cw-hero="photo") ----------------------------
@@ -293,74 +345,96 @@ const glassPairs = [
   // / -accent). Thin the 92% scrim and this is what catches it.
   {
     theme: "light", fg: "#ffffff",
-    glass: { tint: "#173027", alpha: 0.92, over: "#ffffff" },
+    glass: { tint: "#182a20", alpha: 0.92, over: "#ffffff" },
     min: AA_BODY, context: "photo hero title on the copy-band scrim over a white photo pixel",
   },
   {
-    theme: "light", fg: "#cfe0d3",
-    glass: { tint: "#173027", alpha: 0.92, over: "#ffffff" },
+    theme: "light", fg: "#d7e0d2",
+    glass: { tint: "#182a20", alpha: 0.92, over: "#ffffff" },
     min: AA_BODY, context: "photo hero lead/trust text on the copy-band scrim",
   },
   {
-    theme: "light", fg: "#a7c1ad",
-    glass: { tint: "#173027", alpha: 0.92, over: "#ffffff" },
+    theme: "light", fg: "#aec0a9",
+    glass: { tint: "#182a20", alpha: 0.92, over: "#ffffff" },
     min: AA_BODY, context: "photo hero mono price label on the copy-band scrim",
   },
   {
-    theme: "light", fg: "#e0b25c",
-    glass: { tint: "#173027", alpha: 0.92, over: "#ffffff" },
+    theme: "light", fg: "#e5ae65",
+    glass: { tint: "#182a20", alpha: 0.92, over: "#ffffff" },
     min: AA_BODY, context: "photo hero accent (title emphasis, trust tick) on the copy-band scrim",
   },
-  // --- network nav ----------------------------------------------------------
-  // Light tone: the bar and its drawer run the chrome tint (55%) over the page
-  // canvas. That transparency is affordable because the backdrop is bounded —
-  // the bar steps aside over a photo hero, and any section that is not the light
-  // canvas declares itself with data-cw-nav-dark. The worst light ground is the
-  // network's chip surface.
+  // The badge and chips on that band run the material's night tone: a white
+  // lift (--cw-net-hero-glass, 8%) rather than a tint, because the band is
+  // already darker than any tint would take it. Two composites deep, and the
+  // glass helper only does one — so the backdrop here is the band already
+  // resolved over a white photo pixel (#182a20 at 92% over #ffffff = #2a4138),
+  // which is the same worst case the four pairs above assert. Raise the lift
+  // and the pill goes pale against the band; this is what holds it honest.
   {
-    theme: "light", fg: "#1d3a30",
-    glass: { tint: "#fbf9f2", alpha: 0.55, over: "#e4efe7" },
-    min: AA_BODY, context: "nav ink label on the light-tone bar over the worst network canvas",
+    theme: "light", fg: "#d7e0d2",
+    glass: { tint: "#ffffff", alpha: 0.08, over: "#2a4138" },
+    min: AA_BODY, context: "photo hero badge/chip label on the night-tone glass over the copy band",
+  },
+  // --- network nav ----------------------------------------------------------
+  // Light tone: the bar and the drawer it opens into are one sheet on the chrome
+  // tint (30%) over the page canvas — same thinned material as the platform
+  // topbar, and the same alpha, so these figures move with --cw-mat-tint-chrome
+  // in cw.tokens.json. That transparency is affordable because the backdrop is
+  // bounded — the bar steps aside over a photo hero, and any section that is not
+  // the light canvas declares itself with data-cw-nav-dark. The worst light
+  // ground is the network's chip surface.
+  {
+    theme: "light", fg: "#203126",
+    glass: { tint: "#fff8ef", alpha: 0.30, over: "#faefe0" },
+    min: AA_BODY, context: "nav ink label on the light-tone sheet over the worst network canvas",
   },
   {
-    theme: "light", fg: "#3f6f63",
-    glass: { tint: "#fbf9f2", alpha: 0.55, over: "#e4efe7" },
-    min: AA_BODY, context: "nav accent (hover/current) on the light-tone bar",
+    theme: "light", fg: "#3f6350",
+    glass: { tint: "#fff8ef", alpha: 0.30, over: "#faefe0" },
+    min: AA_BODY, context: "nav accent (focus ring) on the light-tone sheet",
+  },
+  {
+    theme: "light", fg: "#1f2e24",
+    glass: { tint: "#fff8ef", alpha: 0.30, over: "#faefe0" },
+    min: AA_BODY, context: "nav active/hover label (--cw-nav-active-ink) on the light-tone sheet",
   },
   // Dark tone: backdrop is a declared dark section, so the worst ground is the
-  // lightest stop of a skin's dark gradient — reset-day's #356152, not white.
-  // That is what lets the night tint stay at 42% and still read as glass.
+  // lightest stop of a skin's dark gradient — reset-day's #3a5c48, not white.
+  // That is what lets the night tint run the same thinned 30% the light tone
+  // does and still read as glass. The drawer no longer has rows of its own here:
+  // it is the same sheet at the same density, so these pairs cover both.
   {
     theme: "light", fg: "#ffffff",
-    glass: { tint: "#173027", alpha: 0.42, over: "#356152" },
-    min: AA_BODY, context: "nav brand/ink on the dark-tone bar over the lightest dark-section stop",
+    glass: { tint: "#182a20", alpha: 0.30, over: "#3a5c48" },
+    min: AA_BODY, context: "nav brand/ink on the dark-tone sheet over the lightest dark-section stop",
   },
   {
-    theme: "light", fg: "#cfe0d3",
-    glass: { tint: "#173027", alpha: 0.42, over: "#356152" },
-    min: AA_BODY, context: "nav link label on the dark-tone bar",
+    theme: "light", fg: "#d7e0d2",
+    glass: { tint: "#182a20", alpha: 0.30, over: "#3a5c48" },
+    min: AA_BODY, context: "nav link label on the dark-tone sheet",
   },
   {
-    theme: "light", fg: "#e0b25c",
-    glass: { tint: "#173027", alpha: 0.42, over: "#356152" },
-    min: AA_BODY, context: "nav accent (hover/current/focus ring) on the dark-tone bar",
+    theme: "light", fg: "#ffffff",
+    glass: { tint: "#182a20", alpha: 0.30, over: "#3a5c48" },
+    min: AA_BODY, context: "nav active/hover label (--cw-nav-active-ink) on the dark-tone sheet",
   },
+  // The focus ring is a non-text indicator, so it is held to the 3:1 UI bound,
+  // not the 4.5 body bound. Worth knowing where it actually lands: on the
+  // thinned night sheet gold measures 4.46 — it cleared 4.5 at the old 42% tint
+  // and no longer does, which is why the wordmark and the active marker stopped
+  // being gold here (--cw-nav-active-ink). Gold on this bar is now only the ring
+  // and the mark image; thin the material any further and the ring goes too.
   {
-    theme: "light", fg: "#cfe0d3",
-    glass: { tint: "#173027", alpha: 0.66, over: "#356152" },
-    min: AA_BODY, context: "nav link label in the dark-tone drawer panel",
-  },
-  {
-    theme: "light", fg: "#1d3a30",
-    glass: { tint: "#fbf9f2", alpha: 0.76, over: "#e4efe7" },
-    min: AA_BODY, context: "nav link label in the light-tone drawer panel",
+    theme: "light", fg: "#e5ae65",
+    glass: { tint: "#182a20", alpha: 0.30, over: "#3a5c48" },
+    min: AA_LARGE, context: "nav accent focus ring on the dark-tone sheet (UI bound, not text)",
   },
   // The footer lockup now runs the same gold word the dark-tone bar does. Not
   // glass — the footer is the solid --cw-net-text of the skin, and the worst
-  // (lightest) one across the five network landings is #2f4536.
+  // (lightest) one across the five network landings is #283b2b.
   {
-    theme: "light", fg: "#e0b25c",
-    glass: { plain: "#2f4536" },
+    theme: "light", fg: "#e5ae65",
+    glass: { plain: "#283b2b" },
     min: AA_BODY, context: "gold footer wordmark on the lightest network footer ground",
   },
 ];
@@ -482,7 +556,7 @@ for (const { theme, fg, fgOver, glass, min, context } of glassPairs) {
   let bgRgb = null;
 
   if (glass.plain) {
-    bgRgb = resolve(glass.plain, map);
+    bgRgb = resolve(map.get(glass.plain) ?? glass.plain, map);
   } else {
     const tint = resolve(map.get(glass.tint) ?? glass.tint, map);
     const alpha = resolveAlpha(glass.alpha, map);

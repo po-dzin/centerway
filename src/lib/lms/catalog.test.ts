@@ -8,7 +8,7 @@
 import { describe, expect, it } from "vitest";
 
 import { listCourses, getCourse, getCourseByProgram } from "./catalog";
-import { countLessons, flattenLessons, flattenReference, flattenSteps } from "@/lms-core";
+import { countLessons, courseReadiness, flattenLessons, flattenReference, flattenSteps, formatReadiness } from "@/lms-core";
 
 describe("course catalog", () => {
   it("loads and validates every authored course", () => {
@@ -39,13 +39,31 @@ describe("course catalog", () => {
     }
   });
 
-  it("gives every daily course a contiguous day sequence starting at 1", () => {
+  it("starts every daily course on day 1 and keeps its days strictly increasing", () => {
+    // Days may be sparse: a three-week protocol is authored per week, so a
+    // lesson lands on day 8 while days 9 and 11 carry no new step. What must
+    // hold is that the walk opens on day 1 and never goes backwards, because
+    // both the drip gate and the reminder cron read the day sequence in order.
     for (const course of listCourses()) {
       if (course.schedule.mode !== "daily") continue;
-      const days = flattenLessons(course)
-        .map((entry) => entry.lesson.dayIndex ?? 0)
-        .sort((a, b) => a - b);
-      expect(days, `course ${course.slug}`).toEqual(days.map((_, index) => index + 1));
+      const days = flattenSteps(course).map((entry) => entry.lesson.dayIndex ?? 0);
+      expect(days[0], `course ${course.slug} does not start on day 1`).toBe(1);
+      for (let index = 1; index < days.length; index += 1) {
+        expect(
+          days[index] > days[index - 1],
+          `course ${course.slug}: day ${days[index]} does not follow day ${days[index - 1]}`
+        ).toBe(true);
+      }
+    }
+  });
+
+  it("never publishes a course that still owes the learner content", () => {
+    // The publish gate. A draft may carry [ЗАПОВНИ] markers, empty video ids and
+    // dead links — that is what a draft is for. A published course may not.
+    for (const course of listCourses()) {
+      if (course.status !== "published") continue;
+      const readiness = courseReadiness(course);
+      expect(readiness.ready, `course ${course.slug} is not publishable:\n${formatReadiness(readiness)}`).toBe(true);
     }
   });
 

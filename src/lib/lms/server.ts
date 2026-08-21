@@ -117,12 +117,21 @@ async function findCustomerIds(identity: LearnerIdentity): Promise<string[]> {
  * Entitlement is derived from paid orders and their access tokens, never from a
  * specific payment provider — adding Stripe or a merchant-of-record later means
  * new order rows, not new logic here.
+ *
+ * Staff bypass entitlement outright — they may open a published course without
+ * ever having paid for it, the same way they already open a draft. Checked here
+ * rather than per-caller so the shelf, auto-enrollment and manual review all
+ * agree without a `lms:grant` row per course per admin.
  */
 export async function checkEntitlement(
   identity: LearnerIdentity,
   course: Course,
   now = new Date()
 ): Promise<ReturnType<typeof resolveEntitlement>> {
+  if (await isStaff(identity.authUserId)) {
+    return { entitled: true, source: "manual", grantedAt: now.toISOString(), orderRef: null };
+  }
+
   const db = adminClient();
   const customerIds = await findCustomerIds(identity);
 

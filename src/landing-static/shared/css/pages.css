@@ -51,18 +51,25 @@ p,
   margin-top: 1rem;
 }
 
+/* Utility pages (thanks / pay-failed / public-offer) run their own thin stack
+   and never load the generated token file, so the contract's axes arrive as
+   fallbacks here — but they are the contract's numbers, not a third opinion.
+   This had its own 0.75rem corner and 0.75rem/1rem padding. */
 a.btn,
 a.btn:visited,
 .cw-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
+  gap: var(--ds-button-gap, 0.5rem);
+  min-height: var(--ds-button-min-height, var(--ds-touch-target-min, 3rem));
+  padding-inline: var(--ds-button-padding-inline, 1.15rem);
+  border-radius: var(--ds-button-radius, 1rem);
+  font-size: var(--ds-button-font-size, 1rem);
+  font-weight: var(--ds-button-font-weight, 700);
   text-decoration: none;
   border: 1px solid var(--ds-color-text, #111111);
   color: var(--ds-color-text, #111111);
-  min-height: var(--ds-touch-target-min, 44px);
   line-height: 1.2;
 }
 
@@ -199,13 +206,8 @@ body.utility-page {
 .utility-status-actions a.btn,
 .utility-status-actions a.btn:visited {
   min-width: min(100%, 15rem);
-  min-height: var(--ds-touch-target-min, 2.75rem);
-  padding: 0.95rem 1.5rem;
   border-width: 1px;
   border-style: solid;
-  border-radius: var(--landing-radius-cta-control, var(--ds-radius-sm, 0.75rem));
-  font-size: var(--landing-type-button-size, 1rem);
-  font-weight: 700;
   transition:
     transform 180ms ease,
     background-color 180ms ease,

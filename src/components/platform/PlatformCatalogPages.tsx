@@ -37,7 +37,7 @@ export function PlatformProgramsIndexPage() {
             <p className={heroStyles.heroBadge}>
               <span>Маршрути · Ритм · Глибина</span>
             </p>
-            <h1 className={heroStyles.heroFeatureTitle}>Програми CenterWay</h1>
+            <h1 className={heroStyles.heroFeatureTitle}>Програми</h1>
             <p className={heroStyles.heroFeatureLead}>
               Короткі входи, довші програми і різна глибина роботи з тілом, ритмом, харчуванням та увагою.
             </p>
@@ -102,7 +102,7 @@ export function PlatformProgramsIndexPage() {
           <div className={offerStyles.sectionHeader}>
             <div>
               <p className={offerStyles.label}>Основні програми</p>
-              <h2 className={offerStyles.sectionTitle}>Глибші маршрути відновлення</h2>
+              <h2 className={offerStyles.sectionTitle}>Глибші програми відновлення</h2>
             </div>
           </div>
           <div className={offerStyles.aggregateRail}>
@@ -325,10 +325,10 @@ export function PlatformProductsIndexPage() {
             <p className={heroStyles.heroBadge}>
               <span>Підтримка · Придатність · Контекст</span>
             </p>
-            <h1 className={heroStyles.heroFeatureTitle}>Продукти CenterWay</h1>
+            <h1 className={heroStyles.heroFeatureTitle}>Продукти</h1>
             <p className={heroStyles.heroFeatureLead}>
               Окремий шар підтримки: трави й інші продуктові формати, які мають сенс тільки в контексті стану, режиму
-              та вашого поточного маршруту.
+              та того, що ви вже проходите.
             </p>
             <div className={heroStyles.heroFeatureActions}>
               <Link className={heroStyles.heroPrimaryButton} href="#product-focus">
@@ -362,7 +362,7 @@ export function PlatformProductsIndexPage() {
             <div className={offerStyles.programFormatMeta}>
               <span>Коли доречно: м&apos;яка підтримка травлення, ритму і щоденного самопочуття.</span>
               <span>Не замінює: діагностику, лікаря або хаотичне самопризначення.</span>
-              <span>Найкращий контекст: разом із програмою, режимом і зрозумілим маршрутом.</span>
+              <span>Найкращий контекст: разом із програмою, режимом і зрозумілим наступним кроком.</span>
             </div>
           </article>
           <div className={offerStyles.aggregateRail} data-layout="single">
@@ -387,7 +387,7 @@ export function PlatformProductsIndexPage() {
         >
           <div className={offerStyles.sectionHeader}>
             <div>
-              <p className={offerStyles.label}>Пов&apos;язані маршрути</p>
+              <p className={offerStyles.label}>Пов&apos;язані програми</p>
               <h2 className={offerStyles.sectionTitle}>Де продукт має найбільше сенсу</h2>
             </div>
           </div>

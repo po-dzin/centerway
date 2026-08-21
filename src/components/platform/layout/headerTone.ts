@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 
 export type HeaderTone = "light" | "dark";
 
@@ -66,7 +66,36 @@ function resolveExplicitTopbarTone(sampleY: number): HeaderTone | null {
   return null;
 }
 
-function resolveToneFromPoint(x: number, y: number): HeaderTone | null {
+/* Photography reads as dark: the heroes are graded down and carry a scrim, and
+   there is no cheap way to sample actual pixels. The stand-in sits below
+   ENTER_DARK so a photo resolves as dark under either hysteresis branch. */
+const PHOTO_LUMINANCE = 0.12;
+
+/* A band that declares itself light, as a value rather than a verdict, so it can
+   take part in the open sheet's median alongside measured rows. Above
+   ENTER_LIGHT by design. */
+const DECLARED_LIGHT_LUMINANCE = 0.9;
+
+/* Two thresholds, not one. With a single switch point at 0.34, any section
+   boundary that happened to land near it flipped the bar every few scrolled
+   pixels — /tests strobed five times in one pass, two of those 120px apart.
+   With a band between the thresholds the bar has to travel past a boundary
+   before it changes its mind.
+
+   These two numbers are also load-bearing beyond comfort: ENTER_LIGHT is the
+   brightest backdrop a dark bar is ever allowed to sit on, and that is exactly
+   the bound guard-contrast checks the dark-tone labels against (#8a8a8a,
+   luminance 0.26). Raise ENTER_LIGHT and the assertion in that file stops being
+   true — the pair and this constant move together or not at all. The band is
+   narrower than it was because the two tones are no longer far apart: at a 30%
+   tint the flip is a change of text colour over the same see-through glass, not
+   a plate inverting, so switching more readily costs almost nothing visually. */
+const ENTER_DARK = 0.18;
+const ENTER_LIGHT = 0.26;
+
+type PointReading = { tone: HeaderTone } | { luminance: number } | null;
+
+function resolveReadingFromPoint(x: number, y: number): PointReading {
   const elements = document.elementsFromPoint(x, y);
 
   for (const node of elements) {
@@ -74,7 +103,7 @@ function resolveToneFromPoint(x: number, y: number): HeaderTone | null {
     if (node.closest("header[data-cw-header-tone]")) continue;
 
     const explicitTone = node.closest<HTMLElement>("[data-cw-topbar-tone]")?.dataset.cwTopbarTone;
-    if (explicitTone === "light" || explicitTone === "dark") return explicitTone;
+    if (explicitTone === "light" || explicitTone === "dark") return { tone: explicitTone };
 
     let current: HTMLElement | null = node;
 
@@ -84,11 +113,11 @@ function resolveToneFromPoint(x: number, y: number): HeaderTone | null {
       const parsed = parseCssColor(style.backgroundColor);
 
       if (parsed && parsed.a > 0.08) {
-        return luminanceFromColor(parsed) < 0.34 ? "dark" : "light";
+        return { luminance: luminanceFromColor(parsed) };
       }
 
       if (backgroundImage && backgroundImage !== "none") {
-        return "dark";
+        return { luminance: PHOTO_LUMINANCE };
       }
 
       current = current.parentElement;
@@ -98,11 +127,64 @@ function resolveToneFromPoint(x: number, y: number): HeaderTone | null {
   return null;
 }
 
+function median(values: number[]) {
+  const sorted = [...values].sort((a, b) => a - b);
+  return sorted[Math.floor(sorted.length / 2)];
+}
+
 export function useHeaderTone(initialTone: HeaderTone = "light", watchKey?: string | null) {
   const [headerTone, setHeaderTone] = useState<HeaderTone>(initialTone);
+  // Hysteresis has to compare against the tone that is on screen right now, not
+  // the one this render closed over.
+  const toneRef = useRef<HeaderTone>(initialTone);
 
   useLayoutEffect(() => {
     if (typeof window === "undefined") return;
+
+    /* Hysteresis fixes the sampled path, but most flips are not sampled — the
+       sections declare their own tone, and some of them are short. On / the bar
+       was asked to go dark at 1280 and light again at 1320: a 40px band passing
+       under the sample line. So a declared change also has to hold still before
+       it counts. At a flick's speed a band that thin is gone inside the dwell
+       and never reaches the bar; a real boundary takes longer than this to
+       cross and commits normally. */
+    const DWELL_MS = 160;
+
+    let pendingTone: HeaderTone | null = null;
+    let pendingTimer = 0;
+    // Mount runs updateTone several times as layout settles; those must land
+    // immediately or the bar starts on the wrong tone.
+    let immediate = true;
+
+    const applyTone = (tone: HeaderTone) => {
+      pendingTone = null;
+      toneRef.current = tone;
+      setHeaderTone(tone);
+    };
+
+    const commitTone = (tone: HeaderTone) => {
+      if (toneRef.current === tone) {
+        pendingTone = null;
+        if (pendingTimer) {
+          window.clearTimeout(pendingTimer);
+          pendingTimer = 0;
+        }
+        return;
+      }
+
+      if (immediate) {
+        applyTone(tone);
+        return;
+      }
+
+      if (pendingTone === tone && pendingTimer) return;
+      if (pendingTimer) window.clearTimeout(pendingTimer);
+      pendingTone = tone;
+      pendingTimer = window.setTimeout(() => {
+        pendingTimer = 0;
+        if (pendingTone) applyTone(pendingTone);
+      }, DWELL_MS);
+    };
 
     let frame = 0;
     let followupFrame = 0;
@@ -110,25 +192,81 @@ export function useHeaderTone(initialTone: HeaderTone = "light", watchKey?: stri
 
     const updateTone = () => {
       frame = 0;
-      const header = document.querySelector<HTMLElement>("header[data-cw-header-tone]");
-      const headerHeight = header?.offsetHeight ?? 72;
+      const headerEl = document.querySelector<HTMLElement>("header[data-cw-header-tone]");
+      const headerHeight = headerEl?.offsetHeight ?? 72;
       const sampleY = Math.max(16, Math.min(window.innerHeight - 16, Math.round(headerHeight * 0.72)));
-      const explicitTone = resolveExplicitTopbarTone(sampleY);
+
+      /* The open sheet is 320px of backdrop, not the bar's 64px, so it is
+         sampled down its own height and the tone follows what the sheet actually
+         covers. Freezing the tone while open was the previous behaviour and it
+         was worse in the way that shows: scroll under an open menu and the sheet
+         stayed on the tone it was opened with, then snapped to the real one the
+         moment you closed it — the change happened where you were not looking.
+
+         Note what is *not* being re-decided here: density. The sheet keeps the
+         media floor in both tones. An earlier attempt let the rows decide
+         thickness too, and about half of all scroll positions came back mixed
+         (bright band, dark object, one sheet), so the same menu opened
+         see-through or frosted depending on where you happened to be. Tone has
+         no such problem — the sheet is legible either way at the media floor, so
+         the flip is a palette change and nothing else, carried by the same dwell
+         and cross-fade as the bar's own. */
+      const menuOpen = headerEl?.dataset.menuOpen === "true";
+      const sheetHeight = menuOpen && headerEl
+        ? Number.parseFloat(headerEl.style.getPropertyValue("--cw-menu-sheet-height")) || 0
+        : 0;
+
+      /* A declared band is trusted for the bar, whose whole box it covers. It is
+         not trusted for the sheet, which reaches far below that band. */
+      const explicitTone = menuOpen ? null : resolveExplicitTopbarTone(sampleY);
 
       if (explicitTone) {
-        setHeaderTone(explicitTone);
+        commitTone(explicitTone);
         return;
       }
 
       const samplePoints = [0.18, 0.5, 0.82].map((ratio) => Math.round(window.innerWidth * ratio));
-      const tones = samplePoints
-        .map((sampleX) => resolveToneFromPoint(sampleX, sampleY))
-        .filter((tone): tone is HeaderTone => tone === "light" || tone === "dark");
+      const sampleRows = sheetHeight > 0
+        ? [sampleY, ...[0.3, 0.6, 0.92].map((ratio) => Math.round(headerHeight + sheetHeight * ratio))]
+            .filter((y) => y < window.innerHeight - 4)
+        : [sampleY];
 
-      if (!tones.length) return;
+      const readings = sampleRows
+        .flatMap((rowY) => samplePoints.map((sampleX) => resolveReadingFromPoint(sampleX, rowY)))
+        .filter((reading): reading is Exclude<PointReading, null> => reading !== null);
 
-      const darkVotes = tones.filter((tone) => tone === "dark").length;
-      setHeaderTone(darkVotes >= Math.ceil(tones.length / 2) ? "dark" : "light");
+      if (!readings.length) return;
+
+      // A declared tone under a sample column is the author stating what that
+      // band is, and for the bar it wins outright — it is not a measurement that
+      // could be sitting on a threshold, so it needs no hysteresis. For the sheet
+      // it must not short-circuit, or one band would decide for rows it does not
+      // cover; there it folds into the readings as a value.
+      if (!menuOpen) {
+        const declared = readings.find((reading): reading is { tone: HeaderTone } => "tone" in reading);
+        if (declared) {
+          commitTone(declared.tone);
+          return;
+        }
+      }
+
+      const luminances = readings.map((reading) =>
+        "tone" in reading
+          ? reading.tone === "dark" ? PHOTO_LUMINANCE : DECLARED_LIGHT_LUMINANCE
+          : reading.luminance,
+      );
+
+      /* Median in both cases, and for the same reason: the surface should match
+         what it mostly sits on, and one odd column or one dark object should not
+         speak for the whole thing. The bar reads three columns of its own 64px;
+         the sheet reads the same three across four rows of its own height. */
+      const level = median(luminances);
+      const current = toneRef.current;
+      commitTone(
+        current === "dark"
+          ? level > ENTER_LIGHT ? "light" : "dark"
+          : level < ENTER_DARK ? "dark" : "light",
+      );
     };
 
     const requestToneUpdate = () => {
@@ -140,7 +278,10 @@ export function useHeaderTone(initialTone: HeaderTone = "light", watchKey?: stri
     requestToneUpdate();
     followupFrame = window.requestAnimationFrame(() => {
       updateTone();
-      settleTimer = window.setTimeout(updateTone, 120);
+      settleTimer = window.setTimeout(() => {
+        updateTone();
+        immediate = false;
+      }, 120);
     });
 
     const mutationObserver = new MutationObserver(requestToneUpdate);
@@ -159,6 +300,7 @@ export function useHeaderTone(initialTone: HeaderTone = "light", watchKey?: stri
       if (frame) window.cancelAnimationFrame(frame);
       if (followupFrame) window.cancelAnimationFrame(followupFrame);
       if (settleTimer) window.clearTimeout(settleTimer);
+      if (pendingTimer) window.clearTimeout(pendingTimer);
       mutationObserver.disconnect();
       window.removeEventListener("scroll", requestToneUpdate);
       window.removeEventListener("resize", requestToneUpdate);

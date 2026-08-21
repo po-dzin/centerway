@@ -25,15 +25,32 @@ export type CourseLocale = "uk" | "ru" | "en";
 export type CourseStatus = "draft" | "published";
 
 /**
- * How lessons unlock.
- * - `open`       — everything available at once (reference material)
- * - `sequential` — next lesson unlocks when the previous is completed
- * - `daily`      — lesson N unlocks on day N of the enrollment, in the LEARNER's timezone
+ * How lessons are PACED.
+ * - `open`       — no rhythm at all (reference material)
+ * - `sequential` — the next lesson follows the previous one
+ * - `daily`      — lesson N belongs to day N of the enrollment, in the LEARNER's timezone
+ *
+ * Pacing is not the same as locking — see `CourseSchedule.gate`.
  */
 export type CourseScheduleMode = "open" | "sequential" | "daily";
 
+/**
+ * What the schedule does to a learner who runs ahead of it.
+ *
+ * - `soft` (default) — the day is GUIDANCE. Tomorrow's lesson opens today; the
+ *   outline says which day it belongs to and the reminders still arrive on
+ *   schedule. This is the honest default for a protocol you buy: a person has
+ *   to see week 3 on day 1 to know what to order, and hiding the material they
+ *   already paid for reads as a lock on their own purchase.
+ * - `hard` — the lesson stays shut until its day. Reserve it for content that
+ *   is genuinely unsafe or meaningless out of order.
+ */
+export type CourseScheduleGate = "soft" | "hard";
+
 export type CourseSchedule = {
   mode: CourseScheduleMode;
+  /** Defaults to `soft`. */
+  gate?: CourseScheduleGate;
   /**
    * Anchor for `daily`: the enrollment's start date. `purchase` uses the
    * enrollment row, `date` uses a fixed cohort start.
@@ -133,6 +150,9 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
     schedule.mode === "open" || schedule.mode === "sequential" || schedule.mode === "daily",
     `lms_course_invalid_schedule_mode:${path}`
   );
+  if (schedule.gate !== undefined) {
+    assert(schedule.gate === "soft" || schedule.gate === "hard", `lms_course_invalid_schedule_gate:${path}`);
+  }
   if (schedule.reminderHour !== undefined) {
     assert(
       typeof schedule.reminderHour === "number" &&

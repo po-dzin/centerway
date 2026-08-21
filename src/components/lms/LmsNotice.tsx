@@ -12,16 +12,21 @@ import Link from "next/link";
 import type { LmsFailure } from "./lmsClient";
 import styles from "./Lms.module.css";
 
+/* Address form: «ви», the platform's one register — the same reader gets the
+   cabinet, these notices and the bot's replies, and until now got «ви» in the
+   first and «ти» in the other two. Also drops "оплатив(-ла)": a gendered past
+   tense with a bracketed alternative is the clumsiest possible way to address
+   someone, and "якщо оплата вже пройшла" says it without needing one. */
 const COPY: Record<LmsFailure, { title: string; text: string; href?: string; cta?: string }> = {
   unauthenticated: {
     title: "Потрібен вхід",
-    text: "Увійди в свій профіль, щоб відкрити курс — прогрес зберігається за твоїм акаунтом.",
+    text: "Увійдіть у свій профіль, щоб відкрити курс — прогрес зберігається за вашим акаунтом.",
     href: "/profile",
     cta: "Перейти до профілю",
   },
   unauthorized: {
     title: "Сесія завершилась",
-    text: "Схоже, сесія застаріла. Онови сторінку або увійди ще раз.",
+    text: "Схоже, сесія застаріла. Оновіть сторінку або увійдіть ще раз.",
     href: "/profile",
     cta: "Перейти до профілю",
   },
@@ -39,13 +44,13 @@ const COPY: Record<LmsFailure, { title: string; text: string; href?: string; cta
   },
   not_entitled: {
     title: "Доступ ще не відкрито",
-    text: "Цей курс відкривається після оплати. Якщо ти вже оплатив(-ла) — перевір профіль: там видно всі покупки й доступи.",
+    text: "Цей курс відкривається після оплати. Якщо оплата вже пройшла — перевірте профіль: там видно всі покупки й доступи.",
     href: "/profile",
     cta: "Мої покупки",
   },
   expired: {
     title: "Термін доступу минув",
-    text: "Доступ до цього курсу завершився. Напиши нам — розберемось.",
+    text: "Доступ до цього курсу завершився. Напишіть нам — розберемось.",
     href: "/profile",
     cta: "Мій профіль",
   },
@@ -55,7 +60,7 @@ const COPY: Record<LmsFailure, { title: string; text: string; href?: string; cta
   },
   lesson_locked: {
     title: "Урок ще закритий",
-    text: "Цей крок відкриється за розкладом курсу — повернись, коли він стане доступним.",
+    text: "Цей урок відкриється за розкладом курсу — повернись, коли він стане доступним.",
   },
   network: {
     title: "Не вдалося завантажити",

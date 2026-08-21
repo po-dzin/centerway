@@ -12,6 +12,7 @@ import { useCallback, useEffect, useRef } from "react";
 import Link from "next/link";
 
 import type { CourseOutlineEntryDto } from "./lmsClient";
+import { Icon } from "@/components/Icon";
 import styles from "./Lms.module.css";
 
 export function CourseContentsDrawer({
@@ -53,7 +54,10 @@ export function CourseContentsDrawer({
     [onClose]
   );
 
-  const completed = outline.filter((entry) => entry.completed).length;
+  // Steps only, so the drawer's counter agrees with the course map's. Reference
+  // pages are a handbook — reading a recipe is not progress through a protocol.
+  const steps = outline.filter((entry) => !entry.isReference);
+  const completed = steps.filter((entry) => entry.completed).length;
 
   // Group by module so the course reads as sections, not one long list.
   const groups: Array<{ id: string; title: string; entries: CourseOutlineEntryDto[] }> = [];
@@ -70,13 +74,19 @@ export function CourseContentsDrawer({
 
         <div className={styles.drawerHead}>
           <h2 className={styles.drawerTitle}>Зміст курсу</h2>
-          <button ref={closeRef} className={styles.iconButton} type="button" onClick={onClose}>
-            Закрити
+          <button
+            ref={closeRef}
+            className={styles.iconButtonBare}
+            type="button"
+            onClick={onClose}
+            aria-label="Закрити зміст"
+          >
+            <Icon name="close" size={18} />
           </button>
         </div>
 
         <p className={styles.pagerLabel}>
-          Пройдено {completed} з {outline.length}
+          Пройдено {completed} з {steps.length}
         </p>
 
         {groups.map((group) => (
@@ -84,9 +94,14 @@ export function CourseContentsDrawer({
             <p className={styles.drawerModule}>{group.title}</p>
             {group.entries.map((entry) => {
               const isCurrent = entry.slug === currentSlug;
+              const ahead =
+                entry.availability.available && entry.availability.ahead?.reason === "before_day"
+                  ? entry.availability.ahead
+                  : null;
               const meta = [
                 entry.dayIndex ? `День ${entry.dayIndex}` : null,
                 entry.durationMin ? `${entry.durationMin} хв` : null,
+                ahead ? "за планом попереду" : null,
               ]
                 .filter(Boolean)
                 .join(" · ");
@@ -95,14 +110,14 @@ export function CourseContentsDrawer({
                 return (
                   <div key={entry.lessonId} className={styles.drawerItemLocked} aria-disabled="true">
                     <span className={styles.drawerMark} aria-hidden="true">
-                      ✕
+                      <Icon name="lock" size={14} />
                     </span>
                     <span>
                       {entry.title}
                       <span className={styles.drawerMeta}>
                         {entry.availability.reason === "locked_by_day"
                           ? `відкриється через ${entry.availability.daysRemaining} дн.`
-                          : "спершу заверши попередній крок"}
+                          : "спершу заверши попередній урок"}
                       </span>
                     </span>
                   </div>
@@ -121,7 +136,7 @@ export function CourseContentsDrawer({
                     className={entry.completed ? styles.drawerMarkDone : styles.drawerMark}
                     aria-hidden="true"
                   >
-                    {entry.completed ? "✓" : (entry.dayIndex ?? "•")}
+                    {entry.completed ? <Icon name="check" size={14} /> : (entry.dayIndex ?? "•")}
                   </span>
                   <span>
                     {entry.title}

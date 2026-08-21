@@ -4,7 +4,7 @@ import { programPageBySlug } from "@/lib/platform/content";
 
 export const metadata: Metadata = {
   title: "Way 21 - детокс програма CenterWay",
-  description: "Платформена сторінка програми Way 21: м'яке очищення, травлення, ритм і аюрведичний маршрут.",
+  description: "Платформена сторінка програми Way 21: м'яке очищення, травлення, ритм і аюрведична практика.",
   alternates: { canonical: "/programs/way21" },
 };
 

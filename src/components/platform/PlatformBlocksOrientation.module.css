@@ -116,20 +116,31 @@
 /* Partial tint: one scrim shaped to where the text actually is (the left
    column on desktop), transparent across the rest so the photograph reads as a
    photograph. The second layer is a whisper of brand hue — enough to seat the
-   image in the palette, far below the level where it becomes a colour cast. */
+   image in the palette, far below the level where it becomes a colour cast.
+
+   The darkening ink is neutral, and that is the point (2026-08-20). It used to
+   be --cw-platform-text, which is #18261d — a green-black. At the 74-84% this
+   ramp reaches, a green-black does not darken a photograph, it repaints it:
+   turning the scrim off showed the hero image is actually warm, brown wood and
+   warm light, and every bit of the green cast was coming from here. The ramp
+   keeps its opacities (the text contrast they buy is asserted in
+   guard-contrast.mjs) and only loses its hue; the brand tint below drops from
+   9% to 5%, which is enough to seat the image without doing the same job
+   twice. */
 .heroPhotoLayer::after {
   position: absolute;
   inset: 0;
   z-index: 2;
   content: "";
+  --hero-scrim-ink: var(--cw-mat-scrim-ink);
   background:
     linear-gradient(96deg,
-      color-mix(in srgb, var(--cw-platform-text) 84%, transparent) 0%,
-      color-mix(in srgb, var(--cw-platform-text) 74%, transparent) 34%,
-      color-mix(in srgb, var(--cw-platform-text) 48%, transparent) 54%,
+      color-mix(in srgb, var(--hero-scrim-ink) 84%, transparent) 0%,
+      color-mix(in srgb, var(--hero-scrim-ink) 74%, transparent) 34%,
+      color-mix(in srgb, var(--hero-scrim-ink) 48%, transparent) 54%,
       transparent 74%),
     linear-gradient(150deg,
-      color-mix(in srgb, var(--cw-sem-guide-strong) 9%, transparent),
+      color-mix(in srgb, var(--cw-sem-guide-strong) 5%, transparent),
       transparent 55%,
       color-mix(in srgb, var(--cw-sem-warmth) 6%, transparent));
 }
@@ -156,18 +167,26 @@
   padding: 0.48rem 0.74rem;
   border: 0;
   border-radius: var(--cw-radius-pill);
-  /* Same chrome tint the topbar runs — the badge used to sit on the denser
-     media floor (86%) and read as a second, opaque-white material next to the
-     topbar's see-through one. Dark ink text holds contrast against chrome (55%)
-     regardless of what the photo underneath does: even the limit case, a pure
-     black photo with no scrim at all, still clears body AA (~4.97:1) — see the
-     chrome-floor glass-media pairs in guard-contrast.mjs. --cw-mat-inverse-control
-     (a dark scrim + light text, matching the topbar's own dark-tone state) used
-     to sit here before that; over a bright photo region it measured ~2.0
-     against a 4.5 requirement, which is why this runs the topbar's light-tone
-     recipe (chrome tint + ink) rather than its dark-tone one. */
-  color: var(--cw-platform-text);
-  background-color: var(--cw-mat-tint-chrome);
+  /* The topbar's material, night side — the same tint token at the same chrome
+     floor (55%), the same blur, the same grain. The badge is not tone-managed:
+     headerTone samples what the bar floats over and swaps --cw-mat-surface for
+     the whole bar, and the badge, sitting on the same photograph a few hundred
+     pixels lower, was outside that local context and resolved the day surface.
+     Two elements of one material, one lightening its backdrop by ~115 and the
+     other darkening it by ~50 — which is why the badge read as a white plate
+     next to see-through chrome.
+
+     The light recipe was not arbitrary: an earlier dark badge measured ~2.0
+     against a 4.5 requirement, because the guard has to assume any photo pixel
+     under it. What makes the night side safe here is that the badge always sits
+     inside .heroPhotoLayer::after, and that scrim is a construction guarantee,
+     not a hope — 64% of near-black at its weakest point under the copy on
+     mobile, 78%+ in the copy column on desktop. Held to the mobile figure over
+     a pure-white photo pixel, light text on this tint clears body AA with room
+     (~8.8:1); the pair is asserted in guard-contrast.mjs. Move the badge out of
+     a scrimmed hero and that assertion stops being true. */
+  color: var(--cw-platform-accent-contrast);
+  background-color: color-mix(in srgb, var(--cw-mat-surface-night) var(--cw-mat-tint-chrome-floor), transparent);
   background-image: var(--cw-mat-grain-image);
   backdrop-filter: var(--cw-mat-filter);
   box-shadow: var(--cw-mat-shadow-raised);
@@ -229,52 +248,17 @@
   margin-top: 0.2rem;
 }
 
-.heroPrimaryButton,
-.heroSecondaryButton {
-  width: 100%;
-  min-height: var(--ds-button-min-height);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--ds-radius-button-soft);
-  padding: 0 var(--ds-button-padding-inline);
-  text-decoration: none;
-  font-weight: 800;
-}
-
-/* The gradient stays, but it now runs gold → deep gold instead of gold →
-   accent-strong. accent-strong is the dark green, so the old ramp muddied into
-   an olive that read as a different, older yellow next to the flat
-   --cw-sem-warmth used everywhere else. Both stops are now the same gold
-   family, and the label is ink — the lighter stop is the binding contrast case
-   and is asserted in guard-contrast.mjs. */
+/* Both hero buttons are the contract; the hero only adds full-bleed width,
+   which is a layout call, not a button one. The gold ramp used to be copied
+   here verbatim from PlatformShell and is now defined once. */
 .heroPrimaryButton {
-  border: 0;
-  color: var(--cw-platform-on-accent);
-  background: linear-gradient(135deg, var(--cw-platform-accent), var(--cw-platform-accent-pressed));
-  box-shadow: 0 16px 30px color-mix(in srgb, var(--cw-platform-accent) 20%, transparent);
-  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+  composes: primary from "./PlatformButtons.module.css";
+  width: 100%;
 }
 
-.heroPrimaryButton:hover {
-  transform: translateY(-1px);
-  background: linear-gradient(135deg, var(--cw-platform-accent-pressed), color-mix(in srgb, var(--cw-platform-accent-pressed) 86%, var(--cw-platform-on-accent)));
-  box-shadow: 0 20px 32px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent);
-}
-
-/* Same chrome tint + ink recipe as .heroBadge and the topbar — one material
-   across the hero instead of the badge/button pair running the opaque media
-   floor while the bar above them stays see-through chrome. */
 .heroSecondaryButton {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  border: 0;
-  color: var(--cw-platform-text);
-  background-color: var(--cw-mat-tint-chrome);
-  background-image: var(--cw-mat-grain-image);
-  backdrop-filter: var(--cw-mat-filter);
-  box-shadow: var(--cw-mat-shadow-raised);
+  composes: onMedia from "./PlatformButtons.module.css";
+  width: 100%;
 }
 
 .videoSection {
@@ -340,41 +324,18 @@
   width: 100%;
 }
 
-.videoActionButton {
+/* The video rail's two actions. A third verbatim copy of the gold ramp lived
+   here until the contract took it. They were `[data-kind]` variants of one
+   class; `composes` only works on a plain class selector, and the role split
+   is real, so they are two classes now. */
+.videoActionPrimary {
+  composes: primary from "./PlatformButtons.module.css";
   width: 100%;
-  min-height: var(--ds-button-min-height);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 1.15rem;
-  border: 0;
-  border-radius: var(--ds-radius-button-soft);
-  text-decoration: none;
-  font-family: var(--cw-font-ui);
-  font-size: 1rem;
-  font-weight: 800;
-  line-height: 1;
-  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
 }
 
-.videoActionButton[data-kind="primary"] {
-  color: var(--cw-platform-on-accent);
-  background: linear-gradient(135deg, var(--cw-platform-accent), var(--cw-platform-accent-pressed));
-  box-shadow: 0 16px 30px color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
-}
-
-.videoActionButton[data-kind="primary"]:hover {
-  background: linear-gradient(135deg, var(--cw-platform-accent-pressed), color-mix(in srgb, var(--cw-platform-accent-pressed) 86%, var(--cw-platform-on-accent)));
-}
-
-.videoActionButton[data-kind="secondary"] {
-  color: var(--cw-platform-text);
-  background: color-mix(in srgb, var(--cw-platform-surface) 92%, var(--cw-platform-bg) 8%);
-  box-shadow: var(--cw-mat-shadow-soft);
-}
-
-.videoActionButton:hover {
-  transform: translateY(-1px);
+.videoActionSecondary {
+  composes: secondary from "./PlatformButtons.module.css";
+  width: 100%;
 }
 
 .videoDecisionRail {
@@ -394,7 +355,7 @@
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
     padding: 0.55rem;
-    border-radius: clamp(1.05rem, 4vw, var(--cw-radius-lg));
+    border-radius: var(--cw-radius-lg);
   }
 
   .videoSection > * {
@@ -407,11 +368,11 @@
   .videoPanel {
     align-self: start;
     aspect-ratio: 16 / 9;
-    border-radius: clamp(1rem, 4vw, var(--cw-radius-lg)) clamp(1rem, 4vw, var(--cw-radius-lg)) 0 0;
+    border-radius: var(--cw-radius-lg) var(--cw-radius-lg) 0 0;
   }
 
   .videoAside {
-    border-radius: 0 0 clamp(1rem, 4vw, var(--cw-radius-lg)) clamp(1rem, 4vw, var(--cw-radius-lg));
+    border-radius: 0 0 var(--cw-radius-lg) var(--cw-radius-lg);
     gap: 0.95rem;
     padding: 1rem 0.95rem 0.95rem;
   }

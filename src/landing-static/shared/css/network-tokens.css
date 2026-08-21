@@ -8,7 +8,7 @@
      platform --cw-sem-* (data/design-tokens/cw.tokens.json)   ← base of record
         │  values mirrored here as the network's --cw-net-* semantic layer
         ▼
-     --cw-net-*  (defaults below = the mineral "core" = way21 palette)
+     --cw-net-*  (defaults below = the brand "core" = way21 palette)
         │  per-landing skin blocks override only the values that differ
         ▼
      local dialects map onto --cw-net-*:
@@ -21,37 +21,41 @@
    needs to keep this before the consumers for clarity.
 
    Trace map (network → platform semantic → primitive):
-     --cw-net-route        ≈ --cw-sem-guide-primary  (#4f7e76, AA-deepened #3f6f63)
-     --cw-net-route-strong ≈ --cw-sem-guide-strong   (#1e3d34)
-     --cw-net-gold         =  --cw-sem-warmth         (#dba54f)
-     --cw-net-canvas       ≈ --cw-sem-calm-bg         (#f6f2ea)
-     --cw-net-ink          ≈ --cw-sem-method-ink      (#31403e, network core #1d3a30)
+     --cw-net-route        ≈ --cw-sem-guide-primary  (#456b58, AA-deepened #3f6350)
+     --cw-net-route-strong ≈ --cw-sem-guide-strong   (#203126)
+     --cw-net-gold         =  --cw-sem-warmth         (#e5ae65)
+     --cw-net-canvas       ≈ --cw-sem-calm-bg         (#faefe0)
+     --cw-net-ink          ≈ --cw-sem-method-ink      (#203126, network core #203126)
    ============================================================================ */
 
 [data-cw-landing] {
-  /* --- palette primitives: default = way21 mineral core --- */
-  --cw-net-canvas: var(--cw-sem-calm-bg, #f7f5ec);
+  /* --- palette primitives: default = way21 brand core --- */
+  --cw-net-canvas: var(--cw-sem-calm-bg, #faefe0);
   --cw-net-surface: var(--cw-mat-surface, #ffffff);
-  --cw-net-surface-cool: #f1f5f0;
-  --cw-net-ink: var(--cw-sem-guide-strong, #1d3a30);
-  --cw-net-ink-soft: #2c4c40;
-  --cw-net-text: var(--cw-sem-method-ink, #1b2a24);
-  --cw-net-text-muted: #45544c;
-  --cw-net-text-soft: #6a7770;
+  --cw-net-surface-cool: #f5f1e7;
+  --cw-net-ink: var(--cw-sem-guide-strong, #203126);
+  --cw-net-ink-soft: #283e31;
+  --cw-net-text: var(--cw-sem-method-ink, #1f2e24);
+  --cw-net-text-muted: #48544c;
+  --cw-net-text-soft: #646d64;
 
-  --cw-net-route: #3f6f63;         /* primary green a landing leads with */
-  --cw-net-route-bright: var(--cw-sem-guide-primary, #4f7e76);  /* = --cw-sem-guide-primary */
-  --cw-net-route-strong: #264e44;
-  --cw-net-route-soft: #e9f1ec;    /* soft accent tint (backgrounds) */
-  --cw-net-chip: #e4efe7;
-  --cw-net-chip-soft: #f0f6f1;
+  --cw-net-route: #3f6350;         /* primary green a landing leads with */
+  --cw-net-route-bright: var(--cw-sem-guide-primary, #456b58);  /* = --cw-sem-guide-primary */
+  --cw-net-route-strong: #203126;
+  --cw-net-route-soft: #f0ece2;    /* soft accent tint (backgrounds) */
+  /* Label colour on a filled route-green control (the Telegram action). Was a
+     bare #fff inline in landing.css; the platform's own on-accent contrast is
+     cream, not pure white. */
+  --cw-net-on-route: var(--cw-platform-accent-contrast, #faefe0);
+  --cw-net-chip: #e8e6dc;
+  --cw-net-chip-soft: #f3efe5;
 
-  --cw-net-gold: var(--cw-sem-warmth, #dba54f);          /* = --cw-sem-warmth */
-  --cw-net-gold-strong: var(--cw-sem-warmth-strong, #c2902f);
-  --cw-net-on-gold: #1d3a30;       /* ink on gold (AA) */
+  --cw-net-gold: var(--cw-sem-warmth, #e5ae65);          /* = --cw-sem-warmth */
+  --cw-net-gold-strong: var(--cw-sem-warmth-strong, #c8913f);
+  --cw-net-on-gold: #203126;       /* ink on gold (AA) */
 
-  --cw-net-line: #dbe6dc;
-  --cw-net-line-strong: #bccfbf;
+  --cw-net-line: #d8d6c6;
+  --cw-net-line-strong: #c2c5b5;
 
   /* --- material: references, not copies. The values live in
      data/design-tokens/cw.tokens.json and arrive via cw-tokens.generated.css,
@@ -60,7 +64,7 @@
   --cw-net-mat-surface: var(--cw-mat-surface, #fbf9f2);
   --cw-net-mat-tint: var(--cw-mat-tint, rgba(251, 249, 242, .76));
   --cw-net-mat-tint-hover: var(--cw-mat-tint-hover, rgba(251, 249, 242, .84));
-  --cw-net-mat-tint-chrome: var(--cw-mat-tint-chrome, rgba(251, 249, 242, .55));
+  --cw-net-mat-tint-chrome: var(--cw-mat-tint-chrome, rgba(251, 249, 242, .30));
   /* Canvas floor — the density ink text needs over the page itself. The nav bar
      and its drawer both sit here so they read as one glass, not two. */
   --cw-net-mat-tint-floor: var(--cw-mat-tint, rgba(251, 249, 242, .76));
@@ -68,11 +72,15 @@
      — same warm tint family, just less see-through, so dark ink text stays
      legible over any photo content (verified against black and white). */
   --cw-net-mat-tint-media: var(--cw-mat-tint-media, rgba(251, 249, 242, .86));
-  --cw-net-mat-blur: var(--cw-mat-blur, 34px);
-  --cw-net-mat-filter: var(--cw-mat-filter, blur(34px) saturate(1.18));
+  --cw-net-mat-blur: var(--cw-mat-blur, 20px);
+  --cw-net-mat-filter: var(--cw-mat-filter, blur(20px) saturate(1.08));
   --cw-net-mat-stroke: var(--cw-mat-stroke, rgba(255, 255, 255, .55));
   --cw-net-mat-shadow: var(--cw-mat-shadow-soft, 0 1px 2px rgba(35, 29, 20, .05), 0 10px 28px rgba(35, 29, 20, .07));
   --cw-net-mat-shadow-raised: var(--cw-mat-shadow-raised, 0 2px 6px rgba(35, 29, 20, .07), 0 24px 56px rgba(35, 29, 20, .12));
+  /* Chrome shadow: the floating bar hangs over the page rather than resting on
+     it, so it needs more lift than a card and less weight than a modal. Same
+     token the platform topbar uses. */
+  --cw-net-mat-shadow-chrome: var(--cw-mat-shadow-chrome, 0 1px 2px rgba(35, 29, 20, .06), 0 14px 34px rgba(35, 29, 20, .10));
   --cw-net-mat-grain: var(--cw-mat-grain-image, none);
 
   /* --- shared scale (shape / type / rhythm) — consumed by the shared
@@ -81,28 +89,36 @@
   /* One brand mark for every lockup — nav bar, drawer header, footer. The
      wordmark's own size differs by context, the mark does not. */
   --cw-net-brand-mark: 2.25rem;
-  /* Optical, not geometric. The two mark files are not drawn to the same
-     margin: cw-logo-ink.png is a 256px canvas with the glyph inset to 78.5%,
-     cw-logo-gold.png is a 128px canvas the glyph fills edge to edge. Given the
-     same box the gold one reads ~27% larger — which is exactly what the dark
-     bar and the footer showed. Everywhere the gold file is used, it gets this
-     box instead, so both marks land on the same drawn size. Re-crop either
-     PNG and this figure is what changes. Applied as padding rather than a
-     smaller box so the lockup keeps its width — the bar swaps marks mid-scroll,
-     and a narrower box would slide the wordmark sideways on every flip. */
-  --cw-net-brand-mark-gold-inset: calc(var(--cw-net-brand-mark, 2.25rem) * 0.1075);
 
   --maxw: 1160px;
   --r-sm: .7rem; --r-md: 1rem; --r-lg: 1.4rem; --r-pill: 999px;
   /* Single button shape across platform and network: soft rect, never pill.
-     Mirrors --ds-radius-button-soft in the platform token source. */
-  --r-btn: 1rem;
+     No longer a mirrored literal — cw-tokens.generated.css now carries the
+     button contract's geometry, so this resolves to the platform's own corner
+     and moves with it. The 1rem fallback is for a stale cached generated file
+     only; it is the same 16px. */
+  --r-btn: var(--ds-button-radius, 1rem);
+
+  /* The rest of the button contract, referenced the same way. docs/design-system.md
+     → "Buttons". The network paints its own colours but does not get its own
+     height, padding, weight or lift: those are the axes that drifted last time.
+     Landing .btn had no min-height at all and was padding-driven. */
+  --btn-h: var(--ds-button-min-height, 3rem);
+  --btn-px: var(--ds-button-padding-inline, 1.15rem);
+  --btn-gap: var(--ds-button-gap, .5rem);
+  --btn-fs: var(--ds-button-font-size, 1rem);
+  --btn-weight: var(--ds-button-font-weight, 700);
+  --btn-lift: var(--ds-button-lift, -1px);
   --sp-sec: clamp(64px, 9vw, 132px);
   /* Depth is the platform's, not the network's own: these two feed every
      card, panel and hover state in landing.css. */
   --shadow-soft: var(--cw-net-mat-shadow);
   --shadow-med: var(--cw-net-mat-shadow-raised);
-  --shadow-cta: 0 8px 22px rgba(219,165,79,.32);
+  /* Was a hardcoded rgba of a gold that is a token two lines below, at a
+     different spread from the platform's. Same recipe as the contract's
+     primary now, mixed off whichever gold the active skin resolves. */
+  --shadow-cta: 0 16px 30px color-mix(in srgb, var(--cw-net-gold) 20%, transparent);
+  --shadow-cta-hover: 0 20px 32px color-mix(in srgb, var(--cw-net-gold) 24%, transparent);
   --chip-py: .55em; --chip-px: .95em; --chip-fs: .78rem; --chip-nudge: .09em;
 
   /* --- local dialect map: the premium component DS (landing.css) reads
@@ -131,13 +147,13 @@
 
   /* dark-section palette (used by .offer and other dark blocks in landing.css).
      Default = mineral-dark; way21/reset-day page.css override per skin. */
-  --irem-dark-1: #173027; --irem-dark-2: #274a3c;
+  --irem-dark-1: #182a20; --irem-dark-2: #2c4635;
   /* The dark offer block is the material's night side, same gradient the
      platform's inverse panels use. */
   --irem-grad-dark: var(--cw-mat-inverse-bg, linear-gradient(165deg, var(--irem-dark-1), var(--irem-dark-2)));
-  --irem-gold-bright: #e0b25c; --irem-gold-soft: #e6b863; --irem-gold-tint: #f3ead4;
-  --irem-on-dark-soft: #cfe0d3; --irem-on-dark-muted: #b3c8b9; --irem-on-dark-faint: #7e9587; --irem-on-dark-label: #a7c1ad;
-  --irem-indigo-soft: #6f9a86;
+  --irem-gold-bright: #e5ae65; --irem-gold-soft: #edc693; --irem-gold-tint: #f3e4d0;
+  --irem-on-dark-soft: #d7e0d2; --irem-on-dark-muted: #bcc7b4; --irem-on-dark-faint: #8b9884; --irem-on-dark-label: #aec0a9;
+  --irem-indigo-soft: #7d9a7a;
 
   /* --- photo hero (mobile, data-cw-hero="photo") ---
      The copy band over a photograph runs the night side of the palette: the
@@ -147,11 +163,26 @@
      lighter (reset-day's #23463a) would drop the hero labels under AA. It is
      one fixed depth for the whole network, and it is the value the contrast
      gate asserts — a skin that overrides it owes the gate a new pair. */
-  --cw-net-hero-scrim: #173027;
+  --cw-net-hero-scrim: #182a20;
+  /* What darkens the photograph itself, as opposed to the band the copy sits
+     on. Those are two jobs and they were sharing one green-black value: at the
+     strengths this scrim runs, a green-black repaints a warm photo instead of
+     darkening it. The band above keeps the brand dark (it is a surface, and the
+     gate asserts it); the image gets the platform's neutral scrim ink. */
+  --cw-net-photo-scrim: var(--cw-mat-scrim-ink, #171817);
   --cw-net-hero-ink: #ffffff;
   --cw-net-hero-ink-soft: var(--irem-on-dark-soft);
   --cw-net-hero-ink-label: var(--irem-on-dark-label);
   --cw-net-hero-accent: var(--irem-gold-bright);
+  /* The night side of the glass, for chips and badges sitting on the hero's
+     copy band. The same material as the bar, on the other tone: the bar's dark
+     tone tints DOWN because its backdrop (a dark section, #356152) is lighter
+     than the depth it wants, while here the backdrop is the 92% scrim, already
+     darker than any tint would take it — so the night side lifts instead.
+     Sourced from the platform's own inverse-glass pair so the two surfaces
+     stay one material rather than two look-alikes. */
+  --cw-net-hero-glass: var(--cw-mat-inverse-glass, color-mix(in srgb, #ffffff 8%, transparent));
+  --cw-net-hero-glass-stroke: var(--cw-mat-inverse-stroke, color-mix(in srgb, #ffffff 18%, transparent));
 }
 
 /* ============ Platform type (whole network) ============
@@ -176,81 +207,102 @@
 
 /* ============ Per-landing skins (override palette only) ============ */
 
-/* way21 — deep mineral core (= defaults; declared explicitly for clarity) */
+/* way21 — deep brand core (= defaults; declared explicitly for clarity) */
 [data-cw-landing="way21"] {
-  --cw-net-route: #3f6f63;
-  --cw-net-route-bright: #4f7e76;
-  --cw-net-route-strong: #264e44;
-  --cw-net-route-soft: #e9f1ec;
-  --cw-net-chip: #e4efe7;
-  --cw-net-chip-soft: #f0f6f1;
-  --cw-net-ink: #1d3a30;
-  --cw-net-ink-soft: #2c4c40;
-  --cw-net-text: #1b2a24;
-  --cw-net-text-muted: #45544c;
-  --cw-net-text-soft: #6a7770;
-  --cw-net-canvas: #f7f5ec;
-  --cw-net-surface-cool: #f1f5f0;
-  --cw-net-line: #dbe6dc;
-  --cw-net-line-strong: #bccfbf;
-  --cw-net-on-gold: #1d3a30;
+  --cw-net-route: #3f6350;
+  --cw-net-route-bright: #456b58;
+  --cw-net-route-strong: #203126;
+  --cw-net-route-soft: #f0ece2;
+  --cw-net-chip: #e8e6dc;
+  --cw-net-chip-soft: #f3efe5;
+  --cw-net-ink: #203126;
+  --cw-net-ink-soft: #283e31;
+  --cw-net-text: #1f2e24;
+  --cw-net-text-muted: #48544c;
+  --cw-net-text-soft: #646d64;
+  --cw-net-canvas: #faefe0;
+  --cw-net-surface-cool: #f5f1e7;
+  --cw-net-line: #d8d6c6;
+  --cw-net-line-strong: #c2c5b5;
+  --cw-net-on-gold: #203126;
 }
 
-/* reset-day — light sage (lighter / emotional variant of the core) */
+/* reset-day — lighter, warmer variant of the core */
 [data-cw-landing="reset-day"] {
-  --cw-net-route: #588a72;
-  --cw-net-route-bright: #6fa085;
-  --cw-net-route-strong: #35604f;
-  --cw-net-route-soft: #eef5f0;
-  --cw-net-chip: #e7f1ea;
-  --cw-net-chip-soft: #f2f8f3;
-  --cw-net-ink: #284a3b;
-  --cw-net-ink-soft: #3a5e4d;
-  --cw-net-text: #243530;
-  --cw-net-text-muted: #4d5b54;
-  --cw-net-text-soft: #74807a;
-  --cw-net-canvas: #f9f7ef;
-  --cw-net-surface-cool: #f3f7f1;
-  --cw-net-line: #e0eadf;
-  --cw-net-line-strong: #c5d6c6;
-  --cw-net-on-gold: #22382e;
+  --cw-net-route: #55806a;
+  --cw-net-route-bright: #6b957c;
+  --cw-net-route-strong: #2c4636;
+  --cw-net-route-soft: #f1f0e8;
+  --cw-net-chip: #ebebe3;
+  --cw-net-chip-soft: #f5f3eb;
+  --cw-net-ink: #2c4636;
+  --cw-net-ink-soft: #375544;
+  --cw-net-text: #26372c;
+  --cw-net-text-muted: #48544c;
+  --cw-net-text-soft: #656e66;
+  --cw-net-canvas: #fdf6ec;
+  --cw-net-surface-cool: #f7f2e8;
+  --cw-net-line: #dfe1d5;
+  --cw-net-line-strong: #cbd3c5;
+  --cw-net-on-gold: #2c4636;
 }
 
 /* dosha — deep diagnostic core (mirrors way21 route) */
 [data-cw-landing="dosha"] {
-  --cw-net-route: #3f6f63;
-  --cw-net-route-bright: #4f7e76;
-  --cw-net-route-strong: #1d3a30;
-  --cw-net-route-soft: #e9f1ec;
-  --cw-net-ink: #1d3a30;
-  --cw-net-text: #2c4137;
-  --cw-net-text-soft: #5f6f66;
-  --cw-net-canvas: #f7f4ec;
-  --cw-net-on-gold: #1d3a30;
+  --cw-net-route: #3f6350;
+  --cw-net-route-bright: #456b58;
+  --cw-net-route-strong: #203126;
+  --cw-net-route-soft: #f0ece2;
+  --cw-net-chip: #e8e6dc;
+  --cw-net-chip-soft: #f3efe5;
+  --cw-net-ink: #203126;
+  --cw-net-ink-soft: #283e31;
+  --cw-net-text: #243429;
+  --cw-net-text-muted: #48544c;
+  --cw-net-text-soft: #646d64;
+  --cw-net-canvas: #faefe0;
+  --cw-net-surface-cool: #f5f1e7;
+  --cw-net-line: #d8d6c6;
+  --cw-net-line-strong: #c2c5b5;
+  --cw-net-on-gold: #203126;
 }
 
-/* consult — bright mineral trust */
+/* consult — brighter trust */
 [data-cw-landing="consult"] {
-  --cw-net-route: #4f7e76;
-  --cw-net-route-bright: #4f7e76;
-  --cw-net-route-strong: #234b41;
-  --cw-net-route-soft: #e9f1ec;
-  --cw-net-ink: #1d3a30;
-  --cw-net-text: #2c4137;
-  --cw-net-text-soft: #5f6f66;
-  --cw-net-canvas: #f7f4ec;
-  --cw-net-on-gold: #1d3a30;
+  --cw-net-route: #456b58;
+  --cw-net-route-bright: #4f7a63;
+  --cw-net-route-strong: #24382b;
+  --cw-net-route-soft: #f0ede3;
+  --cw-net-chip: #e9e7dd;
+  --cw-net-chip-soft: #f4f0e6;
+  --cw-net-ink: #24382b;
+  --cw-net-ink-soft: #2d4537;
+  --cw-net-text: #243429;
+  --cw-net-text-muted: #48544c;
+  --cw-net-text-soft: #646d64;
+  --cw-net-canvas: #faefe0;
+  --cw-net-surface-cool: #f6f1e7;
+  --cw-net-line: #d9d7c8;
+  --cw-net-line-strong: #c4c7b7;
+  --cw-net-on-gold: #24382b;
 }
 
 /* herbs — leafier nature (still inside the family) */
 [data-cw-landing="herbs"] {
-  --cw-net-route: #5f8757;
-  --cw-net-route-bright: #5f8757;
-  --cw-net-route-strong: #2f4b24;
-  --cw-net-route-soft: #eef5e6;
-  --cw-net-ink: #22392b;
-  --cw-net-text: #2f4536;
-  --cw-net-text-soft: #63736a;
-  --cw-net-canvas: #f7f4ec;
-  --cw-net-on-gold: #22392b;
+  --cw-net-route: #56804f;
+  --cw-net-route-bright: #628c5a;
+  --cw-net-route-strong: #2b4526;
+  --cw-net-route-soft: #f1eee2;
+  --cw-net-chip: #ebeadc;
+  --cw-net-chip-soft: #f5f1e5;
+  --cw-net-ink: #2b4526;
+  --cw-net-ink-soft: #365431;
+  --cw-net-text: #283b2b;
+  --cw-net-text-muted: #48544c;
+  --cw-net-text-soft: #646d64;
+  --cw-net-canvas: #faefe0;
+  --cw-net-surface-cool: #f7f2e7;
+  --cw-net-line: #dcdbc6;
+  --cw-net-line-strong: #c9ceb4;
+  --cw-net-on-gold: #2b4526;
 }

@@ -1,5 +1,7 @@
 import Link from "next/link";
 import { LeadForm } from "@/components/platform/LeadForm";
+import { Icon } from "@/components/Icon";
+import { PlatformBlock } from "@/components/platform/PlatformBlock";
 import styles from "@/components/platform/PlatformTrustStyles";
 import { consultationCopy, expertFacts } from "@/lib/platform/content";
 import type { PlatformRouteBlockProps } from "@/components/platform/blocks/types";
@@ -9,28 +11,35 @@ export function SupportForm({ route }: Pick<PlatformRouteBlockProps, "route">) {
 
   if (route === "platform-home") {
     return (
-      <section className={`${styles.container} ${styles.section}`} id="author">
-        <article className={`${styles.authorPanel} ${styles.authorPanelStacked}`}>
+      <PlatformBlock
+        id="author"
+        label="Провідник"
+        title="Про автора"
+        lead="Хто веде цей процес і як відбувається супровід?"
+      >
+        <div className={`${styles.authorPanel} ${styles.authorPanelStacked}`}>
           <div className={styles.authorCardMedia} aria-label="Євгеній Корякін">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img className={styles.authorPortrait} src="/shared/img/author-evgeniy-2026-08.webp" alt="Євгеній Корякін" />
           </div>
           <div className={styles.authorPanelContent}>
-            <h2 className={styles.title}>Про автора</h2>
             <p className={styles.lead}>
-              Євгеній Корякін - дослідник і практик аюрведи, магістр комплементарної медицини та засновник CenterWay. На головній він присутній як точка довіри, а не окремий рекламний блок.
+              Євгеній Корякін - дослідник і практик аюрведи, магістр комплементарної медицини та засновник CenterWay.
             </p>
             <div className={styles.factGrid}>
               {expertFacts.slice(0, 4).map((fact) => (
-                <span key={fact.label} data-icon={fact.icon}>{fact.label}</span>
+                <span key={fact.label}>
+                  <Icon name={fact.icon} size={20} className={styles.factIcon} />
+                  {fact.label}
+                </span>
               ))}
             </div>
             <Link className={styles.secondaryButton} href="/expert">
               Більше про автора
             </Link>
           </div>
-        </article>
-      </section>
+        </div>
+      </PlatformBlock>
     );
   }
 

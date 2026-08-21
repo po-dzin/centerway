@@ -10,6 +10,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { platformUrl } from "@/lib/surfaces/catalog";
 import { sendTelegramMessage } from "@/lib/tg";
 
 export type NotificationChannel = "telegram" | "email" | "webpush";
@@ -18,7 +19,7 @@ export type LearnerNotification = {
   authUserId: string;
   /** Short plain-text body. Channel senders may decorate it. */
   text: string;
-  /** Absolute or site-relative link to the thing being nudged. */
+  /** Site-relative path to the thing being nudged; senders absolutise it. */
   href?: string;
 };
 
@@ -30,7 +31,14 @@ type ChannelSender = (notification: LearnerNotification, address: string) => Pro
 
 const senders: Partial<Record<NotificationChannel, ChannelSender>> = {
   telegram: async (notification, chatId) => {
-    const body = notification.href ? `${notification.text}\n\n${notification.href}` : notification.text;
+    // Absolute, always. `href` is written site-relative by the callers (that is
+    // the right shape for a link the web app also renders), and Telegram does
+    // not linkify "/learn/way21" — it prints it as text. Every reminder we have
+    // ever queued points at a lesson, so this is the difference between a nudge
+    // that is one tap away and one that is a path the reader has to retype.
+    const body = notification.href
+      ? `${notification.text}\n\n${platformUrl(notification.href)}`
+      : notification.text;
     await sendTelegramMessage(chatId, body);
   },
   // email / webpush intentionally unimplemented on H1 — see file header.
