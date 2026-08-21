@@ -267,14 +267,54 @@ describe("drip availability", () => {
   const course = dailyCourse();
   const startedAt = new Date("2026-08-15T06:00:00Z");
 
-  it("unlocks day 1 immediately and locks day 2", () => {
+  it("opens day 2 ahead of its day, and says how far ahead it is", () => {
+    // The default gate is soft: the schedule paces the course, it does not lock
+    // it. Someone on day 1 must be able to read week 3 — that is how they know
+    // what to order before it is needed.
     const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
     const progress = foldProgress([]);
     const [day1, day2] = flattenLessons(course).map((entry) => entry.lesson);
 
-    expect(lessonAvailability(course, day1, progress, context).available).toBe(true);
-    const locked = lessonAvailability(course, day2, progress, context);
-    expect(locked).toEqual({ available: false, reason: "locked_by_day", unlocksOnDay: 2, daysRemaining: 1 });
+    expect(lessonAvailability(course, day1, progress, context)).toEqual({ available: true });
+    expect(lessonAvailability(course, day2, progress, context)).toEqual({
+      available: true,
+      ahead: { reason: "before_day", scheduledDay: 2, daysAhead: 1 },
+    });
+  });
+
+  it("locks day 2 when the course asks for a hard gate", () => {
+    const strict = { ...course, schedule: { ...course.schedule, gate: "hard" as const } };
+    const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
+    const progress = foldProgress([]);
+    const [day1, day2] = flattenLessons(strict).map((entry) => entry.lesson);
+
+    expect(lessonAvailability(strict, day1, progress, context).available).toBe(true);
+    expect(lessonAvailability(strict, day2, progress, context)).toEqual({
+      available: false,
+      reason: "locked_by_day",
+      unlocksOnDay: 2,
+      daysRemaining: 1,
+    });
+  });
+
+  it("keeps `continue` on the day the learner has actually reached", () => {
+    // Day 2 is open (soft gate) but it is not where the protocol says to be, so
+    // the course entry point must still point at day 1.
+    const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
+    expect(resolveCurrentLesson(course, foldProgress([]), context)?.slug).toBe("day-1");
+  });
+
+  it("points ahead once everything the schedule opened is done", () => {
+    const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
+    const done = foldProgress([
+      {
+        clientId: "d1",
+        type: "lesson.completed",
+        lessonId: "l1",
+        occurredAt: "2026-08-15T07:00:00Z",
+      },
+    ]);
+    expect(resolveCurrentLesson(course, done, context)?.slug).toBe("day-2");
   });
 
   it("unlocks day 2 once the learner's local date rolls over", () => {
@@ -320,12 +360,13 @@ describe("drip availability", () => {
     expect(resolveCurrentLesson(course, foldProgress([]), context)?.slug).toBe("day-1");
   });
 
-  it("builds an outline carrying lock and completion state", () => {
+  it("builds an outline carrying schedule position and completion state", () => {
     const context = { startedAt, timeZone: "Europe/Kyiv", now: startedAt };
     const outline = buildOutline(course, foldProgress([]), context);
     expect(outline).toHaveLength(2);
-    expect(outline[0].availability.available).toBe(true);
-    expect(outline[1].availability.available).toBe(false);
+    expect(outline[0].availability).toEqual({ available: true });
+    expect(outline[1].availability.available).toBe(true);
+    expect(outline[1].availability.available && outline[1].availability.ahead?.reason).toBe("before_day");
   });
 
   it("collects checklist items that gate completion", () => {

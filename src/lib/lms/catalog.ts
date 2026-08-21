@@ -14,9 +14,10 @@
  */
 
 import resetDayCourse from "../../../data/courses/reset-day.json";
+import way21Course from "../../../data/courses/way21.json";
 import { validateCourse, type Course } from "@/lms-core";
 
-const rawCourses: unknown[] = [resetDayCourse];
+const rawCourses: unknown[] = [resetDayCourse, way21Course];
 
 function loadCourses(): Course[] {
   return rawCourses.map((raw, index) => {

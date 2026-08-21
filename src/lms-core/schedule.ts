@@ -22,8 +22,17 @@ import {
 } from "./progress";
 import { enrollmentDayNumber, localHour, resolveTimeZone } from "./time";
 
+/**
+ * Where a lesson sits relative to the course's rhythm, when the learner is
+ * running ahead of it. Present only on `soft`-gated courses — on a `hard` gate
+ * the same situation produces `available: false` instead.
+ */
+export type AheadOfSchedule =
+  | { reason: "before_day"; scheduledDay: number; daysAhead: number }
+  | { reason: "before_sequence"; requiresLessonId: string };
+
 export type LessonAvailability =
-  | { available: true }
+  | { available: true; ahead?: AheadOfSchedule }
   | { available: false; reason: "locked_by_sequence"; requiresLessonId: string }
   | { available: false; reason: "locked_by_day"; unlocksOnDay: number; daysRemaining: number };
 
@@ -37,9 +46,13 @@ export type LearnerContext = {
 /**
  * Can this learner open this lesson right now?
  *
- * `open`       — always.
- * `sequential` — only if the previous lesson in walking order is completed.
- * `daily`      — only once the learner's local day number reaches `dayIndex`.
+ * Two questions live here and they are deliberately separate:
+ *   WHERE does this lesson sit in the rhythm — `schedule.mode`;
+ *   MAY the learner open it early — `schedule.gate`.
+ *
+ * On the default `soft` gate the answer to the second is always yes, and the
+ * first is reported as `ahead` so the surface can say "day 8" without shutting
+ * the door. Only a `hard` gate turns rhythm into a lock.
  */
 export function lessonAvailability(
   course: Course,
@@ -48,6 +61,7 @@ export function lessonAvailability(
   context: LearnerContext
 ): LessonAvailability {
   const mode = course.schedule.mode;
+  const hardGate = course.schedule.gate === "hard";
 
   // Reference material is a lookup, available whenever it is needed — gating a
   // recipe behind a drip schedule would be absurd.
@@ -62,12 +76,23 @@ export function lessonAvailability(
 
     const previous = walk[index - 1].lesson;
     if (isLessonCompleted(progress, previous.id)) return { available: true };
+
+    if (!hardGate) {
+      return { available: true, ahead: { reason: "before_sequence", requiresLessonId: previous.id } };
+    }
     return { available: false, reason: "locked_by_sequence", requiresLessonId: previous.id };
   }
 
   const dayIndex = lesson.dayIndex ?? 1;
   const currentDay = enrollmentDayNumber(context.startedAt, context.now, resolveTimeZone(context.timeZone));
   if (currentDay >= dayIndex) return { available: true };
+
+  if (!hardGate) {
+    return {
+      available: true,
+      ahead: { reason: "before_day", scheduledDay: dayIndex, daysAhead: dayIndex - currentDay },
+    };
+  }
 
   return {
     available: false,
@@ -108,12 +133,23 @@ export function resolveCurrentLesson(
   const walk = flattenSteps(course);
   if (walk.length === 0) return null;
 
+  // Prefers the first uncompleted lesson the rhythm has actually reached, so
+  // "continue" follows the protocol rather than racing ahead of it — even though
+  // a soft gate would happily open tomorrow's lesson. Only once everything the
+  // schedule has opened is done does it point forward.
+  let firstOpenAhead: Lesson | null = null;
+
   for (const entry of walk) {
     if (isLessonCompleted(progress, entry.lesson.id)) continue;
-    if (lessonAvailability(course, entry.lesson, progress, context).available) return entry.lesson;
+
+    const availability = lessonAvailability(course, entry.lesson, progress, context);
+    if (!availability.available) continue;
+
+    if (!availability.ahead) return entry.lesson;
+    firstOpenAhead ??= entry.lesson;
   }
 
-  return walk[walk.length - 1].lesson;
+  return firstOpenAhead ?? walk[walk.length - 1].lesson;
 }
 
 export type CourseOutlineEntry = {
