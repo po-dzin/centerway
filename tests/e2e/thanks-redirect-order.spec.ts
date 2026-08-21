@@ -8,20 +8,37 @@ declare global {
 
 const baseUrl = (process.env.SMOKE_UI_BASE_URL || "http://127.0.2.2:8002").replace(/\/+$/, "");
 
-// Both funnels now hand the buyer to the platform cabinet, not to Telegram:
-// the course itself lives in /learn, and Telegram is only the support fallback.
+// Every funnel that takes money hands the buyer to the platform cabinet, not to
+// Telegram. For the two courses that means /learn/<slug>; for herbs, which owns
+// no course, it means /profile — the only page where that purchase exists.
+//
+// Absent on purpose: consult and way21-support. Both sell through the landing's
+// lead form, so they have no checkout and no thanks page to assert on.
+//
+// Amounts here are the CW_TEST_PRICE_1UAH values. They are display/analytics
+// data on this page, so they do not need to move back when the real prices are
+// restored — but keeping them in step avoids a confusing fixture.
 const thanksCases = [
   {
     name: "way21",
-    path: "/way21/thanks?product=way21&order_ref=smoke-way21&payment_id=rrn-way21&amount=4100&currency=UAH",
+    path: "/way21/thanks?product=way21&order_ref=smoke-way21&payment_id=rrn-way21&amount=1&currency=UAH",
     pageAttr: "thanks",
+    cabinetLabel: "Увійти в кабінет",
     cabinetHref: "https://centerway.net.ua/learn/way21",
   },
   {
     name: "reset-day",
-    path: "/reset-day/thanks?product=reset-day&order_ref=smoke-reset&payment_id=rrn-reset&amount=795&currency=UAH",
+    path: "/reset-day/thanks?product=reset-day&order_ref=smoke-reset&payment_id=rrn-reset&amount=1&currency=UAH",
     pageAttr: "thanks",
+    cabinetLabel: "Увійти в кабінет",
     cabinetHref: "https://centerway.net.ua/learn/reset-day",
+  },
+  {
+    name: "herbs",
+    path: "/herbs/thanks?product=herbs&order_ref=smoke-herbs&payment_id=rrn-herbs&amount=1&currency=UAH",
+    pageAttr: "thanks",
+    cabinetLabel: "Перейти в кабінет",
+    cabinetHref: "https://www.centerway.net.ua/profile",
   },
 ] as const;
 
@@ -45,7 +62,7 @@ test.describe("thanks redirect order smoke", () => {
       expect(response!.status(), `${thankCase.name}: thanks page must open successfully`).toBe(200);
 
       await expect(page.locator(`html[data-cw-page="${thankCase.pageAttr}"]`)).toBeVisible();
-      const cabinetButton = page.getByRole("link", { name: "Увійти в кабінет" });
+      const cabinetButton = page.getByRole("link", { name: thankCase.cabinetLabel });
       await expect(cabinetButton).toBeVisible();
       await expect(cabinetButton).toHaveAttribute("href", thankCase.cabinetHref);
 

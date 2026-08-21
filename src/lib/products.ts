@@ -1,5 +1,25 @@
 export type SearchParams = Record<string, string | string[] | undefined>;
 
+/**
+ * TEST PRICE — 1 UAH. Short-lived: put in on 2026-08-21 for a couple of days of
+ * QA, so walking the purchase chain end to end does not move real money through
+ * WayForPay.
+ *
+ * THIS FILE IS THE ONLY PLACE IT LIVES. The landings still show their real
+ * prices, on purpose — the charged sum is always read from PRODUCTS[...].amount,
+ * never from the page. `data-cw-price-value` and `PRICE_VALUE` in the landings'
+ * js/common.js are pixel values only and cannot mischarge; `amountOverride` in
+ * /api/pay/start is reachable only through irem's personal offers.
+ *
+ * The cost of that split, stated plainly: while this is in, a buyer is quoted
+ * 4100 and charged 1. That is fine for a closed QA window on noindex landings
+ * and NOT fine once traffic arrives.
+ *
+ * TO REVERT: grep for CW_TEST_PRICE_1UAH — the real amount sits next to each
+ * line. Nothing outside this file needs touching.
+ */
+const TEST_PRICE_UAH = 1;
+
 export const PRODUCTS = {
   short: {
     heading: {
@@ -44,7 +64,7 @@ export const PRODUCTS = {
       en:
         "Detox program payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
     },
-    amount: 4100,
+    amount: TEST_PRICE_UAH, // CW_TEST_PRICE_1UAH — real: 4100
     currency: "UAH",
     // TODO(placeholder): swap to the real way21 funnel subdomain + bot before launch.
     approvedUrl: "https://way21.centerway.net.ua/thanks",
@@ -61,6 +81,9 @@ export const PRODUCTS = {
       en:
         "Guided package payment by Centerway: the detox program with 2 personal consultations and individual guidance. After payment, a confirmation page opens with a Telegram bot entry button. Support: if you have questions, message us and we will help quickly.",
     },
+    // No test price: the guided package sells through the landing's lead form,
+    // so nothing charges this amount in the QA flow. It stands as the quote used
+    // when the sale is invoiced after the conversation.
     amount: 9000,
     currency: "UAH",
     // TODO(placeholder): swap to the real way21 funnel subdomain + bot before launch.
@@ -78,15 +101,37 @@ export const PRODUCTS = {
       en:
         "Mini course payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
     },
-    amount: 795,
+    amount: TEST_PRICE_UAH, // CW_TEST_PRICE_1UAH — real: 795
     currency: "UAH",
     // TODO(placeholder): swap to the real reset-day funnel subdomain + bot before launch.
     approvedUrl: "https://resetday.centerway.net.ua/thanks",
     declinedUrl: "https://resetday.centerway.net.ua/pay-failed",
   },
+  herbs: {
+    heading: {
+      ua: "Фітозбір — індивідуальний підбір",
+      en: "Herbal blend — individual selection",
+    },
+    description: {
+      ua:
+        "Оплата індивідуального підбору фітозбору від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка переходу до продукту в кабінеті — там же будуть подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
+      en:
+        "Individual herbal blend payment by Centerway. After successful payment, a confirmation page opens with a button to the product in the cabinet and next steps. Support: if you have questions, message us and we will help quickly.",
+    },
+    // CW_TEST_PRICE_1UAH. Unlike the others this has no real price to go back
+    // to — herbs was never sold self-serve before. Agree one before launch,
+    // and put it in the landing CTA label at the same time.
+    amount: TEST_PRICE_UAH,
+    currency: "UAH",
+    approvedUrl: "https://herbs.centerway.net.ua/thanks",
+    declinedUrl: "https://herbs.centerway.net.ua/pay-failed",
+  },
 } as const;
 
-export const LEAD_PRODUCT_CODES = ["consult", "ideal-body", "platform", "herbs", "irem-individual"] as const;
+// Codes that only ever produce a lead, never an order. "herbs" left this list
+// when it got its own checkout; consult stayed, because the consultation is
+// agreed in conversation and its landing posts to /api/leads.
+export const LEAD_PRODUCT_CODES = ["consult", "ideal-body", "platform", "irem-individual"] as const;
 
 export type PayableProductCode = keyof typeof PRODUCTS;
 export type LeadProductCode = (typeof LEAD_PRODUCT_CODES)[number];
@@ -152,7 +197,8 @@ export function isPayableProduct(product: ProductCode | string | null | undefine
     product === "irem" ||
     product === "way21" ||
     product === "way21-support" ||
-    product === "reset-day"
+    product === "reset-day" ||
+    product === "herbs"
   );
 }
 
