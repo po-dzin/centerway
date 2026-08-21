@@ -137,9 +137,10 @@ export function PlatformHeader({
 
   function isActive(href: string, match: "exact" | "prefix") {
     if (!pathname) return false;
-    // The learning entry carries a hash (`/profile#learning`) and `pathname`
-    // never does, so the raw href would never match and the item could never
-    // read as current. Compare paths; the hash selects a section, not a route.
+    // Hashes are stripped before comparing: `pathname` never carries one, so a
+    // raw href with a fragment could never read as current. Nothing in the nav
+    // has one today — the shelf stopped being `/profile#learning` — but a copy
+    // link with an anchor is one edit away.
     const path = href.split("#")[0];
     if (match === "exact") return pathname === path;
     return pathname === path || pathname.startsWith(`${path}/`);

@@ -12,13 +12,17 @@ describe("the learning entry", () => {
     expect(platformNav.some((item) => item.label === learningNavItem.label)).toBe(false);
   });
 
-  it("points at the cabinet's learning section", () => {
-    expect(LEARNING_SHELF_HREF).toBe("/profile#learning");
+  it("points at the shelf's own route, not at a section of the profile", () => {
+    // A hash is not a route: the back button did not step through it, it could
+    // not be prefetched, and /learn was missing from a tree that already had
+    // /learn/<course>/<lesson>.
+    expect(LEARNING_SHELF_HREF).toBe("/learn");
+    expect(LEARNING_SHELF_HREF).not.toContain("#");
     expect(learningNavItem.href).toBe(LEARNING_SHELF_HREF);
   });
 
   /**
-   * The four places the shelf address appears must not drift apart. Before this
+   * The six places the shelf address appears must not drift apart. Before this
    * constant existed they were separate literals, and the installed app opened
    * on the storefront while the bot sent people to a section of the profile.
    */
@@ -36,11 +40,10 @@ describe("the learning entry", () => {
     expect(manifest().scope).toBe("/");
   });
 
-  it("matches by path, since a hash never appears in a pathname", () => {
-    // The header strips the hash before comparing; if the item were declared
-    // with `match: "exact"` against the raw href it could never read as current.
+  it("reads as current throughout the course tree", () => {
+    // `exact` would leave the entry looking inactive inside every lesson —
+    // which is where a learner spends the session.
     expect(learningNavItem.match).toBe("prefix");
-    expect(LEARNING_SHELF_HREF.split("#")[0]).toBe("/profile");
   });
 });
 

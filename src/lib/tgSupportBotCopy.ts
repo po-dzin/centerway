@@ -17,9 +17,12 @@
  *   3. One idea per message. Telegram has no visual hierarchy to lean on.
  */
 
+import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
 import { PLATFORM_ORIGIN, platformUrl } from "@/lib/surfaces/catalog";
 
-export const CABINET_URL = platformUrl("/profile#learning");
+// The shelf address, not a copy of it: this literal was already one release
+// behind the constant once.
+export const CABINET_URL = platformUrl(LEARNING_SHELF_HREF);
 export const PROGRAMS_URL = platformUrl("/programs");
 export const SUPPORT_BOT_URL = "https://telegram.me/centerway_support_bot";
 

@@ -9,18 +9,14 @@
 
 import type { ProfileLang } from "../profile/types";
 
-export type CabinetSection = "overview" | "learning" | "tests" | "products" | "account";
-
 export type CabinetCopy = {
-  nav: Record<CabinetSection, string>;
-  navAria: string;
-
   continueTitle: string;
   continueLead: string;
   continueAction: string;
   startAction: string;
   openCourseMap: string;
   reviewAction: string;
+  allCourses: string;
 
   learningTitle: string;
   learningLabel: string;
@@ -41,15 +37,7 @@ export type CabinetCopy = {
   startedAtLabel: string;
   openProgramPage: string;
 
-  testsLabel: string;
-  testsTitle: string;
-  testsLead: string;
-  testPlanned: string;
-  testPassed: string;
-  testOpen: string;
-
   accountLabel: string;
-  accountEntry: string;
   accountTitle: string;
   accountLead: string;
 
@@ -83,21 +71,13 @@ function ukPlural(count: number, one: string, few: string, many: string): string
 export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
   if (lang === "en") {
     return {
-      nav: {
-        overview: "Overview",
-        learning: "Learning",
-        tests: "Tests",
-        products: "Products",
-        account: "Account",
-      },
-      navAria: "Cabinet sections",
-
       continueTitle: "Continue where you stopped",
       continueLead: "Your next step is already open.",
       continueAction: "Continue",
       startAction: "Start the course",
       openCourseMap: "Course map",
       reviewAction: "Open again",
+      allCourses: "All my courses",
 
       learningTitle: "My courses",
       learningLabel: "Learning",
@@ -118,15 +98,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       startedAtLabel: "Started",
       openProgramPage: "About the program",
 
-      testsLabel: "Tests",
-      testsTitle: "Diagnostics and results",
-      testsLead: "Your results stay in the profile and shape what is suggested next.",
-      testPlanned: "In preparation",
-      testPassed: "Completed",
-      testOpen: "Open the test",
-
       accountLabel: "Account",
-      accountEntry: "Account settings",
       accountTitle: "Account and contacts",
       accountLead: "The fields orders and access notifications are matched against.",
 
@@ -151,21 +123,13 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
   }
 
   return {
-    nav: {
-      overview: "Огляд",
-      learning: "Навчання",
-      tests: "Тести",
-      products: "Продукти",
-      account: "Акаунт",
-    },
-    navAria: "Розділи кабінету",
-
     continueTitle: "Продовжити з місця зупинки",
     continueLead: "Наступний урок уже відкритий.",
     continueAction: "Продовжити",
     startAction: "Почати курс",
     openCourseMap: "Карта курсу",
     reviewAction: "Відкрити знову",
+    allCourses: "Усі мої курси",
 
     learningTitle: "Мої курси",
     learningLabel: "Навчання",
@@ -186,15 +150,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     startedAtLabel: "Старт",
     openProgramPage: "Про програму",
 
-    testsLabel: "Тести",
-    testsTitle: "Діагностика і результати",
-    testsLead: "Результати лишаються в профілі і впливають на те, що пропонується далі.",
-    testPlanned: "Готується",
-    testPassed: "Пройдено",
-    testOpen: "Пройти тест",
-
     accountLabel: "Акаунт",
-    accountEntry: "Налаштування акаунта",
     accountTitle: "Акаунт і контакти",
     accountLead: "Поля, за якими зіставляються замовлення і повідомлення про доступ.",
 
