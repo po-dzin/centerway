@@ -69,7 +69,7 @@
     "smoke:landing:cutover-toggle": "node scripts/smoke-landing-cutover-toggle.mjs",
     "gate:landing:short-irem": "node scripts/landing-gate-short-irem.mjs",
     "baseline:landing:short-irem": "node scripts/baseline-landing-short-irem.mjs",
-    "tg:webhook:set": "node scripts/set-telegram-webhook.mjs",
+    "tg:webhook:set": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/set-telegram-webhook.mjs",
     "tg:doctor": "node scripts/tg-doctor.mjs",
     "tg:profile": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/tg-bot-profile.mjs",
     "smoke:landing:qa": "npm run smoke:landing:short-irem",
