@@ -261,6 +261,17 @@ export const ICONS = {
     group: "Meta",
     d: ["M4 7.4h16", "M4 12h16", "M4 16.6h16"],
   },
+  // Settings, and it is a gear because a gear is what "settings" means to
+  // everyone — eight teeth on a 45° pitch, cut shallow (9.0/6.5 of 12) so the
+  // hand pass does not turn them into a saw. The hub is the same circle the
+  // dosha glyphs use, which keeps it in the set rather than borrowed from one.
+  settings: {
+    group: "Meta",
+    d: [
+      "M18.11 9.78 L20.91 10.75 L20.91 13.25 L18.11 14.22 L17.89 14.75 L19.19 17.42 L17.42 19.19 L14.75 17.89 L14.22 18.11 L13.25 20.91 L10.75 20.91 L9.78 18.11 L9.25 17.89 L6.58 19.19 L4.81 17.42 L6.11 14.75 L5.89 14.22 L3.09 13.25 L3.09 10.75 L5.89 9.78 L6.11 9.25 L4.81 6.58 L6.58 4.81 L9.25 6.11 L9.78 5.89 L10.75 3.09 L13.25 3.09 L14.22 5.89 L14.75 6.11 L17.42 4.81 L19.19 6.58 L17.89 9.25 Z",
+      "M12 8.6a3.4 3.4 0 1 0 0 6.8 3.4 3.4 0 0 0 0-6.8z",
+    ],
+  },
   close: {
     group: "Meta",
     d: ["M6 6l12 12", "M18 6 6 18"],
