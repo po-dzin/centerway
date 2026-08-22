@@ -26,6 +26,8 @@ export type BlockField = {
   kind: FieldKind;
   /** Long prose gets a textarea, short identifiers a single line. */
   multiline?: boolean;
+  /** One line under the input, for a rule the label cannot carry. */
+  hint?: string;
 };
 
 export const BLOCK_TYPE_LABELS: Record<LessonBlock["type"], string> = {
@@ -39,8 +41,51 @@ export const BLOCK_TYPE_LABELS: Record<LessonBlock["type"], string> = {
   quote: "Цитата",
   boundary_note: "Межі та застереження",
   faq_block: "Питання і відповіді",
+  table: "Таблиця",
   cta: "Кнопка",
 };
+
+/**
+ * What each block is FOR, one line, shown in the picker.
+ *
+ * Eleven names in a list say nothing about when to reach for «Практика» rather
+ * than «Крок протоколу» — and an author choosing wrong does not find out until
+ * a learner sees a timing rendered as a duration. The sentence is the whole
+ * difference between a menu and a vocabulary.
+ */
+export const BLOCK_TYPE_HINTS: Record<LessonBlock["type"], string> = {
+  lesson_objective: "Одне речення: для чого цей урок. Стоїть першим.",
+  rich_text: "Абзаци, підзаголовки та списки — основне тіло уроку.",
+  protocol_step: "Пронумерований крок дня з часом або умовою.",
+  practice_block: "Вправа, яку виконують, із тривалістю.",
+  checklist: "Пункти, які учень відмічає. Можуть вимагатися для завершення уроку.",
+  video: "Відео на YouTube за його ID.",
+  image: "Зображення з обов'язковим описом.",
+  quote: "Цитата з автором.",
+  boundary_note: "Межі й застереження. Обов'язковий у всьому, що стосується тіла.",
+  faq_block: "Питання і відповіді.",
+  table: "Рядки й колонки — доза, етап, продукт. Те, що список не тримає.",
+  cta: "Кнопка з посиланням і поясненням поруч.",
+};
+
+/**
+ * The order the picker offers types in — by how often a lesson needs one,
+ * not alphabetically and not by the order they happen to sit in the union.
+ */
+export const BLOCK_TYPE_ORDER: LessonBlock["type"][] = [
+  "rich_text",
+  "lesson_objective",
+  "protocol_step",
+  "practice_block",
+  "checklist",
+  "table",
+  "video",
+  "image",
+  "quote",
+  "faq_block",
+  "boundary_note",
+  "cta",
+];
 
 const RICH_NODE_LABELS: Record<RichTextNode["kind"], string> = {
   p: "Абзац",
@@ -78,10 +123,13 @@ export function describeBlock(block: LessonBlock): BlockField[] {
         ];
       });
 
+    // `step` is absent on purpose. It is the block's POSITION in the day's
+    // protocol, derived by `renumberSteps` the way `order` and `dayIndex` are —
+    // a typed one goes wrong the moment a step is inserted in the middle, and
+    // goes wrong silently.
     case "protocol_step":
       return [
-        { path: ["step"], label: "Номер кроку", kind: "number" },
-        { path: ["timing"], label: "Час або умова", kind: "text" },
+        { path: ["timing"], label: "Час або умова", kind: "text", hint: "Наприклад «07:00» або «натще». Рендериться як написано." },
         { path: ["title"], label: "Назва", kind: "inline" },
         { path: ["text"], label: "Опис", kind: "inline", multiline: true },
       ];
@@ -111,14 +159,34 @@ export function describeBlock(block: LessonBlock): BlockField[] {
 
     case "video":
       return [
-        { path: ["videoId"], label: "ID відео на YouTube", kind: "text" },
-        { path: ["title"], label: "Підпис", kind: "inline" },
+        {
+          path: ["videoId"],
+          label: "ID відео на YouTube",
+          kind: "text",
+          hint: "Тільки ID, не посилання: у youtu.be/AbC123 це AbC123.",
+        },
+        // NOT a caption. It is the player's accessible name — the sentence a
+        // screen reader announces instead of "frame". Labelled «Підпис» until
+        // 2026-08-21, which had authors writing captions nobody could ever see:
+        // the renderer puts this in the iframe's `title` attribute and draws no
+        // text under the video at all.
+        {
+          path: ["title"],
+          label: "Назва відео для читалок екрана",
+          kind: "inline",
+          hint: "Не видно на сторінці. Це те, що озвучить читалка замість «фрейм».",
+        },
         { path: ["durationMin"], label: "Тривалість, хв", kind: "number" },
       ];
 
     case "image":
       return [
-        { path: ["src"], label: "Шлях до файлу", kind: "text" },
+        {
+          path: ["src"],
+          label: "Шлях до файлу",
+          kind: "text",
+          hint: "Шлях від кореня сайту (/cw/…) або повне посилання https://…",
+        },
         { path: ["alt"], label: "Опис для тих, хто не бачить зображення", kind: "text", multiline: true },
         { path: ["caption"], label: "Підпис", kind: "inline" },
       ];
@@ -139,6 +207,23 @@ export function describeBlock(block: LessonBlock): BlockField[] {
           multiline: true,
         },
       ]);
+
+    case "table":
+      return [
+        { path: ["title"], label: "Назва таблиці", kind: "inline" },
+        ...(block.head ?? []).map((_, index) => ({
+          path: ["head", index],
+          label: `Заголовок колонки ${index + 1}`,
+          kind: "inline" as const,
+        })),
+        ...block.rows.flatMap((row, rowIndex) =>
+          row.map((_, cellIndex) => ({
+            path: ["rows", rowIndex, cellIndex],
+            label: `Рядок ${rowIndex + 1}, колонка ${cellIndex + 1}`,
+            kind: "inline" as const,
+          }))
+        ),
+      ];
 
     case "cta":
       return [

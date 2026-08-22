@@ -146,6 +146,24 @@ The same button had been written five times — platform shell, hero, cabinet, L
 
 That is the rule this section encodes: **an axis with no token is an axis that will diverge**, and a document alone does not stop it. Hence a contract file that owns the recipe, tokens for every axis, and a gate that fails the build when a component stylesheet reaches for one.
 
+### `composes` does not chain — name `base` explicitly (2026-08-21)
+
+`.chromeBare` composed `chrome`, and `chrome` composes `base`. That transitive
+chain **does not survive the bundler**: the class list that reaches the DOM is
+`chromeBare chrome`, with `base` missing. Everything `base` owns therefore did
+not apply — geometry, `display: inline-flex`, the focus ring.
+
+Measured on the builder before the fix: the header's previous/next arrows came
+out **48×20** and the row menus **48×18**, against a 48px touch minimum, with
+`display` falling back to `block`. Nothing failed loudly; `guard:buttons` reads
+the stylesheet, not the rendered box, so a role that composes correctly on paper
+passes while shipping a 20px control. The learner's own `iconButtonBare` was on
+the same chain.
+
+`.chromeBare` now names both — `composes: base; composes: chrome;`. **A role
+that composes another role must name `base` itself.** One-level composition is
+what actually arrives, so it is what we write.
+
 ### Six roles, and there is no seventh
 
 | role | where | fill | stroke | elevation |
@@ -285,7 +303,22 @@ The default gamma is the **brand sheet**: warm orange over deep green, cream gro
 
 Admin dark (`base.dark`) stays neutral grey — the brand sheet's green admin shell was not adopted, and its own rule ("never green on a dark ground") argues against it.
 
-**Packs.** `layers.packs.mineral` re-points the same `--cw-sem-*` role names to the warm-mineral gamma (`#f6f2ea` / `#31403e` / `#4f7e76` / `#c1906b`) for individual programs and author landings. A scope opts in with `class="cw-pack-mineral"`; because only values move and never names, no component changes. This is the mechanism the dormant `token_packs.json` was always meant to prove.
+**Packs.** `layers.packs` re-points the same `--cw-sem-*` role names for a scope; because only values move and never names, no component changes. This is the mechanism the dormant `token_packs.json` was always meant to prove.
+
+Four packs today, all generated into `globals.css` from the JSON:
+
+| Pack | Gamma | Opt-in |
+|---|---|---|
+| `mineral` | the warm-mineral gamma (`#f6f2ea` / `#31403e` / `#4f7e76` / `#c1906b`) — individual programs and author landings | `class="cw-pack-mineral"` **or** `data-cw-pack="mineral"` |
+| `way21` | the deep green way21 and dosha share (`#3f6350` route, `#1f2e24` ink) | `data-cw-pack="way21"` |
+| `reset-day` | lighter and warmer, on its own `#fdf6ec` canvas (`#517a65` route) | `data-cw-pack="reset-day"` |
+| `herbs` | the leaf green (`#537c4c` route, `#283b2b` ink) | `data-cw-pack="herbs"` |
+
+The three added 2026-08-21 exist so a **course** can pick its look (`src/lms-core/theme.ts` — the choice is a name from a closed list, never a value an author types). Their greens are the landings' own, deepened where a course needed them to clear body AA on the reading surface — reset-day `#55806a` → `#517a65` (4.61), herbs `#56804f` → `#537c4c` (4.58). That is the same move the brand sheet's `#588768` → `#456b58` made, and every pair is asserted in `guard:contrast`. There is deliberately no `dosha` or `consult` pack: dosha runs way21's green and consult runs the base one, and two names on one gamma is a control that does nothing.
+
+**A pack re-emits the platform aliases.** `--cw-platform-bg: var(--cw-sem-calm-bg)` is declared on `:root`, and a custom property is substituted where it is *declared* — so a descendant that re-points `--cw-sem-calm-bg` inherits the alias already resolved against the root and nothing repaints. The generator therefore writes `layers.modeOverrides.platform` into every pack scope, before the pack's own values so a pack that pins a platform token of its own (mineral's ink) still wins.
+
+**Two more course axes**, hand-maintained beside the generated packs and consumed by `Lms.module.css` / `Builder.module.css`: `[data-cw-course-font="ui"]` swaps the heading family for the sans the platform already loads, and `[data-cw-course-scale="compact"|"generous"]` moves `--cw-course-body-size`, `--cw-course-heading-scale` and `--cw-course-block-gap` together. Every consumer names a fallback that *is* the platform default, so a course that chose nothing renders exactly as it did before the axes existed.
 
 Rules that hold today:
 

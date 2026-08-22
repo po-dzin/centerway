@@ -1,5 +1,5 @@
 /**
- * Lossless text form for `InlineText`, so the builder can edit it in a textarea.
+ * Lossless TEXT form for `InlineText`.
  *
  * WHY THIS EXISTS. `InlineText` is either a plain string or a list of spans with
  * `bold` / `italic` / `href`. Two thirds of the span arrays in the shipped
@@ -8,11 +8,24 @@
  * an author opened a lesson and pressed save. That is the failure mode this
  * module exists to make impossible.
  *
- * WHY MARKDOWN-ISH AND NOT A RICH EDITOR. The span model has exactly three
- * features, and this dialect has exactly three constructs — so the mapping is
- * total in both directions and the round trip is provable, which is what the
- * tests assert. A contenteditable surface would be a much larger thing that
- * still had to solve this same conversion underneath.
+ * NO LONGER THE DEFAULT SURFACE. Until 2026-08-21 this was how the builder let
+ * an author edit spans, and it asked them to type `**зірочки**` — the
+ * renderer's job handed to a person. The rich surface is `inlineDom.ts` plus
+ * `BuilderInlineEditor`, which maps the same three features onto three toolbar
+ * buttons. This module did not become dead code; it became the two things a
+ * contenteditable cannot be:
+ *
+ *   · the ESCAPE HATCH, per field, behind «як текст». contenteditable is
+ *     genuinely unreliable on mobile Safari — selection handles, autocorrect
+ *     fighting the model, the keyboard covering the surface — and the builder
+ *     is explicitly meant to be usable on a phone.
+ *   · the form the CLI and the author's agent (H3) read and write, neither of
+ *     which has a DOM to select inside.
+ *
+ * The span model has exactly three features and this dialect has exactly three
+ * constructs, so the mapping is total in both directions and the round trip is
+ * provable — which is what the tests assert, and what makes the two surfaces
+ * safe to swap between mid-edit.
  *
  *   **bold**            → { bold: true }
  *   *italic*            → { italic: true }

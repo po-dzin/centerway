@@ -10,7 +10,7 @@
  */
 
 import { supabaseClient } from "@/lib/supabaseClient";
-import type { LessonAvailability, LessonBlock, InlineText, ProgressEventType } from "@/lms-core";
+import type { CourseTheme, LessonAvailability, LessonBlock, InlineText, ProgressEventType } from "@/lms-core";
 
 export type LmsFailure =
   | "unauthenticated"
@@ -45,6 +45,7 @@ export type CourseViewDto = {
     locale: string;
     scheduleMode: "open" | "sequential" | "daily";
     summary: InlineText | null;
+    theme: CourseTheme | null;
   };
   enrollment: { startedAt: string; source: string; timeZone: string };
   standing: { totalLessons: number; completedLessons: number; currentDay: number | null; isFinished: boolean };
@@ -84,6 +85,8 @@ export type LessonViewDto = {
   };
   module: { id: string; title: string };
   courseVersion: number;
+  courseTheme: CourseTheme | null;
+  courseTitle: string;
   progress: { status: "started" | "completed"; checklist: Record<string, boolean>; completedAt: string | null };
   requiredChecklistItemIds: string[];
   completion: { allowed: true } | { allowed: false; reason: "unavailable" | "checklist_incomplete" };

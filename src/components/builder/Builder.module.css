@@ -10,6 +10,11 @@
    is a CenterWay surface: same material, same type, same spacing scale. What it
    does not share is the platform's chrome (docs/design-system.md).
 
+   Every control composes a role from PlatformButtons.module.css. The builder
+   has more controls than any other surface in the repo — three per row in the
+   structure list alone — which makes it the surface where a private button
+   recipe would spread fastest. `guard:buttons` fails the build on one.
+
    Breakpoints follow the canon — mobile ≤ 560, tablet 561–900, desktop ≥ 901. */
 
 .shell {
@@ -29,23 +34,59 @@
 .bar {
   display: flex;
   align-items: center;
-  gap: var(--cw-space-sm);
-  padding: var(--cw-space-sm) var(--cw-space-md);
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-2xs) var(--cw-space-sm);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-soft);
 }
 
+/* The way home, in the same place on every screen. That is what makes it the
+   root of the author's own courses rather than a logo. */
 .barBrand {
   display: inline-flex;
   align-items: center;
-  gap: var(--cw-space-2xs);
+  justify-content: center;
+  gap: var(--cw-space-xs);
   min-height: var(--ds-touch-target-min);
+  min-width: var(--ds-touch-target-min);
+  padding-inline: var(--cw-space-2xs);
+  /* One hit-area shape for every control in this bar — brand, gear, menu. The
+     earlier bar mixed a rounded rect against a circular glyph frame, and two
+     shapes at the same level read as two systems. */
+  border-radius: var(--cw-radius-md);
   color: var(--cw-platform-text);
   text-decoration: none;
+}
+
+.barBrand:hover {
+  background: var(--cw-mat-surface-sunk);
+}
+
+.barBrand:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+/* The mark is painted as a MASK, same as the platform header: the baked shape
+   takes the header ink instead of whatever colour the file happens to carry. */
+.barMark {
+  /* The header size the platform's own shell uses. At 1.6rem the mark read as
+     a favicon dropped into the corner rather than as the way home. */
+  width: var(--cw-brand-size-symbol-header);
+  height: var(--cw-brand-size-symbol-header);
+  display: block;
+  flex: 0 0 auto;
+  background-color: var(--cw-platform-text);
+  -webkit-mask: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
+  mask: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
+}
+
+.barBrandName {
+  display: none;
   font-family: var(--cw-font-data);
-  font-size: 0.82rem;
+  font-size: 0.78rem;
   font-weight: 680;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   white-space: nowrap;
 }
@@ -64,37 +105,147 @@
   min-width: 0;
 }
 
-.barCrumb {
+/* ── Body: page, and the rail beside it ───────────── */
+
+.body {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  color: var(--cw-platform-muted);
-  font-size: 0.88rem;
 }
 
-/* Composed, not redrawn. An earlier pass hand-rolled this control — its own
-   radius, padding, weight and size — which is exactly the drift the contract
-   exists to stop, and `guard:buttons` failed the build on it. `chrome` is the
-   role for nav and utility on its own row: back, crumb, drawer close.
+/* One column on a phone: the rail is a drawer there, in flow above the page,
+   because an overlay would need a scrim, a focus trap and an escape key to be
+   honest — three things for a list the author can also reach by pressing the
+   course crumb. */
+.bodyWithAside {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+}
 
-   Two roles, because the bar carries two kinds of control. Going BACK is
-   chrome. Saving and publishing move the author's work forward and are the one
-   action of their view — that is `primary`, and the contract says at most one
-   per view, which holds: the editor has a save and the course page a publish. */
-.barAction {
+.aside {
+  display: none;
+  min-width: 0;
+  padding: var(--cw-space-md);
+}
+
+.aside[data-open] {
+  display: block;
+}
+
+@media (min-width: 901px) {
+  .bodyWithAside {
+    grid-template-columns: 17rem minmax(0, 1fr);
+    align-items: start;
+  }
+
+  /* Always there on a desk, and it scrolls on its own: a forty-lesson course
+     must not push the editor's own scroll position around. */
+  .aside {
+    display: block;
+    position: sticky;
+    top: 0;
+    max-height: 100svh;
+    overflow-y: auto;
+    padding-block: var(--cw-space-lg);
+  }
+}
+
+.barTools {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+}
+
+/* Icon-only chrome: `chromeBare` drops the inline padding that exists for a
+   label, so the control comes out square instead of a wide empty button. */
+.stepAction {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  width: var(--ds-touch-target-min);
+}
+
+.contentsAction {
   composes: chrome from "../platform/PlatformButtons.module.css";
+  gap: var(--cw-space-2xs);
 }
 
-.commitAction {
-  composes: primary from "../platform/PlatformButtons.module.css";
+/* From 901px the rail is always on screen, so the control that reveals it has
+   nothing left to do. */
+@media (min-width: 901px) {
+  .contentsAction {
+    display: none;
+  }
 }
 
-/* Unpublishing is not the same act as publishing. It is a retreat, and dressing
-   it in the gold that means "this advances your work" would make the loudest
-   control on a published course the one that takes it away from learners. */
-.retreatAction {
-  composes: secondary from "../platform/PlatformButtons.module.css";
+.contentsCount {
+  font-family: var(--cw-font-data);
+  font-size: 0.75rem;
+  color: var(--cw-platform-muted);
+}
+
+/* ── Contents drawer ──────────────────────────────── */
+
+/* Every lesson of the course, one press away from any lesson. It sits in the
+   page rather than over it: an overlay would need a scrim, a focus trap and an
+   escape key to be honest, and all three for a list the author can also reach
+   by pressing the course crumb. */
+.contentsPanel {
+  padding: var(--cw-space-md);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
+  display: grid;
+  gap: var(--cw-space-sm);
+  align-content: start;
+}
+
+/* As a rail it is part of the page's ground, not a plate floating on it: a
+   raised surface pinned down the left edge reads as a dialog that will not
+   close. */
+@media (min-width: 901px) {
+  .contentsPanel {
+    background: transparent;
+    box-shadow: none;
+    padding: 0;
+  }
+}
+
+.contentsGroup {
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.contentsLink {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  width: 100%;
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border: 0;
+  border-radius: var(--cw-radius-md);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.contentsLink:hover {
+  background: var(--cw-mat-surface-sunk);
+}
+
+.contentsLink[aria-current="page"] {
+  background: color-mix(in srgb, var(--cw-platform-accent) 14%, var(--cw-mat-surface-sunk));
+}
+
+.contentsLink:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.contentsRoot {
+  composes: text from "../platform/PlatformButtons.module.css";
+  justify-self: start;
 }
 
 /* ── Page ─────────────────────────────────────────── */
@@ -106,6 +257,38 @@
   display: grid;
   gap: var(--cw-space-lg);
   align-content: start;
+}
+
+/* Title and the single primary action on one row. Stacked, the button read as
+   a step in the page instead of the thing you do to it, and spent a whole band
+   of vertical space above the shelf. */
+.pageHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  flex-wrap: wrap;
+  margin-block-end: var(--cw-space-2xs);
+}
+
+.pageHead > .pageTitle {
+  flex: 0 1 auto;
+  min-width: 0;
+}
+
+/* The list's own bar: how many, and how to look at them. It belongs to the
+   content, not to the app chrome — a view toggle in the header competed with
+   the brand for the same row and lost the wordmark to make space. */
+.listBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.listCount {
+  color: var(--cw-platform-muted);
+  font-size: 0.85rem;
 }
 
 .pageTitle {
@@ -131,10 +314,27 @@
   gap: var(--cw-space-sm);
 }
 
+.panelHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  flex-wrap: wrap;
+}
+
 .panelTitle {
   margin: 0;
   font-size: 1.05rem;
   font-weight: 600;
+}
+
+.subTitle {
+  margin: var(--cw-space-sm) 0 0;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
 }
 
 .panelText {
@@ -143,7 +343,182 @@
   line-height: 1.55;
 }
 
-/* ── Course list ──────────────────────────────────── */
+.noticeLine {
+  margin: 0;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-tone-boundary, var(--cw-mat-surface-sunk));
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+/* ── Controls ─────────────────────────────────────── */
+
+.commitAction {
+  composes: primary from "../platform/PlatformButtons.module.css";
+}
+
+/* Unpublishing is not the same act as publishing. It is a retreat, and dressing
+   it in the gold that means "this advances your work" would make the loudest
+   control on a published course the one that takes it away from learners. */
+.retreatAction {
+  composes: secondary from "../platform/PlatformButtons.module.css";
+}
+
+.quietAction {
+  composes: quiet from "../platform/PlatformButtons.module.css";
+}
+
+/* The one control that destroys something. It is `secondary` wearing the
+   boundary tone rather than a role of its own — the contract has six roles and
+   "dangerous" is a MEANING, not a geometry. It only ever appears after the
+   author has already said which course they mean. */
+.dangerAction {
+  composes: secondary from "../platform/PlatformButtons.module.css";
+  background: color-mix(in srgb, var(--cw-sem-boundary) 16%, var(--cw-mat-surface));
+  color: var(--cw-sem-boundary);
+}
+
+.dangerAction:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--cw-sem-boundary) 26%, var(--cw-mat-surface));
+}
+
+/* Up, down, remove — the three controls that repeat on every row of the
+   structure and every block of a lesson. Icon-only and square, because a row
+   carrying three labelled buttons is a row with no room left for its title. */
+.iconAction {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  width: var(--ds-touch-target-min);
+  color: var(--cw-platform-muted);
+}
+
+.iconAction:hover:not(:disabled) {
+  color: var(--cw-platform-text);
+}
+
+.confirmRow {
+  flex: 1 1 100%;
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  flex-wrap: wrap;
+}
+
+.confirmText {
+  font-size: 0.85rem;
+  color: var(--cw-platform-text);
+  overflow-wrap: anywhere;
+}
+
+/* "Add" is a tertiary action inside a card, which is what `quiet` is for. */
+.addAction {
+  composes: quiet from "../platform/PlatformButtons.module.css";
+  justify-self: start;
+}
+
+.addGlyph {
+  font-family: var(--cw-font-data);
+  font-size: 1.05em;
+  line-height: 1;
+}
+
+/* ── View switch ──────────────────────────────────── */
+
+.viewSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-2xs);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+}
+
+/* Keeps chrome's touch target: a segmented option is still a thing a thumb
+   has to hit, and 44px is the floor whatever the label's length.
+
+   `nowrap` is load-bearing. A flex item wraps its text at any width, and on a
+   375px bar these two came out one letter per line — two vertical strips of
+   Cyrillic where the switch should be. The label is two words in the whole
+   builder; it may take its own width and let the bar keep the rest. */
+.viewOption {
+  composes: chrome from "../platform/PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
+  white-space: nowrap;
+}
+
+.viewOption[aria-pressed="true"] {
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+  color: var(--cw-platform-text);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+/* ── The shelf: rows ──────────────────────────────── */
+
+.courseRows {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: var(--cw-space-xs);
+}
+
+.courseRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-sm);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.courseRowMain {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-height: var(--ds-touch-target-min);
+  align-content: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Status and counts on one line under the title: they qualify the course, they
+   are not the course. */
+.courseRowMeta {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  flex-wrap: wrap;
+}
+
+.courseRowMain:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.courseRowTitle {
+  font-weight: 600;
+  overflow-wrap: anywhere;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+/* ── The shelf: cards ─────────────────────────────── */
 
 .courseGrid {
   display: grid;
@@ -151,19 +526,60 @@
 }
 
 .courseCard {
-  composes: panel;
+  display: grid;
   gap: var(--cw-space-xs);
-  color: inherit;
-  text-decoration: none;
+  padding: var(--cw-space-md);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
 .courseCard:hover {
   box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
 }
 
-.courseCard:focus-visible {
+.courseCardFace {
+  display: grid;
+  gap: var(--cw-space-xs);
+  color: inherit;
+  text-decoration: none;
+}
+
+.courseCardFace:focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
   outline-offset: var(--ds-focus-ring-offset);
+}
+
+.courseCover {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+/* A course with no cover still has a palette. Two initials on its own gamma
+   tell two cards apart at a glance; a grey rectangle does not. */
+.courseCoverFallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border-radius: var(--cw-radius-md);
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--cw-sem-guide-primary) 22%, var(--cw-mat-surface-sunk)),
+    var(--cw-mat-surface-sunk)
+  );
+  color: var(--cw-sem-guide-strong);
+  font-family: var(--cw-font-editorial);
+  font-size: 2rem;
+  font-weight: 500;
+}
+
+.courseCardBody {
+  display: grid;
+  gap: var(--cw-space-2xs);
 }
 
 .courseTitleRow {
@@ -191,7 +607,7 @@
 .pill {
   display: inline-flex;
   align-items: center;
-  padding: 0.15rem 0.6rem;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
   border-radius: var(--cw-radius-pill);
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-muted);
@@ -212,17 +628,19 @@
   color: var(--cw-platform-text);
 }
 
-.pillBlocked {
-  composes: pill;
-  background: var(--cw-mat-tone-boundary, var(--cw-mat-surface-sunk));
-  color: var(--cw-platform-text);
-}
-
 /* ── Structure ────────────────────────────────────── */
 
 .moduleBlock {
   display: grid;
-  gap: var(--cw-space-xs);
+  gap: var(--cw-space-2xs);
+  padding-block-end: var(--cw-space-sm);
+}
+
+.moduleHead {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
 }
 
 .moduleTitle {
@@ -234,16 +652,72 @@
   color: var(--cw-platform-muted);
 }
 
-.lessonRow {
+/* The module's title is edited in place. A module is a heading and nothing
+   else, so a panel with a form around it would be three surfaces for one
+   string. */
+.moduleTitleInput {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border: 1px solid transparent;
+  border-radius: var(--cw-radius-md);
+  background: transparent;
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.moduleTitleInput:hover {
+  border-color: var(--cw-mat-stroke-inner);
+}
+
+.moduleTitleInput:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: 1px;
+  background: var(--cw-mat-surface);
+}
+
+.moduleFlag {
   display: flex;
   align-items: center;
-  gap: var(--cw-space-sm);
+  gap: var(--cw-space-2xs);
   min-height: var(--ds-touch-target-min);
+  padding-inline: var(--cw-space-xs);
+  color: var(--cw-platform-muted);
+  font-size: 0.82rem;
+}
+
+.lessonRowWrap {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+/* Title first, on its own line; day and block count underneath. The row used
+   to carry day, title, count and three buttons on ONE line — at 360px the
+   buttons took 147 of 347 pixels and left the title 54, which in Ukrainian is
+   one word per line, and the page grew a horizontal scroll to fit it. */
+.lessonRow {
+  flex: 1 1 auto;
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+  min-height: var(--ds-touch-target-min);
+  align-content: center;
   padding: var(--cw-space-xs) var(--cw-space-sm);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
   color: inherit;
   text-decoration: none;
+}
+
+.lessonMeta {
+  font-family: var(--cw-font-data);
+  font-size: 0.75rem;
+  color: var(--cw-platform-muted);
 }
 
 .lessonRow:hover {
@@ -263,11 +737,19 @@
   color: var(--cw-platform-muted);
 }
 
+/* Two lines, then an ellipsis. A structure list is scanned, not read: a
+   66-character Ukrainian title runs to four lines at this measure and pushes
+   the next lesson off the screen. The whole title is one press away, on the
+   lesson's own page. Same clamp the learner's pager already uses. */
 .lessonName {
-  flex: 1 1 auto;
   min-width: 0;
   overflow-wrap: anywhere;
   font-weight: 500;
+  line-height: 1.35;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
 }
 
 .lessonFlag {
@@ -281,7 +763,7 @@
 
 .blockList {
   display: grid;
-  gap: var(--cw-space-md);
+  gap: var(--cw-course-block-gap, var(--cw-space-md));
 }
 
 .blockCard {
@@ -308,9 +790,115 @@
   color: var(--cw-platform-muted);
 }
 
+/* The block picker. Each option is a PLATE carrying two lines — the name and
+   the sentence that says when to reach for it — which is the `outlineLink`
+   shape, not a control's: sized by its content, not by the button contract. */
+.typeGrid {
+  display: grid;
+  gap: var(--cw-space-xs);
+}
+
+.typeOption {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-sm);
+  border: 0;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  color: inherit;
+  font: inherit;
+  text-align: start;
+  cursor: pointer;
+}
+
+.typeOption:hover {
+  background: color-mix(in srgb, var(--cw-platform-accent) 12%, var(--cw-mat-surface-sunk));
+}
+
+/* The picked one. Same treatment as `.choiceOption[aria-pressed]` — a plate
+   that is a choice rather than a command still has to say which is chosen. */
+.typeOption[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--cw-platform-accent) 20%, var(--cw-mat-surface-sunk));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-platform-accent) 45%, transparent);
+}
+
+.typeOption:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.typeName {
+  font-weight: 600;
+}
+
+.typeHint {
+  color: var(--cw-platform-muted);
+  font-size: 0.85rem;
+  line-height: 1.4;
+}
+
+/* ── Rich text nodes ──────────────────────────────── */
+
+.nodeList {
+  display: grid;
+  gap: var(--cw-space-xs);
+}
+
+/* Separated by a hairline, not by a plate. A node used to carry its own
+   surface inside the block card, which put the author's textarea — itself a
+   control plate — three surfaces deep. A paragraph in a list of paragraphs is
+   not an object; it needs a boundary, and a rule is the cheapest true one. */
+.nodeCard {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  padding-block: var(--cw-space-xs);
+}
+
+.nodeCard + .nodeCard {
+  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.nodeHead {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.nodeKind {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border: 1px solid var(--cw-mat-stroke-inner);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: 0.85rem;
+}
+
+.nodeAdd {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-2xs);
+}
+
+.itemRow {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--cw-space-2xs);
+}
+
+.itemRow > .field {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* ── Fields ───────────────────────────────────────── */
+
 .field {
   display: grid;
-  gap: 0.3rem;
+  gap: var(--cw-space-2xs);
 }
 
 .fieldLabel {
@@ -319,10 +907,16 @@
   color: var(--cw-platform-muted);
 }
 
+.fieldHint {
+  color: var(--cw-platform-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+}
+
 .input,
 .textarea {
   width: 100%;
-  padding: 0.7rem 0.85rem;
+  padding: var(--cw-space-sm);
   border: 1px solid var(--cw-mat-stroke-inner);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface);
@@ -359,18 +953,135 @@
   line-height: 1.5;
 }
 
+/* ── Choices ──────────────────────────────────────── */
+
+/* A closed list, drawn open. These are three-to-five options the author is
+   choosing BETWEEN — a dropdown would hide every alternative behind a press. */
+.choiceRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-2xs);
+}
+
+/* Same rule as `.inlineToggle`: the contract owns the type. `guard:buttons`
+   cannot see this selector — its name does not end in a control word — so the
+   consistency here is deliberate rather than enforced. */
+.choiceOption {
+  composes: quiet from "../platform/PlatformButtons.module.css";
+  white-space: nowrap;
+}
+
+.choiceOption[aria-pressed="true"] {
+  background: color-mix(in srgb, var(--cw-platform-accent) 22%, var(--cw-mat-surface));
+  color: var(--cw-platform-text);
+}
+
+/* The gamma, shown rather than named. A palette chosen from five words is a
+   palette chosen blind. */
+.choiceSwatch {
+  width: 0.9rem;
+  height: 0.9rem;
+  flex: 0 0 auto;
+  border-radius: var(--cw-radius-pill);
+  background: linear-gradient(
+    135deg,
+    var(--cw-sem-guide-primary) 0 50%,
+    var(--cw-sem-calm-bg) 50% 100%
+  );
+  box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-inner);
+}
+
+/* ── Preview ──────────────────────────────────────── */
+
+.previewMedia {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+}
+
+.previewImage {
+  width: 100%;
+  max-height: 22rem;
+  object-fit: contain;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+}
+
+.previewEmpty {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.85rem;
+}
+
+/* A wide table scrolls inside its own box. Left to the page it would widen the
+   document, which on a phone gives every screen a horizontal scroll. */
+.previewTableWrap {
+  overflow-x: auto;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+}
+
+.previewTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.88rem;
+}
+
+.previewTable th,
+.previewTable td {
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border-bottom: 1px solid var(--cw-mat-stroke-inner);
+  text-align: start;
+  vertical-align: top;
+}
+
+.previewTable th {
+  color: var(--cw-platform-muted);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.previewTable tr:last-child td {
+  border-bottom: 0;
+}
+
 /* ── Save bar ─────────────────────────────────────── */
 
-/* This one IS sticky: it is the only control in the editor whose absence loses
-   work, and a lesson is long enough that a save at the bottom is a save the
-   author has to go looking for. */
+/* An action row INSIDE a panel. No material of its own — the panel is already
+   the surface, and a raised bar within it made `panel > bar > button`: three
+   plates for one action, which is the triple container the design system spent
+   a wave removing from the public blocks. `.saveBar` below is a different
+   thing: it floats over the page, so it needs its own ground. */
+.panelActions {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  flex-wrap: wrap;
+  margin-block-start: var(--cw-space-2xs);
+}
+
+.panelStatus {
+  flex: 1 1 8rem;
+  min-width: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.88rem;
+  overflow-wrap: anywhere;
+}
+
+/* This one IS sticky, and it is the only bar that keeps its own material: it
+   floats over the page rather than sitting inside a panel. It is also the only
+   control in the editor whose absence loses work, and a lesson is long enough
+   that a save at the bottom is a save the author has to go looking for. */
 .saveBar {
   position: sticky;
   bottom: max(var(--cw-space-md), env(safe-area-inset-bottom));
   z-index: var(--ds-z-sticky);
   display: flex;
   align-items: center;
-  gap: var(--cw-space-sm);
+  gap: var(--cw-space-2xs);
+  flex-wrap: wrap;
   padding: var(--cw-space-sm);
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
@@ -378,7 +1089,7 @@
 }
 
 .saveState {
-  flex: 1 1 auto;
+  flex: 1 1 8rem;
   min-width: 0;
   color: var(--cw-platform-muted);
   font-size: 0.88rem;
@@ -397,7 +1108,7 @@
 
 .blockerItem {
   display: grid;
-  gap: 0.15rem;
+  gap: var(--cw-space-2xs);
   padding: var(--cw-space-xs) var(--cw-space-sm);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
@@ -420,7 +1131,15 @@
 
 @media (min-width: 561px) {
   .bar {
+    gap: var(--cw-space-sm);
     padding-inline: var(--cw-space-lg);
+  }
+
+  /* The wordmark appears when there is room for it. On a phone the bar has
+     three jobs and one line; the mark alone still says which application this
+     is, and the trail needs the width more. */
+  .barBrandName {
+    display: inline;
   }
 
   .page {
@@ -428,6 +1147,270 @@
   }
 
   .courseGrid {
-    grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(18rem, 1fr));
+  }
+
+  .typeGrid {
+    grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  }
+}
+
+/* ── Inline editor ────────────────────────────────── */
+
+.inlineField {
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+/* The toolbar, and the href row that replaces it while a link is being added.
+   A row above the field rather than a bar following the selection: a floating
+   toolbar has to dodge the iOS selection handles and then lands under the thumb
+   that made the selection. */
+.inlineBar {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  flex-wrap: wrap;
+}
+
+/* Takes the contract's type outright. An earlier pass shrank these to 0.8rem
+   to keep the toolbar narrow, which is the exact trade the button contract
+   exists to refuse: font-size is a token-owned axis, and a control that shrinks
+   itself to fit its row is the first step of the drift that produced five
+   different label weights before the contract existed. The bar wraps instead. */
+.inlineToggle {
+  composes: quiet from "../platform/PlatformButtons.module.css";
+  white-space: nowrap;
+}
+
+.inlineHint {
+  flex: 1 1 auto;
+  min-width: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.78rem;
+}
+
+.inlineHint code {
+  font-family: var(--cw-font-data);
+}
+
+/* The editable surface. Same plate as `.input` — an author should not be able
+   to tell from the frame which of the two kinds of field they are in. */
+.inlineSurface {
+  width: 100%;
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-sm);
+  border: 1px solid var(--cw-mat-stroke-inner);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  font: inherit;
+  /* 16px minimum: anything smaller makes iOS Safari zoom the page on focus. */
+  font-size: 1rem;
+  line-height: 1.5;
+  /* Existing content may carry newlines from the textarea era; they render as a
+     space for the learner, and `pre-wrap` at least shows the author what is
+     actually stored instead of silently reflowing it. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.inlineSurface[data-multiline] {
+  min-height: 5rem;
+}
+
+.inlineSurface:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: 1px;
+}
+
+/* An empty contenteditable has no height of its own and no sign that it is a
+   field at all. The three constructs it can hold are named there instead. */
+.inlineSurface:empty::before {
+  content: "Порожньо";
+  color: var(--cw-platform-muted);
+}
+
+.inlineSurface a {
+  color: var(--cw-sem-guide-primary);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+/* ── Overflow menu ────────────────────────────────── */
+
+.menuRoot {
+  position: relative;
+  flex: 0 0 auto;
+}
+
+/* Every icon-only control in the builder is this shape and this size: the
+   brand's hit area, the gear, a row's menu, a sheet's close. One shape at one
+   level; the earlier bar mixed a rounded rect against a circular glyph frame. */
+.menuTrigger {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  width: var(--ds-touch-target-min);
+  color: var(--cw-platform-muted);
+}
+
+.menuTrigger:hover:not(:disabled),
+.menuTrigger[aria-expanded="true"] {
+  color: var(--cw-platform-text);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.menuList {
+  position: absolute;
+  inset-inline-end: 0;
+  top: calc(100% + var(--cw-space-2xs));
+  z-index: var(--ds-z-sticky);
+  min-width: 12rem;
+  display: grid;
+  padding: var(--cw-space-2xs);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
+  animation: menuIn 140ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes menuIn {
+  from {
+    opacity: 0;
+    transform: translateY(-0.25rem);
+  }
+}
+
+.menuItem {
+  display: block;
+  width: 100%;
+  min-height: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-sm);
+  border: 0;
+  border-radius: var(--cw-radius-inset);
+  background: transparent;
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: 0.9rem;
+  text-align: start;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.menuItem:hover:not(:disabled) {
+  background: var(--cw-mat-surface-sunk);
+}
+
+.menuItem:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: -2px;
+}
+
+.menuItem:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Destructive last, behind a hairline, in the boundary tone. Separation is the
+   point: the item above it is "move down". */
+.menuItemDanger {
+  composes: menuItem;
+  color: var(--cw-sem-boundary);
+}
+
+.menuItemDanger[data-first-danger] {
+  margin-block-start: var(--cw-space-2xs);
+  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+  border-start-start-radius: 0;
+  border-start-end-radius: 0;
+  padding-block-start: var(--cw-space-2xs);
+}
+
+/* ── Settings sheet ───────────────────────────────── */
+
+/* Native <dialog>: the focus trap, Escape and page inertness come with it.
+   Bottom sheet on a phone because the thumb is there; centred on a desk
+   because the eye is. */
+.sheet {
+  width: 100%;
+  max-width: 100%;
+  max-height: 92svh;
+  margin: auto auto 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cw-platform-text);
+  overflow: visible;
+}
+
+.sheet::backdrop {
+  background: color-mix(in srgb, var(--cw-sem-guide-strong) 46%, transparent);
+  backdrop-filter: blur(2px);
+}
+
+.sheetBody {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: 92svh;
+  border-start-start-radius: var(--cw-radius-lg);
+  border-start-end-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
+  animation: sheetIn 240ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes sheetIn {
+  from {
+    transform: translateY(1.5rem);
+    opacity: 0;
+  }
+}
+
+/* Sticky, because the way out of a long form must not be at the bottom of it. */
+.sheetHead {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-sm) var(--cw-space-sm) var(--cw-space-sm) var(--cw-space-lg);
+  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  background: var(--cw-mat-surface);
+  border-start-start-radius: var(--cw-radius-lg);
+  border-start-end-radius: var(--cw-radius-lg);
+}
+
+.sheetScroll {
+  overflow-y: auto;
+  padding: var(--cw-space-lg);
+  padding-block-end: max(var(--cw-space-lg), env(safe-area-inset-bottom));
+}
+
+.settingsForm {
+  display: grid;
+  gap: var(--cw-space-sm);
+}
+
+@media (min-width: 561px) {
+  .sheet {
+    max-width: 34rem;
+    margin: auto;
+  }
+
+  .sheetBody {
+    border-radius: var(--cw-radius-lg);
+    max-height: 82svh;
+  }
+
+  .sheetHead {
+    border-radius: var(--cw-radius-lg) var(--cw-radius-lg) 0 0;
+  }
+}
+
+/* The one authored moment stays; the movement does not. */
+@media (prefers-reduced-motion: reduce) {
+  .menuList,
+  .sheetBody {
+    animation: none;
   }
 }

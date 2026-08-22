@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { CourseView } from "@/components/lms/CourseView";
-import { getCourse } from "@/lib/lms/catalog";
+import { getLiveCourse } from "@/lib/lms/liveCatalog";
 
 export const metadata: Metadata = {
   title: "Мій курс - CenterWay",
@@ -16,7 +16,7 @@ export default async function LearnCoursePage({ params }: { params: Promise<{ co
   const { course } = await params;
 
   // Existence is public information; entitlement is decided by the API.
-  if (!getCourse(course)) notFound();
+  if (!(await getLiveCourse(course))) notFound();
 
   return (
     <PlatformShell headerMode="learn">

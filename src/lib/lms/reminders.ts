@@ -23,7 +23,7 @@ import {
   type Course,
   type ReminderHourPolicy,
 } from "@/lms-core";
-import { listPublishedCourses } from "./catalog";
+import { listLiveCourses } from "./liveCatalog";
 import { loadProgress } from "./server";
 import { notifyLearner } from "./notify";
 
@@ -86,9 +86,11 @@ async function fetchAllRows<T>(
  * A schedule mode is a property of the course; nothing should have to be
  * remembered in a second place for it to take effect.
  */
-function dailyCourseIds(): Map<string, Course> {
+async function dailyCourseIds(): Promise<Map<string, Course>> {
   const map = new Map<string, Course>();
-  for (const course of listPublishedCourses()) {
+  // Live: a course unpublished in the builder must stop sending reminders on
+  // the next run, not on the next deploy.
+  for (const course of (await listLiveCourses()).filter((entry) => entry.status === "published")) {
     if (course.schedule.mode === "daily") {
       map.set(course.id, course);
     }
@@ -119,7 +121,9 @@ export async function runUnstartedReminders(
   let scanned = 0;
   let sent = 0;
 
-  for (const course of listPublishedCourses()) {
+  // Live: a course unpublished in the builder must stop sending reminders on
+  // the next run, not on the next deploy.
+  for (const course of (await listLiveCourses()).filter((entry) => entry.status === "published")) {
     if (course.entitlementProductCodes.length === 0) continue;
 
     // Paged, ascending on a column pair that is stable under concurrent
@@ -271,7 +275,7 @@ export async function runDailyReminders(
   hourPolicy: ReminderHourPolicy = "learner-local"
 ): Promise<ReminderRunResult> {
   const db = adminClient();
-  const courses = dailyCourseIds();
+  const courses = await dailyCourseIds();
   const skipped: Record<string, number> = {};
 
   if (courses.size === 0) {

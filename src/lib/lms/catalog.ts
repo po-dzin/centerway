@@ -1,13 +1,19 @@
 /**
- * App-layer course catalog.
+ * The course SNAPSHOT — the copy that ships in the deploy.
  *
- * Content lives as validated JSON in `data/courses/**` — the H1 "склад" where
- * courses are authored through code. The same JSON is mirrored into Postgres by
- * `scripts/lms-seed.mjs` so progress events have real lesson rows to reference,
- * and so the H2 builder has somewhere to write.
+ * It stopped being the source of truth on 2026-08-21. The database is the
+ * source now (`liveCatalog.ts`), because an author publishing in the builder
+ * has to reach a learner without the owner running a CLI and a deploy. What
+ * these files became is the fallback underneath that: the last known good copy,
+ * served whenever the live read cannot answer. `npm run lms:pull` is how the
+ * snapshot is refreshed, and it is a safety net now rather than the delivery
+ * path.
  *
- * Source of truth on H1: the JSON files. When the builder ships (H2), the DB
- * becomes the source and this module turns into an import path, not a reader.
+ * DELIBERATELY FILE-ONLY AND SYNCHRONOUS. Nothing here touches Supabase, which
+ * is what lets the marketing pages stay statically prerendered and the unit
+ * tests read real courses without a database. Anything learner-facing must call
+ * `liveCatalog.ts` instead — the names here all say `snapshot` so a call site
+ * cannot pick the wrong source by accident.
  *
  * Mirrors the repo's generator convention (src/lib/generator/content.ts):
  * validate once at module load and fail loudly, rather than defensively at use.
@@ -31,20 +37,27 @@ function loadCourses(): Course[] {
 const courses = loadCourses();
 const coursesBySlug = new Map(courses.map((course) => [course.slug, course]));
 
-export function listCourses(): Course[] {
+export function snapshotCourses(): Course[] {
   return courses;
 }
 
-/** Courses a learner may reach: drafts stay invisible outside admin tooling. */
-export function listPublishedCourses(): Course[] {
+/** Snapshot courses a learner may reach: drafts stay invisible outside admin tooling. */
+export function listPublishedSnapshotCourses(): Course[] {
   return courses.filter((course) => course.status === "published");
 }
 
-export function getCourse(slug: string): Course | null {
+export function getSnapshotCourse(slug: string): Course | null {
   return coursesBySlug.get(slug) ?? null;
 }
 
-/** Resolves the course delivering a catalog program, e.g. "reset-day". */
-export function getCourseByProgram(programSlug: string): Course | null {
+/**
+ * The snapshot course delivering a catalog program, e.g. "reset-day".
+ *
+ * Snapshot on purpose: its one caller is the public program page, which needs a
+ * lesson count for a marketing claim and is statically prerendered. A live read
+ * there would turn a static marketing page into a per-request database query to
+ * change a number that changes once a quarter.
+ */
+export function getSnapshotCourseByProgram(programSlug: string): Course | null {
   return courses.find((course) => course.programSlug === programSlug) ?? null;
 }

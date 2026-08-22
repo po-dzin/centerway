@@ -11,9 +11,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
-import { inlineToPlainText } from "@/lms-core";
+import { courseThemeAttributes, inlineToPlainText } from "@/lms-core";
+import { PlatformTrail } from "@/components/platform/PlatformTrail";
 import { Icon } from "@/components/Icon";
 import { LogoMark } from "@/components/brand/LogoMark";
+import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
 import { BlockRenderer } from "./LessonBlocks";
 import { CourseContentsDrawer } from "./CourseContentsDrawer";
 import { LmsNotice } from "./LmsNotice";
@@ -214,16 +216,29 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
   const { nav } = data;
 
   return (
-    <main className={styles.wrap} data-cw-platform-template="learn-lesson">
+    <main
+      className={styles.wrap}
+      data-cw-platform-template="learn-lesson"
+      // The course's gamma, on the lesson too. Scoped rather than global so a
+      // learner walking between two courses with different palettes never sees
+      // one course's green on the other's page.
+      {...courseThemeAttributes(data.courseTheme ?? undefined)}
+    >
       <div className={styles.readingTrack} aria-hidden="true">
         <div className={styles.readingFill} style={{ width: `${Math.round(readingRatio * 100)}%` }} />
       </div>
 
       <div className={styles.lessonTopBar}>
-        <Link className={styles.backButton} href={`/learn/${courseSlug}`}>
-          <Icon name="arrow-left" size={18} />
-          <span>До курсу</span>
-        </Link>
+        {/* Three levels where there used to be one «До курсу». The lesson is
+            the last step and is not a link — the crumb a learner can press has
+            to be the one that looks pressable. */}
+        <PlatformTrail
+          steps={[
+            { label: "Мої курси", href: LEARNING_SHELF_HREF },
+            { label: data.courseTitle, href: `/learn/${courseSlug}` },
+            { label: data.lesson.title },
+          ]}
+        />
         <span className={styles.topBarSpacer} />
         <button
           className={styles.iconButton}

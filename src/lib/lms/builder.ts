@@ -24,8 +24,14 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { courseFromRows, writeCourseStructure } from "./authoring";
-import { getCourse } from "./catalog";
-import { courseReadiness, validateCourse, type Course } from "@/lms-core";
+import {
+  courseReadiness,
+  newCourseFromTemplate,
+  uniqueSlug,
+  validateCourse,
+  type Course,
+  type CourseTheme,
+} from "@/lms-core";
 
 export type BuilderCourseSummary = {
   id: string;
@@ -37,6 +43,10 @@ export type BuilderCourseSummary = {
   lessonCount: number;
   blockerCount: number;
   updatedAt: string | null;
+  /** Card face for the grid view — the author's own image, when they set one. */
+  cover: { src: string; alt: string } | null;
+  theme: CourseTheme | null;
+  sortOrder: number | null;
 };
 
 type CourseRow = Record<string, unknown>;
@@ -72,35 +82,16 @@ export async function loadBuilderCourse(
   if (moduleError) throw new Error(`lms_builder_modules_read_failed:${moduleError.message}`);
   if (lessonError) throw new Error(`lms_builder_lessons_read_failed:${lessonError.message}`);
 
-  // `reference` is a JSON-only flag with no column (see courseFromRows). The
-  // builder cannot recover it from the database, so a reference module read
-  // here and written straight back would silently lose the flag and drop the
-  // module into the numbered flow. Carried across from the shipped file.
-  const referenceSlugs = referenceModuleSlugs(courseRow.slug as string);
-
   return {
-    course: courseFromRows(courseRow, (moduleRows ?? []) as CourseRow[], (lessonRows ?? []) as CourseRow[], referenceSlugs),
+    course: courseFromRows(courseRow, (moduleRows ?? []) as CourseRow[], (lessonRows ?? []) as CourseRow[]),
     authorId: (courseRow.author_id as string | null) ?? null,
     updatedAt: (courseRow.updated_at as string | null) ?? null,
   };
 }
 
-/**
- * Reference-module slugs, from the shipped catalog.
- *
- * A stopgap with a real expiry: it goes away the moment `reference` becomes a
- * column, which is the right fix and belongs with the source-of-truth switch.
- * Until then this is the only place that knows, and a course the builder
- * created from scratch simply has none.
- */
-function referenceModuleSlugs(slug: string): string[] {
-  const shipped = getCourse(slug);
-  return shipped ? shipped.modules.filter((module) => module.reference).map((module) => module.slug) : [];
-}
-
 export async function listBuilderCourses(filter: { authorId?: string }): Promise<BuilderCourseSummary[]> {
   const db = adminClient();
-  let query = db.from("lms_courses").select("id, slug, title, status, author_id, updated_at");
+  let query = db.from("lms_courses").select("id, slug, title, status, author_id, updated_at, cover, theme, sort_order");
   if (filter.authorId) query = query.eq("author_id", filter.authorId);
 
   const { data, error } = await query;
@@ -155,11 +146,25 @@ export async function listBuilderCourses(filter: { authorId?: string }): Promise
         lessonCount: lessonCounts.get(row.id as string) ?? 0,
         blockerCount,
         updatedAt: (row.updated_at as string | null) ?? null,
+        cover: (row.cover as { src: string; alt: string } | null) ?? null,
+        theme: (row.theme as CourseTheme | null) ?? null,
+        sortOrder: row.sort_order === null || row.sort_order === undefined ? null : Number(row.sort_order),
       };
     })
   );
 
-  return summaries.sort((a, b) => a.title.localeCompare(b.title));
+  // The author's own order first; anything they have never placed sorts after
+  // it, alphabetically. A course that has no `sortOrder` is not "position 0" —
+  // treating NULL as zero would push every untouched course to the top the
+  // first time anyone reordered anything.
+  return summaries.sort((a, b) => {
+    if (a.sortOrder !== b.sortOrder) {
+      if (a.sortOrder === null) return 1;
+      if (b.sortOrder === null) return -1;
+      return a.sortOrder - b.sortOrder;
+    }
+    return a.title.localeCompare(b.title);
+  });
 }
 
 export type SaveOutcome = {
@@ -246,4 +251,131 @@ export async function saveBuilderCourse(input: unknown): Promise<SaveOutcome> {
   const writer = db as unknown as Parameters<typeof writeCourseStructure>[0];
   const result = await writeCourseStructure(writer, { ...incoming, id: ownerCourseId, version: nextVersion });
   return { slug: result.slug, status: result.status, blockers: result.blockers };
+}
+
+/**
+ * Creates a course from nothing.
+ *
+ * The one write in the builder that does NOT go through `saveBuilderCourse`
+ * first — because that function reads the existing row to decide the version
+ * and the owning id, and there is no existing row. What it does instead is
+ * hand the same `writeCourseStructure` a course built from a TEMPLATE, so a
+ * course born here is validated by the same validator as one imported from a
+ * file, and comes into the world as a draft whose every hole is marked.
+ *
+ * Ownership is set at creation and never guessed later. `author_id` is the
+ * person who pressed the button — including an admin, who can hand it over
+ * afterwards. A course created with `author_id = NULL` would be a "house
+ * course" nobody can see but an admin, which is the state both shipped
+ * courses are in and precisely the thing that needed an UPDATE by hand.
+ */
+export async function createBuilderCourse(input: {
+  title: string;
+  programSlug: string;
+  authorId: string;
+  template?: string;
+  theme?: CourseTheme;
+  ids: () => string;
+}): Promise<{ slug: string }> {
+  const db = adminClient();
+
+  const { data: existingRows, error: listError } = await db.from("lms_courses").select("slug");
+  if (listError) throw new Error(`lms_builder_list_failed:${listError.message}`);
+  const takenSlugs = ((existingRows ?? []) as { slug: string }[]).map((row) => row.slug);
+
+  const title = input.title.trim();
+  if (title.length === 0) throw new Error("lms_builder_missing_title");
+
+  const course = newCourseFromTemplate(input.ids, {
+    slug: uniqueSlug(title, takenSlugs),
+    title,
+    programSlug: input.programSlug,
+    // An unknown id falls back to the blank template rather than throwing: it
+    // arrives over HTTP, so it is a payload, not a crash.
+    template: input.template,
+    ...(input.theme ? { theme: input.theme } : {}),
+  });
+
+  const writer = db as unknown as Parameters<typeof writeCourseStructure>[0];
+  await writeCourseStructure(writer, course);
+
+  // Ownership is a column `writeCourseStructure` does not know about — it maps
+  // the authored JSON, and `author_id` is not part of it. Written straight
+  // after, on the row that was just created.
+  const { error } = await db.from("lms_courses").update({ author_id: input.authorId }).eq("id", course.id);
+  if (error) throw new Error(`lms_builder_author_write_failed:${error.message}`);
+
+  return { slug: course.slug };
+}
+
+/**
+ * Deletes a course — with two refusals that are not negotiable from the UI.
+ *
+ * A published course is refused: unpublishing is one press and reversible,
+ * deleting is neither, and an author who meant "take it down" must not be able
+ * to reach "erase it" by pressing the wrong red thing once.
+ *
+ * A course any learner has ever touched is refused outright. `lms_progress_events`
+ * cascades from lessons, so deleting the course would erase the history of
+ * everyone who walked it, silently and with no way back. That is not a
+ * confirmation dialog's decision to make; a course with learners gets
+ * unpublished and archived, not removed.
+ */
+export async function deleteBuilderCourse(slug: string): Promise<void> {
+  const db = adminClient();
+
+  const row = await readCourseRow(slug);
+  if (!row) throw new Error(`lms_builder_unknown_course:${slug}`);
+  if (row.status === "published") throw new Error(`lms_builder_delete_published:${slug}`);
+
+  const courseId = row.id as string;
+  const { data: enrollments, error: enrollmentError } = await db
+    .from("lms_enrollments")
+    .select("id")
+    .eq("course_id", courseId)
+    .limit(1);
+  if (enrollmentError) throw new Error(`lms_builder_delete_check_failed:${enrollmentError.message}`);
+  if ((enrollments ?? []).length > 0) throw new Error(`lms_builder_delete_has_learners:${slug}`);
+
+  const { data: lessons, error: lessonError } = await db.from("lms_lessons").select("id").eq("course_id", courseId);
+  if (lessonError) throw new Error(`lms_builder_delete_check_failed:${lessonError.message}`);
+  const lessonIds = ((lessons ?? []) as { id: string }[]).map((lesson) => lesson.id);
+
+  if (lessonIds.length > 0) {
+    const { data: touched, error: progressError } = await db
+      .from("lms_progress_events")
+      .select("lesson_id")
+      .in("lesson_id", lessonIds)
+      .limit(1);
+    if (progressError) throw new Error(`lms_builder_delete_check_failed:${progressError.message}`);
+    if ((touched ?? []).length > 0) throw new Error(`lms_builder_delete_has_learners:${slug}`);
+  }
+
+  // Modules and lessons cascade from the course row (see the foundation
+  // migration), so one delete is the whole thing.
+  const { error } = await db.from("lms_courses").delete().eq("id", courseId);
+  if (error) throw new Error(`lms_builder_delete_failed:${error.message}`);
+}
+
+/**
+ * Writes the author's own order for their shelf.
+ *
+ * Positions are rewritten wholesale from the list the client sends, rather than
+ * patched one row at a time, because "move this card up" is a statement about
+ * the whole sequence: a single-row update leaves two cards claiming the same
+ * position, and the list then sorts by whatever `title.localeCompare` decides.
+ *
+ * Every slug is checked against what this identity may edit BEFORE anything is
+ * written — a payload that names a course the caller does not own would
+ * otherwise reorder someone else's shelf.
+ */
+export async function reorderBuilderCourses(slugs: string[], allowed: (slug: string) => boolean): Promise<void> {
+  const unauthorized = slugs.filter((slug) => !allowed(slug));
+  if (unauthorized.length > 0) throw new Error(`lms_builder_reorder_forbidden:${unauthorized[0]}`);
+
+  const db = adminClient();
+  for (let index = 0; index < slugs.length; index += 1) {
+    const { error } = await db.from("lms_courses").update({ sort_order: index + 1 }).eq("slug", slugs[index]);
+    if (error) throw new Error(`lms_builder_reorder_failed:${error.message}`);
+  }
 }

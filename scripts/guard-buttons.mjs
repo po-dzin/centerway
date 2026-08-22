@@ -43,6 +43,11 @@ const BUTTON_SELECTOR = /^\.[A-Za-z][A-Za-z0-9_]*(Button|Btn|Link|Action|Cta|Tog
    from review. */
 const NOT_BUTTONS = new Map([
   ["outlineLink", "a lesson row in the course outline — a list item, sized by its content"],
+  [
+    "contentsLink",
+    "a lesson row in the builder's contents drawer — the same shape as " +
+      "outlineLink: a list item sized by its content, not a control.",
+  ],
   ["pagerLink", "the prev/next lesson card — a full plate carrying a title, not a control"],
   ["videoActionMeta", "the caption under the video rail's buttons, not a button"],
   ["videoActionCard", "the plate the video rail's buttons sit in"],

@@ -51,12 +51,15 @@
   color: var(--cw-platform-muted);
 }
 
+/* The page title takes the course's heading voice. The fallback IS the
+   platform default, so a course that chose nothing is byte-identical to what
+   shipped before the axis existed. */
 .title {
   margin: 0 0 var(--cw-space-sm);
-  font-family: var(--cw-font-editorial);
-  font-size: clamp(1.7rem, 6vw, 2.4rem);
+  font-family: var(--cw-course-heading-family, var(--cw-font-editorial));
+  font-size: calc(clamp(1.7rem, 6vw, 2.4rem) * var(--cw-course-heading-scale, 1));
   line-height: 1.15;
-  font-weight: 500;
+  font-weight: var(--cw-course-heading-weight, 500);
 }
 
 .lead {
@@ -122,6 +125,8 @@
   composes: secondary from "../platform/PlatformButtons.module.css";
   justify-self: start;
 }
+
+/* ── Way out of a course ──────────────────────────── */
 
 /* ── Outline ──────────────────────────────────────── */
 
@@ -512,9 +517,16 @@
   overflow: hidden;
 }
 
+/* The lesson body — the one place a course's `scale` choice lands.
+   The three custom properties are declared by the theme scope on `<main>`
+   (globals.css) and fall back to the platform's own values, so a course that
+   chose nothing renders exactly as it did before the axis existed. Type and the
+   space around it move TOGETHER: a "spacious" setting that only grew the letters
+   would come out merely bigger, not roomier. */
 .blocks {
   display: grid;
-  gap: var(--cw-space-lg);
+  gap: var(--cw-course-block-gap, var(--cw-space-lg));
+  font-size: var(--cw-course-body-size, 1rem);
 }
 
 /* The lesson's one abstract, and it sits in the text column like everything
@@ -536,8 +548,9 @@
 
 .heading {
   margin: var(--cw-space-sm) 0 0;
-  font-size: 1.15rem;
-  font-weight: 600;
+  font-family: var(--cw-course-heading-family, inherit);
+  font-size: calc(1.15rem * var(--cw-course-heading-scale, 1));
+  font-weight: var(--cw-course-heading-weight, 600);
 }
 
 /* Markers hang in the margin, so list text starts on the SAME left edge as the
@@ -898,4 +911,73 @@
     border-radius: var(--cw-radius-xl);
     max-height: 78svh;
   }
+}
+
+/* ── Table block ──────────────────────────────────── */
+
+/* Added 2026-08-21 with the builder's second wave. A table is the one shape a
+   list cannot carry — a dose per day, a food per stage — and authors kept
+   reaching for one. */
+.tableBlock {
+  margin: 0;
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.tableTitle {
+  color: var(--cw-platform-muted);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* The scroller, not the page. A table wider than the reading column has to
+   scroll inside its own box: unbounded it widens the document, and on a phone
+   that gives every screen a horizontal scroll and unsettles the fixed topbar. */
+.tableScroll {
+  overflow-x: auto;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.tableScroll:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95rem;
+}
+
+.table th,
+.table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--cw-mat-stroke-inner);
+  text-align: start;
+  vertical-align: top;
+  line-height: 1.45;
+}
+
+.table th {
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+/* The video's frame plus the one authored value that renders beside it. A bare
+   iframe carried no room for the duration, which is why `video.durationMin`
+   sat in the contract with no consumer until 2026-08-21. */
+.mediaFigure {
+  margin: 0;
+  display: grid;
+  gap: var(--cw-space-2xs);
 }

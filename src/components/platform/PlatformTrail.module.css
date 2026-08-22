@@ -1,0 +1,51 @@
+/* The breadcrumb. Tokens only, and every pressable step composes a role from
+   the button contract — `chrome` is the role for nav on its own row, which is
+   exactly what a crumb is. */
+
+.trail {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  min-width: 0;
+  margin-block-end: var(--cw-space-xs);
+}
+
+.step {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  /* Truncation lives on the STEP, not on the control inside it: `max-width` is
+     an axis the button contract owns. */
+  max-width: 14rem;
+}
+
+.sep {
+  flex: 0 0 auto;
+  color: var(--cw-platform-muted);
+  opacity: 0.6;
+}
+
+.crumbLink {
+  composes: chrome from "./PlatformButtons.module.css";
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  line-height: var(--ds-touch-target-min);
+  color: var(--cw-platform-muted);
+}
+
+.crumbLink:hover:not(:disabled) {
+  color: var(--cw-platform-text);
+}
+
+.here {
+  min-width: 0;
+  padding-inline: var(--cw-space-2xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--cw-platform-text);
+  font-size: 0.9rem;
+  font-weight: 600;
+}

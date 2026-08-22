@@ -30,6 +30,7 @@ export type LessonBlockType =
   | "quote"
   | "boundary_note"
   | "faq_block"
+  | "table"
   | "cta";
 
 /** Paragraph-level shapes inside a rich_text block. Still not HTML. */
@@ -119,6 +120,28 @@ export type FaqBlock = BlockBase & {
   items: Array<{ id: string; question: InlineText; answer: InlineText }>;
 };
 
+/**
+ * A table — the one shape a list cannot carry.
+ *
+ * Added because authors kept reaching for one: a dosage per day, a food per
+ * stage, a symptom against what to do about it. Written as rows of inline
+ * text rather than as HTML, for the same reason nothing else here is HTML —
+ * a native renderer has to be able to draw it too, and a phone draws a wide
+ * table as stacked pairs, not as a scrolling grid.
+ *
+ * `head` is optional and separate from `rows`. A header row that lived inside
+ * `rows[0]` would be indistinguishable from data to every renderer, which is
+ * exactly the information a screen reader needs to announce a cell's column.
+ * Column count is fixed by the header when there is one, and by the first row
+ * when there is not — a ragged table is a table nothing can lay out.
+ */
+export type TableBlock = BlockBase & {
+  type: "table";
+  title?: InlineText;
+  head?: InlineText[];
+  rows: InlineText[][];
+};
+
 export type CtaBlock = BlockBase & {
   type: "cta";
   label: string;
@@ -137,6 +160,7 @@ export type LessonBlock =
   | QuoteBlock
   | BoundaryNoteBlock
   | FaqBlock
+  | TableBlock
   | CtaBlock;
 
 export const LESSON_BLOCK_TYPES: readonly LessonBlockType[] = [
@@ -150,6 +174,7 @@ export const LESSON_BLOCK_TYPES: readonly LessonBlockType[] = [
   "quote",
   "boundary_note",
   "faq_block",
+  "table",
   "cta",
 ];
 
@@ -249,6 +274,28 @@ export function validateLessonBlock(block: unknown, path: string): asserts block
         assert(isNonEmptyString(item.id), `lms_block_faq_item_missing_id:${path}.items[${index}]`);
         validateInlineText(item.question, `${path}.items[${index}].question`);
         validateInlineText(item.answer, `${path}.items[${index}].answer`);
+      });
+      return;
+    }
+
+    case "table": {
+      if (block.title !== undefined) validateInlineText(block.title, `${path}.title`);
+      assert(Array.isArray(block.rows) && block.rows.length > 0, `lms_block_empty_table:${path}`);
+
+      let columns: number | null = null;
+      if (block.head !== undefined) {
+        assert(Array.isArray(block.head) && block.head.length > 0, `lms_block_empty_table_head:${path}`);
+        block.head.forEach((cell, index) => validateInlineText(cell, `${path}.head[${index}]`));
+        columns = block.head.length;
+      }
+
+      block.rows.forEach((row, rowIndex) => {
+        assert(Array.isArray(row) && row.length > 0, `lms_block_empty_table_row:${path}.rows[${rowIndex}]`);
+        if (columns === null) columns = row.length;
+        // Ragged rows are rejected here rather than padded: a renderer that
+        // guesses the missing cell writes content the author never wrote.
+        assert(row.length === columns, `lms_block_ragged_table:${path}.rows[${rowIndex}]`);
+        row.forEach((cell, cellIndex) => validateInlineText(cell, `${path}.rows[${rowIndex}][${cellIndex}]`));
       });
       return;
     }
