@@ -1461,3 +1461,31 @@
     animation: none;
   }
 }
+
+/* ── Undo ─────────────────────────────────────────── */
+
+/* The pair sits ahead of the save state in the bar, and stays one object: two
+   halves of one gesture, so they share an edge rather than the bar's gap. */
+.historyPair {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.historyButton {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  width: var(--ds-touch-target-min);
+  color: var(--cw-platform-muted);
+}
+
+.historyButton:hover:not(:disabled) {
+  color: var(--cw-platform-text);
+  background: var(--cw-mat-surface-sunk);
+}
+
+/* Dimmed rather than hidden. "Nothing left to take back" is information; a
+   control that disappears when it has nothing to do teaches the author it was
+   never there. */
+.historyButton:disabled {
+  opacity: 0.4;
+}

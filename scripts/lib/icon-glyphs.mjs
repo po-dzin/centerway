@@ -57,6 +57,20 @@ export const ICONS = {
     group: "Route",
     d: ["M12 4v14", "M6.4 12.8 12 18.4l5.6-5.6"],
   },
+  /* Undo/redo. Not a rotated `arrow-left`: undoing is a return along a path
+     already walked, and the arc is what says "back the way you came" rather
+     than "one step left". The head keeps the arrows' 5.1-unit legs so the pair
+     reads as the same family, and `redo` is the exact mirror — the two are one
+     gesture in two directions, and drawing them independently would have made
+     the redo arc sit a hair higher than the undo arc. */
+  undo: {
+    group: "Route",
+    d: ["M4.5 9.5h9a4.5 4.5 0 0 1 0 9h-3.5", "M9.6 4.4 4.5 9.5l5.1 5.1"],
+  },
+  redo: {
+    group: "Route",
+    d: ["M19.5 9.5h-9a4.5 4.5 0 0 0 0 9h3.5", "M14.4 4.4 19.5 9.5l-5.1 5.1"],
+  },
   "chevron-right": {
     group: "Route",
     d: ["M9.5 5.5 16 12l-6.5 6.5"],

@@ -22,13 +22,15 @@ import { BuilderSheet } from "./BuilderSheet";
 import { BuilderCourseSettings } from "./BuilderCourseSettings";
 import { BuilderBlockers } from "./BuilderBlockers";
 import { loadCourse, saveCourse, type BuilderCourseDto, type BuilderFailure } from "./builderClient";
+import { BuilderHistory } from "./BuilderHistory";
+import { useCourseHistory } from "./useCourseHistory";
 import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
 
 type State =
   | { status: "loading" }
   | { status: "failed"; failure: BuilderFailure; detail?: string }
-  | { status: "ready"; data: BuilderCourseDto; course: Course };
+  | { status: "ready"; data: BuilderCourseDto };
 
 const ids = () => crypto.randomUUID();
 
@@ -47,7 +49,8 @@ const ids = () => crypto.randomUUID();
  */
 export function BuilderCourseView({ slug }: { slug: string }) {
   const [state, setState] = useState<State>({ status: "loading" });
-  const [dirty, setDirty] = useState(false);
+  const history = useCourseHistory();
+  const { course, dirty } = history;
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -56,13 +59,13 @@ export function BuilderCourseView({ slug }: { slug: string }) {
 
   const load = useCallback(async () => {
     const result = await loadCourse(slug);
+    if (result.ok) history.reset(result.data.course);
     setState(
       result.ok
-        ? { status: "ready", data: result.data, course: result.data.course }
+        ? { status: "ready", data: result.data }
         : { status: "failed", failure: result.failure, detail: result.detail }
     );
-    setDirty(false);
-  }, [slug]);
+  }, [history, slug]);
 
   useEffect(() => {
     // Guarded so switching courses cannot land a stale response, and awaiting
@@ -71,15 +74,18 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     void (async () => {
       const result = await loadCourse(slug);
       if (cancelled) return;
+      if (result.ok) history.reset(result.data.course);
       setState(
         result.ok
-          ? { status: "ready", data: result.data, course: result.data.course }
+          ? { status: "ready", data: result.data }
           : { status: "failed", failure: result.failure, detail: result.detail }
       );
     })();
     return () => {
       cancelled = true;
     };
+    // `history.reset` is stable; the course is reloaded only when the slug changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   // The browser's own guard, same as the lesson editor: an author who
@@ -91,14 +97,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [dirty]);
 
-  const editCourse = useCallback((path: (string | number)[], value: unknown) => {
-    setState((current) => {
-      if (current.status !== "ready") return current;
-      return { ...current, course: normalize(writePath(current.course, path, value)) };
-    });
-    setDirty(true);
-    setNote(null);
-  }, []);
+  const editCourse = useCallback(
+    (path: (string | number)[], value: unknown) => {
+      // Coalesced by the path: retitling a module is one undo, not one per letter.
+      history.edit(path.join("."), (current) => normalize(writePath(current, path, value)));
+      setNote(null);
+    },
+    [history]
+  );
 
   /**
    * Replaces the module list wholesale, then re-derives `order`.
@@ -110,19 +116,20 @@ export function BuilderCourseView({ slug }: { slug: string }) {
    * one press of a reorder arrow would have moved every reminder already
    * scheduled against those numbers.
    */
-  const editModules = useCallback((next: (course: Course) => CourseModule[]) => {
-    setState((current) => {
-      if (current.status !== "ready") return current;
-      return { ...current, course: { ...current.course, modules: renumber(next(current.course)) } };
-    });
-    setDirty(true);
-    setNote(null);
-  }, []);
+  const editModules = useCallback(
+    (next: (course: Course) => CourseModule[]) => {
+      // No coalescing key — see the lesson editor: each add, delete and move is
+      // its own act and gets its own step back.
+      history.edit(null, (current) => ({ ...current, modules: renumber(next(current)) }));
+      setNote(null);
+    },
+    [history]
+  );
 
   /**
    * The lesson slugs the SERVER has.
    *
-   * `state.data` is the loaded response and `state.course` is the working copy;
+   * `state.data` is the loaded response and the history's course is the working copy;
    * edits touch only the second, so this stays the stored truth until the next
    * save reloads it. It is what tells a freshly added lesson — which exists
    * only on this screen — from one an author may open.
@@ -160,11 +167,11 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   );
 
   async function save(): Promise<boolean> {
-    if (state.status !== "ready" || busy) return false;
+    if (!course || busy) return false;
     setBusy(true);
     setNote(null);
 
-    const result = await saveCourse(slug, state.course);
+    const result = await saveCourse(slug, course);
     setBusy(false);
 
     if (!result.ok) {
@@ -173,7 +180,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       return false;
     }
 
-    setDirty(false);
+    history.markClean();
     // Reloaded rather than patched: the server bumps `version` and re-derives
     // readiness, and a screen that kept the old copy would show a blocker list
     // that no longer matches what is stored.
@@ -231,7 +238,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     );
   }
 
-  const { course } = state;
+  if (!course) {
+    return (
+      <BuilderShell trail={trail}>
+        <BuilderNotice title="Завантажуємо курс…" />
+      </BuilderShell>
+    );
+  }
+
   const { readiness } = state.data;
   const published = state.data.course.status === "published";
   const lessonCount = course.modules.reduce((total, module) => total + module.lessons.length, 0);
@@ -366,7 +380,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
                 onClick={() => {
                   const href = pendingHref;
                   setPendingHref(null);
-                  setDirty(false);
+                  history.markClean();
                   router.push(href);
                 }}
                 disabled={busy}
@@ -399,6 +413,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           </>
         ) : (
           <>
+            <BuilderHistory history={history} disabled={busy} />
             <span className={styles.saveState}>{note ?? (dirty ? "Є незбережені зміни" : "Змін немає")}</span>
             <button className={styles.commitAction} type="button" onClick={() => void save()} disabled={busy || !dirty}>
               {busy ? "Зберігаємо…" : "Зберегти"}

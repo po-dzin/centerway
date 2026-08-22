@@ -6,6 +6,8 @@ export const CW_ICON_NAMES = [
   "arrow-left",
   "arrow-up",
   "arrow-down",
+  "undo",
+  "redo",
   "chevron-right",
   "chevron-down",
   "body",

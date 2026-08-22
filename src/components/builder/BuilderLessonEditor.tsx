@@ -25,6 +25,8 @@ import { BuilderMenu } from "./BuilderMenu";
 import { FieldInput } from "./BuilderFields";
 import { BlockPreview } from "./BuilderBlockPreview";
 import { loadCourse, saveCourse, type BuilderFailure } from "./builderClient";
+import { BuilderHistory } from "./BuilderHistory";
+import { useCourseHistory } from "./useCourseHistory";
 import {
   BLOCK_TYPE_HINTS,
   BLOCK_TYPE_LABELS,
@@ -38,7 +40,7 @@ import styles from "./Builder.module.css";
 type State =
   | { status: "loading" }
   | { status: "failed"; failure: BuilderFailure; detail?: string }
-  | { status: "ready"; course: Course };
+  | { status: "ready" };
 
 const ids = () => crypto.randomUUID();
 
@@ -61,7 +63,8 @@ const ids = () => crypto.randomUUID();
 export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lessonSlug: string }) {
   const router = useRouter();
   const [state, setState] = useState<State>({ status: "loading" });
-  const [dirty, setDirty] = useState(false);
+  const history = useCourseHistory();
+  const { course, dirty } = history;
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [contentsOpen, setContentsOpen] = useState(false);
@@ -74,33 +77,35 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     void (async () => {
       const result = await loadCourse(slug);
       if (cancelled) return;
+      if (result.ok) history.reset(result.data.course);
       setState(
         result.ok
-          ? { status: "ready", course: result.data.course }
+          ? { status: "ready" }
           : { status: "failed", failure: result.failure, detail: result.detail }
       );
     })();
     return () => {
       cancelled = true;
     };
+    // `history.reset` is stable; the course is reloaded only when the slug changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   // Plain derivation, not memoized: it is two array scans over a handful of
   // modules, and the shape the compiler could not memoize anyway.
-  const located = state.status === "ready" ? locateLesson(state.course, lessonSlug) : null;
+  const located = course ? locateLesson(course, lessonSlug) : null;
 
   /** Applies a change to one path inside the current lesson. */
   const editLesson = useCallback(
     (path: (string | number)[], value: unknown) => {
-      setState((current) => {
-        if (current.status !== "ready" || !located) return current;
-        const full = ["modules", located.moduleIndex, "lessons", located.lessonIndex, ...path];
-        return { status: "ready", course: writePath(current.course, full, value) };
-      });
-      setDirty(true);
+      if (!located) return;
+      const full = ["modules", located.moduleIndex, "lessons", located.lessonIndex, ...path];
+      // Coalesced by the path being written: a burst of typing in one field is
+      // one undo, and moving to the next field starts a new one.
+      history.edit(full.join("."), (current) => writePath(current, full, value));
       setNote(null);
     },
-    [located]
+    [history, located]
   );
 
   /**
@@ -112,16 +117,17 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
    */
   const editBlocks = useCallback(
     (next: (blocks: LessonBlock[]) => LessonBlock[]) => {
-      setState((current) => {
-        if (current.status !== "ready" || !located) return current;
-        const path = ["modules", located.moduleIndex, "lessons", located.lessonIndex, "blocks"];
-        const blocks = readPath(current.course, path) as LessonBlock[];
-        return { status: "ready", course: writePath(current.course, path, renumberSteps(next(blocks))) };
-      });
-      setDirty(true);
+      if (!located) return;
+      const path = ["modules", located.moduleIndex, "lessons", located.lessonIndex, "blocks"];
+      // No coalescing key: adding, deleting and reordering a block are each one
+      // deliberate act, and merging two of them would take back a move the
+      // author never asked to lose.
+      history.edit(null, (current) =>
+        writePath(current, path, renumberSteps(next(readPath(current, path) as LessonBlock[])))
+      );
       setNote(null);
     },
-    [located]
+    [history, located]
   );
 
   // The browser's own guard. An author who edits a lesson on a phone and
@@ -134,11 +140,11 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   }, [dirty]);
 
   const save = useCallback(async (): Promise<boolean> => {
-    if (state.status !== "ready" || busy) return false;
+    if (!course || busy) return false;
     setBusy(true);
     setNote(null);
 
-    const result = await saveCourse(slug, state.course);
+    const result = await saveCourse(slug, course);
     setBusy(false);
 
     if (!result.ok) {
@@ -147,14 +153,14 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       return false;
     }
 
-    setDirty(false);
+    history.markClean();
     setNote(
       result.data.blockers.length === 0
         ? "Збережено. Блокерів немає."
         : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`
     );
     return true;
-  }, [busy, slug, state]);
+  }, [busy, course, history, slug]);
 
   /**
    * In-builder navigation, with the unsaved edit accounted for.
@@ -198,7 +204,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     );
   }
 
-  if (!located) {
+  if (!course || !located) {
     return (
       <BuilderShell trail={trail}>
         <BuilderNotice title="Урок не знайдено" text={`У курсі немає уроку «${lessonSlug}».`} />
@@ -206,7 +212,6 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     );
   }
 
-  const course = state.course;
   // Not named `module`: Next forbids shadowing the CommonJS global.
   const holder = course.modules[located.moduleIndex];
   const lesson = holder.lessons[located.lessonIndex] as Lesson;
@@ -327,7 +332,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
               onClick={() => {
                 const href = pendingHref;
                 setPendingHref(null);
-                setDirty(false);
+                history.markClean();
                 router.push(href);
               }}
               disabled={busy}
@@ -351,6 +356,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
           </>
         ) : (
           <>
+            <BuilderHistory history={history} disabled={busy} />
             <span className={styles.saveState}>{note ?? (dirty ? "Є незбережені зміни" : "Змін немає")}</span>
             <button className={styles.commitAction} type="button" onClick={save} disabled={busy || !dirty}>
               {busy ? "Зберігаємо…" : "Зберегти"}
