@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Analytics } from "@vercel/analytics/next";
 import { GoogleTagProvider } from "@/lib/tracking/GoogleTagProvider";
+import { PixelProvider } from "@/lib/tracking/PixelProvider";
 import { Suspense } from "react";
 import "../globals.css";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
@@ -45,6 +46,14 @@ export default function RootLayout({
       <body suppressHydrationWarning>
         <Suspense fallback={null}>
           <GoogleTagProvider measurementId={GOOGLE_TAG_ID} />
+        </Suspense>
+        {/* The Meta Pixel, finally mounted. It had been written and left
+            unmounted, so a purchase returning to a platform page had a
+            server-side Purchase from the WayForPay webhook and nothing in the
+            browser to deduplicate it against. Honours cw_staff — see the
+            provider. */}
+        <Suspense fallback={null}>
+          <PixelProvider />
         </Suspense>
         {children}
         <Analytics />
