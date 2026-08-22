@@ -38,8 +38,10 @@ import { PwaInstallFooterEntry } from "@/components/platform/cabinet/PwaInstallC
 const INSTALL_LABEL = "Додати на екран";
 
 /* Not the storefront's promise — nobody here is being sold to. It says what
-   this application is for, in the same slot and at the same weight. */
-const PERSONAL_LEAD = "Ваші курси, поступ і нагадування — в одному місці.";
+   this application is for, in the same slot and at the same weight, in the
+   plainest words that are still true: «поступ» is a book word, and a line that
+   has to be parsed is a line that was written for the writer. */
+const PERSONAL_LEAD = "Тут ваші курси й уроки.";
 
 export function PlatformFooter({ variant = "full" }: { variant?: "full" | "personal" }) {
   const href = useSurfaceHref();
