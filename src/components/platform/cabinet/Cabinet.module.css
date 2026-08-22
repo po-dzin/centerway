@@ -442,6 +442,79 @@
   font-family: var(--cw-font-data);
 }
 
+/* Top-level blocks used to touch: the shell is not a grid and nothing set a
+   gap, so "Продукти" started where the card above it ended. With the last two
+   now folding, the seam between them is also the hit area's edge, and it has to
+   be visible. */
+.section + .section,
+.section + .fold,
+.fold + .fold,
+.fold + .section {
+  margin-top: var(--cw-space-xl);
+}
+
+/* ── Folded sections ──────────────────────────────── */
+
+/* See CabinetFold.tsx: shut on a phone, open from 561 up. */
+.fold {
+  display: grid;
+  gap: var(--cw-space-md);
+}
+
+.foldHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  /* Both, and neither is redundant: `list-style` kills the marker in Firefox,
+     the pseudo-element in WebKit. */
+  list-style: none;
+  padding-block: var(--cw-space-2xs);
+  cursor: pointer;
+}
+
+.foldHead::-webkit-details-marker {
+  display: none;
+}
+
+.foldHead:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+  border-radius: var(--cw-radius-md);
+}
+
+.foldText {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+/* Sized to the touch minimum and centred on the label line rather than on the
+   whole header, so it stays beside the title when a lead wraps under it. */
+.foldChevron {
+  flex: none;
+  width: var(--ds-touch-target-min);
+  height: var(--ds-touch-target-min);
+  padding: 0.6rem;
+  color: var(--cw-platform-muted);
+  transition: transform 200ms ease;
+}
+
+.fold[open] .foldChevron {
+  transform: rotate(180deg);
+}
+
+.foldBody {
+  display: grid;
+  gap: var(--cw-space-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foldChevron {
+    transition: none;
+  }
+}
+
 /* ── Course overview (rings) ──────────────────────── */
 
 /* A panel like any other — the rings are the only new thing here, and they are

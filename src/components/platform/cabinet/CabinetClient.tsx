@@ -30,6 +30,7 @@ import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
 import { PwaInstallCard } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
+import { CabinetFold } from "./CabinetFold";
 import { ShelfErrorCard, courseAction, courseMapHref, matte } from "./CourseCard";
 import {
   dateLocaleFor,
@@ -363,38 +364,13 @@ export function CabinetClient() {
                 </Link>
               </div>
             </article>
-
-            {/* Reachability sits on the dashboard, not behind a settings tab: a
-                learner who cannot receive a reminder should find that out here,
-                not by missing one. */}
-            {reach ? (
-              <article className={reach.linked ? styles.card : styles.notice} {...matte}>
-                <p className={styles.sectionLabel}>{cab.accountLabel}</p>
-                <h2 className={styles.cardTitle}>{cab.notificationsTitle}</h2>
-                <p className={styles.cardText}>
-                  {reach.linked
-                    ? cab.notificationsLinked
-                    : reach.linkUrl
-                      ? cab.notificationsMissing
-                      : cab.notificationsUnavailable}
-                </p>
-                {!reach.linked && reach.linkUrl ? (
-                  <div className={styles.actions}>
-                    <a className={styles.actionPrimary} href={reach.linkUrl} target="_blank" rel="noopener noreferrer">
-                      {cab.connectTelegram}
-                    </a>
-                  </div>
-                ) : null}
-              </article>
-            ) : null}
           </div>
         </div>
 
-        <div className={styles.section}>
-          <div className={styles.sectionHead}>
-            <p className={styles.sectionLabel}>{copy.products}</p>
-            <h2 className={styles.sectionTitle}>{copy.productsTitle}</h2>
-          </div>
+        {/* Folded shut on a phone. A receipt is reference, not the answer the
+            dashboard exists to give, and one column of them was a ribbon
+            between the reader and the end of their own account. */}
+        <CabinetFold label={copy.products} title={copy.productsTitle}>
           {purchases.length > 0 ? (
             <div className={styles.cardGrid}>
               {purchases.map((purchase) => (
@@ -440,15 +416,9 @@ export function CabinetClient() {
               </div>
             </article>
           )}
-        </div>
+        </CabinetFold>
 
-        <div className={styles.section}>
-          <div className={styles.sectionHead}>
-            <p className={styles.sectionLabel}>{cab.accountLabel}</p>
-            <h2 className={styles.sectionTitle}>{cab.accountTitle}</h2>
-            <p className={styles.sectionLead}>{cab.accountLead}</p>
-          </div>
-
+        <CabinetFold label={cab.accountLabel} title={cab.accountTitle} lead={cab.accountLead}>
           <div className={styles.cardGrid}>
             <article className={styles.card} {...matte}>
               <h3 className={styles.cardTitle}>{copy.contactsTitle}</h3>
@@ -480,12 +450,37 @@ export function CabinetClient() {
               </div>
             </article>
 
+            {/* Reachability belongs to the account, beside the contacts it is
+                one of: "can support reach me" and "what is my phone number" are
+                the same question asked twice. It sat up in the dosha row for a
+                while, where a boundary-toned panel beside a test result read as
+                an alert about the test. */}
+            {reach ? (
+              <article className={reach.linked ? styles.card : styles.notice} {...matte}>
+                <h3 className={styles.cardTitle}>{cab.notificationsTitle}</h3>
+                <p className={styles.cardText}>
+                  {reach.linked
+                    ? cab.notificationsLinked
+                    : reach.linkUrl
+                      ? cab.notificationsMissing
+                      : cab.notificationsUnavailable}
+                </p>
+                {!reach.linked && reach.linkUrl ? (
+                  <div className={styles.actions}>
+                    <a className={styles.actionPrimary} href={reach.linkUrl} target="_blank" rel="noopener noreferrer">
+                      {cab.connectTelegram}
+                    </a>
+                  </div>
+                ) : null}
+              </article>
+            ) : null}
+
             {/* Hides itself on `www`, where an install would put the SHOP on
                 the home screen; on localhost and preview one origin serves
                 everything and it appears here as before. */}
             <PwaInstallCard copy={cab} />
           </div>
-        </div>
+        </CabinetFold>
       </div>
     </main>
   );
