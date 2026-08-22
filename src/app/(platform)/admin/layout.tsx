@@ -9,7 +9,7 @@ import { I18nProvider, useI18n } from "@/components/I18nProvider";
 import { UserMenu } from "@/components/UserMenu";
 import { ToastProvider } from "@/components/ToastProvider";
 import { supabaseClient } from "@/lib/supabaseClient";
-import { isAdminRole } from "@/lib/platform/adminRole";
+import { ADMIN_ROLE_CACHE_KEY, ADMIN_ROLE_CACHE_TTL_MS, isAdminRole } from "@/lib/platform/adminRole";
 import { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 const icons = {
@@ -19,6 +19,7 @@ const icons = {
     orders: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" /><line x1="3" y1="6" x2="21" y2="6" /><path d="M16 10a4 4 0 0 1-8 0" /></svg>,
     analytics: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10" /><line x1="12" y1="20" x2="12" y2="4" /><line x1="6" y1="20" x2="6" y2="14" /></svg>,
     jobs: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="3" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14M4.93 4.93a10 10 0 0 0 0 14.14" /></svg>,
+    access: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" /><path d="M7 11V7a5 5 0 0 1 10 0v4" /></svg>,
     system: <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><line x1="4" y1="6" x2="20" y2="6" /><line x1="4" y1="12" x2="20" y2="12" /><line x1="4" y1="18" x2="20" y2="18" /><circle cx="9" cy="6" r="2" fill="currentColor" stroke="none" /><circle cx="15" cy="12" r="2" fill="currentColor" stroke="none" /><circle cx="11" cy="18" r="2" fill="currentColor" stroke="none" /></svg>,
 };
 
@@ -31,6 +32,9 @@ function AdminShell({ children }: { children: ReactNode }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [session, setSession] = useState<Session | null>(null);
     const [role, setRole] = useState<string | null>(null);
+    /* Decides the builder entry in the account menu. Ownership is per row
+       (`lms_courses.author_id`), so it cannot be read off the role. */
+    const [authorsCourses, setAuthorsCourses] = useState(false);
     const [authInitialized, setAuthInitialized] = useState(false);
     const [roleInitialized, setRoleInitialized] = useState(false);
     const roleFetchRef = useRef<{ token: string; at: number; inFlight: boolean }>({
@@ -40,15 +44,25 @@ function AdminShell({ children }: { children: ReactNode }) {
     });
 
     const loadRole = useCallback(async (accessToken: string) => {
-        const cacheKey = "cw_admin_role_cache_v1";
+        /* The key and the TTL come from the shared module, not from a literal
+           here: the platform header reads the same entry, and when this file
+           kept its own copy of the name a bump on one side simply stopped the
+           other side from ever hitting the cache. */
+        const cacheKey = ADMIN_ROLE_CACHE_KEY;
         try {
             const cachedRaw = sessionStorage.getItem(cacheKey);
             if (cachedRaw) {
-                const cached = JSON.parse(cachedRaw) as { role?: string; tokenTail?: string; at?: number };
+                const cached = JSON.parse(cachedRaw) as {
+                    role?: string;
+                    authorsCourses?: boolean;
+                    tokenTail?: string;
+                    at?: number;
+                };
                 const tokenTail = accessToken.slice(-16);
-                const fresh = typeof cached.at === "number" && Date.now() - cached.at < 5 * 60_000;
+                const fresh = typeof cached.at === "number" && Date.now() - cached.at < ADMIN_ROLE_CACHE_TTL_MS;
                 if (fresh && cached.tokenTail === tokenTail && typeof cached.role === "string") {
                     setRole(cached.role);
+                    setAuthorsCourses(cached.authorsCourses === true);
                     setRoleInitialized(true);
                     return;
                 }
@@ -78,14 +92,24 @@ function AdminShell({ children }: { children: ReactNode }) {
                 setRole(null);
                 return;
             }
-            const payload = (await res.json().catch(() => ({}))) as { role?: string };
+            const payload = (await res.json().catch(() => ({}))) as {
+                role?: string;
+                authorsCourses?: boolean;
+            };
             const nextRole = typeof payload.role === "string" ? payload.role : null;
+            const nextAuthors = payload.authorsCourses === true;
             setRole(nextRole);
+            setAuthorsCourses(nextAuthors);
             if (nextRole) {
                 try {
                     sessionStorage.setItem(
                         cacheKey,
-                        JSON.stringify({ role: nextRole, tokenTail: accessToken.slice(-16), at: Date.now() })
+                        JSON.stringify({
+                            role: nextRole,
+                            authorsCourses: nextAuthors,
+                            tokenTail: accessToken.slice(-16),
+                            at: Date.now(),
+                        })
                     );
                 } catch {
                     // ignore storage write errors
@@ -118,6 +142,7 @@ function AdminShell({ children }: { children: ReactNode }) {
             setSession(session);
             if (event === "SIGNED_OUT") {
                 setRole(null);
+                setAuthorsCourses(false);
                 setRoleInitialized(true);
             } else if ((event === "INITIAL_SESSION" || event === "SIGNED_IN") && session?.access_token) {
                 void loadRole(session.access_token);
@@ -197,6 +222,7 @@ function AdminShell({ children }: { children: ReactNode }) {
         { key: "nav_orders" as const, href: "/admin/orders", icon: icons.orders, active: true },
         { key: "nav_customers" as const, href: "/admin/customers", icon: icons.customers, active: true },
         { key: "nav_operations" as const, href: "/admin/jobs", icon: icons.jobs, active: true },
+        { key: "nav_access" as const, href: "/admin/access", icon: icons.access, active: true },
         { key: "nav_system" as const, href: "/admin/system", icon: icons.system, active: true },
     ];
     const isSelectedNav = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname?.startsWith(href));
@@ -287,6 +313,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                         <UserMenu
                             email={session?.user?.email}
                             role={role}
+                            authorsCourses={authorsCourses}
                             initial={session?.user?.email ? session.user.email.charAt(0).toUpperCase() : "?"}
                             avatarUrl={session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture}
                         />
