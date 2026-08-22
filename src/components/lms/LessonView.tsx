@@ -350,6 +350,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
             className={styles.pagerLink}
             href={surfaceHref(`/learn/${courseSlug}/${nav.previous.slug}`)}
             aria-label={`Попередній урок: ${nav.previous.title}`}
+            title={nav.previous.title}
           >
             <Icon name="arrow-left" size={16} className={styles.pagerArrow} />
             <span className={styles.pagerTitle}>{nav.previous.title}</span>
@@ -366,6 +367,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
             className={completed ? styles.pagerLinkNextAccent : styles.pagerLinkNext}
             href={surfaceHref(`/learn/${courseSlug}/${nav.next.slug}`)}
             aria-label={`Наступний урок: ${nav.next.title}`}
+            title={nav.next.title}
           >
             <span className={styles.pagerTitle}>{nav.next.title}</span>
             <Icon name="arrow-right" size={16} className={styles.pagerArrow} />

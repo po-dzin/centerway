@@ -517,22 +517,23 @@
   color: var(--cw-platform-muted);
 }
 
+/* ONE LINE. A lesson title is a sentence, and a pager that grows to three lines
+   is a paragraph with an arrow on it — the cell stops reading as a control and
+   the two cells stop matching each other's height. Clipped with an ellipsis;
+   the full title is on the link's `title`, one hover away, and on `aria-label`
+   for anyone not hovering. Same rule the breadcrumb follows.
+
+   `min-width: 0` is what lets it clip at all: without it the title is sized by
+   its longest word, the flex row cannot shrink, and the arrow is pushed out of
+   the cell. A flex item's `min-width: auto` is a floor at min-content. */
 .pagerTitle {
-  /* Without it the title is sized by its longest word and the flex row cannot
-     shrink: the arrow was pushed out of the cell and wrapped under the text,
-     with the accent fill running past the grid column it belongs to. A flex
-     item's `min-width: auto` is a floor at min-content, and a clamped title
-     needs to be allowed below it. */
   min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-size: 0.92rem;
   font-weight: 600;
   line-height: 1.3;
-  /* Two lines is enough to recognise the lesson; a four-line wrap on a phone
-     turns the pager into a wall. */
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
 }
 
 /* The lesson body — the one place a course's `scale` choice lands.
@@ -842,8 +843,15 @@
 
 /* Done: the accent is spent, so the control steps back to a quiet surface and
    the check alone carries the state. */
+/* `composes` names BOTH ancestors, and it has to: a two-level chain inside one
+   module loses the grandparent. Written as `composes: completeToggle` alone,
+   the build emitted `completeToggleDone completeToggle` and dropped
+   `completionBar` — so the moment the lesson was ticked the bar stopped being
+   sticky and lost its 32px top margin, and the whole page below it jumped. The
+   forward pager had the identical bug; those are the only two chains in the
+   codebase, and both now name every ancestor. */
 .completeToggleDone {
-  composes: completeToggle;
+  composes: completionBar completeToggle;
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-text);
 }
