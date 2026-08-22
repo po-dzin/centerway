@@ -58,6 +58,13 @@ export function courseRows(course: Course): CourseRows {
       theme: course.theme ?? null,
       cover: course.cover ?? null,
       sort_order: course.sortOrder ?? null,
+      // Storefront. The author owns what the course claims about itself; the
+      // PRICE is not here and never will be — it lives in `lms_course_offers`,
+      // which the authoring routes have no grant on. See the 2026-08-22
+      // migration for why that is a different table rather than a policy.
+      tagline: course.tagline ?? null,
+      results: course.results ?? null,
+      visibility: course.visibility ?? "hidden",
     },
     modules: course.modules.map((module) => ({
       id: module.id,
@@ -159,6 +166,23 @@ export function courseFromRows(
     ...(courseRow.sort_order === null || courseRow.sort_order === undefined
       ? {}
       : { sortOrder: Number(courseRow.sort_order) }),
+    // Read TOLERANTLY, unlike `reference` above, and the difference is what is
+    // at stake. A missing `reference` column silently turned a recipe list back
+    // into day 4 of the protocol — content lost. A missing storefront column
+    // means the course is not on sale, which is the safe state and the default
+    // the migration itself writes. So an older database reads back as hidden
+    // rather than refusing to open.
+    ...(courseRow.tagline ? { tagline: courseRow.tagline as string } : {}),
+    ...(Array.isArray(courseRow.results) && courseRow.results.length > 0
+      ? { results: courseRow.results as string[] }
+      : {}),
+    // `hidden` reads back as ABSENT, not as the string. It is the default the
+    // column itself writes, so carrying it explicitly would put a field in every
+    // exported course file that says what its absence already says — and would
+    // make the round-trip through the database not equal what went in.
+    ...(typeof courseRow.visibility === "string" && courseRow.visibility !== "hidden"
+      ? { visibility: courseRow.visibility as never }
+      : {}),
     modules,
   };
 

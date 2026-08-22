@@ -336,8 +336,8 @@ my.centerway.net.ua/build/way21/day-1   → /build/way21/day-1 редактор 
 
 1. ~~**DNS + домен у Vercel.**~~ Зроблено 2026-08-22, але на іншому хості: у проєкті `my.centerway.net.ua` (і `www.my.` — 308 на голий). Код маршрутизує саме його; на превʼю та localhost обидва префікси доступні за шляхом.
 2. ~~**Supabase Auth redirect allowlist.**~~ Зроблено 2026-08-22: `https://my.centerway.net.ua/**` у списку дозволених redirect URL.
-3. **Міграція хвилі 2** — канонічний запис `docs/migration/sql/2026-08-21_lms_builder_authoring.sql`; застейджити (`node scripts/db-stage-migration.mjs 2026-08-21_lms_builder_authoring`) і виконати в SQL-редакторі Supabase. Додає `lms_courses.theme / cover / sort_order` і `lms_modules.reference`. Без неї збереження курсу впаде на невідомій колонці.
-4. **`npm run lms:seed`**, щоб структура обох курсів у базі збігалася з файлами — білдер читає базу, і без цього він покаже стан на момент останнього сиду.
+3. ~~**Міграція хвилі 2.**~~ Застосована. Перевірено 2026-08-22 читанням схеми: `lms_courses.theme / cover / sort_order / author_id` і `lms_modules.reference` на місці.
+4. ~~**`npm run lms:seed`**~~ — виконаний 2026-08-22. У базі три курси (`way21` 5 модулів, `reset-day` 3, `test` 1) і 23 уроки, що збігається з файлами.
 5. Щоб віддати курс автору — проставити `lms_courses.author_id` (`npm run lms:grant`). Курс, створений у білдері, одразу належить тому, хто його створив.
 
 `reference` тепер колонка, а не флаг лише в JSON. Милиця, яка тягла його з файлу (`referenceModuleSlugs`), видалена: модуль, створений у білдері, раніше не міг стати довідковим узагалі.
