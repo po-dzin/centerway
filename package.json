@@ -36,6 +36,7 @@
     "lms:import": "npm run lms:validate && node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/lms-import.mjs",
     "lms:pull": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --import ./scripts/lib/register-ts.mjs scripts/lms-pull.mjs",
     "lms:grant": "node scripts/lms-grant.mjs",
+    "admin:role": "node scripts/admin-role.mjs",
     "lms:qa": "npm run guard:lms-core && npm run lms:validate && npm run lint && npm run build",
     "generator:validate": "node scripts/generator-validate.mjs",
     "guard:rhythm": "node scripts/guard-rhythm-grid.mjs",

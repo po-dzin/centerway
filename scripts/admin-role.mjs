@@ -1,12 +1,11 @@
 /**
- * Reads and sets `public.user_roles.role` — the store that actually gates admin.
+ * Reads and sets `public.user_roles.role` — the one role store.
  *
- * This exists because there was no way to grant admin except by hand in the SQL
- * console, and because this codebase has TWO role columns: `user_roles.role`
- * (what RLS and every server check read) and `platform_users.role` (what parts
- * of the app display). Writing the wrong one is a silent no-op — no error, the
- * surface just stays locked. This script writes the first and REPORTS the
- * second, so a mismatch is visible instead of mysterious.
+ * It was two until 2026-08-21: `platform_users.role` sat beside it, unsynced,
+ * gating one thing (`isStaff()`), and writing the wrong one was a silent no-op.
+ * That column is gone (docs/migration/sql/2026-08-21_merge_role_stores.sql), so
+ * this script no longer has a second column to reconcile — but it is still the
+ * only way to grant a role without opening the SQL console.
  *
  * NOTE: writes to whatever SUPABASE_URL points at, which in local development
  * is the same project as production. Granting admin is not sandboxed.
@@ -25,7 +24,8 @@ import path from "node:path";
 import { createClient } from "@supabase/supabase-js";
 
 const rootDir = process.cwd();
-const GRANTABLE = new Set(["admin", "support", "user"]);
+// Mirrors user_roles' CHECK, which gained `coach` when the stores merged.
+const GRANTABLE = new Set(["admin", "support", "coach", "user"]);
 
 function loadEnv() {
   const envPath = path.join(rootDir, ".env.local");
@@ -62,7 +62,7 @@ const db = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_SERVICE_R
 async function accountFor(email) {
   const { data, error } = await db
     .from("platform_users")
-    .select("auth_user_id, email, role")
+    .select("auth_user_id, email")
     .ilike("email", email)
     .maybeSingle();
   if (error) fail(error.message);
@@ -80,31 +80,24 @@ async function gatingRole(authUserId) {
   return typeof data?.role === "string" ? data.role : null;
 }
 
-/** Both columns side by side: the one that gates, and the one that only displays. */
-function report(email, gating, display) {
-  const admin = ["admin", "support"].includes((gating ?? "").toLowerCase());
-  console.log(`  ${admin ? "✓" : "·"} ${email}`);
-  console.log(`      user_roles.role      = ${gating ?? "(none)"}   ← gates the admin surface`);
-  console.log(`      platform_users.role  = ${display ?? "(none)"}   ← display only`);
-  if (gating && display && gating.toLowerCase() !== display.toLowerCase()) {
-    console.log(`      ! the two stores disagree — the gating one wins`);
-  }
+function report(email, role) {
+  const elevated = ["admin", "support", "coach"].includes((role ?? "").toLowerCase());
+  console.log(`  ${elevated ? "✓" : "·"} ${email.padEnd(38)} ${role ?? "(none)"}`);
 }
 
 async function list() {
   const { data, error } = await db.from("user_roles").select("user_id, role");
   if (error) fail(error.message);
-  const elevated = (data ?? []).filter((r) => ["admin", "support"].includes((r.role ?? "").toLowerCase()));
+  const elevated = (data ?? []).filter((r) => ["admin", "support", "coach"].includes((r.role ?? "").toLowerCase()));
   if (!elevated.length) {
     console.log("admin:role — nobody holds admin or support in user_roles.");
     return;
   }
-  const { data: users } = await db.from("platform_users").select("auth_user_id, email, role");
+  const { data: users } = await db.from("platform_users").select("auth_user_id, email");
   const byId = new Map((users ?? []).map((u) => [u.auth_user_id, u]));
   console.log(`admin:role — ${elevated.length} elevated account(s):`);
   for (const row of elevated) {
-    const u = byId.get(row.user_id);
-    report(u?.email ?? row.user_id, row.role, u?.role);
+    report(byId.get(row.user_id)?.email ?? row.user_id, row.role);
   }
 }
 
@@ -120,7 +113,7 @@ async function main() {
 
   if (!nextRole) {
     console.log(`admin:role — ${email}:`);
-    report(account.email, await gatingRole(account.auth_user_id), account.role);
+    report(account.email, await gatingRole(account.auth_user_id));
     return;
   }
 
@@ -133,7 +126,7 @@ async function main() {
   if (error) fail(error.message);
 
   console.log(`admin:role — set ${email} → ${role}`);
-  report(account.email, await gatingRole(account.auth_user_id), account.role);
+  report(account.email, await gatingRole(account.auth_user_id));
   console.log("\n  The header caches the role per tab for 5 minutes; reload after a change.");
 }
 
