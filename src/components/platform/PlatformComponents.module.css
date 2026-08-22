@@ -517,24 +517,6 @@
   justify-items: start;
 }
 
-/* The learning footer: one wrapping row of plain links, no grid columns and no
-   brand block. It is a rule at the bottom of a lesson, not a close — so it
-   carries the weight of a caption, and the touch targets are still real. */
-.footerLearnRow {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--cw-space-sm) var(--cw-space-lg);
-}
-
-.footerLearnRow a,
-.footerLearnRow button {
-  min-height: var(--ds-touch-target-min);
-  font-family: var(--cw-font-body);
-  font-size: 0.92rem;
-  font-weight: 500;
-}
-
 .footerSocials {
   width: fit-content;
   justify-self: end;

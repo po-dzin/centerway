@@ -442,7 +442,7 @@
 
 .pager {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--cw-space-xs);
   margin-top: var(--cw-space-lg);
 }
@@ -488,16 +488,24 @@
   opacity: 0.5;
 }
 
-.pagerLinkNextAccent .pagerArrow {
-  opacity: 0.7;
-}
-
 /* Once the lesson is done, forward momentum moves HERE rather than adding a
-   second button to the sticky bar. One accent on screen at a time. */
+   second button to the sticky bar. One accent on screen at a time.
+
+   `composes` names BOTH links in the chain, and the rule styling a descendant
+   of this class comes AFTER it, not before. With the descendant rule written
+   first and `composes: pagerLinkNext` alone, the build emitted
+   `pagerLinkNextAccent pagerLinkNext` and dropped `pagerLink` — so the accent
+   cell had no display, no padding and no radius, and on a phone the arrow
+   wrapped under a two-line title with the gold fill running to the column's
+   edge. */
 .pagerLinkNextAccent {
-  composes: pagerLinkNext;
+  composes: pagerLink pagerLinkNext;
   background: var(--cw-platform-accent);
   color: var(--cw-platform-on-accent);
+}
+
+.pagerLinkNextAccent .pagerArrow {
+  opacity: 0.7;
 }
 
 /* Left over from the pager, now only the drawer's "Пройдено N з M" line. */
@@ -510,6 +518,12 @@
 }
 
 .pagerTitle {
+  /* Without it the title is sized by its longest word and the flex row cannot
+     shrink: the arrow was pushed out of the cell and wrapped under the text,
+     with the accent fill running past the grid column it belongs to. A flex
+     item's `min-width: auto` is a floor at min-content, and a clamped title
+     needs to be allowed below it. */
+  min-width: 0;
   font-size: 0.92rem;
   font-weight: 600;
   line-height: 1.3;
