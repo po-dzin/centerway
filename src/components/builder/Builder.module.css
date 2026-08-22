@@ -590,10 +590,97 @@
 
 /* ── Structure ────────────────────────────────────── */
 
+/* ── The structure, as a path ─────────────────────── */
+
+/* Modules and their lessons used to run together in one undifferentiated
+   column: a title, some rows, another title, more rows, nothing saying which
+   belonged to which. The hierarchy is drawn now — a numbered node per module
+   and a dashed line hanging its lessons off it, in the same dash vocabulary the
+   learner's progress rail and the icon set already speak.
+
+   The number is a CSS counter, so it is the module's real position and cannot
+   drift from the list. A REFERENCE module does not increment it: it is outside
+   the sequence by definition, and a recipe list numbered "4" would say the
+   opposite. */
+.structure {
+  counter-reset: cw-module;
+}
+
 .moduleBlock {
+  counter-increment: cw-module;
   display: grid;
   gap: var(--cw-space-2xs);
   padding-block-end: var(--cw-space-sm);
+  padding-inline-start: 2.1rem;
+}
+
+.moduleBlock[data-reference] {
+  counter-increment: none;
+}
+
+/* A hairline between modules. Without it the only thing separating two modules
+   was the gap that also separates a module from its own lessons. */
+.moduleBlock + .moduleBlock {
+  margin-block-start: var(--cw-space-sm);
+  padding-block-start: var(--cw-space-md);
+  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.moduleHead {
+  position: relative;
+}
+
+.moduleHead::before {
+  content: counter(cw-module);
+  position: absolute;
+  left: -2.1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.65rem;
+  height: 1.65rem;
+  display: grid;
+  place-items: center;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  box-shadow: inset 0 0 0 1px var(--cw-platform-border);
+  font-family: var(--cw-font-data);
+  font-size: 0.78rem;
+  color: var(--cw-platform-muted);
+}
+
+/* Outside the sequence, and it says so: a dash where the number would be. */
+.moduleBlock[data-reference] .moduleHead::before {
+  content: "—";
+  background: transparent;
+}
+
+/* The path spans exactly the lessons — it starts under the module's node and
+   ends at the last row, so «Додати урок» hangs off nothing. */
+.lessonList {
+  position: relative;
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.lessonList::before {
+  content: "";
+  position: absolute;
+  left: -1.28rem;
+  top: -0.55rem;
+  bottom: 0.9rem;
+  border-left: 2px dashed var(--cw-platform-border);
+}
+
+.lessonRowWrap::before {
+  content: "";
+  position: absolute;
+  left: -1.53rem;
+  top: 50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: -0.25rem;
+  border-radius: 50%;
+  background: var(--cw-platform-accent);
 }
 
 .moduleHead {
@@ -639,17 +726,29 @@
   background: var(--cw-mat-surface);
 }
 
+/* A checkbox and ONE line. Anything longer is the tooltip's job — see
+   BuilderCourseView.tsx: a sentence beside a control wraps and turns the row
+   into a paragraph. */
 .moduleFlag {
   display: flex;
   align-items: center;
-  gap: var(--cw-space-2xs);
+  gap: var(--cw-space-xs);
   min-height: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-xs);
+  padding-inline: var(--cw-space-2xs);
   color: var(--cw-platform-muted);
   font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.moduleFlag > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .lessonRowWrap {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--cw-space-2xs);
@@ -701,15 +800,16 @@
    66-character Ukrainian title runs to four lines at this measure and pushes
    the next lesson off the screen. The whole title is one press away, on the
    lesson's own page. Same clamp the learner's pager already uses. */
+/* One line, the rest in the tooltip. Two-line titles made every row a
+   different height, which put the dots on the path at uneven intervals and
+   turned a list into a stack of paragraphs. */
 .lessonName {
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-weight: 500;
   line-height: 1.35;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
 }
 
 .lessonFlag {
@@ -1056,14 +1156,19 @@
    floats over the page rather than sitting inside a panel. It is also the only
    control in the editor whose absence loses work, and a lesson is long enough
    that a save at the bottom is a save the author has to go looking for. */
+/* ONE ROW, ALWAYS. It wrapped: undo, redo, a sentence and a button do not fit
+   across 375px, so «Зберегти» dropped to a second line and the bar became a
+   block. The state is a state now («Не збережено» / «Збережено»), not a
+   sentence, the row does not wrap, and the button is sized by its own label
+   rather than by the card minimum — this is a bar, not a card footer. */
 .saveBar {
   position: sticky;
   bottom: max(var(--cw-space-md), env(safe-area-inset-bottom));
   z-index: var(--ds-z-sticky);
   display: flex;
   align-items: center;
-  gap: var(--cw-space-2xs);
-  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+  flex-wrap: nowrap;
   padding: var(--cw-space-sm);
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
@@ -1071,11 +1176,19 @@
 }
 
 .saveState {
-  flex: 1 1 8rem;
+  flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: var(--cw-platform-muted);
   font-size: 0.88rem;
-  overflow-wrap: anywhere;
+}
+
+.saveBar .commitAction,
+.saveBar .quietAction {
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
 /* ── Blockers ─────────────────────────────────────── */

@@ -399,7 +399,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         ) : (
           <>
             <BuilderHistory history={history} disabled={busy} />
-            <span className={styles.saveState}>{note ?? (dirty ? "Є незбережені зміни" : "Змін немає")}</span>
+            <span className={styles.saveState}>{note ?? (dirty ? "Не збережено" : "Збережено")}</span>
             <button className={styles.commitAction} type="button" onClick={save} disabled={busy || !dirty}>
               {busy ? "Зберігаємо…" : "Зберегти"}
             </button>

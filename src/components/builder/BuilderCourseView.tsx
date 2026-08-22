@@ -37,6 +37,9 @@ type State =
 
 const ids = () => crypto.randomUUID();
 
+/** Long form of the reference flag: tooltip and accessible name, never the label. */
+const REFERENCE_FLAG_HINT = "Довідковий модуль — поза послідовністю уроків";
+
 /**
  * The course page — structure, settings, readiness, publish.
  *
@@ -373,7 +376,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </div>
       </section>
 
-      <section className={styles.panel}>
+      <section className={`${styles.panel} ${styles.structure}`}>
         <div className={styles.panelHead}>
           <h2 className={styles.panelTitle}>Структура</h2>
           <span className={styles.courseMeta}>
@@ -464,7 +467,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         ) : (
           <>
             <BuilderHistory history={history} disabled={busy} />
-            <span className={styles.saveState}>{note ?? (dirty ? "Є незбережені зміни" : "Змін немає")}</span>
+            <span className={styles.saveState}>{note ?? (dirty ? "Не збережено" : "Збережено")}</span>
             <button className={styles.commitAction} type="button" onClick={() => void save()} disabled={busy || !dirty}>
               {busy ? "Зберігаємо…" : "Зберегти"}
             </button>
@@ -586,7 +589,14 @@ function ModuleEditor({
   const moduleRow: DragRef = { list: "module", group: 0, index: moduleIndex };
 
   return (
-    <div className={`${styles.moduleBlock} ${styles.dragRow}`} {...moduleDrag.rowProps(moduleRow)}>
+    <div
+      className={`${styles.moduleBlock} ${styles.dragRow}`}
+      /* The rail reads this: a reference module is outside the sequence, so it
+         gets a dash on the path instead of the next number, and the numbers
+         after it do not skip. */
+      data-reference={module.reference === true ? "" : undefined}
+      {...moduleDrag.rowProps(moduleRow)}
+    >
       <div className={styles.moduleHead}>
         <BuilderGrip drag={moduleDrag} row={moduleRow} label={module.title} />
         <input
@@ -628,17 +638,22 @@ function ModuleEditor({
       {/* Reference material is not a step. A module marked here leaves the
           numbered flow, stops counting toward completion and loses its day
           numbers — a recipe list is not "day 4". */}
-      <label className={styles.moduleFlag}>
+      {/* A control's label is one line. What the flag DOES is a sentence, and a
+          sentence beside a checkbox wraps to two lines and turns a row into a
+          paragraph — so it goes to the tooltip and to the accessible name. */}
+      <label className={styles.moduleFlag} title={REFERENCE_FLAG_HINT}>
         <input
           type="checkbox"
           checked={module.reference === true}
+          aria-label={REFERENCE_FLAG_HINT}
           onChange={(event) =>
             onChange(["modules", moduleIndex, "reference"], event.target.checked || undefined)
           }
-        />{" "}
-        Довідковий модуль — поза послідовністю уроків
+        />
+        <span>Довідковий модуль</span>
       </label>
 
+      <div className={styles.lessonList}>
       {module.lessons.map((lesson, lessonIndex) => {
         const lessonRow: DragRef = { list: "lesson", group: moduleIndex, index: lessonIndex };
         return (
@@ -654,6 +669,7 @@ function ModuleEditor({
           <Link
             className={styles.lessonRow}
             href={`/build/${course.slug}/${lesson.slug}`}
+            title={lesson.title}
             onClick={(event) => {
               if (onOpenLesson(`/build/${course.slug}/${lesson.slug}`) === "held") event.preventDefault();
             }}
@@ -685,6 +701,7 @@ function ModuleEditor({
         </div>
         );
       })}
+      </div>
 
       <button
         className={styles.addAction}
