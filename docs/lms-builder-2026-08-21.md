@@ -249,7 +249,7 @@ build.centerway.net.ua/way21/day-1      → /build/way21/day-1 редактор 
 
 1. **DNS + домен у Vercel.** Додати `build.centerway.net.ua` до проєкту. Код уже маршрутизує хост; поки домену немає, білдер доступний за шляхом `/build` на превʼю та на localhost (на проді — ні, там 404).
 2. **Supabase Auth redirect allowlist.** Додати `https://build.centerway.net.ua/**` до дозволених redirect URL, інакше вхід через Google на новому домені поверне помилку. Це в дашборді Supabase — через MCP не зробити, коннектор дивиться в чужий проєкт (`docs/lms-h1-implementation-2026-08-15.md`).
-3. **Міграція хвилі 2** — `supabase/migrations/20260821010000_lms_builder_authoring.sql` у SQL-редакторі Supabase. Додає `lms_courses.theme / cover / sort_order` і `lms_modules.reference`. Без неї збереження курсу впаде на невідомій колонці.
+3. **Міграція хвилі 2** — канонічний запис `docs/migration/sql/2026-08-21_lms_builder_authoring.sql`; застейджити (`node scripts/db-stage-migration.mjs 2026-08-21_lms_builder_authoring`) і виконати в SQL-редакторі Supabase. Додає `lms_courses.theme / cover / sort_order` і `lms_modules.reference`. Без неї збереження курсу впаде на невідомій колонці.
 4. **`npm run lms:seed`**, щоб структура обох курсів у базі збігалася з файлами — білдер читає базу, і без цього він покаже стан на момент останнього сиду.
 5. Щоб віддати курс автору — проставити `lms_courses.author_id` (`npm run lms:grant`). Курс, створений у білдері, одразу належить тому, хто його створив.
 

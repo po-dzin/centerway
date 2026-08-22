@@ -107,6 +107,72 @@ describe("writeCourseStructure", () => {
     await expect(writeCourseStructure(fakeWriter(), holed)).rejects.toThrow(/lms_authoring_not_publishable/);
   });
 
+  it("refuses the save when a removed lesson has learner progress", async () => {
+    // Module 0 has exactly one lesson — removing it would empty the module,
+    // which `validateCourse` refuses before this code is ever reached. Module 1
+    // has four, so removing its first lesson leaves a valid course behind.
+    const touchedLesson = course.modules[1].lessons[0];
+    const withLessonRemoved: Course = {
+      ...course,
+      modules: [
+        course.modules[0],
+        { ...course.modules[1], lessons: course.modules[1].lessons.slice(1) },
+        ...course.modules.slice(2),
+      ],
+    };
+
+    const reconcileAwareWriter = (): StructureWriter & { deletedLessonIds: string[] } => {
+      const base = fakeWriter();
+      const deletedLessonIds: string[] = [];
+      return {
+        ...base,
+        deletedLessonIds,
+        from(table: string) {
+          if (table === "lms_lessons") {
+            return {
+              ...base.from(table),
+              select: () => ({
+                eq: async () => ({
+                  data: course.modules.flatMap((module) => module.lessons.map((lesson) => ({ id: lesson.id }))),
+                  error: null,
+                }),
+                in: async () => ({ data: [], error: null }),
+              }),
+              delete: () => ({
+                in: async (_column: string, ids: string[]) => {
+                  deletedLessonIds.push(...ids);
+                  return { error: null };
+                },
+              }),
+            };
+          }
+          if (table === "lms_modules") {
+            return {
+              ...base.from(table),
+              select: () => ({ eq: async () => ({ data: [], error: null }) }),
+            };
+          }
+          if (table === "lms_progress_events") {
+            return {
+              select: () => ({
+                in: async () => ({ data: [{ lesson_id: touchedLesson.id }], error: null }),
+              }),
+            };
+          }
+          return base.from(table);
+        },
+      } as unknown as StructureWriter & { deletedLessonIds: string[] };
+    };
+
+    const db = reconcileAwareWriter();
+    await expect(writeCourseStructure(db, withLessonRemoved)).rejects.toThrow(
+      "lms_authoring_reconcile_lesson_has_learners",
+    );
+    // The refusal must not be a formality: the touched lesson stays in place,
+    // not quietly deleted before the throw.
+    expect(db.deletedLessonIds).toEqual([]);
+  });
+
   it("writes the same course as a draft even with holes in it", async () => {
     const draft = { ...course, status: "draft" as const, title: "[ЗАПОВНИ: назва курсу]" };
     await expect(writeCourseStructure(fakeWriter(), draft)).resolves.toMatchObject({ status: "draft" });

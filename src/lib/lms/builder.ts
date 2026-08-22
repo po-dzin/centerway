@@ -24,6 +24,7 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { courseFromRows, writeCourseStructure } from "./authoring";
+import { getSnapshotCourse } from "./catalog";
 import {
   courseReadiness,
   newCourseFromTemplate,
@@ -309,7 +310,7 @@ export async function createBuilderCourse(input: {
 }
 
 /**
- * Deletes a course — with two refusals that are not negotiable from the UI.
+ * Deletes a course — with three refusals that are not negotiable from the UI.
  *
  * A published course is refused: unpublishing is one press and reversible,
  * deleting is neither, and an author who meant "take it down" must not be able
@@ -320,6 +321,14 @@ export async function createBuilderCourse(input: {
  * everyone who walked it, silently and with no way back. That is not a
  * confirmation dialog's decision to make; a course with learners gets
  * unpublished and archived, not removed.
+ *
+ * A course with a checked-in snapshot (`data/courses/*.json`) is refused too.
+ * `liveCatalog.ts`'s absent-row branch exists to survive a seeding mistake —
+ * deleting the row is supposed to mean "this course never happened", but for a
+ * snapshot-backed slug it instead means "reactivate the file", the moment the
+ * row disappears and the fallback takes over. Retiring one of these for real
+ * is a git change (delete the JSON, `lms:pull` has nothing left to protect),
+ * not a database delete.
  */
 export async function deleteBuilderCourse(slug: string): Promise<void> {
   const db = adminClient();
@@ -327,6 +336,7 @@ export async function deleteBuilderCourse(slug: string): Promise<void> {
   const row = await readCourseRow(slug);
   if (!row) throw new Error(`lms_builder_unknown_course:${slug}`);
   if (row.status === "published") throw new Error(`lms_builder_delete_published:${slug}`);
+  if (getSnapshotCourse(slug)) throw new Error(`lms_builder_delete_has_snapshot:${slug}`);
 
   const courseId = row.id as string;
   const { data: enrollments, error: enrollmentError } = await db

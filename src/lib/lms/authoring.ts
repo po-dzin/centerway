@@ -108,7 +108,7 @@ export function courseFromRows(
   const missingReference = moduleRowsIn.find((row) => !("reference" in row));
   if (missingReference) {
     throw new Error(
-      "lms_authoring_missing_reference_column:run supabase/migrations/20260821010000_lms_builder_authoring.sql"
+      "lms_authoring_missing_reference_column:run docs/migration/sql/2026-08-21_lms_builder_authoring.sql (see docs/lms-builder-2026-08-21.md)"
     );
   }
 
@@ -218,12 +218,15 @@ export type WriteCourseResult = {
  *
  * Deletion only happens where it is provably safe: `lms_progress_events.lesson_id`
  * is `ON DELETE CASCADE`, so hard-deleting a lesson a learner has actually
- * touched would erase their history along with it. A removed row that no
- * progress event references is deleted for real; one that does is left in
- * place — orphaned (visible to no course any more) rather than resurrected,
- * which is the safer of the two wrong states a naive delete could produce.
- * A soft-delete column is the real fix and belongs with a schema change, not
- * this pass.
+ * touched would erase their history along with it. But "leave the row in
+ * place" is not the safe alternative it looks like: the row still carries its
+ * original `course_id`/`module_id`, so `courseFromRows` picks it straight back
+ * up on the very next read — the author gets a save that reports success and a
+ * lesson that never left. A course whose removed lesson has progress is
+ * refused outright instead; the author keeps the lesson (as a draft, hidden,
+ * whatever the structure already allows) rather than being told it is gone
+ * when it is not. A soft-delete/archive column is the real fix and belongs
+ * with a schema change, not this pass.
  */
 async function reconcileRemovedRows(db: StructureWriter, course: Course): Promise<void> {
   const keptModuleIds = new Set(course.modules.map((module) => module.id));
@@ -243,7 +246,6 @@ async function reconcileRemovedRows(db: StructureWriter, course: Course): Promis
     .map((row) => row.id)
     .filter((id) => !keptModuleIds.has(id));
 
-  let deletableLessonIds = removedLessonIds;
   if (removedLessonIds.length > 0) {
     const { data: touched, error: progressError } = await db
       .from("lms_progress_events")
@@ -253,21 +255,24 @@ async function reconcileRemovedRows(db: StructureWriter, course: Course): Promis
       throw new Error(`lms_authoring_reconcile_read_failed:lms_progress_events:${progressError.message}`);
     }
     const touchedLessonIds = new Set(((touched ?? []) as { lesson_id: string }[]).map((row) => row.lesson_id));
-    deletableLessonIds = removedLessonIds.filter((id) => !touchedLessonIds.has(id));
-  }
+    if (touchedLessonIds.size > 0) {
+      throw new Error(
+        `lms_authoring_reconcile_lesson_has_learners:${[...touchedLessonIds].join(",")}`
+      );
+    }
 
-  if (deletableLessonIds.length > 0) {
-    const { error } = await db.from("lms_lessons").delete().in("id", deletableLessonIds);
+    const { error } = await db.from("lms_lessons").delete().in("id", removedLessonIds);
     if (error) throw new Error(`lms_authoring_reconcile_delete_failed:lms_lessons:${error.message}`);
   }
 
   if (removedModuleIds.length === 0) return;
 
-  // A removed module may only go if nothing still points at it — including a
-  // lesson this same pass chose to preserve because a learner had touched it.
-  // `lms_lessons.module_id` is `NOT NULL REFERENCES ... ON DELETE CASCADE`, so
-  // deleting it out from under a preserved lesson would take the lesson (and
-  // its progress) with it.
+  // A removed module may only go if nothing still points at it. By this line
+  // every removed lesson with progress has already thrown, so what is left to
+  // check is ordinary: a kept lesson whose own row still names a module this
+  // structure no longer has. `lms_lessons.module_id` is `NOT NULL REFERENCES
+  // ... ON DELETE CASCADE`, so deleting the module out from under it would take
+  // the lesson (and its progress) with it.
   const { data: survivors, error: survivorError } = await db
     .from("lms_lessons")
     .select("module_id")

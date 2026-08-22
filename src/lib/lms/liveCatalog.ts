@@ -26,10 +26,13 @@
  *   · the read FAILED     → serve the snapshot, and say so in the log. This is
  *     the case the fallback was built for.
  *
- * The one gap: deleting a course ROW that still has a file would resurrect the
- * file. `deleteBuilderCourse` refuses to delete anything published or enrolled,
- * so such a course was already unpublished and empty of learners, and it leaves
- * git through `lms:pull` and a commit like everything else.
+ * The one gap this closed: deleting a course ROW that still has a checked-in
+ * snapshot would resurrect the file the moment the row disappeared, since the
+ * absent-row branch exists precisely to survive a seeding mistake and cannot
+ * tell that apart from an intentional delete. `deleteBuilderCourse` now refuses
+ * a snapshot-backed slug outright, on top of refusing anything published or
+ * enrolled — retiring one of these for real is a git change (delete the JSON,
+ * `lms:pull` has nothing left to protect), not a database delete.
  */
 
 import { unstable_cache } from "next/cache";
