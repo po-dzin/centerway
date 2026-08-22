@@ -359,11 +359,11 @@ export function PlatformProductsIndexPage() {
                 поєднується з режимом, харчуванням та програмою.
               </p>
             </div>
-            <div className={offerStyles.programFormatMeta}>
-              <span>Коли доречно: м&apos;яка підтримка травлення, ритму і щоденного самопочуття.</span>
-              <span>Не замінює: діагностику, лікаря або хаотичне самопризначення.</span>
-              <span>Найкращий контекст: разом із програмою, режимом і зрозумілим наступним кроком.</span>
-            </div>
+            <ul className={`${offerStyles.timeline} ${offerStyles.programMetaList}`}>
+              <li>Коли доречно: м&apos;яка підтримка травлення, ритму і щоденного самопочуття.</li>
+              <li>Не замінює: діагностику, лікаря або хаотичне самопризначення.</li>
+              <li>Найкращий контекст: разом із програмою, режимом і зрозумілим наступним кроком.</li>
+            </ul>
           </article>
           <div className={offerStyles.aggregateRail} data-layout="single">
             <PlatformOfferCard

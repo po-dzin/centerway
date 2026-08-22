@@ -23,11 +23,11 @@ import { useRouter } from "next/navigation";
 
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { ProgressRail } from "@/components/platform/ProgressRail";
-import { resolvePlatformHref, usePlatformHref } from "@/components/platform/layout/usePlatformHref";
+import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
-import { usePwaInstall } from "../pwa/usePwaInstall";
+import { PwaInstallCard } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
 import { ShelfErrorCard, courseAction, matte } from "./CourseCard";
 import {
@@ -87,7 +87,6 @@ export function CabinetClient() {
   useHashMigration();
 
   const lang = useProfileLang();
-  const pwaInstall = usePwaInstall();
   const { session, loading: sessionLoading, signInWithGoogle, signOut } = useCabinetSession();
   const { profile, loading: profileLoading, error, clear: clearProfile } = useProfileData(session);
   const { shelf, failed: shelfFailed, reload: reloadShelf } = useLearnerShelf(session);
@@ -135,10 +134,11 @@ export function CabinetClient() {
   const cab = useMemo(() => getCabinetCopy(lang), [lang]);
   const dateLocale = dateLocaleFor(lang);
 
-  const doshaTestHref = usePlatformHref(DOSHA_TEST_ROUTE);
-  const programsHref = usePlatformHref("/programs");
-  const shelfHref = usePlatformHref(LEARNING_SHELF_HREF);
-  const homeHref = usePlatformHref("/");
+  const href = useSurfaceHref();
+  const doshaTestHref = href(DOSHA_TEST_ROUTE);
+  const programsHref = href("/programs");
+  const shelfHref = href(LEARNING_SHELF_HREF);
+  const homeHref = href("/");
 
   const scoreBars = useMemo(() => {
     const scores = profile?.profile.dosha?.scores;
@@ -247,7 +247,7 @@ export function CabinetClient() {
               <div className={styles.actions}>
                 <Link
                   className={styles.actionPrimary}
-                  href={resolvePlatformHref(courseAction(resumeCourse, cab).href)}
+                  href={href(courseAction(resumeCourse, cab).href)}
                 >
                   {courseAction(resumeCourse, cab).label}
                 </Link>
@@ -428,32 +428,10 @@ export function CabinetClient() {
               </div>
             </article>
 
-            {/* Only ever one of the two branches, and neither renders once the
-                platform is already running installed: Chrome parks a real
-                prompt, Safari never fires one and has to be told the two taps
-                instead. */}
-            {pwaInstall.canPrompt || pwaInstall.needsIosInstructions ? (
-              <article className={styles.card} {...matte}>
-                <h3 className={styles.cardTitle}>{cab.installTitle}</h3>
-                <p className={styles.cardText}>{cab.installLead}</p>
-                {pwaInstall.canPrompt ? (
-                  <div className={styles.actions}>
-                    <button className={styles.actionPrimary} type="button" onClick={() => void pwaInstall.install()}>
-                      {cab.installAction}
-                    </button>
-                  </div>
-                ) : (
-                  <>
-                    <p className={styles.cardText}>{cab.installIosLead}</p>
-                    <ul className={styles.metaList}>
-                      {cab.installIosSteps.map((step) => (
-                        <li key={step}>{step}</li>
-                      ))}
-                    </ul>
-                  </>
-                )}
-              </article>
-            ) : null}
+            {/* Hides itself on `www`, where an install would put the SHOP on
+                the home screen; on localhost and preview one origin serves
+                everything and it appears here as before. */}
+            <PwaInstallCard copy={cab} />
           </div>
         </div>
       </div>

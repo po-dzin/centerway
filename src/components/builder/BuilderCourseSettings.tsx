@@ -75,7 +75,7 @@ export function BuilderCourseSettings({
       {/* The course slug is the address of every lesson under it and of every
           reminder already sent. Shown, never edited — a rename is a migration. */}
       <p className={styles.readOnlyNote}>
-        Адреса курсу: <code>/learn/{course.slug}</code> — не змінюється. Програма в каталозі:{" "}
+        Адреса курсу: <code>my.centerway.net.ua/{course.slug}</code> — не змінюється. Програма в каталозі:{" "}
         <code>{course.programSlug}</code>.
       </p>
 

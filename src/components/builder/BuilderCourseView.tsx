@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Icon } from "@/components/Icon";
 import {
@@ -50,6 +51,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const router = useRouter();
 
   const load = useCallback(async () => {
     const result = await loadCourse(slug);
@@ -116,8 +119,48 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     setNote(null);
   }, []);
 
-  async function save() {
-    if (state.status !== "ready" || busy) return;
+  /**
+   * The lesson slugs the SERVER has.
+   *
+   * `state.data` is the loaded response and `state.course` is the working copy;
+   * edits touch only the second, so this stays the stored truth until the next
+   * save reloads it. It is what tells a freshly added lesson — which exists
+   * only on this screen — from one an author may open.
+   */
+  const savedLessonSlugs = useMemo(() => {
+    if (state.status !== "ready") return new Set<string>();
+    return new Set(state.data.course.modules.flatMap((entry) => entry.lessons.map((lesson) => lesson.slug)));
+  }, [state]);
+
+  /**
+   * Opening a lesson with the structure unsaved.
+   *
+   * THE BUG THIS FIXES. Every lesson row is a link, and «Додати урок» puts a
+   * row on screen the moment it is pressed — with a working href to a lesson
+   * that exists nowhere but this component's state. Clicking it was a
+   * client-side route change, which `beforeunload` does not cover, so the
+   * editor loaded the course from the server, could not find the lesson, and
+   * said «Урок не знайдено» — while the addition itself was dropped. An author
+   * who pressed «Додати урок» and then pressed the thing it created got a
+   * dead end and lost the work.
+   *
+   * The lesson editor already held its own dirty navigation; the course screen
+   * did not, and that is the whole difference.
+   */
+  const pendingIsUnsaved =
+    pendingHref !== null && !savedLessonSlugs.has(pendingHref.split("/").pop() ?? "");
+
+  const openLesson = useCallback(
+    (href: string): "allow" | "held" => {
+      if (!dirty) return "allow";
+      setPendingHref(href);
+      return "held";
+    },
+    [dirty]
+  );
+
+  async function save(): Promise<boolean> {
+    if (state.status !== "ready" || busy) return false;
     setBusy(true);
     setNote(null);
 
@@ -127,7 +170,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     if (!result.ok) {
       // Kept verbatim: a validation code names the exact place that is wrong.
       setNote(result.detail ?? "Не вдалося зберегти. Спробуйте ще раз.");
-      return;
+      return false;
     }
 
     setDirty(false);
@@ -140,6 +183,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         ? "Збережено. Блокерів немає."
         : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`
     );
+    return true;
   }
 
   /**
@@ -285,6 +329,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             onChange={editCourse}
             onModules={editModules}
             onNote={setNote}
+            onOpenLesson={openLesson}
           />
         ))}
 
@@ -303,10 +348,63 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       </section>
 
       <div className={styles.saveBar}>
-        <span className={styles.saveState}>{note ?? (dirty ? "Є незбережені зміни" : "Змін немає")}</span>
-        <button className={styles.commitAction} type="button" onClick={save} disabled={busy || !dirty}>
-          {busy ? "Зберігаємо…" : "Зберегти"}
-        </button>
+        {pendingHref ? (
+          <>
+            <span className={styles.saveState}>
+              {pendingIsUnsaved
+                ? "Цього уроку ще немає в базі — його треба зберегти, щоб відкрити."
+                : "Є незбережені зміни."}
+            </span>
+            {/* Offered only for a lesson the server already has. For a freshly
+                added one, "go without saving" would DELETE the lesson being
+                opened and land on «Урок не знайдено» — the exact dead end this
+                whole branch exists to remove. */}
+            {pendingIsUnsaved ? null : (
+              <button
+                className={styles.quietAction}
+                type="button"
+                onClick={() => {
+                  const href = pendingHref;
+                  setPendingHref(null);
+                  setDirty(false);
+                  router.push(href);
+                }}
+                disabled={busy}
+              >
+                Піти без збереження
+              </button>
+            )}
+            <button
+              className={styles.quietAction}
+              type="button"
+              onClick={() => setPendingHref(null)}
+              disabled={busy}
+            >
+              Лишитись
+            </button>
+            <button
+              className={styles.commitAction}
+              type="button"
+              onClick={async () => {
+                const href = pendingHref;
+                const saved = await save();
+                if (!saved) return;
+                setPendingHref(null);
+                router.push(href);
+              }}
+              disabled={busy}
+            >
+              {busy ? "Зберігаємо…" : "Зберегти і відкрити"}
+            </button>
+          </>
+        ) : (
+          <>
+            <span className={styles.saveState}>{note ?? (dirty ? "Є незбережені зміни" : "Змін немає")}</span>
+            <button className={styles.commitAction} type="button" onClick={() => void save()} disabled={busy || !dirty}>
+              {busy ? "Зберігаємо…" : "Зберегти"}
+            </button>
+          </>
+        )}
       </div>
     </BuilderShell>
   );
@@ -336,6 +434,7 @@ function ModuleEditor({
   onChange,
   onModules,
   onNote,
+  onOpenLesson,
 }: {
   course: Course;
   module: CourseModule;
@@ -343,6 +442,8 @@ function ModuleEditor({
   onChange: (path: (string | number)[], value: unknown) => void;
   onModules: (next: (course: Course) => CourseModule[]) => void;
   onNote: (note: string | null) => void;
+  /** Answers whether the row may follow its own href, or is being held back. */
+  onOpenLesson: (href: string) => "allow" | "held";
 }) {
   const isOnlyModule = course.modules.length === 1;
 
@@ -407,16 +508,19 @@ function ModuleEditor({
           items={[
             {
               label: "Підняти вище",
+              icon: "arrow-up",
               disabled: moduleIndex === 0,
               onSelect: () => onModules((current) => moveItem(current.modules, moduleIndex, moduleIndex - 1)),
             },
             {
               label: "Опустити нижче",
+              icon: "arrow-down",
               disabled: moduleIndex === course.modules.length - 1,
               onSelect: () => onModules((current) => moveItem(current.modules, moduleIndex, moduleIndex + 1)),
             },
             {
               label: "Видалити модуль",
+              icon: "trash",
               danger: true,
               // The last module cannot go: `validateCourse` requires one, and
               // the author would meet that as a save error instead of a
@@ -444,7 +548,16 @@ function ModuleEditor({
 
       {module.lessons.map((lesson, lessonIndex) => (
         <div className={styles.lessonRowWrap} key={lesson.id}>
-          <Link className={styles.lessonRow} href={`/build/${course.slug}/${lesson.slug}`}>
+          {/* Still a link, not a button: the href is real for every lesson the
+              server has, so middle-click and "open in new tab" keep working.
+              The click is intercepted only while there is unsaved structure. */}
+          <Link
+            className={styles.lessonRow}
+            href={`/build/${course.slug}/${lesson.slug}`}
+            onClick={(event) => {
+              if (onOpenLesson(`/build/${course.slug}/${lesson.slug}`) === "held") event.preventDefault();
+            }}
+          >
             <span className={styles.lessonName}>{lesson.title}</span>
             <span className={styles.lessonMeta}>
               {lesson.dayIndex ? `День ${lesson.dayIndex} · ` : ""}
@@ -456,15 +569,17 @@ function ModuleEditor({
             items={[
               {
                 label: "Підняти вище",
+                icon: "arrow-up",
                 disabled: moduleIndex === 0 && lessonIndex === 0,
                 onSelect: () => moveLesson(lessonIndex, -1),
               },
               {
                 label: "Опустити нижче",
+                icon: "arrow-down",
                 disabled: moduleIndex === course.modules.length - 1 && lessonIndex === module.lessons.length - 1,
                 onSelect: () => moveLesson(lessonIndex, 1),
               },
-              { label: "Видалити урок", danger: true, onSelect: () => deleteLesson(lessonIndex) },
+              { label: "Видалити урок", icon: "trash" as const, danger: true, onSelect: () => deleteLesson(lessonIndex) },
             ]}
           />
         </div>

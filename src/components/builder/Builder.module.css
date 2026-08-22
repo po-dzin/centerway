@@ -38,6 +38,25 @@
   padding: var(--cw-space-2xs) var(--cw-space-sm);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-soft);
+
+  /* The header recipe's inputs, mapped for this bar.
+     `PlatformAccountMenu` is shared with the platform's own header and draws
+     from `--platform-header-*` / `--platform-utility-control-*`, which the
+     platform declares on its `.header`. The builder has its own bar, so it
+     declares the same recipe here rather than the component carrying a second
+     palette — the per-surface mapping block is how every shared recipe in this
+     system is fed (docs/platform-scale-plan.md §4).
+     Values are the platform's LIGHT mapping: the builder has no dark topbar
+     tone and no photograph to sit over. */
+  --platform-header-fg: var(--cw-platform-text);
+  --platform-header-control-bg: var(--cw-mat-tint-chrome);
+  --platform-header-popover-bg: var(--cw-mat-surface);
+  --platform-header-sheet-shadow: var(--cw-mat-shadow-chrome);
+  --platform-header-sheet-filter: var(--cw-mat-filter);
+  --platform-utility-control-size: var(--ds-touch-target-min);
+  --platform-utility-control-radius: var(--cw-radius-md);
+  --platform-utility-control-focus:
+    0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
 }
 
 /* The way home, in the same place on every screen. That is what makes it the
@@ -1259,11 +1278,15 @@
   background: var(--cw-mat-surface-sunk);
 }
 
+/* FIXED and portalled — see BuilderMenu. Absolutely positioned inside the row,
+   this list was laid out below its trigger and then clipped by the viewport: a
+   menu opened on the last card in the grid rendered off the bottom of the
+   screen with its items unreachable. `top`/`left` are written as inline styles
+   from a measured rect, so the list can flip above the trigger and clamp to the
+   viewport on both axes. */
 .menuList {
-  position: absolute;
-  inset-inline-end: 0;
-  top: calc(100% + var(--cw-space-2xs));
-  z-index: var(--ds-z-sticky);
+  position: fixed;
+  z-index: calc(var(--ds-z-sticky) + 2);
   min-width: 12rem;
   display: grid;
   padding: var(--cw-space-2xs);
@@ -1281,7 +1304,12 @@
 }
 
 .menuItem {
-  display: block;
+  /* A grid, so every label starts on the same line whether or not its item has
+     an icon — a mixed menu with only some rows indented reads as two lists. */
+  display: grid;
+  grid-template-columns: 1rem 1fr;
+  align-items: center;
+  gap: var(--cw-space-xs);
   width: 100%;
   min-height: var(--ds-touch-target-min);
   padding: 0 var(--cw-space-sm);
@@ -1312,9 +1340,28 @@
 
 /* Destructive last, behind a hairline, in the boundary tone. Separation is the
    point: the item above it is "move down". */
+.menuItemIcon {
+  width: 1rem;
+  height: 1rem;
+  display: block;
+  color: var(--cw-platform-muted);
+}
+
+.menuItemLabel {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .menuItemDanger {
   composes: menuItem;
   color: var(--cw-sem-boundary);
+}
+
+/* The destructive item's icon carries the tone too — a muted glyph beside red
+   text reads as two states of one row. */
+.menuItemDanger .menuItemIcon {
+  color: currentColor;
 }
 
 .menuItemDanger[data-first-danger] {

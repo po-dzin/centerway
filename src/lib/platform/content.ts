@@ -46,24 +46,35 @@ export const platformNav = [
  * profile → the "Навчання" tab → the card → the lesson: four steps to the thing
  * that was paid for, and none of them named on the bar.
  */
+/**
+ * The bar on the PERSONAL host.
+ *
+ * A different application gets a different bar. `platformNav` is the showcase,
+ * addressed to a stranger: programmes, products, tests, the author. None of it
+ * belongs over somebody's own courses, and every item in it now crosses an
+ * origin — which is exactly what the account switcher is for.
+ *
+ * What is left is what this application actually contains: the courses, and,
+ * for whoever writes them, the builder. Both are same-origin here, so the bar
+ * stops being a set of links off the host it is drawn on.
+ *
+ * The builder entry is gated the same way the switcher gates it — an admin
+ * role or a `lms_courses.author_id` row — and it appears when that read
+ * resolves rather than on first paint. Absent-then-present is the safe order;
+ * present-then-gone would blink an entry out mid-read.
+ */
+export type NavItem = { label: string; href: string; match: "exact" | "prefix" };
+
+export const personalNav: NavItem[] = [
+  { label: "Мої курси", href: LEARNING_SHELF_HREF, match: "exact" },
+];
+
+export const builderNavItem: NavItem = { label: "Білдер", href: "/build", match: "prefix" };
+
+/** Kept for the switcher's label, which names the same destination. */
 export const learningNavItem = {
   label: "Навчання",
   href: LEARNING_SHELF_HREF,
-  match: "prefix" as const,
-};
-
-/**
- * The admin entry. Rendered only for `user_roles.role` in {admin, support} —
- * see `isAdminRole`. Kept out of `platformNav` on purpose: that array is the
- * public showcase and is rendered for signed-out visitors, so an admin item in
- * it would be a link everyone sees and almost nobody may follow.
- *
- * `prefix`, because /admin has sub-routes and the entry should read as current
- * throughout them.
- */
-export const adminNavItem = {
-  label: "Адмінка",
-  href: "/admin",
   match: "prefix" as const,
 };
 

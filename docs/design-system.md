@@ -138,6 +138,30 @@ In use on the course page and both cabinet course meters. The dosha score bars s
 
 **List gap 0.7rem, not 0.4rem.** Lesson list items are "term — definition" and most wrap to two or three lines at 1.6 line-height; at 0.4rem the space between items was smaller than the space between two lines of the same item, so the list read as one paragraph with bold words scattered through it.
 
+### A list is text, not a stack of cards (2026-08-22)
+
+`.timeline` (`PlatformBlocksBase.module.css`) is the platform's **one** plain
+list, and it now follows the lesson player's rule from 2026-08-20 rather than
+contradicting it: gap 0.7rem, marker hanging in the margin (accent dot at
+`left: -0.85rem`, `top: 0.62em` so it lands on the x-height), text on the
+panel's own left edge.
+
+It used to give every `li` a soft-rect plate — `--cw-platform-surface` plus
+`--cw-mat-shadow-soft` plus 0.9rem padding. A five-line list inside a panel
+therefore rendered as **six surfaces to say five short sentences**, and the
+plates read as pressable when nothing in them is. The offer page showed the
+failure twice side by side: results as five plates in the left panel, format
+facts as three more in the right, where those were a `<div>` of `<span>`s
+(`.programFormatMeta`) carrying a second, slightly different plate recipe.
+
+Fixed in three places, because the plate had been re-asserted after the base
+rule: the format facts are now a real `<ul class="timeline">` (`.programMetaList`
+sets only its top step and small type), and two responsive blocks that re-added
+`padding: 0.85rem` to `.timeline li` below 900px and to `.profileMain .timeline
+li` are gone. Surfaces that are genuinely objects — `.outlineItem`, course
+cards, offer tiles — keep theirs; the test is whether the row does something
+when you touch it.
+
 ## Buttons — the one contract (2026-08-21)
 
 Source: `src/components/platform/PlatformButtons.module.css`. Gate: `guard:buttons`.

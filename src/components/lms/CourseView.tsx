@@ -27,6 +27,7 @@ import {
 } from "./lmsClient";
 import { LmsNotice } from "./LmsNotice";
 import styles from "./Lms.module.css";
+import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 
 type Availability = CourseViewDto["outline"][number]["availability"];
 
@@ -56,6 +57,7 @@ function lockNote(availability: Availability): string {
 }
 
 export function CourseView({ courseSlug }: { courseSlug: string }) {
+  const href = useSurfaceHref();
   const [state, setState] = useState<
     { status: "loading" } | { status: "ready"; data: CourseViewDto } | { status: "error"; error: LmsFailure }
   >({ status: "loading" });
@@ -155,7 +157,7 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
           not be two different controls. Replaced a single «Мої курси» back
           link — which knew one level and said nothing about where you are. */}
       <PlatformTrail
-        steps={[{ label: "Мої курси", href: LEARNING_SHELF_HREF }, { label: course.title }]}
+        steps={[{ label: "Мої курси", href: href(LEARNING_SHELF_HREF) }, { label: course.title }]}
       />
       <p className={styles.eyebrow}>Мій курс</p>
       <h1 className={styles.title}>{course.title}</h1>
@@ -194,7 +196,7 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
 
       <ul className={styles.outline}>
         {steps.map((entry) => {
-          const href = `/learn/${course.slug}/${entry.slug}`;
+          const lessonHref = href(`/learn/${course.slug}/${entry.slug}`);
           const badgeLabel = entry.dayIndex ?? "•";
           const isCurrent = entry.slug === currentLessonSlug;
 
@@ -227,7 +229,7 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
 
           return (
             <li key={entry.lessonId} className={styles.outlineItem} data-current={isCurrent || undefined}>
-              <Link className={styles.outlineLink} href={href}>
+              <Link className={styles.outlineLink} href={lessonHref}>
                 <span className={entry.completed ? styles.dayBadgeDone : styles.dayBadge} aria-hidden="true">
                   {entry.completed ? <Icon name="check" size={18} /> : badgeLabel}
                 </span>
@@ -251,7 +253,7 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
           <ul className={styles.outline}>
             {reference.map((entry) => (
               <li key={entry.lessonId} className={styles.outlineItem}>
-                <Link className={styles.outlineLink} href={`/learn/${course.slug}/${entry.slug}`}>
+                <Link className={styles.outlineLink} href={href(`/learn/${course.slug}/${entry.slug}`)}>
                   <span className={styles.dayBadge} aria-hidden="true">
                     <Icon name="star" size={18} />
                   </span>

@@ -4,6 +4,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
+import { PlatformAccountMenu } from "@/components/platform/layout/PlatformAccountMenu";
 import { PlatformTrail, type TrailStep } from "@/components/platform/PlatformTrail";
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { BuilderFailure } from "./builderClient";
@@ -61,6 +62,12 @@ export function BuilderShell({
         </Link>
         <span className={styles.barSpacer} />
         {tools ? <div className={styles.barTools}>{tools}</div> : null}
+        {/* The account, and the way to the other applications. The builder had
+            NO account control at all: an author could not see which account they
+            were in, could not reach the shelf or the cabinet, and could not sign
+            out. Shared with the platform's header so the two lists cannot
+            disagree; the bar above feeds it the header recipe's tokens. */}
+        <PlatformAccountMenu compact />
       </header>
 
       <div className={aside ? styles.bodyWithAside : styles.body}>

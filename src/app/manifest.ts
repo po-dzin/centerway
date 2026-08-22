@@ -1,7 +1,6 @@
 import type { MetadataRoute } from "next";
 
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
-import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
 
 /**
  * Installed-app identity. Without this the desktop browser falls back to a
@@ -21,19 +20,21 @@ export default function manifest(): MetadataRoute.Manifest {
     description: "Курси, практики та супровід — тіло, ритм і опора у власному темпі.",
     lang: "uk",
     /**
-     * The installed app opens on the SHELF, not the storefront.
+     * The installed app opens on the SHELF, and the shelf is now the ROOT of
+     * the personal host — `my.centerway.net.ua/` is rewritten to `/learn`.
      *
      * Someone who added CenterWay to their home screen has almost certainly
-     * bought something — the install prompt lives in the cabinet — and what they
-     * tap the icon for is the course they are in the middle of, not the
-     * programmes page they already bought from. A signed-out visitor still gets
-     * the profile's own auth wall, which is a working destination.
+     * bought something, and what they tap the icon for is the course they are
+     * in the middle of, not the programmes page they already bought from.
      *
-     * Scope stays "/" so links out of the shelf (a programme page, the legal
-     * pages) stay inside the installed window instead of kicking out to the
-     * browser.
+     * The literal "/" matters more than it looks. This same manifest is served
+     * on `www` too, where "/" is the storefront — and while the shelf lived
+     * there, `start_url: "/learn"` now names a path that 308s to another
+     * origin, which is an install whose entry point leaves its own scope on the
+     * first tap. One relative start_url is correct on both hosts, because each
+     * host's root is that host's own home.
      */
-    start_url: LEARNING_SHELF_HREF,
+    start_url: "/",
     scope: "/",
     display: "standalone",
     // The calm ground, so the splash and the window chrome open on the same

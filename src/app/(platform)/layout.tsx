@@ -3,6 +3,8 @@ import { Analytics } from "@vercel/analytics/next";
 import { GoogleTagProvider } from "@/lib/tracking/GoogleTagProvider";
 import { PixelProvider } from "@/lib/tracking/PixelProvider";
 import { Suspense } from "react";
+import { headers } from "next/headers";
+import { SurfaceHostProvider } from "@/components/platform/layout/SurfaceHost";
 import "../globals.css";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
 
@@ -36,11 +38,22 @@ export const viewport: Viewport = {
   themeColor: PLATFORM_GROUND,
 };
 
-export default function RootLayout({
+/**
+ * The host is read HERE, once, and handed to the client tree.
+ *
+ * Two origins serve this app — `www` (public) and `my` (personal) — and which
+ * one owns a given path is the question every link asks. Answering it from
+ * `window` would mean the server renders one `href` and the browser hydrates
+ * another; answering it here means the markup is right when it is sent.
+ */
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+
   return (
     <html lang="uk" suppressHydrationWarning>
       <body suppressHydrationWarning>
@@ -55,7 +68,7 @@ export default function RootLayout({
         <Suspense fallback={null}>
           <PixelProvider />
         </Suspense>
-        {children}
+        <SurfaceHostProvider host={host}>{children}</SurfaceHostProvider>
         <Analytics />
       </body>
     </html>

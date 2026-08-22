@@ -14,6 +14,7 @@ import Link from "next/link";
 import type { CourseOutlineEntryDto } from "./lmsClient";
 import { Icon } from "@/components/Icon";
 import styles from "./Lms.module.css";
+import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 
 export function CourseContentsDrawer({
   courseSlug,
@@ -26,6 +27,7 @@ export function CourseContentsDrawer({
   currentSlug: string;
   onClose: () => void;
 }) {
+  const surfaceHref = useSurfaceHref();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
 
@@ -128,7 +130,7 @@ export function CourseContentsDrawer({
                 <Link
                   key={entry.lessonId}
                   className={isCurrent ? styles.drawerItemCurrent : styles.drawerItem}
-                  href={`/learn/${courseSlug}/${entry.slug}`}
+                  href={surfaceHref(`/learn/${courseSlug}/${entry.slug}`)}
                   aria-current={isCurrent ? "page" : undefined}
                   onClick={onClose}
                 >

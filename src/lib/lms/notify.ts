@@ -10,7 +10,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
-import { platformUrl } from "@/lib/surfaces/catalog";
+import { surfaceUrl } from "@/lib/surfaces/catalog";
 import { sendTelegramMessage } from "@/lib/tg";
 
 export type NotificationChannel = "telegram" | "email" | "webpush";
@@ -37,7 +37,7 @@ const senders: Partial<Record<NotificationChannel, ChannelSender>> = {
     // ever queued points at a lesson, so this is the difference between a nudge
     // that is one tap away and one that is a path the reader has to retype.
     const body = notification.href
-      ? `${notification.text}\n\n${platformUrl(notification.href)}`
+      ? `${notification.text}\n\n${surfaceUrl(notification.href)}`
       : notification.text;
     await sendTelegramMessage(chatId, body);
   },

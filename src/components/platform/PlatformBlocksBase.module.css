@@ -159,21 +159,46 @@
   scroll-margin-top: 5.25rem;
 }
 
+/* The platform's one plain list. Every item used to be its own soft-rect plate
+   with a shadow, so a five-line list inside a panel rendered as five cards
+   stacked in a card — six surfaces to say five short sentences, and the plates
+   read as pressable when nothing in them is. A list is text, so it is set as
+   text: the marker hangs in the margin (the lesson player's rule, see
+   docs/design-system.md), the sentences start on the panel's own left edge, and
+   the panel is the only surface in the block. */
 .timeline {
   display: grid;
-  gap: 0.75rem;
+  /* 0.7rem, not 0.4: these items wrap to two lines often enough that a tighter
+     gap would leave less air between items than inside one. */
+  gap: 0.7rem;
   margin: 0;
   padding: 0;
   list-style: none;
+  color: var(--cw-platform-muted);
+  line-height: var(--ds-type-body-line-height);
 }
 
 .timeline li {
-  padding: 0.9rem;
+  position: relative;
+  padding: 0;
   border: 0;
-  border-radius: var(--cw-radius-sm);
-  color: var(--cw-platform-muted);
-  background: var(--cw-platform-surface);
-  box-shadow: var(--cw-mat-shadow-soft);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.timeline li::before {
+  content: "";
+  position: absolute;
+  /* Hangs into the panel's padding (>= 1.15rem), so the text edge is the
+     paragraph edge. */
+  left: -0.85rem;
+  /* Optical, not geometric: lands the dot on the x-height of the first line. */
+  top: 0.62em;
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cw-platform-accent) 68%, transparent);
 }
 
 /* ── Block frame (PlatformBlock) ──────────────────── */

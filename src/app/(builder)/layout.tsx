@@ -1,4 +1,7 @@
+import { PERSONAL_ORIGIN } from "@/lib/surfaces/catalog";
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
+import { SurfaceHostProvider } from "@/components/platform/layout/SurfaceHost";
 
 import "../globals.css";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
@@ -16,7 +19,7 @@ import { PLATFORM_GROUND } from "@/lib/platform/chrome";
  * like one; what it does not share is the platform's chrome.
  */
 export const metadata: Metadata = {
-  metadataBase: new URL("https://build.centerway.net.ua"),
+  metadataBase: new URL(PERSONAL_ORIGIN),
   title: "CenterWay Builder",
   description: "Конструктор курсів CenterWay.",
   // Never indexed. Every route behind it is someone's unpublished draft.
@@ -31,10 +34,17 @@ export const viewport: Viewport = {
   themeColor: PLATFORM_GROUND,
 };
 
-export default function BuilderRootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+export default async function BuilderRootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  // Same reason as the platform root: links out of the builder cross into the
+  // public origin, and the host has to be known where the markup is made.
+  const requestHeaders = await headers();
+  const host = requestHeaders.get("x-forwarded-host") ?? requestHeaders.get("host");
+
   return (
     <html lang="uk" suppressHydrationWarning>
-      <body suppressHydrationWarning>{children}</body>
+      <body suppressHydrationWarning>
+        <SurfaceHostProvider host={host}>{children}</SurfaceHostProvider>
+      </body>
     </html>
   );
 }

@@ -48,7 +48,9 @@ describe("learner notifications", () => {
 
     expect(result).toEqual({ delivered: true, channel: "telegram" });
     expect(sent).toHaveLength(1);
-    expect(sent[0].text).toContain("https://www.centerway.net.ua/learn/way21/day-3");
+    // The PERSONAL origin: lessons live on `my`, and a reminder that named
+    // `www` would spend a 308 on the way to the lesson it points at.
+    expect(sent[0].text).toContain("https://my.centerway.net.ua/way21/day-3");
     expect(sent[0].text).not.toMatch(/\n\/learn/);
   });
 

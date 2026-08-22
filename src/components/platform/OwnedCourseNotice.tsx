@@ -17,10 +17,11 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 
 import { fetchMyCourses, type LearnerShelfCourseDto } from "@/components/lms/lmsClient";
-import { resolvePlatformHref } from "@/components/platform/layout/usePlatformHref";
+import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import styles from "./OwnedCourseNotice.module.css";
 
 export function OwnedCourseNotice({ programSlug }: { programSlug: string }) {
+  const surfaceHref = useSurfaceHref();
   const [owned, setOwned] = useState<LearnerShelfCourseDto | null>(null);
 
   useEffect(() => {
@@ -66,7 +67,7 @@ export function OwnedCourseNotice({ programSlug }: { programSlug: string }) {
                   : "Курс уже відкритий у вашому кабінеті."}
           </p>
         </div>
-        <Link className={styles.resumeAction} href={resolvePlatformHref(href)}>
+        <Link className={styles.resumeAction} href={surfaceHref(href)}>
           {action}
         </Link>
       </div>

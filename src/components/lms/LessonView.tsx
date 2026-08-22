@@ -28,6 +28,7 @@ import {
   type LmsFailure,
 } from "./lmsClient";
 import styles from "./Lms.module.css";
+import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 
 type State =
   | { status: "loading" }
@@ -35,6 +36,7 @@ type State =
   | { status: "error"; error: LmsFailure };
 
 export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; lessonSlug: string }) {
+  const surfaceHref = useSurfaceHref();
   const [state, setState] = useState<State>({ status: "loading" });
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const [completed, setCompleted] = useState(false);
@@ -201,7 +203,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
     return (
       <main className={styles.wrap} data-cw-platform-template="learn-lesson">
         <div className={styles.lessonTopBar}>
-          <Link className={styles.backButton} href={`/learn/${courseSlug}`}>
+          <Link className={styles.backButton} href={surfaceHref(`/learn/${courseSlug}`)}>
             <Icon name="arrow-left" size={18} />
             <span>До курсу</span>
           </Link>
@@ -234,8 +236,8 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
             to be the one that looks pressable. */}
         <PlatformTrail
           steps={[
-            { label: "Мої курси", href: LEARNING_SHELF_HREF },
-            { label: data.courseTitle, href: `/learn/${courseSlug}` },
+            { label: "Мої курси", href: surfaceHref(LEARNING_SHELF_HREF) },
+            { label: data.courseTitle, href: surfaceHref(`/learn/${courseSlug}`) },
             { label: data.lesson.title },
           ]}
         />
@@ -346,14 +348,14 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
         {nav.previous ? (
           <Link
             className={styles.pagerLink}
-            href={`/learn/${courseSlug}/${nav.previous.slug}`}
+            href={surfaceHref(`/learn/${courseSlug}/${nav.previous.slug}`)}
             aria-label={`Попередній урок: ${nav.previous.title}`}
           >
             <Icon name="arrow-left" size={16} className={styles.pagerArrow} />
             <span className={styles.pagerTitle}>{nav.previous.title}</span>
           </Link>
         ) : (
-          <Link className={styles.pagerLink} href={`/learn/${courseSlug}`}>
+          <Link className={styles.pagerLink} href={surfaceHref(`/learn/${courseSlug}`)}>
             <Icon name="arrow-left" size={16} className={styles.pagerArrow} />
             <span className={styles.pagerTitle}>Карта курсу</span>
           </Link>
@@ -362,14 +364,14 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
         {nav.next ? (
           <Link
             className={completed ? styles.pagerLinkNextAccent : styles.pagerLinkNext}
-            href={`/learn/${courseSlug}/${nav.next.slug}`}
+            href={surfaceHref(`/learn/${courseSlug}/${nav.next.slug}`)}
             aria-label={`Наступний урок: ${nav.next.title}`}
           >
             <span className={styles.pagerTitle}>{nav.next.title}</span>
             <Icon name="arrow-right" size={16} className={styles.pagerArrow} />
           </Link>
         ) : (
-          <Link className={styles.pagerLinkNext} href={`/learn/${courseSlug}`}>
+          <Link className={styles.pagerLinkNext} href={surfaceHref(`/learn/${courseSlug}`)}>
             <span className={styles.pagerTitle}>Карта курсу</span>
             <Icon name="arrow-right" size={16} className={styles.pagerArrow} />
           </Link>

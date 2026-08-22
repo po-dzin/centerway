@@ -5,6 +5,8 @@ import styles from "./PlatformShellStyles";
 import { PlatformFooter } from "./layout/PlatformFooter";
 import { PlatformHeader } from "./layout/PlatformHeader";
 import { PwaRuntime } from "./pwa/PwaRuntime";
+import { useSurfaceHost } from "./layout/SurfaceHost";
+import { isPersonalHost } from "@/lib/platform/surfaceHref";
 
 /**
  * Three modes, and `learn` is the one that is not cosmetic.
@@ -30,12 +32,18 @@ export function PlatformShell({
   // from the first pixel, and starting dark would flash an inverted bar before
   // the tone sampler corrects it on the first frame.
   const floats = headerMode === "overlay" || headerMode === "learn";
+  const onPersonalHost = isPersonalHost(useSurfaceHost());
 
   return (
     <div className={`${styles.shell} ${floats ? styles.shellOverlay : ""}`}>
       <PlatformHeader initialTone={headerMode === "overlay" ? "dark" : "light"} mode={headerMode} />
       {children}
-      <PlatformFooter variant={headerMode === "learn" ? "minimal" : "full"} />
+      {/* The full footer is a storefront close — brand promise, phone, four
+          social networks. That is the wrong ending for every page of the
+          personal host, not just for a lesson: nobody on `my` is being sold to,
+          and every link in it leaves the origin. So the minimal footer follows
+          the HOST as well as the mode. */}
+      <PlatformFooter variant={headerMode === "learn" || onPersonalHost ? "minimal" : "full"} />
       <PwaRuntime />
     </div>
   );

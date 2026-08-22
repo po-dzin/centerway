@@ -663,23 +663,13 @@
   align-items: start;
 }
 
-.programResultList li {
-  min-height: 0;
-}
-
-.programFormatMeta {
-  display: grid;
-  gap: 0.75rem;
+/* Format facts are a list of sentences, so they are a .timeline like every
+   other list on the platform — the plated <span> stack this replaced was the
+   same five-cards-in-a-card shape, mirrored in the second column. Only the top
+   step is local: this list follows a paragraph rather than a heading. */
+.programMetaList {
   margin-top: 1rem;
-}
-
-.programFormatMeta span {
-  display: block;
-  padding: 0.95rem 1rem;
-  border-radius: var(--cw-card-radius);
-  color: var(--cw-platform-muted);
-  background: var(--cw-mat-surface);
-  box-shadow: var(--cw-mat-shadow-soft);
+  font-size: var(--ds-type-body-sm-size);
   line-height: var(--ds-type-body-sm-line-height);
 }
 
