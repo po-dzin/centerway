@@ -52,7 +52,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<BuilderResu
     response = await fetch(path, {
       ...init,
       headers: {
-        ...(init?.body ? { "content-type": "application/json" } : {}),
+        // Only for a JSON body. A FormData body must carry the browser's own
+        // multipart boundary, and naming a content-type here overwrites it —
+        // the server then cannot find where one part ends and the next begins.
+        ...(typeof init?.body === "string" ? { "content-type": "application/json" } : {}),
         authorization: `Bearer ${token}`,
         ...(init?.headers ?? {}),
       },
@@ -124,4 +127,19 @@ export function saveCourse(
     method: "PUT",
     body: JSON.stringify({ course }),
   });
+}
+
+/**
+ * Sends one image and gets back the address it now lives at.
+ *
+ * A FormData body, so `request`'s JSON content-type must not be set — which is
+ * why the header is left off when the body is not a string. The browser writes
+ * its own multipart boundary and getting in the way of that breaks the parse on
+ * the other side.
+ */
+export function uploadMedia(courseSlug: string, file: File): Promise<BuilderResult<{ src: string; path: string }>> {
+  const body = new FormData();
+  body.set("courseSlug", courseSlug);
+  body.set("file", file);
+  return request("/api/lms/authoring/media", { method: "POST", body });
 }

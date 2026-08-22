@@ -138,6 +138,30 @@ In use on the course page and both cabinet course meters. The dosha score bars s
 
 **List gap 0.7rem, not 0.4rem.** Lesson list items are "term — definition" and most wrap to two or three lines at 1.6 line-height; at 0.4rem the space between items was smaller than the space between two lines of the same item, so the list read as one paragraph with bold words scattered through it.
 
+### The detail hero's title has a base, not just breakpoints (2026-08-22)
+
+`.detailHeroTitle` (program, product and diagnostic offer heroes) had **no base
+rule inside the bundle its component loads**: the only declarations lived in
+`PlatformBlocksOffer.module.css`, which `PlatformHeroStyles` does not merge. So
+the element took the per-breakpoint `font-size` overrides on top of the
+browser's `h1` defaults — `line-height: 1.5`, no measure. A 57-character
+program name came out five lines at 86px and pushed the hero 240px past the
+fold on a 1440x900 screen.
+
+The base now lives in `PlatformBlocksOrientation.module.css` beside its
+siblings: UI face, weight 800, `--ds-type-hero-line-height`, measure 15ch,
+`text-wrap: balance`, and the same on-photo shadow `.heroFeatureTitle` carries.
+**Sentence case, not the home hero's uppercase 900** — these titles are whole
+sentences, and the plate treatment belongs to a two-word title. The breakpoint
+scale was retuned with them (desktop `clamp(2.9rem, 3.9vw, 4.4rem)` at 17ch,
+down from `clamp(4.1rem, 6vw, 6.3rem)` at 9.5ch), and the tablet band's copy
+column got a real start gutter — it was `margin-inline: 0 auto`, which put the
+badge and title hard against the bezel.
+
+The general rule: a class that only ever appears inside `@media` blocks is a
+class with no base. If the merged bundle does not carry its unconditional rule,
+the browser's defaults are the base, and they will not match anything.
+
 ### A list is text, not a stack of cards (2026-08-22)
 
 `.timeline` (`PlatformBlocksBase.module.css`) is the platform's **one** plain

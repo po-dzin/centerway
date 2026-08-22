@@ -17,7 +17,7 @@
 
 import type { LessonBlock, RichTextNode } from "@/lms-core";
 
-export type FieldKind = "inline" | "text" | "number" | "boolean" | "youtube";
+export type FieldKind = "inline" | "text" | "number" | "boolean" | "youtube" | "image";
 
 export type BlockField = {
   /** Address inside the block, e.g. ["content", 2, "items", 0]. */
@@ -199,9 +199,9 @@ export function describeBlock(block: LessonBlock): BlockField[] {
       return [
         {
           path: ["src"],
-          label: "Шлях до файлу",
-          kind: "text",
-          hint: "Шлях від кореня сайту (/cw/…) або повне посилання https://…",
+          label: "Зображення",
+          kind: "image",
+          hint: "Шлях від кореня сайту (/cw/…), повне посилання, або файл із вашого комп'ютера.",
         },
         { path: ["alt"], label: "Опис для тих, хто не бачить зображення", kind: "text", multiline: true },
         { path: ["caption"], label: "Підпис", kind: "inline" },

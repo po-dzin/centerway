@@ -16,6 +16,7 @@ import { useState } from "react";
 
 import { inlineToMarkup } from "@/lib/lms/inlineMarkup";
 import { PLACEHOLDER_MARKER, youtubeIdFrom, type InlineText } from "@/lms-core";
+import { BuilderImageField } from "./BuilderImageField";
 import { BuilderInlineEditor } from "./BuilderInlineEditor";
 import type { BlockField } from "./blockFields";
 import styles from "./Builder.module.css";
@@ -23,10 +24,17 @@ import styles from "./Builder.module.css";
 export function FieldInput({
   field,
   value,
+  courseSlug,
   onChange,
 }: {
   field: BlockField;
   value: unknown;
+  /**
+   * Which course an uploaded file belongs to. Only `image` fields need it, and
+   * only because an upload has to land in a folder — the rest of the table has
+   * no idea what course it is describing, and should not have to.
+   */
+  courseSlug?: string;
   onChange: (path: (string | number)[], value: unknown) => void;
 }) {
   if (field.kind === "boolean") {
@@ -90,6 +98,18 @@ export function FieldInput({
    * not blank the block on every keystroke — only a recognisable one is written
    * through.
    */
+  if (field.kind === "image") {
+    return (
+      <BuilderImageField
+        label={field.label}
+        hint={field.hint}
+        courseSlug={courseSlug ?? ""}
+        src={typeof value === "string" ? value : undefined}
+        onChange={(next) => onChange(field.path, next)}
+      />
+    );
+  }
+
   if (field.kind === "youtube") {
     return (
       <YoutubeField field={field} value={typeof value === "string" ? value : ""} onChange={onChange} />

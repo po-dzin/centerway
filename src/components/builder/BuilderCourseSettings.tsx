@@ -24,6 +24,7 @@ import {
   type CourseTypeScale,
   type CourseVisibility,
 } from "@/lms-core";
+import { BuilderImageField } from "./BuilderImageField";
 import { ChoiceRow, FieldInput } from "./BuilderFields";
 import { PALETTE_LABELS } from "./coursePalettes";
 import styles from "./Builder.module.css";
@@ -245,15 +246,13 @@ export function BuilderCourseSettings({
       />
 
       <h3 className={styles.subTitle}>Обкладинка</h3>
-      <FieldInput
-        field={{
-          path: ["cover", "src"],
-          label: "Зображення",
-          kind: "text",
-          hint: "Шлях від кореня сайту (/cw/…) або повне посилання https://…",
-        }}
-        value={course.cover?.src}
-        onChange={onChange}
+      <BuilderImageField
+        label="Зображення"
+        hint="Шлях від кореня сайту (/cw/…), повне посилання, або файл із вашого комп'ютера."
+        courseSlug={course.slug}
+        src={course.cover?.src}
+        alt={course.cover?.alt}
+        onChange={(next) => onChange(["cover", "src"], next)}
       />
       <FieldInput
         field={{
@@ -265,10 +264,6 @@ export function BuilderCourseSettings({
         value={course.cover?.alt}
         onChange={onChange}
       />
-      {course.cover?.src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img className={styles.previewImage} src={course.cover.src} alt={course.cover.alt ?? ""} />
-      ) : null}
 
       <h3 className={styles.subTitle}>Доступ</h3>
       <FieldInput

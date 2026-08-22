@@ -345,6 +345,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
             total={lesson.blocks.length}
             drag={blockDrag}
             fresh={block.id === freshBlockId}
+            courseSlug={course.slug}
             onChange={editLesson}
             onBlocks={editBlocks}
           />
@@ -497,6 +498,7 @@ function BlockEditor({
   total,
   drag,
   fresh,
+  courseSlug,
   onChange,
   onBlocks,
 }: {
@@ -504,6 +506,8 @@ function BlockEditor({
   index: number;
   total: number;
   drag: RowDrag;
+  /** Where an uploaded image lands. Only the image block uses it. */
+  courseSlug: string;
   /** Just added by the author — the caret belongs in its first node. */
   fresh?: boolean;
   onChange: (path: (string | number)[], value: unknown) => void;
@@ -557,7 +561,13 @@ function BlockEditor({
         />
       ) : (
         fields.map((field) => (
-          <FieldInput key={field.path.join(".")} field={field} value={readPath(block, field.path)} onChange={editField} />
+          <FieldInput
+            key={field.path.join(".")}
+            field={field}
+            value={readPath(block, field.path)}
+            courseSlug={courseSlug}
+            onChange={editField}
+          />
         ))
       )}
 
