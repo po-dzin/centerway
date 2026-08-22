@@ -2,6 +2,21 @@
    the button contract — `chrome` is the role for nav on its own row, which is
    exactly what a crumb is. */
 
+/* MOBILE FIRST, and here that means the single back control is the base state
+   and the full trail is what a wider viewport adds. */
+.back {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.backIcon {
+  flex: 0 0 auto;
+  margin-inline-end: calc(-1 * var(--cw-space-2xs));
+  color: var(--cw-platform-muted);
+}
+
 .trail {
   display: flex;
   align-items: center;
@@ -10,8 +25,9 @@
   margin-block-end: var(--cw-space-xs);
 }
 
+/* Hidden on a phone — the `.back` control above is the whole trail there. */
 .step {
-  display: inline-flex;
+  display: none;
   align-items: center;
   min-width: 0;
   /* Truncation lives on the STEP, not on the control inside it: `max-width` is
@@ -37,6 +53,16 @@
 
 .crumbLink:hover:not(:disabled) {
   color: var(--cw-platform-text);
+}
+
+@media (min-width: 561px) {
+  .back {
+    display: none;
+  }
+
+  .step {
+    display: inline-flex;
+  }
 }
 
 .here {

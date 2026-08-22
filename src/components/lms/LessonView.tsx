@@ -357,7 +357,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
         ) : (
           <Link className={styles.pagerLink} href={surfaceHref(`/learn/${courseSlug}`)}>
             <Icon name="arrow-left" size={16} className={styles.pagerArrow} />
-            <span className={styles.pagerTitle}>Карта курсу</span>
+            <span className={styles.pagerTitle}>Зміст</span>
           </Link>
         )}
 
@@ -372,7 +372,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
           </Link>
         ) : (
           <Link className={styles.pagerLinkNext} href={surfaceHref(`/learn/${courseSlug}`)}>
-            <span className={styles.pagerTitle}>Карта курсу</span>
+            <span className={styles.pagerTitle}>Зміст</span>
             <Icon name="arrow-right" size={16} className={styles.pagerArrow} />
           </Link>
         )}

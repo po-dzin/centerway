@@ -271,6 +271,13 @@
   gap: 0.15rem;
 }
 
+/* The shelf's page title is a header for the whole page, not for the first
+   card — without this it sat 10px above the panel it names and read as its
+   caption. */
+.shell > .sectionHead {
+  margin-bottom: var(--cw-space-lg);
+}
+
 /* The page's single label idiom. The hero used to run a second one (mono, in
    the data face) two inches above this one; there is now only this. */
 .sectionLabel {

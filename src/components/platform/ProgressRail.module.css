@@ -7,6 +7,12 @@
 .wrap {
   position: relative;
   padding-top: 1.15rem;
+  /* The walker's room is a 20px-wide column of mostly nothing, and in a stacked
+     card it was reading as a paragraph break: the gap above the dashes came out
+     roughly three times the gap below them. Half the padding is taken back out
+     of the flow, so the rail sits in the card's rhythm and the figure borrows
+     the air over it rather than adding its own. */
+  margin-top: -0.55rem;
 }
 
 /* `--cw-walk` is `done / total`, set inline: 0 puts him at the left edge before

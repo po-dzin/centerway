@@ -248,13 +248,17 @@
 /* ── Lesson top bar ───────────────────────────────── */
 
 /* Reading position for the current lesson. Sits under the app header so it
-   stays visible while the body scrolls. */
+   stays visible while the body scrolls.
+
+   It owns no row. A 3px hairline with a 1rem margin under it was costing 19px
+   at the top of every lesson on a phone, above a header stack that was already
+   the complaint — and the thing it measures is the body, which starts below.
+   The margin is gone and the bar under it brings its own. */
 .readingTrack {
   position: sticky;
   top: 0;
   z-index: 2;
   height: 0.2rem;
-  margin-bottom: var(--cw-space-md);
   border-radius: var(--cw-radius-pill);
   background: var(--cw-mat-surface-sunk);
   overflow: hidden;
@@ -270,7 +274,7 @@
   display: flex;
   align-items: center;
   gap: var(--cw-space-xs);
-  margin-bottom: var(--cw-space-md);
+  margin-block: var(--cw-space-xs) var(--cw-space-sm);
 }
 
 /* Real controls, not text links: both are thumb-sized and read as buttons.

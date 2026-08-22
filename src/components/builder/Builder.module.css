@@ -254,6 +254,15 @@
   line-height: 1.55;
 }
 
+/* The page head is a title and a sentence about it, and the two were sharing a
+   wrapper with no gap — on a phone the summary started on the line under the
+   status pill with nothing between them. Set here rather than by wrapping the
+   pair in a grid, so every screen that prints a title and a lead gets it. */
+.pageTitle + .pageLead,
+.courseTitleRow + .pageLead {
+  margin-top: var(--cw-space-xs);
+}
+
 .panel {
   padding: var(--cw-space-lg);
   border-radius: var(--cw-radius-lg);
