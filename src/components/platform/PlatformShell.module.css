@@ -590,12 +590,18 @@
   width: 100%;
 }
 
+/* The address is a CAPTION for the rows under it, not a row of its own.
+   It used to sit hard against the hairline above with a 3rem row's worth of air
+   below, which put the one small line in the sheet in the middle of a gap and
+   attached it to the list it is not part of. Loose above, tight below: it
+   belongs to the account block, and now it reads that way.
+
+   0.9rem is what `.navLayer .nav a` uses, so the account block sits on the same
+   left edge as the list above it. A block that starts a few pixels in reads as
+   a different level of the same menu. */
 .profileWrapMobile p {
   margin: 0;
-  /* 0.9rem is what `.navLayer .nav a` uses, so the account rows sit on the
-     same left edge as the list above them. A block that starts a few pixels in
-     reads as a different level of the same menu. */
-  padding: 0 0.9rem 0.35rem;
+  padding: 0.55rem 0.9rem 0;
   color: color-mix(in srgb, var(--platform-header-fg) 72%, transparent);
   font-size: var(--ds-type-label-size);
   line-height: var(--ds-type-label-line-height);

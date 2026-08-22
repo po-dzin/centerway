@@ -7,6 +7,7 @@ import { LEARNING_SHELF_HREF, builderNavItem, personalNav, platformHomeHref, pla
 import { canonicalPersonalPath } from "@/lib/surfaces/catalog";
 import { isPersonalHost } from "@/lib/platform/surfaceHref";
 import { isAdminRole } from "@/lib/platform/adminRole";
+import { currentAppKey, type PlatformAppKey } from "@/lib/platform/apps";
 import { usePlatformIdentity } from "./usePlatformIdentity";
 import styles from "@/components/platform/PlatformShellStyles";
 import { Icon } from "@/components/Icon";
@@ -49,7 +50,8 @@ export function PlatformHeader({
      what is missing and links to the programmes. Advertising it to a signed-out
      visitor would be the actual mistake, and that is what this excludes. */
   const session = usePlatformSession();
-  const onPersonalHost = isPersonalHost(useSurfaceHost());
+  const host = useSurfaceHost();
+  const onPersonalHost = isPersonalHost(host);
   /* THE HEADER NO LONGER FETCHES. It used to read `user_roles` for one reason:
      the admin entry sat in this nav and could not be derived from the session.
      That entry moved to the account menu, which needs the read anyway and does
@@ -85,6 +87,18 @@ export function PlatformHeader({
     ...item,
     resolvedHref: href(item.href),
   }));
+  /* WHICH APPLICATIONS THE SHEET ALREADY NAMES — computed, not assumed.
+     The account block under the burger's list used to exclude the shelf flat
+     out, on the true observation that the personal bar names it in its own nav.
+     On `www` that nav names no application at all, so the exclusion deleted the
+     one row a signed-in visitor most needs there: the sheet listed Діагностика,
+     Програми, Продукти, Про автора and then jumped straight to the cabinet,
+     with no way into learning anywhere on the phone. Derived from the nav that
+     is actually rendered, the rule holds on both hosts and cannot drift when
+     an entry moves. */
+  const navExcludes = navSource
+    .map((item) => currentAppKey(host, item.href))
+    .filter((key): key is PlatformAppKey => key !== null);
   const currentPath = pathname ?? null;
   const menuOpen = openMenuPath !== null && openMenuPath === currentPath;
 
@@ -197,9 +211,9 @@ export function PlatformHeader({
               ))}
             </nav>
             <div className={styles.mobileProfileSlot}>
-              {/* The sheet's own nav already names the shelf; the account block
-                  below it must not offer a second row with the same label. */}
-              <PlatformAccountMenu variant="inline" exclude={["learn"]} onNavigate={closeMenu} />
+              {/* Whatever the list above already names, the account block does
+                  not repeat — and nothing more than that. */}
+              <PlatformAccountMenu variant="inline" exclude={navExcludes} onNavigate={closeMenu} />
             </div>
           </div>
         </div>
