@@ -34,7 +34,8 @@ import { landingIndex, useRowDrag, type DragRef, type DropEdge, type RowDrag } f
 import {
   BLOCK_TYPE_HINTS,
   BLOCK_TYPE_LABELS,
-  BLOCK_TYPE_ORDER,
+  BLOCK_STRUCTURE_ORDER,
+  BLOCK_TEMPLATE_ORDER,
   describeBlock,
   readPath,
   writePath,
@@ -421,13 +422,16 @@ function locateLesson(course: Course, lessonSlug: string): { moduleIndex: number
  *
  * IT USED TO ASK FIRST. The one control here opened a grid of twelve cards and
  * would not let a word be written until one was chosen — a lesson began with a
- * taxonomy question. The types are real and the sentences beside them are worth
- * keeping, but they are an answer to "what kind of thing is this", and an
- * author does not know that before they have written it.
+ * taxonomy question. An author does not know what kind of thing they are
+ * writing before they have written it.
  *
- * So the default is text, immediately, with the caret in it. The vocabulary is
- * still one keystroke away — "/" inside any paragraph — and the grid stays
- * behind «Інший тип…» for the author who does know what they want.
+ * So the default is text, immediately, with the caret in it. The SHAPES a
+ * paragraph cannot take are one "/" away. And the third door, here, is for
+ * TEMPLATES — the blocks that arrive already knowing what job they do. That is
+ * a different question, deliberately asked in a different place: choosing
+ * «Крок протоколу» is a decision about the lesson's structure, and the grid,
+ * with the sentence that says when to reach for each, is the right shape for a
+ * decision. It is the wrong shape for "I need a table here".
  */
 function AddBlock({ onAdd }: { onAdd: (type: LessonBlockType) => void }) {
   const [open, setOpen] = useState(false);
@@ -439,31 +443,45 @@ function AddBlock({ onAdd }: { onAdd: (type: LessonBlockType) => void }) {
           <span className={styles.addGlyph} aria-hidden="true">+</span> Додати текст
         </button>
         <button className={styles.quietAction} type="button" onClick={() => setOpen(true)}>
-          Інший тип…
+          Шаблон…
         </button>
       </div>
     );
   }
 
+  const pick = (type: LessonBlockType) => {
+    onAdd(type);
+    setOpen(false);
+  };
+
   return (
     <section className={styles.panel}>
       <div className={styles.panelHead}>
-        <h2 className={styles.panelTitle}>Додати блок</h2>
+        <h2 className={styles.panelTitle}>Шаблони</h2>
         <button className={styles.quietAction} type="button" onClick={() => setOpen(false)}>
           Закрити
         </button>
       </div>
+      <p className={styles.panelText}>
+        Блок, який уже знає, що він робить в уроці. Плеєр учня малює кожен по-своєму, а перевірка готовності
+        деякі з них вимагає.
+      </p>
       <div className={styles.typeGrid}>
-        {BLOCK_TYPE_ORDER.map((type) => (
-          <button
-            key={type}
-            className={styles.typeOption}
-            type="button"
-            onClick={() => {
-              onAdd(type);
-              setOpen(false);
-            }}
-          >
+        {BLOCK_TEMPLATE_ORDER.map((type) => (
+          <button key={type} className={styles.typeOption} type="button" onClick={() => pick(type)}>
+            <span className={styles.typeName}>{BLOCK_TYPE_LABELS[type]}</span>
+            <span className={styles.typeHint}>{BLOCK_TYPE_HINTS[type]}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* The same shapes "/" offers, kept reachable without typing — on a touch
+          keyboard the slash is two taps away, and this is the screen an author
+          is already on when they realise they want a table. */}
+      <h3 className={styles.panelTitle}>Блоки</h3>
+      <div className={styles.typeGrid}>
+        {BLOCK_STRUCTURE_ORDER.map((type) => (
+          <button key={type} className={styles.typeOption} type="button" onClick={() => pick(type)}>
             <span className={styles.typeName}>{BLOCK_TYPE_LABELS[type]}</span>
             <span className={styles.typeHint}>{BLOCK_TYPE_HINTS[type]}</span>
           </button>
@@ -564,14 +582,15 @@ const NODE_LABELS: Record<RichTextNode["kind"], string> = {
  * for «Таблиця» halfway through a sentence is rarer than reaching for a list.
  */
 /**
- * The rest of the vocabulary, offered under the node kinds.
+ * The shapes prose cannot take, offered under the node kinds.
  *
- * `rich_text` is not among them: the author is already inside one, and "add
- * another paragraph block" is what Enter does. Every other type is a shape
- * prose cannot take — a table, a video, a checklist — so choosing one inserts a
- * new block after this one rather than converting the words already written.
+ * STRUCTURE ONLY — a table, a video, an image, a quote, a button. The blocks
+ * that arrive carrying a ROLE (мета уроку, крок протоколу, чек-лист, межі) are
+ * templates, not shapes, and they are NOT here: mid-sentence the author is
+ * asking "what shape is this", and a list that answers two questions at once
+ * makes both answers harder to find. Templates live behind «Шаблон…».
  */
-const BLOCK_COMMANDS: SlashCommand[] = BLOCK_TYPE_ORDER.filter((type) => type !== "rich_text").map((type) => ({
+const BLOCK_COMMANDS: SlashCommand[] = BLOCK_STRUCTURE_ORDER.map((type) => ({
   id: `block:${type}`,
   label: BLOCK_TYPE_LABELS[type],
   hint: BLOCK_TYPE_HINTS[type],

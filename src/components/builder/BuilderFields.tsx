@@ -12,8 +12,10 @@
  * key where they reject an empty string, so clearing a field deletes it.
  */
 
+import { useState } from "react";
+
 import { inlineToMarkup } from "@/lib/lms/inlineMarkup";
-import { PLACEHOLDER_MARKER, type InlineText } from "@/lms-core";
+import { PLACEHOLDER_MARKER, youtubeIdFrom, type InlineText } from "@/lms-core";
 import { BuilderInlineEditor } from "./BuilderInlineEditor";
 import type { BlockField } from "./blockFields";
 import styles from "./Builder.module.css";
@@ -79,6 +81,21 @@ export function FieldInput({
     );
   }
 
+  /**
+   * A link field whose STORED value is the identifier inside it.
+   *
+   * The author types a link, because a link is what is in their clipboard; the
+   * model keeps the id, because the player builds its own embed URL and has no
+   * business parsing YouTube. The draft is local so a half-pasted address does
+   * not blank the block on every keystroke — only a recognisable one is written
+   * through.
+   */
+  if (field.kind === "youtube") {
+    return (
+      <YoutubeField field={field} value={typeof value === "string" ? value : ""} onChange={onChange} />
+    );
+  }
+
   const text = typeof value === "string" ? value : "";
   const hasMarker = text.includes(PLACEHOLDER_MARKER);
   const className = `${field.multiline ? styles.textarea : styles.input} ${hasMarker ? styles.inputTodo : ""}`;
@@ -99,6 +116,49 @@ export function FieldInput({
       ) : (
         <input className={className} type="text" value={text} onChange={(event) => handle(event.target.value)} />
       )}
+      {field.hint ? <span className={styles.fieldHint}>{field.hint}</span> : null}
+    </label>
+  );
+}
+
+function YoutubeField({
+  field,
+  value,
+  onChange,
+}: {
+  field: BlockField;
+  value: string;
+  onChange: (path: (string | number)[], value: unknown) => void;
+}) {
+  // Seeded from the stored id and only ever replaced by the author. Deriving it
+  // from `value` on every render would rewrite the address they are in the
+  // middle of typing back into a bare id under the caret.
+  const [draft, setDraft] = useState(value);
+
+  const id = youtubeIdFrom(draft);
+
+  return (
+    <label className={styles.field}>
+      <span className={styles.fieldLabel}>{field.label}</span>
+      <input
+        className={styles.input}
+        type="text"
+        inputMode="url"
+        placeholder="https://youtu.be/…"
+        value={draft}
+        onChange={(event) => {
+          const next = event.target.value;
+          setDraft(next);
+          const found = youtubeIdFrom(next);
+          // Nothing recognisable means the field is not ready, not that the
+          // block should lose the video it already had.
+          if (found) onChange(field.path, found);
+          else if (next.trim() === "") onChange(field.path, undefined);
+        }}
+      />
+      <span className={styles.fieldHint}>
+        {id ? `Відео ${id}` : "Поки не видно ідентифікатора — вставте адресу з YouTube."}
+      </span>
       {field.hint ? <span className={styles.fieldHint}>{field.hint}</span> : null}
     </label>
   );

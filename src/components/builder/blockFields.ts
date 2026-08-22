@@ -17,7 +17,7 @@
 
 import type { LessonBlock, RichTextNode } from "@/lms-core";
 
-export type FieldKind = "inline" | "text" | "number" | "boolean";
+export type FieldKind = "inline" | "text" | "number" | "boolean" | "youtube";
 
 export type BlockField = {
   /** Address inside the block, e.g. ["content", 2, "items", 0]. */
@@ -59,7 +59,7 @@ export const BLOCK_TYPE_HINTS: Record<LessonBlock["type"], string> = {
   protocol_step: "Пронумерований крок дня з часом або умовою.",
   practice_block: "Вправа, яку виконують, із тривалістю.",
   checklist: "Пункти, які учень відмічає. Можуть вимагатися для завершення уроку.",
-  video: "Відео на YouTube за його ID.",
+  video: "Відео на YouTube — вставте посилання.",
   image: "Зображення з обов'язковим описом.",
   quote: "Цитата з автором.",
   boundary_note: "Межі й застереження. Обов'язковий у всьому, що стосується тіла.",
@@ -69,22 +69,38 @@ export const BLOCK_TYPE_HINTS: Record<LessonBlock["type"], string> = {
 };
 
 /**
+ * TWO LISTS, BECAUSE THEY ARE TWO DIFFERENT QUESTIONS.
+ *
+ * A block that arrives carrying a role is not a type, it is a TEMPLATE. «Мета
+ * уроку» is a paragraph that has been told what job it does; «Крок протоколу»
+ * is a titled paragraph with a time on it. The learner's renderer and
+ * `courseReadiness` both depend on those roles, so they are real and they stay
+ * — but they answer "what job does this do in the lesson", and that is not the
+ * question an author is asking when they reach for a table halfway through a
+ * sentence.
+ *
+ * So the shapes live in the slash menu, where writing happens, and the roles
+ * live behind «Шаблон…», where choosing is the point.
+ */
+export const BLOCK_STRUCTURE_ORDER: LessonBlock["type"][] = ["table", "video", "image", "quote", "cta"];
+
+export const BLOCK_TEMPLATE_ORDER: LessonBlock["type"][] = [
+  "lesson_objective",
+  "protocol_step",
+  "practice_block",
+  "checklist",
+  "faq_block",
+  "boundary_note",
+];
+
+/**
  * The order the picker offers types in — by how often a lesson needs one,
  * not alphabetically and not by the order they happen to sit in the union.
  */
 export const BLOCK_TYPE_ORDER: LessonBlock["type"][] = [
   "rich_text",
-  "lesson_objective",
-  "protocol_step",
-  "practice_block",
-  "checklist",
-  "table",
-  "video",
-  "image",
-  "quote",
-  "faq_block",
-  "boundary_note",
-  "cta",
+  ...BLOCK_TEMPLATE_ORDER,
+  ...BLOCK_STRUCTURE_ORDER,
 ];
 
 const RICH_NODE_LABELS: Record<RichTextNode["kind"], string> = {
@@ -161,9 +177,9 @@ export function describeBlock(block: LessonBlock): BlockField[] {
       return [
         {
           path: ["videoId"],
-          label: "ID відео на YouTube",
-          kind: "text",
-          hint: "Тільки ID, не посилання: у youtu.be/AbC123 це AbC123.",
+          label: "Посилання на відео",
+          kind: "youtube",
+          hint: "Вставте адресу з YouTube. Зберігається сам ідентифікатор, тож посилання може бути в будь-якій формі.",
         },
         // NOT a caption. It is the player's accessible name — the sentence a
         // screen reader announces instead of "frame". Labelled «Підпис» until

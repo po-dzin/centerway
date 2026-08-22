@@ -9,6 +9,13 @@
  * has exactly three features, so a toolbar of three buttons maps onto it
  * without remainder — the same totality, with the syntax taken off the author.
  *
+ * THE TOOLBAR FLOATS AND IS PORTALLED. It used to be a row that appeared above
+ * the field on focus — which pushed the block down the page the moment the
+ * caret entered it, and pushed it back on the way out. A control that moves the
+ * thing it acts on is worse than no control. It now hangs over the selection in
+ * a fixed layer, so nothing in the document moves, and the right mouse button
+ * opens the same panel: formatting is what a context menu on prose is FOR.
+ *
  * THE DIALECT STAYS, per field, behind «як текст». Not nostalgia: contenteditable
  * is genuinely unreliable on mobile Safari (selection handles, autocorrect
  * fighting the model, the keyboard covering the surface), and the builder is
@@ -116,6 +123,14 @@ export function BuilderInlineEditor({
   const [linkDraft, setLinkDraft] = useState<string | null>(null);
   /** Whether the surface currently holds anything — what decides the placeholder. */
   const [hasText, setHasText] = useState(false);
+  /**
+   * Where the formatting panel hangs, in viewport coordinates, or null when it
+   * is shut. `flip` is set when the selection is too near the top of the window
+   * for the panel to sit above it.
+   */
+  const [bar, setBar] = useState<{ x: number; y: number; flip: boolean } | null>(null);
+  /** Opened by the right button, and then it stays until dismissed. */
+  const [pinned, setPinned] = useState(false);
   const savedRange = useRef<Range | null>(null);
 
   /**
@@ -136,6 +151,46 @@ export function BuilderInlineEditor({
   // Clamped rather than reset: narrowing the query must not silently move the
   // highlight back to the top under an author who is about to press Enter.
   const active = matches.length > 0 ? Math.min(cursor, matches.length - 1) : 0;
+
+  /**
+   * Puts the panel over the current selection.
+   *
+   * The anchor is a POINT, not a box, and the panel is centred on it with a
+   * transform — which is what lets it be positioned in one pass. Measuring the
+   * panel first would mean rendering it invisibly for a frame, and a formatting
+   * bar that blinks is exactly the twitchiness this replaced.
+   */
+  const placeBar = useCallback((from?: { x: number; y: number }) => {
+    const element = ref.current;
+    if (!element) return;
+
+    let point = from;
+    if (!point) {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        setBar(null);
+        return;
+      }
+      const range = selection.getRangeAt(0);
+      if (!element.contains(range.commonAncestorContainer)) {
+        setBar(null);
+        return;
+      }
+      const rect = range.getBoundingClientRect();
+      // A collapsed caret reports a zero-width rect, which is still a position.
+      const box = rect.width === 0 && rect.height === 0 ? element.getBoundingClientRect() : rect;
+      point = { x: box.left + box.width / 2, y: box.top };
+    }
+
+    setBar({
+      // Clamped so the panel cannot hang off the side of the window. The number
+      // is half a plausible panel, which is cheaper than measuring and wrong by
+      // at most a few pixels on a selection made at the very edge.
+      x: Math.min(Math.max(point.x, 110), window.innerWidth - 110),
+      y: point.y,
+      flip: point.y < 72,
+    });
+  }, []);
 
   const closeMenu = useCallback(() => {
     setQuery(null);
@@ -165,6 +220,32 @@ export function BuilderInlineEditor({
     const rect = element.getBoundingClientRect();
     setAnchor({ top: rect.bottom + 4, left: rect.left, width: rect.width });
   }, [query]);
+
+  /**
+   * The panel follows the selection while the caret is in this field.
+   *
+   * Bound only while focused: `selectionchange` fires on every caret move in
+   * the document, and a lesson holds dozens of these fields at once.
+   */
+  useEffect(() => {
+    if (!focused) return;
+    const onSelectionChange = () => {
+      if (pinned) return;
+      const selection = window.getSelection();
+      const element = ref.current;
+      if (!selection || selection.isCollapsed || !element || selection.rangeCount === 0) {
+        setBar(null);
+        return;
+      }
+      if (!element.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+        setBar(null);
+        return;
+      }
+      placeBar();
+    };
+    document.addEventListener("selectionchange", onSelectionChange);
+    return () => document.removeEventListener("selectionchange", onSelectionChange);
+  }, [focused, pinned, placeBar]);
 
   // A field the author has just created by pressing Enter. Focus lands at the
   // end so typing continues where they were, not before what is already there.
@@ -261,85 +342,14 @@ export function BuilderInlineEditor({
     );
   }
 
+  const closeBar = () => {
+    setPinned(false);
+    setBar(null);
+    setLinkDraft(null);
+  };
+
   return (
     <div className={styles.inlineField}>
-      {/* The bar appears on focus rather than following the selection. A
-          floating toolbar has to dodge the iOS selection handles, and it lands
-          under the thumb that made the selection; a fixed row above the field
-          is in the same place every time. */}
-      {focused ? (
-        <div className={styles.inlineBar}>
-          <button
-            className={styles.inlineToggle}
-            type="button"
-            title="Жирний"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => exec("bold")}
-          >
-            <b>Ж</b>
-          </button>
-          <button
-            className={styles.inlineToggle}
-            type="button"
-            title="Курсив"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => exec("italic")}
-          >
-            <i>К</i>
-          </button>
-          <button
-            className={styles.inlineToggle}
-            type="button"
-            title="Посилання"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              const element = ref.current;
-              if (!element) return;
-              const existing = enclosingLink(element);
-              if (existing) {
-                exec("unlink");
-                return;
-              }
-              // The selection is lost the moment focus moves to the input, so
-              // the range is kept and restored when the href is applied.
-              const selection = window.getSelection();
-              savedRange.current = selection && selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
-              setLinkDraft("");
-            }}
-          >
-            Посилання
-          </button>
-          <span className={styles.barSpacer} />
-          <button className={styles.inlineToggle} type="button" onClick={() => setAsText(true)}>
-            Як текст
-          </button>
-        </div>
-      ) : null}
-
-      {linkDraft !== null ? (
-        <div className={styles.inlineBar}>
-          <input
-            className={styles.input}
-            type="text"
-            autoFocus
-            placeholder="/programs/way21 або https://…"
-            aria-label="Адреса посилання"
-            value={linkDraft}
-            onChange={(event) => setLinkDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                applyLink();
-              }
-              if (event.key === "Escape") setLinkDraft(null);
-            }}
-          />
-          <button className={styles.inlineToggle} type="button" onClick={applyLink}>
-            Додати
-          </button>
-        </div>
-      ) : null}
-
       <div
         ref={ref}
         className={`${bare ? styles.inlineBare : styles.inlineSurface} ${hasMarker ? styles.inputTodo : ""}`}
@@ -354,8 +364,20 @@ export function BuilderInlineEditor({
         onFocus={() => setFocused(true)}
         onBlur={() => {
           setFocused(false);
-          setLinkDraft(null);
           closeMenu();
+          // The panel's own buttons keep the caret (they preventDefault on
+          // mousedown), so a blur that reaches here means the author went
+          // somewhere else and the panel has nothing left to act on.
+          closeBar();
+        }}
+        onContextMenu={(event) => {
+          // The right button on prose should offer formatting. It is the one
+          // gesture that already means "what can I do with this", and the
+          // browser's own menu over a contenteditable offers spell-check and
+          // little else that applies here.
+          event.preventDefault();
+          setPinned(true);
+          placeBar({ x: event.clientX, y: event.clientY });
         }}
         onInput={emit}
         onKeyDown={(event) => {
@@ -380,6 +402,12 @@ export function BuilderInlineEditor({
               closeMenu();
               return;
             }
+          }
+
+          if (event.key === "Escape" && bar) {
+            event.preventDefault();
+            closeBar();
+            return;
           }
 
           // The span model has NO line break. A newline stored here renders as
@@ -409,6 +437,89 @@ export function BuilderInlineEditor({
           emit();
         }}
       />
+
+      {bar && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className={styles.formatBar}
+              data-flip={bar.flip || undefined}
+              style={{ left: bar.x, top: bar.y }}
+              role="toolbar"
+              aria-label={`Форматування: ${label}`}
+              // Every control here keeps the caret where it is. Losing the
+              // selection to a button press would apply the command to nothing.
+              onMouseDown={(event) => event.preventDefault()}
+            >
+              {linkDraft !== null ? (
+                <>
+                  <input
+                    className={styles.formatInput}
+                    type="text"
+                    autoFocus
+                    placeholder="/programs/way21 або https://…"
+                    aria-label="Адреса посилання"
+                    value={linkDraft}
+                    onChange={(event) => setLinkDraft(event.target.value)}
+                    onMouseDown={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        applyLink();
+                      }
+                      if (event.key === "Escape") closeBar();
+                    }}
+                  />
+                  <button className={styles.formatAction} type="button" onClick={applyLink}>
+                    Додати
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className={styles.formatAction} type="button" title="Жирний" onClick={() => exec("bold")}>
+                    <b>Ж</b>
+                  </button>
+                  <button className={styles.formatAction} type="button" title="Курсив" onClick={() => exec("italic")}>
+                    <i>К</i>
+                  </button>
+                  <button
+                    className={styles.formatAction}
+                    type="button"
+                    title="Посилання"
+                    onClick={() => {
+                      const element = ref.current;
+                      if (!element) return;
+                      if (enclosingLink(element)) {
+                        exec("unlink");
+                        return;
+                      }
+                      // The selection is lost the moment focus moves to the
+                      // input, so the range is kept and restored on apply.
+                      const selection = window.getSelection();
+                      savedRange.current =
+                        selection && selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
+                      setLinkDraft("");
+                    }}
+                  >
+                    Посилання
+                  </button>
+                  <span className={styles.formatDivider} aria-hidden="true" />
+                  <button
+                    className={styles.formatAction}
+                    type="button"
+                    title="Правити як розмітку"
+                    onClick={() => {
+                      closeBar();
+                      setAsText(true);
+                    }}
+                  >
+                    Як текст
+                  </button>
+                </>
+              )}
+            </div>,
+            document.body
+          )
+        : null}
 
       {query !== null && anchor && matches.length > 0 && typeof document !== "undefined"
         ? createPortal(
@@ -445,7 +556,7 @@ export function BuilderInlineEditor({
 
   function applyLink() {
     const href = (linkDraft ?? "").trim();
-    setLinkDraft(null);
+    closeBar();
     if (href === "") return;
 
     const element = ref.current;

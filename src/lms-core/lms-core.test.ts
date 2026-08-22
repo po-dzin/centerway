@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { validateLessonBlock, collectRequiredChecklistItemIds } from "./blocks";
+import { validateLessonBlock, collectRequiredChecklistItemIds, youtubeIdFrom } from "./blocks";
 import { validateCourse, flattenLessons, type Course } from "./course";
 import { calendarDaysBetween, enrollmentDayNumber, localHour, resolveTimeZone } from "./time";
 import { foldProgress, checklistSatisfied, type ProgressEvent } from "./progress";
@@ -608,5 +608,33 @@ describe("entitlement", () => {
       manualGrants: [{ courseSlug: "reset-day", grantedAt: "2026-08-05T00:00:00Z" }],
     });
     expect(result).toMatchObject({ entitled: true, source: "manual" });
+  });
+});
+
+describe("youtubeIdFrom", () => {
+  const ID = "dQw4w9WgXcQ";
+
+  it("takes the identifier out of every link shape someone actually copies", () => {
+    expect(youtubeIdFrom(`https://www.youtube.com/watch?v=${ID}`)).toBe(ID);
+    expect(youtubeIdFrom(`https://youtu.be/${ID}`)).toBe(ID);
+    expect(youtubeIdFrom(`https://www.youtube.com/embed/${ID}`)).toBe(ID);
+    expect(youtubeIdFrom(`https://www.youtube.com/shorts/${ID}`)).toBe(ID);
+    expect(youtubeIdFrom(`https://www.youtube.com/live/${ID}`)).toBe(ID);
+  });
+
+  it("keeps the extra query parameters out of it", () => {
+    expect(youtubeIdFrom(`https://www.youtube.com/watch?v=${ID}&t=42s&list=PLabc`)).toBe(ID);
+    expect(youtubeIdFrom(`https://youtu.be/${ID}?t=42`)).toBe(ID);
+  });
+
+  it("still accepts a bare identifier, because that is what the field used to hold", () => {
+    expect(youtubeIdFrom(ID)).toBe(ID);
+    expect(youtubeIdFrom(`  ${ID}  `)).toBe(ID);
+  });
+
+  it("returns null rather than a guess when nothing looks like one", () => {
+    expect(youtubeIdFrom("")).toBeNull();
+    expect(youtubeIdFrom("https://vimeo.com/12345")).toBeNull();
+    expect(youtubeIdFrom("не посилання")).toBeNull();
   });
 });

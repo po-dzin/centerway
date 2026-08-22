@@ -1575,7 +1575,6 @@
   justify-items: start;
   text-align: start;
   padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border-radius: var(--cw-radius-sm);
 }
 
 .slashItem[data-active] {
@@ -1649,4 +1648,70 @@
   align-items: center;
   gap: var(--cw-space-2xs);
   flex-wrap: wrap;
+}
+
+/* ── Formatting panel ─────────────────────────────── */
+
+/* Over the selection, in its own layer. It used to be a row above the field
+   that appeared on focus — which pushed the block down the page the moment the
+   caret entered it and pushed it back on the way out. A control that moves the
+   thing it acts on is worse than no control.
+
+   Centred on an anchor POINT by transform rather than measured: measuring would
+   mean rendering it invisibly for a frame first, and a formatting bar that
+   blinks is the twitchiness this replaced. */
+.formatBar {
+  position: fixed;
+  z-index: calc(var(--ds-z-sticky) + 3);
+  transform: translate(-50%, calc(-100% - 0.5rem));
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100vw - 1rem);
+  padding: 3px;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
+  animation: formatIn 120ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Selection too near the top of the window for the panel to sit above it. */
+.formatBar[data-flip] {
+  transform: translate(-50%, 0.75rem);
+}
+
+@keyframes formatIn {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Type, radius and padding are the contract's, not this panel's. A toolbar that
+   shrank its own labels to stay narrow is the exact trade `guard:buttons`
+   exists to refuse — the panel wraps or gets wider instead. */
+.formatAction {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  white-space: nowrap;
+}
+
+.formatAction:hover:not(:disabled) {
+  background: var(--cw-mat-surface-sunk);
+}
+
+.formatDivider {
+  align-self: stretch;
+  width: 1px;
+  margin-inline: 2px;
+  background: var(--cw-mat-stroke-inner);
+}
+
+.formatInput {
+  min-width: 14rem;
+  min-height: var(--ds-touch-target-min);
+  padding-inline: var(--cw-space-2xs);
+  border: 1px solid var(--cw-mat-stroke-inner);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  font: inherit;
 }
