@@ -106,9 +106,16 @@ export function PlatformAccountMenu({
   const measure = useCallback(() => {
     const trigger = triggerRef.current;
     if (!trigger) return;
-    const rect = trigger.getBoundingClientRect();
+    /* Anchored to the BAR, not to the avatar. The avatar sits inside the
+       header's own inline padding, so aligning to it hung the menu a centimetre
+       short of the plate above it — two right edges a few pixels apart, which
+       reads as a misplaced popover rather than as a panel belonging to the bar.
+       Falls back to the trigger where there is no bar to belong to. */
+    const bar = trigger.closest("header");
+    const rect = (bar ?? trigger).getBoundingClientRect();
+    const triggerRect = trigger.getBoundingClientRect();
     setAnchor({
-      top: `${Math.round(rect.bottom + 8)}px`,
+      top: `${Math.round(Math.max(rect.bottom, triggerRect.bottom) + 8)}px`,
       right: `${Math.round(Math.max(8, window.innerWidth - rect.right))}px`,
     });
   }, []);
@@ -274,7 +281,7 @@ export function PlatformAccountMenu({
       </button>
       {open && anchor && typeof document !== "undefined"
         ? createPortal(
-            <div className={styles.profileMenu} style={anchor} role="menu" ref={menuRef}>
+            <div className={styles.profileMenu} style={anchor} role="menu" ref={menuRef} data-cw-glass="shell">
               {rows}
             </div>,
             document.body,

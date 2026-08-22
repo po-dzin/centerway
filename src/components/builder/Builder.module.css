@@ -31,100 +31,33 @@
 /* Static, not sticky. The editor's own save control is the thing that must stay
    reachable while scrolling a long lesson, and two competing sticky layers on a
    phone leave almost no room for the content between them. */
-.bar {
+/* The bar lives in PlatformHeader now — see BuilderShell.tsx. What used to be
+   here was a second header recipe plus a `--platform-header-*` mapping block
+   kept in step with the platform's by hand. */
+
+/* Trail and page tools on one line. The tools are the course's or the lesson's,
+   never the application's, so they sit beside the line that names them. */
+.pageTrail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  min-width: 0;
+}
+
+.pageTools {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: var(--cw-space-2xs);
-  padding: var(--cw-space-2xs) var(--cw-space-sm);
-  background: var(--cw-mat-surface);
-  box-shadow: var(--cw-mat-shadow-soft);
-
-  /* The header recipe's inputs, mapped for this bar.
-     `PlatformAccountMenu` is shared with the platform's own header and draws
-     from `--platform-header-*` / `--platform-utility-control-*`, which the
-     platform declares on its `.header`. The builder has its own bar, so it
-     declares the same recipe here rather than the component carrying a second
-     palette — the per-surface mapping block is how every shared recipe in this
-     system is fed (docs/platform-scale-plan.md §4).
-     Values are the platform's LIGHT mapping: the builder has no dark topbar
-     tone and no photograph to sit over. */
-  --platform-header-fg: var(--cw-platform-text);
-  --platform-header-control-bg: var(--cw-mat-tint-chrome);
-  --platform-header-popover-bg: var(--cw-mat-surface);
-  --platform-header-sheet-shadow: var(--cw-mat-shadow-chrome);
-  --platform-header-sheet-filter: var(--cw-mat-filter);
-  --platform-utility-control-size: var(--ds-touch-target-min);
-  --platform-utility-control-radius: var(--cw-radius-md);
-  --platform-utility-control-focus:
-    0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
 }
 
-/* The way home, in the same place on every screen. That is what makes it the
-   root of the author's own courses rather than a logo. */
-.barBrand {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--cw-space-xs);
-  min-height: var(--ds-touch-target-min);
-  min-width: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-2xs);
-  /* One hit-area shape for every control in this bar — brand, gear, menu. The
-     earlier bar mixed a rounded rect against a circular glyph frame, and two
-     shapes at the same level read as two systems. */
-  border-radius: var(--cw-radius-md);
-  color: var(--cw-platform-text);
-  text-decoration: none;
-}
-
-.barBrand:hover {
-  background: var(--cw-mat-surface-sunk);
-}
-
-.barBrand:focus-visible {
-  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: var(--ds-focus-ring-offset);
-}
-
-/* The mark is painted as a MASK, same as the platform header: the baked shape
-   takes the header ink instead of whatever colour the file happens to carry. */
-.barMark {
-  /* The header size the platform's own shell uses. At 1.6rem the mark read as
-     a favicon dropped into the corner rather than as the way home. */
-  width: var(--cw-brand-size-symbol-header);
-  height: var(--cw-brand-size-symbol-header);
-  display: block;
-  flex: 0 0 auto;
-  background-color: var(--cw-platform-text);
-  -webkit-mask: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
-  mask: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
-}
-
-.barBrandName {
-  display: none;
-  font-family: var(--cw-font-data);
-  font-size: 0.78rem;
-  font-weight: 680;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-/* The word that says which application this is. It is the whole reason the
-   builder has its own bar: an author who lands here from a link must never have
-   to work out whether they are looking at the platform. */
-.barKind {
-  color: var(--cw-platform-muted);
-  font-weight: 500;
-  letter-spacing: 0.08em;
-}
-
+/* Outlived the bar it was named for: the inline editor's toolbar still uses it
+   to push its last control to the right. */
 .barSpacer {
   flex: 1 1 auto;
   min-width: 0;
 }
-
-/* ── Body: page, and the rail beside it ───────────── */
 
 .body {
   min-width: 0;
@@ -161,19 +94,16 @@
   .aside {
     display: block;
     position: sticky;
-    top: 0;
-    max-height: 100svh;
+    /* Clears the floating header, which is sticky at 0.75rem and is now the
+       platform's own bar rather than a flush strip this shell owned. */
+    top: 5rem;
+    max-height: calc(100svh - 5rem);
     overflow-y: auto;
     padding-block: var(--cw-space-lg);
   }
 }
 
-.barTools {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: var(--cw-space-2xs);
-}
+
 
 /* Icon-only chrome: `chromeBare` drops the inline padding that exists for a
    label, so the control comes out square instead of a wide empty button. */
@@ -1149,18 +1079,6 @@
 /* ── Wider viewports: additive only ───────────────── */
 
 @media (min-width: 561px) {
-  .bar {
-    gap: var(--cw-space-sm);
-    padding-inline: var(--cw-space-lg);
-  }
-
-  /* The wordmark appears when there is room for it. On a phone the bar has
-     three jobs and one line; the mark alone still says which application this
-     is, and the trail needs the width more. */
-  .barBrandName {
-    display: inline;
-  }
-
   .page {
     padding-block-start: var(--cw-space-xl);
   }

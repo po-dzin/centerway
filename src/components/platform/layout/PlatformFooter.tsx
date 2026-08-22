@@ -5,6 +5,7 @@ import { LEARNING_SHELF_HREF, contact, platformHomeHref, socialLinks } from "@/l
 import styles from "@/components/platform/PlatformShellStyles";
 import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
 import { useSurfaceHref } from "./SurfaceHost";
+import { PwaInstallFooterEntry } from "@/components/platform/cabinet/PwaInstallCard";
 
 /**
  * `minimal` is the learning footer.
@@ -15,7 +16,17 @@ import { useSurfaceHref } from "./SurfaceHost";
  * day 8 landed in Instagram links. The minimal variant keeps only what someone
  * mid-course can actually need: back to the shelf, support, and the legal pair
  * we are obliged to carry on every page.
+ *
+ * The install entry sits here in both variants. It is a standing offer, made
+ * once per device, and standing offers belong at the bottom of every page
+ * rather than in a panel at the top of two of them. It renders itself away
+ * where there is nothing to offer — on `www`, without a live prompt, or once
+ * the app is already installed.
  */
+/* Short on purpose: it stands in a column of three-word links, and the card's
+   full sentence would be the one item that wraps. */
+const INSTALL_LABEL = "Додати на екран";
+
 export function PlatformFooter({ variant = "full" }: { variant?: "full" | "minimal" }) {
   const href = useSurfaceHref();
   const homeHref = href(platformHomeHref);
@@ -33,6 +44,7 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "minim
           </a>
           <Link href={publicOfferHref}>Публічний договір</Link>
           <Link href={privacyHref}>Політика конфіденційності</Link>
+          <PwaInstallFooterEntry label={INSTALL_LABEL} />
         </div>
       </footer>
     );
@@ -55,6 +67,7 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "minim
         <div className={`${styles.footerLinks} ${styles.footerLegal}`}>
           <Link href={publicOfferHref}>Публічний договір</Link>
           <Link href={privacyHref}>Політика конфіденційності</Link>
+          <PwaInstallFooterEntry label={INSTALL_LABEL} />
         </div>
         <div className={`${styles.footerLinks} ${styles.footerSocials}`}>
           <a href={`tel:${contact.phone.replace(/\s+/g, "")}`}>{contact.phone}</a>

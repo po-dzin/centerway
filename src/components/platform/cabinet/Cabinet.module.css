@@ -287,8 +287,14 @@
   line-height: 1.6;
 }
 
+/* A column, not a grid, and the difference is the button row: `margin-top:
+   auto` on the actions needs a flex parent to push against. Cards in one grid
+   row stretch to the tallest, so without it three cards whose text runs to
+   different lengths put their buttons at three different heights — the row read
+   as three cards nudged out of line rather than as a shelf. */
 .card {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: var(--cw-space-sm);
   padding: var(--cw-space-lg);
   border-radius: var(--cw-radius-xl);
@@ -402,13 +408,24 @@
    reached the card edge — two stubs floating in a card rather than the card's
    own footer. They go side by side at 561px, where the card is at least 22rem
    and there is room for both. */
+/* THE BUTTON ROW, and it has one rule per axis.
+   Vertically: pinned to the bottom of its card, so a row of cards lines its
+   actions up instead of hanging each one under its own paragraph.
+   Horizontally: full width on a phone, where a thumb wants the whole card
+   edge; content width from 561 up, floored at the contract's min so a two-word
+   label is still a button. It used to be `grid-auto-columns: 1fr` there, which
+   handed each button half a wide card and then capped it at 22rem — two 352px
+   slabs with a canyon between them, on a card whose text ran 60 characters. */
 .actions {
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: var(--cw-space-xs);
+  margin-top: auto;
+  padding-top: var(--cw-space-2xs);
 }
 
 .actions > * {
-  width: 100%;
+  flex: 1 1 100%;
 }
 
 .actionPrimary {
@@ -421,7 +438,12 @@
 
 /* ── Score bars (dosha) ───────────────────────────── */
 
+/* The card is full width — the dosha result is the only thing in its row since
+   reachability moved to the account — but a meter is read by comparing three
+   lengths, and three 1200px bars are compared no better than three 500px ones.
+   Capped so the row stays a chart rather than a horizon. */
 .scoreList {
+  max-width: 34rem;
   display: grid;
   gap: var(--cw-space-sm);
 }
@@ -560,11 +582,27 @@
   outline-offset: var(--ds-focus-ring-offset);
 }
 
+/* Two lines, then an ellipsis. A ring is a glyph 4rem wide and the label under
+   it is a caption for it, not the course's name in full — «Розвантажувальний
+   день — практикум з умовного голодування» ran to six lines and made one column
+   three times the height of its neighbours. The full title is on the card the
+   ring links to. */
 .ringTitle {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
   font-size: 0.86rem;
   font-weight: 600;
   line-height: 1.25;
   overflow-wrap: anywhere;
+}
+
+/* Baselines line up across the row even when one label takes one line and the
+   next takes two. */
+.ringItem {
+  align-content: start;
 }
 
 .ringMeta {
@@ -572,6 +610,57 @@
   font-family: var(--cw-font-data);
   font-size: 0.7rem;
   letter-spacing: 0.04em;
+}
+
+/* ── Install, as one line ─────────────────────────── */
+
+/* Not a card. See PwaInstallCard.tsx: the offer lives in the footer now, and
+   what is left here is a fact about this account's device, sitting in the
+   account section at the weight of a row. */
+.installRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  min-height: var(--ds-touch-target-min);
+  list-style: none;
+}
+
+.installRow::-webkit-details-marker {
+  display: none;
+}
+
+.installRowText {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.95rem;
+}
+
+/* The iOS branch has no control to press, so the row becomes a disclosure and
+   the two taps live under it rather than in a panel nobody asked to open. */
+.installFold {
+  display: grid;
+  gap: var(--cw-space-xs);
+}
+
+.installFold > summary {
+  cursor: pointer;
+}
+
+.installFold > summary:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+  border-radius: var(--cw-radius-md);
+}
+
+/* One control in a row of its own is not a card footer: the flex `auto` margin
+   that pins actions to a card's bottom would push this one across the line. */
+.installRow .actionGhost {
+  flex: 0 1 auto;
+  margin-top: 0;
+  padding-top: 0;
+  min-width: var(--ds-button-min-width);
 }
 
 /* ── Locked / muted states ────────────────────────── */
@@ -640,10 +729,10 @@
     grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
   }
 
-  /* One row. The card is at least 22rem here, so two full-width buttons sit
-     side by side without either one truncating. */
-  .actions {
-    grid-auto-flow: column;
-    grid-auto-columns: 1fr;
+  /* Content width, floored at the contract's minimum. Two of them sit side by
+     side because they are small, not because a grid track made them equal. */
+  .actions > * {
+    flex: 0 1 auto;
+    min-width: var(--ds-button-min-width);
   }
 }

@@ -24,7 +24,6 @@ import { cabinetGate } from "./CabinetGate";
 import { CourseCard, ShelfEmptyCard, ShelfErrorCard } from "./CourseCard";
 import { dateLocaleFor } from "./format";
 import { getCabinetCopy } from "./copy";
-import { PwaInstallCard } from "./PwaInstallCard";
 import { useCabinetSession, useLearnerShelf, useProfileLang } from "./useCabinet";
 import styles from "./Cabinet.module.css";
 
@@ -70,11 +69,6 @@ export function LearnShelfClient() {
           )}
         </div>
 
-        {/* The shelf is the installed app's start screen, so this is the one
-            place where "add to home screen" installs the thing being used. */}
-        <div className={styles.section}>
-          <PwaInstallCard copy={cab} />
-        </div>
       </div>
     </main>
   );

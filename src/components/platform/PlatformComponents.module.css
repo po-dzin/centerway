@@ -459,6 +459,7 @@
 .footerLead,
 .footerLinks a:first-child,
 .footerLinks a,
+.footerLinks button,
 .footerSocials a:first-child {
   color: var(--cw-platform-muted);
   font-family: var(--cw-font-body);
@@ -473,16 +474,28 @@
   align-content: start;
 }
 
-.footer a {
+/* The install entry is a BUTTON — it opens the browser's own prompt, there is
+   no href to give it — and in a column of links it has to be one of them, not a
+   control that arrived from somewhere else. Everything below is written for
+   both, so the two are indistinguishable until pressed. */
+.footer a,
+.footer button {
   width: fit-content;
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--cw-platform-muted);
+  font: inherit;
+  text-align: left;
   text-decoration: none;
+  cursor: pointer;
 }
 
-.footer a:hover {
+.footer a:hover,
+.footer button:hover {
   color: var(--cw-platform-text);
 }
 
@@ -514,7 +527,8 @@
   gap: var(--cw-space-sm) var(--cw-space-lg);
 }
 
-.footerLearnRow a {
+.footerLearnRow a,
+.footerLearnRow button {
   min-height: var(--ds-touch-target-min);
   font-family: var(--cw-font-body);
   font-size: 0.92rem;

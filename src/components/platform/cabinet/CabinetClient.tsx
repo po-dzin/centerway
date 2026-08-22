@@ -28,7 +28,7 @@ import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
-import { PwaInstallCard } from "./PwaInstallCard";
+import { PwaInstallRow } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
 import { ShelfErrorCard, courseAction, courseMapHref, matte } from "./CourseCard";
@@ -474,12 +474,13 @@ export function CabinetClient() {
                 ) : null}
               </article>
             ) : null}
-
-            {/* Hides itself on `www`, where an install would put the SHOP on
-                the home screen; on localhost and preview one origin serves
-                everything and it appears here as before. */}
-            <PwaInstallCard copy={cab} />
           </div>
+
+          {/* A line, not a fourth card. Installing is a once-per-device act;
+              it lives in the footer now, and what stays here is the fact that
+              it is available to this account's device. Hides itself on `www`,
+              where an install would put the SHOP on the home screen. */}
+          <PwaInstallRow copy={cab} />
         </CabinetFold>
       </div>
     </main>

@@ -526,9 +526,15 @@
   gap: 0.25rem;
   padding: 0.7rem;
   border: 0;
-  border-radius: var(--cw-radius-md);
+  /* The bar's own material, not a second one. The popover used to be opaque
+     matte at the nested radius, which made it a card that happened to hang off
+     a sheet of glass — a different surface at a different corner, an inch
+     apart. Same tint, same grain, same filter, same shell radius: one plate,
+     extended downward. */
+  border-radius: var(--cw-radius-lg);
   color: var(--cw-platform-text);
-  background: var(--cw-mat-surface);
+  background-color: var(--cw-mat-tint-chrome);
+  background-image: var(--cw-mat-grain-image);
   box-shadow: var(--cw-mat-shadow-chrome);
   backdrop-filter: var(--cw-mat-filter);
 }

@@ -44,12 +44,21 @@ export type AppAudience = {
 };
 
 /**
- * Ordered by how often someone goes there, not by importance. The shelf is
- * first because the installed app opens on it and it is what a buyer came for;
- * the panel is last because the people who can open it are the ones who least
- * need it advertised.
+ * The profile is first, and the panel last.
+ *
+ * This is an ACCOUNT control, and the row that opens under an avatar should be
+ * the account it belongs to — that is what the reader came to the avatar to
+ * check. The shelf led for a while on the argument that the installed app opens
+ * on it, which is true and is exactly why it does not need this row: someone
+ * already on `my` reached the shelf by opening the app, and the bar above names
+ * it again. The panel stays last because the people who can open it are the
+ * ones who least need it advertised.
+ *
+ * «Профіль», not «Кабінет». The page says «Профіль» in its own header and the
+ * signed-out control has always said it too — a menu row is not the place to
+ * introduce a third word for one destination.
  */
-const CABINET: PlatformApp = { key: "cabinet", label: "Кабінет", path: "/profile", host: null };
+const CABINET: PlatformApp = { key: "cabinet", label: "Профіль", path: "/profile", host: null };
 const LEARN: PlatformApp = { key: "learn", label: "Навчання", path: LEARNING_SHELF_HREF, host: PERSONAL_HOST };
 const BUILDER: PlatformApp = { key: "builder", label: "Білдер", path: BUILDER_PATH_PREFIX, host: PERSONAL_HOST };
 const ADMIN: PlatformApp = { key: "admin", label: "Адмінка", path: "/admin", host: null };
@@ -74,7 +83,7 @@ const ADMIN: PlatformApp = { key: "admin", label: "Адмінка", path: "/admi
 export function appsFor(audience: AppAudience): PlatformApp[] {
   if (!audience.signedIn) return [];
 
-  const apps: PlatformApp[] = [LEARN, CABINET];
+  const apps: PlatformApp[] = [CABINET, LEARN];
   if (audience.authorsCourses || isAdminRole(audience.role)) apps.push(BUILDER);
   if (isAdminRole(audience.role)) apps.push(ADMIN);
   return apps;
