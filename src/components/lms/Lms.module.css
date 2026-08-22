@@ -572,11 +572,17 @@
   font-weight: var(--cw-course-heading-weight, 600);
 }
 
-/* Markers hang in the margin, so list text starts on the SAME left edge as the
-   paragraphs above and below it. The old rule padded the list in by 1.2rem and
-   set `display: grid`, which blockifies the items and drops their ::marker —
-   an indent with nothing in it, which is what made running text look like it
-   kept changing its mind about where the page begins. */
+/* THE MARKER SITS ON THE COLUMN'S EDGE, and the text is indented past it.
+
+   It used to hang the other way — text flush with the paragraphs and the dot
+   out in the card's padding. That is a real typographic tradition and it is
+   wrong here: on a narrow card the protruding dots make the left edge ragged,
+   and the page reads as if the list belongs to a different column from the
+   sentence above it. One edge for everything; the indent inside the list is the
+   list's own business.
+
+   `list-style: none` with an absolute marker rather than `::marker`, because
+   `display: grid` blockifies the items and drops the native marker entirely. */
 .list,
 .listOrdered {
   margin: 0;
@@ -591,15 +597,20 @@
   line-height: 1.6;
 }
 
-.list > li,
+.list > li {
+  position: relative;
+  padding-inline-start: 1.15rem;
+}
+
 .listOrdered > li {
   position: relative;
+  padding-inline-start: 1.6rem;
 }
 
 .list > li::before {
   content: "";
   position: absolute;
-  left: -0.85rem;
+  left: 0.28rem;
   /* Optical, not geometric: 0.62em lands the dot on the x-height of the first
      line rather than its box, which is where the eye expects it. */
   top: 0.62em;
@@ -620,9 +631,9 @@
 .listOrdered > li::before {
   content: counter(cw-item) ".";
   position: absolute;
-  left: -1.35rem;
-  width: 1.1rem;
-  text-align: right;
+  left: 0;
+  width: 1.25rem;
+  text-align: left;
   font-family: var(--cw-font-data);
   font-size: 0.82rem;
   line-height: 1.95;
