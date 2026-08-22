@@ -71,7 +71,7 @@ type PlatformOfferSurfaceTemplateProps = {
 
 export function PlatformOfferResultList({ items }: { items: string[] }) {
   return (
-    <ul className={`${styles.timeline} ${styles.programResultList}`}>
+    <ul className={styles.timeline}>
       {items.map((item) => (
         <li key={item}>{item}</li>
       ))}
@@ -81,11 +81,11 @@ export function PlatformOfferResultList({ items }: { items: string[] }) {
 
 export function PlatformOfferMetaList({ items }: { items: string[] }) {
   return (
-    <div className={styles.programFormatMeta}>
+    <ul className={`${styles.timeline} ${styles.programMetaList}`}>
       {items.map((item) => (
-        <span key={item}>{item}</span>
+        <li key={item}>{item}</li>
       ))}
-    </div>
+    </ul>
   );
 }
 

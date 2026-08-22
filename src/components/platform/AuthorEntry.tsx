@@ -22,7 +22,8 @@
 import { useEffect, useState } from "react";
 
 import { Icon } from "@/components/Icon";
-import { BUILDER_HOST, BUILDER_PATH_PREFIX } from "@/lib/surfaces/catalog";
+import { BUILDER_PATH_PREFIX } from "@/lib/surfaces/catalog";
+import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { supabaseClient } from "@/lib/supabaseClient";
 import styles from "./PlatformOfferCommerce.module.css";
 
@@ -31,18 +32,14 @@ type AuthoringAccess = { isAdmin: boolean; editableCourseSlugs: string[] };
 /**
  * Where the builder answers from HERE.
  *
- * Mirrors `allowsBuilderPath` in src/lib/proxy/builder.ts, and has to: the
- * subdomain can only ever point at production, so on localhost and on a preview
- * deployment the builder is reachable by path instead. A link that always named
- * the host would be dead in exactly the two places anyone tests it.
+ * One question, one answer: `resolveSurfaceHref` owns which origin a path lives
+ * on, including the localhost and preview case where there is no personal host
+ * to be on and the prefix is served by path. A second copy of that rule here is
+ * how a link comes to be dead in exactly the two places anyone tests it.
  */
-export function builderHref(path: string): string {
-  const suffix = path.startsWith("/") ? path : `/${path}`;
-  if (typeof window === "undefined") return `${BUILDER_PATH_PREFIX}${suffix}`;
-
-  const host = window.location.hostname;
-  const byPath = host === "localhost" || host === "127.0.0.1" || host.endsWith(".vercel.app");
-  return byPath ? `${BUILDER_PATH_PREFIX}${suffix}` : `https://${BUILDER_HOST}${suffix}`;
+export function useBuilderHref(): (path: string) => string {
+  const href = useSurfaceHref();
+  return (path: string) => href(`${BUILDER_PATH_PREFIX}${path.startsWith("/") ? path : `/${path}`}`);
 }
 
 /* One read per tab, shared by every caller. The offer page and the cabinet both
@@ -98,6 +95,7 @@ export function useAuthoringAccess(): AuthoringAccess | null {
  */
 export function CourseAuthorLink({ courseSlug }: { courseSlug: string }) {
   const access = useAuthoringAccess();
+  const builderHref = useBuilderHref();
   if (!access || !access.editableCourseSlugs.includes(courseSlug)) return null;
 
   return (

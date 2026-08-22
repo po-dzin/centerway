@@ -49,8 +49,23 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: readErr.message }, { status: 500 });
   }
 
+  /* Whether this account authors anything, asked here rather than from its own
+     endpoint. The header's standing rule is one request per session, and the
+     app switcher needs both answers to decide the builder entry — a second
+     round trip for the second half would break the rule to save a join.
+
+     Ownership is per row (`lms_courses.author_id`), never a global role: see
+     `src/lib/lms/builderAccess.ts`. A failed read answers `false`, which hides
+     a link rather than offering one the builder would then 404. */
+  const { data: authored } = await db
+    .from("lms_courses")
+    .select("id")
+    .eq("author_id", userId)
+    .limit(1);
+
   return NextResponse.json({
     ok: true,
     role: typeof data?.role === "string" ? data.role : "user",
+    authorsCourses: Array.isArray(authored) && authored.length > 0,
   });
 }

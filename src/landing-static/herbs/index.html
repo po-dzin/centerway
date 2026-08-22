@@ -25,14 +25,24 @@
 
 <a id="top"></a>
 
-<!-- ============ NETWORK NAV (temporarily suspended) ============ -->
-<header class="cwn" data-cw-network-nav>
+<!-- ============ PAGE NAV (burger < 760px, topbar 760px+) ============ -->
+<header class="cwn cwn--anchored" data-cw-network-nav>
   <div class="cwn__in">
-    <a class="cwn__brand" href="#top"><img src="/shared/img/cw-mark-ink.svg" alt="" aria-hidden="true"><span>CenterWay</span></a>
-    <button class="cwn__toggle" type="button" aria-expanded="false" aria-controls="cwn-menu" aria-label="Меню CenterWay"><svg class="cwn__toggle-ico" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-menu"/></svg><svg class="cwn__toggle-ico cwn__toggle-ico--close" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg></button>
-    <nav class="cwn__menu" id="cwn-menu" aria-label="Мережа CenterWay">
-      <a href="https://way21.centerway.net.ua/">Шлях 21</a>
-      <a href="https://resetday.centerway.net.ua/">Розвантажувальний день</a>
+    <a class="cwn__brand" href="#top">
+      <img src="/shared/img/cw-mark-ink.svg" alt="" aria-hidden="true">
+      <span>CenterWay</span>
+    </a>
+    <button class="cwn__toggle" type="button" aria-expanded="false" aria-controls="cwn-menu" aria-label="Меню сторінки">
+      <svg class="cwn__toggle-ico" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-menu"/></svg>
+      <svg class="cwn__toggle-ico cwn__toggle-ico--close" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg>
+    </button>
+    <nav class="cwn__menu" id="cwn-menu" aria-label="Навігація сторінкою">
+      <a href="#blends">Три збори</a>
+      <a href="#why">Чому збір</a>
+      <a href="#fit">Кому підходить</a>
+      <a href="#lead">Замовити</a>
+      <a href="#reviews">Відгуки</a>
+      <a href="#faq">Питання</a>
     </nav>
   </div>
 </header>
@@ -77,7 +87,7 @@
 </section>
 
 <!-- ============ THREE BLENDS ============ -->
-<section class="sec">
+<section id="blends" class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Що це за збори</span>
@@ -121,7 +131,7 @@
 <div class="seam" aria-hidden="true"><svg class="ico" width="42" height="42" focusable="false"><use href="/shared/img/cw-icons.svg#cw-connector"/></svg></div>
 
 <!-- ============ WHY THIS WAY ============ -->
-<section class="sec sec-alt">
+<section id="why" class="sec sec-alt">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Трохи глибше · чому саме так</span>
@@ -140,7 +150,7 @@
 </section>
 
 <!-- ============ WHO ============ -->
-<section class="sec">
+<section id="fit" class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Кому це підходить</span>
@@ -214,7 +224,7 @@
 </section>
 
 <!-- ============ PROOF ============ -->
-<section class="sec">
+<section id="reviews" class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Відгуки</span>
@@ -251,7 +261,7 @@
 </section>
 
 <!-- ============ FAQ ============ -->
-<section class="sec sec-alt">
+<section id="faq" class="sec sec-alt">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Питання й відповіді</span>

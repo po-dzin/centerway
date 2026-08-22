@@ -4,15 +4,35 @@ import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
+import { appHref, appsFor, currentAppKey } from "@/lib/platform/apps";
+import { useSurfaceHost } from "@/components/platform/layout/SurfaceHost";
 
+/**
+ * The panel's account control.
+ *
+ * IT USED TO HOLD ONE ITEM: sign out. That made leaving `/admin` and leaving
+ * the ACCOUNT the same act — the panel had no other link out of itself, so an
+ * operator who opened it was stuck in it. The applications listed here are the
+ * same ones the platform's own `PlatformAccountMenu` shows, computed by
+ * `src/lib/platform/apps.ts`, so the two cannot disagree about where this
+ * account may go.
+ *
+ * The MARKUP stays Tailwind and grey. The panel runs its own skin
+ * (`cw-admin-theme`) and pulling `--ds-*` into it is exactly the cross-layer
+ * consumption `guard:ds-contract` bans, so what is shared here is the data, not
+ * the component. The day the panel moves onto the design system, this becomes
+ * one more caller of the shared control.
+ */
 interface UserMenuProps {
     email?: string | null;
     role?: string | null;
+    /** Whether this account owns a course row — decides the builder entry. */
+    authorsCourses?: boolean;
     initial?: string;
     avatarUrl?: string | null;
 }
 
-export function UserMenu({ email, role, initial = "?", avatarUrl }: UserMenuProps) {
+export function UserMenu({ email, role, authorsCourses = false, initial = "?", avatarUrl }: UserMenuProps) {
     const { t } = useI18n();
     const [open, setOpen] = useState(false);
     const ref = useRef<HTMLDivElement>(null);
@@ -32,6 +52,13 @@ export function UserMenu({ email, role, initial = "?", avatarUrl }: UserMenuProp
         setOpen(false);
         await supabaseClient.auth.signOut();
     };
+
+    const host = useSurfaceHost();
+    const pathname = typeof window === "undefined" ? "" : window.location.pathname;
+    /* Signed in by construction: this control only renders inside the panel,
+       which the shell already gates on a session and an admin role. */
+    const apps = appsFor({ signedIn: true, role: role ?? null, authorsCourses });
+    const here = currentAppKey(host, pathname);
 
     return (
         <div className="relative" ref={ref}>
@@ -67,6 +94,25 @@ export function UserMenu({ email, role, initial = "?", avatarUrl }: UserMenuProp
                             ) : null}
                         </div>
                     )}
+                    {apps.length > 0 ? (
+                        <div className="py-1 border-b cw-border">
+                            {apps.map((app) => {
+                                const href = appHref(app, host);
+                                const current = app.key === here;
+                                return (
+                                    <a
+                                        key={app.key}
+                                        href={href}
+                                        onClick={() => setOpen(false)}
+                                        aria-current={current ? "page" : undefined}
+                                        className={`w-full flex items-center gap-2 px-4 py-3 text-sm cw-text hover:bg-[var(--cw-surface-2)] transition-colors ${current ? "font-semibold" : ""}`}
+                                    >
+                                        {app.label}
+                                    </a>
+                                );
+                            })}
+                        </div>
+                    ) : null}
                     <button
                         onClick={handleSignOut}
                         className="w-full flex items-center gap-2 px-4 py-3 text-sm cw-text hover:bg-[var(--cw-surface-2)] transition-colors"

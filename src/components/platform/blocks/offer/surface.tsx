@@ -69,7 +69,7 @@ export function OfferInfo({ programSlug }: Pick<PlatformRouteBlockProps, "progra
         <article className={styles.panel}>
           <p className={styles.label}>Що змінюємо</p>
           <h2 className={styles.title}>{detailsTitle}</h2>
-          <ul className={`${styles.timeline} ${styles.programResultList}`}>
+          <ul className={styles.timeline}>
             {program.results.slice(0, 5).map((result) => (
               <li key={result}>{result}</li>
             ))}
@@ -79,11 +79,11 @@ export function OfferInfo({ programSlug }: Pick<PlatformRouteBlockProps, "progra
           <p className={styles.label}>Формат</p>
           <h2 className={styles.title}>{program.duration}</h2>
           <p className={styles.lead}>{program.description}</p>
-          <div className={styles.programFormatMeta}>
+          <ul className={`${styles.timeline} ${styles.programMetaList}`}>
             {formatMeta.map((item) => (
-              <span key={item}>{item}</span>
+              <li key={item}>{item}</li>
             ))}
-          </div>
+          </ul>
         </article>
       </div>
     </section>

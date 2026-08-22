@@ -25,8 +25,16 @@ export function isAdminRole(role: string | null | undefined): boolean {
   return ADMIN_ROLES.has(role.trim().toLowerCase());
 }
 
-/** Shared by the admin shell and the platform header so one fetch serves both. */
-export const ADMIN_ROLE_CACHE_KEY = "cw_admin_role_cache_v1";
+/**
+ * Shared by the admin shell and the platform header so one fetch serves both.
+ *
+ * `_v2` because the entry stopped being just a role: it now also carries
+ * whether the account authors a course, which is what decides the builder entry
+ * in the app switcher. A surviving `_v1` entry would parse cleanly with that
+ * field undefined, and an author would silently lose the link to their own tool
+ * for the length of the TTL. Bumping the key makes the stale shape a miss.
+ */
+export const ADMIN_ROLE_CACHE_KEY = "cw_admin_role_cache_v2";
 export const ADMIN_ROLE_CACHE_TTL_MS = 5 * 60_000;
 
 /**

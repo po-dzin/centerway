@@ -18,11 +18,13 @@
  */
 
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
-import { PLATFORM_ORIGIN, platformUrl } from "@/lib/surfaces/catalog";
+import { PLATFORM_ORIGIN, platformUrl, surfaceUrl } from "@/lib/surfaces/catalog";
 
 // The shelf address, not a copy of it: this literal was already one release
-// behind the constant once.
-export const CABINET_URL = platformUrl(LEARNING_SHELF_HREF);
+// behind the constant once. `surfaceUrl`, not `platformUrl`, because the shelf
+// moved to the personal host and the bot's link would otherwise spend a 308
+// getting there.
+export const CABINET_URL = surfaceUrl(LEARNING_SHELF_HREF);
 export const PROGRAMS_URL = platformUrl("/programs");
 export const SUPPORT_BOT_URL = "https://telegram.me/centerway_support_bot";
 

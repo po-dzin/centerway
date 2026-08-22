@@ -45,6 +45,18 @@ export const ICONS = {
     group: "Route",
     d: ["M20 12H6", "M11.2 6.4 5.6 12l5.6 5.6"],
   },
+  /* The vertical pair of `arrow-left`/`arrow-right`, same shaft length and same
+     14-unit reach, so a row that offers "up / down / right" draws one family
+     rather than two. Reordering is a vertical statement and had been borrowing
+     the horizontal arrows for it. */
+  "arrow-up": {
+    group: "Route",
+    d: ["M12 20V6", "M6.4 11.2 12 5.6l5.6 5.6"],
+  },
+  "arrow-down": {
+    group: "Route",
+    d: ["M12 4v14", "M6.4 12.8 12 18.4l5.6-5.6"],
+  },
   "chevron-right": {
     group: "Route",
     d: ["M9.5 5.5 16 12l-6.5 6.5"],
@@ -281,6 +293,14 @@ export const ICONS = {
   // character from whatever font happens to load. Radius 1.35 and a 5.2 pitch:
   // at 0.95 (the `week` pitch) three dots read as a stalled progress bar, and
   // the control has to be recognisable at 18px in a list row.
+  /* Delete. A lid on a body, with the handle above it — the one shape people
+     read as "remove" without a label, which matters because this item is the
+     only destructive one in every menu it appears in. No inner tick marks: at
+     18px in a list row they close into a smudge. */
+  trash: {
+    group: "Meta",
+    d: ["M4.5 7h15", "M9.5 7V4.8h5V7", "M6.8 7l1 12.2h8.4l1-12.2"],
+  },
   more: {
     group: "Meta",
     dots: [

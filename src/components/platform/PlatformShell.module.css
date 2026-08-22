@@ -508,10 +508,18 @@
   line-height: 1;
 }
 
+/* FIXED, AND IN A PORTAL — see PlatformAccountMenu.
+   The header is `overflow: clip` (it has to be: the shell is a rounded frosted
+   plate and the nav sheet slides inside it), so a popover positioned against
+   the avatar was laid out correctly and then clipped away entirely — 315px of
+   menu, all of it below the bar's bottom edge, none of it painted.
+
+   COLOURS COME FROM THE GLOBAL LAYER, not from `--platform-header-*`. Outside
+   the header those variables do not resolve, and a popover is its own surface
+   anyway: it should read as the material sheet with ordinary ink on it whether
+   the bar above it is in its light or dark tone. */
 .profileMenu {
-  position: absolute;
-  top: calc(100% + 0.55rem);
-  right: 0;
+  position: fixed;
   z-index: calc(var(--ds-z-sticky) + 2);
   width: min(17rem, calc(100vw - 2rem));
   display: grid;
@@ -519,16 +527,16 @@
   padding: 0.7rem;
   border: 0;
   border-radius: var(--cw-radius-md);
-  color: var(--platform-header-fg);
-  background: var(--platform-header-popover-bg);
-  box-shadow: var(--platform-header-sheet-shadow);
-  backdrop-filter: var(--platform-header-sheet-filter);
+  color: var(--cw-platform-text);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-chrome);
+  backdrop-filter: var(--cw-mat-filter);
 }
 
 .profileMenu p {
   margin: 0;
   padding: 0.45rem 0.55rem 0.6rem;
-  color: color-mix(in srgb, var(--platform-header-fg) 72%, transparent);
+  color: var(--cw-platform-muted);
   font-size: var(--ds-type-label-size);
   line-height: var(--ds-type-label-line-height);
   overflow-wrap: anywhere;
@@ -543,7 +551,7 @@
   padding: 0 0.65rem;
   border: 0;
   border-radius: var(--cw-radius-sm);
-  color: var(--platform-header-fg);
+  color: var(--cw-platform-text);
   background: transparent;
   font: inherit;
   font-weight: 720;
@@ -553,7 +561,61 @@
 
 .profileMenu a:hover,
 .profileMenu button:hover {
-  background: var(--platform-header-control-bg);
+  background: var(--cw-mat-tint-hover);
+}
+
+/* "You are here", said the way the bar says it: weight at full foreground, not
+   a fill. A fill would be the hover state sitting on permanently, and the
+   reader would take the row they are on for the row under their cursor. The
+   application you are in stays listed rather than being dropped — a menu whose
+   rows change with where you opened it has to be re-read every time. */
+.profileMenu a[data-current] {
+  font-weight: 850;
+}
+
+/* The account block inside the burger sheet. Same rows as the popover, laid
+   flat — a popover nested in a sheet is a second layer over a layer on the
+   smallest screen there is. These keep the HEADER's variables rather than the
+   global ones the popover moved to: this block renders inside the sheet, where
+   the ground is the dark plate and `--platform-header-fg` is the ink for it. */
+.profileWrapMobile {
+  display: grid;
+  gap: 0.15rem;
+  width: 100%;
+}
+
+.profileWrapMobile p {
+  margin: 0;
+  /* 0.9rem is what `.navLayer .nav a` uses, so the account rows sit on the
+     same left edge as the list above them. A block that starts a few pixels in
+     reads as a different level of the same menu. */
+  padding: 0 0.9rem 0.35rem;
+  color: color-mix(in srgb, var(--platform-header-fg) 72%, transparent);
+  font-size: var(--ds-type-label-size);
+  line-height: var(--ds-type-label-line-height);
+  overflow-wrap: anywhere;
+}
+
+.profileWrapMobile a,
+.profileWrapMobile button {
+  min-height: var(--ds-touch-target-min);
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 0 0.9rem;
+  border: 0;
+  border-radius: var(--cw-radius-sm);
+  color: var(--platform-header-fg);
+  background: transparent;
+  font: inherit;
+  font-weight: 720;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.profileWrapMobile a[data-current] {
+  font-weight: 850;
 }
 
 .mobileProfileSlot {

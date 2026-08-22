@@ -1,8 +1,38 @@
 import { describe, expect, it } from "vitest";
 
-import { LEARNING_SHELF_HREF, adminNavItem, learningNavItem, platformNav } from "./content";
+import { LEARNING_SHELF_HREF, builderNavItem, learningNavItem, personalNav, platformNav } from "./content";
 import manifest from "@/app/manifest";
 import { botCopy } from "@/lib/tgSupportBotCopy";
+
+/**
+ * Two applications, two bars. The showcase bar is addressed to a stranger; the
+ * personal bar is what the environment actually contains. A single bar that
+ * grew items depending on who was reading it is what this replaced.
+ */
+describe("the two navs", () => {
+  it("share no item", () => {
+    const publicHrefs = platformNav.map((item) => item.href);
+    for (const item of [...personalNav, builderNavItem]) {
+      expect(publicHrefs, item.label).not.toContain(item.href);
+    }
+  });
+
+  it("keeps the personal bar same-origin", () => {
+    // Every entry here is served by the host the bar is drawn on. A bar whose
+    // items all leave the origin is a switcher wearing a nav's clothes.
+    for (const item of [...personalNav, builderNavItem]) {
+      expect(item.href, item.label).toMatch(/^\/(learn|build)/);
+    }
+  });
+
+  it("puts the dashboard first and matches it exactly", () => {
+    // `exact`, because on the personal host every lesson lives UNDER the
+    // dashboard's address once the prefix is folded away — a prefix match would
+    // light "Мої курси" on every screen of the player.
+    expect(personalNav[0].href).toBe(LEARNING_SHELF_HREF);
+    expect(personalNav[0].match).toBe("exact");
+  });
+});
 
 describe("the learning entry", () => {
   it("is not part of the showcase nav", () => {
@@ -22,16 +52,25 @@ describe("the learning entry", () => {
   });
 
   /**
-   * The six places the shelf address appears must not drift apart. Before this
+   * The places the shelf address appears must not drift apart. Before this
    * constant existed they were separate literals, and the installed app opened
    * on the storefront while the bot sent people to a section of the profile.
+   *
+   * The start_url is no longer the shelf PATH but the ROOT, and that is the
+   * same destination: the installed app lives on the personal host, whose root
+   * is rewritten to `/learn`. A relative "/" is the only form that is correct
+   * on both hosts this one manifest is served from.
    */
-  it("is the installed app's start_url", () => {
-    expect(manifest().start_url).toBe(LEARNING_SHELF_HREF);
+  it("opens the installed app on its own host's root", () => {
+    expect(manifest().start_url).toBe("/");
   });
 
   it("is what the support bot hands people", () => {
-    expect(botCopy.cabinet).toContain(LEARNING_SHELF_HREF);
+    // The bot prints the DESTINATION: on the personal host the dashboard is the
+    // root, and `/learn` is a 308 in front of it. A link in a message cannot be
+    // corrected later, so it must not name the forward.
+    expect(botCopy.cabinet).toContain("https://my.centerway.net.ua/");
+    expect(botCopy.cabinet).not.toContain(`${LEARNING_SHELF_HREF}`);
   });
 
   it("keeps scope at the site root so links out of the shelf stay in the app", () => {
@@ -44,27 +83,5 @@ describe("the learning entry", () => {
     // `exact` would leave the entry looking inactive inside every lesson —
     // which is where a learner spends the session.
     expect(learningNavItem.match).toBe("prefix");
-  });
-});
-
-describe("the admin entry", () => {
-  it("is not part of the showcase nav", () => {
-    // platformNav renders for signed-out visitors. An admin item in it would be
-    // a link everyone sees and almost nobody may follow.
-    expect(platformNav.map((item) => item.href)).not.toContain(adminNavItem.href);
-    expect(platformNav.some((item) => item.label === adminNavItem.label)).toBe(false);
-  });
-
-  it("points at the admin surface, and matches its sub-routes", () => {
-    expect(adminNavItem.href).toBe("/admin");
-    // `exact` would leave the entry looking inactive everywhere inside the panel.
-    expect(adminNavItem.match).toBe("prefix");
-  });
-
-  it("is a plain path, so a branded host can prefix it with the platform origin", () => {
-    // The header rewrites nav hrefs to ${PLATFORM_SITE_ORIGIN}${href} off-origin.
-    // An absolute URL here would come out doubled.
-    expect(adminNavItem.href.startsWith("/")).toBe(true);
-    expect(adminNavItem.href).not.toMatch(/^https?:/);
   });
 });

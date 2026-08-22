@@ -11,7 +11,7 @@
 import Link from "next/link";
 
 import { ProgressRail } from "@/components/platform/ProgressRail";
-import { resolvePlatformHref } from "@/components/platform/layout/usePlatformHref";
+import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import type { LearnerShelfCourseDto } from "@/components/lms/lmsClient";
 import { fmtShortDate } from "./format";
 import type { CabinetCopy } from "./copy";
@@ -53,6 +53,7 @@ export function CourseCard({
   copy: CabinetCopy;
   dateLocale: string;
 }) {
+  const href = useSurfaceHref();
   const action = courseAction(course, copy);
   const done = course.standing?.completedLessons ?? 0;
   const total = course.standing?.totalLessons ?? 0;
@@ -106,12 +107,12 @@ export function CourseCard({
       <div className={styles.actions}>
         <Link
           className={action.primary ? styles.actionPrimary : styles.actionGhost}
-          href={resolvePlatformHref(action.href)}
+          href={href(action.href)}
         >
           {action.label}
         </Link>
         {course.access !== "locked" && action.href !== courseMapHref(course) ? (
-          <Link className={styles.actionGhost} href={resolvePlatformHref(courseMapHref(course))}>
+          <Link className={styles.actionGhost} href={href(courseMapHref(course))}>
             {copy.openCourseMap}
           </Link>
         ) : null}

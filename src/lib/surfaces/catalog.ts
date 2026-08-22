@@ -1,40 +1,156 @@
 /**
  * The platform's own origin, server-safe.
  *
- * `usePlatformHref` re-exports this rather than declaring a second copy: that
- * module is `"use client"`, so anything running on the server — the Telegram
- * bot, reminders, emails — could not import the origin from it and would have
- * had to hardcode the domain a second time.
+ * Declared here, not in a `"use client"` module: anything running on the server
+ * — the Telegram bot, reminders, emails — has to be able to import the origin,
+ * and a client module would have forced a second copy of the domain.
  */
 export const PLATFORM_ORIGIN = "https://www.centerway.net.ua";
 
 /**
- * The builder's own host.
+ * The host every PERSONAL surface lives on: the learner's shelf, the player,
+ * and the builder.
  *
- * A separate origin, on purpose. The builder is not a section of the platform
- * the way the cabinet is — it is a different application for a different person
- * doing a different job, and the two share nothing but the course contract. On
- * one host it would have had to answer, on every route, "is this reader a
- * learner or an author?", which is exactly the question the platform got wrong
- * for the LMS itself (docs/lms-authoring-pipeline-2026-08-19.md).
+ * The line is not "showcase against learning" — it is PUBLIC against PERSONAL.
+ * `www` stays anonymous, indexable and cacheable; nothing there needs a
+ * session. Everything that answers "what is MINE" answers from here.
  *
- * Cost, stated plainly: a separate origin means a separate Supabase session, so
- * an author signs in here once even if they are signed in on the platform, and
- * this host must be added to the project's auth redirect allowlist. That is
- * acceptable for a tool used by a handful of people, and it is exactly why the
- * LEARNER surface did NOT get its own host — a learner shares identity, session
- * and installed-app scope with the buyer, and splitting them would break the
- * cabinet's sign-in and the PWA's scope for no gain.
+ * The old reason for the builder's separate host — "a separate origin costs a
+ * separate session" — was true of the configuration, not of the web: the
+ * session now lives in a cookie on `.centerway.net.ua` and is shared by every
+ * surface under it (`src/lib/auth/sessionCookie.ts`). What a separate origin
+ * still costs is one entry in the Supabase auth redirect allowlist, and the
+ * PWA scope, which is why the installed app now lives HERE rather than on the
+ * showcase.
  */
-export const BUILDER_HOST = "build.centerway.net.ua";
+export const PERSONAL_HOST = "my.centerway.net.ua";
 
-/** Route prefix the builder host maps onto, and its path on the platform host. */
+/** The personal host's own origin, server-safe. */
+export const PERSONAL_ORIGIN = `https://${PERSONAL_HOST}`;
+
+/**
+ * The builder's prefix, which is a real public path: `my/build/…`.
+ */
 export const BUILDER_PATH_PREFIX = "/build";
+
+/**
+ * The learner routes' INTERNAL prefix.
+ *
+ * `/learn` is where the pages live in the router and nothing else. On the
+ * personal host it is not part of any address: `my/` is the dashboard and
+ * `my/way21/day-1` is a lesson, and the proxy rewrites those onto this prefix
+ * the way the builder host used to rewrite onto `/build`.
+ *
+ * It survives as a prefix at all because on localhost and on preview there is
+ * one origin for everything, and a lesson at `/way21/day-1` there would collide
+ * with the funnel landing of the same name.
+ */
+export const LEARNING_PATH_PREFIX = "/learn";
+
+export const PERSONAL_PATH_PREFIXES = [LEARNING_PATH_PREFIX, BUILDER_PATH_PREFIX] as const;
+
+/** True for a path owned by the personal host, prefix-exact. */
+export function isPersonalPath(path: string): boolean {
+  const pathname = path.split("?")[0].split("#")[0];
+  return PERSONAL_PATH_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  );
+}
+
+/**
+ * The PUBLIC form of a personal path, as it is addressed on `my`.
+ *
+ * The learner tree loses its prefix entirely — `/learn` is the dashboard at the
+ * root, `/learn/way21/day-1` is `/way21/day-1` — so the address someone shares,
+ * bookmarks or installs is the same one the switcher and the player print. The
+ * builder keeps `/build`, because there it is a real segment and not a
+ * container: `my/build` IS the builder's own home.
+ *
+ * App code keeps writing `/learn/…`, which is the route the page lives at and,
+ * on localhost and preview, also the address.
+ */
+export function canonicalPersonalPath(path: string): string {
+  const [pathname, ...rest] = path.split(/(?=[?#])/);
+  if (pathname !== LEARNING_PATH_PREFIX && !pathname.startsWith(`${LEARNING_PATH_PREFIX}/`)) {
+    return path;
+  }
+  const stripped = pathname.slice(LEARNING_PATH_PREFIX.length) || "/";
+  return `${stripped}${rest.join("")}`;
+}
+
+/**
+ * Top-level segments that belong to the PUBLIC tree.
+ *
+ * On the personal host any unclaimed path is a COURSE — `my/way21/day-1` is a
+ * lesson — so these names cannot also be course slugs, and a request for one on
+ * `my` is somebody who typed or followed a public address into the wrong
+ * origin. They forward to `www` rather than 404ing as a missing course.
+ *
+ * Note what is NOT here: `way21`, `reset-day`, `herbs` and the other funnel
+ * slugs. They are public pages on `www`, and they are also the slugs of the
+ * courses sold under them — which is exactly why the personal host must own
+ * them and the public one must keep them.
+ *
+ * `catalog.test.ts` walks `src/app/(platform)` and fails if this list drifts
+ * from the router.
+ */
+export const PUBLIC_ROOT_SEGMENTS = [
+  "admin",
+  "consult",
+  "detox",
+  "dosha-test",
+  "expert",
+  "legal",
+  "mini-detox",
+  "pay",
+  "platform-vision",
+  "products",
+  "profile",
+  "programs",
+  "tests",
+] as const;
+
+export function isPublicRootPath(pathname: string): boolean {
+  const segment = pathname.split("/")[1] ?? "";
+  return (PUBLIC_ROOT_SEGMENTS as readonly string[]).includes(segment);
+}
+
+/**
+ * The reverse: the ROUTE behind an address on the personal host.
+ *
+ * `/` and `/way21/day-1` are learner routes; `/build/…` is already one. Used by
+ * the proxy, which is the only place that has to go this direction.
+ */
+export function personalRouteFor(pathname: string): string {
+  if (pathname === BUILDER_PATH_PREFIX || pathname.startsWith(`${BUILDER_PATH_PREFIX}/`)) {
+    return pathname;
+  }
+  return pathname === "/" ? LEARNING_PATH_PREFIX : `${LEARNING_PATH_PREFIX}${pathname}`;
+}
 
 /** Absolute platform URL for a site-relative path, for use off-origin. */
 export function platformUrl(path: string): string {
   if (/^https?:\/\//i.test(path)) return path;
   return `${PLATFORM_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+/** Absolute personal-host URL for a site-relative path, for use off-origin. */
+export function personalUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${PERSONAL_ORIGIN}${path.startsWith("/") ? path : `/${path}`}`;
+}
+
+/**
+ * Absolute URL on whichever origin OWNS the path.
+ *
+ * For code with no host of its own — the support bot, lesson reminders, mail —
+ * where a link has to be absolute and there is nothing to be relative to. It
+ * used to be `platformUrl` everywhere, which after the split would send every
+ * reminder to a 308 on the way to the lesson it names.
+ */
+export function surfaceUrl(path: string): string {
+  if (/^https?:\/\//i.test(path)) return path;
+  return isPersonalPath(path) ? personalUrl(canonicalPersonalPath(path)) : platformUrl(path);
 }
 
 export type ProductKey =

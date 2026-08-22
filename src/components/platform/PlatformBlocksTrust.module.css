@@ -257,11 +257,9 @@
 }
 
 .timelineCompact {
-  gap: 0.6rem;
-}
-
-.timelineCompact li {
-  padding: 0.72rem 0.85rem;
+  gap: 0.55rem;
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
 }
 
 .collapsibleBlock {

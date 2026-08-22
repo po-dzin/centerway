@@ -3,15 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { LEARNING_SHELF_HREF, adminNavItem, learningNavItem, platformHomeHref, platformNav } from "@/lib/platform/content";
+import { LEARNING_SHELF_HREF, builderNavItem, personalNav, platformHomeHref, platformNav } from "@/lib/platform/content";
+import { canonicalPersonalPath } from "@/lib/surfaces/catalog";
+import { isPersonalHost } from "@/lib/platform/surfaceHref";
+import { isAdminRole } from "@/lib/platform/adminRole";
+import { usePlatformIdentity } from "./usePlatformIdentity";
 import styles from "@/components/platform/PlatformShellStyles";
 import { Icon } from "@/components/Icon";
-import { PlatformProfileEntry } from "./PlatformProfileEntry";
+import { PlatformAccountMenu } from "./PlatformAccountMenu";
 import { useHeaderTone } from "./headerTone";
-import { PLATFORM_SITE_ORIGIN, useIsBrandedHost } from "./usePlatformHref";
+import { useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
 import { usePlatformSession } from "./usePlatformSession";
-import { usePlatformRole } from "./usePlatformRole";
-import { isAdminRole } from "@/lib/platform/adminRole";
 
 /**
  * `learn` is not a skin — it is a different job for the same bar.
@@ -41,33 +43,47 @@ export function PlatformHeader({
   const toggleRef = useRef<HTMLButtonElement | null>(null);
   const pathname = usePathname();
   const headerTone = useHeaderTone(initialTone, pathname);
-  const isBrandedHost = useIsBrandedHost();
+  const href = useSurfaceHref();
   /* Signed in, not "owns a course". Gating on the shelf would mean a fetch in
      the header on every page, and the empty shelf is not a dead end — it says
      what is missing and links to the programmes. Advertising it to a signed-out
      visitor would be the actual mistake, and that is what this excludes. */
   const session = usePlatformSession();
-  /* The one exception to "the header does not fetch": the admin entry cannot be
-     derived from the session, because the role lives in `user_roles` and the JWT
-     does not carry it. The read is cached per tab and shared with the admin
-     shell, so it costs one request per session — see usePlatformRole. */
-  const role = usePlatformRole(session);
-  const showAdmin = isAdminRole(role);
-  const brandTarget = learnMode ? LEARNING_SHELF_HREF : platformHomeHref;
-  const homeHref = isBrandedHost ? `${PLATFORM_SITE_ORIGIN}${brandTarget}` : brandTarget;
-  /* Admin goes last: it is a way out of the product, not a part of it.
-     Learn mode still gets nothing — an admin inside a lesson is a learner
-     inside a lesson, and the reason that nav is empty (every link out is a way
-     to not finish) does not stop applying because of who is reading. The way
-     back to the panel from there is the brand, then the header. */
-  const navSource = learnMode
-    ? []
-    : session
-      ? [learningNavItem, ...platformNav, ...(showAdmin ? [adminNavItem] : [])]
-      : platformNav;
+  const onPersonalHost = isPersonalHost(useSurfaceHost());
+  /* THE HEADER NO LONGER FETCHES. It used to read `user_roles` for one reason:
+     the admin entry sat in this nav and could not be derived from the session.
+     That entry moved to the account menu, which needs the read anyway and does
+     it there — so the rule the bar kept making an exception to is simply true
+     again. */
+  /* The brand mark is a link to the root of THIS application, on every screen
+     of it. On `my` that is the dashboard — pointing it at the storefront would
+     make the one control that never changes the one that leaves. */
+  const brandTarget = learnMode || onPersonalHost ? LEARNING_SHELF_HREF : platformHomeHref;
+  const homeHref = href(brandTarget);
+  /* TWO BARS, ONE HEADER — because they are two applications.
+     `www` is the showcase and its bar is addressed to a stranger: programmes,
+     products, tests, the author. `my` is somebody's own environment, and none
+     of that belongs over their courses; every showcase item there would also
+     cross an origin, which is what the account switcher is for.
+
+     The shelf is no longer an entry on the public bar. It earned that place
+     when it was a page on this same host and the only route in was avatar →
+     profile → tab → card. It is a different application on a different origin
+     now, and cross-application links live in one control, not two.
+
+     THE PANEL LEFT THIS BAR for the same reason, one wave earlier: it is an
+     application, and applications live in the account menu.
+
+     Learn mode gets nothing on either host — an admin inside a lesson is a
+     learner inside a lesson, and the reason that nav is empty (every link out
+     is a way to not finish) does not stop applying because of who is reading. */
+  const identity = usePlatformIdentity(session);
+  const canBuild = isAdminRole(identity.role) || identity.authorsCourses;
+  const personalBar = personalNav.concat(canBuild ? [builderNavItem] : []);
+  const navSource = learnMode ? [] : onPersonalHost ? personalBar : platformNav;
   const navItems = navSource.map((item) => ({
     ...item,
-    resolvedHref: isBrandedHost ? `${PLATFORM_SITE_ORIGIN}${item.href}` : item.href,
+    resolvedHref: href(item.href),
   }));
   const currentPath = pathname ?? null;
   const menuOpen = openMenuPath !== null && openMenuPath === currentPath;
@@ -141,9 +157,14 @@ export function PlatformHeader({
     // raw href with a fragment could never read as current. Nothing in the nav
     // has one today — the shelf stopped being `/profile#learning` — but a copy
     // link with an anchor is one edit away.
-    const path = href.split("#")[0];
-    if (match === "exact") return pathname === path;
-    return pathname === path || pathname.startsWith(`${path}/`);
+    /* Both sides folded to the address form. On `my` the ROUTE is `/learn` and
+       the ADDRESS is `/`, and which of the two `pathname` carries depends on
+       whether this render is the server's or the browser's — so comparing raw
+       would light the wrong item for exactly as long as hydration takes. */
+    const path = canonicalPersonalPath(href.split("#")[0]);
+    const here = canonicalPersonalPath((pathname ?? "").split("#")[0]);
+    if (match === "exact") return here === path;
+    return here === path || here.startsWith(`${path}/`);
   }
 
   return (
@@ -176,13 +197,15 @@ export function PlatformHeader({
               ))}
             </nav>
             <div className={styles.mobileProfileSlot}>
-              <PlatformProfileEntry mobile onNavigate={closeMenu} />
+              {/* The sheet's own nav already names the shelf; the account block
+                  below it must not offer a second row with the same label. */}
+              <PlatformAccountMenu variant="inline" exclude={["learn"]} onNavigate={closeMenu} />
             </div>
           </div>
         </div>
         )}
         <div className={styles.profileSlot}>
-          <PlatformProfileEntry compact />
+          <PlatformAccountMenu compact />
         </div>
         {learnMode ? null : (
         <button

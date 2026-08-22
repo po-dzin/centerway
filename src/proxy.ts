@@ -1,19 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import { isInfraBypassPath, shouldBypassProxy } from "@/lib/proxy/bypass";
 import { resolveExperimentAssignmentRouteForRequest, withExperimentAssignmentNext } from "@/lib/proxy/experiments";
-import { rewriteBuilderHostRequest } from "@/lib/proxy/builder";
+import { rewritePersonalHostRequest } from "@/lib/proxy/personal";
 import { rewriteFunnelHostRequest, rewriteLegacyLandingEntryRequest } from "@/lib/proxy/landing";
-import { BUILDER_HOST } from "@/lib/surfaces/catalog";
+import { PERSONAL_HOST } from "@/lib/surfaces/catalog";
 
 const RETIRED_FUNNEL_HOST_REDIRECTS: Record<string, string> = {
   "detox.centerway.net.ua": "https://way21.centerway.net.ua/",
   "www.detox.centerway.net.ua": "https://way21.centerway.net.ua/",
 };
 
-/* Hosts that own their bare form: `www.<host>` 308s to it. The builder is in
-   the set for the same reason the funnels are, and for one more — its own rule
-   ACCEPTS `www.build`, so without the redirect the "one canonical origin" this
-   whole design turns on would be two. */
+/* Hosts that own their bare form: `www.<host>` 308s to it. The personal host is
+   in the set for the same reason the funnels are, and for one more — its own
+   rule ACCEPTS `www.my`, so without the redirect the "one canonical origin"
+   this whole design turns on would be two. */
 const CANONICAL_FUNNEL_HOSTS = new Set([
   "consult.centerway.net.ua",
   "dosha.centerway.net.ua",
@@ -22,7 +22,7 @@ const CANONICAL_FUNNEL_HOSTS = new Set([
   "reboot.centerway.net.ua",
   "resetday.centerway.net.ua",
   "way21.centerway.net.ua",
-  BUILDER_HOST,
+  PERSONAL_HOST,
 ]);
 
 /**
@@ -79,17 +79,16 @@ export function proxy(req: NextRequest) {
     return NextResponse.next();
   }
 
-  // The builder host BEFORE the landing-bundle bypass, not after.
+  // The personal host BEFORE the landing-bundle bypass, not after.
   //
   // That bypass matches by first segment — `/way21/`, `/reset-day/` — and those
-  // are product slugs, which are also COURSE slugs. Running it first meant
-  // every lesson URL on the builder host (`/way21/intro`) was handed to the
-  // static landing bundle and 404'd, while `/way21` resolved because the
-  // prefixes carry a trailing slash. The builder was unusable for the one thing
-  // it exists to do, and only on production, where the host exists.
-  const builderResponse = rewriteBuilderHostRequest(req);
-  if (builderResponse) {
-    return builderResponse;
+  // are product slugs, which are also COURSE slugs. Personal routes now carry
+  // their own prefix, so the collision is no longer literal, but the ordering
+  // still is: the personal host must decide what it serves before a static
+  // landing bundle claims a path on it.
+  const personalResponse = rewritePersonalHostRequest(req);
+  if (personalResponse) {
+    return personalResponse;
   }
 
   if (shouldBypassProxy(pathname)) {

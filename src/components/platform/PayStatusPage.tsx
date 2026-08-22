@@ -5,6 +5,7 @@ import { PurchaseSignal } from "@/components/platform/PurchaseSignal";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
 import styles from "@/components/platform/PlatformOfferCommerce.module.css";
 import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
+import { surfaceUrl } from "@/lib/surfaces/catalog";
 import {
   PRODUCTS,
   formatPrice,
@@ -67,7 +68,11 @@ export function PayStatusPage({
     ? fulfilment.kind === "bot"
       ? { href: fulfilment.url, label: "Відкрити бот", external: true }
       : fulfilment.kind === "course"
-        ? { href: `/learn/${fulfilment.courseSlug}`, label: "Перейти до курсу", external: false }
+        ? // ABSOLUTE, because this page cannot move. `PLATFORM_THANKS_URL` is
+          // baked into invoices WayForPay has already issued, so the return
+          // always lands on `www` while the course now lives on `my`. This link
+          // is the hand-off between the two.
+          { href: surfaceUrl(`/learn/${fulfilment.courseSlug}`), label: "Перейти до курсу", external: false }
         : { href: "/profile", label: "Перейти в кабінет", external: false }
     : { href: "/programs", label: "Повернутися до програм", external: false };
 

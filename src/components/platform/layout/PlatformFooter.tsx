@@ -4,7 +4,7 @@ import Link from "next/link";
 import { LEARNING_SHELF_HREF, contact, platformHomeHref, socialLinks } from "@/lib/platform/content";
 import styles from "@/components/platform/PlatformShellStyles";
 import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
-import { PLATFORM_SITE_ORIGIN, useIsBrandedHost } from "./usePlatformHref";
+import { useSurfaceHref } from "./SurfaceHost";
 
 /**
  * `minimal` is the learning footer.
@@ -17,11 +17,11 @@ import { PLATFORM_SITE_ORIGIN, useIsBrandedHost } from "./usePlatformHref";
  * we are obliged to carry on every page.
  */
 export function PlatformFooter({ variant = "full" }: { variant?: "full" | "minimal" }) {
-  const isBrandedHost = useIsBrandedHost();
-  const homeHref = isBrandedHost ? `${PLATFORM_SITE_ORIGIN}${platformHomeHref}` : platformHomeHref;
-  const shelfHref = isBrandedHost ? `${PLATFORM_SITE_ORIGIN}${LEARNING_SHELF_HREF}` : LEARNING_SHELF_HREF;
-  const publicOfferHref = isBrandedHost ? `${PLATFORM_SITE_ORIGIN}/legal/public-offer` : "/legal/public-offer";
-  const privacyHref = isBrandedHost ? `${PLATFORM_SITE_ORIGIN}/legal/privacy` : "/legal/privacy";
+  const href = useSurfaceHref();
+  const homeHref = href(platformHomeHref);
+  const shelfHref = href(LEARNING_SHELF_HREF);
+  const publicOfferHref = href("/legal/public-offer");
+  const privacyHref = href("/legal/privacy");
 
   if (variant === "minimal") {
     return (

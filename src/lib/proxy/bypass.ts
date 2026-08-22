@@ -17,7 +17,23 @@ const INFRA_BYPASS_PREFIXES = [
 
 const LANDING_BRAND_PREFIXES = Array.from(LANDING_STATIC_BRANDS, (brand) => `/${brand}/`);
 
-const BYPASS_EXACT_PATHS = new Set(["/favicon.ico"]);
+/* The app's own root-level metadata files. They are generated routes, not
+   pages, and they must answer on EVERY host — the personal host sends unknown
+   paths to `www`, and without this its manifest and icons would be sent along
+   with them, which is an installed app that cannot find its own identity. */
+const BYPASS_EXACT_PATHS = new Set([
+  "/favicon.ico",
+  "/manifest.webmanifest",
+  "/icon.svg",
+  "/apple-icon.png",
+  /* The worker and the document it precaches. A service worker registration
+     dies on a cross-origin redirect, and without a worker that answers a
+     navigation offline Chrome does not offer installation at all — so sending
+     these to `www` from the personal host would silently un-installable the one
+     host the app is meant to be installed from. */
+  "/sw.js",
+  "/offline.html",
+]);
 
 /**
  * Framework, API and asset paths. Host-independent: these bypass everywhere,

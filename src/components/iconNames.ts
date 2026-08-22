@@ -4,6 +4,8 @@
 export const CW_ICON_NAMES = [
   "arrow-right",
   "arrow-left",
+  "arrow-up",
+  "arrow-down",
   "chevron-right",
   "chevron-down",
   "body",
@@ -40,6 +42,7 @@ export const CW_ICON_NAMES = [
   "menu",
   "settings",
   "close",
+  "trash",
   "more",
   "vata",
   "pitta",

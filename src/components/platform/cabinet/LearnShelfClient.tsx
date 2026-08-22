@@ -18,12 +18,13 @@
 import { useMemo } from "react";
 
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
-import { usePlatformHref } from "@/components/platform/layout/usePlatformHref";
+import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import { cabinetGate } from "./CabinetGate";
 import { CourseCard, ShelfEmptyCard, ShelfErrorCard } from "./CourseCard";
 import { dateLocaleFor } from "./format";
 import { getCabinetCopy } from "./copy";
+import { PwaInstallCard } from "./PwaInstallCard";
 import { useCabinetSession, useLearnerShelf, useProfileLang } from "./useCabinet";
 import styles from "./Cabinet.module.css";
 
@@ -39,8 +40,9 @@ export function LearnShelfClient() {
   );
   const dateLocale = dateLocaleFor(lang);
 
-  const programsHref = usePlatformHref("/programs");
-  const homeHref = usePlatformHref("/");
+  const href = useSurfaceHref();
+  const programsHref = href("/programs");
+  const homeHref = href("/");
 
   const gate = cabinetGate({ lang, loading, session, homeHref, onSignIn: () => void signInWithGoogle() });
   if (gate) return gate;
@@ -66,6 +68,12 @@ export function LearnShelfClient() {
           ) : (
             <p className={styles.sectionLead}>{copy.loadingTitle}</p>
           )}
+        </div>
+
+        {/* The shelf is the installed app's start screen, so this is the one
+            place where "add to home screen" installs the thing being used. */}
+        <div className={styles.section}>
+          <PwaInstallCard copy={cab} />
         </div>
       </div>
     </main>
