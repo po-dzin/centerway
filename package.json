@@ -77,7 +77,10 @@
     "ds:qa": "npm run canon:guard && npm run tokens:check && npm run ds:sync:check && npm run brand:check && npm run guard:ds-contract && npm run guard:contrast && npm run guard:buttons && npm run generator:validate && npm run semantic:audit && npm run lint && npm run build",
     "ds:qa:landing": "npm run guard:ds-contract && npm run smoke:landing:qa",
     "smoke:dosha:route": "npm run smoke:dosha:userflows && npm run smoke:dosha:brand-fit",
-    "smoke:dosha:qa": "npm run smoke:dosha:result && npm run smoke:dosha:api && npm run smoke:dosha:userflows && npm run smoke:dosha:responsive && npm run smoke:dosha:brand-fit"
+    "smoke:dosha:qa": "npm run smoke:dosha:result && npm run smoke:dosha:api && npm run smoke:dosha:userflows && npm run smoke:dosha:responsive && npm run smoke:dosha:brand-fit",
+    "ds:drift": "node scripts/design/ds-drift.mjs",
+    "ds:drift:report": "node scripts/design/ds-drift.mjs --write",
+    "ds:drift:gate": "node scripts/design/ds-drift.mjs --gate"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",
