@@ -451,6 +451,49 @@
   gap: 0.7rem;
 }
 
+/* The personal footer carries five short links where the storefront carries a
+   phone number, four social icons and a promise — so the storefront's three
+   near-equal fractions spread them into a row of islands with a canyon in the
+   middle, and on a phone they never collapsed at all: three 90px columns of
+   overlapping text under the brand.
+
+   Every breakpoint is declared HERE, on this class, rather than inherited from
+   `.footerGrid` and overridden across files. Two rules of one class each, in
+   two different stylesheets, resolve by bundle order — which is not a thing to
+   bet a footer on.
+
+   Mobile: one column. From 561: brand and links side by side. From 901: the
+   same two tracks sized to their contents and packed left, so the block reads
+   as a signature and not as a spread. */
+.footerGridPersonal {
+  composes: footerGrid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-lg);
+}
+
+/* The storefront centres its legal column between a brand block and a social
+   column. There is no social column here, so centring would leave it floating
+   in the middle of its own track. */
+.footerGridPersonal .footerLegal {
+  justify-self: start;
+  justify-items: start;
+}
+
+@media (min-width: 561px) {
+  .footerGridPersonal {
+    grid-template-columns: minmax(0, 1fr) auto;
+    column-gap: clamp(1.5rem, 5vw, 4rem);
+  }
+}
+
+@media (min-width: 901px) {
+  .footerGridPersonal {
+    grid-template-columns: minmax(0, 20rem) auto;
+    justify-content: start;
+    column-gap: clamp(2rem, 6vw, 5rem);
+  }
+}
+
 .footerLead,
 .footerLinks {
   display: grid;

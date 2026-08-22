@@ -31,17 +31,22 @@ import { PwaInstallFooterEntry } from "@/components/platform/cabinet/PwaInstallC
  * The install entry sits in both. It is a standing offer, made once per device,
  * and it renders itself away where there is nothing to offer — on `www`,
  * without a live prompt, or once the app is already installed.
+ *
+ * NO LEGAL PAIR ON `my`, by decision. The offer and the privacy policy are
+ * carried on every page of `www`, which is where the selling happens and where
+ * they are read before a purchase. Repeating them under a lesson and under the
+ * builder put a contract at the bottom of a page whose reader has already
+ * signed it. They stay one link away — from the shop, and from any receipt.
  */
 
 /* Short on purpose: it stands in a column of three-word links, and the card's
    full sentence would be the one item that wraps. */
 const INSTALL_LABEL = "Додати на екран";
 
-/* Not the storefront's promise — nobody here is being sold to. It says what
-   this application is for, in the same slot and at the same weight, in the
-   plainest words that are still true: «поступ» is a book word, and a line that
-   has to be parsed is a line that was written for the writer. */
-const PERSONAL_LEAD = "Тут ваші курси й уроки.";
+/* Not the storefront's promise — nobody here is being sold to, and this is the
+   author's line rather than a description of the software. Two short sentences,
+   set as two lines: the break is the pause. */
+const PERSONAL_LEAD = ["Місце уважної присутності.", "Тут тихо."];
 
 export function PlatformFooter({ variant = "full" }: { variant?: "full" | "personal" }) {
   const href = useSurfaceHref();
@@ -54,7 +59,7 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
   if (variant === "personal") {
     return (
       <footer className={styles.footer} data-platform-footer="personal">
-        <div className={`${styles.container} ${styles.footerGrid}`}>
+        <div className={`${styles.container} ${styles.footerGridPersonal}`}>
           <div className={styles.footerBrandBlock}>
             {/* The root of THIS application, like the header's mark. Pointing
                 the personal footer at the storefront would make the one control
@@ -63,7 +68,13 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
               <span className={styles.brandSymbol} aria-hidden="true" />
               <span className={styles.footerBrandText}>CENTERWAY</span>
             </Link>
-            <p className={styles.footerLead}>{PERSONAL_LEAD}</p>
+            {/* `.footerLead` is a grid, so each sentence is its own row. A
+                `<br>` inside a grid container is a grid item, not a break. */}
+            <p className={styles.footerLead}>
+              {PERSONAL_LEAD.map((line) => (
+                <span key={line}>{line}</span>
+              ))}
+            </p>
           </div>
           <div className={styles.footerLinks}>
             <Link href={shelfHref}>Мої курси</Link>
@@ -71,10 +82,9 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
             <a href={SUPPORT_BOT_URL} target="_blank" rel="noopener noreferrer">
               Підтримка
             </a>
-          </div>
-          <div className={`${styles.footerLinks} ${styles.footerLegal}`}>
-            <Link href={publicOfferHref}>Публічний договір</Link>
-            <Link href={privacyHref}>Політика конфіденційності</Link>
+            {/* In the links column, not a column of its own: it renders itself
+                away most of the time, and a track that is empty on almost every
+                visit is a gap the other two have to be laid out around. */}
             <PwaInstallFooterEntry label={INSTALL_LABEL} />
           </div>
         </div>

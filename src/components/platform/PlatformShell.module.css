@@ -575,8 +575,16 @@
    reader would take the row they are on for the row under their cursor. The
    application you are in stays listed rather than being dropped — a menu whose
    rows change with where you opened it has to be re-read every time. */
+/* Where you are, marked in both presentations of this menu. Weight alone was
+   doing it, and weight alone is not a mark: five rows in one type family with
+   one of them a notch bolder is a difference you have to hunt for. The rule
+   under the word is the mark; the weight stays as its second signal. */
 .profileMenu a[data-current] {
   font-weight: 850;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.32em;
+  text-decoration-color: var(--cw-platform-accent);
 }
 
 /* The account block inside the burger sheet. Same rows as the popover, laid
@@ -628,6 +636,10 @@
 
 .profileWrapMobile a[data-current] {
   font-weight: 850;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.32em;
+  text-decoration-color: var(--cw-platform-accent);
 }
 
 .mobileProfileSlot {

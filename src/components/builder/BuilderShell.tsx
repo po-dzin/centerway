@@ -3,6 +3,7 @@
 import type { ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
+import { PlatformFooter } from "@/components/platform/layout/PlatformFooter";
 import { PlatformHeader } from "@/components/platform/layout/PlatformHeader";
 import { PlatformTrail, type TrailStep } from "@/components/platform/PlatformTrail";
 import { supabaseClient } from "@/lib/supabaseClient";
@@ -70,6 +71,11 @@ export function BuilderShell({
           {children}
         </main>
       </div>
+
+      {/* The same ending the shelf and the player get. An authoring tool is
+          still one of this account's applications, and it was the one surface
+          that stopped at the last panel with nothing under it. */}
+      <PlatformFooter variant="personal" />
     </div>
   );
 }

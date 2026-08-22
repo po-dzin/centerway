@@ -20,7 +20,9 @@
 .shell {
   min-height: 100svh;
   display: grid;
-  grid-template-rows: auto 1fr;
+  /* Header, body, footer. The body row takes the slack so a short page still
+     pushes the footer to the bottom of the viewport. */
+  grid-template-rows: auto 1fr auto;
   background: var(--cw-platform-bg);
   color: var(--cw-platform-text);
   font-family: var(--cw-font-ui);
