@@ -600,6 +600,38 @@ describe("entitlement", () => {
     expect(result).toEqual({ entitled: false, reason: "expired" });
   });
 
+  /**
+   * The second of the two mines the storefront pass named: a course sold from
+   * the builder is charged under `course:<slug>`, and nobody types that into
+   * `entitlementProductCodes`. If it had to be declared, the first sale would
+   * take the money and grant nothing — and only a buyer would find out.
+   */
+  it("accepts the course's own offer code without it being declared", () => {
+    const result = resolveEntitlement({
+      courseProductCodes: [],
+      courseSlug: "my-course",
+      now,
+      orders: [
+        { orderRef: "o1", productCode: "course:my-course", status: "paid", createdAt: "2026-08-01T10:00:00Z" },
+      ],
+      tokens: [],
+    });
+    expect(result).toMatchObject({ entitled: true, source: "order", orderRef: "o1" });
+  });
+
+  it("does not let one course's offer code open another course", () => {
+    const result = resolveEntitlement({
+      courseProductCodes: [],
+      courseSlug: "my-course",
+      now,
+      orders: [
+        { orderRef: "o1", productCode: "course:other-course", status: "paid", createdAt: "2026-08-01T10:00:00Z" },
+      ],
+      tokens: [],
+    });
+    expect(result).toEqual({ entitled: false, reason: "no_paid_order" });
+  });
+
   it("honours a manual grant without any order", () => {
     const result = resolveEntitlement({
       ...base,

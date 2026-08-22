@@ -3,10 +3,10 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import {
   Locale,
   PayableProductCode,
-  PRODUCTS,
+  PayableOffer,
   normalizeLocale,
-  productDescription,
-  productHeading,
+  offerDescription,
+  offerHeading,
 } from "@/lib/products";
 import { buildReturnUrl, buildWfpProductName } from "@/lib/pay";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
@@ -32,7 +32,17 @@ export type PaymentStartError = {
 export type PaymentStartResult = PaymentStartSuccess | PaymentStartError;
 
 export type PaymentStartInput = {
-  product: PayableProductCode;
+  /**
+   * WHAT IS BEING SOLD, ALREADY RESOLVED.
+   *
+   * It used to be a product CODE, and this function looked the price up in
+   * `PRODUCTS`. That worked only while every sellable thing was written in that
+   * file. A course out of the builder is priced in `lms_course_offers`, so the
+   * caller resolves the offer (`loadPayableOffer`) and refuses the payment when
+   * there is none — which is a decision a route can make and this function
+   * cannot.
+   */
+  offer: PayableOffer;
   locale: Locale;
   source: "pay_start" | "checkout_start";
   offer_id?: string | null;
@@ -69,13 +79,25 @@ export function requiredPaymentEnv() {
   return { need, missing };
 }
 
+/**
+ * `course:my-course` → `course-my-course`.
+ *
+ * The order reference is echoed by WayForPay, read back out of URLs and used as
+ * a key in three tables. A colon in it is a character that has to survive all
+ * of that intact, for no gain — the product is carried separately in
+ * `orders.product_code` and in the return URL. Only the prefix is touched.
+ */
+function orderRefToken(product: PayableProductCode): string {
+  return product.replace(/[^a-z0-9-]+/gi, "-");
+}
+
 function makeOrderRef(product: PayableProductCode, nowMs: () => number, randomHex: (bytes: number) => string) {
   const d = new Date(nowMs());
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
   const day = String(d.getDate()).padStart(2, "0");
   const rand = randomHex(4);
-  return `${product}_${y}${m}${day}_${rand}`;
+  return `${orderRefToken(product)}_${y}${m}${day}_${rand}`;
 }
 
 function countryFromHeaders(headers: Headers): string | null {
@@ -137,14 +159,15 @@ export async function createPaymentInvoiceWithDeps(
     };
   }
 
-  const cfg = PRODUCTS[input.product];
+  const cfg = input.offer;
+  const product = cfg.code;
   const amount =
     typeof input.amountOverride === "number" && Number.isFinite(input.amountOverride) && input.amountOverride > 0
       ? input.amountOverride
       : cfg.amount;
   const title = buildWfpProductName(
-    productHeading(input.product, input.locale),
-    productDescription(input.product, input.locale)
+    offerHeading(cfg, input.locale),
+    offerDescription(cfg, input.locale)
   );
 
   const merchantAccount = process.env.WFP_MERCHANT_ACCOUNT!;
@@ -152,14 +175,14 @@ export async function createPaymentInvoiceWithDeps(
   const appBaseUrl = process.env.APP_BASE_URL!;
   const merchantDomainName = process.env.WFP_MERCHANT_DOMAIN!;
 
-  const order_ref = makeOrderRef(input.product, deps.nowMs, deps.randomHex);
+  const order_ref = makeOrderRef(product, deps.nowMs, deps.randomHex);
   const sb = deps.db;
 
   // The WayForPay CREATE_INVOICE round-trip is the slowest leg of this request and
   // depends only on locally-computed values (order_ref, amount, signature). Kick it
   // off first and let the order/analytics writes run concurrently underneath it
   // instead of stacking them sequentially ahead of the external call.
-  const returnUrl = buildReturnUrl(appBaseUrl, input.product, order_ref);
+  const returnUrl = buildReturnUrl(appBaseUrl, product, order_ref);
 
   const wfpPayload: {
     apiVersion: number;
@@ -214,7 +237,7 @@ export async function createPaymentInvoiceWithDeps(
 
   const orderInsertPromise = sb.from("orders").insert({
     order_ref,
-    product_code: input.product,
+    product_code: product,
     amount,
     currency: cfg.currency,
     status: "created",
@@ -275,9 +298,9 @@ export async function createPaymentInvoiceWithDeps(
         user_agent: input.client_ua ?? null,
         event_source_url: input.page_url ?? null,
         action_source: "website",
-        content_name: productHeading(input.product, input.locale),
+        content_name: offerHeading(cfg, input.locale),
         content_type: "product",
-        content_ids: [input.product],
+        content_ids: [product],
       };
       const { data: job } = await sb
         .from("jobs")
@@ -307,7 +330,7 @@ export async function createPaymentInvoiceWithDeps(
         payload: {
           source: input.source,
           host: input.host ?? null,
-          product: input.product,
+          product,
           offer_id: input.offer_id ?? null,
           event_id: clientEventId,
           fbp: input.fbp ?? null,
@@ -363,7 +386,7 @@ export async function createPaymentInvoiceWithDeps(
   return {
     ok: true,
     order_ref,
-    product: input.product,
+    product,
     payUrl,
   };
 }

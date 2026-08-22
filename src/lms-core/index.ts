@@ -23,6 +23,7 @@ export * from "./time";
 export * from "./progress";
 export * from "./schedule";
 export * from "./access";
+export * from "./offerCode";
 export * from "./theme";
 export * from "./drafts";
 export * from "./templates";

@@ -20,6 +20,13 @@
  *     therefore refuses until the local folder matches, which is why staging
  *     one file and pushing currently errors with "Remote migration versions
  *     not found in local migrations directory". The SQL editor still works.
+ *
+ *     Applied that way on 2026-08-22 (storefront + course-media bucket) and
+ *     recorded in `supabase_migrations.schema_migrations` by hand as
+ *     20260822000000 / 20260822010000, so the history stays complete. NOTE the
+ *     direct `db.<ref>.supabase.co` host is IPv6-only and unreachable from a
+ *     v4-only machine; the session pooler
+ *     (`aws-1-eu-west-2.pooler.supabase.com:5432`, user `postgres.<ref>`) is.
  *   * the staged version is derived from the DATE alone, so two migrations
  *     written on the same day produce the same `YYYYMMDD000000` stamp. One at
  *     a time hides it; do not assume otherwise.

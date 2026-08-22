@@ -1,7 +1,14 @@
-import { PRODUCTS } from "@/lib/products";
+import { productReturnUrls, type PayableProductCode } from "@/lib/products";
 
 export type ReturnStatus = "paid" | "failed";
-export type ReturnProduct = keyof typeof PRODUCTS;
+
+/**
+ * WIDER THAN `PRODUCTS` SINCE 2026-08-22. A course out of the builder returns
+ * through here too, and it has no entry in that constant. `productReturnUrls`
+ * answers for both namespaces — and gives the same platform pair either way,
+ * because that is where every product's confirmation lives now.
+ */
+export type ReturnProduct = PayableProductCode;
 
 export type ReturnMeta = {
   rrn?: string | null;
@@ -16,7 +23,8 @@ export function buildReturnDestination(
   meta: ReturnMeta,
   nowMs: number
 ): string {
-  const destBase = status === "paid" ? PRODUCTS[product].approvedUrl : PRODUCTS[product].declinedUrl;
+  const urls = productReturnUrls(product);
+  const destBase = status === "paid" ? urls.approvedUrl : urls.declinedUrl;
   const dest = new URL(destBase);
 
   dest.searchParams.set("order_ref", orderRef);
@@ -31,4 +39,3 @@ export function buildReturnDestination(
 
   return dest.toString();
 }
-

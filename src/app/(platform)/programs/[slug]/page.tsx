@@ -23,7 +23,8 @@ import { notFound } from "next/navigation";
 
 import { ProgramDetailPage, type OfferSurface } from "@/components/platform/ProgramDetailPage";
 import { getLiveCourse } from "@/lib/lms/liveCatalog";
-import { isPublicCourse } from "@/lib/platform/offers";
+import { courseOfferCommerce } from "@/lib/platform/offerCommerce";
+import { isPublicCourse, loadCourseOffer } from "@/lib/platform/offers";
 import { inlineToPlainText, type Course } from "@/lms-core";
 
 /**
@@ -98,8 +99,20 @@ export default async function CourseOfferPage({ params }: { params: Promise<{ sl
   const course = await publicCourse(slug);
   if (!course) notFound();
 
+  /* THE PRICE, AND WHY IT IS READ HERE. The offer row is owner-written and
+     lives in a table the authoring routes hold no grant on, so it cannot come
+     from the course the author edited. No row means no agreed price, and the
+     page falls back to the lead form — the same honest state `herbs` is in. */
+  const offer = await loadCourseOffer(course.slug);
+
   // Passed in rather than looked up: this page has already read the course, and
   // the snapshot lookup inside would find nothing for a course that exists only
   // in the database — which is every course this route serves.
-  return <ProgramDetailPage program={toOfferSurface(course)} course={course} />;
+  return (
+    <ProgramDetailPage
+      program={toOfferSurface(course)}
+      course={course}
+      commerce={courseOfferCommerce(course.slug, offer)}
+    />
+  );
 }

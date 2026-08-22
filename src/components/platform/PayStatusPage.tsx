@@ -6,10 +6,10 @@ import offerStyles from "@/components/platform/PlatformOfferStyles";
 import styles from "@/components/platform/PlatformOfferCommerce.module.css";
 import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
 import { surfaceUrl } from "@/lib/surfaces/catalog";
+import { loadPayableOffer } from "@/lib/platform/offers";
 import {
-  PRODUCTS,
   formatPrice,
-  resolvePayableProduct,
+  type ProductFulfilment,
   type SearchParams,
 } from "@/lib/products";
 
@@ -45,24 +45,28 @@ function parseAmount(raw: string | null): number | null {
   return Number.isFinite(value) && value > 0 ? value : null;
 }
 
-export function PayStatusPage({
+export async function PayStatusPage({
   status,
   searchParams,
 }: {
   status: "paid" | "failed";
   searchParams: SearchParams;
 }) {
-  // Defaults to "short" the way every other reader of this parameter does; the
-  // page must render something honest even when the provider drops the field.
-  const product = resolvePayableProduct(searchParams);
-  const entry = PRODUCTS[product];
+  /* NO LONGER DEFAULTS TO "short". It used to, so that the page rendered
+     something when the provider dropped the field — but the same default sent
+     a buyer of anything unrecognised to Short Reboot's Telegram bot. An unknown
+     product now falls back to the CABINET, which is true for every purchase:
+     whatever it was, it is in the buyer's account. */
+  const offer = await loadPayableOffer(firstParam(searchParams.product));
   const orderRef = firstParam(searchParams.order_ref) ?? firstParam(searchParams.orderReference);
   const transactionId = firstParam(searchParams.payment_id) ?? firstParam(searchParams.rrn);
   const amount = parseAmount(firstParam(searchParams.amount));
-  const currency = (firstParam(searchParams.currency) ?? entry.currency).toUpperCase();
+  const currency = (firstParam(searchParams.currency) ?? offer?.currency ?? "UAH").toUpperCase();
 
   const paid = status === "paid";
-  const fulfilment = entry.fulfilment;
+  const fulfilment: ProductFulfilment = offer?.fulfilment ?? { kind: "cabinet" };
+  const contentName = offer?.pixelContentName ?? "CenterWay";
+  const product: string = offer?.code ?? firstParam(searchParams.product) ?? "";
 
   const destination = paid
     ? fulfilment.kind === "bot"
@@ -87,7 +91,7 @@ export function PayStatusPage({
   const meta = [
     transactionId || orderRef ? `Номер платежу: ${transactionId || orderRef}` : null,
     amount ? formatPrice(amount, currency) : null,
-    entry.pixelContentName,
+    contentName,
   ].filter(Boolean) as string[];
 
   return (
@@ -101,7 +105,7 @@ export function PayStatusPage({
           <PurchaseSignal
             orderRef={orderRef}
             product={product}
-            contentName={entry.pixelContentName}
+            contentName={contentName}
             transactionId={transactionId}
             value={amount}
             currency={currency}

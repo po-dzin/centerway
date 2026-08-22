@@ -9,12 +9,12 @@ import {
   PRODUCTS,
   isPayableProduct,
   normalizeProduct,
-  type PayableProductCode,
+  type CatalogProductCode,
 } from "@/lib/products";
 import { getSnapshotCourseByProgram } from "@/lib/lms/catalog";
 import { buildReturnDestination } from "@/lib/payReturn";
 
-const payableCodes = Object.keys(PRODUCTS) as PayableProductCode[];
+const payableCodes = Object.keys(PRODUCTS) as CatalogProductCode[];
 
 /**
  * The gap this covers: way21-support, consult and herbs each sat in a state

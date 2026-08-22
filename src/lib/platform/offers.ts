@@ -22,9 +22,23 @@
 
 import { unstable_cache } from "next/cache";
 
-import { COURSE_LIST_TAG, courseTag, listLiveCourses } from "@/lib/lms/liveCatalog";
+import { COURSE_LIST_TAG, courseTag, getLiveCourse, listLiveCourses } from "@/lib/lms/liveCatalog";
+import {
+  PLATFORM_FAILED_URL,
+  PLATFORM_THANKS_URL,
+  catalogOffer,
+  isCatalogProduct,
+  normalizePayableProduct,
+  type PayableOffer,
+} from "@/lib/products";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { inlineToPlainText, type Course, type CourseVisibility } from "@/lms-core";
+import {
+  courseOfferCode,
+  inlineToPlainText,
+  parseCourseOfferCode,
+  type Course,
+  type CourseVisibility,
+} from "@/lms-core";
 
 /** Offers are cheap to read and change rarely; the tag is what makes it live. */
 const REVALIDATE_SECONDS = 300;
@@ -41,24 +55,12 @@ export type CourseOffer = {
   pixelContentName: string;
 };
 
-const PREFIX = "course:";
-
-export function courseOfferCode(slug: string): string {
-  return `${PREFIX}${slug}`;
-}
-
 /**
- * The slug inside a `course:<slug>` code, or null for anything else.
- *
- * Shape-checked rather than trusted: the code arrives from a query string on
- * the payment route, and it becomes a database lookup. The character class is
- * the one `slugify` produces and nothing wider.
+ * The `course:<slug>` namespace now lives in lms-core, beside the entitlement
+ * that has to accept the same string — see src/lms-core/offerCode.ts. Re-exported
+ * here because this is where the storefront reads it from.
  */
-export function parseCourseOfferCode(code: unknown): string | null {
-  if (typeof code !== "string" || !code.startsWith(PREFIX)) return null;
-  const slug = code.slice(PREFIX.length);
-  return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) ? slug : null;
-}
+export { courseOfferCode, parseCourseOfferCode };
 
 type Row = Record<string, unknown>;
 
@@ -184,4 +186,57 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
       visual: VISUAL_BY_PALETTE[course.theme?.palette ?? ""] ?? "stone",
       lessons: course.modules.reduce((total, module) => total + module.lessons.length, 0),
     }));
+}
+
+/**
+ * The commercial facts for ANY payable code, whichever namespace it is in.
+ *
+ * This is the function that defuses the first of the two mines the storefront
+ * pass left behind. `resolvePayableProduct` used to answer an unknown code with
+ * `"short"`, so a `course:<slug>` button reaching the payment route before this
+ * existed would have charged the buyer for Short Reboot. There is no fallback
+ * here: an unknown, unpublished or unpriced code answers `null`, and the routes
+ * refuse to open a checkout for it.
+ *
+ * NULL IS THE NORMAL "NOT FOR SALE" ANSWER — a draft, a hidden course, or a
+ * course nobody has priced. Only the owner writes `lms_course_offers`, so a
+ * missing row is a decision, not an outage.
+ */
+export async function loadPayableOffer(code: unknown): Promise<PayableOffer | null> {
+  const normalized = normalizePayableProduct(code);
+  if (!normalized) return null;
+  if (isCatalogProduct(normalized)) return catalogOffer(normalized);
+
+  const slug = parseCourseOfferCode(normalized);
+  if (!slug) return null;
+
+  const [course, offer] = await Promise.all([getLiveCourse(slug), loadCourseOffer(slug)]);
+
+  // Both halves have to agree, and each says something different: the course
+  // says the author finished it and let strangers see it, the offer row says
+  // the owner set a price. Selling a draft would deliver a half-written course;
+  // selling without a row would charge a figure nobody agreed.
+  if (!course || !isPublicCourse(course) || !offer) return null;
+
+  const summary = course.summary ? inlineToPlainText(course.summary) : "";
+  const heading = `${course.title} — CenterWay`;
+  const description = summary || heading;
+
+  return {
+    code: offer.code as `course:${string}`,
+    // One language, twice, on purpose: a course written by its author is
+    // written in one language, and inventing a translation for a WayForPay
+    // invoice line would put words in their mouth.
+    heading: { ua: heading, en: heading },
+    description: { ua: description, en: description },
+    amount: offer.amount,
+    listAmount: offer.listAmount ?? offer.amount,
+    currency: offer.currency,
+    pixelContentName: offer.pixelContentName,
+    // Always the platform: a course built here is delivered here. The bot and
+    // cabinet shapes belong to products that predate the LMS.
+    fulfilment: { kind: "course", courseSlug: slug },
+    approvedUrl: PLATFORM_THANKS_URL,
+    declinedUrl: PLATFORM_FAILED_URL,
+  };
 }
