@@ -253,8 +253,16 @@
 
 /* ── Section scaffolding ──────────────────────────── */
 
+/* `minmax(0, 1fr)`, never the implicit `auto`, and this is not boilerplate.
+   An auto track sizes to its widest child's MIN-CONTENT, and the ring row's
+   min-content is the sum of its three fixed 6.5rem columns — so on a 375px
+   phone the track came out 394px and every panel in the section hung 50px past
+   the viewport with the page scrolling sideways behind it. The ring row is a
+   scroll container and is perfectly happy to be narrower than its contents;
+   it just has to be told that the track is not negotiable. */
 .section {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-md);
 }
 
@@ -302,6 +310,7 @@
 
 .cardGrid {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-md);
 }
 
@@ -528,6 +537,7 @@
 
 .foldBody {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-md);
 }
 
