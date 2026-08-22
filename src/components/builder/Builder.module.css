@@ -807,10 +807,32 @@
   border-block-start: 1px solid var(--cw-mat-stroke-inner);
 }
 
+/* Reveal, not furniture. A paragraph should look like a paragraph until the
+   author reaches for it; this row used to carry a kind dropdown on every line
+   of prose, which is what made a lesson read as a form about a lesson. */
 .nodeHead {
   display: flex;
   align-items: center;
-  gap: var(--cw-space-xs);
+  gap: var(--cw-space-2xs);
+  min-height: 1.25rem;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.nodeCard:hover .nodeHead,
+.nodeCard:focus-within .nodeHead,
+.nodeHead:has([aria-expanded="true"]) {
+  opacity: 1;
+}
+
+.nodeKindName {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--cw-font-data);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
 }
 
 .nodeKind {
@@ -1475,4 +1497,156 @@
 
 .dragRow[data-drop="after"]::after {
   inset-block-end: -1px;
+}
+
+/* ── Writing surface ──────────────────────────────── */
+
+/* The field with its plate taken off: it IS the paragraph rather than a box
+   holding one. Used everywhere the author is writing the document itself —
+   the lesson title, its lead, the body of a text block. The frame is what made
+   the builder feel like a form over a course instead of the course. */
+.inlineBare {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.inlineBare:focus-visible,
+.inlineSurface:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+/* The prompt is the field, not a caption above it. `data-empty` rather than
+   `:empty` because a contenteditable that has been typed into and cleared is
+   not always empty in the DOM — some browsers leave a `<br>` behind. */
+.inlineBare[data-empty][data-placeholder]::before,
+.inlineSurface[data-empty][data-placeholder]::before {
+  content: attr(data-placeholder);
+  color: var(--cw-platform-muted);
+  pointer-events: none;
+}
+
+/* The title, edited where it is read. It used to be an `<h1>` echoing a «Назва»
+   field in a panel below — the same words twice, and the copy was the one you
+   could change. */
+.titleInput {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+.titleInput::placeholder {
+  color: var(--cw-platform-muted);
+}
+
+/* ── Slash menu ───────────────────────────────────── */
+
+/* Fixed and portalled, measured from the field — the same lesson the row menu
+   learned: a list positioned inside a card is clipped by the first ancestor
+   that scrolls, and a block near the bottom of a long lesson is exactly where
+   an author reaches for it. */
+.slashList {
+  position: fixed;
+  z-index: calc(var(--ds-z-sticky) + 2);
+  max-width: min(22rem, calc(100vw - 2 * var(--cw-space-sm)));
+  max-height: 17rem;
+  overflow-y: auto;
+  display: grid;
+  padding: var(--cw-space-2xs);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
+}
+
+.slashItem {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  text-align: start;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-sm);
+}
+
+.slashItem[data-active] {
+  background: var(--cw-mat-surface-sunk);
+}
+
+.slashLabel {
+  font-weight: 600;
+}
+
+.slashHint {
+  color: var(--cw-platform-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+/* ── The document head ────────────────────────────── */
+
+/* Title and lead, edited in place. The gap is tighter than a panel's because
+   these two lines are one statement, not two fields. */
+.docHead {
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.docMeta {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.85rem;
+}
+
+/* ── Prose nodes ──────────────────────────────────── */
+
+/* A heading renders as a heading. The author should be able to tell a
+   subheading from a paragraph without reading the label that says so. */
+.nodeHeading {
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.nodeUl,
+.nodeOl {
+  margin: 0;
+  padding-inline-start: 1.4rem;
+  display: grid;
+  gap: var(--cw-space-3xs, 0.25rem);
+}
+
+.nodeUl {
+  list-style: disc;
+}
+
+/* An `<ul>` wearing numbers: the element is a list either way, and the marker
+   is the only thing `ol` vs `ul` decides here. Keeping one element keeps one
+   set of item styles. */
+.nodeOl {
+  list-style: decimal;
+}
+
+.nodeItem::marker {
+  color: var(--cw-platform-muted);
+}
+
+/* ── Adding ───────────────────────────────────────── */
+
+/* Text first, the taxonomy second and quieter. The order is the argument. */
+.addRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  flex-wrap: wrap;
 }

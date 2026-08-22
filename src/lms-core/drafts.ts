@@ -27,8 +27,9 @@
  * fixture gets them for free.
  */
 
-import type { LessonBlock, LessonBlockType } from "./blocks";
+import type { LessonBlock, LessonBlockType, RichTextNode } from "./blocks";
 import type { Course, CourseModule, Lesson } from "./course";
+import { inlineToPlainText, type InlineText } from "./inline";
 import { PLACEHOLDER_MARKER } from "./readiness";
 
 /** A source of fresh ids — `crypto.randomUUID` in both browser and Node. */
@@ -179,6 +180,51 @@ export function newCourse(
  * Moves one item and returns a new array. Out-of-range targets clamp rather
  * than throw — "up" on the first row is a no-op an author expects, not an error.
  */
+/**
+ * Drops the prose an author started and did not write.
+ *
+ * WHY THIS HAS TO EXIST. `validateInlineText` refuses an empty string, and it
+ * is right to: an empty paragraph in a published lesson is a gap a learner
+ * sees. But an editor where Enter opens the next paragraph produces empty
+ * paragraphs constantly — that is what Enter IS — and the alternative, seeding
+ * each new node with a `[ЗАПОВНИ: …]` marker the author has to select and
+ * delete before typing, is the rigidity this editor exists to remove.
+ *
+ * So the rule is the one every document editor uses: an empty paragraph is not
+ * content, and it does not survive the save. This runs on the way OUT, over the
+ * payload only — never over the editor's own state, which would delete the
+ * paragraph out from under the caret that is sitting in it.
+ *
+ * A block emptied of every node is dropped too. A lesson emptied of every block
+ * is NOT: that is a claim about the lesson, and `validateCourse` should be the
+ * one to refuse it, by name, in the readiness list.
+ */
+export function pruneEmptyProse(course: Course): Course {
+  const written = (text: InlineText | undefined) =>
+    text !== undefined && inlineToPlainText(text).trim().length > 0;
+
+  return {
+    ...course,
+    modules: course.modules.map((module) => ({
+      ...module,
+      lessons: module.lessons.map((lesson) => ({
+        ...lesson,
+        blocks: lesson.blocks.flatMap<LessonBlock>((block) => {
+          if (block.type !== "rich_text") return [block];
+          const content = block.content.flatMap<RichTextNode>((node) => {
+            if (node.kind === "ul" || node.kind === "ol") {
+              const items = node.items.filter(written);
+              return items.length > 0 ? [{ ...node, items }] : [];
+            }
+            return written(node.text) ? [node] : [];
+          });
+          return content.length > 0 ? [{ ...block, content }] : [];
+        }),
+      })),
+    })),
+  };
+}
+
 export function moveItem<T>(items: T[], from: number, to: number): T[] {
   if (from < 0 || from >= items.length) return items;
   const target = Math.min(Math.max(to, 0), items.length - 1);

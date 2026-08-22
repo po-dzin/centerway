@@ -65,13 +65,11 @@ export function BuilderCourseSettings({
 
   return (
     <div className={styles.settingsForm}>
-      <FieldInput field={{ path: ["title"], label: "Назва", kind: "text" }} value={course.title} onChange={onChange} />
-      <FieldInput
-        field={{ path: ["summary"], label: "Короткий опис", kind: "inline", multiline: true }}
-        value={course.summary}
-        onChange={onChange}
-      />
-
+      {/* Name and summary are NOT here any more. They are the heading and the
+          lead of the course page itself, edited where they are read; a settings
+          sheet holding a second copy of them is a second place for them to be
+          wrong. What stays here is what has no place in the document: the
+          address, the schedule, the entitlement codes, the palette. */}
       {/* The course slug is the address of every lesson under it and of every
           reminder already sent. Shown, never edited — a rename is a migration. */}
       <p className={styles.readOnlyNote}>

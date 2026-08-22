@@ -6,8 +6,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Icon } from "@/components/Icon";
 import {
-  inlineToPlainText,
   moveItem,
+  pruneEmptyProse,
   newLesson,
   newModule,
   nextDayIndex,
@@ -23,6 +23,7 @@ import { BuilderCourseSettings } from "./BuilderCourseSettings";
 import { BuilderBlockers } from "./BuilderBlockers";
 import { loadCourse, saveCourse, type BuilderCourseDto, type BuilderFailure } from "./builderClient";
 import { BuilderGrip } from "./BuilderGrip";
+import { BuilderInlineEditor } from "./BuilderInlineEditor";
 import { BuilderHistory } from "./BuilderHistory";
 import { useCourseHistory } from "./useCourseHistory";
 import { landingIndex, useRowDrag, type DragRef, type DropEdge, type RowDrag } from "./useRowDrag";
@@ -200,7 +201,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     setBusy(true);
     setNote(null);
 
-    const result = await saveCourse(slug, course);
+    const result = await saveCourse(slug, pruneEmptyProse(course));
     setBusy(false);
 
     if (!result.ok) {
@@ -301,14 +302,32 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         <BuilderCourseSettings course={course} onChange={editCourse} />
       </BuilderSheet>
 
-      <div>
+      {/* Edited where it is read — see the lesson editor. The gear keeps what
+          has no place in a document: address, schedule, codes, palette. */}
+      <div className={styles.docHead}>
         <div className={styles.courseTitleRow}>
-          <h1 className={styles.pageTitle}>{course.title}</h1>
+          <input
+            className={`${styles.pageTitle} ${styles.titleInput}`}
+            type="text"
+            value={course.title}
+            placeholder="Назва курсу"
+            aria-label="Назва курсу"
+            onChange={(event) => editCourse(["title"], event.target.value)}
+          />
           <span className={published ? styles.pillPublished : styles.pill}>
             {published ? "Опубліковано" : "Чернетка"}
           </span>
         </div>
-        {course.summary ? <p className={styles.pageLead}>{inlineToPlainText(course.summary)}</p> : null}
+        <div className={styles.pageLead}>
+          <BuilderInlineEditor
+            bare
+            multiline
+            value={course.summary}
+            label="Короткий опис курсу"
+            placeholder="Про що цей курс — одне-два речення."
+            onChange={(next) => editCourse(["summary"], next)}
+          />
+        </div>
       </div>
 
       <BuilderBlockers blockers={readiness.blockers} />
