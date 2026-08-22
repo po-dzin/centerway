@@ -25,8 +25,10 @@ import { BuilderMenu } from "./BuilderMenu";
 import { FieldInput } from "./BuilderFields";
 import { BlockPreview } from "./BuilderBlockPreview";
 import { loadCourse, saveCourse, type BuilderFailure } from "./builderClient";
+import { BuilderGrip } from "./BuilderGrip";
 import { BuilderHistory } from "./BuilderHistory";
 import { useCourseHistory } from "./useCourseHistory";
+import { landingIndex, useRowDrag, type DragRef, type DropEdge, type RowDrag } from "./useRowDrag";
 import {
   BLOCK_TYPE_HINTS,
   BLOCK_TYPE_LABELS,
@@ -128,6 +130,16 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       setNote(null);
     },
     [history, located]
+  );
+
+  /** Blocks reorder within the lesson. Steps renumber on the way, as with the arrows. */
+  const blockDrag = useRowDrag(
+    useCallback(
+      (from: DragRef, to: DragRef, edge: DropEdge) => {
+        editBlocks((blocks) => moveItem(blocks, from.index, landingIndex(from.index, to.index, edge, true)));
+      },
+      [editBlocks]
+    )
   );
 
   // The browser's own guard. An author who edits a lesson on a phone and
@@ -314,6 +326,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
             block={block}
             index={index}
             total={lesson.blocks.length}
+            drag={blockDrag}
             onChange={editLesson}
             onBlocks={editBlocks}
           />
@@ -427,21 +440,26 @@ function BlockEditor({
   block,
   index,
   total,
+  drag,
   onChange,
   onBlocks,
 }: {
   block: LessonBlock;
   index: number;
   total: number;
+  drag: RowDrag;
   onChange: (path: (string | number)[], value: unknown) => void;
   onBlocks: (next: (blocks: LessonBlock[]) => LessonBlock[]) => void;
 }) {
   const fields = describeBlock(block);
   const editField = (path: (string | number)[], value: unknown) => onChange(["blocks", index, ...path], value);
 
+  const row: DragRef = { list: "block", group: 0, index };
+
   return (
-    <section className={styles.blockCard}>
+    <section className={`${styles.blockCard} ${styles.dragRow}`} {...drag.rowProps(row)}>
       <div className={styles.blockHead}>
+        <BuilderGrip drag={drag} row={row} label={BLOCK_TYPE_LABELS[block.type]} />
         <span className={styles.blockType}>{BLOCK_TYPE_LABELS[block.type]}</span>
         <BuilderMenu
           label={`Дії з блоком «${BLOCK_TYPE_LABELS[block.type]}»`}
@@ -503,11 +521,26 @@ function RichTextEditor({
 }) {
   const setContent = (next: RichTextNode[]) => onChange(["content"], next);
 
+  /**
+   * Nodes reorder within their own block only.
+   *
+   * No `crossGroup`: one rich-text block is on screen per card, and a node
+   * carried into a neighbouring block would be a move between two different
+   * pieces of prose — a thing the author would have to undo more often than
+   * they meant it. The block itself is the unit that travels.
+   */
+  const drag = useRowDrag((from, to, edge) =>
+    setContent(moveItem(block.content, from.index, landingIndex(from.index, to.index, edge, true)))
+  );
+
   return (
     <div className={styles.nodeList}>
-      {block.content.map((node, index) => (
-        <div className={styles.nodeCard} key={index}>
+      {block.content.map((node, index) => {
+        const row: DragRef = { list: "node", group: 0, index };
+        return (
+        <div className={`${styles.nodeCard} ${styles.dragRow}`} key={index} {...drag.rowProps(row)}>
           <div className={styles.nodeHead}>
+            <BuilderGrip drag={drag} row={row} label={NODE_LABELS[node.kind]} />
             <select
               className={styles.nodeKind}
               value={node.kind}
@@ -579,7 +612,8 @@ function RichTextEditor({
             />
           )}
         </div>
-      ))}
+        );
+      })}
 
       <div className={styles.nodeAdd}>
         {(Object.keys(NODE_LABELS) as RichTextNode["kind"][]).map((kind) => (

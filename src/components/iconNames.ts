@@ -41,6 +41,7 @@ export const CW_ICON_NAMES = [
   "mail",
   "phone",
   "telegram",
+  "grip",
   "menu",
   "settings",
   "close",

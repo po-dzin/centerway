@@ -22,8 +22,10 @@ import { BuilderSheet } from "./BuilderSheet";
 import { BuilderCourseSettings } from "./BuilderCourseSettings";
 import { BuilderBlockers } from "./BuilderBlockers";
 import { loadCourse, saveCourse, type BuilderCourseDto, type BuilderFailure } from "./builderClient";
+import { BuilderGrip } from "./BuilderGrip";
 import { BuilderHistory } from "./BuilderHistory";
 import { useCourseHistory } from "./useCourseHistory";
+import { landingIndex, useRowDrag, type DragRef, type DropEdge, type RowDrag } from "./useRowDrag";
 import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
 
@@ -124,6 +126,33 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       setNote(null);
     },
     [history]
+  );
+
+  /** Modules reorder within the course; the drop names a place in the list on screen. */
+  const moduleDrag = useRowDrag(
+    useCallback(
+      (from: DragRef, to: DragRef, edge: DropEdge) => {
+        editModules((current) => moveItem(current.modules, from.index, landingIndex(from.index, to.index, edge, true)));
+      },
+      [editModules]
+    )
+  );
+
+  /**
+   * Lessons reorder ACROSS modules, the same way the arrows already carry one
+   * over a module edge. `crossGroup` is what says so; without it a lesson could
+   * only be dropped among its own siblings, which is the move an author needs
+   * least — the reason to pick a lesson up is usually that it belongs to
+   * another week.
+   */
+  const lessonDrag = useRowDrag(
+    useCallback(
+      (from: DragRef, to: DragRef, edge: DropEdge) => {
+        editModules((current) => moveLessonTo(current, from, to, edge));
+      },
+      [editModules]
+    ),
+    { crossGroup: true }
   );
 
   /**
@@ -340,6 +369,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             course={course}
             module={module}
             moduleIndex={moduleIndex}
+            moduleDrag={moduleDrag}
+            lessonDrag={lessonDrag}
             onChange={editCourse}
             onModules={editModules}
             onNote={setNote}
@@ -442,10 +473,33 @@ function normalize(course: Course): Course {
   return course;
 }
 
+/**
+ * A dropped lesson, placed in the module it was dropped into.
+ *
+ * The one refusal is the same one the arrows carry: a module cannot be emptied
+ * by a move, because `validateCourse` requires at least one lesson in each and
+ * the author would meet that as a save error long after the gesture. Dropping
+ * the last lesson of a module elsewhere simply does not take.
+ */
+function moveLessonTo(course: Course, from: DragRef, to: DragRef, edge: DropEdge): CourseModule[] {
+  const modules = course.modules.map((entry) => ({ ...entry, lessons: [...entry.lessons] }));
+  const source = modules[from.group];
+  const target = modules[to.group];
+  if (!source || !target) return modules;
+  if (source !== target && source.lessons.length === 1) return modules;
+
+  const insert = landingIndex(from.index, to.index, edge, source === target);
+  const [moved] = source.lessons.splice(from.index, 1);
+  target.lessons.splice(insert, 0, moved);
+  return modules;
+}
+
 function ModuleEditor({
   course,
   module,
   moduleIndex,
+  moduleDrag,
+  lessonDrag,
   onChange,
   onModules,
   onNote,
@@ -454,6 +508,8 @@ function ModuleEditor({
   course: Course;
   module: CourseModule;
   moduleIndex: number;
+  moduleDrag: RowDrag;
+  lessonDrag: RowDrag;
   onChange: (path: (string | number)[], value: unknown) => void;
   onModules: (next: (course: Course) => CourseModule[]) => void;
   onNote: (note: string | null) => void;
@@ -508,9 +564,12 @@ function ModuleEditor({
     );
   };
 
+  const moduleRow: DragRef = { list: "module", group: 0, index: moduleIndex };
+
   return (
-    <div className={styles.moduleBlock}>
+    <div className={`${styles.moduleBlock} ${styles.dragRow}`} {...moduleDrag.rowProps(moduleRow)}>
       <div className={styles.moduleHead}>
+        <BuilderGrip drag={moduleDrag} row={moduleRow} label={module.title} />
         <input
           className={styles.moduleTitleInput}
           type="text"
@@ -561,8 +620,15 @@ function ModuleEditor({
         Довідковий модуль — поза послідовністю уроків
       </label>
 
-      {module.lessons.map((lesson, lessonIndex) => (
-        <div className={styles.lessonRowWrap} key={lesson.id}>
+      {module.lessons.map((lesson, lessonIndex) => {
+        const lessonRow: DragRef = { list: "lesson", group: moduleIndex, index: lessonIndex };
+        return (
+        <div
+          className={`${styles.lessonRowWrap} ${styles.dragRow}`}
+          key={lesson.id}
+          {...lessonDrag.rowProps(lessonRow)}
+        >
+          <BuilderGrip drag={lessonDrag} row={lessonRow} label={lesson.title} />
           {/* Still a link, not a button: the href is real for every lesson the
               server has, so middle-click and "open in new tab" keep working.
               The click is intercepted only while there is unsaved structure. */}
@@ -598,7 +664,8 @@ function ModuleEditor({
             ]}
           />
         </div>
-      ))}
+        );
+      })}
 
       <button
         className={styles.addAction}

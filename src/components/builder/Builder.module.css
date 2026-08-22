@@ -1489,3 +1489,72 @@
 .historyButton:disabled {
   opacity: 0.4;
 }
+
+/* ── Drag to reorder ──────────────────────────────── */
+
+/* The grip is the ONLY way a row becomes draggable, and it is not rendered
+   where dragging was rejected: on a touch screen the arrows in the row menu
+   stay the whole story. `pointer: coarse` rather than a width query — the
+   objection was never the size of the screen, it was the finger. */
+.rowGrip {
+  display: none;
+}
+
+@media (pointer: fine) {
+  .rowGrip {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    align-self: center;
+    color: var(--cw-platform-muted);
+    cursor: grab;
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+
+  /* Revealed by the row, not by itself: a grip that only appears once the
+     pointer is already on it is a control you have to know is there. */
+  .dragRow:hover .rowGrip,
+  .dragRow:focus-within .rowGrip,
+  .rowGrip:active {
+    opacity: 1;
+  }
+
+  .rowGrip:active {
+    cursor: grabbing;
+  }
+}
+
+.dragRow {
+  position: relative;
+}
+
+/* Faded, not hidden. The row keeps its place in the layout while it is being
+   carried, so the list does not reflow under the pointer and change what the
+   author is aiming at. */
+.dragRow[data-dragging="true"] {
+  opacity: 0.4;
+}
+
+/* The landing line. Drawn on the row being hovered rather than by opening a
+   gap: a gap animates the whole list on every pixel of movement, and the line
+   says the same thing — it goes here — without moving anything. */
+.dragRow[data-drop]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--cw-platform-accent);
+  pointer-events: none;
+}
+
+.dragRow[data-drop="before"]::after {
+  inset-block-start: -1px;
+}
+
+.dragRow[data-drop="after"]::after {
+  inset-block-end: -1px;
+}

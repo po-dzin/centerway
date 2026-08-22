@@ -283,6 +283,22 @@ export const ICONS = {
     group: "Meta",
     d: ["M20.4 4.6 3.8 11.2l4.6 1.8 1.4 5.4 2.6-3.4 4.2 3.2z", "M8.4 13 20.4 4.6l-8 10.4"],
   },
+  /* The drag handle. Six dots rather than the two bars a handle is usually
+     drawn with: two bars in this set already mean `menu`, and a control that
+     reorders must not wear the glyph of the control that opens a list. The dots
+     are the same node language as `week` and `rail` — a thing you can pick up
+     and put somewhere else in a sequence. */
+  grip: {
+    group: "Meta",
+    dots: [
+      { cx: 9.4, cy: 7, r: 1.15 },
+      { cx: 14.6, cy: 7, r: 1.15 },
+      { cx: 9.4, cy: 12, r: 1.15 },
+      { cx: 14.6, cy: 12, r: 1.15 },
+      { cx: 9.4, cy: 17, r: 1.15 },
+      { cx: 14.6, cy: 17, r: 1.15 },
+    ],
+  },
   menu: {
     group: "Meta",
     d: ["M4 7.4h16", "M4 12h16", "M4 16.6h16"],
