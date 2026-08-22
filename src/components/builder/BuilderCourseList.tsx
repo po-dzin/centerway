@@ -551,9 +551,28 @@ function EntryControls({ course, index, total, busy, confirming, onMove, onAskDe
     <BuilderMenu
       label={`Дії з курсом «${course.title}»`}
       items={[
-        { label: "Підняти вище", onSelect: () => onMove(index, -1), disabled: busy || index === 0 },
-        { label: "Опустити нижче", onSelect: () => onMove(index, 1), disabled: busy || index === total - 1 },
-        { label: "Видалити", onSelect: () => onAskDelete(course.slug), disabled: busy, danger: true },
+        {
+          label: "Підняти вище",
+          icon: "arrow-up",
+          hint: "Курс піде вище в списку — порядок пише sort_order",
+          onSelect: () => onMove(index, -1),
+          disabled: busy || index === 0,
+        },
+        {
+          label: "Опустити нижче",
+          icon: "arrow-down",
+          hint: "Курс піде нижче в списку — порядок пише sort_order",
+          onSelect: () => onMove(index, 1),
+          disabled: busy || index === total - 1,
+        },
+        {
+          label: "Видалити",
+          icon: "trash",
+          hint: "Опублікований курс і курс з учнями видалити не можна",
+          onSelect: () => onAskDelete(course.slug),
+          disabled: busy,
+          danger: true,
+        },
       ]}
     />
   );

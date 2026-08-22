@@ -440,10 +440,11 @@ function BlockEditor({
         <BuilderMenu
           label={`Дії з блоком «${BLOCK_TYPE_LABELS[block.type]}»`}
           items={[
-            { label: "Підняти вище", disabled: index === 0, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index - 1)) },
-            { label: "Опустити нижче", disabled: index === total - 1, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index + 1)) },
+            { label: "Підняти вище", icon: "arrow-up" as const, disabled: index === 0, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index - 1)) },
+            { label: "Опустити нижче", icon: "arrow-down" as const, disabled: index === total - 1, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index + 1)) },
             {
               label: "Видалити блок",
+              icon: "trash",
               danger: true,
               // A lesson with no blocks fails `validateCourse`, and the author
               // would meet that as a save error rather than a disabled item.
@@ -516,9 +517,9 @@ function RichTextEditor({
             <BuilderMenu
               label={`Дії з ${NODE_LABELS[node.kind].toLowerCase()}`}
               items={[
-                { label: "Підняти вище", disabled: index === 0, onSelect: () => setContent(moveItem(block.content, index, index - 1)) },
-                { label: "Опустити нижче", disabled: index === block.content.length - 1, onSelect: () => setContent(moveItem(block.content, index, index + 1)) },
-                { label: "Видалити", danger: true, disabled: block.content.length === 1, onSelect: () => setContent(block.content.filter((_, position) => position !== index)) },
+                { label: "Підняти вище", icon: "arrow-up" as const, disabled: index === 0, onSelect: () => setContent(moveItem(block.content, index, index - 1)) },
+                { label: "Опустити нижче", icon: "arrow-down" as const, disabled: index === block.content.length - 1, onSelect: () => setContent(moveItem(block.content, index, index + 1)) },
+                { label: "Видалити", icon: "trash" as const, danger: true, disabled: block.content.length === 1, onSelect: () => setContent(block.content.filter((_, position) => position !== index)) },
               ]}
             />
           </div>
