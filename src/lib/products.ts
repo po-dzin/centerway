@@ -1,6 +1,27 @@
 export type SearchParams = Record<string, string | string[] | undefined>;
 
 /**
+ * Where WayForPay sends the buyer back, for every product.
+ *
+ * ONE PAIR, not one pair per funnel. Each landing used to own its own
+ * `/thanks` and `/pay-failed`, which meant five copies of the same contract —
+ * pixel, Purchase event id, client signal, order line, destination — drifting
+ * apart file by file. The confirmation is a platform surface: it is where a
+ * purchase becomes an entitlement, and the entitlement lives here.
+ *
+ * The apex host is `www` on purpose. It is what `WFP_MERCHANT_DOMAIN`, the
+ * sitemap and the OG metadataBase already name, and the proxy 308s the bare
+ * form onto it — a redirect in the middle of a payment return is a step that
+ * can only lose people.
+ *
+ * The static pages under `src/landing-static/<brand>/thanks.html` STAY. WayForPay
+ * stores the return URL with the invoice, so a payment started before this
+ * shipped still comes back to the old address.
+ */
+export const PLATFORM_THANKS_URL = "https://www.centerway.net.ua/pay/thanks";
+export const PLATFORM_FAILED_URL = "https://www.centerway.net.ua/pay/failed";
+
+/**
  * TEST PRICE — 1 UAH. Short-lived: put in on 2026-08-21 for a couple of days of
  * QA, so walking the purchase chain end to end does not move real money through
  * WayForPay.
@@ -20,6 +41,23 @@ export type SearchParams = Record<string, string | string[] | undefined>;
  */
 const TEST_PRICE_UAH = 1;
 
+/**
+ * Where a paid product is actually delivered, and what Meta should call it.
+ *
+ * `fulfilment` used to live nowhere: it was a hard-coded href and a
+ * `redirectTarget` constant inside each of the five static thanks pages, which
+ * is why the same purchase could send one buyer to a bot and another to a
+ * cabinet with no single place saying so. Three shapes, and they are the three
+ * real ones:
+ *
+ *   course  — the platform serves it; the buyer goes to /learn/<slug>
+ *   bot     — a Telegram bot delivers it, with its own ?start= token
+ *   cabinet — no course of its own; the purchase exists in /profile
+ *
+ * `pixelContentName` is kept verbatim from the strings the landings sent, not
+ * rewritten to something tidier: it is a REPORTING LABEL in Meta, and renaming
+ * it splits one product's history into two lines.
+ */
 export const PRODUCTS = {
   short: {
     heading: {
@@ -33,9 +71,12 @@ export const PRODUCTS = {
         "Online course payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     amount: 795,
+    listAmount: 795,
     currency: "UAH",
-    approvedUrl: "https://reboot.centerway.net.ua/thanks",
-    declinedUrl: "https://reboot.centerway.net.ua/pay-failed",
+    pixelContentName: "Short Reboot",
+    fulfilment: { kind: "bot", url: "https://telegram.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07" },
+    approvedUrl: PLATFORM_THANKS_URL,
+    declinedUrl: PLATFORM_FAILED_URL,
   },
   irem: {
     heading: {
@@ -49,9 +90,12 @@ export const PRODUCTS = {
         "Online system payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     amount: 3950,
+    listAmount: 3950,
     currency: "UAH",
-    approvedUrl: "https://irem.centerway.net.ua/thanks",
-    declinedUrl: "https://irem.centerway.net.ua/pay-failed",
+    pixelContentName: "IREM",
+    fulfilment: { kind: "bot", url: "https://telegram.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4" },
+    approvedUrl: PLATFORM_THANKS_URL,
+    declinedUrl: PLATFORM_FAILED_URL,
   },
   way21: {
     heading: {
@@ -64,11 +108,13 @@ export const PRODUCTS = {
       en:
         "Detox program payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
     },
-    amount: TEST_PRICE_UAH, // CW_TEST_PRICE_1UAH — real: 4100
+    amount: TEST_PRICE_UAH, // CW_TEST_PRICE_1UAH — charged
+    listAmount: 4100,
     currency: "UAH",
-    // TODO(placeholder): swap to the real way21 funnel subdomain + bot before launch.
-    approvedUrl: "https://way21.centerway.net.ua/thanks",
-    declinedUrl: "https://way21.centerway.net.ua/pay-failed",
+    pixelContentName: "Way21 Detox",
+    fulfilment: { kind: "course", courseSlug: "way21" },
+    approvedUrl: PLATFORM_THANKS_URL,
+    declinedUrl: PLATFORM_FAILED_URL,
   },
   "way21-support": {
     heading: {
@@ -85,10 +131,12 @@ export const PRODUCTS = {
     // so nothing charges this amount in the QA flow. It stands as the quote used
     // when the sale is invoiced after the conversation.
     amount: 9000,
+    listAmount: 9000,
     currency: "UAH",
-    // TODO(placeholder): swap to the real way21 funnel subdomain + bot before launch.
-    approvedUrl: "https://way21.centerway.net.ua/thanks",
-    declinedUrl: "https://way21.centerway.net.ua/pay-failed",
+    pixelContentName: "Way21 Support",
+    fulfilment: { kind: "course", courseSlug: "way21" },
+    approvedUrl: PLATFORM_THANKS_URL,
+    declinedUrl: PLATFORM_FAILED_URL,
   },
   "reset-day": {
     heading: {
@@ -101,11 +149,13 @@ export const PRODUCTS = {
       en:
         "Mini course payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
     },
-    amount: TEST_PRICE_UAH, // CW_TEST_PRICE_1UAH — real: 795
+    amount: TEST_PRICE_UAH, // CW_TEST_PRICE_1UAH — charged
+    listAmount: 795,
     currency: "UAH",
-    // TODO(placeholder): swap to the real reset-day funnel subdomain + bot before launch.
-    approvedUrl: "https://resetday.centerway.net.ua/thanks",
-    declinedUrl: "https://resetday.centerway.net.ua/pay-failed",
+    pixelContentName: "Reset Day",
+    fulfilment: { kind: "course", courseSlug: "reset-day" },
+    approvedUrl: PLATFORM_THANKS_URL,
+    declinedUrl: PLATFORM_FAILED_URL,
   },
   herbs: {
     heading: {
@@ -122,9 +172,14 @@ export const PRODUCTS = {
     // to — herbs was never sold self-serve before. Agree one before launch,
     // and put it in the landing CTA label at the same time.
     amount: TEST_PRICE_UAH,
+    // Null, not a number: there is no agreed price to quote, and a surface that
+    // must show one is required to say so rather than invent it.
+    listAmount: null,
     currency: "UAH",
-    approvedUrl: "https://herbs.centerway.net.ua/thanks",
-    declinedUrl: "https://herbs.centerway.net.ua/pay-failed",
+    pixelContentName: "Herbal Blend",
+    fulfilment: { kind: "cabinet" },
+    approvedUrl: PLATFORM_THANKS_URL,
+    declinedUrl: PLATFORM_FAILED_URL,
   },
 } as const;
 
@@ -207,8 +262,39 @@ export function normalizePayableProduct(input: unknown): PayableProductCode | nu
   return isPayableProduct(product) ? product : null;
 }
 
+export type ProductFulfilment =
+  | { kind: "course"; courseSlug: string }
+  | { kind: "bot"; url: string }
+  | { kind: "cabinet" };
+
+export function productFulfilment(product: PayableProductCode): ProductFulfilment {
+  return PRODUCTS[product].fulfilment;
+}
+
 export function resolvePayableProduct(input: unknown): PayableProductCode {
   return normalizePayableProduct(input) ?? "short";
+}
+
+/**
+ * The price a surface may QUOTE, in whole currency units — never the charged
+ * one.
+ *
+ * Two numbers, on purpose. `amount` is what WayForPay is asked to take and is
+ * read only by the server; `listAmount` is what a page is allowed to print.
+ * They diverge exactly while the 1 ₴ QA window is open (CW_TEST_PRICE_1UAH),
+ * and a page that read `amount` would quietly advertise a hryvnia.
+ *
+ * `null` means "no agreed price": the caller must render the offer without a
+ * figure rather than pick one.
+ */
+export function productListPrice(product: PayableProductCode): number | null {
+  return PRODUCTS[product].listAmount;
+}
+
+/** "4 100 ₴" — one formatter, so the figure reads the same on every surface. */
+export function formatPrice(amount: number, currency: string = "UAH"): string {
+  const grouped = amount.toLocaleString("uk-UA").replace(/\u00a0/g, "\u202f");
+  return currency === "UAH" ? `${grouped} \u20b4` : `${grouped} ${currency}`;
 }
 
 export function normalizeLocale(input: string | null | undefined): Locale | null {

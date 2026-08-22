@@ -1,5 +1,7 @@
 import type { ComponentProps, ReactNode } from "react";
 import { LeadForm } from "@/components/platform/LeadForm";
+import { OfferTrail } from "@/components/platform/OfferCommerce";
+import type { TrailStep } from "@/components/platform/PlatformTrail";
 import { PlatformDetailHero } from "@/components/platform/PlatformDetailHero";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import styles from "@/components/platform/PlatformOfferStyles";
@@ -38,13 +40,32 @@ type PlatformOfferSurfaceTemplateProps = {
    * template stays a server component, the slot can be a client one.
    */
   afterHero?: ReactNode;
+  /**
+   * The way back to the index this page was reached from.
+   *
+   * Optional because not every surface has one: /consult is reached from the
+   * header and from five landings, and a "back to consultations" control would
+   * point at a list that does not exist.
+   */
+  trail?: TrailStep[];
   detailSectionId?: string;
   detailSemanticFamily: string;
   detailLeft: PanelSlot;
   detailRight: PanelSlot;
+  /** Full-width sections between the detail split and the support block. */
+  beforeSupport?: ReactNode;
   supportSectionId: string;
   supportLeft: PanelSlot;
-  form: FormConfig;
+  /**
+   * What closes the page: a lead form (`form`) or anything else (`supportRight`).
+   *
+   * Two slots rather than one, because the choice is not cosmetic. An offer that
+   * can be bought ends in a price and a checkout button; an offer that is agreed
+   * in conversation ends in a form. Passing `supportRight` wins — a page cannot
+   * both sell and ask.
+   */
+  form?: FormConfig;
+  supportRight?: ReactNode;
   boundary?: BoundaryConfig;
 };
 
@@ -103,19 +124,24 @@ export function PlatformOfferSurfaceTemplate({
   templateKind,
   hero,
   afterHero,
+  trail,
   detailSectionId,
   detailSemanticFamily,
   detailLeft,
   detailRight,
+  beforeSupport,
   supportSectionId,
   supportLeft,
   form,
+  supportRight,
   boundary,
 }: PlatformOfferSurfaceTemplateProps) {
   return (
     <PlatformShell headerMode="overlay">
       <main data-cw-detail-template={templateKind}>
         <PlatformDetailHero {...hero} />
+
+        {trail && trail.length > 0 ? <OfferTrail steps={trail} /> : null}
 
         {afterHero}
 
@@ -132,6 +158,8 @@ export function PlatformOfferSurfaceTemplate({
           </div>
         </section>
 
+        {beforeSupport}
+
         <section
           className={`${styles.container} ${styles.section}`}
           data-cw-semantic-role="support"
@@ -141,11 +169,15 @@ export function PlatformOfferSurfaceTemplate({
         >
           <div className={styles.split}>
             <article className={styles.panel}>{renderPanel(supportLeft)}</article>
-            <article className={styles.formPanel}>
-              <p className={styles.label}>{form.label}</p>
-              <h2 className={styles.title}>{form.title}</h2>
-              <LeadForm productCode={form.productCode} source={form.source} ctaPlace={form.ctaPlace} />
-            </article>
+            {supportRight ?? (
+              form ? (
+                <article className={styles.formPanel}>
+                  <p className={styles.label}>{form.label}</p>
+                  <h2 className={styles.title}>{form.title}</h2>
+                  <LeadForm productCode={form.productCode} source={form.source} ctaPlace={form.ctaPlace} />
+                </article>
+              ) : null
+            )}
           </div>
         </section>
 

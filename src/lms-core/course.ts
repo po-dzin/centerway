@@ -15,6 +15,7 @@ import {
   validateInlineText,
 } from "./inline";
 import { validateLessonBlock, type LessonBlock } from "./blocks";
+import { validateCourseTheme, type CourseTheme } from "./theme";
 
 /**
  * Content locale. Slot for the EN expansion (docs §3A) — the platform ships
@@ -117,6 +118,23 @@ export type Course = {
    * purpose: WayForPay is one driver among future ones (§3A.1).
    */
   entitlementProductCodes: string[];
+  /**
+   * How this course looks — a choice from a closed list, never values.
+   * Absent means the platform default. See `theme.ts`.
+   */
+  theme?: CourseTheme;
+  /**
+   * The card image in the builder's grid and, later, in the catalog. Optional
+   * because a course without one is a normal state, not a broken one: the grid
+   * falls back to the course's own initials on its palette.
+   */
+  cover?: { src: string; alt: string };
+  /**
+   * Where this course sits in the author's own grid. Authors order their shelf
+   * by what they are working on, which is not alphabetical and not by date.
+   * Absent sorts after everything ordered, then by title.
+   */
+  sortOrder?: number;
   modules: CourseModule[];
 };
 
@@ -138,6 +156,22 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
     `lms_course_invalid_version:${path}`
   );
   if (input.summary !== undefined) validateInlineText(input.summary, `${path}.summary`);
+  if (input.theme !== undefined) validateCourseTheme(input.theme, `${path}.theme`);
+
+  if (input.cover !== undefined) {
+    assert(isRecord(input.cover), `lms_course_invalid_cover:${path}`);
+    assert(isNonEmptyString(input.cover.src), `lms_course_cover_missing_src:${path}`);
+    // Alt is mandatory wherever an image is, same as `image` blocks: a11y is a
+    // release gate in this repo, not a nicety.
+    assert(isNonEmptyString(input.cover.alt), `lms_course_cover_missing_alt:${path}`);
+  }
+
+  if (input.sortOrder !== undefined) {
+    assert(
+      typeof input.sortOrder === "number" && Number.isInteger(input.sortOrder),
+      `lms_course_invalid_sort_order:${path}`
+    );
+  }
 
   assert(
     Array.isArray(input.entitlementProductCodes) && input.entitlementProductCodes.every(isNonEmptyString),

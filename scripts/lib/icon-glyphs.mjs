@@ -276,6 +276,19 @@ export const ICONS = {
     group: "Meta",
     d: ["M6 6l12 12", "M18 6 6 18"],
   },
+  // "More actions" — three nodes on the same rail the rhythm glyphs use, so the
+  // overflow control is drawn in this family rather than borrowed as a "⋯"
+  // character from whatever font happens to load. Radius 1.35 and a 5.2 pitch:
+  // at 0.95 (the `week` pitch) three dots read as a stalled progress bar, and
+  // the control has to be recognisable at 18px in a list row.
+  more: {
+    group: "Meta",
+    dots: [
+      { cx: 6.8, cy: 12, r: 1.35 },
+      { cx: 12, cy: 12, r: 1.35 },
+      { cx: 17.2, cy: 12, r: 1.35 },
+    ],
+  },
 
   // ── Dosha glyphs ───────────────────────────────────────────────────────
   vata: {

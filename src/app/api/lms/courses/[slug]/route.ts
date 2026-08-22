@@ -60,6 +60,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       locale: course.locale,
       scheduleMode: course.schedule.mode,
       summary: course.summary ?? null,
+      // The gamma the author chose, travelling with the course rather than
+      // being looked up again: it is one field and the client needs it before
+      // the first paint, so a second request for it would be a flash of the
+      // wrong palette.
+      theme: course.theme ?? null,
     },
     enrollment: {
       startedAt: enrollment.startedAt.toISOString(),

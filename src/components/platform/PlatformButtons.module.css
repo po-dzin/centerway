@@ -169,8 +169,16 @@
 }
 
 /* Icon-only: the inline padding is sized for a label beside the glyph, and
-   without one it reads as a wide empty button. */
+   without one it reads as a wide empty button.
+
+   `base` is named EXPLICITLY beside `chrome`, and it has to be. The transitive
+   chain — chromeBare → chrome → base — drops `base` under this bundler, so
+   every icon-only control in the app rendered without the contract's geometry:
+   measured 48x20 on the builder's header arrows and 48x18 on its row menus,
+   against a 48px touch minimum, with `display` falling back to block. One-level
+   composition (`chrome base`) is what actually arrives, so it is what we write. */
 .chromeBare {
+  composes: base;
   composes: chrome;
   padding-inline: 0;
 }

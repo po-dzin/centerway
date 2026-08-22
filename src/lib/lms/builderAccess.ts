@@ -11,9 +11,10 @@
  * `author_id` is NULL — the state both existing courses are in, meaning
  * "managed by the house".
  *
- * The admin check reads `public.user_roles` through `get_my_role()`'s table, not
- * `platform_users.role`. Those are two unsynchronised stores in this codebase
- * and picking the wrong one is a silent no-op (see the same commit).
+ * The admin check reads `public.user_roles` — the table `get_my_role()` reads.
+ * There used to be a second, unsynchronised store (`platform_users.role`) and
+ * picking the wrong one was a silent no-op; that column was retired 2026-08-21
+ * (docs/migration/sql/2026-08-21_merge_role_stores.sql).
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
@@ -54,4 +55,21 @@ export function canEditCourse(identity: BuilderIdentity, authorId: string | null
 /** Courses this identity may see in the builder's list. */
 export function courseFilterFor(identity: BuilderIdentity): { authorId?: string } {
   return identity.isAdmin ? {} : { authorId: identity.authUserId };
+}
+
+/**
+ * True when this identity may create a course from nothing.
+ *
+ * NOT "anyone who is signed in". The builder answers on a public host and its
+ * sign-in is plain Google OAuth, so every person on the internet can reach an
+ * authenticated session here; a bare `user !== null` check would make "create
+ * a course" a public endpoint that writes rows.
+ *
+ * Two who may: an admin, and someone who already owns a course. The second is
+ * the rule that keeps ownership per-row while still letting a real author work
+ * — an author is a person the house has already handed something to, and
+ * handing them the first course is the deliberate act that makes them one.
+ */
+export function canCreateCourse(identity: BuilderIdentity, ownedCourseCount: number): boolean {
+  return identity.isAdmin || ownedCourseCount > 0;
 }

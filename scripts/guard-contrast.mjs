@@ -437,6 +437,49 @@ const glassPairs = [
     glass: { plain: "#283b2b" },
     min: AA_BODY, context: "gold footer wordmark on the lightest network footer ground",
   },
+
+  // --- Course packs (2026-08-21) --------------------------------------------
+  // A course may carry one of five gammas (src/lms-core/theme.ts) as a
+  // `data-cw-pack` scope. The scope re-points --cw-sem-* names, so nothing in
+  // the resolver below sees it — the values are restated here as literals,
+  // which is what the way21 phyto pairs above already do.
+  //
+  // These are the pairs the choice actually moves: body ink and accent ink on
+  // the reading surface, and the muted label on the canvas. The greens are the
+  // landings' own, deepened for reset-day and herbs until they cleared this
+  // gate — the same move the brand sheet's #588768 → #456b58 made.
+  {
+    theme: "light", fg: "#1f2e24", glass: { plain: "#fff8ef" },
+    min: AA_BODY, context: "course pack way21 — body ink on the reading surface",
+  },
+  {
+    theme: "light", fg: "#3f6350", glass: { plain: "#fff8ef" },
+    min: AA_BODY, context: "course pack way21 — accent ink on the reading surface",
+  },
+  {
+    theme: "light", fg: "#26372c", glass: { plain: "#fff8ef" },
+    min: AA_BODY, context: "course pack reset-day — body ink on the reading surface",
+  },
+  {
+    theme: "light", fg: "#517a65", glass: { plain: "#fff8ef" },
+    min: AA_BODY, context: "course pack reset-day — accent ink on the reading surface",
+  },
+  {
+    theme: "light", fg: "#48544c", glass: { plain: "#fdf6ec" },
+    min: AA_BODY, context: "course pack reset-day — muted label on its own canvas",
+  },
+  {
+    theme: "light", fg: "#283b2b", glass: { plain: "#fff8ef" },
+    min: AA_BODY, context: "course pack herbs — body ink on the reading surface",
+  },
+  {
+    theme: "light", fg: "#537c4c", glass: { plain: "#fff8ef" },
+    min: AA_BODY, context: "course pack herbs — accent ink on the reading surface",
+  },
+  {
+    theme: "light", fg: "#31403e", glass: { plain: "#fbfaf6" },
+    min: AA_BODY, context: "course pack mineral — body ink on the reading surface",
+  },
 ];
 
 // The topbar over a dark hero: a light page whose header carries the material's

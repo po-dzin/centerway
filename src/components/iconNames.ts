@@ -40,6 +40,7 @@ export const CW_ICON_NAMES = [
   "menu",
   "settings",
   "close",
+  "more",
   "vata",
   "pitta",
   "kapha",

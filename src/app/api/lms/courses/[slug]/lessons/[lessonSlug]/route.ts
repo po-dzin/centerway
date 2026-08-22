@@ -100,6 +100,10 @@ export async function GET(
     },
     module: { id: found.module.id, title: found.module.title },
     courseVersion: course.version,
+    courseTheme: course.theme ?? null,
+    // The crumb names the course, not its slug. One string, travelling with the
+    // lesson rather than costing a second request before the first paint.
+    courseTitle: course.title,
     progress: {
       status: lessonProgress.status === "not_started" ? "started" : lessonProgress.status,
       checklist: lessonProgress.checklist,

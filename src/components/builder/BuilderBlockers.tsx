@@ -23,6 +23,17 @@ const BLOCKER_LABELS: Record<string, string> = {
  * up as prose would cost the author the only thing that lets them go straight
  * to it. The code gets a translation; the address does not need one.
  */
+/**
+ * How many blockers are listed before the rest are counted instead.
+ *
+ * A course created from the twenty-one-day template is born with roughly sixty
+ * marked holes — which is honest, it really does have twenty-one unwritten
+ * days. Rendering all sixty turns the first screen of a new course into a wall
+ * of identical red lines, and a wall is not a list of things to do. Twelve is
+ * about a screen; the count carries the rest.
+ */
+const LISTED = 12;
+
 export function BuilderBlockers({ blockers }: { blockers: ReadinessBlocker[] }) {
   if (blockers.length === 0) {
     return (
@@ -37,7 +48,7 @@ export function BuilderBlockers({ blockers }: { blockers: ReadinessBlocker[] }) 
     <section className={styles.panel}>
       <h2 className={styles.panelTitle}>Що заважає публікації</h2>
       <ul className={styles.blockerList}>
-        {blockers.map((blocker, index) => (
+        {blockers.slice(0, LISTED).map((blocker, index) => (
           <li key={`${blocker.path}-${index}`} className={styles.blockerItem}>
             <span className={styles.blockerPath}>{blocker.path}</span>
             <span className={styles.blockerDetail}>
@@ -47,6 +58,21 @@ export function BuilderBlockers({ blockers }: { blockers: ReadinessBlocker[] }) 
           </li>
         ))}
       </ul>
+      {blockers.length > LISTED ? (
+        <p className={styles.panelText}>
+          …і ще {blockers.length - LISTED} {plural(blockers.length - LISTED, "дірка", "дірки", "дірок")}. Кожна
+          позначена в редакторі того уроку, якому належить.
+        </p>
+      ) : null}
     </section>
   );
+}
+
+function plural(count: number, one: string, few: string, many: string): string {
+  const mod100 = count % 100;
+  if (mod100 >= 11 && mod100 <= 14) return many;
+  const mod10 = count % 10;
+  if (mod10 === 1) return one;
+  if (mod10 >= 2 && mod10 <= 4) return few;
+  return many;
 }

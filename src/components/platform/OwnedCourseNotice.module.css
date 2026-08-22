@@ -40,17 +40,13 @@
   line-height: 1.4;
 }
 
-.action {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-height: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-lg);
-  border-radius: var(--cw-radius-btn);
-  background: var(--cw-platform-accent);
-  color: var(--cw-platform-on-accent);
-  font-weight: 600;
-  text-decoration: none;
+/* Composed, not re-declared. This rule used to write its own geometry, its own
+   radius and a FLAT accent fill — the exact drift guard:buttons exists to stop,
+   and it slipped through only because the guard matches `…Action`, not a bare
+   `.action`. Beside a hero CTA carrying the gold ramp, the flat fill read as a
+   different yellow. */
+.resumeAction {
+  composes: primary from "./PlatformButtons.module.css";
 }
 
 @media (min-width: 561px) {

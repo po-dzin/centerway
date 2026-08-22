@@ -10,7 +10,7 @@
  */
 
 import { supabaseClient } from "@/lib/supabaseClient";
-import type { Course, ReadinessBlocker } from "@/lms-core";
+import type { Course, CourseTheme, ReadinessBlocker } from "@/lms-core";
 
 export type BuilderFailure = "unauthenticated" | "forbidden" | "not_found" | "invalid" | "network";
 
@@ -25,6 +25,9 @@ export type BuilderCourseSummary = {
   /** -1 means the stored rows do not currently form a valid course. */
   blockerCount: number;
   updatedAt: string | null;
+  cover: { src: string; alt: string } | null;
+  theme: CourseTheme | null;
+  sortOrder: number | null;
 };
 
 export type BuilderCourseDto = {
@@ -59,6 +62,7 @@ async function request<T>(path: string, init?: RequestInit): Promise<BuilderResu
   }
 
   if (response.status === 401) return { ok: false, failure: "unauthenticated" };
+  if (response.status === 403) return { ok: false, failure: "forbidden" };
   if (response.status === 404) return { ok: false, failure: "not_found" };
 
   const payload = (await response.json().catch(() => null)) as (T & { error?: string }) | null;
@@ -78,8 +82,34 @@ async function request<T>(path: string, init?: RequestInit): Promise<BuilderResu
   return { ok: true, data: payload };
 }
 
-export function listCourses(): Promise<BuilderResult<{ courses: BuilderCourseSummary[]; isAdmin: boolean }>> {
+export function listCourses(): Promise<
+  BuilderResult<{ courses: BuilderCourseSummary[]; isAdmin: boolean; canCreate: boolean }>
+> {
   return request("/api/lms/authoring/courses");
+}
+
+export function createCourse(input: {
+  title: string;
+  programSlug: string;
+  template: string;
+  palette: string;
+}): Promise<BuilderResult<{ slug: string }>> {
+  return request("/api/lms/authoring/courses", { method: "POST", body: JSON.stringify(input) });
+}
+
+export function deleteCourse(slug: string): Promise<BuilderResult<{ ok: true }>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}`, { method: "DELETE" });
+}
+
+/**
+ * Writes the whole order, not one moved card.
+ *
+ * "Move up" is a statement about the sequence: sending only the moved slug
+ * would leave two courses claiming the same position and the shelf would then
+ * fall back to sorting by title — the order the author just changed.
+ */
+export function reorderCourses(slugs: string[]): Promise<BuilderResult<{ ok: true }>> {
+  return request("/api/lms/authoring/courses", { method: "PATCH", body: JSON.stringify({ slugs }) });
 }
 
 export function loadCourse(slug: string): Promise<BuilderResult<BuilderCourseDto>> {

@@ -143,7 +143,9 @@ const PRODUCT_SURFACE_REGISTRY: Record<ProductKey, ProductSurfaceEntry> = {
     surfaceKinds: ["funnel", "platform"],
     host: "herbs.centerway.net.ua",
     platformRoute: "/products/herbs",
-    ctaMode: "redirect",
+    // Was "redirect" while the landing's only CTA was a lead form. The funnel
+    // now sells the blend directly, so the CTA is a checkout like way21's.
+    ctaMode: "checkout",
     defaultDoshaEligibility: "secondary",
     status: "active",
     funnelRuntime: "landing-app",

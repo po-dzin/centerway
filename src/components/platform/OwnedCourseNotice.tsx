@@ -66,7 +66,7 @@ export function OwnedCourseNotice({ programSlug }: { programSlug: string }) {
                   : "Курс уже відкритий у вашому кабінеті."}
           </p>
         </div>
-        <Link className={styles.action} href={resolvePlatformHref(href)}>
+        <Link className={styles.resumeAction} href={resolvePlatformHref(href)}>
           {action}
         </Link>
       </div>

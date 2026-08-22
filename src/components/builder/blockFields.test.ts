@@ -1,14 +1,25 @@
 import { describe, expect, it } from "vitest";
 
 import { BLOCK_TYPE_LABELS, describeBlock, readPath, writePath } from "./blockFields";
-import { listCourses } from "@/lib/lms/catalog";
+import { snapshotCourses } from "@/lib/lms/catalog";
 import { LESSON_BLOCK_TYPES, type LessonBlock } from "@/lms-core";
 
 /** Structural keys the author never edits. */
 const NOT_AUTHORED = new Set(["id", "type", "provider", "kind"]);
 
+/**
+ * Fields that are DERIVED, not authored — each one with the reason, so an
+ * exemption stays a statement rather than a silencer.
+ *
+ * `step` joined `order` and `dayIndex` on 2026-08-21. It is the block's
+ * position in the day's protocol, and it was a number the author typed: insert
+ * a step in the middle and every number below it was wrong, silently, because
+ * the badge renders whatever the field says. `renumberSteps` owns it now.
+ */
+const DERIVED = new Set(["protocol_step:step"]);
+
 function everyBlock(): LessonBlock[] {
-  return listCourses().flatMap((course) =>
+  return snapshotCourses().flatMap((course) =>
     course.modules.flatMap((module) => module.lessons.flatMap((lesson) => lesson.blocks))
   );
 }
@@ -37,6 +48,7 @@ describe("block field descriptions", () => {
         const key = path.join(".");
         // Covered directly, or by a field deeper inside it (a rich_text block is
         // described node by node, not as one `content` field).
+        if (DERIVED.has(`${block.type}:${key}`)) continue;
         const reachable = covered.has(key) || [...covered].some((candidate) => candidate.startsWith(`${key}.`));
         if (!reachable) missing.push(`${block.type}: ${key}`);
       }

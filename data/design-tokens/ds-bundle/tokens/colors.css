@@ -244,3 +244,40 @@
   /* #faefe0 reads 4.44 on the dark-tone chrome glass, just under the bar. */
   --cw-platform-accent-contrast: #fff8eb;
 }
+
+.cw-pack-way21 {
+  --cw-sem-calm-surface-muted: #f5f1e7;
+  --cw-sem-method-ink: #1f2e24;
+  /* the route voice. Deepened from the brand sheet's #588768, which sat at
+     3.64 against the CTA label and read bright next to the gold. */
+  --cw-sem-guide-primary: #3f6350;
+  --cw-sem-guide-strong: #203126;
+  /* the living green — practice marks, progress fills. Split off guide on
+     2026-08-20: the brand sheet had both roles on one value. */
+  --cw-sem-embodied: #456b58;
+}
+
+.cw-pack-reset-day {
+  --cw-sem-calm-bg: #fdf6ec;
+  --cw-sem-calm-surface-muted: #f7f2e8;
+  --cw-sem-method-ink: #26372c;
+  /* the route voice. Deepened from the brand sheet's #588768, which sat at
+     3.64 against the CTA label and read bright next to the gold. */
+  --cw-sem-guide-primary: #517a65;
+  --cw-sem-guide-strong: #2c4636;
+  /* the living green — practice marks, progress fills. Split off guide on
+     2026-08-20: the brand sheet had both roles on one value. */
+  --cw-sem-embodied: #6b957c;
+}
+
+.cw-pack-herbs {
+  --cw-sem-calm-surface-muted: #f7f2e7;
+  --cw-sem-method-ink: #283b2b;
+  /* the route voice. Deepened from the brand sheet's #588768, which sat at
+     3.64 against the CTA label and read bright next to the gold. */
+  --cw-sem-guide-primary: #537c4c;
+  --cw-sem-guide-strong: #2b4526;
+  /* the living green — practice marks, progress fills. Split off guide on
+     2026-08-20: the brand sheet had both roles on one value. */
+  --cw-sem-embodied: #628c5a;
+}

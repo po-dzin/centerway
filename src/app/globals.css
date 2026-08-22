@@ -472,6 +472,128 @@
     --cw-platform-accent-contrast: #fff8eb;
     /* CW_PACK_MINERAL_END */
   }
+
+  /* Course gammas, as an ATTRIBUTE scope.
+     A course carries its palette as data — `data-cw-pack="way21"` — because the
+     value comes out of a database row, not out of a class someone typed. Same
+     mechanism as the mineral pack above and the same rule: only values move,
+     never names, so no component changes when a course changes its gamma.
+     Generated from `layers.packs` in cw.tokens.json; mineral appears here too,
+     which is why it now answers to both forms. */
+  /* CW_COURSE_PACKS_START */
+  [data-cw-pack="mineral"] {
+    --cw-platform-bg: var(--cw-sem-calm-bg);
+    --cw-platform-surface: var(--cw-sem-calm-surface);
+    --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
+    --cw-platform-text: #18261d;
+    --cw-platform-muted: var(--cw-sem-muted-ink);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-progress) 38%, var(--cw-platform-bg) 62%);
+    --cw-platform-accent: var(--cw-sem-warmth);
+    --cw-platform-accent-strong: var(--cw-sem-guide-strong);
+    --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
+    --cw-platform-on-accent: var(--cw-sem-on-warmth);
+    --cw-platform-accent-contrast: #fff8ef;
+    --cw-sem-calm-bg: #f6f2ea;
+    --cw-sem-calm-surface: #fbfaf6;
+    --cw-sem-calm-surface-muted: #e9e2d6;
+    --cw-sem-method-ink: #31403e;
+    --cw-sem-guide-primary: #4f7e76;
+    --cw-sem-guide-strong: #1e3d34;
+    --cw-sem-embodied: #6e8668;
+    --cw-sem-progress: #c1906b;
+    --cw-sem-warmth: #dba54f;
+    --cw-sem-warmth-strong: #c2902f;
+    --cw-sem-on-warmth: #0d1b17;
+    --cw-sem-boundary: #b76045;
+    --cw-sem-trust: #35535f;
+    --cw-sem-muted-ink: #616863;
+    --cw-platform-text: #0d1b17;
+    --cw-platform-accent-contrast: #fff8eb;
+  }
+
+  [data-cw-pack="way21"] {
+    --cw-platform-bg: var(--cw-sem-calm-bg);
+    --cw-platform-surface: var(--cw-sem-calm-surface);
+    --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
+    --cw-platform-text: #18261d;
+    --cw-platform-muted: var(--cw-sem-muted-ink);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-progress) 38%, var(--cw-platform-bg) 62%);
+    --cw-platform-accent: var(--cw-sem-warmth);
+    --cw-platform-accent-strong: var(--cw-sem-guide-strong);
+    --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
+    --cw-platform-on-accent: var(--cw-sem-on-warmth);
+    --cw-platform-accent-contrast: #fff8ef;
+    --cw-sem-calm-surface-muted: #f5f1e7;
+    --cw-sem-method-ink: #1f2e24;
+    --cw-sem-guide-primary: #3f6350;
+    --cw-sem-guide-strong: #203126;
+    --cw-sem-embodied: #456b58;
+  }
+
+  [data-cw-pack="reset-day"] {
+    --cw-platform-bg: var(--cw-sem-calm-bg);
+    --cw-platform-surface: var(--cw-sem-calm-surface);
+    --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
+    --cw-platform-text: #18261d;
+    --cw-platform-muted: var(--cw-sem-muted-ink);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-progress) 38%, var(--cw-platform-bg) 62%);
+    --cw-platform-accent: var(--cw-sem-warmth);
+    --cw-platform-accent-strong: var(--cw-sem-guide-strong);
+    --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
+    --cw-platform-on-accent: var(--cw-sem-on-warmth);
+    --cw-platform-accent-contrast: #fff8ef;
+    --cw-sem-calm-bg: #fdf6ec;
+    --cw-sem-calm-surface-muted: #f7f2e8;
+    --cw-sem-method-ink: #26372c;
+    --cw-sem-guide-primary: #517a65;
+    --cw-sem-guide-strong: #2c4636;
+    --cw-sem-embodied: #6b957c;
+  }
+
+  [data-cw-pack="herbs"] {
+    --cw-platform-bg: var(--cw-sem-calm-bg);
+    --cw-platform-surface: var(--cw-sem-calm-surface);
+    --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
+    --cw-platform-text: #18261d;
+    --cw-platform-muted: var(--cw-sem-muted-ink);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-progress) 38%, var(--cw-platform-bg) 62%);
+    --cw-platform-accent: var(--cw-sem-warmth);
+    --cw-platform-accent-strong: var(--cw-sem-guide-strong);
+    --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
+    --cw-platform-on-accent: var(--cw-sem-on-warmth);
+    --cw-platform-accent-contrast: #fff8ef;
+    --cw-sem-calm-surface-muted: #f7f2e7;
+    --cw-sem-method-ink: #283b2b;
+    --cw-sem-guide-primary: #537c4c;
+    --cw-sem-guide-strong: #2b4526;
+    --cw-sem-embodied: #628c5a;
+  }
+    /* CW_COURSE_PACKS_END */
+
+  /* The other two axes a course may choose (src/lms-core/theme.ts).
+
+     Neither one is a value the author supplies. `headingFont` swaps between the
+     two families the platform already loads — a third would be a font, and a
+     font is a loading budget rather than a preference. `scale` moves the
+     reading size and the rhythm between blocks together, because moving type
+     without moving the space around it is how a "spacious" setting comes out
+     merely bigger. */
+  [data-cw-course-font="ui"] {
+    --cw-course-heading-family: var(--cw-font-ui);
+    --cw-course-heading-weight: 650;
+  }
+
+  [data-cw-course-scale="compact"] {
+    --cw-course-body-size: 0.95rem;
+    --cw-course-heading-scale: 0.92;
+    --cw-course-block-gap: var(--cw-space-sm);
+  }
+
+  [data-cw-course-scale="generous"] {
+    --cw-course-body-size: 1.08rem;
+    --cw-course-heading-scale: 1.12;
+    --cw-course-block-gap: var(--cw-space-xl);
+  }
 }
 
 body {

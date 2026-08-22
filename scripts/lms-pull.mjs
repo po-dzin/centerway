@@ -12,10 +12,10 @@
  *   npm run lms:pull -- way21
  */
 
+import { courseFromRows, preserveFileAnnotations } from "../src/lib/lms/authoring.ts";
 import fs from "node:fs";
 import path from "node:path";
 
-import { courseFromRows } from "../src/lib/lms/authoring.ts";
 import { coursesDir, db, fail, readCourseFile, writeCourseFile } from "./lib/lms-cli.mjs";
 
 const slug = process.argv.slice(2).find((arg) => !arg.startsWith("--"));
@@ -39,18 +39,19 @@ async function main() {
   if (moduleError) throw new Error(`lms_pull_read_failed:${moduleError.message}`);
   if (lessonError) throw new Error(`lms_pull_read_failed:${lessonError.message}`);
 
-  const existingFile = path.join(coursesDir, `${slug}.json`);
-  const referenceSlugs = fs.existsSync(existingFile)
-    ? readCourseFile(existingFile)
-        .modules.filter((module) => module.reference === true)
-        .map((module) => module.slug)
-    : [];
-  if (!fs.existsSync(existingFile)) {
-    console.log("lms:pull — no local file to carry `reference: true` from; check reference modules by hand.");
-  }
+  // `reference` is a column since 2026-08-21, so the pull no longer has to
+  // carry the flag across from the file it is about to overwrite.
+  const course = courseFromRows(courseRow, modules ?? [], lessons ?? []);
 
-  const course = courseFromRows(courseRow, modules ?? [], lessons ?? [], referenceSlugs);
-  console.log(`lms:pull — ${course.slug} [${course.status}] → ${writeCourseFile(course)}`);
+  // The file's own annotations DO still have to be carried across: `$content_note`
+  // and `$schema_note` live in the snapshot and have no column behind them, so a
+  // pull that wrote only the course would delete the provenance of the material
+  // it was preserving.
+  const existingFile = path.join(coursesDir, `${slug}.json`);
+  const existing = fs.existsSync(existingFile) ? readCourseFile(existingFile) : null;
+  const merged = preserveFileAnnotations(existing, course);
+
+  console.log(`lms:pull — ${course.slug} [${course.status}] → ${writeCourseFile(merged)}`);
 }
 
 main().catch((error) => fail("lms:pull", error));

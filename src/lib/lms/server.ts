@@ -25,7 +25,7 @@ import {
   type ProgressEventType,
 } from "@/lms-core";
 import { linkPurchasesToAccount } from "@/lib/platform/linkPurchases";
-import { getCourse, listCourses } from "./catalog";
+import { getLiveCourse, listLiveCourses } from "./liveCatalog";
 
 /**
  * Staff may open draft courses; buyers may not.
@@ -33,12 +33,10 @@ import { getCourse, listCourses } from "./catalog";
  * Reads `user_roles`, like every other authorisation in this codebase. It used
  * to read `platform_users.role` — the other, unsynchronised store — which made
  * this the single place where "who is staff" could answer differently from
- * "who is admin". Nothing kept the two columns in step, so an account elevated
- * in one was silently ordinary in the other, in whichever direction.
- *
- * Switching it changed access for nobody: at the time of the change the two
- * stores agreed for every account that held any elevated role. That is what
- * made it safe to do rather than something to schedule.
+ * "who is admin", and, worse, the only reader of a column any signed-in user
+ * could write on their own row. Switching it changed access for nobody (the
+ * two stores agreed for every elevated account), which is what made it safe to
+ * do immediately; the column itself was dropped the same day.
  */
 export async function isStaff(authUserId: string): Promise<boolean> {
   const db = adminClient();
@@ -363,7 +361,7 @@ export async function listLearnerCourses(
   const enrollmentByCourse = new Map((enrollmentRows ?? []).map((row) => [row.course_id, row]));
 
   const entries = await Promise.all(
-    listCourses().map(async (course): Promise<LearnerShelfEntry | null> => {
+    (await listLiveCourses()).map(async (course): Promise<LearnerShelfEntry | null> => {
       const enrollment = enrollmentByCourse.get(course.id);
 
       // A draft is visible to staff, and to anyone holding a manual grant — the
@@ -422,7 +420,10 @@ export async function loadLearnerCourse(
   | { ok: true; context: LearnerCourseContext }
   | { ok: false; reason: "course_not_found" | "not_entitled" | "expired" | "not_published" }
 > {
-  const course = getCourse(courseSlug);
+  // Live, with the shipped snapshot underneath it — so an author's publish is
+  // visible to a learner without a deploy, and a database that cannot answer
+  // still serves the last known good copy (liveCatalog.ts).
+  const course = await getLiveCourse(courseSlug);
   if (!course) return { ok: false, reason: "course_not_found" };
 
   if (course.status !== "published") {

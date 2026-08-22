@@ -90,7 +90,7 @@ async function list() {
 async function resolveAccount(email) {
   const { data, error } = await db
     .from("platform_users")
-    .select("auth_user_id, email, role")
+    .select("auth_user_id, email")
     .ilike("email", email)
     .maybeSingle();
 

@@ -166,15 +166,26 @@ export function BlockRenderer({ block, checklist, onToggleChecklistItem, disable
     case "video":
       // Unlisted YouTube is the 2026-08-15 decision; the block stores
       // {provider, id}, so switching providers stays a data migration.
+      //
+      // `title` is the player's ACCESSIBLE NAME, not a caption — it goes in the
+      // iframe's title attribute and is drawn nowhere. `durationMin` is the one
+      // authored value here that does get drawn, beside the frame: until
+      // 2026-08-21 it had no consumer at all, so the builder collected a number
+      // that went to the database and died there.
       return (
-        <iframe
-          className={styles.media}
-          src={`https://www.youtube-nocookie.com/embed/${block.videoId}`}
-          title={block.title ? toSpans(block.title).map((span) => span.text).join("") : "Відео уроку"}
-          allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-          allowFullScreen
-          loading="lazy"
-        />
+        <figure className={styles.mediaFigure}>
+          <iframe
+            className={styles.media}
+            src={`https://www.youtube-nocookie.com/embed/${block.videoId}`}
+            title={block.title ? toSpans(block.title).map((span) => span.text).join("") : "Відео уроку"}
+            allow="accelerometer; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+            allowFullScreen
+            loading="lazy"
+          />
+          {block.durationMin ? (
+            <figcaption className={styles.caption}>{block.durationMin} хв</figcaption>
+          ) : null}
+        </figure>
       );
 
     case "image":
@@ -220,6 +231,47 @@ export function BlockRenderer({ block, checklist, onToggleChecklistItem, disable
             </details>
           ))}
         </section>
+      );
+
+    case "table":
+      return (
+        <figure className={styles.tableBlock}>
+          {block.title ? (
+            <figcaption className={styles.tableTitle}>
+              <Inline value={block.title} />
+            </figcaption>
+          ) : null}
+          {/* The scroller is the element that scrolls, and it is focusable so a
+              keyboard can reach a table wider than the column. Left to the page,
+              a wide table widens the document and gives every screen on a phone
+              a horizontal scroll. */}
+          <div className={styles.tableScroll} tabIndex={0} role="group">
+            <table className={styles.table}>
+              {block.head ? (
+                <thead>
+                  <tr>
+                    {block.head.map((cell, index) => (
+                      <th key={index} scope="col">
+                        <Inline value={cell} />
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+              ) : null}
+              <tbody>
+                {block.rows.map((row, rowIndex) => (
+                  <tr key={rowIndex}>
+                    {row.map((cell, cellIndex) => (
+                      <td key={cellIndex}>
+                        <Inline value={cell} />
+                      </td>
+                    ))}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </figure>
       );
 
     case "cta":

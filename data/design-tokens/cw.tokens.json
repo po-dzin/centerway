@@ -372,6 +372,28 @@
         "--cw-sem-muted-ink": "#616863",
         "--cw-platform-text": "#0d1b17",
         "--cw-platform-accent-contrast": "#fff8eb"
+      },
+      "way21": {
+        "--cw-sem-calm-surface-muted": "#f5f1e7",
+        "--cw-sem-method-ink": "#1f2e24",
+        "--cw-sem-guide-primary": "#3f6350",
+        "--cw-sem-guide-strong": "#203126",
+        "--cw-sem-embodied": "#456b58"
+      },
+      "reset-day": {
+        "--cw-sem-calm-bg": "#fdf6ec",
+        "--cw-sem-calm-surface-muted": "#f7f2e8",
+        "--cw-sem-method-ink": "#26372c",
+        "--cw-sem-guide-primary": "#517a65",
+        "--cw-sem-guide-strong": "#2c4636",
+        "--cw-sem-embodied": "#6b957c"
+      },
+      "herbs": {
+        "--cw-sem-calm-surface-muted": "#f7f2e7",
+        "--cw-sem-method-ink": "#283b2b",
+        "--cw-sem-guide-primary": "#537c4c",
+        "--cw-sem-guide-strong": "#2b4526",
+        "--cw-sem-embodied": "#628c5a"
       }
     }
   },

@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { inlineToMarkup, markupToInline } from "./inlineMarkup";
-import { listCourses } from "./catalog";
+import { snapshotCourses } from "./catalog";
 import { validateInlineText, type InlineText } from "@/lms-core";
 
 function roundTrip(value: InlineText): InlineText {
@@ -77,7 +77,7 @@ describe("inline markup", () => {
       }
     };
 
-    for (const course of listCourses()) visit(course);
+    for (const course of snapshotCourses()) visit(course);
     expect(checked).toBeGreaterThan(50);
   });
 });

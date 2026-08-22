@@ -77,6 +77,12 @@ function blockText(block: LessonBlock): string {
       return `${block.src} ${block.alt} ${textOf(block.caption)}`;
     case "faq_block":
       return block.items.map((item) => `${textOf(item.question)} ${textOf(item.answer)}`).join(" ");
+    case "table":
+      return [
+        textOf(block.title),
+        ...(block.head ?? []).map((cell) => textOf(cell)),
+        ...block.rows.flatMap((row) => row.map((cell) => textOf(cell))),
+      ].join(" ");
     case "cta":
       return `${block.label} ${block.href} ${textOf(block.text)}`;
     default:

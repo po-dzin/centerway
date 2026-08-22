@@ -32,6 +32,8 @@ const PLATFORM_DARK_START = "/* CW_PLATFORM_DARK_START */";
 const PLATFORM_DARK_END = "/* CW_PLATFORM_DARK_END */";
 const PACK_MINERAL_START = "/* CW_PACK_MINERAL_START */";
 const PACK_MINERAL_END = "/* CW_PACK_MINERAL_END */";
+const COURSE_PACKS_START = "/* CW_COURSE_PACKS_START */";
+const COURSE_PACKS_END = "/* CW_COURSE_PACKS_END */";
 
 function toDecls(map, indent = "  ") {
   return Object.entries(map)
@@ -167,6 +169,31 @@ async function main() {
   // Packs re-point the same role names, so a pack block is the semantic layer
   // again with different values — never a second set of token names.
   const packMineralDecls = toDecls(tokens.layers?.packs?.mineral ?? {}, "    ");
+  // Every pack, as an attribute scope. A course carries its gamma as data
+  // (`data-cw-pack="way21"`), because the value comes out of a row rather than
+  // out of a class someone typed — see src/lms-core/theme.ts. Mineral keeps its
+  // original `.cw-pack-mineral` class above; this adds the attribute form
+  // without moving a single value.
+  //
+  // The platform aliases are re-emitted INSIDE each scope, and that is the part
+  // that makes a pack visible at all. `--cw-platform-bg: var(--cw-sem-calm-bg)`
+  // is declared on `:root`, and a custom property is substituted where it is
+  // DECLARED — so a descendant that re-points `--cw-sem-calm-bg` inherits the
+  // platform alias already resolved against the root's value and nothing
+  // repaints. Declaring the aliases again in the scope re-resolves them against
+  // the pack. They come first, so a pack that pins a platform value of its own
+  // (mineral's ink) still wins.
+  const platformAliases = tokens.layers?.modeOverrides?.platform ?? {};
+  const coursePackDecls = Object.entries(tokens.layers?.packs ?? {})
+    .map(([name, values]) =>
+      [
+        `  [data-cw-pack="${name}"] {`,
+        toDecls(platformAliases, "    "),
+        toDecls(values, "    "),
+        "  }",
+      ].join("\n")
+    )
+    .join("\n\n");
 
   const baseLightDecls = toDecls(tokens.base?.light ?? {}, "    ");
   const baseDarkDecls = toDecls(tokens.base?.dark ?? {}, "    ");
@@ -179,6 +206,7 @@ async function main() {
   nextGlobals = upsertBefore(nextGlobals, MATERIAL_DARK_START, MATERIAL_DARK_END, DARK_START, materialDarkDecls);
   nextGlobals = upsertBefore(nextGlobals, PLATFORM_DARK_START, PLATFORM_DARK_END, DARK_START, platformDarkDecls);
   nextGlobals = replaceBetween(nextGlobals, PACK_MINERAL_START, PACK_MINERAL_END, packMineralDecls);
+  nextGlobals = replaceBetween(nextGlobals, COURSE_PACKS_START, COURSE_PACKS_END, coursePackDecls);
 
   await writeFile(GLOBALS_CSS_PATH, nextGlobals, "utf8");
   await writeFile(NETWORK_CSS_PATH, buildNetworkCss(tokens), "utf8");

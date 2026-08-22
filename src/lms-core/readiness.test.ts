@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { courseReadiness, type Course } from "./index";
+import { courseReadiness, PLACEHOLDER_MARKER, type Course } from "./index";
 
 function course(overrides: Partial<Course> = {}): Course {
   return {
@@ -97,3 +97,51 @@ describe("courseReadiness", () => {
     expect(courseReadiness(protocol).ready).toBe(true);
   });
 });
+
+describe("table blocks", () => {
+  it("counts a marker inside a cell as a blocker", () => {
+    // Every author-visible string of every block type has to be scanned. A type
+    // missing from `blockText` is the quietest way for readiness to be wrong:
+    // the course publishes with a hole nobody was told about.
+    const course = tableCourse([["Ранок", `${PLACEHOLDER_MARKER}: доза]`]]);
+    expect(courseReadiness(course).blockers.some((b) => b.code === "lms_ready_placeholder")).toBe(true);
+  });
+
+  it("is ready when every cell is filled", () => {
+    const course = tableCourse([["Ранок", "1 ложка"]]);
+    expect(courseReadiness(course).ready).toBe(true);
+  });
+});
+
+function tableCourse(rows: string[][]): Course {
+  return {
+    id: "c",
+    slug: "tables",
+    title: "Таблиці",
+    programSlug: "way21",
+    brand: "centerway",
+    locale: "uk",
+    translationGroupId: "g",
+    status: "draft",
+    version: 1,
+    schedule: { mode: "open" },
+    entitlementProductCodes: [],
+    modules: [
+      {
+        id: "m",
+        slug: "m",
+        title: "Модуль",
+        order: 1,
+        lessons: [
+          {
+            id: "l",
+            slug: "l",
+            title: "Урок",
+            order: 1,
+            blocks: [{ id: "b", type: "table", head: ["Коли", "Скільки"], rows }],
+          },
+        ],
+      },
+    ],
+  };
+}

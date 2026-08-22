@@ -15,8 +15,17 @@ export const platformHomeHref = "/";
  */
 export const LEARNING_SHELF_HREF = "/learn";
 
+/**
+ * The showcase bar.
+ *
+ * NO "Головна" ITEM. The brand mark sits immediately to its left and is a link
+ * to the same place on every surface of the platform — a second control for
+ * the same destination, right beside the first, only makes the bar longer.
+ * Signed in and with the admin role, that bar was carrying SEVEN items across
+ * a hero photograph; the ones that were left are the ones that go somewhere
+ * the brand cannot.
+ */
 export const platformNav = [
-  { label: "Головна", href: "/", match: "exact" as const },
   { label: "Діагностика", href: "/tests", match: "prefix" as const },
   { label: "Програми", href: "/programs", match: "prefix" as const },
   { label: "Продукти", href: "/products", match: "prefix" as const },
@@ -114,8 +123,12 @@ export const programs = [
       mobilePosition: "center 18%",
     },
     description: "Короткий тілесний міні-курс: розігрів, увага, дихання і м'яке повернення енергії.",
+    // Was two sentences about funnels and conversion surfaces — internal
+    // architecture, printed to the buyer, and false the moment this page
+    // started selling. Copy on an offer page answers the reader's question,
+    // not the team's.
     longDescription:
-      "Short Reboot - це компактний вхід у тілесну практику CenterWay. На платформі сторінка пояснює логіку програми, а основна funnel-версія залишається окремою швидкою поверхнею для конверсії.",
+      "Компактний вхід у тілесну практику CenterWay: короткі заняття, які реально втримати в буденному дні. Розігрів, увага до дихання, м'яка мобільність — без спортивного перевантаження і без вимоги перебудувати розклад.",
     results: [
       "почати з короткого безпечного входу без перевантаження",
       "зрозуміти базову логіку руху, уваги і дихання",
@@ -198,7 +211,7 @@ export const programs = [
     },
     description: "12-тижнева рухова практика для контакту з тілом, м'якшої мобільності, енергії і зняття побутової напруги.",
     longDescription:
-      "IREM збирає прості рухові техніки у послідовну практику: розігрів, дихання, мобільність, робота з напруженням і повернення уваги до сигналів тіла. Сторінка платформи пояснює програму, а основна воронка IREM залишається окремою воронкою.",
+      "IREM збирає прості рухові техніки у послідовну практику: розігрів, дихання, мобільність, робота з напруженням і повернення уваги до сигналів тіла. Дванадцять тижнів ідуть по порядку, від простого до глибшого, щоб тіло встигало за темпом.",
     results: [
       "зрозуміти, як вбудувати коротку практику руху в день",
       "помічати напруження раніше і м'якше з ним працювати",

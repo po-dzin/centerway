@@ -5,11 +5,13 @@
  * and the header was about to make it three. Three copies of "who may see the
  * admin surface" is a security answer with three opinions.
  *
- * The role comes from `public.user_roles` — NOT `platform_users.role`. Those are
- * two unsynchronised stores in this codebase and picking the wrong one is a
- * silent no-op: the check simply never matches and the surface stays hidden with
- * no error anywhere. `resolveBuilderIdentity` and `/api/admin/bootstrap-role`
- * both read the same table; so does this.
+ * The role comes from `public.user_roles`, which is now the only role store.
+ * A second one (`platform_users.role`) sat beside it until 2026-08-21, unsynced,
+ * and writing to the wrong one was a silent no-op — the check simply never
+ * matched and the surface stayed hidden with no error anywhere. It also carried
+ * a self-elevation hole: `authenticated` could UPDATE that column on its own
+ * row. It is gone; `resolveBuilderIdentity`, `isStaff` and
+ * `/api/admin/bootstrap-role` all read this table.
  *
  * `support` is included deliberately — the admin shell already lets support in,
  * and a nav entry that leads somewhere you are allowed to be is the point.
