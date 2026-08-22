@@ -23,13 +23,14 @@ import { useRouter } from "next/navigation";
 
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { ProgressRail } from "@/components/platform/ProgressRail";
+import { ProgressRing } from "@/components/platform/ProgressRing";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
 import { PwaInstallCard } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
-import { ShelfErrorCard, courseAction, matte } from "./CourseCard";
+import { ShelfErrorCard, courseAction, courseMapHref, matte } from "./CourseCard";
 import {
   dateLocaleFor,
   fmtDate,
@@ -157,6 +158,19 @@ export function CabinetClient() {
     [shelf],
   );
 
+  /**
+   * The compact overview: every owned course as one ring of dots.
+   *
+   * Only courses whose length is known can be drawn — a ring with no lessons to
+   * count is a circle, not progress — and only from two upwards, because with
+   * one course the resume card above already IS the overview and this would
+   * repeat it in a smaller hand.
+   */
+  const overviewCourses = useMemo(
+    () => ownedCourses.filter((course) => (course.standing?.totalLessons ?? 0) > 0),
+    [ownedCourses],
+  );
+
   /** The single course the dashboard offers to resume: in-flight first, then unstarted. */
   const resumeCourse = useMemo(() => {
     const started = ownedCourses.find(
@@ -274,6 +288,44 @@ export function CabinetClient() {
               </div>
             </article>
           )}
+
+          {/* Everything else I own, at a glance. The resume card answers "what
+              now"; this answers "and how do the rest stand" — and it is also
+              the way INTO them from here, which the dashboard otherwise leaves
+              entirely to the header's app switcher. One glyph per course, so
+              five courses cost one row rather than five cards. */}
+          {overviewCourses.length > 1 ? (
+            <section className={styles.overview} {...matte} aria-labelledby="cw-profile-overview">
+              <p className={styles.sectionLabel} id="cw-profile-overview">
+                {cab.learningLabel}
+              </p>
+              <ul className={styles.ringList}>
+                {overviewCourses.map((course) => (
+                  <li key={course.slug}>
+                    <Link className={styles.ringItem} href={href(courseMapHref(course))}>
+                      <ProgressRing
+                        value={course.standing?.completedLessons ?? 0}
+                        total={course.standing?.totalLessons ?? 0}
+                        label={course.title}
+                      />
+                      <span className={styles.ringTitle}>{course.title}</span>
+                      <span className={styles.ringMeta}>
+                        {cab.stepsOf(
+                          course.standing?.completedLessons ?? 0,
+                          course.standing?.totalLessons ?? 0,
+                        )}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <div className={styles.actions}>
+                <Link className={styles.actionGhost} href={shelfHref}>
+                  {cab.allCourses}
+                </Link>
+              </div>
+            </section>
+          ) : null}
 
           <div className={styles.cardGrid}>
             {/* The dosha RESULT, not the tests catalogue. What the test is and

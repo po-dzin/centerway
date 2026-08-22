@@ -442,6 +442,65 @@
   font-family: var(--cw-font-data);
 }
 
+/* ── Course overview (rings) ──────────────────────── */
+
+/* A panel like any other — the rings are the only new thing here, and they are
+   drawn by ProgressRing, not by this file. */
+.overview {
+  composes: card;
+}
+
+/* Scrolls sideways on a phone instead of wrapping into a second row: three
+   courses on one line is the whole reason the ring exists, and a wrap turns the
+   compact summary back into a stack. `auto-fill` off a fixed track so a lone
+   pair does not stretch to half the panel each. */
+.ringList {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 6.5rem;
+  gap: var(--cw-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-x: auto;
+  overscroll-behavior-inline: contain;
+  scrollbar-width: thin;
+}
+
+.ringItem {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  padding: var(--cw-space-2xs);
+  border-radius: var(--cw-radius-md);
+  color: inherit;
+  text-align: center;
+  text-decoration: none;
+}
+
+.ringItem:hover {
+  background: var(--cw-mat-surface-sunk);
+}
+
+.ringItem:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.ringTitle {
+  font-size: 0.86rem;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+
+.ringMeta {
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: 0.7rem;
+  letter-spacing: 0.04em;
+}
+
 /* ── Locked / muted states ────────────────────────── */
 
 .cardMuted {
