@@ -58,6 +58,9 @@ export function BuilderShell({
   onNavigate?: (href: string) => void;
   children: ReactNode;
 }) {
+  const showTrail = trail.length > 1;
+  const showContextRow = showTrail || Boolean(tools);
+
   const interceptNavigation = (event: MouseEvent<HTMLDivElement>) => {
     if (!onNavigate || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const target = event.target;
@@ -95,10 +98,12 @@ export function BuilderShell({
           <main className={styles.page}>
             {/* Trail and tools on one line: where am I, and the handful of
                 controls that act on this exact course or lesson. */}
-            <div className={styles.pageTrail}>
-              <PlatformTrail steps={trail} />
-              {tools ? <div className={styles.pageTools}>{tools}</div> : null}
-            </div>
+            {showContextRow ? (
+              <div className={styles.pageTrail}>
+                {showTrail ? <PlatformTrail steps={trail} /> : null}
+                {tools ? <div className={styles.pageTools}>{tools}</div> : null}
+              </div>
+            ) : null}
             {children}
           </main>
 
