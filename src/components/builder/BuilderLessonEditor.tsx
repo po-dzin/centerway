@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/Icon";
 import {
@@ -31,6 +31,7 @@ import { BlockPreview } from "./BuilderBlockPreview";
 import { importLessonFiles, loadCourse, saveCourse, type BuilderFailure } from "./builderClient";
 import { BuilderGrip } from "./BuilderGrip";
 import { BuilderHistory } from "./BuilderHistory";
+import { useCourseAutosave } from "./useCourseAutosave";
 import { useCourseHistory } from "./useCourseHistory";
 import { landingIndex, useRowDrag, type DragRef, type DropEdge, type RowDrag } from "./useRowDrag";
 import {
@@ -144,6 +145,23 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     [history, located]
   );
 
+  const insertBlock = useCallback(
+    (position: number, type: LessonBlockType) => {
+      // A text block starts empty, with the caret ready. Empty prose is pruned
+      // before save, so opening a gap and changing one's mind is harmless.
+      const block = type === "rich_text"
+        ? { id: ids(), type, content: [{ kind: "p" as const, text: "" }] }
+        : newBlock(type, ids);
+      setFreshBlockId(block.id);
+      editBlocks((blocks) => [
+        ...blocks.slice(0, position),
+        block,
+        ...blocks.slice(position),
+      ]);
+    },
+    [editBlocks]
+  );
+
   /** Blocks reorder within the lesson. Steps renumber on the way, as with the arrows. */
   const blockDrag = useRowDrag(
     useCallback(
@@ -154,41 +172,33 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     )
   );
 
-  // The browser's own guard. An author who edits a lesson on a phone and
-  // switches apps should not lose the paragraph they just wrote to a reload.
-  useEffect(() => {
-    if (!dirty) return;
-    const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [dirty]);
-
-  const save = useCallback(async (): Promise<boolean> => {
-    if (!course || busy) return false;
-    setBusy(true);
+  const persistCourse = useCallback(async (snapshot: Course) => {
     setNote(null);
-
-    const result = await saveCourse(slug, pruneEmptyProse(course));
-    setBusy(false);
-
+    const result = await saveCourse(slug, pruneEmptyProse(snapshot));
     if (!result.ok) {
-      // Kept verbatim: a validation code names the exact block that is wrong.
-      setNote(result.detail ?? "Не вдалося зберегти. Спробуйте ще раз.");
-      return false;
+      return { ok: false as const, message: result.detail ?? "Не вдалося зберегти. Спробуйте ще раз." };
     }
-
-    history.markClean();
-    setNote(
-      result.data.blockers.length === 0
+    return {
+      ok: true as const,
+      message: result.data.blockers.length === 0
         ? "Збережено. Блокерів немає."
-        : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`
-    );
-    return true;
-  }, [busy, course, history, slug]);
+        : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`,
+    };
+  }, [slug]);
+
+  const autosave = useCourseAutosave({
+    course,
+    dirty,
+    paused: busy,
+    persist: persistCourse,
+    markSaved: history.markSaved,
+  });
+  const working = busy || autosave.saving;
+  const save = autosave.saveNow;
 
   const importIntoLesson = useCallback(
     async (file: File) => {
-      if (!located || busy) return;
+      if (!located || working) return;
       setBusy(true);
       setNote(null);
       const result = await importLessonFiles(slug, [file]);
@@ -212,32 +222,26 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       });
       setNote(`Імпортовано «${file.name}». Перевірте урок і збережіть зміни.`);
     },
-    [busy, history, located, slug]
+    [history, located, slug, working]
   );
 
-  /**
-   * In-builder navigation, with the unsaved edit accounted for.
-   *
-   * `beforeunload` only covers a reload or a closed tab; a click on the next
-   * lesson is a client-side route change the browser never asks about. Without
-   * this, the arrows an author asked for would be the fastest way in the whole
-   * tool to lose a paragraph. So a dirty editor holds the destination and asks,
-   * with both honest answers offered — save and go, or go and drop it.
-   */
+  /** Flushes the current snapshot and continues without asking a question. */
   const navigate = useCallback(
     (href: string) => {
       setContentsOpen(false);
-      if (dirty) {
-        setPendingHref(href);
-        return;
-      }
-      router.push(href);
+      if (!dirty) return router.push(href);
+      if (pendingHref) return;
+      setPendingHref(href);
+      void save().then((saved) => {
+        if (saved) router.push(href);
+        else setPendingHref(null);
+      });
     },
-    [dirty, router]
+    [dirty, pendingHref, router, save]
   );
 
   const preview = () => {
-    if (busy) return;
+    if (working) return;
     if (dirty) {
       setNote("Спочатку збережіть зміни, щоб відкрити перегляд.");
       return;
@@ -290,15 +294,16 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   return (
     <BuilderShell
       trail={[
-        { label: "Курси", href: "/build" },
-        { label: trailTitle(course.title, "Курс без назви"), href: `/build/${slug}` },
+        { label: "Курси", onNavigate: () => navigate("/build") },
+        { label: trailTitle(course.title, "Курс без назви"), onNavigate: () => navigate(`/build/${slug}`) },
         { label: trailTitle(lesson.title, "Урок без назви") },
       ]}
       aside={<BuilderContents course={course} currentSlug={lesson.slug} onNavigate={navigate} />}
       asideOpen={contentsOpen}
+      onNavigate={navigate}
       tools={
         <>
-          <button className={styles.quietAction} type="button" onClick={preview} disabled={busy} title={dirty ? "Спочатку збережіть зміни" : "Відкрити урок як учень"}>
+          <button className={styles.quietAction} type="button" onClick={preview} disabled={working} title={dirty ? "Спочатку збережіть зміни" : "Відкрити урок як учень"}>
             Переглянути
           </button>
           <BuilderStep
@@ -358,7 +363,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       <section className={styles.panel}>
         <div className={styles.panelHead}>
           <h2 className={styles.panelTitle}>Урок</h2>
-          <button className={styles.quietAction} type="button" disabled={busy} onClick={() => importPicker.current?.click()}>
+          <button className={styles.quietAction} type="button" disabled={working} onClick={() => importPicker.current?.click()}>
             <Icon name="import" size={20} /> Імпорт
           </button>
           <input
@@ -403,73 +408,38 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       </section>
 
       <div className={styles.blockList} {...courseThemeAttributes(course.theme)}>
+        <BlockInsert position={0} onAdd={insertBlock} />
         {lesson.blocks.map((block, index) => (
-          <BlockEditor
-            key={block.id}
-            block={block}
-            index={index}
-            total={lesson.blocks.length}
-            drag={blockDrag}
-            fresh={block.id === freshBlockId}
-            courseSlug={course.slug}
-            onChange={editLesson}
-            onBlocks={editBlocks}
-          />
+          <Fragment key={block.id}>
+            <BlockEditor
+              block={block}
+              index={index}
+              total={lesson.blocks.length}
+              drag={blockDrag}
+              fresh={block.id === freshBlockId}
+              courseSlug={course.slug}
+              onChange={editLesson}
+              onBlocks={editBlocks}
+              onInsertAfter={(type) => insertBlock(index + 1, type)}
+            />
+            <BlockInsert position={index + 1} onAdd={insertBlock} />
+          </Fragment>
         ))}
       </div>
 
-      <AddBlock
-        onAdd={(type) => {
-          // A text block starts EMPTY, not with a `[ЗАПОВНИ: текст]` marker the
-          // author has to select and delete before typing. Empty prose cannot
-          // be saved — `pruneEmptyProse` is what makes that safe, by dropping
-          // on the way out whatever was never written.
-          const block = type === "rich_text" ? { id: ids(), type, content: [{ kind: "p" as const, text: "" }] } : newBlock(type, ids);
-          setFreshBlockId(block.id);
-          editBlocks((blocks) => [...blocks, block]);
-        }}
-      />
-
       <div className={styles.saveBar}>
         {pendingHref ? (
-          <>
-            <span className={styles.saveState}>Є незбережені зміни.</span>
-            <button
-              className={styles.quietAction}
-              type="button"
-              onClick={() => {
-                const href = pendingHref;
-                setPendingHref(null);
-                history.markClean();
-                router.push(href);
-              }}
-              disabled={busy}
-            >
-              Піти без збереження
-            </button>
-            <button
-              className={styles.commitAction}
-              type="button"
-              onClick={async () => {
-                const href = pendingHref;
-                const saved = await save();
-                if (!saved) return;
-                setPendingHref(null);
-                router.push(href);
-              }}
-              disabled={busy}
-            >
-              {busy ? "Зберігаємо…" : "Зберегти і перейти"}
-            </button>
-          </>
+          <span className={styles.saveState} role="status" aria-live="polite">
+            Зберігаємо зміни перед переходом…
+          </span>
         ) : (
           <>
-            <BuilderHistory history={history} disabled={busy} />
+            <BuilderHistory history={history} disabled={working} />
             <span className={styles.saveState} role="status" aria-live="polite">
-              {note ?? (dirty ? "Не збережено" : "Збережено")}
+              {note ?? autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
             </span>
-            <button className={styles.commitAction} type="button" onClick={save} disabled={busy || !dirty}>
-              {busy ? "Зберігаємо…" : "Зберегти"}
+            <button className={styles.commitAction} type="button" onClick={() => void save()} disabled={working || !dirty}>
+              {autosave.saving ? "Зберігаємо…" : "Зберегти зараз"}
             </button>
           </>
         )}
@@ -502,41 +472,41 @@ function locateLesson(course: Course, lessonSlug: string): { moduleIndex: number
  * with the sentence that says when to reach for each, is the right shape for a
  * decision. It is the wrong shape for "I need a table here".
  */
-function AddBlock({ onAdd }: { onAdd: (type: LessonBlockType) => void }) {
+function BlockInsert({
+  position,
+  onAdd,
+}: {
+  position: number;
+  onAdd: (position: number, type: LessonBlockType) => void;
+}) {
   const [open, setOpen] = useState(false);
 
   if (!open) {
     return (
-      <div className={styles.addRow}>
-        <button className={styles.addAction} type="button" onClick={() => onAdd("rich_text")}>
-          <span className={styles.addGlyph} aria-hidden="true">+</span> Додати текст
-        </button>
-        <button className={styles.quietAction} type="button" onClick={() => setOpen(true)}>
-          Шаблон…
+      <div className={styles.blockInsert}>
+        <button className={styles.blockInsertAction} type="button" onClick={() => setOpen(true)}>
+          <span className={styles.addGlyph} aria-hidden="true">+</span> Додати блок
         </button>
       </div>
     );
   }
 
   const pick = (type: LessonBlockType) => {
-    onAdd(type);
+    onAdd(position, type);
     setOpen(false);
   };
 
   return (
-    <section className={styles.panel}>
+    <section className={styles.blockPicker} aria-label="Додати блок">
       <div className={styles.panelHead}>
-        <h2 className={styles.panelTitle}>Шаблони</h2>
+        <h2 className={styles.panelTitle}>Додати блок</h2>
         <button className={styles.quietAction} type="button" onClick={() => setOpen(false)}>
           Закрити
         </button>
       </div>
-      <p className={styles.panelText}>
-        Блок, який уже знає, що він робить в уроці. Плеєр учня малює кожен по-своєму, а перевірка готовності
-        деякі з них вимагає.
-      </p>
+      <h3 className={styles.blockPickerGroup}>Текст і медіа</h3>
       <div className={styles.typeGrid}>
-        {BLOCK_TEMPLATE_ORDER.map((type) => (
+        {(["rich_text", ...BLOCK_STRUCTURE_ORDER] as LessonBlockType[]).map((type) => (
           <button key={type} className={styles.typeOption} type="button" onClick={() => pick(type)}>
             <span className={styles.typeName}>{BLOCK_TYPE_LABELS[type]}</span>
             <span className={styles.typeHint}>{BLOCK_TYPE_HINTS[type]}</span>
@@ -544,12 +514,9 @@ function AddBlock({ onAdd }: { onAdd: (type: LessonBlockType) => void }) {
         ))}
       </div>
 
-      {/* The same shapes "/" offers, kept reachable without typing — on a touch
-          keyboard the slash is two taps away, and this is the screen an author
-          is already on when they realise they want a table. */}
-      <h3 className={styles.panelTitle}>Блоки</h3>
+      <h3 className={styles.blockPickerGroup}>Шаблони уроку</h3>
       <div className={styles.typeGrid}>
-        {BLOCK_STRUCTURE_ORDER.map((type) => (
+        {BLOCK_TEMPLATE_ORDER.map((type) => (
           <button key={type} className={styles.typeOption} type="button" onClick={() => pick(type)}>
             <span className={styles.typeName}>{BLOCK_TYPE_LABELS[type]}</span>
             <span className={styles.typeHint}>{BLOCK_TYPE_HINTS[type]}</span>
@@ -569,6 +536,7 @@ function BlockEditor({
   courseSlug,
   onChange,
   onBlocks,
+  onInsertAfter,
 }: {
   block: LessonBlock;
   index: number;
@@ -580,6 +548,7 @@ function BlockEditor({
   fresh?: boolean;
   onChange: (path: (string | number)[], value: unknown) => void;
   onBlocks: (next: (blocks: LessonBlock[]) => LessonBlock[]) => void;
+  onInsertAfter: (type: LessonBlockType) => void;
 }) {
   const fields = describeBlock(block);
   const editField = (path: (string | number)[], value: unknown) => onChange(["blocks", index, ...path], value);
@@ -619,11 +588,7 @@ function BlockEditor({
              every paragraph the author had written to get here. */
           onBlockCommand={(id) => {
             const type = id.slice("block:".length) as LessonBlock["type"];
-            onBlocks((blocks) => [
-              ...blocks.slice(0, index + 1),
-              newBlock(type, ids),
-              ...blocks.slice(index + 1),
-            ]);
+            onInsertAfter(type);
           }}
           onChange={editField}
         />
@@ -672,13 +637,14 @@ const BLOCK_COMMANDS: SlashCommand[] = BLOCK_STRUCTURE_ORDER.map((type) => ({
   id: `block:${type}`,
   label: BLOCK_TYPE_LABELS[type],
   hint: BLOCK_TYPE_HINTS[type],
+  group: "Блоки",
 }));
 
 const NODE_COMMANDS: SlashCommand[] = [
-  { id: "p", label: "Абзац", hint: "Звичайний текст." },
-  { id: "h3", label: "Підзаголовок", hint: "Ділить урок на частини." },
-  { id: "ul", label: "Список", hint: "Перелік, у якому порядок не важить." },
-  { id: "ol", label: "Нумерований список", hint: "Кроки, які йдуть по черзі." },
+  { id: "p", label: "Абзац", hint: "Звичайний текст.", group: "Текст" },
+  { id: "h3", label: "Підзаголовок", hint: "Ділить урок на частини.", group: "Текст" },
+  { id: "ul", label: "Список", hint: "Перелік, у якому порядок не важить.", group: "Текст" },
+  { id: "ol", label: "Нумерований список", hint: "Кроки, які йдуть по черзі.", group: "Текст" },
 ];
 
 /**

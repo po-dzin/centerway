@@ -24,10 +24,10 @@ import type { Course } from "@/lms-core";
  * delete, reorder — pass a null key and never merge: each one is a deliberate
  * act the author should be able to take back on its own.
  *
- * WHAT IT DOES NOT DO. It does not persist. A reload still loses unsaved work,
- * and `beforeunload` is still what stands between the author and that. Undo is
- * a within-session rope, and it exists before autosave on purpose: autosave
- * without undo turns every mistake into a stored one.
+ * WHAT IT DOES NOT DO. It does not persist the undo stack. Autosave persists
+ * the current Course snapshot, while undo remains a within-session rope. It
+ * exists before autosave on purpose: persistence without undo would turn every
+ * mistake into a stored one with no quick way back.
  */
 
 /** Entries kept. Beyond this the oldest are dropped — a bounded rope, not a log. */
@@ -90,6 +90,11 @@ export function redoStep(history: History): History {
   };
 }
 
+/** Records the exact snapshot accepted by the server. */
+export function markSavedStep(history: History, course: Course): History {
+  return { ...history, saved: course };
+}
+
 export type CourseHistory = {
   /** The working copy, or null before the course has loaded. */
   course: Course | null;
@@ -108,6 +113,8 @@ export type CourseHistory = {
   canRedo: boolean;
   /** True when the working copy differs from the last saved one. */
   dirty: boolean;
+  /** Records the exact snapshot accepted by persistence, even if editing continued meanwhile. */
+  markSaved: (course: Course) => void;
   /**
    * Declares the working copy clean without touching the stack.
    *
@@ -153,6 +160,10 @@ export function useCourseHistory(): CourseHistory {
 
   const markClean = useCallback(() => {
     setHistory((current) => ({ ...current, saved: current.present }));
+  }, []);
+
+  const markSaved = useCallback((course: Course) => {
+    setHistory((current) => markSavedStep(current, course));
   }, []);
 
   /**
@@ -205,6 +216,7 @@ export function useCourseHistory(): CourseHistory {
     canUndo: history.past.length > 0,
     canRedo: history.future.length > 0,
     dirty: history.present !== null && history.present !== history.saved,
+    markSaved,
     markClean,
   };
 }
