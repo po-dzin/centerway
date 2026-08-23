@@ -1227,8 +1227,11 @@ body {
 
   .cw-icon-btn:hover {
     color: var(--cw-text);
-    background-color: var(--cw-interactive-hover-bg);
-    border-color: var(--cw-interactive-hover-border);
+    /* Icon-only controls should not acquire a pale material tile on hover.
+       Platform controls with an ink-ring supply that quieter affordance
+       locally; legacy utility controls retain just the colour change. */
+    background-color: transparent;
+    border-color: transparent;
   }
 
   .cw-icon-btn:focus-visible {

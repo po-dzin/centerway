@@ -546,7 +546,7 @@
   .navLayer .nav a:hover,
   .navLayer .nav a:focus-visible {
     color: var(--platform-header-fg);
-    background: var(--platform-header-hover-bg);
+    background: transparent;
     outline: none;
   }
 
@@ -568,7 +568,7 @@
   .shellOverlay .navLayer .nav a:hover,
   .shellOverlay .navLayer .nav a:focus-visible {
     color: var(--platform-header-fg);
-    background: var(--platform-header-hover-bg);
+    background: transparent;
   }
 
   .shellOverlay .navLayer .nav a[aria-current="page"] {

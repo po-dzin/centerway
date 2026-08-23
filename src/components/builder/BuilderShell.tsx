@@ -2,7 +2,7 @@
 
 import type { ReactNode } from "react";
 
-import { Icon } from "@/components/Icon";
+import { HandGraphic, Icon } from "@/components/Icon";
 import { PlatformFooter } from "@/components/platform/layout/PlatformFooter";
 import { PlatformHeader } from "@/components/platform/layout/PlatformHeader";
 import { PlatformTrail, type TrailStep } from "@/components/platform/PlatformTrail";
@@ -126,6 +126,7 @@ export function BuilderStep({
       title={label}
     >
       <Icon name={direction === "prev" ? "arrow-left" : "arrow-right"} size={20} />
+      <HandGraphic className={styles.stepInkRing} name="ink-ring" size={42} />
     </button>
   );
 }

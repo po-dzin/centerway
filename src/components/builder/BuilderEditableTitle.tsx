@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import Link from "next/link";
+import { useEffect, useRef, useState, type MouseEventHandler } from "react";
 
 import { Icon } from "@/components/Icon";
 import { PLACEHOLDER_MARKER } from "@/lms-core";
@@ -12,12 +13,16 @@ export function BuilderEditableTitle({
   label,
   level = "h1",
   compact = false,
+  href,
+  onLinkClick,
   onChange,
 }: {
   value: string;
   label: string;
-  level?: "h1" | "h3";
+  level?: "h1" | "h3" | "h4";
   compact?: boolean;
+  href?: string;
+  onLinkClick?: MouseEventHandler<HTMLAnchorElement>;
   onChange: (value: string) => void;
 }) {
   const [editing, setEditing] = useState(false);
@@ -71,7 +76,13 @@ export function BuilderEditableTitle({
   return (
     <div className={compact ? styles.editableTitleCompact : styles.editableTitle}>
       <Heading className={`${compact ? styles.editableHeadingCompact : styles.pageTitle} ${visibleValue ? "" : styles.editableHeadingEmpty}`}>
-        {visibleValue || label.replace(/^Редагувати\s+/i, "")}
+        {href ? (
+          <Link className={styles.editableTitleLink} href={href} title={visibleValue || undefined} onClick={onLinkClick}>
+            {visibleValue || label.replace(/^Редагувати\s+/i, "")}
+          </Link>
+        ) : (
+          visibleValue || label.replace(/^Редагувати\s+/i, "")
+        )}
       </Heading>
       <button
         className={styles.titleEditAction}

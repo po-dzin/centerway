@@ -132,6 +132,26 @@
 .stepAction {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
   composes: square from "../platform/PlatformButtons.module.css";
+  position: relative;
+}
+
+.stepInkRing {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: var(--cw-ink-ring-size);
+  height: var(--cw-ink-ring-size);
+  overflow: visible;
+  color: var(--cw-nav-marker);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.6) rotate(-4deg);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.stepAction:hover:not(:disabled) .stepInkRing,
+.stepAction:focus-visible .stepInkRing {
+  opacity: var(--cw-ink-hover-opacity);
+  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
 }
 
 .contentsAction {
@@ -661,8 +681,8 @@
 
 .slugEditAction:hover .iconInkRing,
 .slugEditAction:focus-visible .iconInkRing {
-  opacity: 0.9;
-  transform: translate(-50%, -50%) scale(1) rotate(-4deg);
+  opacity: var(--cw-ink-hover-opacity);
+  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
 }
 
 .slugLockState {
@@ -2015,6 +2035,24 @@
   font-weight: 600;
 }
 
+.editableTitleLink {
+  display: block;
+  overflow: hidden;
+  color: inherit;
+  text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editableTitleLink:hover {
+  color: var(--cw-sem-guide-primary);
+}
+
+.editableTitleLink:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
 .titleEditAction {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
   composes: square from "../platform/PlatformButtons.module.css";
@@ -2409,8 +2447,8 @@
 
 .courseRailCollapse:hover .iconInkRing,
 .courseRailCollapse:focus-visible .iconInkRing {
-  opacity: 0.9;
-  transform: translate(-50%, -50%) scale(1) rotate(-4deg);
+  opacity: var(--cw-ink-hover-opacity);
+  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
 }
 
 .courseRail[data-collapsed] .courseRailNav {
@@ -2430,7 +2468,11 @@
 }
 
 .courseRail[data-collapsed] .courseRailLink:hover .iconInkRing,
-.courseRail[data-collapsed] .courseRailLink:focus-visible .iconInkRing,
+.courseRail[data-collapsed] .courseRailLink:focus-visible .iconInkRing {
+  opacity: var(--cw-ink-hover-opacity);
+  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+}
+
 .courseRail[data-collapsed] .courseRailLink[aria-current="page"] .iconInkRing {
   opacity: 0.9;
   transform: translate(-50%, -50%) scale(1) rotate(-4deg);
@@ -2547,9 +2589,13 @@
 
 .viewOption:hover .iconInkRing,
 .viewOption:focus-visible .iconInkRing,
-.viewOption[aria-pressed="true"] .iconInkRing,
 .menuTrigger:hover .iconInkRing,
-.menuTrigger:focus-visible .iconInkRing,
+.menuTrigger:focus-visible .iconInkRing {
+  opacity: var(--cw-ink-hover-opacity);
+  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+}
+
+.viewOption[aria-pressed="true"] .iconInkRing,
 .menuTrigger[aria-expanded="true"] .iconInkRing {
   opacity: 0.9;
   transform: translate(-50%, -50%) scale(1) rotate(-4deg);
@@ -2569,6 +2615,13 @@
   border-block-start: 1px solid var(--cw-mat-stroke-inner);
   background: transparent;
   box-shadow: none;
+}
+
+/* The desktop save action belongs to the same tool row as preview. Keeping a
+   second copy absolutely positioned over that row made the two controls share
+   one coordinate and overlap. Mobile keeps the in-flow save bar below. */
+.courseHeaderSave {
+  display: none;
 }
 
 .courseStatusItem,
@@ -2683,10 +2736,6 @@
 }
 
 @media (min-width: 901px) {
-  .bodyWithAside {
-    display: block;
-  }
-
   .aside {
     min-height: calc(100svh - 5rem);
     padding-inline: var(--cw-space-2xl);
@@ -2708,12 +2757,9 @@
     font-size: clamp(2.25rem, 3vw, 2.75rem);
   }
 
-  .saveBar:not([data-pending]) {
+  .saveBar:not([data-pending]):not(.courseSaveBar) {
     position: absolute;
-    /* Course modes no longer share one long overview. Keep save beside the
-       page trail so it cannot collide with structure-view controls or the
-       release heading in whichever workspace is active. */
-    inset-block-start: var(--cw-space-lg);
+    inset-block-start: 9rem;
     inset-inline-end: 0;
     bottom: auto;
     padding: 0;
@@ -2722,13 +2768,21 @@
     box-shadow: none;
   }
 
-  .saveBar:not([data-pending]) .historyPair,
-  .saveBar:not([data-pending]) .saveState {
+  .saveBar:not([data-pending]):not(.courseSaveBar) .historyPair,
+  .saveBar:not([data-pending]):not(.courseSaveBar) .saveState {
     display: none;
   }
 
-  .saveBar:not([data-pending]) .commitAction {
+  .saveBar:not([data-pending]):not(.courseSaveBar) .commitAction {
     min-width: 10.5rem;
+  }
+
+  .courseHeaderSave {
+    display: inline-flex;
+  }
+
+  .courseSaveBar:not([data-pending]) {
+    display: none;
   }
 
   .structure:not(.structureCards) .lessonMeta {
@@ -2745,7 +2799,8 @@
 
 @media (prefers-reduced-motion: reduce) {
   .inkMark,
-  .iconInkRing {
+  .iconInkRing,
+  .stepInkRing {
     transition: none;
   }
 }
