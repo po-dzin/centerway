@@ -38,12 +38,13 @@ export function PlatformShell({
     <div className={`${styles.shell} ${floats ? styles.shellOverlay : ""}`}>
       <PlatformHeader initialTone={headerMode === "overlay" ? "dark" : "light"} mode={headerMode} />
       {children}
-      {/* The full footer is a storefront close — brand promise, phone, four
-          social networks. That is the wrong ending for every page of the
-          personal host, not just for a lesson: nobody on `my` is being sold to,
-          and every link in it leaves the origin. So the minimal footer follows
-          the HOST as well as the mode. */}
-      <PlatformFooter variant={headerMode === "learn" || onPersonalHost ? "minimal" : "full"} />
+      {/* The storefront's close — phone, four social networks — is the wrong
+          ending for every page of the personal host, not just for a lesson:
+          nobody on `my` is being sold to, and every one of those links leaves
+          the origin. The personal footer keeps the shape and the brand and
+          drops the sales column, and it follows the HOST as well as the mode,
+          so `my` ends one way on every page. */}
+      <PlatformFooter variant={headerMode === "learn" || onPersonalHost ? "personal" : "full"} />
       <PwaRuntime />
     </div>
   );

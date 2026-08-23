@@ -23,13 +23,15 @@ import { useRouter } from "next/navigation";
 
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { ProgressRail } from "@/components/platform/ProgressRail";
+import { ProgressRing } from "@/components/platform/ProgressRing";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
-import { PwaInstallCard } from "./PwaInstallCard";
+import { PwaInstallRow } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
-import { ShelfErrorCard, courseAction, matte } from "./CourseCard";
+import { CabinetFold } from "./CabinetFold";
+import { ShelfErrorCard, courseAction, courseMapHref, matte } from "./CourseCard";
 import {
   dateLocaleFor,
   fmtDate,
@@ -157,6 +159,19 @@ export function CabinetClient() {
     [shelf],
   );
 
+  /**
+   * The compact overview: every owned course as one ring of dots.
+   *
+   * Only courses whose length is known can be drawn — a ring with no lessons to
+   * count is a circle, not progress — and only from two upwards, because with
+   * one course the resume card above already IS the overview and this would
+   * repeat it in a smaller hand.
+   */
+  const overviewCourses = useMemo(
+    () => ownedCourses.filter((course) => (course.standing?.totalLessons ?? 0) > 0),
+    [ownedCourses],
+  );
+
   /** The single course the dashboard offers to resume: in-flight first, then unstarted. */
   const resumeCourse = useMemo(() => {
     const started = ownedCourses.find(
@@ -275,6 +290,44 @@ export function CabinetClient() {
             </article>
           )}
 
+          {/* Everything else I own, at a glance. The resume card answers "what
+              now"; this answers "and how do the rest stand" — and it is also
+              the way INTO them from here, which the dashboard otherwise leaves
+              entirely to the header's app switcher. One glyph per course, so
+              five courses cost one row rather than five cards. */}
+          {overviewCourses.length > 1 ? (
+            <section className={styles.overview} {...matte} aria-labelledby="cw-profile-overview">
+              <p className={styles.sectionLabel} id="cw-profile-overview">
+                {cab.learningLabel}
+              </p>
+              <ul className={styles.ringList}>
+                {overviewCourses.map((course) => (
+                  <li key={course.slug}>
+                    <Link className={styles.ringItem} href={href(courseMapHref(course))}>
+                      <ProgressRing
+                        value={course.standing?.completedLessons ?? 0}
+                        total={course.standing?.totalLessons ?? 0}
+                        label={course.title}
+                      />
+                      <span className={styles.ringTitle}>{course.title}</span>
+                      <span className={styles.ringMeta}>
+                        {cab.stepsOf(
+                          course.standing?.completedLessons ?? 0,
+                          course.standing?.totalLessons ?? 0,
+                        )}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+              <div className={styles.actions}>
+                <Link className={styles.actionGhost} href={shelfHref}>
+                  {cab.allCourses}
+                </Link>
+              </div>
+            </section>
+          ) : null}
+
           <div className={styles.cardGrid}>
             {/* The dosha RESULT, not the tests catalogue. What the test is and
                 what else exists is the showcase's business — this card holds
@@ -311,38 +364,13 @@ export function CabinetClient() {
                 </Link>
               </div>
             </article>
-
-            {/* Reachability sits on the dashboard, not behind a settings tab: a
-                learner who cannot receive a reminder should find that out here,
-                not by missing one. */}
-            {reach ? (
-              <article className={reach.linked ? styles.card : styles.notice} {...matte}>
-                <p className={styles.sectionLabel}>{cab.accountLabel}</p>
-                <h2 className={styles.cardTitle}>{cab.notificationsTitle}</h2>
-                <p className={styles.cardText}>
-                  {reach.linked
-                    ? cab.notificationsLinked
-                    : reach.linkUrl
-                      ? cab.notificationsMissing
-                      : cab.notificationsUnavailable}
-                </p>
-                {!reach.linked && reach.linkUrl ? (
-                  <div className={styles.actions}>
-                    <a className={styles.actionPrimary} href={reach.linkUrl} target="_blank" rel="noopener noreferrer">
-                      {cab.connectTelegram}
-                    </a>
-                  </div>
-                ) : null}
-              </article>
-            ) : null}
           </div>
         </div>
 
-        <div className={styles.section}>
-          <div className={styles.sectionHead}>
-            <p className={styles.sectionLabel}>{copy.products}</p>
-            <h2 className={styles.sectionTitle}>{copy.productsTitle}</h2>
-          </div>
+        {/* Folded shut on a phone. A receipt is reference, not the answer the
+            dashboard exists to give, and one column of them was a ribbon
+            between the reader and the end of their own account. */}
+        <CabinetFold label={copy.products} title={copy.productsTitle}>
           {purchases.length > 0 ? (
             <div className={styles.cardGrid}>
               {purchases.map((purchase) => (
@@ -388,15 +416,9 @@ export function CabinetClient() {
               </div>
             </article>
           )}
-        </div>
+        </CabinetFold>
 
-        <div className={styles.section}>
-          <div className={styles.sectionHead}>
-            <p className={styles.sectionLabel}>{cab.accountLabel}</p>
-            <h2 className={styles.sectionTitle}>{cab.accountTitle}</h2>
-            <p className={styles.sectionLead}>{cab.accountLead}</p>
-          </div>
-
+        <CabinetFold label={cab.accountLabel} title={cab.accountTitle} lead={cab.accountLead}>
           <div className={styles.cardGrid}>
             <article className={styles.card} {...matte}>
               <h3 className={styles.cardTitle}>{copy.contactsTitle}</h3>
@@ -428,12 +450,38 @@ export function CabinetClient() {
               </div>
             </article>
 
-            {/* Hides itself on `www`, where an install would put the SHOP on
-                the home screen; on localhost and preview one origin serves
-                everything and it appears here as before. */}
-            <PwaInstallCard copy={cab} />
+            {/* Reachability belongs to the account, beside the contacts it is
+                one of: "can support reach me" and "what is my phone number" are
+                the same question asked twice. It sat up in the dosha row for a
+                while, where a boundary-toned panel beside a test result read as
+                an alert about the test. */}
+            {reach ? (
+              <article className={reach.linked ? styles.card : styles.notice} {...matte}>
+                <h3 className={styles.cardTitle}>{cab.notificationsTitle}</h3>
+                <p className={styles.cardText}>
+                  {reach.linked
+                    ? cab.notificationsLinked
+                    : reach.linkUrl
+                      ? cab.notificationsMissing
+                      : cab.notificationsUnavailable}
+                </p>
+                {!reach.linked && reach.linkUrl ? (
+                  <div className={styles.actions}>
+                    <a className={styles.actionPrimary} href={reach.linkUrl} target="_blank" rel="noopener noreferrer">
+                      {cab.connectTelegram}
+                    </a>
+                  </div>
+                ) : null}
+              </article>
+            ) : null}
           </div>
-        </div>
+
+          {/* A line, not a fourth card. Installing is a once-per-device act;
+              it lives in the footer now, and what stays here is the fact that
+              it is available to this account's device. Hides itself on `www`,
+              where an install would put the SHOP on the home screen. */}
+          <PwaInstallRow copy={cab} />
+        </CabinetFold>
       </div>
     </main>
   );

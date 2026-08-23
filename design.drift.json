@@ -1,0 +1,53 @@
+{
+  "contract": "ds-drift/1",
+  "project": "CenterWay",
+  "mirror": {
+    "project": "CenterWay Design System (Claude Design)",
+    "projectId": "216f0b49-cc48-417f-9194-2c6c5be6d11b",
+    "direction": "repo -> project",
+    "localExport": "data/design-tokens/ds-bundle/"
+  },
+  "reportDir": "docs/design-system/drift",
+  "sources": {
+    "code": {
+      "kind": "css",
+      "path": "src/app/globals.css",
+      "role": "what ships to the browser"
+    },
+    "mirror": {
+      "kind": "css",
+      "dir": "data/design-tokens/ds-bundle/tokens",
+      "role": "the Claude Design project's token layer, as last exported"
+    },
+    "brief": {
+      "kind": "doc-hexes",
+      "paths": [
+        "docs/design-system.md"
+      ],
+      "role": "the living design-system reference"
+    }
+  },
+  "pairs": [
+    {
+      "name": "mirror -> code",
+      "from": "mirror",
+      "to": "code",
+      "mode": "tokens",
+      "gate": true,
+      "ignore": [
+        "--cw-prim-"
+      ],
+      "note": "Primitives are JSON-only by contract and never reach globals.css, so they are out of scope here. Gated: both sides derive from cw.tokens.json, so any difference is a real break.",
+      "gateOn": "conflict"
+    },
+    {
+      "name": "brief -> code (colour literals)",
+      "from": "brief",
+      "to": "code",
+      "mode": "values",
+      "valuePattern": "^#",
+      "gate": false,
+      "note": "A hex only in the brief is a colour the document commits to that no shipped token carries — either prose describing a retired value, or real drift."
+    }
+  ]
+}

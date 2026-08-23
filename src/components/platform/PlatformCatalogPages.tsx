@@ -7,9 +7,24 @@ import offerStyles from "@/components/platform/PlatformOfferStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { platformAggregateArtwork, platformMiniCourses, platformPageArtwork, platformProductOffers, platformProgramOffers } from "@/lib/platform/content";
 import { activePlatformTests, plannedPlatformTests, testsHubCopy } from "@/lib/platform/tests";
+import { listStorefrontCourses } from "@/lib/platform/offers";
 import { getPlatformRoute } from "@/lib/surfaces/catalog";
 
-export function PlatformProgramsIndexPage() {
+/**
+ * The catalogue, no longer six constants.
+ *
+ * Authored courses are MERGED INTO THE TWO RAILS rather than given a third one
+ * of their own. A buyer does not care which of them was typed into a TS file
+ * and which came out of the builder; a section headed "courses from the
+ * builder" would publish an internal fact as if it were a category. The split
+ * that does mean something to a reader is how much of their life the thing asks
+ * for, which is what the two rails already are.
+ */
+export async function PlatformProgramsIndexPage() {
+  const authored = await listStorefrontCourses();
+  const authoredMini = authored.filter((course) => course.lessons <= 8);
+  const authoredLong = authored.filter((course) => course.lessons > 8);
+
   const heroStyle = {
     "--hero-photo-x": "50%",
     "--hero-photo-y": "18%",
@@ -75,6 +90,20 @@ export function PlatformProgramsIndexPage() {
             </div>
           </div>
           <div className={offerStyles.aggregateRail} data-rail="mini">
+            {authoredMini.map((course) => (
+              <PlatformOfferCard
+                key={course.slug}
+                title={course.title}
+                tag={course.tag}
+                description={course.description}
+                href={course.href}
+                visual={course.visual}
+                slug={course.slug}
+                artwork={course.artwork}
+                ctaLabel="Деталі курсу"
+                size="compact"
+              />
+            ))}
             {platformMiniCourses.map((program) => (
               <PlatformOfferCard
                 key={program.slug}
@@ -106,6 +135,19 @@ export function PlatformProgramsIndexPage() {
             </div>
           </div>
           <div className={offerStyles.aggregateRail}>
+            {authoredLong.map((course) => (
+              <PlatformOfferCard
+                key={course.slug}
+                title={course.title}
+                tag={course.tag}
+                description={course.description}
+                href={course.href}
+                visual={course.visual}
+                slug={course.slug}
+                artwork={course.artwork}
+                ctaLabel="Деталі програми"
+              />
+            ))}
             {platformProgramOffers.map((program) => (
               <PlatformOfferCard
                 key={program.slug}

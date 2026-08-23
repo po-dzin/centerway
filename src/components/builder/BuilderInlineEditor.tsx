@@ -9,6 +9,13 @@
  * has exactly three features, so a toolbar of three buttons maps onto it
  * without remainder — the same totality, with the syntax taken off the author.
  *
+ * THE TOOLBAR FLOATS AND IS PORTALLED. It used to be a row that appeared above
+ * the field on focus — which pushed the block down the page the moment the
+ * caret entered it, and pushed it back on the way out. A control that moves the
+ * thing it acts on is worse than no control. It now hangs over the selection in
+ * a fixed layer, so nothing in the document moves, and the right mouse button
+ * opens the same panel: formatting is what a context menu on prose is FOR.
+ *
  * THE DIALECT STAYS, per field, behind «як текст». Not nostalgia: contenteditable
  * is genuinely unreliable on mobile Safari (selection handles, autocorrect
  * fighting the model, the keyboard covering the surface), and the builder is
@@ -19,9 +26,18 @@
  * caret is in it — rewriting `innerHTML` under a live selection throws the
  * caret to the start on every keystroke. So the value flows in only when the
  * element is not focused, and out on every input.
+ *
+ * IT IS ALSO WHERE THE DOCUMENT KEYS LIVE. Enter, Backspace-on-empty and the
+ * slash menu are all offered as callbacks rather than handled here: this
+ * component knows about one span of text and nothing about what surrounds it,
+ * and the thing that knows whether Enter means "next paragraph", "next list
+ * item" or nothing at all is the list the field sits in. Handing it the keys
+ * and keeping the structure out is what lets one editor serve a lesson title, a
+ * checklist item and a paragraph without branching on which it is.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 
 import { inlineToHtml, nodesToInline, type MarkupNode } from "@/lib/lms/inlineDom";
 import { inlineToMarkup, markupToInline } from "@/lib/lms/inlineMarkup";
@@ -62,22 +78,189 @@ function enclosingLink(root: HTMLElement): HTMLAnchorElement | null {
   return null;
 }
 
+/** One entry of the slash menu. `id` is handed back verbatim to the owner. */
+export type SlashCommand = {
+  id: string;
+  label: string;
+  /** The sentence that says when to reach for it — the picker's whole point. */
+  hint?: string;
+};
+
 export function BuilderInlineEditor({
   value,
   multiline,
   label,
+  placeholder,
+  autoFocus,
+  bare,
+  commands,
   onChange,
+  onCommand,
+  onEnter,
+  onEmptyBackspace,
 }: {
   value: InlineText | undefined;
   multiline?: boolean;
   label: string;
+  /** Shown while the field is empty. The prompt is the field, not a caption above it. */
+  placeholder?: string;
+  /** Focus on mount — a node the author just created by pressing Enter. */
+  autoFocus?: boolean;
+  /** Drops the plate and the frame: the field IS the paragraph, not a box holding one. */
+  bare?: boolean;
+  /** Offered when the author types "/" into an empty field. */
+  commands?: SlashCommand[];
   onChange: (next: InlineText | undefined) => void;
+  onCommand?: (id: string) => void;
+  /** Enter. The span model has no line break, so this is always a structural move. */
+  onEnter?: () => void;
+  /** Backspace with nothing left to delete — "join me to what came before". */
+  onEmptyBackspace?: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
   const [focused, setFocused] = useState(false);
   const [asText, setAsText] = useState(false);
   const [linkDraft, setLinkDraft] = useState<string | null>(null);
+  /** Whether the surface currently holds anything — what decides the placeholder. */
+  const [hasText, setHasText] = useState(false);
+  /**
+   * Where the formatting panel hangs, in viewport coordinates, or null when it
+   * is shut. `flip` is set when the selection is too near the top of the window
+   * for the panel to sit above it.
+   */
+  const [bar, setBar] = useState<{ x: number; y: number; flip: boolean } | null>(null);
+  /** Opened by the right button, and then it stays until dismissed. */
+  const [pinned, setPinned] = useState(false);
   const savedRange = useRef<Range | null>(null);
+
+  /**
+   * The slash menu.
+   *
+   * `query` is null when it is shut. It opens on a "/" typed into an EMPTY
+   * field and closes the moment the text stops looking like a command — so it
+   * can never sit on top of real prose, and a slash written mid-sentence is
+   * just a slash.
+   */
+  const [query, setQuery] = useState<string | null>(null);
+  const [cursor, setCursor] = useState(0);
+  const [anchor, setAnchor] = useState<{ top: number; left: number; width: number } | null>(null);
+
+  const matches = (commands ?? []).filter(
+    (command) => query !== null && command.label.toLowerCase().includes(query.toLowerCase())
+  );
+  // Clamped rather than reset: narrowing the query must not silently move the
+  // highlight back to the top under an author who is about to press Enter.
+  const active = matches.length > 0 ? Math.min(cursor, matches.length - 1) : 0;
+
+  /**
+   * Puts the panel over the current selection.
+   *
+   * The anchor is a POINT, not a box, and the panel is centred on it with a
+   * transform — which is what lets it be positioned in one pass. Measuring the
+   * panel first would mean rendering it invisibly for a frame, and a formatting
+   * bar that blinks is exactly the twitchiness this replaced.
+   */
+  const placeBar = useCallback((from?: { x: number; y: number }) => {
+    const element = ref.current;
+    if (!element) return;
+
+    let point = from;
+    if (!point) {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        setBar(null);
+        return;
+      }
+      const range = selection.getRangeAt(0);
+      if (!element.contains(range.commonAncestorContainer)) {
+        setBar(null);
+        return;
+      }
+      const rect = range.getBoundingClientRect();
+      // A collapsed caret reports a zero-width rect, which is still a position.
+      const box = rect.width === 0 && rect.height === 0 ? element.getBoundingClientRect() : rect;
+      point = { x: box.left + box.width / 2, y: box.top };
+    }
+
+    setBar({
+      // Clamped so the panel cannot hang off the side of the window. The number
+      // is half a plausible panel, which is cheaper than measuring and wrong by
+      // at most a few pixels on a selection made at the very edge.
+      x: Math.min(Math.max(point.x, 110), window.innerWidth - 110),
+      y: point.y,
+      flip: point.y < 72,
+    });
+  }, []);
+
+  const closeMenu = useCallback(() => {
+    setQuery(null);
+    setCursor(0);
+    setAnchor(null);
+  }, []);
+
+  /** Clears the "/query" the author typed and hands the choice to the owner. */
+  const runCommand = useCallback(
+    (id: string) => {
+      const element = ref.current;
+      if (element) element.innerHTML = "";
+      closeMenu();
+      onChange(undefined);
+      onCommand?.(id);
+    },
+    [closeMenu, onChange, onCommand]
+  );
+
+  // Measured rather than declared, and fixed rather than absolute — the same
+  // reason the row menu is (see BuilderMenu): a list positioned inside a card
+  // is clipped by the first ancestor that scrolls.
+  useLayoutEffect(() => {
+    if (query === null) return;
+    const element = ref.current;
+    if (!element) return;
+    const rect = element.getBoundingClientRect();
+    setAnchor({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+  }, [query]);
+
+  /**
+   * The panel follows the selection while the caret is in this field.
+   *
+   * Bound only while focused: `selectionchange` fires on every caret move in
+   * the document, and a lesson holds dozens of these fields at once.
+   */
+  useEffect(() => {
+    if (!focused) return;
+    const onSelectionChange = () => {
+      if (pinned) return;
+      const selection = window.getSelection();
+      const element = ref.current;
+      if (!selection || selection.isCollapsed || !element || selection.rangeCount === 0) {
+        setBar(null);
+        return;
+      }
+      if (!element.contains(selection.getRangeAt(0).commonAncestorContainer)) {
+        setBar(null);
+        return;
+      }
+      placeBar();
+    };
+    document.addEventListener("selectionchange", onSelectionChange);
+    return () => document.removeEventListener("selectionchange", onSelectionChange);
+  }, [focused, pinned, placeBar]);
+
+  // A field the author has just created by pressing Enter. Focus lands at the
+  // end so typing continues where they were, not before what is already there.
+  useEffect(() => {
+    if (!autoFocus) return;
+    const element = ref.current;
+    if (!element) return;
+    element.focus();
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    range.collapse(false);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(range);
+  }, [autoFocus]);
 
   // The value flows IN only when the caret is elsewhere. Writing innerHTML
   // under a live selection is what makes naive contenteditable components jump
@@ -87,16 +270,34 @@ export function BuilderInlineEditor({
     if (!element || document.activeElement === element) return;
     const html = inlineToHtml(value ?? "");
     if (element.innerHTML !== html) element.innerHTML = html;
+    setHasText((element.textContent ?? "") !== "");
   }, [value, asText]);
 
   const emit = useCallback(() => {
     const element = ref.current;
     if (!element) return;
+    const raw = element.textContent ?? "";
+    setHasText(raw !== "");
+
+    // A slash typed into an empty field opens the menu, and what follows it
+    // filters. The moment the text stops looking like a command the menu shuts
+    // and the text is written through — so a slash inside a sentence is a slash.
+    const slash = commands && commands.length > 0 ? /^\/([^\s/]*)$/.exec(raw) : null;
+    if (slash) {
+      setQuery(slash[1]);
+      setCursor(0);
+      // Deliberately NOT written to the model: a half-typed command is not
+      // content, and recording it would put "/" on the undo stack and, if the
+      // author walked away mid-command, into the saved course.
+      return;
+    }
+
+    closeMenu();
     const next = nodesToInline(readNodes(element));
     // Empty is ABSENT, the same rule every other field follows: the validators
     // reject an empty string where they accept a missing key.
     onChange(next === "" ? undefined : next);
-  }, [onChange]);
+  }, [closeMenu, commands, onChange]);
 
   const exec = (command: string, argument?: string) => {
     const element = ref.current;
@@ -141,88 +342,19 @@ export function BuilderInlineEditor({
     );
   }
 
+  const closeBar = () => {
+    setPinned(false);
+    setBar(null);
+    setLinkDraft(null);
+  };
+
   return (
     <div className={styles.inlineField}>
-      {/* The bar appears on focus rather than following the selection. A
-          floating toolbar has to dodge the iOS selection handles, and it lands
-          under the thumb that made the selection; a fixed row above the field
-          is in the same place every time. */}
-      {focused ? (
-        <div className={styles.inlineBar}>
-          <button
-            className={styles.inlineToggle}
-            type="button"
-            title="Жирний"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => exec("bold")}
-          >
-            <b>Ж</b>
-          </button>
-          <button
-            className={styles.inlineToggle}
-            type="button"
-            title="Курсив"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => exec("italic")}
-          >
-            <i>К</i>
-          </button>
-          <button
-            className={styles.inlineToggle}
-            type="button"
-            title="Посилання"
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={() => {
-              const element = ref.current;
-              if (!element) return;
-              const existing = enclosingLink(element);
-              if (existing) {
-                exec("unlink");
-                return;
-              }
-              // The selection is lost the moment focus moves to the input, so
-              // the range is kept and restored when the href is applied.
-              const selection = window.getSelection();
-              savedRange.current = selection && selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
-              setLinkDraft("");
-            }}
-          >
-            Посилання
-          </button>
-          <span className={styles.barSpacer} />
-          <button className={styles.inlineToggle} type="button" onClick={() => setAsText(true)}>
-            Як текст
-          </button>
-        </div>
-      ) : null}
-
-      {linkDraft !== null ? (
-        <div className={styles.inlineBar}>
-          <input
-            className={styles.input}
-            type="text"
-            autoFocus
-            placeholder="/programs/way21 або https://…"
-            aria-label="Адреса посилання"
-            value={linkDraft}
-            onChange={(event) => setLinkDraft(event.target.value)}
-            onKeyDown={(event) => {
-              if (event.key === "Enter") {
-                event.preventDefault();
-                applyLink();
-              }
-              if (event.key === "Escape") setLinkDraft(null);
-            }}
-          />
-          <button className={styles.inlineToggle} type="button" onClick={applyLink}>
-            Додати
-          </button>
-        </div>
-      ) : null}
-
       <div
         ref={ref}
-        className={`${styles.inlineSurface} ${hasMarker ? styles.inputTodo : ""}`}
+        className={`${bare ? styles.inlineBare : styles.inlineSurface} ${hasMarker ? styles.inputTodo : ""}`}
+        data-placeholder={placeholder}
+        data-empty={!hasText || undefined}
         contentEditable
         suppressContentEditableWarning
         role="textbox"
@@ -232,15 +364,69 @@ export function BuilderInlineEditor({
         onFocus={() => setFocused(true)}
         onBlur={() => {
           setFocused(false);
-          setLinkDraft(null);
+          closeMenu();
+          // The panel's own buttons keep the caret (they preventDefault on
+          // mousedown), so a blur that reaches here means the author went
+          // somewhere else and the panel has nothing left to act on.
+          closeBar();
+        }}
+        onContextMenu={(event) => {
+          // The right button on prose should offer formatting. It is the one
+          // gesture that already means "what can I do with this", and the
+          // browser's own menu over a contenteditable offers spell-check and
+          // little else that applies here.
+          event.preventDefault();
+          setPinned(true);
+          placeBar({ x: event.clientX, y: event.clientY });
         }}
         onInput={emit}
         onKeyDown={(event) => {
+          if (query !== null && matches.length > 0) {
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              setCursor((active + 1) % matches.length);
+              return;
+            }
+            if (event.key === "ArrowUp") {
+              event.preventDefault();
+              setCursor((active - 1 + matches.length) % matches.length);
+              return;
+            }
+            if (event.key === "Enter" || event.key === "Tab") {
+              event.preventDefault();
+              runCommand(matches[active].id);
+              return;
+            }
+            if (event.key === "Escape") {
+              event.preventDefault();
+              closeMenu();
+              return;
+            }
+          }
+
+          if (event.key === "Escape" && bar) {
+            event.preventDefault();
+            closeBar();
+            return;
+          }
+
           // The span model has NO line break. A newline stored here renders as
-          // a space for the learner, so allowing Enter would show the author a
-          // paragraph break nobody else ever gets. A real break is a new node
-          // in the rich-text block, which the editor offers a button for.
-          if (event.key === "Enter") event.preventDefault();
+          // a space for the learner, so a paragraph break the author sees would
+          // be one nobody else ever gets. Enter is therefore always structural:
+          // whoever owns the list decides what comes next.
+          if (event.key === "Enter") {
+            event.preventDefault();
+            onEnter?.();
+            return;
+          }
+
+          // Backspace with nothing left to erase. Handed up rather than
+          // swallowed: in a list it removes the item, in a paragraph it removes
+          // the paragraph, and this field cannot tell which it is in.
+          if (event.key === "Backspace" && onEmptyBackspace && (ref.current?.textContent ?? "") === "") {
+            event.preventDefault();
+            onEmptyBackspace();
+          }
         }}
         onPaste={(event) => {
           // Whatever was on the clipboard is arbitrary HTML. Only its text can
@@ -251,12 +437,126 @@ export function BuilderInlineEditor({
           emit();
         }}
       />
+
+      {bar && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className={styles.formatBar}
+              data-flip={bar.flip || undefined}
+              style={{ left: bar.x, top: bar.y }}
+              role="toolbar"
+              aria-label={`Форматування: ${label}`}
+              // Every control here keeps the caret where it is. Losing the
+              // selection to a button press would apply the command to nothing.
+              onMouseDown={(event) => event.preventDefault()}
+            >
+              {linkDraft !== null ? (
+                <>
+                  <input
+                    className={styles.formatInput}
+                    type="text"
+                    autoFocus
+                    placeholder="/programs/way21 або https://…"
+                    aria-label="Адреса посилання"
+                    value={linkDraft}
+                    onChange={(event) => setLinkDraft(event.target.value)}
+                    onMouseDown={(event) => event.stopPropagation()}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        applyLink();
+                      }
+                      if (event.key === "Escape") closeBar();
+                    }}
+                  />
+                  <button className={styles.formatAction} type="button" onClick={applyLink}>
+                    Додати
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button className={styles.formatAction} type="button" title="Жирний" onClick={() => exec("bold")}>
+                    <b>Ж</b>
+                  </button>
+                  <button className={styles.formatAction} type="button" title="Курсив" onClick={() => exec("italic")}>
+                    <i>К</i>
+                  </button>
+                  <button
+                    className={styles.formatAction}
+                    type="button"
+                    title="Посилання"
+                    onClick={() => {
+                      const element = ref.current;
+                      if (!element) return;
+                      if (enclosingLink(element)) {
+                        exec("unlink");
+                        return;
+                      }
+                      // The selection is lost the moment focus moves to the
+                      // input, so the range is kept and restored on apply.
+                      const selection = window.getSelection();
+                      savedRange.current =
+                        selection && selection.rangeCount > 0 ? selection.getRangeAt(0).cloneRange() : null;
+                      setLinkDraft("");
+                    }}
+                  >
+                    Посилання
+                  </button>
+                  <span className={styles.formatDivider} aria-hidden="true" />
+                  <button
+                    className={styles.formatAction}
+                    type="button"
+                    title="Правити як розмітку"
+                    onClick={() => {
+                      closeBar();
+                      setAsText(true);
+                    }}
+                  >
+                    Як текст
+                  </button>
+                </>
+              )}
+            </div>,
+            document.body
+          )
+        : null}
+
+      {query !== null && anchor && matches.length > 0 && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className={styles.slashList}
+              role="listbox"
+              aria-label="Команди"
+              style={{ top: anchor.top, left: anchor.left, minWidth: anchor.width }}
+            >
+              {matches.map((command, index) => (
+                <button
+                  key={command.id}
+                  className={styles.slashItem}
+                  type="button"
+                  role="option"
+                  aria-selected={index === active}
+                  data-active={index === active || undefined}
+                  // The caret must not leave the field: losing it would close
+                  // the menu before the click it is being closed by.
+                  onMouseDown={(event) => event.preventDefault()}
+                  onMouseEnter={() => setCursor(index)}
+                  onClick={() => runCommand(command.id)}
+                >
+                  <span className={styles.slashLabel}>{command.label}</span>
+                  {command.hint ? <span className={styles.slashHint}>{command.hint}</span> : null}
+                </button>
+              ))}
+            </div>,
+            document.body
+          )
+        : null}
     </div>
   );
 
   function applyLink() {
     const href = (linkDraft ?? "").trim();
-    setLinkDraft(null);
+    closeBar();
     if (href === "") return;
 
     const element = ref.current;

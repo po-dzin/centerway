@@ -12,8 +12,11 @@
  * key where they reject an empty string, so clearing a field deletes it.
  */
 
+import { useState } from "react";
+
 import { inlineToMarkup } from "@/lib/lms/inlineMarkup";
-import { PLACEHOLDER_MARKER, type InlineText } from "@/lms-core";
+import { PLACEHOLDER_MARKER, youtubeIdFrom, type InlineText } from "@/lms-core";
+import { BuilderImageField } from "./BuilderImageField";
 import { BuilderInlineEditor } from "./BuilderInlineEditor";
 import type { BlockField } from "./blockFields";
 import styles from "./Builder.module.css";
@@ -21,10 +24,17 @@ import styles from "./Builder.module.css";
 export function FieldInput({
   field,
   value,
+  courseSlug,
   onChange,
 }: {
   field: BlockField;
   value: unknown;
+  /**
+   * Which course an uploaded file belongs to. Only `image` fields need it, and
+   * only because an upload has to land in a folder — the rest of the table has
+   * no idea what course it is describing, and should not have to.
+   */
+  courseSlug?: string;
   onChange: (path: (string | number)[], value: unknown) => void;
 }) {
   if (field.kind === "boolean") {
@@ -79,6 +89,33 @@ export function FieldInput({
     );
   }
 
+  /**
+   * A link field whose STORED value is the identifier inside it.
+   *
+   * The author types a link, because a link is what is in their clipboard; the
+   * model keeps the id, because the player builds its own embed URL and has no
+   * business parsing YouTube. The draft is local so a half-pasted address does
+   * not blank the block on every keystroke — only a recognisable one is written
+   * through.
+   */
+  if (field.kind === "image") {
+    return (
+      <BuilderImageField
+        label={field.label}
+        hint={field.hint}
+        courseSlug={courseSlug ?? ""}
+        src={typeof value === "string" ? value : undefined}
+        onChange={(next) => onChange(field.path, next)}
+      />
+    );
+  }
+
+  if (field.kind === "youtube") {
+    return (
+      <YoutubeField field={field} value={typeof value === "string" ? value : ""} onChange={onChange} />
+    );
+  }
+
   const text = typeof value === "string" ? value : "";
   const hasMarker = text.includes(PLACEHOLDER_MARKER);
   const className = `${field.multiline ? styles.textarea : styles.input} ${hasMarker ? styles.inputTodo : ""}`;
@@ -99,6 +136,64 @@ export function FieldInput({
       ) : (
         <input className={className} type="text" value={text} onChange={(event) => handle(event.target.value)} />
       )}
+      {field.hint ? <span className={styles.fieldHint}>{field.hint}</span> : null}
+    </label>
+  );
+}
+
+function YoutubeField({
+  field,
+  value,
+  onChange,
+}: {
+  field: BlockField;
+  value: string;
+  onChange: (path: (string | number)[], value: unknown) => void;
+}) {
+  // Seeded from the stored id and only ever replaced by the author WHILE
+  // FOCUSED. Deriving it from `value` on every render would rewrite the
+  // address they are in the middle of typing back into a bare id under the
+  // caret. But `value` can also change out from under this field with no
+  // caret in it at all — undo/redo, a block dropped by drag — and unlike
+  // `BuilderInlineEditor`, this is a plain input with no focus/blur hook of
+  // its own to re-seed from. `focused` gives it one: the render-phase pattern
+  // React's own docs recommend for "adjust state when a prop changes" — not an
+  // effect, which would commit one render late and flash the stale value.
+  const [draft, setDraft] = useState(value);
+  const [seededFrom, setSeededFrom] = useState(value);
+  const [focused, setFocused] = useState(false);
+
+  if (value !== seededFrom && !focused) {
+    setSeededFrom(value);
+    setDraft(value);
+  }
+
+  const id = youtubeIdFrom(draft);
+
+  return (
+    <label className={styles.field}>
+      <span className={styles.fieldLabel}>{field.label}</span>
+      <input
+        className={styles.input}
+        type="text"
+        inputMode="url"
+        placeholder="https://youtu.be/…"
+        value={draft}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
+        onChange={(event) => {
+          const next = event.target.value;
+          setDraft(next);
+          const found = youtubeIdFrom(next);
+          // Nothing recognisable means the field is not ready, not that the
+          // block should lose the video it already had.
+          if (found) onChange(field.path, found);
+          else if (next.trim() === "") onChange(field.path, undefined);
+        }}
+      />
+      <span className={styles.fieldHint}>
+        {id ? `Відео ${id}` : "Поки не видно ідентифікатора — вставте адресу з YouTube."}
+      </span>
       {field.hint ? <span className={styles.fieldHint}>{field.hint}</span> : null}
     </label>
   );

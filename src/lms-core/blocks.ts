@@ -93,6 +93,42 @@ export type VideoBlock = BlockBase & {
   durationMin?: number;
 };
 
+/**
+ * The YouTube identifier inside whatever the author pasted.
+ *
+ * The model stores the ID and only the ID — the player builds its own embed
+ * URL, and a stored watch link would have to be re-parsed on every render by
+ * code that has no business knowing about YouTube's URL shapes. But asking an
+ * author for "just the ID, not the link" is asking a person to do a parser's
+ * job: they have a link in the clipboard, and every one of these forms is a
+ * link somebody actually copies.
+ *
+ * Returns null when nothing in the input looks like an ID, so the caller can
+ * leave the field alone rather than storing a guess.
+ */
+export function youtubeIdFrom(input: string): string | null {
+  const value = input.trim();
+  if (value === "") return null;
+
+  // A bare ID, which is still allowed: eleven characters of the URL-safe set.
+  if (/^[\w-]{11}$/.test(value)) return value;
+
+  const patterns = [
+    /youtu\.be\/([\w-]{11})/,
+    /[?&]v=([\w-]{11})/,
+    /\/embed\/([\w-]{11})/,
+    /\/shorts\/([\w-]{11})/,
+    /\/live\/([\w-]{11})/,
+  ];
+
+  for (const pattern of patterns) {
+    const found = pattern.exec(value);
+    if (found) return found[1];
+  }
+
+  return null;
+}
+
 export type ImageBlock = BlockBase & {
   type: "image";
   src: string;

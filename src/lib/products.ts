@@ -1,3 +1,5 @@
+import { courseOfferCode, parseCourseOfferCode } from "@/lms-core/offerCode";
+
 export type SearchParams = Record<string, string | string[] | undefined>;
 
 /**
@@ -188,7 +190,35 @@ export const PRODUCTS = {
 // agreed in conversation and its landing posts to /api/leads.
 export const LEAD_PRODUCT_CODES = ["consult", "ideal-body", "platform", "irem-individual"] as const;
 
-export type PayableProductCode = keyof typeof PRODUCTS;
+/**
+ * The six products written in this file, and only those.
+ *
+ * `PRODUCTS[code]` is safe for exactly this union and nothing wider — which is
+ * the whole reason it has its own name now.
+ */
+export type CatalogProductCode = keyof typeof PRODUCTS;
+
+/**
+ * A course out of the builder, sold under its own code.
+ *
+ * Built by `courseOfferCode` and parsed by `parseCourseOfferCode`, both in
+ * lms-core so the checkout and the entitlement cannot build it differently.
+ * The two namespaces cannot collide: a `PRODUCTS` key can never contain a
+ * colon.
+ */
+export type CourseProductCode = `course:${string}`;
+
+/**
+ * Anything that can be charged for.
+ *
+ * WIDENED 2026-08-22, and the widening is the point. While this was
+ * `keyof typeof PRODUCTS`, every payment surface could write `PRODUCTS[code]`
+ * and be right; a `course:<slug>` code reaching that indexing would have read
+ * `undefined` — or, through `resolvePayableProduct`'s old fallback, charged the
+ * buyer for Short Reboot. Prices for these codes live in the database, so the
+ * commercial facts are now looked up (`loadPayableOffer`) rather than indexed.
+ */
+export type PayableProductCode = CatalogProductCode | CourseProductCode;
 export type LeadProductCode = (typeof LEAD_PRODUCT_CODES)[number];
 export type ProductCode = PayableProductCode | LeadProductCode;
 export type Locale = "ua" | "en";
@@ -211,6 +241,10 @@ export function normalizeProduct(input: unknown): ProductCode | null {
   // строка
   if (typeof input === "string") {
     const s = input.trim().toLowerCase();
+    // A course out of the builder. Checked FIRST and rebuilt from the parsed
+    // slug rather than passed through, so nothing but the exact shape survives.
+    const courseSlug = parseCourseOfferCode(s);
+    if (courseSlug) return courseOfferCode(courseSlug) as CourseProductCode;
     if (s === "short" || s === "reboot") return "short";
     if (s === "irem-individual" || s === "irem_individual" || s === "irem-support") return "irem-individual";
     if (s === "irem") return "irem";
@@ -246,15 +280,15 @@ export function resolveProduct(input: unknown): ProductCode {
   return normalizeProduct(input) ?? "short";
 }
 
+/** One of the six written in this file — the only codes `PRODUCTS` may be indexed by. */
+export function isCatalogProduct(
+  product: ProductCode | string | null | undefined
+): product is CatalogProductCode {
+  return typeof product === "string" && Object.prototype.hasOwnProperty.call(PRODUCTS, product);
+}
+
 export function isPayableProduct(product: ProductCode | string | null | undefined): product is PayableProductCode {
-  return (
-    product === "short" ||
-    product === "irem" ||
-    product === "way21" ||
-    product === "way21-support" ||
-    product === "reset-day" ||
-    product === "herbs"
-  );
+  return isCatalogProduct(product) || parseCourseOfferCode(product) !== null;
 }
 
 export function normalizePayableProduct(input: unknown): PayableProductCode | null {
@@ -267,12 +301,75 @@ export type ProductFulfilment =
   | { kind: "bot"; url: string }
   | { kind: "cabinet" };
 
-export function productFulfilment(product: PayableProductCode): ProductFulfilment {
+export function productFulfilment(product: CatalogProductCode): ProductFulfilment {
   return PRODUCTS[product].fulfilment;
 }
 
-export function resolvePayableProduct(input: unknown): PayableProductCode {
-  return normalizePayableProduct(input) ?? "short";
+/**
+ * Everything a payment needs to know about the thing being sold.
+ *
+ * WHY THIS TYPE EXISTS. Until 2026-08-22 the payment path read `PRODUCTS[code]`
+ * directly, which quietly assumed every sellable thing is written in this file.
+ * A course built in the builder is not: its price lives in `lms_course_offers`,
+ * set by the owner, and it is read at request time. So the surfaces now take
+ * the RESOLVED facts and no longer care which of the two places they came from
+ * — see `loadPayableOffer` in src/lib/platform/offers.ts.
+ *
+ * `listAmount` is what a page may PRINT and `amount` is what is charged; they
+ * diverge while the 1 ₴ QA window is open (CW_TEST_PRICE_1UAH). `null` means
+ * no agreed price, and a surface that must show one has to say so.
+ */
+export type PayableOffer = {
+  code: PayableProductCode;
+  heading: Record<Locale, string>;
+  description: Record<Locale, string>;
+  amount: number;
+  listAmount: number | null;
+  currency: string;
+  pixelContentName: string;
+  fulfilment: ProductFulfilment;
+  approvedUrl: string;
+  declinedUrl: string;
+};
+
+/** One of the six, as an offer. Pure — no database, no await. */
+export function catalogOffer(code: CatalogProductCode): PayableOffer {
+  const entry = PRODUCTS[code];
+  return {
+    code,
+    heading: { ua: entry.heading.ua, en: entry.heading.en },
+    description: { ua: entry.description.ua, en: entry.description.en },
+    amount: entry.amount,
+    listAmount: entry.listAmount,
+    currency: entry.currency,
+    pixelContentName: entry.pixelContentName,
+    fulfilment: entry.fulfilment,
+    approvedUrl: entry.approvedUrl,
+    declinedUrl: entry.declinedUrl,
+  };
+}
+
+export function offerHeading(offer: PayableOffer, locale: Locale): string {
+  return offer.heading[locale] ?? offer.heading[DEFAULT_LOCALE];
+}
+
+export function offerDescription(offer: PayableOffer, locale: Locale): string {
+  return offer.description[locale] ?? offer.description[DEFAULT_LOCALE];
+}
+
+/**
+ * Where a buyer is sent back to after paying for `code`.
+ *
+ * The six answer from their own entry; anything else answers with the platform
+ * pair, which is what all six point at anyway. A code with no entry must still
+ * return somewhere real — a return URL is decided before the payment, and a
+ * missing one strands the buyer on WayForPay.
+ */
+export function productReturnUrls(code: string): { approvedUrl: string; declinedUrl: string } {
+  if (isCatalogProduct(code)) {
+    return { approvedUrl: PRODUCTS[code].approvedUrl, declinedUrl: PRODUCTS[code].declinedUrl };
+  }
+  return { approvedUrl: PLATFORM_THANKS_URL, declinedUrl: PLATFORM_FAILED_URL };
 }
 
 /**
@@ -287,7 +384,7 @@ export function resolvePayableProduct(input: unknown): PayableProductCode {
  * `null` means "no agreed price": the caller must render the offer without a
  * figure rather than pick one.
  */
-export function productListPrice(product: PayableProductCode): number | null {
+export function productListPrice(product: CatalogProductCode): number | null {
   return PRODUCTS[product].listAmount;
 }
 
@@ -305,12 +402,12 @@ export function normalizeLocale(input: string | null | undefined): Locale | null
   return null;
 }
 
-export function productHeading(product: PayableProductCode, locale: Locale): string {
+export function productHeading(product: CatalogProductCode, locale: Locale): string {
   const headings = PRODUCTS[product].heading;
   return headings[locale] ?? headings[DEFAULT_LOCALE];
 }
 
-export function productDescription(product: PayableProductCode, locale: Locale): string {
+export function productDescription(product: CatalogProductCode, locale: Locale): string {
   const descriptions = PRODUCTS[product].description;
   return descriptions[locale] ?? descriptions[DEFAULT_LOCALE];
 }

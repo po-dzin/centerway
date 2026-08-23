@@ -526,9 +526,15 @@
   gap: 0.25rem;
   padding: 0.7rem;
   border: 0;
-  border-radius: var(--cw-radius-md);
+  /* The bar's own material, not a second one. The popover used to be opaque
+     matte at the nested radius, which made it a card that happened to hang off
+     a sheet of glass — a different surface at a different corner, an inch
+     apart. Same tint, same grain, same filter, same shell radius: one plate,
+     extended downward. */
+  border-radius: var(--cw-radius-lg);
   color: var(--cw-platform-text);
-  background: var(--cw-mat-surface);
+  background-color: var(--cw-mat-tint-chrome);
+  background-image: var(--cw-mat-grain-image);
   box-shadow: var(--cw-mat-shadow-chrome);
   backdrop-filter: var(--cw-mat-filter);
 }
@@ -569,8 +575,16 @@
    reader would take the row they are on for the row under their cursor. The
    application you are in stays listed rather than being dropped — a menu whose
    rows change with where you opened it has to be re-read every time. */
+/* Where you are, marked in both presentations of this menu. Weight alone was
+   doing it, and weight alone is not a mark: five rows in one type family with
+   one of them a notch bolder is a difference you have to hunt for. The rule
+   under the word is the mark; the weight stays as its second signal. */
 .profileMenu a[data-current] {
   font-weight: 850;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.32em;
+  text-decoration-color: var(--cw-platform-accent);
 }
 
 /* The account block inside the burger sheet. Same rows as the popover, laid
@@ -584,12 +598,18 @@
   width: 100%;
 }
 
+/* The address is a CAPTION for the rows under it, not a row of its own.
+   It used to sit hard against the hairline above with a 3rem row's worth of air
+   below, which put the one small line in the sheet in the middle of a gap and
+   attached it to the list it is not part of. Loose above, tight below: it
+   belongs to the account block, and now it reads that way.
+
+   0.9rem is what `.navLayer .nav a` uses, so the account block sits on the same
+   left edge as the list above it. A block that starts a few pixels in reads as
+   a different level of the same menu. */
 .profileWrapMobile p {
   margin: 0;
-  /* 0.9rem is what `.navLayer .nav a` uses, so the account rows sit on the
-     same left edge as the list above them. A block that starts a few pixels in
-     reads as a different level of the same menu. */
-  padding: 0 0.9rem 0.35rem;
+  padding: 0.55rem 0.9rem 0;
   color: color-mix(in srgb, var(--platform-header-fg) 72%, transparent);
   font-size: var(--ds-type-label-size);
   line-height: var(--ds-type-label-line-height);
@@ -616,6 +636,10 @@
 
 .profileWrapMobile a[data-current] {
   font-weight: 850;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.32em;
+  text-decoration-color: var(--cw-platform-accent);
 }
 
 .mobileProfileSlot {

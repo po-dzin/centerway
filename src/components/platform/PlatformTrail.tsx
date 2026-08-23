@@ -28,6 +28,22 @@ import styles from "./PlatformTrail.module.css";
  * A step may be a LINK, a BUTTON, or neither. The button form exists because
  * the builder cannot always navigate on click: an editor with unsaved work has
  * to ask first, and the destination is the caller's to know.
+ *
+ * ONE LINE, ALWAYS, AND THE REST IN A TOOLTIP. Course and lesson titles are
+ * sentences — «Розвантажувальний день — практикум з умовного голодування» is a
+ * legitimate crumb — and a nav control that wraps to three lines stops being a
+ * control and becomes a paragraph you can click. Every step is clipped to its
+ * line with an ellipsis and carries the full label on `title`, so nothing is
+ * hidden, it is just not in the way. Same rule for the pager at the foot of a
+ * lesson.
+ *
+ * ON A PHONE IT IS ONE CONTROL, NOT THREE. Three crumbs at the touch minimum do
+ * not fit on 375px, so they wrapped into three stacked rows — 144px of chrome
+ * above a lesson, most of it spent restating the title printed immediately
+ * below it. What a reader actually needs there is the way back up one level, so
+ * that is what is rendered: the deepest step that can be navigated to, behind a
+ * left arrow. Both forms are in the markup and CSS picks one; deciding in JS
+ * would mean the server rendering the wrong one and swapping it after paint.
  */
 
 export type TrailStep = {
@@ -40,24 +56,42 @@ export type TrailStep = {
 export function PlatformTrail({ steps, label = "Де ви зараз" }: { steps: TrailStep[]; label?: string }) {
   if (steps.length === 0) return null;
 
+  /* One level up: the deepest step that goes anywhere. On a trail whose last
+     step is the current page — the usual shape — that is its parent. */
+  const back = [...steps].reverse().find((step) => step.href || step.onNavigate);
+
   return (
     <nav className={styles.trail} aria-label={label}>
+      {back ? (
+        <span className={styles.back}>
+          <Icon className={styles.backIcon} name="arrow-left" size={16} />
+          {back.onNavigate ? (
+            <button className={styles.crumbLink} type="button" onClick={back.onNavigate} title={back.label}>
+              {back.label}
+            </button>
+          ) : (
+            <Link className={styles.crumbLink} href={back.href ?? "#"} title={back.label}>
+              {back.label}
+            </Link>
+          )}
+        </span>
+      ) : null}
       {steps.map((step, index) => (
         <span className={styles.step} key={`${step.label}-${index}`}>
           {index > 0 ? <Icon className={styles.sep} name="chevron-right" size={14} /> : null}
           {step.onNavigate ? (
-            <button className={styles.crumbLink} type="button" onClick={step.onNavigate}>
+            <button className={styles.crumbLink} type="button" onClick={step.onNavigate} title={step.label}>
               {step.label}
             </button>
           ) : step.href ? (
-            <Link className={styles.crumbLink} href={step.href}>
+            <Link className={styles.crumbLink} href={step.href} title={step.label}>
               {step.label}
             </Link>
           ) : (
             // The last step is where you already are. Not a link, and dimmer
             // than the ones that are — the crumb an author can press has to be
             // the one that looks pressable.
-            <span className={styles.here} aria-current="page">
+            <span className={styles.here} aria-current="page" title={step.label}>
               {step.label}
             </span>
           )}

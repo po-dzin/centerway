@@ -8,10 +8,28 @@
  * the two drift. This script generates the CLI-shaped copy from the canonical one.
  *
  * Why one file at a time — IMPORTANT:
- * the remote database has no `supabase_migrations` history (schema changes were
- * applied by hand through the SQL editor). `supabase db push` applies EVERY file
- * in supabase/migrations/, so staging the whole folder would re-run ~30 historical
- * migrations against production. Stage deliberately, one change at a time.
+ * `supabase db push` applies EVERY file in supabase/migrations/, so staging the
+ * whole folder would re-run historical migrations against production. Stage
+ * deliberately, one change at a time.
+ *
+ * TWO THINGS THAT ARE NO LONGER TRUE / WERE NEVER SAID (noted 2026-08-22):
+ *
+ *   * this used to say the remote database has no `supabase_migrations`
+ *     history. It does now — 20260815000000 through 20260821010000 are
+ *     recorded, so someone has been pushing through the CLI. `db push`
+ *     therefore refuses until the local folder matches, which is why staging
+ *     one file and pushing currently errors with "Remote migration versions
+ *     not found in local migrations directory". The SQL editor still works.
+ *
+ *     Applied that way on 2026-08-22 (storefront + course-media bucket) and
+ *     recorded in `supabase_migrations.schema_migrations` by hand as
+ *     20260822000000 / 20260822010000, so the history stays complete. NOTE the
+ *     direct `db.<ref>.supabase.co` host is IPv6-only and unreachable from a
+ *     v4-only machine; the session pooler
+ *     (`aws-1-eu-west-2.pooler.supabase.com:5432`, user `postgres.<ref>`) is.
+ *   * the staged version is derived from the DATE alone, so two migrations
+ *     written on the same day produce the same `YYYYMMDD000000` stamp. One at
+ *     a time hides it; do not assume otherwise.
  *
  * Usage:
  *   node scripts/db-stage-migration.mjs 2026-08-15_lms_foundation

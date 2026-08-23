@@ -135,8 +135,29 @@ export type Course = {
    * Absent sorts after everything ordered, then by title.
    */
   sortOrder?: number;
+  /**
+   * The line under the title on a card. NOT the summary: `summary` answers
+   * "what is this", the tagline answers "why would I".
+   */
+  tagline?: string;
+  /** What the buyer walks away with. Short statements, not paragraphs. */
+  results?: string[];
+  /**
+   * Whether strangers may find this course. Independent of `status`, which says
+   * whether the material is published to the people who already own it — a live
+   * course sold only through a landing is published and unlisted, and a finished
+   * course still waiting on a price is published and hidden.
+   *
+   * Absent means `hidden`. A course says nothing about being for sale until
+   * someone says it.
+   */
+  visibility?: CourseVisibility;
   modules: CourseModule[];
 };
+
+export const COURSE_VISIBILITIES = ["hidden", "unlisted", "listed"] as const;
+
+export type CourseVisibility = (typeof COURSE_VISIBILITIES)[number];
 
 export function validateCourse(input: unknown, path = "course"): asserts input is Course {
   assert(isRecord(input), `lms_course_invalid_shape:${path}`);
@@ -170,6 +191,27 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
     assert(
       typeof input.sortOrder === "number" && Number.isInteger(input.sortOrder),
       `lms_course_invalid_sort_order:${path}`
+    );
+  }
+
+  if (input.tagline !== undefined) {
+    assert(isNonEmptyString(input.tagline), `lms_course_invalid_tagline:${path}`);
+  }
+
+  if (input.results !== undefined) {
+    // An empty array is rejected rather than tolerated: "no promises" is said by
+    // leaving the field out, and a stored `[]` is a card with a heading over
+    // nothing.
+    assert(
+      Array.isArray(input.results) && input.results.length > 0 && input.results.every(isNonEmptyString),
+      `lms_course_invalid_results:${path}`
+    );
+  }
+
+  if (input.visibility !== undefined) {
+    assert(
+      (COURSE_VISIBILITIES as readonly string[]).includes(input.visibility as string),
+      `lms_course_invalid_visibility:${path}`
     );
   }
 

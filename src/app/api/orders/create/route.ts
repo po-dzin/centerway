@@ -3,7 +3,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { PRODUCTS, PayableProductCode, resolvePayableProduct } from "@/lib/products";
+import { PayableProductCode } from "@/lib/products";
+import { loadPayableOffer } from "@/lib/platform/offers";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 
 export const runtime = "nodejs";
@@ -51,8 +52,15 @@ export async function POST(req: NextRequest) {
   try {
     const body = (await req.json()) as Body;
 
-    const product = resolvePayableProduct(body.product_code);
-    const cfg = PRODUCTS[product];
+    /* Same rule as /api/pay/start: no fallback product. This route only
+       RECORDS an order, but the row it writes is what the entitlement later
+       reads, so an order filed under the wrong code is access to the wrong
+       course. */
+    const cfg = await loadPayableOffer(body.product_code);
+    if (!cfg) {
+      return cors(NextResponse.json({ ok: false, error: "unknown_product" }, { status: 404 }));
+    }
+    const product = cfg.code;
     const attrib = body.attrib ?? null;
 
     const order_ref = makeOrderRef(product);

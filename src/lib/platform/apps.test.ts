@@ -29,7 +29,7 @@ describe("appsFor", () => {
   it("offers the shelf and the cabinet to any signed-in account", () => {
     // Deliberately NOT gated on owning a course: the header does not fetch per
     // page, and an empty shelf is a working destination.
-    expect(keys(learner)).toEqual(["learn", "cabinet"]);
+    expect(keys(learner)).toEqual(["cabinet", "learn"]);
   });
 
   it("offers the builder to someone who owns a course row", () => {
@@ -38,7 +38,7 @@ describe("appsFor", () => {
   });
 
   it("offers the builder and the panel to an admin", () => {
-    expect(keys(admin)).toEqual(["learn", "cabinet", "builder", "admin"]);
+    expect(keys(admin)).toEqual(["cabinet", "learn", "builder", "admin"]);
   });
 
   it("treats support as staff, same as the nav entry does", () => {
@@ -48,7 +48,7 @@ describe("appsFor", () => {
   it("hides the panel while the role is still unresolved", () => {
     // usePlatformRole returns null until it answers. Absent-then-present is the
     // safe order; present-then-gone would blink an entry out mid-read.
-    expect(keys({ signedIn: true, role: null, authorsCourses: false })).toEqual(["learn", "cabinet"]);
+    expect(keys({ signedIn: true, role: null, authorsCourses: false })).toEqual(["cabinet", "learn"]);
   });
 });
 

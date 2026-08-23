@@ -3,7 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { resolveIremLandingOffer } from "@/lib/landing/offers";
 import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
-import { resolvePayableProduct } from "@/lib/products";
+import { loadPayableOffer } from "@/lib/platform/offers";
 import {
   createPaymentInvoice,
   resolveLocaleFromRequest,
@@ -16,16 +16,24 @@ export async function GET(req: NextRequest) {
   if (!rl.allowed) return tooManyRequests(rl.retryAfter);
 
   const url = new URL(req.url);
-  const product = resolvePayableProduct({
-    product: url.searchParams.get("product") ?? undefined,
-  });
+  /* NO FALLBACK. This used to be `resolvePayableProduct`, which answered an
+     unrecognised code with "short" — so a typo, a stale link or a course code
+     this route did not yet understand opened a checkout for Short Reboot and
+     charged for it. An unknown or unpriced code is now a 404: nothing is
+     charged, and the buyer sees that this offer is not on sale rather than a
+     payment page for something else. */
+  const offer = await loadPayableOffer(url.searchParams.get("product"));
+  if (!offer) {
+    return NextResponse.json({ ok: false, error: "unknown_product" }, { status: 404 });
+  }
+  const product = offer.code;
   const resolvedOffer = product === "irem" ? await resolveIremLandingOffer(url.searchParams) : null;
   const format = url.searchParams.get("format"); // json | null
   const locale = resolveLocaleFromRequest(req.headers, url.searchParams);
   const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
 
   const started = await createPaymentInvoice({
-    product,
+    offer,
     locale,
     source: "pay_start",
     offer_id: resolvedOffer?.offerId ?? url.searchParams.get("offer_id") ?? undefined,

@@ -10,9 +10,50 @@
  */
 
 import type { JSX } from "react";
+import Link from "next/link";
 
 import { toSpans, type InlineText, type LessonBlock, type RichTextNode } from "@/lms-core";
+import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import styles from "./Lms.module.css";
+
+/** A course link that starts with `/` is a CenterWay route, not a foreign URL. */
+function isInternalHref(href: string) {
+  return href.startsWith("/");
+}
+
+/**
+ * A lesson's call to action.
+ *
+ * The href in a course is a PATH when it points inside CenterWay and a URL when
+ * it points out. That distinction has to be honoured here, because the lesson
+ * is served from `my` and half the platform lives on `www`: a bare `/tests/dosha`
+ * in an `<a>` would resolve against the personal host and 404. Internal links go
+ * through the surface resolver and `next/link`; external ones open in a new tab,
+ * since leaving a lesson by accident costs the reader their place.
+ */
+function CtaBlock({ href, label, text }: { href: string; label: string; text?: InlineText }) {
+  const surfaceHref = useSurfaceHref();
+  const internal = isInternalHref(href);
+
+  return (
+    <div className={styles.ctaBlock}>
+      {text ? (
+        <p className={styles.paragraph}>
+          <Inline value={text} />
+        </p>
+      ) : null}
+      {internal ? (
+        <Link className={styles.ctaLink} href={surfaceHref(href)}>
+          {label}
+        </Link>
+      ) : (
+        <a className={styles.ctaLink} href={href} target="_blank" rel="noopener noreferrer">
+          {label}
+        </a>
+      )}
+    </div>
+  );
+}
 
 function Inline({ value }: { value: InlineText }) {
   return (
@@ -275,17 +316,6 @@ export function BlockRenderer({ block, checklist, onToggleChecklistItem, disable
       );
 
     case "cta":
-      return (
-        <div className={styles.ctaBlock}>
-          {block.text ? (
-            <p className={styles.paragraph}>
-              <Inline value={block.text} />
-            </p>
-          ) : null}
-          <a className={styles.ctaLink} href={block.href}>
-            {block.label}
-          </a>
-        </div>
-      );
+      return <CtaBlock href={block.href} label={block.label} text={block.text} />;
   }
 }

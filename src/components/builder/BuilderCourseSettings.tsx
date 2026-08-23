@@ -10,17 +10,21 @@
  * scroll past the entitlement codes to reach the lesson list.
  */
 
+import { Icon } from "@/components/Icon";
 import {
   COURSE_HEADING_FONTS,
   COURSE_PALETTES,
   COURSE_TYPE_SCALES,
+  COURSE_VISIBILITIES,
   DEFAULT_COURSE_THEME,
   type Course,
   type CourseHeadingFont,
   type CourseScheduleGate,
   type CourseScheduleMode,
   type CourseTypeScale,
+  type CourseVisibility,
 } from "@/lms-core";
+import { BuilderImageField } from "./BuilderImageField";
 import { ChoiceRow, FieldInput } from "./BuilderFields";
 import { PALETTE_LABELS } from "./coursePalettes";
 import styles from "./Builder.module.css";
@@ -53,6 +57,77 @@ const GATE_LABELS: Record<CourseScheduleGate, string> = {
   hard: "День — замок",
 };
 
+const VISIBILITY_LABELS: Record<CourseVisibility, string> = {
+  hidden: "Ніхто",
+  unlisted: "За посиланням",
+  listed: "У каталозі",
+};
+
+/**
+ * Visibility is NOT «опубліковано».
+ *
+ * `status` says whether the material is open to the people who already own the
+ * course; this says whether strangers may find it. Two courses prove they are
+ * independent: one sold through a landing is published and unlisted, one
+ * finished but waiting on a price is published and hidden.
+ */
+const VISIBILITY_HINTS: Record<CourseVisibility, string> = {
+  hidden: "Курс видно тільки тим, хто вже має до нього доступ. Це стан за замовчуванням.",
+  unlisted: "У курсу є сторінка, на яку можна дати посилання, але в каталозі й пошуку його немає.",
+  listed: "Курс стоїть у каталозі поряд з рештою.",
+};
+
+/**
+ * The promises, as a list the author can grow.
+ *
+ * Separate from the field table because the table describes fields that exist
+ * and cannot say "there should be a fourth one" — the same reason
+ * `RepeatControls` exists in the lesson editor.
+ */
+function ResultsField({
+  results,
+  onChange,
+}: {
+  results: string[];
+  onChange: (path: (string | number)[], value: unknown) => void;
+}) {
+  // Empty is ABSENT, as everywhere else: the validator rejects `[]` because a
+  // heading over nothing is worse than no heading.
+  const write = (next: string[]) => onChange(["results"], next.length > 0 ? next : undefined);
+
+  return (
+    <div className={styles.field}>
+      <span className={styles.fieldLabel}>Що людина отримає</span>
+      {results.map((result, index) => (
+        <div className={styles.itemRow} key={index}>
+          <input
+            className={styles.input}
+            type="text"
+            value={result}
+            aria-label={`Результат ${index + 1}`}
+            onChange={(event) => write(results.map((one, at) => (at === index ? event.target.value : one)))}
+          />
+          <button
+            className={styles.iconAction}
+            type="button"
+            title="Прибрати"
+            aria-label={`Прибрати результат ${index + 1}`}
+            onClick={() => write(results.filter((_, at) => at !== index))}
+          >
+            <Icon name="close" size={18} />
+          </button>
+        </div>
+      ))}
+      <button className={styles.addAction} type="button" onClick={() => write([...results, ""])}>
+        <span className={styles.addGlyph} aria-hidden="true">+</span> Ще один
+      </button>
+      <span className={styles.fieldHint}>
+        Короткі твердження, не абзаци. Порожні рядки не зберігаються.
+      </span>
+    </div>
+  );
+}
+
 export function BuilderCourseSettings({
   course,
   onChange,
@@ -65,19 +140,43 @@ export function BuilderCourseSettings({
 
   return (
     <div className={styles.settingsForm}>
-      <FieldInput field={{ path: ["title"], label: "Назва", kind: "text" }} value={course.title} onChange={onChange} />
-      <FieldInput
-        field={{ path: ["summary"], label: "Короткий опис", kind: "inline", multiline: true }}
-        value={course.summary}
-        onChange={onChange}
-      />
-
+      {/* Name and summary are NOT here any more. They are the heading and the
+          lead of the course page itself, edited where they are read; a settings
+          sheet holding a second copy of them is a second place for them to be
+          wrong. What stays here is what has no place in the document: the
+          address, the schedule, the entitlement codes, the palette. */}
       {/* The course slug is the address of every lesson under it and of every
           reminder already sent. Shown, never edited — a rename is a migration. */}
       <p className={styles.readOnlyNote}>
         Адреса курсу: <code>my.centerway.net.ua/{course.slug}</code> — не змінюється. Програма в каталозі:{" "}
         <code>{course.programSlug}</code>.
       </p>
+
+      {/* THE AUTHOR'S HALF OF THE STOREFRONT. What the course claims about
+          itself is content, and content is the author's. The PRICE is not here
+          and will not be: it is a commitment the business makes to a buyer, and
+          it lives in `lms_course_offers`, which the builder's routes have no
+          grant on. That is a different table rather than a hidden field
+          precisely so the boundary is structural. */}
+      <h3 className={styles.subTitle}>Вітрина</h3>
+      <ChoiceRow
+        label="Хто може знайти курс"
+        hint={VISIBILITY_HINTS[course.visibility ?? "hidden"]}
+        options={COURSE_VISIBILITIES.map((value) => ({ value, label: VISIBILITY_LABELS[value] }))}
+        value={course.visibility ?? "hidden"}
+        onChange={(next) => onChange(["visibility"], next)}
+      />
+      <FieldInput
+        field={{
+          path: ["tagline"],
+          label: "Рядок під назвою",
+          kind: "text",
+          hint: "Не те саме, що опис. Опис каже, що це; цей рядок каже, навіщо це вам.",
+        }}
+        value={course.tagline}
+        onChange={onChange}
+      />
+      <ResultsField results={course.results ?? []} onChange={onChange} />
 
       <h3 className={styles.subTitle}>Ритм</h3>
       <ChoiceRow
@@ -147,15 +246,13 @@ export function BuilderCourseSettings({
       />
 
       <h3 className={styles.subTitle}>Обкладинка</h3>
-      <FieldInput
-        field={{
-          path: ["cover", "src"],
-          label: "Зображення",
-          kind: "text",
-          hint: "Шлях від кореня сайту (/cw/…) або повне посилання https://…",
-        }}
-        value={course.cover?.src}
-        onChange={onChange}
+      <BuilderImageField
+        label="Зображення"
+        hint="Шлях від кореня сайту (/cw/…), повне посилання, або файл із вашого комп'ютера."
+        courseSlug={course.slug}
+        src={course.cover?.src}
+        alt={course.cover?.alt}
+        onChange={(next) => onChange(["cover", "src"], next)}
       />
       <FieldInput
         field={{
@@ -167,10 +264,6 @@ export function BuilderCourseSettings({
         value={course.cover?.alt}
         onChange={onChange}
       />
-      {course.cover?.src ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img className={styles.previewImage} src={course.cover.src} alt={course.cover.alt ?? ""} />
-      ) : null}
 
       <h3 className={styles.subTitle}>Доступ</h3>
       <FieldInput

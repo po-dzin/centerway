@@ -12,10 +12,31 @@ import { LeadForm } from "@/components/platform/LeadForm";
 import { OwnedCourseNotice } from "@/components/platform/OwnedCourseNotice";
 import { CourseAuthorLink } from "@/components/platform/AuthorEntry";
 import { getSnapshotCourseByProgram } from "@/lib/lms/catalog";
-import { resolveOfferCommerce } from "@/lib/platform/offerCommerce";
-import type { programs } from "@/lib/platform/content";
+import { resolveOfferCommerce, type OfferCommerce } from "@/lib/platform/offerCommerce";
+import type { PlatformOfferSurfaceType } from "@/lib/platform/content";
+import type { Course } from "@/lms-core";
 
-type Program = (typeof programs)[number];
+/**
+ * What this page actually needs, declared instead of inferred.
+ *
+ * It used to be typed as `(typeof programs)[number]` — one of the six literals
+ * in content.ts — which made "an offer page" and "an offer hard-coded in
+ * TypeScript" the same thing. A course out of the builder is an offer too, and
+ * it satisfies exactly these ten fields. The six still pass unchanged: this is
+ * a narrowing of what is asked for, not a change to what they carry.
+ */
+export type OfferSurface = {
+  slug: string;
+  title: string;
+  fullTitle: string;
+  tag: string;
+  duration: string;
+  description: string;
+  longDescription: string;
+  results: readonly string[];
+  surfaceType: PlatformOfferSurfaceType;
+  artwork?: { desktop: string; desktopPosition?: string; mobilePosition?: string };
+};
 
 /**
  * A platform offer page.
@@ -36,12 +57,35 @@ type Program = (typeof programs)[number];
  * the lessons, so the outline is read from there and cannot drift from what a
  * buyer actually receives.
  */
-export function ProgramDetailPage({ program }: { program: Program }) {
-  const commerce = resolveOfferCommerce(program.slug);
+export function ProgramDetailPage({
+  program,
+  course: given,
+  commerce: givenCommerce,
+}: {
+  program: OfferSurface;
+  /**
+   * The course this offer delivers, when the caller already has it.
+   *
+   * The six hand-written pages do not pass one and must not: they are
+   * statically prerendered, and the snapshot read below is what keeps them
+   * static. A page built from the database has already paid for the read.
+   */
+  course?: Course | null;
+  /**
+   * How this offer converts, when the caller already knows.
+   *
+   * The six hand-written pages do not pass one: their commerce is decided by
+   * slug in `resolveOfferCommerce`, from constants, with no read. A course out
+   * of the builder is priced in the database, and only the caller can await
+   * that — so it hands the answer in rather than making this component async.
+   */
+  commerce?: OfferCommerce;
+}) {
+  const commerce = givenCommerce ?? resolveOfferCommerce(program.slug);
   // The SNAPSHOT on purpose: this page is statically prerendered and needs a
   // lesson count for a marketing claim, not live content. A live read here
   // would turn a static page into a per-request query.
-  const course = getSnapshotCourseByProgram(program.slug);
+  const course = given ?? getSnapshotCourseByProgram(program.slug);
   const lessonCount = course
     ? course.modules.reduce((total, module) => total + module.lessons.length, 0)
     : 0;

@@ -1,40 +1,40 @@
 "use client";
 
-import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
-import { PlatformAccountMenu } from "@/components/platform/layout/PlatformAccountMenu";
+import { PlatformFooter } from "@/components/platform/layout/PlatformFooter";
+import { PlatformHeader } from "@/components/platform/layout/PlatformHeader";
 import { PlatformTrail, type TrailStep } from "@/components/platform/PlatformTrail";
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { BuilderFailure } from "./builderClient";
 import styles from "./Builder.module.css";
 
 /**
- * The builder's chrome.
+ * The builder's chrome — which is the platform's chrome.
  *
- * THE HEADER ANSWERS ONE QUESTION and does not change shape per route: which
- * application is this, and how do I get back to my own courses. The mark plus
- * the word «Білдер», and the mark is a LINK to the root — the one control in
- * the same place on every screen, which is what makes it the way home rather
- * than a logo.
+ * IT USED TO BE ITS OWN BAR: a flush white strip with a small mark, the word
+ * «Білдер» in mono caps, and an avatar at the far right. Beside the shelf's
+ * floating rounded plate with a wordmark and a nav, it read as a different
+ * product — and it was a second copy of a header recipe, kept in step by hand
+ * through a mapping block of `--platform-header-*` values in this module's CSS.
+ * Both problems have one fix: render the header the other two surfaces render.
+ * The builder is on the personal host, so the bar it gets is the one learning
+ * gets — «Мої курси», «Білдер», the account — and «which application is this»
+ * is answered by the marked row in the switcher rather than by a word welded to
+ * the wordmark.
  *
- * IT USED TO ANSWER THREE. Brand, trail and step arrows shared one row, and the
- * wordmark had to be hidden below 561px to make them fit. A row that drops a
- * word to fit is a row carrying someone else's job, so the trail moved into the
- * page (`PlatformTrail`, shared with the learner's player) and the outline
- * moved into a rail beside it.
+ * THE TOOLS MOVED INTO THE PAGE, and they were never chrome to begin with: a
+ * course's settings gear and a lesson's prev/next belong to the course and the
+ * lesson, not to the application. They sit on the trail row now — the line that
+ * already says which course and which lesson — so the controls are beside the
+ * thing they act on.
  *
  * THE RAIL is the course's own structure, and it is for the LESSON EDITOR only.
  * The course page IS the structure — a rail repeating it beside itself is the
  * panel-inside-a-panel the design system spent a wave removing. Below 901px the
- * same node becomes a drawer the header's button opens; one component, two
+ * same node becomes a drawer the trail row's button opens; one component, two
  * presentations, never two lists that can disagree.
- *
- * STATIC, NOT STICKY — deliberately, and it is the editor that decides it. The
- * save bar is the control whose absence loses work, so it gets the sticky
- * budget; two pinned layers on a phone leave a lesson about four lines tall
- * between them.
  */
 
 export function BuilderShell({
@@ -53,22 +53,7 @@ export function BuilderShell({
 }) {
   return (
     <div className={styles.shell}>
-      <header className={styles.bar}>
-        <Link className={styles.barBrand} href="/build">
-          <span className={styles.barMark} aria-hidden="true" />
-          <span className={styles.barBrandName}>
-            CenterWay <span className={styles.barKind}>Білдер</span>
-          </span>
-        </Link>
-        <span className={styles.barSpacer} />
-        {tools ? <div className={styles.barTools}>{tools}</div> : null}
-        {/* The account, and the way to the other applications. The builder had
-            NO account control at all: an author could not see which account they
-            were in, could not reach the shelf or the cabinet, and could not sign
-            out. Shared with the platform's header so the two lists cannot
-            disagree; the bar above feeds it the header recipe's tokens. */}
-        <PlatformAccountMenu compact />
-      </header>
+      <PlatformHeader />
 
       <div className={aside ? styles.bodyWithAside : styles.body}>
         {aside ? (
@@ -77,10 +62,20 @@ export function BuilderShell({
           </aside>
         ) : null}
         <main className={styles.page}>
-          <PlatformTrail steps={trail} />
+          {/* Trail and tools on one line: where am I, and the handful of
+              controls that act on this exact course or lesson. */}
+          <div className={styles.pageTrail}>
+            <PlatformTrail steps={trail} />
+            {tools ? <div className={styles.pageTools}>{tools}</div> : null}
+          </div>
           {children}
         </main>
       </div>
+
+      {/* The same ending the shelf and the player get. An authoring tool is
+          still one of this account's applications, and it was the one surface
+          that stopped at the last panel with nothing under it. */}
+      <PlatformFooter variant="personal" />
     </div>
   );
 }

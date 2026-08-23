@@ -8,6 +8,8 @@
  * merchant-of-record later is a new source value, not a rewrite (§3A.1).
  */
 
+import { courseOfferCode } from "./offerCode";
+
 export type EntitlementSource = "order" | "token" | "manual";
 
 export type PaidOrderRef = {
@@ -48,7 +50,17 @@ function normalizeCode(code: string): string {
  * every code that grants them, and matching is case-insensitive.
  */
 export function resolveEntitlement(input: EntitlementInput): Entitlement {
-  const accepted = new Set(input.courseProductCodes.map(normalizeCode));
+  /* A course ALWAYS accepts its own offer code, listed or not.
+     `course:<slug>` is what the storefront charges for a course built in the
+     builder, and it is generated from the slug at checkout. If accepting it
+     depended on someone having typed it into `entitlementProductCodes`, the
+     first course sold from the builder would take the money and grant nothing
+     — and the omission would be invisible until a buyer complained. The
+     declared codes stay: they are how the OLD funnel names ("mini-detox") keep
+     working. */
+  const accepted = new Set(
+    [...input.courseProductCodes, courseOfferCode(input.courseSlug)].map(normalizeCode)
+  );
 
   const manual = (input.manualGrants ?? []).find((grant) => grant.courseSlug === input.courseSlug);
   if (manual) {

@@ -21,8 +21,10 @@ import {
   formatPrice,
   productListPrice,
   PRODUCTS,
+  type CatalogProductCode,
   type PayableProductCode,
 } from "@/lib/products";
+import type { CourseOffer } from "@/lib/platform/offers";
 
 export type OfferCommerce =
   | {
@@ -46,7 +48,7 @@ export type OfferCommerce =
  * sold as "short"), and a clever mapping would silently make a new catalogue
  * entry buyable the moment someone happened to name it after a product.
  */
-const PAYABLE_BY_SLUG: Partial<Record<string, PayableProductCode>> = {
+const PAYABLE_BY_SLUG: Partial<Record<string, CatalogProductCode>> = {
   reboot: "short",
   "reset-day": "reset-day",
   way21: "way21",
@@ -66,6 +68,36 @@ const LEAD_BY_SLUG: Partial<Record<string, string>> = {
   herbs: "herbs",
 };
 
+/** The site-relative link that starts a checkout for one payable code. */
+function checkoutHref(productCode: PayableProductCode, slug: string): string {
+  return `/api/pay/start?product=${encodeURIComponent(productCode)}&cta_place=${encodeURIComponent(
+    `${slug}_platform_offer`
+  )}&source=platform_offer`;
+}
+
+/**
+ * How a course out of the BUILDER converts.
+ *
+ * Same rule as the six, read from the other place: an active offer row means a
+ * price the owner agreed, and a price the owner agreed means a buy button.
+ * No row means the course is not for sale, and the page falls back to the form
+ * rather than inventing a figure — which is exactly what `herbs` does.
+ *
+ * The quoted figure is `listAmount ?? amount`: unlike `PRODUCTS`, a database
+ * offer has no test-price split, so a null list price means "quote what is
+ * charged", not "quote nothing".
+ */
+export function courseOfferCommerce(slug: string, offer: CourseOffer | null): OfferCommerce {
+  if (!offer) return { mode: "lead", leadProductCode: "platform" };
+
+  return {
+    mode: "checkout",
+    productCode: offer.code as PayableProductCode,
+    checkoutHref: checkoutHref(offer.code as PayableProductCode, slug),
+    price: formatPrice(offer.listAmount ?? offer.amount, offer.currency),
+  };
+}
+
 export function resolveOfferCommerce(slug: string): OfferCommerce {
   const productCode = PAYABLE_BY_SLUG[slug];
 
@@ -79,9 +111,7 @@ export function resolveOfferCommerce(slug: string): OfferCommerce {
     return {
       mode: "checkout",
       productCode,
-      checkoutHref: `/api/pay/start?product=${encodeURIComponent(productCode)}&cta_place=${encodeURIComponent(
-        `${slug}_platform_offer`
-      )}&source=platform_offer`,
+      checkoutHref: checkoutHref(productCode, slug),
       price: formatPrice(listed, PRODUCTS[productCode].currency),
     };
   }

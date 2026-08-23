@@ -9,6 +9,7 @@ import {
   newModule,
   PLACEHOLDER_MARKER,
   nextDayIndex,
+  pruneEmptyProse,
   renumber,
   slugify,
   uniqueSlug,
@@ -16,6 +17,7 @@ import {
   validateLessonBlock,
   courseReadiness,
   type Course,
+  type LessonBlock,
 } from "./index";
 
 /** Deterministic ids: the factories take a source precisely so a test can. */
@@ -146,5 +148,45 @@ describe("nextDayIndex", () => {
 
   it("answers nothing at all on a non-daily course", () => {
     expect(nextDayIndex({ ...gapped, schedule: { mode: "open" } })).toBeUndefined();
+  });
+});
+
+describe("pruneEmptyProse", () => {
+  const course = (blocks: LessonBlock[]): Course =>
+    ({
+      modules: [{ lessons: [{ blocks }] }],
+    }) as unknown as Course;
+
+  const rich = (content: unknown[]): LessonBlock =>
+    ({ id: "b1", type: "rich_text", content }) as unknown as LessonBlock;
+
+  it("drops a paragraph the author opened and never wrote", () => {
+    const pruned = pruneEmptyProse(course([rich([{ kind: "p", text: "Написане" }, { kind: "p", text: "" }])]));
+    expect(pruned.modules[0].lessons[0].blocks[0]).toMatchObject({
+      content: [{ kind: "p", text: "Написане" }],
+    });
+  });
+
+  it("drops empty list items and keeps the ones with words in them", () => {
+    const pruned = pruneEmptyProse(course([rich([{ kind: "ul", items: ["Перший", "", "Третій"] }])]));
+    expect(pruned.modules[0].lessons[0].blocks[0]).toMatchObject({
+      content: [{ kind: "ul", items: ["Перший", "Третій"] }],
+    });
+  });
+
+  it("drops a block emptied of every node", () => {
+    const pruned = pruneEmptyProse(course([rich([{ kind: "p", text: "" }])]));
+    expect(pruned.modules[0].lessons[0].blocks).toEqual([]);
+  });
+
+  it("leaves every other block type exactly as it found it", () => {
+    const video = { id: "v1", type: "video", youtubeId: "abc" } as unknown as LessonBlock;
+    const pruned = pruneEmptyProse(course([video]));
+    expect(pruned.modules[0].lessons[0].blocks[0]).toBe(video);
+  });
+
+  it("counts whitespace as nothing written", () => {
+    const pruned = pruneEmptyProse(course([rich([{ kind: "p", text: "   " }, { kind: "p", text: "Є" }])]));
+    expect(pruned.modules[0].lessons[0].blocks[0]).toMatchObject({ content: [{ kind: "p", text: "Є" }] });
   });
 });

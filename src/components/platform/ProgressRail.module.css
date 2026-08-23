@@ -1,6 +1,41 @@
 /* Dashed progress rail. See ProgressRail.tsx for why this is dashes and not a
    filled bar. Platform-tier tokens only. */
 
+/* The rail plus the figure standing on it. The padding is the walker's room:
+   he is absolutely positioned so that moving him along the rail cannot move
+   anything else, and his feet land on the dash line rather than beside it. */
+.wrap {
+  position: relative;
+  padding-top: 1.15rem;
+  /* The walker's room is a 20px-wide column of mostly nothing, and in a stacked
+     card it was reading as a paragraph break: the gap above the dashes came out
+     roughly three times the gap below them. Half the padding is taken back out
+     of the flow, so the rail sits in the card's rhythm and the figure borrows
+     the air over it rather than adding its own. */
+  margin-top: -0.55rem;
+}
+
+/* `--cw-walk` is `done / total`, set inline: 0 puts him at the left edge before
+   the first lesson, 1 at the right edge past the last, and everything between
+   lands on a seam. He straddles the edge on purpose — a figure tucked fully
+   inside the first dash would read as standing ON lesson one when nothing has
+   been done yet. */
+.walker {
+  position: absolute;
+  left: calc(var(--cw-walk, 0) * 100%);
+  bottom: 0.235rem;
+  transform: translateX(-50%);
+  color: var(--cw-platform-text);
+  pointer-events: none;
+  transition: left 260ms ease;
+}
+
+.walkerGlyph {
+  display: block;
+  width: 1.28rem;
+  height: 1.4rem;
+}
+
 .rail {
   display: flex;
   align-items: center;
@@ -26,8 +61,10 @@
 
 /* The over-32 fallback: a continuous dash pattern, no per-dash hand. */
 .long {
+  display: block;
   position: relative;
   height: 0.19rem;
+  margin-block: 0.28rem;
   border-radius: var(--cw-radius-pill);
   background: repeating-linear-gradient(
     90deg,
@@ -51,7 +88,8 @@
 /* The rail is the whole point at rest; it does not need to animate into place. */
 @media (prefers-reduced-motion: reduce) {
   .dash,
-  .longFill {
+  .longFill,
+  .walker {
     transition: none;
   }
 }

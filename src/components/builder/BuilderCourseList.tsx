@@ -227,9 +227,11 @@ export function BuilderCourseList() {
             </button>
           ) : null}
         </div>
-        <p className={styles.pageLead}>
-          {state.isAdmin ? "Усі курси платформи." : "Курси, автором яких ви є."}
-        </p>
+        {/* One line for both audiences, and it describes the LIST rather than
+            the platform. «Усі курси платформи» was true for an admin and read
+            like a catalogue of the shop — this page is a workspace, and what is
+            on it is what this account may open. */}
+        <p className={styles.pageLead}>Курси, доступні вам для редагування.</p>
       </div>
 
       {state.canCreate && creating ? (

@@ -17,6 +17,7 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import {
+  courseOfferCode,
   decideDailyReminder,
   decideUnstartedReminder,
   resolveTimeZone,
@@ -124,7 +125,12 @@ export async function runUnstartedReminders(
   // Live: a course unpublished in the builder must stop sending reminders on
   // the next run, not on the next deploy.
   for (const course of (await listLiveCourses()).filter((entry) => entry.status === "published")) {
-    if (course.entitlementProductCodes.length === 0) continue;
+    /* The same set `resolveEntitlement` accepts, built the same way: the codes
+       the author declared PLUS the course's own `course:<slug>`. A course sold
+       from the builder declares nothing, and reading only the declared list
+       skipped exactly those buyers — the ones with no funnel and no bot to fall
+       back on. */
+    const productCodes = [...course.entitlementProductCodes, courseOfferCode(course.slug)];
 
     // Paged, ascending on a column pair that is stable under concurrent
     // inserts — not `.limit(limit)` on its own, which silently re-served the
@@ -135,7 +141,7 @@ export async function runUnstartedReminders(
         .from("orders")
         .select("order_ref, customer_id, created_at")
         .eq("status", "paid")
-        .in("product_code", course.entitlementProductCodes)
+        .in("product_code", productCodes)
         .order("created_at", { ascending: true })
         .order("order_ref", { ascending: true })
         .range(from, to)

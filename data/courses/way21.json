@@ -137,8 +137,8 @@
               "id": "intro-dosha-cta",
               "type": "cta",
               "label": "Пройти тест на дошу",
-              "href": "https://t.me/Detox_with_Evgen_bot?start=ZGw6MTA4NjQ1",
-              "text": "12 питань, у телеграм-боті."
+              "href": "/tests/dosha",
+              "text": "12 питань, просто на платформі."
             },
             {
               "id": "intro-report",

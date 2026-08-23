@@ -20,7 +20,9 @@
 .shell {
   min-height: 100svh;
   display: grid;
-  grid-template-rows: auto 1fr;
+  /* Header, body, footer. The body row takes the slack so a short page still
+     pushes the footer to the bottom of the viewport. */
+  grid-template-rows: auto 1fr auto;
   background: var(--cw-platform-bg);
   color: var(--cw-platform-text);
   font-family: var(--cw-font-ui);
@@ -31,100 +33,33 @@
 /* Static, not sticky. The editor's own save control is the thing that must stay
    reachable while scrolling a long lesson, and two competing sticky layers on a
    phone leave almost no room for the content between them. */
-.bar {
+/* The bar lives in PlatformHeader now — see BuilderShell.tsx. What used to be
+   here was a second header recipe plus a `--platform-header-*` mapping block
+   kept in step with the platform's by hand. */
+
+/* Trail and page tools on one line. The tools are the course's or the lesson's,
+   never the application's, so they sit beside the line that names them. */
+.pageTrail {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  min-width: 0;
+}
+
+.pageTools {
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   gap: var(--cw-space-2xs);
-  padding: var(--cw-space-2xs) var(--cw-space-sm);
-  background: var(--cw-mat-surface);
-  box-shadow: var(--cw-mat-shadow-soft);
-
-  /* The header recipe's inputs, mapped for this bar.
-     `PlatformAccountMenu` is shared with the platform's own header and draws
-     from `--platform-header-*` / `--platform-utility-control-*`, which the
-     platform declares on its `.header`. The builder has its own bar, so it
-     declares the same recipe here rather than the component carrying a second
-     palette — the per-surface mapping block is how every shared recipe in this
-     system is fed (docs/platform-scale-plan.md §4).
-     Values are the platform's LIGHT mapping: the builder has no dark topbar
-     tone and no photograph to sit over. */
-  --platform-header-fg: var(--cw-platform-text);
-  --platform-header-control-bg: var(--cw-mat-tint-chrome);
-  --platform-header-popover-bg: var(--cw-mat-surface);
-  --platform-header-sheet-shadow: var(--cw-mat-shadow-chrome);
-  --platform-header-sheet-filter: var(--cw-mat-filter);
-  --platform-utility-control-size: var(--ds-touch-target-min);
-  --platform-utility-control-radius: var(--cw-radius-md);
-  --platform-utility-control-focus:
-    0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
 }
 
-/* The way home, in the same place on every screen. That is what makes it the
-   root of the author's own courses rather than a logo. */
-.barBrand {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--cw-space-xs);
-  min-height: var(--ds-touch-target-min);
-  min-width: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-2xs);
-  /* One hit-area shape for every control in this bar — brand, gear, menu. The
-     earlier bar mixed a rounded rect against a circular glyph frame, and two
-     shapes at the same level read as two systems. */
-  border-radius: var(--cw-radius-md);
-  color: var(--cw-platform-text);
-  text-decoration: none;
-}
-
-.barBrand:hover {
-  background: var(--cw-mat-surface-sunk);
-}
-
-.barBrand:focus-visible {
-  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: var(--ds-focus-ring-offset);
-}
-
-/* The mark is painted as a MASK, same as the platform header: the baked shape
-   takes the header ink instead of whatever colour the file happens to carry. */
-.barMark {
-  /* The header size the platform's own shell uses. At 1.6rem the mark read as
-     a favicon dropped into the corner rather than as the way home. */
-  width: var(--cw-brand-size-symbol-header);
-  height: var(--cw-brand-size-symbol-header);
-  display: block;
-  flex: 0 0 auto;
-  background-color: var(--cw-platform-text);
-  -webkit-mask: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
-  mask: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
-}
-
-.barBrandName {
-  display: none;
-  font-family: var(--cw-font-data);
-  font-size: 0.78rem;
-  font-weight: 680;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
-/* The word that says which application this is. It is the whole reason the
-   builder has its own bar: an author who lands here from a link must never have
-   to work out whether they are looking at the platform. */
-.barKind {
-  color: var(--cw-platform-muted);
-  font-weight: 500;
-  letter-spacing: 0.08em;
-}
-
+/* Outlived the bar it was named for: the inline editor's toolbar still uses it
+   to push its last control to the right. */
 .barSpacer {
   flex: 1 1 auto;
   min-width: 0;
 }
-
-/* ── Body: page, and the rail beside it ───────────── */
 
 .body {
   min-width: 0;
@@ -161,19 +96,16 @@
   .aside {
     display: block;
     position: sticky;
-    top: 0;
-    max-height: 100svh;
+    /* Clears the floating header, which is sticky at 0.75rem and is now the
+       platform's own bar rather than a flush strip this shell owned. */
+    top: 5rem;
+    max-height: calc(100svh - 5rem);
     overflow-y: auto;
     padding-block: var(--cw-space-lg);
   }
 }
 
-.barTools {
-  flex: 0 0 auto;
-  display: flex;
-  align-items: center;
-  gap: var(--cw-space-2xs);
-}
+
 
 /* Icon-only chrome: `chromeBare` drops the inline padding that exists for a
    label, so the control comes out square instead of a wide empty button. */
@@ -322,6 +254,15 @@
   margin: 0;
   color: var(--cw-platform-muted);
   line-height: 1.55;
+}
+
+/* The page head is a title and a sentence about it, and the two were sharing a
+   wrapper with no gap — on a phone the summary started on the line under the
+   status pill with nothing between them. Set here rather than by wrapping the
+   pair in a grid, so every screen that prints a title and a lead gets it. */
+.pageTitle + .pageLead,
+.courseTitleRow + .pageLead {
+  margin-top: var(--cw-space-xs);
 }
 
 .panel {
@@ -649,10 +590,97 @@
 
 /* ── Structure ────────────────────────────────────── */
 
+/* ── The structure, as a path ─────────────────────── */
+
+/* Modules and their lessons used to run together in one undifferentiated
+   column: a title, some rows, another title, more rows, nothing saying which
+   belonged to which. The hierarchy is drawn now — a numbered node per module
+   and a dashed line hanging its lessons off it, in the same dash vocabulary the
+   learner's progress rail and the icon set already speak.
+
+   The number is a CSS counter, so it is the module's real position and cannot
+   drift from the list. A REFERENCE module does not increment it: it is outside
+   the sequence by definition, and a recipe list numbered "4" would say the
+   opposite. */
+.structure {
+  counter-reset: cw-module;
+}
+
 .moduleBlock {
+  counter-increment: cw-module;
   display: grid;
   gap: var(--cw-space-2xs);
   padding-block-end: var(--cw-space-sm);
+  padding-inline-start: 2.1rem;
+}
+
+.moduleBlock[data-reference] {
+  counter-increment: none;
+}
+
+/* A hairline between modules. Without it the only thing separating two modules
+   was the gap that also separates a module from its own lessons. */
+.moduleBlock + .moduleBlock {
+  margin-block-start: var(--cw-space-sm);
+  padding-block-start: var(--cw-space-md);
+  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.moduleHead {
+  position: relative;
+}
+
+.moduleHead::before {
+  content: counter(cw-module);
+  position: absolute;
+  left: -2.1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.65rem;
+  height: 1.65rem;
+  display: grid;
+  place-items: center;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  box-shadow: inset 0 0 0 1px var(--cw-platform-border);
+  font-family: var(--cw-font-data);
+  font-size: 0.78rem;
+  color: var(--cw-platform-muted);
+}
+
+/* Outside the sequence, and it says so: a dash where the number would be. */
+.moduleBlock[data-reference] .moduleHead::before {
+  content: "—";
+  background: transparent;
+}
+
+/* The path spans exactly the lessons — it starts under the module's node and
+   ends at the last row, so «Додати урок» hangs off nothing. */
+.lessonList {
+  position: relative;
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.lessonList::before {
+  content: "";
+  position: absolute;
+  left: -1.28rem;
+  top: -0.55rem;
+  bottom: 0.9rem;
+  border-left: 2px dashed var(--cw-platform-border);
+}
+
+.lessonRowWrap::before {
+  content: "";
+  position: absolute;
+  left: -1.53rem;
+  top: 50%;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: -0.25rem;
+  border-radius: 50%;
+  background: var(--cw-platform-accent);
 }
 
 .moduleHead {
@@ -698,17 +726,29 @@
   background: var(--cw-mat-surface);
 }
 
+/* A checkbox and ONE line. Anything longer is the tooltip's job — see
+   BuilderCourseView.tsx: a sentence beside a control wraps and turns the row
+   into a paragraph. */
 .moduleFlag {
   display: flex;
   align-items: center;
-  gap: var(--cw-space-2xs);
+  gap: var(--cw-space-xs);
   min-height: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-xs);
+  padding-inline: var(--cw-space-2xs);
   color: var(--cw-platform-muted);
   font-size: 0.82rem;
+  cursor: pointer;
+}
+
+.moduleFlag > span {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .lessonRowWrap {
+  position: relative;
   display: flex;
   align-items: center;
   gap: var(--cw-space-2xs);
@@ -760,15 +800,16 @@
    66-character Ukrainian title runs to four lines at this measure and pushes
    the next lesson off the screen. The whole title is one press away, on the
    lesson's own page. Same clamp the learner's pager already uses. */
+/* One line, the rest in the tooltip. Two-line titles made every row a
+   different height, which put the dots on the path at uneven intervals and
+   turned a list into a stack of paragraphs. */
 .lessonName {
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-weight: 500;
   line-height: 1.35;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
 }
 
 .lessonFlag {
@@ -877,10 +918,32 @@
   border-block-start: 1px solid var(--cw-mat-stroke-inner);
 }
 
+/* Reveal, not furniture. A paragraph should look like a paragraph until the
+   author reaches for it; this row used to carry a kind dropdown on every line
+   of prose, which is what made a lesson read as a form about a lesson. */
 .nodeHead {
   display: flex;
   align-items: center;
-  gap: var(--cw-space-xs);
+  gap: var(--cw-space-2xs);
+  min-height: 1.25rem;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.nodeCard:hover .nodeHead,
+.nodeCard:focus-within .nodeHead,
+.nodeHead:has([aria-expanded="true"]) {
+  opacity: 1;
+}
+
+.nodeKindName {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-family: var(--cw-font-data);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
 }
 
 .nodeKind {
@@ -1093,14 +1156,19 @@
    floats over the page rather than sitting inside a panel. It is also the only
    control in the editor whose absence loses work, and a lesson is long enough
    that a save at the bottom is a save the author has to go looking for. */
+/* ONE ROW, ALWAYS. It wrapped: undo, redo, a sentence and a button do not fit
+   across 375px, so «Зберегти» dropped to a second line and the bar became a
+   block. The state is a state now («Не збережено» / «Збережено»), not a
+   sentence, the row does not wrap, and the button is sized by its own label
+   rather than by the card minimum — this is a bar, not a card footer. */
 .saveBar {
   position: sticky;
   bottom: max(var(--cw-space-md), env(safe-area-inset-bottom));
   z-index: var(--ds-z-sticky);
   display: flex;
   align-items: center;
-  gap: var(--cw-space-2xs);
-  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+  flex-wrap: nowrap;
   padding: var(--cw-space-sm);
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
@@ -1108,11 +1176,19 @@
 }
 
 .saveState {
-  flex: 1 1 8rem;
+  flex: 1 1 auto;
   min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   color: var(--cw-platform-muted);
   font-size: 0.88rem;
-  overflow-wrap: anywhere;
+}
+
+.saveBar .commitAction,
+.saveBar .quietAction {
+  flex: 0 0 auto;
+  min-width: 0;
 }
 
 /* ── Blockers ─────────────────────────────────────── */
@@ -1149,18 +1225,6 @@
 /* ── Wider viewports: additive only ───────────────── */
 
 @media (min-width: 561px) {
-  .bar {
-    gap: var(--cw-space-sm);
-    padding-inline: var(--cw-space-lg);
-  }
-
-  /* The wordmark appears when there is room for it. On a phone the bar has
-     three jobs and one line; the mark alone still says which application this
-     is, and the trail needs the width more. */
-  .barBrandName {
-    display: inline;
-  }
-
   .page {
     padding-block-start: var(--cw-space-xl);
   }
@@ -1460,4 +1524,343 @@
   .sheetBody {
     animation: none;
   }
+}
+
+/* ── Undo ─────────────────────────────────────────── */
+
+/* The pair sits ahead of the save state in the bar, and stays one object: two
+   halves of one gesture, so they share an edge rather than the bar's gap. */
+.historyPair {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.historyButton {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  width: var(--ds-touch-target-min);
+  color: var(--cw-platform-muted);
+}
+
+.historyButton:hover:not(:disabled) {
+  color: var(--cw-platform-text);
+  background: var(--cw-mat-surface-sunk);
+}
+
+/* Dimmed rather than hidden. "Nothing left to take back" is information; a
+   control that disappears when it has nothing to do teaches the author it was
+   never there. */
+.historyButton:disabled {
+  opacity: 0.4;
+}
+
+/* ── Drag to reorder ──────────────────────────────── */
+
+/* The grip is the ONLY way a row becomes draggable, and it is not rendered
+   where dragging was rejected: on a touch screen the arrows in the row menu
+   stay the whole story. `pointer: coarse` rather than a width query — the
+   objection was never the size of the screen, it was the finger. */
+.rowGrip {
+  display: none;
+}
+
+@media (pointer: fine) {
+  .rowGrip {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-content: center;
+    width: 1.5rem;
+    align-self: center;
+    color: var(--cw-platform-muted);
+    cursor: grab;
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+
+  /* Revealed by the row, not by itself: a grip that only appears once the
+     pointer is already on it is a control you have to know is there. */
+  .dragRow:hover .rowGrip,
+  .dragRow:focus-within .rowGrip,
+  .rowGrip:active {
+    opacity: 1;
+  }
+
+  .rowGrip:active {
+    cursor: grabbing;
+  }
+}
+
+.dragRow {
+  position: relative;
+}
+
+/* Faded, not hidden. The row keeps its place in the layout while it is being
+   carried, so the list does not reflow under the pointer and change what the
+   author is aiming at. */
+.dragRow[data-dragging="true"] {
+  opacity: 0.4;
+}
+
+/* The landing line. Drawn on the row being hovered rather than by opening a
+   gap: a gap animates the whole list on every pixel of movement, and the line
+   says the same thing — it goes here — without moving anything. */
+.dragRow[data-drop]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--cw-platform-accent);
+  pointer-events: none;
+}
+
+.dragRow[data-drop="before"]::after {
+  inset-block-start: -1px;
+}
+
+.dragRow[data-drop="after"]::after {
+  inset-block-end: -1px;
+}
+
+/* ── Writing surface ──────────────────────────────── */
+
+/* The field with its plate taken off: it IS the paragraph rather than a box
+   holding one. Used everywhere the author is writing the document itself —
+   the lesson title, its lead, the body of a text block. The frame is what made
+   the builder feel like a form over a course instead of the course. */
+.inlineBare {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.inlineBare:focus-visible,
+.inlineSurface:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+/* The prompt is the field, not a caption above it. `data-empty` rather than
+   `:empty` because a contenteditable that has been typed into and cleared is
+   not always empty in the DOM — some browsers leave a `<br>` behind. */
+.inlineBare[data-empty][data-placeholder]::before,
+.inlineSurface[data-empty][data-placeholder]::before {
+  content: attr(data-placeholder);
+  color: var(--cw-platform-muted);
+  pointer-events: none;
+}
+
+/* The title, edited where it is read. It used to be an `<h1>` echoing a «Назва»
+   field in a panel below — the same words twice, and the copy was the one you
+   could change. */
+.titleInput {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+}
+
+.titleInput::placeholder {
+  color: var(--cw-platform-muted);
+}
+
+/* ── Slash menu ───────────────────────────────────── */
+
+/* Fixed and portalled, measured from the field — the same lesson the row menu
+   learned: a list positioned inside a card is clipped by the first ancestor
+   that scrolls, and a block near the bottom of a long lesson is exactly where
+   an author reaches for it. */
+.slashList {
+  position: fixed;
+  z-index: calc(var(--ds-z-sticky) + 2);
+  max-width: min(22rem, calc(100vw - 2 * var(--cw-space-sm)));
+  max-height: 17rem;
+  overflow-y: auto;
+  display: grid;
+  padding: var(--cw-space-2xs);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
+}
+
+.slashItem {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  display: grid;
+  gap: 2px;
+  justify-items: start;
+  text-align: start;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+}
+
+.slashItem[data-active] {
+  background: var(--cw-mat-surface-sunk);
+}
+
+.slashLabel {
+  font-weight: 600;
+}
+
+.slashHint {
+  color: var(--cw-platform-muted);
+  font-size: 0.8rem;
+  line-height: 1.4;
+  white-space: normal;
+}
+
+/* ── The document head ────────────────────────────── */
+
+/* Title and lead, edited in place. The gap is tighter than a panel's because
+   these two lines are one statement, not two fields. */
+.docHead {
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.docMeta {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.85rem;
+}
+
+/* ── Prose nodes ──────────────────────────────────── */
+
+/* A heading renders as a heading. The author should be able to tell a
+   subheading from a paragraph without reading the label that says so. */
+.nodeHeading {
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.nodeUl,
+.nodeOl {
+  margin: 0;
+  padding-inline-start: 1.4rem;
+  display: grid;
+  gap: var(--cw-space-3xs, 0.25rem);
+}
+
+.nodeUl {
+  list-style: disc;
+}
+
+/* An `<ul>` wearing numbers: the element is a list either way, and the marker
+   is the only thing `ol` vs `ul` decides here. Keeping one element keeps one
+   set of item styles. */
+.nodeOl {
+  list-style: decimal;
+}
+
+.nodeItem::marker {
+  color: var(--cw-platform-muted);
+}
+
+/* ── Adding ───────────────────────────────────────── */
+
+/* Text first, the taxonomy second and quieter. The order is the argument. */
+.addRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  flex-wrap: wrap;
+}
+
+/* ── Formatting panel ─────────────────────────────── */
+
+/* Over the selection, in its own layer. It used to be a row above the field
+   that appeared on focus — which pushed the block down the page the moment the
+   caret entered it and pushed it back on the way out. A control that moves the
+   thing it acts on is worse than no control.
+
+   Centred on an anchor POINT by transform rather than measured: measuring would
+   mean rendering it invisibly for a frame first, and a formatting bar that
+   blinks is the twitchiness this replaced. */
+.formatBar {
+  position: fixed;
+  z-index: calc(var(--ds-z-sticky) + 3);
+  transform: translate(-50%, calc(-100% - 0.5rem));
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  max-width: calc(100vw - 1rem);
+  padding: 3px;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
+  animation: formatIn 120ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Selection too near the top of the window for the panel to sit above it. */
+.formatBar[data-flip] {
+  transform: translate(-50%, 0.75rem);
+}
+
+@keyframes formatIn {
+  from {
+    opacity: 0;
+  }
+}
+
+/* Type, radius and padding are the contract's, not this panel's. A toolbar that
+   shrank its own labels to stay narrow is the exact trade `guard:buttons`
+   exists to refuse — the panel wraps or gets wider instead. */
+.formatAction {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  white-space: nowrap;
+}
+
+.formatAction:hover:not(:disabled) {
+  background: var(--cw-mat-surface-sunk);
+}
+
+.formatDivider {
+  align-self: stretch;
+  width: 1px;
+  margin-inline: 2px;
+  background: var(--cw-mat-stroke-inner);
+}
+
+.formatInput {
+  min-width: 14rem;
+  min-height: var(--ds-touch-target-min);
+  padding-inline: var(--cw-space-2xs);
+  border: 1px solid var(--cw-mat-stroke-inner);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  font: inherit;
+}
+
+/* ── Images ───────────────────────────────────────── */
+
+/* The native file input, kept in the DOM and out of sight. Not `display: none`:
+   a hidden input cannot be opened by `click()` in every browser, and the button
+   beside it is the only thing the author should see. */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* An upload that did not land says so in the field, in the boundary tone. A
+   toast would put the sentence somewhere other than the control it is about. */
+.fieldError {
+  color: var(--cw-sem-boundary);
+  font-size: 0.82rem;
+  line-height: 1.4;
 }

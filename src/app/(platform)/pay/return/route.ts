@@ -1,22 +1,52 @@
 import { NextRequest, NextResponse } from "next/server";
 import { buildReturnDestination } from "@/lib/payReturn";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { PRODUCTS } from "@/lib/products";
+import { normalizePayableProduct, productReturnUrls, type PayableProductCode } from "@/lib/products";
 
 export const runtime = "nodejs";
 
-type ProductCode = keyof typeof PRODUCTS;
+type ProductCode = PayableProductCode;
 
 function norm(v: unknown): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
 }
 
-function productFrom(orderRef: string | null, productRaw: string | null): ProductCode {
+/**
+ * Which product this return belongs to, from the parameters alone.
+ *
+ * `null` when nothing recognisable came back — the caller then asks the order
+ * row, which is the only other place that knows. A course out of the builder
+ * cannot be recovered from the order reference: `course:my-course` is written
+ * into it as `course-my-course` (a colon has no business travelling through a
+ * payment provider's URLs) and a slug may contain dashes of its own, so the
+ * split is ambiguous by construction. The order row is not.
+ */
+function productFrom(orderRef: string | null, productRaw: string | null): ProductCode | null {
   if (productRaw === "short" || productRaw === "reboot") return "short";
-  if (productRaw && productRaw in PRODUCTS) return productRaw as ProductCode;
-  if (orderRef?.startsWith("irem_")) return "irem" as ProductCode;
-  if (orderRef?.startsWith("short_") || orderRef?.startsWith("reboot_")) return "short" as ProductCode;
-  return "short" as ProductCode;
+  const normalized = normalizePayableProduct(productRaw);
+  if (normalized) return normalized;
+  if (orderRef?.startsWith("irem_")) return "irem";
+  if (orderRef?.startsWith("short_") || orderRef?.startsWith("reboot_")) return "short";
+  return null;
+}
+
+/** The product code the order was FILED under. The last word, and the true one. */
+async function productFromOrder(orderRef: string): Promise<ProductCode | null> {
+  try {
+    const sb = supabaseAdmin();
+    const { data } = await sb
+      .from("orders")
+      .select("product_code")
+      .eq("order_ref", orderRef)
+      .maybeSingle();
+    return normalizePayableProduct(data?.product_code ?? null);
+  } catch (err) {
+    console.warn("pay_return_product_read_failed", {
+      orderRef,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
+  }
 }
 
 async function readBody(req: NextRequest): Promise<Record<string, string>> {
@@ -144,7 +174,10 @@ function pickMeta(body: Record<string, string>, sp: URLSearchParams) {
 async function handler(req: NextRequest) {
   const sp = req.nextUrl.searchParams;
   // Resolve product up front (no DB) so the backstop can always route to a real page.
-  let product: ProductCode = productFrom(norm(sp.get("order_ref")) || norm(sp.get("orderReference")), norm(sp.get("product")));
+  // "short" only as the last resort of the last resort: the catch-all below has
+  // to redirect somewhere real even when the request carried nothing at all,
+  // and every product's failure page is the same platform page anyway.
+  let product: ProductCode = productFrom(norm(sp.get("order_ref")) || norm(sp.get("orderReference")), norm(sp.get("product"))) ?? "short";
 
   try {
     const body = await readBody(req);
@@ -156,11 +189,19 @@ async function handler(req: NextRequest) {
       norm(body["orderReference"]);
 
     const productRaw = norm(sp.get("product")) || norm(body["product"]);
-    product = productFrom(orderRef, productRaw);
+    const fromParams = productFrom(orderRef, productRaw);
+    if (fromParams) product = fromParams;
 
     // Если order_ref не пришел — не можем понять что делать
     if (!orderRef) {
-      return NextResponse.redirect(PRODUCTS[product].declinedUrl, { status: 302 });
+      return NextResponse.redirect(productReturnUrls(product).declinedUrl, { status: 302 });
+    }
+
+    // The parameters said nothing usable — ask the order itself before deciding
+    // where to send the buyer. A wrong product here shows the wrong "open your
+    // course" button to someone who has just paid.
+    if (!fromParams) {
+      product = (await productFromOrder(orderRef)) ?? product;
     }
 
     // 1) пробуем понять из параметров, 2) иначе смотрим БД (с ретраем на гонку webhook)
@@ -188,7 +229,7 @@ async function handler(req: NextRequest) {
     console.error("pay_return_failed", {
       error: err instanceof Error ? err.message : String(err),
     });
-    return NextResponse.redirect(PRODUCTS[product].declinedUrl, { status: 302 });
+    return NextResponse.redirect(productReturnUrls(product).declinedUrl, { status: 302 });
   }
 }
 

@@ -6,8 +6,8 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 
 import { Icon } from "@/components/Icon";
 import {
-  inlineToPlainText,
   moveItem,
+  pruneEmptyProse,
   newLesson,
   newModule,
   nextDayIndex,
@@ -22,15 +22,23 @@ import { BuilderSheet } from "./BuilderSheet";
 import { BuilderCourseSettings } from "./BuilderCourseSettings";
 import { BuilderBlockers } from "./BuilderBlockers";
 import { loadCourse, saveCourse, type BuilderCourseDto, type BuilderFailure } from "./builderClient";
+import { BuilderGrip } from "./BuilderGrip";
+import { BuilderInlineEditor } from "./BuilderInlineEditor";
+import { BuilderHistory } from "./BuilderHistory";
+import { useCourseHistory } from "./useCourseHistory";
+import { landingIndex, useRowDrag, type DragRef, type DropEdge, type RowDrag } from "./useRowDrag";
 import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
 
 type State =
   | { status: "loading" }
   | { status: "failed"; failure: BuilderFailure; detail?: string }
-  | { status: "ready"; data: BuilderCourseDto; course: Course };
+  | { status: "ready"; data: BuilderCourseDto };
 
 const ids = () => crypto.randomUUID();
+
+/** Long form of the reference flag: tooltip and accessible name, never the label. */
+const REFERENCE_FLAG_HINT = "Довідковий модуль — поза послідовністю уроків";
 
 /**
  * The course page — structure, settings, readiness, publish.
@@ -47,7 +55,8 @@ const ids = () => crypto.randomUUID();
  */
 export function BuilderCourseView({ slug }: { slug: string }) {
   const [state, setState] = useState<State>({ status: "loading" });
-  const [dirty, setDirty] = useState(false);
+  const history = useCourseHistory();
+  const { course, dirty } = history;
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -56,13 +65,13 @@ export function BuilderCourseView({ slug }: { slug: string }) {
 
   const load = useCallback(async () => {
     const result = await loadCourse(slug);
+    if (result.ok) history.reset(result.data.course);
     setState(
       result.ok
-        ? { status: "ready", data: result.data, course: result.data.course }
+        ? { status: "ready", data: result.data }
         : { status: "failed", failure: result.failure, detail: result.detail }
     );
-    setDirty(false);
-  }, [slug]);
+  }, [history, slug]);
 
   useEffect(() => {
     // Guarded so switching courses cannot land a stale response, and awaiting
@@ -71,15 +80,18 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     void (async () => {
       const result = await loadCourse(slug);
       if (cancelled) return;
+      if (result.ok) history.reset(result.data.course);
       setState(
         result.ok
-          ? { status: "ready", data: result.data, course: result.data.course }
+          ? { status: "ready", data: result.data }
           : { status: "failed", failure: result.failure, detail: result.detail }
       );
     })();
     return () => {
       cancelled = true;
     };
+    // `history.reset` is stable; the course is reloaded only when the slug changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
   // The browser's own guard, same as the lesson editor: an author who
@@ -91,14 +103,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     return () => window.removeEventListener("beforeunload", onBeforeUnload);
   }, [dirty]);
 
-  const editCourse = useCallback((path: (string | number)[], value: unknown) => {
-    setState((current) => {
-      if (current.status !== "ready") return current;
-      return { ...current, course: normalize(writePath(current.course, path, value)) };
-    });
-    setDirty(true);
-    setNote(null);
-  }, []);
+  const editCourse = useCallback(
+    (path: (string | number)[], value: unknown) => {
+      // Coalesced by the path: retitling a module is one undo, not one per letter.
+      history.edit(path.join("."), (current) => normalize(writePath(current, path, value)));
+      setNote(null);
+    },
+    [history]
+  );
 
   /**
    * Replaces the module list wholesale, then re-derives `order`.
@@ -110,19 +122,47 @@ export function BuilderCourseView({ slug }: { slug: string }) {
    * one press of a reorder arrow would have moved every reminder already
    * scheduled against those numbers.
    */
-  const editModules = useCallback((next: (course: Course) => CourseModule[]) => {
-    setState((current) => {
-      if (current.status !== "ready") return current;
-      return { ...current, course: { ...current.course, modules: renumber(next(current.course)) } };
-    });
-    setDirty(true);
-    setNote(null);
-  }, []);
+  const editModules = useCallback(
+    (next: (course: Course) => CourseModule[]) => {
+      // No coalescing key — see the lesson editor: each add, delete and move is
+      // its own act and gets its own step back.
+      history.edit(null, (current) => ({ ...current, modules: renumber(next(current)) }));
+      setNote(null);
+    },
+    [history]
+  );
+
+  /** Modules reorder within the course; the drop names a place in the list on screen. */
+  const moduleDrag = useRowDrag(
+    useCallback(
+      (from: DragRef, to: DragRef, edge: DropEdge) => {
+        editModules((current) => moveItem(current.modules, from.index, landingIndex(from.index, to.index, edge, true)));
+      },
+      [editModules]
+    )
+  );
+
+  /**
+   * Lessons reorder ACROSS modules, the same way the arrows already carry one
+   * over a module edge. `crossGroup` is what says so; without it a lesson could
+   * only be dropped among its own siblings, which is the move an author needs
+   * least — the reason to pick a lesson up is usually that it belongs to
+   * another week.
+   */
+  const lessonDrag = useRowDrag(
+    useCallback(
+      (from: DragRef, to: DragRef, edge: DropEdge) => {
+        editModules((current) => moveLessonTo(current, from, to, edge));
+      },
+      [editModules]
+    ),
+    { crossGroup: true }
+  );
 
   /**
    * The lesson slugs the SERVER has.
    *
-   * `state.data` is the loaded response and `state.course` is the working copy;
+   * `state.data` is the loaded response and the history's course is the working copy;
    * edits touch only the second, so this stays the stored truth until the next
    * save reloads it. It is what tells a freshly added lesson — which exists
    * only on this screen — from one an author may open.
@@ -160,11 +200,11 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   );
 
   async function save(): Promise<boolean> {
-    if (state.status !== "ready" || busy) return false;
+    if (!course || busy) return false;
     setBusy(true);
     setNote(null);
 
-    const result = await saveCourse(slug, state.course);
+    const result = await saveCourse(slug, pruneEmptyProse(course));
     setBusy(false);
 
     if (!result.ok) {
@@ -173,7 +213,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       return false;
     }
 
-    setDirty(false);
+    history.markClean();
     // Reloaded rather than patched: the server bumps `version` and re-derives
     // readiness, and a screen that kept the old copy would show a blocker list
     // that no longer matches what is stored.
@@ -231,7 +271,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     );
   }
 
-  const { course } = state;
+  if (!course) {
+    return (
+      <BuilderShell trail={trail}>
+        <BuilderNotice title="Завантажуємо курс…" />
+      </BuilderShell>
+    );
+  }
+
   const { readiness } = state.data;
   const published = state.data.course.status === "published";
   const lessonCount = course.modules.reduce((total, module) => total + module.lessons.length, 0);
@@ -258,14 +305,32 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         <BuilderCourseSettings course={course} onChange={editCourse} />
       </BuilderSheet>
 
-      <div>
+      {/* Edited where it is read — see the lesson editor. The gear keeps what
+          has no place in a document: address, schedule, codes, palette. */}
+      <div className={styles.docHead}>
         <div className={styles.courseTitleRow}>
-          <h1 className={styles.pageTitle}>{course.title}</h1>
+          <input
+            className={`${styles.pageTitle} ${styles.titleInput}`}
+            type="text"
+            value={course.title}
+            placeholder="Назва курсу"
+            aria-label="Назва курсу"
+            onChange={(event) => editCourse(["title"], event.target.value)}
+          />
           <span className={published ? styles.pillPublished : styles.pill}>
             {published ? "Опубліковано" : "Чернетка"}
           </span>
         </div>
-        {course.summary ? <p className={styles.pageLead}>{inlineToPlainText(course.summary)}</p> : null}
+        <div className={styles.pageLead}>
+          <BuilderInlineEditor
+            bare
+            multiline
+            value={course.summary}
+            label="Короткий опис курсу"
+            placeholder="Про що цей курс — одне-два речення."
+            onChange={(next) => editCourse(["summary"], next)}
+          />
+        </div>
       </div>
 
       <BuilderBlockers blockers={readiness.blockers} />
@@ -311,7 +376,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </div>
       </section>
 
-      <section className={styles.panel}>
+      <section className={`${styles.panel} ${styles.structure}`}>
         <div className={styles.panelHead}>
           <h2 className={styles.panelTitle}>Структура</h2>
           <span className={styles.courseMeta}>
@@ -326,6 +391,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             course={course}
             module={module}
             moduleIndex={moduleIndex}
+            moduleDrag={moduleDrag}
+            lessonDrag={lessonDrag}
             onChange={editCourse}
             onModules={editModules}
             onNote={setNote}
@@ -366,7 +433,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
                 onClick={() => {
                   const href = pendingHref;
                   setPendingHref(null);
-                  setDirty(false);
+                  history.markClean();
                   router.push(href);
                 }}
                 disabled={busy}
@@ -399,7 +466,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           </>
         ) : (
           <>
-            <span className={styles.saveState}>{note ?? (dirty ? "Є незбережені зміни" : "Змін немає")}</span>
+            <BuilderHistory history={history} disabled={busy} />
+            <span className={styles.saveState}>{note ?? (dirty ? "Не збережено" : "Збережено")}</span>
             <button className={styles.commitAction} type="button" onClick={() => void save()} disabled={busy || !dirty}>
               {busy ? "Зберігаємо…" : "Зберегти"}
             </button>
@@ -427,10 +495,33 @@ function normalize(course: Course): Course {
   return course;
 }
 
+/**
+ * A dropped lesson, placed in the module it was dropped into.
+ *
+ * The one refusal is the same one the arrows carry: a module cannot be emptied
+ * by a move, because `validateCourse` requires at least one lesson in each and
+ * the author would meet that as a save error long after the gesture. Dropping
+ * the last lesson of a module elsewhere simply does not take.
+ */
+function moveLessonTo(course: Course, from: DragRef, to: DragRef, edge: DropEdge): CourseModule[] {
+  const modules = course.modules.map((entry) => ({ ...entry, lessons: [...entry.lessons] }));
+  const source = modules[from.group];
+  const target = modules[to.group];
+  if (!source || !target) return modules;
+  if (source !== target && source.lessons.length === 1) return modules;
+
+  const insert = landingIndex(from.index, to.index, edge, source === target);
+  const [moved] = source.lessons.splice(from.index, 1);
+  target.lessons.splice(insert, 0, moved);
+  return modules;
+}
+
 function ModuleEditor({
   course,
   module,
   moduleIndex,
+  moduleDrag,
+  lessonDrag,
   onChange,
   onModules,
   onNote,
@@ -439,6 +530,8 @@ function ModuleEditor({
   course: Course;
   module: CourseModule;
   moduleIndex: number;
+  moduleDrag: RowDrag;
+  lessonDrag: RowDrag;
   onChange: (path: (string | number)[], value: unknown) => void;
   onModules: (next: (course: Course) => CourseModule[]) => void;
   onNote: (note: string | null) => void;
@@ -493,9 +586,19 @@ function ModuleEditor({
     );
   };
 
+  const moduleRow: DragRef = { list: "module", group: 0, index: moduleIndex };
+
   return (
-    <div className={styles.moduleBlock}>
+    <div
+      className={`${styles.moduleBlock} ${styles.dragRow}`}
+      /* The rail reads this: a reference module is outside the sequence, so it
+         gets a dash on the path instead of the next number, and the numbers
+         after it do not skip. */
+      data-reference={module.reference === true ? "" : undefined}
+      {...moduleDrag.rowProps(moduleRow)}
+    >
       <div className={styles.moduleHead}>
+        <BuilderGrip drag={moduleDrag} row={moduleRow} label={module.title} />
         <input
           className={styles.moduleTitleInput}
           type="text"
@@ -535,25 +638,38 @@ function ModuleEditor({
       {/* Reference material is not a step. A module marked here leaves the
           numbered flow, stops counting toward completion and loses its day
           numbers — a recipe list is not "day 4". */}
-      <label className={styles.moduleFlag}>
+      {/* A control's label is one line. What the flag DOES is a sentence, and a
+          sentence beside a checkbox wraps to two lines and turns a row into a
+          paragraph — so it goes to the tooltip and to the accessible name. */}
+      <label className={styles.moduleFlag} title={REFERENCE_FLAG_HINT}>
         <input
           type="checkbox"
           checked={module.reference === true}
+          aria-label={REFERENCE_FLAG_HINT}
           onChange={(event) =>
             onChange(["modules", moduleIndex, "reference"], event.target.checked || undefined)
           }
-        />{" "}
-        Довідковий модуль — поза послідовністю уроків
+        />
+        <span>Довідковий модуль</span>
       </label>
 
-      {module.lessons.map((lesson, lessonIndex) => (
-        <div className={styles.lessonRowWrap} key={lesson.id}>
+      <div className={styles.lessonList}>
+      {module.lessons.map((lesson, lessonIndex) => {
+        const lessonRow: DragRef = { list: "lesson", group: moduleIndex, index: lessonIndex };
+        return (
+        <div
+          className={`${styles.lessonRowWrap} ${styles.dragRow}`}
+          key={lesson.id}
+          {...lessonDrag.rowProps(lessonRow)}
+        >
+          <BuilderGrip drag={lessonDrag} row={lessonRow} label={lesson.title} />
           {/* Still a link, not a button: the href is real for every lesson the
               server has, so middle-click and "open in new tab" keep working.
               The click is intercepted only while there is unsaved structure. */}
           <Link
             className={styles.lessonRow}
             href={`/build/${course.slug}/${lesson.slug}`}
+            title={lesson.title}
             onClick={(event) => {
               if (onOpenLesson(`/build/${course.slug}/${lesson.slug}`) === "held") event.preventDefault();
             }}
@@ -583,7 +699,9 @@ function ModuleEditor({
             ]}
           />
         </div>
-      ))}
+        );
+      })}
+      </div>
 
       <button
         className={styles.addAction}

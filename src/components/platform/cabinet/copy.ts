@@ -75,7 +75,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       continueLead: "Your next step is already open.",
       continueAction: "Continue",
       startAction: "Start the course",
-      openCourseMap: "Course map",
+      openCourseMap: "Contents",
       reviewAction: "Open again",
       allCourses: "All my courses",
 
@@ -127,7 +127,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     continueLead: "Наступний урок уже відкритий.",
     continueAction: "Продовжити",
     startAction: "Почати курс",
-    openCourseMap: "Карта курсу",
+    openCourseMap: "Зміст",
     reviewAction: "Відкрити знову",
     allCourses: "Усі мої курси",
 

@@ -248,13 +248,17 @@
 /* ── Lesson top bar ───────────────────────────────── */
 
 /* Reading position for the current lesson. Sits under the app header so it
-   stays visible while the body scrolls. */
+   stays visible while the body scrolls.
+
+   It owns no row. A 3px hairline with a 1rem margin under it was costing 19px
+   at the top of every lesson on a phone, above a header stack that was already
+   the complaint — and the thing it measures is the body, which starts below.
+   The margin is gone and the bar under it brings its own. */
 .readingTrack {
   position: sticky;
   top: 0;
   z-index: 2;
   height: 0.2rem;
-  margin-bottom: var(--cw-space-md);
   border-radius: var(--cw-radius-pill);
   background: var(--cw-mat-surface-sunk);
   overflow: hidden;
@@ -270,7 +274,7 @@
   display: flex;
   align-items: center;
   gap: var(--cw-space-xs);
-  margin-bottom: var(--cw-space-md);
+  margin-block: var(--cw-space-xs) var(--cw-space-sm);
 }
 
 /* Real controls, not text links: both are thumb-sized and read as buttons.
@@ -438,7 +442,7 @@
 
 .pager {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--cw-space-xs);
   margin-top: var(--cw-space-lg);
 }
@@ -484,16 +488,24 @@
   opacity: 0.5;
 }
 
-.pagerLinkNextAccent .pagerArrow {
-  opacity: 0.7;
-}
-
 /* Once the lesson is done, forward momentum moves HERE rather than adding a
-   second button to the sticky bar. One accent on screen at a time. */
+   second button to the sticky bar. One accent on screen at a time.
+
+   `composes` names BOTH links in the chain, and the rule styling a descendant
+   of this class comes AFTER it, not before. With the descendant rule written
+   first and `composes: pagerLinkNext` alone, the build emitted
+   `pagerLinkNextAccent pagerLinkNext` and dropped `pagerLink` — so the accent
+   cell had no display, no padding and no radius, and on a phone the arrow
+   wrapped under a two-line title with the gold fill running to the column's
+   edge. */
 .pagerLinkNextAccent {
-  composes: pagerLinkNext;
+  composes: pagerLink pagerLinkNext;
   background: var(--cw-platform-accent);
   color: var(--cw-platform-on-accent);
+}
+
+.pagerLinkNextAccent .pagerArrow {
+  opacity: 0.7;
 }
 
 /* Left over from the pager, now only the drawer's "Пройдено N з M" line. */
@@ -505,16 +517,23 @@
   color: var(--cw-platform-muted);
 }
 
+/* ONE LINE. A lesson title is a sentence, and a pager that grows to three lines
+   is a paragraph with an arrow on it — the cell stops reading as a control and
+   the two cells stop matching each other's height. Clipped with an ellipsis;
+   the full title is on the link's `title`, one hover away, and on `aria-label`
+   for anyone not hovering. Same rule the breadcrumb follows.
+
+   `min-width: 0` is what lets it clip at all: without it the title is sized by
+   its longest word, the flex row cannot shrink, and the arrow is pushed out of
+   the cell. A flex item's `min-width: auto` is a floor at min-content. */
 .pagerTitle {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
   font-size: 0.92rem;
   font-weight: 600;
   line-height: 1.3;
-  /* Two lines is enough to recognise the lesson; a four-line wrap on a phone
-     turns the pager into a wall. */
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  overflow: hidden;
 }
 
 /* The lesson body — the one place a course's `scale` choice lands.
@@ -553,11 +572,17 @@
   font-weight: var(--cw-course-heading-weight, 600);
 }
 
-/* Markers hang in the margin, so list text starts on the SAME left edge as the
-   paragraphs above and below it. The old rule padded the list in by 1.2rem and
-   set `display: grid`, which blockifies the items and drops their ::marker —
-   an indent with nothing in it, which is what made running text look like it
-   kept changing its mind about where the page begins. */
+/* THE MARKER SITS ON THE COLUMN'S EDGE, and the text is indented past it.
+
+   It used to hang the other way — text flush with the paragraphs and the dot
+   out in the card's padding. That is a real typographic tradition and it is
+   wrong here: on a narrow card the protruding dots make the left edge ragged,
+   and the page reads as if the list belongs to a different column from the
+   sentence above it. One edge for everything; the indent inside the list is the
+   list's own business.
+
+   `list-style: none` with an absolute marker rather than `::marker`, because
+   `display: grid` blockifies the items and drops the native marker entirely. */
 .list,
 .listOrdered {
   margin: 0;
@@ -572,15 +597,20 @@
   line-height: 1.6;
 }
 
-.list > li,
+.list > li {
+  position: relative;
+  padding-inline-start: 1.15rem;
+}
+
 .listOrdered > li {
   position: relative;
+  padding-inline-start: 1.6rem;
 }
 
 .list > li::before {
   content: "";
   position: absolute;
-  left: -0.85rem;
+  left: 0.28rem;
   /* Optical, not geometric: 0.62em lands the dot on the x-height of the first
      line rather than its box, which is where the eye expects it. */
   top: 0.62em;
@@ -601,9 +631,9 @@
 .listOrdered > li::before {
   content: counter(cw-item) ".";
   position: absolute;
-  left: -1.35rem;
-  width: 1.1rem;
-  text-align: right;
+  left: 0;
+  width: 1.25rem;
+  text-align: left;
   font-family: var(--cw-font-data);
   font-size: 0.82rem;
   line-height: 1.95;
@@ -824,8 +854,15 @@
 
 /* Done: the accent is spent, so the control steps back to a quiet surface and
    the check alone carries the state. */
+/* `composes` names BOTH ancestors, and it has to: a two-level chain inside one
+   module loses the grandparent. Written as `composes: completeToggle` alone,
+   the build emitted `completeToggleDone completeToggle` and dropped
+   `completionBar` — so the moment the lesson was ticked the bar stopped being
+   sticky and lost its 32px top margin, and the whole page below it jumped. The
+   forward pager had the identical bug; those are the only two chains in the
+   codebase, and both now name every ancestor. */
 .completeToggleDone {
-  composes: completeToggle;
+  composes: completionBar completeToggle;
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-text);
 }
