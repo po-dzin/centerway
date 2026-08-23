@@ -12,9 +12,8 @@ import { isPersonalHost } from "@/lib/platform/surfaceHref";
  * Three modes, and `learn` is the one that is not cosmetic.
  *
  * `default` and `overlay` differ only in whether the bar floats over a dark
- * hero. `learn` keeps a brand mark that leads back to the shelf and a footer
- * stripped to what a reader mid-lesson can use. Its header still exposes the
- * shared route map so course pages do not become a navigation dead end.
+ * hero. `learn` is a personal reading surface: its mark leads back to the
+ * shelf and it keeps the personal footer without importing public navigation.
  *
  * It keeps the `overlay` clearance, because the learner surfaces were written
  * against it (see the margin note at the top of Lms.module.css).
