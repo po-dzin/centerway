@@ -8,6 +8,7 @@ import { COURSE_PALETTES, COURSE_TEMPLATES, courseThemeAttributes, moveItem, typ
 import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
 import { ChoiceRow } from "./BuilderFields";
 import { BuilderMenu } from "./BuilderMenu";
+import { Icon } from "@/components/Icon";
 import { PALETTE_LABELS } from "./coursePalettes";
 import {
   createCourse,
@@ -301,27 +302,33 @@ export function BuilderCourseList() {
 function ViewSwitch({ view, onChange }: { view: CourseView; onChange: (next: CourseView) => void }) {
   return (
     <div className={styles.viewSwitch} role="group" aria-label="Вигляд списку">
-      {/* Words, not glyphs. There is no icon in the baked sprite that means
-          "a grid of cards", and the dot/orbit layer is navigation BETWEEN
-          blocks — Icon.tsx says in as many words never to put it in a text row.
-          Used that way it came out as a vertical ellipsis and a ring of dots
-          where the switch should be, naming neither view. Two short words are
-          unambiguous and cost the bar about the same room. */}
+      {/* Glyphs now, and they exist: `view-rows` / `view-cards` were added to
+          the baked set for exactly this control (scripts/lib/icon-glyphs.mjs).
+          Words were a stand-in for the set not having them — the earlier note
+          here was right that `menu` and the dot/orbit layer both meant something
+          else, and the answer to a missing glyph is to draw it, not to set a
+          toolbar in prose.
+
+          The label survives as the accessible name and as the tooltip: a
+          two-state icon switch is unreadable to a screen reader without one, and
+          the pointer user gets the same word on hover. */}
       <button
         className={styles.viewOption}
         type="button"
         aria-pressed={view === "rows"}
+        title="Рядки"
         onClick={() => onChange("rows")}
       >
-        Рядки
+        <Icon name="view-rows" size={20} label="Рядки" />
       </button>
       <button
         className={styles.viewOption}
         type="button"
         aria-pressed={view === "grid"}
+        title="Картки"
         onClick={() => onChange("grid")}
       >
-        Картки
+        <Icon name="view-cards" size={20} label="Картки" />
       </button>
     </div>
   );

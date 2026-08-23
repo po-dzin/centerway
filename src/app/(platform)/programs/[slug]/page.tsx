@@ -26,6 +26,8 @@ import { getLiveCourse } from "@/lib/lms/liveCatalog";
 import { courseOfferCommerce } from "@/lib/platform/offerCommerce";
 import { isPublicCourse, loadCourseOffer } from "@/lib/platform/offers";
 import { inlineToPlainText, type Course } from "@/lms-core";
+import { describe } from "@/lib/brand/identity";
+import { pageMetadata } from "@/lib/seo/metadata";
 
 /**
  * A course, seen as an offer.
@@ -84,14 +86,18 @@ export async function generateMetadata({
 
   const description = course.summary ? inlineToPlainText(course.summary) : course.tagline;
 
-  return {
-    title: `${course.title} — CenterWay`,
-    ...(description ? { description } : {}),
-    alternates: { canonical: `/programs/${course.slug}` },
+  return pageMetadata({
+    title: course.title,
+    // The author's own summary when there is one. Falling back to the platform
+    // line rather than to nothing: a course with no description at all would
+    // inherit the layout's default, which describes the platform and not this.
+    description: description || describe(`${course.title} — курс на платформі CenterWay.`),
+    path: `/programs/${course.slug}`,
+    ...(course.cover ? { image: course.cover.src } : {}),
     // Unlisted means "not in the catalogue and not in search". A page that is
     // reachable by link but indexed anyway would make the setting a lie.
-    ...(course.visibility === "unlisted" ? { robots: { index: false, follow: false } } : {}),
-  };
+    noindex: course.visibility === "unlisted",
+  });
 }
 
 export default async function CourseOfferPage({ params }: { params: Promise<{ slug: string }> }) {

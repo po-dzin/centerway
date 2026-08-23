@@ -76,15 +76,24 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
               ))}
             </p>
           </div>
+          {/* TWO LINK COLUMNS, SPLIT BY WHAT THEY ARE. The first is this
+              application's own pages — the places a reader goes to keep working.
+              The second is everything that leaves it or changes the device:
+              support opens a chat elsewhere, and install is an OS affordance,
+              not a page. Four rows in one column read as one undifferentiated
+              stack where the storefront footer beside it has three tracks, so
+              the two footers disagreed about their own shape. */}
           <div className={styles.footerLinks}>
             <Link href={shelfHref}>Мої курси</Link>
             <Link href={profileHref}>Профіль</Link>
+          </div>
+          <div className={styles.footerLinks}>
             <a href={SUPPORT_BOT_URL} target="_blank" rel="noopener noreferrer">
               Підтримка
             </a>
-            {/* In the links column, not a column of its own: it renders itself
-                away most of the time, and a track that is empty on almost every
-                visit is a gap the other two have to be laid out around. */}
+            {/* Renders itself away when the browser offers no prompt, which is
+                most visits — so this track has to survive being empty without
+                collapsing the two beside it. */}
             <PwaInstallFooterEntry label={INSTALL_LABEL} />
           </div>
         </div>

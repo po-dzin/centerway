@@ -22,7 +22,9 @@ export async function GET(req: NextRequest) {
 
     try {
         const items = await listRoles({ q: new URL(req.url).searchParams.get("q") ?? undefined });
-        return NextResponse.json({ items, canGrant: session.role === "admin" });
+        // `selfId` lets the panel disable the row that would fail with
+        // `cannot_change_own_role` instead of offering a control that 409s.
+        return NextResponse.json({ items, canGrant: session.role === "admin", selfId: session.user.id });
     } catch (error) {
         return failed(error);
     }

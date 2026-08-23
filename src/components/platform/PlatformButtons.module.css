@@ -73,12 +73,73 @@
   transform: none;
 }
 
-/* Standalone buttons on a page reserve a width so two of them side by side do
-   not come out two different sizes. Deliberately opt-in: inside a card the
-   actions are full width instead (docs "Card actions are full width"), and a
-   min-width there fights the grid. */
+/* ── fit: how a button sizes itself in its container ──
+
+   THE SECOND AXIS, AND THE ONE THAT KEPT DRIFTING. The six roles above answer
+   what a button IS. They never answered how wide it should be, so every caller
+   answered that itself — and the answers were `width: fit-content`,
+   `width: 100%`, `flex: 1 1 100%`, `flex: 0 1 auto` + `min-width`, and nothing
+   at all, spread across five stylesheets. Three separate bugs came out of that
+   in one session: offer-card CTAs sized to their own labels so three cards in a
+   row showed three different stubs; cabinet card actions stacked at the
+   contract minimum and left a third of the card empty beside each; the
+   builder's icon-only options kept the inline padding meant for a label and
+   rendered as wide empty plates.
+
+   None of those is a role question. They are all the same question — "what does
+   this control do with the space it is given" — and it now has four documented
+   answers instead of one per caller. Compose exactly one alongside a role.
+
+     hug     content width. Toolbars and inline controls, where the label is
+             the object and the container is a row of other things.
+     fill    spans the container, still capped by --ds-button-max-width. Card
+             actions, hero CTAs, anything whose container IS the measure.
+     wide    a floor, not a span: two standalone buttons side by side come out
+             the same size instead of two different ones.
+     square  icon-only. A 1:1 box at the touch minimum with the label padding
+             removed — that padding is sized for text beside a glyph and reads
+             as a wide empty button without one. */
+
+.hug {
+  width: fit-content;
+}
+
+/* The cap stays `base`'s. That is what makes `fill` safe in a container of any
+   width: a lone action in a maximised window stops at 22rem instead of becoming
+   a 1.5m band, and a card at the default offer width (24rem less its padding =
+   21.5rem) is spanned exactly. */
+.fill {
+  width: 100%;
+}
+
 .wide {
   min-width: var(--ds-button-min-width);
+}
+
+.square {
+  width: var(--ds-touch-target-min);
+  min-width: var(--ds-touch-target-min);
+  max-width: none;
+  padding-inline: 0;
+  aspect-ratio: 1;
+}
+
+/* ── row: a group of buttons ──────────────────────────
+
+   One line when they fit, one full-width line each when they do not — and the
+   threshold is the contract's own `--ds-button-min-width`, never a breakpoint
+   someone measured against one card. A media query cannot answer this: the same
+   card is 326px in a three-up grid and 560px in a one-up, at one viewport width.
+   Flexbox answers it exactly, so the rule is four lines and belongs to every
+   caller rather than being rewritten per surface. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+}
+
+.row > * {
+  flex: 1 1 var(--ds-button-min-width);
 }
 
 /* ── primary ──────────────────────────────────────── */

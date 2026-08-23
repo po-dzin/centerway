@@ -124,7 +124,7 @@
 
 .buyAction {
   composes: primary from "./PlatformButtons.module.css";
-  width: 100%;
+  composes: fill from "./PlatformButtons.module.css";
 }
 
 .fineprint {
@@ -158,12 +158,12 @@
 
 .statusPrimaryAction {
   composes: primary from "./PlatformButtons.module.css";
-  width: 100%;
+  composes: fill from "./PlatformButtons.module.css";
 }
 
 .statusSecondaryAction {
   composes: secondary from "./PlatformButtons.module.css";
-  width: 100%;
+  composes: fill from "./PlatformButtons.module.css";
 }
 
 .statusMeta {

@@ -34,6 +34,15 @@ export type OfferCommerce =
       checkoutHref: string;
       /** Already formatted — a checkout without a quoted price is not offered. */
       price: string;
+      /**
+       * The same figure unformatted, and the currency it is in.
+       *
+       * Structured data needs a number: `"4 100 ₴"` is what a person reads and
+       * `4100` + `"UAH"` is what an Offer node states. Both are derived from
+       * one source here so a page cannot print one price and publish another.
+       */
+      amount: number;
+      currency: string;
     }
   | {
       mode: "lead";
@@ -95,6 +104,8 @@ export function courseOfferCommerce(slug: string, offer: CourseOffer | null): Of
     productCode: offer.code as PayableProductCode,
     checkoutHref: checkoutHref(offer.code as PayableProductCode, slug),
     price: formatPrice(offer.listAmount ?? offer.amount, offer.currency),
+    amount: offer.listAmount ?? offer.amount,
+    currency: offer.currency,
   };
 }
 
@@ -113,6 +124,8 @@ export function resolveOfferCommerce(slug: string): OfferCommerce {
       productCode,
       checkoutHref: checkoutHref(productCode, slug),
       price: formatPrice(listed, PRODUCTS[productCode].currency),
+      amount: listed,
+      currency: PRODUCTS[productCode].currency,
     };
   }
 

@@ -164,93 +164,6 @@
   overflow-wrap: normal;
 }
 
-/* ── Section navigation ───────────────────────────── */
-
-/* A scroll strip, not a wrapping row: five labels must stay on one line on a
-   360px phone without the tallest one pushing the content down. */
-.tabs {
-  display: flex;
-  gap: var(--cw-space-2xs);
-  margin-bottom: var(--cw-space-lg);
-  padding-bottom: var(--cw-space-2xs);
-  overflow-x: auto;
-  scrollbar-width: none;
-  -webkit-overflow-scrolling: touch;
-  /* The scrollbar is hidden, so the last tab used to end flush against the
-     viewport edge with nothing to say the row continues — "Акаунт" simply did
-     not exist as far as the reader could tell. The mask fades the final 2rem so
-     a clipped tab looks clipped. */
-  -webkit-mask: linear-gradient(90deg, #000 calc(100% - 2rem), transparent);
-  mask: linear-gradient(90deg, #000 calc(100% - 2rem), transparent);
-}
-
-/* Once every tab fits there is nothing to fade, and the fade would just eat the
-   last one's right edge. Four labels measure ~333px, which clears the container
-   from 368px of viewport up; below that — a 360px or 320px phone — the row does
-   scroll and the fade is telling the truth. */
-@media (min-width: 23rem) {
-  .tabs {
-    -webkit-mask: none;
-    mask: none;
-  }
-}
-
-.tabs::-webkit-scrollbar {
-  display: none;
-}
-
-.tab {
-  flex: 0 0 auto;
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  min-height: var(--ds-touch-target-min);
-  /* No fill at rest. Five filled chips in a row on a calm page is five objects
-     competing before the reader has chosen anything. */
-  padding-inline: var(--cw-space-sm);
-  border: 0;
-  border-radius: var(--cw-radius-btn);
-  background: transparent;
-  color: var(--cw-platform-muted);
-  font: inherit;
-  font-size: 0.92rem;
-  font-weight: 600;
-  cursor: pointer;
-  white-space: nowrap;
-}
-
-.tab:hover {
-  color: var(--cw-platform-text);
-  background: var(--cw-mat-surface-sunk);
-}
-
-.tab:focus-visible {
-  outline: none;
-  background: var(--cw-mat-surface-sunk);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 32%, transparent);
-}
-
-/* "You are here" is the foreground at full weight plus the gold marker, and
-   nothing else. A fill was tried here and removed: the sunk material measured
-   1.04 against the page ground, so it read as a half-drawn box rather than a
-   chip, and outlining it properly turned a quiet strip into five objects. The
-   rest-state fill stays off; the marker carries the state. */
-.tabActive {
-  composes: tab;
-  color: var(--cw-platform-text);
-}
-
-.tabActive::after {
-  content: "";
-  position: absolute;
-  left: var(--cw-space-sm);
-  right: var(--cw-space-sm);
-  bottom: 0.35rem;
-  height: 2px;
-  border-radius: var(--cw-radius-pill);
-  background: var(--cw-platform-accent);
-}
-
 /* ── Section scaffolding ──────────────────────────── */
 
 /* `minmax(0, 1fr)`, never the implicit `auto`, and this is not boilerplate.
@@ -433,16 +346,15 @@
    handed each button half a wide card and then capped it at 22rem — two 352px
    slabs with a canyon between them, on a card whose text ran 60 characters. */
 .actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--cw-space-xs);
+  composes: row from "../PlatformButtons.module.css";
   margin-top: auto;
   padding-top: var(--cw-space-2xs);
 }
 
-.actions > * {
-  flex: 1 1 100%;
-}
+/* The group rule now lives in the contract (`row`), because "one line when they
+   fit, a full-width line each when they do not" is not a cabinet question — the
+   builder and the offer tiles were solving it too, differently. What stays here
+   is only what is local: the card pins its actions to its own bottom. */
 
 .actionPrimary {
   composes: primary from "../PlatformButtons.module.css";
@@ -789,10 +701,11 @@
     grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
   }
 
-  /* Content width, floored at the contract's minimum. Two of them sit side by
-     side because they are small, not because a grid track made them equal. */
-  .actions > * {
-    flex: 0 1 auto;
-    min-width: var(--ds-button-min-width);
-  }
+  /* NO OVERRIDE HERE ANY MORE — the base rule already answers this band. This
+     one set `flex-grow: 0`, which meant a pair that did NOT fit stayed at the
+     contract minimum instead of filling the line it wrapped onto: at a 326px
+     card, two 168px buttons need 348px, so they wrapped and each left 158px of
+     dead card beside it. That is the "neither one row nor full width" state.
+     `flex: 1 1 var(--ds-button-min-width)` on `.actions > *` covers both
+     outcomes at every width, so this band needs nothing of its own. */
 }

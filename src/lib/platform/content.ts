@@ -29,7 +29,11 @@ export const platformNav = [
   { label: "Діагностика", href: "/tests", match: "prefix" as const },
   { label: "Програми", href: "/programs", match: "prefix" as const },
   { label: "Продукти", href: "/products", match: "prefix" as const },
-  { label: "Про автора", href: "/expert", match: "exact" as const },
+  /* «Консультація», not «Про автора». The page merged the two on 2026-08-23 and
+     the topbar names what a reader can DO there — the author's credentials are
+     the evidence on that page, not a fifth destination. `prefix`, because the
+     merged surface is the one `/consult` now serves whole. */
+  { label: "Консультація", href: "/consult", match: "prefix" as const },
 ];
 
 /**
@@ -249,6 +253,18 @@ export const programs = [
       mobilePosition: "center 22%",
     },
     description: "Трав'яні формули і м'яка природна підтримка, яку обирають за станом, ритмом і поточним етапом відновлення.",
+    /* The three lines a reader needs before they can judge whether this product
+       is for them — appropriateness, limits, context. They used to be a prose
+       block ABOVE the card (`naturalSupportItems`, plus a "Як читати" panel on
+       /products), which meant the home page argued about herbs for three
+       paragraphs before showing one. Carried on the offer itself so the next
+       product to land brings its own set instead of needing a panel written for
+       it. See `points` on PlatformOfferCard. */
+    points: [
+      "Доречно: м'яка підтримка травлення, ритму і щоденного самопочуття.",
+      "Не замінює: діагностику, лікаря і власне харчування, сон та практику.",
+      "Підбір за станом і конституцією, не за універсальною схемою.",
+    ],
     longDescription:
       "Трав'яна підтримка може бути доречною, коли потрібно м'яко підтримати травлення, ритм і щоденне самопочуття. Її важливо розглядати не окремо від життя, а разом із харчуванням, сном, практикою і вашим поточним станом — тоді продукт не стає випадковою покупкою без сенсу.",
     results: [
@@ -436,7 +452,12 @@ export const doshas = [
 ];
 
 export const consultationCopy = {
-  title: "Особиста консультація з Євгенієм Корякіним",
+  /* No name in the hero title since the 2026-08-22 merge with /expert — the
+     page now carries a full author section (facts, path, portrait) a few
+     scrolls down, so the title repeating "з Євгенієм Корякіним" was saying the
+     same thing twice on one page. The name still opens the body copy just
+     below and the metadata title. */
+  title: "Особиста консультація",
   text: "Не «просто порада», а персональний план відновлення: стан, конституція, харчування, очищення, ритм і наступні кроки без зайвого тиску.",
 };
 

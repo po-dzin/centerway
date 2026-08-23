@@ -85,6 +85,7 @@
       "--cw-card-border": "1px solid var(--cw-border)",
       "--cw-card-shadow": "var(--cw-shadow-soft)",
       "--cw-max-width": "1160px",
+      "--cw-container-inset": "max(1rem, calc((100% - var(--cw-max-width)) / 2))",
       "--cw-platform-visual-movement-start": "#17332d",
       "--cw-platform-visual-movement-mid": "#25473f",
       "--cw-platform-visual-movement-end": "#102621",
@@ -186,7 +187,8 @@
       "--cw-card-radius": "var(--cw-radius-lg)",
       "--cw-card-border": "1px solid var(--cw-border)",
       "--cw-card-shadow": "var(--cw-shadow-soft)",
-      "--cw-max-width": "1160px"
+      "--cw-max-width": "1160px",
+      "--cw-container-inset": "max(1rem, calc((100% - var(--cw-max-width)) / 2))"
     }
   },
   "layers": {

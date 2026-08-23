@@ -600,10 +600,24 @@
 /* Geometry, type and focus come from the contract; only the fill is local,
    because a program tile paints its own theme (--program-tile-*). Composing
    `base` rather than `primary` is the point — a themed control still owes the
-   system its size, weight and corner. */
+   system its size, weight and corner.
+
+   FULL CARD WIDTH, CAPPED AT THE DEFAULT CARD'S. `fit-content` sized the CTA to
+   its own label, so «Деталі курсу» and «Деталі програми» came out two different
+   widths in one row and neither reached the card's edge — three cards with three
+   different stubs floating in their footers. The card is the measure now.
+
+   The cap is what keeps a one-up and a two-up row honest. Those layouts hand the
+   tile a much wider cell, and a CTA that filled it would be a different control
+   from the one the three-up row draws — same page, same card, same job, three
+   sizes. `--ds-button-max-width` (22rem) sits just above the default tile's
+   inner width (`--ds-offer-card-width-desktop` 24rem less 2×1.25rem padding =
+   21.5rem), so at the default size the button spans the card exactly and in a
+   wider cell it stops at the size it already had. `.base` owns that cap; nothing
+   is restated here. */
 .programLink {
   composes: base from "./PlatformButtons.module.css";
-  width: fit-content;
+  composes: fill from "./PlatformButtons.module.css";
   border: 1px solid var(--program-tile-button-border);
   color: var(--program-tile-fg);
   background: var(--program-tile-button-bg);
@@ -620,6 +634,48 @@
    not exist yet. A planned tile keeps the tile rhythm but never offers an action. */
 .programTileBody[data-has-meta="true"] {
   grid-template-rows: auto auto auto 1fr auto;
+}
+
+/* The context list, inside the card it describes. The description row gives up
+   the slack instead of the list, so cards with and without points still line
+   their CTAs up along the bottom of the row. */
+.programTileBody[data-has-points="true"] {
+  grid-template-rows: auto auto 1fr auto auto;
+}
+
+.programTileBody[data-has-meta="true"][data-has-points="true"] {
+  grid-template-rows: auto auto auto 1fr auto auto;
+}
+
+/* Marker inside the text column, the platform's one list rule — see
+   `.timeline` in PlatformBlocksBase.module.css. On a tile that matters twice
+   over: the card has 1.25rem of padding and a hanging marker would sit on the
+   photograph. */
+.programTilePoints {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.programTilePoints li {
+  position: relative;
+  padding-inline-start: 0.95rem;
+  color: color-mix(in srgb, var(--program-tile-fg) 88%, transparent);
+}
+
+.programTilePoints li::before {
+  content: "";
+  position: absolute;
+  left: 0.1rem;
+  top: 0.6em;
+  width: 0.26rem;
+  height: 0.26rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--program-tile-fg) 62%, transparent);
 }
 
 .programTileMeta {

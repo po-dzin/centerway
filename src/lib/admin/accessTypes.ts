@@ -86,3 +86,85 @@ export function learnerStatusOf(
 export function isGrantableRole(value: unknown): value is GrantableRole {
     return typeof value === "string" && (GRANTABLE_ROLES as readonly string[]).includes(value);
 }
+
+export type LearnerAccountRow = {
+    authUserId: string;
+    email: string | null;
+    fullName: string | null;
+    avatarUrl: string | null;
+    /** Every enrollment this person holds, newest first. */
+    courses: LearnerRow[];
+    lessonsTotal: number;
+    lessonsCompleted: number;
+    lastActivityAt: string | null;
+    status: LearnerStatus;
+};
+
+/**
+ * How one person's several courses collapse into one headline status.
+ *
+ * Ordered by "who needs a look first", not by progress: a stalled course is the
+ * reason to open the row, and a finished one is the reason not to. So a learner
+ * who finished Reset Day but went quiet on Way21 reads as stalled, which is the
+ * true thing about them.
+ */
+export const ACCOUNT_STATUS_PRECEDENCE: readonly LearnerStatus[] = [
+    "stalled",
+    "in_progress",
+    "not_started",
+    "completed",
+] as const;
+
+/**
+ * Fold enrollment rows into one row per account.
+ *
+ * Input order is preserved (the query sorts by start date, newest first), so
+ * the page keeps a stable order without a second sort, and each person's
+ * courses stay in that same order inside their row.
+ */
+export function groupLearnersByAccount(rows: LearnerRow[]): LearnerAccountRow[] {
+    const byAccount = new Map<string, LearnerAccountRow>();
+
+    for (const row of rows) {
+        const existing = byAccount.get(row.authUserId);
+        if (existing) {
+            existing.courses.push(row);
+            continue;
+        }
+        byAccount.set(row.authUserId, {
+            authUserId: row.authUserId,
+            email: row.email,
+            fullName: row.fullName,
+            avatarUrl: row.avatarUrl,
+            courses: [row],
+            lessonsTotal: 0,
+            lessonsCompleted: 0,
+            lastActivityAt: null,
+            status: "not_started",
+        });
+    }
+
+    return [...byAccount.values()].map((account) => {
+        let lessonsTotal = 0;
+        let lessonsCompleted = 0;
+        let lastActivityAt: string | null = null;
+        const present = new Set<LearnerStatus>();
+
+        for (const course of account.courses) {
+            lessonsTotal += course.lessonsTotal;
+            lessonsCompleted += course.lessonsCompleted;
+            present.add(course.status);
+            if (course.lastActivityAt && (!lastActivityAt || course.lastActivityAt > lastActivityAt)) {
+                lastActivityAt = course.lastActivityAt;
+            }
+        }
+
+        return {
+            ...account,
+            lessonsTotal,
+            lessonsCompleted,
+            lastActivityAt,
+            status: ACCOUNT_STATUS_PRECEDENCE.find((status) => present.has(status)) ?? "not_started",
+        };
+    });
+}

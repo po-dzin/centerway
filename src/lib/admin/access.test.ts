@@ -83,14 +83,17 @@ describe("listLearners", () => {
     it("folds the event log into per-learner progress and a status", async () => {
         const { items, total, summary } = await listLearners({ limit: 50, offset: 0 });
 
+        // Three people, each holding one course.
         expect(total).toBe(3);
         const byEmail = new Map(items.map((row) => [row.email, row]));
 
         expect(byEmail.get("learner@example.com")).toMatchObject({
-            courseSlug: "reset-day",
             lessonsTotal: 2,
             lessonsCompleted: 1,
             status: "in_progress",
+        });
+        expect(byEmail.get("learner@example.com")!.courses[0]).toMatchObject({
+            courseSlug: "reset-day",
             source: "order",
         });
         expect(byEmail.get("stalled@example.com")).toMatchObject({ lessonsCompleted: 0, status: "stalled" });
@@ -152,8 +155,44 @@ describe("listLearners", () => {
             source: "manual", order_ref: null, started_at: daysAgo(1), expires_at: null,
         });
         const { items } = await listLearners({ limit: 50, offset: 0 });
-        const orphan = items.find((row) => row.enrollmentId === "enr-orphan");
+        const orphan = items
+            .flatMap((account) => account.courses)
+            .find((row) => row.enrollmentId === "enr-orphan");
         expect(orphan).toMatchObject({ courseSlug: "—", lessonsTotal: 0 });
+    });
+
+    it("gives one person one row, however many courses they hold", async () => {
+        db.tables.lms_enrollments.push({
+            id: "enr-4", course_id: "course-way21", auth_user_id: "auth-1",
+            source: "manual", order_ref: null, started_at: daysAgo(1), expires_at: null,
+        });
+
+        const { items, total, summary } = await listLearners({ limit: 50, offset: 0 });
+
+        // Still three people, not four rows.
+        expect(total).toBe(3);
+        const learner = items.find((row) => row.email === "learner@example.com")!;
+        expect(learner.courses.map((course) => course.courseSlug).sort()).toEqual(["reset-day", "way21"]);
+        // Lessons add up across their courses; way21 has none yet.
+        expect(learner).toMatchObject({ lessonsTotal: 2, lessonsCompleted: 1, status: "in_progress" });
+
+        // The tiles count people per status they hold, so this one person is
+        // counted under both of theirs — and the numbers no longer sum to 3.
+        expect(summary).toMatchObject({ in_progress: 1, not_started: 2, stalled: 1 });
+    });
+
+    it("matches a person when any one of their courses is in the filtered status", async () => {
+        db.tables.lms_enrollments.push({
+            id: "enr-4", course_id: "course-way21", auth_user_id: "auth-1",
+            source: "manual", order_ref: null, started_at: daysAgo(1), expires_at: null,
+        });
+
+        const idle = await listLearners({ status: "not_started", limit: 50, offset: 0 });
+        // auth-1 qualifies through way21 even though reset-day is in progress.
+        expect(idle.items.map((row) => row.email).sort()).toEqual([
+            "fresh@example.com",
+            "learner@example.com",
+        ]);
     });
 
     it("surfaces a database error as a 500 instead of an empty list", async () => {

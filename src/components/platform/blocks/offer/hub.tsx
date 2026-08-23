@@ -1,5 +1,5 @@
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
-import { PlatformBlock } from "@/components/platform/PlatformBlock";
+import { PlatformBlock, PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import styles from "@/components/platform/PlatformOfferStyles";
 import { featuredPrograms, miniCourses } from "@/lib/platform/content";
 
@@ -10,6 +10,7 @@ export function HubMini() {
       label="Міні-курси"
       title="М&apos;який вхід без довгого зобов&apos;язання"
       lead="Кілька днів практики, щоб спробувати підхід без довгого зобов'язання."
+      headActions={<PlatformBlockLink href="/programs" label="Усі програми і курси" />}
     >
       <div className={styles.programShowcase} data-layout="mini">
         {miniCourses.map((program) => (
@@ -38,6 +39,7 @@ export function HubPrograms() {
       label="Програми"
       title="Глибші програми для тіла, харчування і ритму"
       lead="Яка програма підходить моєму поточному стану?"
+      headActions={<PlatformBlockLink href="/programs" label="Усі програми" />}
     >
       <div className={styles.programShowcase}>
         {featuredPrograms.map((program) => (

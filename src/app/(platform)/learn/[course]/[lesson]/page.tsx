@@ -5,12 +5,14 @@ import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { LessonView } from "@/components/lms/LessonView";
 import { getLiveCourse } from "@/lib/lms/liveCatalog";
 import { findLesson } from "@/lms-core";
+import { describe } from "@/lib/brand/identity";
+import { pageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "Урок - CenterWay",
-  description: "Крок курсу на платформі CenterWay.",
-  robots: { index: false, follow: false },
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Урок",
+  description: describe("Крок курсу на платформі CenterWay.", { bounded: false }),
+  noindex: true,
+});
 
 export default async function LearnLessonPage({
   params,

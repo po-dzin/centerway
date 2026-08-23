@@ -274,12 +274,12 @@
    here verbatim from PlatformShell and is now defined once. */
 .heroPrimaryButton {
   composes: primary from "./PlatformButtons.module.css";
-  width: 100%;
+  composes: fill from "./PlatformButtons.module.css";
 }
 
 .heroSecondaryButton {
   composes: onMedia from "./PlatformButtons.module.css";
-  width: 100%;
+  composes: fill from "./PlatformButtons.module.css";
 }
 
 .videoSection {
@@ -351,12 +351,12 @@
    is real, so they are two classes now. */
 .videoActionPrimary {
   composes: primary from "./PlatformButtons.module.css";
-  width: 100%;
+  composes: fill from "./PlatformButtons.module.css";
 }
 
 .videoActionSecondary {
   composes: secondary from "./PlatformButtons.module.css";
-  width: 100%;
+  composes: fill from "./PlatformButtons.module.css";
 }
 
 .videoDecisionRail {
@@ -368,6 +368,18 @@
 .videoDecisionIntro {
   display: grid;
   gap: 0.35rem;
+}
+
+/* The diagnostics block's own way out, matching the showcase blocks' — see
+   `.blockAction`. This panel offers the dosha test and a consultation, which are
+   two of the tests catalogue's entries, not the catalogue. */
+.videoDecisionMore {
+  composes: blockAction from "./PlatformBlocksBase.module.css";
+  justify-content: flex-start;
+}
+
+.videoDecisionMoreArrow {
+  composes: blockActionArrow from "./PlatformBlocksBase.module.css";
 }
 
 @media (max-width: 900px) {

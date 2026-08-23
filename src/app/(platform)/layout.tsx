@@ -7,29 +7,44 @@ import { headers } from "next/headers";
 import { SurfaceHostProvider } from "@/components/platform/layout/SurfaceHost";
 import "../globals.css";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
+import { BRAND, BRAND_COVER, BRAND_LOCALE } from "@/lib/brand/identity";
+import { JsonLd } from "@/lib/seo/StructuredData";
+import { graph, organizationLd, personLd, websiteLd } from "@/lib/seo/jsonLd";
+import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 
 const GOOGLE_TAG_ID = "G-HV89HDP52T";
-
-/** Baked by scripts/brand-mark-bake.mjs — the mark and wordmark on the deep ground. */
-const BRAND_COVER = "/cw/brand/cw-og-cover.png";
 
 export const metadata: Metadata = {
   // Needed for the OG/Twitter image below: Next resolves relative asset paths
   // against this, and a scraper is handed an absolute URL or nothing.
-  metadataBase: new URL("https://www.centerway.net.ua"),
-  title: "CenterWay Platform",
-  description: "Unified platform for CenterWay products",
+  metadataBase: new URL(PLATFORM_ORIGIN),
+  title: {
+    // The suffix a page no longer writes by hand. It used to be typed into
+    // every title — as "- CenterWay", "| CenterWay", "CenterWay |", or not at
+    // all — which is four brands as far as a result page is concerned.
+    default: `${BRAND.name} — ${BRAND.category}`,
+    template: `%s — ${BRAND.name}`,
+  },
+  // Was "Unified platform for CenterWay products": English, internal, and the
+  // fallback description for every page that forgot its own.
+  description: BRAND.description,
+  applicationName: BRAND.name,
+  keywords: [...BRAND.entities],
+  authors: [{ name: BRAND.founder.name, url: `${PLATFORM_ORIGIN}${BRAND.founder.path}` }],
+  creator: BRAND.founder.name,
+  publisher: BRAND.name,
   openGraph: {
     type: "website",
-    siteName: "CenterWay",
-    images: [{ url: BRAND_COVER, width: 1200, height: 630, alt: "CenterWay" }],
+    siteName: BRAND.name,
+    locale: BRAND_LOCALE,
+    url: `${PLATFORM_ORIGIN}/`,
+    images: [{ url: BRAND_COVER, width: 1200, height: 630, alt: BRAND.name }],
   },
   twitter: {
     card: "summary_large_image",
     images: [BRAND_COVER],
   },
 };
-
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -68,6 +83,10 @@ export default async function RootLayout({
         <Suspense fallback={null}>
           <PixelProvider />
         </Suspense>
+        {/* The brand graph, on every public page of the showcase. It is three
+            nodes and ~1 KB, and it is what makes a Course or a Product on any
+            other page resolve to a provider instead of a bare name. */}
+        <JsonLd data={graph(organizationLd(), websiteLd(), personLd())} />
         <SurfaceHostProvider host={host}>{children}</SurfaceHostProvider>
         <Analytics />
       </body>

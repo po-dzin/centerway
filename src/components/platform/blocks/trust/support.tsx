@@ -34,7 +34,7 @@ export function SupportForm({ route }: Pick<PlatformRouteBlockProps, "route">) {
                 </span>
               ))}
             </div>
-            <Link className={styles.secondaryButton} href="/expert">
+            <Link className={styles.secondaryButton} href="/consult">
               Більше про автора
             </Link>
           </div>

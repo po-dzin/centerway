@@ -293,7 +293,7 @@ function AdminShell({ children }: { children: ReactNode }) {
 
             {/* Main */}
             <main className="flex-1 flex flex-col min-w-0 min-h-0">
-                <header className="h-14 md:h-16 shrink-0 border-b cw-border cw-surface-2 flex items-center justify-between sm:justify-end px-3 sm:px-4 md:px-8 sticky top-0 z-20 transition-colors duration-300">
+                <header className="relative h-14 md:h-16 shrink-0 border-b cw-border cw-surface-2 flex items-center justify-between sm:justify-end px-3 sm:px-4 md:px-8 sticky top-0 z-20 transition-colors duration-300">
                     <button
                         type="button"
                         onClick={() => setMobileMenuOpen(true)}

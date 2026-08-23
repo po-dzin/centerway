@@ -111,7 +111,7 @@
    label, so the control comes out square instead of a wide empty button. */
 .stepAction {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
-  width: var(--ds-touch-target-min);
+  composes: square from "../platform/PlatformButtons.module.css";
 }
 
 .contentsAction {
@@ -348,7 +348,7 @@
    carrying three labelled buttons is a row with no room left for its title. */
 .iconAction {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
-  width: var(--ds-touch-target-min);
+  composes: square from "../platform/PlatformButtons.module.css";
   color: var(--cw-platform-muted);
 }
 
@@ -384,26 +384,30 @@
 
 /* ── View switch ──────────────────────────────────── */
 
+/* A SOFT RECT, NOT A PILL. The switch holds two square icon targets now, and a
+   pill around two squares leaves a crescent of track showing at each end that
+   belongs to neither option. The button radius is the one every other control
+   in this toolbar already uses, so the switch sits in the row rather than
+   beside it. */
 .viewSwitch {
   display: inline-flex;
   align-items: center;
   gap: var(--cw-space-2xs);
   padding: var(--cw-space-2xs);
-  border-radius: var(--cw-radius-pill);
+  border-radius: var(--cw-radius-btn);
   background: var(--cw-mat-surface-sunk);
 }
 
-/* Keeps chrome's touch target: a segmented option is still a thing a thumb
-   has to hit, and 44px is the floor whatever the label's length.
-
-   `nowrap` is load-bearing. A flex item wraps its text at any width, and on a
-   375px bar these two came out one letter per line — two vertical strips of
-   Cyrillic where the switch should be. The label is two words in the whole
-   builder; it may take its own width and let the bar keep the rest. */
+/* Keeps chrome's touch target: a segmented option is still a thing a thumb has
+   to hit, and the contract's minimum is the floor whether it carries a word or
+   a glyph. Square, because the content is now a 20px icon and `chrome`'s inline
+   padding is sized for a label beside one — left alone it drew a wide empty
+   button with a small mark adrift in it. */
 .viewOption {
   composes: chrome from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  border-radius: var(--cw-radius-sm);
   color: var(--cw-platform-muted);
-  white-space: nowrap;
 }
 
 .viewOption[aria-pressed="true"] {
@@ -485,13 +489,30 @@
   gap: var(--cw-space-md);
 }
 
+/* TWO ROWS, AND THE FACE TAKES THE SLACK. `auto` rows let every card pack its
+   content to the top and leave the remainder under the last line, so the row
+   menu floated at a different height in each card of a row — three cards, three
+   places to look for the same control. With `1fr auto` the face absorbs the
+   height a taller neighbour forces and the controls sit on one line across the
+   row.
+
+   Card actions align to the INLINE END. The menu is a corner affordance, not a
+   line of content: left-aligned under a paragraph it read as one more item in
+   the card's body, and the eye had to distinguish it from `blockerLine` by
+   shape alone. */
 .courseCard {
   display: grid;
+  grid-template-rows: 1fr auto;
+  justify-items: stretch;
   gap: var(--cw-space-xs);
   padding: var(--cw-space-md);
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.courseCard > .menuRoot {
+  justify-self: end;
 }
 
 .courseCard:hover {
@@ -500,6 +521,9 @@
 
 .courseCardFace {
   display: grid;
+  /* Packed to the top of whatever height the row hands it, so two cards of
+     different content length still start their covers and titles on one line. */
+  align-content: start;
   gap: var(--cw-space-xs);
   color: inherit;
   text-decoration: none;
@@ -1332,7 +1356,7 @@
    level; the earlier bar mixed a rounded rect against a circular glyph frame. */
 .menuTrigger {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
-  width: var(--ds-touch-target-min);
+  composes: square from "../platform/PlatformButtons.module.css";
   color: var(--cw-platform-muted);
 }
 
@@ -1538,7 +1562,7 @@
 
 .historyButton {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
-  width: var(--ds-touch-target-min);
+  composes: square from "../platform/PlatformButtons.module.css";
   color: var(--cw-platform-muted);
 }
 

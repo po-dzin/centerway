@@ -91,6 +91,7 @@
     --cw-card-border: 1px solid var(--cw-border);
     --cw-card-shadow: var(--cw-shadow-soft);
     --cw-max-width: 1160px;
+    --cw-container-inset: max(1rem, calc((100% - var(--cw-max-width)) / 2));
     --cw-platform-visual-movement-start: #17332d;
     --cw-platform-visual-movement-mid: #25473f;
     --cw-platform-visual-movement-end: #102621;
@@ -189,7 +190,6 @@
     --cw-mat-inverse-stroke: color-mix(in srgb, #ffffff 18%, transparent);
     --cw-mat-inverse-text: #faefe0;
     --cw-mat-inverse-text-muted: color-mix(in srgb, #faefe0 78%, transparent);
-    --cw-branch-grid-discipline: 1;
     /* CW_RUNTIME_TOKENS_END */
 
     /* DS_ALIAS_LIGHT_START */
@@ -356,6 +356,7 @@
     --cw-card-border: 1px solid var(--cw-border);
     --cw-card-shadow: var(--cw-shadow-soft);
     --cw-max-width: 1160px;
+    --cw-container-inset: max(1rem, calc((100% - var(--cw-max-width)) / 2));
     /* CW_BASE_DARK_END */
 
     /* DS_ALIAS_DARK_START */
@@ -447,6 +448,49 @@
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #0e1811;
     /* CW_PLATFORM_DARK_END */
+  }
+
+  /* ── The one nav-state contract ─────────────────────
+
+     THREE SURFACES USED TO ANSWER "you are here" DIFFERENTLY. The topbar drew
+     an ink underline, the cabinet's tab strip drew a gold one, and the account
+     popover underlined its current row in gold via `text-decoration`. Three
+     marks for one state, two of them in the same viewport at the same time —
+     the reader had to learn that a black rule and a gold rule mean the same
+     thing, which is a thing no reader should have to learn.
+
+     ONE MARK, TONED. Ink on a light ground, gold on a dark one. Not a taste
+     call in either direction: on cream, gold is a mid-luminance colour that
+     measures ~1.05 against the sheet and simply is not visible as a rule; on
+     the night material the ink IS the cream text, so an ink underline under a
+     cream label is the label drawn twice. Each tone takes the mark its ground
+     can actually carry.
+
+     The mark is the SECOND signal in every case, never the only one — the
+     active label also runs at full foreground and a heavier weight. That is
+     what keeps the gold mark inside 1.4.11: it is redundant decoration, not the
+     sole carrier of state, which matters because gold on the dark chrome tint
+     measures 2.34 against the 3.0 a load-bearing indicator would owe.
+
+     HOVER IS THE SAME MARK, HALF-DRAWN — a fill was the other candidate and it
+     loses on the rule the design doc already writes down for the tab strip:
+     these rows sit straight on the page ground, and filling one turns a quiet
+     strip into a row of objects. So: rest is muted with no plate, hover grows
+     the mark to three-quarters at 42% and brings the label to full foreground,
+     active runs the mark to full. Consumers read the three numbers below rather
+     than restating them — that is what stopped them drifting the first time. */
+  :root,
+  [data-cw-header-tone="light"] {
+    --cw-nav-marker: var(--cw-platform-text);
+    --cw-nav-marker-size: 2px;
+    --cw-nav-marker-hover-opacity: 0.42;
+    --cw-nav-marker-hover-scale: 0.74;
+  }
+
+  .dark,
+  [data-cw-theme="dark"],
+  [data-cw-header-tone="dark"] {
+    --cw-nav-marker: var(--cw-platform-accent);
   }
 
   /* Mineral pack — the earlier warm-mineral gamma, kept for individual programs

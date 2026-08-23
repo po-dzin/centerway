@@ -178,9 +178,19 @@
   line-height: var(--ds-type-body-line-height);
 }
 
+/* THE MARKER SITS INSIDE THE TEXT COLUMN, not out in the panel's padding. It
+   used to hang at -0.85rem on the theory that the sentences should start on the
+   paragraph edge — but a panel's padding is not a margin the list owns, and the
+   dots landed left of every other thing in the block: the eyebrow, the heading
+   and the disclosure row all start at the padding edge, and only the list broke
+   it. Worse, the theory needed the padding to be >= 1.15rem and several panels
+   run tighter, so on those the dots cleared the card entirely. Same fix, same
+   numbers as the lesson player's `.list` (Lms.module.css): the item is indented
+   and the marker sits in that indent. */
 .timeline li {
   position: relative;
   padding: 0;
+  padding-inline-start: 1.15rem;
   border: 0;
   border-radius: 0;
   background: none;
@@ -190,9 +200,7 @@
 .timeline li::before {
   content: "";
   position: absolute;
-  /* Hangs into the panel's padding (>= 1.15rem), so the text edge is the
-     paragraph edge. */
-  left: -0.85rem;
+  left: 0.28rem;
   /* Optical, not geometric: lands the dot on the x-height of the first line. */
   top: 0.62em;
   width: 0.3rem;
@@ -252,6 +260,35 @@
 
 .blockHeadActions {
   flex: none;
+}
+
+/* THE BLOCK'S OWN WAY OUT. Every showcase block on the home page is a sample of
+   a fuller page — three programmes of five, two mini-courses of however many —
+   and until now the only route to the rest was the topbar, which is a different
+   act of navigation entirely: leaving what you are reading versus following it
+   further. The block now names its own aggregate.
+
+   The `text` role, not a plate: this sits beside a heading, and a filled control
+   there would outweigh the title it belongs to. The arrow is part of the label
+   rather than an icon slot, because the label is the target — a 12px glyph is
+   not one. */
+.blockAction {
+  composes: text from "./PlatformButtons.module.css";
+  gap: 0.4rem;
+}
+
+.blockActionArrow {
+  transition: transform 160ms ease;
+}
+
+.blockAction:hover .blockActionArrow {
+  transform: translateX(0.18rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blockAction:hover .blockActionArrow {
+    transform: none;
+  }
 }
 
 @media (max-width: 560px) {
