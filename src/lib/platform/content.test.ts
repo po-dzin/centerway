@@ -1,38 +1,8 @@
 import { describe, expect, it } from "vitest";
 
-import { LEARNING_SHELF_HREF, builderNavItem, learningNavItem, personalNav, platformNav } from "./content";
+import { LEARNING_SHELF_HREF, learningNavItem, platformNav } from "./content";
 import manifest from "@/app/manifest";
 import { botCopy } from "@/lib/tgSupportBotCopy";
-
-/**
- * Two applications, two bars. The showcase bar is addressed to a stranger; the
- * personal bar is what the environment actually contains. A single bar that
- * grew items depending on who was reading it is what this replaced.
- */
-describe("the two navs", () => {
-  it("share no item", () => {
-    const publicHrefs = platformNav.map((item) => item.href);
-    for (const item of [...personalNav, builderNavItem]) {
-      expect(publicHrefs, item.label).not.toContain(item.href);
-    }
-  });
-
-  it("keeps the personal bar same-origin", () => {
-    // Every entry here is served by the host the bar is drawn on. A bar whose
-    // items all leave the origin is a switcher wearing a nav's clothes.
-    for (const item of [...personalNav, builderNavItem]) {
-      expect(item.href, item.label).toMatch(/^\/(learn|build)/);
-    }
-  });
-
-  it("puts the dashboard first and matches it exactly", () => {
-    // `exact`, because on the personal host every lesson lives UNDER the
-    // dashboard's address once the prefix is folded away — a prefix match would
-    // light "Мої курси" on every screen of the player.
-    expect(personalNav[0].href).toBe(LEARNING_SHELF_HREF);
-    expect(personalNav[0].match).toBe("exact");
-  });
-});
 
 describe("the learning entry", () => {
   it("is not part of the showcase nav", () => {

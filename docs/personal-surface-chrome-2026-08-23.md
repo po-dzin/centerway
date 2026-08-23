@@ -24,5 +24,6 @@ chrome styling continue to come from the shared platform design-system tokens.
 - Session restoration and content fetching use one `PlatformLoadingState`.
   The current route shell, header, footer and width stay mounted throughout.
 - The loader uses the DS `LogoMark` wait motion, semantic material tokens and a
-  reserved content box. It does not introduce a full-screen overlay or a second
-  loading layer.
+  compact, centered content box capped at `42rem`. Label, title and detail share
+  one text column beside the mark, so their alignment does not drift. The state
+  does not introduce a full-screen overlay or a second loading layer.

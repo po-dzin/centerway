@@ -321,6 +321,12 @@
   font-weight: 700;
 }
 
+/* The brand already links home on desktop. The labelled route returns inside
+   the mobile drawer, where the brand sits outside the opened navigation list. */
+.nav a.mobileHomeNavItem {
+  display: none;
+}
+
 /* The shell's three page-level buttons ARE the contract, at the standalone
    width. Everything they used to declare inline — geometry, weight, the gold
    ramp, hover lift, focus ring — now has exactly one definition. */
@@ -585,6 +591,7 @@
   background-image: var(--cw-mat-grain-image);
   box-shadow: var(--cw-mat-shadow-chrome);
   backdrop-filter: var(--cw-mat-filter);
+  overflow-y: auto;
 }
 
 .profileMenu p {
@@ -594,6 +601,12 @@
   font-size: var(--ds-type-label-size);
   line-height: var(--ds-type-label-line-height);
   overflow-wrap: anywhere;
+}
+
+.profileMenuDivider {
+  height: 1px;
+  margin: var(--ds-space-1) var(--ds-space-2);
+  background: color-mix(in srgb, currentColor 14%, transparent);
 }
 
 .profileMenu a,

@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 
 import { HandGraphic } from "@/components/Icon";
+import { platformHomeHref, platformNav } from "@/lib/platform/content";
 import { supabaseClient } from "@/lib/supabaseClient";
 import styles from "@/components/platform/PlatformShellStyles";
 import {
@@ -65,6 +66,7 @@ export function PlatformAccountMenu({
   compact = false,
   exclude,
   onNavigate,
+  includePlatformNavigation = false,
 }: {
   variant?: "menu" | "inline";
   compact?: boolean;
@@ -76,6 +78,8 @@ export function PlatformAccountMenu({
    */
   exclude?: PlatformAppKey[];
   onNavigate?: () => void;
+  /** Public platform routes repeated in the account popover on `my`. */
+  includePlatformNavigation?: boolean;
 }) {
   const session = usePlatformSession();
   const identity = usePlatformIdentity(session);
@@ -104,10 +108,14 @@ export function PlatformAccountMenu({
   /* The signed-out entry is a plain link to the cabinet, and the cabinet stayed
      on `www` — so from the personal host it has to name its origin like every
      other crossing. */
-  const cabinetHref = useSurfaceHref()("/profile");
+  const surfaceHref = useSurfaceHref();
+  const cabinetHref = surfaceHref("/profile");
   const allApps = appsFor({ signedIn, role: identity.role, authorsCourses: identity.authorsCourses });
   const apps = exclude?.length ? allApps.filter((app) => !exclude.includes(app.key)) : allApps;
   const here = currentAppKey(host, pathname);
+  const platformRoutes = includePlatformNavigation
+    ? [{ label: "Головна", href: platformHomeHref }, ...platformNav]
+    : [];
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -134,6 +142,7 @@ export function PlatformAccountMenu({
     setAnchor({
       top: `${Math.round(Math.max(rect.bottom, triggerRect.bottom) + 8)}px`,
       right: `${Math.round(Math.max(8, window.innerWidth - rect.right))}px`,
+      maxHeight: `${Math.max(192, Math.round(window.innerHeight - Math.max(rect.bottom, triggerRect.bottom) - 16))}px`,
     });
   }, []);
 
@@ -247,6 +256,25 @@ export function PlatformAccountMenu({
   const rows = (
     <>
       {email ? <p>{email}</p> : null}
+      {platformRoutes.map((route) => {
+        const routeHref = surfaceHref(route.href);
+        const shared = {
+          onClick: () => {
+            close();
+            onNavigate?.();
+          },
+        };
+        return routeHref.startsWith("http") ? (
+          <a key={`platform:${route.href}`} href={routeHref} {...shared}>
+            <InkMenuLabel>{route.label}</InkMenuLabel>
+          </a>
+        ) : (
+          <Link key={`platform:${route.href}`} href={routeHref} {...shared}>
+            <InkMenuLabel>{route.label}</InkMenuLabel>
+          </Link>
+        );
+      })}
+      {platformRoutes.length > 0 ? <div className={styles.profileMenuDivider} role="separator" /> : null}
       {apps.map((app) => {
         const href = appHref(app, host);
         const offOrigin = appIsOffOrigin(app, host);

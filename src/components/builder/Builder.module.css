@@ -87,30 +87,31 @@
 
 @media (min-width: 901px) {
   .bodyWithAside {
-    display: block;
-    position: relative;
+    display: grid;
+    grid-template-columns: 15.25rem minmax(0, 1fr);
+    align-items: start;
   }
 
   /* An auxiliary layer, never a layout column. Until the viewport has enough
      outer gutter for a permanent rail it opens over the page on request; the
      document keeps exactly the same measure as the topbar in either state. */
   .aside {
-    display: none;
-    position: fixed;
-    z-index: var(--ds-z-overlay);
-    inset-block: 5.75rem 1rem;
-    inset-inline-start: max(1rem, calc(var(--cw-container-inset) - 16.5rem));
-    width: 15.5rem;
-    max-height: none;
+    display: block;
+    position: sticky;
+    z-index: auto;
+    inset-block-start: var(--cw-space-md);
+    width: auto;
+    max-height: calc(100svh - (2 * var(--cw-space-md)));
     overflow-y: auto;
-    padding-block: var(--cw-space-lg);
-    background: color-mix(in srgb, var(--cw-platform-bg) 96%, transparent);
+    padding: var(--cw-space-lg) var(--cw-space-md);
+    background: transparent;
     border-inline-end: 1px solid var(--cw-mat-stroke-inner);
-    box-shadow: var(--cw-mat-shadow-soft);
+    box-shadow: none;
   }
 
-  .aside[data-open] {
-    display: block;
+  .aside[data-compact] {
+    width: 4.75rem;
+    padding-inline: var(--cw-space-xs);
   }
 }
 
@@ -636,6 +637,7 @@
 }
 
 .courseAddressValue {
+  min-width: 0;
   color: var(--cw-platform-text);
   font-family: var(--cw-font-data);
   overflow-wrap: anywhere;
@@ -649,6 +651,25 @@
 .slugEditAction {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
   composes: square from "../platform/PlatformButtons.module.css";
+  position: relative;
+  color: var(--cw-platform-muted);
+}
+
+.slugControlTooltip {
+  display: inline-grid;
+}
+
+.slugEditAction:hover .iconInkRing,
+.slugEditAction:focus-visible .iconInkRing {
+  opacity: 0.9;
+  transform: translate(-50%, -50%) scale(1) rotate(-4deg);
+}
+
+.slugLockState {
+  display: inline-grid;
+  place-items: center;
+  width: var(--ds-touch-target-min);
+  min-height: var(--ds-touch-target-min);
   color: var(--cw-platform-muted);
 }
 
@@ -960,10 +981,11 @@
   min-width: 0;
   min-height: var(--ds-touch-target-min);
   padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border: 1px solid transparent;
+  border: 1px solid var(--cw-mat-stroke-inner);
   border-radius: var(--cw-radius-md);
   background: transparent;
   color: var(--cw-platform-text);
+  caret-color: var(--cw-platform-text);
   font: inherit;
   font-size: 0.95rem;
   font-weight: 600;
@@ -1955,10 +1977,13 @@
    could change. */
 .titleInput {
   width: 100%;
-  padding: 0;
-  border: 0;
-  background: none;
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border: 1px solid var(--cw-mat-stroke-inner);
+  border-radius: var(--cw-radius-sm);
+  background: var(--cw-mat-surface);
   color: inherit;
+  caret-color: var(--cw-platform-text);
   font: inherit;
 }
 
@@ -1976,6 +2001,10 @@
 
 .editableTitle { flex: 1 1 auto; }
 .editableTitleCompact { flex: 1 1 auto; }
+
+.editableHeadingEmpty {
+  color: var(--cw-platform-muted);
+}
 
 .editableHeadingCompact {
   min-width: 0;
@@ -1999,8 +2028,8 @@
 }
 
 .titleEditing {
-  min-height: var(--ds-touch-target-min);
-  border-bottom: 1px solid var(--cw-mat-stroke-inner);
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
 }
 
 /* ── Slash menu ───────────────────────────────────── */
@@ -2201,15 +2230,21 @@
    The course overview is not a dashboard made from cards. It is a working
    sheet: one navigation rail, one document surface and hairlines that preserve
    the module/lesson hierarchy. Detail remains available in the release sheet,
-   but the page itself stays quiet enough to scan like a manuscript. */
+   but each workspace mode stays quiet enough to scan like a manuscript. */
 
 .courseMobileNav {
-  display: flex;
+  position: sticky;
+  z-index: var(--ds-z-sticky);
+  inset-block-start: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
-  gap: var(--cw-space-md);
+  gap: var(--cw-space-xs);
+  width: 100%;
   min-width: 0;
-  overflow-x: auto;
   border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  background: var(--cw-platform-bg);
+  white-space: nowrap;
 }
 
 .courseMobileNavItem,
@@ -2225,7 +2260,9 @@
 }
 
 .courseMobileNavItem {
-  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  min-width: 0;
   min-height: var(--ds-touch-target-min);
   padding: 0 var(--cw-space-2xs);
 }
@@ -2247,7 +2284,7 @@
   color: var(--cw-nav-marker);
   pointer-events: none;
   opacity: 0;
-  transform: scaleX(0.36) rotate(-1.2deg);
+  transform: scaleX(0.58) rotate(-1.2deg);
   transform-origin: center;
   transition: opacity 160ms ease, transform 160ms ease;
 }
@@ -2260,8 +2297,8 @@
 
 .courseMobileNavItem:hover .inkMark,
 .courseMobileNavItem:focus-visible .inkMark {
-  opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale)) rotate(-1.2deg);
+  opacity: 1;
+  transform: scaleX(1) rotate(-1.2deg);
 }
 
 .courseMobileNavItem[aria-current="page"] .inkMark {
@@ -2296,6 +2333,14 @@
   padding-block: var(--cw-space-2xs);
 }
 
+.courseRailIcon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+}
+
 .courseRailLink:hover,
 .courseRailLink:focus-visible,
 .courseRailLink[aria-current="page"] {
@@ -2304,8 +2349,8 @@
 
 .courseRailLink:hover .inkMark,
 .courseRailLink:focus-visible .inkMark {
-  opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale)) rotate(-1.2deg);
+  opacity: 1;
+  transform: scaleX(1) rotate(-1.2deg);
 }
 
 .courseRailLink[aria-current="page"] .inkMark {
@@ -2338,6 +2383,11 @@
   cursor: pointer;
 }
 
+.courseRailStatusLine:is(a) {
+  text-decoration: none;
+  cursor: pointer;
+}
+
 .courseRailStatusDot {
   flex: 0 0 auto;
   color: var(--cw-platform-muted);
@@ -2346,6 +2396,92 @@
 .courseRailStatusDotBoundary {
   flex: 0 0 auto;
   color: var(--cw-sem-boundary);
+}
+
+.courseRailCollapse {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  position: relative;
+  align-self: flex-start;
+  margin-block: var(--cw-space-sm) var(--cw-space-md);
+  color: var(--cw-platform-muted);
+}
+
+.courseRailCollapse:hover .iconInkRing,
+.courseRailCollapse:focus-visible .iconInkRing {
+  opacity: 0.9;
+  transform: translate(-50%, -50%) scale(1) rotate(-4deg);
+}
+
+.courseRail[data-collapsed] .courseRailNav {
+  justify-items: center;
+}
+
+.courseRail[data-collapsed] .courseRailLink {
+  display: grid;
+  grid-template-columns: 1fr;
+  place-items: center;
+  width: var(--ds-touch-target-min);
+}
+
+.courseRail[data-collapsed] .courseRailLink > .inkLabel,
+.courseRail[data-collapsed] .courseRailStatus {
+  display: none;
+}
+
+.courseRail[data-collapsed] .courseRailLink:hover .iconInkRing,
+.courseRail[data-collapsed] .courseRailLink:focus-visible .iconInkRing,
+.courseRail[data-collapsed] .courseRailLink[aria-current="page"] .iconInkRing {
+  opacity: 0.9;
+  transform: translate(-50%, -50%) scale(1) rotate(-4deg);
+}
+
+.courseRail[data-collapsed] .courseRailCollapse {
+  align-self: center;
+  margin-block-start: auto;
+}
+
+.courseWorkspacePanel,
+.releaseWorkspace {
+  scroll-margin-block-start: var(--cw-space-lg);
+}
+
+.courseWorkspacePanel[hidden],
+.releaseWorkspace[hidden],
+.structure[hidden] {
+  display: none;
+}
+
+.courseWorkspacePanel {
+  display: grid;
+  gap: var(--cw-space-xl);
+}
+
+.courseSettingsPanel {
+  display: grid;
+  gap: var(--cw-space-md);
+  padding-block-start: var(--cw-space-lg);
+  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.releaseWorkspace {
+  display: grid;
+  gap: var(--cw-space-lg);
+  align-content: start;
+}
+
+.releaseWorkspaceHead {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--cw-space-md);
+  flex-wrap: wrap;
+  padding-block-end: var(--cw-space-md);
+  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.releaseWorkspace .releaseSection {
+  max-width: 48rem;
 }
 
 .moduleCollapse {
@@ -2574,7 +2710,10 @@
 
   .saveBar:not([data-pending]) {
     position: absolute;
-    inset-block-start: 9rem;
+    /* Course modes no longer share one long overview. Keep save beside the
+       page trail so it cannot collide with structure-view controls or the
+       release heading in whichever workspace is active. */
+    inset-block-start: var(--cw-space-lg);
     inset-inline-end: 0;
     bottom: auto;
     padding: 0;
@@ -2601,5 +2740,12 @@
   .courseMobileNav,
   .courseStatusStrip {
     display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .inkMark,
+  .iconInkRing {
+    transition: none;
   }
 }

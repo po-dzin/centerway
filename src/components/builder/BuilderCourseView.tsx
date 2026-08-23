@@ -12,6 +12,7 @@ import {
   newLesson,
   newModule,
   nextDayIndex,
+  PLACEHOLDER_MARKER,
   renumber,
   uniqueSlug,
   type Course,
@@ -21,7 +22,6 @@ import {
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 import { BuilderFailureNotice, BuilderShell } from "./BuilderShell";
 import { BuilderMenu } from "./BuilderMenu";
-import { BuilderSheet } from "./BuilderSheet";
 import { BuilderCourseSettings } from "./BuilderCourseSettings";
 import { BuilderBlockers } from "./BuilderBlockers";
 import {
@@ -52,8 +52,11 @@ type State =
 const ids = () => crypto.randomUUID();
 
 type StructureView = "rows" | "cards";
+type WorkspaceMode = "course" | "content" | "release";
 const STRUCTURE_VIEW_KEY = "cw.builder.structureView";
 const STRUCTURE_VIEW_EVENT = "cw:builder-structure-view";
+const trailTitle = (value: string, fallback: string) =>
+  value.includes(PLACEHOLDER_MARKER) || value.trim() === "" ? fallback : value;
 // Two module cards need enough measure for a title, grip and overflow menu.
 // Phones and compact tablets stay in the faster, reorderable row view.
 const STRUCTURE_WIDE = "(min-width: 901px)";
@@ -96,9 +99,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const { course, dirty } = history;
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [releaseOpen, setReleaseOpen] = useState(false);
-  const [workspaceMode, setWorkspaceMode] = useState<"course" | "content">("content");
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("content");
+  const [railCollapsed, setRailCollapsed] = useState(false);
   const [slugEditing, setSlugEditing] = useState(false);
   const [slugDraft, setSlugDraft] = useState("");
   const [pendingHref, setPendingHref] = useState<string | null>(null);
@@ -110,6 +112,31 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     () => false,
   );
   const structureView: StructureView = structureWide ? storedStructureView : "rows";
+
+  const selectWorkspaceMode = (mode: WorkspaceMode) => {
+    const hash: Record<WorkspaceMode, string> = {
+      course: "#course-overview",
+      content: "#course-structure",
+      release: "#course-release",
+    };
+    setWorkspaceMode(mode);
+    window.history.replaceState(null, "", hash[mode]);
+    window.scrollTo({ top: 0, behavior: "auto" });
+  };
+
+  useEffect(() => {
+    const syncModeFromHash = () => {
+      const next: Record<string, WorkspaceMode> = {
+        "#course-overview": "course",
+        "#course-structure": "content",
+        "#course-release": "release",
+      };
+      setWorkspaceMode(next[window.location.hash] ?? "content");
+    };
+    syncModeFromHash();
+    window.addEventListener("hashchange", syncModeFromHash);
+    return () => window.removeEventListener("hashchange", syncModeFromHash);
+  }, []);
 
   const load = useCallback(async () => {
     const result = await loadCourse(slug);
@@ -333,6 +360,15 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     return true;
   }
 
+  const preview = () => {
+    if (busy) return;
+    if (dirty) {
+      setNote("Спочатку збережіть зміни, щоб відкрити перегляд.");
+      return;
+    }
+    window.open(`/learn/${encodeURIComponent(slug)}`, "_blank", "noopener,noreferrer");
+  };
+
   /**
    * Publishing is a status change and nothing else — it does not save edits.
    *
@@ -433,113 +469,32 @@ export function BuilderCourseView({ slug }: { slug: string }) {
 
   return (
     <BuilderShell
-      trail={[...trail, { label: course.slug }]}
+      trail={[...trail, { label: trailTitle(course.title, "Курс без назви") }]}
+      tools={
+        <button className={styles.quietAction} type="button" onClick={preview} disabled={busy} title={dirty ? "Спочатку збережіть зміни" : "Відкрити як учень"}>
+          Переглянути
+        </button>
+      }
       aside={
         <BuilderCourseRail
           published={published}
           blockerCount={readiness.blockers.length}
-          activeMode={releaseOpen ? "release" : workspaceMode}
-          onMode={setWorkspaceMode}
-          onRelease={() => {
-            setSettingsOpen(false);
-            setReleaseOpen(true);
-          }}
+          activeMode={workspaceMode}
+          onMode={selectWorkspaceMode}
+          collapsed={railCollapsed}
+          onCollapse={() => setRailCollapsed((current) => !current)}
         />
       }
-      tools={
-        <button
-          className={styles.menuTrigger}
-          type="button"
-          aria-label="Налаштування курсу"
-          aria-expanded={settingsOpen}
-          onClick={() => {
-            setReleaseOpen(false);
-            setSettingsOpen(true);
-          }}
-        >
-          <Icon name="settings" size={18} />
-          <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
-        </button>
-      }
+      asideCompact={railCollapsed}
     >
-      {/* Settings live behind the gear, not in the page. They are entered
-          deliberately and changed rarely; in the flow they cost every visit a
-          scroll past the entitlement codes to reach the lesson list. */}
-      <BuilderSheet open={settingsOpen} title="Налаштування курсу" onClose={() => setSettingsOpen(false)}>
-        <BuilderCourseSettings
-          course={course}
-          onChange={editCourse}
-          onApplyTemplate={(template) => {
-            history.edit(null, (current) => {
-              const preset = newCourseFromTemplate(ids, {
-                slug: current.slug,
-                title: current.title,
-                programSlug: current.programSlug,
-                template,
-              });
-              return { ...current, schedule: preset.schedule, modules: preset.modules };
-            });
-            setNote("Стартову структуру застосовано. Перевірте модулі й збережіть курс.");
-          }}
-        />
-      </BuilderSheet>
-
-      <BuilderSheet open={releaseOpen} title="Випуск" placement="side" onClose={() => setReleaseOpen(false)}>
-        <div className={styles.releaseSheetContent}>
-          <div className={styles.releaseSummary}>
-            <span className={published ? styles.pillPublished : styles.pill}>
-              {published ? "Опубліковано" : "Чернетка"}
-            </span>
-            <span className={styles.panelStatus}>{reviewStatusLabel(state.data)}</span>
-          </div>
-          <BuilderBlockers blockers={readiness.blockers} />
-          <section className={styles.releaseSection}>
-            <h3 className={styles.panelTitle}>Перевірка й публікація</h3>
-            <p className={styles.panelText}>
-              {state.data.hasPendingRevision
-                ? "Ви редагуєте наступну версію. Учні поки бачать опублікований курс; надішліть оновлення на перевірку, коли воно готове."
-                : state.data.review.enabled
-                ? "Збережіть готову структуру й надішліть її на перевірку. Після схвалення курс можна відкрити учням; видимість у каталозі окремо визначає адміністратор."
-                : "Контур модерації ще не активовано в базі. Поточне ручне тестування публікації залишається доступним."}
-            </p>
-            {state.data.review.note ? <p className={styles.panelText}>Коментар адміністратора: {state.data.review.note}</p> : null}
-            {dirty ? <p className={styles.panelText}>Спочатку збережіть поточні зміни структури.</p> : null}
-            <div className={styles.panelActions}>
-              {published ? (
-                state.data.hasPendingRevision ? (
-                  state.data.review.status === "in_review" ? null : (
-                    <button className={styles.commitAction} type="button" onClick={() => void submitReview()} disabled={busy || dirty || !readiness.ready}>
-                      Надіслати оновлення на перевірку
-                    </button>
-                  )
-                ) : (
-                  <button className={styles.retreatAction} type="button" onClick={() => setStatus("draft")} disabled={busy}>
-                    Зняти з публікації
-                  </button>
-                )
-              ) : !state.data.review.enabled || state.data.review.status === "approved" ? (
-                <button className={styles.commitAction} type="button" onClick={() => setStatus("published")} disabled={busy || !readiness.ready}>
-                  Опублікувати
-                </button>
-              ) : state.data.review.status === "in_review" ? null : (
-                <button className={styles.commitAction} type="button" onClick={() => void submitReview()} disabled={busy || dirty || !readiness.ready}>
-                  Надіслати на перевірку
-                </button>
-              )}
-            </div>
-          </section>
-        </div>
-      </BuilderSheet>
-
       <nav className={styles.courseMobileNav} aria-label="Розділи курсу">
-        <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={!releaseOpen && workspaceMode === "course" ? "page" : undefined} onClick={() => setWorkspaceMode("course")}><BuilderInkLabel>Курс</BuilderInkLabel></a>
-        <a className={styles.courseMobileNavItem} href="#course-structure" aria-current={!releaseOpen && workspaceMode === "content" ? "page" : undefined} onClick={() => setWorkspaceMode("content")}><BuilderInkLabel>Зміст</BuilderInkLabel></a>
-        <button className={styles.courseMobileNavItem} type="button" aria-current={releaseOpen ? "page" : undefined} onClick={() => setReleaseOpen(true)}><BuilderInkLabel>Випуск</BuilderInkLabel></button>
+        <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={workspaceMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("course"); }}><BuilderInkLabel>Курс</BuilderInkLabel></a>
+        <a className={styles.courseMobileNavItem} href="#course-structure" aria-current={workspaceMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("content"); }}><BuilderInkLabel>Зміст</BuilderInkLabel></a>
+        <a className={styles.courseMobileNavItem} href="#course-release" aria-current={workspaceMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("release"); }}><BuilderInkLabel>Випуск</BuilderInkLabel></a>
       </nav>
 
-      {/* Edited where it is read — see the lesson editor. The gear keeps what
-          has no place in a document: address, schedule, codes, palette. */}
-      <div className={styles.docHead} id="course-overview">
+      <section className={styles.courseWorkspacePanel} id="course-overview" hidden={workspaceMode !== "course"} aria-labelledby="course-overview-title">
+      <div className={styles.docHead}>
         <div className={styles.courseTitleRow}>
           <BuilderEditableTitle
             value={course.title}
@@ -561,7 +516,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           />
         </div>
         <div className={styles.courseAddressRow}>
-          <span className={styles.courseAddressLabel}>Адреса</span>
+          <span className={styles.courseAddressLabel}>Адреса курсу</span>
           {slugEditing ? (
             <form
               className={styles.slugForm}
@@ -574,7 +529,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
                 className={styles.slugInput}
                 value={slugDraft}
                 autoFocus
-                aria-label="Адреса курсу"
+                aria-label="Частина адреси курсу після домену"
                 onChange={(event) => setSlugDraft(event.target.value)}
                 onKeyDown={(event) => {
                   if (event.key === "Escape") setSlugEditing(false);
@@ -585,31 +540,66 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             </form>
           ) : (
             <>
-              <code className={styles.courseAddressValue}>{course.slug}</code>
+              <code className={styles.courseAddressValue}>my.centerway.net.ua/{course.slug}</code>
               {state.data.slugEditable ? (
-                <button
-                  className={styles.slugEditAction}
-                  type="button"
-                  aria-label="Редагувати адресу курсу"
-                  title={dirty ? "Спочатку збережіть зміни" : "Редагувати адресу курсу"}
-                  disabled={dirty || busy}
-                  onClick={() => {
-                    setSlugDraft(course.slug);
-                    setSlugEditing(true);
-                  }}
+                <span className={styles.slugControlTooltip} title={dirty ? "Спочатку збережіть зміни курсу" : "Змінити автоматично створену адресу"}>
+                  <button
+                    className={styles.slugEditAction}
+                    type="button"
+                    aria-label={dirty ? "Спочатку збережіть зміни курсу" : "Змінити автоматично створену адресу"}
+                    aria-describedby="course-address-hint"
+                    disabled={dirty || busy}
+                    onClick={() => {
+                      setSlugDraft(course.slug);
+                      setSlugEditing(true);
+                    }}
+                  >
+                    <Icon name="edit" size={16} />
+                    <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+                  </button>
+                </span>
+              ) : (
+                <span
+                  className={styles.slugLockState}
+                  role="img"
+                  aria-label="Адресу закріплено"
+                  title="Адресу закріплено після першого випуску, появи учнів або підключення вітрини"
                 >
-                  <Icon name="edit" size={16} />
-                </button>
-              ) : null}
-              <span className={styles.courseAddressHint}>
-                {state.data.slugEditable ? "Можна змінити, поки це невикористана чернетка" : "Адресу закріплено"}
+                  <Icon name="lock" size={16} />
+                </span>
+              )}
+              <span className={styles.courseAddressHint} id="course-address-hint">
+                {state.data.slugEditable
+                  ? "Адресу створено автоматично. Її можна змінити до першого випуску, появи учнів або підключення вітрини."
+                  : "Адресу закріплено, щоб уже видані посилання залишалися робочими."}
               </span>
             </>
           )}
         </div>
       </div>
 
-      <section id="course-structure" className={`${styles.panel} ${styles.structure} ${structureView === "cards" ? styles.structureCards : ""}`}>
+      <div className={styles.courseSettingsPanel}>
+        <h2 className={styles.panelTitle} id="course-overview-title">Загальні налаштування</h2>
+        <BuilderCourseSettings
+          course={course}
+          onChange={editCourse}
+          onApplyTemplate={(template) => {
+            history.edit(null, (current) => {
+              const preset = newCourseFromTemplate(ids, {
+                slug: current.slug,
+                title: current.title,
+                programSlug: current.programSlug,
+                template,
+              });
+              return { ...current, schedule: preset.schedule, modules: preset.modules };
+            });
+            setNote("Стартову структуру застосовано. Перевірте модулі й збережіть курс.");
+          }}
+        />
+      </div>
+      </section>
+
+      <section id="course-structure" hidden={workspaceMode !== "content"} className={`${styles.panel} ${styles.structure} ${structureView === "cards" ? styles.structureCards : ""}`}>
         <div className={styles.panelHead}>
           <div>
             <h2 className={styles.panelTitle}>Структура курсу</h2>
@@ -666,33 +656,49 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </button>
       </section>
 
-      <section className={styles.courseStatusStrip} aria-label="Стан курсу й випуск">
-        <span className={styles.courseStatusItem}>
-          <strong>{published ? "Опубліковано" : "Чернетка"}</strong>
-          <span>{published ? "Курс відкритий учням" : "Робоча версія курсу"}</span>
-        </span>
-        <button className={styles.courseStatusItemButton} type="button" onClick={() => setReleaseOpen(true)}>
-          <strong>{readiness.blockers.length} {plural(readiness.blockers.length, "блокер", "блокери", "блокерів")}</strong>
-          <span>{readiness.ready ? "Готово до перевірки" : "Потребують уваги"}</span>
-        </button>
-        <button className={styles.courseStatusItemButton} type="button" onClick={() => setReleaseOpen(true)}>
-          <strong>{reviewStatusLabel(state.data)}</strong>
-          <span>Відкрити стан випуску</span>
-        </button>
-        <button
-          className={styles.releaseAction}
-          type="button"
-          aria-expanded={releaseOpen}
-          onClick={() => {
-            setSettingsOpen(false);
-            setReleaseOpen(true);
-          }}
-        >
-          Випуск
-        </button>
+      <section className={styles.releaseWorkspace} id="course-release" hidden={workspaceMode !== "release"} aria-labelledby="course-release-title">
+        <header className={styles.releaseWorkspaceHead}>
+          <div>
+            <span className={styles.courseMeta}>Випуск курсу</span>
+            <h2 className={styles.pageTitle} id="course-release-title">Перевірка й публікація</h2>
+          </div>
+          <div className={styles.releaseSummary}>
+            <span className={published ? styles.pillPublished : styles.pill}>{published ? "Опубліковано" : "Чернетка"}</span>
+            <span className={styles.panelStatus}>{reviewStatusLabel(state.data)}</span>
+          </div>
+        </header>
+        {note ? <p className={styles.noticeLine} aria-live="polite">{note}</p> : null}
+        <BuilderBlockers blockers={readiness.blockers} />
+        <section className={styles.releaseSection}>
+          <h3 className={styles.panelTitle}>Дія випуску</h3>
+          <p className={styles.panelText}>
+            {state.data.hasPendingRevision
+              ? "Ви редагуєте наступну версію. Учні поки бачать опублікований курс; надішліть оновлення на перевірку, коли воно готове."
+              : state.data.review.enabled
+              ? "Збережіть готову структуру й надішліть її на перевірку. Після схвалення курс можна відкрити учням; видимість у каталозі окремо визначає адміністратор."
+              : "Контур модерації ще не активовано в базі. Поточне ручне тестування публікації залишається доступним."}
+          </p>
+          {state.data.review.note ? <p className={styles.panelText}>Коментар адміністратора: {state.data.review.note}</p> : null}
+          {dirty ? <p className={styles.panelText}>Спочатку збережіть поточні зміни структури.</p> : null}
+          <div className={styles.panelActions}>
+            {published ? (
+              state.data.hasPendingRevision ? (
+                state.data.review.status === "in_review" ? null : (
+                  <button className={styles.commitAction} type="button" onClick={() => void submitReview()} disabled={busy || dirty || !readiness.ready}>Надіслати оновлення на перевірку</button>
+                )
+              ) : (
+                <button className={styles.retreatAction} type="button" onClick={() => setStatus("draft")} disabled={busy}>Зняти з публікації</button>
+              )
+            ) : !state.data.review.enabled || state.data.review.status === "approved" ? (
+              <button className={styles.commitAction} type="button" onClick={() => setStatus("published")} disabled={busy || !readiness.ready}>Опублікувати</button>
+            ) : state.data.review.status === "in_review" ? null : (
+              <button className={styles.commitAction} type="button" onClick={() => void submitReview()} disabled={busy || dirty || !readiness.ready}>Надіслати на перевірку</button>
+            )}
+          </div>
+        </section>
       </section>
 
-      <div className={`${styles.saveBar} ${styles.courseSaveBar}`} data-pending={pendingHref ? "" : undefined}>
+      {workspaceMode !== "release" || dirty || pendingHref ? <div className={`${styles.saveBar} ${styles.courseSaveBar}`} data-pending={pendingHref ? "" : undefined}>
         {pendingHref ? (
           <>
             <span className={styles.saveState}>
@@ -751,7 +757,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             </button>
           </>
         )}
-      </div>
+      </div> : null}
     </BuilderShell>
   );
 }
@@ -761,40 +767,46 @@ function BuilderCourseRail({
   blockerCount,
   activeMode,
   onMode,
-  onRelease,
+  collapsed,
+  onCollapse,
 }: {
   published: boolean;
   blockerCount: number;
-  activeMode: "course" | "content" | "release";
-  onMode: (mode: "course" | "content") => void;
-  onRelease: () => void;
+  activeMode: WorkspaceMode;
+  onMode: (mode: WorkspaceMode) => void;
+  collapsed: boolean;
+  onCollapse: () => void;
 }) {
   return (
-    <div className={styles.courseRail}>
+    <div className={styles.courseRail} data-collapsed={collapsed || undefined}>
       <nav className={styles.courseRailNav} aria-label="Розділи курсу">
-        <a className={styles.courseRailLink} href="#course-overview" aria-current={activeMode === "course" ? "page" : undefined} onClick={() => onMode("course")}>
-          <Icon name="guide" size={20} />
+        <a className={styles.courseRailLink} href="#course-overview" aria-label="Курс" title={collapsed ? "Курс" : undefined} aria-current={activeMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("course"); }}>
+          <span className={styles.courseRailIcon}><Icon name="guide" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
           <BuilderInkLabel>Курс</BuilderInkLabel>
         </a>
-        <a className={styles.courseRailLink} href="#course-structure" aria-current={activeMode === "content" ? "page" : undefined} onClick={() => onMode("content")}>
-          <Icon name="view-rows" size={20} />
+        <a className={styles.courseRailLink} href="#course-structure" aria-label="Зміст" title={collapsed ? "Зміст" : undefined} aria-current={activeMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("content"); }}>
+          <span className={styles.courseRailIcon}><Icon name="view-rows" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
           <BuilderInkLabel>Зміст</BuilderInkLabel>
         </a>
-        <button className={styles.courseRailLink} type="button" aria-current={activeMode === "release" ? "page" : undefined} onClick={onRelease}>
-          <Icon name="motion" size={20} />
+        <a className={styles.courseRailLink} href="#course-release" aria-label="Випуск" title={collapsed ? "Випуск" : undefined} aria-current={activeMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("release"); }}>
+          <span className={styles.courseRailIcon}><Icon name="motion" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
           <BuilderInkLabel>Випуск</BuilderInkLabel>
-        </button>
+        </a>
       </nav>
       <div className={styles.courseRailStatus}>
         <span className={styles.courseRailStatusLine}>
           <HandGraphic className={styles.courseRailStatusDot} name="dot" size={12} />
           {published ? "Опубліковано" : "Чернетка"}
         </span>
-        <button className={styles.courseRailStatusLine} type="button" onClick={onRelease}>
+        <a className={styles.courseRailStatusLine} href="#course-release" onClick={(event) => { event.preventDefault(); onMode("release"); }}>
           <HandGraphic className={styles.courseRailStatusDotBoundary} name="dot" size={12} />
           {blockerCount} {plural(blockerCount, "блокер", "блокери", "блокерів")}
-        </button>
+        </a>
       </div>
+      <button className={styles.courseRailCollapse} type="button" aria-label={collapsed ? "Розгорнути навігацію" : "Згорнути навігацію до іконок"} aria-pressed={collapsed} onClick={onCollapse}>
+        <Icon name={collapsed ? "arrow-right" : "arrow-left"} size={18} />
+        <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+      </button>
     </div>
   );
 }

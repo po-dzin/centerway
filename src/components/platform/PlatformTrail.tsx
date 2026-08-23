@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 
-import { Icon } from "@/components/Icon";
+import { HandGraphic, Icon } from "@/components/Icon";
 import styles from "./PlatformTrail.module.css";
 
 /**
@@ -67,11 +67,11 @@ export function PlatformTrail({ steps, label = "Де ви зараз" }: { steps
           <Icon className={styles.backIcon} name="arrow-left" size={16} />
           {back.onNavigate ? (
             <button className={styles.crumbLink} type="button" onClick={back.onNavigate} title={back.label}>
-              {back.label}
+              <TrailInkLabel>{back.label}</TrailInkLabel>
             </button>
           ) : (
             <Link className={styles.crumbLink} href={back.href ?? "#"} title={back.label}>
-              {back.label}
+              <TrailInkLabel>{back.label}</TrailInkLabel>
             </Link>
           )}
         </span>
@@ -81,22 +81,31 @@ export function PlatformTrail({ steps, label = "Де ви зараз" }: { steps
           {index > 0 ? <Icon className={styles.sep} name="chevron-right" size={14} /> : null}
           {step.onNavigate ? (
             <button className={styles.crumbLink} type="button" onClick={step.onNavigate} title={step.label}>
-              {step.label}
+              <TrailInkLabel>{step.label}</TrailInkLabel>
             </button>
           ) : step.href ? (
             <Link className={styles.crumbLink} href={step.href} title={step.label}>
-              {step.label}
+              <TrailInkLabel>{step.label}</TrailInkLabel>
             </Link>
           ) : (
             // The last step is where you already are. Not a link, and dimmer
             // than the ones that are — the crumb an author can press has to be
             // the one that looks pressable.
             <span className={styles.here} aria-current="page" title={step.label}>
-              {step.label}
+              <TrailInkLabel current>{step.label}</TrailInkLabel>
             </span>
           )}
         </span>
       ))}
     </nav>
+  );
+}
+
+function TrailInkLabel({ children, current = false }: { children: string; current?: boolean }) {
+  return (
+    <span className={styles.inkLabel} data-current={current || undefined}>
+      <span className={styles.inkText}>{children}</span>
+      <HandGraphic className={styles.inkMark} name="ink-stroke" size={36} />
+    </span>
   );
 }

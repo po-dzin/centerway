@@ -12,10 +12,9 @@ import { isPersonalHost } from "@/lib/platform/surfaceHref";
  * Three modes, and `learn` is the one that is not cosmetic.
  *
  * `default` and `overlay` differ only in whether the bar floats over a dark
- * hero. `learn` is a different intent for the whole shell: no showcase nav, a
- * brand mark that leads back to the shelf, and a footer stripped to what a
- * reader mid-lesson can use. The player kept the storefront chrome until now —
- * scrolling past the end of a lesson landed you in social links.
+ * hero. `learn` keeps a brand mark that leads back to the shelf and a footer
+ * stripped to what a reader mid-lesson can use. Its header still exposes the
+ * shared route map so course pages do not become a navigation dead end.
  *
  * It keeps the `overlay` clearance, because the learner surfaces were written
  * against it (see the margin note at the top of Lms.module.css).

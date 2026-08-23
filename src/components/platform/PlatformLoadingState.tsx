@@ -27,10 +27,10 @@ export function PlatformLoadingState({
       aria-live="polite"
       aria-busy="true"
     >
-      {label ? <p className={styles.platformLoadingLabel}>{label}</p> : null}
       <div className={styles.platformLoadingSignal}>
         <LogoMark size={30} animate="wait" />
         <div className={styles.platformLoadingCopy}>
+          {label ? <p className={styles.platformLoadingLabel}>{label}</p> : null}
           <p className={styles.platformLoadingTitle}>{title}</p>
           {detail ? <p className={styles.platformLoadingDetail}>{detail}</p> : null}
         </div>

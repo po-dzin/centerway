@@ -95,6 +95,12 @@ export function BuilderImageField({
           value={src ?? ""}
           // Empty is ABSENT, the rule every other field follows.
           onChange={(event) => onChange(event.target.value.trim() === "" ? undefined : event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === "Enter") {
+              event.preventDefault();
+              event.currentTarget.blur();
+            }
+          }}
         />
         {src ? (
           <button

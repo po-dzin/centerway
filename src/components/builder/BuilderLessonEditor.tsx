@@ -9,6 +9,7 @@ import {
   flattenLessons,
   inlineToPlainText,
   moveItem,
+  PLACEHOLDER_MARKER,
   pruneEmptyProse,
   newBlock,
   newTableRow,
@@ -50,6 +51,8 @@ type State =
   | { status: "ready" };
 
 const ids = () => crypto.randomUUID();
+const trailTitle = (value: string, fallback: string) =>
+  value.includes(PLACEHOLDER_MARKER) || value.trim() === "" ? fallback : value;
 
 /**
  * The editor — the part of the builder an author actually spends time in.
@@ -202,6 +205,15 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     [dirty, router]
   );
 
+  const preview = () => {
+    if (busy) return;
+    if (dirty) {
+      setNote("Спочатку збережіть зміни, щоб відкрити перегляд.");
+      return;
+    }
+    window.open(`/learn/${encodeURIComponent(slug)}/${encodeURIComponent(lessonSlug)}`, "_blank", "noopener,noreferrer");
+  };
+
   const trail = [
     { label: "Курси", href: "/build" },
     { label: slug, href: `/build/${slug}` },
@@ -246,11 +258,18 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
 
   return (
     <BuilderShell
-      trail={[...trail, { label: lesson.slug }]}
+      trail={[
+        { label: "Курси", href: "/build" },
+        { label: trailTitle(course.title, "Курс без назви"), href: `/build/${slug}` },
+        { label: trailTitle(lesson.title, "Урок без назви") },
+      ]}
       aside={<BuilderContents course={course} currentSlug={lesson.slug} onNavigate={navigate} />}
       asideOpen={contentsOpen}
       tools={
         <>
+          <button className={styles.quietAction} type="button" onClick={preview} disabled={busy} title={dirty ? "Спочатку збережіть зміни" : "Відкрити урок як учень"}>
+            Переглянути
+          </button>
           <BuilderStep
             direction="prev"
             label={previous ? `Попередній урок: ${previous.lesson.title}` : "Попереднього уроку немає"}
