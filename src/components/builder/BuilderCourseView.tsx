@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 
 import { HandGraphic, Icon } from "@/components/Icon";
 import {
@@ -37,6 +37,7 @@ import { BuilderInlineEditor } from "./BuilderInlineEditor";
 import { BuilderHistory } from "./BuilderHistory";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
 import { useCourseHistory } from "./useCourseHistory";
+import { useCourseAutosave } from "./useCourseAutosave";
 import { landingIndex, useRowDrag, type DragRef, type DropEdge, type RowDrag } from "./useRowDrag";
 import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
@@ -168,15 +169,6 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug]);
 
-  // The browser's own guard, same as the lesson editor: an author who
-  // rearranges a course and then reloads should be asked first.
-  useEffect(() => {
-    if (!dirty) return;
-    const onBeforeUnload = (event: BeforeUnloadEvent) => event.preventDefault();
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [dirty]);
-
   const editCourse = useCallback(
     (path: (string | number)[], value: unknown) => {
       // Coalesced by the path: retitling a module is one undo, not one per letter.
@@ -233,48 +225,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     { crossGroup: true }
   );
 
-  /**
-   * The lesson slugs the SERVER has.
-   *
-   * `state.data` is the loaded response and the history's course is the working copy;
-   * edits touch only the second, so this stays the stored truth until the next
-   * save reloads it. It is what tells a freshly added lesson — which exists
-   * only on this screen — from one an author may open.
-   */
-  const savedLessonSlugs = useMemo(() => {
-    if (state.status !== "ready") return new Set<string>();
-    return new Set(state.data.course.modules.flatMap((entry) => entry.lessons.map((lesson) => lesson.slug)));
-  }, [state]);
-
-  /**
-   * Opening a lesson with the structure unsaved.
-   *
-   * THE BUG THIS FIXES. Every lesson row is a link, and «Додати урок» puts a
-   * row on screen the moment it is pressed — with a working href to a lesson
-   * that exists nowhere but this component's state. Clicking it was a
-   * client-side route change, which `beforeunload` does not cover, so the
-   * editor loaded the course from the server, could not find the lesson, and
-   * said «Урок не знайдено» — while the addition itself was dropped. An author
-   * who pressed «Додати урок» and then pressed the thing it created got a
-   * dead end and lost the work.
-   *
-   * The lesson editor already held its own dirty navigation; the course screen
-   * did not, and that is the whole difference.
-   */
-  const pendingIsUnsaved =
-    pendingHref !== null && !savedLessonSlugs.has(pendingHref.split("/").pop() ?? "");
-
-  const openLesson = useCallback(
-    (href: string): "allow" | "held" => {
-      if (!dirty) return "allow";
-      setPendingHref(href);
-      return "held";
-    },
-    [dirty]
-  );
-
   async function exportLesson(lesson: Lesson, format: LessonDocumentFormat) {
-    if (busy) return;
+    if (working) return;
     setBusy(true);
     setNote(null);
     const result = await exportLessonFile(slug, lesson, format);
@@ -293,35 +245,63 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     setNote(`Експортовано ${result.data.filename}`);
   }
 
-  async function save(): Promise<boolean> {
-    if (!course || busy) return false;
-    setBusy(true);
+  const persistCourse = useCallback(async (snapshot: Course) => {
     setNote(null);
-
-    const result = await saveCourse(slug, pruneEmptyProse(course));
-    setBusy(false);
-
+    const result = await saveCourse(slug, pruneEmptyProse(snapshot));
     if (!result.ok) {
-      // Kept verbatim: a validation code names the exact place that is wrong.
-      setNote(result.detail ?? "Не вдалося зберегти. Спробуйте ще раз.");
-      return false;
+      return { ok: false as const, message: result.detail ?? "Не вдалося зберегти. Спробуйте ще раз." };
     }
-
-    history.markClean();
-    // Reloaded rather than patched: the server bumps `version` and re-derives
-    // readiness, and a screen that kept the old copy would show a blocker list
-    // that no longer matches what is stored.
-    await load();
-    setNote(
-      result.data.blockers.length === 0
+    // Keep server-derived readiness current without reloading the document. A
+    // reload here would overwrite keystrokes made while this request was in
+    // flight; the history records the exact accepted snapshot instead.
+    setState((current) => current.status === "ready" ? {
+      ...current,
+      data: {
+        ...current.data,
+        course: snapshot,
+        hasPendingRevision: result.data.staged ? true : current.data.hasPendingRevision,
+        readiness: { ready: result.data.blockers.length === 0, blockers: result.data.blockers },
+        review: result.data.staged || current.data.liveStatus === "draft"
+          ? { ...current.data.review, status: "draft", note: null }
+          : current.data.review,
+      },
+    } : current);
+    return {
+      ok: true as const,
+      message: result.data.blockers.length === 0
         ? "Збережено. Блокерів немає."
-        : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`
-    );
-    return true;
-  }
+        : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`,
+    };
+  }, [slug]);
+
+  const autosave = useCourseAutosave({
+    course,
+    dirty,
+    paused: busy,
+    persist: persistCourse,
+    markSaved: history.markSaved,
+  });
+  const working = busy || autosave.saving;
+  const save = autosave.saveNow;
+
+  const navigate = useCallback((href: string) => {
+    if (!dirty) return router.push(href);
+    if (pendingHref) return;
+    setPendingHref(href);
+    void save().then((saved) => {
+      if (saved) router.push(href);
+      else setPendingHref(null);
+    });
+  }, [dirty, pendingHref, router, save]);
+
+  const openLesson = useCallback((href: string): "allow" | "held" => {
+    if (!dirty) return "allow";
+    navigate(href);
+    return "held";
+  }, [dirty, navigate]);
 
   const preview = () => {
-    if (busy) return;
+    if (working) return;
     if (dirty) {
       setNote("Спочатку збережіть зміни, щоб відкрити перегляд.");
       return;
@@ -338,7 +318,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
    * worse explanation than a sentence saying what is missing.
    */
   async function setStatus(next: "draft" | "published") {
-    if (state.status !== "ready" || busy) return;
+    if (state.status !== "ready" || working) return;
     setBusy(true);
     setNote(null);
 
@@ -357,7 +337,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   }
 
   async function submitReview() {
-    if (busy || dirty) return;
+    if (working || dirty) return;
     setBusy(true);
     setNote(null);
     const result = await submitCourseForReview(slug);
@@ -371,7 +351,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   }
 
   async function renameSlug() {
-    if (state.status !== "ready" || busy || dirty || !state.data.slugEditable) return;
+    if (state.status !== "ready" || working || dirty || !state.data.slugEditable) return;
     setBusy(true);
     setNote(null);
     const result = await renameCourseSlug(slug, slugDraft);
@@ -429,19 +409,19 @@ export function BuilderCourseView({ slug }: { slug: string }) {
 
   return (
     <BuilderShell
-      trail={[...trail, { label: trailTitle(course.title, "Курс без назви") }]}
+      trail={[{ label: "Курси", onNavigate: () => navigate("/build") }, { label: trailTitle(course.title, "Курс без назви") }]}
       tools={
         <>
-          <button className={styles.quietAction} type="button" onClick={preview} disabled={busy} title={dirty ? "Спочатку збережіть зміни" : "Відкрити як учень"}>
+          <button className={styles.quietAction} type="button" onClick={preview} disabled={working} title={dirty ? "Спочатку збережіть зміни" : "Відкрити як учень"}>
             Переглянути
           </button>
           <button
             className={`${styles.commitAction} ${styles.courseHeaderSave}`}
             type="button"
             onClick={() => void save()}
-            disabled={busy || !dirty}
+            disabled={working || !dirty}
           >
-            {busy ? "Зберігаємо…" : "Зберегти зміни"}
+            {autosave.saving ? "Зберігаємо…" : "Зберегти зараз"}
           </button>
         </>
       }
@@ -456,6 +436,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         />
       }
       asideCompact={railCollapsed}
+      onNavigate={navigate}
     >
       <nav className={styles.courseMobileNav} aria-label="Розділи курсу">
         <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={workspaceMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("course"); }}><BuilderInkLabel>Курс</BuilderInkLabel></a>
@@ -505,8 +486,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
                   if (event.key === "Escape") setSlugEditing(false);
                 }}
               />
-              <button className={styles.quietAction} type="button" onClick={() => setSlugEditing(false)} disabled={busy}>Скасувати</button>
-              <button className={styles.quietAction} type="submit" disabled={busy || slugDraft.trim() === ""}>Зберегти</button>
+              <button className={styles.quietAction} type="button" onClick={() => setSlugEditing(false)} disabled={working}>Скасувати</button>
+              <button className={styles.quietAction} type="submit" disabled={working || slugDraft.trim() === ""}>Зберегти</button>
             </form>
           ) : (
             <>
@@ -605,7 +586,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
               onModules={editModules}
               onNote={setNote}
               onOpenLesson={openLesson}
-              busy={busy}
+              busy={working}
               onExportLesson={exportLesson}
             />
           ))}
@@ -653,15 +634,15 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             {published ? (
               state.data.hasPendingRevision ? (
                 state.data.review.status === "in_review" ? null : (
-                  <button className={styles.commitAction} type="button" onClick={() => void submitReview()} disabled={busy || dirty || !readiness.ready}>Надіслати оновлення на перевірку</button>
+                  <button className={styles.commitAction} type="button" onClick={() => void submitReview()} disabled={working || dirty || !readiness.ready}>Надіслати оновлення на перевірку</button>
                 )
               ) : (
-                <button className={styles.retreatAction} type="button" onClick={() => setStatus("draft")} disabled={busy}>Зняти з публікації</button>
+                <button className={styles.retreatAction} type="button" onClick={() => setStatus("draft")} disabled={working}>Зняти з публікації</button>
               )
             ) : !state.data.review.enabled || state.data.review.status === "approved" ? (
-              <button className={styles.commitAction} type="button" onClick={() => setStatus("published")} disabled={busy || !readiness.ready}>Опублікувати</button>
+              <button className={styles.commitAction} type="button" onClick={() => setStatus("published")} disabled={working || dirty || !readiness.ready}>Опублікувати</button>
             ) : state.data.review.status === "in_review" ? null : (
-              <button className={styles.commitAction} type="button" onClick={() => void submitReview()} disabled={busy || dirty || !readiness.ready}>Надіслати на перевірку</button>
+              <button className={styles.commitAction} type="button" onClick={() => void submitReview()} disabled={working || dirty || !readiness.ready}>Надіслати на перевірку</button>
             )}
           </div>
         </section>
@@ -669,60 +650,17 @@ export function BuilderCourseView({ slug }: { slug: string }) {
 
       {workspaceMode !== "release" || dirty || pendingHref ? <div className={`${styles.saveBar} ${styles.courseSaveBar}`} data-pending={pendingHref ? "" : undefined}>
         {pendingHref ? (
-          <>
-            <span className={styles.saveState}>
-              {pendingIsUnsaved
-                ? "Цього уроку ще немає в базі — його треба зберегти, щоб відкрити."
-                : "Є незбережені зміни."}
-            </span>
-            {/* Offered only for a lesson the server already has. For a freshly
-                added one, "go without saving" would DELETE the lesson being
-                opened and land on «Урок не знайдено» — the exact dead end this
-                whole branch exists to remove. */}
-            {pendingIsUnsaved ? null : (
-              <button
-                className={styles.quietAction}
-                type="button"
-                onClick={() => {
-                  const href = pendingHref;
-                  setPendingHref(null);
-                  history.markClean();
-                  router.push(href);
-                }}
-                disabled={busy}
-              >
-                Піти без збереження
-              </button>
-            )}
-            <button
-              className={styles.quietAction}
-              type="button"
-              onClick={() => setPendingHref(null)}
-              disabled={busy}
-            >
-              Лишитись
-            </button>
-            <button
-              className={styles.commitAction}
-              type="button"
-              onClick={async () => {
-                const href = pendingHref;
-                const saved = await save();
-                if (!saved) return;
-                setPendingHref(null);
-                router.push(href);
-              }}
-              disabled={busy}
-            >
-              {busy ? "Зберігаємо…" : "Зберегти і відкрити"}
-            </button>
-          </>
+          <span className={styles.saveState} role="status" aria-live="polite">
+            Зберігаємо зміни перед переходом…
+          </span>
         ) : (
           <>
-            <BuilderHistory history={history} disabled={busy} />
-            <span className={styles.saveState}>{note ?? (dirty ? "Не збережено" : "Збережено")}</span>
-            <button className={styles.commitAction} type="button" onClick={() => void save()} disabled={busy || !dirty}>
-              {busy ? "Зберігаємо…" : "Зберегти зміни"}
+            <BuilderHistory history={history} disabled={working} />
+            <span className={styles.saveState} role="status" aria-live="polite">
+              {note ?? autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
+            </span>
+            <button className={styles.commitAction} type="button" onClick={() => void save()} disabled={working || !dirty}>
+              {autosave.saving ? "Зберігаємо…" : "Зберегти зараз"}
             </button>
           </>
         )}

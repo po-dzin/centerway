@@ -183,7 +183,7 @@ export function loadCourse(slug: string): Promise<BuilderResult<BuilderCourseDto
 export function saveCourse(
   slug: string,
   course: Course
-): Promise<BuilderResult<{ slug: string; status: Course["status"]; blockers: ReadinessBlocker[] }>> {
+): Promise<BuilderResult<{ slug: string; status: Course["status"]; blockers: ReadinessBlocker[]; staged?: true }>> {
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}`, {
     method: "PUT",
     body: JSON.stringify({ course }),

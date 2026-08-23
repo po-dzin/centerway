@@ -246,7 +246,7 @@ export function BuilderCourseList() {
   }
 
   return (
-    <BuilderShell trail={[{ label: "Курси" }]}>
+    <BuilderShell>
       {/* Title and the one primary action share a row. Stacked in a column the
           button read as a step in the page rather than as the thing you do to
           it, and cost a full band of vertical space above the shelf. */}

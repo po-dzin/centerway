@@ -1,6 +1,6 @@
 "use client";
 
-import type { ReactNode } from "react";
+import type { MouseEvent, ReactNode } from "react";
 
 import { HandGraphic, Icon } from "@/components/Icon";
 import { PlatformFooter } from "@/components/platform/layout/PlatformFooter";
@@ -44,6 +44,7 @@ export function BuilderShell({
   aside,
   asideOpen,
   asideCompact,
+  onNavigate,
   children,
 }: {
   trail?: TrailStep[];
@@ -53,10 +54,30 @@ export function BuilderShell({
   asideOpen?: boolean;
   /** Narrows a persistent desktop rail to its icon column. */
   asideCompact?: boolean;
+  /** Flush-aware navigation supplied by an editing surface. */
+  onNavigate?: (href: string) => void;
   children: ReactNode;
 }) {
+  const showTrail = trail.length > 1;
+  const showContextRow = showTrail || Boolean(tools);
+
+  const interceptNavigation = (event: MouseEvent<HTMLDivElement>) => {
+    if (!onNavigate || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+    const target = event.target;
+    if (!(target instanceof Element)) return;
+    const anchor = target.closest("a[href]");
+    if (!(anchor instanceof HTMLAnchorElement) || anchor.target === "_blank" || anchor.hasAttribute("download")) return;
+    const destination = new URL(anchor.href, window.location.href);
+    if (destination.origin !== window.location.origin) return;
+    // In-page mode tabs own their hash and do not leave the document.
+    if (destination.pathname === window.location.pathname && destination.search === window.location.search && destination.hash) return;
+    event.preventDefault();
+    event.stopPropagation();
+    onNavigate(`${destination.pathname}${destination.search}${destination.hash}`);
+  };
+
   return (
-    <div className={styles.shell}>
+    <div className={styles.shell} onClickCapture={interceptNavigation}>
       {/* Explicitly personal: localhost and previews host the storefront and
           authoring app together, so hostname inference alone picks the public
           navigation there. The route, not the transport, owns this identity. */}
@@ -73,21 +94,25 @@ export function BuilderShell({
             {aside}
           </aside>
         ) : null}
-        <main className={styles.page}>
-          {/* Trail and tools on one line: where am I, and the handful of
-              controls that act on this exact course or lesson. */}
-          <div className={styles.pageTrail}>
-            <PlatformTrail steps={trail} />
-            {tools ? <div className={styles.pageTools}>{tools}</div> : null}
-          </div>
-          {children}
-        </main>
-      </div>
+        <div className={styles.mainColumn}>
+          <main className={styles.page}>
+            {/* Trail and tools on one line: where am I, and the handful of
+                controls that act on this exact course or lesson. */}
+            {showContextRow ? (
+              <div className={styles.pageTrail}>
+                {showTrail ? <PlatformTrail steps={trail} /> : null}
+                {tools ? <div className={styles.pageTools}>{tools}</div> : null}
+              </div>
+            ) : null}
+            {children}
+          </main>
 
-      {/* The same ending the shelf and the player get. An authoring tool is
-          still one of this account's applications, and it was the one surface
-          that stopped at the last panel with nothing under it. */}
-      <PlatformFooter variant="personal" />
+          {/* The footer ends the workspace column. The course rail is its own
+              column and therefore never appears to continue into the site
+              footer. */}
+          <PlatformFooter variant="personal" />
+        </div>
+      </div>
     </div>
   );
 }

@@ -20,9 +20,7 @@
 .shell {
   min-height: 100svh;
   display: grid;
-  /* Header, body, footer. The body row takes the slack so a short page still
-     pushes the footer to the bottom of the viewport. */
-  grid-template-rows: auto 1fr auto;
+  grid-template-rows: auto 1fr;
   background: var(--cw-platform-bg);
   color: var(--cw-platform-text);
   font-family: var(--cw-font-ui);
@@ -63,6 +61,13 @@
 
 .body {
   min-width: 0;
+}
+
+.mainColumn {
+  min-width: 0;
+  min-height: 100%;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
 }
 
 /* One column on a phone: the rail is a drawer there, in flow above the page,
@@ -112,6 +117,13 @@
   .aside[data-compact] {
     width: 4.75rem;
     padding-inline: var(--cw-space-xs);
+  }
+
+  /* Match the document to the shared header's viewport-centred guide. The
+     rail occupies outer gutter; it does not get to move the document axis. */
+  .bodyWithAside .page {
+    margin-inline-start: max(1rem, calc((100vw - var(--cw-max-width)) / 2 - 15.25rem));
+    margin-inline-end: auto;
   }
 }
 
@@ -1118,7 +1130,57 @@
 
 .blockList {
   display: grid;
-  gap: var(--cw-course-block-gap, var(--cw-space-md));
+  gap: 0;
+}
+
+.blockInsert {
+  min-height: var(--cw-course-block-gap, var(--cw-space-md));
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.blockInsert::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  border-block-start: 1px solid transparent;
+}
+
+.blockInsert:hover::before,
+.blockInsert:focus-within::before {
+  border-color: var(--cw-mat-stroke-inner);
+}
+
+.blockInsertAction {
+  composes: quiet from "../platform/PlatformButtons.module.css";
+  position: relative;
+  color: var(--cw-platform-muted);
+  background: var(--cw-platform-bg);
+}
+
+.blockInsertAction:hover,
+.blockInsertAction:focus-visible {
+  color: var(--cw-platform-text);
+}
+
+.blockPicker {
+  display: grid;
+  gap: var(--cw-space-sm);
+  margin-block: var(--cw-space-xs);
+  padding: var(--cw-space-md);
+  border: 1px solid var(--cw-mat-stroke-inner);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+}
+
+.blockPickerGroup {
+  margin: 0;
+  font-family: var(--cw-font-data);
+  font-size: 0.75rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
 }
 
 .blockCard {
@@ -2079,14 +2141,37 @@
 .slashList {
   position: fixed;
   z-index: calc(var(--ds-z-sticky) + 2);
-  max-width: min(22rem, calc(100vw - 2 * var(--cw-space-sm)));
-  max-height: 17rem;
+  max-width: calc(100vw - 2 * var(--cw-space-sm));
   overflow-y: auto;
   display: grid;
-  padding: var(--cw-space-2xs);
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-xs);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
+}
+
+.slashList[data-flip] {
+  transform: translateY(-100%);
+}
+
+.slashGroup {
+  display: grid;
+  gap: 2px;
+}
+
+.slashGroup + .slashGroup {
+  padding-block-start: var(--cw-space-xs);
+  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.slashGroupTitle {
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  font-family: var(--cw-font-data);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
 }
 
 .slashItem {

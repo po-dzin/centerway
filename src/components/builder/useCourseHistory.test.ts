@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import type { Course } from "@/lms-core";
 
-import { EMPTY_HISTORY, pushEdit, redoStep, undoStep, type History } from "./useCourseHistory";
+import { EMPTY_HISTORY, markSavedStep, pushEdit, redoStep, undoStep, type History } from "./useCourseHistory";
 
 /**
  * The stack only ever compares courses by identity, so the tests do the same:
@@ -83,6 +83,18 @@ describe("builder undo stack", () => {
     const a = course("a");
     const history = undoStep(pushEdit(start(a), course("b"), false));
     expect(history.present).toBe(history.saved);
+  });
+
+  it("marks the snapshot that completed saving, not a newer edit", () => {
+    const a = course("a");
+    const b = course("b");
+    const c = course("c");
+    const editingContinued = pushEdit(pushEdit(start(a), b, false), c, false);
+
+    const saved = markSavedStep(editingContinued, b);
+    expect(saved.present).toBe(c);
+    expect(saved.saved).toBe(b);
+    expect(saved.present).not.toBe(saved.saved);
   });
 
   it("bounds the stack rather than growing without end", () => {

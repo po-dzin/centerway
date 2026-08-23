@@ -84,6 +84,8 @@ export type SlashCommand = {
   label: string;
   /** The sentence that says when to reach for it — the picker's whole point. */
   hint?: string;
+  /** A short semantic shelf in the menu, such as “Текст” or “Блоки”. */
+  group?: string;
 };
 
 export function BuilderInlineEditor({
@@ -143,7 +145,13 @@ export function BuilderInlineEditor({
    */
   const [query, setQuery] = useState<string | null>(null);
   const [cursor, setCursor] = useState(0);
-  const [anchor, setAnchor] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [anchor, setAnchor] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    maxHeight: number;
+    flip: boolean;
+  } | null>(null);
 
   const matches = (commands ?? []).filter(
     (command) => query !== null && command.label.toLowerCase().includes(query.toLowerCase())
@@ -151,6 +159,13 @@ export function BuilderInlineEditor({
   // Clamped rather than reset: narrowing the query must not silently move the
   // highlight back to the top under an author who is about to press Enter.
   const active = matches.length > 0 ? Math.min(cursor, matches.length - 1) : 0;
+  const groupedMatches = matches.reduce<Array<{ label: string; commands: SlashCommand[] }>>((groups, command) => {
+    const label = command.group ?? "Команди";
+    const current = groups.at(-1);
+    if (current?.label === label) current.commands.push(command);
+    else groups.push({ label, commands: [command] });
+    return groups;
+  }, []);
 
   /**
    * Puts the panel over the current selection.
@@ -218,7 +233,18 @@ export function BuilderInlineEditor({
     const element = ref.current;
     if (!element) return;
     const rect = element.getBoundingClientRect();
-    setAnchor({ top: rect.bottom + 4, left: rect.left, width: rect.width });
+    const gutter = 12;
+    const preferredWidth = Math.min(352, window.innerWidth - 2 * gutter);
+    const roomBelow = window.innerHeight - rect.bottom - gutter;
+    const roomAbove = rect.top - gutter;
+    const flip = roomBelow < 280 && roomAbove > roomBelow;
+    setAnchor({
+      top: flip ? rect.top - 6 : rect.bottom + 6,
+      left: Math.min(Math.max(rect.left, gutter), window.innerWidth - preferredWidth - gutter),
+      width: preferredWidth,
+      maxHeight: Math.max(160, Math.min(408, flip ? roomAbove : roomBelow)),
+      flip,
+    });
   }, [query]);
 
   /**
@@ -554,25 +580,39 @@ export function BuilderInlineEditor({
               className={styles.slashList}
               role="listbox"
               aria-label="Команди"
-              style={{ top: anchor.top, left: anchor.left, minWidth: anchor.width }}
+              data-flip={anchor.flip || undefined}
+              style={{
+                top: anchor.top,
+                left: anchor.left,
+                width: anchor.width,
+                maxHeight: anchor.maxHeight,
+              }}
             >
-              {matches.map((command, index) => (
-                <button
-                  key={command.id}
-                  className={styles.slashItem}
-                  type="button"
-                  role="option"
-                  aria-selected={index === active}
-                  data-active={index === active || undefined}
-                  // The caret must not leave the field: losing it would close
-                  // the menu before the click it is being closed by.
-                  onMouseDown={(event) => event.preventDefault()}
-                  onMouseEnter={() => setCursor(index)}
-                  onClick={() => runCommand(command.id)}
-                >
-                  <span className={styles.slashLabel}>{command.label}</span>
-                  {command.hint ? <span className={styles.slashHint}>{command.hint}</span> : null}
-                </button>
+              {groupedMatches.map((group) => (
+                <div className={styles.slashGroup} role="group" aria-label={group.label} key={group.label}>
+                  <div className={styles.slashGroupTitle} aria-hidden="true">{group.label}</div>
+                  {group.commands.map((command) => {
+                    const index = matches.indexOf(command);
+                    return (
+                      <button
+                        key={command.id}
+                        className={styles.slashItem}
+                        type="button"
+                        role="option"
+                        aria-selected={index === active}
+                        data-active={index === active || undefined}
+                        // The caret must not leave the field: losing it would close
+                        // the menu before the click it is being closed by.
+                        onMouseDown={(event) => event.preventDefault()}
+                        onMouseEnter={() => setCursor(index)}
+                        onClick={() => runCommand(command.id)}
+                      >
+                        <span className={styles.slashLabel}>{command.label}</span>
+                        {command.hint ? <span className={styles.slashHint}>{command.hint}</span> : null}
+                      </button>
+                    );
+                  })}
+                </div>
               ))}
             </div>,
             document.body
