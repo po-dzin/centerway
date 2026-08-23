@@ -39,6 +39,7 @@ export async function GET(req: NextRequest) {
       standing: entry.standing,
       currentLessonSlug: entry.currentLessonSlug,
       currentLessonTitle: entry.currentLessonTitle,
+      cover: entry.course.cover ?? null,
     })),
   });
 }

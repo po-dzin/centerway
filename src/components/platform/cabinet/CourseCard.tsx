@@ -13,6 +13,7 @@ import Link from "next/link";
 import { ProgressRail } from "@/components/platform/ProgressRail";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import type { LearnerShelfCourseDto } from "@/components/lms/lmsClient";
+import { CourseCover } from "./CourseCover";
 import { fmtShortDate } from "./format";
 import type { CabinetCopy } from "./copy";
 import styles from "./Cabinet.module.css";
@@ -71,6 +72,9 @@ export function CourseCard({
 
   return (
     <article className={course.access === "locked" ? styles.cardMuted : styles.card} {...matte}>
+      {/* The picture the course was chosen by, kept after it was bought. */}
+      <CourseCover course={course} dimmed={course.access === "locked"} />
+
       <div className={styles.chipRow}>
         {stateChip ? (
           <span className={course.standing?.isFinished ? styles.chipDone : styles.chip}>{stateChip}</span>

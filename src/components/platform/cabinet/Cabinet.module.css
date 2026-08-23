@@ -629,6 +629,49 @@
   letter-spacing: 0.04em;
 }
 
+/* ── Course cover ─────────────────────────────────── */
+
+/* Bleeds to the card's edges: it is the top of the panel, not a picture sitting
+   inside one. The negative inset is the card's own padding, so the two cannot
+   drift apart. See CourseCover.tsx for why it is a band and not a poster. */
+.cover,
+.coverFallback {
+  width: calc(100% + 2 * var(--cw-space-lg));
+  /* The bleed is wider than the card's content box, and a global
+     `img { max-width: 100% }` clamps exactly that back. Without this the image
+     branch sits inside the padding while the initials branch bleeds — two
+     different cards depending on whether the author uploaded a picture. */
+  max-width: none;
+  margin: calc(-1 * var(--cw-space-lg)) calc(-1 * var(--cw-space-lg)) var(--cw-space-2xs);
+  aspect-ratio: 24 / 9;
+  border-radius: var(--cw-radius-xl) var(--cw-radius-xl) 0 0;
+  object-fit: cover;
+  background: var(--cw-mat-surface-sunk);
+}
+
+.coverFallback {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--cw-sem-guide-primary) 20%, var(--cw-mat-surface-sunk)),
+    var(--cw-mat-surface-sunk)
+  );
+  color: var(--cw-sem-guide-strong);
+  font-family: var(--cw-font-editorial);
+  font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* A course whose access has lapsed keeps its cover — recognising it is exactly
+   how the reader knows which one lapsed — but stops competing with the ones
+   they can open. */
+.cover[data-dimmed],
+.coverFallback[data-dimmed] {
+  opacity: 0.5;
+}
+
 /* ── Install, as one line ─────────────────────────── */
 
 /* Not a card. See PwaInstallCard.tsx: the offer lives in the footer now, and
