@@ -393,30 +393,29 @@ export function PlatformProductsIndexPage() {
               <h2 className={offerStyles.sectionTitle}>Трав&apos;яна підтримка як окремий продуктовий напрям</h2>
             </div>
           </div>
-          <article className={offerStyles.panel}>
-            <div className={offerStyles.panelIntro}>
-              <p className={offerStyles.label}>Як читати</p>
-              <p className={offerStyles.lead}>
-                Тут важлива не випадкова покупка, а придатність: чи доречна така підтримка саме зараз, і як вона
-                поєднується з режимом, харчуванням та програмою.
-              </p>
-            </div>
-            <ul className={`${offerStyles.timeline} ${offerStyles.programMetaList}`}>
-              <li>Коли доречно: м&apos;яка підтримка травлення, ритму і щоденного самопочуття.</li>
-              <li>Не замінює: діагностику, лікаря або хаотичне самопризначення.</li>
-              <li>Найкращий контекст: разом із програмою, режимом і зрозумілим наступним кроком.</li>
-            </ul>
-          </article>
-          <div className={offerStyles.aggregateRail} data-layout="single">
-            <PlatformOfferCard
-              title={featuredProduct.title}
-              tag={featuredProduct.tag}
-              description={featuredProduct.description}
-              href={featuredProduct.href}
-              visual={featuredProduct.visual}
-              slug={featuredProduct.slug}
-              artwork={featuredProduct.artwork}
-            />
+          {/* The "Як читати" panel that stood here is gone, and its three lines
+              with it. They described ONE product from outside it, so a second
+              product would have arrived under an argument about the first —
+              exactly the shape a marketplace cannot use. Each card carries its
+              own appropriateness/limits/context now (`points`), which also means
+              they travel to the home block and the detail page unchanged. */}
+          <div
+            className={offerStyles.aggregateRail}
+            data-layout={platformProductOffers.length === 1 ? "single" : undefined}
+          >
+            {platformProductOffers.map((product) => (
+              <PlatformOfferCard
+                key={product.slug}
+                title={product.title}
+                tag={product.tag}
+                description={product.description}
+                href={product.href}
+                visual={product.visual}
+                slug={product.slug}
+                artwork={product.artwork}
+                points={product.points}
+              />
+            ))}
           </div>
         </section>
 

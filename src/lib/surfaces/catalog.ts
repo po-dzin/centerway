@@ -342,8 +342,13 @@ export function getMainDomainSitemapRoutes(): string[] {
     "/",
     "/programs",
     "/products",
-    "/expert",
+    /* `/expert` is deliberately absent since the 2026-08-23 merge — it 308s to
+       `/consult`, and a sitemap that lists a redirect asks every crawler to
+       spend a fetch discovering that. `/consult` below is the surviving page. */
     "/programs/reboot",
+    // Was missing while the page existed, was linked from the catalogue and
+    // sold a product — the one hand-written offer no crawler was told about.
+    "/programs/reset-day",
     "/programs/way21",
     "/products/herbs",
     "/programs/ideal-body",

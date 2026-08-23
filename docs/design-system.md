@@ -130,9 +130,9 @@ In use on the course page and both cabinet course meters. The dosha score bars s
 
 ### Cabinet tabs, card actions, one container (2026-08-20)
 
-**Tabs mark, they do not fill.** Five filled chips in a row is five objects competing before the reader has chosen anything, and the active one — `--cw-platform-text` as a background — read as a button not yet pressed. Active is now the foreground at full weight plus a 2px accent underline, the same call the platform header made and for the same reason. The row still scrolls, so it takes a right-edge mask below 34rem: the scrollbar is hidden, and without the fade the last tab ended flush against the viewport and "Акаунт" did not appear to exist.
+**Tabs mark, they do not fill.** Five filled chips in a row is five objects competing before the reader has chosen anything, and the active one — `--cw-platform-text` as a background — read as a button not yet pressed. Active became the foreground at full weight plus a 2px underline, the same call the platform header made and for the same reason. *(The cabinet's own tab strip was replaced by `CabinetFold` on 2026-08-22 and its CSS deleted on 2026-08-23; the rule survives it — see "One nav-state contract" below, which is where the marker now lives for every surface that draws one.)*
 
-**Card actions are full width.** `flex-wrap` sized each button to its own label, so two buttons came out two different widths and neither reached the card edge — stubs floating in a card rather than its footer. Stacked and full width by default; `grid-auto-flow: column` at 48rem, where the card is at least 22rem and both fit on one row.
+**Card actions: one row when they fit, full width when they do not.** `flex-wrap` sized each button to its own label, so two buttons came out two different widths and neither reached the card edge — stubs floating in a card rather than its footer. The threshold is the button contract's own `--ds-button-min-width`, never a breakpoint: `.actions > * { flex: 1 1 var(--ds-button-min-width) }` grows a pair to share a line when both clear the minimum and wraps each to a full-width line of its own when they do not. A `min-width: 48rem` override used to set `flex-grow: 0` here and was removed on 2026-08-23 — it left a 326px card showing two 168px buttons with 158px of dead space beside each, which is neither of the two states this rule exists to produce.
 
 **One container per control.** The lesson's completion bar was a raised surface card whose only child was a filled pill: two shadows, two radii and two paddings for one checkbox. `.completionBar` now carries stickiness and reach only, and `.completeToggle` composes it — the control *is* the bar. The reference-page variant is gone entirely: it floated a card holding a hint and a second "До курсу" over a pager that already offers the course map one scroll below.
 
@@ -416,7 +416,7 @@ Added 2026-08-15 as the first step of the tactile redesign (research: `docs/arch
 | `glass` | tint 76% + `blur(34px) saturate(1.18)` | cards, chips — anything over the page canvas |
 | `glass-media` | tint 86%, raised shadow | panels sitting over a photo |
 | chrome tint 55% | the same glass, far more transparent, **no stroke** | the topbar — see below |
-| `inverse` | dark mineral gradient `#173027 → #274a3c` | offer blocks — the night side of the same material |
+| `inverse` | dark mineral gradient `#182a20 → #2c4635` (165deg) | offer blocks — the night side of the same material |
 | tones | the material shifted by a semantic hue: `--cw-mat-tone-{support,proof,boundary,icon}` | role-tinted panels, icon slots, boundary notes |
 | inverse controls | `--cw-mat-inverse-control` — a darkening scrim | chips and ghost buttons sitting **on** dark media inside a light page |
 
@@ -451,7 +451,7 @@ The material is all soft edges, and a control that is only a soft fill on a soft
 
 It is not decoration and not a divider — `--cw-mat-stroke` (the light top edge) and `--cw-mat-stroke-inner` (the hairline that divides one surface) keep those jobs and stay unmeasured, because neither claims to be a boundary you can press.
 
-**What it is deliberately not used for: state.** An outlined chip was tried for the cabinet's active tab and removed the same day — the strip sits straight on the page ground, so outlining the chosen tab turned a quiet row into five objects. "You are here" stays the foreground at full weight plus the gold marker.
+**What it is deliberately not used for: state.** An outlined chip was tried for the cabinet's active tab and removed the same day — the strip sits straight on the page ground, so outlining the chosen tab turned a quiet row into five objects. "You are here" stays the foreground at full weight plus the marker.
 
 Degradation is part of the contract: `@supports not (backdrop-filter)` and `prefers-reduced-transparency: reduce` both fall back to the opaque `--cw-mat-surface`, whose contrast is strictly better than the glass it replaces. One glass depth only — never nest glass in glass.
 
@@ -732,6 +732,107 @@ The token layer is machine-owned, so it can no longer drift by hand:
 
 Legacy names retired in the product (`--cw-depth-*`, `--cw-component-glass-*`) survive in the project only as a marked compatibility block in `tokens/material.css`, kept until its components migrate. They must not come back here.
 
+## Drift probe, and the first three findings (2026-08-23)
+
+`ds-drift/1` (`docs/design-system/DESIGN_CONTRACT.md`) reads three roles — **code**
+(`globals.css`, the only thing a user sees), **mirror** (the exported bundle the
+Claude Design project holds) and **brief** (this file) — and reports where they
+disagree. It is read-only by contract: discovery and closure never run in one
+pass, because a probe that also fixes cannot report honestly what it found.
+
+```
+npm run ds:drift          # print, change nothing
+npm run ds:drift:report   # the same, written to docs/design-system/drift/
+npm run ds:drift:gate     # CI form — exits 1 only on a gated pair
+```
+
+The 22.08 baseline raised three things. All three are settled here; the value of
+recording the verdicts is that the next report can be read in a minute instead
+of re-derived.
+
+**1. The inverse gradient — the brief was stale, the code is right.** The
+document claimed `#173027 → #274a3c`; the code ships
+`linear-gradient(165deg, #182a20, #2c4635)`. Neither stop matched, which is the
+worst kind of disagreement in the darkest material in the system. The code wins
+on evidence, not on precedence: the gradient moved on 2026-08-21 (`5ca9f6f`)
+so the platform's night side would match the landing network's
+`--cw-net-hero-scrim` — the same commit's own prose says so — and
+`guard-contrast.mjs` asserts the panel's text against `#2c4635` as the lighter,
+harder stop. The table above now carries the shipped value. The lesson is
+narrower than "update the doc": that commit changed a documented value without
+saying it did, and the drift probe is what caught it two days later.
+
+**2. `[data-dosha-test="true"]` is a bridge, and stays outside the token file.**
+The block at the end of `globals.css` rebinds ~25 admin-tier chrome tokens
+(`--cw-bg`, `--cw-surface*`, `--cw-status-*`, `--cw-shadow*`, …) onto
+`--cw-platform-*` / `--cw-sem-*` values. It is why the probe reports 32
+*one-sided* findings: for each of those names the code declares a third value
+the mirror never does.
+
+It is **not** promoted into `layers.modeOverrides`. A mode is a theme the whole
+surface takes; this is one component's bridge — the dosha test is built from the
+admin-tier `.cw-btn-*` / `.cw-choice-btn` classes and has to render in the
+platform palette without those classes being rewritten. Lifting it would ship 25
+declarations to every page to serve one route.
+
+The invariant that keeps it honest: **the bridge may only rebind, never
+introduce a value.** Every declaration in it is a `var()` or a `color-mix()` of
+tokens that already exist one tier up. A raw hex appearing there means the
+bridge became a palette, and it belongs in `cw.tokens.json` instead. The
+one-sided count is the metric — it should track the size of that block and
+nothing else.
+
+**3. The nine code-only tokens were three different things, not one drift.**
+
+- `--cw-font-ui` / `-editorial` / `-data` — **not drift.** The export filters
+  the type layer out (`TYPE_PREFIXES` in `ds-export.mjs`), because the mirror's
+  `tokens/fonts.css` carries `@font-face` rules that no token file can derive,
+  and its `tokens/typography.css` is hand-authored beside them. Both were read
+  from the project on 2026-08-23: the three families are declared there with
+  values identical to the code. The probe's `mirror` role points at the
+  *generated* bundle — five of the eight files `styles.css` imports — so three
+  hand-authored files are invisible to it by construction. This is a known limit
+  of the model, recorded in `design.drift.json`, not a gap in the system.
+- `--cw-course-*` (5) — **deliberate, and stays out of `cw.tokens.json`.** They
+  are a course-scoped layer: an author picks `headingFont` and `scale` from a
+  closed list in `src/lms-core/theme.ts`, and the values land on
+  `[data-cw-course-*]` scopes. They are per-course choices expressed as
+  variables, not system tokens, and putting them in the token file would say the
+  system has an opinion about them.
+- `--cw-branch-grid-discipline` — **retired from the browser (2026-08-23).** It
+  reached `:root` of every page through `layers.routeOverlays.platform`, and
+  nothing in `src/` read it: no component, no stylesheet. It belongs to the
+  generator, which reads it from `data/generator/branch_overlays.json`, so the
+  layer stays in `cw.tokens.json` and `generate-design-tokens.mjs` simply no
+  longer flattens it into the runtime block. A token that ships and is never
+  resolved is payload, not a system.
+
+**The `brief -> code` pair has a blind spot, and it is now accounted for.** The
+code side is read as CSS declarations, and the pair keeps only those whose
+*whole* value is a bare hex (`valuePattern: "^#"`). A hex inside a
+`linear-gradient()` or a `color-mix()` therefore never reaches the code side,
+while the brief quotes it happily — so a shipped colour can read as
+"only in brief" forever. As of 2026-08-23 that list is ten entries and none of
+them is drift:
+
+| entries | what they are |
+|---|---|
+| `#173027`, `#274a3c` | the retired inverse stops, quoted in the record of their retirement above |
+| `#182a20`, `#2c4635` | shipped — but only inside `--cw-mat-inverse-bg`'s gradient, which the pair cannot see |
+| `#55806a`, `#56804f`, `#588768` | "moved from" history: the network and course greens next to the values that replaced them |
+| `#1d3a30`, `#b0b0b0`, `#d1cdc6` | measurements quoted in prose (a CTA stop, a grain comparison), never tokens |
+
+Re-derive this table when the count changes; do not re-derive it because the
+count is non-zero.
+
+**What the probe is for.** Conflicts were zero in both passes — the export layer
+(`ds-export.mjs` → `ds:sync:check`) is doing its job, and no token disagrees with
+itself across the two machine-derived sides. Everything it found was either a
+hand-authored side that moved alone (1), or a scope one side does not model
+(2, 3). That is the expected shape of findings once the generated half is gated,
+and it is why the `brief -> code` pair stays on **watch** rather than gated: one
+of its sides is prose.
+
 ## Validation Stack
 
 `npm run ds:qa` = canon:guard → tokens:check → guard:ds-contract → guard:contrast → generator:validate → semantic:audit → lint → build.
@@ -755,6 +856,8 @@ Tracked so no one assumes they render:
 - `--cw-role-*`, `--cw-cta-*` (in `token_packs.json`) — carried by packs for the dormant generated-app runtime; zero CSS consumers.
 (none in the material layer — the shell and block migrations consumed it.)
 
+Retired 2026-08-23, do not reintroduce into the runtime block: `--cw-branch-grid-discipline` (generator layer; see the drift-probe section).
+
 Retired 2026-08-15, do not reintroduce: `--cw-component-glass-*`, `--cw-surface-glass-*`, `--cw-surface-shell-*`, `--cw-shell-frost-*`, `--cw-depth-*`, and the whole `layers.componentRecipes` branch. Their 49 consumers now read `--cw-mat-*`.
 
 The absorption kept the axes apart rather than flattening them. Depth's *material* half became material proper (`card-bg` → `--cw-mat-surface`, the three shadows → `--cw-mat-shadow-{soft,raised,deep}`). Its *role* half stayed a role but is now expressed as the material shifted by a semantic hue (`--cw-mat-tone-{support,proof,boundary,icon}`), so those panels inherit a dark half instead of needing one invented for them.
@@ -764,6 +867,57 @@ The absorption kept the axes apart rather than flattening them. Depth's *materia
 **A control that sits on dark media inside a light page darkens, it does not lighten.** Hero chips and ghost buttons take `--cw-mat-inverse-control`. Reaching for a light tint there produced a pale pill carrying cream text — caught in review, and the reason this token exists rather than being improvised per component.
 
 Note — `--cw-btn-primary-*` was previously listed here as orphan; that was wrong. `.cw-btn-primary` (globals.css) is a rendered class consumed by `RouteAuthGate` and the dosha test. Its fill was retuned 2026-07-06 (gray-accent mix → success/ink mix) because the old dark pairing was ~2.06; it now clears body AA in both themes and is asserted by `guard:contrast`.
+
+### One nav-state contract (2026-08-23)
+
+Three surfaces answered "you are here" three ways: the topbar drew an ink underline, the cabinet's tab strip drew a gold one, and the account popover underlined its current row in gold via `text-decoration`. Two of them were on screen at once, so the reader had to learn that a black rule and a gold rule mean the same thing.
+
+**One mark, toned.** `--cw-nav-marker` in `globals.css` — ink on a light ground, gold on a dark one — read by the topbar (`--platform-header-nav-marker`) and the account popover. Not a taste call in either direction: on cream, gold measures ~1.05 against the sheet and is not visible as a rule at all; on the night material the ink *is* the cream text, so an ink underline under a cream label is the label drawn twice. Toned by the same three scopes the material uses — `.dark`, `[data-cw-theme="dark"]`, `[data-cw-header-tone="dark"]` — so a portalled popover carrying the bar's tone gets the bar's mark for free.
+
+**The mark is always the second signal.** The active label also runs at full foreground and a heavier weight. That is what keeps the gold mark inside 1.4.11 — it is redundant decoration, not the sole carrier of state — which matters because gold on the dark chrome tint measures 2.34 against the 3.0 a load-bearing indicator would owe. Gold is still not a label colour and nothing here asks it to be one.
+
+**Hover is the same mark, half-drawn.** A fill was the other candidate and loses on the rule this document already writes down for tab strips: these rows sit straight on the page ground, and filling one turns a quiet strip into a row of objects. Rest is muted with no plate; hover and focus grow the mark to `--cw-nav-marker-hover-scale` (0.74) at `--cw-nav-marker-hover-opacity` (0.42) and bring the label to full foreground; active runs it to full. Consumers read those tokens rather than restating the numbers — restating them is how the three marks drifted apart the first time.
+
+### Lists keep their markers inside the text column (2026-08-23)
+
+`.timeline` (the platform's one plain list) hung its bullet at `left: -0.85rem`, on the theory that the sentences should start on the paragraph edge. But a panel's padding is not a margin the list owns: the dots landed left of the eyebrow, the heading and the disclosure row, and only the list broke the block's left edge. The theory also required the panel's padding to be ≥ 1.15rem, and several panels run tighter — on those the dots cleared the card entirely.
+
+Same fix and the same numbers as the lesson player's `.list` (`Lms.module.css`): the item takes `padding-inline-start: 1.15rem` and the marker sits in that indent at `left: 0.28rem`. Hanging markers survive in exactly one place — the builder's structure path, where `.moduleBlock` sets the matching `padding-inline-start` itself, so the glyphs hang into padding the element owns rather than into a parent's.
+
+### `view-rows` / `view-cards` (2026-08-23)
+
+The builder's list-view switch was set in **words** because the icon set had no glyph meaning "a grid of cards", and the two candidates it reached for were both wrong the same way: `menu` is three rules that mean "open the navigation", and the dot/orbit layer is block navigation that `Icon.tsx` forbids inside a text row. The answer to a missing glyph is to draw it, not to set a toolbar in prose — the pair is now baked from `scripts/lib/icon-glyphs.mjs` like every other icon. They read only as a pair: three full-width bands against four half-width blocks is the same page arranged two ways, which is exactly what the control switches between. The word survives as `aria-label` and `title`, because a two-state icon switch has no accessible name without one.
+
+### Buttons: the fit axis (2026-08-23)
+
+The six roles answer what a button *is*. They never answered how wide it should be, so every caller answered that itself — `width: fit-content`, `width: 100%`, `flex: 1 1 100%`, `flex: 0 1 auto` + `min-width`, and nothing at all, across five stylesheets and fourteen rules. Three bugs came out of that in one session: offer-card CTAs sized to their own labels so three cards in a row showed three different stubs; cabinet card actions stacked at the contract minimum and left a third of the card empty beside each; the builder's icon-only options kept the inline padding meant for a label and rendered as wide empty plates. None is a role question — all three are "what does this control do with the space it is given", which is now one axis with four documented answers.
+
+| fit | what it means | where |
+| --- | --- | --- |
+| `hug` | content width | toolbars, inline controls |
+| `fill` | spans the container, still capped by `--ds-button-max-width` | card actions, hero CTAs, offer tiles |
+| `wide` | a floor, not a span — two standalone buttons come out one size | page-level pairs |
+| `square` | 1:1 at the touch minimum, label padding removed | icon-only |
+
+Compose exactly one alongside a role. The cap staying on `.base` is what makes `fill` safe at any container width: a lone action in a maximised window stops at 22rem instead of becoming a band, and the default offer tile (24rem less 2×1.25rem padding = 21.5rem) is spanned exactly — which is why a one-up and a three-up row draw the same button rather than three sizes of it.
+
+`.row` is the group container: `flex-wrap` with `flex: 1 1 var(--ds-button-min-width)` on the children, so a pair shares one line when both clear the minimum and each takes a full-width line when they do not. **A media query cannot answer this** — the same card is 326px in a three-up grid and 560px in a one-up at one viewport width, which is exactly how the `min-width: 48rem` override that used to sit in `Cabinet.module.css` came to strand 158px beside each button.
+
+### Offer cards carry their own context (2026-08-23)
+
+The home page's herb block ran three icon notes and a "Як читати" panel before the single card they described, and `/products` repeated the pattern — so the reader met three paragraphs about a product they could not yet see. Worse, the prose described *one* product from outside it: a second product would have arrived under an argument about the first, which is the shape a marketplace cannot use.
+
+`PlatformOfferCard` takes `points` — at most three lines of appropriateness, limits and context — rendered inside the card. The copy lives on the offer in `content.ts`, so it travels to the home block, the aggregate page and the detail page unchanged, and the block renders whatever `platformProductOffers` holds. Herbs are one card of one product, which is what they are.
+
+### Blocks name their own aggregate (2026-08-23)
+
+Every showcase block on the home page is a sample of a fuller page — three programmes of five, one product of however many — and the only route to the rest was the topbar, which is a different act of navigation entirely: leaving what you are reading versus following it further. `PlatformBlock` had a `headActions` slot for exactly this and nothing used it. `PlatformBlockLink` fills it, in the `text` role so it does not outweigh the heading it sits beside. Deliberately not automatic: a block whose content *is* the whole set (the proof stories, the support form) has no aggregate to point at, and a dead link there is worse than none.
+
+### `/expert` merged into `/consult` (2026-08-23)
+
+Two pages, one question between them: who runs this, and how do I work with him. Split, each half had to sell the other — a reader who arrived wanting a consultation met a biography, and one who arrived at the biography was sold the consultation a second time. `/consult` survives and `/expert` 308s to it; the credentials (`ExpertProof`) and the route through the work (`ExpertPath`) are now evidence inside the consultation, in `beforeSupport` — after the reader knows what is on offer, before they are asked to commit.
+
+Three things moved with the content and are easy to forget: the `ProfilePage` node (without it the address an answer engine cites for the founder is a redirect), `BRAND.founder.path` (`personLd` builds the Person's `url` from it, so every page's graph would otherwise cite a 308), and `/consult` joining the `platformEscape` / `requestBrand` prefixes. `/expert` **stays** in `platformEscape` — it has to reach the platform for the platform to serve its redirect — and leaves the sitemap, because listing a redirect spends a crawler's fetch on discovering one.
 
 ## Aspirational Ledger (not implemented)
 

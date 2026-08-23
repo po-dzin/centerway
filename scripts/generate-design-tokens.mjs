@@ -71,8 +71,13 @@ function flattenRuntimeLayers(layers) {
     ...(layers.semanticAliases ?? {}),
     ...(layers.modeOverrides?.platform ?? {}),
     ...(layers.material?.light ?? {}),
-    ...(layers.routeOverlays?.platform ?? {}),
   };
+  // routeOverlays is deliberately NOT flattened in. It is the generator's own
+  // layer (data/generator/branch_overlays.json reads it); its one member,
+  // --cw-branch-grid-discipline, was declared on :root of every page and read
+  // by no component or stylesheet in src/. A token that ships to the browser
+  // and is never resolved there is payload, not a system. See
+  // docs/design-system.md → "Three findings from the first drift probe".
 }
 
 // Colour-only subset: the landings need the palette and the material, not the

@@ -32,6 +32,7 @@ import { PwaInstallRow } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
 import { ShelfErrorCard, courseAction, courseMapHref, matte } from "./CourseCard";
+import { CourseCover } from "./CourseCover";
 import {
   dateLocaleFor,
   fmtDate,
@@ -240,6 +241,10 @@ export function CabinetClient() {
         <div className={styles.section}>
           {resumeCourse ? (
             <article className={styles.continueCard} {...matte}>
+              {/* Only here, and only for the one course being resumed: the
+                  dashboard answers "what do I open right now", and a cover per
+                  owned course would turn that answer into a gallery. */}
+              <CourseCover course={resumeCourse} />
               <p className={styles.sectionLabel}>{cab.continueTitle}</p>
               <h2 className={styles.cardTitle}>{resumeCourse.title}</h2>
               {resumeCourse.currentLessonTitle && !resumeCourse.standing?.isFinished ? (

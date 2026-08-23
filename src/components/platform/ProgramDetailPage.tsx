@@ -15,6 +15,8 @@ import { getSnapshotCourseByProgram } from "@/lib/lms/catalog";
 import { resolveOfferCommerce, type OfferCommerce } from "@/lib/platform/offerCommerce";
 import type { PlatformOfferSurfaceType } from "@/lib/platform/content";
 import type { Course } from "@/lms-core";
+import { JsonLd } from "@/lib/seo/StructuredData";
+import { breadcrumbLd, courseLd, graph } from "@/lib/seo/jsonLd";
 
 /**
  * What this page actually needs, declared instead of inferred.
@@ -141,6 +143,28 @@ export function ProgramDetailPage({
       }}
       afterHero={
         <>
+          {/* The offer, stated for machines, from the same three facts the page
+              prints: what it is, how long it takes, what it costs. The figure is
+              `commerce.amount` — the quotable one — so a page can never publish a
+              price different from the one in its own button. */}
+          <JsonLd
+            data={graph(
+              courseLd({
+                path: `/programs/${program.slug}`,
+                name: program.fullTitle,
+                description: program.longDescription || program.description,
+                price: commerce.mode === "checkout" ? commerce.amount : null,
+                currency: commerce.mode === "checkout" ? commerce.currency : undefined,
+                duration: program.duration,
+                ...(program.artwork ? { image: program.artwork.desktop } : {}),
+              }),
+              breadcrumbLd([
+                { path: "/", name: "CenterWay" },
+                { path: "/programs", name: "Програми" },
+                { path: `/programs/${program.slug}`, name: program.title },
+              ])
+            )}
+          />
           <OwnedCourseNotice programSlug={program.slug} />
           {/* The author's own way in. Renders for nobody else, including the
               buyer looking at the same page. */}

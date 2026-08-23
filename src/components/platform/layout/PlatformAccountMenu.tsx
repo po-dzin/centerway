@@ -72,6 +72,13 @@ export function PlatformAccountMenu({
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const [anchor, setAnchor] = useState<CSSProperties | null>(null);
+  /* The popover is portalled to `document.body`, so it does NOT inherit the
+     bar's tone scope — and the bar has one: `headerTone` flips the topbar to
+     the night material whenever it floats over a dark hero. The menu was left
+     behind on the light side of that flip, which on a graded photo meant a
+     30% cream tint with near-black ink on it: a light-tone panel and no dark
+     one. It carries the bar's tone across the portal instead. */
+  const [tone, setTone] = useState<"light" | "dark">("light");
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -131,7 +138,19 @@ export function PlatformAccountMenu({
        its avatar reads as a bug in the bar rather than in the popover. */
     window.addEventListener("resize", measure);
     window.addEventListener("scroll", measure, true);
+
+    /* WATCHED, not sampled once at open. The bar decides its tone from what it
+       measures behind it, and that verdict lands a frame or more after the
+       click that opened this menu — reading the attribute in `measure` alone
+       left the panel dark over a light page for the whole time it stayed open.
+       The observer keeps the two in step for as long as the menu exists. */
+    const bar = triggerRef.current?.closest("header") ?? null;
+    const syncTone = () => setTone(bar?.dataset.cwHeaderTone === "dark" ? "dark" : "light");
+    const observer = bar ? new MutationObserver(syncTone) : null;
+    observer?.observe(bar as HTMLElement, { attributeFilter: ["data-cw-header-tone"] });
+    syncTone();
     return () => {
+      observer?.disconnect();
       window.removeEventListener("resize", measure);
       window.removeEventListener("scroll", measure, true);
     };
@@ -281,7 +300,7 @@ export function PlatformAccountMenu({
       </button>
       {open && anchor && typeof document !== "undefined"
         ? createPortal(
-            <div className={styles.profileMenu} style={anchor} role="menu" ref={menuRef} data-cw-glass="shell">
+            <div className={styles.profileMenu} style={anchor} role="menu" ref={menuRef} data-cw-glass="shell" data-cw-header-tone={tone}>
               {rows}
             </div>,
             document.body,

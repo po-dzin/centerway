@@ -24,8 +24,15 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { foldProgress, type ProgressEvent, type ProgressEventType } from "@/lms-core/progress";
-import { learnerStatusOf } from "@/lib/admin/accessTypes";
-import type { CourseRow, GrantableRole, LearnerRow, LearnerStatus, RoleRow } from "@/lib/admin/accessTypes";
+import { groupLearnersByAccount, learnerStatusOf } from "@/lib/admin/accessTypes";
+import type {
+    CourseRow,
+    GrantableRole,
+    LearnerAccountRow,
+    LearnerRow,
+    LearnerStatus,
+    RoleRow,
+} from "@/lib/admin/accessTypes";
 
 export * from "@/lib/admin/accessTypes";
 
@@ -193,8 +200,23 @@ export type ListLearnersInput = {
     offset: number;
 };
 
+/**
+ * Learners, one row per person rather than one per enrollment.
+ *
+ * The panel's question is "who is learning here", and a person holding three
+ * courses is one person, not three learners — the flat list made the same
+ * account appear three times and buried that they were the same human. So the
+ * enrollment rows are folded by account before paging, which means the page
+ * size counts people and the status filter asks "does this person have any
+ * course in that state".
+ *
+ * The summary counts people the same way, so a tile's number is exactly what
+ * clicking its tab shows. Tiles therefore do not add up to the total: someone
+ * stalled on one course and finished on another is counted under both, which is
+ * true of them.
+ */
 export async function listLearners(input: ListLearnersInput): Promise<{
-    items: LearnerRow[];
+    items: LearnerAccountRow[];
     total: number;
     truncated: boolean;
     summary: Record<LearnerStatus, number>;
@@ -280,10 +302,16 @@ export async function listLearners(input: ListLearnersInput): Promise<{
         };
     });
 
-    const summary = emptySummary();
-    for (const row of all) summary[row.status] += 1;
+    const people = groupLearnersByAccount(all);
 
-    const filtered = input.status ? all.filter((row) => row.status === input.status) : all;
+    const summary = emptySummary();
+    for (const person of people) {
+        for (const status of new Set(person.courses.map((course) => course.status))) summary[status] += 1;
+    }
+
+    const filtered = input.status
+        ? people.filter((person) => person.courses.some((course) => course.status === input.status))
+        : people;
     const page = filtered.slice(input.offset, input.offset + input.limit);
 
     return { items: page, total: filtered.length, truncated, summary };

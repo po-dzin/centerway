@@ -28,7 +28,11 @@ const PLATFORM_ESCAPE_PREFIXES = [
   "/pay",
   "/programs",
   "/products",
+  /* Kept after the merge: this path still has to reach the platform so the
+     platform can serve its 308 to /consult. Drop it and the funnel host answers
+     instead, and the redirect never runs. */
   "/expert",
+  "/consult",
   "/tests",
   "/dosha-test",
 ] as const;

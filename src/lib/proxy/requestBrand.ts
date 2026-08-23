@@ -13,6 +13,7 @@ function isPlatformRootRoute(pathname: string): boolean {
     pathname === "/programs" ||
     pathname === "/products" ||
     pathname === "/expert" ||
+    pathname === "/consult" ||
     pathname === "/dosha-test" ||
     pathname === "/tests" ||
     pathname.startsWith("/tests/")

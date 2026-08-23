@@ -7,7 +7,7 @@ import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 export function NextStep({ route, programSlug }: Pick<PlatformRouteBlockProps, "route" | "programSlug">) {
   const program = currentProgram(programSlug);
   const primaryHref = program ? "#program-enroll" : DOSHA_TEST_ROUTE;
-  const secondaryHref = program ? "/expert" : DOSHA_TEST_ROUTE;
+  const secondaryHref = program ? "/consult" : DOSHA_TEST_ROUTE;
   const secondaryLabel = program ? "Поставити питання автору" : "Пройти діагностику";
 
   return (

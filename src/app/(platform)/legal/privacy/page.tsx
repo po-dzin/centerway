@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
 import { PlatformLegalTemplate } from "@/components/platform/PlatformLegalTemplate";
 import { contact, legal } from "@/lib/platform/content";
+import { describe } from "@/lib/brand/identity";
+import { pageMetadata } from "@/lib/seo/metadata";
 
-export const metadata: Metadata = {
-  title: "Політика конфіденційності - CenterWay",
-  description: "Політика конфіденційності CenterWay: збір, використання та захист персональних даних.",
-  alternates: { canonical: "/legal/privacy" },
-};
+export const metadata: Metadata = pageMetadata({
+  title: "Політика конфіденційності",
+  description: describe(
+    "Як CenterWay збирає, використовує і захищає персональні дані користувачів платформи, і які права має користувач.",
+    { bounded: false }
+  ),
+  path: "/legal/privacy",
+});
 
 export default function PrivacyPage() {
   return (

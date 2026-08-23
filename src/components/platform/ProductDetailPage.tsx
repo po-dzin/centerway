@@ -2,6 +2,8 @@ import { PlatformOfferResultList, PlatformOfferSurfaceTemplate } from "@/compone
 import { OfferCheckoutPanel } from "@/components/platform/OfferCommerce";
 import { resolveOfferCommerce } from "@/lib/platform/offerCommerce";
 import type { programs } from "@/lib/platform/content";
+import { JsonLd } from "@/lib/seo/StructuredData";
+import { breadcrumbLd, graph, productLd } from "@/lib/seo/jsonLd";
 
 type Product = (typeof programs)[number];
 
@@ -21,6 +23,28 @@ export function ProductDetailPage({ product }: { product: Product }) {
   return (
     <PlatformOfferSurfaceTemplate
       templateKind="product"
+      afterHero={
+        /* No Offer node while there is no agreed price — see productLd. The
+           product is still named, described and attributed to the brand, which
+           is what makes it citable at all. */
+        <JsonLd
+          data={graph(
+            productLd({
+              path: `/products/${product.slug}`,
+              name: product.fullTitle,
+              description: product.longDescription || product.description,
+              price: commerce.mode === "checkout" ? commerce.amount : null,
+              currency: commerce.mode === "checkout" ? commerce.currency : undefined,
+              ...(product.artwork ? { image: product.artwork.desktop } : {}),
+            }),
+            breadcrumbLd([
+              { path: "/", name: "CenterWay" },
+              { path: "/products", name: "Продукти" },
+              { path: `/products/${product.slug}`, name: product.title },
+            ])
+          )}
+        />
+      }
       trail={[{ label: "Продукти", href: "/products" }, { label: product.title }]}
       hero={{
         title: product.fullTitle,

@@ -4,7 +4,8 @@
  * Access — the panel's answer to "who is learning what" and "who may do what".
  *
  * Three tabs, one per store the CLI scripts used to reach:
- *   · Learners — lms_enrollments + folded progress, plus grant/revoke
+ *   · Learners — one row per person, their courses folded inside, plus
+ *                grant/revoke (revoke is still per course, not per person)
  *   · Roles    — user_roles, the one role store
  *   · Builder  — lms_courses.author_id, ownership per row rather than a role
  *
@@ -24,7 +25,7 @@ import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/adminLocale";
-import type { CourseRow, LearnerRow, LearnerStatus, RoleRow } from "@/lib/admin/accessTypes";
+import type { CourseRow, LearnerAccountRow, LearnerRow, LearnerStatus, RoleRow } from "@/lib/admin/accessTypes";
 import { GRANTABLE_ROLES } from "@/lib/admin/accessTypes";
 
 const LIMIT = 50;
@@ -70,6 +71,26 @@ function EmptyIcon() {
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="cw-muted">
             <rect x="3" y="11" width="18" height="11" rx="2" />
             <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+        </svg>
+    );
+}
+
+function ChevronIcon({ open }: { open: boolean }) {
+    return (
+        <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="16"
+            height="16"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+            className={`cw-muted shrink-0 transition-transform ${open ? "rotate-180" : ""}`}
+        >
+            <path d="m6 9 6 6 6-6" />
         </svg>
     );
 }
@@ -170,7 +191,7 @@ function LearnersTab({
     const [status, setStatus] = useState<LearnerStatus | "">("");
     const [page, setPage] = useState(0);
 
-    const [items, setItems] = useState<LearnerRow[]>([]);
+    const [items, setItems] = useState<LearnerAccountRow[]>([]);
     const [total, setTotal] = useState(0);
     const [truncated, setTruncated] = useState(false);
     const [summary, setSummary] = useState<Record<LearnerStatus, number> | null>(null);
@@ -180,6 +201,16 @@ function LearnersTab({
     const [grantEmail, setGrantEmail] = useState("");
     const [grantCourse, setGrantCourse] = useState("");
     const [granting, setGranting] = useState(false);
+
+    // Which people have their course list open. Keyed by account id rather than
+    // by index so a reload or a page change cannot open someone else's row.
+    const [expanded, setExpanded] = useState<Set<string>>(new Set());
+    const toggle = (authUserId: string) =>
+        setExpanded((prev) => {
+            const next = new Set(prev);
+            if (!next.delete(authUserId)) next.add(authUserId);
+            return next;
+        });
 
     const requestSeq = useRef(0);
 
@@ -209,7 +240,7 @@ function LearnersTab({
             params.set("offset", String(page * LIMIT));
 
             const payload = await authFetch(`/api/admin/access/learners?${params}`) as {
-                items: LearnerRow[];
+                items: LearnerAccountRow[];
                 total: number;
                 truncated: boolean;
                 summary: Record<LearnerStatus, number>;
@@ -383,43 +414,83 @@ function LearnersTab({
                 <AdminEmptyState className="py-16" iconWrapperClassName="w-12 h-12 rounded-full" icon={<EmptyIcon />} description={t("access_empty_learners")} />
             ) : (
                 <div className="space-y-1.5">
-                    {items.map((row) => (
-                        <div key={row.enrollmentId} className="cw-list-item flex items-center gap-4 p-4">
-                            <span className={`w-2.5 h-2.5 rounded-full shrink-0 ${STATUS_DOT[row.status]}`} title={t(STATUS_LABEL_KEY[row.status])} />
+                    {items.map((account) => {
+                        const open = expanded.has(account.authUserId);
+                        return (
+                            <div key={account.authUserId} className="cw-list-item p-4">
+                                <button
+                                    type="button"
+                                    onClick={() => toggle(account.authUserId)}
+                                    aria-expanded={open}
+                                    aria-label={t("access_toggle_courses")}
+                                    className="w-full flex items-center gap-4 text-left"
+                                >
+                                    <span
+                                        className={`w-2.5 h-2.5 rounded-full shrink-0 ${STATUS_DOT[account.status]}`}
+                                        title={t(STATUS_LABEL_KEY[account.status])}
+                                    />
 
-                            <div className="flex-1 min-w-0">
-                                <p className="text-sm font-medium cw-text truncate">
-                                    {row.email ?? row.authUserId}
-                                </p>
-                                <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                                    <span className="font-mono">{row.courseSlug}</span>
-                                    <span>{sourceLabel(row.source)}</span>
-                                    <span>
-                                        {t("access_col_started")}: {new Date(row.startedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
-                                    </span>
-                                </div>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium cw-text truncate">
+                                            {account.email ?? account.authUserId}
+                                        </p>
+                                        <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                                            <span>{t("access_col_courses")}: {account.courses.length}</span>
+                                            {account.fullName ? <span className="truncate">{account.fullName}</span> : null}
+                                            <span>
+                                                {account.lastActivityAt
+                                                    ? `${t("access_col_last_activity")}: ${new Date(account.lastActivityAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}`
+                                                    : t("access_no_activity")}
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <div className="text-right shrink-0 hidden sm:block">
+                                        <p className="text-sm cw-text tabular-nums">
+                                            {account.lessonsTotal > 0
+                                                ? `${account.lessonsCompleted}/${account.lessonsTotal}`
+                                                : t("access_no_lessons")}
+                                        </p>
+                                    </div>
+
+                                    <ChevronIcon open={open} />
+                                </button>
+
+                                {open ? (
+                                    <div className="mt-3 pt-3 border-t border-[var(--cw-border)] space-y-2">
+                                        {account.courses.map((row) => (
+                                            <div key={row.enrollmentId} className="flex items-center gap-3">
+                                                <span
+                                                    className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT[row.status]}`}
+                                                    title={t(STATUS_LABEL_KEY[row.status])}
+                                                />
+                                                <div className="flex-1 min-w-0">
+                                                    <p className="text-sm cw-text truncate">{row.courseTitle}</p>
+                                                    <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                                                        <span className="font-mono">{row.courseSlug}</span>
+                                                        <span>{sourceLabel(row.source)}</span>
+                                                        <span>
+                                                            {t("access_col_started")}: {new Date(row.startedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <p className="text-sm cw-text tabular-nums shrink-0 hidden sm:block">
+                                                    {row.lessonsTotal > 0 ? `${row.lessonsCompleted}/${row.lessonsTotal}` : t("access_no_lessons")}
+                                                </p>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => revoke(row)}
+                                                    className="px-3 py-1.5 cw-btn cw-btn-muted text-xs shrink-0"
+                                                >
+                                                    {t("access_revoke")}
+                                                </button>
+                                            </div>
+                                        ))}
+                                    </div>
+                                ) : null}
                             </div>
-
-                            <div className="text-right shrink-0 hidden sm:block">
-                                <p className="text-sm cw-text tabular-nums">
-                                    {row.lessonsTotal > 0 ? `${row.lessonsCompleted}/${row.lessonsTotal}` : t("access_no_lessons")}
-                                </p>
-                                <p className="text-xs cw-muted mt-0.5">
-                                    {row.lastActivityAt
-                                        ? new Date(row.lastActivityAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })
-                                        : t("access_no_activity")}
-                                </p>
-                            </div>
-
-                            <button
-                                type="button"
-                                onClick={() => revoke(row)}
-                                className="px-3 py-1.5 cw-btn cw-btn-muted text-xs shrink-0"
-                            >
-                                {t("access_revoke")}
-                            </button>
-                        </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
 
@@ -451,19 +522,23 @@ function RolesTab({
 
     const [q, setQ] = useState("");
     const [items, setItems] = useState<RoleRow[]>([]);
+    const [selfId, setSelfId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
     const [email, setEmail] = useState("");
     const [role, setRole] = useState<string>("coach");
     const [saving, setSaving] = useState(false);
+    // The row currently being written, so only its own controls go disabled.
+    const [savingId, setSavingId] = useState<string | null>(null);
 
     const load = useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
-            const payload = await authFetch("/api/admin/access/roles") as { items: RoleRow[] };
+            const payload = await authFetch("/api/admin/access/roles") as { items: RoleRow[]; selfId?: string };
             setItems(payload.items ?? []);
+            setSelfId(payload.selfId ?? null);
         } catch (e) {
             setError(errorText(getErrorMessage(e)));
         } finally {
@@ -496,6 +571,35 @@ function RolesTab({
             toast.error(errorText(getErrorMessage(e)));
         } finally {
             setSaving(false);
+        }
+    };
+
+    /**
+     * Change or drop one row's role.
+     *
+     * "Remove" is `user`, not a delete: `user_roles` is the one role store and
+     * every account is expected to have a row there, so taking a role away
+     * means writing the ordinary one back — after which the row leaves this
+     * table, which only lists elevated roles.
+     */
+    const setRowRole = async (row: RoleRow, nextRole: string) => {
+        if (!row.email || nextRole === row.role) return;
+        // Losing the last admin is the one mistake here that cannot be undone
+        // from the panel, so demoting an admin asks first.
+        if (row.role === "admin" && !window.confirm(t("access_role_demote_confirm"))) return;
+
+        setSavingId(row.authUserId);
+        try {
+            await authFetch("/api/admin/access/roles", {
+                method: "POST",
+                body: JSON.stringify({ email: row.email, role: nextRole }),
+            });
+            toast.success(nextRole === "user" ? t("access_role_removed") : t("access_role_set"));
+            await load();
+        } catch (e) {
+            toast.error(errorText(getErrorMessage(e)));
+        } finally {
+            setSavingId(null);
         }
     };
 
@@ -561,14 +665,18 @@ function RolesTab({
                 <AdminEmptyState className="py-16" iconWrapperClassName="w-12 h-12 rounded-full" icon={<EmptyIcon />} description={t("access_empty_roles")} />
             ) : (
                 <div className="space-y-1.5">
-                    {filtered.map((row) => (
-                        <div key={row.authUserId} className="cw-list-item flex items-center gap-4 p-4">
+                    {filtered.map((row) => {
+                        const isSelf = row.authUserId === selfId;
+                        const editable = canGrant && !isSelf && Boolean(row.email);
+                        return (
+                        <div key={row.authUserId} className="cw-list-item flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4">
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2">
                                     <p className="text-sm font-medium cw-text truncate">{row.email ?? row.authUserId}</p>
                                     <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">
                                         {row.role}
                                     </span>
+                                    {isSelf ? <span className="text-[10px] cw-muted uppercase tracking-wide">{t("access_role_self")}</span> : null}
                                 </div>
                                 <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
                                     <span>{t("access_role_owned_courses")}: {row.ownedCourses}</span>
@@ -580,8 +688,33 @@ function RolesTab({
                                     ) : null}
                                 </div>
                             </div>
+
+                            {editable ? (
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <select
+                                        value={row.role}
+                                        onChange={(e) => void setRowRole(row, e.target.value)}
+                                        disabled={savingId === row.authUserId}
+                                        aria-label={t("access_role_title")}
+                                        className="cw-input px-3 py-2 text-sm sm:w-40 disabled:opacity-50"
+                                    >
+                                        {GRANTABLE_ROLES.map((value) => (
+                                            <option key={value} value={value}>{value}</option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={() => void setRowRole(row, "user")}
+                                        disabled={savingId === row.authUserId}
+                                        className="px-3 py-2 cw-btn cw-btn-muted text-xs disabled:opacity-50"
+                                    >
+                                        {t("access_role_remove")}
+                                    </button>
+                                </div>
+                            ) : null}
                         </div>
-                    ))}
+                        );
+                    })}
                 </div>
             )}
         </div>

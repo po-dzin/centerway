@@ -303,6 +303,31 @@ export const ICONS = {
     group: "Meta",
     d: ["M4 7.4h16", "M4 12h16", "M4 16.6h16"],
   },
+  /* The two list layouts, as a pair. The builder's view switch had been set in
+     WORDS because nothing in this set meant "a grid of cards" — and the two
+     candidates it reached for first were both wrong in the same way: `menu` is
+     three rules that mean "open the navigation", and the dot/orbit layer is
+     block navigation that Icon.tsx forbids inside a text row.
+
+     They are drawn as a PAIR and only read as one: three full-width bands
+     against four half-width blocks is the same page arranged two ways, which is
+     exactly what the control switches between. Deliberately not three lines —
+     that is `menu`, four rows up — and deliberately closed rectangles rather
+     than strokes, so the two glyphs share a vocabulary of areas rather than one
+     being lines and the other boxes. */
+  "view-rows": {
+    group: "Meta",
+    d: ["M4.5 5.4 H19.5 V8.6 H4.5 Z", "M4.5 10.4 H19.5 V13.6 H4.5 Z", "M4.5 15.4 H19.5 V18.6 H4.5 Z"],
+  },
+  "view-cards": {
+    group: "Meta",
+    d: [
+      "M4.5 4.5 H11.2 V11.2 H4.5 Z",
+      "M12.8 4.5 H19.5 V11.2 H12.8 Z",
+      "M4.5 12.8 H11.2 V19.5 H4.5 Z",
+      "M12.8 12.8 H19.5 V19.5 H12.8 Z",
+    ],
+  },
   // Settings, and it is a gear because a gear is what "settings" means to
   // everyone — eight teeth on a 45° pitch, cut shallow (9.0/6.5 of 12) so the
   // hand pass does not turn them into a saw. The hub is the same circle the

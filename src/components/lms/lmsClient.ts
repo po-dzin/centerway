@@ -67,6 +67,12 @@ export type LearnerShelfCourseDto = {
   standing: CourseViewDto["standing"] | null;
   currentLessonSlug: string | null;
   currentLessonTitle: string | null;
+  /**
+   * The author's cover, the same one the catalogue and the offer page show.
+   * Absent for a course that has none — the shelf draws its own mark instead
+   * rather than reserving a grey rectangle.
+   */
+  cover: { src: string; alt: string } | null;
 };
 
 export type LearnerShelfDto = { courses: LearnerShelfCourseDto[] };

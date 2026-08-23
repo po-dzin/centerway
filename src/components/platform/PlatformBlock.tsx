@@ -1,4 +1,6 @@
 import type { ReactNode } from "react";
+import Link from "next/link";
+import { Icon } from "@/components/Icon";
 import baseStyles from "./PlatformBlocksBase.module.css";
 import shellStyles from "./PlatformShell.module.css";
 import { mergeStyleModules } from "./mergeStyleModules";
@@ -66,5 +68,26 @@ export function PlatformBlock({
       </header>
       {children}
     </section>
+  );
+}
+
+/**
+ * "All of them" — a block's link to the page it is a sample of.
+ *
+ * Lives here rather than in each block because it is the same act every time:
+ * this section shows three of something, the aggregate shows the rest. Written
+ * per block it drifted immediately into three labels and two shapes, which is
+ * how a reader stops recognising it as one affordance.
+ *
+ * Pass it to `PlatformBlock`'s `headActions`. It is deliberately not automatic —
+ * a block whose content IS the whole set (the proof stories, the support form)
+ * has no aggregate to point at, and a dead link there is worse than none.
+ */
+export function PlatformBlockLink({ href, label }: { href: string; label: string }) {
+  return (
+    <Link className={styles.blockAction} href={href}>
+      {label}
+      <Icon className={styles.blockActionArrow} name="arrow-right" size={18} />
+    </Link>
   );
 }

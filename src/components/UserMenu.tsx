@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { useI18n } from "@/components/I18nProvider";
 import { appHref, appsFor, currentAppKey } from "@/lib/platform/apps";
@@ -56,12 +57,26 @@ export function UserMenu({ email, role, authorsCourses = false, initial = "?", a
     const host = useSurfaceHost();
     const pathname = typeof window === "undefined" ? "" : window.location.pathname;
     /* Signed in by construction: this control only renders inside the panel,
-       which the shell already gates on a session and an admin role. */
-    const apps = appsFor({ signedIn: true, role: role ?? null, authorsCourses });
+       which the shell already gates on a session and an admin role.
+
+       ADMIN ITSELF IS DROPPED FROM THE LIST. This menu only ever opens from
+       inside `/admin`, so the row would point at the page already open behind
+       it — every other row here is a way OUT, and a way to the room you are
+       standing in is not one. */
+    const apps = appsFor({ signedIn: true, role: role ?? null, authorsCourses }).filter(
+        (app) => app.key !== "admin",
+    );
     const here = currentAppKey(host, pathname);
 
     return (
-        <div className="relative" ref={ref}>
+        // NOT `relative` — the panel used to be. Anchored to this element's own
+        // box, the dropdown's `top-full` measured from the BUTTON's bottom edge,
+        // and the button sits centered inside a taller header row: the panel's
+        // top edge landed partway up the topbar's own background rather than
+        // below it. Leaving this div unpositioned lets the anchor fall through
+        // to the header itself (now `relative`, see admin/layout.tsx), so
+        // `top-full` on the panel below resolves against the whole bar.
+        <div ref={ref}>
             <button
                 onClick={() => setOpen((v) => !v)}
                 className="w-8 h-8 cw-surface-2 cw-text rounded-full flex items-center justify-center text-xs font-bold ring-1 ring-[var(--cw-border)] hover:ring-2 hover:ring-[var(--cw-border)] transition-all overflow-hidden"
@@ -83,7 +98,7 @@ export function UserMenu({ email, role, authorsCourses = false, initial = "?", a
             </button>
 
             {open && (
-                <div className="absolute right-0 mt-2 w-52 cw-surface-solid border cw-border rounded-xl cw-shadow overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                <div className="absolute right-0 top-full mt-2 w-52 cw-surface-solid border cw-border rounded-xl cw-shadow overflow-hidden z-50 animate-in fade-in slide-in-from-top-2 duration-150">
                     {email && (
                         <div className="px-4 py-3 border-b cw-border space-y-1">
                             <p className="text-xs cw-muted truncate">{email}</p>
@@ -94,6 +109,20 @@ export function UserMenu({ email, role, authorsCourses = false, initial = "?", a
                             ) : null}
                         </div>
                     )}
+                    <div className="py-1 border-b cw-border">
+                        {/* The panel's own root can only ever lead deeper into the
+                            panel — nothing in it leaves the admin surface, which is
+                            exactly what made `signOut()` the sole way out before this
+                            menu existed. This row is that exit: the public home, first,
+                            above the account's other applications. */}
+                        <Link
+                            href="/"
+                            onClick={() => setOpen(false)}
+                            className="w-full flex items-center gap-2 px-4 py-3 text-sm cw-text hover:bg-[var(--cw-surface-2)] transition-colors"
+                        >
+                            {t("menu_platform_home")}
+                        </Link>
+                    </div>
                     {apps.length > 0 ? (
                         <div className="py-1 border-b cw-border">
                             {apps.map((app) => {

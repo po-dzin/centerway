@@ -37,7 +37,7 @@
       "ignore": [
         "--cw-prim-"
       ],
-      "note": "Primitives are JSON-only by contract and never reach globals.css, so they are out of scope here. Gated: both sides derive from cw.tokens.json, so any difference is a real break.",
+      "note": "Primitives are JSON-only by contract and never reach globals.css, so they are out of scope here. Gated: both sides derive from cw.tokens.json, so any difference is a real break. Two one-sided shapes are settled and expected (docs/design-system.md → \"Drift probe, and the first three findings\"): (a) ~32 chrome tokens carry a third value in code because [data-dosha-test=\"true\"] rebinds them onto --cw-platform-* / --cw-sem-* for one route — that bridge may only rebind, never introduce a value, so a raw hex appearing there is the real finding; (b) this role reads only the GENERATED bundle, five of the eight files styles.css imports — the project's hand-authored tokens/fonts.css, tokens/typography.css and tokens/brand.css are invisible here, which is why --cw-font-* reads as code-only although the mirror declares it identically.",
       "gateOn": "conflict"
     },
     {
@@ -47,7 +47,7 @@
       "mode": "values",
       "valuePattern": "^#",
       "gate": false,
-      "note": "A hex only in the brief is a colour the document commits to that no shipped token carries — either prose describing a retired value, or real drift."
+      "note": "A hex only in the brief is a colour the document commits to that no shipped token carries — either prose describing a retired value, or real drift. Stays on watch, never gated: one side is prose. Many \"only in brief\" hexes are history the document quotes deliberately — a value that was retuned, next to the number it moved from — so read each against its sentence before calling it drift. Blind spot: the code side keeps only declarations whose whole value is a bare hex, so a colour living inside a linear-gradient() or color-mix() never reaches it — --cw-mat-inverse-bg's two stops read as brief-only for that reason. The full ten-entry accounting as of 2026-08-23 is a table in docs/design-system.md; re-derive it when the count changes, not because it is non-zero."
     }
   ]
 }

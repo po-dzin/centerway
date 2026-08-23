@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Icon } from "@/components/Icon";
 import styles from "@/components/platform/PlatformHeroStyles";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 
@@ -60,6 +61,13 @@ export function HubIntro() {
                 Консультація
               </Link>
             </div>
+            {/* These two are entries in the diagnostics catalogue, not the
+                catalogue — the panel names the rest rather than leaving the
+                topbar as the only route to it. */}
+            <Link className={styles.videoDecisionMore} href="/tests">
+              Усі тести
+              <Icon className={styles.videoDecisionMoreArrow} name="arrow-right" size={18} />
+            </Link>
           </div>
         </aside>
       </div>
