@@ -107,6 +107,8 @@ export function newBlock(type: LessonBlockType, ids: IdSource): LessonBlock {
       return { id, type, src: todo("шлях до файлу"), alt: todo("опис зображення") };
     case "quote":
       return { id, type, text: todo("цитата") };
+    case "code":
+      return { id, type, code: todo("код") };
     case "boundary_note":
       return { id, type, text: todo("межі та застереження") };
     case "faq_block":

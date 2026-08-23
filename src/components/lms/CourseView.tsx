@@ -15,7 +15,7 @@ import { courseThemeAttributes, inlineToPlainText } from "@/lms-core";
 import { PlatformTrail } from "@/components/platform/PlatformTrail";
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
 import { Icon } from "@/components/Icon";
-import { LogoMark } from "@/components/brand/LogoMark";
+import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { ProgressRail } from "@/components/platform/ProgressRail";
 import {
   ensureTimeZoneSynced,
@@ -120,10 +120,7 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
   if (state.status === "loading") {
     return (
       <main className={styles.wrap} data-cw-platform-template="learn-course">
-        <div className={styles.loading}>
-          <LogoMark size={30} animate="wait" />
-          <p className={styles.lead}>Завантажуємо курс…</p>
-        </div>
+        <PlatformLoadingState label="Навчання" title="Завантажуємо курс…" detail="Відновлюємо ваш поступ і наступний урок." />
       </main>
     );
   }

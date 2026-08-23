@@ -202,7 +202,11 @@
 /* ── Page ─────────────────────────────────────────── */
 
 .page {
-  width: min(100% - 2rem, 52rem);
+  /* The builder is a platform workspace, not a long-form article. Its index,
+     settings and structure surfaces need the same usable line as the learner
+     shelf and shared chrome; individual text fields still own their readable
+     measure. */
+  width: min(calc(100% - 2rem), var(--cw-max-width));
   margin: 0 auto;
   padding-block: var(--cw-space-lg) var(--cw-space-3xl);
   display: grid;
@@ -225,6 +229,13 @@
 .pageHead > .pageTitle {
   flex: 0 1 auto;
   min-width: 0;
+}
+
+.pageHeadActions {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  flex-wrap: wrap;
 }
 
 /* The list's own bar: how many, and how to look at them. It belongs to the
@@ -310,6 +321,21 @@
   background: var(--cw-mat-tone-boundary, var(--cw-mat-surface-sunk));
   line-height: 1.5;
   overflow-wrap: anywhere;
+}
+
+.importPreview {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  padding-block: var(--cw-space-xs);
+  border-block: 1px solid var(--cw-mat-stroke-inner);
+  color: var(--cw-platform-muted);
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.importPreview strong {
+  color: var(--cw-platform-text);
+  font-size: 1rem;
 }
 
 /* ── Controls ─────────────────────────────────────── */
@@ -1153,6 +1179,17 @@
   border-bottom: 0;
 }
 
+.previewCode {
+  overflow-x: auto;
+  margin: 0;
+  padding: var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font: 0.85rem/1.55 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre;
+}
+
 /* ── Save bar ─────────────────────────────────────── */
 
 /* An action row INSIDE a panel. No material of its own — the panel is already
@@ -1697,6 +1734,36 @@
   color: var(--cw-platform-muted);
 }
 
+.editableTitle,
+.editableTitleCompact {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  gap: var(--cw-space-2xs);
+}
+
+.editableTitle { flex: 1 1 auto; }
+.editableTitleCompact { flex: 1 1 auto; }
+
+.editableHeadingCompact {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.titleEditAction {
+  composes: text from "../platform/PlatformButtons.module.css";
+  flex: 0 0 auto;
+}
+
+.titleEditing {
+  min-height: var(--ds-touch-target-min);
+  border-bottom: 1px solid var(--cw-mat-stroke-inner);
+}
+
 /* ── Slash menu ───────────────────────────────────── */
 
 /* Fixed and portalled, measured from the field — the same lesson the row menu
@@ -1816,6 +1883,7 @@
   align-items: center;
   gap: 2px;
   max-width: calc(100vw - 1rem);
+  overflow-x: auto;
   padding: 3px;
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface);

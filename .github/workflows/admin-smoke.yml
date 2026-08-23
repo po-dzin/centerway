@@ -35,6 +35,12 @@ jobs:
       - name: Lint
         run: npm run -s lint
 
+      - name: Unit tests
+        run: npm run -s test:unit
+
+      - name: LMS contract
+        run: npm run -s lms:validate
+
       - name: Build
         run: npm run -s build
 

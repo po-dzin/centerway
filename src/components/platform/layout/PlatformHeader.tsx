@@ -3,18 +3,15 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { LEARNING_SHELF_HREF, builderNavItem, personalNav, platformHomeHref, platformNav } from "@/lib/platform/content";
+import { LEARNING_SHELF_HREF, personalNav, platformHomeHref, platformNav } from "@/lib/platform/content";
 import { canonicalPersonalPath } from "@/lib/surfaces/catalog";
 import { isPersonalHost } from "@/lib/platform/surfaceHref";
-import { isAdminRole } from "@/lib/platform/adminRole";
 import { currentAppKey, type PlatformAppKey } from "@/lib/platform/apps";
-import { usePlatformIdentity } from "./usePlatformIdentity";
 import styles from "@/components/platform/PlatformShellStyles";
 import { Icon } from "@/components/Icon";
 import { PlatformAccountMenu } from "./PlatformAccountMenu";
 import { useHeaderTone } from "./headerTone";
 import { useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
-import { usePlatformSession } from "./usePlatformSession";
 
 /**
  * `learn` is not a skin — it is a different job for the same bar.
@@ -33,9 +30,11 @@ import { usePlatformSession } from "./usePlatformSession";
 export function PlatformHeader({
   initialTone = "light",
   mode = "default",
+  surface = "auto",
 }: {
   initialTone?: "light" | "dark";
   mode?: "default" | "overlay" | "learn";
+  surface?: "auto" | "personal";
 }) {
   const learnMode = mode === "learn";
   const [openMenuPath, setOpenMenuPath] = useState<string | null>(null);
@@ -45,13 +44,8 @@ export function PlatformHeader({
   const pathname = usePathname();
   const headerTone = useHeaderTone(initialTone, pathname);
   const href = useSurfaceHref();
-  /* Signed in, not "owns a course". Gating on the shelf would mean a fetch in
-     the header on every page, and the empty shelf is not a dead end — it says
-     what is missing and links to the programmes. Advertising it to a signed-out
-     visitor would be the actual mistake, and that is what this excludes. */
-  const session = usePlatformSession();
   const host = useSurfaceHost();
-  const onPersonalHost = isPersonalHost(host);
+  const onPersonalSurface = surface === "personal" || isPersonalHost(host);
   /* THE HEADER NO LONGER FETCHES. It used to read `user_roles` for one reason:
      the admin entry sat in this nav and could not be derived from the session.
      That entry moved to the account menu, which needs the read anyway and does
@@ -60,7 +54,7 @@ export function PlatformHeader({
   /* The brand mark is a link to the root of THIS application, on every screen
      of it. On `my` that is the dashboard — pointing it at the storefront would
      make the one control that never changes the one that leaves. */
-  const brandTarget = learnMode || onPersonalHost ? LEARNING_SHELF_HREF : platformHomeHref;
+  const brandTarget = learnMode || onPersonalSurface ? LEARNING_SHELF_HREF : platformHomeHref;
   const homeHref = href(brandTarget);
   /* TWO BARS, ONE HEADER — because they are two applications.
      `www` is the showcase and its bar is addressed to a stranger: programmes,
@@ -79,10 +73,11 @@ export function PlatformHeader({
      Learn mode gets nothing on either host — an admin inside a lesson is a
      learner inside a lesson, and the reason that nav is empty (every link out
      is a way to not finish) does not stop applying because of who is reading. */
-  const identity = usePlatformIdentity(session);
-  const canBuild = isAdminRole(identity.role) || identity.authorsCourses;
-  const personalBar = personalNav.concat(canBuild ? [builderNavItem] : []);
-  const navSource = learnMode ? [] : onPersonalHost ? personalBar : platformNav;
+  /* Stable application navigation. Access is enforced by the Builder route,
+     not by letting an async identity read change the bar's geometry after
+     hydration. This also follows the DS empty-nav rule: an unavailable
+     destination explains itself instead of silently disappearing. */
+  const navSource = learnMode ? [] : onPersonalSurface ? personalNav : platformNav;
   const navItems = navSource.map((item) => ({
     ...item,
     resolvedHref: href(item.href),

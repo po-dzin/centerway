@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AccessError, listCourses, setCourseAuthor } from "@/lib/admin/access";
+import { AccessError, listCourses, moderateCourse, setCourseAuthor } from "@/lib/admin/access";
 import {
     badRequestResponse,
     forbiddenResponse,
@@ -34,10 +34,14 @@ export async function PATCH(req: NextRequest) {
     if (!session) return unauthorizedResponse();
     if (session.role !== "admin") return forbiddenResponse();
 
-    const body = (await req.json().catch(() => ({}))) as { courseId?: string; email?: string | null };
+    const body = (await req.json().catch(() => ({}))) as { courseId?: string; email?: string | null; action?: "approve" | "request_changes" | "set_visibility"; note?: string; visibility?: "hidden" | "unlisted" | "listed" };
     if (!body.courseId) return badRequestResponse("course_id_required");
 
     try {
+        if (body.action) {
+            const result = await moderateCourse({ courseId: body.courseId, actorId: session.user.id, action: body.action, note: body.note, visibility: body.visibility });
+            return NextResponse.json({ course: result });
+        }
         const result = await setCourseAuthor({
             courseId: body.courseId,
             email: body.email?.trim() ? body.email.trim() : null,

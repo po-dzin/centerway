@@ -10,7 +10,8 @@
  */
 
 import { supabaseClient } from "@/lib/supabaseClient";
-import type { Course, CourseTheme, ReadinessBlocker } from "@/lms-core";
+import type { Course, CourseTheme, Lesson, ReadinessBlocker } from "@/lms-core";
+import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 
 export type BuilderFailure = "unauthenticated" | "forbidden" | "not_found" | "invalid" | "network";
 
@@ -34,6 +35,20 @@ export type BuilderCourseDto = {
   course: Course;
   updatedAt: string | null;
   readiness: { ready: boolean; blockers: ReadinessBlocker[] };
+  review: { status: "draft" | "in_review" | "changes_requested" | "approved"; note: string | null; enabled: boolean };
+};
+
+export type CourseImportPreview = {
+  sourceSlug: string;
+  slug: string;
+  title: string;
+  locale: Course["locale"];
+  moduleCount: number;
+  lessonCount: number;
+  blockCount: number;
+  blockerCount: number;
+  blockers: ReadinessBlocker[];
+  changes: string[];
 };
 
 export type BuilderResult<T> = { ok: true; data: T } | { ok: false; failure: BuilderFailure; detail?: string };
@@ -91,13 +106,55 @@ export function listCourses(): Promise<
   return request("/api/lms/authoring/courses");
 }
 
-export function createCourse(input: {
-  title: string;
-  programSlug: string;
-  template: string;
-  palette: string;
-}): Promise<BuilderResult<{ slug: string }>> {
-  return request("/api/lms/authoring/courses", { method: "POST", body: JSON.stringify(input) });
+export function createCourse(): Promise<BuilderResult<{ slug: string }>> {
+  return request("/api/lms/authoring/courses", { method: "POST", body: "{}" });
+}
+
+export function submitCourseForReview(slug: string): Promise<BuilderResult<{ status: "in_review" }>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/review`, { method: "POST" });
+}
+
+export function previewCourseImport(course: unknown): Promise<BuilderResult<{ preview: CourseImportPreview }>> {
+  return request("/api/lms/authoring/import", {
+    method: "POST",
+    body: JSON.stringify({ course, commit: false }),
+  });
+}
+
+export function commitCourseImport(course: unknown): Promise<BuilderResult<{ slug: string }>> {
+  return request("/api/lms/authoring/import", {
+    method: "POST",
+    body: JSON.stringify({ course, commit: true }),
+  });
+}
+
+/** Download uses the same Bearer boundary but keeps the response as text. */
+export async function exportCourseFile(
+  slug: string,
+): Promise<BuilderResult<{ filename: string; text: string }>> {
+  const token = await accessToken();
+  if (!token) return { ok: false, failure: "unauthenticated" };
+
+  let response: Response;
+  try {
+    response = await fetch(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/export`, {
+      headers: { authorization: `Bearer ${token}` },
+    });
+  } catch {
+    return { ok: false, failure: "network" };
+  }
+
+  if (response.status === 401) return { ok: false, failure: "unauthenticated" };
+  if (response.status === 403) return { ok: false, failure: "forbidden" };
+  if (response.status === 404) return { ok: false, failure: "not_found" };
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    return { ok: false, failure: response.status === 422 ? "invalid" : "network", detail: payload?.error };
+  }
+
+  const disposition = response.headers.get("content-disposition") ?? "";
+  const filename = /filename="([^"]+)"/.exec(disposition)?.[1] ?? `${slug}.json`;
+  return { ok: true, data: { filename, text: await response.text() } };
 }
 
 export function deleteCourse(slug: string): Promise<BuilderResult<{ ok: true }>> {
@@ -142,4 +199,45 @@ export function uploadMedia(courseSlug: string, file: File): Promise<BuilderResu
   body.set("courseSlug", courseSlug);
   body.set("file", file);
   return request("/api/lms/authoring/media", { method: "POST", body });
+}
+
+export function importLessonFiles(courseSlug: string, files: File[]): Promise<BuilderResult<{ lessons: Lesson[] }>> {
+  const body = new FormData();
+  files.forEach((file) => body.append("files", file));
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(courseSlug)}/lessons/import`, {
+    method: "POST",
+    body,
+  });
+}
+
+export async function exportLessonFile(
+  courseSlug: string,
+  lesson: Lesson,
+  format: LessonDocumentFormat,
+): Promise<BuilderResult<{ filename: string; blob: Blob }>> {
+  const token = await accessToken();
+  if (!token) return { ok: false, failure: "unauthenticated" };
+
+  let response: Response;
+  try {
+    response = await fetch(`/api/lms/authoring/courses/${encodeURIComponent(courseSlug)}/lessons/export`, {
+      method: "POST",
+      headers: { authorization: `Bearer ${token}`, "content-type": "application/json" },
+      body: JSON.stringify({ lesson, format }),
+    });
+  } catch {
+    return { ok: false, failure: "network" };
+  }
+
+  if (response.status === 401) return { ok: false, failure: "unauthenticated" };
+  if (response.status === 403) return { ok: false, failure: "forbidden" };
+  if (response.status === 404) return { ok: false, failure: "not_found" };
+  if (!response.ok) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    return { ok: false, failure: response.status === 422 ? "invalid" : "network", detail: payload?.error };
+  }
+
+  const disposition = response.headers.get("content-disposition") ?? "";
+  const filename = /filename="([^"]+)"/.exec(disposition)?.[1] ?? `${lesson.slug}.${format}`;
+  return { ok: true, data: { filename, blob: await response.blob() } };
 }

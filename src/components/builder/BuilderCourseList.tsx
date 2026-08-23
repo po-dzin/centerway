@@ -1,24 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useRouter } from "next/navigation";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
-import { programs } from "@/lib/platform/content";
-import { COURSE_PALETTES, COURSE_TEMPLATES, courseThemeAttributes, moveItem, type CoursePalette } from "@/lms-core";
+import { courseThemeAttributes, moveItem } from "@/lms-core";
 import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
-import { ChoiceRow } from "./BuilderFields";
 import { BuilderMenu } from "./BuilderMenu";
 import { Icon } from "@/components/Icon";
-import { PALETTE_LABELS } from "./coursePalettes";
 import {
+  commitCourseImport,
   createCourse,
   deleteCourse,
+  exportCourseFile,
   listCourses,
+  previewCourseImport,
   reorderCourses,
+  type CourseImportPreview,
   type BuilderCourseSummary,
   type BuilderFailure,
 } from "./builderClient";
 import styles from "./Builder.module.css";
+import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 
 type State =
   | { status: "loading" }
@@ -86,6 +89,7 @@ function subscribeToWidth(onChange: () => void) {
  * global opinion that follows them onto the wrong device.
  */
 export function BuilderCourseList() {
+  const router = useRouter();
   const [state, setState] = useState<State>({ status: "loading" });
   const stored = useSyncExternalStore(subscribeToView, readView, () => "rows" as CourseView);
   // Server-side and on a phone: rows. The card grid is only ever a choice where
@@ -95,6 +99,7 @@ export function BuilderCourseList() {
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
+  const [importing, setImporting] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
 
   const load = useCallback(async () => {
@@ -167,18 +172,19 @@ export function BuilderCourseList() {
     }
   }
 
-  async function create(input: { title: string; programSlug: string; template: string; palette: string }) {
+  async function create() {
     if (busy) return;
     setBusy(true);
+    setCreating(true);
     setNote(null);
-    const result = await createCourse(input);
+    const result = await createCourse();
     setBusy(false);
     if (!result.ok) {
+      setCreating(false);
       setNote(result.detail ?? "Не вдалося створити курс.");
       return;
     }
-    setCreating(false);
-    await load();
+    router.push(`/build/${result.data.slug}`);
   }
 
   async function remove(slug: string) {
@@ -195,10 +201,30 @@ export function BuilderCourseList() {
     await load();
   }
 
+  async function exportOne(slug: string) {
+    if (busy) return;
+    setBusy(true);
+    setNote(null);
+    const result = await exportCourseFile(slug);
+    setBusy(false);
+    if (!result.ok) {
+      setNote(result.detail ?? "Не вдалося експортувати курс.");
+      return;
+    }
+
+    const url = URL.createObjectURL(new Blob([result.data.text], { type: "application/json" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = result.data.filename;
+    link.click();
+    URL.revokeObjectURL(url);
+    setNote(`Експортовано ${result.data.filename}`);
+  }
+
   if (state.status === "loading") {
     return (
       <BuilderShell>
-        <BuilderNotice title="Завантажуємо курси…" />
+        <PlatformLoadingState label="Білдер" title="Завантажуємо ваші курси…" detail="Відновлюємо чернетки, статуси й обкладинки." />
       </BuilderShell>
     );
   }
@@ -207,6 +233,14 @@ export function BuilderCourseList() {
     return (
       <BuilderShell>
         <BuilderFailureNotice failure={state.failure} detail={state.detail} scope="shelf" />
+      </BuilderShell>
+    );
+  }
+
+  if (creating) {
+    return (
+      <BuilderShell trail={[{ label: "Курси", href: "/build" }, { label: "Новий курс" }]}>
+        <PlatformLoadingState label="Білдер" title="Створюємо чернетку…" detail="Після створення одразу відкриється редактор курсу." />
       </BuilderShell>
     );
   }
@@ -222,10 +256,34 @@ export function BuilderCourseList() {
             360px, which is the column the request was to get out of. */}
         <div className={styles.pageHead}>
           <h1 className={styles.pageTitle}>Курси</h1>
-          {state.canCreate && !creating ? (
-            <button className={styles.commitAction} type="button" onClick={() => setCreating(true)}>
-              Новий курс
-            </button>
+          {state.canCreate ? (
+            <div className={styles.pageHeadActions}>
+              {!importing ? (
+                <button
+                  className={styles.quietAction}
+                  type="button"
+                  onClick={() => {
+                    setCreating(false);
+                    setImporting(true);
+                  }}
+                >
+                  Імпортувати JSON
+                </button>
+              ) : null}
+              {!creating ? (
+                <button
+                  className={styles.commitAction}
+                  type="button"
+                  onClick={() => {
+                    setImporting(false);
+                    void create();
+                  }}
+                  disabled={busy}
+                >
+                  {busy ? "Створюємо…" : "Новий курс"}
+                </button>
+              ) : null}
+            </div>
           ) : null}
         </div>
         {/* One line for both audiences, and it describes the LIST rather than
@@ -235,8 +293,15 @@ export function BuilderCourseList() {
         <p className={styles.pageLead}>Курси, доступні вам для редагування.</p>
       </div>
 
-      {state.canCreate && creating ? (
-        <CreatePanel busy={busy} onCancel={() => setCreating(false)} onCreate={create} />
+      {state.canCreate && importing ? (
+        <ImportPanel
+          onCancel={() => setImporting(false)}
+          onImported={async (slug) => {
+            setImporting(false);
+            setNote(`Курс імпортовано як чернетку: ${slug}`);
+            await load();
+          }}
+        />
       ) : null}
 
       {note ? <p className={styles.noticeLine}>{note}</p> : null}
@@ -273,6 +338,7 @@ export function BuilderCourseList() {
               onMove={move}
               onAskDelete={setConfirmingDelete}
               onDelete={remove}
+              onExport={exportOne}
             />
           ))}
         </div>
@@ -289,6 +355,7 @@ export function BuilderCourseList() {
               onMove={move}
               onAskDelete={setConfirmingDelete}
               onDelete={remove}
+              onExport={exportOne}
             />
           ))}
         </ul>
@@ -296,6 +363,126 @@ export function BuilderCourseList() {
         </>
       )}
     </BuilderShell>
+  );
+}
+
+const MAX_IMPORT_BYTES = 5 * 1024 * 1024;
+
+type ImportState =
+  | { status: "empty" }
+  | { status: "checking"; filename: string }
+  | { status: "failed"; message: string }
+  | { status: "ready"; filename: string; course: unknown; preview: CourseImportPreview }
+  | { status: "committing"; filename: string; course: unknown; preview: CourseImportPreview };
+
+/** A two-step boundary: inspect first, write only after explicit confirmation. */
+function ImportPanel({ onCancel, onImported }: { onCancel: () => void; onImported: (slug: string) => void }) {
+  const picker = useRef<HTMLInputElement>(null);
+  const [state, setState] = useState<ImportState>({ status: "empty" });
+
+  async function inspect(file: File) {
+    if (file.size > MAX_IMPORT_BYTES) {
+      setState({ status: "failed", message: "Файл завеликий. JSON курсу має бути не більше 5 МБ." });
+      return;
+    }
+
+    let course: unknown;
+    try {
+      course = JSON.parse(await file.text()) as unknown;
+    } catch {
+      setState({ status: "failed", message: "Файл не є коректним JSON." });
+      return;
+    }
+
+    setState({ status: "checking", filename: file.name });
+    const result = await previewCourseImport(course);
+    if (!result.ok) {
+      setState({ status: "failed", message: result.detail ?? "Структура курсу не пройшла перевірку." });
+      return;
+    }
+    setState({ status: "ready", filename: file.name, course, preview: result.data.preview });
+  }
+
+  async function commit() {
+    if (state.status !== "ready") return;
+    const current = state;
+    setState({ ...current, status: "committing" });
+    const result = await commitCourseImport(current.course);
+    if (!result.ok) {
+      setState({ status: "failed", message: result.detail ?? "Не вдалося імпортувати курс." });
+      return;
+    }
+    onImported(result.data.slug);
+  }
+
+  const waiting = state.status === "checking" || state.status === "committing";
+  const ready = state.status === "ready" || state.status === "committing" ? state : null;
+
+  return (
+    <section className={styles.panel}>
+      <h2 className={styles.panelTitle}>Імпорт курсу</h2>
+      <p className={styles.panelText}>
+        Виберіть JSON, експортований з Builder або сумісний з <code>lms:import</code>. Спершу ми покажемо
+        перевірку; запис відбудеться лише після підтвердження.
+      </p>
+
+      <div className={styles.addRow}>
+        <button className={styles.quietAction} type="button" disabled={waiting} onClick={() => picker.current?.click()}>
+          {state.status === "checking" ? "Перевіряємо…" : "Вибрати JSON"}
+        </button>
+        <span className={styles.fieldHint}>
+          {"filename" in state ? state.filename : "До 5 МБ; медіа залишаються посиланнями"}
+        </span>
+      </div>
+      <input
+        ref={picker}
+        className={styles.visuallyHidden}
+        type="file"
+        accept="application/json,.json"
+        tabIndex={-1}
+        onChange={(event) => {
+          const file = event.target.files?.[0];
+          event.target.value = "";
+          if (file) void inspect(file);
+        }}
+      />
+
+      {state.status === "failed" ? (
+        <p className={styles.noticeLine} role="alert">
+          {state.message}
+        </p>
+      ) : null}
+
+      {ready ? (
+        <div className={styles.importPreview} aria-live="polite">
+          <strong>{ready.preview.title}</strong>
+          <span>
+            Адреса: <code>{ready.preview.slug}</code> · {ready.preview.moduleCount} мод. · {ready.preview.lessonCount} ур. ·{" "}
+            {ready.preview.blockCount} блоків
+          </span>
+          <span>
+            Імпорт створить приховану чернетку, нові ID і не перенесе прив’язки до оплат.
+          </span>
+          <span>
+            {ready.preview.blockerCount === 0
+              ? "Структура готова до подальшого редагування."
+              : `${ready.preview.blockerCount} блокерів публікації залишаться видимими в Builder.`}
+          </span>
+        </div>
+      ) : null}
+
+      <div className={styles.panelActions}>
+        <span className={styles.panelStatus}>
+          {ready ? "Перевірку пройдено; запис тільки як чернетка" : "Файл ще не записано"}
+        </span>
+        <button className={styles.retreatAction} type="button" onClick={onCancel} disabled={waiting}>
+          Скасувати
+        </button>
+        <button className={styles.commitAction} type="button" onClick={() => void commit()} disabled={!ready || waiting}>
+          {state.status === "committing" ? "Імпортуємо…" : "Імпортувати чернетку"}
+        </button>
+      </div>
+    </section>
   );
 }
 
@@ -334,119 +521,6 @@ function ViewSwitch({ view, onChange }: { view: CourseView; onChange: (next: Cou
   );
 }
 
-/**
- * Creating a course asks four things, and two of them are choices from a list.
- *
- * The TITLE, because the slug is derived from it. The PROGRAM, because that is
- * the catalogue entry whose buyers this course serves — a course attached to
- * nothing is a course nobody can ever be enrolled into.
- *
- * Then the TEMPLATE and the GAMMA, and both are here rather than on the course
- * page for the same reason: they are cheap to pick now and expensive to change
- * later. A template writes the whole skeleton — twenty-one days of it, in one
- * case — and applying one to a course that already has lessons is a merge
- * nobody asked for. A gamma is one field either way, but an author picking the
- * look while they are naming the thing is picking it once instead of
- * discovering the setting three screens later.
- *
- * Everything else — schedule details, entitlement codes, the cover — has a sane
- * default and is edited on the course's own page, where there is room to say
- * what each one does. The template sets the schedule; the author can move it.
- */
-function CreatePanel({
-  busy,
-  onCancel,
-  onCreate,
-}: {
-  busy: boolean;
-  onCancel: () => void;
-  onCreate: (input: { title: string; programSlug: string; template: string; palette: string }) => void;
-}) {
-  const [title, setTitle] = useState("");
-  const [programSlug, setProgramSlug] = useState(programs[0]?.slug ?? "");
-  const [template, setTemplate] = useState(COURSE_TEMPLATES[0].id as string);
-  const [palette, setPalette] = useState<CoursePalette>("default");
-
-  return (
-    <section className={styles.panel}>
-      <h2 className={styles.panelTitle}>Новий курс</h2>
-      <label className={styles.field}>
-        <span className={styles.fieldLabel}>Назва</span>
-        <input
-          className={styles.input}
-          type="text"
-          value={title}
-          autoFocus
-          onChange={(event) => setTitle(event.target.value)}
-        />
-      </label>
-      <label className={styles.field}>
-        <span className={styles.fieldLabel}>Програма в каталозі</span>
-        <select
-          className={styles.input}
-          value={programSlug}
-          onChange={(event) => setProgramSlug(event.target.value)}
-        >
-          {programs.map((program) => (
-            <option key={program.slug} value={program.slug}>
-              {program.title}
-            </option>
-          ))}
-        </select>
-      </label>
-
-      <div className={styles.field}>
-        <span className={styles.fieldLabel}>Структура</span>
-        <div className={styles.typeGrid}>
-          {COURSE_TEMPLATES.map((option) => (
-            <button
-              key={option.id}
-              className={styles.typeOption}
-              type="button"
-              aria-pressed={option.id === template}
-              onClick={() => setTemplate(option.id)}
-            >
-              <span className={styles.typeName}>{option.title}</span>
-              <span className={styles.typeHint}>{option.summary}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <ChoiceRow
-        label="Гама"
-        hint="Можна змінити будь-коли на сторінці курсу."
-        options={COURSE_PALETTES.map((option) => ({
-          value: option,
-          label: PALETTE_LABELS[option],
-          swatch: option === "default" ? undefined : option,
-        }))}
-        value={palette}
-        onChange={setPalette}
-      />
-
-      <p className={styles.readOnlyNote}>
-        Адреса курсу утвориться з назви й далі не змінюється. Шаблон створює скелет із позначеними
-        дірками — опублікувати його не вийде, доки їх не заповнено.
-      </p>
-      <div className={styles.panelActions}>
-        <span className={styles.panelStatus}>{title.trim() === "" ? "Потрібна назва" : "Готово"}</span>
-        <button className={styles.retreatAction} type="button" onClick={onCancel} disabled={busy}>
-          Скасувати
-        </button>
-        <button
-          className={styles.commitAction}
-          type="button"
-          onClick={() => onCreate({ title: title.trim(), programSlug, template, palette })}
-          disabled={busy || title.trim() === "" || programSlug === ""}
-        >
-          {busy ? "Створюємо…" : "Створити"}
-        </button>
-      </div>
-    </section>
-  );
-}
-
 type EntryProps = {
   course: BuilderCourseSummary;
   index: number;
@@ -456,6 +530,7 @@ type EntryProps = {
   onMove: (index: number, delta: number) => void;
   onAskDelete: (slug: string | null) => void;
   onDelete: (slug: string) => void;
+  onExport: (slug: string) => void;
 };
 
 /**
@@ -541,7 +616,7 @@ function CourseCard(props: EntryProps) {
  * one dialog the design system cannot style, and its wording cannot say WHICH
  * course is about to go.
  */
-function EntryControls({ course, index, total, busy, confirming, onMove, onAskDelete, onDelete }: EntryProps) {
+function EntryControls({ course, index, total, busy, confirming, onMove, onAskDelete, onDelete, onExport }: EntryProps) {
   if (confirming) {
     return (
       <div className={styles.confirmRow}>
@@ -573,6 +648,12 @@ function EntryControls({ course, index, total, busy, confirming, onMove, onAskDe
           hint: "Курс піде нижче в списку — порядок пише sort_order",
           onSelect: () => onMove(index, 1),
           disabled: busy || index === total - 1,
+        },
+        {
+          label: "Експортувати JSON",
+          hint: "Завантажити переносимий знімок поточної версії курсу",
+          onSelect: () => onExport(course.slug),
+          disabled: busy,
         },
         {
           label: "Видалити",

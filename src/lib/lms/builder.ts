@@ -28,10 +28,13 @@ import { getSnapshotCourse } from "./catalog";
 import {
   courseReadiness,
   newCourseFromTemplate,
+  preparePortableCourse,
   uniqueSlug,
   validateCourse,
   type Course,
   type CourseTheme,
+  type IdSource,
+  type PortableCoursePreview,
 } from "@/lms-core";
 
 export type BuilderCourseSummary = {
@@ -68,7 +71,14 @@ async function readCourseRow(slug: string): Promise<CourseRow | null> {
  */
 export async function loadBuilderCourse(
   slug: string
-): Promise<{ course: Course; authorId: string | null; updatedAt: string | null } | null> {
+): Promise<{
+  course: Course;
+  authorId: string | null;
+  updatedAt: string | null;
+  reviewStatus: CourseReviewStatus;
+  reviewNote: string | null;
+  reviewEnabled: boolean;
+} | null> {
   const courseRow = await readCourseRow(slug);
   if (!courseRow) return null;
 
@@ -87,6 +97,9 @@ export async function loadBuilderCourse(
     course: courseFromRows(courseRow, (moduleRows ?? []) as CourseRow[], (lessonRows ?? []) as CourseRow[]),
     authorId: (courseRow.author_id as string | null) ?? null,
     updatedAt: (courseRow.updated_at as string | null) ?? null,
+    reviewStatus: ((courseRow.review_status as CourseReviewStatus | undefined) ?? (courseRow.status === "published" ? "approved" : "draft")),
+    reviewNote: (courseRow.review_note as string | null) ?? null,
+    reviewEnabled: "review_status" in courseRow,
   };
 }
 
@@ -174,6 +187,8 @@ export type SaveOutcome = {
   blockers: ReturnType<typeof courseReadiness>["blockers"];
 };
 
+export type CourseReviewStatus = "draft" | "in_review" | "changes_requested" | "approved";
+
 /**
  * The ownership boundary `writeCourseStructure` cannot enforce on its own.
  *
@@ -242,6 +257,11 @@ export async function saveBuilderCourse(input: unknown): Promise<SaveOutcome> {
   // a different top-level course id than the one just authorized either.
   const ownerCourseId = existing ? (existing.id as string) : incoming.id;
 
+  const reviewEnabled = Boolean(existing && "review_status" in existing);
+  if (reviewEnabled && incoming.status === "published" && existing?.review_status !== "approved") {
+    throw new Error("lms_builder_review_required");
+  }
+
   const db = adminClient();
   await assertNestedIdsAreOwned(db, incoming, ownerCourseId);
 
@@ -250,8 +270,41 @@ export async function saveBuilderCourse(input: unknown): Promise<SaveOutcome> {
   // rather than a Promise, which satisfies the contract at runtime and not the
   // type — the same cast the CLI does implicitly by being untyped JS.
   const writer = db as unknown as Parameters<typeof writeCourseStructure>[0];
-  const result = await writeCourseStructure(writer, { ...incoming, id: ownerCourseId, version: nextVersion });
+  const result = await writeCourseStructure(writer, {
+    ...incoming,
+    id: ownerCourseId,
+    version: nextVersion,
+    // Catalogue visibility is governed in admin, never accepted from an
+    // authoring payload even if a stale client still sends it.
+    visibility: (existing?.visibility as Course["visibility"] | undefined) ?? "hidden",
+  });
+  if (reviewEnabled && incoming.status === "draft" && existing?.review_status !== "draft") {
+    const { error } = await db.from("lms_courses").update({
+      review_status: "draft",
+      review_note: null,
+      submitted_at: null,
+      approved_at: null,
+      approved_by: null,
+    }).eq("id", ownerCourseId);
+    if (error) throw new Error(`lms_builder_review_reset_failed:${error.message}`);
+  }
   return { slug: result.slug, status: result.status, blockers: result.blockers };
+}
+
+export async function submitBuilderCourseForReview(slug: string): Promise<void> {
+  const loaded = await loadBuilderCourse(slug);
+  if (!loaded) throw new Error("lms_builder_course_not_found");
+  if (!courseReadiness(loaded.course).ready) throw new Error("lms_builder_not_ready_for_review");
+  if (loaded.course.status !== "draft") throw new Error("lms_builder_review_published");
+  const db = adminClient();
+  const { error } = await db.from("lms_courses").update({
+    review_status: "in_review",
+    review_note: null,
+    submitted_at: new Date().toISOString(),
+    approved_at: null,
+    approved_by: null,
+  }).eq("slug", slug);
+  if (error) throw new Error(`lms_builder_review_submit_failed:${error.message}`);
 }
 
 /**
@@ -271,41 +324,99 @@ export async function saveBuilderCourse(input: unknown): Promise<SaveOutcome> {
  * courses are in and precisely the thing that needed an UPDATE by hand.
  */
 export async function createBuilderCourse(input: {
-  title: string;
-  programSlug: string;
+  title?: string;
   authorId: string;
   template?: string;
   theme?: CourseTheme;
   ids: () => string;
 }): Promise<{ slug: string }> {
   const db = adminClient();
+  const requestedTitle = input.title?.trim();
 
-  const { data: existingRows, error: listError } = await db.from("lms_courses").select("slug");
-  if (listError) throw new Error(`lms_builder_list_failed:${listError.message}`);
-  const takenSlugs = ((existingRows ?? []) as { slug: string }[]).map((row) => row.slug);
+  // Two tabs may create a draft at the same time. The unique slug constraint is
+  // the final arbiter; on a collision we re-read and advance the default name.
+  // This keeps the interaction one-click without ever overwriting another
+  // author's "Новий курс".
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const { data: existingRows, error: listError } = await db.from("lms_courses").select("slug, title");
+    if (listError) throw new Error(`lms_builder_list_failed:${listError.message}`);
+    const existing = (existingRows ?? []) as { slug: string; title: string }[];
+    const title = requestedTitle || nextDraftTitle(existing.map((row) => row.title));
+    const slug = uniqueSlug(title, existing.map((row) => row.slug));
 
-  const title = input.title.trim();
-  if (title.length === 0) throw new Error("lms_builder_missing_title");
+    const course = newCourseFromTemplate(input.ids, {
+      slug,
+      title,
+      // A course is its own program before it is a catalogue item. The stable
+      // program identity is born here; visibility/listing is a later admin
+      // decision and never a prerequisite for authoring.
+      programSlug: slug,
+      template: input.template,
+      ...(input.theme ? { theme: input.theme } : {}),
+    });
 
-  const course = newCourseFromTemplate(input.ids, {
-    slug: uniqueSlug(title, takenSlugs),
-    title,
-    programSlug: input.programSlug,
-    // An unknown id falls back to the blank template rather than throwing: it
-    // arrives over HTTP, so it is a payload, not a crash.
-    template: input.template,
-    ...(input.theme ? { theme: input.theme } : {}),
-  });
+    try {
+      const writer = db as unknown as Parameters<typeof writeCourseStructure>[0];
+      await writeCourseStructure(writer, course);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      if (!message.includes("duplicate key") && !message.includes("unique constraint")) throw error;
+      continue;
+    }
 
+    const { error } = await db.from("lms_courses").update({ author_id: input.authorId }).eq("id", course.id);
+    if (error) throw new Error(`lms_builder_author_write_failed:${error.message}`);
+    return { slug: course.slug };
+  }
+
+  throw new Error("lms_builder_create_conflict");
+}
+
+export function nextDraftTitle(titles: Iterable<string>, base = "Новий курс"): string {
+  const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const pattern = new RegExp(`^${escaped}(?: (\\d+))?$`, "i");
+  let highest = 0;
+  for (const title of titles) {
+    const match = title.trim().match(pattern);
+    if (!match) continue;
+    highest = Math.max(highest, match[1] ? Number(match[1]) : 1);
+  }
+  return highest === 0 ? base : `${base} ${highest + 1}`;
+}
+
+/**
+ * Validates an exported course and prepares the exact draft that an import
+ * would create. This is read-only: the Builder can show the real slug and
+ * readiness result before the author allows a write.
+ *
+ * Slugs are read without the author's filter. A collision with somebody
+ * else's hidden course is still a collision in the database, even though the
+ * caller is not allowed to learn that course's title or contents.
+ */
+export async function previewBuilderCourseImport(input: unknown, ids: IdSource): Promise<PortableCoursePreview> {
+  const db = adminClient();
+  const { data, error } = await db.from("lms_courses").select("slug");
+  if (error) throw new Error(`lms_builder_list_failed:${error.message}`);
+  const takenSlugs = ((data ?? []) as { slug: string }[]).map((row) => row.slug);
+  return preparePortableCourse(input, { takenSlugs, ids });
+}
+
+/** Write a previewed portable course and assign it to the importing account. */
+export async function importBuilderCourse(course: Course, authorId: string): Promise<{ slug: string }> {
+  // The route only passes a course produced by `previewBuilderCourseImport`,
+  // but keep the write boundary self-defending: an internal caller must not be
+  // able to turn this into a back door for importing something published.
+  validateCourse(course, "builder.import");
+  if (course.status !== "draft" || course.visibility !== "hidden" || course.entitlementProductCodes.length > 0) {
+    throw new Error("lms_builder_import_not_inert");
+  }
+
+  const db = adminClient();
   const writer = db as unknown as Parameters<typeof writeCourseStructure>[0];
   await writeCourseStructure(writer, course);
 
-  // Ownership is a column `writeCourseStructure` does not know about — it maps
-  // the authored JSON, and `author_id` is not part of it. Written straight
-  // after, on the row that was just created.
-  const { error } = await db.from("lms_courses").update({ author_id: input.authorId }).eq("id", course.id);
+  const { error } = await db.from("lms_courses").update({ author_id: authorId }).eq("id", course.id);
   if (error) throw new Error(`lms_builder_author_write_failed:${error.message}`);
-
   return { slug: course.slug };
 }
 

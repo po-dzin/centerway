@@ -42,3 +42,16 @@ describe("deleteBuilderCourse", () => {
     await expect(deleteBuilderCourse("way21")).rejects.toThrow("lms_builder_delete_has_snapshot:way21");
   });
 });
+
+describe("nextDraftTitle", () => {
+  it("starts with the plain default and advances beyond gaps without colliding", async () => {
+    const { nextDraftTitle } = await import("./builder");
+    expect(nextDraftTitle([])).toBe("Новий курс");
+    expect(nextDraftTitle(["Новий курс", "Новий курс 2", "Новий курс 4", "Інший курс"])).toBe("Новий курс 5");
+  });
+
+  it("matches the default case-insensitively", async () => {
+    const { nextDraftTitle } = await import("./builder");
+    expect(nextDraftTitle(["новий курс", "НОВИЙ КУРС 2"])).toBe("Новий курс 3");
+  });
+});

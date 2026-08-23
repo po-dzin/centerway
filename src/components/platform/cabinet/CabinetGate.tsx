@@ -16,6 +16,7 @@ import type { ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
+import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import type { ProfileLang } from "@/components/platform/profile/types";
 import { isAuthEnabled } from "./useCabinet";
@@ -46,6 +47,7 @@ export function cabinetGate({
   error,
   homeHref,
   onSignIn,
+  loadingCopy,
 }: {
   lang: ProfileLang;
   loading: boolean;
@@ -53,6 +55,7 @@ export function cabinetGate({
   error?: string | null;
   homeHref: string;
   onSignIn: () => void;
+  loadingCopy?: { label?: string; title: string; lead?: string };
 }) {
   const copy = getProfileCopy(lang, { activePrograms: 0, completedPrograms: 0, productPurchases: 0 });
 
@@ -61,7 +64,17 @@ export function cabinetGate({
   }
 
   if (loading) {
-    return <StatePanel label={copy.profile} title={copy.loadingTitle} lead={copy.loadingLead} />;
+    return (
+      <main className={surfaceStyles.profileMain} data-cw-platform-template="loading">
+        <div className={surfaceStyles.container}>
+          <PlatformLoadingState
+            label={loadingCopy?.label ?? copy.profile}
+            title={loadingCopy?.title ?? copy.loadingTitle}
+            detail={loadingCopy?.lead ?? copy.loadingLead}
+          />
+        </div>
+      </main>
+    );
   }
 
   if (!session?.user) {

@@ -5,12 +5,14 @@ import {
   PlatformOfferResultList,
   PlatformOfferSurfaceTemplate,
 } from "@/components/platform/PlatformOfferSurfaceTemplate";
+import { ConsultBoundary, ConsultFaq } from "@/components/platform/ConsultPageSections";
+import { consultationExpectations, consultationSteps } from "@/components/platform/consultPageContract";
 import { HubMini, HubPrograms } from "@/components/platform/blocks/offer/hub";
 import { HubHero, HubIntro } from "@/components/platform/blocks/orientation/hub";
 import { ExpertPath, ExpertProof } from "@/components/platform/blocks/trust/expert";
 import { HubProof, HubSupport } from "@/components/platform/blocks/trust/hub";
 import { SupportForm } from "@/components/platform/blocks/trust/support";
-import { bodySignals, consultationCopy, journeySteps, platformPageArtwork } from "@/lib/platform/content";
+import { bodySignals, consultationCopy, platformPageArtwork } from "@/lib/platform/content";
 
 export function PlatformHomePage() {
   return (
@@ -46,8 +48,6 @@ export function PlatformHomePage() {
  * asked to commit to it.
  */
 export function PlatformConsultPage() {
-  const consultJourney = journeySteps.filter((step) => ["signals", "diagnostics", "programs"].includes(step.id));
-
   return (
     <PlatformOfferSurfaceTemplate
       templateKind="consult"
@@ -68,9 +68,9 @@ export function PlatformConsultPage() {
         body: <PlatformOfferResultList items={bodySignals} />,
       }}
       detailRight={{
-        label: "Що відбувається далі",
-        title: "Жива програма на 2-4 тижні",
-        body: <PlatformOfferCopyStack items={consultJourney.map((step) => ({ id: step.id, title: step.title, text: step.text }))} />,
+        label: "Як це відбувається",
+        title: "Три кроки від запиту до особистого плану",
+        body: <PlatformOfferCopyStack items={[...consultationSteps]} />,
       }}
       supportSectionId="consult-request"
       supportLeft={{
@@ -78,11 +78,14 @@ export function PlatformConsultPage() {
         title: "До 90 хвилин онлайн і зрозумілий наступний крок",
         lead:
           "На консультації ми збираємо стан, ритм, харчування, поточний рівень перевантаження і визначаємо, що зараз доречно: окрема практика, короткий вхід, детокс, програма або природна підтримка.",
+        body: <PlatformOfferResultList items={[...consultationExpectations]} />,
       }}
       beforeSupport={
         <>
           <ExpertProof />
           <ExpertPath />
+          <ConsultBoundary />
+          <ConsultFaq />
         </>
       }
       form={{

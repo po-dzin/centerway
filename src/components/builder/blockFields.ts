@@ -39,6 +39,7 @@ export const BLOCK_TYPE_LABELS: Record<LessonBlock["type"], string> = {
   video: "Відео",
   image: "Зображення",
   quote: "Цитата",
+  code: "Код",
   boundary_note: "Межі та застереження",
   faq_block: "Питання і відповіді",
   table: "Таблиця",
@@ -62,6 +63,7 @@ export const BLOCK_TYPE_HINTS: Record<LessonBlock["type"], string> = {
   video: "Відео на YouTube — вставте посилання.",
   image: "Зображення з обов'язковим описом.",
   quote: "Цитата з автором.",
+  code: "Фрагмент коду або команди зі збереженням відступів.",
   boundary_note: "Межі й застереження. Обов'язковий у всьому, що стосується тіла.",
   faq_block: "Питання і відповіді.",
   table: "Рядки й колонки — доза, етап, продукт. Те, що список не тримає.",
@@ -82,7 +84,7 @@ export const BLOCK_TYPE_HINTS: Record<LessonBlock["type"], string> = {
  * So the shapes live in the slash menu, where writing happens, and the roles
  * live behind «Шаблон…», where choosing is the point.
  */
-export const BLOCK_STRUCTURE_ORDER: LessonBlock["type"][] = ["table", "video", "image", "quote", "cta"];
+export const BLOCK_STRUCTURE_ORDER: LessonBlock["type"][] = ["table", "video", "image", "quote", "code", "cta"];
 
 export const BLOCK_TEMPLATE_ORDER: LessonBlock["type"][] = [
   "lesson_objective",
@@ -211,6 +213,12 @@ export function describeBlock(block: LessonBlock): BlockField[] {
       return [
         { path: ["text"], label: "Цитата", kind: "inline", multiline: true },
         { path: ["author"], label: "Автор", kind: "text" },
+      ];
+
+    case "code":
+      return [
+        { path: ["language"], label: "Мова", kind: "text", hint: "Наприклад: bash, json або javascript." },
+        { path: ["code"], label: "Код", kind: "text", multiline: true },
       ];
 
     case "faq_block":

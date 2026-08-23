@@ -285,6 +285,60 @@
   padding: 1.5rem 0;
 }
 
+/* ── Shared platform loading state ──────────────────
+   One content layer inside the route's existing shell. The animated mark is
+   the DS spinner replacement; fixed internal geometry reserves the final row
+   and prevents session/data phases from producing different page layouts. */
+.platformLoadingState {
+  width: min(100%, var(--cw-max-width));
+  min-height: clamp(10rem, 24svh, 15rem);
+  margin-inline: auto;
+  padding: var(--cw-space-lg);
+  display: grid;
+  align-content: center;
+  gap: var(--cw-space-sm);
+  border-radius: var(--cw-radius-xl);
+  color: var(--cw-platform-text);
+}
+
+.platformLoadingLabel {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.platformLoadingSignal {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  min-width: 0;
+  color: var(--cw-platform-muted);
+}
+
+.platformLoadingCopy {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+.platformLoadingTitle,
+.platformLoadingDetail {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.platformLoadingTitle {
+  color: var(--cw-platform-text);
+  font-weight: 600;
+}
+
+.platformLoadingDetail {
+  color: var(--cw-platform-muted);
+  font-size: 0.92rem;
+}
+
 .diagnosticSpinner {
   width: 3rem;
   height: 3rem;
@@ -462,9 +516,8 @@
    two different stylesheets, resolve by bundle order — which is not a thing to
    bet a footer on.
 
-   Mobile: one column. From 561: brand and links side by side. From 901: the
-   same two tracks sized to their contents and packed left, so the block reads
-   as a signature and not as a spread. */
+   Mobile: one column. From 561: brand and both link groups share the real
+   container width, so short labels do not collapse into a cluster at the left. */
 .footerGridPersonal {
   composes: footerGrid;
   grid-template-columns: minmax(0, 1fr);
@@ -483,22 +536,22 @@
    brand block — three tracks at 561px would leave each of them about 90px. */
 @media (min-width: 561px) {
   .footerGridPersonal {
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1.35fr) repeat(2, minmax(0, 1fr));
     column-gap: clamp(1.25rem, 4vw, 3rem);
   }
 }
 
-/* Desktop takes the storefront footer's own shape: a fixed brand column and two
-   link tracks after it. `align-items: start` matters because the third track is
+/* Desktop takes the storefront footer's own shape: a broader brand track and
+   two equal link tracks across the container. `align-items: start` matters because the third track is
    usually one row shorter — the install entry removes itself when the browser
    has no prompt to give — and a stretched empty track would pull the row's
    baseline down with nothing in it. */
 @media (min-width: 901px) {
   .footerGridPersonal {
-    grid-template-columns: minmax(0, 20rem) auto auto;
-    justify-content: start;
+    grid-template-columns: minmax(0, 1.45fr) repeat(2, minmax(0, 1fr));
+    justify-content: stretch;
     align-items: start;
-    column-gap: clamp(2rem, 6vw, 5rem);
+    column-gap: clamp(2rem, 5vw, 4.5rem);
   }
 }
 
@@ -676,4 +729,3 @@
 .profileGridPair > * {
   min-width: 0;
 }
-

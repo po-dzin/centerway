@@ -530,7 +530,7 @@ export async function listCourses(): Promise<CourseRow[]> {
 
     const { data: courses, error } = await db
         .from("lms_courses")
-        .select("id, slug, title, status, locale, brand, author_id, updated_at")
+        .select("*")
         .order("updated_at", { ascending: false });
     if (error) throw new AccessError(error.message, 500);
 
@@ -553,6 +553,10 @@ export async function listCourses(): Promise<CourseRow[]> {
             slug: row.slug as string,
             title: row.title as string,
             status: row.status as string,
+            reviewStatus: (row.review_status as CourseRow["reviewStatus"] | undefined) ?? (row.status === "published" ? "approved" : "draft"),
+            reviewNote: (row.review_note as string | null) ?? null,
+            reviewEnabled: "review_status" in row,
+            visibility: (row.visibility as CourseRow["visibility"] | undefined) ?? "hidden",
             locale: row.locale as string,
             brand: row.brand as string,
             authorId: (row.author_id as string | null) ?? null,
@@ -562,6 +566,39 @@ export async function listCourses(): Promise<CourseRow[]> {
             updatedAt: row.updated_at as string,
         } satisfies CourseRow;
     });
+}
+
+export async function moderateCourse(input: {
+    courseId: string;
+    actorId: string;
+    action: "approve" | "request_changes" | "set_visibility";
+    note?: string;
+    visibility?: CourseRow["visibility"];
+}) {
+    const db = adminClient();
+    const { data: course, error: readError } = await db.from("lms_courses")
+        .select("id, slug, status, review_status, visibility").eq("id", input.courseId).maybeSingle();
+    if (readError) throw new AccessError(readError.message, 500);
+    if (!course) throw new AccessError("course_not_found", 404);
+
+    let values: Record<string, unknown>;
+    if (input.action === "approve") {
+        if (course.review_status !== "in_review") throw new AccessError("course_not_in_review", 409);
+        values = { review_status: "approved", review_note: null, approved_at: new Date().toISOString(), approved_by: input.actorId };
+    } else if (input.action === "request_changes") {
+        if (course.review_status !== "in_review") throw new AccessError("course_not_in_review", 409);
+        values = { review_status: "changes_requested", review_note: input.note?.trim() || "Потрібні зміни", approved_at: null, approved_by: null };
+    } else {
+        if (!input.visibility || !["hidden", "unlisted", "listed"].includes(input.visibility)) throw new AccessError("invalid_visibility", 400);
+        if (input.visibility !== "hidden" && (course.status !== "published" || course.review_status !== "approved")) {
+            throw new AccessError("course_not_ready_for_storefront", 409);
+        }
+        values = { visibility: input.visibility };
+    }
+    const { error } = await db.from("lms_courses").update(values).eq("id", input.courseId);
+    if (error) throw new AccessError(error.message, 500);
+    await writeAudit(db, { actorId: input.actorId, action: `course.${input.action}`, entityType: "lms_course", entityId: input.courseId, metadata: { slug: course.slug, ...values } });
+    return { id: input.courseId, ...values };
 }
 
 /**

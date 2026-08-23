@@ -502,6 +502,23 @@ export function BuilderInlineEditor({
                   >
                     Посилання
                   </button>
+                  {onCommand && commands?.some((command) => command.id === "ul") ? (
+                    <>
+                      <span className={styles.formatDivider} aria-hidden="true" />
+                      <button className={styles.formatAction} type="button" onClick={() => { onCommand("ul"); closeBar(); }}>
+                        Список
+                      </button>
+                      <button className={styles.formatAction} type="button" onClick={() => { onCommand("ol"); closeBar(); }}>
+                        1. Список
+                      </button>
+                      <button className={styles.formatAction} type="button" onClick={() => { onCommand("block:quote"); closeBar(); }}>
+                        Цитата
+                      </button>
+                      <button className={styles.formatAction} type="button" onClick={() => { onCommand("block:code"); closeBar(); }}>
+                        Код
+                      </button>
+                    </>
+                  ) : null}
                   <span className={styles.formatDivider} aria-hidden="true" />
                   <button
                     className={styles.formatAction}
