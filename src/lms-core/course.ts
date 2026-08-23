@@ -128,7 +128,12 @@ export type Course = {
    * because a course without one is a normal state, not a broken one: the grid
    * falls back to the course's own initials on its palette.
    */
-  cover?: { src: string; alt: string };
+  cover?: {
+    src: string;
+    alt: string;
+    /** 0–100 vertical crop point for portrait sources in a landscape card. */
+    cropY?: number;
+  };
   /**
    * Where this course sits in the author's own grid. Authors order their shelf
    * by what they are working on, which is not alphabetical and not by date.
@@ -185,6 +190,12 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
     // Alt is mandatory wherever an image is, same as `image` blocks: a11y is a
     // release gate in this repo, not a nicety.
     assert(isNonEmptyString(input.cover.alt), `lms_course_cover_missing_alt:${path}`);
+    if (input.cover.cropY !== undefined) {
+      assert(
+        typeof input.cover.cropY === "number" && Number.isInteger(input.cover.cropY) && input.cover.cropY >= 0 && input.cover.cropY <= 100,
+        `lms_course_invalid_cover_crop:${path}`
+      );
+    }
   }
 
   if (input.sortOrder !== undefined) {

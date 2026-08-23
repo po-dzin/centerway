@@ -74,7 +74,7 @@ export type LearnerShelfCourseDto = {
    * Absent for a course that has none — the shelf draws its own mark instead
    * rather than reserving a grey rectangle.
    */
-  cover: { src: string; alt: string } | null;
+  cover: { src: string; alt: string; cropY?: number } | null;
 };
 
 export type LearnerShelfDto = { courses: LearnerShelfCourseDto[] };

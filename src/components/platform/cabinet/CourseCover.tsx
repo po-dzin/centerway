@@ -45,6 +45,7 @@ export function CourseCover({ course, dimmed }: { course: LearnerShelfCourseDto;
         data-dimmed={dimmed || undefined}
         src={course.cover.src}
         alt={course.cover.alt}
+        style={{ objectPosition: `center ${course.cover.cropY ?? 50}%` }}
       />
     );
   }

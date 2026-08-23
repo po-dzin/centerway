@@ -579,7 +579,12 @@ function CourseCard(props: EntryProps) {
           // anywhere, and next/image would need every one of those hosts
           // configured before it would render at all.
           // eslint-disable-next-line @next/next/no-img-element
-          <img className={styles.courseCover} src={course.cover.src} alt={course.cover.alt} />
+          <img
+            className={styles.courseCover}
+            src={course.cover.src}
+            alt={course.cover.alt}
+            style={{ objectPosition: `center ${course.cover.cropY ?? 50}%` }}
+          />
         ) : (
           // Not a grey box: a course with no cover still has a palette, and the
           // initials on it are enough to tell two cards apart at a glance.

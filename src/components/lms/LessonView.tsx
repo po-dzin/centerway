@@ -238,16 +238,6 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
             { label: data.lesson.title },
           ]}
         />
-        <span className={styles.topBarSpacer} />
-        <button
-          className={styles.iconButton}
-          type="button"
-          onClick={() => setContentsOpen(true)}
-          aria-haspopup="dialog"
-        >
-          <Icon name="menu" size={18} />
-          <span>Зміст</span>
-        </button>
       </div>
 
       {/* Position in the course sits next to the duration, so "where am I / how
@@ -293,6 +283,16 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
           />
         ))}
       </div>
+
+      <button
+        className={`${styles.iconButton} ${styles.contentsButton}`}
+        type="button"
+        onClick={() => setContentsOpen(true)}
+        aria-haspopup="dialog"
+      >
+        <Icon name="menu" size={18} />
+        <span>Зміст</span>
+      </button>
 
       {/* One control in the bar, and only one. Advancing lives in the pager
           below, with the next lesson's real title — two competing buttons in a

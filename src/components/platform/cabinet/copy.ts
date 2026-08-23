@@ -51,6 +51,8 @@ export type CabinetCopy = {
 
   installTitle: string;
   installLead: string;
+  installBrowserLead: string;
+  installInstalledTitle: string;
   installAction: string;
   installIosLead: string;
   installIosSteps: string[];
@@ -116,6 +118,8 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       installTitle: "Add CenterWay to your home screen",
       installLead:
         "It opens as an app — full screen, with its own icon, and your courses stay one tap away.",
+      installBrowserLead: "Open your browser menu and choose \"Install app\" or \"Add to Home Screen\".",
+      installInstalledTitle: "CenterWay is already added to your home screen.",
       installAction: "Add",
       installIosLead: "On iPhone and iPad the browser adds it, in two steps:",
       installIosSteps: ["Tap Share in the Safari toolbar.", "Choose “Add to Home Screen”."],
@@ -170,6 +174,8 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     installTitle: "Додати CenterWay на екран телефона",
     installLead:
       "Відкриватиметься як застосунок — на весь екран, з власною іконкою, і шлях лишається за один дотик.",
+    installBrowserLead: "Відкрийте меню браузера та оберіть «Встановити застосунок» або «На початковий екран».",
+    installInstalledTitle: "CenterWay уже додано на ваш екран.",
     installAction: "Додати",
     installIosLead: "На iPhone та iPad застосунок додає сам браузер, у два кроки:",
     installIosSteps: ["Натисніть «Поділитися» на панелі Safari.", "Оберіть «На початковий екран»."],
