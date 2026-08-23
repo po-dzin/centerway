@@ -15,17 +15,11 @@ export const platformHomeHref = "/";
  */
 export const LEARNING_SHELF_HREF = "/learn";
 
-/**
- * The showcase bar.
- *
- * NO "Головна" ITEM. The brand mark sits immediately to its left and is a link
- * to the same place on every surface of the platform — a second control for
- * the same destination, right beside the first, only makes the bar longer.
- * Signed in and with the admin role, that bar was carrying SEVEN items across
- * a hero photograph; the ones that were left are the ones that go somewhere
- * the brand cannot.
- */
-export const platformNav = [
+export type NavItem = { label: string; href: string; match: "exact" | "prefix" };
+
+/** The public platform bar. `Головна` is intentionally explicit here. */
+export const platformNav: NavItem[] = [
+  { label: "Головна", href: platformHomeHref, match: "exact" },
   { label: "Діагностика", href: "/tests", match: "prefix" as const },
   { label: "Програми", href: "/programs", match: "prefix" as const },
   { label: "Продукти", href: "/products", match: "prefix" as const },
@@ -34,6 +28,20 @@ export const platformNav = [
      the evidence on that page, not a fifth destination. `prefix`, because the
      merged surface is the one `/consult` now serves whole. */
   { label: "Консультація", href: "/consult", match: "prefix" as const },
+];
+
+/**
+ * The bar on the personal host.
+ *
+ * `my` is an application rather than a public route map: it keeps only the
+ * learner shelf and authoring workspace. Public navigation belongs to `www`
+ * and is deliberately not repeated over a person's own courses or lessons.
+ */
+export const builderNavItem: NavItem = { label: "Білдер", href: "/build", match: "prefix" };
+
+export const personalNav: NavItem[] = [
+  { label: "Мої курси", href: LEARNING_SHELF_HREF, match: "exact" },
+  builderNavItem,
 ];
 
 /** The account switcher's learning destination; not a public route-map item. */

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { LEARNING_SHELF_HREF, platformHomeHref, platformNav } from "@/lib/platform/content";
+import { LEARNING_SHELF_HREF, personalNav, platformHomeHref, platformNav } from "@/lib/platform/content";
 import { canonicalPersonalPath } from "@/lib/surfaces/catalog";
 import { isPersonalHost } from "@/lib/platform/surfaceHref";
 import { currentAppKey, type PlatformAppKey } from "@/lib/platform/apps";
@@ -14,10 +14,8 @@ import { useHeaderTone } from "./headerTone";
 import { useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
 
 /**
- * `learn` keeps the learner-oriented brand target, but it does not remove the
- * platform route map. Course pages still need the same predictable way back to
- * diagnostics, programmes, products and consultation as the rest of the
- * platform; on mobile those routes live in the burger drawer.
+ * `learn` is a different application intent: the mark leads back to the shelf
+ * and the personal navigation never becomes a public route map.
  */
 export function PlatformHeader({
   initialTone = "light",
@@ -48,18 +46,16 @@ export function PlatformHeader({
      make the one control that never changes the one that leaves. */
   const brandTarget = learnMode || onPersonalSurface ? LEARNING_SHELF_HREF : platformHomeHref;
   const homeHref = href(brandTarget);
-  /* ONE PUBLIC ROUTE MAP ON BOTH ORIGINS. `my` is a personal application, but
-     the owner explicitly keeps the public platform routes visible in its bar;
-     Profile, Learning, Builder and Admin remain application destinations in
-     the account menu. Every crossing is resolved to an absolute `www` URL. */
-  const navSource = platformNav;
+  /* Two bars, one component: public routes stay on `www`; `my` keeps only the
+     learner shelf and Builder. Lessons intentionally have no top-level route
+     map, so the reading surface remains focused. */
+  const navSource = learnMode ? [] : onPersonalSurface ? personalNav : platformNav;
   const navItems = navSource.map((item) => ({
     ...item,
     resolvedHref: href(item.href),
   }));
-  /* Applications already named by the route map are excluded from the account
-     block below the mobile list. Public routes map to no application key, so
-     the personal destinations remain available there. */
+  /* The account block does not repeat an app that is already in the current
+     surface's top-level navigation. */
   const navExcludes = navSource
     .map((item) => currentAppKey(host, item.href))
     .filter((key): key is PlatformAppKey => key !== null);
@@ -129,12 +125,8 @@ export function PlatformHeader({
     setOpenMenuPath(null);
   }
 
-  function isActive(href: string, match: "exact" | "prefix", resolvedHref = href) {
+  function isActive(href: string, match: "exact" | "prefix") {
     if (!pathname) return false;
-    // Every public route is off-origin while this bar is rendered on `my`.
-    // Comparing only raw pathnames would mark `/` as both «Головна» and «Мої
-    // курси», even though the Home link correctly points to `www`.
-    if (/^https?:\/\//i.test(resolvedHref)) return false;
     // Hashes are stripped before comparing: `pathname` never carries one, so a
     // raw href with a fragment could never read as current. Nothing in the nav
     // has one today — the shelf stopped being `/profile#learning` — but a copy
@@ -163,26 +155,15 @@ export function PlatformHeader({
           <span className={styles.brandSymbol} aria-hidden="true" />
           <span className={styles.brandWordmark} aria-hidden="true" />
         </Link>
-        <div ref={navLayerRef} className={`${styles.navLayer} ${menuOpen ? styles.navLayerOpen : ""}`} id="platform-mobile-menu">
+        {learnMode ? null : <div ref={navLayerRef} className={`${styles.navLayer} ${menuOpen ? styles.navLayerOpen : ""}`} id="platform-mobile-menu">
           <div className={styles.mobileMenuSurface} data-cw-glass="shell">
             <nav className={`${styles.nav} ${styles.mobileMenuNav}`} aria-label="Основна навігація">
-              <Link
-                className={styles.mobileHomeNavItem}
-                href={href(platformHomeHref)}
-                onClick={closeMenu}
-                aria-current={isActive(platformHomeHref, "exact", href(platformHomeHref)) ? "page" : undefined}
-              >
-                <span className={styles.navText}>
-                  Головна
-                  <HandGraphic className={styles.navInkMark} name="ink-stroke" size={36} />
-                </span>
-              </Link>
               {navItems.map((item) => (
                 <Link
                   key={item.href}
                   href={item.resolvedHref}
                   onClick={closeMenu}
-                  aria-current={isActive(item.href, item.match, item.resolvedHref) ? "page" : undefined}
+                  aria-current={isActive(item.href, item.match) ? "page" : undefined}
                 >
                   <span className={styles.navText}>
                     {item.label}
@@ -197,11 +178,11 @@ export function PlatformHeader({
               <PlatformAccountMenu variant="inline" exclude={navExcludes} onNavigate={closeMenu} />
             </div>
           </div>
-        </div>
+        </div>}
         <div className={styles.profileSlot}>
-          <PlatformAccountMenu compact includePlatformNavigation={onPersonalSurface || learnMode} />
+          <PlatformAccountMenu compact />
         </div>
-        <button
+        {learnMode ? null : <button
           ref={toggleRef}
           className={styles.menuButton}
           type="button"
@@ -217,7 +198,7 @@ export function PlatformHeader({
           <Icon name="menu" size={32} className={styles.menuGlyph} />
           <Icon name="close" size={32} className={styles.menuGlyphClose} />
           <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
-        </button>
+        </button>}
       </div>
     </header>
   );

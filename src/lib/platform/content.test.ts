@@ -1,10 +1,16 @@
 import { describe, expect, it } from "vitest";
 
-import { LEARNING_SHELF_HREF, learningNavItem, platformNav } from "./content";
+import { LEARNING_SHELF_HREF, learningNavItem, personalNav, platformNav } from "./content";
 import manifest from "@/app/manifest";
 import { botCopy } from "@/lib/tgSupportBotCopy";
 
 describe("the learning entry", () => {
+  it("keeps the public home explicit and the personal bar application-only", () => {
+    expect(platformNav[0]).toMatchObject({ label: "Головна", href: "/", match: "exact" });
+    expect(personalNav.map((item) => item.label)).toEqual(["Мої курси", "Білдер"]);
+    expect(personalNav.map((item) => item.href)).not.toContain("/");
+  });
+
   it("is not part of the showcase nav", () => {
     // platformNav is addressed to everybody and is identical signed out.
     // Learning exists only if you own something — and then outranks the rest.
