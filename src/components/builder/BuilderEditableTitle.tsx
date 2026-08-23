@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/Icon";
+import { PLACEHOLDER_MARKER } from "@/lms-core";
 import styles from "./Builder.module.css";
 
 /** A heading first, a field only while the author explicitly edits it. */
@@ -21,12 +22,24 @@ export function BuilderEditableTitle({
 }) {
   const [editing, setEditing] = useState(false);
   const [before, setBefore] = useState(value);
+  const [draft, setDraft] = useState(value);
   const input = useRef<HTMLInputElement>(null);
   const Heading = level;
+  const unresolved = value.includes(PLACEHOLDER_MARKER);
+  const visibleValue = unresolved ? "" : value;
 
   useEffect(() => {
-    if (editing) input.current?.select();
+    if (editing) {
+      input.current?.focus();
+      const end = input.current?.value.length ?? 0;
+      input.current?.setSelectionRange(end, end);
+    }
   }, [editing]);
+
+  const finish = () => {
+    onChange(draft);
+    setEditing(false);
+  };
 
   if (editing) {
     return (
@@ -34,18 +47,20 @@ export function BuilderEditableTitle({
         ref={input}
         className={compact ? styles.moduleTitleInput : `${styles.pageTitle} ${styles.titleInput} ${styles.titleEditing}`}
         type="text"
-        value={value}
+        value={draft}
+        placeholder={label.replace(/^Редагувати\s+/i, "")}
         aria-label={label}
-        onChange={(event) => onChange(event.target.value)}
-        onBlur={() => setEditing(false)}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={finish}
         onKeyDown={(event) => {
           if (event.key === "Enter") {
             event.preventDefault();
-            setEditing(false);
+            event.currentTarget.blur();
           }
           if (event.key === "Escape") {
             event.preventDefault();
             onChange(before);
+            setDraft(before);
             setEditing(false);
           }
         }}
@@ -55,7 +70,9 @@ export function BuilderEditableTitle({
 
   return (
     <div className={compact ? styles.editableTitleCompact : styles.editableTitle}>
-      <Heading className={compact ? styles.editableHeadingCompact : styles.pageTitle}>{value || label}</Heading>
+      <Heading className={`${compact ? styles.editableHeadingCompact : styles.pageTitle} ${visibleValue ? "" : styles.editableHeadingEmpty}`}>
+        {visibleValue || label.replace(/^Редагувати\s+/i, "")}
+      </Heading>
       <button
         className={styles.titleEditAction}
         type="button"
@@ -63,6 +80,7 @@ export function BuilderEditableTitle({
         title={label}
         onClick={() => {
           setBefore(value);
+          setDraft(visibleValue);
           setEditing(true);
         }}
       >

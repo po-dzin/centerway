@@ -65,6 +65,18 @@ async function hasManualGrant(authUserId: string, courseId: string): Promise<boo
   return data?.source === "manual";
 }
 
+/** An author may inspect their own unpublished work in the learner surface. */
+async function isCourseAuthor(authUserId: string, courseId: string): Promise<boolean> {
+  const db = adminClient();
+  const { data } = await db
+    .from("lms_courses")
+    .select("author_id")
+    .eq("id", courseId)
+    .maybeSingle();
+
+  return data?.author_id === authUserId;
+}
+
 export type LearnerIdentity = {
   authUserId: string;
   email: string | null;
@@ -431,11 +443,12 @@ export async function loadLearnerCourse(
     // explicit manual grant. The manual grant IS the act of authorising a
     // preview, so reviewing unpublished content never requires making a
     // reviewer an admin (`npm run lms:grant`).
-    const [staff, granted] = await Promise.all([
+    const [staff, granted, author] = await Promise.all([
       isStaff(identity.authUserId),
       hasManualGrant(identity.authUserId, course.id),
+      isCourseAuthor(identity.authUserId, course.id),
     ]);
-    if (!staff && !granted) return { ok: false, reason: "not_published" };
+    if (!staff && !granted && !author) return { ok: false, reason: "not_published" };
   }
 
   // Claim any purchases still keyed only by email. Cheap, idempotent, and it

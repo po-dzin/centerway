@@ -109,6 +109,12 @@ function ResultsField({
             value={result}
             aria-label={`Результат ${index + 1}`}
             onChange={(event) => write(results.map((one, at) => (at === index ? event.target.value : one)))}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                event.currentTarget.blur();
+              }
+            }}
           />
           <button
             className={styles.iconAction}
@@ -146,18 +152,9 @@ export function BuilderCourseSettings({
 
   return (
     <div className={styles.settingsForm}>
-      {/* Name and summary are NOT here any more. They are the heading and the
-          lead of the course page itself, edited where they are read; a settings
-          sheet holding a second copy of them is a second place for them to be
-          wrong. What stays here is what has no place in the document: the
-          address, the schedule, the entitlement codes, the palette. */}
-      {/* The course page owns the address editor. Settings only explains the
-          lifecycle boundary so the same value is not edited in two places. */}
-      <p className={styles.readOnlyNote}>
-        Адреса курсу: <code>my.centerway.net.ua/{course.slug}</code>. Її можна змінити у заголовку, поки курс лишається
-        невикористаною прихованою чернеткою; після випуску або появи учнів адреса закріплюється. До каталогу курс додає
-        адміністратор.
-      </p>
+      {/* Name, summary and address live in the course heading, where they are
+          read. Repeating the address here made the automatic/locked state look
+          like a second setting rather than one route boundary. */}
 
       <h3 className={styles.subTitle}>Стартова структура</h3>
       <p className={styles.fieldHint}>Пресет замінює модулі й уроки, але не назву, опис, обкладинку чи доступ.</p>

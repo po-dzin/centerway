@@ -493,10 +493,11 @@ export async function createBuilderCourse(input: {
     if (listError) throw new Error(`lms_builder_list_failed:${listError.message}`);
     const existing = (existingRows ?? []) as { slug: string; title: string }[];
     const title = requestedTitle || nextDraftTitle(existing.map((row) => row.title));
-    // Default titles are Ukrainian prose; the address is a temporary working
-    // key, not a transliteration exercise. A short random suffix stays legible,
-    // avoids collisions and is explicitly editable before first release.
-    const slug = uniqueSlug(`new-course-${input.ids().replace(/[^a-z0-9]/gi, "").slice(0, 6).toLowerCase()}`, existing.map((row) => row.slug));
+    // The author should not have to invent a second name for the same course.
+    // The address is derived from the title and receives a numeric suffix on a
+    // collision. It remains explicitly editable only while the draft has no
+    // public or learner-facing dependencies.
+    const slug = uniqueSlug(title, existing.map((row) => row.slug));
 
     const course = newCourseFromTemplate(input.ids, {
       slug,

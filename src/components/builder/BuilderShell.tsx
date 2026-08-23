@@ -33,8 +33,9 @@ import styles from "./Builder.module.css";
  * THE RAIL is course-local navigation. In the lesson editor it carries the
  * outline; on the course workspace it carries only the three stable modes and
  * release health. It never becomes a second editor. Below 901px the course
- * workspace uses an in-flow mode strip and moves release health below the
- * manuscript, while the long lesson outline remains an explicit drawer.
+ * workspace uses an in-flow mode strip, while the long lesson outline remains
+ * an explicit drawer. On a wide course workspace the stable mode rail can
+ * collapse to its icon column without changing the document measure.
  */
 
 export function BuilderShell({
@@ -42,6 +43,7 @@ export function BuilderShell({
   tools,
   aside,
   asideOpen,
+  asideCompact,
   children,
 }: {
   trail?: TrailStep[];
@@ -49,6 +51,8 @@ export function BuilderShell({
   /** The course outline. A rail on desktop, a drawer below 901px. */
   aside?: ReactNode;
   asideOpen?: boolean;
+  /** Narrows a persistent desktop rail to its icon column. */
+  asideCompact?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -60,7 +64,12 @@ export function BuilderShell({
 
       <div className={aside ? styles.bodyWithAside : styles.body}>
         {aside ? (
-          <aside className={styles.aside} data-open={asideOpen || undefined} aria-label="Структура курсу">
+          <aside
+            className={styles.aside}
+            data-open={asideOpen || undefined}
+            data-compact={asideCompact || undefined}
+            aria-label="Навігація курсу"
+          >
             {aside}
           </aside>
         ) : null}

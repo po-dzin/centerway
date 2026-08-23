@@ -290,13 +290,12 @@
    the DS spinner replacement; fixed internal geometry reserves the final row
    and prevents session/data phases from producing different page layouts. */
 .platformLoadingState {
-  width: min(100%, var(--cw-max-width));
-  min-height: clamp(10rem, 24svh, 15rem);
+  width: min(100%, 42rem);
+  min-height: clamp(8rem, 18svh, 10.5rem);
   margin-inline: auto;
-  padding: var(--cw-space-lg);
+  padding: var(--cw-space-md) var(--cw-space-lg);
   display: grid;
   align-content: center;
-  gap: var(--cw-space-sm);
   border-radius: var(--cw-radius-xl);
   color: var(--cw-platform-text);
 }
@@ -319,8 +318,12 @@
 
 .platformLoadingCopy {
   display: grid;
-  gap: var(--cw-space-2xs);
+  gap: calc(var(--cw-space-2xs) / 2);
   min-width: 0;
+}
+
+.platformLoadingLabel {
+  margin-block-end: var(--cw-space-2xs);
 }
 
 .platformLoadingTitle,

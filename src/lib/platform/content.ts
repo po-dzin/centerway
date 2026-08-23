@@ -36,48 +36,7 @@ export const platformNav = [
   { label: "Консультація", href: "/consult", match: "prefix" as const },
 ];
 
-/**
- * Shown only to someone who has courses.
- *
- * Deliberately NOT a sixth item in `platformNav`: that list is the showcase,
- * addressed to everybody, and it is the same for a signed-out visitor as for a
- * buyer. Learning is the opposite — it exists only if you own something, and
- * for the people it exists for it outranks every other item. Putting it in the
- * same array would either advertise an empty shelf to strangers or make the
- * showcase nav conditional on a fetch.
- *
- * Until this landed, the only route into a purchased course was avatar →
- * profile → the "Навчання" tab → the card → the lesson: four steps to the thing
- * that was paid for, and none of them named on the bar.
- */
-/**
- * The bar on the PERSONAL host.
- *
- * A different application gets a different bar. `platformNav` is the showcase,
- * addressed to a stranger: programmes, products, tests, the author. None of it
- * belongs over somebody's own courses, and every item in it now crosses an
- * origin — which is exactly what the account switcher is for.
- *
- * What is left is what this application actually contains: the courses, and,
- * for whoever writes them, the builder. Both are same-origin here, so the bar
- * stops being a set of links off the host it is drawn on.
- *
- * Both application tabs are stable from first paint. Authorization belongs to
- * the destination route: letting an identity request add/remove top-level
- * navigation made the bar shift during every full transition between the two
- * route-group roots. A refused Builder route explains the missing permission;
- * the navigation does not silently rewrite itself.
- */
-export type NavItem = { label: string; href: string; match: "exact" | "prefix" };
-
-export const builderNavItem: NavItem = { label: "Білдер", href: "/build", match: "prefix" };
-
-export const personalNav: NavItem[] = [
-  { label: "Мої курси", href: LEARNING_SHELF_HREF, match: "exact" },
-  builderNavItem,
-];
-
-/** Kept for the switcher's label, which names the same destination. */
+/** The account switcher's learning destination; not a public route-map item. */
 export const learningNavItem = {
   label: "Навчання",
   href: LEARNING_SHELF_HREF,

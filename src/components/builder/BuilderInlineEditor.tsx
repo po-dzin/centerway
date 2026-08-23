@@ -268,7 +268,8 @@ export function BuilderInlineEditor({
   useEffect(() => {
     const element = ref.current;
     if (!element || document.activeElement === element) return;
-    const html = inlineToHtml(value ?? "");
+    const incoming = inlineToPlainText(value ?? "").includes(PLACEHOLDER_MARKER) ? undefined : value;
+    const html = inlineToHtml(incoming ?? "");
     if (element.innerHTML !== html) element.innerHTML = html;
     setHasText((element.textContent ?? "") !== "");
   }, [value, asText]);
@@ -316,6 +317,7 @@ export function BuilderInlineEditor({
 
   const plain = inlineToPlainText(value ?? "");
   const hasMarker = plain.includes(PLACEHOLDER_MARKER);
+  const editableValue = hasMarker ? undefined : value;
 
   if (asText) {
     return (
@@ -332,10 +334,17 @@ export function BuilderInlineEditor({
           className={`${styles.textarea} ${hasMarker ? styles.inputTodo : ""}`}
           aria-label={label}
           rows={multiline ? 3 : 2}
-          value={inlineToMarkup(value ?? "")}
+          value={inlineToMarkup(editableValue ?? "")}
+          placeholder={placeholder}
           onChange={(event) => {
             const next = markupToInline(event.target.value);
             onChange(next === "" ? undefined : next);
+          }}
+          onKeyDown={(event) => {
+            if (event.key === "Enter" && !event.shiftKey) {
+              event.preventDefault();
+              event.currentTarget.blur();
+            }
           }}
         />
       </div>
@@ -416,7 +425,8 @@ export function BuilderInlineEditor({
           // whoever owns the list decides what comes next.
           if (event.key === "Enter") {
             event.preventDefault();
-            onEnter?.();
+            if (onEnter) onEnter();
+            else ref.current?.blur();
             return;
           }
 

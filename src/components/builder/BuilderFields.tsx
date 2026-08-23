@@ -12,7 +12,7 @@
  * key where they reject an empty string, so clearing a field deletes it.
  */
 
-import { useState } from "react";
+import { useState, type KeyboardEvent } from "react";
 
 import { inlineToMarkup } from "@/lib/lms/inlineMarkup";
 import { PLACEHOLDER_MARKER, youtubeIdFrom, type InlineText } from "@/lms-core";
@@ -20,6 +20,18 @@ import { BuilderImageField } from "./BuilderImageField";
 import { BuilderInlineEditor } from "./BuilderInlineEditor";
 import type { BlockField } from "./blockFields";
 import styles from "./Builder.module.css";
+
+function closeOnEnter(event: KeyboardEvent<HTMLInputElement | HTMLTextAreaElement>) {
+  if (event.key === "Enter" && !event.shiftKey) {
+    event.preventDefault();
+    event.currentTarget.blur();
+  }
+}
+
+function markerPrompt(value: string): string | undefined {
+  const match = /^\[ЗАПОВНИ:\s*(.+)]$/i.exec(value.trim());
+  return match?.[1];
+}
 
 export function FieldInput({
   field,
@@ -66,6 +78,7 @@ export function FieldInput({
           onChange={(event) =>
             onChange(field.path, event.target.value === "" ? undefined : Number(event.target.value))
           }
+          onKeyDown={closeOnEnter}
         />
       </label>
     );
@@ -118,6 +131,8 @@ export function FieldInput({
 
   const text = typeof value === "string" ? value : "";
   const hasMarker = text.includes(PLACEHOLDER_MARKER);
+  const visibleText = hasMarker ? "" : text;
+  const placeholder = hasMarker ? markerPrompt(text) : undefined;
   const className = `${field.multiline ? styles.textarea : styles.input} ${hasMarker ? styles.inputTodo : ""}`;
 
   const handle = (next: string) => {
@@ -132,9 +147,9 @@ export function FieldInput({
     <label className={styles.field}>
       <span className={styles.fieldLabel}>{field.label}</span>
       {field.multiline ? (
-        <textarea className={className} value={text} onChange={(event) => handle(event.target.value)} rows={3} />
+        <textarea className={className} value={visibleText} placeholder={placeholder} onChange={(event) => handle(event.target.value)} onKeyDown={closeOnEnter} rows={3} />
       ) : (
-        <input className={className} type="text" value={text} onChange={(event) => handle(event.target.value)} />
+        <input className={className} type="text" value={visibleText} placeholder={placeholder} onChange={(event) => handle(event.target.value)} onKeyDown={closeOnEnter} />
       )}
       {field.hint ? <span className={styles.fieldHint}>{field.hint}</span> : null}
     </label>
@@ -190,6 +205,7 @@ function YoutubeField({
           if (found) onChange(field.path, found);
           else if (next.trim() === "") onChange(field.path, undefined);
         }}
+        onKeyDown={closeOnEnter}
       />
       <span className={styles.fieldHint}>
         {id ? `Відео ${id}` : "Поки не видно ідентифікатора — вставте адресу з YouTube."}
