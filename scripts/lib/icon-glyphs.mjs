@@ -338,6 +338,17 @@ export const ICONS = {
       "M12.8 12.8 H19.5 V19.5 H12.8 Z",
     ],
   },
+  // Edit: a compact pencil for inline-authored titles and addresses. Kept on
+  // the same diagonal as the route arrows, with a separate cap rather than a
+  // filled nib so it survives the hand-character bake at 16px.
+  edit: {
+    group: "Meta",
+    d: ["M5 19l3.8-.8L19 7l-2.2-2.2L5.8 15z", "M14.8 6.8l2.4 2.4", "M5 19h4"],
+  },
+  document: {
+    group: "Meta",
+    d: ["M6 3.8h7.2L18 8.6V20H6z", "M13.2 3.8v4.8H18", "M8.7 12h6.6", "M8.7 15.3h5.4"],
+  },
   // Settings, and it is a gear because a gear is what "settings" means to
   // everyone — eight teeth on a 45° pitch, cut shallow (9.0/6.5 of 12) so the
   // hand pass does not turn them into a saw. The hub is the same circle the
@@ -401,6 +412,29 @@ export const ICONS = {
  * `dashed: true` marks a stroke that keeps its dash pattern in the sprite.
  */
 export const GRAPHICS = {
+  /* A navigation mark, not a ruled underline. The baked hand pass gives the
+     long stroke its irregular pressure; the two satellite dots are restrained
+     ink drops that keep the gesture alive without turning it into decoration. */
+  "ink-stroke": {
+    group: "Graphics",
+    d: [
+      "M3.5 19.2C10.2 17.5 18.8 18.9 32.4 16.8",
+      "M6.2 20.4C13.8 19.7 22.6 20.3 29.4 18.9",
+    ],
+    dots: [
+      { cx: 4.1, cy: 16.2, r: 0.75 },
+      { cx: 32.1, cy: 20.4, r: 0.62 },
+    ],
+  },
+  /* Hover/selection for icon-only controls. It is intentionally open at the
+     upper-right edge, with one tiny drop where a pen would leave the paper. */
+  "ink-ring": {
+    group: "Graphics",
+    d: [
+      "M27.8 8.2C32.5 12.2 33.1 20.6 28.8 27.2C24.3 33.8 13.4 33.8 7.5 27.5C1.8 21.4 2.8 11.7 9.1 6.9C13.8 3.3 21.5 3.2 26.2 6.6",
+    ],
+    dots: [{ cx: 30.2, cy: 7.2, r: 0.8 }],
+  },
   dot: {
     group: "Graphics",
     dots: [

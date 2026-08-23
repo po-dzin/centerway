@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { Icon } from "@/components/Icon";
 import styles from "./Builder.module.css";
 
 /** A heading first, a field only while the author explicitly edits it. */
@@ -65,7 +66,7 @@ export function BuilderEditableTitle({
           setEditing(true);
         }}
       >
-        Змінити
+        <Icon name="edit" size={16} />
       </button>
     </div>
   );

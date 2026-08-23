@@ -543,8 +543,8 @@
     font-weight: 700;
   }
 
-  /* The underline marker belongs to the topbar row, where items sit side by
-     side. Stacked rows mark the current page with colour and weight instead. */
+  /* The generated ink mark lives inside the label, so it works in both the
+     horizontal bar and this stacked drawer without stretching across a row. */
   .navLayer .nav a::after {
     content: none;
   }
@@ -557,7 +557,7 @@
   }
 
   .navLayer .nav a[aria-current="page"] {
-    color: var(--platform-header-nav-marker);
+    color: var(--platform-header-fg);
     background: transparent;
     box-shadow: none;
     font-weight: 800;

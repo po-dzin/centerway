@@ -25,10 +25,12 @@
 import { adminClient } from "@/lib/auth/adminClient";
 import { courseFromRows, writeCourseStructure } from "./authoring";
 import { getSnapshotCourse } from "./catalog";
+import { immediatePublishedPatch } from "./publishedEditPolicy";
 import {
   courseReadiness,
   newCourseFromTemplate,
   preparePortableCourse,
+  slugify,
   uniqueSlug,
   validateCourse,
   type Course,
@@ -73,11 +75,17 @@ export async function loadBuilderCourse(
   slug: string
 ): Promise<{
   course: Course;
+  /** The relational release currently served to learners. */
+  liveCourse: Course;
   authorId: string | null;
   updatedAt: string | null;
   reviewStatus: CourseReviewStatus;
   reviewNote: string | null;
   reviewEnabled: boolean;
+  /** The stable release stays live while `course` is its next working version. */
+  liveStatus: Course["status"];
+  hasPendingRevision: boolean;
+  revisionEnabled: boolean;
 } | null> {
   const courseRow = await readCourseRow(slug);
   if (!courseRow) return null;
@@ -93,13 +101,30 @@ export async function loadBuilderCourse(
   if (moduleError) throw new Error(`lms_builder_modules_read_failed:${moduleError.message}`);
   if (lessonError) throw new Error(`lms_builder_lessons_read_failed:${lessonError.message}`);
 
+  const liveCourse = courseFromRows(courseRow, (moduleRows ?? []) as CourseRow[], (lessonRows ?? []) as CourseRow[]);
+  const pendingContent = courseRow.pending_content;
+  const hasPendingRevision = pendingContent !== null && pendingContent !== undefined;
+  let course = liveCourse;
+  if (hasPendingRevision) {
+    validateCourse(pendingContent, "pending_revision");
+    course = pendingContent as Course;
+  }
+
   return {
-    course: courseFromRows(courseRow, (moduleRows ?? []) as CourseRow[], (lessonRows ?? []) as CourseRow[]),
+    course,
+    liveCourse,
     authorId: (courseRow.author_id as string | null) ?? null,
     updatedAt: (courseRow.updated_at as string | null) ?? null,
-    reviewStatus: ((courseRow.review_status as CourseReviewStatus | undefined) ?? (courseRow.status === "published" ? "approved" : "draft")),
-    reviewNote: (courseRow.review_note as string | null) ?? null,
+    reviewStatus: hasPendingRevision
+      ? ((courseRow.pending_review_status as CourseReviewStatus | undefined) ?? "draft")
+      : ((courseRow.review_status as CourseReviewStatus | undefined) ?? (courseRow.status === "published" ? "approved" : "draft")),
+    reviewNote: hasPendingRevision
+      ? ((courseRow.pending_review_note as string | null) ?? null)
+      : ((courseRow.review_note as string | null) ?? null),
     reviewEnabled: "review_status" in courseRow,
+    liveStatus: liveCourse.status,
+    hasPendingRevision,
+    revisionEnabled: "pending_content" in courseRow,
   };
 }
 
@@ -185,9 +210,77 @@ export type SaveOutcome = {
   slug: string;
   status: Course["status"];
   blockers: ReturnType<typeof courseReadiness>["blockers"];
+  staged?: boolean;
 };
 
 export type CourseReviewStatus = "draft" | "in_review" | "changes_requested" | "approved";
+
+/**
+ * A course address is mutable only while it is still an inert working draft.
+ *
+ * The database hangs modules, lessons, offers and sources from the course UUID,
+ * so the row itself can be renamed safely. What cannot be renamed casually is
+ * an address already sent to learners or used by a checkout. The server keeps
+ * that boundary here rather than trusting the pencil's disabled state.
+ */
+export function courseSlugCanChange(input: {
+  course: Pick<Course, "slug" | "status" | "visibility">;
+  reviewStatus: CourseReviewStatus;
+}): boolean {
+  return input.course.status === "draft"
+    && (input.course.visibility ?? "hidden") === "hidden"
+    && input.reviewStatus === "draft"
+    && getSnapshotCourse(input.course.slug) === null;
+}
+
+/** The UI promise includes the learner check; the pure predicate above stays
+ * separate so lifecycle rules remain cheap to test without a database. */
+export async function builderCourseSlugCanChange(input: {
+  course: Pick<Course, "id" | "slug" | "status" | "visibility">;
+  reviewStatus: CourseReviewStatus;
+}): Promise<boolean> {
+  if (!courseSlugCanChange(input)) return false;
+  const { data, error } = await adminClient()
+    .from("lms_enrollments")
+    .select("id")
+    .eq("course_id", input.course.id)
+    .limit(1);
+  if (error) throw new Error(`lms_builder_slug_check_failed:${error.message}`);
+  return (data ?? []).length === 0;
+}
+
+export async function renameBuilderCourseSlug(currentSlug: string, requestedSlug: string): Promise<{ slug: string }> {
+  const loaded = await loadBuilderCourse(currentSlug);
+  if (!loaded) throw new Error("lms_builder_course_not_found");
+  if (!await builderCourseSlugCanChange({ course: loaded.course, reviewStatus: loaded.reviewStatus })) {
+    throw new Error("lms_builder_slug_locked");
+  }
+
+  const nextSlug = slugify(requestedSlug);
+  if (nextSlug === currentSlug) return { slug: currentSlug };
+
+  const db = adminClient();
+  const { data: collision, error: collisionError } = await db
+    .from("lms_courses")
+    .select("id")
+    .eq("slug", nextSlug)
+    .maybeSingle();
+  if (collisionError) throw new Error(`lms_builder_slug_check_failed:${collisionError.message}`);
+  if (collision) throw new Error("lms_builder_slug_conflict");
+
+  const programSlug = loaded.course.programSlug === currentSlug ? nextSlug : loaded.course.programSlug;
+  const { error } = await db
+    .from("lms_courses")
+    .update({ slug: nextSlug, program_slug: programSlug })
+    .eq("id", loaded.course.id);
+  if (error) {
+    if (error.message.includes("duplicate key") || error.message.includes("unique constraint")) {
+      throw new Error("lms_builder_slug_conflict");
+    }
+    throw new Error(`lms_builder_slug_write_failed:${error.message}`);
+  }
+  return { slug: nextSlug };
+}
 
 /**
  * The ownership boundary `writeCourseStructure` cannot enforce on its own.
@@ -247,6 +340,7 @@ export async function saveBuilderCourse(input: unknown): Promise<SaveOutcome> {
   validateCourse(input, "builder");
   const incoming = input as Course;
 
+  const loaded = await loadBuilderCourse(incoming.slug);
   const existing = await readCourseRow(incoming.slug);
   const nextVersion = existing ? Number(existing.version ?? 1) + 1 : incoming.version;
 
@@ -263,6 +357,53 @@ export async function saveBuilderCourse(input: unknown): Promise<SaveOutcome> {
   }
 
   const db = adminClient();
+
+  // Once a release exists, modules and lessons must never be written in place.
+  // Learners keep the relational live release; the author works on one complete
+  // next version stored beside it. The two explicitly presentational fields are
+  // the only direct patch path, defined and tested in publishedEditPolicy.ts.
+  if (loaded?.liveStatus === "published" && reviewEnabled) {
+    if (!loaded.revisionEnabled) throw new Error("lms_builder_revision_migration_required");
+
+    const direct = !loaded.hasPendingRevision ? immediatePublishedPatch(loaded.liveCourse ?? loaded.course, incoming) : null;
+    if (direct) {
+      const values: Record<string, unknown> = {
+        cover: direct.cover,
+        sort_order: direct.sortOrder,
+        status: direct.status,
+        version: nextVersion,
+      };
+      // Taking a course offline is an explicit release decision. It must not
+      // retain the approval that applied to the previous public release.
+      if (direct.status === "draft" && existing?.review_status !== "draft") {
+        Object.assign(values, { review_status: "draft", review_note: null, submitted_at: null, approved_at: null, approved_by: null });
+      }
+      const { error } = await db.from("lms_courses").update(values).eq("id", ownerCourseId);
+      if (error) throw new Error(`lms_builder_live_metadata_write_failed:${error.message}`);
+      return { slug: incoming.slug, status: direct.status, blockers: courseReadiness(incoming).blockers };
+    }
+
+    const revision: Course = {
+      ...incoming,
+      id: loaded.liveCourse.id,
+      slug: loaded.liveCourse.slug,
+      programSlug: loaded.liveCourse.programSlug,
+      status: "draft",
+      visibility: loaded.liveCourse.visibility,
+      version: Number(existing?.version ?? loaded.liveCourse.version) + 1,
+    };
+    await assertNestedIdsAreOwned(db, revision, ownerCourseId);
+    const { error } = await db.from("lms_courses").update({
+      pending_content: revision,
+      pending_review_status: "draft",
+      pending_review_note: null,
+      pending_submitted_at: null,
+      pending_updated_at: new Date().toISOString(),
+    }).eq("id", ownerCourseId);
+    if (error) throw new Error(`lms_builder_revision_write_failed:${error.message}`);
+    return { slug: revision.slug, status: "draft", blockers: courseReadiness(revision).blockers, staged: true };
+  }
+
   await assertNestedIdsAreOwned(db, incoming, ownerCourseId);
 
   // `StructureWriter` is the narrow shape authoring.ts needs, so it stays
@@ -295,6 +436,16 @@ export async function submitBuilderCourseForReview(slug: string): Promise<void> 
   const loaded = await loadBuilderCourse(slug);
   if (!loaded) throw new Error("lms_builder_course_not_found");
   if (!courseReadiness(loaded.course).ready) throw new Error("lms_builder_not_ready_for_review");
+  if (loaded.hasPendingRevision) {
+    if (loaded.reviewStatus === "in_review") throw new Error("lms_builder_review_already_submitted");
+    const { error } = await adminClient().from("lms_courses").update({
+      pending_review_status: "in_review",
+      pending_review_note: null,
+      pending_submitted_at: new Date().toISOString(),
+    }).eq("slug", slug);
+    if (error) throw new Error(`lms_builder_review_submit_failed:${error.message}`);
+    return;
+  }
   if (loaded.course.status !== "draft") throw new Error("lms_builder_review_published");
   const db = adminClient();
   const { error } = await db.from("lms_courses").update({
@@ -342,7 +493,10 @@ export async function createBuilderCourse(input: {
     if (listError) throw new Error(`lms_builder_list_failed:${listError.message}`);
     const existing = (existingRows ?? []) as { slug: string; title: string }[];
     const title = requestedTitle || nextDraftTitle(existing.map((row) => row.title));
-    const slug = uniqueSlug(title, existing.map((row) => row.slug));
+    // Default titles are Ukrainian prose; the address is a temporary working
+    // key, not a transliteration exercise. A short random suffix stays legible,
+    // avoids collisions and is explicitly editable before first release.
+    const slug = uniqueSlug(`new-course-${input.ids().replace(/[^a-z0-9]/gi, "").slice(0, 6).toLowerCase()}`, existing.map((row) => row.slug));
 
     const course = newCourseFromTemplate(input.ids, {
       slug,

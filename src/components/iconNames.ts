@@ -47,6 +47,8 @@ export const CW_ICON_NAMES = [
   "menu",
   "view-rows",
   "view-cards",
+  "edit",
+  "document",
   "settings",
   "close",
   "trash",
@@ -57,6 +59,8 @@ export const CW_ICON_NAMES = [
 ] as const;
 
 export const CW_GRAPHIC_NAMES = [
+  "ink-stroke",
+  "ink-ring",
   "dot",
   "orbit",
   "rail",

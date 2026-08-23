@@ -55,3 +55,21 @@ describe("nextDraftTitle", () => {
     expect(nextDraftTitle(["новий курс", "НОВИЙ КУРС 2"])).toBe("Новий курс 3");
   });
 });
+
+describe("courseSlugCanChange", () => {
+  it("allows only an unused hidden draft outside shipped snapshots", async () => {
+    const { courseSlugCanChange } = await import("./builder");
+    expect(courseSlugCanChange({
+      course: { slug: "new-course-k7m4", status: "draft", visibility: "hidden" },
+      reviewStatus: "draft",
+    })).toBe(true);
+    expect(courseSlugCanChange({
+      course: { slug: "new-course-k7m4", status: "published", visibility: "hidden" },
+      reviewStatus: "approved",
+    })).toBe(false);
+    expect(courseSlugCanChange({
+      course: { slug: "way21", status: "draft", visibility: "hidden" },
+      reviewStatus: "draft",
+    })).toBe(false);
+  });
+});

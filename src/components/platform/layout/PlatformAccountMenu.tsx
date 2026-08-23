@@ -6,6 +6,7 @@ import { createPortal } from "react-dom";
 import { usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 
+import { HandGraphic } from "@/components/Icon";
 import { supabaseClient } from "@/lib/supabaseClient";
 import styles from "@/components/platform/PlatformShellStyles";
 import {
@@ -48,6 +49,15 @@ function getUserInitial(session: Session | null) {
   const name =
     session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email;
   return typeof name === "string" && name.length > 0 ? name.charAt(0).toUpperCase() : "?";
+}
+
+function InkMenuLabel({ children }: { children: string }) {
+  return (
+    <span className={styles.menuInkLabel}>
+      {children}
+      <HandGraphic className={styles.menuInkMark} name="ink-stroke" size={36} />
+    </span>
+  );
 }
 
 export function PlatformAccountMenu({
@@ -255,16 +265,16 @@ export function PlatformAccountMenu({
            the builder lives on its own host today. */
         return offOrigin ? (
           <a key={app.key} href={href} {...shared}>
-            {app.label}
+            <InkMenuLabel>{app.label}</InkMenuLabel>
           </a>
         ) : (
           <Link key={app.key} href={href} {...shared}>
-            {app.label}
+            <InkMenuLabel>{app.label}</InkMenuLabel>
           </Link>
         );
       })}
       <button type="button" onClick={() => void signOut()}>
-        Вийти
+        <InkMenuLabel>Вийти</InkMenuLabel>
       </button>
     </>
   );
@@ -296,6 +306,7 @@ export function PlatformAccountMenu({
             getUserInitial(session)
           )}
         </span>
+        <HandGraphic className={styles.profileInkRing} name="ink-ring" size={48} />
         {compact ? null : <span className={styles.profileLabel}>Профіль</span>}
       </button>
       {open && anchor && typeof document !== "undefined"

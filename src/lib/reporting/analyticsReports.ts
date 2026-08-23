@@ -174,7 +174,7 @@ function productLabel(productCode: string | null | undefined): string {
     case "consult":
       return "Consult";
     case "ideal-body":
-      return "Ideal Body";
+      return "Природнє тіло з Аюрведою";
     case "herbs":
       return "Herbs";
     case "platform":

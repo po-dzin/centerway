@@ -376,32 +376,66 @@
 }
 
 .nav a::after {
-  content: "";
+  content: none;
+}
+
+.navText {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+}
+
+.navInkMark,
+.menuInkMark {
   position: absolute;
-  left: 0.95rem;
-  right: 0.95rem;
-  bottom: 0.42rem;
-  width: auto;
-  height: var(--cw-nav-marker-size);
-  border-radius: 999px;
-  background: var(--platform-header-nav-marker);
-  transform: scaleX(0.38);
-  transform-origin: center;
+  inset-inline: -0.2rem;
+  inset-block-end: -0.62rem;
+  width: calc(100% + 0.4rem);
+  height: var(--cw-ink-stroke-height);
+  overflow: visible;
+  color: var(--platform-header-nav-marker);
+  pointer-events: none;
   opacity: 0;
-  transition:
-    opacity 160ms ease,
-    transform 160ms ease;
+  transform: scaleX(0.38) rotate(-1.2deg);
+  transform-origin: center;
+  transition: opacity 160ms ease, transform 160ms ease;
 }
 
-.nav a:hover::after,
-.nav a:focus-visible::after {
+.nav a:hover .navInkMark,
+.nav a:focus-visible .navInkMark {
   opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale));
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) rotate(-1.2deg);
 }
 
-.nav a[aria-current="page"]::after {
+.nav a[aria-current="page"] .navInkMark {
   opacity: 1;
-  transform: scaleX(1);
+  transform: scaleX(1) rotate(-1.2deg);
+}
+
+.iconInkRing,
+.profileInkRing {
+  position: absolute;
+  z-index: 2;
+  inset: 50% auto auto 50%;
+  width: var(--cw-ink-ring-size);
+  height: var(--cw-ink-ring-size);
+  overflow: visible;
+  color: var(--platform-header-nav-marker);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.72) rotate(-4deg);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.menuButton:hover .iconInkRing,
+.menuButton:focus-visible .iconInkRing,
+.menuButton[aria-expanded="true"] .iconInkRing,
+.profileEntry:hover .profileInkRing,
+.profileEntry:focus-visible .profileInkRing,
+.profileEntry[aria-expanded="true"] .profileInkRing {
+  opacity: 0.9;
+  transform: translate(-50%, -50%) scale(1) rotate(-4deg);
 }
 
 .actions {
@@ -426,6 +460,7 @@
 }
 
 .profileEntry {
+  position: relative;
   min-height: var(--platform-utility-control-size);
   display: inline-flex;
   align-items: center;
@@ -595,20 +630,20 @@
    rather than running the full 17rem of the plate. */
 .profileMenu a::after,
 .profileMenu button::after {
-  content: "";
-  position: absolute;
-  left: 0.65rem;
-  right: 0.65rem;
-  bottom: 0.62rem;
-  height: var(--cw-nav-marker-size);
-  border-radius: 999px;
-  background: var(--cw-nav-marker);
-  transform: scaleX(0.38);
+  content: none;
+}
+
+.menuInkLabel {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+}
+
+.menuInkMark {
+  color: var(--cw-nav-marker);
+  inset-block-end: -0.52rem;
   transform-origin: left center;
-  opacity: 0;
-  transition:
-    opacity 160ms ease,
-    transform 160ms ease;
 }
 
 .profileMenu a:hover,
@@ -620,12 +655,12 @@
   outline: none;
 }
 
-.profileMenu a:hover::after,
-.profileMenu button:hover::after,
-.profileMenu a:focus-visible::after,
-.profileMenu button:focus-visible::after {
+.profileMenu a:hover .menuInkMark,
+.profileMenu button:hover .menuInkMark,
+.profileMenu a:focus-visible .menuInkMark,
+.profileMenu button:focus-visible .menuInkMark {
   opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale));
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) rotate(-1.2deg);
 }
 
 /* "You are here": the mark run to full, plus the weight. Both, because weight
@@ -639,9 +674,9 @@
   font-weight: 850;
 }
 
-.profileMenu a[data-current]::after {
+.profileMenu a[data-current] .menuInkMark {
   opacity: 1;
-  transform: scaleX(1);
+  transform: scaleX(1) rotate(-1.2deg);
 }
 
 /* THE NIGHT SIDE OF THE SAME PLATE. The bar is tone-managed — it samples what
@@ -727,10 +762,20 @@
 
 .profileWrapMobile a[data-current] {
   font-weight: 850;
-  text-decoration: underline;
-  text-decoration-thickness: 2px;
-  text-underline-offset: 0.32em;
-  text-decoration-color: var(--cw-platform-accent);
+  text-decoration: none;
+}
+
+.profileWrapMobile a:hover .menuInkMark,
+.profileWrapMobile button:hover .menuInkMark,
+.profileWrapMobile a:focus-visible .menuInkMark,
+.profileWrapMobile button:focus-visible .menuInkMark {
+  opacity: var(--cw-nav-marker-hover-opacity);
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) rotate(-1.2deg);
+}
+
+.profileWrapMobile a[data-current] .menuInkMark {
+  opacity: 1;
+  transform: scaleX(1) rotate(-1.2deg);
 }
 
 .mobileProfileSlot {
@@ -743,7 +788,7 @@
   position: relative;
   display: none;
   place-items: center;
-  overflow: hidden;
+  overflow: visible;
   isolation: isolate;
   appearance: none;
   -webkit-appearance: none;

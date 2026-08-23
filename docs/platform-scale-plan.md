@@ -45,7 +45,7 @@ Principles that follow:
 1. **Every node feeds identity.** A test result, a lead, a purchase — each should create/enrich a platform profile. Today only purchases and the dosha test do; landing leads live in a table nobody logs into.
 2. **The network stays thin, the platform gets deep.** Landings sell one decision each (invariant: one primary CTA); the platform owns everything after the decision.
 3. **`dosha` is the strategic asset.** It is the only free, shareable, segmenting entry — the top of the funnel and the personalization key for everything downstream (protocol per constitution is the product's core claim).
-4. **Scaling the network = adding nodes, not pages.** `ideal-body` is the obvious 6th node: it already has a platform page and a lead code, but no funnel host. Same recipe as way21 (host → static landing → checkout/lead).
+4. **Scaling the network = adding nodes, not pages.** `ideal-body` (`Природнє тіло з Аюрведою`) is the obvious 6th node: it has a platform page, lead code and LMS course, but no funnel host. Same recipe as way21 (host → static landing → checkout/lead).
 
 ## 3. Phased plan to market
 
@@ -87,7 +87,7 @@ Deliver `reset-day` first (3 days, small content), then `way21` (21 days, 3 phas
 
 ### Phase 3 — Full product grid + recurring layer (12–20 weeks)
 
-- `ideal-body` funnel node (6th landing, same static recipe) + LMS course.
+- `ideal-body` funnel node (6th landing, same static recipe). LMS course completed 2026-08-23.
 - Alumni membership: herbs replenishment + seasonal group cleanses (way21 has "сезонні очищення" webinars already) + community — the recurring-revenue layer on top of one-off courses.
 - Consult productized: paid tiers (single / package), calendar booking instead of manual scheduling.
 - EN locale for the platform shell (products.ts already carries en strings).

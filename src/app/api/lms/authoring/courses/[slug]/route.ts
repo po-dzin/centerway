@@ -1,6 +1,7 @@
 /**
  * GET    /api/lms/authoring/courses/:slug — the full authored course, from the DB.
  * PUT    /api/lms/authoring/courses/:slug — write it back.
+ * PATCH  /api/lms/authoring/courses/:slug — rename an unused draft address.
  * DELETE /api/lms/authoring/courses/:slug — remove it, if nothing is owed to anyone.
  *
  * The PUT body is a whole Course, not a patch. That is deliberate and it is the
@@ -17,7 +18,7 @@ import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
-import { deleteBuilderCourse, loadBuilderCourse, saveBuilderCourse } from "@/lib/lms/builder";
+import { builderCourseSlugCanChange, deleteBuilderCourse, loadBuilderCourse, renameBuilderCourseSlug, saveBuilderCourse } from "@/lib/lms/builder";
 import { COURSE_LIST_TAG, PURGE, courseTag } from "@/lib/lms/liveCatalog";
 import { canEditCourse, resolveBuilderIdentity } from "@/lib/lms/builderAccess";
 import { courseReadiness } from "@/lms-core";
@@ -40,6 +41,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     const readiness = courseReadiness(loaded.course);
     return NextResponse.json({
       course: loaded.course,
+      liveStatus: loaded.liveStatus,
+      hasPendingRevision: loaded.hasPendingRevision,
       updatedAt: loaded.updatedAt,
       readiness: { ready: readiness.ready, blockers: readiness.blockers },
       review: {
@@ -47,10 +50,40 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
         note: loaded.reviewNote,
         enabled: loaded.reviewEnabled,
       },
+      slugEditable: await builderCourseSlugCanChange({ course: loaded.course, reviewStatus: loaded.reviewStatus }),
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown_error";
     return NextResponse.json({ error: message }, { status: 500 });
+  }
+}
+
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ slug: string }> }) {
+  const user = await requireUserFromBearer(req.headers.get("authorization"));
+  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  const { slug } = await params;
+  const identity = await resolveBuilderIdentity(user);
+  const existing = await loadBuilderCourse(slug).catch(() => null);
+  if (!existing || !canEditCourse(identity, existing.authorId)) {
+    return NextResponse.json({ error: "course_not_found" }, { status: 404 });
+  }
+
+  const body = (await req.json().catch(() => null)) as { slug?: unknown } | null;
+  if (typeof body?.slug !== "string" || body.slug.trim() === "") {
+    return NextResponse.json({ error: "lms_builder_missing_slug" }, { status: 422 });
+  }
+
+  try {
+    const result = await renameBuilderCourseSlug(slug, body.slug);
+    revalidateTag(courseTag(slug), PURGE);
+    revalidateTag(courseTag(result.slug), PURGE);
+    revalidateTag(COURSE_LIST_TAG, PURGE);
+    return NextResponse.json(result);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "unknown_error";
+    const isAuthorError = message.startsWith("lms_");
+    return NextResponse.json({ error: message }, { status: isAuthorError ? 422 : 500 });
   }
 }
 

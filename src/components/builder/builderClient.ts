@@ -33,9 +33,13 @@ export type BuilderCourseSummary = {
 
 export type BuilderCourseDto = {
   course: Course;
+  /** `course` may be the next version; this is the release learners still see. */
+  liveStatus: Course["status"];
+  hasPendingRevision: boolean;
   updatedAt: string | null;
   readiness: { ready: boolean; blockers: ReadinessBlocker[] };
   review: { status: "draft" | "in_review" | "changes_requested" | "approved"; note: string | null; enabled: boolean };
+  slugEditable: boolean;
 };
 
 export type CourseImportPreview = {
@@ -183,6 +187,13 @@ export function saveCourse(
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}`, {
     method: "PUT",
     body: JSON.stringify({ course }),
+  });
+}
+
+export function renameCourseSlug(slug: string, nextSlug: string): Promise<BuilderResult<{ slug: string }>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}`, {
+    method: "PATCH",
+    body: JSON.stringify({ slug: nextSlug }),
   });
 }
 
