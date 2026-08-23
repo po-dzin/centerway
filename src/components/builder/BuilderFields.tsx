@@ -150,10 +150,23 @@ function YoutubeField({
   value: string;
   onChange: (path: (string | number)[], value: unknown) => void;
 }) {
-  // Seeded from the stored id and only ever replaced by the author. Deriving it
-  // from `value` on every render would rewrite the address they are in the
-  // middle of typing back into a bare id under the caret.
+  // Seeded from the stored id and only ever replaced by the author WHILE
+  // FOCUSED. Deriving it from `value` on every render would rewrite the
+  // address they are in the middle of typing back into a bare id under the
+  // caret. But `value` can also change out from under this field with no
+  // caret in it at all — undo/redo, a block dropped by drag — and unlike
+  // `BuilderInlineEditor`, this is a plain input with no focus/blur hook of
+  // its own to re-seed from. `focused` gives it one: the render-phase pattern
+  // React's own docs recommend for "adjust state when a prop changes" — not an
+  // effect, which would commit one render late and flash the stale value.
   const [draft, setDraft] = useState(value);
+  const [seededFrom, setSeededFrom] = useState(value);
+  const [focused, setFocused] = useState(false);
+
+  if (value !== seededFrom && !focused) {
+    setSeededFrom(value);
+    setDraft(value);
+  }
 
   const id = youtubeIdFrom(draft);
 
@@ -166,6 +179,8 @@ function YoutubeField({
         inputMode="url"
         placeholder="https://youtu.be/…"
         value={draft}
+        onFocus={() => setFocused(true)}
+        onBlur={() => setFocused(false)}
         onChange={(event) => {
           const next = event.target.value;
           setDraft(next);

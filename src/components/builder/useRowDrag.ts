@@ -129,9 +129,17 @@ export function useRowDrag(
         draggable: armed === key(ref) || isDragging,
         onDragStart: (event: DragEvent) => {
           if (armed !== key(ref)) {
-            // Something else in the row started this — a link, or selected
-            // text. Not our gesture.
-            event.preventDefault();
+            // A NESTED draggable row — a lesson inside its draggable module, a
+            // rich-text node inside its draggable block — starts its own drag,
+            // and the browser bubbles that dragstart up to every ancestor's
+            // handler, including this one, which is never armed for a gesture
+            // that began on a child. `target !== currentTarget` is how a
+            // bubbled event is told apart from one that began here: only a
+            // drag that genuinely started on THIS row without being armed —
+            // a link, selected text — gets cancelled.
+            if (event.target === event.currentTarget) {
+              event.preventDefault();
+            }
             return;
           }
           event.dataTransfer.effectAllowed = "move";

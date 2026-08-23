@@ -168,12 +168,27 @@ export function useCourseHistory(): CourseHistory {
     const onKeyDown = (event: KeyboardEvent) => {
       if (!(event.metaKey || event.ctrlKey) || event.altKey) return;
       const key = event.key.toLowerCase();
+      if (key !== "z" && !(key === "y" && !event.shiftKey)) return;
+      event.preventDefault();
+
+      /**
+       * A rich-text field (`BuilderInlineEditor`) is UNCONTROLLED while
+       * focused — it has to be, or every keystroke would fight React for the
+       * caret — so it only reads the reverted value back out of props once it
+       * is no longer the focused element. Without this, undo would rewrite
+       * `history.present` while the field kept showing its pre-undo DOM, and
+       * the next keystroke would emit that stale text straight back into the
+       * model, erasing the undo it just did. A plain `<input>`/`<textarea>`
+       * has no such gap — its value prop is always live — so only a
+       * contenteditable caret is blurred here.
+       */
+      const active = document.activeElement;
+      if (active instanceof HTMLElement && active.isContentEditable) active.blur();
+
       if (key === "z") {
-        event.preventDefault();
         if (event.shiftKey) redo();
         else undo();
-      } else if (key === "y" && !event.shiftKey) {
-        event.preventDefault();
+      } else {
         redo();
       }
     };
