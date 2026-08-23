@@ -26,7 +26,7 @@ export type BuilderCourseSummary = {
   /** -1 means the stored rows do not currently form a valid course. */
   blockerCount: number;
   updatedAt: string | null;
-  cover: { src: string; alt: string } | null;
+  cover: { src: string; alt: string; cropY?: number } | null;
   theme: CourseTheme | null;
   sortOrder: number | null;
 };

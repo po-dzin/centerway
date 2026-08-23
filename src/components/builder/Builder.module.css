@@ -1448,6 +1448,34 @@
   background: var(--cw-mat-surface);
 }
 
+.coverCropPreview {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  display: block;
+  object-fit: cover;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.cropControl {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  color: var(--cw-platform-muted);
+  font-size: 0.82rem;
+}
+
+.cropRange {
+  width: 100%;
+  accent-color: var(--cw-sem-guide-primary);
+}
+
+.cropRange:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
 .previewEmpty {
   margin: 0;
   color: var(--cw-platform-muted);
@@ -2407,7 +2435,10 @@
   color: var(--cw-nav-marker);
   pointer-events: none;
   opacity: 0;
-  transform: scaleX(0.58) rotate(-1.2deg);
+  /* The line uses the same 36px source grid as the circular selector, but is
+     rendered in a 0.85rem-tall band. Scale its ink vertically so the selected
+     nav item has the same perceived stroke weight as the selected icon. */
+  transform: scaleX(0.58) scaleY(3.4) rotate(-1.2deg);
   transform-origin: center;
   transition: opacity 160ms ease, transform 160ms ease;
 }
@@ -2421,12 +2452,12 @@
 .courseMobileNavItem:hover .inkMark,
 .courseMobileNavItem:focus-visible .inkMark {
   opacity: 1;
-  transform: scaleX(1) rotate(-1.2deg);
+  transform: scaleX(1) scaleY(3.4) rotate(-1.2deg);
 }
 
 .courseMobileNavItem[aria-current="page"] .inkMark {
   opacity: 1;
-  transform: scaleX(1) rotate(-1.2deg);
+  transform: scaleX(1) scaleY(3.4) rotate(-1.2deg);
 }
 
 .courseRail {
@@ -2473,12 +2504,12 @@
 .courseRailLink:hover .inkMark,
 .courseRailLink:focus-visible .inkMark {
   opacity: 1;
-  transform: scaleX(1) rotate(-1.2deg);
+  transform: scaleX(1) scaleY(3.4) rotate(-1.2deg);
 }
 
 .courseRailLink[aria-current="page"] .inkMark {
   opacity: 1;
-  transform: scaleX(1) rotate(-1.2deg);
+  transform: scaleX(1) scaleY(3.4) rotate(-1.2deg);
 }
 
 .courseRailStatus {

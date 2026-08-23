@@ -38,11 +38,18 @@ export function PwaInstallRow({ copy }: { copy: ReturnType<typeof getCabinetCopy
   const ownsInstall = useOwnsPersonalSurfaces();
 
   if (!ownsInstall) return null;
-  if (!install.canPrompt && !install.needsIosInstructions) return null;
+
+  if (install.isStandalone) {
+    return (
+      <div id="app-install" className={styles.installRow}>
+        <p className={styles.installRowText}>{copy.installInstalledTitle}</p>
+      </div>
+    );
+  }
 
   if (install.canPrompt) {
     return (
-      <div className={styles.installRow}>
+      <div id="app-install" className={styles.installRow}>
         <p className={styles.installRowText}>{copy.installTitle}</p>
         <button className={styles.actionGhost} type="button" onClick={() => void install.install()}>
           {copy.installAction}
@@ -51,35 +58,47 @@ export function PwaInstallRow({ copy }: { copy: ReturnType<typeof getCabinetCopy
     );
   }
 
+  if (install.needsIosInstructions) {
+    return (
+      <details className={styles.installFold}>
+        <summary id="app-install" className={styles.installRow}>
+          <span className={styles.installRowText}>{copy.installTitle}</span>
+        </summary>
+        <p className={styles.cardText}>{copy.installIosLead}</p>
+        <ul className={styles.metaList}>
+          {copy.installIosSteps.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ul>
+      </details>
+    );
+  }
+
   return (
-    <details className={styles.installFold}>
-      <summary className={styles.installRow}>
-        <span className={styles.installRowText}>{copy.installTitle}</span>
-      </summary>
-      <p className={styles.cardText}>{copy.installIosLead}</p>
-      <ul className={styles.metaList}>
-        {copy.installIosSteps.map((step) => (
-          <li key={step}>{step}</li>
-        ))}
-      </ul>
-    </details>
+    <div id="app-install" className={styles.installRow}>
+      <p className={styles.installRowText}>{copy.installBrowserLead}</p>
+    </div>
   );
 }
 
 /**
- * The footer's entry. Only where there is a real one-tap prompt to give: a
- * footer link that opens a two-step instruction is a link that does not do what
- * a footer link does, and iOS readers are served by the profile row instead.
+ * The footer always keeps the installation route visible. Where the browser
+ * exposes its native prompt it remains a one-tap action; elsewhere it points to
+ * the last account row, which names the browser-specific next step.
  */
-export function PwaInstallFooterEntry({ label }: { label: string }) {
+export function PwaInstallFooterEntry({ label, fallbackHref }: { label: string; fallbackHref: string }) {
   const install = usePwaInstall();
   const ownsInstall = useOwnsPersonalSurfaces();
 
-  if (!ownsInstall || !install.canPrompt) return null;
+  if (!ownsInstall || install.isStandalone) return null;
 
-  return (
-    <button type="button" onClick={() => void install.install()}>
-      {label}
-    </button>
-  );
+  if (install.canPrompt) {
+    return (
+      <button type="button" onClick={() => void install.install()}>
+        {label}
+      </button>
+    );
+  }
+
+  return <a href={fallbackHref}>{label}</a>;
 }

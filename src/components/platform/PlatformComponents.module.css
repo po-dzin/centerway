@@ -544,17 +544,15 @@
   }
 }
 
-/* Desktop takes the storefront footer's own shape: a broader brand track and
-   two equal link tracks across the container. `align-items: start` matters because the third track is
-   usually one row shorter — the install entry removes itself when the browser
-   has no prompt to give — and a stretched empty track would pull the row's
-   baseline down with nothing in it. */
+/* On tablet and desktop the personal footer follows the same three-track
+   measure as the course shelf above it. The brand is content, not a reason to
+   widen its grid cell and break the page's left/right rhythm. */
 @media (min-width: 901px) {
   .footerGridPersonal {
-    grid-template-columns: minmax(0, 1.45fr) repeat(2, minmax(0, 1fr));
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     justify-content: stretch;
     align-items: start;
-    column-gap: clamp(2rem, 5vw, 4.5rem);
+    column-gap: var(--cw-space-md);
   }
 }
 

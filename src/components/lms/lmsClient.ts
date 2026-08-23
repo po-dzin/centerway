@@ -64,6 +64,8 @@ export type LearnerShelfCourseDto = {
   access: "enrolled" | "available" | "locked";
   lockReason: "not_entitled" | "expired" | null;
   startedAt: string | null;
+  /** Last successful lesson interaction; the dashboard's resume order uses this. */
+  lastActivityAt: string | null;
   standing: CourseViewDto["standing"] | null;
   currentLessonSlug: string | null;
   currentLessonTitle: string | null;
@@ -72,7 +74,7 @@ export type LearnerShelfCourseDto = {
    * Absent for a course that has none — the shelf draws its own mark instead
    * rather than reserving a grey rectangle.
    */
-  cover: { src: string; alt: string } | null;
+  cover: { src: string; alt: string; cropY?: number } | null;
 };
 
 export type LearnerShelfDto = { courses: LearnerShelfCourseDto[] };

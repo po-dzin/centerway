@@ -343,6 +343,8 @@ export type LearnerShelfEntry = {
   access: "enrolled" | "available" | "locked";
   lockReason: "not_entitled" | "expired" | null;
   startedAt: string | null;
+  /** Latest real learner interaction in this course, derived from progress events. */
+  lastActivityAt: string | null;
   standing: CourseStandingSummary | null;
   currentLessonSlug: string | null;
   currentLessonTitle: string | null;
@@ -390,6 +392,7 @@ export async function listLearnerCourses(
           access: "enrolled",
           lockReason: null,
           startedAt: enrollment.started_at,
+          lastActivityAt: progress.lastActivityAt,
           standing: summarizeStanding(course, progress, learner),
           currentLessonSlug: current?.slug ?? null,
           currentLessonTitle: current?.title ?? null,
@@ -403,6 +406,7 @@ export async function listLearnerCourses(
         access: entitlement.entitled ? "available" : "locked",
         lockReason: entitlement.entitled ? null : entitlement.reason === "expired" ? "expired" : "not_entitled",
         startedAt: null,
+        lastActivityAt: null,
         standing: null,
         currentLessonSlug: null,
         currentLessonTitle: null,

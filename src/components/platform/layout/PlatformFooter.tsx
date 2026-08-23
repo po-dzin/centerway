@@ -91,10 +91,7 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
             <a href={SUPPORT_BOT_URL} target="_blank" rel="noopener noreferrer">
               Підтримка
             </a>
-            {/* Renders itself away when the browser offers no prompt, which is
-                most visits — so this track has to survive being empty without
-                collapsing the two beside it. */}
-            <PwaInstallFooterEntry label={INSTALL_LABEL} />
+            <PwaInstallFooterEntry label={INSTALL_LABEL} fallbackHref={`${profileHref}#app-install`} />
           </div>
         </div>
       </footer>
@@ -118,7 +115,7 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
         <div className={`${styles.footerLinks} ${styles.footerLegal}`}>
           <Link href={publicOfferHref}>Публічний договір</Link>
           <Link href={privacyHref}>Політика конфіденційності</Link>
-          <PwaInstallFooterEntry label={INSTALL_LABEL} />
+          <PwaInstallFooterEntry label={INSTALL_LABEL} fallbackHref={`${profileHref}#app-install`} />
         </div>
         <div className={`${styles.footerLinks} ${styles.footerSocials}`}>
           <a href={`tel:${contact.phone.replace(/\s+/g, "")}`}>{contact.phone}</a>

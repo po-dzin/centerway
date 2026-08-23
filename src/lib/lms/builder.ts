@@ -50,7 +50,7 @@ export type BuilderCourseSummary = {
   blockerCount: number;
   updatedAt: string | null;
   /** Card face for the grid view — the author's own image, when they set one. */
-  cover: { src: string; alt: string } | null;
+  cover: { src: string; alt: string; cropY?: number } | null;
   theme: CourseTheme | null;
   sortOrder: number | null;
 };
@@ -185,7 +185,7 @@ export async function listBuilderCourses(filter: { authorId?: string }): Promise
         lessonCount: lessonCounts.get(row.id as string) ?? 0,
         blockerCount,
         updatedAt: (row.updated_at as string | null) ?? null,
-        cover: (row.cover as { src: string; alt: string } | null) ?? null,
+        cover: (row.cover as { src: string; alt: string; cropY?: number } | null) ?? null,
         theme: (row.theme as CourseTheme | null) ?? null,
         sortOrder: row.sort_order === null || row.sort_order === undefined ? null : Number(row.sort_order),
       };

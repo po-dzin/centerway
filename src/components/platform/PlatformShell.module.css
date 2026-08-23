@@ -403,7 +403,9 @@
   color: var(--platform-header-nav-marker);
   pointer-events: none;
   opacity: 0;
-  transform: scaleX(0.38) rotate(-1.2deg);
+  /* The line and the circular selector share the same source stroke. This
+     narrow band needs a vertical scale to preserve that weight on screen. */
+  transform: scaleX(0.38) scaleY(3.4) rotate(-1.2deg);
   transform-origin: center;
   transition: opacity 160ms ease, transform 160ms ease;
 }
@@ -411,12 +413,12 @@
 .nav a:hover .navInkMark,
 .nav a:focus-visible .navInkMark {
   opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale)) rotate(-1.2deg);
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-1.2deg);
 }
 
 .nav a[aria-current="page"] .navInkMark {
   opacity: 1;
-  transform: scaleX(1) rotate(-1.2deg);
+  transform: scaleX(1) scaleY(3.4) rotate(-1.2deg);
 }
 
 .iconInkRing,
@@ -677,7 +679,7 @@
 .profileMenu a:focus-visible .menuInkMark,
 .profileMenu button:focus-visible .menuInkMark {
   opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale)) rotate(-1.2deg);
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-1.2deg);
 }
 
 /* "You are here": the mark run to full, plus the weight. Both, because weight
@@ -693,7 +695,7 @@
 
 .profileMenu a[data-current] .menuInkMark {
   opacity: 1;
-  transform: scaleX(1) rotate(-1.2deg);
+  transform: scaleX(1) scaleY(3.4) rotate(-1.2deg);
 }
 
 /* THE NIGHT SIDE OF THE SAME PLATE. The bar is tone-managed — it samples what
