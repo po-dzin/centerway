@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import { HandGraphic, Icon } from "@/components/Icon";
 import {
@@ -26,7 +25,6 @@ import { BuilderCourseSettings } from "./BuilderCourseSettings";
 import { BuilderBlockers } from "./BuilderBlockers";
 import {
   exportLessonFile,
-  importLessonFiles,
   loadCourse,
   renameCourseSlug,
   saveCourse,
@@ -43,6 +41,7 @@ import { landingIndex, useRowDrag, type DragRef, type DropEdge, type RowDrag } f
 import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
+import { lessonDocumentFailureCopy } from "./lessonDocumentCopy";
 
 type State =
   | { status: "loading" }
@@ -274,45 +273,6 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     [dirty]
   );
 
-  async function importLessons(moduleIndex: number, files: File[]) {
-    if (!files.length || busy) return;
-    setBusy(true);
-    setNote(null);
-    const result = await importLessonFiles(slug, files);
-    setBusy(false);
-    if (!result.ok) {
-      setNote(lessonDocumentFailureCopy(result.detail, "Не вдалося прочитати файли уроків."));
-      return;
-    }
-
-    history.edit(null, (current) => {
-      const taken = current.modules.flatMap((entry) => entry.lessons.map((lesson) => lesson.slug));
-      let dayIndex = nextDayIndex(current);
-      return {
-        ...current,
-        modules: renumber(current.modules.map((entry, index) => {
-          if (index !== moduleIndex) return entry;
-          const imported = result.data.lessons.map((lesson, importedIndex) => {
-            const lessonSlug = uniqueSlug(lesson.title, taken);
-            taken.push(lessonSlug);
-            const nextLesson: Lesson = {
-              ...lesson,
-              slug: lessonSlug,
-              order: entry.lessons.length + importedIndex + 1,
-              dayIndex: entry.reference ? undefined : dayIndex,
-            };
-            if (!entry.reference && dayIndex !== undefined) dayIndex += 1;
-            return nextLesson;
-          });
-          return { ...entry, lessons: [...entry.lessons, ...imported] };
-        })),
-      };
-    });
-    setNote(
-      `${result.data.lessons.length} ${plural(result.data.lessons.length, "урок додано", "уроки додано", "уроків додано")}. Перевірте структуру й збережіть курс.`,
-    );
-  }
-
   async function exportLesson(lesson: Lesson, format: LessonDocumentFormat) {
     if (busy) return;
     setBusy(true);
@@ -471,9 +431,19 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     <BuilderShell
       trail={[...trail, { label: trailTitle(course.title, "Курс без назви") }]}
       tools={
-        <button className={styles.quietAction} type="button" onClick={preview} disabled={busy} title={dirty ? "Спочатку збережіть зміни" : "Відкрити як учень"}>
-          Переглянути
-        </button>
+        <>
+          <button className={styles.quietAction} type="button" onClick={preview} disabled={busy} title={dirty ? "Спочатку збережіть зміни" : "Відкрити як учень"}>
+            Переглянути
+          </button>
+          <button
+            className={`${styles.commitAction} ${styles.courseHeaderSave}`}
+            type="button"
+            onClick={() => void save()}
+            disabled={busy || !dirty}
+          >
+            {busy ? "Зберігаємо…" : "Зберегти зміни"}
+          </button>
+        </>
       }
       aside={
         <BuilderCourseRail
@@ -636,7 +606,6 @@ export function BuilderCourseView({ slug }: { slug: string }) {
               onNote={setNote}
               onOpenLesson={openLesson}
               busy={busy}
-              onImportLessons={(files) => importLessons(moduleIndex, files)}
               onExportLesson={exportLesson}
             />
           ))}
@@ -869,7 +838,6 @@ function ModuleEditor({
   onNote,
   onOpenLesson,
   busy,
-  onImportLessons,
   onExportLesson,
 }: {
   course: Course;
@@ -883,11 +851,9 @@ function ModuleEditor({
   /** Answers whether the row may follow its own href, or is being held back. */
   onOpenLesson: (href: string) => "allow" | "held";
   busy: boolean;
-  onImportLessons: (files: File[]) => Promise<void>;
   onExportLesson: (lesson: Lesson, format: LessonDocumentFormat) => Promise<void>;
 }) {
   const isOnlyModule = course.modules.length === 1;
-  const importPicker = useRef<HTMLInputElement>(null);
   const [collapsed, setCollapsed] = useState(false);
 
   /**
@@ -1013,26 +979,26 @@ function ModuleEditor({
           {...lessonDrag.rowProps(lessonRow)}
         >
           <BuilderGrip drag={lessonDrag} row={lessonRow} label={lesson.title} />
-          {/* Still a link, not a button: the href is real for every lesson the
-              server has, so middle-click and "open in new tab" keep working.
-              The click is intercepted only while there is unsaved structure. */}
-          <Link
-            className={styles.lessonRow}
-            href={`/build/${course.slug}/${lesson.slug}`}
-            title={lesson.title}
-            onClick={(event) => {
-              if (onOpenLesson(`/build/${course.slug}/${lesson.slug}`) === "held") event.preventDefault();
-            }}
-          >
+          <div className={styles.lessonRow}>
             <Icon className={styles.lessonIcon} name="document" size={20} />
             <span className={styles.lessonText}>
-              <span className={styles.lessonName}>{lesson.title}</span>
+              <BuilderEditableTitle
+                compact
+                level="h4"
+                value={lesson.title}
+                label={`Редагувати назву уроку ${lessonIndex + 1}`}
+                href={`/build/${course.slug}/${lesson.slug}`}
+                onLinkClick={(event) => {
+                  if (onOpenLesson(`/build/${course.slug}/${lesson.slug}`) === "held") event.preventDefault();
+                }}
+                onChange={(value) => onChange(["modules", moduleIndex, "lessons", lessonIndex, "title"], value)}
+              />
               <span className={styles.lessonMeta}>
                 {lesson.dayIndex ? `День ${lesson.dayIndex} · ` : ""}
                 {lesson.blocks.length} {plural(lesson.blocks.length, "блок", "блоки", "блоків")}
               </span>
             </span>
-          </Link>
+          </div>
           <BuilderMenu
             label={`Дії з уроком «${lesson.title}»`}
             items={[
@@ -1088,22 +1054,6 @@ function ModuleEditor({
         >
           <Icon name="plus" size={20} /> Новий урок
         </button>
-        <button className={styles.quietAction} type="button" disabled={busy} onClick={() => importPicker.current?.click()}>
-          <Icon name="import" size={20} /> {busy ? "Опрацьовуємо…" : "Імпорт"}
-        </button>
-        <input
-          ref={importPicker}
-          className={styles.visuallyHidden}
-          type="file"
-          accept=".md,.markdown,.docx,.txt,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-          multiple
-          tabIndex={-1}
-          onChange={(event) => {
-            const files = Array.from(event.target.files ?? []);
-            event.target.value = "";
-            if (files.length) void onImportLessons(files);
-          }}
-        />
       </div>
       </>}
     </div>
@@ -1126,16 +1076,4 @@ function reviewStatusLabel(data: BuilderCourseDto): string {
   if (data.review.status === "in_review") return "На перевірці";
   if (data.review.status === "changes_requested") return "Потрібні зміни";
   return "Перевірка не розпочата";
-}
-
-function lessonDocumentFailureCopy(detail: string | undefined, fallback: string): string {
-  const messages: Record<string, string> = {
-    lms_lesson_document_unsupported_format: "Підтримуються лише Markdown (.md), Word (.docx) і текст (.txt).",
-    lms_lesson_document_too_large: "Один із файлів завеликий. Максимум — 5 МБ на урок.",
-    lms_lesson_document_too_many_files: "За один раз можна додати не більше 20 уроків.",
-    lms_lesson_document_empty: "У документі немає тексту, який можна перетворити на урок.",
-    lms_lesson_document_invalid_docx: "Word-файл пошкоджений або має неочікувану структуру.",
-    lms_lesson_document_invalid_utf8: "Текстовий файл має бути збережений у UTF-8.",
-  };
-  return (detail && messages[detail]) || fallback;
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/Icon";
 import {
@@ -28,7 +28,7 @@ import { FieldInput } from "./BuilderFields";
 import { BuilderInlineEditor, type SlashCommand } from "./BuilderInlineEditor";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
 import { BlockPreview } from "./BuilderBlockPreview";
-import { loadCourse, saveCourse, type BuilderFailure } from "./builderClient";
+import { importLessonFiles, loadCourse, saveCourse, type BuilderFailure } from "./builderClient";
 import { BuilderGrip } from "./BuilderGrip";
 import { BuilderHistory } from "./BuilderHistory";
 import { useCourseHistory } from "./useCourseHistory";
@@ -44,6 +44,7 @@ import {
 } from "./blockFields";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
+import { lessonDocumentFailureCopy } from "./lessonDocumentCopy";
 
 type State =
   | { status: "loading" }
@@ -79,6 +80,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const [note, setNote] = useState<string | null>(null);
   const [contentsOpen, setContentsOpen] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const importPicker = useRef<HTMLInputElement>(null);
   /** The block just created, so the caret can land in it instead of being aimed. */
   const [freshBlockId, setFreshBlockId] = useState<string | null>(null);
 
@@ -183,6 +185,35 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     );
     return true;
   }, [busy, course, history, slug]);
+
+  const importIntoLesson = useCallback(
+    async (file: File) => {
+      if (!located || busy) return;
+      setBusy(true);
+      setNote(null);
+      const result = await importLessonFiles(slug, [file]);
+      setBusy(false);
+      if (!result.ok || !result.data.lessons[0]) {
+        setNote(lessonDocumentFailureCopy(result.ok ? undefined : result.detail, "Не вдалося імпортувати документ в урок."));
+        return;
+      }
+
+      const imported = result.data.lessons[0];
+      const path = ["modules", located.moduleIndex, "lessons", located.lessonIndex];
+      history.edit(null, (current) => {
+        const existing = readPath(current, path) as Lesson;
+        return writePath(current, path, {
+          ...existing,
+          title: imported.title,
+          summary: imported.summary,
+          durationMin: imported.durationMin,
+          blocks: imported.blocks,
+        });
+      });
+      setNote(`Імпортовано «${file.name}». Перевірте урок і збережіть зміни.`);
+    },
+    [busy, history, located, slug]
+  );
 
   /**
    * In-builder navigation, with the unsaved edit accounted for.
@@ -325,7 +356,24 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       </div>
 
       <section className={styles.panel}>
-        <h2 className={styles.panelTitle}>Урок</h2>
+        <div className={styles.panelHead}>
+          <h2 className={styles.panelTitle}>Урок</h2>
+          <button className={styles.quietAction} type="button" disabled={busy} onClick={() => importPicker.current?.click()}>
+            <Icon name="import" size={20} /> Імпорт
+          </button>
+          <input
+            ref={importPicker}
+            className={styles.visuallyHidden}
+            type="file"
+            accept=".md,.markdown,.docx,.txt,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+            tabIndex={-1}
+            onChange={(event) => {
+              const file = event.target.files?.[0];
+              event.target.value = "";
+              if (file) void importIntoLesson(file);
+            }}
+          />
+        </div>
         <FieldInput
           field={{
             path: ["dayIndex"],
@@ -417,7 +465,9 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         ) : (
           <>
             <BuilderHistory history={history} disabled={busy} />
-            <span className={styles.saveState}>{note ?? (dirty ? "Не збережено" : "Збережено")}</span>
+            <span className={styles.saveState} role="status" aria-live="polite">
+              {note ?? (dirty ? "Не збережено" : "Збережено")}
+            </span>
             <button className={styles.commitAction} type="button" onClick={save} disabled={busy || !dirty}>
               {busy ? "Зберігаємо…" : "Зберегти"}
             </button>
