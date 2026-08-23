@@ -19,13 +19,13 @@ import { useMemo } from "react";
 
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
-import { getProfileCopy } from "@/components/platform/profile/copy";
 import { cabinetGate } from "./CabinetGate";
 import { CourseCard, ShelfEmptyCard, ShelfErrorCard } from "./CourseCard";
 import { dateLocaleFor } from "./format";
 import { getCabinetCopy } from "./copy";
 import { useCabinetSession, useLearnerShelf, useProfileLang } from "./useCabinet";
 import styles from "./Cabinet.module.css";
+import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 
 export function LearnShelfClient() {
   const lang = useProfileLang();
@@ -33,18 +33,39 @@ export function LearnShelfClient() {
   const { shelf, failed, reload } = useLearnerShelf(session);
 
   const cab = useMemo(() => getCabinetCopy(lang), [lang]);
-  const copy = useMemo(
-    () => getProfileCopy(lang, { activePrograms: 0, completedPrograms: 0, productPurchases: 0 }),
-    [lang],
-  );
   const dateLocale = dateLocaleFor(lang);
 
   const href = useSurfaceHref();
   const programsHref = href("/programs");
   const homeHref = href("/");
 
-  const gate = cabinetGate({ lang, loading, session, homeHref, onSignIn: () => void signInWithGoogle() });
+  const gate = cabinetGate({
+    lang,
+    loading,
+    session,
+    homeHref,
+    onSignIn: () => void signInWithGoogle(),
+    loadingCopy: {
+      label: cab.learningLabel,
+      title: cab.learningLoadingTitle,
+      lead: cab.learningLoadingLead,
+    },
+  });
   if (gate) return gate;
+
+  if (!failed && shelf === null) {
+    return (
+      <main className={surfaceStyles.profileMain} data-cw-platform-template="loading">
+        <div className={styles.shell}>
+          <PlatformLoadingState
+            label={cab.learningLabel}
+            title={cab.learningLoadingTitle}
+            detail={cab.learningLoadingLead}
+          />
+        </div>
+      </main>
+    );
+  }
 
   return (
     <main className={surfaceStyles.profileMain} data-cw-platform-template="shelf">
@@ -64,9 +85,7 @@ export function LearnShelfClient() {
             </div>
           ) : failed ? null : shelf ? (
             <ShelfEmptyCard copy={cab} programsHref={programsHref} />
-          ) : (
-            <p className={styles.sectionLead}>{copy.loadingTitle}</p>
-          )}
+          ) : null}
         </div>
 
       </div>

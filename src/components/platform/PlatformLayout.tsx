@@ -23,9 +23,16 @@ import { isPersonalHost } from "@/lib/platform/surfaceHref";
 export function PlatformShell({
   children,
   headerMode = "default",
+  surface = "auto",
 }: {
   children: ReactNode;
   headerMode?: "default" | "overlay" | "learn";
+  /**
+   * Route-owned application identity. Host detection remains the default for
+   * public pages, but personal routes must also render correctly on localhost
+   * and preview where both applications share one origin.
+   */
+  surface?: "auto" | "personal";
 }) {
   // Both float over the content; only `overlay` floats over a DARK hero, so
   // only it starts the bar on the dark tone. A learner page is a light sheet
@@ -33,10 +40,15 @@ export function PlatformShell({
   // the tone sampler corrects it on the first frame.
   const floats = headerMode === "overlay" || headerMode === "learn";
   const onPersonalHost = isPersonalHost(useSurfaceHost());
+  const personalSurface = surface === "personal" || onPersonalHost;
 
   return (
     <div className={`${styles.shell} ${floats ? styles.shellOverlay : ""}`}>
-      <PlatformHeader initialTone={headerMode === "overlay" ? "dark" : "light"} mode={headerMode} />
+      <PlatformHeader
+        initialTone={headerMode === "overlay" ? "dark" : "light"}
+        mode={headerMode}
+        surface={surface}
+      />
       {children}
       {/* The storefront's close — phone, four social networks — is the wrong
           ending for every page of the personal host, not just for a lesson:
@@ -44,7 +56,7 @@ export function PlatformShell({
           the origin. The personal footer keeps the shape and the brand and
           drops the sales column, and it follows the HOST as well as the mode,
           so `my` ends one way on every page. */}
-      <PlatformFooter variant={headerMode === "learn" || onPersonalHost ? "personal" : "full"} />
+      <PlatformFooter variant={headerMode === "learn" || personalSurface ? "personal" : "full"} />
       <PwaRuntime />
     </div>
   );

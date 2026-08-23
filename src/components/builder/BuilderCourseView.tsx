@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
 import { Icon } from "@/components/Icon";
 import {
   moveItem,
+  newCourseFromTemplate,
   pruneEmptyProse,
   newLesson,
   newModule,
@@ -15,20 +16,32 @@ import {
   uniqueSlug,
   type Course,
   type CourseModule,
+  type Lesson,
 } from "@/lms-core";
-import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
+import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
+import { BuilderFailureNotice, BuilderShell } from "./BuilderShell";
 import { BuilderMenu } from "./BuilderMenu";
 import { BuilderSheet } from "./BuilderSheet";
 import { BuilderCourseSettings } from "./BuilderCourseSettings";
 import { BuilderBlockers } from "./BuilderBlockers";
-import { loadCourse, saveCourse, type BuilderCourseDto, type BuilderFailure } from "./builderClient";
+import {
+  exportLessonFile,
+  importLessonFiles,
+  loadCourse,
+  saveCourse,
+  submitCourseForReview,
+  type BuilderCourseDto,
+  type BuilderFailure,
+} from "./builderClient";
 import { BuilderGrip } from "./BuilderGrip";
 import { BuilderInlineEditor } from "./BuilderInlineEditor";
 import { BuilderHistory } from "./BuilderHistory";
+import { BuilderEditableTitle } from "./BuilderEditableTitle";
 import { useCourseHistory } from "./useCourseHistory";
 import { landingIndex, useRowDrag, type DragRef, type DropEdge, type RowDrag } from "./useRowDrag";
 import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
+import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 
 type State =
   | { status: "loading" }
@@ -199,6 +212,65 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     [dirty]
   );
 
+  async function importLessons(moduleIndex: number, files: File[]) {
+    if (!files.length || busy) return;
+    setBusy(true);
+    setNote(null);
+    const result = await importLessonFiles(slug, files);
+    setBusy(false);
+    if (!result.ok) {
+      setNote(lessonDocumentFailureCopy(result.detail, "Не вдалося прочитати файли уроків."));
+      return;
+    }
+
+    history.edit(null, (current) => {
+      const taken = current.modules.flatMap((entry) => entry.lessons.map((lesson) => lesson.slug));
+      let dayIndex = nextDayIndex(current);
+      return {
+        ...current,
+        modules: renumber(current.modules.map((entry, index) => {
+          if (index !== moduleIndex) return entry;
+          const imported = result.data.lessons.map((lesson, importedIndex) => {
+            const lessonSlug = uniqueSlug(lesson.title, taken);
+            taken.push(lessonSlug);
+            const nextLesson: Lesson = {
+              ...lesson,
+              slug: lessonSlug,
+              order: entry.lessons.length + importedIndex + 1,
+              dayIndex: entry.reference ? undefined : dayIndex,
+            };
+            if (!entry.reference && dayIndex !== undefined) dayIndex += 1;
+            return nextLesson;
+          });
+          return { ...entry, lessons: [...entry.lessons, ...imported] };
+        })),
+      };
+    });
+    setNote(
+      `${result.data.lessons.length} ${plural(result.data.lessons.length, "урок додано", "уроки додано", "уроків додано")}. Перевірте структуру й збережіть курс.`,
+    );
+  }
+
+  async function exportLesson(lesson: Lesson, format: LessonDocumentFormat) {
+    if (busy) return;
+    setBusy(true);
+    setNote(null);
+    const result = await exportLessonFile(slug, lesson, format);
+    setBusy(false);
+    if (!result.ok) {
+      setNote(lessonDocumentFailureCopy(result.detail, "Не вдалося експортувати урок."));
+      return;
+    }
+
+    const url = URL.createObjectURL(result.data.blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = result.data.filename;
+    link.click();
+    URL.revokeObjectURL(url);
+    setNote(`Експортовано ${result.data.filename}`);
+  }
+
   async function save(): Promise<boolean> {
     if (!course || busy) return false;
     setBusy(true);
@@ -253,12 +325,26 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     await load();
   }
 
+  async function submitReview() {
+    if (busy || dirty) return;
+    setBusy(true);
+    setNote(null);
+    const result = await submitCourseForReview(slug);
+    setBusy(false);
+    if (!result.ok) {
+      setNote(result.detail ?? "Не вдалося надіслати курс на перевірку.");
+      return;
+    }
+    setNote("Курс надіслано адміністратору на перевірку.");
+    await load();
+  }
+
   const trail = [{ label: "Курси", href: "/build" }];
 
   if (state.status === "loading") {
     return (
       <BuilderShell trail={trail}>
-        <BuilderNotice title="Завантажуємо курс…" />
+        <PlatformLoadingState label="Білдер" title="Завантажуємо курс…" detail="Відновлюємо структуру, налаштування і статус публікації." />
       </BuilderShell>
     );
   }
@@ -274,7 +360,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   if (!course) {
     return (
       <BuilderShell trail={trail}>
-        <BuilderNotice title="Завантажуємо курс…" />
+        <PlatformLoadingState label="Білдер" title="Завантажуємо курс…" detail="Відновлюємо структуру, налаштування і статус публікації." />
       </BuilderShell>
     );
   }
@@ -302,20 +388,32 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           deliberately and changed rarely; in the flow they cost every visit a
           scroll past the entitlement codes to reach the lesson list. */}
       <BuilderSheet open={settingsOpen} title="Налаштування курсу" onClose={() => setSettingsOpen(false)}>
-        <BuilderCourseSettings course={course} onChange={editCourse} />
+        <BuilderCourseSettings
+          course={course}
+          onChange={editCourse}
+          onApplyTemplate={(template) => {
+            history.edit(null, (current) => {
+              const preset = newCourseFromTemplate(ids, {
+                slug: current.slug,
+                title: current.title,
+                programSlug: current.programSlug,
+                template,
+              });
+              return { ...current, schedule: preset.schedule, modules: preset.modules };
+            });
+            setNote("Стартову структуру застосовано. Перевірте модулі й збережіть курс.");
+          }}
+        />
       </BuilderSheet>
 
       {/* Edited where it is read — see the lesson editor. The gear keeps what
           has no place in a document: address, schedule, codes, palette. */}
       <div className={styles.docHead}>
         <div className={styles.courseTitleRow}>
-          <input
-            className={`${styles.pageTitle} ${styles.titleInput}`}
-            type="text"
+          <BuilderEditableTitle
             value={course.title}
-            placeholder="Назва курсу"
-            aria-label="Назва курсу"
-            onChange={(event) => editCourse(["title"], event.target.value)}
+            label="Редагувати назву курсу"
+            onChange={(value) => editCourse(["title"], value)}
           />
           <span className={published ? styles.pillPublished : styles.pill}>
             {published ? "Опубліковано" : "Чернетка"}
@@ -336,17 +434,18 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       <BuilderBlockers blockers={readiness.blockers} />
 
       <section className={styles.panel}>
-        <h2 className={styles.panelTitle}>Публікація</h2>
+        <h2 className={styles.panelTitle}>Перевірка й публікація</h2>
         {/* This said the opposite until 2026-08-21, and it was true then: the
             learner app read files, so a publish reached nobody without a
             deploy. The database is the source now (src/lib/lms/liveCatalog.ts)
             and the sentence has to say so — an author who believes their work
             is live when it is not is the worst state this panel can produce. */}
         <p className={styles.panelText}>
-          Публікація відкриває курс учням одразу — застосунок читає курси з бази. Файл у репозиторії
-          лишається знімком, з якого платформа читає, якщо база не відповість; оновити його —{" "}
-          <code>npm run lms:pull -- {course.slug}</code>.
+          {state.data.review.enabled
+            ? "Спочатку збережіть готову структуру й надішліть її на перевірку. Після схвалення курс можна відкрити учням; у каталог його окремо додає адміністратор."
+            : "Контур модерації ще не активовано в базі. Поточне ручне тестування публікації залишається доступним; каталог автору недоступний."}
         </p>
+        {state.data.review.note ? <p className={styles.panelText}>Коментар адміністратора: {state.data.review.note}</p> : null}
         {readiness.ready ? null : (
           <p className={styles.panelText}>
             Опублікувати не вийде, доки лишаються блокери — це та сама перевірка, яку проходить сид.
@@ -358,12 +457,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           </p>
         ) : null}
         <div className={styles.panelActions}>
-          <span className={styles.panelStatus}>{published ? "Курс відкритий учням" : "Курс у роботі"}</span>
+          <span className={styles.panelStatus}>
+            {published ? "Курс відкритий учням" : !state.data.review.enabled ? "Ручний тестовий контур" : state.data.review.status === "approved" ? "Перевірку пройдено" : state.data.review.status === "in_review" ? "На перевірці" : state.data.review.status === "changes_requested" ? "Потрібні зміни" : "Чернетка автора"}
+          </span>
           {published ? (
             <button className={styles.retreatAction} type="button" onClick={() => setStatus("draft")} disabled={busy}>
               Зняти з публікації
             </button>
-          ) : (
+          ) : !state.data.review.enabled || state.data.review.status === "approved" ? (
             <button
               className={styles.commitAction}
               type="button"
@@ -371,6 +472,10 @@ export function BuilderCourseView({ slug }: { slug: string }) {
               disabled={busy || !readiness.ready}
             >
               Опублікувати
+            </button>
+          ) : state.data.review.status === "in_review" ? null : (
+            <button className={styles.commitAction} type="button" onClick={() => void submitReview()} disabled={busy || dirty || !readiness.ready}>
+              Надіслати на перевірку
             </button>
           )}
         </div>
@@ -397,6 +502,9 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             onModules={editModules}
             onNote={setNote}
             onOpenLesson={openLesson}
+            busy={busy}
+            onImportLessons={(files) => importLessons(moduleIndex, files)}
+            onExportLesson={exportLesson}
           />
         ))}
 
@@ -526,6 +634,9 @@ function ModuleEditor({
   onModules,
   onNote,
   onOpenLesson,
+  busy,
+  onImportLessons,
+  onExportLesson,
 }: {
   course: Course;
   module: CourseModule;
@@ -537,8 +648,12 @@ function ModuleEditor({
   onNote: (note: string | null) => void;
   /** Answers whether the row may follow its own href, or is being held back. */
   onOpenLesson: (href: string) => "allow" | "held";
+  busy: boolean;
+  onImportLessons: (files: File[]) => Promise<void>;
+  onExportLesson: (lesson: Lesson, format: LessonDocumentFormat) => Promise<void>;
 }) {
   const isOnlyModule = course.modules.length === 1;
+  const importPicker = useRef<HTMLInputElement>(null);
 
   /**
    * Moves a lesson, ACROSS module boundaries when it is at an edge.
@@ -599,12 +714,12 @@ function ModuleEditor({
     >
       <div className={styles.moduleHead}>
         <BuilderGrip drag={moduleDrag} row={moduleRow} label={module.title} />
-        <input
-          className={styles.moduleTitleInput}
-          type="text"
+        <BuilderEditableTitle
+          compact
+          level="h3"
           value={module.title}
-          aria-label={`Назва модуля ${moduleIndex + 1}`}
-          onChange={(event) => onChange(["modules", moduleIndex, "title"], event.target.value)}
+          label={`Редагувати назву модуля ${moduleIndex + 1}`}
+          onChange={(value) => onChange(["modules", moduleIndex, "title"], value)}
         />
         <BuilderMenu
           label={`Дії з модулем «${module.title}»`}
@@ -695,6 +810,9 @@ function ModuleEditor({
                 disabled: moduleIndex === course.modules.length - 1 && lessonIndex === module.lessons.length - 1,
                 onSelect: () => moveLesson(lessonIndex, 1),
               },
+              { label: "Експортувати Markdown", disabled: busy, onSelect: () => void onExportLesson(lesson, "md") },
+              { label: "Експортувати Word", disabled: busy, onSelect: () => void onExportLesson(lesson, "docx") },
+              { label: "Експортувати текст", disabled: busy, onSelect: () => void onExportLesson(lesson, "txt") },
               { label: "Видалити урок", icon: "trash" as const, danger: true, onSelect: () => deleteLesson(lessonIndex) },
             ]}
           />
@@ -703,34 +821,52 @@ function ModuleEditor({
       })}
       </div>
 
-      <button
-        className={styles.addAction}
-        type="button"
-        onClick={() =>
-          onModules((current) =>
-            current.modules.map((entry, index) => {
-              if (index !== moduleIndex) return entry;
-              const position = entry.lessons.length + 1;
-              const title = `Урок ${position}`;
-              // Lesson slugs are unique across the WHOLE course, not the module:
-              // they are the URL key, and `validateCourse` refuses a duplicate.
-              const taken = current.modules.flatMap((one) => one.lessons.map((item) => item.slug));
-              // A daily course refuses a lesson with no day at all, so a new
-              // one takes the day after the last — never a renumber of the rest.
-              const dayIndex = entry.reference ? undefined : nextDayIndex(current);
-              return {
-                ...entry,
-                lessons: [
-                  ...entry.lessons,
-                  newLesson(ids, { order: position, title, slug: uniqueSlug(title, taken), dayIndex }),
-                ],
-              };
-            })
-          )
-        }
-      >
-        <span className={styles.addGlyph} aria-hidden="true">+</span> Додати урок
-      </button>
+      <div className={styles.addRow}>
+        <button
+          className={styles.addAction}
+          type="button"
+          onClick={() =>
+            onModules((current) =>
+              current.modules.map((entry, index) => {
+                if (index !== moduleIndex) return entry;
+                const position = entry.lessons.length + 1;
+                const title = `Урок ${position}`;
+                // Lesson slugs are unique across the WHOLE course, not the module:
+                // they are the URL key, and `validateCourse` refuses a duplicate.
+                const taken = current.modules.flatMap((one) => one.lessons.map((item) => item.slug));
+                // A daily course refuses a lesson with no day at all, so a new
+                // one takes the day after the last — never a renumber of the rest.
+                const dayIndex = entry.reference ? undefined : nextDayIndex(current);
+                return {
+                  ...entry,
+                  lessons: [
+                    ...entry.lessons,
+                    newLesson(ids, { order: position, title, slug: uniqueSlug(title, taken), dayIndex }),
+                  ],
+                };
+              })
+            )
+          }
+        >
+          <Icon name="plus" size={20} /> Новий урок
+        </button>
+        <button className={styles.quietAction} type="button" disabled={busy} onClick={() => importPicker.current?.click()}>
+          <Icon name="import" size={20} /> {busy ? "Опрацьовуємо…" : "Імпорт"}
+        </button>
+        <input
+          ref={importPicker}
+          className={styles.visuallyHidden}
+          type="file"
+          accept=".md,.markdown,.docx,.txt,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          multiple
+          tabIndex={-1}
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+            event.target.value = "";
+            if (files.length) void onImportLessons(files);
+          }}
+        />
+      </div>
     </div>
   );
 }
@@ -742,4 +878,16 @@ function plural(count: number, one: string, few: string, many: string): string {
   if (mod10 === 1) return one;
   if (mod10 >= 2 && mod10 <= 4) return few;
   return many;
+}
+
+function lessonDocumentFailureCopy(detail: string | undefined, fallback: string): string {
+  const messages: Record<string, string> = {
+    lms_lesson_document_unsupported_format: "Підтримуються лише Markdown (.md), Word (.docx) і текст (.txt).",
+    lms_lesson_document_too_large: "Один із файлів завеликий. Максимум — 5 МБ на урок.",
+    lms_lesson_document_too_many_files: "За один раз можна додати не більше 20 уроків.",
+    lms_lesson_document_empty: "У документі немає тексту, який можна перетворити на урок.",
+    lms_lesson_document_invalid_docx: "Word-файл пошкоджений або має неочікувану структуру.",
+    lms_lesson_document_invalid_utf8: "Текстовий файл має бути збережений у UTF-8.",
+  };
+  return (detail && messages[detail]) || fallback;
 }

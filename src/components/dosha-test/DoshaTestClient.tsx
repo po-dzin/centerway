@@ -543,7 +543,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
 
   /* Choosing and moving on are two acts, and they used to be one: tapping an
      option wrote the answer, advanced the question and locked the choice, so a
-     misplaced thumb cost you an answer you could never revisit ("режим v1:
+     misplaced thumb cost you an answer you could never revisit ("перша версія:
      попередню відповідь змінити не можна"). Selection is now local state and
      nothing else; the step moves when the reader says so, in either direction.
      Nothing reaches the server until the last answer — `completeTest` posts the

@@ -28,6 +28,7 @@ export type LessonBlockType =
   | "video"
   | "image"
   | "quote"
+  | "code"
   | "boundary_note"
   | "faq_block"
   | "table"
@@ -142,6 +143,12 @@ export type QuoteBlock = BlockBase & {
   author?: string;
 };
 
+export type CodeBlock = BlockBase & {
+  type: "code";
+  code: string;
+  language?: string;
+};
+
 /**
  * Bounded health claims are a brand-contract invariant, not decoration:
  * every protocol that touches the body carries an explicit limit block.
@@ -194,6 +201,7 @@ export type LessonBlock =
   | VideoBlock
   | ImageBlock
   | QuoteBlock
+  | CodeBlock
   | BoundaryNoteBlock
   | FaqBlock
   | TableBlock
@@ -208,6 +216,7 @@ export const LESSON_BLOCK_TYPES: readonly LessonBlockType[] = [
   "video",
   "image",
   "quote",
+  "code",
   "boundary_note",
   "faq_block",
   "table",
@@ -252,6 +261,11 @@ export function validateLessonBlock(block: unknown, path: string): asserts block
     case "boundary_note":
     case "quote":
       validateInlineText(block.text, `${path}.text`);
+      return;
+
+    case "code":
+      assert(isNonEmptyString(block.code), `lms_block_missing_code:${path}`);
+      if (block.language !== undefined) assert(typeof block.language === "string", `lms_block_invalid_language:${path}`);
       return;
 
     case "rich_text":

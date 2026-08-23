@@ -11,6 +11,10 @@
   "status": "published",
   "version": 3,
   "summary": "Один розвантажувальний день — це три дні уваги та дисципліни: підготовка, сам день і коректний вихід.",
+  "cover": {
+    "src": "/cw/platform/programs/reset-day-card-v1.png",
+    "alt": "Обкладинка практикуму «Розвантажувальний день»"
+  },
   "schedule": {
     "mode": "open"
   },

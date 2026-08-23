@@ -265,8 +265,16 @@ describe("builder → rows → builder", () => {
     // `{ theme: null }` and an absent `theme` are the same course, and they must
     // serialise the same way — otherwise `lms:pull` writes a diff into a file
     // nobody edited.
+    // The shipped reset-day snapshot now has an explicit marketplace order, so
+    // remove every optional presentation key to keep this fixture true to the
+    // scenario the test names.
+    const unconfigured = { ...shipped };
+    delete unconfigured.theme;
+    delete unconfigured.cover;
+    delete unconfigured.sortOrder;
+
     const db = fakeWriter();
-    await writeCourseStructure(db, shipped);
+    await writeCourseStructure(db, unconfigured);
     const restored = courseFromRows(db.rows.lms_courses[0], db.rows.lms_modules, db.rows.lms_lessons);
 
     expect("theme" in restored).toBe(false);

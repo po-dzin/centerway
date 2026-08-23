@@ -10,12 +10,14 @@
  * scroll past the entitlement codes to reach the lesson list.
  */
 
+import { useState } from "react";
+
 import { Icon } from "@/components/Icon";
 import {
+  COURSE_TEMPLATES,
   COURSE_HEADING_FONTS,
   COURSE_PALETTES,
   COURSE_TYPE_SCALES,
-  COURSE_VISIBILITIES,
   DEFAULT_COURSE_THEME,
   type Course,
   type CourseHeadingFont,
@@ -23,6 +25,7 @@ import {
   type CourseScheduleMode,
   type CourseTypeScale,
   type CourseVisibility,
+  type CourseTemplateId,
 } from "@/lms-core";
 import { BuilderImageField } from "./BuilderImageField";
 import { ChoiceRow, FieldInput } from "./BuilderFields";
@@ -131,10 +134,13 @@ function ResultsField({
 export function BuilderCourseSettings({
   course,
   onChange,
+  onApplyTemplate,
 }: {
   course: Course;
   onChange: (path: (string | number)[], value: unknown) => void;
+  onApplyTemplate: (template: CourseTemplateId) => void;
 }) {
+  const [pendingTemplate, setPendingTemplate] = useState<CourseTemplateId | null>(null);
   const theme = { ...DEFAULT_COURSE_THEME, ...(course.theme ?? {}) };
   const gate = course.schedule.gate ?? "soft";
 
@@ -148,9 +154,42 @@ export function BuilderCourseSettings({
       {/* The course slug is the address of every lesson under it and of every
           reminder already sent. Shown, never edited — a rename is a migration. */}
       <p className={styles.readOnlyNote}>
-        Адреса курсу: <code>my.centerway.net.ua/{course.slug}</code> — не змінюється. Програма в каталозі:{" "}
-        <code>{course.programSlug}</code>.
+        Адреса курсу: <code>my.centerway.net.ua/{course.slug}</code> — не змінюється. Курс уже має власну
+        програму <code>{course.programSlug}</code>; до каталогу її додає адміністратор після перевірки й публікації.
       </p>
+
+      <h3 className={styles.subTitle}>Стартова структура</h3>
+      <p className={styles.fieldHint}>Пресет замінює модулі й уроки, але не назву, опис, обкладинку чи доступ.</p>
+      <div className={styles.typeGrid}>
+        {COURSE_TEMPLATES.map((template) => (
+          <button
+            key={template.id}
+            className={styles.typeOption}
+            type="button"
+            aria-pressed={pendingTemplate === template.id}
+            onClick={() => setPendingTemplate(template.id)}
+          >
+            <span className={styles.typeName}>{template.title}</span>
+            <span className={styles.typeHint}>{template.summary}</span>
+          </button>
+        ))}
+      </div>
+      {pendingTemplate ? (
+        <div className={styles.confirmRow}>
+          <span className={styles.confirmText}>Замінити поточну структуру? Дію можна скасувати через «Назад».</span>
+          <button className={styles.quietAction} type="button" onClick={() => setPendingTemplate(null)}>Ні</button>
+          <button
+            className={styles.commitAction}
+            type="button"
+            onClick={() => {
+              onApplyTemplate(pendingTemplate);
+              setPendingTemplate(null);
+            }}
+          >
+            Застосувати
+          </button>
+        </div>
+      ) : null}
 
       {/* THE AUTHOR'S HALF OF THE STOREFRONT. What the course claims about
           itself is content, and content is the author's. The PRICE is not here
@@ -159,13 +198,10 @@ export function BuilderCourseSettings({
           grant on. That is a different table rather than a hidden field
           precisely so the boundary is structural. */}
       <h3 className={styles.subTitle}>Вітрина</h3>
-      <ChoiceRow
-        label="Хто може знайти курс"
-        hint={VISIBILITY_HINTS[course.visibility ?? "hidden"]}
-        options={COURSE_VISIBILITIES.map((value) => ({ value, label: VISIBILITY_LABELS[value] }))}
-        value={course.visibility ?? "hidden"}
-        onChange={(next) => onChange(["visibility"], next)}
-      />
+      <p className={styles.readOnlyNote}>
+        Видимість: <strong>{VISIBILITY_LABELS[course.visibility ?? "hidden"]}</strong>. {VISIBILITY_HINTS[course.visibility ?? "hidden"]}{" "}
+        Автор готує матеріал і сторінку; видимість у вітрині змінює лише адміністратор.
+      </p>
       <FieldInput
         field={{
           path: ["tagline"],

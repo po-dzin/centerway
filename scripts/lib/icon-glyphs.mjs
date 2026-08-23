@@ -227,6 +227,16 @@ export const ICONS = {
     d: ["M6.6 3.8h10.8v16.4H6.6z", "M9.4 8.6h5.2", "M9.4 12h5.2", "M9.4 15.4h3.4"],
   },
 
+  // ── Authoring: create / bring content in ──────────────────────────────
+  plus: {
+    group: "Authoring",
+    d: ["M12 4.6v14.8", "M4.6 12h14.8"],
+  },
+  import: {
+    group: "Authoring",
+    d: ["M12 3.8v10.4", "M7.8 10 12 14.2l4.2-4.2", "M5 17v2.8h14V17"],
+  },
+
   // ── Interface / meta ───────────────────────────────────────────────────
   question: {
     group: "Meta",

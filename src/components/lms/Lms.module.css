@@ -68,20 +68,6 @@
   line-height: 1.6;
 }
 
-/* Waiting is carried by the mark, not by a spinner: the brand sits at muted
-   strength and its turns pulse in place. `wait` never rotates, so the row does
-   not read as a system control. */
-.loading {
-  display: flex;
-  align-items: center;
-  gap: var(--cw-space-sm);
-  color: var(--cw-platform-muted);
-}
-
-.loading .lead {
-  margin: 0;
-}
-
 .standing {
   display: flex;
   flex-wrap: wrap;
@@ -779,6 +765,18 @@
   font-family: var(--cw-font-ui);
   font-size: 0.85rem;
   color: var(--cw-platform-muted);
+}
+
+.codeBlock {
+  overflow-x: auto;
+  margin: 0;
+  padding: var(--cw-space-sm);
+  border: 1px solid var(--cw-mat-stroke-inner);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font: 0.88rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre;
 }
 
 .faqItem {

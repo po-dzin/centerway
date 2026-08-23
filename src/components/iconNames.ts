@@ -31,6 +31,8 @@ export const CW_ICON_NAMES = [
   "motion",
   "play",
   "guide",
+  "plus",
+  "import",
   "question",
   "boundary",
   "user",

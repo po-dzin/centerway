@@ -250,6 +250,13 @@ export function BlockRenderer({ block, checklist, onToggleChecklistItem, disable
         </blockquote>
       );
 
+    case "code":
+      return (
+        <pre className={styles.codeBlock} data-language={block.language || undefined}>
+          <code>{block.code}</code>
+        </pre>
+      );
+
     case "boundary_note":
       // Bounded health claims are a brand invariant — rendered, never hidden.
       return (

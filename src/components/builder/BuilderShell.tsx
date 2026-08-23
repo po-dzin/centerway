@@ -53,7 +53,10 @@ export function BuilderShell({
 }) {
   return (
     <div className={styles.shell}>
-      <PlatformHeader />
+      {/* Explicitly personal: localhost and previews host the storefront and
+          authoring app together, so hostname inference alone picks the public
+          navigation there. The route, not the transport, owns this identity. */}
+      <PlatformHeader surface="personal" />
 
       <div className={aside ? styles.bodyWithAside : styles.body}>
         {aside ? (

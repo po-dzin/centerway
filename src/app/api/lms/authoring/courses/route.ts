@@ -56,14 +56,10 @@ export async function POST(req: NextRequest) {
 
   const body = (await req.json().catch(() => null)) as {
     title?: unknown;
-    programSlug?: unknown;
     template?: unknown;
     palette?: unknown;
   } | null;
-  const title = typeof body?.title === "string" ? body.title.trim() : "";
-  const programSlug = typeof body?.programSlug === "string" ? body.programSlug.trim() : "";
-  if (title.length === 0) return NextResponse.json({ error: "lms_builder_missing_title" }, { status: 400 });
-  if (programSlug.length === 0) return NextResponse.json({ error: "lms_builder_missing_program" }, { status: 400 });
+  const title = typeof body?.title === "string" ? body.title.trim() : undefined;
 
   // The palette is validated by name, not trusted: `validateCourseTheme` runs
   // inside `validateCourse` on the way to the database, and an unknown one
@@ -73,7 +69,6 @@ export async function POST(req: NextRequest) {
   try {
     const result = await createBuilderCourse({
       title,
-      programSlug,
       authorId: identity.authUserId,
       template: typeof body?.template === "string" ? body.template : undefined,
       ...(palette && palette !== "default" ? { theme: { palette } } : {}),

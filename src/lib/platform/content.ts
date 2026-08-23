@@ -62,18 +62,20 @@ export const platformNav = [
  * for whoever writes them, the builder. Both are same-origin here, so the bar
  * stops being a set of links off the host it is drawn on.
  *
- * The builder entry is gated the same way the switcher gates it — an admin
- * role or a `lms_courses.author_id` row — and it appears when that read
- * resolves rather than on first paint. Absent-then-present is the safe order;
- * present-then-gone would blink an entry out mid-read.
+ * Both application tabs are stable from first paint. Authorization belongs to
+ * the destination route: letting an identity request add/remove top-level
+ * navigation made the bar shift during every full transition between the two
+ * route-group roots. A refused Builder route explains the missing permission;
+ * the navigation does not silently rewrite itself.
  */
 export type NavItem = { label: string; href: string; match: "exact" | "prefix" };
 
+export const builderNavItem: NavItem = { label: "Білдер", href: "/build", match: "prefix" };
+
 export const personalNav: NavItem[] = [
   { label: "Мої курси", href: LEARNING_SHELF_HREF, match: "exact" },
+  builderNavItem,
 ];
-
-export const builderNavItem: NavItem = { label: "Білдер", href: "/build", match: "prefix" };
 
 /** Kept for the switcher's label, which names the same destination. */
 export const learningNavItem = {

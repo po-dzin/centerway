@@ -25,6 +25,7 @@ import { BuilderContents } from "./BuilderContents";
 import { BuilderMenu } from "./BuilderMenu";
 import { FieldInput } from "./BuilderFields";
 import { BuilderInlineEditor, type SlashCommand } from "./BuilderInlineEditor";
+import { BuilderEditableTitle } from "./BuilderEditableTitle";
 import { BlockPreview } from "./BuilderBlockPreview";
 import { loadCourse, saveCourse, type BuilderFailure } from "./builderClient";
 import { BuilderGrip } from "./BuilderGrip";
@@ -41,6 +42,7 @@ import {
   writePath,
 } from "./blockFields";
 import styles from "./Builder.module.css";
+import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 
 type State =
   | { status: "loading" }
@@ -208,7 +210,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   if (state.status === "loading") {
     return (
       <BuilderShell trail={trail}>
-        <BuilderNotice title="Завантажуємо урок…" />
+        <PlatformLoadingState label="Білдер" title="Завантажуємо урок…" detail="Відновлюємо блоки уроку і останню збережену версію." />
       </BuilderShell>
     );
   }
@@ -282,13 +284,10 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
           IS the input, and the lead under it is the lesson's own summary
           rather than a caption about it. */}
       <div className={styles.docHead}>
-        <input
-          className={`${styles.pageTitle} ${styles.titleInput}`}
-          type="text"
+        <BuilderEditableTitle
           value={lesson.title}
-          placeholder="Назва уроку"
-          aria-label="Назва уроку"
-          onChange={(event) => editLesson(["title"], event.target.value)}
+          label="Редагувати назву уроку"
+          onChange={(value) => editLesson(["title"], value)}
         />
         <p className={styles.docMeta}>
           {holder.title}

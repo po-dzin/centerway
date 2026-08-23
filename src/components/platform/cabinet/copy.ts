@@ -20,6 +20,8 @@ export type CabinetCopy = {
 
   learningTitle: string;
   learningLabel: string;
+  learningLoadingTitle: string;
+  learningLoadingLead: string;
   learningEmptyTitle: string;
   learningEmptyLead: string;
   browsePrograms: string;
@@ -81,6 +83,8 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
 
       learningTitle: "My courses",
       learningLabel: "Learning",
+      learningLoadingTitle: "Loading your courses…",
+      learningLoadingLead: "Restoring access, progress and your next lesson.",
       learningEmptyTitle: "No courses in this profile yet",
       learningEmptyLead: "Once a program is purchased, it opens here — with lessons, progress and the next step.",
       browsePrograms: "Browse programs",
@@ -133,6 +137,8 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
 
     learningTitle: "Мої курси",
     learningLabel: "Навчання",
+    learningLoadingTitle: "Завантажуємо ваші курси…",
+    learningLoadingLead: "Відновлюємо доступ, поступ і ваш наступний урок.",
     learningEmptyTitle: "У профілі ще немає курсів",
     learningEmptyLead: "Після придбання програма відкривається тут — з уроками, поступом і наступним уроком.",
     browsePrograms: "Подивитися програми",

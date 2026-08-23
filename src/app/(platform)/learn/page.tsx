@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function LearnShelfPage() {
   return (
-    <PlatformShell headerMode="overlay">
+    <PlatformShell headerMode="overlay" surface="personal">
       <LearnShelfClient />
     </PlatformShell>
   );

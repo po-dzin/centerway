@@ -34,6 +34,10 @@ export type CourseRow = {
     slug: string;
     title: string;
     status: string;
+    reviewStatus: "draft" | "in_review" | "changes_requested" | "approved";
+    reviewNote: string | null;
+    reviewEnabled: boolean;
+    visibility: "hidden" | "unlisted" | "listed";
     locale: string;
     brand: string;
     authorId: string | null;

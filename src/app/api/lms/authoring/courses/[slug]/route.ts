@@ -42,6 +42,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       course: loaded.course,
       updatedAt: loaded.updatedAt,
       readiness: { ready: readiness.ready, blockers: readiness.blockers },
+      review: {
+        status: loaded.reviewStatus,
+        note: loaded.reviewNote,
+        enabled: loaded.reviewEnabled,
+      },
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown_error";

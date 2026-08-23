@@ -740,6 +740,7 @@ function BuilderTab({
     const toast = useToast();
     const [draft, setDraft] = useState<Record<string, string>>({});
     const [savingId, setSavingId] = useState<string | null>(null);
+    const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
 
     const save = async (course: CourseRow, email: string | null) => {
         setSavingId(course.id);
@@ -756,6 +757,16 @@ function BuilderTab({
         } finally {
             setSavingId(null);
         }
+    };
+
+    const moderate = async (course: CourseRow, action: "approve" | "request_changes" | "set_visibility", visibility?: CourseRow["visibility"]) => {
+        setSavingId(course.id);
+        try {
+            await authFetch("/api/admin/access/courses", { method: "PATCH", body: JSON.stringify({ courseId: course.id, action, visibility, note: reviewNotes[course.id] }) });
+            toast.success(action === "approve" ? "Курс схвалено" : action === "request_changes" ? "Курс повернено автору" : "Видимість оновлено");
+            onChanged();
+        } catch (e) { toast.error(errorText(getErrorMessage(e))); }
+        finally { setSavingId(null); }
     };
 
     if (courses.length === 0) {
@@ -780,6 +791,7 @@ function BuilderTab({
                                     <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">
                                         {course.status}
                                     </span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">{course.reviewStatus}</span>
                                 </div>
                                 <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
                                     <span className="font-mono">{course.slug}</span>
@@ -793,6 +805,22 @@ function BuilderTab({
                                 </p>
                             </div>
                         </div>
+
+                        {canGrant && course.reviewEnabled ? (
+                            <div className="flex flex-col sm:flex-row gap-2">
+                                {course.reviewStatus === "in_review" ? (
+                                    <>
+                                        <input className="cw-input px-3 py-2 text-sm flex-1" value={reviewNotes[course.id] ?? ""} onChange={(e) => setReviewNotes((prev) => ({ ...prev, [course.id]: e.target.value }))} placeholder="Коментар автору, якщо потрібні зміни" />
+                                        <button className="px-4 py-2 cw-btn cw-surface-2 text-sm" disabled={savingId === course.id} onClick={() => void moderate(course, "approve")}>Схвалити</button>
+                                        <button className="px-4 py-2 cw-btn cw-btn-muted text-sm" disabled={savingId === course.id} onClick={() => void moderate(course, "request_changes")}>Повернути</button>
+                                    </>
+                                ) : course.status === "published" && course.reviewStatus === "approved" ? (
+                                    <select className="cw-input px-3 py-2 text-sm sm:w-64" value={course.visibility} disabled={savingId === course.id} onChange={(e) => void moderate(course, "set_visibility", e.target.value as CourseRow["visibility"])}>
+                                        <option value="hidden">Приховано</option><option value="unlisted">За посиланням</option><option value="listed">У каталозі</option>
+                                    </select>
+                                ) : <p className="text-xs cw-muted">Каталог стане доступним після схвалення й публікації.</p>}
+                            </div>
+                        ) : null}
 
                         {canGrant ? (
                             <div className="flex flex-col sm:flex-row gap-2">
