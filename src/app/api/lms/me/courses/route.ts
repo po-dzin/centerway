@@ -36,6 +36,7 @@ export async function GET(req: NextRequest) {
       access: entry.access,
       lockReason: entry.lockReason,
       startedAt: entry.startedAt,
+      lastActivityAt: entry.lastActivityAt,
       standing: entry.standing,
       currentLessonSlug: entry.currentLessonSlug,
       currentLessonTitle: entry.currentLessonTitle,

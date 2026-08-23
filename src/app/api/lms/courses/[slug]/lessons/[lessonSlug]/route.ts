@@ -77,16 +77,17 @@ export async function GET(
         }
       : null;
 
-  if (lessonProgress.status === "not_started") {
-    await recordProgressEvent({
-      enrollmentId: enrollment.id,
-      lessonId: found.lesson.id,
-      type: "lesson.started",
-      // Server-side idempotency key: one "started" per enrollment+lesson.
-      clientId: `srv:start:${found.lesson.id}`,
-      occurredAt: now.toISOString(),
-    });
-  }
+  // Every successful lesson open is real course activity, including a return
+  // to an already started or completed lesson. A fresh id keeps that visit in
+  // the append-only log; the fold preserves the original `startedAt` and never
+  // un-completes a lesson, while advancing `lastActivityAt` for the dashboard.
+  await recordProgressEvent({
+    enrollmentId: enrollment.id,
+    lessonId: found.lesson.id,
+    type: "lesson.started",
+    clientId: `srv:open:${found.lesson.id}:${crypto.randomUUID()}`,
+    occurredAt: now.toISOString(),
+  });
 
   return NextResponse.json({
     lesson: {

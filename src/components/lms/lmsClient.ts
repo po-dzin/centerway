@@ -64,6 +64,8 @@ export type LearnerShelfCourseDto = {
   access: "enrolled" | "available" | "locked";
   lockReason: "not_entitled" | "expired" | null;
   startedAt: string | null;
+  /** Last successful lesson interaction; the dashboard's resume order uses this. */
+  lastActivityAt: string | null;
   standing: CourseViewDto["standing"] | null;
   currentLessonSlug: string | null;
   currentLessonTitle: string | null;

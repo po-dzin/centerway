@@ -45,6 +45,7 @@ import {
   isProgramKind,
 } from "./format";
 import { getCabinetCopy } from "./copy";
+import { pickResumeCourse } from "./resumeCourse";
 import {
   useCabinetSession,
   useLearnerShelf,
@@ -173,13 +174,8 @@ export function CabinetClient() {
     [ownedCourses],
   );
 
-  /** The single course the dashboard offers to resume: in-flight first, then unstarted. */
-  const resumeCourse = useMemo(() => {
-    const started = ownedCourses.find(
-      (course) => course.access === "enrolled" && !course.standing?.isFinished && course.currentLessonSlug,
-    );
-    return started ?? ownedCourses.find((course) => course.access === "available") ?? ownedCourses[0] ?? null;
-  }, [ownedCourses]);
+  /** The single course the dashboard offers to resume: latest real activity wins. */
+  const resumeCourse = useMemo(() => pickResumeCourse(ownedCourses), [ownedCourses]);
 
   const gate = cabinetGate({
     lang,
