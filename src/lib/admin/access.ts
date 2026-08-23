@@ -23,6 +23,8 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { writeCourseStructure } from "@/lib/lms/authoring";
+import { validateCourse, type Course } from "@/lms-core";
 import { foldProgress, type ProgressEvent, type ProgressEventType } from "@/lms-core/progress";
 import { groupLearnersByAccount, learnerStatusOf } from "@/lib/admin/accessTypes";
 import type {
@@ -553,9 +555,14 @@ export async function listCourses(): Promise<CourseRow[]> {
             slug: row.slug as string,
             title: row.title as string,
             status: row.status as string,
-            reviewStatus: (row.review_status as CourseRow["reviewStatus"] | undefined) ?? (row.status === "published" ? "approved" : "draft"),
-            reviewNote: (row.review_note as string | null) ?? null,
+            reviewStatus: row.pending_content
+                ? ((row.pending_review_status as CourseRow["reviewStatus"] | undefined) ?? "draft")
+                : ((row.review_status as CourseRow["reviewStatus"] | undefined) ?? (row.status === "published" ? "approved" : "draft")),
+            reviewNote: row.pending_content
+                ? ((row.pending_review_note as string | null) ?? null)
+                : ((row.review_note as string | null) ?? null),
             reviewEnabled: "review_status" in row,
+            hasPendingRevision: Boolean(row.pending_content),
             visibility: (row.visibility as CourseRow["visibility"] | undefined) ?? "hidden",
             locale: row.locale as string,
             brand: row.brand as string,
@@ -577,17 +584,43 @@ export async function moderateCourse(input: {
 }) {
     const db = adminClient();
     const { data: course, error: readError } = await db.from("lms_courses")
-        .select("id, slug, status, review_status, visibility").eq("id", input.courseId).maybeSingle();
+        .select("*").eq("id", input.courseId).maybeSingle();
     if (readError) throw new AccessError(readError.message, 500);
     if (!course) throw new AccessError("course_not_found", 404);
 
     let values: Record<string, unknown>;
+    const hasPendingRevision = Boolean(course.pending_content);
+    const reviewStatus = hasPendingRevision ? course.pending_review_status : course.review_status;
     if (input.action === "approve") {
-        if (course.review_status !== "in_review") throw new AccessError("course_not_in_review", 409);
-        values = { review_status: "approved", review_note: null, approved_at: new Date().toISOString(), approved_by: input.actorId };
+        if (reviewStatus !== "in_review") throw new AccessError("course_not_in_review", 409);
+        if (hasPendingRevision) {
+            try {
+                validateCourse(course.pending_content, "pending_revision");
+            } catch (error) {
+                throw new AccessError(error instanceof Error ? error.message : "course_revision_invalid", 422);
+            }
+            const revision = course.pending_content as Course;
+            const writer = db as unknown as Parameters<typeof writeCourseStructure>[0];
+            await writeCourseStructure(writer, {
+                ...revision,
+                id: course.id as string,
+                slug: course.slug as string,
+                status: "published",
+                visibility: course.visibility ?? "hidden",
+                version: Number(course.version ?? revision.version) + 1,
+            });
+            values = {
+                review_status: "approved", review_note: null, approved_at: new Date().toISOString(), approved_by: input.actorId,
+                pending_content: null, pending_review_status: null, pending_review_note: null, pending_submitted_at: null, pending_updated_at: null,
+            };
+        } else {
+            values = { review_status: "approved", review_note: null, approved_at: new Date().toISOString(), approved_by: input.actorId };
+        }
     } else if (input.action === "request_changes") {
-        if (course.review_status !== "in_review") throw new AccessError("course_not_in_review", 409);
-        values = { review_status: "changes_requested", review_note: input.note?.trim() || "Потрібні зміни", approved_at: null, approved_by: null };
+        if (reviewStatus !== "in_review") throw new AccessError("course_not_in_review", 409);
+        values = hasPendingRevision
+            ? { pending_review_status: "changes_requested", pending_review_note: input.note?.trim() || "Потрібні зміни" }
+            : { review_status: "changes_requested", review_note: input.note?.trim() || "Потрібні зміни", approved_at: null, approved_by: null };
     } else {
         if (!input.visibility || !["hidden", "unlisted", "listed"].includes(input.visibility)) throw new AccessError("invalid_visibility", 400);
         if (input.visibility !== "hidden" && (course.status !== "published" || course.review_status !== "approved")) {
@@ -598,7 +631,7 @@ export async function moderateCourse(input: {
     const { error } = await db.from("lms_courses").update(values).eq("id", input.courseId);
     if (error) throw new AccessError(error.message, 500);
     await writeAudit(db, { actorId: input.actorId, action: `course.${input.action}`, entityType: "lms_course", entityId: input.courseId, metadata: { slug: course.slug, ...values } });
-    return { id: input.courseId, ...values };
+    return { id: input.courseId, slug: course.slug as string, ...values };
 }
 
 /**

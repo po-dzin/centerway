@@ -87,21 +87,40 @@
 
 @media (min-width: 901px) {
   .bodyWithAside {
-    grid-template-columns: 17rem minmax(0, 1fr);
-    align-items: start;
+    display: block;
+    position: relative;
   }
 
-  /* Always there on a desk, and it scrolls on its own: a forty-lesson course
-     must not push the editor's own scroll position around. */
+  /* An auxiliary layer, never a layout column. Until the viewport has enough
+     outer gutter for a permanent rail it opens over the page on request; the
+     document keeps exactly the same measure as the topbar in either state. */
   .aside {
-    display: block;
-    position: sticky;
-    /* Clears the floating header, which is sticky at 0.75rem and is now the
-       platform's own bar rather than a flush strip this shell owned. */
-    top: 5rem;
-    max-height: calc(100svh - 5rem);
+    display: none;
+    position: fixed;
+    z-index: var(--ds-z-overlay);
+    inset-block: 5.75rem 1rem;
+    inset-inline-start: max(1rem, calc(var(--cw-container-inset) - 16.5rem));
+    width: 15.5rem;
+    max-height: none;
     overflow-y: auto;
     padding-block: var(--cw-space-lg);
+    background: color-mix(in srgb, var(--cw-platform-bg) 96%, transparent);
+    border-inline-end: 1px solid var(--cw-mat-stroke-inner);
+    box-shadow: var(--cw-mat-shadow-soft);
+  }
+
+  .aside[data-open] {
+    display: block;
+  }
+}
+
+/* The 1160px document leaves a full rail in the outer gutter here. Only at
+   this width does the auxiliary layer stay permanently visible. */
+@media (min-width: 1660px) {
+  .aside {
+    display: block;
+    background: transparent;
+    box-shadow: none;
   }
 }
 
@@ -119,9 +138,9 @@
   gap: var(--cw-space-2xs);
 }
 
-/* From 901px the rail is always on screen, so the control that reveals it has
-   nothing left to do. */
-@media (min-width: 901px) {
+/* The outline becomes permanent only when it fits outside the shared content
+   container. On smaller desktops this control opens the overlay rail. */
+@media (min-width: 1660px) {
   .contentsAction {
     display: none;
   }
@@ -599,6 +618,66 @@
   flex-wrap: wrap;
 }
 
+.courseAddressRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-width: 0;
+  margin-block-start: var(--cw-space-sm);
+  color: var(--cw-platform-muted);
+  font-size: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.courseAddressLabel {
+  font-size: 0.78rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.courseAddressValue {
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  overflow-wrap: anywhere;
+}
+
+.courseAddressHint {
+  flex: 1 1 14rem;
+  min-width: 0;
+}
+
+.slugEditAction {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
+}
+
+.slugForm {
+  flex: 1 1 22rem;
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+  flex-wrap: wrap;
+}
+
+.slugInput {
+  flex: 1 1 12rem;
+  min-width: 0;
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+}
+
+.slugInput:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
 .courseTitle {
   margin: 0;
   font-family: var(--cw-font-editorial);
@@ -638,6 +717,101 @@
   color: var(--cw-platform-text);
 }
 
+/* One quiet summary replaces two full-width release panels. It answers the
+   three status questions, then moves detail into the release drawer on demand. */
+.courseStatusStrip {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0;
+  border: 1px solid var(--cw-mat-stroke-inner);
+  border-radius: var(--cw-radius-lg);
+  background: color-mix(in srgb, var(--cw-mat-surface) 72%, transparent);
+  overflow: hidden;
+}
+
+.courseStatusItem,
+.courseStatusItemButton {
+  display: grid;
+  gap: var(--cw-space-3xs, 0.25rem);
+  min-width: var(--ds-button-min-width);
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border: 0;
+  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  background: transparent;
+  color: inherit;
+  text-align: start;
+  font: inherit;
+}
+
+.courseStatusItem strong,
+.courseStatusItemButton strong {
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+.courseStatusItem span,
+.courseStatusItemButton span {
+  color: var(--cw-platform-muted);
+  font-size: 0.8rem;
+  line-height: 1.35;
+}
+
+.courseStatusItemButton {
+  cursor: pointer;
+}
+
+.courseStatusItemButton:hover {
+  background: var(--cw-mat-surface-sunk);
+}
+
+.courseStatusItemButton:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: calc(-1 * var(--ds-focus-ring-width));
+}
+
+.releaseAction {
+  composes: secondary from "../platform/PlatformButtons.module.css";
+  margin: var(--cw-space-xs);
+  align-self: center;
+}
+
+.releaseSheetContent {
+  display: grid;
+  gap: var(--cw-space-md);
+}
+
+.releaseSheetContent > .panel {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.releaseSheetContent .blockerList {
+  gap: 0;
+}
+
+.releaseSheetContent .blockerItem {
+  padding: var(--cw-space-sm) 0;
+  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-radius: 0;
+  background: transparent;
+}
+
+.releaseSummary {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  flex-wrap: wrap;
+}
+
+.releaseSection {
+  display: grid;
+  gap: var(--cw-space-sm);
+  padding-block-start: var(--cw-space-md);
+  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+}
+
 /* ── Structure ────────────────────────────────────── */
 
 /* ── The structure, as a path ─────────────────────── */
@@ -654,6 +828,11 @@
    opposite. */
 .structure {
   counter-reset: cw-module;
+}
+
+.structureModules {
+  display: grid;
+  gap: var(--cw-space-sm);
 }
 
 .moduleBlock {
@@ -674,6 +853,30 @@
   margin-block-start: var(--cw-space-sm);
   padding-block-start: var(--cw-space-md);
   border-block-start: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.structureCards .structureModules {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+}
+
+.structureCards .moduleBlock {
+  height: 100%;
+  padding: var(--cw-space-md);
+  padding-inline-start: calc(var(--cw-space-md) + 2.1rem);
+  border: 1px solid var(--cw-mat-stroke-inner);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.structureCards .moduleBlock + .moduleBlock {
+  margin-block-start: 0;
+  padding-block-start: var(--cw-space-md);
+  border-block-start-color: var(--cw-mat-stroke-inner);
+}
+
+.structureCards .lessonRow {
+  background: var(--cw-mat-surface);
 }
 
 .moduleHead {
@@ -1285,7 +1488,7 @@
 
 /* ── Wider viewports: additive only ───────────────── */
 
-@media (min-width: 561px) {
+@media (min-width: 761px) {
   .page {
     padding-block-start: var(--cw-space-xl);
   }
@@ -1296,6 +1499,17 @@
 
   .typeGrid {
     grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr));
+  }
+
+  .courseStatusStrip {
+    grid-template-columns: minmax(9rem, 1fr) minmax(9rem, 1fr) minmax(12rem, 1.25fr) auto;
+    align-items: stretch;
+  }
+
+  .courseStatusItem,
+  .courseStatusItemButton {
+    border-block-end: 0;
+    border-inline-end: 1px solid var(--cw-mat-stroke-inner);
   }
 }
 
@@ -1394,6 +1608,7 @@
 .menuTrigger {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
   composes: square from "../platform/PlatformButtons.module.css";
+  position: relative;
   color: var(--cw-platform-muted);
 }
 
@@ -1577,6 +1792,23 @@
   .sheetHead {
     border-radius: var(--cw-radius-lg) var(--cw-radius-lg) 0 0;
   }
+
+  .sheetSide {
+    width: min(32rem, calc(100vw - var(--cw-space-lg)));
+    height: 100svh;
+    max-height: 100svh;
+    margin: 0 0 0 auto;
+  }
+
+  .sheetSide .sheetBody {
+    height: 100svh;
+    max-height: 100svh;
+    border-radius: var(--cw-radius-lg) 0 0 var(--cw-radius-lg);
+  }
+
+  .sheetSide .sheetHead {
+    border-radius: var(--cw-radius-lg) 0 0 0;
+  }
 }
 
 /* The one authored moment stays; the movement does not. */
@@ -1635,7 +1867,7 @@
     align-self: center;
     color: var(--cw-platform-muted);
     cursor: grab;
-    opacity: 0;
+    opacity: 0.55;
     transition: opacity 120ms ease;
   }
 
@@ -1755,8 +1987,15 @@
 }
 
 .titleEditAction {
-  composes: text from "../platform/PlatformButtons.module.css";
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
   flex: 0 0 auto;
+  color: var(--cw-platform-muted);
+}
+
+.titleEditAction:hover:not(:disabled) {
+  color: var(--cw-platform-text);
+  background: var(--cw-mat-surface-sunk);
 }
 
 .titleEditing {
@@ -1955,4 +2194,412 @@
   color: var(--cw-sem-boundary);
   font-size: 0.82rem;
   line-height: 1.4;
+}
+
+/* ── Course workspace: paper-first composition ──────────────────────────────
+
+   The course overview is not a dashboard made from cards. It is a working
+   sheet: one navigation rail, one document surface and hairlines that preserve
+   the module/lesson hierarchy. Detail remains available in the release sheet,
+   but the page itself stays quiet enough to scan like a manuscript. */
+
+.courseMobileNav {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-md);
+  min-width: 0;
+  overflow-x: auto;
+  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.courseMobileNavItem,
+.courseRailLink {
+  position: relative;
+  border: 0;
+  background: transparent;
+  color: var(--cw-platform-muted);
+  font: inherit;
+  font-weight: var(--ds-button-font-weight);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.courseMobileNavItem {
+  flex: 0 0 auto;
+  min-height: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-2xs);
+}
+
+.inkLabel {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+}
+
+.inkMark {
+  position: absolute;
+  inset-inline: -0.2rem;
+  inset-block-end: -0.56rem;
+  width: calc(100% + 0.4rem);
+  height: var(--cw-ink-stroke-height);
+  overflow: visible;
+  color: var(--cw-nav-marker);
+  pointer-events: none;
+  opacity: 0;
+  transform: scaleX(0.36) rotate(-1.2deg);
+  transform-origin: center;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.courseMobileNavItem:hover,
+.courseMobileNavItem:focus-visible,
+.courseMobileNavItem[aria-current="page"] {
+  color: var(--cw-platform-text);
+}
+
+.courseMobileNavItem:hover .inkMark,
+.courseMobileNavItem:focus-visible .inkMark {
+  opacity: var(--cw-nav-marker-hover-opacity);
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) rotate(-1.2deg);
+}
+
+.courseMobileNavItem[aria-current="page"] .inkMark {
+  opacity: 1;
+  transform: scaleX(1) rotate(-1.2deg);
+}
+
+.courseRail {
+  min-height: calc(100svh - 8rem);
+  display: flex;
+  flex-direction: column;
+}
+
+.courseRailNav {
+  display: grid;
+  gap: var(--cw-space-md);
+  padding-block-start: var(--cw-space-2xl);
+}
+
+.courseRailLink {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-sm);
+  width: 100%;
+  min-height: var(--ds-button-min-height);
+  padding: 0;
+  text-align: start;
+}
+
+.courseRailLink > .inkLabel {
+  padding-block: var(--cw-space-2xs);
+}
+
+.courseRailLink:hover,
+.courseRailLink:focus-visible,
+.courseRailLink[aria-current="page"] {
+  color: var(--cw-platform-text);
+}
+
+.courseRailLink:hover .inkMark,
+.courseRailLink:focus-visible .inkMark {
+  opacity: var(--cw-nav-marker-hover-opacity);
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) rotate(-1.2deg);
+}
+
+.courseRailLink[aria-current="page"] .inkMark {
+  opacity: 1;
+  transform: scaleX(1) rotate(-1.2deg);
+}
+
+.courseRailStatus {
+  display: grid;
+  gap: var(--cw-space-sm);
+  margin-block-start: auto;
+  padding-block: var(--cw-space-xl) var(--cw-space-md);
+}
+
+.courseRailStatusLine {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-height: 1.5rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: 0.86rem;
+  text-align: start;
+}
+
+.courseRailStatusLine:is(button) {
+  cursor: pointer;
+}
+
+.courseRailStatusDot {
+  flex: 0 0 auto;
+  color: var(--cw-platform-muted);
+}
+
+.courseRailStatusDotBoundary {
+  flex: 0 0 auto;
+  color: var(--cw-sem-boundary);
+}
+
+.moduleCollapse {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
+}
+
+.moduleLessonCount {
+  flex: 0 0 auto;
+  padding: var(--cw-space-3xs, 0.25rem) var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: 0.75rem;
+  white-space: nowrap;
+}
+
+.lessonText {
+  min-width: 0;
+  display: grid;
+  gap: 0.12rem;
+}
+
+.lessonIcon {
+  color: var(--cw-platform-muted);
+}
+
+/* The selected view uses the same ink mark as navigation. A faint filled
+   square was a third state language and almost disappeared on the paper tone. */
+.viewSwitch {
+  gap: var(--cw-space-sm);
+  padding: 0;
+  background: transparent;
+}
+
+.viewOption {
+  position: relative;
+  background: transparent;
+  box-shadow: none;
+}
+
+.iconInkRing {
+  position: absolute;
+  z-index: 1;
+  inset: 50% auto auto 50%;
+  width: var(--cw-ink-ring-size);
+  height: var(--cw-ink-ring-size);
+  overflow: visible;
+  color: var(--cw-nav-marker);
+  pointer-events: none;
+  opacity: 0;
+  transform: translate(-50%, -50%) scale(0.72) rotate(-4deg);
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.viewOption[aria-pressed="true"] {
+  background: transparent;
+  box-shadow: none;
+  color: var(--cw-platform-text);
+}
+
+.viewOption:hover .iconInkRing,
+.viewOption:focus-visible .iconInkRing,
+.viewOption[aria-pressed="true"] .iconInkRing,
+.menuTrigger:hover .iconInkRing,
+.menuTrigger:focus-visible .iconInkRing,
+.menuTrigger[aria-expanded="true"] .iconInkRing {
+  opacity: 0.9;
+  transform: translate(-50%, -50%) scale(1) rotate(-4deg);
+}
+
+/* Mobile keeps the release summary after the manuscript instead of spending
+   the first screen on operational state. */
+.courseStatusStrip {
+  border-inline: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.courseSaveBar {
+  position: static;
+  border-radius: 0;
+  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+  background: transparent;
+  box-shadow: none;
+}
+
+.courseStatusItem,
+.courseStatusItemButton {
+  padding-inline: var(--ds-button-padding-inline);
+}
+
+/* Row view is the manuscript. Card view remains an explicit alternate on wide
+   screens, so only the row surface loses the plate and route decoration. */
+.structure:not(.structureCards) {
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  gap: 0;
+}
+
+.structure:not(.structureCards) > .panelHead {
+  padding-block: var(--cw-space-sm);
+  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.structure:not(.structureCards) .structureModules {
+  gap: 0;
+}
+
+.structure:not(.structureCards) .moduleBlock {
+  gap: 0;
+  padding: 0;
+}
+
+.structure:not(.structureCards) .moduleBlock + .moduleBlock {
+  margin-block-start: 0;
+  padding-block-start: 0;
+  border-block-start: 0;
+}
+
+.structure:not(.structureCards) .moduleHead {
+  min-height: 3.7rem;
+  padding-block: var(--cw-space-xs);
+  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.structure:not(.structureCards) .moduleHead::before,
+.structure:not(.structureCards) .lessonList::before,
+.structure:not(.structureCards) .lessonRowWrap::before {
+  content: none;
+}
+
+.structure:not(.structureCards) .moduleFlag {
+  margin: 0 0 0 4.8rem;
+  padding-inline: 0;
+  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.structure:not(.structureCards) .lessonList {
+  gap: 0;
+  margin-inline-start: 4.8rem;
+}
+
+.structure:not(.structureCards) .lessonRowWrap {
+  gap: var(--cw-space-xs);
+  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.structure:not(.structureCards) .lessonRow {
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-sm);
+  padding-inline: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.structure:not(.structureCards) .lessonRow:hover {
+  background: transparent;
+  color: var(--cw-sem-guide-primary);
+}
+
+.structure:not(.structureCards) .addRow {
+  min-height: 3.7rem;
+  margin-inline-start: 4.8rem;
+  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.structure:not(.structureCards) .addAction,
+.structure:not(.structureCards) .addRow .quietAction {
+  min-width: 0;
+  padding-inline: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--cw-sem-warmth-strong);
+}
+
+.structure:not(.structureCards) > .addAction {
+  margin-inline-start: 4.8rem;
+  margin-block-start: var(--cw-space-xs);
+}
+
+@media (max-width: 560px) {
+  .structure:not(.structureCards) .moduleFlag,
+  .structure:not(.structureCards) .lessonList,
+  .structure:not(.structureCards) .addRow,
+  .structure:not(.structureCards) > .addAction {
+    margin-inline-start: 2.2rem;
+  }
+
+  .moduleLessonCount {
+    display: none;
+  }
+}
+
+@media (min-width: 901px) {
+  .bodyWithAside {
+    display: block;
+  }
+
+  .aside {
+    min-height: calc(100svh - 5rem);
+    padding-inline: var(--cw-space-2xl);
+  }
+
+  .page {
+    position: relative;
+    width: min(calc(100% - 2rem), var(--cw-max-width));
+    margin-inline: auto;
+    gap: var(--cw-space-xl);
+  }
+
+  .docHead {
+    padding-block-start: var(--cw-space-md);
+    padding-inline-end: 13rem;
+  }
+
+  .docHead .pageTitle {
+    font-size: clamp(2.25rem, 3vw, 2.75rem);
+  }
+
+  .saveBar:not([data-pending]) {
+    position: absolute;
+    inset-block-start: 9rem;
+    inset-inline-end: 0;
+    bottom: auto;
+    padding: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .saveBar:not([data-pending]) .historyPair,
+  .saveBar:not([data-pending]) .saveState {
+    display: none;
+  }
+
+  .saveBar:not([data-pending]) .commitAction {
+    min-width: 10.5rem;
+  }
+
+  .structure:not(.structureCards) .lessonMeta {
+    display: none;
+  }
+}
+
+@media (min-width: 1660px) {
+  .courseMobileNav,
+  .courseStatusStrip {
+    display: none;
+  }
 }

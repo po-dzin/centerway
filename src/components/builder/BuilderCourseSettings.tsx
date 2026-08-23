@@ -151,11 +151,12 @@ export function BuilderCourseSettings({
           sheet holding a second copy of them is a second place for them to be
           wrong. What stays here is what has no place in the document: the
           address, the schedule, the entitlement codes, the palette. */}
-      {/* The course slug is the address of every lesson under it and of every
-          reminder already sent. Shown, never edited — a rename is a migration. */}
+      {/* The course page owns the address editor. Settings only explains the
+          lifecycle boundary so the same value is not edited in two places. */}
       <p className={styles.readOnlyNote}>
-        Адреса курсу: <code>my.centerway.net.ua/{course.slug}</code> — не змінюється. Курс уже має власну
-        програму <code>{course.programSlug}</code>; до каталогу її додає адміністратор після перевірки й публікації.
+        Адреса курсу: <code>my.centerway.net.ua/{course.slug}</code>. Її можна змінити у заголовку, поки курс лишається
+        невикористаною прихованою чернеткою; після випуску або появи учнів адреса закріплюється. До каталогу курс додає
+        адміністратор.
       </p>
 
       <h3 className={styles.subTitle}>Стартова структура</h3>

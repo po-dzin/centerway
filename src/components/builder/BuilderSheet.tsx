@@ -26,11 +26,13 @@ import styles from "./Builder.module.css";
 export function BuilderSheet({
   open,
   title,
+  placement = "center",
   onClose,
   children,
 }: {
   open: boolean;
   title: string;
+  placement?: "center" | "side";
   onClose: () => void;
   children: ReactNode;
 }) {
@@ -46,7 +48,7 @@ export function BuilderSheet({
   return (
     <dialog
       ref={ref}
-      className={styles.sheet}
+      className={`${styles.sheet} ${placement === "side" ? styles.sheetSide : ""}`}
       aria-label={title}
       // Escape fires `cancel` before `close`; both are routed back to the owner
       // so React state and the element never disagree about whether it is open.

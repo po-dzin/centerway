@@ -8,7 +8,7 @@ import { canonicalPersonalPath } from "@/lib/surfaces/catalog";
 import { isPersonalHost } from "@/lib/platform/surfaceHref";
 import { currentAppKey, type PlatformAppKey } from "@/lib/platform/apps";
 import styles from "@/components/platform/PlatformShellStyles";
-import { Icon } from "@/components/Icon";
+import { HandGraphic, Icon } from "@/components/Icon";
 import { PlatformAccountMenu } from "./PlatformAccountMenu";
 import { useHeaderTone } from "./headerTone";
 import { useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
@@ -201,7 +201,10 @@ export function PlatformHeader({
                   onClick={closeMenu}
                   aria-current={isActive(item.href, item.match) ? "page" : undefined}
                 >
-                  {item.label}
+                  <span className={styles.navText}>
+                    {item.label}
+                    <HandGraphic className={styles.navInkMark} name="ink-stroke" size={36} />
+                  </span>
                 </Link>
               ))}
             </nav>
@@ -232,6 +235,7 @@ export function PlatformHeader({
               not blink through an empty frame on the swap. */}
           <Icon name="menu" size={32} className={styles.menuGlyph} />
           <Icon name="close" size={32} className={styles.menuGlyphClose} />
+          <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
         </button>
         )}
       </div>

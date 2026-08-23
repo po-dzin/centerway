@@ -30,11 +30,11 @@ import styles from "./Builder.module.css";
  * already says which course and which lesson — so the controls are beside the
  * thing they act on.
  *
- * THE RAIL is the course's own structure, and it is for the LESSON EDITOR only.
- * The course page IS the structure — a rail repeating it beside itself is the
- * panel-inside-a-panel the design system spent a wave removing. Below 901px the
- * same node becomes a drawer the trail row's button opens; one component, two
- * presentations, never two lists that can disagree.
+ * THE RAIL is course-local navigation. In the lesson editor it carries the
+ * outline; on the course workspace it carries only the three stable modes and
+ * release health. It never becomes a second editor. Below 901px the course
+ * workspace uses an in-flow mode strip and moves release health below the
+ * manuscript, while the long lesson outline remains an explicit drawer.
  */
 
 export function BuilderShell({

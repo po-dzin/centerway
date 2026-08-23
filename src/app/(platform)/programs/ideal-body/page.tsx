@@ -5,9 +5,9 @@ import { describe } from "@/lib/brand/identity";
 import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = pageMetadata({
-  title: "Ідеальне тіло з Аюрведою: 8 тижнів харчування",
+  title: "Природнє тіло з Аюрведою: 21 урок про харчування і ритм",
   description: describe(
-    "8-тижнева програма харчування і тілесної стабілізації: вага, апетит, травлення і раціон під вашу конституцію, без дієтичних крайнощів."
+    "Навчальна програма з 21 основного уроку про Аюрведу, властивості продуктів, добовий ритм і баланс дош."
   ),
   path: "/programs/ideal-body",
 });

@@ -37,6 +37,8 @@ export type CourseRow = {
     reviewStatus: "draft" | "in_review" | "changes_requested" | "approved";
     reviewNote: string | null;
     reviewEnabled: boolean;
+    /** A published release exists, while the displayed review state belongs to its next version. */
+    hasPendingRevision: boolean;
     visibility: "hidden" | "unlisted" | "listed";
     locale: string;
     brand: string;

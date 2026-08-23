@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { courseThemeAttributes, moveItem } from "@/lms-core";
 import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
 import { BuilderMenu } from "./BuilderMenu";
-import { Icon } from "@/components/Icon";
+import { HandGraphic, Icon } from "@/components/Icon";
 import {
   commitCourseImport,
   createCourse,
@@ -507,6 +507,7 @@ function ViewSwitch({ view, onChange }: { view: CourseView; onChange: (next: Cou
         onClick={() => onChange("rows")}
       >
         <Icon name="view-rows" size={20} label="Рядки" />
+        <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
       </button>
       <button
         className={styles.viewOption}
@@ -516,6 +517,7 @@ function ViewSwitch({ view, onChange }: { view: CourseView; onChange: (next: Cou
         onClick={() => onChange("grid")}
       >
         <Icon name="view-cards" size={20} label="Картки" />
+        <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
       </button>
     </div>
   );

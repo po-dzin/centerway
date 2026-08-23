@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
+import { revalidateTag } from "next/cache";
 import { AccessError, listCourses, moderateCourse, setCourseAuthor } from "@/lib/admin/access";
+import { COURSE_LIST_TAG, PURGE, courseTag } from "@/lib/lms/liveCatalog";
 import {
     badRequestResponse,
     forbiddenResponse,
@@ -40,6 +42,8 @@ export async function PATCH(req: NextRequest) {
     try {
         if (body.action) {
             const result = await moderateCourse({ courseId: body.courseId, actorId: session.user.id, action: body.action, note: body.note, visibility: body.visibility });
+            revalidateTag(courseTag(result.slug), PURGE);
+            revalidateTag(COURSE_LIST_TAG, PURGE);
             return NextResponse.json({ course: result });
         }
         const result = await setCourseAuthor({

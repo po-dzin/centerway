@@ -791,7 +791,7 @@ function BuilderTab({
                                     <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">
                                         {course.status}
                                     </span>
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">{course.reviewStatus}</span>
+                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">{course.hasPendingRevision ? `оновлення · ${course.reviewStatus}` : course.reviewStatus}</span>
                                 </div>
                                 <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
                                     <span className="font-mono">{course.slug}</span>

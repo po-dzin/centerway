@@ -14,7 +14,7 @@ export function getOfferMeta(productCode: string | null | undefined): {
     case "irem":
       return { code: "irem", title: "IREM Гімнастика", kind: "program" };
     case "ideal-body":
-      return { code: "ideal-body", title: "Ідеальне тіло з Аюрведою", kind: "program" };
+      return { code: "ideal-body", title: "Природнє тіло з Аюрведою", kind: "program" };
     case "consult":
       return { code: "consult", title: "Консультація", kind: "lead" };
     case "herbs":

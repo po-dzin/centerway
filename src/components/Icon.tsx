@@ -24,17 +24,32 @@ type IconBaseProps = Omit<SVGProps<SVGSVGElement>, "children" | "width" | "heigh
   label?: string;
 };
 
-function Glyph({ id, size, label, ...rest }: IconBaseProps & { id: string }) {
+function Glyph({
+  id,
+  size,
+  label,
+  viewBox,
+  stretch = false,
+  ...rest
+}: IconBaseProps & { id: string; viewBox?: string; stretch?: boolean }) {
   const a11y = label ? { role: "img", "aria-label": label } : { "aria-hidden": true as const };
   return (
-    <svg width={size} height={size} focusable="false" {...a11y} {...rest}>
-      <use href={`${SPRITE}#${id}`} />
+    <svg
+      width={size}
+      height={size}
+      viewBox={viewBox}
+      preserveAspectRatio={stretch ? "none" : undefined}
+      focusable="false"
+      {...a11y}
+      {...rest}
+    >
+      <use href={`${SPRITE}#${id}`} width={stretch ? "100%" : undefined} height={stretch ? "100%" : undefined} />
     </svg>
   );
 }
 
 export function Icon({ name, size = 24, ...rest }: IconBaseProps & { name: CwIconName }) {
-  return <Glyph id={`cw-${name}`} size={size} {...rest} />;
+  return <Glyph id={`cw-${name}`} size={size} viewBox="0 0 24 24" {...rest} />;
 }
 
 /**
@@ -46,5 +61,5 @@ export function HandGraphic({
   size = 72,
   ...rest
 }: IconBaseProps & { name: CwGraphicName }) {
-  return <Glyph id={`cw-${name}`} size={size} {...rest} />;
+  return <Glyph id={`cw-${name}`} size={size} viewBox="0 0 36 36" stretch={name === "ink-stroke"} {...rest} />;
 }

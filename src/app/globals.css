@@ -135,6 +135,10 @@
     --cw-brand-size-symbol-header: 2rem;
     --cw-brand-size-wordmark-header-width: 8.1rem;
     --cw-brand-size-wordmark-header-height: 1.93rem;
+    --cw-ink-stroke-height: 0.85rem;
+    --cw-ink-ring-size: 3rem;
+    --cw-ink-hover-opacity: 0.42;
+    --cw-ink-hover-scale: 0.74;
     --cw-brand-size-symbol-footer: 2rem;
     --cw-brand-size-wordmark-footer-width: 8.6rem;
     --cw-brand-size-wordmark-footer-height: 2.05rem;
@@ -483,8 +487,8 @@
   [data-cw-header-tone="light"] {
     --cw-nav-marker: var(--cw-platform-text);
     --cw-nav-marker-size: 2px;
-    --cw-nav-marker-hover-opacity: 0.42;
-    --cw-nav-marker-hover-scale: 0.74;
+    --cw-nav-marker-hover-opacity: var(--cw-ink-hover-opacity);
+    --cw-nav-marker-hover-scale: var(--cw-ink-hover-scale);
   }
 
   .dark,
