@@ -8,7 +8,10 @@ const ids = (() => {
 })();
 
 function publishedCourse() {
-  return { ...newCourseFromTemplate(ids, { slug: "test-course", title: "Тест" }), status: "published" as const };
+  return {
+    ...newCourseFromTemplate(ids, { slug: "test-course", title: "Тест", programSlug: "test-course" }),
+    status: "published" as const,
+  };
 }
 
 describe("immediatePublishedPatch", () => {

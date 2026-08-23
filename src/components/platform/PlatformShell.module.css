@@ -436,9 +436,13 @@
 
 .menuButton:hover .iconInkRing,
 .menuButton:focus-visible .iconInkRing,
-.menuButton[aria-expanded="true"] .iconInkRing,
 .profileEntry:hover .profileInkRing,
-.profileEntry:focus-visible .profileInkRing,
+.profileEntry:focus-visible .profileInkRing {
+  opacity: var(--cw-ink-hover-opacity);
+  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+}
+
+.menuButton[aria-expanded="true"] .iconInkRing,
 .profileEntry[aria-expanded="true"] .profileInkRing {
   opacity: 0.9;
   transform: translate(-50%, -50%) scale(1) rotate(-4deg);
@@ -507,12 +511,12 @@
 }
 
 .profileEntry:hover {
-  background: var(--platform-header-control-bg);
+  background: transparent;
 }
 
 .profileEntry:focus-visible {
   outline: none;
-  background: var(--platform-header-control-bg);
+  background: transparent;
   box-shadow: var(--platform-utility-control-focus);
 }
 
@@ -821,11 +825,11 @@
 }
 
 .menuButton:hover {
-  background: var(--platform-header-control-bg);
+  background: transparent;
 }
 
 .menuButton:focus-visible {
-  background: var(--platform-header-control-bg);
+  background: transparent;
   box-shadow: var(--platform-utility-control-focus);
 }
 

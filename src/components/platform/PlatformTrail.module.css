@@ -53,7 +53,7 @@
 
 .crumbLink:hover:not(:disabled) {
   color: var(--cw-platform-text);
-  background: var(--cw-mat-surface-sunk);
+  background: transparent;
   box-shadow: none;
 }
 
@@ -81,8 +81,7 @@
   color: var(--cw-platform-text);
   font-size: 0.9rem;
   font-weight: 600;
-  background: color-mix(in srgb, var(--cw-platform-accent) 10%, transparent);
-  border-radius: var(--cw-radius-sm);
+  background: transparent;
 }
 
 .inkLabel {
@@ -115,14 +114,14 @@
 }
 
 .crumbLink:hover .inkMark,
-.crumbLink:focus-visible .inkMark,
-.inkLabel[data-current] .inkMark {
-  opacity: 1;
-  transform: scaleX(1) rotate(-1.2deg);
+.crumbLink:focus-visible .inkMark {
+  opacity: var(--cw-nav-marker-hover-opacity);
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) rotate(-1.2deg);
 }
 
 .inkLabel[data-current] .inkMark {
-  opacity: 0.9;
+  opacity: 1;
+  transform: scaleX(1) rotate(-1.2deg);
 }
 
 @media (prefers-reduced-motion: reduce) {

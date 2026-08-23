@@ -225,8 +225,8 @@
 }
 
 .chrome:hover:not(:disabled) {
-  background: var(--cw-mat-surface);
-  box-shadow: var(--cw-mat-shadow-soft);
+  background: transparent;
+  box-shadow: none;
 }
 
 /* Icon-only: the inline padding is sized for a label beside the glyph, and
@@ -242,6 +242,14 @@
   composes: base;
   composes: chrome;
   padding-inline: 0;
+}
+
+/* Icon-only chrome is guided by the baked ink ring supplied by its consumer.
+   A pale material plate competes with that gesture and reads as a default
+   browser highlight on the paper surface. */
+.chromeBare:hover:not(:disabled) {
+  background: transparent;
+  box-shadow: none;
 }
 
 /* ── onMedia ──────────────────────────────────────── */
