@@ -35,9 +35,28 @@ import { db, listCourseFiles, readCourseFile, rootDir } from "./lib/lms-cli.mjs"
 
 const requireDb = process.argv.includes("--require-db");
 
-/** Same serialisation `writeCourseFile` uses, so equality means "pull is a no-op". */
-function canonical(course) {
-  return JSON.stringify(course, null, 2);
+/**
+ * Deep, key-order-independent equality.
+ *
+ * `writeCourseFile` and `courseFromRows` do not promise the same key order for
+ * a block object — one path is "spread the input", the other rebuilds it field
+ * by field — and a `JSON.stringify` comparison flagged that reordering as
+ * drifted "lesson content" the first time this ran, on a course that had just
+ * been written by `lms:import` with genuinely identical data. A JSON round-trip
+ * through `JSON.parse` normalises key order the same way `===` on primitives
+ * already ignores it; arrays keep position, which is correct — a reordered
+ * lesson list is real drift.
+ */
+function sameCourse(a, b) {
+  return JSON.stringify(sortKeysDeep(a)) === JSON.stringify(sortKeysDeep(b));
+}
+
+function sortKeysDeep(value) {
+  if (Array.isArray(value)) return value.map(sortKeysDeep);
+  if (value && typeof value === "object") {
+    return Object.fromEntries(Object.keys(value).sort().map((key) => [key, sortKeysDeep(value[key])]));
+  }
+  return value;
 }
 
 /**
@@ -130,7 +149,7 @@ async function main() {
     }
 
     const live = preserveFileAnnotations(fileCourse, courseFromRows(courseRow, modules ?? [], lessons ?? []));
-    if (canonical(live) !== canonical(fileCourse)) {
+    if (!sameCourse(live, fileCourse)) {
       drifted.push({ slug, note: describe(fileCourse, live), file: path.relative(rootDir, file) });
     }
   }
