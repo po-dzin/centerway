@@ -2468,6 +2468,72 @@
   opacity: 0.4;
 }
 
+/* ── Durable version history ─────────────────────── */
+
+.versionHistory {
+  display: grid;
+  gap: var(--cw-space-lg);
+}
+
+.versionCheckpoint,
+.versionDetail {
+  display: grid;
+  gap: var(--cw-space-sm);
+  padding-block-end: var(--cw-space-lg);
+  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.versionCheckpoint .commitAction,
+.versionDetail .quietAction {
+  justify-self: start;
+}
+
+.versionList,
+.versionOutline {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  margin: var(--cw-space-sm) 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.versionItem {
+  composes: quiet from "../platform/PlatformButtons.module.css";
+  width: 100%;
+  max-width: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-sm);
+  text-align: start;
+}
+
+.versionItemMain {
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.versionItemMain span,
+.versionItem time,
+.versionOutline span {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-button-font-size);
+}
+
+.versionItem time {
+  flex: 0 0 auto;
+  text-align: end;
+}
+
+.versionOutline li {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  padding-block: var(--cw-space-xs);
+  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+}
+
 /* ── Drag to reorder ──────────────────────────────── */
 
 /* The grip is the ONLY way a row becomes draggable, and it is not rendered

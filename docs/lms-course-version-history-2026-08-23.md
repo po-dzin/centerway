@@ -59,13 +59,17 @@ invalidation and must not be treated as a human-visible revision number.
 1. `GET .../revisions` lists metadata without loading every JSON document.
 2. `POST .../revisions` creates a deduplicated checkpoint from the current
    Builder document.
-3. `GET .../revisions/{id}` loads one document for preview/diff.
+3. `GET .../revisions/{id}` loads one document for the Builder side sheet. The
+   base UI shows its type, timestamp and course outline without pulling every
+   JSON document into the timeline request.
 4. `POST .../revisions/{id}/restore` is enabled only after restoring the draft
    and appending its `restored` checkpoint happen in one database transaction.
    A two-request or save-then-log implementation is forbidden because it can
    report failure after the document has already changed.
-5. Builder history is a side sheet/timeline with date, actor, kind and label;
-   diff is computed on demand and is not stored as another source of truth.
+5. Builder history is a side sheet/timeline with date, kind and label. Manual
+   checkpoints are available only after the mutable working copy is saved.
+   Actor presentation and diff remain the next UI increment; diff is computed
+   on demand and is not stored as another source of truth.
 
 ## Operational order
 

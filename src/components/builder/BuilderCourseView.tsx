@@ -50,6 +50,7 @@ import {
   type DurableCourseDraft,
 } from "./courseDraftStore";
 import { BuilderDraftConflict } from "./BuilderDraftConflict";
+import { BuilderVersionHistory } from "./BuilderVersionHistory";
 
 type State =
   | { status: "loading" }
@@ -112,6 +113,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const [slugDraft, setSlugDraft] = useState("");
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const [draftConflict, setDraftConflict] = useState<DurableCourseDraft | null>(null);
+  const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const draftGeneration = useRef<number | null>(null);
   const router = useRouter();
   const storedStructureView = useSyncExternalStore(subscribeToStructureView, readStructureView, () => "rows" as StructureView);
@@ -478,6 +480,15 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       trail={[{ label: "Курси", onNavigate: () => navigate("/build") }, { label: trailTitle(course.title, "Курс без назви") }]}
       tools={
         <>
+          <button
+            className={styles.menuTrigger}
+            type="button"
+            aria-label="Історія версій"
+            title="Історія версій"
+            onClick={() => setVersionHistoryOpen(true)}
+          >
+            <Icon name="clock" size={18} />
+          </button>
           <button className={styles.quietAction} type="button" onClick={preview} disabled={working} title={dirty ? "Зберегти й відкрити як учень" : "Відкрити як учень"}>
             Переглянути
           </button>
@@ -504,6 +515,12 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       asideCompact={railCollapsed}
       onNavigate={navigate}
     >
+      <BuilderVersionHistory
+        slug={slug}
+        open={versionHistoryOpen}
+        checkpointDisabled={working || dirty}
+        onClose={() => setVersionHistoryOpen(false)}
+      />
       {draftConflict ? (
         <BuilderDraftConflict onRecover={recoverConflictingDraft} onDiscard={discardConflictingDraft} />
       ) : null}
