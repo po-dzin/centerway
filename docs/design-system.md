@@ -684,6 +684,11 @@ The contract layer (`route_family_contracts.json` → `screen_manifests.json` �
   This replaced **three** overlapping scales that shipped at once: `--cw-radius-*` (12/18/28), an unused `--ds-radius-*` delivery alias (12/16/20), and a standalone `--cw-card-radius` (20). `md` therefore meant 18 in one file and 16 in another, and a single mobile screen rendered six different corners (12, 14.4, 16, 16.8, 20, 21.6 px). Viewport-interpolated radii (`clamp(1rem, 4vw, …)`) are gone for the same reason: a corner that changes with the window cannot belong to a scale.
 - Touch target minimum `--ds-touch-target-min: 3rem` (canonical since e0c7dbc).
 - Breakpoints: mobile ≤ 560px, tablet 561–900px, desktop ≥ 901px.
+- **Course surfaces have one footer composition (2026-08-24).** Storefront,
+  learner shelf and Builder may carry different links, but their footer uses
+  the same `--cw-max-width` container, gutter and three-track grid. In Builder
+  the footer is a shell row after the workspace: the course rail ends before
+  it and never becomes an extra column that narrows or shifts the footer.
 - **The tablet band gets desktop content and phone chrome (2026-08-21).** The three names above were real in the token file and not in the CSS: `561–900` carried a handful of hero and footer tweaks, and everything else fell through to the phone. An 834px iPad therefore rendered a snap carousel of 626px offer cards — one visible, the next cut at the edge — and body copy running the full 800px. Five pixels wider, at 905px, the same content came out two-up in a 428px grid. The cliff was the layout, not the width.
 
   The band now takes the desktop's *content* shape and keeps the phone's *chrome*: `programShowcase` / `aggregateRail` become a two-column grid (no snap, no edge bleed), and `grid2` / `grid3` / `relaxedGrid` / `videoActionGrid` go two-up. The topbar stays a drawer, because the full nav needs ~790px before the wordmark and the avatar are placed — more than an iPad in portrait has — and a drawer is the better touch target anyway. `split` and the author panel stay stacked: both set a portrait beside prose, and at 800px the text column comes out narrower than the photograph.
