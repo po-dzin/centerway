@@ -2432,7 +2432,7 @@
   /* The line uses the same 36px source grid as the circular selector, but is
      rendered in a 0.85rem-tall band. Scale its ink vertically so the selected
      nav item has the same perceived stroke weight as the selected icon. */
-  transform: scaleX(0.58) scaleY(3.4) rotate(-1.2deg);
+  transform: scaleX(0.58) scaleY(3.4) rotate(-0.4deg);
   transform-origin: center;
   transition: opacity 160ms ease, transform 160ms ease;
 }
@@ -2445,13 +2445,13 @@
 
 .courseMobileNavItem:hover .inkMark,
 .courseMobileNavItem:focus-visible .inkMark {
-  opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-1.2deg);
+  opacity: var(--cw-ink-hover-opacity);
+  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(3.4) rotate(-0.4deg);
 }
 
 .courseMobileNavItem[aria-current="page"] .inkMark {
   opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-1.2deg);
+  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
 }
 
 .courseRail {
@@ -2497,13 +2497,13 @@
 
 .courseRailLink:hover .inkMark,
 .courseRailLink:focus-visible .inkMark {
-  opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-1.2deg);
+  opacity: var(--cw-ink-hover-opacity);
+  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(3.4) rotate(-0.4deg);
 }
 
 .courseRailLink[aria-current="page"] .inkMark {
   opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-1.2deg);
+  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
 }
 
 .courseRailStatus {
