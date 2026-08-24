@@ -132,7 +132,11 @@ function median(values: number[]) {
   return sorted[Math.floor(sorted.length / 2)];
 }
 
-export function useHeaderTone(initialTone: HeaderTone = "light", watchKey?: string | null) {
+export function useHeaderTone(
+  initialTone: HeaderTone = "light",
+  watchKey?: string | null,
+  frozen = false,
+) {
   const [headerTone, setHeaderTone] = useState<HeaderTone>(initialTone);
   // Hysteresis has to compare against the tone that is on screen right now, not
   // the one this render closed over.
@@ -140,6 +144,10 @@ export function useHeaderTone(initialTone: HeaderTone = "light", watchKey?: stri
 
   useLayoutEffect(() => {
     if (typeof window === "undefined") return;
+    // The open mobile menu is the expanded state of the current glass bar, not
+    // a new surface. Background scrolling is locked while it is open, so keep
+    // the already resolved tone until the sheet closes and sampling resumes.
+    if (frozen) return;
 
     /* Hysteresis fixes the sampled path, but most flips are not sampled — the
        sections declare their own tone, and some of them are short. On / the bar
@@ -306,7 +314,7 @@ export function useHeaderTone(initialTone: HeaderTone = "light", watchKey?: stri
       window.removeEventListener("resize", requestToneUpdate);
       window.removeEventListener("load", requestToneUpdate);
     };
-  }, [initialTone, watchKey]);
+  }, [frozen, initialTone, watchKey]);
 
   return headerTone;
 }

@@ -138,6 +138,10 @@
   content: none;
 }
 
+.menuScrim {
+  display: none;
+}
+
 .shellOverlay .header {
   position: fixed;
   top: 0.95rem;

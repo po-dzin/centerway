@@ -143,18 +143,26 @@
     content: none;
   }
 
-  /* The mobile drawer is the active plane. Soften the page behind it without
-     blurring the header itself; pointer events pass through so the existing
-     outside-click handler still closes the menu. */
-  .header[data-menu-open="true"][data-cw-glass="shell"]::after {
-    content: "";
+  /* The drawer is a modal plane, but it remains a drawer hung from the bar.
+     This transparent interaction shield blocks the page without tinting the
+     material beneath it: a tinted backdrop would be sampled by the drawer's
+     glass and make the menu itself dark and low-contrast. */
+  .header[data-menu-open="true"] {
+    z-index: var(--ds-z-modal);
+  }
+
+  .header[data-menu-open="true"] > .menuScrim {
+    display: block;
     position: fixed;
     inset: 0;
-    z-index: 0;
-    pointer-events: none;
+    z-index: -1;
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    border: 0;
     border-radius: 0;
-    background: color-mix(in srgb, var(--cw-platform-bg) 18%, transparent);
-    backdrop-filter: var(--cw-mat-filter);
+    background: transparent;
+    cursor: default;
   }
 
   /* Bar and drawer share one silhouette while open — the drawer is the bar
@@ -275,10 +283,8 @@
   }
 
   /* The menu is a drawer hung off the bar's bottom edge, not a full-screen
-     sheet: it starts at the bar's own bottom edge, keeps only the bottom
-     corners, and the page stays visible and scrollable behind it. The sheet
-     took over the whole viewport for five links and a profile row, and needed a
-     scrim, a scroll lock and its own safe-area padding to do it. */
+     sheet: it starts at the bar's own bottom edge and keeps the bottom corners.
+     The separate modal scrim blocks the page without changing this geometry. */
   .navLayer.navLayer {
     position: absolute;
     top: 100%;
@@ -405,13 +411,11 @@
      --cw-menu-sheet-height is measured in PlatformHeader, because the drawer
      sizes to its content and CSS cannot see that.
 
-     The sheet takes the media floor rather than the bar's 30% chrome. Different
-     job: the bar is something the page reads through, the sheet covers content
-     and carries a list of links over whatever happens to be behind it. Density
-     is the only thing legible over an arbitrary pixel, and unlike the bar the
-     sheet has no sampler bounding what that pixel can be. */
+     The drawer is the expanded chrome, so its resolved tone and translucent
+     density stay continuous with the bar. The scrim supplies separation from
+     body copy without replacing the glass with an opaque material. */
   .header[data-menu-open="true"][data-cw-glass="shell"]::before {
-    background-color: var(--cw-mat-tint-media);
+    background-color: var(--platform-header-band-bg);
     /* height:auto is not tidying — the closed-state rule above pins height:100%,
        and with a height set the box is over-constrained, so `bottom` is thrown
        away and the band silently stays the size of the bar. */

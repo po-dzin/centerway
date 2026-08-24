@@ -13,6 +13,9 @@ import { PlatformAccountMenu } from "./PlatformAccountMenu";
 import { useHeaderTone } from "./headerTone";
 import { useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
 
+const MODAL_FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 /**
  * `learn` is a different application intent: the mark leads back to the shelf
  * and the personal navigation never becomes a public route map.
@@ -32,7 +35,6 @@ export function PlatformHeader({
   const navLayerRef = useRef<HTMLDivElement | null>(null);
   const toggleRef = useRef<HTMLButtonElement | null>(null);
   const pathname = usePathname();
-  const headerTone = useHeaderTone(initialTone, pathname);
   const href = useSurfaceHref();
   const host = useSurfaceHost();
   const onPersonalSurface = surface === "personal" || isPersonalHost(host);
@@ -61,13 +63,24 @@ export function PlatformHeader({
     .filter((key): key is PlatformAppKey => key !== null);
   const currentPath = pathname ?? null;
   const menuOpen = openMenuPath !== null && openMenuPath === currentPath;
+  const headerTone = useHeaderTone(initialTone, pathname, menuOpen);
 
-  // The mobile menu is a drawer hung off the bar, not a full-screen sheet, so
-  // the page behind it stays live: no scroll lock, and the two ways out of a
-  // drawer — click away, press Escape — have to exist. Same contract as the
-  // network bar (shared/js/network-nav.js).
+  // The mobile menu keeps the geometry of a drawer, but behaves as a modal:
+  // background surfaces are inert, scrolling is locked and keyboard focus
+  // cannot escape until the user closes it.
   useEffect(() => {
     if (!menuOpen || typeof document === "undefined") return;
+
+    const header = headerRef.current;
+    const shell = header?.parentElement;
+    const backgroundSiblings = shell
+      ? Array.from(shell.children).filter((element) => element !== header)
+      : [];
+    const previouslyInert = backgroundSiblings.map((element) => element.hasAttribute("inert"));
+    backgroundSiblings.forEach((element) => element.setAttribute("inert", ""));
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
 
     function onPointerDown(event: MouseEvent | TouchEvent) {
       const target = event.target;
@@ -76,9 +89,29 @@ export function PlatformHeader({
     }
 
     function onKeyDown(event: KeyboardEvent) {
-      if (event.key !== "Escape") return;
-      setOpenMenuPath(null);
-      toggleRef.current?.focus();
+      if (event.key === "Escape") {
+        setOpenMenuPath(null);
+        toggleRef.current?.focus();
+        return;
+      }
+      if (event.key !== "Tab" || !header) return;
+
+      const focusable = Array.from(header.querySelectorAll<HTMLElement>(MODAL_FOCUSABLE)).filter(
+        (element) => element.getClientRects().length > 0
+      );
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     }
 
     document.addEventListener("mousedown", onPointerDown);
@@ -88,6 +121,10 @@ export function PlatformHeader({
       document.removeEventListener("mousedown", onPointerDown);
       document.removeEventListener("touchstart", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
+      document.body.style.overflow = previousOverflow;
+      backgroundSiblings.forEach((element, index) => {
+        if (!previouslyInert[index]) element.removeAttribute("inert");
+      });
     };
   }, [menuOpen]);
 
@@ -149,13 +186,27 @@ export function PlatformHeader({
       data-cw-header-tone={headerTone}
       data-cw-header-mode={mode}
       data-menu-open={menuOpen ? "true" : "false"}
+      role={menuOpen ? "dialog" : undefined}
+      aria-modal={menuOpen ? "true" : undefined}
+      aria-label={menuOpen ? "Навігаційне меню" : undefined}
     >
+      <button
+        className={styles.menuScrim}
+        type="button"
+        tabIndex={-1}
+        aria-label="Закрити навігаційне меню"
+        onClick={closeMenu}
+      />
       <div className={`${styles.container} ${styles.headerInner}`}>
         <Link className={styles.brand} href={homeHref} onClick={closeMenu} aria-label="CenterWay">
           <span className={styles.brandSymbol} aria-hidden="true" />
           <span className={styles.brandWordmark} aria-hidden="true" />
         </Link>
-        <div ref={navLayerRef} className={`${styles.navLayer} ${menuOpen ? styles.navLayerOpen : ""}`} id="platform-mobile-menu">
+        <div
+          ref={navLayerRef}
+          className={`${styles.navLayer} ${menuOpen ? styles.navLayerOpen : ""}`}
+          id="platform-mobile-menu"
+        >
           <div className={styles.mobileMenuSurface} data-cw-glass="shell">
             <nav className={`${styles.nav} ${styles.mobileMenuNav}`} aria-label="Основна навігація">
               {navItems.map((item) => (
