@@ -51,6 +51,12 @@ import {
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { lessonDocumentFailureCopy } from "./lessonDocumentCopy";
+import {
+  clearDurableCourseDraft,
+  inspectDurableCourseDraft,
+  type DurableCourseDraft,
+} from "./courseDraftStore";
+import { BuilderDraftConflict } from "./BuilderDraftConflict";
 
 type State =
   | { status: "loading" }
@@ -86,8 +92,10 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const [note, setNote] = useState<string | null>(null);
   const [contentsOpen, setContentsOpen] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [draftConflict, setDraftConflict] = useState<DurableCourseDraft | null>(null);
   const importPicker = useRef<HTMLInputElement>(null);
   const draftGeneration = useRef<number | null>(null);
+  const serverCourse = useRef<Course | null>(null);
   /** The block just created, so the caret can land in it instead of being aimed. */
   const [freshBlockId, setFreshBlockId] = useState<string | null>(null);
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
@@ -105,7 +113,19 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       if (cancelled) return;
       if (result.ok) {
         draftGeneration.current = result.data.draftGeneration;
-        history.reset(result.data.course);
+        serverCourse.current = result.data.course;
+        const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration);
+        if (cancelled) return;
+        setDraftConflict(durable.kind === "conflict" ? durable.draft : null);
+        if (durable.kind === "recover") {
+          history.recover(result.data.course, durable.draft.course);
+          setNote("Відновлено локальні зміни. Вони збережуться автоматично.");
+        } else {
+          history.reset(result.data.course);
+          if (durable.kind === "conflict") {
+            setNote("Локальна копія збережена окремо: серверна версія змінилася в іншій вкладці.");
+          }
+        }
       }
       setState(
         result.ok
@@ -206,6 +226,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     draftGeneration.current = result.data.draftGeneration;
     return {
       ok: true as const,
+      generation: result.data.draftGeneration,
       message: result.data.blockers.length === 0
         ? "Збережено. Блокерів немає."
         : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`,
@@ -218,6 +239,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     paused: busy,
     persist: persistCourse,
     markSaved: history.markSaved,
+    getDraftGeneration: () => draftGeneration.current,
   });
   const working = busy || autosave.saving;
   const save = autosave.saveNow;
@@ -271,6 +293,20 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     const returnTo = `/build/${encodeURIComponent(slug)}/${encodeURIComponent(lessonSlug)}`;
     rememberZenPreviewReturn(returnTo);
     navigate(zenPreviewHref(`/learn/${encodeURIComponent(slug)}/${encodeURIComponent(lessonSlug)}`, returnTo));
+  };
+
+  const recoverConflictingDraft = () => {
+    if (!draftConflict || !serverCourse.current) return;
+    history.recover(serverCourse.current, draftConflict.course);
+    setDraftConflict(null);
+    setNote("Локальну копію відновлено. Вона збережеться як поточна версія.");
+  };
+
+  const discardConflictingDraft = () => {
+    if (!draftConflict) return;
+    void clearDurableCourseDraft(draftConflict.courseId).catch(() => undefined);
+    setDraftConflict(null);
+    setNote("Залишено актуальну серверну версію.");
   };
 
   const trail = [
@@ -409,6 +445,9 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         </>
       }
     >
+      {draftConflict ? (
+        <BuilderDraftConflict onRecover={recoverConflictingDraft} onDiscard={discardConflictingDraft} />
+      ) : null}
       {/* THE DOCUMENT HEAD, and it is the document. The title used to be an
           `<h1>` echoing a «Назва» field in a panel below it: the same words
           twice, with the copy being the one you could change. Now the heading

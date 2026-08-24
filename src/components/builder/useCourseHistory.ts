@@ -100,6 +100,8 @@ export type CourseHistory = {
   course: Course | null;
   /** Loaded or reloaded from the server: the stack starts over and nothing is dirty. */
   reset: (course: Course) => void;
+  /** Restores a durable local copy while keeping the server copy as the saved baseline. */
+  recover: (serverCourse: Course, localCourse: Course) => void;
   /**
    * Applies an edit and records the state it replaced.
    *
@@ -137,6 +139,11 @@ export function useCourseHistory(): CourseHistory {
   const reset = useCallback((course: Course) => {
     lastKey.current = null;
     setHistory({ past: [], present: course, future: [], saved: course });
+  }, []);
+
+  const recover = useCallback((serverCourse: Course, localCourse: Course) => {
+    lastKey.current = null;
+    setHistory({ past: [serverCourse], present: localCourse, future: [], saved: serverCourse });
   }, []);
 
   const edit = useCallback((key: string | null, next: (course: Course) => Course) => {
@@ -210,6 +217,7 @@ export function useCourseHistory(): CourseHistory {
   return {
     course: history.present,
     reset,
+    recover,
     edit,
     undo,
     redo,

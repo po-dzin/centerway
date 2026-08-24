@@ -1,5 +1,9 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { FakeSupabase } from "@/lib/admin/fakeSupabase";
+import { courseRows } from "./authoring";
+import { getSnapshotCourse } from "./catalog";
+
 /**
  * Only `deleteBuilderCourse`'s refusal order is under test here — the rest of
  * `builder.ts` reads and writes the database directly through `adminClient()`
@@ -108,5 +112,62 @@ describe("writeRequiresPublishApproval", () => {
       incomingStatus: "published",
       reviewStatus: "approved",
     })).toBe(false);
+  });
+});
+
+describe("published course draft persistence", () => {
+  it("survives a save and reload without changing the learner release", async () => {
+    const { adminClient } = await import("@/lib/auth/adminClient");
+    const { loadBuilderCourse, saveBuilderCourse } = await import("./builder");
+    const live = getSnapshotCourse("reset-day")!;
+    const rows = courseRows(live);
+    const db = new FakeSupabase({
+      lms_courses: [{
+        ...rows.course,
+        author_id: "author-1",
+        review_status: "approved",
+        review_note: null,
+        pending_content: null,
+        pending_review_status: null,
+        draft_generation: 0,
+        updated_at: "2026-08-24T00:00:00.000Z",
+      }],
+      lms_modules: rows.modules,
+      lms_lessons: rows.lessons,
+    });
+    vi.mocked(adminClient).mockImplementation(() => db as never);
+
+    const editedTitle = `${live.modules[0].lessons[0].title} · чернетка`;
+    const edited = {
+      ...live,
+      modules: live.modules.map((module, moduleIndex) => moduleIndex === 0
+        ? {
+            ...module,
+            lessons: module.lessons.map((lesson, lessonIndex) => lessonIndex === 0
+              ? { ...lesson, title: editedTitle }
+              : lesson),
+          }
+        : module),
+    };
+
+    await expect(saveBuilderCourse(edited, 0)).resolves.toMatchObject({
+      status: "draft",
+      staged: true,
+      draftGeneration: 1,
+    });
+
+    const storedRelease = db.rows("lms_courses")[0];
+    expect(storedRelease.title).toBe(live.title);
+    expect(storedRelease.status).toBe("published");
+    expect(storedRelease.pending_content).toMatchObject({ status: "draft" });
+
+    const reopened = await loadBuilderCourse(live.slug);
+    expect(reopened).toMatchObject({
+      liveStatus: "published",
+      hasPendingRevision: true,
+      draftGeneration: 1,
+    });
+    expect(reopened?.liveCourse.modules[0].lessons[0].title).toBe(live.modules[0].lessons[0].title);
+    expect(reopened?.course.modules[0].lessons[0].title).toBe(editedTitle);
   });
 });

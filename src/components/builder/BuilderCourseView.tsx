@@ -44,6 +44,12 @@ import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { lessonDocumentFailureCopy } from "./lessonDocumentCopy";
+import {
+  clearDurableCourseDraft,
+  inspectDurableCourseDraft,
+  type DurableCourseDraft,
+} from "./courseDraftStore";
+import { BuilderDraftConflict } from "./BuilderDraftConflict";
 
 type State =
   | { status: "loading" }
@@ -105,6 +111,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const [slugEditing, setSlugEditing] = useState(false);
   const [slugDraft, setSlugDraft] = useState("");
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const [draftConflict, setDraftConflict] = useState<DurableCourseDraft | null>(null);
   const draftGeneration = useRef<number | null>(null);
   const router = useRouter();
   const storedStructureView = useSyncExternalStore(subscribeToStructureView, readStructureView, () => "rows" as StructureView);
@@ -144,7 +151,17 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     const result = await loadCourse(slug);
     if (result.ok) {
       draftGeneration.current = result.data.draftGeneration;
-      history.reset(result.data.course);
+      const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration);
+      setDraftConflict(durable.kind === "conflict" ? durable.draft : null);
+      if (durable.kind === "recover") {
+        history.recover(result.data.course, durable.draft.course);
+        setNote("Відновлено локальні зміни. Вони збережуться автоматично.");
+      } else {
+        history.reset(result.data.course);
+        if (durable.kind === "conflict") {
+          setNote("Локальна копія збережена окремо: серверна версія змінилася в іншій вкладці.");
+        }
+      }
     }
     setState(
       result.ok
@@ -162,7 +179,18 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       if (cancelled) return;
       if (result.ok) {
         draftGeneration.current = result.data.draftGeneration;
-        history.reset(result.data.course);
+        const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration);
+        if (cancelled) return;
+        setDraftConflict(durable.kind === "conflict" ? durable.draft : null);
+        if (durable.kind === "recover") {
+          history.recover(result.data.course, durable.draft.course);
+          setNote("Відновлено локальні зміни. Вони збережуться автоматично.");
+        } else {
+          history.reset(result.data.course);
+          if (durable.kind === "conflict") {
+            setNote("Локальна копія збережена окремо: серверна версія змінилася в іншій вкладці.");
+          }
+        }
       }
       setState(
         result.ok
@@ -284,6 +312,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     } : current);
     return {
       ok: true as const,
+      generation: result.data.draftGeneration,
       message: result.data.blockers.length === 0
         ? "Збережено. Блокерів немає."
         : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`,
@@ -296,6 +325,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     paused: busy,
     persist: persistCourse,
     markSaved: history.markSaved,
+    getDraftGeneration: () => draftGeneration.current,
   });
   const working = busy || autosave.saving;
   const save = autosave.saveNow;
@@ -397,6 +427,20 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     window.dispatchEvent(new Event(STRUCTURE_VIEW_EVENT));
   };
 
+  const recoverConflictingDraft = () => {
+    if (state.status !== "ready" || !draftConflict) return;
+    history.recover(state.data.course, draftConflict.course);
+    setDraftConflict(null);
+    setNote("Локальну копію відновлено. Вона збережеться як поточна версія.");
+  };
+
+  const discardConflictingDraft = () => {
+    if (!draftConflict) return;
+    void clearDurableCourseDraft(draftConflict.courseId).catch(() => undefined);
+    setDraftConflict(null);
+    setNote("Залишено актуальну серверну версію.");
+  };
+
   const trail = [{ label: "Курси", href: "/build" }];
 
   if (state.status === "loading") {
@@ -460,6 +504,9 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       asideCompact={railCollapsed}
       onNavigate={navigate}
     >
+      {draftConflict ? (
+        <BuilderDraftConflict onRecover={recoverConflictingDraft} onDiscard={discardConflictingDraft} />
+      ) : null}
       <nav className={styles.courseMobileNav} aria-label="Розділи курсу">
         <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={workspaceMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("course"); }}><BuilderInkLabel>Курс</BuilderInkLabel></a>
         <a className={styles.courseMobileNavItem} href="#course-structure" aria-current={workspaceMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("content"); }}><BuilderInkLabel>Зміст</BuilderInkLabel></a>
