@@ -12,6 +12,7 @@
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { Course, CourseTheme, Lesson, ReadinessBlocker } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
+import type { CourseRevisionSummary } from "@/lib/lms/revisions";
 
 export type BuilderFailure = "unauthenticated" | "forbidden" | "not_found" | "invalid" | "conflict" | "network";
 
@@ -195,6 +196,31 @@ export function saveCourse(
     method: "PUT",
     body: JSON.stringify({ course, expectedGeneration }),
   });
+}
+
+export function listCourseRevisions(
+  slug: string,
+): Promise<BuilderResult<{ revisions: CourseRevisionSummary[] }>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions`);
+}
+
+export function createCourseRevision(
+  slug: string,
+  label: string,
+): Promise<BuilderResult<{ revision: { id: string; revisionNumber: number; createdAt: string } }>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions`, {
+    method: "POST",
+    body: JSON.stringify({ label }),
+  });
+}
+
+export function loadCourseRevision(
+  slug: string,
+  revisionId: string,
+): Promise<BuilderResult<{ revision: CourseRevisionSummary & { content: Course } }>> {
+  return request(
+    `/api/lms/authoring/courses/${encodeURIComponent(slug)}/revisions/${encodeURIComponent(revisionId)}`,
+  );
 }
 
 export function renameCourseSlug(slug: string, nextSlug: string): Promise<BuilderResult<{ slug: string }>> {
