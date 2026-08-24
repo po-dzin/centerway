@@ -274,10 +274,21 @@
   composes: chromeBare from "../platform/PlatformButtons.module.css";
 }
 
-/* The course map belongs after the lesson material: it is a route away from
-   the current reading, not a peer of the lesson title in the top bar. */
+/* The course map stays in one predictable place beside the lesson metadata. */
+.lessonMetaRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  margin-bottom: var(--cw-space-2xs);
+}
+
+.lessonMetaRow .stepMarker {
+  margin-bottom: 0;
+}
+
 .contentsButton {
-  margin-top: var(--cw-space-lg);
+  flex: none;
 }
 
 .backButton {
@@ -437,6 +448,10 @@
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   gap: var(--cw-space-xs);
   margin-top: var(--cw-space-lg);
+}
+
+.pager[data-layout="single"] {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .pagerLink {

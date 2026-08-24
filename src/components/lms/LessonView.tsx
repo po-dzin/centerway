@@ -16,6 +16,7 @@ import { PlatformTrail } from "@/components/platform/PlatformTrail";
 import { Icon } from "@/components/Icon";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
+import { lessonPagerLayout } from "@/lib/lms/lessonNavigation";
 import { BlockRenderer } from "./LessonBlocks";
 import { CourseContentsDrawer } from "./CourseContentsDrawer";
 import { LmsNotice } from "./LmsNotice";
@@ -237,6 +238,11 @@ export function LessonView({
   const data = state.data;
   const hasObjective = data.lesson.blocks.some((block) => block.type === "lesson_objective");
   const { nav } = data;
+  const pager = lessonPagerLayout({
+    isReference: data.isReference,
+    hasPrevious: Boolean(nav.previous),
+    hasNext: Boolean(nav.next),
+  });
 
   return (
     <>
@@ -270,22 +276,34 @@ export function LessonView({
       {/* Position in the course sits next to the duration, so "where am I / how
           long is this" is answered in one glance. Reference pages get a label
           instead of a counter — they hold no place in the sequence. */}
-      <p className={styles.stepMarker}>
-        {nav.position !== null ? (
-          <span className={styles.stepCount}>
-            {nav.position} / {nav.total}
-          </span>
-        ) : (
-          <span className={styles.referenceTag}>Довідник</span>
-        )}
-        <span>{data.module.title}</span>
-        {data.lesson.durationMin ? (
-          <>
-            <span className={styles.stepDivider} aria-hidden="true">·</span>
-            <span>{data.lesson.durationMin} хв</span>
-          </>
-        ) : null}
-      </p>
+      <div className={styles.lessonMetaRow}>
+        <p className={styles.stepMarker}>
+          {nav.position !== null ? (
+            <span className={styles.stepCount}>
+              {nav.position} / {nav.total}
+            </span>
+          ) : (
+            <span className={styles.referenceTag}>Довідник</span>
+          )}
+          <span>{data.module.title}</span>
+          {data.lesson.durationMin ? (
+            <>
+              <span className={styles.stepDivider} aria-hidden="true">·</span>
+              <span>{data.lesson.durationMin} хв</span>
+            </>
+          ) : null}
+        </p>
+
+        <button
+          className={`${styles.iconButton} ${styles.contentsButton}`}
+          type="button"
+          onClick={() => setContentsOpen(true)}
+          aria-haspopup="dialog"
+        >
+          <Icon name="menu" size={18} />
+          <span>Зміст</span>
+        </button>
+      </div>
 
       <h1 className={styles.title}>{data.lesson.title}</h1>
       {/* One abstract under the title, never two. Every lesson carries both a
@@ -314,24 +332,10 @@ export function LessonView({
         ))}
       </div>
 
-      <button
-        className={`${styles.iconButton} ${styles.contentsButton}`}
-        type="button"
-        onClick={() => setContentsOpen(true)}
-        aria-haspopup="dialog"
-      >
-        <Icon name="menu" size={18} />
-        <span>Зміст</span>
-      </button>
-
-      {/* One control in the bar, and only one. Advancing lives in the pager
-          below, with the next lesson's real title — two competing buttons in a
-          sticky strip is how the reader loses the thing they came for. */}
       {data.isReference ? (
         // A lookup page is never "completed", so it has nothing to stick to the
-        // bottom of the screen. It used to float a card holding a hint and a
-        // second "До курсу" — over a pager that already offers the course map
-        // one scroll below. The hint stays, in the flow, at its real weight.
+        // bottom of the screen. Contents stays in the stable top position; the
+        // hint remains in flow at its real weight, without a fake sequence.
         <p className={styles.completeHint}>Довідкова сторінка — повертайся сюди будь-коли.</p>
       ) : (
         <>
@@ -361,51 +365,46 @@ export function LessonView({
         </>
       )}
 
-      {/* Always reachable, whether or not the lesson is finished: re-reading a
-          previous lesson must never require going back to the course page. The
-          next cell takes the accent once this one is done — the momentum moves
-          rather than duplicating itself.
+      {/* Only real neighbours render. A first or last lesson gets one full-width
+          destination; a one-step course and reference material get no pager at
+          all. Contents has one stable home above the lesson title and is never
+          used as a substitute for a missing neighbour.
+
+          The next cell takes the accent once this lesson is done — momentum
+          moves rather than duplicating itself.
 
           One line per cell: the arrow and the side it sits on already say
           "previous" and "next", so the words that used to say it again are
           gone. The lesson title is the only thing here a reader cannot infer,
           and it now gets the whole cell. Direction still reaches screen readers
           through aria-label. */}
-      <nav className={styles.pager} aria-label="Навігація по уроках">
-        {nav.previous ? (
-          <Link
-            className={styles.pagerLink}
-            href={surfaceHref(`/learn/${courseSlug}/${nav.previous.slug}${previewQuery}`)}
-            aria-label={`Попередній урок: ${nav.previous.title}`}
-            title={nav.previous.title}
-          >
-            <Icon name="arrow-left" size={16} className={styles.pagerArrow} />
-            <span className={styles.pagerTitle}>{nav.previous.title}</span>
-          </Link>
-        ) : (
-          <Link className={styles.pagerLink} href={surfaceHref(`/learn/${courseSlug}${previewQuery}`)}>
-            <Icon name="arrow-left" size={16} className={styles.pagerArrow} />
-            <span className={styles.pagerTitle}>Зміст</span>
-          </Link>
-        )}
+      {pager.mode !== "hidden" ? (
+        <nav className={styles.pager} data-layout={pager.mode} aria-label="Навігація по уроках">
+          {pager.showPrevious && nav.previous ? (
+            <Link
+              className={styles.pagerLink}
+              href={surfaceHref(`/learn/${courseSlug}/${nav.previous.slug}${previewQuery}`)}
+              aria-label={`Попередній урок: ${nav.previous.title}`}
+              title={nav.previous.title}
+            >
+              <Icon name="arrow-left" size={16} className={styles.pagerArrow} />
+              <span className={styles.pagerTitle}>{nav.previous.title}</span>
+            </Link>
+          ) : null}
 
-        {nav.next ? (
-          <Link
-            className={completed ? styles.pagerLinkNextAccent : styles.pagerLinkNext}
-            href={surfaceHref(`/learn/${courseSlug}/${nav.next.slug}${previewQuery}`)}
-            aria-label={`Наступний урок: ${nav.next.title}`}
-            title={nav.next.title}
-          >
-            <span className={styles.pagerTitle}>{nav.next.title}</span>
-            <Icon name="arrow-right" size={16} className={styles.pagerArrow} />
-          </Link>
-        ) : (
-          <Link className={styles.pagerLinkNext} href={surfaceHref(`/learn/${courseSlug}${previewQuery}`)}>
-            <span className={styles.pagerTitle}>Зміст</span>
-            <Icon name="arrow-right" size={16} className={styles.pagerArrow} />
-          </Link>
-        )}
-      </nav>
+          {pager.showNext && nav.next ? (
+            <Link
+              className={completed ? styles.pagerLinkNextAccent : styles.pagerLinkNext}
+              href={surfaceHref(`/learn/${courseSlug}/${nav.next.slug}${previewQuery}`)}
+              aria-label={`Наступний урок: ${nav.next.title}`}
+              title={nav.next.title}
+            >
+              <span className={styles.pagerTitle}>{nav.next.title}</span>
+              <Icon name="arrow-right" size={16} className={styles.pagerArrow} />
+            </Link>
+          ) : null}
+        </nav>
+      ) : null}
 
       </main>
 
