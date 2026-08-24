@@ -41,12 +41,18 @@ as defense in depth.
 
 ## Concurrency boundary
 
-The next persistence wave adds `draft_generation` optimistic concurrency. A
-save must claim the generation it loaded before changing the working copy. A
-second tab with an older generation receives a conflict and must reload or
-create an explicit recovery checkpoint. This is separate from `Course.version`,
-which remains learner cache/release invalidation and must not be treated as a
-human-visible revision number.
+`draft_generation` provides optimistic concurrency for whole-course saves. The
+Builder loads the generation with the course and a save atomically claims
+`N → N + 1` with `UPDATE … WHERE draft_generation = N` before it changes the
+working copy. A second tab with an older generation receives HTTP `409` and
+must reload; it cannot silently overwrite the first tab.
+
+The claim is intentionally fail-closed. If a later relational structure write
+fails, the generation still advances and the author reloads rather than retrying
+against an unknown partially written state. The next wave moves the structural
+write and review/publish/restore journal event into one database transaction.
+This is separate from `Course.version`, which remains learner cache/release
+invalidation and must not be treated as a human-visible revision number.
 
 ## API and UX sequence
 

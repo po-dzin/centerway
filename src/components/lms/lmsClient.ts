@@ -10,7 +10,7 @@
  */
 
 import { supabaseClient } from "@/lib/supabaseClient";
-import type { CourseTheme, LessonAvailability, LessonBlock, InlineText, ProgressEventType } from "@/lms-core";
+import type { Course, CourseTheme, InternalReferenceTarget, LessonAvailability, LessonBlock, InlineText, ProgressEventType } from "@/lms-core";
 
 export type LmsFailure =
   | "unauthenticated"
@@ -74,7 +74,7 @@ export type LearnerShelfCourseDto = {
    * Absent for a course that has none — the shelf draws its own mark instead
    * rather than reserving a grey rectangle.
    */
-  cover: { src: string; alt: string; cropY?: number } | null;
+  cover: Course["cover"] | null;
 };
 
 export type LearnerShelfDto = { courses: LearnerShelfCourseDto[] };
@@ -95,6 +95,7 @@ export type LessonViewDto = {
   courseVersion: number;
   courseTheme: CourseTheme | null;
   courseTitle: string;
+  referenceTargets: InternalReferenceTarget[];
   progress: { status: "started" | "completed"; checklist: Record<string, boolean>; completedAt: string | null };
   requiredChecklistItemIds: string[];
   completion: { allowed: true } | { allowed: false; reason: "unavailable" | "checklist_incomplete" };
@@ -205,13 +206,15 @@ export function fetchMyCourses(): Promise<LmsResult<LearnerShelfDto>> {
   return request<LearnerShelfDto>("/api/lms/me/courses");
 }
 
-export function fetchCourse(slug: string): Promise<LmsResult<CourseViewDto>> {
-  return request<CourseViewDto>(`/api/lms/courses/${encodeURIComponent(slug)}`);
+export function fetchCourse(slug: string, draftPreview = false): Promise<LmsResult<CourseViewDto>> {
+  const query = draftPreview ? "?preview=draft" : "";
+  return request<CourseViewDto>(`/api/lms/courses/${encodeURIComponent(slug)}${query}`);
 }
 
-export function fetchLesson(courseSlug: string, lessonSlug: string): Promise<LmsResult<LessonViewDto>> {
+export function fetchLesson(courseSlug: string, lessonSlug: string, draftPreview = false): Promise<LmsResult<LessonViewDto>> {
+  const query = draftPreview ? "?preview=draft" : "";
   return request<LessonViewDto>(
-    `/api/lms/courses/${encodeURIComponent(courseSlug)}/lessons/${encodeURIComponent(lessonSlug)}`
+    `/api/lms/courses/${encodeURIComponent(courseSlug)}/lessons/${encodeURIComponent(lessonSlug)}${query}`
   );
 }
 

@@ -10,11 +10,15 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { loadLearnerCourse, recordProgressEvent } from "@/lib/lms/server";
+import { loadBuilderCourse } from "@/lib/lms/builder";
+import { canEditCourse, resolveBuilderIdentity } from "@/lib/lms/builderAccess";
 import {
   buildOutline,
+  buildInternalReferenceTargets,
   canCompleteLesson,
   collectRequiredChecklistItemIds,
   findLesson,
+  foldProgress,
   lessonAvailability,
   lessonProgressOf,
 } from "@/lms-core";
@@ -37,18 +41,36 @@ export async function GET(
 
   const { slug, lessonSlug } = await params;
   const now = new Date();
+  const draftPreview = req.nextUrl.searchParams.get("preview") === "draft";
 
-  const result = await loadLearnerCourse({ authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) }, slug, now);
-  if (!result.ok) {
-    return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
+  let context;
+  if (draftPreview) {
+    const identity = await resolveBuilderIdentity(user);
+    const loaded = await loadBuilderCourse(slug).catch(() => null);
+    if (!loaded || !canEditCourse(identity, loaded.authorId)) {
+      return NextResponse.json({ error: "course_not_found" }, { status: 404 });
+    }
+    context = {
+      course: loaded.course,
+      enrollment: { id: "builder-preview", startedAt: now },
+      progress: foldProgress([]),
+      timeZone: "Europe/Kyiv",
+    };
+  } else {
+    const result = await loadLearnerCourse({ authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) }, slug, now);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
+    }
+    context = result.context;
   }
 
-  const { course, enrollment, progress, timeZone } = result.context;
-  const found = findLesson(course, lessonSlug);
+  const { course, enrollment, progress, timeZone } = context;
+  const navigableCourse = draftPreview ? { ...course, schedule: { ...course.schedule, mode: "open" as const } } : course;
+  const found = findLesson(navigableCourse, lessonSlug);
   if (!found) return NextResponse.json({ error: "lesson_not_found" }, { status: 404 });
 
   const learner = { startedAt: enrollment.startedAt, timeZone, now };
-  const availability = lessonAvailability(course, found.lesson, progress, learner);
+  const availability = lessonAvailability(navigableCourse, found.lesson, progress, learner);
 
   if (!availability.available) {
     // Locked lessons return their unlock reason, never their content.
@@ -60,7 +82,7 @@ export async function GET(
   // The whole course map travels with the lesson: the player needs it for the
   // contents drawer and for prev/next, and a course is small enough that a
   // second round trip would cost more than the payload.
-  const outline = buildOutline(course, progress, learner);
+  const outline = buildOutline(navigableCourse, progress, learner);
 
   // prev/next and "крок N з M" walk the STEPS only. Reference material sits
   // outside the flow, so opening a recipe never renumbers the protocol.
@@ -81,13 +103,15 @@ export async function GET(
   // to an already started or completed lesson. A fresh id keeps that visit in
   // the append-only log; the fold preserves the original `startedAt` and never
   // un-completes a lesson, while advancing `lastActivityAt` for the dashboard.
-  await recordProgressEvent({
-    enrollmentId: enrollment.id,
-    lessonId: found.lesson.id,
-    type: "lesson.started",
-    clientId: `srv:open:${found.lesson.id}:${crypto.randomUUID()}`,
-    occurredAt: now.toISOString(),
-  });
+  if (!draftPreview) {
+    await recordProgressEvent({
+      enrollmentId: enrollment.id,
+      lessonId: found.lesson.id,
+      type: "lesson.started",
+      clientId: `srv:open:${found.lesson.id}:${crypto.randomUUID()}`,
+      occurredAt: now.toISOString(),
+    });
+  }
 
   return NextResponse.json({
     lesson: {
@@ -105,13 +129,14 @@ export async function GET(
     // The crumb names the course, not its slug. One string, travelling with the
     // lesson rather than costing a second request before the first paint.
     courseTitle: course.title,
+    referenceTargets: buildInternalReferenceTargets(course),
     progress: {
       status: lessonProgress.status === "not_started" ? "started" : lessonProgress.status,
       checklist: lessonProgress.checklist,
       completedAt: lessonProgress.completedAt,
     },
     requiredChecklistItemIds: collectRequiredChecklistItemIds(found.lesson.blocks),
-    completion: canCompleteLesson(course, found.lesson, progress, learner),
+    completion: canCompleteLesson(navigableCourse, found.lesson, progress, learner),
     isReference,
     nav: isReference
       ? // Reference pages have no place in the sequence: no counter, no pager.

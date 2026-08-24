@@ -140,6 +140,20 @@
     content: none;
   }
 
+  /* The mobile drawer is the active plane. Soften the page behind it without
+     blurring the header itself; pointer events pass through so the existing
+     outside-click handler still closes the menu. */
+  .header[data-menu-open="true"][data-cw-glass="shell"]::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    border-radius: 0;
+    background: color-mix(in srgb, var(--cw-platform-bg) 18%, transparent);
+    backdrop-filter: var(--cw-mat-filter);
+  }
+
   /* Bar and drawer share one silhouette while open — the drawer is the bar
      continued downward, so the bar squares off where they meet. */
   .header[data-menu-open="true"],
@@ -238,6 +252,19 @@
   .shellOverlay .menuButton:focus-visible {
     background: transparent;
     box-shadow: none;
+  }
+
+  /* Touch browsers keep :hover after a tap. The hand-drawn selector therefore
+     looked permanently selected even while the menu was closed. Burger/close
+     is a binary glyph on mobile; reserve the ink ring for icon controls whose
+     selected state is not already expressed by a shape swap. */
+  .header .menuButton .iconInkRing {
+    display: none;
+  }
+
+  .header .menuButton:focus-visible {
+    outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+    outline-offset: var(--ds-focus-ring-offset);
   }
 
   .shellOverlay .header.header {

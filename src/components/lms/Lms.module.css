@@ -335,7 +335,7 @@
   position: fixed;
   inset: 0;
   z-index: var(--ds-z-modal, 60);
-  background: color-mix(in srgb, var(--cw-platform-text) 38%, transparent);
+  background: var(--cw-overlay);
   display: flex;
   align-items: flex-end;
   justify-content: center;

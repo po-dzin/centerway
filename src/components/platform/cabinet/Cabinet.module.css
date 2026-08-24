@@ -543,20 +543,16 @@
 
 /* ── Course cover ─────────────────────────────────── */
 
-/* Bleeds to the card's edges: it is the top of the panel, not a picture sitting
-   inside one. The negative inset is the card's own padding, so the two cannot
-   drift apart. See CourseCover.tsx for why it is a band and not a poster. */
+/* The canonical course-media object: the same framed 16:9 crop used by the
+   builder and public catalogue. It remains inside the panel at every width so
+   purchase does not turn one cover into a different composition. */
 .cover,
 .coverFallback {
-  width: calc(100% + 2 * var(--cw-space-lg));
-  /* The bleed is wider than the card's content box, and a global
-     `img { max-width: 100% }` clamps exactly that back. Without this the image
-     branch sits inside the padding while the initials branch bleeds — two
-     different cards depending on whether the author uploaded a picture. */
-  max-width: none;
-  margin: calc(-1 * var(--cw-space-lg)) calc(-1 * var(--cw-space-lg)) var(--cw-space-2xs);
-  aspect-ratio: 24 / 9;
-  border-radius: var(--cw-radius-xl) var(--cw-radius-xl) 0 0;
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 var(--cw-space-2xs);
+  aspect-ratio: 16 / 9;
+  border-radius: var(--cw-radius-md);
   object-fit: cover;
   background: var(--cw-mat-surface-sunk);
 }

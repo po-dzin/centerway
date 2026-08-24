@@ -25,6 +25,13 @@ generator manifests (contracts → screens → blocks → semantic blocks) ─�
 
 The generated CSS is intentionally flat: layering lives in the JSON source and in this document, not in the runtime artifact.
 
+Interaction layers use one shared order: `--ds-z-base: 1`,
+`--ds-z-sticky: 999`, `--ds-z-modal: 1200`. A modal drawer, sheet or dialog
+must therefore cover every sticky page control; its scrim blocks the underlying
+surface, and that surface is inert until the modal closes. Drawer geometry may
+remain attached to its trigger (the mobile navigation does), but that does not
+make the page behind it interactive.
+
 Codegen-owned marker blocks in `globals.css` (never edit by hand — edit `cw.tokens.json` and run `tokens:build`): `CW_BASE_LIGHT`, `CW_BASE_DARK`, `CW_RUNTIME_TOKENS`, `CW_MATERIAL_DARK`, `DS_ALIAS_LIGHT`, `DS_ALIAS_DARK`. Hand-maintained remainder: `--cw-platform-visual-*` gradient stops, the `[data-cw-material]` / `[data-cw-glass]` recipes, and everything outside `@layer base` token blocks.
 
 The generator emits `name: value` pairs only — **comments cannot round-trip through it**. Notes that used to live inside a marker block belong here instead. Carried over 2026-08-15: the wordmark carries the identity's "CenterWay" + MOVE · BALANCE · GROW tagline; wordmark aspect is 541.3:129.3 ≈ 4.19 — keep `--cw-brand-size-wordmark-*-width/height` in that ratio.
@@ -407,6 +414,20 @@ Every content block on the platform is `PlatformBlock`: **head + body, and no su
 Before this, blocks were assembled three different ways on one page — a bare `h2` and a grid; an `h2` inside a flex row beside an empty `div`; and the panel-in-panel stack above. On a phone that reads as the page changing its mind every screen.
 
 ## Material layer (tactile surfaces)
+
+### Authoring material grammar (2026-08-24)
+
+Builder and learner share a light, warm, near-handmade base. This is a role system, not permission to texture every component:
+
+| Material role | Meaning | Allowed surfaces |
+| --- | --- | --- |
+| paper / parchment | continuous reading and writing ground | learner lesson, WYSIWYG document, row manuscript |
+| charcoal ink | structure, state and hand-drawn control boundary | dividers, field outlines, module rows, nav stroke, icon ring, focus geometry |
+| ceramic | a temporary tool held near the document | picker, popover, properties sheet, import mapping, contextual toolbar |
+| mineral | weight, limit or evidence | contraindication, boundary, destructive confirmation, hard release blocker, rare trust anchor |
+| warm guide accent | one next action or current route point | release action, confirmed import, progress/current step |
+
+The decision order is spacing/alignment/type → ink rule → subtle surface tint → border → shadow. Paper content does not get a panel merely for grouping. Ceramic and mineral recipes require a semantic reason; a generic module, field or lesson block stays on paper with charcoal structure. Dark theme will be specified separately rather than inferred by mechanically inverting this light grammar.
 
 Added 2026-08-15 as the first step of the tactile redesign (research: `docs/archive/working-notes/ds-tactile-redesign-research-2026-08-15.md`). One glass, not a ladder of them — the decision was explicitly "одно среднее стекло", warm and grainy.
 

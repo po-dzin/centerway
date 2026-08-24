@@ -44,6 +44,8 @@ export function BuilderShell({
   aside,
   asideOpen,
   asideCompact,
+  toolLayer,
+  pageMode = "workspace",
   onNavigate,
   children,
 }: {
@@ -54,6 +56,10 @@ export function BuilderShell({
   asideOpen?: boolean;
   /** Narrows a persistent desktop rail to its icon column. */
   asideCompact?: boolean;
+  /** Contextual right rail/drawer. It overlays the authoring gutter. */
+  toolLayer?: ReactNode;
+  /** A lesson document uses the learner's readable measure. */
+  pageMode?: "workspace" | "document";
   /** Flush-aware navigation supplied by an editing surface. */
   onNavigate?: (href: string) => void;
   children: ReactNode;
@@ -81,7 +87,7 @@ export function BuilderShell({
       {/* Explicitly personal: localhost and previews host the storefront and
           authoring app together, so hostname inference alone picks the public
           navigation there. The route, not the transport, owns this identity. */}
-      <PlatformHeader surface="personal" />
+      <PlatformHeader surface="personal" mode="learn" />
 
       <div className={aside ? styles.bodyWithAside : styles.body}>
         {aside ? (
@@ -94,7 +100,7 @@ export function BuilderShell({
             {aside}
           </aside>
         ) : null}
-        <main className={styles.page}>
+        <main className={styles.page} data-mode={pageMode}>
           {/* Trail and tools on one line: where am I, and the handful of
               controls that act on this exact course or lesson. */}
           {showContextRow ? (
@@ -105,6 +111,7 @@ export function BuilderShell({
           ) : null}
           {children}
         </main>
+        {toolLayer}
       </div>
       {/* One platform-wide ending: the rail belongs only to the workspace row,
           while the footer uses the same viewport-centred container as every
@@ -227,6 +234,10 @@ const FAILURE_COPY: Record<BuilderFailure, { title: string; text: string }> = {
   invalid: {
     title: "Не пройшло перевірку",
     text: "Структура курсу не пройшла валідацію.",
+  },
+  conflict: {
+    title: "Курс змінився в іншій вкладці",
+    text: "Перезавантажте сторінку, щоб отримати актуальну версію і не перезаписати чужі зміни.",
   },
   network: {
     title: "Немає зв'язку",

@@ -50,7 +50,7 @@ export type BuilderCourseSummary = {
   blockerCount: number;
   updatedAt: string | null;
   /** Card face for the grid view — the author's own image, when they set one. */
-  cover: { src: string; alt: string; cropY?: number } | null;
+  cover: Course["cover"] | null;
   theme: CourseTheme | null;
   sortOrder: number | null;
 };
@@ -86,6 +86,8 @@ export async function loadBuilderCourse(
   liveStatus: Course["status"];
   hasPendingRevision: boolean;
   revisionEnabled: boolean;
+  /** Monotonic CAS token for the mutable authoring workspace. */
+  draftGeneration: number;
 } | null> {
   const courseRow = await readCourseRow(slug);
   if (!courseRow) return null;
@@ -125,6 +127,7 @@ export async function loadBuilderCourse(
     liveStatus: liveCourse.status,
     hasPendingRevision,
     revisionEnabled: "pending_content" in courseRow,
+    draftGeneration: Number(courseRow.draft_generation ?? 0),
   };
 }
 
@@ -185,7 +188,7 @@ export async function listBuilderCourses(filter: { authorId?: string }): Promise
         lessonCount: lessonCounts.get(row.id as string) ?? 0,
         blockerCount,
         updatedAt: (row.updated_at as string | null) ?? null,
-        cover: (row.cover as { src: string; alt: string; cropY?: number } | null) ?? null,
+        cover: (row.cover as Course["cover"] | null) ?? null,
         theme: (row.theme as CourseTheme | null) ?? null,
         sortOrder: row.sort_order === null || row.sort_order === undefined ? null : Number(row.sort_order),
       };
@@ -211,6 +214,8 @@ export type SaveOutcome = {
   status: Course["status"];
   blockers: ReturnType<typeof courseReadiness>["blockers"];
   staged?: boolean;
+  /** The value the next whole-course write must present. */
+  draftGeneration: number;
 };
 
 export type CourseReviewStatus = "draft" | "in_review" | "changes_requested" | "approved";
@@ -336,12 +341,60 @@ async function assertNestedIdsAreOwned(
  * can cache lesson bodies hard, and leaving it to whoever is typing would mean
  * a cache that goes stale exactly when the content changed.
  */
-export async function saveBuilderCourse(input: unknown): Promise<SaveOutcome> {
+export function isDraftGeneration(value: unknown): value is number {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+
+/**
+ * Approval gates a draft becoming the live release. It must not gate editing
+ * an already-live course: that write is converted into `pending_content`
+ * below and therefore does not publish anything.
+ */
+export function writeRequiresPublishApproval(input: {
+  liveStatus: Course["status"];
+  incomingStatus: Course["status"];
+  reviewStatus: CourseReviewStatus;
+}): boolean {
+  return input.liveStatus !== "published"
+    && input.incomingStatus === "published"
+    && input.reviewStatus !== "approved";
+}
+
+/**
+ * Claims exactly one turn to write this course.
+ *
+ * This is a compare-and-swap, not a preliminary read: one of two tabs that
+ * loaded generation N moves it to N + 1, and the other receives a conflict
+ * before it can touch modules, lessons or pending_content. A later structural
+ * transaction will make the write itself all-or-nothing; this claim closes the
+ * immediate silent-overwrite hole now and fails closed if a subsequent write
+ * cannot finish.
+ */
+async function claimDraftGeneration(
+  db: ReturnType<typeof adminClient>,
+  courseId: string,
+  expectedGeneration: number,
+): Promise<number> {
+  const { data, error } = await db
+    .from("lms_courses")
+    .update({ draft_generation: expectedGeneration + 1 })
+    .eq("id", courseId)
+    .eq("draft_generation", expectedGeneration)
+    .select("draft_generation")
+    .maybeSingle();
+  if (error) throw new Error(`lms_builder_draft_claim_failed:${error.message}`);
+  if (!data) throw new Error("lms_builder_draft_conflict");
+  return Number(data.draft_generation);
+}
+
+export async function saveBuilderCourse(input: unknown, expectedGeneration: unknown): Promise<SaveOutcome> {
   validateCourse(input, "builder");
   const incoming = input as Course;
+  if (!isDraftGeneration(expectedGeneration)) throw new Error("lms_builder_invalid_draft_generation");
 
   const loaded = await loadBuilderCourse(incoming.slug);
   const existing = await readCourseRow(incoming.slug);
+  if (!existing) throw new Error("lms_builder_course_not_found");
   const nextVersion = existing ? Number(existing.version ?? 1) + 1 : incoming.version;
 
   // The id this write is authorized for: the existing row's own id when
@@ -352,11 +405,16 @@ export async function saveBuilderCourse(input: unknown): Promise<SaveOutcome> {
   const ownerCourseId = existing ? (existing.id as string) : incoming.id;
 
   const reviewEnabled = Boolean(existing && "review_status" in existing);
-  if (reviewEnabled && incoming.status === "published" && existing?.review_status !== "approved") {
+  if (reviewEnabled && writeRequiresPublishApproval({
+    liveStatus: loaded?.liveStatus ?? "draft",
+    incomingStatus: incoming.status,
+    reviewStatus: (existing?.review_status as CourseReviewStatus | undefined) ?? "draft",
+  })) {
     throw new Error("lms_builder_review_required");
   }
 
   const db = adminClient();
+  const draftGeneration = await claimDraftGeneration(db, ownerCourseId, expectedGeneration);
 
   // Once a release exists, modules and lessons must never be written in place.
   // Learners keep the relational live release; the author works on one complete
@@ -380,7 +438,7 @@ export async function saveBuilderCourse(input: unknown): Promise<SaveOutcome> {
       }
       const { error } = await db.from("lms_courses").update(values).eq("id", ownerCourseId);
       if (error) throw new Error(`lms_builder_live_metadata_write_failed:${error.message}`);
-      return { slug: incoming.slug, status: direct.status, blockers: courseReadiness(incoming).blockers };
+      return { slug: incoming.slug, status: direct.status, blockers: courseReadiness(incoming).blockers, draftGeneration };
     }
 
     const revision: Course = {
@@ -401,7 +459,7 @@ export async function saveBuilderCourse(input: unknown): Promise<SaveOutcome> {
       pending_updated_at: new Date().toISOString(),
     }).eq("id", ownerCourseId);
     if (error) throw new Error(`lms_builder_revision_write_failed:${error.message}`);
-    return { slug: revision.slug, status: "draft", blockers: courseReadiness(revision).blockers, staged: true };
+    return { slug: revision.slug, status: "draft", blockers: courseReadiness(revision).blockers, staged: true, draftGeneration };
   }
 
   await assertNestedIdsAreOwned(db, incoming, ownerCourseId);
@@ -429,7 +487,7 @@ export async function saveBuilderCourse(input: unknown): Promise<SaveOutcome> {
     }).eq("id", ownerCourseId);
     if (error) throw new Error(`lms_builder_review_reset_failed:${error.message}`);
   }
-  return { slug: result.slug, status: result.status, blockers: result.blockers };
+  return { slug: result.slug, status: result.status, blockers: result.blockers, draftGeneration };
 }
 
 export async function submitBuilderCourseForReview(slug: string): Promise<void> {

@@ -32,6 +32,7 @@ import {
   type PayableOffer,
 } from "@/lib/products";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import type { PlatformOfferArtwork } from "@/lib/platform/content";
 import {
   courseOfferCode,
   inlineToPlainText,
@@ -129,7 +130,7 @@ export type StorefrontCard = {
   tag: string;
   description: string;
   href: string;
-  artwork?: { desktop: string };
+  artwork?: PlatformOfferArtwork;
   /**
    * The card's decorative variant, from a closed list the catalogue's CSS knows.
    *
@@ -182,7 +183,14 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
       tag: course.tagline ?? "Курс",
       description: course.summary ? inlineToPlainText(course.summary) : "",
       href: `/programs/${course.slug}`,
-      ...(course.cover ? { artwork: { desktop: course.cover.src } } : {}),
+      ...(course.cover
+        ? {
+            artwork: {
+              desktop: course.cover.src,
+              desktopPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%`,
+            },
+          }
+        : {}),
       visual: VISUAL_BY_PALETTE[course.theme?.palette ?? ""] ?? "stone",
       lessons: course.modules.reduce((total, module) => total + module.lessons.length, 0),
     }));

@@ -58,7 +58,16 @@ function toOfferSurface(course: Course): OfferSurface {
     longDescription: summary,
     results: course.results ?? [],
     surfaceType: isMini ? "mini-course" : "program",
-    ...(course.cover ? { artwork: { desktop: course.cover.src } } : {}),
+    ...(course.cover
+      ? {
+          artwork: {
+            desktop: course.cover.src,
+            ...(course.cover.mobileSrc ? { mobile: course.cover.mobileSrc } : {}),
+            desktopPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%`,
+            mobilePosition: `${course.cover.mobileCropX ?? course.cover.cropX ?? 50}% ${course.cover.mobileCropY ?? course.cover.cropY ?? 50}%`,
+          },
+        }
+      : {}),
   };
 }
 

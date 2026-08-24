@@ -73,3 +73,40 @@ describe("courseSlugCanChange", () => {
     })).toBe(false);
   });
 });
+
+describe("isDraftGeneration", () => {
+  it("accepts only non-negative safe integer compare-and-swap tokens", async () => {
+    const { isDraftGeneration } = await import("./builder");
+    expect(isDraftGeneration(0)).toBe(true);
+    expect(isDraftGeneration(42)).toBe(true);
+    expect(isDraftGeneration(-1)).toBe(false);
+    expect(isDraftGeneration(1.5)).toBe(false);
+    expect(isDraftGeneration(Number.MAX_SAFE_INTEGER + 1)).toBe(false);
+    expect(isDraftGeneration("4")).toBe(false);
+  });
+});
+
+describe("writeRequiresPublishApproval", () => {
+  it("allows an already-published course to be saved as a pending revision", async () => {
+    const { writeRequiresPublishApproval } = await import("./builder");
+    expect(writeRequiresPublishApproval({
+      liveStatus: "published",
+      incomingStatus: "published",
+      reviewStatus: "draft",
+    })).toBe(false);
+  });
+
+  it("still gates a draft becoming the live release", async () => {
+    const { writeRequiresPublishApproval } = await import("./builder");
+    expect(writeRequiresPublishApproval({
+      liveStatus: "draft",
+      incomingStatus: "published",
+      reviewStatus: "draft",
+    })).toBe(true);
+    expect(writeRequiresPublishApproval({
+      liveStatus: "draft",
+      incomingStatus: "published",
+      reviewStatus: "approved",
+    })).toBe(false);
+  });
+});

@@ -15,9 +15,9 @@
  * would cost the same space and say nothing. Same reasoning, and the same
  * shape, as the builder's own grid.
  *
- * A BAND, NOT A POSTER. The shelf is scanned, not browsed: at 16/9 four courses
- * push the first action below the fold on a phone, and the reader came here to
- * continue one of them, not to look at pictures.
+ * The same 16:9 framed object the author sees in the builder and a visitor sees
+ * in the catalogue. The image never changes shape after purchase; context is
+ * expressed by the surrounding card rather than by recropping the cover.
  */
 
 import type { LearnerShelfCourseDto } from "@/components/lms/lmsClient";
@@ -45,7 +45,7 @@ export function CourseCover({ course, dimmed }: { course: LearnerShelfCourseDto;
         data-dimmed={dimmed || undefined}
         src={course.cover.src}
         alt={course.cover.alt}
-        style={{ objectPosition: `center ${course.cover.cropY ?? 50}%` }}
+        style={{ objectPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%` }}
       />
     );
   }

@@ -131,8 +131,14 @@ export type Course = {
   cover?: {
     src: string;
     alt: string;
-    /** 0–100 vertical crop point for portrait sources in a landscape card. */
+    /** 0–100 focal point for the shared 16:9 card crop. */
+    cropX?: number;
     cropY?: number;
+    /** Optional portrait master used only by the course offer's mobile hero. */
+    mobileSrc?: string;
+    /** 0–100 focal point for the 9:16 mobile hero crop. */
+    mobileCropX?: number;
+    mobileCropY?: number;
   };
   /**
    * Where this course sits in the author's own grid. Authors order their shelf
@@ -190,10 +196,15 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
     // Alt is mandatory wherever an image is, same as `image` blocks: a11y is a
     // release gate in this repo, not a nicety.
     assert(isNonEmptyString(input.cover.alt), `lms_course_cover_missing_alt:${path}`);
-    if (input.cover.cropY !== undefined) {
+    if (input.cover.mobileSrc !== undefined) {
+      assert(isNonEmptyString(input.cover.mobileSrc), `lms_course_invalid_cover_mobile_src:${path}`);
+    }
+    for (const cropKey of ["cropX", "cropY", "mobileCropX", "mobileCropY"] as const) {
+      const value = input.cover[cropKey];
+      if (value === undefined) continue;
       assert(
-        typeof input.cover.cropY === "number" && Number.isInteger(input.cover.cropY) && input.cover.cropY >= 0 && input.cover.cropY <= 100,
-        `lms_course_invalid_cover_crop:${path}`
+        typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100,
+        `lms_course_invalid_cover_crop:${path}.${cropKey}`
       );
     }
   }

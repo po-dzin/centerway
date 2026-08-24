@@ -56,8 +56,22 @@ function lockNote(availability: Availability): string {
   return "спершу заверши попередній урок";
 }
 
-export function CourseView({ courseSlug }: { courseSlug: string }) {
+export function CourseView({
+  courseSlug,
+  draftPreview = false,
+  previewReturnTo,
+}: {
+  courseSlug: string;
+  draftPreview?: boolean;
+  previewReturnTo?: string;
+}) {
   const href = useSurfaceHref();
+  const previewQuery = draftPreview
+    ? `?${new URLSearchParams({
+        preview: "draft",
+        ...(previewReturnTo ? { returnTo: previewReturnTo } : {}),
+      }).toString()}`
+    : "";
   const [state, setState] = useState<
     { status: "loading" } | { status: "ready"; data: CourseViewDto } | { status: "error"; error: LmsFailure }
   >({ status: "loading" });
@@ -65,9 +79,9 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
   const [restarting, setRestarting] = useState(false);
 
   const load = useCallback(async () => {
-    const result = await fetchCourse(courseSlug);
+    const result = await fetchCourse(courseSlug, draftPreview);
     setState(result.ok ? { status: "ready", data: result.data } : { status: "error", error: result.error });
-  }, [courseSlug]);
+  }, [courseSlug, draftPreview]);
 
   /**
    * Takes a finished course back to step one.
@@ -79,7 +93,7 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
    */
   const restart = useCallback(
     async (entries: CourseViewDto["outline"]) => {
-      if (restarting) return;
+      if (restarting || draftPreview) return;
       const done = entries.filter((entry) => entry.completed && !entry.isReference);
       if (done.length === 0) return;
 
@@ -98,7 +112,7 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
 
       if (result.ok) void load();
     },
-    [courseSlug, restarting, load]
+    [courseSlug, restarting, load, draftPreview]
   );
 
   useEffect(() => {
@@ -108,14 +122,14 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
       // Zone first: day N is computed from it on the very next call.
       await ensureTimeZoneSynced();
       if (cancelled) return;
-      const result = await fetchCourse(courseSlug);
+      const result = await fetchCourse(courseSlug, draftPreview);
       if (cancelled) return;
       setState(result.ok ? { status: "ready", data: result.data } : { status: "error", error: result.error });
     })();
     return () => {
       cancelled = true;
     };
-  }, [courseSlug]);
+  }, [courseSlug, draftPreview]);
 
   if (state.status === "loading") {
     return (
@@ -153,9 +167,9 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
           and an author are looking at one hierarchy from two sides; it should
           not be two different controls. Replaced a single «Мої курси» back
           link — which knew one level and said nothing about where you are. */}
-      <PlatformTrail
-        steps={[{ label: "Мої курси", href: href(LEARNING_SHELF_HREF) }, { label: course.title }]}
-      />
+      {!draftPreview ? (
+        <PlatformTrail steps={[{ label: "Мої курси", href: href(LEARNING_SHELF_HREF) }, { label: course.title }]} />
+      ) : null}
       <p className={styles.eyebrow}>Мій курс</p>
       <h1 className={styles.title}>{course.title}</h1>
       {course.summary ? <p className={styles.lead}>{inlineToPlainText(course.summary)}</p> : null}
@@ -177,7 +191,7 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
 
       {/* A finished protocol is meant to be repeated, so the end of the course
           offers the beginning of it rather than a dead end. */}
-      {standing.isFinished ? (
+      {standing.isFinished && !draftPreview ? (
         <div className={styles.restartRow}>
           <p className={styles.restartHint}>Протокол можна проходити повторно — коли відчуєте потребу.</p>
           <button
@@ -193,7 +207,7 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
 
       <ul className={styles.outline}>
         {steps.map((entry) => {
-          const lessonHref = href(`/learn/${course.slug}/${entry.slug}`);
+          const lessonHref = href(`/learn/${course.slug}/${entry.slug}${previewQuery}`);
           const badgeLabel = entry.dayIndex ?? "•";
           const isCurrent = entry.slug === currentLessonSlug;
 
@@ -250,7 +264,7 @@ export function CourseView({ courseSlug }: { courseSlug: string }) {
           <ul className={styles.outline}>
             {reference.map((entry) => (
               <li key={entry.lessonId} className={styles.outlineItem}>
-                <Link className={styles.outlineLink} href={href(`/learn/${course.slug}/${entry.slug}`)}>
+                <Link className={styles.outlineLink} href={href(`/learn/${course.slug}/${entry.slug}${previewQuery}`)}>
                   <span className={styles.dayBadge} aria-hidden="true">
                     <Icon name="star" size={18} />
                   </span>

@@ -35,8 +35,24 @@ type State =
   | { status: "ready"; data: LessonViewDto }
   | { status: "error"; error: LmsFailure };
 
-export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; lessonSlug: string }) {
+export function LessonView({
+  courseSlug,
+  lessonSlug,
+  draftPreview = false,
+  previewReturnTo,
+}: {
+  courseSlug: string;
+  lessonSlug: string;
+  draftPreview?: boolean;
+  previewReturnTo?: string;
+}) {
   const surfaceHref = useSurfaceHref();
+  const previewQuery = draftPreview
+    ? `?${new URLSearchParams({
+        preview: "draft",
+        ...(previewReturnTo ? { returnTo: previewReturnTo } : {}),
+      }).toString()}`
+    : "";
   const [state, setState] = useState<State>({ status: "loading" });
   const [checklist, setChecklist] = useState<Record<string, boolean>>({});
   const [completed, setCompleted] = useState(false);
@@ -46,7 +62,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
   const bodyRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async () => {
-    const result = await fetchLesson(courseSlug, lessonSlug);
+    const result = await fetchLesson(courseSlug, lessonSlug, draftPreview);
     if (!result.ok) {
       setState({ status: "error", error: result.error });
       return;
@@ -54,7 +70,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
     setState({ status: "ready", data: result.data });
     setChecklist(result.data.progress.checklist);
     setCompleted(result.data.progress.status === "completed");
-  }, [courseSlug, lessonSlug]);
+  }, [courseSlug, lessonSlug, draftPreview]);
 
   useEffect(() => {
     // Guarded so a fast navigation between lessons cannot land stale content.
@@ -63,7 +79,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
       // Zone first: lesson availability is computed from it on the next call.
       await ensureTimeZoneSynced();
       if (cancelled) return;
-      const result = await fetchLesson(courseSlug, lessonSlug);
+      const result = await fetchLesson(courseSlug, lessonSlug, draftPreview);
       if (cancelled) return;
       if (!result.ok) {
         setState({ status: "error", error: result.error });
@@ -76,7 +92,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
     return () => {
       cancelled = true;
     };
-  }, [courseSlug, lessonSlug]);
+  }, [courseSlug, lessonSlug, draftPreview]);
 
   // Reading position for the current lesson, driven by how far the body has
   // scrolled past the viewport — a progress bar for THIS step, distinct from
@@ -120,6 +136,10 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
       // Optimistic: the checkbox must respond to the thumb immediately.
       setChecklist((current) => ({ ...current, [itemId]: checked }));
 
+      // Preview is a read-only authoring perspective. It may simulate an
+      // interaction locally, but it must not write learner progress.
+      if (draftPreview) return;
+
       const result = await postProgress(courseSlug, [
         {
           clientId: progressClientId({
@@ -141,7 +161,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
         setChecklist((current) => ({ ...current, [itemId]: !checked }));
       }
     },
-    [courseSlug, lesson]
+    [courseSlug, lesson, draftPreview]
   );
 
   /**
@@ -155,6 +175,10 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
   const setLessonCompleted = useCallback(
     async (next: boolean) => {
       if (!lesson || pending) return;
+      if (draftPreview) {
+        setCompleted(next);
+        return;
+      }
       setPending(true);
 
       const result = await postProgress(courseSlug, [
@@ -185,7 +209,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
       // completing a step can unlock the next one, and un-completing can close it.
       void load();
     },
-    [courseSlug, lesson, pending, load]
+    [courseSlug, lesson, pending, load, draftPreview]
   );
 
   if (state.status === "loading") {
@@ -200,7 +224,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
     return (
       <main className={styles.wrap} data-cw-platform-template="learn-lesson">
         <div className={styles.lessonTopBar}>
-          <Link className={styles.backButton} href={surfaceHref(`/learn/${courseSlug}`)}>
+          <Link className={styles.backButton} href={surfaceHref(`/learn/${courseSlug}${previewQuery}`)}>
             <Icon name="arrow-left" size={18} />
             <span>До курсу</span>
           </Link>
@@ -215,19 +239,22 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
   const { nav } = data;
 
   return (
-    <main
-      className={styles.wrap}
-      data-cw-platform-template="learn-lesson"
-      // The course's gamma, on the lesson too. Scoped rather than global so a
-      // learner walking between two courses with different palettes never sees
-      // one course's green on the other's page.
-      {...courseThemeAttributes(data.courseTheme ?? undefined)}
-    >
+    <>
+      <main
+        className={styles.wrap}
+        data-cw-platform-template="learn-lesson"
+        inert={contentsOpen ? true : undefined}
+        aria-hidden={contentsOpen ? "true" : undefined}
+        // The course's gamma, on the lesson too. Scoped rather than global so a
+        // learner walking between two courses with different palettes never sees
+        // one course's green on the other's page.
+        {...courseThemeAttributes(data.courseTheme ?? undefined)}
+      >
       <div className={styles.readingTrack} aria-hidden="true">
         <div className={styles.readingFill} style={{ width: `${Math.round(readingRatio * 100)}%` }} />
       </div>
 
-      <div className={styles.lessonTopBar}>
+      {!draftPreview ? <div className={styles.lessonTopBar}>
         {/* Three levels where there used to be one «До курсу». The lesson is
             the last step and is not a link — the crumb a learner can press has
             to be the one that looks pressable. */}
@@ -238,7 +265,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
             { label: data.lesson.title },
           ]}
         />
-      </div>
+      </div> : null}
 
       {/* Position in the course sits next to the duration, so "where am I / how
           long is this" is answered in one glance. Reference pages get a label
@@ -274,13 +301,16 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
 
       <div className={styles.blocks} ref={bodyRef}>
         {data.lesson.blocks.map((block) => (
-          <BlockRenderer
-            key={block.id}
-            block={block}
-            checklist={checklist}
-            onToggleChecklistItem={toggleItem}
-            disabled={completed}
-          />
+          <div id={`block-${block.id}`} key={block.id}>
+            <BlockRenderer
+              block={block}
+              checklist={checklist}
+              onToggleChecklistItem={toggleItem}
+              disabled={completed}
+              courseSlug={courseSlug}
+              referenceTargets={data.referenceTargets}
+            />
+          </div>
         ))}
       </div>
 
@@ -345,7 +375,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
         {nav.previous ? (
           <Link
             className={styles.pagerLink}
-            href={surfaceHref(`/learn/${courseSlug}/${nav.previous.slug}`)}
+            href={surfaceHref(`/learn/${courseSlug}/${nav.previous.slug}${previewQuery}`)}
             aria-label={`Попередній урок: ${nav.previous.title}`}
             title={nav.previous.title}
           >
@@ -353,7 +383,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
             <span className={styles.pagerTitle}>{nav.previous.title}</span>
           </Link>
         ) : (
-          <Link className={styles.pagerLink} href={surfaceHref(`/learn/${courseSlug}`)}>
+          <Link className={styles.pagerLink} href={surfaceHref(`/learn/${courseSlug}${previewQuery}`)}>
             <Icon name="arrow-left" size={16} className={styles.pagerArrow} />
             <span className={styles.pagerTitle}>Зміст</span>
           </Link>
@@ -362,7 +392,7 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
         {nav.next ? (
           <Link
             className={completed ? styles.pagerLinkNextAccent : styles.pagerLinkNext}
-            href={surfaceHref(`/learn/${courseSlug}/${nav.next.slug}`)}
+            href={surfaceHref(`/learn/${courseSlug}/${nav.next.slug}${previewQuery}`)}
             aria-label={`Наступний урок: ${nav.next.title}`}
             title={nav.next.title}
           >
@@ -370,21 +400,25 @@ export function LessonView({ courseSlug, lessonSlug }: { courseSlug: string; les
             <Icon name="arrow-right" size={16} className={styles.pagerArrow} />
           </Link>
         ) : (
-          <Link className={styles.pagerLinkNext} href={surfaceHref(`/learn/${courseSlug}`)}>
+          <Link className={styles.pagerLinkNext} href={surfaceHref(`/learn/${courseSlug}${previewQuery}`)}>
             <span className={styles.pagerTitle}>Зміст</span>
             <Icon name="arrow-right" size={16} className={styles.pagerArrow} />
           </Link>
         )}
       </nav>
 
+      </main>
+
       {contentsOpen ? (
         <CourseContentsDrawer
           courseSlug={courseSlug}
           outline={data.outline}
           currentSlug={data.lesson.slug}
+          draftPreview={draftPreview}
+          previewReturnTo={previewReturnTo}
           onClose={() => setContentsOpen(false)}
         />
       ) : null}
-    </main>
+    </>
   );
 }

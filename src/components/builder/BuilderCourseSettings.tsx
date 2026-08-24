@@ -27,7 +27,7 @@ import {
   type CourseVisibility,
   type CourseTemplateId,
 } from "@/lms-core";
-import { BuilderImageField } from "./BuilderImageField";
+import { BuilderCoverEditor } from "./BuilderCoverEditor";
 import { ChoiceRow, FieldInput } from "./BuilderFields";
 import { PALETTE_LABELS } from "./coursePalettes";
 import styles from "./Builder.module.css";
@@ -280,14 +280,10 @@ export function BuilderCourseSettings({
       />
 
       <h3 className={styles.subTitle}>Обкладинка</h3>
-      <BuilderImageField
-        label="Зображення"
-        hint="Шлях від кореня сайту (/cw/…), повне посилання, або файл із вашого комп'ютера."
-        courseSlug={course.slug}
-        src={course.cover?.src}
-        alt={course.cover?.alt}
-        onChange={(next) => onChange(["cover", "src"], next)}
-      />
+      <p className={styles.fieldHint}>
+        Один горизонтальний кадр працює на всіх картках. Лише mobile hero сторінки курсу має окремий вертикальний формат.
+      </p>
+      <BuilderCoverEditor course={course} onChange={onChange} />
       <FieldInput
         field={{
           path: ["cover", "alt"],
@@ -298,33 +294,6 @@ export function BuilderCourseSettings({
         value={course.cover?.alt}
         onChange={onChange}
       />
-      {course.cover?.src ? (
-        <label className={styles.field}>
-          <span className={styles.fieldLabel}>Кадрування в картці</span>
-          {/* eslint-disable-next-line @next/next/no-img-element -- authored cover preview */}
-          <img
-            className={styles.coverCropPreview}
-            src={course.cover.src}
-            alt=""
-            style={{ objectPosition: `center ${course.cover.cropY ?? 50}%` }}
-          />
-          <div className={styles.cropControl}>
-            <span aria-hidden="true">Вище</span>
-            <input
-              className={styles.cropRange}
-              type="range"
-              min="0"
-              max="100"
-              step="1"
-              value={course.cover.cropY ?? 50}
-              aria-label="Вертикальне кадрування обкладинки"
-              onChange={(event) => onChange(["cover", "cropY"], Number(event.target.value))}
-            />
-            <span aria-hidden="true">Нижче</span>
-          </div>
-          <span className={styles.fieldHint}>Перетягніть повзунок і одразу перевірте, що головний предмет лишився в рамці.</span>
-        </label>
-      ) : null}
 
       <h3 className={styles.subTitle}>Доступ</h3>
       <FieldInput

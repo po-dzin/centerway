@@ -9,10 +9,17 @@
  * (docs/lms-research-2026-08-15.md §5A).
  */
 
-import type { JSX } from "react";
+import { createContext, useContext, type JSX } from "react";
 import Link from "next/link";
 
-import { toSpans, type InlineText, type LessonBlock, type RichTextNode } from "@/lms-core";
+import {
+  parseInternalReference,
+  toSpans,
+  type InlineText,
+  type InternalReferenceTarget,
+  type LessonBlock,
+  type RichTextNode,
+} from "@/lms-core";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import styles from "./Lms.module.css";
 
@@ -55,14 +62,35 @@ function CtaBlock({ href, label, text }: { href: string; label: string; text?: I
   );
 }
 
+type ReferenceContextValue = {
+  courseSlug?: string;
+  route: "learn" | "build";
+  targets: Map<string, InternalReferenceTarget>;
+};
+
+const ReferenceContext = createContext<ReferenceContextValue>({ route: "learn", targets: new Map() });
+
 function Inline({ value }: { value: InlineText }) {
+  const surfaceHref = useSurfaceHref();
+  const references = useContext(ReferenceContext);
   return (
     <>
       {toSpans(value).map((span, index) => {
-        let node: JSX.Element = <>{span.text}</>;
+        const internalReference = parseInternalReference(span.href);
+        const target = internalReference && span.href ? references.targets.get(span.href) : undefined;
+        const label = target?.label ?? span.text;
+        let node: JSX.Element = <>{label}</>;
         if (span.bold) node = <strong>{node}</strong>;
         if (span.italic) node = <em>{node}</em>;
-        if (span.href) {
+        if (target && references.courseSlug) {
+          const fragment = target.kind === "block" ? `#block-${encodeURIComponent(target.blockId)}` : "";
+          const path = `/${references.route}/${references.courseSlug}/${target.slug}${fragment}`;
+          node = references.route === "learn" ? (
+            <Link href={surfaceHref(path)}>{node}</Link>
+          ) : (
+            <Link href={path}>{node}</Link>
+          );
+        } else if (span.href && !internalReference) {
           node = (
             <a href={span.href} rel="noopener noreferrer">
               {node}
@@ -119,9 +147,23 @@ export type BlockRendererProps = {
   checklist: ChecklistState;
   onToggleChecklistItem: (itemId: string, checked: boolean) => void;
   disabled?: boolean;
+  courseSlug?: string;
+  referenceTargets?: InternalReferenceTarget[];
+  referenceRoute?: "learn" | "build";
 };
 
-export function BlockRenderer({ block, checklist, onToggleChecklistItem, disabled }: BlockRendererProps) {
+export function BlockRenderer(props: BlockRendererProps) {
+  const targets = new Map((props.referenceTargets ?? []).map((target) => [target.key, target]));
+  return (
+    <ReferenceContext.Provider
+      value={{ courseSlug: props.courseSlug, route: props.referenceRoute ?? "learn", targets }}
+    >
+      <BlockRendererBody {...props} />
+    </ReferenceContext.Provider>
+  );
+}
+
+function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }: BlockRendererProps) {
   switch (block.type) {
     case "lesson_objective":
       return (
