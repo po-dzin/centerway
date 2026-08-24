@@ -155,7 +155,7 @@ export function PlatformHeader({
           <span className={styles.brandSymbol} aria-hidden="true" />
           <span className={styles.brandWordmark} aria-hidden="true" />
         </Link>
-        {learnMode ? null : <div ref={navLayerRef} className={`${styles.navLayer} ${menuOpen ? styles.navLayerOpen : ""}`} id="platform-mobile-menu">
+        <div ref={navLayerRef} className={`${styles.navLayer} ${menuOpen ? styles.navLayerOpen : ""}`} id="platform-mobile-menu">
           <div className={styles.mobileMenuSurface} data-cw-glass="shell">
             <nav className={`${styles.nav} ${styles.mobileMenuNav}`} aria-label="Основна навігація">
               {navItems.map((item) => (
@@ -178,11 +178,11 @@ export function PlatformHeader({
               <PlatformAccountMenu variant="inline" exclude={navExcludes} onNavigate={closeMenu} />
             </div>
           </div>
-        </div>}
+        </div>
         <div className={styles.profileSlot}>
           <PlatformAccountMenu compact />
         </div>
-        {learnMode ? null : <button
+        <button
           ref={toggleRef}
           className={styles.menuButton}
           type="button"
@@ -198,7 +198,7 @@ export function PlatformHeader({
           <Icon name="menu" size={32} className={styles.menuGlyph} />
           <Icon name="close" size={32} className={styles.menuGlyphClose} />
           <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
-        </button>}
+        </button>
       </div>
     </header>
   );
