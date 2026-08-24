@@ -116,6 +116,26 @@ describe("block validation", () => {
 });
 
 describe("course validation", () => {
+  it("accepts separate landscape and mobile hero focal points", () => {
+    const course = dailyCourse();
+    course.cover = {
+      src: "/course-wide.webp",
+      alt: "Course cover",
+      cropX: 42,
+      cropY: 61,
+      mobileSrc: "/course-portrait.webp",
+      mobileCropX: 55,
+      mobileCropY: 38,
+    };
+    expect(() => validateCourse(course)).not.toThrow();
+  });
+
+  it("rejects a cover focal point outside the image", () => {
+    const course = dailyCourse();
+    course.cover = { src: "/course.webp", alt: "Course cover", mobileCropY: 101 };
+    expect(() => validateCourse(course)).toThrow(/lms_course_invalid_cover_crop/);
+  });
+
   it("requires a dayIndex on every lesson of a daily course", () => {
     const course = dailyCourse() as unknown as Record<string, unknown>;
     const modules = course.modules as Array<{ lessons: Array<Record<string, unknown>> }>;

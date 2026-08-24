@@ -4,8 +4,11 @@ import { useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/Icon";
+import { BlockRenderer } from "@/components/lms/LessonBlocks";
 import {
   courseThemeAttributes,
+  courseReadiness,
+  buildInternalReferenceTargets,
   flattenLessons,
   inlineToPlainText,
   moveItem,
@@ -25,18 +28,20 @@ import { BuilderFailureNotice, BuilderNotice, BuilderShell, BuilderStep } from "
 import { BuilderContents } from "./BuilderContents";
 import { BuilderMenu } from "./BuilderMenu";
 import { FieldInput } from "./BuilderFields";
-import { BuilderInlineEditor, type SlashCommand } from "./BuilderInlineEditor";
+import { BuilderInlineEditor, type InternalReferenceOption, type SlashCommand } from "./BuilderInlineEditor";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
-import { BlockPreview } from "./BuilderBlockPreview";
 import { importLessonFiles, loadCourse, saveCourse, type BuilderFailure } from "./builderClient";
 import { BuilderGrip } from "./BuilderGrip";
 import { BuilderHistory } from "./BuilderHistory";
+import { BuilderToolRail, type BuilderToolMode } from "./BuilderToolRail";
 import { useCourseAutosave } from "./useCourseAutosave";
+import { rememberZenPreviewReturn, zenPreviewHref } from "@/components/lms/ZenPreviewShell";
 import { useCourseHistory } from "./useCourseHistory";
 import { landingIndex, useRowDrag, type DragRef, type DropEdge, type RowDrag } from "./useRowDrag";
 import {
   BLOCK_TYPE_HINTS,
   BLOCK_TYPE_LABELS,
+  BLOCK_TYPE_ORDER,
   BLOCK_STRUCTURE_ORDER,
   BLOCK_TEMPLATE_ORDER,
   describeBlock,
@@ -82,8 +87,14 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const [contentsOpen, setContentsOpen] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
   const importPicker = useRef<HTMLInputElement>(null);
+  const draftGeneration = useRef<number | null>(null);
   /** The block just created, so the caret can land in it instead of being aimed. */
   const [freshBlockId, setFreshBlockId] = useState<string | null>(null);
+  const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
+  const [insertPosition, setInsertPosition] = useState(0);
+  const [toolMode, setToolMode] = useState<BuilderToolMode>("blocks");
+  const [toolOpen, setToolOpen] = useState(true);
+  const [blockSearch, setBlockSearch] = useState("");
 
   useEffect(() => {
     // Guarded, and awaiting before the first setState: a synchronous setState in
@@ -92,7 +103,10 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     void (async () => {
       const result = await loadCourse(slug);
       if (cancelled) return;
-      if (result.ok) history.reset(result.data.course);
+      if (result.ok) {
+        draftGeneration.current = result.data.draftGeneration;
+        history.reset(result.data.course);
+      }
       setState(
         result.ok
           ? { status: "ready" }
@@ -153,6 +167,11 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         ? { id: ids(), type, content: [{ kind: "p" as const, text: "" }] }
         : newBlock(type, ids);
       setFreshBlockId(block.id);
+      setSelectedBlockId(block.id);
+      if (type !== "rich_text") {
+        setToolMode("block");
+        setToolOpen(true);
+      }
       editBlocks((blocks) => [
         ...blocks.slice(0, position),
         block,
@@ -174,10 +193,17 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
 
   const persistCourse = useCallback(async (snapshot: Course) => {
     setNote(null);
-    const result = await saveCourse(slug, pruneEmptyProse(snapshot));
+    if (draftGeneration.current === null) {
+      return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
+    }
+    const result = await saveCourse(slug, pruneEmptyProse(snapshot), draftGeneration.current);
     if (!result.ok) {
+      if (result.failure === "conflict") {
+        return { ok: false as const, message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни." };
+      }
       return { ok: false as const, message: result.detail ?? "Не вдалося зберегти. Спробуйте ще раз." };
     }
+    draftGeneration.current = result.data.draftGeneration;
     return {
       ok: true as const,
       message: result.data.blockers.length === 0
@@ -242,11 +268,9 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
 
   const preview = () => {
     if (working) return;
-    if (dirty) {
-      setNote("Спочатку збережіть зміни, щоб відкрити перегляд.");
-      return;
-    }
-    window.open(`/learn/${encodeURIComponent(slug)}/${encodeURIComponent(lessonSlug)}`, "_blank", "noopener,noreferrer");
+    const returnTo = `/build/${encodeURIComponent(slug)}/${encodeURIComponent(lessonSlug)}`;
+    rememberZenPreviewReturn(returnTo);
+    navigate(zenPreviewHref(`/learn/${encodeURIComponent(slug)}/${encodeURIComponent(lessonSlug)}`, returnTo));
   };
 
   const trail = [
@@ -290,6 +314,32 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const position = walk.findIndex((entry) => entry.lesson.slug === lesson.slug);
   const previous = position > 0 ? walk[position - 1] : null;
   const next = position >= 0 && position < walk.length - 1 ? walk[position + 1] : null;
+  const selectedBlockIndex = lesson.blocks.findIndex((block) => block.id === selectedBlockId);
+  const selectedBlock = selectedBlockIndex >= 0 ? lesson.blocks[selectedBlockIndex] : null;
+  const readiness = courseReadiness(course);
+  const referenceTargets = buildInternalReferenceTargets(course);
+  const referenceOptions = internalReferenceOptions(referenceTargets, lesson.id, holder.id);
+
+  const selectTool = (nextMode: BuilderToolMode) => {
+    if (toolOpen && toolMode === nextMode) {
+      setToolOpen(false);
+      return;
+    }
+    setToolMode(nextMode);
+    setToolOpen(true);
+  };
+
+  const selectBlock = (blockId: string) => {
+    setSelectedBlockId(blockId);
+    setToolMode("block");
+    setToolOpen(true);
+  };
+
+  const activateInsert = (nextPosition: number) => {
+    setInsertPosition(nextPosition);
+    setToolMode("blocks");
+    setToolOpen(true);
+  };
 
   return (
     <BuilderShell
@@ -300,10 +350,36 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       ]}
       aside={<BuilderContents course={course} currentSlug={lesson.slug} onNavigate={navigate} />}
       asideOpen={contentsOpen}
+      pageMode="document"
       onNavigate={navigate}
+      toolLayer={
+        <BuilderToolRail mode={toolMode} open={toolOpen} onMode={selectTool} onClose={() => setToolOpen(false)}>
+          <LessonToolContent
+            mode={toolMode}
+            course={course}
+            lesson={lesson}
+            selectedBlock={selectedBlock}
+            selectedBlockIndex={selectedBlockIndex}
+            search={blockSearch}
+            insertPosition={insertPosition}
+            readiness={readiness}
+            working={working}
+            importPicker={importPicker}
+            onSearch={setBlockSearch}
+            onInsert={insertBlock}
+            onLessonChange={editLesson}
+            onBlockChange={(path, value) => {
+              if (selectedBlockIndex >= 0) editLesson(["blocks", selectedBlockIndex, ...path], value);
+            }}
+            onPreview={preview}
+            onPublish={() => navigate(`/build/${slug}#course-release`)}
+            onImport={importIntoLesson}
+          />
+        </BuilderToolRail>
+      }
       tools={
         <>
-          <button className={styles.quietAction} type="button" onClick={preview} disabled={working} title={dirty ? "Спочатку збережіть зміни" : "Відкрити урок як учень"}>
+          <button className={styles.quietAction} type="button" onClick={preview} disabled={working} title={dirty ? "Зберегти й відкрити урок як учень" : "Відкрити урок як учень"}>
             Переглянути
           </button>
           <BuilderStep
@@ -360,55 +436,8 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         </div>
       </div>
 
-      <section className={styles.panel}>
-        <div className={styles.panelHead}>
-          <h2 className={styles.panelTitle}>Урок</h2>
-          <button className={styles.quietAction} type="button" disabled={working} onClick={() => importPicker.current?.click()}>
-            <Icon name="import" size={20} /> Імпорт
-          </button>
-          <input
-            ref={importPicker}
-            className={styles.visuallyHidden}
-            type="file"
-            accept=".md,.markdown,.docx,.txt,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
-            tabIndex={-1}
-            onChange={(event) => {
-              const file = event.target.files?.[0];
-              event.target.value = "";
-              if (file) void importIntoLesson(file);
-            }}
-          />
-        </div>
-        <FieldInput
-          field={{
-            path: ["dayIndex"],
-            label: "День курсу",
-            kind: "number",
-            hint:
-              course.schedule.mode === "daily"
-                ? "День програми, а не порядковий номер уроку: пропуски тут нормальні й навмисні."
-                : "Використовується лише в курсах з розкладом «по днях».",
-          }}
-          value={lesson.dayIndex}
-          onChange={editLesson}
-        />
-        <FieldInput
-          field={{ path: ["durationMin"], label: "Тривалість, хв", kind: "number" }}
-          value={lesson.durationMin}
-          onChange={editLesson}
-        />
-        {/* Slug is shown and not editable. It is in every reminder already sent,
-            every Telegram link and every bookmark, and renaming it here would
-            break them all with no warning — a rename is a migration, not a
-            text field. */}
-        <p className={styles.readOnlyNote}>
-          Адреса уроку: <code>/learn/{course.slug}/{lesson.slug}</code> — не змінюється, бо вона вже є в
-          надісланих нагадуваннях і збережених посиланнях.
-        </p>
-      </section>
-
       <div className={styles.blockList} {...courseThemeAttributes(course.theme)}>
-        <BlockInsert position={0} onAdd={insertBlock} />
+        <BlockInsert position={0} active={insertPosition === 0} onActivate={activateInsert} onAdd={insertBlock} />
         {lesson.blocks.map((block, index) => (
           <Fragment key={block.id}>
             <BlockEditor
@@ -417,12 +446,16 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
               total={lesson.blocks.length}
               drag={blockDrag}
               fresh={block.id === freshBlockId}
+              selected={block.id === selectedBlockId}
+              referenceOptions={referenceOptions}
+              referenceTargets={referenceTargets}
               courseSlug={course.slug}
+              onSelect={() => selectBlock(block.id)}
               onChange={editLesson}
               onBlocks={editBlocks}
               onInsertAfter={(type) => insertBlock(index + 1, type)}
             />
-            <BlockInsert position={index + 1} onAdd={insertBlock} />
+            <BlockInsert position={index + 1} active={insertPosition === index + 1} onActivate={activateInsert} onAdd={insertBlock} />
           </Fragment>
         ))}
       </div>
@@ -456,6 +489,169 @@ function locateLesson(course: Course, lessonSlug: string): { moduleIndex: number
   return null;
 }
 
+const BUILDER_BLOCK_MIME = "application/x-centerway-block";
+
+function LessonToolContent({
+  mode,
+  course,
+  lesson,
+  selectedBlock,
+  selectedBlockIndex,
+  search,
+  insertPosition,
+  readiness,
+  working,
+  importPicker,
+  onSearch,
+  onInsert,
+  onLessonChange,
+  onBlockChange,
+  onPreview,
+  onPublish,
+  onImport,
+}: {
+  mode: BuilderToolMode;
+  course: Course;
+  lesson: Lesson;
+  selectedBlock: LessonBlock | null;
+  selectedBlockIndex: number;
+  search: string;
+  insertPosition: number;
+  readiness: ReturnType<typeof courseReadiness>;
+  working: boolean;
+  importPicker: { current: HTMLInputElement | null };
+  onSearch: (value: string) => void;
+  onInsert: (position: number, type: LessonBlockType) => void;
+  onLessonChange: (path: (string | number)[], value: unknown) => void;
+  onBlockChange: (path: (string | number)[], value: unknown) => void;
+  onPreview: () => void;
+  onPublish: () => void;
+  onImport: (file: File) => Promise<void>;
+}) {
+  if (mode === "blocks") {
+    const query = search.trim().toLocaleLowerCase("uk");
+    const visibleTypes = BLOCK_TYPE_ORDER.filter((type) =>
+      `${BLOCK_TYPE_LABELS[type]} ${BLOCK_TYPE_HINTS[type]}`.toLocaleLowerCase("uk").includes(query)
+    );
+    const groups = [
+      { title: "Текст і медіа", types: visibleTypes.filter((type) => type === "rich_text" || BLOCK_STRUCTURE_ORDER.includes(type)) },
+      { title: "Практика і навчання", types: visibleTypes.filter((type) => BLOCK_TEMPLATE_ORDER.includes(type)) },
+    ];
+
+    return (
+      <div className={styles.toolStack}>
+        <label className={styles.toolSearch}>
+          <Icon name="view-rows" size={18} />
+          <input value={search} onChange={(event) => onSearch(event.target.value)} placeholder="Знайти блок…" />
+        </label>
+        <p className={styles.toolHint}>Додасться в обрану позицію {insertPosition + 1}. Перетягніть блок на знак + або натисніть його.</p>
+        {groups.map((group) => group.types.length > 0 ? (
+          <section className={styles.toolGroup} key={group.title}>
+            <h3>{group.title}</h3>
+            <div className={styles.toolLibrary}>
+              {group.types.map((type) => (
+                <button
+                  className={styles.toolBlock}
+                  type="button"
+                  key={type}
+                  draggable
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = "copy";
+                    event.dataTransfer.setData(BUILDER_BLOCK_MIME, type);
+                  }}
+                  onClick={() => onInsert(insertPosition, type)}
+                >
+                  <Icon name={type === "practice_block" ? "motion" : type === "boundary_note" ? "boundary" : "document"} size={19} />
+                  <span><strong>{BLOCK_TYPE_LABELS[type]}</strong><small>{BLOCK_TYPE_HINTS[type]}</small></span>
+                  <Icon name="grip" size={16} />
+                </button>
+              ))}
+            </div>
+          </section>
+        ) : null)}
+        {visibleTypes.length === 0 ? <p className={styles.toolEmpty}>Нічого не знайдено. Спробуйте коротшу назву.</p> : null}
+      </div>
+    );
+  }
+
+  if (mode === "block") {
+    if (!selectedBlock || selectedBlockIndex < 0) {
+      return <p className={styles.toolEmpty}>Оберіть блок у документі — його поля з’являться тут, не перекриваючи текст.</p>;
+    }
+    const fields = describeBlock(selectedBlock);
+    return (
+      <div className={styles.toolStack}>
+        <div className={styles.toolSelectionTitle}>
+          <Icon name="boundary" size={22} />
+          <span><small>Блок {selectedBlockIndex + 1}</small><strong>{BLOCK_TYPE_LABELS[selectedBlock.type]}</strong></span>
+        </div>
+        {selectedBlock.type === "rich_text" ? (
+          <p className={styles.toolHint}>Текст редагується безпосередньо на сторінці. Тут залишаються лише властивості структурних блоків.</p>
+        ) : fields.map((field) => (
+          <FieldInput
+            key={field.path.join(".")}
+            field={field}
+            value={readPath(selectedBlock, field.path)}
+            courseSlug={course.slug}
+            onChange={onBlockChange}
+          />
+        ))}
+        <RepeatControls block={selectedBlock} onChange={onBlockChange} />
+      </div>
+    );
+  }
+
+  if (mode === "page") {
+    return (
+      <div className={styles.toolStack}>
+        <button className={styles.quietAction} type="button" disabled={working} onClick={() => importPicker.current?.click()}>
+          <Icon name="import" size={20} /> Імпортувати документ
+        </button>
+        <input
+          ref={importPicker}
+          className={styles.visuallyHidden}
+          type="file"
+          accept=".md,.markdown,.docx,.txt,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          tabIndex={-1}
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            event.target.value = "";
+            if (file) void onImport(file);
+          }}
+        />
+        <FieldInput
+          field={{
+            path: ["dayIndex"],
+            label: "День курсу",
+            kind: "number",
+            hint: course.schedule.mode === "daily" ? "День програми; пропуски можуть бути навмисними." : "Використовується лише в курсах з розкладом по днях.",
+          }}
+          value={lesson.dayIndex}
+          onChange={onLessonChange}
+        />
+        <FieldInput field={{ path: ["durationMin"], label: "Тривалість, хв", kind: "number" }} value={lesson.durationMin} onChange={onLessonChange} />
+        <p className={styles.readOnlyNote}>Адреса: <code>/learn/{course.slug}/{lesson.slug}</code><br />Закріплена для посилань і нагадувань.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className={styles.toolStack}>
+      <div className={styles.publishSummary} data-ready={readiness.ready || undefined}>
+        <Icon name={readiness.ready ? "check" : "boundary"} size={22} />
+        <span><strong>{readiness.ready ? "Готово до публікації" : `${readiness.blockers.length} блокери`}</strong><small>{course.status === "published" ? "Курс опубліковано" : "Зараз це чернетка"}</small></span>
+      </div>
+      {!readiness.ready ? (
+        <ul className={styles.toolBlockers}>
+          {readiness.blockers.slice(0, 6).map((blocker) => <li key={`${blocker.code}:${blocker.path}`}><strong>{blocker.path}</strong><span>{blocker.detail ?? blocker.code}</span></li>)}
+        </ul>
+      ) : null}
+      <button className={styles.quietAction} type="button" onClick={onPreview} disabled={working}><Icon name="view-rows" size={19} /> Переглянути як учень</button>
+      <button className={styles.commitAction} type="button" onClick={onPublish}>Відкрити публікацію курсу</button>
+    </div>
+  );
+}
+
 /**
  * Adding to the lesson.
  *
@@ -474,17 +670,34 @@ function locateLesson(course: Course, lessonSlug: string): { moduleIndex: number
  */
 function BlockInsert({
   position,
+  active,
+  onActivate,
   onAdd,
 }: {
   position: number;
+  active: boolean;
+  onActivate: (position: number) => void;
   onAdd: (position: number, type: LessonBlockType) => void;
 }) {
   const [open, setOpen] = useState(false);
 
   if (!open) {
     return (
-      <div className={styles.blockInsert}>
-        <button className={styles.blockInsertAction} type="button" onClick={() => setOpen(true)}>
+      <div
+        className={styles.blockInsert}
+        data-active={active || undefined}
+        onDragOver={(event) => {
+          if (event.dataTransfer.types.includes(BUILDER_BLOCK_MIME)) event.preventDefault();
+        }}
+        onDrop={(event) => {
+          const type = event.dataTransfer.getData(BUILDER_BLOCK_MIME) as LessonBlockType;
+          if (!BLOCK_TYPE_ORDER.includes(type)) return;
+          event.preventDefault();
+          onActivate(position);
+          onAdd(position, type);
+        }}
+      >
+        <button className={styles.blockInsertAction} type="button" onClick={() => { onActivate(position); setOpen(true); }}>
           <span className={styles.addGlyph} aria-hidden="true">+</span> Додати блок
         </button>
       </div>
@@ -533,7 +746,11 @@ function BlockEditor({
   total,
   drag,
   fresh,
+  selected,
+  referenceOptions,
+  referenceTargets,
   courseSlug,
+  onSelect,
   onChange,
   onBlocks,
   onInsertAfter,
@@ -542,24 +759,29 @@ function BlockEditor({
   index: number;
   total: number;
   drag: RowDrag;
-  /** Where an uploaded image lands. Only the image block uses it. */
-  courseSlug: string;
   /** Just added by the author — the caret belongs in its first node. */
   fresh?: boolean;
+  selected?: boolean;
+  referenceOptions: InternalReferenceOption[];
+  referenceTargets: ReturnType<typeof buildInternalReferenceTargets>;
+  courseSlug: string;
+  onSelect: () => void;
   onChange: (path: (string | number)[], value: unknown) => void;
   onBlocks: (next: (blocks: LessonBlock[]) => LessonBlock[]) => void;
   onInsertAfter: (type: LessonBlockType) => void;
 }) {
-  const fields = describeBlock(block);
   const editField = (path: (string | number)[], value: unknown) => onChange(["blocks", index, ...path], value);
 
   const row: DragRef = { list: "block", group: 0, index };
 
   return (
-    <section className={`${styles.blockCard} ${styles.dragRow}`} {...drag.rowProps(row)}>
+    <section id={`block-${block.id}`} className={`${styles.blockCard} ${styles.dragRow}`} data-selected={selected || undefined} {...drag.rowProps(row)}>
       <div className={styles.blockHead}>
         <BuilderGrip drag={drag} row={row} label={BLOCK_TYPE_LABELS[block.type]} />
         <span className={styles.blockType}>{BLOCK_TYPE_LABELS[block.type]}</span>
+        <button className={styles.iconAction} type="button" onClick={onSelect} aria-label={`Властивості блоку «${BLOCK_TYPE_LABELS[block.type]}»`}>
+          <Icon name="edit" size={18} />
+        </button>
         <BuilderMenu
           label={`Дії з блоком «${BLOCK_TYPE_LABELS[block.type]}»`}
           items={[
@@ -583,6 +805,7 @@ function BlockEditor({
           block={block}
           fresh={fresh}
           blockCommands={BLOCK_COMMANDS}
+          referenceOptions={referenceOptions}
           /* A block type chosen from inside the prose adds a NEW block after
              this one rather than converting it. Converting would throw away
              every paragraph the author had written to get here. */
@@ -593,19 +816,20 @@ function BlockEditor({
           onChange={editField}
         />
       ) : (
-        fields.map((field) => (
-          <FieldInput
-            key={field.path.join(".")}
-            field={field}
-            value={readPath(block, field.path)}
+        <div className={styles.builderLearnerBlock} onClick={onSelect}>
+          <BlockRenderer
+            block={block}
+            checklist={{}}
+            onToggleChecklistItem={() => undefined}
+            disabled
             courseSlug={courseSlug}
-            onChange={editField}
+            referenceTargets={referenceTargets}
+            referenceRoute="build"
           />
-        ))
+        </div>
       )}
 
-      <RepeatControls block={block} onChange={editField} />
-      <BlockPreview block={block} />
+      {block.type === "rich_text" ? <RepeatControls block={block} onChange={editField} /> : null}
     </section>
   );
 }
@@ -616,6 +840,51 @@ const NODE_LABELS: Record<RichTextNode["kind"], string> = {
   ul: "Список",
   ol: "Нумерований список",
 };
+
+function internalReferenceOptions(
+  targets: ReturnType<typeof buildInternalReferenceTargets>,
+  currentLessonId: string,
+  currentModuleId: string
+): InternalReferenceOption[] {
+  const current = targets.find((target) => target.kind === "lesson" && target.lessonId === currentLessonId);
+  if (!current) return [];
+
+  const rank = (target: (typeof targets)[number]): number => {
+    if (target.lessonIndex === current.lessonIndex - 1) return 0;
+    if (target.lessonIndex < current.lessonIndex) return 1;
+    if (target.moduleId === currentModuleId) return 2;
+    if (!target.referenceModule) return 3;
+    return 4;
+  };
+  const group = (target: (typeof targets)[number]): string => {
+    const value = rank(target);
+    if (value === 0) return "Попередній урок";
+    if (value === 1) return "Раніше в курсі";
+    if (value === 2) return "Поточний модуль";
+    if (value === 3) return "Увесь курс";
+    return "Матеріали CenterWay";
+  };
+
+  return targets
+    .filter((target) => target.lessonId !== currentLessonId)
+    .sort((left, right) => {
+      const groupOrder = rank(left) - rank(right);
+      if (groupOrder !== 0) return groupOrder;
+      if (rank(left) <= 1 && left.lessonIndex !== right.lessonIndex) return right.lessonIndex - left.lessonIndex;
+      if (left.lessonIndex !== right.lessonIndex) return left.lessonIndex - right.lessonIndex;
+      if (left.kind !== right.kind) return left.kind === "lesson" ? -1 : 1;
+      return left.label.localeCompare(right.label, "uk");
+    })
+    .map((target) => ({
+      key: target.key,
+      label: target.label,
+      group: group(target),
+      hint: target.kind === "lesson"
+        ? target.moduleTitle
+        : `${target.lessonTitle} · ${target.moduleTitle}`,
+      future: target.lessonIndex > current.lessonIndex && !target.referenceModule,
+    }));
+}
 
 /**
  * What "/" offers first: the four shapes a paragraph can become.
@@ -672,6 +941,7 @@ function RichTextEditor({
   block,
   fresh,
   blockCommands,
+  referenceOptions,
   onBlockCommand,
   onChange,
 }: {
@@ -679,6 +949,7 @@ function RichTextEditor({
   fresh?: boolean;
   /** Offered in the slash menu below the node kinds — see `BlockEditor`. */
   blockCommands?: SlashCommand[];
+  referenceOptions: InternalReferenceOption[];
   onBlockCommand?: (id: string) => void;
   onChange: (path: (string | number)[], value: unknown) => void;
 }) {
@@ -777,6 +1048,7 @@ function RichTextEditor({
                       placeholder={itemIndex === 0 ? "Пункт" : undefined}
                       autoFocus={focus === `${index}:${itemIndex}`}
                       commands={commands}
+                      references={referenceOptions}
                       onCommand={(id) => runCommand(index, id)}
                       onChange={(next) =>
                         onChange(
@@ -832,6 +1104,7 @@ function RichTextEditor({
                   placeholder={node.kind === "h3" ? "Підзаголовок" : "Пишіть, або «/» для команд"}
                   autoFocus={focus === `${index}`}
                   commands={commands}
+                  references={referenceOptions}
                   onCommand={(id) => runCommand(index, id)}
                   onChange={(next) => onChange(["content", index, "text"], next ?? "")}
                   onEnter={() => openParagraph(index)}

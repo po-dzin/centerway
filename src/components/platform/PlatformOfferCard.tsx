@@ -50,9 +50,11 @@ export function PlatformOfferCard({
   const cardStyle = artwork?.desktop
     ? ({
         "--program-photo-image": `url("${artwork.desktop}")`,
-        "--program-photo-image-mobile": `url("${artwork.mobile ?? artwork.desktop}")`,
+        /* Cards keep one horizontal master at every breakpoint. The optional
+           portrait is reserved for the standalone offer hero on mobile. */
+        "--program-photo-image-mobile": `url("${artwork.desktop}")`,
         "--program-photo-position-desktop": artwork.desktopPosition ?? "center 20%",
-        "--program-photo-position-mobile": artwork.mobilePosition ?? "center 42%",
+        "--program-photo-position-mobile": artwork.desktopPosition ?? "center 20%",
       } as CSSProperties)
     : undefined;
 

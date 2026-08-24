@@ -583,7 +583,7 @@ function CourseCard(props: EntryProps) {
             className={styles.courseCover}
             src={course.cover.src}
             alt={course.cover.alt}
-            style={{ objectPosition: `center ${course.cover.cropY ?? 50}%` }}
+            style={{ objectPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%` }}
           />
         ) : (
           // Not a grey box: a course with no cover still has a palette, and the

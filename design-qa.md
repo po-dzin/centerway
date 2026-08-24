@@ -49,3 +49,52 @@ The mobile before-state and implementation were inspected together. The former s
 No actionable P0/P1/P2 findings remain. Typography uses the existing Cormorant/Manrope hierarchy; spacing follows the shared container; colors and hairlines resolve through existing semantic/material tokens; all non-standard marks are baked vector assets; app copy remains Ukrainian and unchanged except for existing state labels.
 
 final result: passed
+
+---
+
+# Design QA — unified course media
+
+## Reference
+
+- User screenshots 2–3: old Builder upload preview and one-axis crop slider.
+- User screenshot 4: selected landscape card frame and course-grid treatment.
+- User screenshot 1: retired learner/profile edge-to-edge band treatment.
+
+## Implemented target
+
+- one framed 16:9 course cover across marketplace, Builder grid, learning shelf, and profile continue card;
+- optional portrait master used only by the standalone course offer hero on mobile;
+- 9:16 automatic crop of the landscape master when no portrait exists;
+- Builder editor shows and directly edits both final formats instead of showing the uncropped upload and a range slider.
+
+## Captured QA
+
+### Marketplace
+
+- Desktop screenshot checked at 1440×1000: image is inside the card, text is outside photography, rounded frame matches Builder direction.
+- Mobile screenshot checked at 375×812: card remains landscape and does not swap to portrait media.
+- Measured at 375, 768, 1024, and 1440: photo ratio is 1.778 at every breakpoint, radius is 16px, and page overflow is 0.
+
+### Product page
+
+- Mobile screenshot checked at 375×812: offer hero uses portrait framing; the existing landscape asset produces a viable automatic crop.
+
+### Builder, learning, and profile
+
+- Production build and TypeScript pass.
+- Shared component/CSS contract is wired to all three surfaces.
+- Visual capture is blocked because the available in-app browser has no authenticated local session and no authenticated external browser is connected.
+
+## Gates
+
+- `lint`: passed.
+- `build`: passed.
+- course-media targeted tests: passed (75 tests); full `lms:validate`: passed (18 files, 202 tests).
+- `canon:guard`: passed.
+- `guard:ds-contract`: passed.
+- `guard:buttons`: passed after composing the reset action from the shared button contract.
+- `semantic:audit`: blocked by a pre-existing unrelated invariant: missing `src/app/(platform)/herbs/page.tsx`.
+
+final result: blocked
+
+Blocking condition: authenticated visual capture of Builder, `/learn`, and `/profile` is still required before the Product Design visual gate can be marked passed.

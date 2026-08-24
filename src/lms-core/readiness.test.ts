@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { courseReadiness, PLACEHOLDER_MARKER, type Course } from "./index";
+import { courseReadiness, internalLessonReferenceHref, PLACEHOLDER_MARKER, type Course } from "./index";
 
 function course(overrides: Partial<Course> = {}): Course {
   return {
@@ -95,6 +95,46 @@ describe("courseReadiness", () => {
     ];
 
     expect(courseReadiness(protocol).ready).toBe(true);
+  });
+
+  it("blocks a reference whose stable target no longer exists", () => {
+    const withReference = course();
+    withReference.modules[0].lessons[0].blocks[0] = {
+      id: "b1",
+      type: "rich_text",
+      content: [{ kind: "p", text: [{ text: "Зниклий урок", href: internalLessonReferenceHref("missing") }] }],
+    };
+
+    expect(courseReadiness(withReference).blockers.map((blocker) => blocker.code)).toContain(
+      "lms_ready_broken_reference"
+    );
+  });
+
+  it("blocks a hard-gated link from today into a future lesson", () => {
+    const withFuture = course();
+    withFuture.schedule = { mode: "daily", gate: "hard", start: "purchase" };
+    const first = withFuture.modules[0].lessons[0];
+    first.dayIndex = 1;
+    first.blocks = [
+      {
+        id: "b1",
+        type: "rich_text",
+        content: [{ kind: "p", text: [{ text: "Завтрашній урок", href: internalLessonReferenceHref("lesson-2") }] }],
+      },
+      { id: "boundary", type: "boundary_note", text: "Зупиніться, якщо практика викликає дискомфорт." },
+    ];
+    withFuture.modules[0].lessons.push({
+      id: "lesson-2",
+      slug: "l2",
+      title: "Урок 2",
+      order: 2,
+      dayIndex: 2,
+      blocks: [{ id: "b2", type: "rich_text", content: [{ kind: "p", text: "Далі." }] }],
+    });
+
+    expect(courseReadiness(withFuture).blockers.map((blocker) => blocker.code)).toContain(
+      "lms_ready_future_reference"
+    );
   });
 });
 

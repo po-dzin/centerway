@@ -48,6 +48,7 @@ export function BuilderImageField({
   courseSlug,
   src,
   alt,
+  showPreview = true,
   onChange,
 }: {
   label: string;
@@ -57,6 +58,8 @@ export function BuilderImageField({
   src: string | undefined;
   /** Rendered in the preview so the author sees what a screen reader will say. */
   alt?: string;
+  /** Some editors render the image in its final frame instead of as an uncropped original. */
+  showPreview?: boolean;
   onChange: (src: string | undefined) => void;
 }) {
   const input = useRef<HTMLInputElement>(null);
@@ -80,7 +83,7 @@ export function BuilderImageField({
     <div className={styles.field}>
       <span className={styles.fieldLabel}>{label}</span>
 
-      {src ? (
+      {src && showPreview ? (
         /* eslint-disable-next-line @next/next/no-img-element -- authored content, arbitrary remote hosts */
         <img className={styles.previewImage} src={src} alt={alt ?? ""} />
       ) : null}

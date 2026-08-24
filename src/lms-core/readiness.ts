@@ -21,6 +21,7 @@
 import type { LessonBlock, RichTextNode } from "./blocks";
 import { flattenLessons, type Course } from "./course";
 import { inlineToPlainText, type InlineText } from "./inline";
+import { buildInternalReferenceTargets, parseInternalReference } from "./references";
 
 /** Authoring marker for "the author still owes us this". */
 export const PLACEHOLDER_MARKER = "[ЗАПОВНИ";
@@ -55,6 +56,34 @@ function richTextOf(nodes: RichTextNode[]): string {
         : textOf(node.text)
     )
     .join(" ");
+}
+
+function inlineValues(block: LessonBlock): InlineText[] {
+  switch (block.type) {
+    case "lesson_objective":
+    case "boundary_note":
+    case "quote":
+      return [block.text];
+    case "rich_text":
+      return block.content.flatMap((node) => node.kind === "ul" || node.kind === "ol" ? node.items : [node.text]);
+    case "protocol_step":
+    case "practice_block":
+      return [block.title, ...(block.text ? [block.text] : [])];
+    case "checklist":
+      return [...(block.title ? [block.title] : []), ...block.items.map((item) => item.text)];
+    case "video":
+      return block.title ? [block.title] : [];
+    case "image":
+      return block.caption ? [block.caption] : [];
+    case "faq_block":
+      return block.items.flatMap((item) => [item.question, item.answer]);
+    case "table":
+      return [...(block.title ? [block.title] : []), ...(block.head ?? []), ...block.rows.flat()];
+    case "cta":
+      return block.text ? [block.text] : [];
+    case "code":
+      return [];
+  }
 }
 
 /** Every author-visible string in a block, flattened for marker scanning. */
@@ -106,6 +135,8 @@ export function courseReadiness(course: Course): CourseReadiness {
   let bodyFacing = false;
   let hasBoundary = false;
 
+  const referenceTargets = new Map(buildInternalReferenceTargets(course).map((target) => [target.key, target]));
+
   for (const { module, lesson } of flattenLessons(course)) {
     const lessonPath = `${course.slug}.${module.slug}.${lesson.slug}`;
 
@@ -118,6 +149,30 @@ export function courseReadiness(course: Course): CourseReadiness {
       const text = blockText(block);
 
       if (hasMarker(text)) add("lms_ready_placeholder", path, text.trim().slice(0, 160));
+
+      for (const value of inlineValues(block)) {
+        if (typeof value === "string") continue;
+        value.forEach((span) => {
+          const reference = parseInternalReference(span.href);
+          if (!reference) return;
+          const target = referenceTargets.get(span.href ?? "");
+          if (!target) {
+            add("lms_ready_broken_reference", path, span.text);
+            return;
+          }
+          if (
+            course.schedule.mode === "daily" &&
+            course.schedule.gate === "hard" &&
+            module.reference !== true &&
+            target.referenceModule !== true &&
+            typeof lesson.dayIndex === "number" &&
+            typeof target.dayIndex === "number" &&
+            target.dayIndex > lesson.dayIndex
+          ) {
+            add("lms_ready_future_reference", path, target.label);
+          }
+        });
+      }
 
       if (block.type === "boundary_note") hasBoundary = true;
       if (block.type === "protocol_step" || block.type === "practice_block") bodyFacing = true;

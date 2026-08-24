@@ -16,28 +16,65 @@ import { Icon } from "@/components/Icon";
 import styles from "./Lms.module.css";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 
+const MODAL_FOCUSABLE =
+  'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 export function CourseContentsDrawer({
   courseSlug,
   outline,
   currentSlug,
+  draftPreview = false,
+  previewReturnTo,
   onClose,
 }: {
   courseSlug: string;
   outline: CourseOutlineEntryDto[];
   currentSlug: string;
+  draftPreview?: boolean;
+  previewReturnTo?: string;
   onClose: () => void;
 }) {
   const surfaceHref = useSurfaceHref();
   const panelRef = useRef<HTMLDivElement>(null);
   const closeRef = useRef<HTMLButtonElement>(null);
+  const restoreFocusRef = useRef<HTMLElement | null>(null);
+  const previewQuery = draftPreview
+    ? `?${new URLSearchParams({
+        preview: "draft",
+        ...(previewReturnTo ? { returnTo: previewReturnTo } : {}),
+      }).toString()}`
+    : "";
 
   useEffect(() => {
+    restoreFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     closeRef.current?.focus();
+    return () => restoreFocusRef.current?.focus();
   }, []);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
+      if (event.key === "Escape") {
+        onClose();
+        return;
+      }
+      if (event.key !== "Tab" || !panelRef.current) return;
+
+      const focusable = Array.from(panelRef.current.querySelectorAll<HTMLElement>(MODAL_FOCUSABLE)).filter(
+        (element) => element.getClientRects().length > 0
+      );
+      if (focusable.length === 0) {
+        event.preventDefault();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener("keydown", onKeyDown);
     // The page behind a sheet must not scroll under the finger.
@@ -130,7 +167,7 @@ export function CourseContentsDrawer({
                 <Link
                   key={entry.lessonId}
                   className={isCurrent ? styles.drawerItemCurrent : styles.drawerItem}
-                  href={surfaceHref(`/learn/${courseSlug}/${entry.slug}`)}
+                  href={surfaceHref(`/learn/${courseSlug}/${entry.slug}${previewQuery}`)}
                   aria-current={isCurrent ? "page" : undefined}
                   onClick={onClose}
                 >

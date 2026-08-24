@@ -18,7 +18,7 @@ import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
-import { builderCourseSlugCanChange, deleteBuilderCourse, loadBuilderCourse, renameBuilderCourseSlug, saveBuilderCourse } from "@/lib/lms/builder";
+import { builderCourseSlugCanChange, deleteBuilderCourse, isDraftGeneration, loadBuilderCourse, renameBuilderCourseSlug, saveBuilderCourse } from "@/lib/lms/builder";
 import { COURSE_LIST_TAG, PURGE, courseTag } from "@/lib/lms/liveCatalog";
 import { canEditCourse, resolveBuilderIdentity } from "@/lib/lms/builderAccess";
 import { courseReadiness } from "@/lms-core";
@@ -43,6 +43,7 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       course: loaded.course,
       liveStatus: loaded.liveStatus,
       hasPendingRevision: loaded.hasPendingRevision,
+      draftGeneration: loaded.draftGeneration,
       updatedAt: loaded.updatedAt,
       readiness: { ready: readiness.ready, blockers: readiness.blockers },
       review: {
@@ -99,8 +100,11 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
     return NextResponse.json({ error: "course_not_found" }, { status: 404 });
   }
 
-  const body = (await req.json().catch(() => null)) as { course?: unknown } | null;
+  const body = (await req.json().catch(() => null)) as { course?: unknown; expectedGeneration?: unknown } | null;
   if (!body?.course) return NextResponse.json({ error: "missing_course" }, { status: 400 });
+  if (!isDraftGeneration(body.expectedGeneration)) {
+    return NextResponse.json({ error: "lms_builder_invalid_draft_generation" }, { status: 422 });
+  }
 
   // The slug in the path wins over the slug in the body: a payload that renamed
   // the course would otherwise write a DIFFERENT course than the one whose
@@ -108,7 +112,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
   const incoming = { ...(body.course as Record<string, unknown>), slug };
 
   try {
-    const result = await saveBuilderCourse(incoming);
+    const result = await saveBuilderCourse(incoming, body.expectedGeneration);
     // The learner reads this course through a tagged cache, so the write has to
     // drop the entry or a publish would sit behind the TTL. This is the line
     // that makes "опублікувати" mean it.
@@ -117,6 +121,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ slug
     return NextResponse.json(result);
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown_error";
+    if (message === "lms_builder_draft_conflict") {
+      return NextResponse.json({ error: message }, { status: 409 });
+    }
     // Validation and gate failures are the author's to fix, not server faults.
     const isAuthorError = message.startsWith("lms_");
     return NextResponse.json({ error: message }, { status: isAuthorError ? 422 : 500 });

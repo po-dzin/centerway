@@ -1,0 +1,49 @@
+/* Author-only boundary around the real learner renderer. The preview owns no
+   content recipe: everything below this row is rendered by the LMS modules. */
+
+.shell {
+  min-height: 100svh;
+  background: var(--cw-platform-bg);
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-ui);
+}
+
+.boundary {
+  width: min(calc(100% - 2rem), 46rem);
+  min-height: calc(var(--ds-touch-target-min) + var(--cw-space-md));
+  margin-inline: auto;
+  padding-block: var(--cw-space-xs);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+  border-block-end: 1px solid var(--cw-platform-border);
+}
+
+.back {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  min-width: 0;
+  gap: var(--cw-space-2xs);
+  color: var(--cw-platform-text);
+  white-space: nowrap;
+}
+
+.status {
+  min-width: 0;
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: 0.76rem;
+  line-height: 1.35;
+  text-align: end;
+  white-space: nowrap;
+}
+
+@media (max-width: 360px) {
+  .boundary {
+    width: min(calc(100% - 1rem), 46rem);
+  }
+
+  .status {
+    font-size: 0.7rem;
+  }
+}

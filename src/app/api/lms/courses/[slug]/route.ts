@@ -13,7 +13,9 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { loadLearnerCourse } from "@/lib/lms/server";
-import { buildOutline, resolveCurrentLesson, summarizeStanding } from "@/lms-core";
+import { loadBuilderCourse } from "@/lib/lms/builder";
+import { canEditCourse, resolveBuilderIdentity } from "@/lib/lms/builderAccess";
+import { buildOutline, foldProgress, resolveCurrentLesson, summarizeStanding } from "@/lms-core";
 
 export const runtime = "nodejs";
 
@@ -30,16 +32,36 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
 
   const { slug } = await params;
   const now = new Date();
+  const draftPreview = req.nextUrl.searchParams.get("preview") === "draft";
 
-  const result = await loadLearnerCourse({ authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) }, slug, now);
-  if (!result.ok) {
-    return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
+  let context;
+  if (draftPreview) {
+    const identity = await resolveBuilderIdentity(user);
+    const loaded = await loadBuilderCourse(slug).catch(() => null);
+    if (!loaded || !canEditCourse(identity, loaded.authorId)) {
+      return NextResponse.json({ error: "course_not_found" }, { status: 404 });
+    }
+    context = {
+      course: loaded.course,
+      enrollment: { startedAt: now, source: "builder_preview" },
+      progress: foldProgress([]),
+      timeZone: "Europe/Kyiv",
+    };
+  } else {
+    const result = await loadLearnerCourse({ authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) }, slug, now);
+    if (!result.ok) {
+      return NextResponse.json({ error: result.reason }, { status: FAILURE_STATUS[result.reason] ?? 400 });
+    }
+    context = result.context;
   }
 
-  const { course, enrollment, progress, timeZone } = result.context;
+  const { course, enrollment, progress, timeZone } = context;
   const learner = { startedAt: enrollment.startedAt, timeZone, now };
+  // Preview must let the author inspect every lesson regardless of drip or
+  // sequence, while keeping the authored schedule mode visible in the DTO.
+  const navigableCourse = draftPreview ? { ...course, schedule: { ...course.schedule, mode: "open" as const } } : course;
 
-  const outline = buildOutline(course, progress, learner).map((entry) => ({
+  const outline = buildOutline(navigableCourse, progress, learner).map((entry) => ({
     moduleId: entry.moduleId,
     moduleTitle: entry.moduleTitle,
     isReference: entry.isReference,
@@ -71,8 +93,8 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
       source: enrollment.source,
       timeZone,
     },
-    standing: summarizeStanding(course, progress, learner),
-    currentLessonSlug: resolveCurrentLesson(course, progress, learner)?.slug ?? null,
+    standing: summarizeStanding(navigableCourse, progress, learner),
+    currentLessonSlug: resolveCurrentLesson(navigableCourse, progress, learner)?.slug ?? null,
     outline,
   });
 }

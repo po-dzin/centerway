@@ -13,7 +13,7 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import type { Course, CourseTheme, Lesson, ReadinessBlocker } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 
-export type BuilderFailure = "unauthenticated" | "forbidden" | "not_found" | "invalid" | "network";
+export type BuilderFailure = "unauthenticated" | "forbidden" | "not_found" | "invalid" | "conflict" | "network";
 
 export type BuilderCourseSummary = {
   id: string;
@@ -26,7 +26,7 @@ export type BuilderCourseSummary = {
   /** -1 means the stored rows do not currently form a valid course. */
   blockerCount: number;
   updatedAt: string | null;
-  cover: { src: string; alt: string; cropY?: number } | null;
+  cover: Course["cover"] | null;
   theme: CourseTheme | null;
   sortOrder: number | null;
 };
@@ -36,6 +36,8 @@ export type BuilderCourseDto = {
   /** `course` may be the next version; this is the release learners still see. */
   liveStatus: Course["status"];
   hasPendingRevision: boolean;
+  /** Monotonic token required for the next whole-course save. */
+  draftGeneration: number;
   updatedAt: string | null;
   readiness: { ready: boolean; blockers: ReadinessBlocker[] };
   review: { status: "draft" | "in_review" | "changes_requested" | "approved"; note: string | null; enabled: boolean };
@@ -86,6 +88,10 @@ async function request<T>(path: string, init?: RequestInit): Promise<BuilderResu
   if (response.status === 401) return { ok: false, failure: "unauthenticated" };
   if (response.status === 403) return { ok: false, failure: "forbidden" };
   if (response.status === 404) return { ok: false, failure: "not_found" };
+  if (response.status === 409) {
+    const payload = (await response.json().catch(() => null)) as { error?: string } | null;
+    return { ok: false, failure: "conflict", detail: payload?.error };
+  }
 
   const payload = (await response.json().catch(() => null)) as (T & { error?: string }) | null;
 
@@ -182,11 +188,12 @@ export function loadCourse(slug: string): Promise<BuilderResult<BuilderCourseDto
 
 export function saveCourse(
   slug: string,
-  course: Course
-): Promise<BuilderResult<{ slug: string; status: Course["status"]; blockers: ReadinessBlocker[]; staged?: true }>> {
+  course: Course,
+  expectedGeneration: number,
+): Promise<BuilderResult<{ slug: string; status: Course["status"]; blockers: ReadinessBlocker[]; staged?: true; draftGeneration: number }>> {
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}`, {
     method: "PUT",
-    body: JSON.stringify({ course }),
+    body: JSON.stringify({ course, expectedGeneration }),
   });
 }
 

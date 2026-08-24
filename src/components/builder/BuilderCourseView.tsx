@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { HandGraphic, Icon } from "@/components/Icon";
 import {
@@ -38,6 +38,7 @@ import { BuilderHistory } from "./BuilderHistory";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
 import { useCourseHistory } from "./useCourseHistory";
 import { useCourseAutosave } from "./useCourseAutosave";
+import { rememberZenPreviewReturn, zenPreviewHref } from "@/components/lms/ZenPreviewShell";
 import { landingIndex, useRowDrag, type DragRef, type DropEdge, type RowDrag } from "./useRowDrag";
 import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
@@ -104,6 +105,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const [slugEditing, setSlugEditing] = useState(false);
   const [slugDraft, setSlugDraft] = useState("");
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  const draftGeneration = useRef<number | null>(null);
   const router = useRouter();
   const storedStructureView = useSyncExternalStore(subscribeToStructureView, readStructureView, () => "rows" as StructureView);
   const structureWide = useSyncExternalStore(
@@ -140,7 +142,10 @@ export function BuilderCourseView({ slug }: { slug: string }) {
 
   const load = useCallback(async () => {
     const result = await loadCourse(slug);
-    if (result.ok) history.reset(result.data.course);
+    if (result.ok) {
+      draftGeneration.current = result.data.draftGeneration;
+      history.reset(result.data.course);
+    }
     setState(
       result.ok
         ? { status: "ready", data: result.data }
@@ -155,7 +160,10 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     void (async () => {
       const result = await loadCourse(slug);
       if (cancelled) return;
-      if (result.ok) history.reset(result.data.course);
+      if (result.ok) {
+        draftGeneration.current = result.data.draftGeneration;
+        history.reset(result.data.course);
+      }
       setState(
         result.ok
           ? { status: "ready", data: result.data }
@@ -247,10 +255,17 @@ export function BuilderCourseView({ slug }: { slug: string }) {
 
   const persistCourse = useCallback(async (snapshot: Course) => {
     setNote(null);
-    const result = await saveCourse(slug, pruneEmptyProse(snapshot));
+    if (draftGeneration.current === null) {
+      return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
+    }
+    const result = await saveCourse(slug, pruneEmptyProse(snapshot), draftGeneration.current);
     if (!result.ok) {
+      if (result.failure === "conflict") {
+        return { ok: false as const, message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни." };
+      }
       return { ok: false as const, message: result.detail ?? "Не вдалося зберегти. Спробуйте ще раз." };
     }
+    draftGeneration.current = result.data.draftGeneration;
     // Keep server-derived readiness current without reloading the document. A
     // reload here would overwrite keystrokes made while this request was in
     // flight; the history records the exact accepted snapshot instead.
@@ -259,6 +274,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       data: {
         ...current.data,
         course: snapshot,
+        draftGeneration: result.data.draftGeneration,
         hasPendingRevision: result.data.staged ? true : current.data.hasPendingRevision,
         readiness: { ready: result.data.blockers.length === 0, blockers: result.data.blockers },
         review: result.data.staged || current.data.liveStatus === "draft"
@@ -302,11 +318,9 @@ export function BuilderCourseView({ slug }: { slug: string }) {
 
   const preview = () => {
     if (working) return;
-    if (dirty) {
-      setNote("Спочатку збережіть зміни, щоб відкрити перегляд.");
-      return;
-    }
-    window.open(`/learn/${encodeURIComponent(slug)}`, "_blank", "noopener,noreferrer");
+    const returnTo = `/build/${encodeURIComponent(slug)}`;
+    rememberZenPreviewReturn(returnTo);
+    navigate(zenPreviewHref(`/learn/${encodeURIComponent(slug)}`, returnTo));
   };
 
   /**
@@ -324,13 +338,21 @@ export function BuilderCourseView({ slug }: { slug: string }) {
 
     // The STORED course, not the edited one: publishing an unsaved draft would
     // make the button a second, silent save with a different gate.
-    const result = await saveCourse(slug, { ...state.data.course, status: next });
+    if (draftGeneration.current === null) {
+      setBusy(false);
+      setNote("Курс ще завантажується. Спробуйте за мить.");
+      return;
+    }
+    const result = await saveCourse(slug, { ...state.data.course, status: next }, draftGeneration.current);
     setBusy(false);
 
     if (!result.ok) {
-      setNote(result.detail ?? "Не вдалося зберегти. Спробуйте ще раз.");
+      setNote(result.failure === "conflict"
+        ? "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку."
+        : result.detail ?? "Не вдалося зберегти. Спробуйте ще раз.");
       return;
     }
+    draftGeneration.current = result.data.draftGeneration;
 
     setNote(next === "published" ? "Опубліковано в базі." : "Переведено в чернетку.");
     await load();
@@ -412,7 +434,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       trail={[{ label: "Курси", onNavigate: () => navigate("/build") }, { label: trailTitle(course.title, "Курс без назви") }]}
       tools={
         <>
-          <button className={styles.quietAction} type="button" onClick={preview} disabled={working} title={dirty ? "Спочатку збережіть зміни" : "Відкрити як учень"}>
+          <button className={styles.quietAction} type="button" onClick={preview} disabled={working} title={dirty ? "Зберегти й відкрити як учень" : "Відкрити як учень"}>
             Переглянути
           </button>
           <button
@@ -441,7 +463,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       <nav className={styles.courseMobileNav} aria-label="Розділи курсу">
         <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={workspaceMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("course"); }}><BuilderInkLabel>Курс</BuilderInkLabel></a>
         <a className={styles.courseMobileNavItem} href="#course-structure" aria-current={workspaceMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("content"); }}><BuilderInkLabel>Зміст</BuilderInkLabel></a>
-        <a className={styles.courseMobileNavItem} href="#course-release" aria-current={workspaceMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("release"); }}><BuilderInkLabel>Випуск</BuilderInkLabel></a>
+        <a className={styles.courseMobileNavItem} href="#course-release" aria-current={workspaceMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("release"); }}><BuilderInkLabel>Публікація</BuilderInkLabel></a>
       </nav>
 
       <section className={styles.courseWorkspacePanel} id="course-overview" hidden={workspaceMode !== "course"} aria-labelledby="course-overview-title">
@@ -514,14 +536,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
                   className={styles.slugLockState}
                   role="img"
                   aria-label="Адресу закріплено"
-                  title="Адресу закріплено після першого випуску, появи учнів або підключення вітрини"
+                  title="Адресу закріплено після першої публікації, появи учнів або підключення вітрини"
                 >
                   <Icon name="lock" size={16} />
                 </span>
               )}
               <span className={styles.courseAddressHint} id="course-address-hint">
                 {state.data.slugEditable
-                  ? "Адресу створено автоматично. Її можна змінити до першого випуску, появи учнів або підключення вітрини."
+                  ? "Адресу створено автоматично. Її можна змінити до першої публікації, появи учнів або підключення вітрини."
                   : "Адресу закріплено, щоб уже видані посилання залишалися робочими."}
               </span>
             </>
@@ -550,14 +572,15 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       </div>
       </section>
 
-      <section id="course-structure" hidden={workspaceMode !== "content"} className={`${styles.panel} ${styles.structure} ${structureView === "cards" ? styles.structureCards : ""}`}>
-        <div className={styles.panelHead}>
+      <section id="course-structure" hidden={workspaceMode !== "content"} className={`${styles.panel} ${styles.structure} ${structureView === "cards" ? styles.structureCards : ""}`} aria-labelledby="course-structure-title">
+        <header className={`${styles.panelHead} ${styles.structureHead}`}>
           <div>
-            <h2 className={styles.panelTitle}>Структура курсу</h2>
-            <span className={styles.courseMeta}>
+            <span className={styles.structureKicker}>{trailTitle(course.title, "Курс без назви")}</span>
+            <h2 className={styles.structureTitle} id="course-structure-title">Зміст</h2>
+            <p className={styles.structureMeta}>
               {course.modules.length} {plural(course.modules.length, "модуль", "модулі", "модулів")} ·{" "}
               {lessonCount} {plural(lessonCount, "урок", "уроки", "уроків")}
-            </span>
+            </p>
           </div>
           {structureWide ? (
             <div className={styles.viewSwitch} role="group" aria-label="Вигляд структури">
@@ -571,7 +594,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
               </button>
             </div>
           ) : null}
-        </div>
+        </header>
 
         <div className={styles.structureModules}>
           {course.modules.map((module, moduleIndex) => (
@@ -609,7 +632,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       <section className={styles.releaseWorkspace} id="course-release" hidden={workspaceMode !== "release"} aria-labelledby="course-release-title">
         <header className={styles.releaseWorkspaceHead}>
           <div>
-            <span className={styles.courseMeta}>Випуск курсу</span>
+            <span className={styles.courseMeta}>Публікація курсу</span>
             <h2 className={styles.pageTitle} id="course-release-title">Перевірка й публікація</h2>
           </div>
           <div className={styles.releaseSummary}>
@@ -620,7 +643,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         {note ? <p className={styles.noticeLine} aria-live="polite">{note}</p> : null}
         <BuilderBlockers blockers={readiness.blockers} />
         <section className={styles.releaseSection}>
-          <h3 className={styles.panelTitle}>Дія випуску</h3>
+          <h3 className={styles.panelTitle}>Дія публікації</h3>
           <p className={styles.panelText}>
             {state.data.hasPendingRevision
               ? "Ви редагуєте наступну версію. Учні поки бачать опублікований курс; надішліть оновлення на перевірку, коли воно готове."
@@ -695,9 +718,9 @@ function BuilderCourseRail({
           <span className={styles.courseRailIcon}><Icon name="view-rows" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
           <BuilderInkLabel>Зміст</BuilderInkLabel>
         </a>
-        <a className={styles.courseRailLink} href="#course-release" aria-label="Випуск" title={collapsed ? "Випуск" : undefined} aria-current={activeMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("release"); }}>
+        <a className={styles.courseRailLink} href="#course-release" aria-label="Публікація" title={collapsed ? "Публікація" : undefined} aria-current={activeMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("release"); }}>
           <span className={styles.courseRailIcon}><Icon name="motion" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
-          <BuilderInkLabel>Випуск</BuilderInkLabel>
+          <BuilderInkLabel>Публікація</BuilderInkLabel>
         </a>
       </nav>
       <div className={styles.courseRailStatus}>
@@ -793,6 +816,13 @@ function ModuleEditor({
 }) {
   const isOnlyModule = course.modules.length === 1;
   const [collapsed, setCollapsed] = useState(false);
+  const sequenceIndex = module.reference
+    ? null
+    : course.modules.slice(0, moduleIndex + 1).filter((entry) => entry.reference !== true).length;
+  const collapsedPreview = module.lessons
+    .slice(0, 2)
+    .map((lesson) => trailTitle(lesson.title, "Урок без назви"))
+    .join(" · ");
 
   /**
    * Moves a lesson, ACROSS module boundaries when it is at an edge.
@@ -849,10 +879,18 @@ function ModuleEditor({
          gets a dash on the path instead of the next number, and the numbers
          after it do not skip. */
       data-reference={module.reference === true ? "" : undefined}
+      data-collapsed={collapsed ? "" : undefined}
       {...moduleDrag.rowProps(moduleRow)}
     >
       <div className={styles.moduleHead}>
         <BuilderGrip drag={moduleDrag} row={moduleRow} label={module.title} />
+        <span
+          className={styles.moduleOrdinal}
+          data-short-label={sequenceIndex === null ? "Дов." : String(sequenceIndex).padStart(2, "0")}
+          aria-hidden="true"
+        >
+          {sequenceIndex === null ? "Довідка" : `Модуль ${String(sequenceIndex).padStart(2, "0")}`}
+        </span>
         <button
           className={styles.moduleCollapse}
           type="button"
@@ -906,6 +944,13 @@ function ModuleEditor({
         />
       </div>
 
+      {collapsed ? (
+        <p className={styles.moduleCollapsedPreview}>
+          {collapsedPreview}
+          {module.lessons.length > 2 ? ` · ще ${module.lessons.length - 2}` : ""}
+        </p>
+      ) : null}
+
       {collapsed ? null : <>
       <div className={styles.lessonList}>
       {module.lessons.map((lesson, lessonIndex) => {
@@ -918,6 +963,15 @@ function ModuleEditor({
         >
           <BuilderGrip drag={lessonDrag} row={lessonRow} label={lesson.title} />
           <div className={styles.lessonRow}>
+            <span
+              className={styles.lessonOrdinal}
+              data-short-label={String(lessonIndex + 1).padStart(2, "0")}
+              aria-hidden="true"
+            >
+              {sequenceIndex === null
+                ? String(lessonIndex + 1).padStart(2, "0")
+                : `${String(sequenceIndex).padStart(2, "0")}.${String(lessonIndex + 1).padStart(2, "0")}`}
+            </span>
             <Icon className={styles.lessonIcon} name="document" size={20} />
             <span className={styles.lessonText}>
               <BuilderEditableTitle

@@ -88,6 +88,46 @@ export type SlashCommand = {
   group?: string;
 };
 
+export type InternalReferenceOption = {
+  /** Stable `cw-ref:*` identity, never a route assembled from a mutable slug. */
+  key: string;
+  label: string;
+  hint: string;
+  group: string;
+  future?: boolean;
+};
+
+function trailingMentionRange(root: HTMLElement): { query: string; range: Range } | null {
+  const selection = window.getSelection();
+  if (!selection || !selection.isCollapsed || selection.rangeCount === 0) return null;
+  const caret = selection.getRangeAt(0);
+  if (!root.contains(caret.endContainer)) return null;
+
+  const before = document.createRange();
+  before.selectNodeContents(root);
+  before.setEnd(caret.endContainer, caret.endOffset);
+  const text = before.toString();
+  const match = /(?:^|\s)@([^\s@]*)$/.exec(text);
+  if (!match) return null;
+
+  const atOffset = text.length - match[0].length + (match[0].startsWith("@") ? 0 : 1);
+  const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+  let consumed = 0;
+  let node = walker.nextNode();
+  while (node) {
+    const length = node.textContent?.length ?? 0;
+    if (atOffset <= consumed + length) {
+      const range = document.createRange();
+      range.setStart(node, Math.max(0, atOffset - consumed));
+      range.setEnd(caret.endContainer, caret.endOffset);
+      return { query: match[1], range };
+    }
+    consumed += length;
+    node = walker.nextNode();
+  }
+  return null;
+}
+
 export function BuilderInlineEditor({
   value,
   multiline,
@@ -96,6 +136,7 @@ export function BuilderInlineEditor({
   autoFocus,
   bare,
   commands,
+  references,
   onChange,
   onCommand,
   onEnter,
@@ -112,6 +153,8 @@ export function BuilderInlineEditor({
   bare?: boolean;
   /** Offered when the author types "/" into an empty field. */
   commands?: SlashCommand[];
+  /** Internal course entities offered by the separate `@` command. */
+  references?: InternalReferenceOption[];
   onChange: (next: InlineText | undefined) => void;
   onCommand?: (id: string) => void;
   /** Enter. The span model has no line break, so this is always a structural move. */
@@ -144,6 +187,8 @@ export function BuilderInlineEditor({
    * just a slash.
    */
   const [query, setQuery] = useState<string | null>(null);
+  const [referenceQuery, setReferenceQuery] = useState<string | null>(null);
+  const referenceRange = useRef<Range | null>(null);
   const [cursor, setCursor] = useState(0);
   const [anchor, setAnchor] = useState<{
     top: number;
@@ -156,9 +201,15 @@ export function BuilderInlineEditor({
   const matches = (commands ?? []).filter(
     (command) => query !== null && command.label.toLowerCase().includes(query.toLowerCase())
   );
+  const referenceMatches = (references ?? []).filter((option) => {
+    if (referenceQuery === null) return false;
+    const haystack = `${option.label} ${option.hint}`.toLocaleLowerCase("uk");
+    return haystack.includes(referenceQuery.toLocaleLowerCase("uk"));
+  });
+  const menuMatches = referenceQuery !== null ? referenceMatches : matches;
   // Clamped rather than reset: narrowing the query must not silently move the
   // highlight back to the top under an author who is about to press Enter.
-  const active = matches.length > 0 ? Math.min(cursor, matches.length - 1) : 0;
+  const active = menuMatches.length > 0 ? Math.min(cursor, menuMatches.length - 1) : 0;
   const groupedMatches = matches.reduce<Array<{ label: string; commands: SlashCommand[] }>>((groups, command) => {
     const label = command.group ?? "Команди";
     const current = groups.at(-1);
@@ -209,6 +260,8 @@ export function BuilderInlineEditor({
 
   const closeMenu = useCallback(() => {
     setQuery(null);
+    setReferenceQuery(null);
+    referenceRange.current = null;
     setCursor(0);
     setAnchor(null);
   }, []);
@@ -229,7 +282,7 @@ export function BuilderInlineEditor({
   // reason the row menu is (see BuilderMenu): a list positioned inside a card
   // is clipped by the first ancestor that scrolls.
   useLayoutEffect(() => {
-    if (query === null) return;
+    if (query === null && referenceQuery === null) return;
     const element = ref.current;
     if (!element) return;
     const rect = element.getBoundingClientRect();
@@ -245,7 +298,7 @@ export function BuilderInlineEditor({
       maxHeight: Math.max(160, Math.min(408, flip ? roomAbove : roomBelow)),
       flip,
     });
-  }, [query]);
+  }, [query, referenceQuery]);
 
   /**
    * The panel follows the selection while the caret is in this field.
@@ -300,6 +353,34 @@ export function BuilderInlineEditor({
     setHasText((element.textContent ?? "") !== "");
   }, [value, asText]);
 
+  const emitFromElement = useCallback((element: HTMLElement) => {
+    const next = nodesToInline(readNodes(element));
+    onChange(next === "" ? undefined : next);
+  }, [onChange]);
+
+  const runReference = useCallback((option: InternalReferenceOption) => {
+    const element = ref.current;
+    const range = referenceRange.current;
+    if (!element || !range) return;
+
+    const link = document.createElement("a");
+    link.setAttribute("href", option.key);
+    link.textContent = option.label;
+    const space = document.createTextNode(" ");
+    range.deleteContents();
+    range.insertNode(link);
+    link.after(space);
+
+    const caret = document.createRange();
+    caret.setStartAfter(space);
+    caret.collapse(true);
+    const selection = window.getSelection();
+    selection?.removeAllRanges();
+    selection?.addRange(caret);
+    closeMenu();
+    emitFromElement(element);
+  }, [closeMenu, emitFromElement]);
+
   const emit = useCallback(() => {
     const element = ref.current;
     if (!element) return;
@@ -312,6 +393,8 @@ export function BuilderInlineEditor({
     const slash = commands && commands.length > 0 ? /^\/([^\s/]*)$/.exec(raw) : null;
     if (slash) {
       setQuery(slash[1]);
+      setReferenceQuery(null);
+      referenceRange.current = null;
       setCursor(0);
       // Deliberately NOT written to the model: a half-typed command is not
       // content, and recording it would put "/" on the undo stack and, if the
@@ -319,12 +402,19 @@ export function BuilderInlineEditor({
       return;
     }
 
-    closeMenu();
-    const next = nodesToInline(readNodes(element));
-    // Empty is ABSENT, the same rule every other field follows: the validators
-    // reject an empty string where they accept a missing key.
-    onChange(next === "" ? undefined : next);
-  }, [closeMenu, commands, onChange]);
+    setQuery(null);
+    const mention = references && references.length > 0 ? trailingMentionRange(element) : null;
+    if (mention) {
+      referenceRange.current = mention.range;
+      setReferenceQuery(mention.query);
+      setCursor(0);
+    } else {
+      setReferenceQuery(null);
+      referenceRange.current = null;
+      setAnchor(null);
+    }
+    emitFromElement(element);
+  }, [commands, emitFromElement, references]);
 
   const exec = (command: string, argument?: string) => {
     const element = ref.current;
@@ -416,6 +506,29 @@ export function BuilderInlineEditor({
         }}
         onInput={emit}
         onKeyDown={(event) => {
+          if (referenceQuery !== null && referenceMatches.length > 0) {
+            if (event.key === "ArrowDown") {
+              event.preventDefault();
+              setCursor((active + 1) % referenceMatches.length);
+              return;
+            }
+            if (event.key === "ArrowUp") {
+              event.preventDefault();
+              setCursor((active - 1 + referenceMatches.length) % referenceMatches.length);
+              return;
+            }
+            if (event.key === "Enter" || event.key === "Tab") {
+              event.preventDefault();
+              runReference(referenceMatches[active]);
+              return;
+            }
+            if (event.key === "Escape") {
+              event.preventDefault();
+              closeMenu();
+              return;
+            }
+          }
+
           if (query !== null && matches.length > 0) {
             if (event.key === "ArrowDown") {
               event.preventDefault();
@@ -614,6 +727,48 @@ export function BuilderInlineEditor({
                   })}
                 </div>
               ))}
+            </div>,
+            document.body
+          )
+        : null}
+
+      {referenceQuery !== null && anchor && referenceMatches.length > 0 && typeof document !== "undefined"
+        ? createPortal(
+            <div
+              className={styles.slashList}
+              role="listbox"
+              aria-label="Внутрішні посилання"
+              data-flip={anchor.flip || undefined}
+              style={{ top: anchor.top, left: anchor.left, width: anchor.width, maxHeight: anchor.maxHeight }}
+            >
+              {references?.map((option) => option.group).filter((group, index, groups) => groups.indexOf(group) === index).map((group) => {
+                const options = referenceMatches.filter((option) => option.group === group);
+                if (options.length === 0) return null;
+                return (
+                  <div className={styles.slashGroup} role="group" aria-label={group} key={group}>
+                    <div className={styles.slashGroupTitle} aria-hidden="true">{group}</div>
+                    {options.map((option) => {
+                      const index = referenceMatches.indexOf(option);
+                      return (
+                        <button
+                          key={option.key}
+                          className={styles.slashItem}
+                          type="button"
+                          role="option"
+                          aria-selected={index === active}
+                          data-active={index === active || undefined}
+                          onMouseDown={(event) => event.preventDefault()}
+                          onMouseEnter={() => setCursor(index)}
+                          onClick={() => runReference(option)}
+                        >
+                          <span className={styles.slashLabel}>{option.label}</span>
+                          <span className={styles.slashHint}>{option.future ? "Майбутній урок · " : ""}{option.hint}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                );
+              })}
             </div>,
             document.body
           )
