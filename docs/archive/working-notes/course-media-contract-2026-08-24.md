@@ -55,8 +55,25 @@ Card media never swaps to the portrait source at mobile breakpoints. Only the
 standalone offer hero may use `mobileSrc`; this prevents the same course from
 changing identity between catalogue, purchase, learning, and profile.
 
+## Marketplace and video media recipes
+
+Marketplace discovery uses one atmospheric offer-card recipe for Products,
+Programs, Courses, and Tests: the existing horizontal artwork fills the card
+and copy sits on the DS contrast scrim. This is a presentation rule of the
+public catalogue, not a change to the underlying course-cover asset.
+
+Builder, learner shelf, and profile continue cards still render that same course
+cover as a framed `16:9` identity image. The immersive catalogue card never
+switches to the portrait hero source on mobile.
+
+Video is a third, non-interchangeable media object. Public orientation video,
+learner lesson video, and Builder block preview use a horizontal 16:9 player in
+a rounded DS frame. The player preserves 16:9 even when adjacent desktop copy
+is taller; mobile presents it as a distinct rounded rectangle inside the
+containing card. Video never inherits portrait hero behavior.
+
 ## Verification
 
 - course schema validation accepts both focal-point pairs and rejects values outside `0..100`;
 - lint and production build;
-- browser QA at `375`, `768`, `1024`, and `1440` for Builder, catalogue, learning shelf, profile continue card, and dynamic course offer.
+- browser QA at `375`, `768`, `1024`, and `1440` for Builder, catalogue, learning shelf, profile continue card, dynamic course offer, product cards, and public orientation video.
