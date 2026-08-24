@@ -686,7 +686,9 @@ The contract layer (`route_family_contracts.json` → `screen_manifests.json` �
 - Breakpoints: mobile ≤ 560px, tablet 561–900px, desktop ≥ 901px.
 - **Course surfaces have one footer composition (2026-08-24).** Storefront,
   learner shelf and Builder may carry different links, but their footer uses
-  the same `--cw-max-width` container, gutter and three-track grid. In Builder
+  the same `--cw-max-width` container, gutter and three-track grid. Content is
+  anchored left / centre / right inside those tracks on every variant; short
+  personal link groups do not collapse visually toward the left. In Builder
   the footer is a shell row after the workspace: the course rail ends before
   it and never becomes an extra column that narrows or shifts the footer.
 - **The tablet band gets desktop content and phone chrome (2026-08-21).** The three names above were real in the token file and not in the CSS: `561–900` carried a handful of hero and footer tweaks, and everything else fell through to the phone. An 834px iPad therefore rendered a snap carousel of 626px offer cards — one visible, the next cut at the edge — and body copy running the full 800px. Five pixels wider, at 905px, the same content came out two-up in a 428px grid. The cliff was the layout, not the width.

@@ -515,14 +515,6 @@
   composes: footerGrid;
 }
 
-/* The storefront centres its legal column between a brand block and a social
-   column. There is no social column here, so centring would leave it floating
-   in the middle of its own track. */
-.footerGridPersonal .footerLegal {
-  justify-self: start;
-  justify-items: start;
-}
-
 .footerLead,
 .footerLinks {
   display: grid;
