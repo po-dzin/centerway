@@ -3,11 +3,12 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 
 import type { Course } from "@/lms-core";
+import { acknowledgeDurableCourseDraft, writeDurableCourseDraft } from "./courseDraftStore";
 
 const AUTOSAVE_DELAY_MS = 1_500;
 
 export type AutosaveResult =
-  | { ok: true; message: string }
+  | { ok: true; message: string; generation: number }
   | { ok: false; message: string };
 
 type AutosaveState = "idle" | "waiting" | "saving" | "saved" | "error";
@@ -27,12 +28,14 @@ export function useCourseAutosave({
   paused = false,
   persist,
   markSaved,
+  getDraftGeneration,
 }: {
   course: Course | null;
   dirty: boolean;
   paused?: boolean;
   persist: (course: Course) => Promise<AutosaveResult>;
   markSaved: (course: Course) => void;
+  getDraftGeneration: () => number | null;
 }) {
   const [state, setState] = useState<AutosaveState>("idle");
   const [message, setMessage] = useState<string | null>(null);
@@ -45,12 +48,56 @@ export function useCourseAutosave({
   const latestCourse = useRef(course);
   const persistRef = useRef(persist);
   const markSavedRef = useRef(markSaved);
+  const getDraftGenerationRef = useRef(getDraftGeneration);
+  const snapshotIds = useRef(new WeakMap<Course, string>());
+  const durableEntries = useRef(new WeakMap<Course, {
+    generation: number | null;
+    snapshotId: string;
+    write: Promise<void>;
+  }>());
+  const durableChain = useRef(Promise.resolve());
+  const writerId = useRef<string | null>(null);
+  if (writerId.current === null) writerId.current = crypto.randomUUID();
 
   useEffect(() => {
     latestCourse.current = course;
     persistRef.current = persist;
     markSavedRef.current = markSaved;
-  }, [course, markSaved, persist]);
+    getDraftGenerationRef.current = getDraftGeneration;
+  }, [course, getDraftGeneration, markSaved, persist]);
+
+  const durableIdentity = useCallback((snapshot: Course) => {
+    const existing = snapshotIds.current.get(snapshot);
+    if (existing) return existing;
+    const created = crypto.randomUUID();
+    snapshotIds.current.set(snapshot, created);
+    return created;
+  }, []);
+
+  const preserveLocally = useCallback((snapshot: Course) => {
+    const existing = durableEntries.current.get(snapshot);
+    if (existing) return existing;
+    const generation = getDraftGenerationRef.current();
+    const snapshotId = durableIdentity(snapshot);
+    const write = generation === null
+      ? Promise.resolve()
+      : durableChain.current.then(() => writeDurableCourseDraft({
+          courseId: snapshot.id,
+          course: snapshot,
+          baseGeneration: generation,
+          snapshotId,
+          writerId: writerId.current!,
+          updatedAt: Date.now(),
+        })).catch(() => undefined);
+    durableChain.current = write;
+    const entry = {
+      generation,
+      snapshotId,
+      write,
+    };
+    durableEntries.current.set(snapshot, entry);
+    return entry;
+  }, [durableIdentity]);
 
   useEffect(() => {
     // Strict Mode intentionally runs setup → cleanup → setup in development.
@@ -72,12 +119,25 @@ export function useCourseAutosave({
       setMessage("Зберігаємо зміни…");
     }
 
+    const durable = preserveLocally(snapshot);
     const request = chain.current.then(async () => {
+      await durable.write;
       const result = await persistRef.current(snapshot).catch((): AutosaveResult => ({
         ok: false,
         message: "Не вдалося зберегти. Спробуйте ще раз.",
       }));
-      if (result.ok) markSavedRef.current(snapshot);
+      if (result.ok) {
+        markSavedRef.current(snapshot);
+        if (durable.generation !== null) {
+          durableChain.current = durableChain.current.then(() => acknowledgeDurableCourseDraft({
+              courseId: snapshot.id,
+              writerId: writerId.current!,
+              snapshotId: durable.snapshotId,
+              previousGeneration: durable.generation!,
+              nextGeneration: result.generation,
+            })).catch(() => undefined);
+        }
+      }
       return result;
     }).then((result) => {
       pending.current -= 1;
@@ -93,7 +153,12 @@ export function useCourseAutosave({
     chain.current = request;
     queued.current.set(snapshot, request);
     return request;
-  }, []);
+  }, [preserveLocally]);
+
+  useEffect(() => {
+    if (!course || !dirty) return;
+    void preserveLocally(course).write;
+  }, [course, dirty, preserveLocally]);
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);

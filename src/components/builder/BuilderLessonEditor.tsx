@@ -51,6 +51,7 @@ import {
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { lessonDocumentFailureCopy } from "./lessonDocumentCopy";
+import { inspectDurableCourseDraft } from "./courseDraftStore";
 
 type State =
   | { status: "loading" }
@@ -105,7 +106,17 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       if (cancelled) return;
       if (result.ok) {
         draftGeneration.current = result.data.draftGeneration;
-        history.reset(result.data.course);
+        const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration);
+        if (cancelled) return;
+        if (durable.kind === "recover") {
+          history.recover(result.data.course, durable.draft.course);
+          setNote("Відновлено локальні зміни. Вони збережуться автоматично.");
+        } else {
+          history.reset(result.data.course);
+          if (durable.kind === "conflict") {
+            setNote("Локальна копія збережена окремо: серверна версія змінилася в іншій вкладці.");
+          }
+        }
       }
       setState(
         result.ok
@@ -206,6 +217,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     draftGeneration.current = result.data.draftGeneration;
     return {
       ok: true as const,
+      generation: result.data.draftGeneration,
       message: result.data.blockers.length === 0
         ? "Збережено. Блокерів немає."
         : `Збережено. Лишилось блокерів: ${result.data.blockers.length}.`,
@@ -218,6 +230,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     paused: busy,
     persist: persistCourse,
     markSaved: history.markSaved,
+    getDraftGeneration: () => draftGeneration.current,
   });
   const working = busy || autosave.saving;
   const save = autosave.saveNow;
