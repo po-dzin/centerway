@@ -83,11 +83,11 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
               not a page. Four rows in one column read as one undifferentiated
               stack where the storefront footer beside it has three tracks, so
               the two footers disagreed about their own shape. */}
-          <div className={styles.footerLinks}>
+          <div className={`${styles.footerLinks} ${styles.footerLegal}`}>
             <Link href={shelfHref}>Мої курси</Link>
             <Link href={profileHref}>Профіль</Link>
           </div>
-          <div className={styles.footerLinks}>
+          <div className={`${styles.footerLinks} ${styles.footerSocials}`}>
             <a href={SUPPORT_BOT_URL} target="_blank" rel="noopener noreferrer">
               Підтримка
             </a>
