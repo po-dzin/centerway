@@ -90,8 +90,10 @@
      Positioning semantics stay the platform's own (sticky in flow, fixed only
      when a hero is under it) — that part already worked. */
   .header.header {
+    --platform-mobile-header-top: 0.75rem;
+    --platform-mobile-header-height: 3.9rem;
     position: sticky;
-    top: 0.75rem;
+    top: var(--platform-mobile-header-top);
     right: 0;
     left: 0;
     width: min(100% - 2rem, var(--cw-max-width));
@@ -108,7 +110,8 @@
   }
 
   .shellOverlay .header.header {
-    top: 0.95rem;
+    --platform-mobile-header-top: 0.95rem;
+    top: var(--platform-mobile-header-top);
     right: 0;
     left: 0;
     width: min(100% - 2rem, var(--cw-max-width));
@@ -117,7 +120,7 @@
 
   .headerInner,
   .headerInner.container {
-    min-height: 3.9rem;
+    min-height: var(--platform-mobile-header-height);
     display: flex;
     align-items: center;
     justify-content: space-between;
@@ -313,8 +316,15 @@
 
   .header[data-menu-open="true"] .navLayer,
   .navLayerOpen {
-    max-height: min(72svh, 34rem);
+    /* Use the space that actually remains below the floating bar. The old
+       34rem / 72svh ceiling manufactured overflow on ordinary phone screens
+       even when another 150–200px was visibly free below the sheet. */
+    max-height: calc(
+      100dvh - var(--platform-mobile-header-top) - var(--platform-mobile-header-height) -
+        var(--cw-space-sm) - env(safe-area-inset-bottom)
+    );
     overflow-y: auto;
+    overscroll-behavior: contain;
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
