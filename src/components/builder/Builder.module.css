@@ -20,7 +20,7 @@
 .shell {
   min-height: 100svh;
   display: grid;
-  grid-template-rows: auto 1fr;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   background: var(--cw-platform-bg);
   color: var(--cw-platform-text);
   font-family: var(--cw-font-ui);
@@ -63,19 +63,13 @@
   min-width: 0;
 }
 
-.mainColumn {
-  min-width: 0;
-  min-height: 100%;
-  display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
-}
-
 /* One column on a phone: the rail is a drawer there, in flow above the page,
    because an overlay would need a scrim, a focus trap and an escape key to be
    honest — three things for a list the author can also reach by pressing the
    course crumb. */
 .bodyWithAside {
   min-width: 0;
+  min-height: 0;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
 }

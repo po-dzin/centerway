@@ -94,25 +94,22 @@ export function BuilderShell({
             {aside}
           </aside>
         ) : null}
-        <div className={styles.mainColumn}>
-          <main className={styles.page}>
-            {/* Trail and tools on one line: where am I, and the handful of
-                controls that act on this exact course or lesson. */}
-            {showContextRow ? (
-              <div className={styles.pageTrail}>
-                {showTrail ? <PlatformTrail steps={trail} /> : null}
-                {tools ? <div className={styles.pageTools}>{tools}</div> : null}
-              </div>
-            ) : null}
-            {children}
-          </main>
-
-          {/* The footer ends the workspace column. The course rail is its own
-              column and therefore never appears to continue into the site
-              footer. */}
-          <PlatformFooter variant="personal" />
-        </div>
+        <main className={styles.page}>
+          {/* Trail and tools on one line: where am I, and the handful of
+              controls that act on this exact course or lesson. */}
+          {showContextRow ? (
+            <div className={styles.pageTrail}>
+              {showTrail ? <PlatformTrail steps={trail} /> : null}
+              {tools ? <div className={styles.pageTools}>{tools}</div> : null}
+            </div>
+          ) : null}
+          {children}
+        </main>
       </div>
+      {/* One platform-wide ending: the rail belongs only to the workspace row,
+          while the footer uses the same viewport-centred container as every
+          other course surface. */}
+      <PlatformFooter variant="personal" />
     </div>
   );
 }
