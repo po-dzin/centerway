@@ -28,12 +28,33 @@ export function courseMapHref(course: LearnerShelfCourseDto) {
   return `/learn/${course.slug}`;
 }
 
-/** Where a shelf entry sends the learner, and what the button says. */
+/**
+ * Where a shelf entry sends the learner, and what the button says.
+ *
+ * A locked card is NOT a dead end. The brief is explicit that a course nobody
+ * has bought stays visible with a way to buy it, and the same is true of one
+ * whose window has closed — the offer page is where both go, the difference
+ * being whether the button says "buy" or "renew". A banned seat is the one
+ * case with nothing to sell: it names the state and offers support instead.
+ */
 export function courseAction(course: LearnerShelfCourseDto, copy: CabinetCopy) {
   const map = courseMapHref(course);
 
   if (course.access === "locked") {
-    return { href: `/programs/${course.programSlug}`, label: copy.openProgramPage, primary: false };
+    const label =
+      course.lockReason === "expired"
+        ? copy.renewAccess
+        : course.lockReason === "not_entitled"
+          ? copy.buyAccess
+          : copy.openProgramPage;
+    // The offer page is the one place that knows the price, so the card never
+    // starts a checkout itself — it hands over to the surface that does.
+    return {
+      href: `/programs/${course.programSlug}`,
+      label,
+      // A closed window is the moment the buy button is the point of the card.
+      primary: course.lockReason === "expired" || course.lockReason === "not_entitled",
+    };
   }
   if (course.access === "available") {
     return { href: map, label: copy.startAction, primary: true };
@@ -63,12 +84,22 @@ export function CourseCard({
     course.access === "locked"
       ? course.lockReason === "expired"
         ? copy.courseExpired
-        : copy.courseLocked
+        : course.lockReason === "revoked"
+          ? copy.courseRevoked
+          : course.lockReason === "blocked"
+            ? copy.courseBlocked
+            : copy.courseLocked
       : course.access === "available"
         ? copy.courseNotStarted
         : course.standing?.isFinished
           ? copy.courseFinished
           : null;
+
+  /* HOW LONG IS LEFT, not just until when. A date alone makes the learner do
+     the arithmetic, and the answer they wanted was «ще встигаю» or «ні». Shown
+     only while access is open — on a closed card the number is always zero and
+     the chip beside it already said so. */
+  const showsWindow = course.access !== "locked" && course.expiresAt !== null;
 
   return (
     <article className={course.access === "locked" ? styles.cardMuted : styles.card} {...matte}>
@@ -104,6 +135,12 @@ export function CourseCard({
         {course.startedAt ? (
           <li>
             {copy.startedAtLabel}: <strong>{fmtShortDate(course.startedAt, dateLocale)}</strong>
+          </li>
+        ) : null}
+        {showsWindow && course.expiresAt ? (
+          <li>
+            {copy.accessUntilLabel}: <strong>{fmtShortDate(course.expiresAt, dateLocale)}</strong>
+            {course.daysLeft !== null ? <> — {copy.daysLeft(course.daysLeft)}</> : null}
           </li>
         ) : null}
       </ul>

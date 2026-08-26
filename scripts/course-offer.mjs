@@ -20,9 +20,16 @@
  * Usage:
  *   node scripts/course-offer.mjs                                  # list every offer
  *   node scripts/course-offer.mjs --slug=my-course                 # show one course
- *   node scripts/course-offer.mjs --slug=my-course --amount=790     # put it on sale
- *   node scripts/course-offer.mjs --slug=my-course --amount=790 --list-amount=1200
+ *   node scripts/course-offer.mjs --slug=my-course --amount=790 --access-days=30
+ *   node scripts/course-offer.mjs --slug=my-course --amount=790 --access-lifetime
+ *   node scripts/course-offer.mjs --slug=my-course --amount=790 --list-amount=1200 --access-days=90
+ *   node scripts/course-offer.mjs --slug=my-course --access-days=60   # change only the term
  *   node scripts/course-offer.mjs --slug=my-course --off            # withdraw the offer
+ *
+ * THE TERM IS REQUIRED, and that is the point of it being here. An offer with
+ * no access rule grants perpetual access to everyone who ever buys it, silently
+ * and forever — so a new offer cannot be created without --access-days or
+ * --access-lifetime. Existing offers keep whatever they already say.
  */
 
 import fs from "node:fs";
@@ -63,6 +70,12 @@ function wholeAmount(raw, label) {
   return value;
 }
 
+function wholeDays(raw, label) {
+  const value = Number(raw);
+  if (!Number.isInteger(value) || value <= 0) fail(`${label} must be a whole number of days (got "${raw}")`);
+  return value;
+}
+
 loadEnv();
 
 if (!process.env.SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) {
@@ -86,19 +99,27 @@ async function courseFor(slug) {
   return data;
 }
 
+function accessLabel(offer) {
+  if (!offer) return "";
+  if (offer.access_lifetime) return "  ∞ access";
+  return offer.access_days ? `  ${offer.access_days}d access` : "  ACCESS TERM MISSING";
+}
+
 function report(course, offer) {
   const price = offer
     ? `${offer.amount} ${offer.currency}${offer.list_amount ? ` (quoted ${offer.list_amount})` : ""}${
         offer.active ? "" : " — WITHDRAWN"
       }`
     : "(not for sale)";
-  console.log(`  ${offer?.active ? "✓" : "·"} ${course.slug.padEnd(28)} ${course.status}/${course.visibility}  ${price}`);
+  console.log(
+    `  ${offer?.active ? "✓" : "·"} ${course.slug.padEnd(28)} ${course.status}/${course.visibility}  ${price}${accessLabel(offer)}`
+  );
 }
 
 async function offerFor(slug) {
   const { data, error } = await db
     .from("lms_course_offers")
-    .select("id, code, amount, list_amount, currency, pixel_content_name, active")
+    .select("id, code, amount, list_amount, currency, pixel_content_name, active, access_days, access_lifetime")
     .eq("code", offerCode(slug))
     .maybeSingle();
   if (error) fail(error.message);
@@ -113,7 +134,7 @@ async function list() {
   if (error) fail(error.message);
   const { data: offers } = await db
     .from("lms_course_offers")
-    .select("id, code, amount, list_amount, currency, active");
+    .select("id, code, amount, list_amount, currency, active, access_days, access_lifetime");
   const byCode = new Map((offers ?? []).map((row) => [row.code, row]));
 
   console.log(`admin:offer — ${courses?.length ?? 0} course(s):`);
@@ -130,9 +151,15 @@ async function main() {
 
   const course = await courseFor(slug);
   const amountRaw = arg("amount");
+  const accessDaysRaw = arg("access-days");
+  const lifetime = flag("access-lifetime");
   const off = flag("off");
 
-  if (!amountRaw && !off) {
+  if (accessDaysRaw && lifetime) {
+    fail("--access-days and --access-lifetime say opposite things; pass one");
+  }
+
+  if (!amountRaw && !off && !accessDaysRaw && !lifetime) {
     console.log(`admin:offer — ${slug}:`);
     report(course, await offerFor(slug));
     return;
@@ -153,6 +180,42 @@ async function main() {
     return;
   }
 
+  const existingForTerm = await offerFor(slug);
+
+  // The term, decided before anything is written. An offer that already has one
+  // keeps it unless this run says otherwise; a new one must state it, because
+  // "unstated" is spelled the same as "forever" everywhere it is later read.
+  let accessDays = existingForTerm?.access_days ?? null;
+  let accessLifetime = existingForTerm?.access_lifetime ?? false;
+
+  if (lifetime) {
+    accessDays = null;
+    accessLifetime = true;
+  } else if (accessDaysRaw) {
+    accessDays = wholeDays(accessDaysRaw, "--access-days");
+    accessLifetime = false;
+  }
+
+  if (!accessLifetime && !accessDays) {
+    fail(
+      "no access term. Pass --access-days=N (how many days one purchase buys, counted from the payment) " +
+        "or --access-lifetime for an offer sold without an end."
+    );
+  }
+
+  if (!amountRaw) {
+    // Term-only edit: the price stays exactly as it is.
+    if (!existingForTerm) fail(`"${slug}" has no offer yet — set a price with --amount in the same call`);
+    const { error } = await db
+      .from("lms_course_offers")
+      .update({ access_days: accessDays, access_lifetime: accessLifetime, updated_at: new Date().toISOString() })
+      .eq("id", existingForTerm.id);
+    if (error) fail(error.message);
+    console.log(`admin:offer — access term updated for ${offerCode(slug)}`);
+    report(course, await offerFor(slug));
+    return;
+  }
+
   const amount = wholeAmount(amountRaw, "--amount");
   const listRaw = arg("list-amount");
   const listAmount = listRaw ? wholeAmount(listRaw, "--list-amount") : null;
@@ -160,13 +223,18 @@ async function main() {
     fail("--list-amount is the struck-through figure; it cannot be lower than what is charged");
   }
 
-  const existing = await offerFor(slug);
+  const existing = existingForTerm;
   const payload = {
     course_id: course.id,
     code: offerCode(slug),
     amount,
     list_amount: listAmount,
     currency: "UAH",
+    // How long one purchase buys, enforced by lms_enrollments.expires_at. The
+    // sentence printed beside the price is a different field on the course
+    // (access_note) and is deliberately free to differ.
+    access_days: accessDays,
+    access_lifetime: accessLifetime,
     // Kept verbatim once set: it is a reporting label in Meta, and renaming it
     // splits one product's history into two lines.
     pixel_content_name: existing?.pixel_content_name ?? course.title,

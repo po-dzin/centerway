@@ -10,6 +10,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import type { GrantSource } from "@/lib/admin/accessTypes";
 import { isStaffRole } from "@/lib/platform/adminRole";
 import {
   DEFAULT_TIMEZONE,
@@ -111,7 +112,13 @@ export type EnrollmentRecord = {
   id: string;
   courseId: string;
   startedAt: Date;
-  source: "order" | "token" | "manual";
+  /**
+   * How the seat was come by. `manual`/`bonus`/`promotion` are the three the
+   * admin grant screen can write (`GrantSource`, admin/accessTypes.ts) — this
+   * used to say only "manual", which was accurate until that screen learned to
+   * label a seat as a bonus or a promo rather than a plain grant.
+   */
+  source: "order" | "token" | GrantSource;
   orderRef: string | null;
   /** Deadline for this person on this course; `null` means access does not end. */
   expiresAt: string | null;

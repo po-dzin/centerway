@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
     AccessError,
+    blockCourse,
+    isGrantSource,
     isPaymentCurrency,
     listLearners,
     normalizeDeadline,
     provisionAccess,
+    reactivateCourse,
     revokeCourse,
     setEnrollmentDeadline,
+    unblockCourse,
     type LearnerStatus,
     type PaymentCurrency,
 } from "@/lib/admin/access";
@@ -63,6 +67,8 @@ type ProvisionBody = {
     expiresAt?: string | null;
     createAccount?: boolean;
     payment?: { amount?: unknown; currency?: unknown; note?: string } | null;
+    /** `manual` (default), `bonus` or `promotion` — why this seat exists. */
+    source?: string;
 };
 
 // POST /api/admin/access/learners { email, course, fullName?, expiresAt?, createAccount?, payment? }
@@ -94,6 +100,7 @@ export async function POST(req: NextRequest) {
             fullName: body.fullName ?? null,
             courseSlug: body.course,
             expiresAt: deadline.value,
+            source: isGrantSource(body.source) ? body.source : undefined,
             createAccount: Boolean(body.createAccount),
             payment,
             actorId: session.user.id,
@@ -116,24 +123,60 @@ export async function POST(req: NextRequest) {
     }
 }
 
-// PATCH /api/admin/access/learners { enrollmentId, expiresAt } — set or clear a deadline
+/**
+ * PATCH /api/admin/access/learners { enrollmentId, action?, expiresAt?, reason? }
+ *
+ * One endpoint for every change to an existing seat, because they are one
+ * decision to the operator: move the date, close it, open it again, ban.
+ * `action` defaults to `deadline`, which is what this route did before the
+ * others existed — an old client keeps working.
+ */
+const ACTIONS = ["deadline", "revoke", "reactivate", "block", "unblock"] as const;
+type Action = (typeof ACTIONS)[number];
+
 export async function PATCH(req: NextRequest) {
     const session = await requireAdminSession(req);
     if (!session) return unauthorizedResponse();
 
-    const body = (await req.json().catch(() => ({}))) as { enrollmentId?: string; expiresAt?: string | null };
+    const body = (await req.json().catch(() => ({}))) as {
+        enrollmentId?: string;
+        action?: string;
+        expiresAt?: string | null;
+        reason?: string | null;
+    };
     if (!body.enrollmentId) return badRequestResponse("enrollment_id_required");
 
-    const deadline = normalizeDeadline(body.expiresAt);
-    if (!deadline.ok) return badRequestResponse("expires_at_invalid");
+    const action = (body.action ?? "deadline") as Action;
+    if (!ACTIONS.includes(action)) return badRequestResponse("action_invalid");
+
+    const actorId = session.user.id;
+    const enrollmentId = body.enrollmentId;
 
     try {
-        const result = await setEnrollmentDeadline({
-            enrollmentId: body.enrollmentId,
-            expiresAt: deadline.value,
-            actorId: session.user.id,
-        });
-        return NextResponse.json(result);
+        if (action === "revoke") {
+            return NextResponse.json(await revokeCourse({ enrollmentId, actorId, reason: body.reason ?? null }));
+        }
+        if (action === "block") {
+            return NextResponse.json(await blockCourse({ enrollmentId, actorId, reason: body.reason ?? null }));
+        }
+        if (action === "unblock") {
+            return NextResponse.json(await unblockCourse({ enrollmentId, actorId }));
+        }
+
+        const deadline = normalizeDeadline(body.expiresAt);
+        if (!deadline.ok) return badRequestResponse("expires_at_invalid");
+
+        if (action === "reactivate") {
+            // `expiresAt` absent means "leave the date alone"; an empty string
+            // clears it. `normalizeDeadline` collapses both to null, so the raw
+            // body decides which of the two the operator meant.
+            const expiresAt = body.expiresAt === undefined ? undefined : deadline.value;
+            return NextResponse.json(await reactivateCourse({ enrollmentId, actorId, expiresAt }));
+        }
+
+        return NextResponse.json(
+            await setEnrollmentDeadline({ enrollmentId, expiresAt: deadline.value, actorId })
+        );
     } catch (error) {
         return failed(error);
     }

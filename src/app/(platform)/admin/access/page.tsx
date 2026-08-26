@@ -360,13 +360,36 @@ function LearnersTab({
         }
     };
 
-    const revoke = async (row: LearnerRow) => {
-        if (!window.confirm(t("access_revoke_confirm"))) return;
+    /**
+     * Every change to an existing seat, through one endpoint.
+     *
+     * They read as one decision to the operator — close it, open it, ban —
+     * so they are one call with an `action`, and one place that reloads the
+     * table afterwards. The two destructive ones ask first; reactivating and
+     * unblocking give access back and need no confirmation.
+     */
+    const seatAction = async (
+        row: LearnerRow,
+        action: "revoke" | "reactivate" | "block" | "unblock",
+        confirmKey?: "access_revoke_confirm" | "access_block_confirm"
+    ) => {
+        if (confirmKey && !window.confirm(t(confirmKey))) return;
         try {
-            await authFetch(`/api/admin/access/learners?enrollmentId=${encodeURIComponent(row.enrollmentId)}`, {
-                method: "DELETE",
+            await authFetch("/api/admin/access/learners", {
+                method: "PATCH",
+                body: JSON.stringify({ enrollmentId: row.enrollmentId, action }),
             });
-            toast.success(t("access_revoked"));
+            toast.success(
+                t(
+                    action === "revoke"
+                        ? "access_revoked"
+                        : action === "reactivate"
+                          ? "access_reactivated"
+                          : action === "block"
+                            ? "access_blocked_toast"
+                            : "access_unblocked"
+                )
+            );
             onCoursesChanged();
             await load();
         } catch (e) {
@@ -383,7 +406,25 @@ function LearnersTab({
     ];
 
     const sourceLabel = (source: string) =>
-        source === "manual" ? t("access_source_manual") : source === "token" ? t("access_source_token") : t("access_source_order");
+        source === "manual"
+            ? t("access_source_manual")
+            : source === "bonus"
+              ? t("access_source_bonus")
+              : source === "promotion"
+                ? t("access_source_promotion")
+                : source === "token"
+                  ? t("access_source_token")
+                  : t("access_source_order");
+
+    /* The state of the DOOR, which is not the state of the learner: the dot
+       beside the row still reports progress. Both matter and neither answers
+       the other's question. */
+    const ACCESS_STATE_KEY = {
+        active: "access_state_active",
+        expired: "access_state_expired",
+        revoked: "access_state_revoked",
+        blocked: "access_state_blocked",
+    } as const;
 
     const totalPages = Math.ceil(total / LIMIT);
 
@@ -614,7 +655,7 @@ function LearnersTab({
                                         {account.courses.map((row) => {
                                             const stored = deadlineInputValue(row.expiresAt);
                                             const draft = deadlineDraft[row.enrollmentId] ?? stored;
-                                            const expired = row.expiresAt !== null && Date.parse(row.expiresAt) <= Date.now();
+                                            const closed = row.access !== "active";
 
                                             return (
                                                 <div key={row.enrollmentId} className="space-y-2">
@@ -631,23 +672,60 @@ function LearnersTab({
                                                                 <span>
                                                                     {t("access_col_started")}: {new Date(row.startedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
                                                                 </span>
-                                                                {/* An expired row is not a detail — it is why the
-                                                                    learner wrote in, so it is said outright. */}
-                                                                {expired ? (
-                                                                    <span className="cw-status-failed-text">{t("access_deadline_expired")}</span>
+                                                                {/* A closed door is not a detail — it is why the
+                                                                    learner wrote in, so it is said outright, and it
+                                                                    says WHICH kind of closed. */}
+                                                                {closed ? (
+                                                                    <span className="cw-status-failed-text">
+                                                                        {t(ACCESS_STATE_KEY[row.access])}
+                                                                        {row.blockedReason ? ` — ${row.blockedReason}` : ""}
+                                                                    </span>
+                                                                ) : row.daysLeft !== null ? (
+                                                                    <span>{row.daysLeft} {t("access_days_left")}</span>
                                                                 ) : null}
                                                             </div>
                                                         </div>
                                                         <p className="text-sm cw-text tabular-nums shrink-0 hidden sm:block">
                                                             {row.lessonsTotal > 0 ? `${row.lessonsCompleted}/${row.lessonsTotal}` : t("access_no_lessons")}
                                                         </p>
-                                                        <button
-                                                            type="button"
-                                                            onClick={() => revoke(row)}
-                                                            className="px-3 py-1.5 cw-btn cw-btn-muted text-xs shrink-0"
-                                                        >
-                                                            {t("access_revoke")}
-                                                        </button>
+                                                        <div className="flex items-center gap-2 shrink-0">
+                                                            {row.access === "blocked" ? (
+                                                                <button
+                                                                    type="button"
+                                                                    onClick={() => void seatAction(row, "unblock")}
+                                                                    className="px-3 py-1.5 cw-btn cw-surface-2 text-xs"
+                                                                >
+                                                                    {t("access_unblock")}
+                                                                </button>
+                                                            ) : (
+                                                                <>
+                                                                    {row.access === "revoked" ? (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => void seatAction(row, "reactivate")}
+                                                                            className="px-3 py-1.5 cw-btn cw-surface-2 text-xs"
+                                                                        >
+                                                                            {t("access_reactivate")}
+                                                                        </button>
+                                                                    ) : (
+                                                                        <button
+                                                                            type="button"
+                                                                            onClick={() => void seatAction(row, "revoke", "access_revoke_confirm")}
+                                                                            className="px-3 py-1.5 cw-btn cw-btn-muted text-xs"
+                                                                        >
+                                                                            {t("access_revoke")}
+                                                                        </button>
+                                                                    )}
+                                                                    <button
+                                                                        type="button"
+                                                                        onClick={() => void seatAction(row, "block", "access_block_confirm")}
+                                                                        className="px-3 py-1.5 cw-btn cw-btn-muted text-xs"
+                                                                    >
+                                                                        {t("access_block")}
+                                                                    </button>
+                                                                </>
+                                                            )}
+                                                        </div>
                                                     </div>
 
                                                     <div className="flex flex-wrap items-center gap-2 pl-5">

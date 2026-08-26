@@ -38,6 +38,17 @@ export type CabinetCopy = {
   nextStepLabel: string;
   startedAtLabel: string;
   openProgramPage: string;
+  /* The window of access, as the card says it. A learner asks two questions of
+     a paid course — «чи ще діє» and «скільки лишилось» — and the second one is
+     the only one a bare date does not answer. */
+  courseActive: string;
+  courseRevoked: string;
+  courseBlocked: string;
+  accessUntilLabel: string;
+  accessForeverLabel: string;
+  daysLeft: (days: number) => string;
+  buyAccess: string;
+  renewAccess: string;
 
   accountLabel: string;
   accountTitle: string;
@@ -84,7 +95,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       allCourses: "All my courses",
 
       learningTitle: "My courses",
-      learningLabel: "Learning",
+      learningLabel: "Library",
       learningLoadingTitle: "Loading your courses…",
       learningLoadingLead: "Restoring access, progress and your next lesson.",
       learningEmptyTitle: "No courses in this profile yet",
@@ -103,6 +114,14 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       nextStepLabel: "Next step",
       startedAtLabel: "Started",
       openProgramPage: "About the program",
+      courseActive: "Active",
+      courseRevoked: "Access withdrawn",
+      courseBlocked: "Access closed",
+      accessUntilLabel: "Access until",
+      accessForeverLabel: "Access without an end date",
+      daysLeft: (days) => (days === 1 ? "1 day left" : `${days} days left`),
+      buyAccess: "Get access",
+      renewAccess: "Renew access",
 
       accountLabel: "Account",
       accountTitle: "Account and contacts",
@@ -140,7 +159,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     allCourses: "Усі мої курси",
 
     learningTitle: "Мої курси",
-    learningLabel: "Навчання",
+    learningLabel: "Бібліотека",
     learningLoadingTitle: "Завантажуємо ваші курси…",
     learningLoadingLead: "Відновлюємо доступ, поступ і ваш наступний урок.",
     learningEmptyTitle: "У профілі ще немає курсів",
@@ -159,6 +178,14 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     nextStepLabel: "Наступний урок",
     startedAtLabel: "Старт",
     openProgramPage: "Про програму",
+    courseActive: "Активна",
+    courseRevoked: "Доступ відкликано",
+    courseBlocked: "Доступ закрито",
+    accessUntilLabel: "Доступ до",
+    accessForeverLabel: "Доступ без обмеження в часі",
+    daysLeft: (days) => `лишил${days === 1 ? "ся" : "ось"} ${days} ${ukPlural(days, "день", "дні", "днів")}`,
+    buyAccess: "Придбати доступ",
+    renewAccess: "Продовжити доступ",
 
     accountLabel: "Акаунт",
     accountTitle: "Акаунт і контакти",

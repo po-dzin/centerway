@@ -17,6 +17,7 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import {
+  accessStateOf,
   courseOfferCode,
   decideDailyReminder,
   decideUnstartedReminder,
@@ -39,6 +40,9 @@ type EnrollmentRow = {
   course_id: string;
   auth_user_id: string;
   started_at: string;
+  expires_at?: string | null;
+  status?: string | null;
+  blocked_at?: string | null;
 };
 
 function bump(counter: Record<string, number>, key: string): void {
@@ -295,7 +299,7 @@ export async function runDailyReminders(
   const enrollments = await fetchAllRows<EnrollmentRow>(limit, (from, to) =>
     db
       .from("lms_enrollments")
-      .select("id, course_id, auth_user_id, started_at")
+      .select("id, course_id, auth_user_id, started_at, expires_at, status, blocked_at")
       .in("course_id", [...courses.keys()])
       .order("id", { ascending: true })
       .range(from, to)
@@ -305,6 +309,20 @@ export async function runDailyReminders(
   for (const enrollment of enrollments) {
     const course = courses.get(enrollment.course_id);
     if (!course) continue;
+
+    // «Сьогоднішній крок чекає» — to someone whose access closed yesterday is
+    // the worst message this cron can send. The row survives a lapsed deadline
+    // on purpose (the progress is kept), so the reminder has to ask the gate
+    // rather than infer from the row's existence.
+    if (
+      accessStateOf(
+        { status: enrollment.status, blockedAt: enrollment.blocked_at, expiresAt: enrollment.expires_at },
+        now
+      ) !== "active"
+    ) {
+      bump(skipped, "access_closed");
+      continue;
+    }
 
     const { data: profile } = await db
       .from("platform_users")

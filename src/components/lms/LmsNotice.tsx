@@ -54,6 +54,21 @@ const COPY: Record<LmsFailure, { title: string; text: string; href?: string; cta
     href: "/profile",
     cta: "Мій профіль",
   },
+  /* Closed by a person, not by a date, so the text does not blame the
+     calendar and does not promise that paying again will help — for a ban it
+     would not. Both send the reader to support rather than to checkout. */
+  revoked: {
+    title: "Доступ до курсу закрито",
+    text: "Доступ до цього курсу відкликано. Ваш поступ збережено — напишіть нам, і ми розберемось.",
+    href: "/profile",
+    cta: "Мій профіль",
+  },
+  blocked: {
+    title: "Доступ до курсу закрито",
+    text: "Доступ до цього курсу заблоковано. Напишіть нам — це вирішується тільки вручну.",
+    href: "/profile",
+    cta: "Мій профіль",
+  },
   lesson_not_found: {
     title: "Урок не знайдено",
     text: "Такого уроку немає в цьому курсі.",
