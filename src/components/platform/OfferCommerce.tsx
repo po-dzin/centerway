@@ -3,7 +3,6 @@ import type { ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
 import { PlatformTrail, type TrailStep } from "@/components/platform/PlatformTrail";
-import type { Course } from "@/lms-core";
 import type { OfferCommerce } from "@/lib/platform/offerCommerce";
 import styles from "./PlatformOfferCommerce.module.css";
 import offerStyles from "./PlatformOfferStyles";
@@ -29,60 +28,6 @@ export function OfferTrail({ steps }: { steps: TrailStep[] }) {
     <div className={styles.backRow}>
       <PlatformTrail steps={steps} />
     </div>
-  );
-}
-
-/**
- * What is actually inside the course — modules and lesson titles, read from the
- * catalogue that serves the lessons themselves.
- *
- * This replaces the block that used to sit here: two generic sentences about
- * "a short entry into the system without a long commitment", written once and
- * printed on every offer regardless of what the offer contained. A reader
- * deciding whether to buy needs to know that Reset Day is three stages plus
- * recipes, not that it is short.
- *
- * Lesson TITLES, not summaries: the titles are the promise, the summaries are
- * the content, and printing the content is giving the course away.
- */
-export function OfferCurriculum({ course }: { course: Course }) {
-  const lessonCount = course.modules.reduce((total, module) => total + module.lessons.length, 0);
-
-  return (
-    <section
-      className={`${offerStyles.container} ${offerStyles.section}`}
-      data-cw-semantic-role="offer-detail"
-      data-cw-semantic-family="method-progress"
-      data-cw-token-source="global-app-ds"
-      id="program-plan"
-    >
-      <article className={offerStyles.panel}>
-        <p className={offerStyles.label}>Що всередині</p>
-        <h2 className={offerStyles.title}>Програма курсу</h2>
-        <p className={offerStyles.lead}>
-          {course.summary ? inlineToText(course.summary) : null}
-        </p>
-        <ul className={styles.outline}>
-          {course.modules.map((module) => (
-            <li className={styles.outlineModule} key={module.id ?? module.title}>
-              <div className={styles.outlineModuleHead}>
-                <h3 className={styles.outlineModuleTitle}>{module.title}</h3>
-                <span className={styles.outlineCount}>{module.lessons.length}</span>
-              </div>
-              <ul className={styles.outlineLessons}>
-                {module.lessons.map((lesson) => (
-                  <li key={lesson.slug}>{lesson.title}</li>
-                ))}
-              </ul>
-            </li>
-          ))}
-        </ul>
-        <p className={styles.priceNote}>
-          {course.modules.length} {plural(course.modules.length, "модуль", "модулі", "модулів")} ·{" "}
-          {lessonCount} {plural(lessonCount, "урок", "уроки", "уроків")}
-        </p>
-      </article>
-    </section>
   );
 }
 
@@ -133,7 +78,7 @@ export function OfferCheckoutPanel({
         ))}
       </ul>
 
-      <a className={styles.buyAction} href={commerce.checkoutHref} rel="nofollow">
+      <a className={styles.buyAction} href={commerce.checkoutHref} rel="nofollow" data-cw-offer-cta>
         {ctaLabel}
       </a>
 
@@ -163,23 +108,4 @@ export function OfferSupportPanel({
       {children}
     </article>
   );
-}
-
-/* Ukrainian counts take three forms, and "3 уроки / 5 уроків" is the kind of
-   thing a reader notices immediately when it is wrong. */
-function plural(count: number, one: string, few: string, many: string): string {
-  const mod100 = count % 100;
-  if (mod100 >= 11 && mod100 <= 14) return many;
-  const mod10 = count % 10;
-  if (mod10 === 1) return one;
-  if (mod10 >= 2 && mod10 <= 4) return few;
-  return many;
-}
-
-/* The catalogue's inline text is either a string or a run of spans; an offer
-   page prints it flat. */
-function inlineToText(value: Course["summary"]): string {
-  if (typeof value === "string") return value;
-  if (!Array.isArray(value)) return "";
-  return value.map((span) => (typeof span === "string" ? span : span.text)).join("");
 }

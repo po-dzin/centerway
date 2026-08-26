@@ -624,11 +624,30 @@ function CourseCard(props: EntryProps) {
  * course is about to go.
  */
 function EntryControls({ course, index, total, busy, confirming, onMove, onAskDelete, onDelete, onExport }: EntryProps) {
+  const cancelDeleteRef = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (confirming) cancelDeleteRef.current?.focus();
+  }, [confirming]);
+
   if (confirming) {
     return (
-      <div className={styles.confirmRow}>
-        <span className={styles.confirmText}>Видалити «{course.title}»?</span>
-        <button className={styles.quietAction} type="button" onClick={() => onAskDelete(null)} disabled={busy}>
+      <div
+        className={styles.confirmRow}
+        role="group"
+        aria-label={`Підтвердження видалення курсу «${course.title}»`}
+        onKeyDown={(event) => {
+          if (event.key === "Escape") onAskDelete(null);
+        }}
+      >
+        <span className={styles.confirmText} title={course.title}>Видалити курс?</span>
+        <button
+          ref={cancelDeleteRef}
+          className={styles.quietAction}
+          type="button"
+          onClick={() => onAskDelete(null)}
+          disabled={busy}
+        >
           Ні
         </button>
         <button className={styles.dangerAction} type="button" onClick={() => onDelete(course.slug)} disabled={busy}>

@@ -3,9 +3,26 @@ import Link from "next/link";
 import styles from "@/components/platform/PlatformOfferStyles";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 
+/**
+ * One offer, as a preview.
+ *
+ * THE PREVIEW FORMAT, stated once here and enforced in CSS: an eyebrow of one
+ * line, a name of one line, three lines of description. It is a fixed shape so
+ * that a rail of cards reads as one object and so that a course written in the
+ * builder cannot push the two cards beside it out of alignment with a long
+ * title. The strings are cut to fit before they arrive — see
+ * src/lib/platform/offerPreview.ts — and the CSS ceilings catch the rest.
+ */
 type PlatformOfferCardProps = {
+  /** The NAME, one line. Not the name plus what it is — `offerName` cuts that. */
   title: string;
+  /**
+   * The eyebrow, one line: the same badge the offer page prints over its own
+   * title (kind · duration), built with `offerEyebrow`. Never the tagline —
+   * that is a sentence, and this row is set in uppercase.
+   */
   tag: string;
+  /** Why this exists. Three lines; the rest is on the page it links to. */
   description: string;
   href: string | null;
   visual: string;
@@ -71,6 +88,13 @@ export function PlatformOfferCard({
       style={cardStyle}
     >
       <div className={styles.programPhoto} aria-hidden="true" />
+      {/* The card IS the choice, so the whole card routes — the visible CTA below
+          is its label, not the only way in. This overlay is the single real link
+          in the card: making the CTA a link too would put two links with the same
+          destination in the a11y tree and in the tab order. */}
+      {isPlanned ? null : (
+        <Link className={styles.programTileOverlay} href={href} aria-label={title} />
+      )}
       <div
         className={styles.programTileBody}
         data-has-meta={meta ? "true" : "false"}
@@ -90,9 +114,9 @@ export function PlatformOfferCard({
         {isPlanned ? (
           <span className={styles.programTileStatus}>{statusLabel}</span>
         ) : (
-          <Link className={styles.programLink} href={href}>
-            {ctaLabel}
-          </Link>
+          /* Not a link: the overlay above already is one, and it covers this.
+             Kept as a span so the card offers one target, not two. */
+          <span className={styles.programLink}>{ctaLabel}</span>
         )}
       </div>
     </article>

@@ -3,7 +3,6 @@
 import type { MouseEvent, ReactNode } from "react";
 
 import { HandGraphic, Icon } from "@/components/Icon";
-import { PlatformFooter } from "@/components/platform/layout/PlatformFooter";
 import { PlatformHeader } from "@/components/platform/layout/PlatformHeader";
 import { PlatformTrail, type TrailStep } from "@/components/platform/PlatformTrail";
 import { supabaseClient } from "@/lib/supabaseClient";
@@ -11,24 +10,20 @@ import type { BuilderFailure } from "./builderClient";
 import styles from "./Builder.module.css";
 
 /**
- * The builder's chrome — which is the platform's chrome.
+ * The builder's chrome — the restrained internal side of the platform chrome.
  *
  * IT USED TO BE ITS OWN BAR: a flush white strip with a small mark, the word
  * «Білдер» in mono caps, and an avatar at the far right. Beside the shelf's
  * floating rounded plate with a wordmark and a nav, it read as a different
  * product — and it was a second copy of a header recipe, kept in step by hand
  * through a mapping block of `--platform-header-*` values in this module's CSS.
- * Both problems have one fix: render the header the other two surfaces render.
- * The builder is on the personal host, so the bar it gets is the one learning
- * gets — «Мої курси», «Білдер», the account — and «which application is this»
- * is answered by the marked row in the switcher rather than by a word welded to
- * the wordmark.
+ * Both problems have one component-level fix: render the shared personal
+ * header in its workspace mode. Identity and account behaviour stay one
+ * system; the material becomes a flat warm panel rather than storefront glass.
  *
- * THE TOOLS MOVED INTO THE PAGE, and they were never chrome to begin with: a
- * course's settings gear and a lesson's prev/next belong to the course and the
- * lesson, not to the application. They sit on the trail row now — the line that
- * already says which course and which lesson — so the controls are beside the
- * thing they act on.
+ * Route context and document-level actions share the workspace topbar: the
+ * brand remains application chrome, while breadcrumb, preview and save state
+ * describe the exact course or lesson currently being edited.
  *
  * THE RAIL is course-local navigation. In the lesson editor it carries the
  * outline; on the course workspace it carries only the three stable modes and
@@ -44,6 +39,8 @@ export function BuilderShell({
   aside,
   asideOpen,
   asideCompact,
+  asideCollapsed,
+  onAsideToggle,
   toolLayer,
   pageMode = "workspace",
   onNavigate,
@@ -56,7 +53,10 @@ export function BuilderShell({
   asideOpen?: boolean;
   /** Narrows a persistent desktop rail to its icon column. */
   asideCompact?: boolean;
-  /** Contextual right rail/drawer. It overlays the authoring gutter. */
+  /** Hides the desktop outline while leaving a stable reopen control. */
+  asideCollapsed?: boolean;
+  onAsideToggle?: () => void;
+  /** Contextual right rail on desktop and bottom sheet on compact layouts. */
   toolLayer?: ReactNode;
   /** A lesson document uses the learner's readable measure. */
   pageMode?: "workspace" | "document";
@@ -64,8 +64,14 @@ export function BuilderShell({
   onNavigate?: (href: string) => void;
   children: ReactNode;
 }) {
+  /* ONE BAR AT EVERY LEVEL. The context row used to appear only once a trail
+     had two steps and disappear on the course index, so moving between the
+     three builder levels changed the height of the chrome itself — the one
+     part of the screen that should never move. The row is now unconditional:
+     a level with nothing to say renders it empty, and the frame stays put.
+     The TRAIL still needs two steps, because a breadcrumb showing only its own
+     root is not a path — it is the application's name written twice. */
   const showTrail = trail.length > 1;
-  const showContextRow = showTrail || Boolean(tools);
 
   const interceptNavigation = (event: MouseEvent<HTMLDivElement>) => {
     if (!onNavigate || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
@@ -87,23 +93,49 @@ export function BuilderShell({
       {/* Explicitly personal: localhost and previews host the storefront and
           authoring app together, so hostname inference alone picks the public
           navigation there. The route, not the transport, owns this identity. */}
-      <PlatformHeader surface="personal" mode="learn" />
+      <PlatformHeader
+        surface="personal"
+        mode="workspace"
+        workspaceContent={(
+          <div className={styles.workspaceTopbarContext}>
+            {showTrail ? <PlatformTrail steps={trail} /> : <span />}
+            {tools ? <div className={styles.workspaceTopbarTools}>{tools}</div> : <span />}
+          </div>
+        )}
+      />
 
-      <div className={aside ? styles.bodyWithAside : styles.body}>
+      <div
+        className={aside ? styles.bodyWithAside : styles.body}
+        data-aside-collapsed={asideCollapsed || undefined}
+        data-aside-compact={asideCompact || undefined}
+      >
         {aside ? (
           <aside
             className={styles.aside}
             data-open={asideOpen || undefined}
             data-compact={asideCompact || undefined}
+            data-collapsed={asideCollapsed || undefined}
             aria-label="Навігація курсу"
           >
-            {aside}
+            <div className={styles.asideContent}>{aside}</div>
+            {onAsideToggle ? (
+              <button
+                className={styles.asideCollapseAction}
+                type="button"
+                onClick={onAsideToggle}
+                aria-label={asideCollapsed ? "Розгорнути структуру курсу" : "Згорнути структуру курсу"}
+                aria-expanded={!asideCollapsed}
+              >
+                <Icon name={asideCollapsed ? "arrow-right" : "arrow-left"} size={18} />
+                <HandGraphic className={styles.stepInkRing} name="ink-ring" size={42} />
+              </button>
+            ) : null}
           </aside>
         ) : null}
         <main className={styles.page} data-mode={pageMode}>
           {/* Trail and tools on one line: where am I, and the handful of
               controls that act on this exact course or lesson. */}
-          {showContextRow ? (
+          {showTrail || tools ? (
             <div className={styles.pageTrail}>
               {showTrail ? <PlatformTrail steps={trail} /> : null}
               {tools ? <div className={styles.pageTools}>{tools}</div> : null}
@@ -113,10 +145,6 @@ export function BuilderShell({
         </main>
         {toolLayer}
       </div>
-      {/* One platform-wide ending: the rail belongs only to the workspace row,
-          while the footer uses the same viewport-centred container as every
-          other course surface. */}
-      <PlatformFooter variant="personal" />
     </div>
   );
 }
@@ -250,6 +278,20 @@ const SHELF_NOT_FOUND = {
   text: "Сервер не віддав список курсів. Це не про курс — це про застосунок: найчастіше застарілий кеш збірки (зупиніть dev-сервер, видаліть .next і запустіть знову) або незастосована міграція.",
 };
 
+function failureText(failure: BuilderFailure, detail: string | undefined, fallback: string): string {
+  if (!detail) return fallback;
+
+  if (failure === "invalid" && detail.startsWith("lms_lesson_duplicate_day_index")) {
+    return "Два уроки мають однаковий номер дня. Змініть день одного з уроків і спробуйте знову.";
+  }
+
+  // API and database identifiers belong in logs. A person-facing recovery
+  // state should never turn a 500 response into an unexplained code dump.
+  if (failure === "network" || detail.startsWith("lms_")) return fallback;
+
+  return detail;
+}
+
 /**
  * Renders a failure, with the way out of it when there is one.
  *
@@ -267,8 +309,15 @@ export function BuilderFailureNotice({
 }) {
   const copy = failure === "not_found" && scope === "shelf" ? SHELF_NOT_FOUND : FAILURE_COPY[failure];
   return (
-    <BuilderNotice title={copy.title} text={detail ?? copy.text}>
+    <BuilderNotice title={copy.title} text={failureText(failure, detail, copy.text)}>
       {failure === "unauthenticated" ? <BuilderSignIn /> : null}
+      {failure === "network" ? (
+        <div className={styles.panelActions}>
+          <button className={styles.quietAction} type="button" onClick={() => window.location.reload()}>
+            Спробувати ще раз
+          </button>
+        </div>
+      ) : null}
     </BuilderNotice>
   );
 }

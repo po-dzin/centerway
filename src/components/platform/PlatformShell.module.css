@@ -138,6 +138,10 @@
   content: none;
 }
 
+.menuScrim {
+  display: none;
+}
+
 .shellOverlay .header {
   position: fixed;
   top: 0.95rem;
@@ -214,6 +218,11 @@
   justify-content: space-between;
   gap: 0.65rem;
   padding: 0 1rem;
+}
+
+.workspaceHeaderSlot {
+  min-width: 0;
+  flex: 1 1 auto;
 }
 
 .brand {
@@ -789,12 +798,12 @@
 .profileWrapMobile a:focus-visible .menuInkMark,
 .profileWrapMobile button:focus-visible .menuInkMark {
   opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale)) rotate(-0.4deg);
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
 }
 
 .profileWrapMobile a[data-current] .menuInkMark {
   opacity: 1;
-  transform: scaleX(1) rotate(-0.4deg);
+  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
 }
 
 .mobileProfileSlot {
@@ -891,4 +900,21 @@
   align-content: start;
   gap: clamp(0.9rem, 2.4vw, 1.15rem);
   min-width: 0;
+}
+
+/* ── Clearance for the phone's thumb bar ──────────────
+   An offer page on a phone ends in a fixed action bar (see
+   PlatformOfferCommerce.module.css → .stickyBar). The room for it belongs here
+   rather than inside `<main>`: the footer is main's sibling, so a spacer in
+   main clears the last section and still leaves the bar sitting over the phone
+   number and the legal links.
+
+   Keyed off an attribute the offer template sets, so a page WITHOUT a bar gains
+   no dead space at its foot. 900px is the platform's mobile boundary, the same
+   one the bar itself uses — the two must switch on the same width or a page
+   gets padding with no bar, or a bar with no padding. */
+@media (max-width: 900px) {
+  .shell:has(main[data-cw-offer-sticky]) {
+    padding-bottom: calc(4.5rem + env(safe-area-inset-bottom));
+  }
 }

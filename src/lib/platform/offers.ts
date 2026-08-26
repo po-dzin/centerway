@@ -33,6 +33,8 @@ import {
 } from "@/lib/products";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
+import { toOfferSurface } from "@/lib/platform/courseOffer";
+import { offerEyebrow } from "@/lib/platform/offerPreview";
 import {
   courseOfferCode,
   inlineToPlainText,
@@ -177,23 +179,32 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
   return courses
     .filter((course) => isPublicCourse(course, ["listed"]))
     .sort((a, b) => (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER))
-    .map((course) => ({
-      slug: course.slug,
-      title: course.title,
-      tag: course.tagline ?? "Курс",
-      description: course.summary ? inlineToPlainText(course.summary) : "",
-      href: `/programs/${course.slug}`,
-      ...(course.cover
-        ? {
-            artwork: {
-              desktop: course.cover.src,
-              desktopPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%`,
-            },
-          }
-        : {}),
-      visual: VISUAL_BY_PALETTE[course.theme?.palette ?? ""] ?? "stone",
-      lessons: course.modules.reduce((total, module) => total + module.lessons.length, 0),
-    }));
+    .map((course) => {
+      /* THE CARD SAYS WHAT THE PAGE SAYS. The eyebrow, the name and the
+         duration are read off the same `toOfferSurface` the offer page is built
+         from, so a reader who follows a card meets the two facts they were
+         shown, in the same words. This used to be its own opinion — the tagline
+         as the eyebrow, the raw title as the name — and it drifted the moment
+         a course was authored with a long title. */
+      const surface = toOfferSurface(course);
+      return {
+        slug: course.slug,
+        title: surface.title,
+        tag: offerEyebrow(surface.tag, surface.duration),
+        description: course.summary ? inlineToPlainText(course.summary) : "",
+        href: `/programs/${course.slug}`,
+        ...(course.cover
+          ? {
+              artwork: {
+                desktop: course.cover.src,
+                desktopPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%`,
+              },
+            }
+          : {}),
+        visual: VISUAL_BY_PALETTE[course.theme?.palette ?? ""] ?? "stone",
+        lessons: course.modules.reduce((total, module) => total + module.lessons.length, 0),
+      };
+    });
 }
 
 /**

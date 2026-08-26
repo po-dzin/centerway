@@ -1,20 +1,23 @@
 import {
   PlatformOfferMetaList,
-  PlatformOfferResultList,
   PlatformOfferSurfaceTemplate,
 } from "@/components/platform/PlatformOfferSurfaceTemplate";
-import {
-  OfferCheckoutPanel,
-  OfferCurriculum,
-  OfferSupportPanel,
-} from "@/components/platform/OfferCommerce";
+import { OfferCheckoutPanel, OfferSupportPanel } from "@/components/platform/OfferCommerce";
+import { OfferCurriculum } from "@/components/platform/OfferCurriculum";
+import { OfferAccessProvider } from "@/components/platform/OfferAccess";
+import { OfferHeroActions, OfferHeroCommitment } from "@/components/platform/OfferHeroState";
+import { OfferAuthor, OfferBento } from "@/components/platform/OfferFacets";
+import { OfferStickyBar } from "@/components/platform/OfferStickyBar";
+import { OfferSupport } from "@/components/platform/OfferSupportState";
+import offerPanelStyles from "@/components/platform/PlatformOfferStyles";
 import { LeadForm } from "@/components/platform/LeadForm";
-import { OwnedCourseNotice } from "@/components/platform/OwnedCourseNotice";
 import { CourseAuthorLink } from "@/components/platform/AuthorEntry";
 import { getSnapshotCourseByProgram } from "@/lib/lms/catalog";
 import { resolveOfferCommerce, type OfferCommerce } from "@/lib/platform/offerCommerce";
 import type { PlatformOfferSurfaceType } from "@/lib/platform/content";
-import type { Course } from "@/lms-core";
+import type { Author, Course } from "@/lms-core";
+import type { ReactNode } from "react";
+
 import { JsonLd } from "@/lib/seo/StructuredData";
 import { breadcrumbLd, courseLd, graph } from "@/lib/seo/jsonLd";
 
@@ -31,6 +34,16 @@ export type OfferSurface = {
   slug: string;
   title: string;
   fullTitle: string;
+  /**
+   * The line between the name and the tagline: what kind of thing this is.
+   *
+   * Optional, and empty for most offers. It exists because a title written in
+   * the builder often carries two jobs in one string — «Розвантажувальний день
+   * — практикум з умовного голодування» — and the half after the dash is not
+   * noise, it just cannot be part of a name. The name is the h1, this is under
+   * it, the tagline is under that. See `offerSubtitle`.
+   */
+  subtitle?: string;
   tag: string;
   duration: string;
   description: string;
@@ -38,6 +51,19 @@ export type OfferSurface = {
   results: readonly string[];
   surfaceType: PlatformOfferSurfaceType;
   artwork?: { desktop: string; desktopPosition?: string; mobilePosition?: string };
+  /**
+   * The offer surface proper (2026-08-26). Optional to a fault, and that is the
+   * point: these are the things the six hand-written pages said in prose only a
+   * developer could edit, and a course out of the builder says exactly as many
+   * of them as its author has filled in. A page prints what it has and stays
+   * quiet about the rest — never a heading over an empty list.
+   */
+  audience?: readonly string[];
+  format?: readonly string[];
+  /** The access promise printed beside the price — "доступ назавжди". */
+  accessNote?: string;
+  /** Why this author for this course. One sentence; the profile is joined separately. */
+  authorNote?: string;
 };
 
 /**
@@ -63,6 +89,8 @@ export function ProgramDetailPage({
   program,
   course: given,
   commerce: givenCommerce,
+  author = null,
+  purchase,
 }: {
   program: OfferSurface;
   /**
@@ -82,6 +110,21 @@ export function ProgramDetailPage({
    * that — so it hands the answer in rather than making this component async.
    */
   commerce?: OfferCommerce;
+  /**
+   * The byline, when the caller has read it.
+   *
+   * Not looked up here for the same reason `commerce` is not: this component is
+   * synchronous so the six hand-written pages stay statically prerendered, and
+   * a profile lives in a table only an async caller can reach.
+   */
+  author?: Author | null;
+  /**
+   * The confirmation, when the reader has just come back from paying.
+   *
+   * A slot rather than a flag: only the route can read the return parameters,
+   * and only it can resolve the offer they name.
+   */
+  purchase?: ReactNode;
 }) {
   const commerce = givenCommerce ?? resolveOfferCommerce(program.slug);
   // The SNAPSHOT on purpose: this page is statically prerendered and needs a
@@ -112,118 +155,202 @@ export function ProgramDetailPage({
     "проходити можна з телефона і з компʼютера",
   ];
 
+  /* Duration is deliberately NOT in here any more. It is the panel's own title
+     and, since the facts moved up, a hero pill as well — printing it a third
+     time inside the panel it titles read as a stutter. */
   const formatMeta = [
-    program.duration,
     course ? `${lessonCount} ${plural(lessonCount, "урок", "уроки", "уроків")}` : program.tag,
+    ...(program.accessNote ? [program.accessNote] : []),
     commerce.mode === "checkout" ? "оплата просто тут, без переходу на лендинг" : "участь узгоджуємо в розмові",
   ];
 
+  /* THE FACTS, MOVED INTO THE HERO. These three used to be reachable only by
+     scrolling to the «Формат» panel, which meant the questions a reader stops
+     to look for — how long, how much of it, for how long is it mine — were
+     answered below the thing they were deciding about.
+
+     Filtered rather than padded: a course whose author has not written an
+     access promise shows two pills, not three and a blank. */
+  const heroMeta = [
+    { label: program.duration, icon: "clock" as const },
+    ...(course
+      ? [{ label: `${lessonCount} ${plural(lessonCount, "урок", "уроки", "уроків")}`, icon: "day" as const }]
+      : []),
+    ...(program.accessNote ? [{ label: program.accessNote, icon: "shield-check" as const }] : []),
+  ];
+
+  const buyHref = commerce.mode === "checkout" ? commerce.checkoutHref : "#program-enroll";
+  const buyLabel = commerce.mode === "checkout" ? "Придбати доступ" : "Записатися на програму";
+
   return (
-    <PlatformOfferSurfaceTemplate
-      templateKind="program"
-      trail={[{ label: "Програми", href: "/programs" }, { label: program.title }]}
-      hero={{
-        title: program.fullTitle,
-        description: program.description,
-        badge: `${program.tag} · ${program.duration}`,
-        artwork: program.artwork,
-        imageAlt: program.title,
-        templateKind: "program",
-        primaryAction: {
-          href: "#program-enroll",
-          /* The price in the label, when there is one: a CTA that names the
-             figure is the difference between "another page" and an offer. */
-          label:
-            commerce.mode === "checkout" ? `Купити за ${commerce.price}` : "Записатися на програму",
-        },
-        secondaryAction: {
-          href: course ? "#program-plan" : "#program-results",
-          label: course ? "Що всередині" : "Подивитися деталі",
-        },
-      }}
-      afterHero={
-        <>
-          {/* The offer, stated for machines, from the same three facts the page
-              prints: what it is, how long it takes, what it costs. The figure is
-              `commerce.amount` — the quotable one — so a page can never publish a
-              price different from the one in its own button. */}
-          <JsonLd
-            data={graph(
-              courseLd({
-                path: `/programs/${program.slug}`,
-                name: program.fullTitle,
-                description: program.longDescription || program.description,
-                price: commerce.mode === "checkout" ? commerce.amount : null,
-                currency: commerce.mode === "checkout" ? commerce.currency : undefined,
-                duration: program.duration,
-                ...(program.artwork ? { image: program.artwork.desktop } : {}),
-              }),
-              breadcrumbLd([
-                { path: "/", name: "CenterWay" },
-                { path: "/programs", name: "Програми" },
-                { path: `/programs/${program.slug}`, name: program.title },
-              ])
-            )}
-          />
-          <OwnedCourseNotice programSlug={program.slug} />
-          {/* The author's own way in. Renders for nobody else, including the
-              buyer looking at the same page. */}
-          {course ? <CourseAuthorLink courseSlug={course.slug} /> : null}
-        </>
-      }
-      detailSectionId="program-results"
-      detailSemanticFamily="method-progress"
-      detailLeft={{
-        label: "Що змінюємо",
-        title: isMiniCourse ? "Що дає цей короткий вхід" : "Коротко про результат",
-        body: <PlatformOfferResultList items={program.results.slice(0, 5)} />,
-      }}
-      detailRight={{
-        label: "Формат",
-        title: program.duration,
-        lead: program.longDescription,
-        body: <PlatformOfferMetaList items={formatMeta} />,
-      }}
-      beforeSupport={course ? <OfferCurriculum course={course} /> : null}
-      supportSectionId="program-enroll"
-      supportLeft={{
-        label: commerce.mode === "checkout" ? "Участь" : "Запис",
-        title:
-          commerce.mode === "checkout"
-            ? `Відкрити доступ до «${program.title}»`
-            : `Записатися на «${program.title}»`,
-        lead:
-          commerce.mode === "checkout"
-            ? `Оплата проходить тут, на платформі, без переходу на окремий лендинг: ${deliveryLine}.`
-            : "Цю програму ми узгоджуємо в розмові — щоб формат, темп і межі методу підходили саме вашому стану. Залиште контакт, і ми повернемося з деталями і способом оплати.",
-      }}
-      supportRight={
-        commerce.mode === "checkout" ? (
-          <OfferCheckoutPanel
-            commerce={commerce}
-            label="Оплата"
-            title={program.title}
-            lead={program.description}
-            includes={includes}
-            ctaLabel={`Оплатити ${commerce.price}`}
-          />
-        ) : (
-          <OfferSupportPanel label="Форма" title="Залишити контакти">
-            <LeadForm
-              productCode={commerce.leadProductCode}
-              source={`platform_${program.slug}_form`}
-              ctaPlace={`${program.slug}_offer`}
+    /* EVERYTHING INSIDE ONE PROVIDER, and only two things read it. The hero and
+       the outline are the parts of an offer page that stop being an offer once
+       you own it; the rest — what it is, who it is for, who wrote it — is the
+       same page either way, and wrapping it costs nothing because a server
+       component passed through a client provider stays server-rendered. */
+    <OfferAccessProvider programSlug={program.slug}>
+      <PlatformOfferSurfaceTemplate
+        templateKind="program"
+        trail={[{ label: "Програми", href: "/programs" }, { label: program.title }]}
+        hero={{
+          title: program.fullTitle,
+          ...(program.subtitle ? { subtitle: program.subtitle } : {}),
+          description: program.description,
+          badge: `${program.tag} · ${program.duration}`,
+          artwork: program.artwork,
+          imageAlt: program.title,
+          templateKind: "program",
+          meta: heroMeta,
+          commitment: (
+            <OfferHeroCommitment
+              commerce={{
+                price: commerce.mode === "checkout" ? commerce.price : null,
+                accessNote: program.accessNote ?? null,
+              }}
             />
-          </OfferSupportPanel>
-        )
-      }
-      boundary={{
-        label: "Межі методу",
-        title: "Чесний формат без медичних обіцянок",
-        lead:
-          "CenterWay працює як освітня wellness-платформа і супровід практики. Програми не замінюють діагностику, лікування або рекомендації вашого лікаря; якщо є гострі стани, вагітність, хронічні захворювання або медикаментозна терапія, спочатку потрібна медична консультація.",
-      }}
-    />
+          ),
+          actions: (
+            <OfferHeroActions
+              buyHref={buyHref}
+              buyLabel={buyLabel}
+              secondaryLabel={course ? "Що всередині" : "Подивитися деталі"}
+            />
+          ),
+          /* Still required by the hero's own contract, and still the right
+             answer for a surface that passes no `actions` slot. This page always
+             does, so these are the fallback nobody reaches — kept because the
+             hero is shared with the product and consult templates. */
+          primaryAction: { href: buyHref, label: buyLabel },
+          secondaryAction: {
+            href: course ? "#program-plan" : "#program-results",
+            label: course ? "Що всередині" : "Подивитися деталі",
+          },
+        }}
+        afterHero={
+          <>
+            {/* FIRST, above everything the page says about itself. Somebody who
+                has just paid is looking for one answer, and it must not be
+                below a sales pitch. */}
+            {purchase}
+            {/* The offer, stated for machines, from the same three facts the page
+                prints: what it is, how long it takes, what it costs. The figure is
+                `commerce.amount` — the quotable one — so a page can never publish a
+                price different from the one in its checkout offer. */}
+            <JsonLd
+              data={graph(
+                courseLd({
+                  path: `/programs/${program.slug}`,
+                  name: program.fullTitle,
+                  description: program.longDescription || program.description,
+                  price: commerce.mode === "checkout" ? commerce.amount : null,
+                  currency: commerce.mode === "checkout" ? commerce.currency : undefined,
+                  duration: program.duration,
+                  ...(program.artwork ? { image: program.artwork.desktop } : {}),
+                }),
+                breadcrumbLd([
+                  { path: "/", name: "CenterWay" },
+                  { path: "/programs", name: "Програми" },
+                  { path: `/programs/${program.slug}`, name: program.title },
+                ])
+              )}
+            />
+            {/* `OwnedCourseNotice` used to sit here — a banner telling a buyer
+                they already owned the course, under a hero still selling it to
+                them. The hero says it now, in the place the contradiction was,
+                and a second announcement below would be the platform saying the
+                same thing twice in two voices. */}
+            {/* The author's own way in. Renders for nobody else, including the
+                buyer looking at the same page. */}
+            {course ? <CourseAuthorLink courseSlug={course.slug} /> : null}
+            <OfferBento audience={program.audience} results={program.results} format={program.format} />
+          </>
+        }
+        detailSectionId="program-results"
+        detailSemanticFamily="method-progress"
+        /* THE SPLIT STOPPED REPEATING THE BENTO. Its left panel used to print
+           `program.results` as a list, and the bento above now prints the same
+           list under the same heading — two identical bullet sets a screen
+           apart, which reads as a page that lost its place.
+
+           So the split takes the half the bento cannot: the paragraph. The
+           bento is what a reader SCANS, this is what they read once they have
+           decided to. */
+        detailLeft={{
+          label: "Про метод",
+          title: isMiniCourse ? "Що дає цей короткий вхід" : "Коротко про результат",
+          lead: program.longDescription,
+        }}
+        detailRight={{
+          label: "Формат",
+          title: program.duration,
+          body: <PlatformOfferMetaList items={formatMeta} />,
+        }}
+        beforeSupport={
+          <>
+            {course ? <OfferCurriculum course={course} /> : null}
+            <OfferAuthor author={author} note={program.authorNote} />
+          </>
+        }
+        supportSectionId="program-enroll"
+        /* Required by the template and unreachable here: the slot below always
+           wins. Kept because the type is shared with the product and consult
+           pages, which have no access state to swap on. */
+        supportLeft={{ label: "Участь", title: program.title }}
+        supportSlot={
+          <OfferSupport
+            title={program.title}
+            sales={
+              <>
+                <article className={offerPanelStyles.panel}>
+                  <p className={offerPanelStyles.label}>{commerce.mode === "checkout" ? "Участь" : "Запис"}</p>
+                  <h2 className={offerPanelStyles.title}>
+                    {commerce.mode === "checkout"
+                      ? `Відкрити доступ до «${program.title}»`
+                      : `Записатися на «${program.title}»`}
+                  </h2>
+                  <p className={offerPanelStyles.lead}>
+                    {commerce.mode === "checkout"
+                      ? `Оплата проходить тут, на платформі, без переходу на окремий лендинг: ${deliveryLine}.`
+                      : "Цю програму ми узгоджуємо в розмові — щоб формат, темп і межі методу підходили саме вашому стану. Залиште контакт, і ми повернемося з деталями і способом оплати."}
+                  </p>
+                </article>
+                {commerce.mode === "checkout" ? (
+                  <OfferCheckoutPanel
+                    commerce={commerce}
+                    label="Оплата"
+                    title={program.title}
+                    lead={program.description}
+                    includes={includes}
+                    ctaLabel={`Оплатити ${commerce.price}`}
+                  />
+                ) : (
+                  <OfferSupportPanel label="Форма" title="Залишити контакти">
+                    <LeadForm
+                      productCode={commerce.leadProductCode}
+                      source={`platform_${program.slug}_form`}
+                      ctaPlace={`${program.slug}_offer`}
+                    />
+                  </OfferSupportPanel>
+                )}
+              </>
+            }
+          />
+        }
+        trailing={
+          <OfferStickyBar
+            price={commerce.mode === "checkout" ? commerce.price : null}
+            buyHref={buyHref}
+            buyLabel={buyLabel}
+          />
+        }
+        boundary={{
+          label: "Межі методу",
+          title: "Чесний формат без медичних обіцянок",
+          lead:
+            "CenterWay працює як освітня wellness-платформа і супровід практики. Програми не замінюють діагностику, лікування або рекомендації вашого лікаря; якщо є гострі стани, вагітність, хронічні захворювання або медикаментозна терапія, спочатку потрібна медична консультація.",
+        }}
+      />
+    </OfferAccessProvider>
   );
 }
 

@@ -134,7 +134,7 @@ export function CourseView({
   if (state.status === "loading") {
     return (
       <main className={styles.wrap} data-cw-platform-template="learn-course">
-        <PlatformLoadingState label="Навчання" title="Завантажуємо курс…" detail="Відновлюємо ваш поступ і наступний урок." />
+        <PlatformLoadingState label="Бібліотека" title="Завантажуємо курс…" detail="Відновлюємо ваш поступ і наступний урок." />
       </main>
     );
   }

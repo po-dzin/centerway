@@ -19,6 +19,8 @@ export type LmsFailure =
   | "not_published"
   | "not_entitled"
   | "expired"
+  | "revoked"
+  | "blocked"
   | "lesson_not_found"
   | "lesson_locked"
   | "network";
@@ -62,8 +64,13 @@ export type LearnerShelfCourseDto = {
   scheduleMode: "open" | "sequential" | "daily";
   summary: string | null;
   access: "enrolled" | "available" | "locked";
-  lockReason: "not_entitled" | "expired" | null;
+  lockReason: "not_entitled" | "expired" | "revoked" | "blocked" | null;
   startedAt: string | null;
+  /** When this window closes; `null` means it does not. */
+  expiresAt: string | null;
+  /** Whole days left, computed on the server so every surface counts the same way. */
+  daysLeft: number | null;
+  source: "order" | "token" | "manual" | "bonus" | "promotion" | null;
   /** Last successful lesson interaction; the dashboard's resume order uses this. */
   lastActivityAt: string | null;
   standing: CourseViewDto["standing"] | null;
@@ -153,6 +160,8 @@ async function request<T>(path: string, init?: RequestInit): Promise<LmsResult<T
     "not_published",
     "not_entitled",
     "expired",
+    "revoked",
+    "blocked",
     "lesson_not_found",
     "lesson_locked",
   ];

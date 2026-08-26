@@ -1124,33 +1124,27 @@ export default function AnalyticsPage() {
 
   if (error) {
     return (
-      <div className="max-w-7xl mx-auto">
-        <AdminErrorState
-          title={t("analytics_load_error")}
-          message={
-            errorType === "sql"
-              ? `${error}. ${t("analytics_sql_reminder")}`
-              : error
-          }
-          action={(
-            <button
-              onClick={() => fetchAnalytics()}
-              className="px-4 py-2 cw-btn cw-surface-2"
-            >
-              {t("analytics_retry")}
-            </button>
-          )}
-        />
-      </div>
+      <AdminErrorState
+        title={t("analytics_load_error")}
+        message={
+          errorType === "sql"
+            ? `${error}. ${t("analytics_sql_reminder")}`
+            : error
+        }
+        action={(
+          <button
+            onClick={() => fetchAnalytics()}
+            className="px-4 py-2 cw-btn cw-surface-2"
+          >
+            {t("analytics_retry")}
+          </button>
+        )}
+      />
     );
   }
 
   if (loading || !summary) {
-    return (
-      <div className="max-w-7xl mx-auto">
-        <AdminLoadingState variant="spinner" text={t("analytics_loading")} className="cw-panel" />
-      </div>
-    );
+    return <AdminLoadingState variant="spinner" text={t("analytics_loading")} className="cw-panel" />;
   }
 
   const chartHeight = 150;
@@ -1241,7 +1235,7 @@ export default function AnalyticsPage() {
       : t("analytics_col_source_adset");
   const activeBar = hovered ?? selectedBar;
   return (
-    <div className="max-w-7xl mx-auto space-y-4 md:space-y-6">
+    <div className="space-y-4 md:space-y-6">
       <div className="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-3 md:gap-4 cw-surface p-4 sm:p-5 md:p-6 rounded-2xl border cw-border cw-shadow">
         <div className="xl:max-w-sm">
           <h1 className="text-xl sm:text-2xl font-bold cw-text">{t("analytics_title")}</h1>

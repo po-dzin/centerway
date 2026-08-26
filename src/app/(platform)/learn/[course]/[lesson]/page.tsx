@@ -48,5 +48,5 @@ export default async function LearnLessonPage({
 
   return draftPreview
     ? <ZenPreviewShell returnTo={previewReturnTo}>{view}</ZenPreviewShell>
-    : <PlatformShell headerMode="learn">{view}</PlatformShell>;
+    : <PlatformShell headerMode="learn" footer={false}>{view}</PlatformShell>;
 }

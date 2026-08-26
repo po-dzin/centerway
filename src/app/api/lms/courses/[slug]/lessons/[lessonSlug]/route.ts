@@ -30,6 +30,10 @@ const FAILURE_STATUS: Record<string, number> = {
   not_published: 404,
   not_entitled: 403,
   expired: 403,
+  // Closed by an operator rather than by the calendar. Same 403 to the caller —
+  // the reason is for the notice, not for the status line.
+  revoked: 403,
+  blocked: 403,
 };
 
 export async function GET(

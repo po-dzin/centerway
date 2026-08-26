@@ -4,6 +4,79 @@
    Mobile-first. Material and type come from the app DS; the only local rules
    are layout, and the button roles are composed, never re-declared. */
 
+/* ── The thumb bar ────────────────────────────────────
+   PHONE ONLY, and 900px is the platform's own mobile boundary — the same one
+   PlatformResponsive uses everywhere else. The spec that asked for this said
+   768px, which is a different framework's number; importing it would have put a
+   fixed bar over the tablet band (561–900) that the rest of the platform lays
+   out as a wide column with the CTA already in reach.
+
+   Hidden by default in EVERY viewport, including this one: it rises only once
+   the observer reports no real CTA on screen. A bar that is up on load covers
+   the hero's own button with a copy of itself. */
+.stickyBar {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .stickyBar {
+    position: fixed;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    /* Below the header and the menu, which are modal when open. A buy button
+       floating over an open navigation sheet is the bar winning an argument it
+       should not be in. */
+    z-index: var(--ds-z-sticky);
+    display: flex;
+    align-items: center;
+    gap: var(--cw-space-sm);
+    width: 100%;
+    /* The home-indicator strip on a notched phone is not padding we can skip:
+       without it the button's lower half is under the system gesture area, and
+       the tap that lands there dismisses the app instead. */
+    padding: 0.6rem var(--cw-space-md) max(0.6rem, env(safe-area-inset-bottom));
+    background-color: color-mix(in srgb, var(--cw-mat-surface) var(--cw-mat-tint-chrome-floor), transparent);
+    background-image: var(--cw-mat-grain-image);
+    backdrop-filter: var(--cw-mat-filter);
+    box-shadow: var(--cw-mat-shadow-raised);
+    /* Its own compositor layer. Without it Safari repaints the blurred backdrop
+       on every scroll frame and the bar visibly lags the content behind it. */
+    will-change: transform;
+    transform: translateY(110%);
+    transition: transform 320ms cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+
+  .stickyBar[data-shown="true"] {
+    transform: translateY(0);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .stickyBar {
+      transition: none;
+    }
+  }
+}
+
+.stickyPrice {
+  flex: none;
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: 1.05rem;
+  line-height: 1.1;
+}
+
+/* Takes the rest of the row. The 44px touch floor the mobile spec asks for is
+   NOT set here — `primary` already carries `--ds-button-min-height`, which
+   resolves to `--ds-touch-target-min`. Restating it locally would have been a
+   second copy of a number the contract owns, free to drift from it. */
+.stickyAction {
+  composes: primary from "./PlatformButtons.module.css";
+  composes: fill from "./PlatformButtons.module.css";
+  flex: 1;
+}
+
 /* ── The row under the hero ───────────────────────── */
 
 /* Holds the trail, and the author's "edit this course" when there is one. A
@@ -40,11 +113,60 @@
   box-shadow: var(--cw-mat-shadow-soft);
 }
 
+/* The accordion's handle. Padding is generous rather than tidy: on a phone this
+   is the row a thumb aims at, and a heading with a chevron beside it is a much
+   smaller target than it looks. The negative margin lets the tap area reach the
+   card's edges without the text moving off its own margin. */
 .outlineModuleHead {
   display: flex;
-  align-items: baseline;
+  align-items: center;
   justify-content: space-between;
   gap: var(--cw-space-sm);
+  margin: calc(var(--cw-space-md) * -1);
+  padding: var(--cw-space-md);
+  cursor: pointer;
+  list-style: none;
+}
+
+/* Safari still draws its own disclosure triangle through `list-style: none`. */
+.outlineModuleHead::-webkit-details-marker {
+  display: none;
+}
+
+.outlineModuleHead:focus-visible {
+  outline: 2px solid var(--cw-platform-text);
+  outline-offset: -2px;
+  border-radius: var(--cw-radius-sm);
+}
+
+/* Space between the handle and the lessons appears only when the module is
+   open — a shut module is a single row, and a bottom margin under nothing is
+   what makes a closed accordion look broken. */
+.outlineModule[open] .outlineModuleHead {
+  margin-block-end: 0;
+}
+
+.outlineChevron {
+  flex: none;
+  color: var(--cw-platform-muted);
+  transition: transform 180ms ease;
+}
+
+.outlineModule[open] .outlineChevron {
+  transform: rotate(180deg);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .outlineChevron {
+    transition: none;
+  }
+}
+
+/* The lessons need a little of their own top gap, since the handle's margin is
+   negative and eats the card's grid gap. Small: the handle is already 53px
+   tall, and a wide channel under it reads as two separate cards. */
+.outlineModule[open] .outlineLessons {
+  margin-top: 0.5rem;
 }
 
 .outlineModuleTitle {
@@ -73,6 +195,202 @@
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
   line-height: 1.45;
+}
+
+/* ── A lesson, before and after it is yours ───────────
+   ONE ROW, FOUR STATES, and the row itself never moves between them. A buyer
+   who pays and returns should recognise the list they were reading a minute
+   ago — the padlocks come off and the titles brighten, but nothing reflows.
+   That is why the glyph column is a fixed width in every state, including the
+   one where there is no glyph.
+
+   `locked` is dimmed, not hidden. Someone deciding whether to buy is entitled
+   to see the whole shape of what they would get; what they are not given is the
+   content behind it. The titles are the promise, the lessons are the goods. */
+.outlineLesson {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  align-items: start;
+  gap: 0.5rem;
+}
+
+.outlineLessonGlyph {
+  margin-top: 0.1rem;
+  color: var(--cw-platform-muted);
+}
+
+/* The locked row. Not a disabled control — there is no control here to disable,
+   and marking prose `aria-disabled` tells a screen reader something false about
+   an element it can still read perfectly well. */
+.outlineLesson[data-state="locked"] {
+  color: color-mix(in srgb, var(--cw-platform-muted) 72%, transparent);
+}
+
+.outlineLesson[data-state="done"] .outlineLessonGlyph,
+.outlineLesson[data-state="current"] .outlineLessonGlyph {
+  color: var(--cw-platform-text);
+}
+
+/* The open row. Ink, not a highlight: the underline is a drawn stroke that
+   thickens under the cursor, which is how every other selectable thing on this
+   platform behaves. */
+/* WEIGHT IS NOT HOW THIS SPEAKS. An open lesson used to be bolder than a locked
+   one, which the button contract rightly refused — font-weight belongs to the
+   button roles, and this is prose. Colour does the work instead, which is also
+   the platform's own idiom: states are said in ink, not in weight. */
+.outlineLessonLink {
+  color: var(--cw-platform-text);
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--cw-platform-text) 28%, transparent);
+  text-underline-offset: 0.22em;
+  text-decoration-thickness: 1px;
+  transition: text-decoration-color 140ms ease, text-decoration-thickness 140ms ease;
+}
+
+.outlineLessonLink:hover,
+.outlineLessonLink:focus-visible {
+  text-decoration-color: var(--cw-platform-text);
+  text-decoration-thickness: 2px;
+}
+
+/* A finished lesson keeps its link — repeating a protocol is the normal way to
+   use one — but stops competing for attention with the one still to do. */
+.outlineLesson[data-state="done"] .outlineLessonLink {
+  color: var(--cw-platform-muted);
+}
+
+/* Why this particular row is shut, when the reason is the schedule rather than
+   the purchase. Said in words, because a padlock alone reads as "you did not
+   pay" to somebody who did. */
+.outlineLessonNote {
+  display: block;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-weight: 560;
+}
+
+/* ── The scan layer ───────────────────────────────────
+   Three answers a reader wants before they will read anything longer: who it is
+   for, what it changes, what it is made of. Cards rather than three more
+   paragraphs, because this section exists to be SCANNED — a person deciding
+   reads it in the order their eye lands, not the order it is written.
+
+   auto-fit rather than a fixed three, because the number of cards is authored:
+   a course may fill two of the three. A hard three-column grid would have left
+   a hole where the missing one was. */
+.bento {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(16rem, 100%), 1fr));
+  gap: var(--cw-space-md);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.bentoCard {
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+  padding: var(--cw-space-md);
+  border-radius: var(--cw-radius-sm);
+  background: var(--cw-platform-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.bentoCardHead {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--cw-platform-muted);
+}
+
+.bentoCardTitle {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-ui);
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.bentoList {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.45;
+}
+
+/* A drawn tick in the margin, the same mark the checkout panel uses for what is
+   included. One vocabulary for "this is part of the deal". */
+.bentoList li {
+  display: grid;
+  grid-template-columns: 1.15rem 1fr;
+  align-items: start;
+  gap: 0.45rem;
+}
+
+.bentoMark {
+  margin-top: 0.08rem;
+  color: color-mix(in srgb, var(--cw-platform-text) 46%, transparent);
+}
+
+/* ── The author ───────────────────────────────────────
+   Compact on purpose. The full biography has a page of its own; what belongs on
+   an offer is the one sentence about why this person wrote THIS, and enough
+   face to make the sentence a person's rather than a brand's. */
+.author {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: var(--cw-space-md);
+}
+
+.authorPhoto {
+  width: 5.5rem;
+  height: 5.5rem;
+  border-radius: var(--cw-radius-pill);
+  object-fit: cover;
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.authorBody {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.authorName {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-ui);
+  font-size: 1.02rem;
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+.authorRole {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  font-weight: 640;
+  letter-spacing: 0.02em;
+}
+
+.authorNote {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
+
+.authorLink {
+  composes: text from "./PlatformButtons.module.css";
+  justify-self: start;
+  gap: 0.35rem;
 }
 
 /* ── Price and checkout ───────────────────────────── */
@@ -125,6 +443,21 @@
 .buyAction {
   composes: primary from "./PlatformButtons.module.css";
   composes: fill from "./PlatformButtons.module.css";
+}
+
+/* What stands where the buy button stood, once the course is theirs. Same role
+   and the same width — the panel keeps its shape, only its offer changes. */
+.resumeAction {
+  composes: primary from "./PlatformButtons.module.css";
+  composes: fill from "./PlatformButtons.module.css";
+}
+
+/* The way to the rest of the shelf. Quiet on purpose: it is the second thing
+   an owner might want, and it must not compete with the course they are in. */
+.shelfAction {
+  composes: text from "./PlatformButtons.module.css";
+  justify-self: start;
+  margin-top: 0.35rem;
 }
 
 .fineprint {

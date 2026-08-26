@@ -46,7 +46,7 @@ export const personalNav: NavItem[] = [
 
 /** The account switcher's learning destination; not a public route-map item. */
 export const learningNavItem = {
-  label: "Навчання",
+  label: "Бібліотека",
   href: LEARNING_SHELF_HREF,
   match: "prefix" as const,
 };
@@ -71,7 +71,6 @@ const way21FunnelHref = getFunnelHostUrl("way21") ?? "/way21";
 const consultFunnelHref = getFunnelHostUrl("consult") ?? "/consult";
 const iremFunnelHref = getFunnelHostUrl("irem") ?? "/irem";
 const rebootFunnelHref = getFunnelHostUrl("reboot") ?? "/reboot";
-const resetDayFunnelHref = getFunnelHostUrl("reset-day") ?? "/reset-day";
 
 export type PlatformOfferSurfaceType = "program" | "mini-course" | "product";
 export type PlatformOfferConversionMode = "lead" | "direct-pay" | "hybrid" | "redirect";
@@ -243,37 +242,19 @@ export const programs = [
       "уникнути хаотичного вибору банок без контексту стану і меж методу",
     ],
   },
-  {
-    slug: "reset-day",
-    surfaceType: "mini-course" as PlatformOfferSurfaceType,
-    conversionMode: "direct-pay" as PlatformOfferConversionMode,
-    primaryActionKind: "buy" as PlatformOfferPrimaryActionKind,
-    title: "Розвантажувальний день",
-    fullTitle: "Розвантажувальний день — практикум з умовного голодування",
-    // Catalog cards lead to the platform page, checkout stays on the funnel —
-    // the same split `reboot` uses. It also gives a buyer somewhere to land
-    // that can tell them they already own the course.
-    href: getPlatformRoute("reset-day") ?? "/programs/reset-day",
-    funnelHref: resetDayFunnelHref,
-    tag: "Міні-курс детоксу",
-    duration: "1 день",
-    visual: "stone",
-    artwork: {
-      desktop: "/cw/platform/programs/reset-day-card-v1.png",
-      desktopPosition: "center 14%",
-      mobilePosition: "center 16%",
-    },
-    description: "Один м'який день режиму, простого харчування і спостереження за сигналами тіла.",
-    longDescription:
-      "Reset Day дає м'який одноденний формат, щоб знизити перевантаження, впорядкувати режим і спокійно побачити сигнали тіла без різких обіцянок та жорсткого тиску.",
-    results: [
-      "спокійно увійти у практику без довгого зобов'язання",
-      "побачити, як тіло реагує на прості зміни режиму",
-      "зменшити харчовий шум і перевантаження на один день",
-      "зафіксувати сигнали травлення, енергії і сну",
-      "обрати наступний крок: консультація, Way 21 або підтримка",
-    ],
-  },
+  /* RESET DAY IS NOT HERE ANY MORE (2026-08-26).
+     It was the last thing in this array to describe a course that the database
+     already described better, and the two had drifted into contradicting each
+     other in public — this entry claimed «1 день» while the funnel landing
+     selling the same product said «3 дні». It is now a `listed` course served
+     by /programs/[slug], priced by an admin in `lms_course_offers`, and edited
+     by its author in the builder. The catalogue picks it up through
+     `listStorefrontCourses()` like any other authored course.
+
+     The five that remain are the ones with no course behind them, or whose
+     delivery is still a Telegram bot. Each is a candidate for the same move,
+     one at a time, and each needs the same three things reset-day needed: an
+     offer row, a visibility, and a decision about what it charges. */
 ];
 
 export const programPageBySlug = Object.fromEntries(programs.map((program) => [program.slug, program]));

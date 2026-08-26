@@ -57,6 +57,19 @@ type PlatformOfferSurfaceTemplateProps = {
   supportSectionId: string;
   supportLeft: PanelSlot;
   /**
+   * Replaces both support panels outright.
+   *
+   * Exists because the closing block is the one part of an offer page that is
+   * wrong in BOTH halves once the reader owns what it sells: the left panel
+   * says «Відкрити доступ» to someone who has it, and the right one offers to
+   * charge them again. Swapping only the right half would have left the
+   * sentence beside it contradicting the button.
+   *
+   * A slot rather than a variant, so the template keeps knowing nothing about
+   * access — the page passes a client component and stays server-rendered.
+   */
+  supportSlot?: ReactNode;
+  /**
    * What closes the page: a lead form (`form`) or anything else (`supportRight`).
    *
    * Two slots rather than one, because the choice is not cosmetic. An offer that
@@ -67,6 +80,14 @@ type PlatformOfferSurfaceTemplateProps = {
   form?: FormConfig;
   supportRight?: ReactNode;
   boundary?: BoundaryConfig;
+  /**
+   * The last thing in `<main>`, after the boundary.
+   *
+   * For page furniture rather than content — a fixed thumb bar and the spacer
+   * that keeps it off the final paragraph. Kept as a slot so the template does
+   * not have to know that such a bar exists.
+   */
+  trailing?: ReactNode;
 };
 
 export function PlatformOfferResultList({ items }: { items: string[] }) {
@@ -132,13 +153,20 @@ export function PlatformOfferSurfaceTemplate({
   beforeSupport,
   supportSectionId,
   supportLeft,
+  supportSlot,
   form,
   supportRight,
   boundary,
+  trailing,
 }: PlatformOfferSurfaceTemplateProps) {
   return (
     <PlatformShell headerMode="overlay">
-      <main data-cw-detail-template={templateKind}>
+      {/* `data-cw-offer-sticky` is how the SHELL learns there is a fixed bar at
+          the bottom of this page. The clearance cannot be an element inside
+          `<main>`: the footer is main's sibling, so a spacer here holds the
+          boundary paragraph clear and still lets the bar sit over the phone
+          number. The shell owns the padding because the shell owns both. */}
+      <main data-cw-detail-template={templateKind} data-cw-offer-sticky={trailing ? "true" : undefined}>
         <PlatformDetailHero {...hero} />
 
         {trail && trail.length > 0 ? <OfferTrail steps={trail} /> : null}
@@ -168,15 +196,18 @@ export function PlatformOfferSurfaceTemplate({
           id={supportSectionId}
         >
           <div className={styles.split}>
-            <article className={styles.panel}>{renderPanel(supportLeft)}</article>
-            {supportRight ?? (
-              form ? (
-                <article className={styles.formPanel}>
-                  <p className={styles.label}>{form.label}</p>
-                  <h2 className={styles.title}>{form.title}</h2>
-                  <LeadForm productCode={form.productCode} source={form.source} ctaPlace={form.ctaPlace} />
-                </article>
-              ) : null
+            {supportSlot ?? (
+              <>
+                <article className={styles.panel}>{renderPanel(supportLeft)}</article>
+                {supportRight ??
+                  (form ? (
+                    <article className={styles.formPanel}>
+                      <p className={styles.label}>{form.label}</p>
+                      <h2 className={styles.title}>{form.title}</h2>
+                      <LeadForm productCode={form.productCode} source={form.source} ctaPlace={form.ctaPlace} />
+                    </article>
+                  ) : null)}
+              </>
             )}
           </div>
         </section>
@@ -195,6 +226,8 @@ export function PlatformOfferSurfaceTemplate({
             </article>
           </section>
         ) : null}
+
+        {trailing}
       </main>
     </PlatformShell>
   );

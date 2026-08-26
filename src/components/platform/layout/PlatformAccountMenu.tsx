@@ -104,10 +104,38 @@ export function PlatformAccountMenu({
   /* The signed-out entry is a plain link to the cabinet, and the cabinet stayed
      on `www` — so from the personal host it has to name its origin like every
      other crossing. */
-  const cabinetHref = useSurfaceHref()("/profile");
+  const surfaceHref = useSurfaceHref();
+  const cabinetHref = surfaceHref("/profile");
+  /* THE WAY BACK TO THE PUBLIC SITE.
+     `my` serves the shelf, the player and the builder, and nothing on it leads
+     back to the public site: its own root IS the shelf, so a reader who wanted
+     the catalogue, the programs or the offer they came from had the browser's
+     back button and nothing else. The admin panel had the same hole and closed
+     it with a first row out; this is that row, on the other shell.
+
+     NOT an entry in `apps.ts`. That list answers "which applications may this
+     account enter", and every row in it is marked when you are standing in it.
+     The public site is not an application of the account — it is where the
+     account is not needed — and a row labelled «На платформу» marked as the
+     current page on `www` would read as an instruction to go where you already
+     are. The label is Ukrainian here and translated in the panel because the
+     platform ships one language and the panel ships two; what the two shells
+     share is the destination, not the string. */
+  const platformHref = surfaceHref("/");
   const allApps = appsFor({ signedIn, role: identity.role, authorsCourses: identity.authorsCourses });
   const apps = exclude?.length ? allApps.filter((app) => !exclude.includes(app.key)) : allApps;
   const here = currentAppKey(host, pathname);
+  /* WHICH APPLICATION, not which host. Keying the exit off `isPersonalHost`
+     was the obvious version and hid the row exactly where it is most needed
+     while building: the subdomain only ever points at production, so on
+     localhost and on a preview `my` does not exist and the shelf and the
+     builder are reached by path. Asking where the reader IS answers for both —
+     the personal host, where everything is one of these two, and every other
+     environment, where they are paths on one origin.
+
+     `cabinet` is deliberately not in the list: /profile is on the public site,
+     so its reader is already on the platform. */
+  const inPersonalApp = here === "learn" || here === "builder";
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -248,6 +276,24 @@ export function PlatformAccountMenu({
   const rows = (
     <>
       {email ? <p>{email}</p> : null}
+      {/* First, above the account's own applications — the same place the panel
+          puts it. Rendered only inside the shelf or the builder: on the public
+          site it would point at the family of pages the reader is already in.
+
+          A plain anchor, like every other crossing in this menu: `next/link`
+          would prefetch a route this origin does not own and still full-load on
+          click. */}
+      {inPersonalApp ? (
+        <a
+          href={platformHref}
+          onClick={() => {
+            close();
+            onNavigate?.();
+          }}
+        >
+          <InkMenuLabel>На платформу</InkMenuLabel>
+        </a>
+      ) : null}
       {apps.map((app) => {
         const href = appHref(app, host);
         const offOrigin = appIsOffOrigin(app, host);

@@ -44,7 +44,7 @@ export const botCopy = {
      one message: where the courses are, and the one condition that actually
      trips people up — signing in with the address the purchase was made on. */
   cabinet: [
-    "Усі придбані курси лежать у кабінеті, у розділі «Навчання»:",
+    "Усі придбані курси лежать у кабінеті, у розділі «Бібліотека»:",
     CABINET_URL,
     "",
     "Важливо увійти тією поштою, на яку оформлювали замовлення — за нею кабінет знаходить покупку.",
@@ -58,7 +58,7 @@ export const botCopy = {
     [
       `Оплату за «${title}» знайдено — курс уже відкритий у кабінеті.`,
       "",
-      "Увійдіть тією ж поштою, що й під час оплати, і курс буде в розділі «Навчання».",
+      "Увійдіть тією ж поштою, що й під час оплати, і курс буде в розділі «Бібліотека».",
     ].join("\n"),
 
   accessFoundBot: (title: string) =>
@@ -86,7 +86,7 @@ export const botCopy = {
      alive, and the kind of mismatch a hand-kept second list produces eventually. */
   faq: {
     where_course: [
-      "Курс відкривається в кабінеті на сайті, у розділі «Навчання»:",
+      "Курс відкривається в кабінеті на сайті, у розділі «Бібліотека»:",
       CABINET_URL,
       "",
       "Уроки, поступ і наступний крок — усе там. Окремий застосунок не потрібен.",

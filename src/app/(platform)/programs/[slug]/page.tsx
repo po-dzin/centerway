@@ -7,10 +7,17 @@
  * developer and a deploy, which is the dependency wave 2 removed from content
  * and left on selling.
  *
- * THE SIX STILL WIN. `/programs/reset-day` is a static segment and this is a
- * dynamic one; Next resolves the static route first, always. So a hand-written
- * page is never shadowed by a database row that happens to share its slug, and
- * this file cannot change what any existing offer says.
+ * A HAND-WRITTEN PAGE STILL WINS. A static segment beats a dynamic one in Next,
+ * always, so `/programs/irem` is served by its own file and never by a database
+ * row that happens to share its slug. Five of the original six still are.
+ *
+ * RESET DAY IS NOT, since 2026-08-26 — it was the first to move here in full.
+ * Its page came from `content.ts`, its price from a constant, and both said
+ * things the course itself said better; one of them, its duration, had drifted
+ * into contradicting the landing that sells it. It is now an ordinary listed
+ * course: copy from the builder, price from `lms_course_offers`, served by this
+ * file. The remaining five each need the same three things before they can
+ * follow — an offer row, a visibility, and a decision about what they charge.
  *
  * WHAT DECIDES WHETHER A STRANGER SEES IT. Two fields, and both have to agree:
  * `status` (has the author published the material) and `visibility` (may
@@ -21,63 +28,16 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
-import { ProgramDetailPage, type OfferSurface } from "@/components/platform/ProgramDetailPage";
+import { ProgramDetailPage } from "@/components/platform/ProgramDetailPage";
+import { OfferPurchaseReturn, readPurchaseReturn } from "@/components/platform/OfferPurchaseReturn";
+import { getCourseAuthor } from "@/lib/lms/authors";
+import { toOfferSurface } from "@/lib/platform/courseOffer";
 import { getLiveCourse } from "@/lib/lms/liveCatalog";
 import { courseOfferCommerce } from "@/lib/platform/offerCommerce";
-import { isPublicCourse, loadCourseOffer } from "@/lib/platform/offers";
-import { inlineToPlainText, type Course } from "@/lms-core";
+import { isPublicCourse, loadCourseOffer, loadPayableOffer } from "@/lib/platform/offers";
+import { courseOfferCode, inlineToPlainText, type Course } from "@/lms-core";
 import { describe } from "@/lib/brand/identity";
 import { pageMetadata } from "@/lib/seo/metadata";
-
-/**
- * A course, seen as an offer.
- *
- * Every field the page needs has a home on the course already — the author
- * fills them in the builder's «Вітрина» panel. What is missing falls back to
- * something true rather than to a placeholder: a course with no tagline gets
- * the word for what it is, not "Tagline".
- */
-function toOfferSurface(course: Course): OfferSurface {
-  const lessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
-  const summary = course.summary ? inlineToPlainText(course.summary) : "";
-  // The same threshold the catalogue's two rails use. A course is a "mini" one
-  // by how much of someone's life it asks for, and lesson count is the only
-  // honest proxy the data actually carries.
-  const isMini = lessons <= 8;
-
-  return {
-    slug: course.slug,
-    title: course.title,
-    fullTitle: course.title,
-    tag: course.tagline ?? (isMini ? "Міні-курс" : "Програма"),
-    duration:
-      course.schedule.mode === "daily"
-        ? `${lessons} ${plural(lessons, "день", "дні", "днів")}`
-        : `${lessons} ${plural(lessons, "урок", "уроки", "уроків")}`,
-    description: summary,
-    longDescription: summary,
-    results: course.results ?? [],
-    surfaceType: isMini ? "mini-course" : "program",
-    ...(course.cover
-      ? {
-          artwork: {
-            desktop: course.cover.src,
-            ...(course.cover.mobileSrc ? { mobile: course.cover.mobileSrc } : {}),
-            desktopPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%`,
-            mobilePosition: `${course.cover.mobileCropX ?? course.cover.cropX ?? 50}% ${course.cover.mobileCropY ?? course.cover.cropY ?? 50}%`,
-          },
-        }
-      : {}),
-  };
-}
-
-function plural(count: number, one: string, few: string, many: string): string {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  if (mod10 === 1 && mod100 !== 11) return one;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
-  return many;
-}
 
 async function publicCourse(slug: string): Promise<Course | null> {
   const course = await getLiveCourse(slug);
@@ -109,7 +69,14 @@ export async function generateMetadata({
   });
 }
 
-export default async function CourseOfferPage({ params }: { params: Promise<{ slug: string }> }) {
+export default async function CourseOfferPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  /* Present only when the payment route sent a buyer back here. */
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
   const { slug } = await params;
   const course = await publicCourse(slug);
   if (!course) notFound();
@@ -118,7 +85,26 @@ export default async function CourseOfferPage({ params }: { params: Promise<{ sl
      lives in a table the authoring routes hold no grant on, so it cannot come
      from the course the author edited. No row means no agreed price, and the
      page falls back to the lead form — the same honest state `herbs` is in. */
-  const offer = await loadCourseOffer(course.slug);
+  /* Both reads at once: they are independent, and a byline should not wait on a
+     price. Neither can fail the page — `loadCourseOffer` falls back to the lead
+     form and `getCourseAuthor` to no byline at all. */
+  const [offer, author, query] = await Promise.all([
+    loadCourseOffer(course.slug),
+    getCourseAuthor(course.slug),
+    searchParams,
+  ]);
+
+  /* THE CODE COMES FROM THE RETURN, not from the course.
+     One course can be sold under several codes and reset-day is the live proof:
+     the platform charges `course:reset-day`, the funnel landing still charges
+     `reset-day`, and older orders are filed under `mini-detox`. All three open
+     the same course, so all three can land here — and a receipt that printed
+     this page's own code would name a product the buyer did not buy, and file
+     the browser Purchase against it. */
+  const returnedCode =
+    typeof query.product === "string" && query.product ? query.product : courseOfferCode(course.slug);
+  const payable = await loadPayableOffer(returnedCode);
+  const returned = readPurchaseReturn(query, payable);
 
   // Passed in rather than looked up: this page has already read the course, and
   // the snapshot lookup inside would find nothing for a course that exists only
@@ -128,6 +114,10 @@ export default async function CourseOfferPage({ params }: { params: Promise<{ sl
       program={toOfferSurface(course)}
       course={course}
       commerce={courseOfferCommerce(course.slug, offer)}
+      author={author}
+      purchase={
+        returned ? <OfferPurchaseReturn purchase={{ ...returned, product: returnedCode }} /> : undefined
+      }
     />
   );
 }

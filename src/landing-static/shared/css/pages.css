@@ -139,6 +139,22 @@ code,
   line-height: 1.6;
 }
 
+.refund-policy-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+
+.refund-policy-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.refund-policy-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
 body.utility-page {
   min-height: 100vh;
   display: flex;

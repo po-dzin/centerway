@@ -216,7 +216,7 @@ export function LessonView({
   if (state.status === "loading") {
     return (
       <main className={styles.wrap} data-cw-platform-template="learn-lesson">
-        <PlatformLoadingState label="Навчання" title="Завантажуємо урок…" detail="Відновлюємо матеріали і ваш стан проходження." />
+        <PlatformLoadingState label="Бібліотека" title="Завантажуємо урок…" detail="Відновлюємо матеріали і ваш стан проходження." />
       </main>
     );
   }

@@ -10,7 +10,7 @@
  * scroll past the entitlement codes to reach the lesson list.
  */
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
 import {
@@ -81,34 +81,47 @@ const VISIBILITY_HINTS: Record<CourseVisibility, string> = {
 };
 
 /**
- * The promises, as a list the author can grow.
+ * A list the author can grow — promises, audiences, formats.
  *
  * Separate from the field table because the table describes fields that exist
  * and cannot say "there should be a fourth one" — the same reason
  * `RepeatControls` exists in the lesson editor.
+ *
+ * Was `ResultsField`, hard-wired to `results`, until the offer page needed the
+ * same control for «для кого» and «формат». Three copies of a row of inputs
+ * with a remove button is how a builder stops looking like one thing.
  */
-function ResultsField({
-  results,
+function StringListField({
+  path,
+  label,
+  itemLabel,
+  hint,
+  items,
   onChange,
 }: {
-  results: string[];
+  path: string;
+  label: string;
+  /** Singular, for the screen-reader label on each row: "Результат 2". */
+  itemLabel: string;
+  hint: string;
+  items: string[];
   onChange: (path: (string | number)[], value: unknown) => void;
 }) {
   // Empty is ABSENT, as everywhere else: the validator rejects `[]` because a
   // heading over nothing is worse than no heading.
-  const write = (next: string[]) => onChange(["results"], next.length > 0 ? next : undefined);
+  const write = (next: string[]) => onChange([path], next.length > 0 ? next : undefined);
 
   return (
     <div className={styles.field}>
-      <span className={styles.fieldLabel}>Що людина отримає</span>
-      {results.map((result, index) => (
+      <span className={styles.fieldLabel}>{label}</span>
+      {items.map((item, index) => (
         <div className={styles.itemRow} key={index}>
           <input
             className={styles.input}
             type="text"
-            value={result}
-            aria-label={`Результат ${index + 1}`}
-            onChange={(event) => write(results.map((one, at) => (at === index ? event.target.value : one)))}
+            value={item}
+            aria-label={`${itemLabel} ${index + 1}`}
+            onChange={(event) => write(items.map((one, at) => (at === index ? event.target.value : one)))}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
@@ -120,20 +133,64 @@ function ResultsField({
             className={styles.iconAction}
             type="button"
             title="Прибрати"
-            aria-label={`Прибрати результат ${index + 1}`}
-            onClick={() => write(results.filter((_, at) => at !== index))}
+            aria-label={`Прибрати: ${itemLabel} ${index + 1}`}
+            onClick={() => write(items.filter((_, at) => at !== index))}
           >
             <Icon name="close" size={18} />
           </button>
         </div>
       ))}
-      <button className={styles.addAction} type="button" onClick={() => write([...results, ""])}>
+      <button className={styles.addAction} type="button" onClick={() => write([...items, ""])}>
         <span className={styles.addGlyph} aria-hidden="true">+</span> Ще один
       </button>
-      <span className={styles.fieldHint}>
-        Короткі твердження, не абзаци. Порожні рядки не зберігаються.
-      </span>
+      <span className={styles.fieldHint}>{hint}</span>
     </div>
+  );
+}
+
+type SettingsSectionId = "storefront" | "rhythm" | "appearance" | "cover";
+
+/**
+ * A setting reads as part of the course until the author explicitly reaches
+ * for it. The pencil is deliberately the only permanent control: keeping the
+ * form open all the time made rare configuration look as important as the
+ * course's title and promise.
+ */
+function SettingsSection({
+  id,
+  title,
+  summary,
+  editing,
+  onEdit,
+  children,
+}: {
+  id: SettingsSectionId;
+  title: string;
+  summary: ReactNode;
+  editing: boolean;
+  onEdit: (id: SettingsSectionId | null) => void;
+  children: ReactNode;
+}) {
+  return (
+    <section className={styles.courseSettingSection} aria-labelledby={`course-setting-${id}`}>
+      <div className={styles.courseSettingHead}>
+        <div className={styles.courseSettingCopy}>
+          <h3 className={styles.courseSettingTitle} id={`course-setting-${id}`}>{title}</h3>
+          {!editing ? <div className={styles.courseSettingSummary}>{summary}</div> : null}
+        </div>
+        <button
+          className={styles.courseSettingEdit}
+          type="button"
+          aria-label={editing ? `Закрити налаштування «${title}»` : `Редагувати «${title}»`}
+          title={editing ? "Готово" : "Редагувати"}
+          aria-expanded={editing}
+          onClick={() => onEdit(editing ? null : id)}
+        >
+          <Icon name={editing ? "close" : "edit"} size={16} />
+        </button>
+      </div>
+      {editing ? <div className={styles.courseSettingEditor}>{children}</div> : null}
+    </section>
   );
 }
 
@@ -147,8 +204,11 @@ export function BuilderCourseSettings({
   onApplyTemplate: (template: CourseTemplateId) => void;
 }) {
   const [pendingTemplate, setPendingTemplate] = useState<CourseTemplateId | null>(null);
+  const [selectedTemplate, setSelectedTemplate] = useState<CourseTemplateId>(COURSE_TEMPLATES[0]?.id ?? "blank");
+  const [editing, setEditing] = useState<SettingsSectionId | null>(null);
   const theme = { ...DEFAULT_COURSE_THEME, ...(course.theme ?? {}) };
   const gate = course.schedule.gate ?? "soft";
+  const visibility = course.visibility ?? "hidden";
 
   return (
     <div className={styles.settingsForm}>
@@ -156,166 +216,202 @@ export function BuilderCourseSettings({
           read. Repeating the address here made the automatic/locked state look
           like a second setting rather than one route boundary. */}
 
-      <h3 className={styles.subTitle}>Стартова структура</h3>
-      <p className={styles.fieldHint}>Пресет замінює модулі й уроки, але не назву, опис, обкладинку чи доступ.</p>
-      <div className={styles.typeGrid}>
-        {COURSE_TEMPLATES.map((template) => (
-          <button
-            key={template.id}
-            className={styles.typeOption}
-            type="button"
-            aria-pressed={pendingTemplate === template.id}
-            onClick={() => setPendingTemplate(template.id)}
-          >
-            <span className={styles.typeName}>{template.title}</span>
-            <span className={styles.typeHint}>{template.summary}</span>
-          </button>
-        ))}
-      </div>
-      {pendingTemplate ? (
-        <div className={styles.confirmRow}>
-          <span className={styles.confirmText}>Замінити поточну структуру? Дію можна скасувати через «Назад».</span>
-          <button className={styles.quietAction} type="button" onClick={() => setPendingTemplate(null)}>Ні</button>
-          <button
-            className={styles.commitAction}
-            type="button"
-            onClick={() => {
-              onApplyTemplate(pendingTemplate);
-              setPendingTemplate(null);
-            }}
-          >
-            Застосувати
-          </button>
-        </div>
-      ) : null}
-
       {/* THE AUTHOR'S HALF OF THE STOREFRONT. What the course claims about
           itself is content, and content is the author's. The PRICE is not here
           and will not be: it is a commitment the business makes to a buyer, and
           it lives in `lms_course_offers`, which the builder's routes have no
           grant on. That is a different table rather than a hidden field
           precisely so the boundary is structural. */}
-      <h3 className={styles.subTitle}>Вітрина</h3>
-      <p className={styles.readOnlyNote}>
-        Видимість: <strong>{VISIBILITY_LABELS[course.visibility ?? "hidden"]}</strong>. {VISIBILITY_HINTS[course.visibility ?? "hidden"]}{" "}
-        Автор готує матеріал і сторінку; видимість у вітрині змінює лише адміністратор.
-      </p>
-      <FieldInput
-        field={{
-          path: ["tagline"],
-          label: "Рядок під назвою",
-          kind: "text",
-          hint: "Не те саме, що опис. Опис каже, що це; цей рядок каже, навіщо це вам.",
-        }}
-        value={course.tagline}
-        onChange={onChange}
-      />
-      <ResultsField results={course.results ?? []} onChange={onChange} />
-
-      <h3 className={styles.subTitle}>Ритм</h3>
-      <ChoiceRow
-        label="Розклад"
-        hint={MODE_HINTS[course.schedule.mode]}
-        options={(Object.keys(MODE_LABELS) as CourseScheduleMode[]).map((mode) => ({
-          value: mode,
-          label: MODE_LABELS[mode],
-        }))}
-        value={course.schedule.mode}
-        onChange={(next) => onChange(["schedule", "mode"], next)}
-      />
-
-      {course.schedule.mode === "daily" ? (
-        <>
-          <ChoiceRow
-            label="Що робить день із тим, хто біжить попереду"
-            hint={
-              gate === "soft"
-                ? "Завтрашній урок відкривається сьогодні. Чесний варіант для протоколу, який купили."
-                : "Урок закритий до свого дня. Тільки для матеріалу, який поза чергою небезпечний."
-            }
-            options={(Object.keys(GATE_LABELS) as CourseScheduleGate[]).map((value) => ({
-              value,
-              label: GATE_LABELS[value],
-            }))}
-            value={gate}
-            onChange={(next) => onChange(["schedule", "gate"], next)}
-          />
-          <FieldInput
-            field={{
-              path: ["schedule", "reminderHour"],
-              label: "Година нагадування",
-              kind: "number",
-              hint: "0–23, у часовому поясі учня. Порожньо — нагадувань за днями немає.",
-            }}
-            value={course.schedule.reminderHour}
-            onChange={onChange}
-          />
-        </>
-      ) : null}
-
-      <h3 className={styles.subTitle}>Вигляд</h3>
-      <ChoiceRow
-        label="Гама"
-        hint="Готові гами платформи. Кожну вже перевірено на контраст — власних кольорів тут немає навмисно."
-        options={COURSE_PALETTES.map((palette) => ({
-          value: palette,
-          label: PALETTE_LABELS[palette],
-          swatch: palette === "default" ? undefined : palette,
-        }))}
-        value={theme.palette}
-        onChange={(next) => onChange(["theme", "palette"], next)}
-      />
-      <ChoiceRow
-        label="Заголовки"
-        hint="Серіф — для тексту, який читають. Гротеск — для протоколу, який виконують."
-        options={COURSE_HEADING_FONTS.map((font) => ({ value: font, label: FONT_LABELS[font] }))}
-        value={theme.headingFont}
-        onChange={(next) => onChange(["theme", "headingFont"], next)}
-      />
-      <ChoiceRow
-        label="Щільність"
-        options={COURSE_TYPE_SCALES.map((scale) => ({ value: scale, label: SCALE_LABELS[scale] }))}
-        value={theme.scale}
-        onChange={(next) => onChange(["theme", "scale"], next)}
-      />
-
-      <h3 className={styles.subTitle}>Обкладинка</h3>
-      <p className={styles.fieldHint}>
-        Один горизонтальний кадр працює на всіх картках. Лише mobile hero сторінки курсу має окремий вертикальний формат.
-      </p>
-      <BuilderCoverEditor course={course} onChange={onChange} />
-      <FieldInput
-        field={{
-          path: ["cover", "alt"],
-          label: "Опис для тих, хто не бачить зображення",
-          kind: "text",
-          multiline: true,
-        }}
-        value={course.cover?.alt}
-        onChange={onChange}
-      />
-
-      <h3 className={styles.subTitle}>Доступ</h3>
-      <FieldInput
-        field={{
-          path: [],
-          label: "Коди продуктів, що відкривають курс",
-          kind: "text",
-          hint: "Через кому. Порожньо — курс не відкривається жодною покупкою.",
-        }}
-        value={course.entitlementProductCodes.join(", ")}
-        // Written back as an array, not as the string the author typed: the
-        // contract is a list of codes, and storing the raw line would put the
-        // separator inside the data.
-        onChange={(_path, value) =>
-          onChange(
-            ["entitlementProductCodes"],
-            typeof value === "string"
-              ? value.split(",").map((code) => code.trim()).filter(Boolean)
-              : []
-          )
+      <SettingsSection
+        id="storefront"
+        title="Вітрина"
+        editing={editing === "storefront"}
+        onEdit={setEditing}
+        summary={
+          <>
+            <strong>{course.tagline || "Рядок під назвою не додано"}</strong>
+            {/* Counts rather than contents: the fold has to say whether the offer
+                page has anything to print without reprinting it. */}
+            <span>
+              {[
+                VISIBILITY_LABELS[visibility],
+                course.duration,
+                `${course.results?.length ?? 0} результатів`,
+                `${course.audience?.length ?? 0} для кого`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+          </>
         }
-      />
+      >
+        <p className={styles.readOnlyNote}>
+          Видимість: <strong>{VISIBILITY_LABELS[visibility]}</strong>. {VISIBILITY_HINTS[visibility]} Автор готує матеріал і сторінку; видимість змінює адміністратор.
+        </p>
+        <FieldInput
+          field={{ path: ["tagline"], label: "Рядок під назвою", kind: "text", hint: "Коротко: навіщо цей курс людині." }}
+          value={course.tagline}
+          onChange={onChange}
+        />
+        <StringListField
+          path="results"
+          label="Що людина отримає"
+          itemLabel="Результат"
+          hint="Короткі твердження, не абзаци. Порожні рядки не зберігаються."
+          items={course.results ?? []}
+          onChange={onChange}
+        />
+        <StringListField
+          path="audience"
+          label="Для кого"
+          itemLabel="Аудиторія"
+          hint="Друга половина обіцянки: «що зміниться» вже сказано вище, тут — з ким."
+          items={course.audience ?? []}
+          onChange={onChange}
+        />
+        <StringListField
+          path="format"
+          label="Формат та інструменти"
+          itemLabel="Формат"
+          hint="З чого курс складається: відео, аудіо, чек-листи, рецепти. Не структура — саме носій."
+          items={course.format ?? []}
+          onChange={onChange}
+        />
+        {/* WHY DURATION IS TYPED AND NOT COUNTED. The offer page derives «12
+            уроків» from the structure, which is true and answers a question
+            nobody asked. A course whose lessons are meant to be walked over
+            three days says «3 дні», and no lesson count can know that. Left
+            empty, the derived count stays — this field only overrides it. */}
+        <FieldInput
+          field={{ path: ["duration"], label: "Тривалість", kind: "text", hint: "Словами автора: «3 дні», «21 день». Порожньо — рахуємо уроки." }}
+          value={course.duration}
+          onChange={onChange}
+        />
+        {/* Prose, not policy. What actually cuts access off is the expiry on the
+            grant itself, set when the seat is sold; this is the promise printed
+            beside the price. They are free to differ on purpose — «доступ
+            назавжди» is still compatible with revoking a refunded seat. */}
+        <FieldInput
+          field={{ path: ["accessNote"], label: "Термін доступу", kind: "text", hint: "Що обіцяємо покупцю: «доступ назавжди», «30 днів після покупки»." }}
+          value={course.accessNote}
+          onChange={onChange}
+        />
+        <FieldInput
+          field={{ path: ["authorNote"], label: "Чому саме ви — про цей курс", kind: "text", multiline: true, hint: "Одне речення. Біографія і фото живуть у профілі автора, тут — тільки те, що змінюється від курсу до курсу." }}
+          value={course.authorNote}
+          onChange={onChange}
+        />
+      </SettingsSection>
+
+      <SettingsSection
+        id="rhythm"
+        title="Ритм"
+        editing={editing === "rhythm"}
+        onEdit={setEditing}
+        summary={<><strong>{MODE_LABELS[course.schedule.mode]}</strong><span>{MODE_HINTS[course.schedule.mode]}</span></>}
+      >
+        <ChoiceRow
+          label="Розклад"
+          hint={MODE_HINTS[course.schedule.mode]}
+          options={(Object.keys(MODE_LABELS) as CourseScheduleMode[]).map((mode) => ({ value: mode, label: MODE_LABELS[mode] }))}
+          value={course.schedule.mode}
+          onChange={(next) => onChange(["schedule", "mode"], next)}
+        />
+        {course.schedule.mode === "daily" ? (
+          <>
+            <ChoiceRow
+              label="Доступ до наступного дня"
+              hint={gate === "soft" ? "Наступний урок доступний раніше свого дня." : "Урок закритий до свого дня."}
+              options={(Object.keys(GATE_LABELS) as CourseScheduleGate[]).map((value) => ({ value, label: GATE_LABELS[value] }))}
+              value={gate}
+              onChange={(next) => onChange(["schedule", "gate"], next)}
+            />
+            <FieldInput
+              field={{ path: ["schedule", "reminderHour"], label: "Година нагадування", kind: "number", hint: "0–23 у часовому поясі учня." }}
+              value={course.schedule.reminderHour}
+              onChange={onChange}
+            />
+          </>
+        ) : null}
+      </SettingsSection>
+
+      <SettingsSection
+        id="appearance"
+        title="Вигляд"
+        editing={editing === "appearance"}
+        onEdit={setEditing}
+        summary={<><strong>{PALETTE_LABELS[theme.palette]}</strong><span>{FONT_LABELS[theme.headingFont]} · {SCALE_LABELS[theme.scale]}</span></>}
+      >
+        <ChoiceRow
+          label="Гама"
+          options={COURSE_PALETTES.map((palette) => ({ value: palette, label: PALETTE_LABELS[palette], swatch: palette === "default" ? undefined : palette }))}
+          value={theme.palette}
+          onChange={(next) => onChange(["theme", "palette"], next)}
+        />
+        <ChoiceRow
+          label="Заголовки"
+          options={COURSE_HEADING_FONTS.map((font) => ({ value: font, label: FONT_LABELS[font] }))}
+          value={theme.headingFont}
+          onChange={(next) => onChange(["theme", "headingFont"], next)}
+        />
+        <ChoiceRow
+          label="Щільність"
+          options={COURSE_TYPE_SCALES.map((scale) => ({ value: scale, label: SCALE_LABELS[scale] }))}
+          value={theme.scale}
+          onChange={(next) => onChange(["theme", "scale"], next)}
+        />
+      </SettingsSection>
+
+      <SettingsSection
+        id="cover"
+        title="Обкладинка"
+        editing={editing === "cover"}
+        onEdit={setEditing}
+        summary={course.cover?.src ? <><strong>{course.cover.alt || "Обкладинку додано"}</strong><span>Горизонтальний кадр · mobile автокроп</span></> : <span>Зображення ще не додано</span>}
+      >
+        <BuilderCoverEditor course={course} onChange={onChange} />
+        <FieldInput
+          field={{ path: ["cover", "alt"], label: "Опис зображення", kind: "text", multiline: true }}
+          value={course.cover?.alt}
+          onChange={onChange}
+        />
+      </SettingsSection>
+
+      <details className={styles.courseSettingsAdvanced}>
+        <summary>Додатково</summary>
+        <div className={styles.courseSettingsAdvancedBody}>
+          <div className={styles.field}>
+            <span className={styles.fieldLabel}>Стартова структура</span>
+            <div className={styles.choiceRow} role="group" aria-label="Стартова структура">
+              {COURSE_TEMPLATES.map((option) => (
+                <button
+                  key={option.id}
+                  className={styles.choiceOption}
+                  type="button"
+                  aria-pressed={selectedTemplate === option.id}
+                  onClick={() => setSelectedTemplate(option.id)}
+                >
+                  {option.title}
+                </button>
+              ))}
+            </div>
+            <span className={styles.fieldHint}>Замінює модулі й уроки. Назва, обкладинка та доступ залишаться.</span>
+            <button className={styles.courseSettingsTextAction} type="button" onClick={() => setPendingTemplate(selectedTemplate)}>Замінити структуру…</button>
+          </div>
+          {pendingTemplate ? (
+            <div className={styles.confirmRow}>
+              <span className={styles.confirmText}>Замінити поточну структуру? Дію можна скасувати через «Назад».</span>
+              <button className={styles.courseSettingsTextAction} type="button" onClick={() => setPendingTemplate(null)}>Ні</button>
+              <button className={styles.courseSettingsTextAction} type="button" onClick={() => { onApplyTemplate(pendingTemplate); setPendingTemplate(null); }}>Застосувати</button>
+            </div>
+          ) : null}
+          <FieldInput
+            field={{ path: [], label: "Коди продуктів, що відкривають курс", kind: "text", hint: "Технічне поле. Коди вказуються через кому." }}
+            value={course.entitlementProductCodes.join(", ")}
+            onChange={(_path, value) => onChange(["entitlementProductCodes"], typeof value === "string" ? value.split(",").map((code) => code.trim()).filter(Boolean) : [])}
+          />
+        </div>
+      </details>
     </div>
   );
 }

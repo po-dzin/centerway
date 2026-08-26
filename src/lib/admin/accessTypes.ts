@@ -1,3 +1,5 @@
+import type { AccessState } from "@/lms-core";
+
 /**
  * Shapes shared by the access API and the admin page.
  *
@@ -8,6 +10,21 @@
  */
 
 export type LearnerStatus = "not_started" | "in_progress" | "stalled" | "completed";
+
+/**
+ * Sources a hand-made grant may declare.
+ *
+ * `manual` is the plain admin grant and stays the default; `bonus` and
+ * `promotion` exist so that "why does this person have this?" is answerable
+ * from the row a year later, without a note in a Telegram thread. `order` and
+ * `token` are never chosen here — a purchase writes those itself.
+ */
+export const GRANT_SOURCES = ["manual", "bonus", "promotion"] as const;
+export type GrantSource = (typeof GRANT_SOURCES)[number];
+
+export function isGrantSource(value: unknown): value is GrantSource {
+    return typeof value === "string" && (GRANT_SOURCES as readonly string[]).includes(value);
+}
 
 export type LearnerRow = {
     enrollmentId: string;
@@ -23,6 +40,11 @@ export type LearnerRow = {
     orderRef: string | null;
     startedAt: string;
     expiresAt: string | null;
+    /** Whether the door is open right now, and if not, why. Derived, never stored. */
+    access: AccessState;
+    /** Whole days left on the window; `null` when it has no end. */
+    daysLeft: number | null;
+    blockedReason: string | null;
     lessonsTotal: number;
     lessonsCompleted: number;
     lastActivityAt: string | null;
@@ -49,6 +71,28 @@ export type CourseRow = {
     updatedAt: string;
 };
 
+/**
+ * One platform account, whatever it has or has not done yet.
+ *
+ * The other three lists each answer a narrower question — who holds an elevated
+ * role, who is taking a course, who has paid — so an account that merely signed
+ * in appeared in none of them. This is the row for "who exists".
+ */
+export type AccountRow = {
+    authUserId: string;
+    email: string | null;
+    fullName: string | null;
+    avatarUrl: string | null;
+    /** Sign-in provider as recorded at sync; `manual` for an account the panel made. */
+    provider: string | null;
+    lastSignInAt: string | null;
+    /** `null` when there is no `user_roles` row at all, which is most people. */
+    role: string | null;
+    enrollments: number;
+    /** Paid orders reachable from this account, by link or by matching email. */
+    purchases: number;
+};
+
 export type RoleRow = {
     authUserId: string;
     email: string | null;
@@ -64,6 +108,14 @@ export type RoleRow = {
 /** Roles `user_roles` accepts — mirrors its CHECK, widened by the 2026-08-21 merge. */
 export const GRANTABLE_ROLES = ["user", "coach", "support", "admin"] as const;
 export type GrantableRole = (typeof GRANTABLE_ROLES)[number];
+
+/** Payment currencies the panel offers for a hand-recorded sale. UAH first — the merchant settles in it. */
+export const PAYMENT_CURRENCIES = ["UAH", "USD", "EUR"] as const;
+export type PaymentCurrency = (typeof PAYMENT_CURRENCIES)[number];
+
+export function isPaymentCurrency(value: unknown): value is PaymentCurrency {
+    return typeof value === "string" && (PAYMENT_CURRENCIES as readonly string[]).includes(value);
+}
 
 /** How stale an in-progress learner must be before the panel calls them stalled. */
 export const STALLED_AFTER_DAYS = 7;
@@ -91,6 +143,41 @@ export function learnerStatusOf(
 
 export function isGrantableRole(value: unknown): value is GrantableRole {
     return typeof value === "string" && (GRANTABLE_ROLES as readonly string[]).includes(value);
+}
+
+/**
+ * Turns what an operator typed into a deadline the database can hold.
+ *
+ * The panel uses `<input type="date">`, so the common value is a bare
+ * `YYYY-MM-DD`. A bare date means "through the end of that day", not "at
+ * midnight, when the day begins" — an operator who types today's date is giving
+ * access for today, not taking it away retroactively. The end of day is fixed in
+ * UTC rather than in the learner's timezone: it is a couple of hours generous
+ * for Kyiv, and being generous is the right way to be wrong about a deadline.
+ *
+ * An empty string is a deliberate `null` — that is how the UI clears a deadline.
+ */
+export function normalizeDeadline(raw: unknown): { ok: true; value: string | null } | { ok: false } {
+    if (raw === null || raw === undefined) return { ok: true, value: null };
+    if (typeof raw !== "string") return { ok: false };
+
+    const trimmed = raw.trim();
+    if (!trimmed) return { ok: true, value: null };
+
+    if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) {
+        const endOfDay = new Date(`${trimmed}T23:59:59.999Z`);
+        return Number.isNaN(endOfDay.getTime()) ? { ok: false } : { ok: true, value: endOfDay.toISOString() };
+    }
+
+    const parsed = new Date(trimmed);
+    return Number.isNaN(parsed.getTime()) ? { ok: false } : { ok: true, value: parsed.toISOString() };
+}
+
+/** The `<input type="date">` value for a stored deadline, in UTC to match how it was written. */
+export function deadlineInputValue(expiresAt: string | null): string {
+    if (!expiresAt) return "";
+    const parsed = new Date(expiresAt);
+    return Number.isNaN(parsed.getTime()) ? "" : parsed.toISOString().slice(0, 10);
 }
 
 export type LearnerAccountRow = {

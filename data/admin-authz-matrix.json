@@ -145,5 +145,33 @@
       "email": "smoke@example.com",
       "role": "support"
     }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/access/accounts"
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/access/learners",
+    "body": {
+      "enrollmentId": "smoke-enrollment",
+      "action": "revoke"
+    }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/catalog"
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/catalog",
+    "body": {
+      "courseId": "smoke-course",
+      "action": "withdraw_offer"
+    }
   }
 ]

@@ -65,6 +65,13 @@ export function courseRows(course: Course): CourseRows {
       tagline: course.tagline ?? null,
       results: course.results ?? null,
       visibility: course.visibility ?? "hidden",
+      // The offer surface (2026-08-26). Everything the six hand-written program
+      // pages could say and a builder course could not.
+      audience: course.audience ?? null,
+      format: course.format ?? null,
+      duration: course.duration ?? null,
+      access_note: course.accessNote ?? null,
+      author_note: course.authorNote ?? null,
     },
     modules: course.modules.map((module) => ({
       id: module.id,
@@ -183,6 +190,19 @@ export function courseFromRows(
     ...(typeof courseRow.visibility === "string" && courseRow.visibility !== "hidden"
       ? { visibility: courseRow.visibility as never }
       : {}),
+    // The offer surface, read as tolerantly as the storefront columns above and
+    // for the same reason: a database without the 2026-08-26 migration has a
+    // course that says less about itself, which the offer page already knows how
+    // to render — it fell back to derived counts and a generic tag for months.
+    ...(Array.isArray(courseRow.audience) && courseRow.audience.length > 0
+      ? { audience: courseRow.audience as string[] }
+      : {}),
+    ...(Array.isArray(courseRow.format) && courseRow.format.length > 0
+      ? { format: courseRow.format as string[] }
+      : {}),
+    ...(courseRow.duration ? { duration: courseRow.duration as string } : {}),
+    ...(courseRow.access_note ? { accessNote: courseRow.access_note as string } : {}),
+    ...(courseRow.author_note ? { authorNote: courseRow.author_note as string } : {}),
     modules,
   };
 

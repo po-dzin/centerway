@@ -1,4 +1,4 @@
-import { productReturnUrls, type PayableProductCode } from "@/lib/products";
+import { productProgramPath, productReturnUrls, type PayableProductCode } from "@/lib/products";
 
 export type ReturnStatus = "paid" | "failed";
 
@@ -24,8 +24,27 @@ export function buildReturnDestination(
   nowMs: number
 ): string {
   const urls = productReturnUrls(product);
+
+  /* A PAID COURSE GOES BACK TO ITS OWN PAGE, not to a confirmation screen.
+     The offer page already knows how to show a course as owned — status,
+     unlocked lessons, a button into the last one — so it is a better
+     confirmation than a page whose whole content is "you paid", and it removes
+     a click between the payment and the course.
+
+     Built on the approved URL's ORIGIN rather than on a relative path or a
+     configured base: `approvedUrl` is what WayForPay was told to return to and
+     is already absolute, so this lands on exactly the host the invoice named.
+     Everything else — bot deliveries, the herb order, and every failure —
+     keeps the pages it had.
+
+     The Purchase signal moves with the buyer: the program page fires it from
+     `order_ref` below, with the same `purchase_<order_ref>` event id the
+     webhook sends server-side. Losing that pairing would have Meta counting
+     one payment twice, which is the reason this is a redirect target and not a
+     deletion of /pay/thanks. */
+  const programPath = status === "paid" ? productProgramPath(product) : null;
   const destBase = status === "paid" ? urls.approvedUrl : urls.declinedUrl;
-  const dest = new URL(destBase);
+  const dest = programPath ? new URL(programPath, urls.approvedUrl) : new URL(destBase);
 
   dest.searchParams.set("order_ref", orderRef);
   dest.searchParams.set("product", String(product));

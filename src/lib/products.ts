@@ -373,6 +373,45 @@ export function productReturnUrls(code: string): { approvedUrl: string; declined
 }
 
 /**
+ * The offer page for what `code` sells, when there is one.
+ *
+ * WHAT IT IS FOR. A buyer who pays for a course used to land on a confirmation
+ * page and then press a second button to reach the thing they bought. That page
+ * exists for a real reason — a bot purchase has nowhere else to go, and a
+ * physical order has only the cabinet — but for a course it is a step between
+ * the payment and the course whose entire content is "you paid". The offer page
+ * they came from already knows how to show a course as owned: unlocked lessons,
+ * their standing, a button into the last one. Sending them back to it is the
+ * confirmation.
+ *
+ * `null` for anything without an offer page — bot deliveries and the herb
+ * order, which keep `/pay/thanks`.
+ *
+ * NOT ASYNC, and it must not become so: it is called while deciding the return
+ * URL, and a database read there is a way for a payment to end nowhere. A
+ * builder course answers from its code alone (`course:<slug>` → `/programs/
+ * <slug>`), and it cannot be sold at all unless that page is already public —
+ * `loadPayableOffer` refuses a course that is not.
+ */
+export function productProgramPath(code: string): string | null {
+  const courseCode = parseCourseOfferCode(code);
+  if (courseCode) return `/programs/${courseCode}`;
+
+  if (isCatalogProduct(code)) {
+    const fulfilment = PRODUCTS[code].fulfilment;
+    /* The COURSE slug, which is also the program slug for both products that
+       reach here (way21, reset-day) — each has a hand-written page under that
+       name. A future course product whose program is slugged differently would
+       need the program named on the entry rather than inferred; there is no such
+       product, and inventing the field for one that does not exist would be a
+       second name for the same thing to drift. */
+    if (fulfilment.kind === "course") return `/programs/${fulfilment.courseSlug}`;
+  }
+
+  return null;
+}
+
+/**
  * The price a surface may QUOTE, in whole currency units — never the charged
  * one.
  *

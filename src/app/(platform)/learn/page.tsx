@@ -7,7 +7,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 
 export const metadata: Metadata = {
   ...pageMetadata({
-    title: "Навчання",
+    title: "Бібліотека",
     description: describe("Ваші курси на CenterWay: уроки, поступ і наступний крок у кожній програмі.", {
       bounded: false,
     }),
@@ -22,7 +22,7 @@ export const metadata: Metadata = {
 
 export default function LearnShelfPage() {
   return (
-    <PlatformShell headerMode="overlay" surface="personal">
+    <PlatformShell headerMode="learn" surface="personal" footer={false}>
       <LearnShelfClient />
     </PlatformShell>
   );

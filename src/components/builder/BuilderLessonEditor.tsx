@@ -1,9 +1,9 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { Fragment, useCallback, useEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 
-import { Icon } from "@/components/Icon";
+import { HandGraphic, Icon } from "@/components/Icon";
 import { BlockRenderer } from "@/components/lms/LessonBlocks";
 import {
   courseThemeAttributes,
@@ -12,24 +12,31 @@ import {
   flattenLessons,
   inlineToPlainText,
   moveItem,
+  newLesson,
+  newModule,
   PLACEHOLDER_MARKER,
   pruneEmptyProse,
   newBlock,
+  renumber,
   newTableRow,
   renumberSteps,
   todo,
+  uniqueSlug,
   type Course,
+  type CourseModule,
   type Lesson,
   type LessonBlock,
   type LessonBlockType,
   type RichTextNode,
 } from "@/lms-core";
-import { BuilderFailureNotice, BuilderNotice, BuilderShell, BuilderStep } from "./BuilderShell";
+import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
 import { BuilderContents } from "./BuilderContents";
 import { BuilderMenu } from "./BuilderMenu";
 import { FieldInput } from "./BuilderFields";
 import { BuilderInlineEditor, type InternalReferenceOption, type SlashCommand } from "./BuilderInlineEditor";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
+import { BuilderBlockPicker } from "./BuilderBlockPicker";
+import { InkLabel } from "./BuilderInkLabel";
 import { importLessonFiles, loadCourse, saveCourse, type BuilderFailure } from "./builderClient";
 import { BuilderGrip } from "./BuilderGrip";
 import { BuilderHistory } from "./BuilderHistory";
@@ -37,7 +44,7 @@ import { BuilderToolRail, type BuilderToolMode } from "./BuilderToolRail";
 import { useCourseAutosave } from "./useCourseAutosave";
 import { rememberZenPreviewReturn, zenPreviewHref } from "@/components/lms/ZenPreviewShell";
 import { useCourseHistory } from "./useCourseHistory";
-import { landingIndex, useRowDrag, type DragRef, type DropEdge, type RowDrag } from "./useRowDrag";
+import { landingIndex, useRowDrag, type DragRef, type RowDrag } from "./useRowDrag";
 import {
   BLOCK_TYPE_HINTS,
   BLOCK_TYPE_LABELS,
@@ -91,9 +98,39 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [contentsOpen, setContentsOpen] = useState(false);
+  const [structureCollapsed, setStructureCollapsed] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  /**
+   * WHICH LESSON IS ON SCREEN — state, not the route.
+   *
+   * The route used to be the only answer, and moving between two lessons of the
+   * course therefore cost a full navigation: save the whole course over the
+   * wire, wait for the server to render the page again, remount the editor,
+   * refetch the course it had just sent. Seconds, to look at a lesson that was
+   * already in memory — the editor holds the WHOLE course precisely so it
+   * would not have to ask.
+   *
+   * So an in-course move is a state change, and the URL follows it via
+   * `history.pushState`, which the App Router supports for exactly this. Deep
+   * links, back and forward all still work: arriving by route seeds this state,
+   * and `popstate` puts it back. Nothing is lost by not saving first — the
+   * course is one document and autosave owns writing it.
+   */
+  const [activeSlug, setActiveSlug] = useState(lessonSlug);
+  /**
+   * Where to go once the lesson on screen stops existing.
+   *
+   * Held in state rather than navigated to on the spot, because the two things
+   * have to happen in this order: the destination is computed from the course
+   * as it still stands, the removal is applied, and only the render AFTER that
+   * commit may leave. Navigating first would save the course with the lesson
+   * still in it; navigating inside the same handler would route away from a
+   * list that had not been rewritten yet.
+   */
+  const [leaveFor, setLeaveFor] = useState<string | null>(null);
   const [draftConflict, setDraftConflict] = useState<DurableCourseDraft | null>(null);
   const importPicker = useRef<HTMLInputElement>(null);
+  const docRef = useRef<HTMLDivElement>(null);
   const draftGeneration = useRef<number | null>(null);
   const serverCourse = useRef<Course | null>(null);
   /** The block just created, so the caret can land in it instead of being aimed. */
@@ -142,7 +179,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
 
   // Plain derivation, not memoized: it is two array scans over a handful of
   // modules, and the shape the compiler could not memoize anyway.
-  const located = course ? locateLesson(course, lessonSlug) : null;
+  const located = course ? locateLesson(course, activeSlug) : null;
 
   /** Applies a change to one path inside the current lesson. */
   const editLesson = useCallback(
@@ -201,15 +238,48 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     [editBlocks]
   );
 
-  /** Blocks reorder within the lesson. Steps renumber on the way, as with the arrows. */
+  /**
+   * Blocks reorder within the lesson, and they land in a GAP.
+   *
+   * The row-to-row drop this hook offers is turned off here on purpose. A block
+   * is a paragraph of a document, not a row of a table: what an author aims at
+   * is the space between two blocks, and asking them to find the correct half
+   * of the correct block instead is asking them to hit a target they cannot
+   * see. The document owns the drop (see `nominateGap`), which is also what
+   * lets a block carried from the palette and a block carried from the page
+   * answer to exactly the same hint.
+   */
   const blockDrag = useRowDrag(
-    useCallback(
-      (from: DragRef, to: DragRef, edge: DropEdge) => {
-        editBlocks((blocks) => moveItem(blocks, from.index, landingIndex(from.index, to.index, edge, true)));
-      },
-      [editBlocks]
-    )
+    useCallback(() => undefined, []),
+    { mime: BLOCK_MOVE_MIME, dropTargets: false }
   );
+
+  /**
+   * Which gap the carried block will land in.
+   *
+   * Nominated from the pointer's distance to each gap rather than from what it
+   * happens to be over, so the hint appears the moment the drag starts moving
+   * and the nearest gap claims it — the light pull the gesture needs to feel
+   * aimed rather than dropped.
+   */
+  const [dropGap, setDropGap] = useState<number | null>(null);
+  const blockList = useRef<HTMLDivElement>(null);
+
+  const carriesBlock = (types: readonly string[]) =>
+    types.includes(BUILDER_BLOCK_MIME) || types.includes(BLOCK_MOVE_MIME);
+
+  const nominateGap = (clientY: number) => {
+    const gaps = blockList.current?.querySelectorAll<HTMLElement>("[data-gap]");
+    if (!gaps || gaps.length === 0) return null;
+    let best: { position: number; distance: number } | null = null;
+    gaps.forEach((gap) => {
+      const rect = gap.getBoundingClientRect();
+      const distance = Math.abs(clientY - (rect.top + rect.height / 2));
+      const position = Number(gap.dataset.gap);
+      if (!best || distance < best.distance) best = { position, distance };
+    });
+    return best === null ? null : (best as { position: number }).position;
+  };
 
   const persistCourse = useCallback(async (snapshot: Course) => {
     setNote(null);
@@ -274,6 +344,22 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   );
 
   /** Flushes the current snapshot and continues without asking a question. */
+  /**
+   * A whole-modules replacement, the way the course workspace applies one.
+   *
+   * No coalescing key: reordering and deleting are each one deliberate act and
+   * merging two of them would take back a move the author never asked to lose.
+   * `renumber` runs on every one of them because `order` and the day index are
+   * derived from where a module and a lesson SIT.
+   */
+  const editModules = useCallback(
+    (next: (course: Course) => CourseModule[]) => {
+      history.edit(null, (current) => ({ ...current, modules: renumber(next(current)) }));
+      setNote(null);
+    },
+    [history]
+  );
+
   const navigate = useCallback(
     (href: string) => {
       setContentsOpen(false);
@@ -288,11 +374,74 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     [dirty, pendingHref, router, save]
   );
 
+  /** `/build/<this course>/<lesson>` — and only that — is an in-course move. */
+  const lessonSlugIn = useCallback(
+    (href: string) => {
+      const [path] = href.split(/[?#]/);
+      const segments = path.split("/").filter(Boolean);
+      if (segments.length !== 3 || segments[0] !== "build") return null;
+      if (decodeURIComponent(segments[1]) !== slug) return null;
+      return decodeURIComponent(segments[2]);
+    },
+    [slug]
+  );
+
+  /**
+   * One entry point for everything that used to call `navigate`.
+   *
+   * Anything leaving the course still leaves the ordinary way — saved first,
+   * then routed. Only a sibling lesson takes the short path, because only for a
+   * sibling lesson is the destination already on this client.
+   */
+  const go = useCallback(
+    (href: string) => {
+      const target = lessonSlugIn(href);
+      if (target === null) return navigate(href);
+      setContentsOpen(false);
+      if (target === activeSlug) return;
+      setActiveSlug(target);
+      window.history.pushState(null, "", href);
+    },
+    [activeSlug, lessonSlugIn, navigate]
+  );
+
+  // Arriving by route — a deep link, or a return from preview — seeds the
+  // state; back and forward move it again.
+  useEffect(() => {
+    setActiveSlug(lessonSlug);
+  }, [lessonSlug]);
+
+  /**
+   * The new lesson starts at its own beginning.
+   *
+   * A route change used to reset the scroller for free. Switching in place does
+   * not, so an author moving from the end of a long lesson to a short one would
+   * land somewhere in the middle of it — or below it entirely.
+   */
+  useEffect(() => {
+    docRef.current?.closest("main")?.scrollTo({ top: 0 });
+  }, [activeSlug]);
+
+  useEffect(() => {
+    const onPop = () => {
+      const target = lessonSlugIn(window.location.pathname);
+      if (target !== null) setActiveSlug(target);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [lessonSlugIn]);
+
+  useEffect(() => {
+    if (!leaveFor) return;
+    setLeaveFor(null);
+    go(leaveFor);
+  }, [go, leaveFor]);
+
   const preview = () => {
     if (working) return;
-    const returnTo = `/build/${encodeURIComponent(slug)}/${encodeURIComponent(lessonSlug)}`;
+    const returnTo = `/build/${encodeURIComponent(slug)}/${encodeURIComponent(activeSlug)}`;
     rememberZenPreviewReturn(returnTo);
-    navigate(zenPreviewHref(`/learn/${encodeURIComponent(slug)}/${encodeURIComponent(lessonSlug)}`, returnTo));
+    navigate(zenPreviewHref(`/learn/${encodeURIComponent(slug)}/${encodeURIComponent(activeSlug)}`, returnTo));
   };
 
   const recoverConflictingDraft = () => {
@@ -333,7 +482,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   if (!course || !located) {
     return (
       <BuilderShell trail={trail}>
-        <BuilderNotice title="Урок не знайдено" text={`У курсі немає уроку «${lessonSlug}».`} />
+        <BuilderNotice title="Урок не знайдено" text={`У курсі немає уроку «${activeSlug}».`} />
       </BuilderShell>
     );
   }
@@ -348,33 +497,87 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   // reachable with one press from the lesson before it.
   const walk = flattenLessons(course);
   const position = walk.findIndex((entry) => entry.lesson.slug === lesson.slug);
-  const previous = position > 0 ? walk[position - 1] : null;
-  const next = position >= 0 && position < walk.length - 1 ? walk[position + 1] : null;
   const selectedBlockIndex = lesson.blocks.findIndex((block) => block.id === selectedBlockId);
   const selectedBlock = selectedBlockIndex >= 0 ? lesson.blocks[selectedBlockIndex] : null;
   const readiness = courseReadiness(course);
   const referenceTargets = buildInternalReferenceTargets(course);
   const referenceOptions = internalReferenceOptions(referenceTargets, lesson.id, holder.id);
 
+  const addLessonToModule = (moduleId: string) => {
+    history.edit(null, (current) => {
+      const taken = current.modules.flatMap((entry) => entry.lessons.map((item) => item.slug));
+      const nextDay = Math.max(0, ...current.modules.flatMap((entry) => entry.lessons.map((item) => item.dayIndex ?? 0))) + 1;
+      return {
+        ...current,
+        modules: current.modules.map((entry) => {
+          if (entry.id !== moduleId) return entry;
+          const order = entry.lessons.length + 1;
+          const title = `Урок ${order}`;
+          return {
+            ...entry,
+            lessons: [
+              ...entry.lessons,
+              newLesson(ids, {
+                order,
+                title,
+                slug: uniqueSlug(title, taken),
+                dayIndex: current.schedule.mode === "daily" && !entry.reference ? nextDay : undefined,
+              }),
+            ],
+          };
+        }),
+      };
+    });
+  };
+
+  const addCourseModule = () => {
+    history.edit(null, (current) => {
+      const order = current.modules.length + 1;
+      const title = `Модуль ${order}`;
+      const taken = current.modules.map((entry) => entry.slug);
+      const nextDay = Math.max(0, ...current.modules.flatMap((entry) => entry.lessons.map((item) => item.dayIndex ?? 0))) + 1;
+      return {
+        ...current,
+        modules: [
+          ...current.modules,
+          newModule(ids, {
+            order,
+            title,
+            slug: uniqueSlug(title, taken),
+            dayIndex: current.schedule.mode === "daily" ? nextDay : undefined,
+          }),
+        ],
+      };
+    });
+  };
+
   const selectTool = (nextMode: BuilderToolMode) => {
-    if (toolOpen && toolMode === nextMode) {
-      setToolOpen(false);
-      return;
-    }
     setToolMode(nextMode);
     setToolOpen(true);
   };
 
+  /**
+   * Selecting is not opening a panel.
+   *
+   * It used to be: pressing a block set the tool layer to its properties and
+   * swung the drawer out, so the ordinary act of pointing at what you are
+   * writing rearranged a third of the screen. Selection now only says WHICH
+   * block the author means. Properties are asked for — from the block's own
+   * menu, or by opening the panel on its properties tab.
+   */
   const selectBlock = (blockId: string) => {
+    setSelectedBlockId(blockId);
+  };
+
+  const openBlockProperties = (blockId: string) => {
     setSelectedBlockId(blockId);
     setToolMode("block");
     setToolOpen(true);
   };
 
+  /** Which gap a palette press drops into. It does not open anything. */
   const activateInsert = (nextPosition: number) => {
     setInsertPosition(nextPosition);
-    setToolMode("blocks");
-    setToolOpen(true);
   };
 
   return (
@@ -382,14 +585,31 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       trail={[
         { label: "Курси", onNavigate: () => navigate("/build") },
         { label: trailTitle(course.title, "Курс без назви"), onNavigate: () => navigate(`/build/${slug}`) },
+        { label: trailTitle(holder.title, "Модуль без назви") },
         { label: trailTitle(lesson.title, "Урок без назви") },
       ]}
-      aside={<BuilderContents course={course} currentSlug={lesson.slug} onNavigate={navigate} />}
+      aside={
+        <BuilderContents
+          course={course}
+          currentSlug={lesson.slug}
+          onNavigate={go}
+          onAddLesson={addLessonToModule}
+          onAddModule={addCourseModule}
+          editing={{ onModules: editModules, onNote: setNote, onLeaveCurrent: setLeaveFor }}
+        />
+      }
       asideOpen={contentsOpen}
+      asideCollapsed={structureCollapsed}
+      onAsideToggle={() => setStructureCollapsed((collapsed) => !collapsed)}
       pageMode="document"
-      onNavigate={navigate}
+      onNavigate={go}
       toolLayer={
-        <BuilderToolRail mode={toolMode} open={toolOpen} onMode={selectTool} onClose={() => setToolOpen(false)}>
+        <BuilderToolRail
+          mode={toolMode}
+          open={toolOpen}
+          onMode={selectTool}
+          onClose={() => setToolOpen(false)}
+        >
           <LessonToolContent
             mode={toolMode}
             course={course}
@@ -398,7 +618,6 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
             selectedBlockIndex={selectedBlockIndex}
             search={blockSearch}
             insertPosition={insertPosition}
-            readiness={readiness}
             working={working}
             importPicker={importPicker}
             onSearch={setBlockSearch}
@@ -407,22 +626,21 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
             onBlockChange={(path, value) => {
               if (selectedBlockIndex >= 0) editLesson(["blocks", selectedBlockIndex, ...path], value);
             }}
-            onPreview={preview}
-            onPublish={() => navigate(`/build/${slug}#course-release`)}
             onImport={importIntoLesson}
           />
         </BuilderToolRail>
       }
       tools={
         <>
-          <button className={styles.quietAction} type="button" onClick={preview} disabled={working} title={dirty ? "Зберегти й відкрити урок як учень" : "Відкрити урок як учень"}>
-            Переглянути
+          <button className={styles.workspacePreviewAction} type="button" onClick={preview} disabled={working} title={dirty ? "Зберегти й відкрити урок як учень" : "Відкрити урок як учень"}>
+            <Icon name="view-rows" size={18} /> Переглянути
           </button>
-          <BuilderStep
-            direction="prev"
-            label={previous ? `Попередній урок: ${previous.lesson.title}` : "Попереднього уроку немає"}
-            onNavigate={previous ? () => navigate(`/build/${slug}/${previous.lesson.slug}`) : undefined}
-          />
+          <span className={styles.workspaceSaveStatus} role="status" aria-live="polite">
+            <Icon name="check" size={18} /> {autosave.saving ? "Зберігаємо…" : dirty ? "Є зміни" : "Збережено"}
+          </span>
+          <button className={styles.workspaceBlockers} type="button" onClick={() => navigate(`/build/${slug}#course-release`)}>
+            <span aria-hidden="true">•</span> {readiness.blockers.length} блокери
+          </button>
           {/* Hidden from 901px up, where the rail is simply there. A control
               that toggles something already visible is a control that does
               nothing the first time it is pressed. */}
@@ -437,11 +655,6 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
               {position + 1}/{walk.length}
             </span>
           </button>
-          <BuilderStep
-            direction="next"
-            label={next ? `Наступний урок: ${next.lesson.title}` : "Наступного уроку немає"}
-            onNavigate={next ? () => navigate(`/build/${slug}/${next.lesson.slug}`) : undefined}
-          />
         </>
       }
     >
@@ -453,16 +666,17 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
           twice, with the copy being the one you could change. Now the heading
           IS the input, and the lead under it is the lesson's own summary
           rather than a caption about it. */}
-      <div className={styles.docHead}>
+      {/* Keyed on the lesson, so moving to another one is a short dissolve
+          rather than a swap. It is the only thing left standing in for the
+          navigation that used to happen here: without it the document changes
+          between two frames and the eye cannot tell whether it moved or the
+          text was edited under it. */}
+      <div className={`${styles.docHead} ${styles.docEnter}`} key={`head-${lesson.id}`} ref={docRef}>
         <BuilderEditableTitle
           value={lesson.title}
           label="Редагувати назву уроку"
           onChange={(value) => editLesson(["title"], value)}
         />
-        <p className={styles.docMeta}>
-          {holder.title}
-          {lesson.dayIndex ? ` · день ${lesson.dayIndex}` : ""}
-        </p>
         <div className={styles.pageLead}>
           <BuilderInlineEditor
             bare
@@ -475,8 +689,46 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         </div>
       </div>
 
-      <div className={styles.blockList} {...courseThemeAttributes(course.theme)}>
-        <BlockInsert position={0} active={insertPosition === 0} onActivate={activateInsert} onAdd={insertBlock} />
+      <div
+        ref={blockList}
+        className={`${styles.blockList} ${styles.docEnter}`}
+        key={`blocks-${lesson.id}`}
+        onDragOver={(event) => {
+          if (!carriesBlock(event.dataTransfer.types)) return;
+          event.preventDefault();
+          event.dataTransfer.dropEffect = event.dataTransfer.types.includes(BUILDER_BLOCK_MIME) ? "copy" : "move";
+          setDropGap(nominateGap(event.clientY));
+        }}
+        onDragLeave={(event) => {
+          // Only when the pointer has genuinely left the document: `dragleave`
+          // also fires crossing between two blocks inside it, and clearing on
+          // that makes the hint flicker all the way down the lesson.
+          if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+          setDropGap(null);
+        }}
+        onDrop={(event) => {
+          if (!carriesBlock(event.dataTransfer.types)) return;
+          event.preventDefault();
+          const gap = nominateGap(event.clientY);
+          setDropGap(null);
+          if (gap === null) return;
+          const added = event.dataTransfer.getData(BUILDER_BLOCK_MIME) as LessonBlockType;
+          if (BLOCK_TYPE_ORDER.includes(added)) {
+            activateInsert(gap);
+            insertBlock(gap, added);
+            return;
+          }
+          const moved = Number(event.dataTransfer.getData(BLOCK_MOVE_MIME).split(":").at(-1));
+          if (!Number.isInteger(moved)) return;
+          // The gap names a place in the list the author is LOOKING at, which
+          // still contains the block being carried.
+          const target = moved < gap ? gap - 1 : gap;
+          if (target === moved) return;
+          editBlocks((blocks) => moveItem(blocks, moved, target));
+        }}
+        {...courseThemeAttributes(course.theme)}
+      >
+        <BlockInsert position={0} drop={dropGap === 0} onActivate={activateInsert} onAdd={insertBlock} />
         {lesson.blocks.map((block, index) => (
           <Fragment key={block.id}>
             <BlockEditor
@@ -490,11 +742,12 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
               referenceTargets={referenceTargets}
               courseSlug={course.slug}
               onSelect={() => selectBlock(block.id)}
+              onProperties={() => openBlockProperties(block.id)}
               onChange={editLesson}
               onBlocks={editBlocks}
               onInsertAfter={(type) => insertBlock(index + 1, type)}
             />
-            <BlockInsert position={index + 1} active={insertPosition === index + 1} onActivate={activateInsert} onAdd={insertBlock} />
+            <BlockInsert position={index + 1} drop={dropGap === index + 1} onActivate={activateInsert} onAdd={insertBlock} />
           </Fragment>
         ))}
       </div>
@@ -530,6 +783,32 @@ function locateLesson(course: Course, lessonSlug: string): { moduleIndex: number
 
 const BUILDER_BLOCK_MIME = "application/x-centerway-block";
 
+/**
+ * What the pointer carries out of the palette.
+ *
+ * The browser's default drag image for a palette row is a snapshot of that
+ * row — a wide strip of the tool panel, dragged across a manuscript, saying
+ * nothing about what is being placed. A block already in the document drags
+ * its own snapshot and therefore looks like the thing it is; this gives a
+ * block coming FROM the palette the same courtesy: a small chip with its name,
+ * under the cursor.
+ *
+ * Detached and removed on the next frame, because `setDragImage` only needs the
+ * element to be rendered at the moment it is called, and one left in the
+ * document would sit at the bottom of the page for the rest of the session.
+ */
+function carryChip(event: DragEvent<HTMLElement>, label: string) {
+  if (typeof document === "undefined") return;
+  const chip = document.createElement("div");
+  chip.className = styles.dragChip;
+  chip.textContent = label;
+  document.body.append(chip);
+  event.dataTransfer.setDragImage(chip, 12, 16);
+  requestAnimationFrame(() => chip.remove());
+}
+/** A block already in the lesson, on its way to another gap in it. */
+const BLOCK_MOVE_MIME = "application/x-centerway-block-move";
+
 function LessonToolContent({
   mode,
   course,
@@ -538,15 +817,12 @@ function LessonToolContent({
   selectedBlockIndex,
   search,
   insertPosition,
-  readiness,
   working,
   importPicker,
   onSearch,
   onInsert,
   onLessonChange,
   onBlockChange,
-  onPreview,
-  onPublish,
   onImport,
 }: {
   mode: BuilderToolMode;
@@ -556,15 +832,12 @@ function LessonToolContent({
   selectedBlockIndex: number;
   search: string;
   insertPosition: number;
-  readiness: ReturnType<typeof courseReadiness>;
   working: boolean;
   importPicker: { current: HTMLInputElement | null };
   onSearch: (value: string) => void;
   onInsert: (position: number, type: LessonBlockType) => void;
   onLessonChange: (path: (string | number)[], value: unknown) => void;
   onBlockChange: (path: (string | number)[], value: unknown) => void;
-  onPreview: () => void;
-  onPublish: () => void;
   onImport: (file: File) => Promise<void>;
 }) {
   if (mode === "blocks") {
@@ -597,11 +870,12 @@ function LessonToolContent({
                   onDragStart={(event) => {
                     event.dataTransfer.effectAllowed = "copy";
                     event.dataTransfer.setData(BUILDER_BLOCK_MIME, type);
+                    carryChip(event, BLOCK_TYPE_LABELS[type]);
                   }}
                   onClick={() => onInsert(insertPosition, type)}
                 >
                   <Icon name={type === "practice_block" ? "motion" : type === "boundary_note" ? "boundary" : "document"} size={19} />
-                  <span><strong>{BLOCK_TYPE_LABELS[type]}</strong><small>{BLOCK_TYPE_HINTS[type]}</small></span>
+                  <span><InkLabel strong>{BLOCK_TYPE_LABELS[type]}</InkLabel><small>{BLOCK_TYPE_HINTS[type]}</small></span>
                   <Icon name="grip" size={16} />
                 </button>
               ))}
@@ -615,27 +889,26 @@ function LessonToolContent({
 
   if (mode === "block") {
     if (!selectedBlock || selectedBlockIndex < 0) {
-      return <p className={styles.toolEmpty}>Оберіть блок у документі — його поля з’являться тут, не перекриваючи текст.</p>;
+      return <p className={styles.toolEmpty}>Оберіть блок у документі — тут з’являться його властивості.</p>;
     }
-    const fields = describeBlock(selectedBlock);
+    /* PROPERTIES, NOT CONTENT. What a block SAYS is edited at the block, in the
+       document; what is left here is what the block IS — where it sits, what it
+       is called in the data, and how often it comes back. A panel that also
+       held the words meant the author read the table on one side of the screen
+       and typed it on the other. */
     return (
       <div className={styles.toolStack}>
         <div className={styles.toolSelectionTitle}>
           <Icon name="boundary" size={22} />
           <span><small>Блок {selectedBlockIndex + 1}</small><strong>{BLOCK_TYPE_LABELS[selectedBlock.type]}</strong></span>
         </div>
-        {selectedBlock.type === "rich_text" ? (
-          <p className={styles.toolHint}>Текст редагується безпосередньо на сторінці. Тут залишаються лише властивості структурних блоків.</p>
-        ) : fields.map((field) => (
-          <FieldInput
-            key={field.path.join(".")}
-            field={field}
-            value={readPath(selectedBlock, field.path)}
-            courseSlug={course.slug}
-            onChange={onBlockChange}
-          />
-        ))}
+        <p className={styles.toolHint}>{BLOCK_TYPE_HINTS[selectedBlock.type]}</p>
         <RepeatControls block={selectedBlock} onChange={onBlockChange} />
+        <p className={styles.toolHint}>
+          {selectedBlock.type === "rich_text"
+            ? "Текст редагується просто на сторінці."
+            : "Вміст блоку редагується під ним у документі — оберіть блок."}
+        </p>
       </div>
     );
   }
@@ -674,21 +947,7 @@ function LessonToolContent({
     );
   }
 
-  return (
-    <div className={styles.toolStack}>
-      <div className={styles.publishSummary} data-ready={readiness.ready || undefined}>
-        <Icon name={readiness.ready ? "check" : "boundary"} size={22} />
-        <span><strong>{readiness.ready ? "Готово до публікації" : `${readiness.blockers.length} блокери`}</strong><small>{course.status === "published" ? "Курс опубліковано" : "Зараз це чернетка"}</small></span>
-      </div>
-      {!readiness.ready ? (
-        <ul className={styles.toolBlockers}>
-          {readiness.blockers.slice(0, 6).map((blocker) => <li key={`${blocker.code}:${blocker.path}`}><strong>{blocker.path}</strong><span>{blocker.detail ?? blocker.code}</span></li>)}
-        </ul>
-      ) : null}
-      <button className={styles.quietAction} type="button" onClick={onPreview} disabled={working}><Icon name="view-rows" size={19} /> Переглянути як учень</button>
-      <button className={styles.commitAction} type="button" onClick={onPublish}>Відкрити публікацію курсу</button>
-    </div>
-  );
+  return null;
 }
 
 /**
@@ -707,75 +966,58 @@ function LessonToolContent({
  * with the sentence that says when to reach for each, is the right shape for a
  * decision. It is the wrong shape for "I need a table here".
  */
+/**
+ * The gap between two blocks.
+ *
+ * Silent until it is asked for. A ring parked in every gap, with a rule
+ * permanently drawn above the first block, made the manuscript read as a form
+ * with slots in it — and the chooser it opened used to replace the gap in the
+ * flow, so pressing it threw the rest of the lesson down the page. The ring
+ * appears on pointing, the rule is drawn with it, and the chooser floats.
+ */
 function BlockInsert({
   position,
-  active,
+  drop,
   onActivate,
   onAdd,
 }: {
   position: number;
-  active: boolean;
+  /** The list has nominated this gap as where the carried block lands. */
+  drop?: boolean;
   onActivate: (position: number) => void;
   onAdd: (position: number, type: LessonBlockType) => void;
 }) {
-  const [open, setOpen] = useState(false);
-
-  if (!open) {
-    return (
-      <div
-        className={styles.blockInsert}
-        data-active={active || undefined}
-        onDragOver={(event) => {
-          if (event.dataTransfer.types.includes(BUILDER_BLOCK_MIME)) event.preventDefault();
-        }}
-        onDrop={(event) => {
-          const type = event.dataTransfer.getData(BUILDER_BLOCK_MIME) as LessonBlockType;
-          if (!BLOCK_TYPE_ORDER.includes(type)) return;
-          event.preventDefault();
-          onActivate(position);
-          onAdd(position, type);
-        }}
-      >
-        <button className={styles.blockInsertAction} type="button" onClick={() => { onActivate(position); setOpen(true); }}>
-          <span className={styles.addGlyph} aria-hidden="true">+</span> Додати блок
-        </button>
-      </div>
-    );
-  }
-
-  const pick = (type: LessonBlockType) => {
-    onAdd(position, type);
-    setOpen(false);
-  };
+  const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const ring = useRef<HTMLButtonElement>(null);
 
   return (
-    <section className={styles.blockPicker} aria-label="Додати блок">
-      <div className={styles.panelHead}>
-        <h2 className={styles.panelTitle}>Додати блок</h2>
-        <button className={styles.quietAction} type="button" onClick={() => setOpen(false)}>
-          Закрити
-        </button>
-      </div>
-      <h3 className={styles.blockPickerGroup}>Текст і медіа</h3>
-      <div className={styles.typeGrid}>
-        {(["rich_text", ...BLOCK_STRUCTURE_ORDER] as LessonBlockType[]).map((type) => (
-          <button key={type} className={styles.typeOption} type="button" onClick={() => pick(type)}>
-            <span className={styles.typeName}>{BLOCK_TYPE_LABELS[type]}</span>
-            <span className={styles.typeHint}>{BLOCK_TYPE_HINTS[type]}</span>
-          </button>
-        ))}
-      </div>
-
-      <h3 className={styles.blockPickerGroup}>Шаблони уроку</h3>
-      <div className={styles.typeGrid}>
-        {BLOCK_TEMPLATE_ORDER.map((type) => (
-          <button key={type} className={styles.typeOption} type="button" onClick={() => pick(type)}>
-            <span className={styles.typeName}>{BLOCK_TYPE_LABELS[type]}</span>
-            <span className={styles.typeHint}>{BLOCK_TYPE_HINTS[type]}</span>
-          </button>
-        ))}
-      </div>
-    </section>
+    <div className={styles.blockInsert} data-open={anchor ? "" : undefined} data-drop={drop || undefined} data-gap={position}>
+      <button
+        ref={ring}
+        className={styles.blockInsertAction}
+        type="button"
+        aria-label="Додати блок"
+        title="Додати блок"
+        aria-expanded={anchor !== null}
+        onClick={() => {
+          onActivate(position);
+          setAnchor(ring.current?.getBoundingClientRect() ?? null);
+        }}
+      >
+        <Icon name="plus" size={18} />
+        <HandGraphic className={styles.blockInsertInkRing} name="ink-ring" size={42} />
+      </button>
+      {anchor ? (
+        <BuilderBlockPicker
+          anchor={anchor}
+          onPick={(type) => {
+            onAdd(position, type);
+            setAnchor(null);
+          }}
+          onClose={() => setAnchor(null)}
+        />
+      ) : null}
+    </div>
   );
 }
 
@@ -790,6 +1032,7 @@ function BlockEditor({
   referenceTargets,
   courseSlug,
   onSelect,
+  onProperties,
   onChange,
   onBlocks,
   onInsertAfter,
@@ -805,25 +1048,59 @@ function BlockEditor({
   referenceTargets: ReturnType<typeof buildInternalReferenceTargets>;
   courseSlug: string;
   onSelect: () => void;
+  /** Selects the block AND brings its properties up in the tool panel. */
+  onProperties: () => void;
   onChange: (path: (string | number)[], value: unknown) => void;
   onBlocks: (next: (blocks: LessonBlock[]) => LessonBlock[]) => void;
   onInsertAfter: (type: LessonBlockType) => void;
 }) {
   const editField = (path: (string | number)[], value: unknown) => onChange(["blocks", index, ...path], value);
 
+  /* The field descriptors are already the one place that knows what each
+     address is CALLED; an empty leaf in the document borrows that name as its
+     placeholder rather than inventing a second vocabulary. */
+  const described = describeBlock(block);
+  const labels = new Map(described.map((field) => [field.path.join("."), field.label]));
+  /* What the rendering could not take over: numbers, media, links, flags — and
+     any inline leaf the renderer never draws (`offPage`). They stay a short
+     form under the block. */
+  const residual = described.filter((field) => field.kind !== "inline" || field.offPage === true);
+
   const row: DragRef = { list: "block", group: 0, index };
 
   return (
-    <section id={`block-${block.id}`} className={`${styles.blockCard} ${styles.dragRow}`} data-selected={selected || undefined} {...drag.rowProps(row)}>
-      <div className={styles.blockHead}>
+    <section
+      id={`block-${block.id}`}
+      className={`${styles.blockCard} ${styles.dragRow}`}
+      data-selected={selected || undefined}
+      /* SELECTION FOLLOWS THE CARET, not only the pointer. A prose block has no
+         read-only preview to click — its fields ARE its surface — so a click
+         handler on the preview selected every block except the one an author
+         spends most of their time in. Focus anywhere inside says «this is the
+         block I mean» for every type, and typing is the strongest possible
+         statement of that. */
+      onFocusCapture={onSelect}
+      {...drag.rowProps(row)}
+    >
+      {/* THE HANDLE RAIL, and it is not a header.
+          It used to be a permanent row above every block carrying the type in
+          mono caps — «МЕТА УРОКУ» over a lesson goal, «ТАБЛИЦЯ» over a table.
+          The block already says what it is by being one, so the label was a
+          line of filler on top of every block in the document, and the row it
+          sat in pushed the content down by its own height on every block.
+          What is left is the grip and the menu, in the margin, asked for by
+          pointing at the block or selecting it. */}
+      <div className={styles.blockRail} aria-hidden={undefined}>
         <BuilderGrip drag={drag} row={row} label={BLOCK_TYPE_LABELS[block.type]} />
-        <span className={styles.blockType}>{BLOCK_TYPE_LABELS[block.type]}</span>
-        <button className={styles.iconAction} type="button" onClick={onSelect} aria-label={`Властивості блоку «${BLOCK_TYPE_LABELS[block.type]}»`}>
-          <Icon name="edit" size={18} />
-        </button>
         <BuilderMenu
           label={`Дії з блоком «${BLOCK_TYPE_LABELS[block.type]}»`}
           items={[
+            {
+              label: "Властивості блоку",
+              icon: "settings" as const,
+              hint: "Налаштування блоку в панелі праворуч",
+              onSelect: onProperties,
+            },
             { label: "Підняти вище", icon: "arrow-up" as const, disabled: index === 0, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index - 1)) },
             { label: "Опустити нижче", icon: "arrow-down" as const, disabled: index === total - 1, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index + 1)) },
             {
@@ -855,17 +1132,60 @@ function BlockEditor({
           onChange={editField}
         />
       ) : (
-        <div className={styles.builderLearnerBlock} onClick={onSelect}>
-          <BlockRenderer
-            block={block}
-            checklist={{}}
-            onToggleChecklistItem={() => undefined}
-            disabled
-            courseSlug={courseSlug}
-            referenceTargets={referenceTargets}
-            referenceRoute="build"
-          />
-        </div>
+        <>
+          {/* THE BLOCK IS THE EDITOR. It is the learner's own rendering, with
+              every addressed text leaf handed back as a field — so a table is
+              typed in the table and a practice in the practice, at the size and
+              face they will be read at. There is no editable twin of these
+              thirteen types to drift away from the ones above. */}
+          <div className={styles.builderLearnerBlock} onClick={onSelect}>
+            <BlockRenderer
+              block={block}
+              checklist={{}}
+              onToggleChecklistItem={() => undefined}
+              disabled
+              courseSlug={courseSlug}
+              referenceTargets={referenceTargets}
+              referenceRoute="build"
+              authoring={{
+                field: (path, value) => (
+                  <BuilderInlineEditor
+                    bare
+                    phrasing
+                    key={path.join(".")}
+                    value={typeof value === "string" ? value : ""}
+                    label={labels.get(path.join(".")) ?? "Текст блоку"}
+                    placeholder={labels.get(path.join(".")) ?? "Текст"}
+                    references={referenceOptions}
+                    onChange={(next) => editField(path, next)}
+                  />
+                ),
+              }}
+            />
+          </div>
+          {/* THE FIELDS ARE AT THE BLOCK, not in a panel beside it.
+              They used to live in the right drawer, which meant editing the
+              words of a table happened three hundred pixels away from the
+              table — the author read one thing and typed into another, and
+              the block they were changing was behind whichever panel state
+              they had left open. Selecting the block opens them under it, in
+              the document, in the place the change will appear. The drawer
+              keeps what is genuinely a PROPERTY of the block rather than its
+              content. */}
+          {selected && residual.length > 0 ? (
+            <div className={styles.blockFields}>
+              {residual.map((field) => (
+                <FieldInput
+                  key={field.path.join(".")}
+                  field={field}
+                  value={readPath(block, field.path)}
+                  courseSlug={courseSlug}
+                  onChange={editField}
+                />
+              ))}
+            </div>
+          ) : null}
+        </>
       )}
 
       {block.type === "rich_text" ? <RepeatControls block={block} onChange={editField} /> : null}
@@ -1059,8 +1379,13 @@ function RichTextEditor({
                 control. The kind now lives in the menu, where it is reachable
                 by touch as well as by "/". */}
             <div className={styles.nodeHead}>
+              {/* The handle, and nothing else. The kind was written beside it
+                  in mono caps — «АБЗАЦ» over a paragraph, «СПИСОК» over a list
+                  — which is the same filler the block heads carried: a list has
+                  bullets and a subheading is bigger, so the label told the
+                  author what they were already looking at. The menu still says
+                  the kind, in the one place where it is a question. */}
               <BuilderGrip drag={drag} row={row} label={NODE_LABELS[node.kind]} />
-              <span className={styles.nodeKindName}>{NODE_LABELS[node.kind]}</span>
               <BuilderMenu
                 label={`Дії з ${NODE_LABELS[node.kind].toLowerCase()}`}
                 items={[

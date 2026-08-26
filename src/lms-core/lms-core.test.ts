@@ -12,7 +12,7 @@ import {
   lessonAvailability,
   resolveCurrentLesson,
 } from "./schedule";
-import { resolveEntitlement } from "./access";
+import { isEnrollmentExpired, resolveEntitlement } from "./access";
 
 function dailyCourse(): Course {
   const course = {
@@ -660,6 +660,28 @@ describe("entitlement", () => {
       manualGrants: [{ courseSlug: "reset-day", grantedAt: "2026-08-05T00:00:00Z" }],
     });
     expect(result).toMatchObject({ entitled: true, source: "manual" });
+  });
+});
+
+describe("enrollment deadline", () => {
+  const now = new Date("2026-08-26T12:00:00Z");
+
+  it("treats no deadline as access that does not end", () => {
+    expect(isEnrollmentExpired(null, now)).toBe(false);
+    expect(isEnrollmentExpired(undefined, now)).toBe(false);
+    expect(isEnrollmentExpired("", now)).toBe(false);
+  });
+
+  it("closes access at the deadline, not a day later", () => {
+    expect(isEnrollmentExpired("2026-08-26T11:59:59Z", now)).toBe(true);
+    expect(isEnrollmentExpired("2026-08-26T12:00:00Z", now)).toBe(true);
+    expect(isEnrollmentExpired("2026-08-26T12:00:01Z", now)).toBe(false);
+  });
+
+  it("keeps a learner in rather than locking them out over a malformed date", () => {
+    // A broken timestamp is a data bug; locking a paying learner out because of
+    // one is the worse of the two ways to be wrong.
+    expect(isEnrollmentExpired("whenever", now)).toBe(false);
   });
 });
 

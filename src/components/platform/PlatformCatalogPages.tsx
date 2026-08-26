@@ -5,9 +5,10 @@ import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
 import heroStyles from "@/components/platform/PlatformHeroStyles";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
-import { platformAggregateArtwork, platformMiniCourses, platformPageArtwork, platformProductOffers, platformProgramOffers } from "@/lib/platform/content";
+import { platformAggregateArtwork, platformMiniCourses, platformPageArtwork, platformProductOffers, platformProgramOffers, type PlatformOfferArtwork } from "@/lib/platform/content";
 import { activePlatformTests, plannedPlatformTests, testsHubCopy } from "@/lib/platform/tests";
 import { listStorefrontCourses } from "@/lib/platform/offers";
+import { offerEyebrow } from "@/lib/platform/offerPreview";
 import { getPlatformRoute } from "@/lib/surfaces/catalog";
 
 /**
@@ -108,7 +109,7 @@ export async function PlatformProgramsIndexPage() {
               <PlatformOfferCard
                 key={program.slug}
                 title={program.title}
-                tag={program.tag}
+                tag={offerEyebrow(program.tag, program.duration)}
                 description={program.description}
                 href={program.href}
                 visual={program.visual}
@@ -152,7 +153,7 @@ export async function PlatformProgramsIndexPage() {
               <PlatformOfferCard
                 key={program.slug}
                 title={program.title}
-                tag={program.tag}
+                tag={offerEyebrow(program.tag, program.duration)}
                 description={program.description}
                 href={program.href}
                 visual={program.visual}
@@ -316,11 +317,37 @@ export function PlatformTestsHubPage() {
   );
 }
 
-export function PlatformProductsIndexPage() {
+/**
+ * The three offers a herb buyer is most likely to be in the middle of.
+ *
+ * Named by slug, and looked up in BOTH shelves: reset-day left content.ts when
+ * its page became a builder route, and this rail silently lost a third of
+ * itself — a filter over the six literals cannot find a course that lives in
+ * the database. The list is the editorial decision; where each one is stored is
+ * not.
+ */
+const PRODUCT_RELATED_SLUGS = ["reset-day", "way21", "ideal-body"];
+
+export async function PlatformProductsIndexPage() {
   const featuredProduct = platformProductOffers[0];
-  const relatedPrograms = [...platformMiniCourses, ...platformProgramOffers].filter((program) =>
-    ["reset-day", "way21", "ideal-body"].includes(program.slug),
+  const authoredBySlug = new Map((await listStorefrontCourses()).map((course) => [course.slug, course]));
+  const staticBySlug = new Map(
+    [...platformMiniCourses, ...platformProgramOffers].map((program) => [
+      program.slug,
+      {
+        slug: program.slug,
+        title: program.title,
+        tag: offerEyebrow(program.tag, program.duration),
+        description: program.description,
+        href: program.href,
+        visual: program.visual,
+        artwork: program.artwork as PlatformOfferArtwork | undefined,
+      },
+    ]),
   );
+  const relatedPrograms = PRODUCT_RELATED_SLUGS.map(
+    (slug) => authoredBySlug.get(slug) ?? staticBySlug.get(slug),
+  ).filter((program) => program !== undefined);
   const heroStyle = {
     "--hero-photo-x": "50%",
     "--hero-photo-y": "16%",
@@ -407,7 +434,7 @@ export function PlatformProductsIndexPage() {
               <PlatformOfferCard
                 key={product.slug}
                 title={product.title}
-                tag={product.tag}
+                tag={offerEyebrow(product.tag, product.duration)}
                 description={product.description}
                 href={product.href}
                 visual={product.visual}

@@ -1,5 +1,7 @@
 # LMS reader navigation — mobile baseline
 
+Status: local implementation decision, pending longer-term product validation.
+
 ## Contract
 
 - Surface: learner lesson and the same renderer inside Zen Preview.
@@ -11,12 +13,23 @@
 
 ## Behaviour
 
-`Зміст` has one stable position above the lesson title. The footer renders only
-real sequential neighbours: reference and one-lesson pages have no pager; the
-first and last lessons show one full-width destination; middle lessons show
-both neighbours. Missing neighbours are never replaced with course contents.
+`Зміст` has one stable position above the lesson title and opens the existing
+course drawer. The footer renders only real sequential neighbours:
+
+| State | Footer |
+| --- | --- |
+| Reference page | hidden |
+| One sequential lesson | hidden |
+| First lesson | next only, full width |
+| Middle lesson | previous + next |
+| Last lesson | previous only, full width |
+
+A missing previous or next lesson is never replaced with a link to course
+contents. Reference pages remain outside the sequential lesson count.
 
 ## Validation
 
 - Unit matrix: `src/lib/lms/lessonNavigation.test.ts`.
-- Browser QA covers reference, first, middle and last lesson states in Zen Preview.
+- Manual mobile QA: 390 × 844 in Zen Preview.
+- Verified states in `ideal-body`: reference (`recipes`), first (`lesson-1`),
+  middle (`lesson-11`), and last (`lesson-21`).

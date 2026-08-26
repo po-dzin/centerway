@@ -4,7 +4,11 @@ export type LessonPagerLayout = {
   mode: "hidden" | "single" | "split";
 };
 
-/** Keeps the lesson footer honest by rendering only destinations that exist. */
+/**
+ * Keeps the lesson footer honest: it only renders destinations that exist.
+ * Reference pages sit outside the learning sequence and therefore never get a
+ * previous/next pager, even if a malformed payload were to contain neighbours.
+ */
 export function lessonPagerLayout({
   isReference,
   hasPrevious,

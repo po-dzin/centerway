@@ -5,7 +5,6 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 
 import { HandGraphic, Icon } from "@/components/Icon";
 import {
-  moveItem,
   newCourseFromTemplate,
   pruneEmptyProse,
   newLesson,
@@ -19,6 +18,7 @@ import {
   type Lesson,
 } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
+import { OFFER_CARD_TITLE_MAX, OFFER_TITLE_MAX, offerCardOverflow } from "@/lib/platform/offerPreview";
 import { BuilderFailureNotice, BuilderShell } from "./BuilderShell";
 import { BuilderMenu } from "./BuilderMenu";
 import { BuilderCourseSettings } from "./BuilderCourseSettings";
@@ -33,13 +33,22 @@ import {
   type BuilderFailure,
 } from "./builderClient";
 import { BuilderGrip } from "./BuilderGrip";
-import { BuilderInlineEditor } from "./BuilderInlineEditor";
 import { BuilderHistory } from "./BuilderHistory";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
+import { BuilderRecordField } from "./BuilderRecordField";
 import { useCourseHistory } from "./useCourseHistory";
 import { useCourseAutosave } from "./useCourseAutosave";
 import { rememberZenPreviewReturn, zenPreviewHref } from "@/components/lms/ZenPreviewShell";
-import { landingIndex, useRowDrag, type DragRef, type DropEdge, type RowDrag } from "./useRowDrag";
+import { useRowDrag, type DragRef, type DropEdge, type RowDrag } from "./useRowDrag";
+import {
+  LAST_LESSON_REFUSAL,
+  moveLessonTo,
+  moveModuleTo,
+  removeLesson,
+  removeModule,
+  stepLesson,
+  stepModule,
+} from "./structureMoves";
 import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
@@ -142,7 +151,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         "#course-structure": "content",
         "#course-release": "release",
       };
-      setWorkspaceMode(next[window.location.hash] ?? "content");
+      const mode = next[window.location.hash] ?? "content";
+      setWorkspaceMode(mode);
     };
     syncModeFromHash();
     window.addEventListener("hashchange", syncModeFromHash);
@@ -240,7 +250,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const moduleDrag = useRowDrag(
     useCallback(
       (from: DragRef, to: DragRef, edge: DropEdge) => {
-        editModules((current) => moveItem(current.modules, from.index, landingIndex(from.index, to.index, edge, true)));
+        editModules((current) => moveModuleTo(current.modules, from, to, edge));
       },
       [editModules]
     )
@@ -256,7 +266,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const lessonDrag = useRowDrag(
     useCallback(
       (from: DragRef, to: DragRef, edge: DropEdge) => {
-        editModules((current) => moveLessonTo(current, from, to, edge));
+        editModules((current) => moveLessonTo(current.modules, from, to, edge));
       },
       [editModules]
     ),
@@ -473,6 +483,9 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   // A published course can be edited as a next version. Its `course` is then
   // deliberately a draft while learners keep the stable live release.
   const published = state.data.liveStatus === "published";
+  /* How far past a card's line this title runs. Zero for every course on the
+     shelf today; the warning below only appears once one is written long. */
+  const titleOverflow = offerCardOverflow(course.title);
   const lessonCount = course.modules.reduce((total, module) => total + module.lessons.length, 0);
 
   return (
@@ -508,11 +521,10 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           blockerCount={readiness.blockers.length}
           activeMode={workspaceMode}
           onMode={selectWorkspaceMode}
-          collapsed={railCollapsed}
-          onCollapse={() => setRailCollapsed((current) => !current)}
         />
       }
-      asideCompact={railCollapsed}
+      asideCollapsed={railCollapsed}
+      onAsideToggle={() => setRailCollapsed((current) => !current)}
       onNavigate={navigate}
     >
       <BuilderVersionHistory
@@ -534,20 +546,34 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       <div className={styles.docHead}>
         <div className={styles.courseTitleRow}>
           <BuilderEditableTitle
+            register="record"
             value={course.title}
             label="Редагувати назву курсу"
+            maxLength={OFFER_TITLE_MAX}
             onChange={(value) => editCourse(["title"], value)}
           />
           <span className={published ? styles.pillPublished : styles.pill}>
             {published ? "Опубліковано" : "Чернетка"}
           </span>
         </div>
+        {/* TWO LIMITS, AND THEY ARE DIFFERENT KINDS OF LIMIT. The page cannot
+            clip, so its ceiling is hard and the field above simply stops at
+            OFFER_TITLE_MAX. A card CAN clip, so its ceiling is a warning: the
+            name is the author's, some names really are long, and an ellipsis on
+            a card is a smaller cost than a title they were not allowed to
+            write. What they may not have is the ellipsis as a surprise. */}
+        {titleOverflow > 0 ? (
+          <p className={styles.courseTitleHint}>
+            На картці в каталозі вміщається {OFFER_CARD_TITLE_MAX}{" "}
+            {plural(OFFER_CARD_TITLE_MAX, "символ", "символи", "символів")} — у назві на {titleOverflow}{" "}
+            {plural(titleOverflow, "символ", "символи", "символів")} більше. Там її буде обрізано.
+          </p>
+        ) : null}
         <div className={styles.pageLead}>
-          <BuilderInlineEditor
-            bare
+          <BuilderRecordField
             multiline
             value={course.summary}
-            label="Короткий опис курсу"
+            label="Редагувати короткий опис курсу"
             placeholder="Про що цей курс — одне-два речення."
             onChange={(next) => editCourse(["summary"], next)}
           />
@@ -616,7 +642,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       </div>
 
       <div className={styles.courseSettingsPanel}>
-        <h2 className={styles.panelTitle} id="course-overview-title">Загальні налаштування</h2>
+        <h2 className={styles.panelTitle} id="course-overview-title">Про курс</h2>
         <BuilderCourseSettings
           course={course}
           onChange={editCourse}
@@ -735,7 +761,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </section>
       </section>
 
-      {workspaceMode !== "release" || dirty || pendingHref ? <div className={`${styles.saveBar} ${styles.courseSaveBar}`} data-pending={pendingHref ? "" : undefined}>
+      <div className={`${styles.saveBar} ${styles.courseSaveBar}`} data-pending={pendingHref ? "" : undefined}>
         {pendingHref ? (
           <span className={styles.saveState} role="status" aria-live="polite">
             Зберігаємо зміни перед переходом…
@@ -751,7 +777,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             </button>
           </>
         )}
-      </div> : null}
+      </div>
     </BuilderShell>
   );
 }
@@ -761,29 +787,25 @@ function BuilderCourseRail({
   blockerCount,
   activeMode,
   onMode,
-  collapsed,
-  onCollapse,
 }: {
   published: boolean;
   blockerCount: number;
   activeMode: WorkspaceMode;
   onMode: (mode: WorkspaceMode) => void;
-  collapsed: boolean;
-  onCollapse: () => void;
 }) {
   return (
-    <div className={styles.courseRail} data-collapsed={collapsed || undefined}>
+    <div className={styles.courseRail}>
       <nav className={styles.courseRailNav} aria-label="Розділи курсу">
-        <a className={styles.courseRailLink} href="#course-overview" aria-label="Курс" title={collapsed ? "Курс" : undefined} aria-current={activeMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("course"); }}>
+        <a className={styles.courseRailLink} href="#course-overview" aria-label="Курс" aria-current={activeMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("course"); }}>
           <span className={styles.courseRailIcon}><Icon name="guide" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
           <BuilderInkLabel>Курс</BuilderInkLabel>
         </a>
-        <a className={styles.courseRailLink} href="#course-structure" aria-label="Зміст" title={collapsed ? "Зміст" : undefined} aria-current={activeMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("content"); }}>
+        <a className={styles.courseRailLink} href="#course-structure" aria-label="Зміст" aria-current={activeMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("content"); }}>
           <span className={styles.courseRailIcon}><Icon name="view-rows" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
           <BuilderInkLabel>Зміст</BuilderInkLabel>
         </a>
-        <a className={styles.courseRailLink} href="#course-release" aria-label="Публікація" title={collapsed ? "Публікація" : undefined} aria-current={activeMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("release"); }}>
-          <span className={styles.courseRailIcon}><Icon name="motion" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
+        <a className={styles.courseRailLink} href="#course-release" aria-label="Публікація" aria-current={activeMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("release"); }}>
+          <span className={styles.courseRailIcon}><Icon name="shield-check" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
           <BuilderInkLabel>Публікація</BuilderInkLabel>
         </a>
       </nav>
@@ -792,15 +814,11 @@ function BuilderCourseRail({
           <HandGraphic className={styles.courseRailStatusDot} name="dot" size={12} />
           {published ? "Опубліковано" : "Чернетка"}
         </span>
-        <a className={styles.courseRailStatusLine} href="#course-release" onClick={(event) => { event.preventDefault(); onMode("release"); }}>
+        <span className={styles.courseRailStatusLine}>
           <HandGraphic className={styles.courseRailStatusDotBoundary} name="dot" size={12} />
           {blockerCount} {plural(blockerCount, "блокер", "блокери", "блокерів")}
-        </a>
+        </span>
       </div>
-      <button className={styles.courseRailCollapse} type="button" aria-label={collapsed ? "Розгорнути навігацію" : "Згорнути навігацію до іконок"} aria-pressed={collapsed} onClick={onCollapse}>
-        <Icon name={collapsed ? "arrow-right" : "arrow-left"} size={18} />
-        <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
-      </button>
     </div>
   );
 }
@@ -829,27 +847,6 @@ function normalize(course: Course): Course {
     return next;
   }
   return course;
-}
-
-/**
- * A dropped lesson, placed in the module it was dropped into.
- *
- * The one refusal is the same one the arrows carry: a module cannot be emptied
- * by a move, because `validateCourse` requires at least one lesson in each and
- * the author would meet that as a save error long after the gesture. Dropping
- * the last lesson of a module elsewhere simply does not take.
- */
-function moveLessonTo(course: Course, from: DragRef, to: DragRef, edge: DropEdge): CourseModule[] {
-  const modules = course.modules.map((entry) => ({ ...entry, lessons: [...entry.lessons] }));
-  const source = modules[from.group];
-  const target = modules[to.group];
-  if (!source || !target) return modules;
-  if (source !== target && source.lessons.length === 1) return modules;
-
-  const insert = landingIndex(from.index, to.index, edge, source === target);
-  const [moved] = source.lessons.splice(from.index, 1);
-  target.lessons.splice(insert, 0, moved);
-  return modules;
 }
 
 function ModuleEditor({
@@ -888,50 +885,19 @@ function ModuleEditor({
     .map((lesson) => trailTitle(lesson.title, "Урок без назви"))
     .join(" · ");
 
-  /**
-   * Moves a lesson, ACROSS module boundaries when it is at an edge.
-   *
-   * Pressing "down" on the last lesson of a module means "put it in the next
-   * one" — that is where the author is looking and it is the move a course
-   * actually needs when a week grows by a day. Stopping at the boundary would
-   * make regrouping lessons impossible without deleting and retyping them.
-   */
   const moveLesson = (lessonIndex: number, delta: number) => {
-    onModules((current) => {
-      const modules = current.modules.map((entry) => ({ ...entry, lessons: [...entry.lessons] }));
-      const from = modules[moduleIndex];
-      const target = lessonIndex + delta;
-
-      if (target >= 0 && target < from.lessons.length) {
-        from.lessons = moveItem(from.lessons, lessonIndex, target);
-        return modules;
-      }
-
-      const neighbourIndex = moduleIndex + delta;
-      if (neighbourIndex < 0 || neighbourIndex >= modules.length) return modules;
-      // A module cannot be emptied by a move: `validateCourse` requires at
-      // least one lesson in each, and the author would find out at save time.
-      if (from.lessons.length === 1) return modules;
-
-      const [moved] = from.lessons.splice(lessonIndex, 1);
-      const neighbour = modules[neighbourIndex];
-      neighbour.lessons.splice(delta > 0 ? 0 : neighbour.lessons.length, 0, moved);
-      return modules;
-    });
+    onModules((current) => stepLesson(current.modules, moduleIndex, lessonIndex, delta) ?? current.modules);
   };
 
   const deleteLesson = (lessonIndex: number) => {
-    if (module.lessons.length === 1) {
-      onNote("Останній урок модуля не видаляється — видаліть модуль цілком.");
-      return;
-    }
-    onModules((current) =>
-      current.modules.map((entry, index) =>
-        index === moduleIndex
-          ? { ...entry, lessons: entry.lessons.filter((_, position) => position !== lessonIndex) }
-          : entry
-      )
-    );
+    onModules((current) => {
+      const next = removeLesson(current.modules, moduleIndex, lessonIndex);
+      if (!next) {
+        onNote(LAST_LESSON_REFUSAL);
+        return current.modules;
+      }
+      return next;
+    });
   };
 
   const moduleRow: DragRef = { list: "module", group: 0, index: moduleIndex };
@@ -966,6 +932,7 @@ function ModuleEditor({
         </button>
         <BuilderEditableTitle
           compact
+          register="record"
           level="h3"
           value={module.title}
           label={`Редагувати назву модуля ${moduleIndex + 1}`}
@@ -981,13 +948,13 @@ function ModuleEditor({
               label: "Підняти вище",
               icon: "arrow-up",
               disabled: moduleIndex === 0,
-              onSelect: () => onModules((current) => moveItem(current.modules, moduleIndex, moduleIndex - 1)),
+              onSelect: () => onModules((current) => stepModule(current.modules, moduleIndex, -1) ?? current.modules),
             },
             {
               label: "Опустити нижче",
               icon: "arrow-down",
               disabled: moduleIndex === course.modules.length - 1,
-              onSelect: () => onModules((current) => moveItem(current.modules, moduleIndex, moduleIndex + 1)),
+              onSelect: () => onModules((current) => stepModule(current.modules, moduleIndex, 1) ?? current.modules),
             },
             {
               label: module.reference ? "Повернути в послідовність" : "Зробити довідковим",
@@ -1002,7 +969,7 @@ function ModuleEditor({
               // the author would meet that as a save error instead of a
               // disabled item.
               disabled: isOnlyModule,
-              onSelect: () => onModules((current) => current.modules.filter((_, index) => index !== moduleIndex)),
+              onSelect: () => onModules((current) => removeModule(current.modules, moduleIndex) ?? current.modules),
             },
           ]}
         />

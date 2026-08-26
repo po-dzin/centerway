@@ -55,7 +55,7 @@ export function ProductDetailPage({ product }: { product: Product }) {
         templateKind: "product",
         primaryAction: {
           href: "#product-support",
-          label: commerce.mode === "checkout" ? `Купити за ${commerce.price}` : "Перейти до запиту",
+          label: commerce.mode === "checkout" ? "Купити" : "Перейти до запиту",
         },
         secondaryAction: {
           href: "#product-details",

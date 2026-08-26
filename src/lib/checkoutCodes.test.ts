@@ -52,7 +52,9 @@ describe("course product codes in the payment path", () => {
     expect(catalogOffer("short").code).toBe("short");
   });
 
-  it("returns a course purchase to the platform confirmation", () => {
+  it("returns a paid builder course to its own offer page", () => {
+    // The pair the invoice is issued against is unchanged — only where a
+    // SUCCESSFUL return is pointed moved, and it is built on this origin.
     expect(productReturnUrls("course:my-course")).toEqual({
       approvedUrl: PLATFORM_THANKS_URL,
       declinedUrl: PLATFORM_FAILED_URL,
@@ -61,9 +63,19 @@ describe("course product codes in the payment path", () => {
     const paid = new URL(
       buildReturnDestination("paid", "course:my-course", "course-my-course_20260822_ab12", {}, 0)
     );
-    expect(paid.pathname).toBe("/pay/thanks");
+    // The slug is recovered from the CODE, never from the order reference: the
+    // colon cannot survive a provider URL, so the reference carries
+    // `course-my-course` and a slug of its own may contain dashes. Splitting
+    // that back apart is ambiguous by construction; the code is not.
+    expect(paid.pathname).toBe("/programs/my-course");
+    expect(paid.origin).toBe(new URL(PLATFORM_THANKS_URL).origin);
     expect(paid.searchParams.get("product")).toBe("course:my-course");
     expect(paid.searchParams.get("order_ref")).toBe("course-my-course_20260822_ab12");
+
+    const failed = new URL(
+      buildReturnDestination("failed", "course:my-course", "course-my-course_20260822_ab12", {}, 0)
+    );
+    expect(failed.pathname).toBe("/pay/failed");
   });
 });
 

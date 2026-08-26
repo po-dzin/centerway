@@ -1,10 +1,18 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
     AccessError,
-    grantCourse,
+    blockCourse,
+    isGrantSource,
+    isPaymentCurrency,
     listLearners,
+    normalizeDeadline,
+    provisionAccess,
+    reactivateCourse,
     revokeCourse,
+    setEnrollmentDeadline,
+    unblockCourse,
     type LearnerStatus,
+    type PaymentCurrency,
 } from "@/lib/admin/access";
 import {
     badRequestResponse,
@@ -51,26 +59,124 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// POST /api/admin/access/learners { email, course }
+type ProvisionBody = {
+    email?: string;
+    course?: string;
+    fullName?: string;
+    /** `YYYY-MM-DD` from the panel's date input, or an ISO instant. Empty clears. */
+    expiresAt?: string | null;
+    createAccount?: boolean;
+    payment?: { amount?: unknown; currency?: unknown; note?: string } | null;
+    /** `manual` (default), `bonus` or `promotion` — why this seat exists. */
+    source?: string;
+};
+
+// POST /api/admin/access/learners { email, course, fullName?, expiresAt?, createAccount?, payment? }
 export async function POST(req: NextRequest) {
     const session = await requireAdminSession(req);
     if (!session) return unauthorizedResponse();
 
-    const body = (await req.json().catch(() => ({}))) as { email?: string; course?: string };
+    const body = (await req.json().catch(() => ({}))) as ProvisionBody;
     if (!body.email || !body.course) return badRequestResponse("email_and_course_required");
 
+    const deadline = normalizeDeadline(body.expiresAt);
+    if (!deadline.ok) return badRequestResponse("expires_at_invalid");
+
+    // Payment is optional — a review grant or a gift carries no money — but a
+    // half-typed one is rejected rather than silently dropped: an operator who
+    // entered an amount and gets access without an order would only find the
+    // missing sale in a revenue report weeks later.
+    let payment: { amount: number; currency: PaymentCurrency; note?: string | null } | null = null;
+    if (body.payment && body.payment.amount !== undefined && body.payment.amount !== null && body.payment.amount !== "") {
+        const amount = Number(body.payment.amount);
+        if (!Number.isFinite(amount) || amount <= 0) return badRequestResponse("amount_invalid");
+        if (!isPaymentCurrency(body.payment.currency)) return badRequestResponse("currency_invalid");
+        payment = { amount, currency: body.payment.currency, note: body.payment.note ?? null };
+    }
+
     try {
-        const result = await grantCourse({
+        const result = await provisionAccess({
             email: body.email,
+            fullName: body.fullName ?? null,
             courseSlug: body.course,
+            expiresAt: deadline.value,
+            source: isGrantSource(body.source) ? body.source : undefined,
+            createAccount: Boolean(body.createAccount),
+            payment,
             actorId: session.user.id,
         });
         return NextResponse.json({
-            created: result.created,
-            enrollmentId: result.enrollmentId,
+            created: result.grant.created,
+            accountCreated: result.accountCreated,
+            orderRef: result.payment?.orderRef ?? null,
+            expiresAt: result.grant.expiresAt,
+            enrollmentId: result.grant.enrollmentId,
             email: result.account.email,
-            course: { slug: result.course.slug, title: result.course.title, status: result.course.status },
+            course: {
+                slug: result.grant.course.slug,
+                title: result.grant.course.title,
+                status: result.grant.course.status,
+            },
         });
+    } catch (error) {
+        return failed(error);
+    }
+}
+
+/**
+ * PATCH /api/admin/access/learners { enrollmentId, action?, expiresAt?, reason? }
+ *
+ * One endpoint for every change to an existing seat, because they are one
+ * decision to the operator: move the date, close it, open it again, ban.
+ * `action` defaults to `deadline`, which is what this route did before the
+ * others existed — an old client keeps working.
+ */
+const ACTIONS = ["deadline", "revoke", "reactivate", "block", "unblock"] as const;
+type Action = (typeof ACTIONS)[number];
+
+export async function PATCH(req: NextRequest) {
+    const session = await requireAdminSession(req);
+    if (!session) return unauthorizedResponse();
+
+    const body = (await req.json().catch(() => ({}))) as {
+        enrollmentId?: string;
+        action?: string;
+        expiresAt?: string | null;
+        reason?: string | null;
+    };
+    if (!body.enrollmentId) return badRequestResponse("enrollment_id_required");
+
+    const action = (body.action ?? "deadline") as Action;
+    if (!ACTIONS.includes(action)) return badRequestResponse("action_invalid");
+
+    const actorId = session.user.id;
+    const enrollmentId = body.enrollmentId;
+
+    try {
+        if (action === "revoke") {
+            return NextResponse.json(await revokeCourse({ enrollmentId, actorId, reason: body.reason ?? null }));
+        }
+        if (action === "block") {
+            return NextResponse.json(await blockCourse({ enrollmentId, actorId, reason: body.reason ?? null }));
+        }
+        if (action === "unblock") {
+            return NextResponse.json(await unblockCourse({ enrollmentId, actorId }));
+        }
+
+        const deadline = normalizeDeadline(body.expiresAt);
+        if (!deadline.ok) return badRequestResponse("expires_at_invalid");
+
+        if (action === "reactivate") {
+            // `expiresAt` absent means "leave the date alone"; an empty string
+            // clears it. `normalizeDeadline` collapses both to null, so the raw
+            // body decides which of the two the operator meant.
+            const expiresAt = body.expiresAt === undefined ? undefined : deadline.value;
+            return NextResponse.json(await reactivateCourse({ enrollmentId, actorId, expiresAt }));
+        }
+
+        return NextResponse.json(
+            await setEnrollmentDeadline({ enrollmentId, expiresAt: deadline.value, actorId })
+        );
     } catch (error) {
         return failed(error);
     }

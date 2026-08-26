@@ -17,13 +17,21 @@ vi.mock("@/lib/auth/adminClient", () => ({
 
 const {
     AccessError,
+    createAccount,
+    listAccounts,
     grantCourse,
     listCourses,
     listLearners,
     listRoles,
+    provisionAccess,
+    recordManualPayment,
+    blockCourse,
+    reactivateCourse,
     revokeCourse,
+    unblockCourse,
     sanitizeSearch,
     setCourseAuthor,
+    setEnrollmentDeadline,
     setRole,
 } = await import("./access");
 
@@ -66,9 +74,15 @@ function seed() {
             { user_id: "auth-coach", role: "coach", updated_at: daysAgo(10) },
             { user_id: "auth-1", role: "user", updated_at: daysAgo(5) },
         ],
+        customers: [
+            { id: "cus-1", email: "learner@example.com", auth_user_id: null, created_at: daysAgo(70) },
+        ],
+        orders: [],
         audit_log: [],
     };
     db.failures = {};
+    db.authUsers = [];
+    db.authCreateError = null;
 }
 
 const auditRows = () => db.rows("audit_log");
@@ -270,18 +284,367 @@ describe("grantCourse", () => {
     });
 });
 
+describe("listAccounts", () => {
+    it("lists everyone with an account, including people no other tab can show", async () => {
+        const { items, total } = await listAccounts({ limit: 50, offset: 0 });
+
+        // Five accounts are seeded; only two hold an elevated role and only
+        // three hold a course, which is exactly why this list has to exist.
+        expect(total).toBe(5);
+        const emails = items.map((row) => row.email);
+        expect(emails).toContain("fresh@example.com");
+        expect(emails).toContain("coach@example.com");
+    });
+
+    it("carries the role, the course count and the purchase count", async () => {
+        db.tables.orders.push(
+            { order_ref: "ord-a", product_code: "reset-day", status: "paid", customer_id: "cus-1", created_at: daysAgo(9) },
+            // Not paid: an abandoned checkout is not a purchase.
+            { order_ref: "ord-b", product_code: "reset-day", status: "created", customer_id: "cus-1", created_at: daysAgo(8) }
+        );
+
+        const { items } = await listAccounts({ limit: 50, offset: 0 });
+        const byEmail = new Map(items.map((row) => [row.email, row]));
+
+        expect(byEmail.get("learner@example.com")).toMatchObject({
+            role: "user",
+            enrollments: 1,
+            purchases: 1,
+        });
+        expect(byEmail.get("coach@example.com")).toMatchObject({ role: "coach", enrollments: 0, purchases: 0 });
+        // No `user_roles` row at all — most people — reads as null, not as a
+        // missing account.
+        expect(byEmail.get("fresh@example.com")).toMatchObject({ role: null, enrollments: 1 });
+    });
+
+    it("counts a purchase made before the account existed, matched by email", async () => {
+        // `customers.auth_user_id` is NULL until the buyer signs in; counting
+        // only linked rows would report 0 for the very people support looks up.
+        db.tables.customers.push({ id: "cus-2", email: "fresh@example.com", auth_user_id: null, created_at: daysAgo(20) });
+        db.tables.orders.push({ order_ref: "ord-c", product_code: "way21", status: "paid", customer_id: "cus-2", created_at: daysAgo(19) });
+
+        const { items } = await listAccounts({ limit: 50, offset: 0 });
+        expect(items.find((row) => row.email === "fresh@example.com")).toMatchObject({ purchases: 1 });
+    });
+
+    it("leaves a customer row that belongs to another account alone", async () => {
+        db.tables.customers.push({ id: "cus-3", email: "fresh@example.com", auth_user_id: "auth-someone-else", created_at: daysAgo(20) });
+        db.tables.orders.push({ order_ref: "ord-d", product_code: "way21", status: "paid", customer_id: "cus-3", created_at: daysAgo(19) });
+
+        const { items } = await listAccounts({ limit: 50, offset: 0 });
+        expect(items.find((row) => row.email === "fresh@example.com")).toMatchObject({ purchases: 0 });
+    });
+
+    it("searches by email and by name, and reports the full count for paging", async () => {
+        const byEmail = await listAccounts({ q: "coach@", limit: 50, offset: 0 });
+        expect(byEmail.items.map((row) => row.email)).toEqual(["coach@example.com"]);
+
+        const byName = await listAccounts({ q: "Never Started", limit: 50, offset: 0 });
+        expect(byName.items.map((row) => row.email)).toEqual(["fresh@example.com"]);
+
+        const firstPage = await listAccounts({ limit: 2, offset: 0 });
+        expect(firstPage.items).toHaveLength(2);
+        expect(firstPage.total).toBe(5);
+    });
+
+    it("returns an empty page rather than everyone when nothing matches", async () => {
+        expect(await listAccounts({ q: "nobody-here", limit: 50, offset: 0 })).toEqual({ items: [], total: 0 });
+    });
+});
+
+describe("setEnrollmentDeadline", () => {
+    it("writes the deadline and records both ends of the change", async () => {
+        const result = await setEnrollmentDeadline({
+            enrollmentId: "enr-1",
+            expiresAt: "2026-09-30T23:59:59.999Z",
+            actorId: ADMIN,
+        });
+
+        expect(result).toMatchObject({ courseSlug: "reset-day", email: "learner@example.com" });
+        const enrollment = db.rows("lms_enrollments").find((row) => row.id === "enr-1") as Row;
+        expect(enrollment.expires_at).toBe("2026-09-30T23:59:59.999Z");
+
+        expect(auditRows()[0]).toMatchObject({ action: "access.course.deadline", entity_id: "enr-1" });
+        expect((auditRows()[0] as { metadata: Row }).metadata).toMatchObject({
+            expires_at_before: null,
+            expires_at_after: "2026-09-30T23:59:59.999Z",
+        });
+    });
+
+    it("clears a deadline without touching the progress the learner already has", async () => {
+        await setEnrollmentDeadline({ enrollmentId: "enr-1", expiresAt: "2026-09-01T00:00:00.000Z", actorId: ADMIN });
+        await setEnrollmentDeadline({ enrollmentId: "enr-1", expiresAt: null, actorId: ADMIN });
+
+        expect((db.rows("lms_enrollments").find((row) => row.id === "enr-1") as Row).expires_at).toBeNull();
+        expect(db.rows("lms_progress_events").filter((row) => row.enrollment_id === "enr-1")).toHaveLength(2);
+        expect((auditRows()[1] as { metadata: Row }).metadata).toMatchObject({
+            expires_at_before: "2026-09-01T00:00:00.000Z",
+            expires_at_after: null,
+        });
+    });
+
+    it("refuses an enrollment that is not there", async () => {
+        await expect(
+            setEnrollmentDeadline({ enrollmentId: "enr-gone", expiresAt: null, actorId: ADMIN })
+        ).rejects.toMatchObject({ message: "enrollment_not_found", status: 404 });
+    });
+});
+
+describe("createAccount", () => {
+    it("mints an account for an email that has never signed in, with the address confirmed", async () => {
+        const result = await createAccount({ email: "New@Example.com", fullName: " Ann ", actorId: ADMIN });
+
+        expect(result.created).toBe(true);
+        // Confirmed, because purchase linking matches by email ONLY when the
+        // provider verified it — an unconfirmed account would own nothing.
+        expect(db.authUsers[0]).toMatchObject({ email: "new@example.com", emailConfirmed: true });
+
+        const profile = db.rows("platform_users").find((row) => row.email === "new@example.com") as Row;
+        expect(profile).toMatchObject({ auth_user_id: result.account.authUserId, full_name: "Ann", provider: "manual" });
+        expect(auditRows()[0]).toMatchObject({ action: "access.account.create" });
+    });
+
+    it("leaves an existing account alone rather than making a second one", async () => {
+        const result = await createAccount({ email: "LEARNER@example.com", actorId: ADMIN });
+
+        expect(result).toMatchObject({ created: false });
+        expect(result.account.authUserId).toBe("auth-1");
+        expect(db.authUsers).toHaveLength(0);
+        expect(auditRows()).toHaveLength(0);
+    });
+
+    it("surfaces a failure from the auth API instead of writing a profile for nobody", async () => {
+        db.authCreateError = "email address already registered";
+        await expect(createAccount({ email: "new@example.com", actorId: ADMIN })).rejects.toMatchObject({ status: 500 });
+        expect(db.rows("platform_users").some((row) => row.email === "new@example.com")).toBe(false);
+    });
+});
+
+describe("recordManualPayment", () => {
+    it("writes a paid order against the buyer's customer row and marks it manual", async () => {
+        const result = await recordManualPayment({
+            email: "learner@example.com",
+            productCode: "course:reset-day",
+            amount: 1200,
+            currency: "UAH",
+            note: "bank transfer",
+            authUserId: "auth-1",
+            actorId: ADMIN,
+        });
+
+        expect(result.orderRef.startsWith("manual_course-reset-day_")).toBe(true);
+        const order = db.rows("orders")[0];
+        expect(order).toMatchObject({
+            order_ref: result.orderRef,
+            product_code: "course:reset-day",
+            amount: 1200,
+            currency: "UAH",
+            status: "paid",
+            customer_id: "cus-1",
+        });
+
+        // The customer row existed but belonged to nobody; linking it is what
+        // makes the purchase visible to the LMS and the profile.
+        expect((db.rows("customers")[0] as Row).auth_user_id).toBe("auth-1");
+        expect(auditRows()[0]).toMatchObject({ action: "order.manual.record", entity_id: result.orderRef });
+    });
+
+    it("creates the customer row when this email has never bought anything", async () => {
+        await recordManualPayment({
+            email: "fresh@example.com",
+            productCode: "course:way21",
+            amount: 500,
+            currency: "USD",
+            authUserId: "auth-3",
+            actorId: ADMIN,
+        });
+
+        const customer = db.rows("customers").find((row) => row.email === "fresh@example.com") as Row;
+        expect(customer).toMatchObject({ auth_user_id: "auth-3" });
+    });
+
+    it("never re-points a customer row that already belongs to someone else", async () => {
+        (db.rows("customers")[0] as Row).auth_user_id = "auth-someone-else";
+
+        await recordManualPayment({
+            email: "learner@example.com",
+            productCode: "course:reset-day",
+            amount: 100,
+            currency: "UAH",
+            authUserId: "auth-1",
+            actorId: ADMIN,
+        });
+
+        expect((db.rows("customers")[0] as Row).auth_user_id).toBe("auth-someone-else");
+    });
+
+    it("refuses an amount that is not money", async () => {
+        for (const amount of [0, -5, Number.NaN]) {
+            await expect(
+                recordManualPayment({
+                    email: "learner@example.com",
+                    productCode: "course:reset-day",
+                    amount,
+                    currency: "UAH",
+                    actorId: ADMIN,
+                })
+            ).rejects.toMatchObject({ message: "amount_invalid" });
+        }
+        expect(db.rows("orders")).toHaveLength(0);
+    });
+});
+
+describe("provisionAccess", () => {
+    it("makes the account, records the money, then opens the course — in that order", async () => {
+        const result = await provisionAccess({
+            email: "buyer@example.com",
+            fullName: "Buyer",
+            courseSlug: "reset-day",
+            expiresAt: "2026-09-30T23:59:59.999Z",
+            createAccount: true,
+            payment: { amount: 1200, currency: "UAH", note: "cash" },
+            actorId: ADMIN,
+        });
+
+        expect(result.accountCreated).toBe(true);
+        expect(result.payment?.orderRef).toBeTruthy();
+        expect(result.grant.created).toBe(true);
+
+        const enrollment = db.rows("lms_enrollments").find((row) => row.id === result.grant.enrollmentId) as Row;
+        expect(enrollment).toMatchObject({ source: "manual", expires_at: "2026-09-30T23:59:59.999Z" });
+
+        // The order is charged under the course's own offer code, which
+        // `resolveEntitlement` always accepts — so the buyer owns the course by
+        // purchase, not only by the operator's word.
+        expect((db.rows("orders")[0] as Row).product_code).toBe("course:reset-day");
+        // The customer row is linked to the new account, so entitlement finds it.
+        const customer = db.rows("customers").find((row) => row.email === "buyer@example.com") as Row;
+        expect(customer.auth_user_id).toBe(result.account.authUserId);
+    });
+
+    it("grants without money when there was none — a gift or a review copy", async () => {
+        const result = await provisionAccess({
+            email: "fresh@example.com",
+            courseSlug: "reset-day",
+            actorId: ADMIN,
+        });
+
+        expect(result).toMatchObject({ accountCreated: false, payment: null });
+        expect(db.rows("orders")).toHaveLength(0);
+    });
+
+    it("applies a deadline typed for someone who is already enrolled", async () => {
+        const result = await provisionAccess({
+            email: "learner@example.com",
+            courseSlug: "reset-day",
+            expiresAt: "2026-10-15T23:59:59.999Z",
+            actorId: ADMIN,
+        });
+
+        // Enrolment unchanged, but half the request — "until this date" — was
+        // not yet true, so it is applied rather than silently dropped.
+        expect(result.grant.created).toBe(false);
+        expect((db.rows("lms_enrollments").find((row) => row.id === "enr-1") as Row).expires_at).toBe(
+            "2026-10-15T23:59:59.999Z"
+        );
+    });
+
+    it("refuses an unknown account before writing an order for it", async () => {
+        await expect(
+            provisionAccess({
+                email: "ghost@example.com",
+                courseSlug: "reset-day",
+                payment: { amount: 900, currency: "UAH" },
+                actorId: ADMIN,
+            })
+        ).rejects.toMatchObject({ message: "account_not_found" });
+        expect(db.rows("orders")).toHaveLength(0);
+    });
+
+    it("refuses an unknown course before writing an order for it", async () => {
+        // The failure `grantCourse` would hit anyway — checked here, before the
+        // sale, so a typo'd slug never leaves a charge with nothing behind it.
+        await expect(
+            provisionAccess({
+                email: "learner@example.com",
+                courseSlug: "no-such-course",
+                payment: { amount: 900, currency: "UAH" },
+                actorId: ADMIN,
+            })
+        ).rejects.toMatchObject({ message: "course_not_found" });
+        expect(db.rows("orders")).toHaveLength(0);
+    });
+
+    it("refuses a banned seat before writing an order for it", async () => {
+        db.tables.lms_enrollments = [
+            ...db.rows("lms_enrollments"),
+            { id: "enr-blocked", course_id: "course-reset", auth_user_id: "auth-3", source: "manual", order_ref: null, started_at: daysAgo(10), expires_at: null, blocked_at: daysAgo(1) },
+        ];
+
+        // Same reasoning as the unknown-course case: a ban is a known, checkable
+        // reason `grantCourse` would refuse this grant, so it is caught before
+        // the money is written rather than after — a retry from the operator
+        // must not record a second charge for a seat that still won't open.
+        await expect(
+            provisionAccess({
+                email: "fresh@example.com",
+                courseSlug: "reset-day",
+                payment: { amount: 900, currency: "UAH" },
+                actorId: ADMIN,
+            })
+        ).rejects.toMatchObject({ message: "enrollment_blocked" });
+        expect(db.rows("orders")).toHaveLength(0);
+    });
+});
+
 describe("revokeCourse", () => {
-    it("deletes the enrollment and records how much progress went with it", async () => {
+    /* WHY THE ROW SURVIVES. Deleting it destroyed the learner's progress AND
+       undid the revoke: entitlement is derived from paid orders, which stay, so
+       the next visit re-created the enrollment. The status is what the door
+       reads now, and it outranks the purchase that paid for it. */
+    it("closes the seat without deleting it or the progress behind it", async () => {
         const result = await revokeCourse({ enrollmentId: "enr-1", actorId: ADMIN });
 
         expect(result).toMatchObject({
             courseSlug: "reset-day",
             email: "learner@example.com",
-            progressEventsDeleted: 2,
+            status: "revoked",
         });
-        expect(db.rows("lms_enrollments").some((row) => row.id === "enr-1")).toBe(false);
+
+        const row = db.rows("lms_enrollments").find((item) => item.id === "enr-1");
+        expect(row?.status).toBe("revoked");
+        expect(row?.revoked_at).toEqual(expect.any(String));
+        expect(db.rows("lms_progress_events").filter((item) => item.enrollment_id === "enr-1")).toHaveLength(2);
         expect(auditRows()[0]).toMatchObject({ action: "access.course.revoke", entity_id: "enr-1" });
-        expect((auditRows()[0] as { metadata: Row }).metadata).toMatchObject({ progress_events_deleted: 2 });
+    });
+
+    it("is lifted by reactivation, and the progress is still there", async () => {
+        await revokeCourse({ enrollmentId: "enr-1", actorId: ADMIN });
+        const result = await reactivateCourse({ enrollmentId: "enr-1", actorId: ADMIN });
+
+        expect(result).toMatchObject({ courseSlug: "reset-day", status: "active" });
+        const row = db.rows("lms_enrollments").find((item) => item.id === "enr-1");
+        expect(row?.status).toBe("active");
+        expect(row?.revoked_at).toBeNull();
+        expect(db.rows("lms_progress_events").filter((item) => item.enrollment_id === "enr-1")).toHaveLength(2);
+    });
+
+    /* A ban is the state a payment cannot argue with, so it is also the state a
+       grant cannot silently overwrite. */
+    it("refuses to reactivate or re-grant a banned seat", async () => {
+        await blockCourse({ enrollmentId: "enr-1", actorId: ADMIN, reason: "chargeback" });
+
+        await expect(reactivateCourse({ enrollmentId: "enr-1", actorId: ADMIN })).rejects.toMatchObject({
+            message: "enrollment_blocked",
+            status: 409,
+        });
+        await expect(
+            grantCourse({ email: "learner@example.com", courseSlug: "reset-day", actorId: ADMIN })
+        ).rejects.toMatchObject({ message: "enrollment_blocked" });
+
+        await unblockCourse({ enrollmentId: "enr-1", actorId: ADMIN });
+        const row = db.rows("lms_enrollments").find((item) => item.id === "enr-1");
+        expect(row?.blocked_at).toBeNull();
     });
 
     it("refuses an enrollment that is not there", async () => {

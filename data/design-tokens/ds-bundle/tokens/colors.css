@@ -62,6 +62,7 @@
   --cw-text-tertiary: color-mix(in srgb, var(--cw-muted) 82%, #ffffff 18%);
   --cw-border-strong: color-mix(in srgb, var(--cw-border) 68%, var(--cw-text) 32%);
   --cw-accent-strong: color-mix(in srgb, var(--cw-accent) 78%, #3a2a22 22%);
+  --cw-container-inset: max(1rem, calc((100% - var(--cw-max-width)) / 2));
   --cw-platform-visual-movement-start: #17332d;
   --cw-platform-visual-movement-mid: #25473f;
   --cw-platform-visual-movement-end: #102621;
@@ -112,6 +113,10 @@
   --cw-brand-size-symbol-header: 2rem;
   --cw-brand-size-wordmark-header-width: 8.1rem;
   --cw-brand-size-wordmark-header-height: 1.93rem;
+  --cw-ink-stroke-height: 0.85rem;
+  --cw-ink-ring-size: 3rem;
+  --cw-ink-hover-opacity: 0.42;
+  --cw-ink-hover-scale: 0.74;
   --cw-brand-size-symbol-footer: 2rem;
   --cw-brand-size-wordmark-footer-width: 8.6rem;
   --cw-brand-size-wordmark-footer-height: 2.05rem;
@@ -196,6 +201,7 @@
   --cw-text-tertiary: color-mix(in srgb, var(--cw-muted) 82%, #141414 18%);
   --cw-border-strong: color-mix(in srgb, var(--cw-border) 70%, var(--cw-text) 30%);
   --cw-accent-strong: color-mix(in srgb, var(--cw-accent) 72%, #f4f1e9 28%);
+  --cw-container-inset: max(1rem, calc((100% - var(--cw-max-width)) / 2));
 }
 
 [data-cw-theme="dark"] {

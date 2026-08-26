@@ -88,6 +88,12 @@ class FakeQuery implements PromiseLike<{ data: Row[] | Row | null; error: { mess
         return this;
     }
 
+    is(column: string, value: unknown) {
+        if (value !== null) throw new Error("fake: unsupported is(non-null)");
+        this.filters.push((row) => row[column] === null || row[column] === undefined);
+        return this;
+    }
+
     not(column: string, operator: string, value: unknown) {
         if (operator !== "is" || value !== null) throw new Error(`fake: unsupported not(${operator})`);
         this.filters.push((row) => row[column] !== null && row[column] !== undefined);
@@ -215,9 +221,38 @@ export class FakeSupabase {
     conflictKey: string | null = null;
     /** `${table}:${mode}` → error message, for the error branches. */
     failures: Record<string, string> = {};
+    /** Accounts minted through `auth.admin.createUser`, so a test can inspect them. */
+    authUsers: Array<{ id: string; email: string; emailConfirmed: boolean; metadata: Row }> = [];
+    /** Set to make the next `createUser` fail, the way a duplicate address does. */
+    authCreateError: string | null = null;
     private counters: Record<string, number> = {};
 
     constructor(public tables: Tables = {}) {}
+
+    /**
+     * Only the one admin call the access module makes.
+     *
+     * `auth.users` is not a table this fake can hold — it is Supabase's, behind
+     * an API — so account creation is modelled as its observable effect: an id
+     * exists afterwards, and the caller has to write `platform_users` itself.
+     */
+    auth = {
+        admin: {
+            createUser: async (input: { email: string; email_confirm?: boolean; user_metadata?: Row }) => {
+                if (this.authCreateError) {
+                    return { data: null, error: { message: this.authCreateError } };
+                }
+                const user = {
+                    id: this.nextId("auth-user"),
+                    email: input.email,
+                    emailConfirmed: Boolean(input.email_confirm),
+                    metadata: input.user_metadata ?? {},
+                };
+                this.authUsers.push(user);
+                return { data: { user: { id: user.id } }, error: null };
+            },
+        },
+    };
 
     from(table: string) {
         return new FakeQuery(this, table);

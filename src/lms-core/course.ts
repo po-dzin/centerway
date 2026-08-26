@@ -154,6 +154,45 @@ export type Course = {
   /** What the buyer walks away with. Short statements, not paragraphs. */
   results?: string[];
   /**
+   * Who this is for. The other half of `results`: one says what changes, this
+   * says who it changes for, and an offer page that prints only the first makes
+   * every reader decide for themselves whether they are the audience.
+   */
+  audience?: string[];
+  /**
+   * What the course is made of — video, audio, checklists, recipes. Not the
+   * modules: a buyer scanning an offer wants to know the MEDIUM before they
+   * read the outline, and "6 відео + чек-лист" answers that in one line.
+   */
+  format?: string[];
+  /**
+   * How long it takes, in the author's own words.
+   *
+   * Derived counts ("12 уроків") are true and useless: a course whose lessons
+   * are meant to be walked over three days says "3 дні", and no lesson count
+   * can know that. Absent falls back to the count, which is what the offer page
+   * did before this field existed.
+   */
+  duration?: string;
+  /**
+   * How long access lasts, in the author's own words — "доступ назавжди",
+   * "30 днів після покупки".
+   *
+   * PROSE, not a policy. The enforcing value is `lms_enrollments.expires_at`,
+   * written per grant; this is the promise printed next to the price. They are
+   * deliberately separate: an owner can sell lifetime access and still revoke a
+   * refunded seat, and a course-level number could not express that.
+   */
+  accessNote?: string;
+  /**
+   * Why THIS author for THIS course — one sentence, written per course.
+   *
+   * The concentrate, not the profile. The reusable biography lives once in
+   * `lms_authors` and is joined in; this is the line that changes between a
+   * fasting protocol and a breathing course by the same person.
+   */
+  authorNote?: string;
+  /**
    * Whether strangers may find this course. Independent of `status`, which says
    * whether the material is published to the people who already own it — a live
    * course sold only through a landing is published and unlisted, and a finished
@@ -228,6 +267,23 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
       Array.isArray(input.results) && input.results.length > 0 && input.results.every(isNonEmptyString),
       `lms_course_invalid_results:${path}`
     );
+  }
+
+  // Same rule as `results`, for the same reason: the way to say "nothing here"
+  // is to leave the field out, never to store an empty list under a heading.
+  for (const listKey of ["audience", "format"] as const) {
+    const value = input[listKey];
+    if (value === undefined) continue;
+    assert(
+      Array.isArray(value) && value.length > 0 && value.every(isNonEmptyString),
+      `lms_course_invalid_${listKey}:${path}`
+    );
+  }
+
+  for (const textKey of ["duration", "accessNote", "authorNote"] as const) {
+    const value = input[textKey];
+    if (value === undefined) continue;
+    assert(isNonEmptyString(value), `lms_course_invalid_${textKey.toLowerCase()}:${path}`);
   }
 
   if (input.visibility !== undefined) {

@@ -436,6 +436,7 @@
         "--ds-shadow-md": "var(--cw-shadow-strong)",
         "--ds-z-base": "1",
         "--ds-z-sticky": "999",
+        "--ds-z-modal": "1200",
         "--ds-breakpoint-mobile-max": "35rem",
         "--ds-breakpoint-tablet-min": "35.0625rem",
         "--ds-breakpoint-tablet-max": "56.25rem",
@@ -462,6 +463,8 @@
         "--ds-offer-card-width-tablet": "21rem",
         "--ds-offer-card-width-mobile": "min(82vw, 19rem)",
         "--ds-offer-card-rail-width": "var(--ds-offer-card-width-mobile)",
+        "--ds-offer-card-title-size": "clamp(1.15rem, 1.9vw, 1.45rem)",
+        "--ds-offer-card-title-line-height": "1.2",
         "--ds-focus-ring-width": "3px",
         "--ds-focus-ring-offset": "3px",
         "--ds-focus-ring-color": "var(--cw-focus-ring)",
@@ -478,7 +481,9 @@
         "--ds-type-hero-size": "clamp(3.25rem, 7.6vw, 6.75rem)",
         "--ds-type-hero-line-height": "0.96",
         "--ds-type-display-size": "clamp(1.5rem, 3vw, 2.2rem)",
-        "--ds-type-display-line-height": "1.08"
+        "--ds-type-display-line-height": "1.08",
+        "--ds-type-hero-subtitle-size": "clamp(1.2rem, 1.7vw, 1.6rem)",
+        "--ds-type-hero-subtitle-line-height": "1.25"
       },
       "dark": {
         "--ds-color-bg-canvas": "var(--cw-bg)",
