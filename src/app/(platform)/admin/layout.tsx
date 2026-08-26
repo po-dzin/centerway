@@ -320,7 +320,11 @@ function AdminShell({ children }: { children: ReactNode }) {
                     </div>
                 </header>
                 <div data-admin-scroll className="custom-scrollbar flex-1 px-3 py-3 sm:px-4 sm:py-4 md:p-8 overflow-y-auto overflow-x-hidden w-full min-h-0 pb-4 md:pb-8">
-                    {children}
+                    {/* One content column for every tab, on the platform's own
+                        guide — see `.cw-admin-content`. The scroll viewport stays
+                        the outer element: AdminPagination scrolls it by
+                        `[data-admin-scroll]`. */}
+                    <div className="cw-admin-content">{children}</div>
                 </div>
                 {mobileMenuOpen ? (
                     <div className="md:hidden fixed inset-0 z-40">

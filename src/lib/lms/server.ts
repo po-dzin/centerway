@@ -14,6 +14,7 @@ import { isStaffRole } from "@/lib/platform/adminRole";
 import {
   DEFAULT_TIMEZONE,
   foldProgress,
+  isEnrollmentExpired,
   resolveCurrentLesson,
   resolveEntitlement,
   resolveTimeZone,
@@ -52,17 +53,21 @@ export async function isStaff(authUserId: string): Promise<boolean> {
 /**
  * Whether this account holds a hand-issued grant for the course.
  * Used to let reviewers open a draft without granting them admin rights.
+ *
+ * A grant past its deadline is not a grant: otherwise a time-boxed reviewer
+ * would keep the draft open forever, which is the one thing the deadline was
+ * set to prevent.
  */
-async function hasManualGrant(authUserId: string, courseId: string): Promise<boolean> {
+async function hasManualGrant(authUserId: string, courseId: string, now = new Date()): Promise<boolean> {
   const db = adminClient();
   const { data } = await db
     .from("lms_enrollments")
-    .select("source")
+    .select("source, expires_at")
     .eq("auth_user_id", authUserId)
     .eq("course_id", courseId)
     .maybeSingle();
 
-  return data?.source === "manual";
+  return data?.source === "manual" && !isEnrollmentExpired(data.expires_at, now);
 }
 
 /** An author may inspect their own unpublished work in the learner surface. */
@@ -96,6 +101,8 @@ export type EnrollmentRecord = {
   startedAt: Date;
   source: "order" | "token" | "manual";
   orderRef: string | null;
+  /** Deadline for this person on this course; `null` means access does not end. */
+  expiresAt: string | null;
 };
 
 export type LearnerSettings = {
@@ -193,11 +200,39 @@ export async function checkEntitlement(
   });
 }
 
+/** The columns every enrollment read selects, so all of them fold the same way. */
+const ENROLLMENT_COLUMNS = "id, course_id, started_at, source, order_ref, expires_at";
+
+type EnrollmentRow = {
+  id: string;
+  course_id: string;
+  started_at: string;
+  source: EnrollmentRecord["source"];
+  order_ref: string | null;
+  expires_at: string | null;
+};
+
+function toEnrollmentRecord(row: EnrollmentRow): EnrollmentRecord {
+  return {
+    id: row.id,
+    courseId: row.course_id,
+    startedAt: new Date(row.started_at),
+    source: row.source,
+    orderRef: row.order_ref,
+    expiresAt: row.expires_at ?? null,
+  };
+}
+
 /**
  * Returns the learner's enrollment, creating it on first entitled visit.
  *
  * Auto-provisioning is what replaces "after payment — a Telegram button": the
  * purchase alone is enough to start the course on the platform.
+ *
+ * A deadline set on the enrollment closes the course again. It is checked here
+ * rather than per-caller because this is the one door: the course page, the
+ * lesson page and every progress write pass through `loadLearnerCourse`, so an
+ * expired learner stops being able to read AND to record.
  */
 export async function ensureEnrollment(
   identity: LearnerIdentity,
@@ -208,21 +243,17 @@ export async function ensureEnrollment(
 
   const existing = await db
     .from("lms_enrollments")
-    .select("id, course_id, started_at, source, order_ref")
+    .select(ENROLLMENT_COLUMNS)
     .eq("course_id", course.id)
     .eq("auth_user_id", identity.authUserId)
     .maybeSingle();
 
   if (existing.data) {
-    return {
-      enrollment: {
-        id: existing.data.id,
-        courseId: existing.data.course_id,
-        startedAt: new Date(existing.data.started_at),
-        source: existing.data.source,
-        orderRef: existing.data.order_ref,
-      },
-    };
+    const enrollment = toEnrollmentRecord(existing.data as EnrollmentRow);
+    if (isEnrollmentExpired(enrollment.expiresAt, now)) {
+      return { enrollment: null, reason: "expired" };
+    }
+    return { enrollment };
   }
 
   const entitlement = await checkEntitlement(identity, course, now);
@@ -245,14 +276,14 @@ export async function ensureEnrollment(
       order_ref: entitlement.orderRef,
       started_at: startedAt.toISOString(),
     })
-    .select("id, course_id, started_at, source, order_ref")
+    .select(ENROLLMENT_COLUMNS)
     .single();
 
   if (inserted.error || !inserted.data) {
     // A concurrent request may have won the unique (course_id, auth_user_id).
     const retry = await db
       .from("lms_enrollments")
-      .select("id, course_id, started_at, source, order_ref")
+      .select(ENROLLMENT_COLUMNS)
       .eq("course_id", course.id)
       .eq("auth_user_id", identity.authUserId)
       .maybeSingle();
@@ -261,26 +292,14 @@ export async function ensureEnrollment(
       throw new Error(`lms_enrollment_insert_failed:${inserted.error?.message ?? "unknown"}`);
     }
 
-    return {
-      enrollment: {
-        id: retry.data.id,
-        courseId: retry.data.course_id,
-        startedAt: new Date(retry.data.started_at),
-        source: retry.data.source,
-        orderRef: retry.data.order_ref,
-      },
-    };
+    const enrollment = toEnrollmentRecord(retry.data as EnrollmentRow);
+    if (isEnrollmentExpired(enrollment.expiresAt, now)) {
+      return { enrollment: null, reason: "expired" };
+    }
+    return { enrollment };
   }
 
-  return {
-    enrollment: {
-      id: inserted.data.id,
-      courseId: inserted.data.course_id,
-      startedAt: new Date(inserted.data.started_at),
-      source: inserted.data.source,
-      orderRef: inserted.data.order_ref,
-    },
-  };
+  return { enrollment: toEnrollmentRecord(inserted.data as EnrollmentRow) };
 }
 
 /** Reads the raw event log and folds it into current progress. */
@@ -366,7 +385,7 @@ export async function listLearnerCourses(
   const [{ data: enrollmentRows }, staff, settings] = await Promise.all([
     db
       .from("lms_enrollments")
-      .select("id, course_id, started_at, source, order_ref")
+      .select(ENROLLMENT_COLUMNS)
       .eq("auth_user_id", identity.authUserId),
     isStaff(identity.authUserId),
     getLearnerSettings(identity.authUserId),
@@ -376,11 +395,29 @@ export async function listLearnerCourses(
 
   const entries = await Promise.all(
     (await listLiveCourses()).map(async (course): Promise<LearnerShelfEntry | null> => {
-      const enrollment = enrollmentByCourse.get(course.id);
+      const row = enrollmentByCourse.get(course.id);
+      // Past its deadline the row still exists — the learner keeps their
+      // progress and their place — but it no longer opens the course, so the
+      // shelf shows the card locked rather than pretending it is theirs.
+      const expired = isEnrollmentExpired(row?.expires_at ?? null, now);
+      const enrollment = expired ? undefined : row;
 
       // A draft is visible to staff, and to anyone holding a manual grant — the
       // grant IS the enrollment row, so its presence is the check.
       if (course.status !== "published" && !enrollment && !staff) return null;
+
+      if (expired) {
+        return {
+          course,
+          access: "locked",
+          lockReason: "expired",
+          startedAt: row?.started_at ?? null,
+          lastActivityAt: null,
+          standing: null,
+          currentLessonSlug: null,
+          currentLessonTitle: null,
+        };
+      }
 
       if (enrollment) {
         const progress = await loadProgress(enrollment.id);

@@ -227,6 +227,7 @@
     --ds-shadow-md: var(--cw-shadow-strong);
     --ds-z-base: 1;
     --ds-z-sticky: 999;
+    --ds-z-modal: 1200;
     --ds-breakpoint-mobile-max: 35rem;
     --ds-breakpoint-tablet-min: 35.0625rem;
     --ds-breakpoint-tablet-max: 56.25rem;
@@ -778,6 +779,19 @@ body {
     background-color: var(--cw-bg);
   }
 
+  /* The admin content column, on the same guide as every other surface.
+     `--cw-max-width` is what the learner shelf and the builder document axis
+     already measure against, so a table in /admin/orders and a course card in
+     /learn stand on one axis instead of the panel sprawling to the edge of a
+     wide display. Set once in the admin layout: a per-page width was how the
+     tabs drifted apart (analytics 80rem, one customer 56rem, the rest edge to
+     edge), and one class is what keeps them from drifting again. */
+  .cw-admin-content {
+    width: 100%;
+    max-width: var(--cw-max-width);
+    margin-inline: auto;
+  }
+
   .cw-app-bg {
     background-color: var(--cw-bg);
   }
@@ -929,8 +943,15 @@ body {
     box-shadow: var(--cw-shadow);
   }
 
+  /* Field skin only — never a width.
+     It used to set `width: 100%`, which silently ate every width the call site
+     asked for: a `sm:w-40` select and a `flex-1` input are the same single-class
+     specificity, and this rule is emitted last, so it won. The result was a
+     panel of fields stretched edge to edge no matter what the markup said.
+     Width belongs to the layout; this class is the border, the ground and the
+     focus ring. Inputs inside a flex column or a grid cell still fill their
+     track on their own; a standalone one asks for `w-full`. */
   .cw-input {
-    width: 100%;
     border: 1px solid var(--cw-border);
     border-radius: 0.75rem;
     background-color: var(--cw-surface);
@@ -949,6 +970,27 @@ body {
     outline: none;
     box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
     border-color: var(--cw-interactive-active-border);
+  }
+
+  /* A select whose mark belongs to the field.
+     The platform arrow is painted against the border edge and ignores padding
+     entirely, so on a wide select it drifted far away from the value it points
+     at — which is what made these controls read as broken. `appearance: none`
+     is what makes the padding real, and the caret is drawn here instead.
+     Two gradients rather than an SVG data URI, because a data URI cannot read a
+     CSS variable: a hard-coded arrow colour would stay dark in dark mode.
+     Pair with `pl-3` (not `px-3`) — the right padding is this rule's, and it is
+     reserving room for the caret. */
+  .cw-select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 2rem;
+    background-image:
+      linear-gradient(45deg, transparent 50%, var(--cw-muted) 50%),
+      linear-gradient(135deg, var(--cw-muted) 50%, transparent 50%);
+    background-position: calc(100% - 1.05rem) center, calc(100% - 0.75rem) center;
+    background-size: 0.3rem 0.3rem;
+    background-repeat: no-repeat;
   }
 
   .cw-btn {

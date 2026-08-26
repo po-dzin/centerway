@@ -1,10 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
     AccessError,
-    grantCourse,
+    isPaymentCurrency,
     listLearners,
+    normalizeDeadline,
+    provisionAccess,
     revokeCourse,
+    setEnrollmentDeadline,
     type LearnerStatus,
+    type PaymentCurrency,
 } from "@/lib/admin/access";
 import {
     badRequestResponse,
@@ -51,26 +55,85 @@ export async function GET(req: NextRequest) {
     }
 }
 
-// POST /api/admin/access/learners { email, course }
+type ProvisionBody = {
+    email?: string;
+    course?: string;
+    fullName?: string;
+    /** `YYYY-MM-DD` from the panel's date input, or an ISO instant. Empty clears. */
+    expiresAt?: string | null;
+    createAccount?: boolean;
+    payment?: { amount?: unknown; currency?: unknown; note?: string } | null;
+};
+
+// POST /api/admin/access/learners { email, course, fullName?, expiresAt?, createAccount?, payment? }
 export async function POST(req: NextRequest) {
     const session = await requireAdminSession(req);
     if (!session) return unauthorizedResponse();
 
-    const body = (await req.json().catch(() => ({}))) as { email?: string; course?: string };
+    const body = (await req.json().catch(() => ({}))) as ProvisionBody;
     if (!body.email || !body.course) return badRequestResponse("email_and_course_required");
 
+    const deadline = normalizeDeadline(body.expiresAt);
+    if (!deadline.ok) return badRequestResponse("expires_at_invalid");
+
+    // Payment is optional — a review grant or a gift carries no money — but a
+    // half-typed one is rejected rather than silently dropped: an operator who
+    // entered an amount and gets access without an order would only find the
+    // missing sale in a revenue report weeks later.
+    let payment: { amount: number; currency: PaymentCurrency; note?: string | null } | null = null;
+    if (body.payment && body.payment.amount !== undefined && body.payment.amount !== null && body.payment.amount !== "") {
+        const amount = Number(body.payment.amount);
+        if (!Number.isFinite(amount) || amount <= 0) return badRequestResponse("amount_invalid");
+        if (!isPaymentCurrency(body.payment.currency)) return badRequestResponse("currency_invalid");
+        payment = { amount, currency: body.payment.currency, note: body.payment.note ?? null };
+    }
+
     try {
-        const result = await grantCourse({
+        const result = await provisionAccess({
             email: body.email,
+            fullName: body.fullName ?? null,
             courseSlug: body.course,
+            expiresAt: deadline.value,
+            createAccount: Boolean(body.createAccount),
+            payment,
             actorId: session.user.id,
         });
         return NextResponse.json({
-            created: result.created,
-            enrollmentId: result.enrollmentId,
+            created: result.grant.created,
+            accountCreated: result.accountCreated,
+            orderRef: result.payment?.orderRef ?? null,
+            expiresAt: result.grant.expiresAt,
+            enrollmentId: result.grant.enrollmentId,
             email: result.account.email,
-            course: { slug: result.course.slug, title: result.course.title, status: result.course.status },
+            course: {
+                slug: result.grant.course.slug,
+                title: result.grant.course.title,
+                status: result.grant.course.status,
+            },
         });
+    } catch (error) {
+        return failed(error);
+    }
+}
+
+// PATCH /api/admin/access/learners { enrollmentId, expiresAt } — set or clear a deadline
+export async function PATCH(req: NextRequest) {
+    const session = await requireAdminSession(req);
+    if (!session) return unauthorizedResponse();
+
+    const body = (await req.json().catch(() => ({}))) as { enrollmentId?: string; expiresAt?: string | null };
+    if (!body.enrollmentId) return badRequestResponse("enrollment_id_required");
+
+    const deadline = normalizeDeadline(body.expiresAt);
+    if (!deadline.ok) return badRequestResponse("expires_at_invalid");
+
+    try {
+        const result = await setEnrollmentDeadline({
+            enrollmentId: body.enrollmentId,
+            expiresAt: deadline.value,
+            actorId: session.user.id,
+        });
+        return NextResponse.json(result);
     } catch (error) {
         return failed(error);
     }

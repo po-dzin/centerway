@@ -3,9 +3,12 @@
 /**
  * Access — the panel's answer to "who is learning what" and "who may do what".
  *
- * Three tabs, one per store the CLI scripts used to reach:
+ * Four tabs, one per store the CLI scripts used to reach:
  *   · Learners — one row per person, their courses folded inside, plus
  *                grant/revoke (revoke is still per course, not per person)
+ *   · Accounts — platform_users, everyone who has signed in at all. The other
+ *                three tabs each answer a narrower question, so an account that
+ *                merely exists used to appear in none of them
  *   · Roles    — user_roles, the one role store
  *   · Builder  — lms_courses.author_id, ownership per row rather than a role
  *
@@ -25,8 +28,8 @@ import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/adminLocale";
-import type { CourseRow, LearnerAccountRow, LearnerRow, LearnerStatus, RoleRow } from "@/lib/admin/accessTypes";
-import { GRANTABLE_ROLES } from "@/lib/admin/accessTypes";
+import type { AccountRow, CourseRow, LearnerAccountRow, LearnerRow, LearnerStatus, RoleRow } from "@/lib/admin/accessTypes";
+import { deadlineInputValue, GRANTABLE_ROLES, PAYMENT_CURRENCIES } from "@/lib/admin/accessTypes";
 
 const LIMIT = 50;
 
@@ -100,7 +103,7 @@ export default function AccessPage() {
     const locale = getAdminLocale(lang);
     const toast = useToast();
 
-    const [tab, setTab] = useState<"learners" | "roles" | "builder">("learners");
+    const [tab, setTab] = useState<"learners" | "accounts" | "roles" | "builder">("learners");
 
     // Shared: the course list feeds the grant form, the course filter and the
     // builder tab, so it is fetched once for the page rather than per tab.
@@ -111,6 +114,10 @@ export default function AccessPage() {
         const known: Record<string, string> = {
             account_not_found: t("access_error_account_not_found"),
             course_not_found: t("access_error_course_not_found"),
+            enrollment_not_found: t("access_error_enrollment_not_found"),
+            expires_at_invalid: t("access_error_expires_at_invalid"),
+            amount_invalid: t("access_error_amount_invalid"),
+            currency_invalid: t("access_error_currency_invalid"),
             cannot_change_own_role: t("access_error_cannot_change_own_role"),
             Forbidden: t("access_error_forbidden"),
         };
@@ -140,6 +147,7 @@ export default function AccessPage() {
 
     const TABS = [
         { key: "learners", label: t("access_tab_learners") },
+        { key: "accounts", label: t("access_tab_accounts") },
         { key: "roles", label: t("access_tab_roles") },
         { key: "builder", label: t("access_tab_builder") },
     ];
@@ -160,6 +168,14 @@ export default function AccessPage() {
 
             {tab === "learners" ? (
                 <LearnersTab courses={courses} locale={locale} errorText={errorText} onCoursesChanged={reloadCourses} />
+            ) : tab === "accounts" ? (
+                <AccountsTab
+                    courses={courses}
+                    canGrant={canGrantRoles}
+                    locale={locale}
+                    errorText={errorText}
+                    onCoursesChanged={reloadCourses}
+                />
             ) : tab === "roles" ? (
                 <RolesTab canGrant={canGrantRoles} locale={locale} errorText={errorText} />
             ) : (
@@ -201,6 +217,20 @@ function LearnersTab({
     const [grantEmail, setGrantEmail] = useState("");
     const [grantCourse, setGrantCourse] = useState("");
     const [granting, setGranting] = useState(false);
+
+    // The hand-made sale: a person who may not exist yet, money that arrived off
+    // the payment provider, and a date the access ends on. All optional except
+    // the email and the course — a gift and a paid enrollment take the same form.
+    const [grantName, setGrantName] = useState("");
+    const [grantCreateAccount, setGrantCreateAccount] = useState(false);
+    const [grantExpiresAt, setGrantExpiresAt] = useState("");
+    const [grantAmount, setGrantAmount] = useState("");
+    const [grantCurrency, setGrantCurrency] = useState<string>(PAYMENT_CURRENCIES[0]);
+    const [grantNote, setGrantNote] = useState("");
+
+    // Deadline edits, keyed by enrollment so two open rows never share a draft.
+    const [deadlineDraft, setDeadlineDraft] = useState<Record<string, string>>({});
+    const [savingDeadline, setSavingDeadline] = useState<string | null>(null);
 
     // Which people have their course list open. Keyed by account id rather than
     // by index so a reload or a page change cannot open someone else's row.
@@ -268,18 +298,65 @@ function LearnersTab({
         try {
             const payload = await authFetch("/api/admin/access/learners", {
                 method: "POST",
-                body: JSON.stringify({ email: grantEmail.trim(), course: grantCourse }),
-            }) as { created: boolean };
+                body: JSON.stringify({
+                    email: grantEmail.trim(),
+                    course: grantCourse,
+                    fullName: grantName.trim() || null,
+                    createAccount: grantCreateAccount,
+                    expiresAt: grantExpiresAt || null,
+                    payment: grantAmount.trim()
+                        ? { amount: Number(grantAmount), currency: grantCurrency, note: grantNote.trim() || null }
+                        : null,
+                }),
+            }) as { created: boolean; accountCreated: boolean; orderRef: string | null };
+
+            // Three things may have happened; the toast names the one the
+            // operator is least sure about — money is the part they cannot
+            // check by looking at the list underneath.
             toast[payload.created ? "success" : "info"](
-                payload.created ? t("access_granted") : t("access_already_enrolled")
+                payload.orderRef
+                    ? t("access_granted_with_payment")
+                    : payload.created
+                      ? t("access_granted")
+                      : t("access_already_enrolled")
             );
+            if (payload.accountCreated) toast.info(t("access_account_created"));
+
             setGrantEmail("");
+            setGrantName("");
+            setGrantAmount("");
+            setGrantNote("");
+            setGrantCreateAccount(false);
             onCoursesChanged();
             await load();
         } catch (e) {
             toast.error(errorText(getErrorMessage(e)));
         } finally {
             setGranting(false);
+        }
+    };
+
+    // Takes the value explicitly rather than reading the draft map: "clear" sets
+    // the draft and saves in the same click, and a state update is not readable
+    // yet at that point — it would have saved the value it just replaced.
+    const saveDeadline = async (enrollmentId: string, value: string) => {
+        setSavingDeadline(enrollmentId);
+        try {
+            await authFetch("/api/admin/access/learners", {
+                method: "PATCH",
+                body: JSON.stringify({ enrollmentId, expiresAt: value || null }),
+            });
+            toast.success(value ? t("access_deadline_saved") : t("access_deadline_cleared"));
+            setDeadlineDraft((prev) => {
+                const next = { ...prev };
+                delete next[enrollmentId];
+                return next;
+            });
+            await load();
+        } catch (e) {
+            toast.error(errorText(getErrorMessage(e)));
+        } finally {
+            setSavingDeadline(null);
         }
     };
 
@@ -312,36 +389,112 @@ function LearnersTab({
 
     return (
         <div className="space-y-4">
-            {/* Grant */}
+            {/* Grant — person, access, deadline, and the money if there was any */}
             <div className="cw-panel p-4 space-y-3">
                 <div>
                     <p className="text-sm font-semibold cw-text">{t("access_grant_title")}</p>
                     <p className="text-xs cw-muted mt-1">{t("access_grant_hint")}</p>
                 </div>
-                <div className="flex flex-col sm:flex-row gap-2">
+
+                {/* Who and what, on one line at desktop width. A twelve-column
+                    track rather than a row of flex-1 fields: an email needs
+                    room, a date does not, and stretching them equally is what
+                    made the panel read as a wall. */}
+                <div className="grid grid-cols-1 sm:grid-cols-12 gap-2">
                     <input
                         type="email"
                         value={grantEmail}
                         onChange={(e) => setGrantEmail(e.target.value)}
                         placeholder={t("access_grant_email")}
-                        className="cw-input px-3 py-2.5 text-sm flex-1"
+                        className="cw-input px-3 py-2 text-sm sm:col-span-5"
+                    />
+                    <input
+                        type="text"
+                        value={grantName}
+                        onChange={(e) => setGrantName(e.target.value)}
+                        placeholder={t("access_grant_name")}
+                        className="cw-input px-3 py-2 text-sm sm:col-span-3"
                     />
                     <select
                         value={grantCourse}
                         onChange={(e) => setGrantCourse(e.target.value)}
-                        className="cw-input px-3 py-2.5 text-sm sm:w-64"
+                        aria-label={t("access_grant_course")}
+                        className="cw-input cw-select pl-3 py-2 text-sm sm:col-span-4"
                     >
                         {courses.map((course) => (
                             <option key={course.id} value={course.slug}>
-                                {course.title} · {course.slug}
+                                {course.title}
                             </option>
                         ))}
                     </select>
+                </div>
+
+                <p className="text-xs cw-muted">{t("access_grant_payment_hint")}</p>
+
+                {/* Deadline and money — the two optional halves, on one line.
+                    A bare date input says nothing about which date it is, so
+                    this row keeps its captions; the fields above do not need
+                    them, their placeholders say it. */}
+                <div className="grid grid-cols-2 sm:grid-cols-12 gap-2">
+                    <label className="col-span-2 sm:col-span-3 flex flex-col gap-1">
+                        <span className="text-xs cw-muted">{t("access_grant_deadline")}</span>
+                        <input
+                            type="date"
+                            value={grantExpiresAt}
+                            onChange={(e) => setGrantExpiresAt(e.target.value)}
+                            className="cw-input px-3 py-2 text-sm"
+                        />
+                    </label>
+                    <label className="sm:col-span-2 flex flex-col gap-1">
+                        <span className="text-xs cw-muted">{t("access_grant_amount")}</span>
+                        <input
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            inputMode="decimal"
+                            value={grantAmount}
+                            onChange={(e) => setGrantAmount(e.target.value)}
+                            className="cw-input px-3 py-2 text-sm"
+                        />
+                    </label>
+                    <label className="sm:col-span-2 flex flex-col gap-1">
+                        <span className="text-xs cw-muted">{t("access_grant_currency")}</span>
+                        <select
+                            value={grantCurrency}
+                            onChange={(e) => setGrantCurrency(e.target.value)}
+                            className="cw-input cw-select pl-3 py-2 text-sm"
+                        >
+                            {PAYMENT_CURRENCIES.map((currency) => (
+                                <option key={currency} value={currency}>{currency}</option>
+                            ))}
+                        </select>
+                    </label>
+                    <label className="col-span-2 sm:col-span-5 flex flex-col gap-1">
+                        <span className="text-xs cw-muted">{t("access_grant_note")}</span>
+                        <input
+                            type="text"
+                            value={grantNote}
+                            onChange={(e) => setGrantNote(e.target.value)}
+                            className="cw-input px-3 py-2 text-sm"
+                        />
+                    </label>
+                </div>
+
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
+                    <label className="flex items-start gap-2 text-xs cw-muted flex-1">
+                        <input
+                            type="checkbox"
+                            checked={grantCreateAccount}
+                            onChange={(e) => setGrantCreateAccount(e.target.checked)}
+                            className="mt-0.5 shrink-0"
+                        />
+                        <span>{t("access_grant_create_account")}</span>
+                    </label>
                     <button
                         type="button"
                         onClick={grant}
                         disabled={granting || !grantEmail.trim() || !grantCourse}
-                        className="px-4 py-2.5 cw-btn cw-surface-2 text-sm disabled:opacity-50"
+                        className="px-4 py-2 cw-btn cw-surface-2 text-sm disabled:opacity-50 w-full sm:w-auto shrink-0"
                     >
                         {t("access_grant_submit")}
                     </button>
@@ -387,7 +540,7 @@ function LearnersTab({
                         setCourseSlug(e.target.value);
                         setPage(0);
                     }}
-                    className="cw-input px-3 py-2.5 text-sm sm:w-64"
+                    className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-56"
                 >
                     <option value="">{t("access_all_courses")}</option>
                     {courses.map((course) => (
@@ -458,34 +611,82 @@ function LearnersTab({
 
                                 {open ? (
                                     <div className="mt-3 pt-3 border-t border-[var(--cw-border)] space-y-2">
-                                        {account.courses.map((row) => (
-                                            <div key={row.enrollmentId} className="flex items-center gap-3">
-                                                <span
-                                                    className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT[row.status]}`}
-                                                    title={t(STATUS_LABEL_KEY[row.status])}
-                                                />
-                                                <div className="flex-1 min-w-0">
-                                                    <p className="text-sm cw-text truncate">{row.courseTitle}</p>
-                                                    <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                                                        <span className="font-mono">{row.courseSlug}</span>
-                                                        <span>{sourceLabel(row.source)}</span>
-                                                        <span>
-                                                            {t("access_col_started")}: {new Date(row.startedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
-                                                        </span>
+                                        {account.courses.map((row) => {
+                                            const stored = deadlineInputValue(row.expiresAt);
+                                            const draft = deadlineDraft[row.enrollmentId] ?? stored;
+                                            const expired = row.expiresAt !== null && Date.parse(row.expiresAt) <= Date.now();
+
+                                            return (
+                                                <div key={row.enrollmentId} className="space-y-2">
+                                                    <div className="flex items-center gap-3">
+                                                        <span
+                                                            className={`w-2 h-2 rounded-full shrink-0 ${STATUS_DOT[row.status]}`}
+                                                            title={t(STATUS_LABEL_KEY[row.status])}
+                                                        />
+                                                        <div className="flex-1 min-w-0">
+                                                            <p className="text-sm cw-text truncate">{row.courseTitle}</p>
+                                                            <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                                                                <span className="font-mono">{row.courseSlug}</span>
+                                                                <span>{sourceLabel(row.source)}</span>
+                                                                <span>
+                                                                    {t("access_col_started")}: {new Date(row.startedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
+                                                                </span>
+                                                                {/* An expired row is not a detail — it is why the
+                                                                    learner wrote in, so it is said outright. */}
+                                                                {expired ? (
+                                                                    <span className="cw-status-failed-text">{t("access_deadline_expired")}</span>
+                                                                ) : null}
+                                                            </div>
+                                                        </div>
+                                                        <p className="text-sm cw-text tabular-nums shrink-0 hidden sm:block">
+                                                            {row.lessonsTotal > 0 ? `${row.lessonsCompleted}/${row.lessonsTotal}` : t("access_no_lessons")}
+                                                        </p>
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => revoke(row)}
+                                                            className="px-3 py-1.5 cw-btn cw-btn-muted text-xs shrink-0"
+                                                        >
+                                                            {t("access_revoke")}
+                                                        </button>
+                                                    </div>
+
+                                                    <div className="flex flex-wrap items-center gap-2 pl-5">
+                                                        <span className="text-xs cw-muted">{t("access_deadline_label")}</span>
+                                                        <input
+                                                            type="date"
+                                                            value={draft}
+                                                            onChange={(e) =>
+                                                                setDeadlineDraft((prev) => ({ ...prev, [row.enrollmentId]: e.target.value }))
+                                                            }
+                                                            className="cw-input px-2 py-1 text-xs"
+                                                        />
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => void saveDeadline(row.enrollmentId, draft)}
+                                                            disabled={savingDeadline === row.enrollmentId || draft === stored}
+                                                            className="px-3 py-1.5 cw-btn cw-surface-2 text-xs disabled:opacity-50"
+                                                        >
+                                                            {t("access_deadline_save")}
+                                                        </button>
+                                                        {stored ? (
+                                                            <button
+                                                                type="button"
+                                                                onClick={() => {
+                                                                    setDeadlineDraft((prev) => ({ ...prev, [row.enrollmentId]: "" }));
+                                                                    void saveDeadline(row.enrollmentId, "");
+                                                                }}
+                                                                disabled={savingDeadline === row.enrollmentId}
+                                                                className="px-3 py-1.5 cw-btn cw-btn-muted text-xs disabled:opacity-50"
+                                                            >
+                                                                {t("access_deadline_clear")}
+                                                            </button>
+                                                        ) : (
+                                                            <span className="text-xs cw-muted">{t("access_deadline_none")}</span>
+                                                        )}
                                                     </div>
                                                 </div>
-                                                <p className="text-sm cw-text tabular-nums shrink-0 hidden sm:block">
-                                                    {row.lessonsTotal > 0 ? `${row.lessonsCompleted}/${row.lessonsTotal}` : t("access_no_lessons")}
-                                                </p>
-                                                <button
-                                                    type="button"
-                                                    onClick={() => revoke(row)}
-                                                    className="px-3 py-1.5 cw-btn cw-btn-muted text-xs shrink-0"
-                                                >
-                                                    {t("access_revoke")}
-                                                </button>
-                                            </div>
-                                        ))}
+                                            );
+                                        })}
                                     </div>
                                 ) : null}
                             </div>
@@ -622,7 +823,7 @@ function RolesTab({
                         <select
                             value={role}
                             onChange={(e) => setRole(e.target.value)}
-                            className="cw-input px-3 py-2.5 text-sm sm:w-48"
+                            className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-40"
                         >
                             {GRANTABLE_ROLES.map((value) => (
                                 <option key={value} value={value}>{value}</option>
@@ -696,7 +897,7 @@ function RolesTab({
                                         onChange={(e) => void setRowRole(row, e.target.value)}
                                         disabled={savingId === row.authUserId}
                                         aria-label={t("access_role_title")}
-                                        className="cw-input px-3 py-2 text-sm sm:w-40 disabled:opacity-50"
+                                        className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-36 disabled:opacity-50"
                                     >
                                         {GRANTABLE_ROLES.map((value) => (
                                             <option key={value} value={value}>{value}</option>
@@ -717,6 +918,237 @@ function RolesTab({
                     })}
                 </div>
             )}
+        </div>
+    );
+}
+
+/* ──────────────────────────── Accounts ────────────────────────────── */
+
+/**
+ * Everyone who has an account — the list the other three tabs cannot give.
+ *
+ * Roles show only elevated roles, Learners only people holding a course, and
+ * Customers only people who paid. Someone who signed in and did nothing else
+ * appeared nowhere, which made them impossible to find on the very surface
+ * built for handing out access by hand.
+ */
+function AccountsTab({
+    courses,
+    canGrant,
+    locale,
+    errorText,
+    onCoursesChanged,
+}: {
+    courses: CourseRow[];
+    canGrant: boolean;
+    locale: string;
+    errorText: (message: string) => string;
+    onCoursesChanged: () => void;
+}) {
+    const { t } = useI18n();
+    const toast = useToast();
+
+    const [q, setQ] = useState("");
+    const [debouncedQ, setDebouncedQ] = useState("");
+    const [page, setPage] = useState(0);
+
+    const [items, setItems] = useState<AccountRow[]>([]);
+    const [total, setTotal] = useState(0);
+    const [selfId, setSelfId] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
+
+    // The course each row would be granted, and which row is being written.
+    const [grantDraft, setGrantDraft] = useState<Record<string, string>>({});
+    const [busyId, setBusyId] = useState<string | null>(null);
+
+    const requestSeq = useRef(0);
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedQ(q);
+            setPage(0);
+        }, 350);
+        return () => clearTimeout(timer);
+    }, [q]);
+
+    const load = useCallback(async () => {
+        requestSeq.current += 1;
+        const reqId = requestSeq.current;
+        setLoading(true);
+        setError(null);
+        try {
+            const params = new URLSearchParams();
+            if (debouncedQ) params.set("q", debouncedQ);
+            params.set("limit", String(LIMIT));
+            params.set("offset", String(page * LIMIT));
+
+            const payload = await authFetch(`/api/admin/access/accounts?${params}`) as {
+                items: AccountRow[];
+                total: number;
+                selfId?: string;
+            };
+            if (reqId !== requestSeq.current) return;
+            setItems(payload.items ?? []);
+            setTotal(payload.total ?? 0);
+            setSelfId(payload.selfId ?? null);
+        } catch (e) {
+            if (reqId !== requestSeq.current) return;
+            setError(errorText(getErrorMessage(e)));
+        } finally {
+            if (reqId === requestSeq.current) setLoading(false);
+        }
+    }, [debouncedQ, page, errorText]);
+
+    useEffect(() => {
+        void load();
+    }, [load]);
+
+    const grant = async (row: AccountRow) => {
+        const slug = grantDraft[row.authUserId] ?? courses[0]?.slug;
+        if (!row.email || !slug) return;
+        setBusyId(row.authUserId);
+        try {
+            const payload = await authFetch("/api/admin/access/learners", {
+                method: "POST",
+                body: JSON.stringify({ email: row.email, course: slug }),
+            }) as { created: boolean };
+            toast[payload.created ? "success" : "info"](
+                payload.created ? t("access_granted") : t("access_already_enrolled")
+            );
+            onCoursesChanged();
+            await load();
+        } catch (e) {
+            toast.error(errorText(getErrorMessage(e)));
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    const setRowRole = async (row: AccountRow, nextRole: string) => {
+        if (!row.email || nextRole === (row.role ?? "user")) return;
+        if (row.role === "admin" && !window.confirm(t("access_role_demote_confirm"))) return;
+
+        setBusyId(row.authUserId);
+        try {
+            await authFetch("/api/admin/access/roles", {
+                method: "POST",
+                body: JSON.stringify({ email: row.email, role: nextRole }),
+            });
+            toast.success(nextRole === "user" ? t("access_role_removed") : t("access_role_set"));
+            await load();
+        } catch (e) {
+            toast.error(errorText(getErrorMessage(e)));
+        } finally {
+            setBusyId(null);
+        }
+    };
+
+    const totalPages = Math.ceil(total / LIMIT);
+
+    return (
+        <div className="space-y-4">
+            <p className="text-xs cw-muted">{t("access_accounts_hint")}</p>
+
+            <AdminSearchInput
+                value={q}
+                onChange={setQ}
+                placeholder={t("access_search_learners")}
+                onClear={q ? () => setQ("") : undefined}
+            />
+
+            {loading ? (
+                <AdminLoadingState variant="spinner" text={t("access_loading")} />
+            ) : error ? (
+                <AdminErrorState
+                    title={t("common_error")}
+                    message={error}
+                    action={(
+                        <button type="button" onClick={() => void load()} className="px-4 py-2 cw-btn cw-surface-2">
+                            {t("analytics_retry")}
+                        </button>
+                    )}
+                />
+            ) : items.length === 0 ? (
+                <AdminEmptyState className="py-16" iconWrapperClassName="w-12 h-12 rounded-full" icon={<EmptyIcon />} description={t("access_empty_accounts")} />
+            ) : (
+                <div className="space-y-1.5">
+                    {items.map((row) => {
+                        const isSelf = row.authUserId === selfId;
+                        const busy = busyId === row.authUserId;
+                        return (
+                            <div key={row.authUserId} className="cw-list-item flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4 p-4">
+                                <div className="flex-1 min-w-0">
+                                    <div className="flex items-center gap-2 flex-wrap">
+                                        <p className="text-sm font-medium cw-text truncate">{row.email ?? row.authUserId}</p>
+                                        {/* Only an elevated role is worth a badge — `user` is everyone. */}
+                                        {row.role && row.role !== "user" ? (
+                                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">
+                                                {row.role}
+                                            </span>
+                                        ) : null}
+                                        {isSelf ? <span className="text-[10px] cw-muted uppercase tracking-wide">{t("access_role_self")}</span> : null}
+                                    </div>
+                                    <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
+                                        {row.fullName ? <span className="truncate">{row.fullName}</span> : null}
+                                        {row.provider ? <span>{row.provider}</span> : null}
+                                        <span>{t("access_role_enrollments")}: {row.enrollments}</span>
+                                        <span>{t("access_accounts_purchases")}: {row.purchases}</span>
+                                        <span>
+                                            {row.lastSignInAt
+                                                ? `${t("access_role_last_sign_in")}: ${new Date(row.lastSignInAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}`
+                                                : t("access_accounts_never_signed_in")}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-2 shrink-0">
+                                    <select
+                                        value={grantDraft[row.authUserId] ?? courses[0]?.slug ?? ""}
+                                        onChange={(e) => setGrantDraft((prev) => ({ ...prev, [row.authUserId]: e.target.value }))}
+                                        aria-label={t("access_grant_course")}
+                                        className="cw-input cw-select pl-3 py-2 text-sm flex-1 lg:flex-none lg:w-48"
+                                    >
+                                        {courses.map((course) => (
+                                            <option key={course.id} value={course.slug}>{course.title}</option>
+                                        ))}
+                                    </select>
+                                    <button
+                                        type="button"
+                                        onClick={() => void grant(row)}
+                                        disabled={busy || !row.email || courses.length === 0}
+                                        className="px-3 py-2 cw-btn cw-surface-2 text-xs disabled:opacity-50 shrink-0"
+                                    >
+                                        {t("access_grant_submit")}
+                                    </button>
+                                    {canGrant && !isSelf && row.email ? (
+                                        <select
+                                            value={row.role ?? "user"}
+                                            onChange={(e) => void setRowRole(row, e.target.value)}
+                                            disabled={busy}
+                                            aria-label={t("access_role_title")}
+                                            className="cw-input cw-select pl-3 py-2 text-sm w-28 shrink-0 disabled:opacity-50"
+                                        >
+                                            {GRANTABLE_ROLES.map((value) => (
+                                                <option key={value} value={value}>{value}</option>
+                                            ))}
+                                        </select>
+                                    ) : null}
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {!loading && !error && total > LIMIT ? (
+                <AdminPagination
+                    page={page}
+                    totalPages={totalPages}
+                    onPrev={() => setPage((p) => Math.max(0, p - 1))}
+                    onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
+                />
+            ) : null}
         </div>
     );
 }
@@ -815,7 +1247,7 @@ function BuilderTab({
                                         <button className="px-4 py-2 cw-btn cw-btn-muted text-sm" disabled={savingId === course.id} onClick={() => void moderate(course, "request_changes")}>Повернути</button>
                                     </>
                                 ) : course.status === "published" && course.reviewStatus === "approved" ? (
-                                    <select className="cw-input px-3 py-2 text-sm sm:w-64" value={course.visibility} disabled={savingId === course.id} onChange={(e) => void moderate(course, "set_visibility", e.target.value as CourseRow["visibility"])}>
+                                    <select className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-48" value={course.visibility} disabled={savingId === course.id} onChange={(e) => void moderate(course, "set_visibility", e.target.value as CourseRow["visibility"])}>
                                         <option value="hidden">Приховано</option><option value="unlisted">За посиланням</option><option value="listed">У каталозі</option>
                                     </select>
                                 ) : <p className="text-xs cw-muted">Каталог стане доступним після схвалення й публікації.</p>}

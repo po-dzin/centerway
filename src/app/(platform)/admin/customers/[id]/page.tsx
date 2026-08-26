@@ -182,7 +182,7 @@ export default function CustomerProfilePage() {
     const hasContacts = customer.email || customer.phone || customer.tg_id || customer.google_id || customer.auth_user_id;
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl">
+        <div className="space-y-6 animate-in fade-in duration-500">
             {/* Breadcrumb */}
             <nav className="flex items-center gap-2 text-xs cw-muted">
                 <Link href="/admin/customers" className="cw-link-hover">

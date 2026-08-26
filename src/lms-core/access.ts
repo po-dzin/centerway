@@ -92,3 +92,22 @@ export function resolveEntitlement(input: EntitlementInput): Entitlement {
 
   return { entitled: false, reason: "expired" };
 }
+
+/**
+ * Has this enrollment's deadline passed?
+ *
+ * A deadline is per enrollment, not per product: the same course can be sold
+ * with a year of access to one cohort and a month to another, and support may
+ * extend one person's date without touching the offer. `null` is the default
+ * and means "no deadline" — most access never expires, and an empty column must
+ * not read as "expired at the epoch".
+ *
+ * An unparseable value is treated as no deadline rather than as an expiry: a
+ * malformed timestamp is a data bug, and locking a paying learner out because
+ * of one is the worse of the two failures.
+ */
+export function isEnrollmentExpired(expiresAt: string | null | undefined, now: Date): boolean {
+  if (!expiresAt) return false;
+  const deadline = Date.parse(expiresAt);
+  return Number.isFinite(deadline) && deadline <= now.getTime();
+}

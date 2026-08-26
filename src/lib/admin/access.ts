@@ -13,6 +13,16 @@
  *                      "author" role would say "may edit courses", not "may
  *                      edit THESE courses" (see the authorship migration).
  *
+ * Since 2026-08-26 it also carries the hand-made sale, for money that arrives
+ * outside the payment provider — a transfer, cash, a partner invoice:
+ *
+ *   · the person       — an account for an email that has never signed in, so a
+ *                        buyer is not told to log in first and call back
+ *   · the payment      — a paid `orders` row, because entitlement, the profile
+ *                        and every revenue report read orders, not enrollments
+ *   · the deadline     — `lms_enrollments.expires_at`, per person per course
+ *
+
  * Every mutation here writes `audit_log`. Handing out access is exactly the
  * kind of act that must be attributable afterwards.
  *
@@ -24,12 +34,14 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { writeCourseStructure } from "@/lib/lms/authoring";
-import { validateCourse, type Course } from "@/lms-core";
+import { courseOfferCode, validateCourse, type Course } from "@/lms-core";
 import { foldProgress, type ProgressEvent, type ProgressEventType } from "@/lms-core/progress";
 import { groupLearnersByAccount, learnerStatusOf } from "@/lib/admin/accessTypes";
 import type {
+    AccountRow,
     CourseRow,
     GrantableRole,
+    PaymentCurrency,
     LearnerAccountRow,
     LearnerRow,
     LearnerStatus,
@@ -323,7 +335,13 @@ function emptySummary(): Record<LearnerStatus, number> {
     return { not_started: 0, in_progress: 0, stalled: 0, completed: 0 };
 }
 
-export async function grantCourse(input: { email: string; courseSlug: string; actorId: string }) {
+export async function grantCourse(input: {
+    email: string;
+    courseSlug: string;
+    actorId: string;
+    /** ISO instant, already normalized by the caller. `null`/absent means access does not end. */
+    expiresAt?: string | null;
+}) {
     const db = adminClient();
     const account = await resolveAccountByEmail(db, input.email);
 
@@ -335,17 +353,28 @@ export async function grantCourse(input: { email: string; courseSlug: string; ac
     if (courseError) throw new AccessError(courseError.message, 500);
     if (!course) throw new AccessError("course_not_found", 404);
 
+    const expiresAt = input.expiresAt ?? null;
+
     const { data: existing } = await db
         .from("lms_enrollments")
-        .select("id, source, started_at")
+        .select("id, source, started_at, expires_at")
         .eq("course_id", course.id)
         .eq("auth_user_id", account.authUserId)
         .maybeSingle();
 
     if (existing) {
         // Already enrolled is success, not an error — the operator's intent
-        // ("this person can open the course") is already true.
-        return { created: false, course, account, enrollmentId: existing.id as string };
+        // ("this person can open the course") is already true. A deadline
+        // typed alongside the grant is still applied: the operator asked for
+        // access *until this date*, and half of that request is not yet true.
+        if (expiresAt !== null && expiresAt !== existing.expires_at) {
+            await setEnrollmentDeadline({
+                enrollmentId: existing.id as string,
+                expiresAt,
+                actorId: input.actorId,
+            });
+        }
+        return { created: false, course, account, enrollmentId: existing.id as string, expiresAt };
     }
 
     const { data: inserted, error } = await db
@@ -356,6 +385,7 @@ export async function grantCourse(input: { email: string; courseSlug: string; ac
             source: "manual",
             // Day 1 starts now — same rule as `scripts/lms-grant.mjs`.
             started_at: new Date().toISOString(),
+            expires_at: expiresAt,
         })
         .select("id")
         .single();
@@ -373,10 +403,313 @@ export async function grantCourse(input: { email: string; courseSlug: string; ac
             grantee_email: account.email,
             grantee_auth_user_id: account.authUserId,
             source: "manual",
+            expires_at: expiresAt,
         },
     });
 
-    return { created: true, course, account, enrollmentId: inserted.id as string };
+    return { created: true, course, account, enrollmentId: inserted.id as string, expiresAt };
+}
+
+/**
+ * Moves, sets or clears one person's deadline on one course.
+ *
+ * Per enrollment rather than per course: the same course is sold with a year of
+ * access to one cohort and a month to another, and support extends a single
+ * person's date without touching anyone else's. `null` clears the deadline.
+ *
+ * Nothing is deleted — an expired enrollment keeps its progress, so extending
+ * the date returns the learner exactly where they stopped.
+ */
+export async function setEnrollmentDeadline(input: {
+    enrollmentId: string;
+    expiresAt: string | null;
+    actorId: string;
+}) {
+    const db = adminClient();
+
+    const { data: enrollment, error: readError } = await db
+        .from("lms_enrollments")
+        .select("id, course_id, auth_user_id, expires_at")
+        .eq("id", input.enrollmentId)
+        .maybeSingle();
+    if (readError) throw new AccessError(readError.message, 500);
+    if (!enrollment) throw new AccessError("enrollment_not_found", 404);
+
+    const { error } = await db
+        .from("lms_enrollments")
+        .update({ expires_at: input.expiresAt })
+        .eq("id", enrollment.id);
+    if (error) throw new AccessError(error.message, 500);
+
+    const [{ data: course }, { data: account }] = await Promise.all([
+        db.from("lms_courses").select("slug").eq("id", enrollment.course_id).maybeSingle(),
+        db.from("platform_users").select("email").eq("auth_user_id", enrollment.auth_user_id).maybeSingle(),
+    ]);
+
+    await writeAudit(db, {
+        actorId: input.actorId,
+        action: "access.course.deadline",
+        entityType: "lms_enrollment",
+        entityId: enrollment.id as string,
+        metadata: {
+            course_slug: course?.slug ?? null,
+            grantee_email: account?.email ?? null,
+            grantee_auth_user_id: enrollment.auth_user_id,
+            // Both ends recorded: "who shortened this" is the question asked
+            // afterwards, and the previous value is the only way to answer it.
+            expires_at_before: (enrollment.expires_at as string | null) ?? null,
+            expires_at_after: input.expiresAt,
+        },
+    });
+
+    return {
+        enrollmentId: enrollment.id as string,
+        courseSlug: course?.slug ?? null,
+        email: account?.email ?? null,
+        expiresAt: input.expiresAt,
+    };
+}
+
+/**
+ * Creates a platform account for someone who has never signed in.
+ *
+ * Until now every grant needed the person to have logged in once, because
+ * `platform_users` is written at sign-in. That is the wrong order for a sale
+ * made by hand — the operator has the money and the email, and the buyer should
+ * find the course waiting rather than be told to log in first and call back.
+ *
+ * The address is marked confirmed: it was verified out of band (a transfer, an
+ * invoice, a message), and an unconfirmed address would silently refuse to
+ * claim the very purchases this account is being made for — purchase linking
+ * matches by email ONLY when the provider verified it.
+ *
+ * No password is set. The person signs in through the normal doors (OAuth, or a
+ * magic link to this address), which is also why this is not a way to take over
+ * an address that already has an account: an existing one is left untouched.
+ */
+export async function createAccount(input: { email: string; fullName?: string | null; actorId: string }) {
+    const db = adminClient();
+    const email = input.email.trim().toLowerCase();
+    if (!email) throw new AccessError("email_required");
+
+    const { data: existing } = await db
+        .from("platform_users")
+        .select("auth_user_id, email, full_name, avatar_url")
+        .ilike("email", email)
+        .maybeSingle();
+
+    if (existing) {
+        return {
+            created: false,
+            account: {
+                authUserId: existing.auth_user_id as string,
+                email: existing.email as string | null,
+                fullName: existing.full_name as string | null,
+                avatarUrl: existing.avatar_url as string | null,
+            } satisfies AccessAccount,
+        };
+    }
+
+    const fullName = input.fullName?.trim() || null;
+    const created = await db.auth.admin.createUser({
+        email,
+        email_confirm: true,
+        user_metadata: fullName ? { full_name: fullName } : {},
+    });
+
+    if (created.error || !created.data?.user) {
+        throw new AccessError(created.error?.message ?? "account_create_failed", 500);
+    }
+
+    const authUserId = created.data.user.id;
+
+    const { error: profileError } = await db.from("platform_users").upsert(
+        {
+            auth_user_id: authUserId,
+            email,
+            full_name: fullName,
+            provider: "manual",
+        },
+        { onConflict: "auth_user_id" }
+    );
+    if (profileError) throw new AccessError(profileError.message, 500);
+
+    await writeAudit(db, {
+        actorId: input.actorId,
+        action: "access.account.create",
+        entityType: "platform_user",
+        entityId: authUserId,
+        metadata: { email, full_name: fullName },
+    });
+
+    return {
+        created: true,
+        account: { authUserId, email, fullName, avatarUrl: null } satisfies AccessAccount,
+    };
+}
+
+/**
+ * Records money that arrived outside the payment provider.
+ *
+ * A bank transfer, cash, a partner's invoice — the sale is real, but WayForPay
+ * never saw it, so no `orders` row exists and the buyer owns nothing: the LMS,
+ * the profile and every revenue report read paid orders, not enrollments.
+ * Writing the order is what makes a hand-made sale indistinguishable from an
+ * automatic one everywhere downstream.
+ *
+ * The reference is prefixed `manual_` on purpose. It has to be obvious at a
+ * glance — in a report, in the orders table, in the audit log — that a human
+ * asserted this payment rather than a provider confirming it.
+ */
+export async function recordManualPayment(input: {
+    email: string;
+    productCode: string;
+    amount: number;
+    currency: PaymentCurrency;
+    note?: string | null;
+    actorId: string;
+    /** Set when the buyer already has an account, so the purchase is theirs immediately. */
+    authUserId?: string | null;
+}) {
+    const db = adminClient();
+    const email = input.email.trim().toLowerCase();
+    if (!email) throw new AccessError("email_required");
+
+    const productCode = input.productCode.trim();
+    if (!productCode) throw new AccessError("product_code_required");
+    if (!Number.isFinite(input.amount) || input.amount <= 0) throw new AccessError("amount_invalid");
+
+    const customerId = await resolveCustomerId(db, email, input.authUserId ?? null);
+
+    const orderRef = manualOrderRef(productCode);
+    const paidAt = new Date().toISOString();
+
+    const { error } = await db.from("orders").insert({
+        order_ref: orderRef,
+        product_code: productCode,
+        amount: input.amount,
+        currency: input.currency,
+        status: "paid",
+        customer_id: customerId,
+        created_at: paidAt,
+    });
+    if (error) throw new AccessError(error.message, 500);
+
+    await writeAudit(db, {
+        actorId: input.actorId,
+        action: "order.manual.record",
+        entityType: "order",
+        entityId: orderRef,
+        metadata: {
+            email,
+            product_code: productCode,
+            amount: input.amount,
+            currency: input.currency,
+            customer_id: customerId,
+            note: input.note?.trim() || null,
+        },
+    });
+
+    return { orderRef, customerId, amount: input.amount, currency: input.currency, productCode };
+}
+
+/**
+ * The customer row a manual payment hangs on, created if this email has none.
+ *
+ * Linking `auth_user_id` here is what lets the LMS find the purchase: entitlement
+ * looks up customers by account first and by verified email second, so an
+ * unlinked row would leave the buyer staring at a locked course they paid for.
+ */
+async function resolveCustomerId(db: Db, email: string, authUserId: string | null): Promise<string> {
+    const { data: existing, error: readError } = await db
+        .from("customers")
+        .select("id, auth_user_id")
+        .ilike("email", email)
+        .order("created_at", { ascending: true })
+        .limit(1);
+    if (readError) throw new AccessError(readError.message, 500);
+
+    const found = existing?.[0];
+    if (found) {
+        // Never re-point a row that already belongs to another account — that is
+        // a support case, not an automatic merge (see `linkPurchasesToAccount`).
+        if (authUserId && !found.auth_user_id) {
+            await db.from("customers").update({ auth_user_id: authUserId }).eq("id", found.id).is("auth_user_id", null);
+        }
+        return found.id as string;
+    }
+
+    const { data: inserted, error } = await db
+        .from("customers")
+        .insert({ email, auth_user_id: authUserId })
+        .select("id")
+        .single();
+    if (error) throw new AccessError(error.message, 500);
+
+    return inserted.id as string;
+}
+
+function manualOrderRef(productCode: string): string {
+    const token = productCode.replace(/[^a-z0-9-]+/gi, "-");
+    const now = new Date();
+    const stamp = [
+        now.getUTCFullYear(),
+        String(now.getUTCMonth() + 1).padStart(2, "0"),
+        String(now.getUTCDate()).padStart(2, "0"),
+    ].join("");
+    const rand = Math.random().toString(16).slice(2, 10);
+    return `manual_${token}_${stamp}_${rand}`;
+}
+
+export type ProvisionAccessInput = {
+    email: string;
+    fullName?: string | null;
+    courseSlug: string;
+    /** ISO instant or `null`; the route normalizes what the operator typed. */
+    expiresAt?: string | null;
+    /** Create the platform account when this email has never signed in. */
+    createAccount?: boolean;
+    /** Amount that arrived outside the provider. Omitted for a plain gift or a review grant. */
+    payment?: { amount: number; currency: PaymentCurrency; note?: string | null } | null;
+    actorId: string;
+};
+
+/**
+ * The whole hand-made sale in one act: person, money, access, deadline.
+ *
+ * Composed here rather than in the route so the ORDER is stated once and holds:
+ * the account must exist before the payment, so the customer row can be linked
+ * to it; the payment must be written before the grant, so the enrollment is
+ * backed by a real order rather than only by an operator's word.
+ *
+ * Each step is independently useful and independently audited — this only fixes
+ * the sequence, it does not hide the steps.
+ */
+export async function provisionAccess(input: ProvisionAccessInput) {
+    const account = input.createAccount
+        ? await createAccount({ email: input.email, fullName: input.fullName, actorId: input.actorId })
+        : { created: false, account: await resolveAccountByEmail(adminClient(), input.email) };
+
+    const payment = input.payment
+        ? await recordManualPayment({
+              email: input.email,
+              productCode: courseOfferCode(input.courseSlug),
+              amount: input.payment.amount,
+              currency: input.payment.currency,
+              note: input.payment.note,
+              authUserId: account.account.authUserId,
+              actorId: input.actorId,
+          })
+        : null;
+
+    const grant = await grantCourse({
+        email: input.email,
+        courseSlug: input.courseSlug,
+        expiresAt: input.expiresAt ?? null,
+        actorId: input.actorId,
+    });
+
+    return { accountCreated: account.created, account: grant.account, payment, grant };
 }
 
 /**
@@ -428,6 +761,166 @@ export async function revokeCourse(input: { enrollmentId: string; actorId: strin
     });
 
     return { courseSlug: course?.slug ?? null, email: account?.email ?? null, progressEventsDeleted: eventCount ?? 0 };
+}
+
+export type ListAccountsInput = { q?: string; limit: number; offset: number };
+
+/**
+ * Everyone who has an account, which no other list in the panel answers.
+ *
+ * Roles show only elevated roles, Learners show only people holding a course,
+ * Customers show only people who paid — so someone who signed in with Google
+ * and did nothing else was invisible in a panel that knew about them all along.
+ * That is the wrong shape for the surface you use to hand out access by hand:
+ * to grant something to a person you first have to be able to FIND them.
+ *
+ * `platform_users` is the mirror of `auth.users`, written on every sign-in
+ * (`/api/platform/users/sync`), and it is the only one of the two this codebase
+ * may read with a plain query — so it is the list.
+ *
+ * Course and purchase counts are folded per page, not per row: one query each
+ * for the fifty accounts on screen instead of a hundred round-trips.
+ */
+export async function listAccounts(input: ListAccountsInput): Promise<{
+    items: AccountRow[];
+    total: number;
+}> {
+    const db = adminClient();
+
+    let query = db
+        .from("platform_users")
+        .select("auth_user_id, email, full_name, avatar_url, provider, last_sign_in_at", { count: "exact" })
+        // Most recent sign-in first; an account that has never signed in — one
+        // the panel just created for a hand-made sale — sorts last rather than
+        // to the top, where it would look like the newest activity.
+        .order("last_sign_in_at", { ascending: false, nullsFirst: false })
+        .range(input.offset, input.offset + input.limit - 1);
+
+    const q = sanitizeSearch(input.q);
+    if (q) query = query.or(`email.ilike.%${q}%,full_name.ilike.%${q}%`);
+
+    const { data, error, count } = await query;
+    if (error) throw new AccessError(error.message, 500);
+
+    const rows = data ?? [];
+    if (rows.length === 0) return { items: [], total: count ?? 0 };
+
+    const ids = rows.map((row) => row.auth_user_id as string);
+
+    const [{ data: roles }, { data: enrollments }, customerIdByAccount] = await Promise.all([
+        db.from("user_roles").select("user_id, role").in("user_id", ids),
+        db.from("lms_enrollments").select("auth_user_id").in("auth_user_id", ids),
+        customersByAccount(
+            db,
+            rows.map((row) => ({
+                authUserId: row.auth_user_id as string,
+                email: (row.email as string | null) ?? null,
+            }))
+        ),
+    ]);
+
+    const roleById = new Map((roles ?? []).map((row) => [row.user_id as string, String(row.role).toLowerCase()]));
+
+    const enrolledCount = new Map<string, number>();
+    for (const row of enrollments ?? []) {
+        const key = row.auth_user_id as string;
+        enrolledCount.set(key, (enrolledCount.get(key) ?? 0) + 1);
+    }
+
+    const paidByCustomer = await paidOrderCounts(db, [...new Set([...customerIdByAccount.values()].flat())]);
+
+    return {
+        items: rows.map((row) => {
+            const authUserId = row.auth_user_id as string;
+            const customers = customerIdByAccount.get(authUserId) ?? [];
+            return {
+                authUserId,
+                email: (row.email as string | null) ?? null,
+                fullName: (row.full_name as string | null) ?? null,
+                avatarUrl: (row.avatar_url as string | null) ?? null,
+                provider: (row.provider as string | null) ?? null,
+                lastSignInAt: (row.last_sign_in_at as string | null) ?? null,
+                role: roleById.get(authUserId) ?? null,
+                enrollments: enrolledCount.get(authUserId) ?? 0,
+                purchases: customers.reduce((sum, id) => sum + (paidByCustomer.get(id) ?? 0), 0),
+            } satisfies AccountRow;
+        }),
+        total: count ?? rows.length,
+    };
+}
+
+/**
+ * Which customer rows belong to each account, by link and by address.
+ *
+ * Both, because the two are not the same set: a purchase made before the
+ * account existed carries no `auth_user_id` until the buyer signs in, and the
+ * panel's own manual sale links the row immediately. Counting only linked rows
+ * would report "0 purchases" for exactly the people support is looking up.
+ *
+ * The address match is an exact `in` on lowercase rather than a per-row
+ * `ilike`, which is one query instead of fifty. It holds because every writer
+ * of `customers.email` normalizes — the WayForPay webhook through `normEmail`,
+ * the support bot from the already-lowercased mirror, `recordManualPayment`
+ * here. A future writer that does not is what would quietly break this count.
+ */
+async function customersByAccount(
+    db: Db,
+    accounts: Array<{ authUserId: string; email: string | null }>
+): Promise<Map<string, string[]>> {
+    const byAccount = new Map<string, string[]>();
+    const seen = new Set<string>();
+
+    const add = (authUserId: string, customerId: string) => {
+        const key = `${authUserId}:${customerId}`;
+        if (seen.has(key)) return;
+        seen.add(key);
+        byAccount.set(authUserId, [...(byAccount.get(authUserId) ?? []), customerId]);
+    };
+
+    const emailOwner = new Map<string, string>();
+    for (const account of accounts) {
+        const email = account.email?.trim().toLowerCase();
+        // First account wins if the mirror somehow holds one address twice —
+        // better than two accounts both claiming the same purchase.
+        if (email && !emailOwner.has(email)) emailOwner.set(email, account.authUserId);
+    }
+
+    const ids = accounts.map((account) => account.authUserId);
+    const emails = [...emailOwner.keys()];
+
+    const [linked, byEmail] = await Promise.all([
+        ids.length > 0
+            ? db.from("customers").select("id, auth_user_id, email").in("auth_user_id", ids)
+            : { data: [] },
+        emails.length > 0 ? db.from("customers").select("id, auth_user_id, email").in("email", emails) : { data: [] },
+    ]);
+
+    for (const row of linked.data ?? []) add(row.auth_user_id as string, row.id as string);
+
+    for (const row of byEmail.data ?? []) {
+        const owner = emailOwner.get((row.email as string | null)?.trim().toLowerCase() ?? "");
+        if (!owner) continue;
+        // A row already claimed by another account is that account's purchase,
+        // not this one's — a shared address is a support case, never a merge.
+        const linkedTo = row.auth_user_id as string | null;
+        if (linkedTo && linkedTo !== owner) continue;
+        add(owner, row.id as string);
+    }
+
+    return byAccount;
+}
+
+async function paidOrderCounts(db: Db, customerIds: string[]): Promise<Map<string, number>> {
+    const counts = new Map<string, number>();
+    if (customerIds.length === 0) return counts;
+
+    const { data } = await db.from("orders").select("customer_id, status").in("customer_id", customerIds);
+    for (const row of data ?? []) {
+        if (String(row.status ?? "").toLowerCase() !== "paid") continue;
+        const key = row.customer_id as string;
+        counts.set(key, (counts.get(key) ?? 0) + 1);
+    }
+    return counts;
 }
 
 export async function listRoles(input: { q?: string }): Promise<RoleRow[]> {
