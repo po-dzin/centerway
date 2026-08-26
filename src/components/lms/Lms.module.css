@@ -568,9 +568,15 @@
   color: var(--cw-platform-muted);
 }
 
+/* 1.85, not the 1.65 it was. Measured against the register this reads in —
+   ryokan, tea and craft surfaces set running text between 1.6 and 2.2 (KINTO
+   1.9, hana-mura 2.2) while we sat at the bottom of that range. See
+   docs/design-system/references/eastern-zen-survey-2026-08-26.md. Only the
+   leading moves: the letter-spacing those pages carry exists for square kana
+   and takes Cyrillic apart. */
 .paragraph {
   margin: 0;
-  line-height: 1.65;
+  line-height: 1.85;
 }
 
 .heading {
@@ -598,11 +604,13 @@
   list-style: none;
   display: grid;
   /* Wider than the 0.4rem it was. These items are "term — definition" and most
-     of them wrap to two or three lines at 1.6; at 0.4rem the space between two
-     items was smaller than the space between two lines of the same item, so the
-     list read as one paragraph with bold words scattered through it. */
-  gap: 0.7rem;
-  line-height: 1.6;
+     of them wrap to two or three lines; at 0.4rem the space between two items
+     was smaller than the space between two lines of the same item, so the list
+     read as one paragraph with bold words scattered through it. The gap has to
+     stay ahead of the leading, so it moved with it: at 1.85 the space inside an
+     item is 0.85em, and 1rem clears it. */
+  gap: 1rem;
+  line-height: 1.85;
 }
 
 .list > li {
@@ -644,7 +652,10 @@
   text-align: left;
   font-family: var(--cw-font-data);
   font-size: 0.82rem;
-  line-height: 1.95;
+  /* Matches the item's first line box, so the number sits on the first line's
+     baseline rather than above it: 1.85rem / 0.82rem. It tracks `.list`'s
+     line-height and has to be recomputed whenever that moves. */
+  line-height: 2.256;
   color: var(--cw-platform-muted);
 }
 
