@@ -59,7 +59,7 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
   if (variant === "personal") {
     return (
       <footer className={styles.footer} data-platform-footer="personal">
-        <div className={`${styles.container} ${styles.footerGridPersonal}`}>
+        <div className={`${styles.container} ${styles.footerGrid} ${styles.footerGridPersonal}`}>
           <div className={styles.footerBrandBlock}>
             {/* The root of THIS application, like the header's mark. Pointing
                 the personal footer at the storefront would make the one control
@@ -70,11 +70,6 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
             </Link>
             {/* `.footerLead` is a grid, so each sentence is its own row. A
                 `<br>` inside a grid container is a grid item, not a break. */}
-            <p className={styles.footerLead}>
-              {PERSONAL_LEAD.map((line) => (
-                <span key={line}>{line}</span>
-              ))}
-            </p>
           </div>
           {/* TWO LINK COLUMNS, SPLIT BY WHAT THEY ARE. The first is this
               application's own pages — the places a reader goes to keep working.
@@ -106,11 +101,11 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
             <span className={styles.brandSymbol} aria-hidden="true" />
             <span className={styles.footerBrandText}>CENTERWAY</span>
           </Link>
-          {/* Placeholder wording pending the owner's line. The old one named
-              ayurveda and consultations only, which stopped describing the
-              platform once the LMS, the dosha test and the product shelf landed;
-              this one names the shape of the offer instead of one modality. */}
-          <p className={styles.footerLead}>Курси, практики та супровід — тіло, ритм і опора у власному темпі.</p>
+          <p className={styles.footerLead}>
+            {PERSONAL_LEAD.map((line) => (
+              <span key={line}>{line}</span>
+            ))}
+          </p>
         </div>
         <div className={`${styles.footerLinks} ${styles.footerLegal}`}>
           <Link href={publicOfferHref}>Публічний договір</Link>

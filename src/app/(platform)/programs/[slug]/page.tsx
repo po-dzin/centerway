@@ -22,6 +22,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { ProgramDetailPage, type OfferSurface } from "@/components/platform/ProgramDetailPage";
+import { getCourseAuthor } from "@/lib/lms/authors";
 import { getLiveCourse } from "@/lib/lms/liveCatalog";
 import { courseOfferCommerce } from "@/lib/platform/offerCommerce";
 import { isPublicCourse, loadCourseOffer } from "@/lib/platform/offers";
@@ -50,14 +51,23 @@ function toOfferSurface(course: Course): OfferSurface {
     title: course.title,
     fullTitle: course.title,
     tag: course.tagline ?? (isMini ? "Міні-курс" : "Програма"),
+    /* THE AUTHOR'S WORD WINS. The derived count is true and answers a question
+       nobody asked: reset-day is twelve lessons meant to be walked over three
+       days, and «12 уроків» is not what its buyer needs to read. The count
+       stays as the fallback for a course whose author has not said. */
     duration:
-      course.schedule.mode === "daily"
+      course.duration ??
+      (course.schedule.mode === "daily"
         ? `${lessons} ${plural(lessons, "день", "дні", "днів")}`
-        : `${lessons} ${plural(lessons, "урок", "уроки", "уроків")}`,
+        : `${lessons} ${plural(lessons, "урок", "уроки", "уроків")}`),
     description: summary,
     longDescription: summary,
     results: course.results ?? [],
     surfaceType: isMini ? "mini-course" : "program",
+    ...(course.audience ? { audience: course.audience } : {}),
+    ...(course.format ? { format: course.format } : {}),
+    ...(course.accessNote ? { accessNote: course.accessNote } : {}),
+    ...(course.authorNote ? { authorNote: course.authorNote } : {}),
     ...(course.cover
       ? {
           artwork: {
@@ -118,7 +128,10 @@ export default async function CourseOfferPage({ params }: { params: Promise<{ sl
      lives in a table the authoring routes hold no grant on, so it cannot come
      from the course the author edited. No row means no agreed price, and the
      page falls back to the lead form — the same honest state `herbs` is in. */
-  const offer = await loadCourseOffer(course.slug);
+  /* Both reads at once: they are independent, and a byline should not wait on a
+     price. Neither can fail the page — `loadCourseOffer` falls back to the lead
+     form and `getCourseAuthor` to no byline at all. */
+  const [offer, author] = await Promise.all([loadCourseOffer(course.slug), getCourseAuthor(course.slug)]);
 
   // Passed in rather than looked up: this page has already read the course, and
   // the snapshot lookup inside would find nothing for a course that exists only
@@ -128,6 +141,7 @@ export default async function CourseOfferPage({ params }: { params: Promise<{ sl
       program={toOfferSurface(course)}
       course={course}
       commerce={courseOfferCommerce(course.slug, offer)}
+      author={author}
     />
   );
 }

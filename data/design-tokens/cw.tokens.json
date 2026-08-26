@@ -436,6 +436,7 @@
         "--ds-shadow-md": "var(--cw-shadow-strong)",
         "--ds-z-base": "1",
         "--ds-z-sticky": "999",
+        "--ds-z-modal": "1200",
         "--ds-breakpoint-mobile-max": "35rem",
         "--ds-breakpoint-tablet-min": "35.0625rem",
         "--ds-breakpoint-tablet-max": "56.25rem",

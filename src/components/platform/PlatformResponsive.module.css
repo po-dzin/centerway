@@ -1,6 +1,38 @@
 /* Responsive overrides for shell, blocks, and components.
    Derived from PlatformSite.module.css during semantic architecture CSS split. */
 
+/* Internal workspaces are a stable application frame, not a storefront layer.
+   The same shared header supplies identity and account behaviour, but its
+   material is a flat top panel spanning the viewport above both rails.
+
+   IT IS THE PAGE, NOT A PLATE ON IT. The bar used to paint `--cw-mat-surface`,
+   which is the white card material: against the warm ground of a workspace it
+   read as a separate white object laid over the paper, and every panel that
+   copied it read the same way. One sheet of paper, one colour; what separates
+   the bar from the work below it is a drawn rule, the same one the panels use
+   down their edges. */
+.header[data-cw-header-mode="workspace"] {
+  position: relative;
+  inset: auto;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  overflow: visible;
+  box-sizing: border-box;
+  border-block-end: 1px solid color-mix(in srgb, var(--cw-platform-text) 13%, transparent);
+  border-radius: 0;
+  background: var(--cw-platform-bg);
+  box-shadow: none;
+}
+
+.header[data-cw-header-mode="workspace"] .headerInner {
+  width: 100% !important;
+  max-width: none !important;
+  box-sizing: border-box;
+  margin: 0;
+  padding-inline: var(--cw-space-2xl);
+}
+
 @media (max-width: 1100px) and (min-width: 901px) {
   .header {
     width: min(100% - 1.5rem, var(--cw-max-width));
@@ -103,6 +135,18 @@
     overflow: visible;
     border: 0;
     border-bottom: 0;
+  }
+
+  .header.header[data-cw-header-mode="workspace"] {
+    top: 0;
+    width: 100%;
+    margin: 0;
+    border-block-end: 1px solid var(--cw-mat-stroke-inner);
+    border-radius: 0;
+  }
+
+  .header[data-cw-header-mode="workspace"] .headerInner {
+    padding-inline: var(--cw-space-md);
   }
 
   .shell:has(.heroFeature) .header.header {
@@ -338,6 +382,21 @@
       max-height 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
       opacity 160ms ease 40ms,
       visibility 0s;
+  }
+
+  /* Workspace chrome is intentionally matte rather than glass. Its mobile
+     account drawer therefore needs its own opaque DS surface; the storefront
+     version is painted by the expanding glass pseudo-element, which workspace
+     mode deliberately does not render. */
+  .header[data-cw-header-mode="workspace"][data-menu-open="true"] .navLayer {
+    color: var(--cw-platform-text);
+    background: var(--cw-mat-surface);
+    border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  }
+
+  .header[data-cw-header-mode="workspace"] .mobileMenuSurface {
+    --platform-header-fg: var(--cw-platform-text);
+    background: var(--cw-mat-surface);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -823,7 +882,7 @@
   .videoPanel {
     min-height: auto;
     aspect-ratio: 16 / 9;
-    border-radius: var(--cw-card-radius) var(--cw-card-radius) 0 0;
+    border-radius: var(--cw-card-radius);
   }
 
   .videoAside {
@@ -999,7 +1058,7 @@
   }
 
   .videoPanel {
-    border-radius: var(--cw-radius-lg) var(--cw-radius-lg) 0 0;
+    border-radius: var(--cw-radius-lg);
   }
 
   .videoAside,

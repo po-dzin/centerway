@@ -624,7 +624,41 @@
   box-shadow: 0 12px 24px color-mix(in srgb, var(--cw-platform-text) 18%, transparent);
 }
 
-.programLink:hover {
+/* Whole-card route to the detail page.
+
+   Why a sibling overlay and not the usual `::after` on the CTA: that pattern
+   needs no positioned ancestor between the link and the card, and
+   .programTileBody must keep `position: relative` — that is what lifts the copy
+   above the absolutely-positioned photo (see the 2026-08-21 note above). So the
+   overlay is its own element, anchored straight to the tile.
+
+   Cost, stated plainly: a sheet over the card means the copy inside it can no
+   longer be selected by dragging. That is the accepted trade for card-wide
+   click, and it is why nothing else in the card is interactive. */
+.programTileOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+}
+
+/* Drawn inside the tile: `.programTile` clips overflow, so an outward ring
+   would be cut off. Never `outline: none` without a replacement — same rule the
+   button base follows. */
+.programTileOverlay:focus-visible {
+  outline: 2px solid var(--cw-platform-accent);
+  outline-offset: -4px;
+}
+
+/* The CTA is no longer the element the pointer or the keyboard lands on — the
+   overlay sits on top of it — so both states are driven by the card. Same
+   declarations as before, new trigger.
+
+   `:has()` rather than a sibling combinator: the card is what reacts, and
+   reading it off the tile keeps hover and focus in one place instead of one
+   rule that walks up and another that walks across. */
+.programTile:hover .programLink,
+.programTile:has(.programTileOverlay:focus-visible) .programLink {
   transform: translateY(var(--ds-button-lift));
   background: color-mix(in srgb, var(--program-tile-button-bg) 88%, var(--cw-platform-surface) 12%);
   box-shadow: 0 16px 28px color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
@@ -727,86 +761,6 @@
   margin-top: 1rem;
   font-size: var(--ds-type-body-sm-size);
   line-height: var(--ds-type-body-sm-line-height);
-}
-
-/* ── Shared course-cover frame ──────────────────────
-
-   Catalogue cards use the same media object the author edits in Builder and
-   the learner sees after purchase: one 16:9 image inside the card's frame.
-   Copy no longer sits on photography, so crop, contrast and card recognition
-   stay stable from mobile through desktop. The only portrait exception is the
-   standalone offer hero handled by PlatformHeroPhoto. */
-.programTile,
-.programTile[data-has-art="true"],
-.programTile[data-visual="leaf"],
-.programTile[data-visual="stone"] {
-  --program-tile-fg: var(--cw-platform-text);
-  --program-tile-copy: var(--cw-platform-muted);
-  --program-label-fg: var(--cw-platform-muted);
-  min-height: 0;
-  display: grid;
-  grid-template-rows: auto minmax(0, 1fr);
-  align-items: stretch;
-  padding: var(--cw-space-sm);
-  color: var(--cw-platform-text);
-  background: var(--cw-mat-surface);
-}
-
-.programTile .programPhoto {
-  position: relative;
-  inset: auto;
-  width: 100%;
-  aspect-ratio: 16 / 9;
-  overflow: hidden;
-  border-radius: var(--cw-radius-md);
-}
-
-.programTile[data-has-art="true"] .programPhoto {
-  background: var(--program-photo-active-image) var(--program-photo-position) / cover no-repeat;
-}
-
-.programTile .programPhoto::before,
-.programTile .programPhoto::after {
-  display: none;
-}
-
-.programTile .programTileBody {
-  padding: var(--cw-space-sm) var(--cw-space-xs) var(--cw-space-xs);
-}
-
-.programTile[data-has-art="true"] .programTileBody,
-.programTile[data-has-art="true"] .programTileBody h3,
-.programTile[data-has-art="true"] .programTileBody p,
-.programTile[data-has-art="true"] .programLink {
-  text-shadow: none;
-}
-
-.programTile .programTileBody h3,
-.programTile[data-has-art="true"] .programTileBody h3 {
-  color: var(--cw-platform-text);
-}
-
-.programTile .programTileBody p:not(.label),
-.programTile[data-has-art="true"] .programTileBody p:not(.label),
-.programTile[data-has-art="true"] .programTileBody .label,
-.programTile .programTileMeta.programTileMeta {
-  color: var(--cw-platform-muted);
-}
-
-.programTile .programTilePoints li {
-  color: var(--cw-platform-text);
-}
-
-.programTile .programLink {
-  border-color: color-mix(in srgb, var(--cw-platform-accent) 56%, transparent);
-  color: var(--cw-platform-on-accent);
-  background: var(--cw-platform-accent);
-  box-shadow: var(--cw-mat-shadow-soft);
-}
-
-.programTile .programLink:hover {
-  background: var(--cw-platform-accent-strong);
-  box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
 }
 
 /* Reduced motion: offer/test tiles keep the hover surface change, lose the lift. */

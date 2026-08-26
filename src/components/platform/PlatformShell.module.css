@@ -220,6 +220,11 @@
   padding: 0 1rem;
 }
 
+.workspaceHeaderSlot {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -793,12 +798,12 @@
 .profileWrapMobile a:focus-visible .menuInkMark,
 .profileWrapMobile button:focus-visible .menuInkMark {
   opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale)) rotate(-0.4deg);
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
 }
 
 .profileWrapMobile a[data-current] .menuInkMark {
   opacity: 1;
-  transform: scaleX(1) rotate(-0.4deg);
+  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
 }
 
 .mobileProfileSlot {

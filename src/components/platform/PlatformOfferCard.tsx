@@ -71,6 +71,13 @@ export function PlatformOfferCard({
       style={cardStyle}
     >
       <div className={styles.programPhoto} aria-hidden="true" />
+      {/* The card IS the choice, so the whole card routes — the visible CTA below
+          is its label, not the only way in. This overlay is the single real link
+          in the card: making the CTA a link too would put two links with the same
+          destination in the a11y tree and in the tab order. */}
+      {isPlanned ? null : (
+        <Link className={styles.programTileOverlay} href={href} aria-label={title} />
+      )}
       <div
         className={styles.programTileBody}
         data-has-meta={meta ? "true" : "false"}
@@ -90,9 +97,9 @@ export function PlatformOfferCard({
         {isPlanned ? (
           <span className={styles.programTileStatus}>{statusLabel}</span>
         ) : (
-          <Link className={styles.programLink} href={href}>
-            {ctaLabel}
-          </Link>
+          /* Not a link: the overlay above already is one, and it covers this.
+             Kept as a span so the card offers one target, not two. */
+          <span className={styles.programLink}>{ctaLabel}</span>
         )}
       </div>
     </article>

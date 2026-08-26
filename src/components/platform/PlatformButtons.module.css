@@ -116,6 +116,24 @@
   min-width: var(--ds-button-min-width);
 }
 
+/* ── bar: a control that spans a panel edge ───────────
+
+   A collapse foot at the bottom of a side panel is a button, but it is not a
+   plate sitting inside content: it spans the panel, and the rule above it is
+   the border between the control and the thing it closes. It exists as a role
+   because the builder has TWO of them, one per side of the document, and two
+   controls that answer the same question on opposite sides of one document
+   have to be the same object rather than two hand-matched recipes. */
+.bar {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  min-height: var(--ds-touch-target-min);
+  padding-inline: 0;
+  border-radius: 0;
+  aspect-ratio: auto;
+}
+
 .square {
   width: var(--ds-touch-target-min);
   min-width: var(--ds-touch-target-min);

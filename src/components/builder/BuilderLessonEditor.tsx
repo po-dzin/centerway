@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useRef, useState } from "react";
 
-import { Icon } from "@/components/Icon";
+import { HandGraphic, Icon } from "@/components/Icon";
 import { BlockRenderer } from "@/components/lms/LessonBlocks";
 import {
   courseThemeAttributes,
@@ -12,24 +12,30 @@ import {
   flattenLessons,
   inlineToPlainText,
   moveItem,
+  newLesson,
+  newModule,
   PLACEHOLDER_MARKER,
   pruneEmptyProse,
   newBlock,
+  renumber,
   newTableRow,
   renumberSteps,
   todo,
+  uniqueSlug,
   type Course,
+  type CourseModule,
   type Lesson,
   type LessonBlock,
   type LessonBlockType,
   type RichTextNode,
 } from "@/lms-core";
-import { BuilderFailureNotice, BuilderNotice, BuilderShell, BuilderStep } from "./BuilderShell";
+import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
 import { BuilderContents } from "./BuilderContents";
 import { BuilderMenu } from "./BuilderMenu";
 import { FieldInput } from "./BuilderFields";
 import { BuilderInlineEditor, type InternalReferenceOption, type SlashCommand } from "./BuilderInlineEditor";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
+import { InkLabel } from "./BuilderInkLabel";
 import { importLessonFiles, loadCourse, saveCourse, type BuilderFailure } from "./builderClient";
 import { BuilderGrip } from "./BuilderGrip";
 import { BuilderHistory } from "./BuilderHistory";
@@ -85,7 +91,36 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [contentsOpen, setContentsOpen] = useState(false);
+  const [structureCollapsed, setStructureCollapsed] = useState(false);
   const [pendingHref, setPendingHref] = useState<string | null>(null);
+  /**
+   * WHICH LESSON IS ON SCREEN — state, not the route.
+   *
+   * The route used to be the only answer, and moving between two lessons of the
+   * course therefore cost a full navigation: save the whole course over the
+   * wire, wait for the server to render the page again, remount the editor,
+   * refetch the course it had just sent. Seconds, to look at a lesson that was
+   * already in memory — the editor holds the WHOLE course precisely so it
+   * would not have to ask.
+   *
+   * So an in-course move is a state change, and the URL follows it via
+   * `history.pushState`, which the App Router supports for exactly this. Deep
+   * links, back and forward all still work: arriving by route seeds this state,
+   * and `popstate` puts it back. Nothing is lost by not saving first — the
+   * course is one document and autosave owns writing it.
+   */
+  const [activeSlug, setActiveSlug] = useState(lessonSlug);
+  /**
+   * Where to go once the lesson on screen stops existing.
+   *
+   * Held in state rather than navigated to on the spot, because the two things
+   * have to happen in this order: the destination is computed from the course
+   * as it still stands, the removal is applied, and only the render AFTER that
+   * commit may leave. Navigating first would save the course with the lesson
+   * still in it; navigating inside the same handler would route away from a
+   * list that had not been rewritten yet.
+   */
+  const [leaveFor, setLeaveFor] = useState<string | null>(null);
   const importPicker = useRef<HTMLInputElement>(null);
   const draftGeneration = useRef<number | null>(null);
   /** The block just created, so the caret can land in it instead of being aimed. */
@@ -122,7 +157,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
 
   // Plain derivation, not memoized: it is two array scans over a handful of
   // modules, and the shape the compiler could not memoize anyway.
-  const located = course ? locateLesson(course, lessonSlug) : null;
+  const located = course ? locateLesson(course, activeSlug) : null;
 
   /** Applies a change to one path inside the current lesson. */
   const editLesson = useCallback(
@@ -252,6 +287,22 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   );
 
   /** Flushes the current snapshot and continues without asking a question. */
+  /**
+   * A whole-modules replacement, the way the course workspace applies one.
+   *
+   * No coalescing key: reordering and deleting are each one deliberate act and
+   * merging two of them would take back a move the author never asked to lose.
+   * `renumber` runs on every one of them because `order` and the day index are
+   * derived from where a module and a lesson SIT.
+   */
+  const editModules = useCallback(
+    (next: (course: Course) => CourseModule[]) => {
+      history.edit(null, (current) => ({ ...current, modules: renumber(next(current)) }));
+      setNote(null);
+    },
+    [history]
+  );
+
   const navigate = useCallback(
     (href: string) => {
       setContentsOpen(false);
@@ -266,11 +317,63 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     [dirty, pendingHref, router, save]
   );
 
+  /** `/build/<this course>/<lesson>` — and only that — is an in-course move. */
+  const lessonSlugIn = useCallback(
+    (href: string) => {
+      const [path] = href.split(/[?#]/);
+      const segments = path.split("/").filter(Boolean);
+      if (segments.length !== 3 || segments[0] !== "build") return null;
+      if (decodeURIComponent(segments[1]) !== slug) return null;
+      return decodeURIComponent(segments[2]);
+    },
+    [slug]
+  );
+
+  /**
+   * One entry point for everything that used to call `navigate`.
+   *
+   * Anything leaving the course still leaves the ordinary way — saved first,
+   * then routed. Only a sibling lesson takes the short path, because only for a
+   * sibling lesson is the destination already on this client.
+   */
+  const go = useCallback(
+    (href: string) => {
+      const target = lessonSlugIn(href);
+      if (target === null) return navigate(href);
+      setContentsOpen(false);
+      if (target === activeSlug) return;
+      setActiveSlug(target);
+      window.history.pushState(null, "", href);
+    },
+    [activeSlug, lessonSlugIn, navigate]
+  );
+
+  // Arriving by route — a deep link, or a return from preview — seeds the
+  // state; back and forward move it again.
+  useEffect(() => {
+    setActiveSlug(lessonSlug);
+  }, [lessonSlug]);
+
+  useEffect(() => {
+    const onPop = () => {
+      const target = lessonSlugIn(window.location.pathname);
+      if (target !== null) setActiveSlug(target);
+    };
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, [lessonSlugIn]);
+
+  useEffect(() => {
+    if (!leaveFor) return;
+    setLeaveFor(null);
+    go(leaveFor);
+  }, [go, leaveFor]);
+
   const preview = () => {
     if (working) return;
-    const returnTo = `/build/${encodeURIComponent(slug)}/${encodeURIComponent(lessonSlug)}`;
+    const returnTo = `/build/${encodeURIComponent(slug)}/${encodeURIComponent(activeSlug)}`;
     rememberZenPreviewReturn(returnTo);
-    navigate(zenPreviewHref(`/learn/${encodeURIComponent(slug)}/${encodeURIComponent(lessonSlug)}`, returnTo));
+    navigate(zenPreviewHref(`/learn/${encodeURIComponent(slug)}/${encodeURIComponent(activeSlug)}`, returnTo));
   };
 
   const trail = [
@@ -297,7 +400,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   if (!course || !located) {
     return (
       <BuilderShell trail={trail}>
-        <BuilderNotice title="Урок не знайдено" text={`У курсі немає уроку «${lessonSlug}».`} />
+        <BuilderNotice title="Урок не знайдено" text={`У курсі немає уроку «${activeSlug}».`} />
       </BuilderShell>
     );
   }
@@ -312,19 +415,61 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   // reachable with one press from the lesson before it.
   const walk = flattenLessons(course);
   const position = walk.findIndex((entry) => entry.lesson.slug === lesson.slug);
-  const previous = position > 0 ? walk[position - 1] : null;
-  const next = position >= 0 && position < walk.length - 1 ? walk[position + 1] : null;
   const selectedBlockIndex = lesson.blocks.findIndex((block) => block.id === selectedBlockId);
   const selectedBlock = selectedBlockIndex >= 0 ? lesson.blocks[selectedBlockIndex] : null;
   const readiness = courseReadiness(course);
   const referenceTargets = buildInternalReferenceTargets(course);
   const referenceOptions = internalReferenceOptions(referenceTargets, lesson.id, holder.id);
 
+  const addLessonToModule = (moduleId: string) => {
+    history.edit(null, (current) => {
+      const taken = current.modules.flatMap((entry) => entry.lessons.map((item) => item.slug));
+      const nextDay = Math.max(0, ...current.modules.flatMap((entry) => entry.lessons.map((item) => item.dayIndex ?? 0))) + 1;
+      return {
+        ...current,
+        modules: current.modules.map((entry) => {
+          if (entry.id !== moduleId) return entry;
+          const order = entry.lessons.length + 1;
+          const title = `Урок ${order}`;
+          return {
+            ...entry,
+            lessons: [
+              ...entry.lessons,
+              newLesson(ids, {
+                order,
+                title,
+                slug: uniqueSlug(title, taken),
+                dayIndex: current.schedule.mode === "daily" && !entry.reference ? nextDay : undefined,
+              }),
+            ],
+          };
+        }),
+      };
+    });
+  };
+
+  const addCourseModule = () => {
+    history.edit(null, (current) => {
+      const order = current.modules.length + 1;
+      const title = `Модуль ${order}`;
+      const taken = current.modules.map((entry) => entry.slug);
+      const nextDay = Math.max(0, ...current.modules.flatMap((entry) => entry.lessons.map((item) => item.dayIndex ?? 0))) + 1;
+      return {
+        ...current,
+        modules: [
+          ...current.modules,
+          newModule(ids, {
+            order,
+            title,
+            slug: uniqueSlug(title, taken),
+            dayIndex: current.schedule.mode === "daily" ? nextDay : undefined,
+          }),
+        ],
+      };
+    });
+  };
+
   const selectTool = (nextMode: BuilderToolMode) => {
-    if (toolOpen && toolMode === nextMode) {
-      setToolOpen(false);
-      return;
-    }
     setToolMode(nextMode);
     setToolOpen(true);
   };
@@ -346,14 +491,31 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       trail={[
         { label: "Курси", onNavigate: () => navigate("/build") },
         { label: trailTitle(course.title, "Курс без назви"), onNavigate: () => navigate(`/build/${slug}`) },
+        { label: trailTitle(holder.title, "Модуль без назви") },
         { label: trailTitle(lesson.title, "Урок без назви") },
       ]}
-      aside={<BuilderContents course={course} currentSlug={lesson.slug} onNavigate={navigate} />}
+      aside={
+        <BuilderContents
+          course={course}
+          currentSlug={lesson.slug}
+          onNavigate={navigate}
+          onAddLesson={addLessonToModule}
+          onAddModule={addCourseModule}
+          editing={{ onModules: editModules, onNote: setNote, onLeaveCurrent: setLeaveFor }}
+        />
+      }
       asideOpen={contentsOpen}
+      asideCollapsed={structureCollapsed}
+      onAsideToggle={() => setStructureCollapsed((collapsed) => !collapsed)}
       pageMode="document"
       onNavigate={navigate}
       toolLayer={
-        <BuilderToolRail mode={toolMode} open={toolOpen} onMode={selectTool} onClose={() => setToolOpen(false)}>
+        <BuilderToolRail
+          mode={toolMode}
+          open={toolOpen}
+          onMode={selectTool}
+          onClose={() => setToolOpen(false)}
+        >
           <LessonToolContent
             mode={toolMode}
             course={course}
@@ -362,7 +524,6 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
             selectedBlockIndex={selectedBlockIndex}
             search={blockSearch}
             insertPosition={insertPosition}
-            readiness={readiness}
             working={working}
             importPicker={importPicker}
             onSearch={setBlockSearch}
@@ -371,22 +532,21 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
             onBlockChange={(path, value) => {
               if (selectedBlockIndex >= 0) editLesson(["blocks", selectedBlockIndex, ...path], value);
             }}
-            onPreview={preview}
-            onPublish={() => navigate(`/build/${slug}#course-release`)}
             onImport={importIntoLesson}
           />
         </BuilderToolRail>
       }
       tools={
         <>
-          <button className={styles.quietAction} type="button" onClick={preview} disabled={working} title={dirty ? "Зберегти й відкрити урок як учень" : "Відкрити урок як учень"}>
-            Переглянути
+          <button className={styles.workspacePreviewAction} type="button" onClick={preview} disabled={working} title={dirty ? "Зберегти й відкрити урок як учень" : "Відкрити урок як учень"}>
+            <Icon name="view-rows" size={18} /> Переглянути
           </button>
-          <BuilderStep
-            direction="prev"
-            label={previous ? `Попередній урок: ${previous.lesson.title}` : "Попереднього уроку немає"}
-            onNavigate={previous ? () => navigate(`/build/${slug}/${previous.lesson.slug}`) : undefined}
-          />
+          <span className={styles.workspaceSaveStatus} role="status" aria-live="polite">
+            <Icon name="check" size={18} /> {autosave.saving ? "Зберігаємо…" : dirty ? "Є зміни" : "Збережено"}
+          </span>
+          <button className={styles.workspaceBlockers} type="button" onClick={() => navigate(`/build/${slug}#course-release`)}>
+            <span aria-hidden="true">•</span> {readiness.blockers.length} блокери
+          </button>
           {/* Hidden from 901px up, where the rail is simply there. A control
               that toggles something already visible is a control that does
               nothing the first time it is pressed. */}
@@ -401,11 +561,6 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
               {position + 1}/{walk.length}
             </span>
           </button>
-          <BuilderStep
-            direction="next"
-            label={next ? `Наступний урок: ${next.lesson.title}` : "Наступного уроку немає"}
-            onNavigate={next ? () => navigate(`/build/${slug}/${next.lesson.slug}`) : undefined}
-          />
         </>
       }
     >
@@ -415,15 +570,14 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
           IS the input, and the lead under it is the lesson's own summary
           rather than a caption about it. */}
       <div className={styles.docHead}>
+        <p className={styles.docMeta}>
+          {holder.title} <span aria-hidden="true">•</span> {lesson.title}
+        </p>
         <BuilderEditableTitle
           value={lesson.title}
           label="Редагувати назву уроку"
           onChange={(value) => editLesson(["title"], value)}
         />
-        <p className={styles.docMeta}>
-          {holder.title}
-          {lesson.dayIndex ? ` · день ${lesson.dayIndex}` : ""}
-        </p>
         <div className={styles.pageLead}>
           <BuilderInlineEditor
             bare
@@ -499,15 +653,12 @@ function LessonToolContent({
   selectedBlockIndex,
   search,
   insertPosition,
-  readiness,
   working,
   importPicker,
   onSearch,
   onInsert,
   onLessonChange,
   onBlockChange,
-  onPreview,
-  onPublish,
   onImport,
 }: {
   mode: BuilderToolMode;
@@ -517,15 +668,12 @@ function LessonToolContent({
   selectedBlockIndex: number;
   search: string;
   insertPosition: number;
-  readiness: ReturnType<typeof courseReadiness>;
   working: boolean;
   importPicker: { current: HTMLInputElement | null };
   onSearch: (value: string) => void;
   onInsert: (position: number, type: LessonBlockType) => void;
   onLessonChange: (path: (string | number)[], value: unknown) => void;
   onBlockChange: (path: (string | number)[], value: unknown) => void;
-  onPreview: () => void;
-  onPublish: () => void;
   onImport: (file: File) => Promise<void>;
 }) {
   if (mode === "blocks") {
@@ -562,7 +710,7 @@ function LessonToolContent({
                   onClick={() => onInsert(insertPosition, type)}
                 >
                   <Icon name={type === "practice_block" ? "motion" : type === "boundary_note" ? "boundary" : "document"} size={19} />
-                  <span><strong>{BLOCK_TYPE_LABELS[type]}</strong><small>{BLOCK_TYPE_HINTS[type]}</small></span>
+                  <span><InkLabel strong>{BLOCK_TYPE_LABELS[type]}</InkLabel><small>{BLOCK_TYPE_HINTS[type]}</small></span>
                   <Icon name="grip" size={16} />
                 </button>
               ))}
@@ -635,21 +783,7 @@ function LessonToolContent({
     );
   }
 
-  return (
-    <div className={styles.toolStack}>
-      <div className={styles.publishSummary} data-ready={readiness.ready || undefined}>
-        <Icon name={readiness.ready ? "check" : "boundary"} size={22} />
-        <span><strong>{readiness.ready ? "Готово до публікації" : `${readiness.blockers.length} блокери`}</strong><small>{course.status === "published" ? "Курс опубліковано" : "Зараз це чернетка"}</small></span>
-      </div>
-      {!readiness.ready ? (
-        <ul className={styles.toolBlockers}>
-          {readiness.blockers.slice(0, 6).map((blocker) => <li key={`${blocker.code}:${blocker.path}`}><strong>{blocker.path}</strong><span>{blocker.detail ?? blocker.code}</span></li>)}
-        </ul>
-      ) : null}
-      <button className={styles.quietAction} type="button" onClick={onPreview} disabled={working}><Icon name="view-rows" size={19} /> Переглянути як учень</button>
-      <button className={styles.commitAction} type="button" onClick={onPublish}>Відкрити публікацію курсу</button>
-    </div>
-  );
+  return null;
 }
 
 /**
@@ -697,8 +831,9 @@ function BlockInsert({
           onAdd(position, type);
         }}
       >
-        <button className={styles.blockInsertAction} type="button" onClick={() => { onActivate(position); setOpen(true); }}>
-          <span className={styles.addGlyph} aria-hidden="true">+</span> Додати блок
+        <button className={styles.blockInsertAction} type="button" aria-label="Додати блок" title="Додати блок" onClick={() => { onActivate(position); setOpen(true); }}>
+          <Icon name="plus" size={18} />
+          <HandGraphic className={styles.blockInsertInkRing} name="ink-ring" size={42} />
         </button>
       </div>
     );

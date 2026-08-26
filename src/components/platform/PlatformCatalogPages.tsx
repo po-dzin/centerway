@@ -413,7 +413,6 @@ export function PlatformProductsIndexPage() {
                 visual={product.visual}
                 slug={product.slug}
                 artwork={product.artwork}
-                points={product.points}
               />
             ))}
           </div>

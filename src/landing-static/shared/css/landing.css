@@ -139,6 +139,9 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 
 .hero-trust{display:flex;align-items:flex-start;gap:.5em;font-size:.84rem;color:var(--text-soft);line-height:1.44}
 .hero-trust svg{flex:0 0 auto;color:var(--indigo);margin-top:2px}
+.refund-policy-link{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+.refund-policy-link:hover{text-decoration-thickness:2px}
+.refund-policy-link:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 
 /* photo stage — full-portrait hero photo */
 /* Fade the photo into the page with an OPAQUE cream overlay rather than an alpha

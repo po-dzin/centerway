@@ -55,7 +55,11 @@ export async function GET(req: NextRequest, { params }: { params: Promise<{ slug
     });
   } catch (error) {
     const message = error instanceof Error ? error.message : "unknown_error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    // A stored course can fail the same LMS contract as an incoming save. That
+    // is invalid authored content, not a lost server connection; classifying
+    // it as 422 lets the Builder show the recovery state instead of a network
+    // error with an internal validation code.
+    return NextResponse.json({ error: message }, { status: message.startsWith("lms_") ? 422 : 500 });
   }
 }
 

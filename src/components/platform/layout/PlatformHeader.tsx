@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { LEARNING_SHELF_HREF, personalNav, platformHomeHref, platformNav } from "@/lib/platform/content";
 import { canonicalPersonalPath } from "@/lib/surfaces/catalog";
 import { isPersonalHost } from "@/lib/platform/surfaceHref";
@@ -24,12 +24,15 @@ export function PlatformHeader({
   initialTone = "light",
   mode = "default",
   surface = "auto",
+  workspaceContent,
 }: {
   initialTone?: "light" | "dark";
-  mode?: "default" | "overlay" | "learn";
+  mode?: "default" | "overlay" | "learn" | "workspace";
   surface?: "auto" | "personal";
+  /** Route context and document actions inside an internal editor topbar. */
+  workspaceContent?: ReactNode;
 }) {
-  const learnMode = mode === "learn";
+  const focusedMode = mode === "learn" || mode === "workspace";
   const [openMenuPath, setOpenMenuPath] = useState<string | null>(null);
   const headerRef = useRef<HTMLElement | null>(null);
   const navLayerRef = useRef<HTMLDivElement | null>(null);
@@ -46,12 +49,12 @@ export function PlatformHeader({
   /* The brand mark is a link to the root of THIS application, on every screen
      of it. On `my` that is the dashboard — pointing it at the storefront would
      make the one control that never changes the one that leaves. */
-  const brandTarget = learnMode || onPersonalSurface ? LEARNING_SHELF_HREF : platformHomeHref;
+  const brandTarget = focusedMode || onPersonalSurface ? LEARNING_SHELF_HREF : platformHomeHref;
   const homeHref = href(brandTarget);
   /* Two bars, one component: public routes stay on `www`; `my` keeps only the
      learner shelf and Builder. Lessons intentionally have no top-level route
      map, so the reading surface remains focused. */
-  const navSource = learnMode ? [] : onPersonalSurface ? personalNav : platformNav;
+  const navSource = focusedMode ? [] : onPersonalSurface ? personalNav : platformNav;
   const navItems = navSource.map((item) => ({
     ...item,
     resolvedHref: href(item.href),
@@ -182,7 +185,7 @@ export function PlatformHeader({
     <header
       ref={headerRef}
       className={styles.header}
-      data-cw-glass="shell"
+      data-cw-glass={mode === "workspace" ? undefined : "shell"}
       data-cw-header-tone={headerTone}
       data-cw-header-mode={mode}
       data-menu-open={menuOpen ? "true" : "false"}
@@ -202,12 +205,15 @@ export function PlatformHeader({
           <span className={styles.brandSymbol} aria-hidden="true" />
           <span className={styles.brandWordmark} aria-hidden="true" />
         </Link>
+        {mode === "workspace" && workspaceContent ? (
+          <div className={styles.workspaceHeaderSlot}>{workspaceContent}</div>
+        ) : null}
         <div
           ref={navLayerRef}
           className={`${styles.navLayer} ${menuOpen ? styles.navLayerOpen : ""}`}
           id="platform-mobile-menu"
         >
-          <div className={styles.mobileMenuSurface} data-cw-glass="shell">
+          <div className={styles.mobileMenuSurface} data-cw-glass={mode === "workspace" ? undefined : "shell"}>
             <nav className={`${styles.nav} ${styles.mobileMenuNav}`} aria-label="Основна навігація">
               {navItems.map((item) => (
                 <Link

@@ -11,9 +11,9 @@
  *
  * SILENT IN EVERY UNCERTAIN CASE — while loading, when signed out, when the
  * read fails, and for everyone who may not edit. Same discipline as
- * `OwnedCourseNotice`, and for the same reason: these controls appear on public
- * offer pages, and a flicker of an editing control in front of a buyer is worse
- * than a control that never appears.
+ * `OfferAccess`, and for the same reason: these controls appear on public offer
+ * pages, and a flicker of an editing control in front of a buyer is worse than
+ * a control that never appears.
  *
  * The permission itself is NOT decided here. `/api/platform/authoring` asks
  * `builderAccess`, which is the one place that owns ownership.

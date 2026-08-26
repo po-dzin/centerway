@@ -1,5 +1,7 @@
 import Link from "next/link";
-import type { CSSProperties } from "react";
+import type { CSSProperties, ReactNode } from "react";
+import { Icon } from "@/components/Icon";
+import type { CwIconName } from "@/components/iconNames";
 import styles from "@/components/platform/PlatformHeroStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
@@ -10,6 +12,12 @@ type DetailHeroAction = {
   kind?: "primary" | "secondary";
 };
 
+/** One fact — duration, medium, access term. Icon optional; the words carry it. */
+export type DetailHeroMeta = {
+  label: string;
+  icon?: CwIconName;
+};
+
 type PlatformDetailHeroProps = {
   title: string;
   description: string;
@@ -17,8 +25,34 @@ type PlatformDetailHeroProps = {
   artwork?: PlatformOfferArtwork;
   imageAlt: string;
   templateKind?: "program" | "product";
+  /**
+   * The facts a reader scrolls looking for, kept where they stop looking.
+   *
+   * Absent on surfaces that have none — a consultation page has no lesson count
+   * and no access term, and an empty pill row would say it did.
+   */
+  meta?: DetailHeroMeta[];
   primaryAction: DetailHeroAction;
   secondaryAction?: DetailHeroAction | null;
+  /**
+   * What sits between the facts and the buttons: a price, or — once the reader
+   * turns out to own this — their standing in it.
+   *
+   * A SLOT, because the hero is server-rendered and prerendered, and who is
+   * reading it is not known until the browser asks. The offer page passes a
+   * client component that swaps itself; the hero stays static and stays
+   * indexable. See `OfferAccess.tsx`.
+   */
+  commitment?: ReactNode;
+  /**
+   * Replaces the two default buttons outright.
+   *
+   * The same reasoning as `commitment` applied one element lower: «Купити» and
+   * «Продовжити навчання» are not variants of one control, they are two
+   * different offers, and a label swap would leave the buy anchor's href
+   * pointing at the checkout for somebody who has already paid.
+   */
+  actions?: ReactNode;
 };
 
 function resolveHeroPosition(position?: string) {
@@ -42,8 +76,11 @@ export function PlatformDetailHero({
   artwork,
   imageAlt,
   templateKind,
+  meta,
   primaryAction,
   secondaryAction,
+  commitment,
+  actions,
 }: PlatformDetailHeroProps) {
   const desktopFocus = resolveHeroPosition(artwork?.desktopPosition);
   const mobileFocus = resolveHeroPosition(artwork?.mobilePosition ?? artwork?.desktopPosition);
@@ -82,16 +119,29 @@ export function PlatformDetailHero({
         </p>
         <h1 className={styles.detailHeroTitle}>{title}</h1>
         <p className={styles.heroFeatureLead}>{description}</p>
-        <div className={styles.heroFeatureActions}>
-          <Link className={styles.heroPrimaryButton} href={primaryAction.href}>
-            {primaryAction.label}
-          </Link>
-          {secondaryAction ? (
-            <Link className={styles.heroSecondaryButton} href={secondaryAction.href}>
-              <span>{secondaryAction.label}</span>
+        {meta && meta.length > 0 ? (
+          <ul className={styles.heroMetaList}>
+            {meta.map((fact) => (
+              <li className={styles.heroMetaItem} key={fact.label}>
+                {fact.icon ? <Icon className={styles.heroMetaGlyph} name={fact.icon} size={20} /> : null}
+                <span>{fact.label}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        {commitment}
+        {actions ?? (
+          <div className={styles.heroFeatureActions}>
+            <Link className={styles.heroPrimaryButton} href={primaryAction.href}>
+              {primaryAction.label}
             </Link>
-          ) : null}
-        </div>
+            {secondaryAction ? (
+              <Link className={styles.heroSecondaryButton} href={secondaryAction.href}>
+                <span>{secondaryAction.label}</span>
+              </Link>
+            ) : null}
+          </div>
+        )}
       </div>
     </section>
   );

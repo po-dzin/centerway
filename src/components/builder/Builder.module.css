@@ -7,8 +7,8 @@
    is unusable on a phone simply does not get that check.
 
    Tokens only. The builder is a separate application on a separate host, but it
-   is a CenterWay surface: same material, same type, same spacing scale. What it
-   does not share is the platform's chrome (docs/design-system.md).
+   is a CenterWay surface: same material, same type, same spacing scale and the
+   same personal navigation chrome as learning.
 
    Every control composes a role from PlatformButtons.module.css. The builder
    has more controls than any other surface in the repo — three per row in the
@@ -18,12 +18,76 @@
    Breakpoints follow the canon — mobile ≤ 560, tablet 561–900, desktop ≥ 901. */
 
 .shell {
-  min-height: 100svh;
+  --builder-topbar-height: calc(4rem + 1px);
+  --builder-side-panel-width: clamp(15.25rem, 22vw, 21.25rem);
+  --builder-mode-rail-width: 4.75rem;
+  /* Shared by both side panels, so «symmetric» is a value rather than a habit:
+     the same padding, the same foot height and the same easing on each side. */
+  --builder-panel-pad-inline: var(--cw-space-lg);
+  --builder-panel-pad-block: var(--cw-space-lg);
+  --builder-panel-motion: 180ms;
+  /* A DRAWN RULE, NOT A MATERIAL EDGE. `--cw-mat-stroke-inner` is the seam
+     between two plates; the builder has no plates left to separate. What
+     divides things here is a line someone put on paper, so the rule is the
+     page's own ink at drawing strength — warm, low, and the same value for a
+     panel edge, a group separator and the foot above a control. Carrying the
+     analogy further (a real drafted line, weight varying along its length)
+     belongs in the design system at art-direction level, not in one module. */
+  --builder-rule: color-mix(in srgb, var(--cw-platform-text) 13%, transparent);
+  height: 100svh;
+  height: 100dvh;
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr);
+  overflow: hidden;
   background: var(--cw-platform-bg);
   color: var(--cw-platform-text);
   font-family: var(--cw-font-ui);
+}
+
+/* ── One selection language ───────────────────────────
+
+   Hover and selection are the SAME stroke at two strengths — faint under the
+   pointer, full on the current row. That is the whole point: a highlight plate
+   used for both makes the selected row read as stuck hover the moment the
+   pointer rests on it, which is what it did. Any row that can be pointed at or
+   chosen composes `inkRow` and renders an `InkLabel`; nothing in the builder
+   is allowed to invent a second answer. */
+.inkRow {
+  position: relative;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.inkRow:hover,
+.inkRow:focus-visible,
+.inkRow[aria-current="page"],
+.inkRow[data-selected] {
+  background: transparent;
+  color: var(--cw-platform-text);
+}
+
+/* Keyboard focus keeps its ring. The ink says WHERE YOU ARE POINTING and WHICH
+   ROW IS CURRENT; it does not also have to say «the keyboard is here», and at
+   hover strength it would say it too quietly to be usable. */
+.inkRow:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.inkRow:hover .inkMark,
+.inkRow:focus-visible .inkMark {
+  opacity: var(--cw-ink-hover-opacity);
+  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+}
+
+/* Full ink: this row IS the thing being edited. */
+.inkRow[aria-current="page"] .inkMark,
+.inkRow[data-selected] .inkMark {
+  opacity: 1;
+  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
 }
 
 /* ── Bar ──────────────────────────────────────────── */
@@ -52,6 +116,49 @@
   gap: var(--cw-space-2xs);
 }
 
+.workspaceTopbarContext {
+  min-width: 0;
+  width: 100%;
+  display: none;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-lg);
+}
+
+.workspaceTopbarContext > :first-child {
+  min-width: 0;
+}
+
+.workspaceTopbarTools {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+}
+
+.workspaceSaveStatus,
+.workspaceBlockers {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  min-height: var(--ds-touch-target-min);
+  color: var(--cw-platform-muted);
+  font-size: 0.84rem;
+  white-space: nowrap;
+}
+
+.workspaceBlockers {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.workspaceBlockers > span {
+  color: var(--cw-sem-boundary);
+}
+
 /* Outlived the bar it was named for: the inline editor's toolbar still uses it
    to push its last control to the right. */
 .barSpacer {
@@ -61,6 +168,8 @@
 
 .body {
   min-width: 0;
+  min-height: 0;
+  overflow: hidden;
 }
 
 /* One column on a phone: the rail is a drawer there, in flow above the page,
@@ -70,8 +179,10 @@
 .bodyWithAside {
   min-width: 0;
   min-height: 0;
+  height: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
+  overflow: hidden;
 }
 
 .aside {
@@ -85,47 +196,135 @@
 }
 
 @media (min-width: 901px) {
+  /* THREE TRACKS, AND THE OUTER TWO NEVER CHANGE SIZE.
+     The document used to be pushed off the viewport's centre line by whichever
+     panel happened to be open: the outline was a real column, the tool layer
+     was an overlay, and the page carried a hand-tuned left margin to make the
+     result look deliberate.
+
+     The fix is not to recompute the centre per state — it is to stop the state
+     from reaching the centre at all. Both side tracks are reserved at the full
+     panel width for as long as the workspace is on screen. Collapsing narrows
+     the PANEL inside its track; the track, and therefore the document, does not
+     move by a pixel. The freed room stays empty on purpose: a side panel is not
+     allowed to buy width from the manuscript by folding away, because then the
+     line an author is reading would reflow every time they glanced at the
+     outline. A surface with no tool layer at all — the course workspace —
+     reserves the third track anyway, so it shares one axis with the editor. */
   .bodyWithAside {
     display: grid;
-    grid-template-columns: 15.25rem minmax(0, 1fr);
-    align-items: start;
+    grid-template-columns:
+      var(--builder-side-panel-width)
+      minmax(0, 1fr)
+      var(--builder-side-panel-width);
+    position: relative;
+    align-items: stretch;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .workspaceTopbarContext {
+    display: flex;
+  }
+
+  .pageTrail {
+    display: none;
   }
 
   /* An auxiliary layer, never a layout column. Until the viewport has enough
      outer gutter for a permanent rail it opens over the page on request; the
      document keeps exactly the same measure as the topbar in either state. */
   .aside {
-    display: block;
-    position: sticky;
+    grid-column: 1;
+    justify-self: start;
+    width: var(--builder-side-panel-width);
+    transition: width var(--builder-panel-motion) ease;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    position: relative;
     z-index: auto;
-    inset-block-start: var(--cw-space-md);
-    width: auto;
-    max-height: calc(100svh - (2 * var(--cw-space-md)));
-    overflow-y: auto;
-    padding: var(--cw-space-lg) var(--cw-space-md);
+    inset: auto;
+    height: 100%;
+    min-height: 0;
+    max-height: none;
+    box-sizing: border-box;
+    overflow: hidden;
+    overscroll-behavior: contain;
+    padding: var(--builder-panel-pad-block) 0 0;
     background: transparent;
-    border-inline-end: 1px solid var(--cw-mat-stroke-inner);
+    border-inline-end: 1px solid var(--builder-rule);
     box-shadow: none;
   }
 
+  /* The mobile drawer's `display: block` out-specifies the column rule, and a
+     block panel has no row 2 for the foot to sit in. */
+  .aside[data-open] {
+    display: grid;
+  }
+
+  .asideContent {
+    padding-inline: var(--builder-panel-pad-inline);
+  }
+
+  .asideContent {
+    height: 100%;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    min-height: 0;
+  }
+
+  .aside[data-collapsed],
   .aside[data-compact] {
-    width: 4.75rem;
+    width: var(--builder-mode-rail-width);
+  }
+
+  .aside[data-collapsed] {
+    padding-block-start: 0;
+    overflow: hidden;
+  }
+
+  .aside[data-collapsed] .asideContent {
+    display: none;
+  }
+
+  /* One recipe for BOTH panels. These two controls answer the same question on
+     opposite sides of the document, so they are the same object: same row of
+     the panel grid, same height, same rule above them, same distance from the
+     bottom of the viewport. Anything less and the eye reads two different
+     mechanisms. */
+  .asideCollapseAction,
+  .toolCollapseAction {
+    grid-row: 2;
+    position: relative;
+    inset: auto;
+    justify-self: stretch;
+    margin: 0;
+    border-block-start: 1px solid var(--builder-rule);
+    transform: none;
+    z-index: 2;
+    background: transparent;
+  }
+
+  .aside[data-compact] .asideContent {
     padding-inline: var(--cw-space-xs);
   }
 
-  /* Match the document to the shared header's viewport-centred guide. The
-     rail occupies outer gutter; it does not get to move the document axis. */
+  /* The middle column IS the document's frame now, so centring is the whole
+     rule: no compensating margin, no per-state width. */
   .bodyWithAside .page {
-    margin-inline-start: max(1rem, calc((100vw - var(--cw-max-width)) / 2 - 15.25rem));
-    margin-inline-end: auto;
+    width: min(100%, var(--cw-max-width));
+    margin-inline: auto;
+    padding-inline: var(--builder-panel-pad-inline);
   }
 }
 
 /* The 1160px document leaves a full rail in the outer gutter here. Only at
    this width does the auxiliary layer stay permanently visible. */
+/* The outline is a column from 901px up, so the wide viewport has nothing left
+   to promote — it only drops the last of the overlay material. */
 @media (min-width: 1660px) {
   .aside {
-    display: block;
     background: transparent;
     box-shadow: none;
   }
@@ -139,23 +338,49 @@
    bottom where a thumb can dismiss it without crossing the page. */
 .toolLayer {
   position: fixed;
-  z-index: calc(var(--ds-z-sticky) + 4);
+  z-index: calc(var(--ds-z-sticky) + 1);
   inset: auto 0 0;
   pointer-events: none;
 }
 
-.toolTabs {
+/* On a phone the layer is a bottom sheet whose rail floats above it, so the
+   desktop wrapper must not introduce a box here — it becomes the panel grid
+   only where there is a panel. */
+.toolLayerContent {
+  display: contents;
+}
+
+.toolModeRail {
   position: absolute;
   inset: auto var(--cw-space-xs) 100% auto;
   display: flex;
   align-items: center;
+  pointer-events: auto;
+}
+
+.toolTabs {
+  position: static;
+  display: flex;
+  align-items: center;
   gap: var(--cw-space-3xs, 0.25rem);
   padding: var(--cw-space-3xs, 0.25rem);
-  border: 1px solid var(--cw-mat-stroke-inner);
+  border: 1px solid var(--builder-rule);
   border-block-end: 0;
   border-radius: var(--cw-radius-md) var(--cw-radius-md) 0 0;
-  background: var(--cw-mat-surface);
+  background: var(--cw-platform-bg);
   pointer-events: auto;
+}
+
+.toolCollapseAction,
+.asideCollapseAction {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: bar from "../platform/PlatformButtons.module.css";
+  position: relative;
+  color: var(--cw-platform-muted);
+}
+
+.toolCollapseAction {
+  display: none;
 }
 
 .toolTab,
@@ -198,10 +423,10 @@
 .toolDrawer {
   max-height: min(76svh, 42rem);
   overflow: hidden;
-  border: 1px solid var(--cw-mat-stroke-inner);
+  border: 1px solid var(--builder-rule);
   border-block-end: 0;
   border-radius: var(--cw-radius-lg) var(--cw-radius-lg) 0 0;
-  background: var(--cw-mat-surface);
+  background: var(--cw-platform-bg);
   box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
   opacity: 0;
   pointer-events: none;
@@ -221,7 +446,7 @@
   justify-content: space-between;
   gap: var(--cw-space-sm);
   padding: var(--cw-space-sm) var(--cw-space-md);
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
 }
 
 .toolDrawerTitle {
@@ -255,9 +480,11 @@
   align-items: center;
   gap: var(--cw-space-xs);
   padding-inline: var(--cw-space-sm);
-  border: 1px solid var(--cw-mat-stroke-inner);
-  border-radius: var(--cw-radius-md);
-  background: var(--cw-mat-surface-sunk);
+  /* A field is a line ruled on the page, not a sunk white well cut into it. */
+  border: 0;
+  border-block-end: 1px solid var(--builder-rule);
+  border-radius: 0;
+  background: transparent;
   color: var(--cw-platform-muted);
 }
 
@@ -281,29 +508,20 @@
 }
 
 .toolBlock {
+  composes: inkRow;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--cw-space-sm);
   width: 100%;
   min-height: var(--ds-touch-target-min);
-  padding: var(--cw-space-xs) var(--cw-space-sm);
-  border: 1px solid var(--cw-mat-stroke-inner);
-  border-radius: var(--cw-radius-md);
-  background: transparent;
-  color: inherit;
+  padding: var(--cw-space-xs) 0;
   font: inherit;
   text-align: start;
-  cursor: crosshair;
+  cursor: grab;
 }
 
-.toolBlock:hover,
-.toolBlock:focus-visible {
-  background: var(--cw-mat-surface-sunk);
-  border-color: var(--cw-platform-border);
-}
-
-.toolBlock span,
+.toolBlock > span,
 .toolSelectionTitle span,
 .publishSummary span {
   min-width: 0;
@@ -331,7 +549,7 @@
   align-items: center;
   gap: var(--cw-space-sm);
   padding-block-end: var(--cw-space-sm);
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
 }
 
 .toolBlockers {
@@ -345,7 +563,7 @@
   display: grid;
   gap: 0.2rem;
   padding-block: var(--cw-space-xs);
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
   font-size: 0.76rem;
   overflow-wrap: anywhere;
 }
@@ -370,47 +588,147 @@
 
 @media (min-width: 901px) {
   .page[data-mode="document"] {
-    width: min(calc(100% - 2rem), 46rem);
-    margin-inline-start: clamp(2rem, 6vw, 6rem);
-    margin-inline-end: auto;
+    width: min(100%, 46rem);
+    margin-inline: auto;
   }
 
   .page[data-mode="document"] .docHead {
     padding-inline-end: 0;
   }
 
+  /* THE MIRROR OF THE OUTLINE, not an overlay over the gutter. It used to be
+     `position: absolute` with its mode rail hanging outside on a negative
+     offset — which is exactly why it could not share the outline's geometry:
+     it had no column to be symmetric with. As a real third column it has the
+     same width, the same border, the same foot and the same easing, and the
+     document between them keeps one axis. */
   .toolLayer {
-    inset: 5.75rem 0 1rem auto;
-    width: 0;
+    grid-column: 3;
+    justify-self: end;
+    width: var(--builder-side-panel-width);
+    transition: width var(--builder-panel-motion) ease;
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    display: grid;
+    grid-template-rows: minmax(0, 1fr) auto;
+    height: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    overflow: visible;
+    padding: var(--builder-panel-pad-block) 0 0;
+    background: transparent;
+    border-inline-start: 1px solid var(--builder-rule);
+    pointer-events: auto;
   }
 
-  .toolLayer[data-open] {
-    width: 18.75rem;
+  .toolLayer:not([data-open]) {
+    width: var(--builder-mode-rail-width);
+    padding-block-start: 0;
+  }
+
+  /* The mode tabs are a TAB STRIP ON THE PANEL'S EDGE, not a column inside it.
+     Folded into the panel they ate a fifth of the drawer's measure and turned
+     a tool panel into two panels; hung on the edge they read as what they are —
+     the handle you press to change what the panel is showing. Closed, the strip
+     is all that is left of the panel, so it stops being a floating plate and
+     simply sits in the reserved track. */
+  .toolLayerContent {
+    grid-row: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .toolModeRail {
+    position: absolute;
+    inset: var(--cw-space-md) 100% auto auto;
+    z-index: 2;
+    width: var(--builder-mode-rail-width);
+    height: auto;
+    display: block;
+    padding: var(--cw-space-3xs, 0.25rem);
+    border: 1px solid var(--builder-rule);
+    border-inline-end: 0;
+    border-radius: var(--cw-radius-md) 0 0 var(--cw-radius-md);
+    background: var(--cw-platform-bg);
+    box-shadow: none;
+  }
+
+  .toolLayer:not([data-open]) .toolModeRail {
+    position: relative;
+    inset: auto;
+    width: auto;
+    padding: var(--builder-panel-pad-block) var(--cw-space-3xs, 0.25rem) 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
   }
 
   .toolTabs {
-    inset: var(--cw-space-md) 100% auto auto;
     flex-direction: column;
-    border: 1px solid var(--cw-mat-stroke-inner);
-    border-inline-end: 0;
-    border-radius: var(--cw-radius-md) 0 0 var(--cw-radius-md);
+    align-items: center;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+
+  .toolCollapseAction {
+    display: inline-flex;
+    justify-content: center;
   }
 
   .toolDrawer {
+    display: grid;
+    grid-template-rows: auto minmax(0, 1fr);
+    min-width: 0;
     height: 100%;
     max-height: none;
-    border: 1px solid var(--cw-mat-stroke-inner);
-    border-inline-end: 0;
-    border-radius: var(--cw-radius-lg) 0 0 var(--cw-radius-lg);
-    transform: translateX(1.25rem);
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
+    opacity: 1;
+    transform: none;
+    transition: none;
   }
 
-  .toolLayer[data-open] .toolDrawer {
-    transform: translateX(0);
+  .toolLayer:not([data-open]) .toolDrawer {
+    display: none;
   }
 
   .toolDrawerBody {
-    max-height: calc(100% - 4rem);
+    min-height: 0;
+    max-height: none;
+    padding: var(--cw-space-md) var(--builder-panel-pad-inline) var(--cw-space-xl);
+  }
+
+  .toolDrawerHead {
+    min-height: 0;
+    box-sizing: border-box;
+    padding: 0 var(--builder-panel-pad-inline) var(--cw-space-sm);
+    border-block-end: 0;
+  }
+
+  .toolClose {
+    display: none;
+  }
+
+  .toolLibrary {
+    gap: var(--cw-space-2xs);
+  }
+
+  .toolBlock {
+    min-height: 2.5rem;
+    padding: var(--cw-space-2xs) 0;
+    border: 0;
+    border-radius: 0;
+    cursor: grab;
+  }
+
+  .toolBlock small {
+    display: none;
   }
 
   .page[data-mode="document"] .saveBar:not([data-pending]):not(.courseSaveBar) {
@@ -483,11 +801,8 @@
    by pressing the course crumb. */
 .contentsPanel {
   padding: var(--cw-space-md);
-  border-radius: var(--cw-radius-lg);
-  background: var(--cw-mat-surface);
-  box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
   display: grid;
-  gap: var(--cw-space-sm);
+  gap: var(--cw-space-md);
   align-content: start;
 }
 
@@ -504,40 +819,142 @@
 
 .contentsGroup {
   display: grid;
+  gap: var(--cw-space-xs);
+  padding-block-end: var(--cw-space-md);
+  border-block-end: 1px solid var(--builder-rule);
+}
+
+.contentsHeader,
+.contentsModuleRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.contentsHeader {
+  justify-content: flex-start;
+  min-height: var(--ds-touch-target-min);
+}
+
+.contentsBack {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: hug from "../platform/PlatformButtons.module.css";
+  composes: inkRow;
+  gap: var(--cw-space-xs);
+  padding-inline: 0;
+}
+
+.contentsTree,
+.contentsLessons {
+  display: grid;
   gap: var(--cw-space-2xs);
 }
 
-.contentsLink {
-  display: flex;
+.contentsModuleRow {
+  color: var(--cw-platform-muted);
+}
+
+/* A control, so it takes a role rather than a private recipe: this was a bare
+   <button> carrying its own touch target, type scale and weight, which is the
+   one thing `guard:buttons` exists to stop. Composed, it inherits the
+   contract's geometry and type; what stays local is only what makes it a ROW —
+   it grows to fill the module line and reads from the leading edge. */
+.contentsModuleToggle {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: inkRow;
+  flex: 1 1 auto;
+  justify-content: flex-start;
+  gap: var(--cw-space-xs);
+  text-align: start;
+}
+
+
+
+/* The lesson line: the row that navigates, plus the two controls that
+   restructure it. They are quiet until the row is under the pointer or holds
+   focus — a structure read straight down should be titles, not a column of
+   handles and dots. `.rowGrip` already reveals itself this way; the menu joins
+   it so the two appear together rather than one at a time. */
+.contentsRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  gap: var(--cw-space-sm);
+}
+
+/* A read-only outline has no grip element at all, and its lesson link must not
+   land in the grip's shrink-to-fit column. */
+.contentsRow:not(:has(> .rowGrip)) {
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.contentsRow > .menuTrigger,
+.contentsModuleRow > .menuTrigger {
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.contentsRow:hover > .menuTrigger,
+.contentsRow:focus-within > .menuTrigger,
+.contentsRow > .menuTrigger[aria-expanded="true"],
+.contentsModuleRow:hover > .menuTrigger,
+.contentsModuleRow:focus-within > .menuTrigger,
+.contentsModuleRow > .menuTrigger[aria-expanded="true"] {
+  opacity: 1;
+}
+
+@media (pointer: coarse) {
+  /* Nothing to hover with, and the menu is the ONLY way to reorder or delete
+     here — the grip is not rendered on a finger. It stays visible. */
+  .contentsRow > .menuTrigger,
+  .contentsModuleRow > .menuTrigger {
+    opacity: 1;
+  }
+}
+
+.contentsLink {
+  composes: inkRow;
+  display: grid;
+  grid-template-columns: 1.25rem 2rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-xs);
   width: 100%;
   min-height: var(--ds-touch-target-min);
-  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  padding: var(--cw-space-2xs) 0;
+  font: inherit;
+  text-align: start;
+}
+
+.contentsRoot {
+  composes: text from "../platform/PlatformButtons.module.css";
+  justify-self: start;
+}
+
+.contentsLessonOrdinal {
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: 0.72rem;
+}
+
+.contentsAdd,
+.contentsAddModule {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-height: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-sm);
   border: 0;
-  border-radius: var(--cw-radius-md);
   background: transparent;
-  color: inherit;
+  color: var(--cw-platform-accent-strong, var(--cw-platform-accent));
   font: inherit;
   text-align: start;
   cursor: pointer;
 }
 
-.contentsLink:hover {
-  background: var(--cw-mat-surface-sunk);
+.contentsAdd {
+  margin-inline-start: 2.25rem;
 }
 
-.contentsLink[aria-current="page"] {
-  background: color-mix(in srgb, var(--cw-platform-accent) 14%, var(--cw-mat-surface-sunk));
-}
-
-.contentsLink:focus-visible {
-  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: var(--ds-focus-ring-offset);
-}
-
-.contentsRoot {
-  composes: text from "../platform/PlatformButtons.module.css";
+.contentsAddModule {
   justify-self: start;
 }
 
@@ -549,11 +966,25 @@
      shelf and shared chrome; individual text fields still own their readable
      measure. */
   width: min(calc(100% - 2rem), var(--cw-max-width));
+  height: 100%;
+  min-height: 0;
   margin: 0 auto;
   padding-block: var(--cw-space-lg) var(--cw-space-3xl);
   display: grid;
   gap: var(--cw-space-lg);
   align-content: start;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-gutter: stable;
+}
+
+/* A grid child with a long unbroken control row must not redefine the mobile
+   page track. The page itself already owns a 1rem viewport gutter on both
+   sides; cap its direct surfaces to that same definite measure so intrinsic
+   widths cannot silently consume the right gutter. */
+.page > * {
+  min-width: 0;
+  max-inline-size: calc(100vw - 2rem);
 }
 
 /* Title and the single primary action on one row. Stacked, the button read as
@@ -619,6 +1050,8 @@
 }
 
 .panel {
+  min-width: 0;
+  max-width: 100%;
   padding: var(--cw-space-lg);
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
@@ -651,9 +1084,11 @@
 }
 
 .panelText {
+  min-width: 0;
   margin: 0;
   color: var(--cw-platform-muted);
   line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .noticeLine {
@@ -669,7 +1104,7 @@
   display: grid;
   gap: var(--cw-space-2xs);
   padding-block: var(--cw-space-xs);
-  border-block: 1px solid var(--cw-mat-stroke-inner);
+  border-block: 1px solid var(--builder-rule);
   color: var(--cw-platform-muted);
   font-size: 0.88rem;
   line-height: 1.5;
@@ -695,6 +1130,11 @@
 
 .quietAction {
   composes: quiet from "../platform/PlatformButtons.module.css";
+}
+
+.workspacePreviewAction {
+  composes: chrome from "../platform/PlatformButtons.module.css";
+  composes: hug from "../platform/PlatformButtons.module.css";
 }
 
 /* The one control that destroys something. It is `secondary` wearing the
@@ -736,6 +1176,41 @@
   font-size: 0.85rem;
   color: var(--cw-platform-text);
   overflow-wrap: anywhere;
+}
+
+/* On the shelf, confirmation belongs to one course but must not become card
+   content: if it joins the grid flow, one open confirmation stretches every
+   card in that row. It therefore replaces the card's action corner as a local
+   boundary surface. The course title remains directly above it and in the
+   accessible label, so repeating a long title inside this compact state adds
+   height without adding certainty. */
+.courseCard > .confirmRow {
+  position: absolute;
+  right: var(--cw-space-md);
+  bottom: var(--cw-space-md);
+  left: var(--cw-space-md);
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-2xs);
+  border-inline-start: 0.2rem solid var(--cw-sem-boundary);
+  border-radius: var(--cw-radius-btn);
+  background: color-mix(in srgb, var(--cw-sem-boundary) 10%, var(--cw-mat-surface));
+  box-shadow: var(--cw-mat-shadow-raised);
+}
+
+.courseCard > .confirmRow .confirmText {
+  min-width: 0;
+  padding-inline-start: var(--cw-space-xs);
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.courseCard > .confirmRow :is(.quietAction, .dangerAction) {
+  min-width: auto;
+  min-height: var(--ds-touch-target-min);
+  padding-inline: var(--cw-space-sm);
 }
 
 /* "Add" is a tertiary action inside a card, which is what `quiet` is for. */
@@ -869,6 +1344,7 @@
    the card's body, and the eye had to distinguish it from `blockerLine` by
    shape alone. */
 .courseCard {
+  position: relative;
   display: grid;
   grid-template-rows: 1fr auto;
   justify-items: stretch;
@@ -1066,7 +1542,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 0;
-  border: 1px solid var(--cw-mat-stroke-inner);
+  border: 1px solid var(--builder-rule);
   border-radius: var(--cw-radius-lg);
   background: color-mix(in srgb, var(--cw-mat-surface) 72%, transparent);
   overflow: hidden;
@@ -1079,7 +1555,7 @@
   min-width: var(--ds-button-min-width);
   padding: var(--cw-space-sm) var(--cw-space-md);
   border: 0;
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
   background: transparent;
   color: inherit;
   text-align: start;
@@ -1136,7 +1612,7 @@
 
 .releaseSheetContent .blockerItem {
   padding: var(--cw-space-sm) 0;
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
   border-radius: 0;
   background: transparent;
 }
@@ -1152,7 +1628,7 @@
   display: grid;
   gap: var(--cw-space-sm);
   padding-block-start: var(--cw-space-md);
-  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+  border-block-start: 1px solid var(--builder-rule);
 }
 
 /* ── Structure ────────────────────────────────────── */
@@ -1171,10 +1647,19 @@
    opposite. */
 .structure {
   counter-reset: cw-module;
+  min-width: 0;
+  max-width: 100%;
 }
 
 .structureHead {
   align-items: flex-end;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.structureHead > div:first-child {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .structureKicker {
@@ -1227,7 +1712,7 @@
 .moduleBlock + .moduleBlock {
   margin-block-start: var(--cw-space-sm);
   padding-block-start: var(--cw-space-md);
-  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+  border-block-start: 1px solid var(--builder-rule);
 }
 
 .structureCards .structureModules {
@@ -1238,7 +1723,7 @@
 .structureCards .moduleBlock {
   height: 100%;
   padding: var(--cw-space-md);
-  border: 1px solid var(--cw-mat-stroke-inner);
+  border: 1px solid var(--builder-rule);
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface-sunk);
 }
@@ -1246,7 +1731,7 @@
 .structureCards .moduleBlock + .moduleBlock {
   margin-block-start: 0;
   padding-block-start: var(--cw-space-md);
-  border-block-start-color: var(--cw-mat-stroke-inner);
+  border-block-start-color: var(--builder-rule);
 }
 
 .structureCards .lessonRow {
@@ -1364,7 +1849,7 @@
   min-width: 0;
   min-height: var(--ds-touch-target-min);
   padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border: 1px solid var(--cw-mat-stroke-inner);
+  border: 1px solid var(--builder-rule);
   border-radius: var(--cw-radius-md);
   background: transparent;
   color: var(--cw-platform-text);
@@ -1375,7 +1860,7 @@
 }
 
 .moduleTitleInput:hover {
-  border-color: var(--cw-mat-stroke-inner);
+  border-color: var(--builder-rule);
 }
 
 .moduleTitleInput:focus-visible {
@@ -1484,6 +1969,13 @@
   gap: 0;
 }
 
+@media (min-width: 901px) {
+  .page[data-mode="document"] .blockList {
+    min-block-size: calc(100dvh - var(--builder-topbar-height) - 12rem);
+    align-content: start;
+  }
+}
+
 .blockInsert {
   min-height: var(--cw-course-block-gap, var(--cw-space-md));
   display: grid;
@@ -1500,14 +1992,15 @@
 
 .blockInsert:hover::before,
 .blockInsert:focus-within::before {
-  border-color: var(--cw-mat-stroke-inner);
+  border-color: var(--builder-rule);
 }
 
 .blockInsertAction {
-  composes: quiet from "../platform/PlatformButtons.module.css";
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
   position: relative;
   color: var(--cw-platform-muted);
-  background: var(--cw-platform-bg);
+  background: transparent;
 }
 
 .blockInsertAction:hover,
@@ -1515,12 +2008,23 @@
   color: var(--cw-platform-text);
 }
 
+.blockInsertInkRing {
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: var(--cw-ink-ring-size);
+  height: var(--cw-ink-ring-size);
+  color: var(--cw-platform-text);
+  opacity: 0.72;
+  pointer-events: none;
+  transform: translate(-50%, -50%) rotate(-4deg);
+}
+
 .blockPicker {
   display: grid;
   gap: var(--cw-space-sm);
   margin-block: var(--cw-space-xs);
   padding: var(--cw-space-md);
-  border: 1px solid var(--cw-mat-stroke-inner);
+  border: 1px solid var(--builder-rule);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface);
 }
@@ -1546,7 +2050,7 @@
 
 .blockCard:hover,
 .blockCard:focus-within {
-  border-color: var(--cw-mat-stroke-inner);
+  border-color: var(--builder-rule);
   background: color-mix(in srgb, var(--cw-mat-surface) 42%, transparent);
 }
 
@@ -1631,7 +2135,7 @@
 }
 
 .nodeCard + .nodeCard {
-  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+  border-block-start: 1px solid var(--builder-rule);
 }
 
 /* Reveal, not furniture. A paragraph should look like a paragraph until the
@@ -1667,7 +2171,7 @@
   min-width: 0;
   min-height: var(--ds-touch-target-min);
   padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border: 1px solid var(--cw-mat-stroke-inner);
+  border: 1px solid var(--builder-rule);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface);
   color: var(--cw-platform-text);
@@ -1715,7 +2219,7 @@
 .textarea {
   width: 100%;
   padding: var(--cw-space-sm);
-  border: 1px solid var(--cw-mat-stroke-inner);
+  border: 1px solid var(--builder-rule);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface);
   color: var(--cw-platform-text);
@@ -1741,7 +2245,7 @@
    only in the readiness list, so the author sees the hole while they are in the
    place that can fill it. */
 .inputTodo {
-  border-color: color-mix(in srgb, var(--cw-platform-accent) 55%, var(--cw-mat-stroke-inner));
+  border-color: color-mix(in srgb, var(--cw-platform-accent) 55%, var(--builder-rule));
 }
 
 .readOnlyNote {
@@ -1786,7 +2290,7 @@
     var(--cw-sem-guide-primary) 0 50%,
     var(--cw-sem-calm-bg) 50% 100%
   );
-  box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-inner);
+  box-shadow: inset 0 0 0 1px var(--builder-rule);
 }
 
 /* ── Preview ──────────────────────────────────────── */
@@ -1815,7 +2319,7 @@
 .coverEditorEmpty {
   margin: 0;
   padding: var(--cw-space-md);
-  border: 1px dashed var(--cw-mat-stroke-inner);
+  border: 1px dashed var(--builder-rule);
   border-radius: var(--cw-radius-md);
   color: var(--cw-platform-muted);
   font-size: 0.88rem;
@@ -1834,7 +2338,7 @@
   align-content: start;
   gap: var(--cw-space-sm);
   padding: var(--cw-space-md);
-  border: 1px solid var(--cw-mat-stroke-inner);
+  border: 1px solid var(--builder-rule);
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
 }
@@ -1932,7 +2436,7 @@
   display: grid;
   place-items: center;
   translate: -50% -50%;
-  border: 1px solid var(--cw-mat-stroke-inner);
+  border: 1px solid var(--builder-rule);
   border-radius: var(--cw-radius-pill);
   background: var(--cw-mat-tint-media);
   color: var(--cw-platform-text);
@@ -1988,7 +2492,7 @@
 .previewTable th,
 .previewTable td {
   padding: var(--cw-space-xs) var(--cw-space-sm);
-  border-bottom: 1px solid var(--cw-mat-stroke-inner);
+  border-bottom: 1px solid var(--builder-rule);
   text-align: start;
   vertical-align: top;
 }
@@ -2130,7 +2634,7 @@
   .courseStatusItem,
   .courseStatusItemButton {
     border-block-end: 0;
-    border-inline-end: 1px solid var(--cw-mat-stroke-inner);
+    border-inline-end: 1px solid var(--builder-rule);
   }
 }
 
@@ -2179,7 +2683,7 @@
   width: 100%;
   min-height: var(--ds-touch-target-min);
   padding: var(--cw-space-sm);
-  border: 1px solid var(--cw-mat-stroke-inner);
+  border: 1px solid var(--builder-rule);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface);
   color: var(--cw-platform-text);
@@ -2327,7 +2831,7 @@
 
 .menuItemDanger[data-first-danger] {
   margin-block-start: var(--cw-space-2xs);
-  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+  border-block-start: 1px solid var(--builder-rule);
   border-start-start-radius: 0;
   border-start-end-radius: 0;
   padding-block-start: var(--cw-space-2xs);
@@ -2382,7 +2886,7 @@
   justify-content: space-between;
   gap: var(--cw-space-sm);
   padding: var(--cw-space-sm) var(--cw-space-sm) var(--cw-space-sm) var(--cw-space-lg);
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
   background: var(--cw-mat-surface);
   border-start-start-radius: var(--cw-radius-lg);
   border-start-end-radius: var(--cw-radius-lg);
@@ -2396,7 +2900,126 @@
 
 .settingsForm {
   display: grid;
+  border-block-end: 1px solid var(--builder-rule);
+}
+
+.courseSettingSection {
+  display: grid;
   gap: var(--cw-space-sm);
+  padding-block: var(--cw-space-sm);
+  border-block-start: 1px solid var(--builder-rule);
+}
+
+.courseSettingHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cw-space-sm);
+}
+
+.courseSettingCopy {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.courseSettingTitle {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.courseSettingSummary {
+  min-width: 0;
+  display: grid;
+  gap: var(--cw-space-3xs, 0.25rem);
+  color: var(--cw-platform-muted);
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.courseSettingSummary strong {
+  color: var(--cw-platform-text);
+  font-size: 1rem;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+
+.courseSettingEdit {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  flex: 0 0 auto;
+  color: var(--cw-platform-muted);
+}
+
+.courseSettingEdit:hover:not(:disabled),
+.courseSettingEdit[aria-expanded="true"] {
+  color: var(--cw-platform-text);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.courseSettingEditor {
+  display: grid;
+  gap: var(--cw-space-md);
+  padding-block-end: var(--cw-space-xs);
+}
+
+/* The choice still owns a full touch target, but no longer draws a large pill
+   around every word. On the manuscript surface the active underline is enough
+   to say which of the neighbouring values is selected. */
+.courseSettingEditor .choiceOption {
+  padding-inline: var(--cw-space-sm);
+  border-color: transparent;
+  border-radius: 0;
+  background: transparent;
+}
+
+.courseSettingEditor .choiceOption:hover:not(:disabled),
+.courseSettingEditor .choiceOption[aria-pressed="true"] {
+  border-block-end-color: var(--cw-platform-text);
+  background: transparent;
+}
+
+.courseSettingsAdvanced {
+  border-block-start: 1px solid var(--builder-rule);
+}
+
+.courseSettingsAdvanced > summary {
+  min-height: var(--ds-touch-target-min);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--cw-platform-muted);
+  font-size: 0.88rem;
+  cursor: pointer;
+}
+
+.courseSettingsAdvanced > summary::after {
+  content: "+";
+  color: var(--cw-platform-accent-strong);
+  font-size: 1.1rem;
+}
+
+.courseSettingsAdvanced[open] > summary::after {
+  content: "−";
+}
+
+.courseSettingsAdvanced > summary:hover {
+  color: var(--cw-platform-text);
+}
+
+.courseSettingsAdvancedBody {
+  display: grid;
+  gap: var(--cw-space-md);
+  padding-block: var(--cw-space-xs) var(--cw-space-md);
+}
+
+.courseSettingsTextAction {
+  composes: text from "../platform/PlatformButtons.module.css";
+  justify-self: start;
 }
 
 @media (min-width: 561px) {
@@ -2578,7 +3201,7 @@
   width: 100%;
   min-height: var(--ds-touch-target-min);
   padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border: 1px solid var(--cw-mat-stroke-inner);
+  border: 1px solid var(--builder-rule);
   border-radius: var(--cw-radius-sm);
   background: var(--cw-mat-surface);
   color: inherit;
@@ -2679,7 +3302,7 @@
 
 .slashGroup + .slashGroup {
   padding-block-start: var(--cw-space-xs);
-  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+  border-block-start: 1px solid var(--builder-rule);
 }
 
 .slashGroupTitle {
@@ -2728,6 +3351,21 @@
   margin: 0;
   color: var(--cw-platform-muted);
   font-size: 0.85rem;
+}
+
+.docMeta > span {
+  padding-inline: var(--cw-space-2xs);
+  color: var(--cw-platform-text);
+}
+
+.page[data-mode="document"] .docHead .pageLead {
+  margin-block-start: var(--cw-space-sm);
+  padding-inline-start: var(--cw-space-md);
+  border-inline-start: 2px solid var(--cw-sem-warmth-strong);
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-editorial);
+  font-size: 1.05rem;
+  line-height: 1.55;
 }
 
 /* ── Prose nodes ──────────────────────────────────── */
@@ -2826,14 +3464,14 @@
   align-self: stretch;
   width: 1px;
   margin-inline: 2px;
-  background: var(--cw-mat-stroke-inner);
+  background: var(--builder-rule);
 }
 
 .formatInput {
   min-width: 14rem;
   min-height: var(--ds-touch-target-min);
   padding-inline: var(--cw-space-2xs);
-  border: 1px solid var(--cw-mat-stroke-inner);
+  border: 1px solid var(--builder-rule);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface);
   color: var(--cw-platform-text);
@@ -2874,7 +3512,7 @@
 
 .courseMobileNav {
   position: sticky;
-  z-index: var(--ds-z-sticky);
+  z-index: calc(var(--ds-z-sticky) - 1);
   inset-block-start: 0;
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -2882,7 +3520,9 @@
   gap: var(--cw-space-xs);
   width: 100%;
   min-width: 0;
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  box-sizing: border-box;
+  padding-inline: var(--cw-space-xs);
+  border-block-end: 1px solid var(--builder-rule);
   background: var(--cw-platform-bg);
   white-space: nowrap;
 }
@@ -2912,6 +3552,14 @@
   display: inline-flex;
   align-items: center;
   width: fit-content;
+  max-width: 100%;
+}
+
+.inkText {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
 .inkMark {
@@ -3041,53 +3689,6 @@
   color: var(--cw-sem-boundary);
 }
 
-.courseRailCollapse {
-  composes: chromeBare from "../platform/PlatformButtons.module.css";
-  composes: square from "../platform/PlatformButtons.module.css";
-  position: relative;
-  align-self: flex-start;
-  margin-block: var(--cw-space-sm) var(--cw-space-md);
-  color: var(--cw-platform-muted);
-}
-
-.courseRailCollapse:hover .iconInkRing,
-.courseRailCollapse:focus-visible .iconInkRing {
-  opacity: var(--cw-ink-hover-opacity);
-  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
-}
-
-.courseRail[data-collapsed] .courseRailNav {
-  justify-items: center;
-}
-
-.courseRail[data-collapsed] .courseRailLink {
-  display: grid;
-  grid-template-columns: 1fr;
-  place-items: center;
-  width: var(--ds-touch-target-min);
-}
-
-.courseRail[data-collapsed] .courseRailLink > .inkLabel,
-.courseRail[data-collapsed] .courseRailStatus {
-  display: none;
-}
-
-.courseRail[data-collapsed] .courseRailLink:hover .iconInkRing,
-.courseRail[data-collapsed] .courseRailLink:focus-visible .iconInkRing {
-  opacity: var(--cw-ink-hover-opacity);
-  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
-}
-
-.courseRail[data-collapsed] .courseRailLink[aria-current="page"] .iconInkRing {
-  opacity: 0.9;
-  transform: translate(-50%, -50%) scale(1) rotate(-4deg);
-}
-
-.courseRail[data-collapsed] .courseRailCollapse {
-  align-self: center;
-  margin-block-start: auto;
-}
-
 .courseWorkspacePanel,
 .releaseWorkspace {
   scroll-margin-block-start: var(--cw-space-lg);
@@ -3108,7 +3709,7 @@
   display: grid;
   gap: var(--cw-space-md);
   padding-block-start: var(--cw-space-lg);
-  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+  border-block-start: 1px solid var(--builder-rule);
 }
 
 .releaseWorkspace {
@@ -3124,7 +3725,7 @@
   gap: var(--cw-space-md);
   flex-wrap: wrap;
   padding-block-end: var(--cw-space-md);
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
 }
 
 .releaseWorkspace .releaseSection {
@@ -3217,7 +3818,7 @@
 .courseSaveBar {
   position: static;
   border-radius: 0;
-  border-block-start: 1px solid var(--cw-mat-stroke-inner);
+  border-block-start: 1px solid var(--builder-rule);
   background: transparent;
   box-shadow: none;
 }
@@ -3246,7 +3847,7 @@
 
 .structure:not(.structureCards) > .panelHead {
   padding-block: var(--cw-space-md) var(--cw-space-lg);
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
 }
 
 .structure:not(.structureCards) .structureModules {
@@ -3267,13 +3868,13 @@
 .structure:not(.structureCards) .moduleHead {
   min-height: 4.25rem;
   padding-block: var(--cw-space-xs);
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
 }
 
 .structure:not(.structureCards) .moduleCollapsedPreview {
   margin-inline: 9.55rem 4rem;
   padding-block: 0 var(--cw-space-sm);
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
 }
 
 .structure:not(.structureCards) .moduleBlock[data-collapsed] .moduleHead {
@@ -3289,7 +3890,7 @@
 .structure:not(.structureCards) .moduleFlag {
   margin: 0 0 0 4.8rem;
   padding-inline: 0;
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
 }
 
 .structure:not(.structureCards) .lessonList {
@@ -3299,7 +3900,7 @@
 
 .structure:not(.structureCards) .lessonRowWrap {
   gap: var(--cw-space-xs);
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
 }
 
 .structure:not(.structureCards) .lessonRow {
@@ -3329,7 +3930,7 @@
 .structure:not(.structureCards) .addRow {
   min-height: 3.7rem;
   margin-inline-start: 4.8rem;
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
 }
 
 .structure:not(.structureCards) .addAction,
@@ -3359,7 +3960,7 @@
   font-size: 0.72rem;
 }
 
-.structureCards .moduleHead::before {
+.structureCards .moduleBlock .moduleHead::before {
   content: none;
 }
 
@@ -3373,7 +3974,7 @@
 }
 
 .structureCards .lessonRowWrap {
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
 }
 
 .structureCards .lessonRow {
@@ -3446,9 +4047,15 @@
 }
 
 @media (min-width: 901px) {
+  /* At this breakpoint the course-local sidebar is present. Keep exactly one
+     navigation contour: the horizontal strip belongs only to compact layouts
+     where the sidebar has left the page. */
+  .courseMobileNav {
+    display: none;
+  }
+
   .aside {
-    min-height: calc(100svh - 5rem);
-    padding-inline: var(--cw-space-2xl);
+    min-height: 0;
   }
 
   .page {
@@ -3463,8 +4070,12 @@
     padding-inline-end: 13rem;
   }
 
+  .bodyWithAside:has(.toolLayer) .docHead {
+    padding-inline-end: 0;
+  }
+
   .docHead .pageTitle {
-    font-size: clamp(2.25rem, 3vw, 2.75rem);
+    font-size: clamp(2.5rem, 3.4vw, 3.15rem);
   }
 
   .saveBar:not([data-pending]):not(.courseSaveBar) {
@@ -3487,6 +4098,10 @@
     min-width: 10.5rem;
   }
 
+  .bodyWithAside:has(.toolLayer) .page[data-mode="document"] .saveBar:not(.courseSaveBar) {
+    display: none;
+  }
+
   .courseHeaderSave {
     display: inline-flex;
   }
@@ -3498,13 +4113,18 @@
 }
 
 @media (min-width: 1660px) {
-  .courseMobileNav,
   .courseStatusStrip {
     display: none;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .aside,
+  .toolLayer,
+  .toolLayerContent {
+    transition: none;
+  }
+
   .inkMark,
   .iconInkRing,
   .stepInkRing {
