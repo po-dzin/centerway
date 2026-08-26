@@ -560,6 +560,41 @@ describe("provisionAccess", () => {
         ).rejects.toMatchObject({ message: "account_not_found" });
         expect(db.rows("orders")).toHaveLength(0);
     });
+
+    it("refuses an unknown course before writing an order for it", async () => {
+        // The failure `grantCourse` would hit anyway — checked here, before the
+        // sale, so a typo'd slug never leaves a charge with nothing behind it.
+        await expect(
+            provisionAccess({
+                email: "learner@example.com",
+                courseSlug: "no-such-course",
+                payment: { amount: 900, currency: "UAH" },
+                actorId: ADMIN,
+            })
+        ).rejects.toMatchObject({ message: "course_not_found" });
+        expect(db.rows("orders")).toHaveLength(0);
+    });
+
+    it("refuses a banned seat before writing an order for it", async () => {
+        db.tables.lms_enrollments = [
+            ...db.rows("lms_enrollments"),
+            { id: "enr-blocked", course_id: "course-reset", auth_user_id: "auth-3", source: "manual", order_ref: null, started_at: daysAgo(10), expires_at: null, blocked_at: daysAgo(1) },
+        ];
+
+        // Same reasoning as the unknown-course case: a ban is a known, checkable
+        // reason `grantCourse` would refuse this grant, so it is caught before
+        // the money is written rather than after — a retry from the operator
+        // must not record a second charge for a seat that still won't open.
+        await expect(
+            provisionAccess({
+                email: "fresh@example.com",
+                courseSlug: "reset-day",
+                payment: { amount: 900, currency: "UAH" },
+                actorId: ADMIN,
+            })
+        ).rejects.toMatchObject({ message: "enrollment_blocked" });
+        expect(db.rows("orders")).toHaveLength(0);
+    });
 });
 
 describe("revokeCourse", () => {

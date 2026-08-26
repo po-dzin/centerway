@@ -23,9 +23,19 @@
 -- once set: renaming it splits one product's history into two lines. The
 -- `admin:offer` script would have defaulted it to the course's own title, which
 -- is exactly that mistake — hence SQL here rather than the script.
+--
+-- `access_lifetime = true` IS STATED, not left to default. The 2026-08-26
+-- program-access-windows migration added a CHECK requiring one of
+-- access_days/access_lifetime to say something, and its own default
+-- (access_lifetime false, access_days null) satisfies neither — an insert that
+-- left this out would violate the CHECK on a fresh database applying both
+-- files in filename order, and would abort before Reset Day was ever listed.
+-- `true` is not a placeholder: the offer page has told buyers "доступ
+-- назавжди" since the 2026-08-26 offer-content migration, and lifetime is the
+-- only value that keeps that sentence true.
 
-INSERT INTO public.lms_course_offers (course_id, code, amount, list_amount, currency, pixel_content_name, active)
-SELECT id, 'course:reset-day', 1, 795, 'UAH', 'Reset Day', true
+INSERT INTO public.lms_course_offers (course_id, code, amount, list_amount, currency, pixel_content_name, access_lifetime, active)
+SELECT id, 'course:reset-day', 1, 795, 'UAH', 'Reset Day', true, true
 FROM public.lms_courses
 WHERE slug = 'reset-day'
 ON CONFLICT (code) DO UPDATE SET
@@ -33,6 +43,7 @@ ON CONFLICT (code) DO UPDATE SET
   list_amount = EXCLUDED.list_amount,
   currency = EXCLUDED.currency,
   pixel_content_name = EXCLUDED.pixel_content_name,
+  access_lifetime = EXCLUDED.access_lifetime,
   active = true,
   updated_at = now();
 

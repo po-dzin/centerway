@@ -248,6 +248,14 @@ async function loadPurchases(
  * programs — has no term, and `planAccess` reads that as perpetual. That is the
  * pre-migration behaviour and the safe direction: an unconfigured offer must
  * never lock out someone who has paid.
+ *
+ * NOT FILTERED TO `active`. Withdrawing an offer (`setOfferActive`) stops new
+ * sales; it does not un-happen the ones already made, and their term is on
+ * this same row — `code` is unique per course, so there is exactly one, never
+ * a history of them. Reading only the active one used to make a withdrawn
+ * offer look unconfigured, and an unconfigured offer reads as perpetual: a
+ * buyer whose first visit landed after the offer closed would have received
+ * access forever instead of the term they paid for.
  */
 async function readAccessRule(course: Course): Promise<AccessRule | null> {
   const db = adminClient();
@@ -255,7 +263,6 @@ async function readAccessRule(course: Course): Promise<AccessRule | null> {
     .from("lms_course_offers")
     .select("access_days, access_lifetime, active")
     .eq("course_id", course.id)
-    .eq("active", true)
     .maybeSingle();
 
   if (!data) return null;

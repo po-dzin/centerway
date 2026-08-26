@@ -135,6 +135,21 @@ describe("the first purchase", () => {
         expect(result.enrollment).toMatchObject({ expiresAt: null });
     });
 
+    /* Withdrawing an offer stops new sales; it must not erase the term a
+       buyer already agreed to. `code` is unique per course, so there is one
+       row and no history to fall back to — reading only the active row used
+       to make a withdrawn offer look unconfigured, which reads as lifetime:
+       exactly backwards for someone whose window should still close on time. */
+    it("still applies the term of an offer that has since been withdrawn", async () => {
+        seed({
+            orders: [order("ord-1", "2026-08-20T09:00:00.000Z")],
+            offers: [{ ...offer("course-reset", 30), active: false }],
+        });
+
+        const result = await ensureEnrollment(IDENTITY, RESET, NOW);
+        expect(result.enrollment).toMatchObject({ orderRef: "ord-1", expiresAt: "2026-09-19T09:00:00.000Z" });
+    });
+
     /* Bought in May, 30-day term, opened in August: the window closed unopened.
        Nothing is written — a dead row would have to be stepped over on every
        later purchase, and it carries no progress worth keeping. */

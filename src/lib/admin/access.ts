@@ -711,20 +711,59 @@ export type ProvisionAccessInput = {
 };
 
 /**
+ * What would stop `grantCourse` from succeeding, checked BEFORE any money is
+ * recorded.
+ *
+ * `provisionAccess` used to record the payment first and grant second, on the
+ * theory that the enrollment should be backed by a real order rather than only
+ * by an operator's word. That is still true, but it let a grant failure — the
+ * course slug typo'd, the seat already banned — land AFTER the sale was
+ * already written: the operator sees an error over a completed charge, and
+ * pressing the button again records a second `orders` row for the same sale.
+ * Checking the two conditions `grantCourse` would otherwise fail on, first and
+ * without side effects, keeps the payment from being written for a grant that
+ * cannot happen. `grantCourse` still re-checks both on its own — this does not
+ * change what it validates, only when the operator finds out.
+ */
+async function assertGrantable(db: Db, courseSlug: string, authUserId: string): Promise<void> {
+    const { data: course, error: courseError } = await db
+        .from("lms_courses")
+        .select("id")
+        .eq("slug", courseSlug)
+        .maybeSingle();
+    if (courseError) throw new AccessError(courseError.message, 500);
+    if (!course) throw new AccessError("course_not_found", 404);
+
+    const { data: existing, error: enrollmentError } = await db
+        .from("lms_enrollments")
+        .select("blocked_at")
+        .eq("course_id", course.id)
+        .eq("auth_user_id", authUserId)
+        .maybeSingle();
+    if (enrollmentError) throw new AccessError(enrollmentError.message, 500);
+    if (existing?.blocked_at) throw new AccessError("enrollment_blocked", 409);
+}
+
+/**
  * The whole hand-made sale in one act: person, money, access, deadline.
  *
  * Composed here rather than in the route so the ORDER is stated once and holds:
  * the account must exist before the payment, so the customer row can be linked
- * to it; the payment must be written before the grant, so the enrollment is
- * backed by a real order rather than only by an operator's word.
+ * to it; the grant is checked for the failures it can predict before the
+ * payment is written, so a rejected grant never leaves a naked charge; the
+ * payment must be written before the grant runs, so the enrollment is backed
+ * by a real order rather than only by an operator's word.
  *
  * Each step is independently useful and independently audited — this only fixes
  * the sequence, it does not hide the steps.
  */
 export async function provisionAccess(input: ProvisionAccessInput) {
+    const db = adminClient();
     const account = input.createAccount
         ? await createAccount({ email: input.email, fullName: input.fullName, actorId: input.actorId })
-        : { created: false, account: await resolveAccountByEmail(adminClient(), input.email) };
+        : { created: false, account: await resolveAccountByEmail(db, input.email) };
+
+    await assertGrantable(db, input.courseSlug, account.account.authUserId);
 
     const payment = input.payment
         ? await recordManualPayment({

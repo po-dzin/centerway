@@ -327,9 +327,20 @@ export function planAccess(input: AccessPlanInput): AccessPlan {
     : Date.parse(fresh[0].createdAt);
 
   if (!Number.isFinite(end)) end = input.now.getTime();
-  // Every fresh purchase adds its term, so two payments that arrive before the
-  // learner ever opens the course buy two terms, not one.
-  end += fresh.length * rule.days * DAY_MS;
+
+  // Every fresh purchase adds its term ONTO WHATEVER IS STILL OWED AT THAT
+  // PAYMENT'S OWN MOMENT, not onto a single sum anchored to the first one. A
+  // February and an August purchase, 30 days apiece, are not one 60-day window
+  // starting in February — that window lapses in April and the August payment
+  // would buy access that had already expired before it happened. Walking the
+  // purchases in order and re-anchoring on any that lands after the running
+  // window has lapsed keeps every payment paying for time starting no earlier
+  // than itself.
+  for (const order of fresh) {
+    const paidAt = Date.parse(order.createdAt);
+    if (Number.isFinite(paidAt) && paidAt > end) end = paidAt;
+    end += rule.days * DAY_MS;
+  }
 
   return {
     grant: true,
