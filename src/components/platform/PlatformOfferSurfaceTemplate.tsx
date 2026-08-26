@@ -161,7 +161,12 @@ export function PlatformOfferSurfaceTemplate({
 }: PlatformOfferSurfaceTemplateProps) {
   return (
     <PlatformShell headerMode="overlay">
-      <main data-cw-detail-template={templateKind}>
+      {/* `data-cw-offer-sticky` is how the SHELL learns there is a fixed bar at
+          the bottom of this page. The clearance cannot be an element inside
+          `<main>`: the footer is main's sibling, so a spacer here holds the
+          boundary paragraph clear and still lets the bar sit over the phone
+          number. The shell owns the padding because the shell owns both. */}
+      <main data-cw-detail-template={templateKind} data-cw-offer-sticky={trailing ? "true" : undefined}>
         <PlatformDetailHero {...hero} />
 
         {trail && trail.length > 0 ? <OfferTrail steps={trail} /> : null}

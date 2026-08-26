@@ -242,6 +242,28 @@
   text-wrap: balance;
 }
 
+/* The subtitle, and why it is set in the editorial face.
+
+   It sits between an 800-weight UI title and a 560-weight UI lead, and a third
+   UI line at a fourth size would have read as a caption for the h1 rather than
+   as a claim of its own. The editorial face is the register the platform
+   already uses for a said thing rather than a labelled one, and it separates
+   this line from both neighbours without another weight step.
+
+   Measure is deliberately tighter than the lead's: this is a phrase, not a
+   sentence, and a phrase that runs the width of a paragraph stops looking like
+   a subtitle. */
+.detailHeroSubtitle {
+  max-width: min(24rem, 100%);
+  margin: 0;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 90%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-hero-subtitle-size);
+  font-weight: 500;
+  line-height: var(--ds-type-hero-subtitle-line-height);
+}
+
 .heroFeatureLead {
   max-width: min(29rem, 100%);
   margin: 0;

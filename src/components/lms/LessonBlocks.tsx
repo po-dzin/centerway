@@ -9,7 +9,7 @@
  * (docs/lms-research-2026-08-15.md §5A).
  */
 
-import { createContext, useContext, type JSX } from "react";
+import { createContext, useContext, type JSX, type ReactNode } from "react";
 import Link from "next/link";
 
 import {
@@ -38,15 +38,15 @@ function isInternalHref(href: string) {
  * through the surface resolver and `next/link`; external ones open in a new tab,
  * since leaving a lesson by accident costs the reader their place.
  */
-function CtaBlock({ href, label, text }: { href: string; label: string; text?: InlineText }) {
+function CtaBlock({ href, label, text, authoring = false }: { href: string; label: string; text?: InlineText; authoring?: boolean }) {
   const surfaceHref = useSurfaceHref();
   const internal = isInternalHref(href);
 
   return (
     <div className={styles.ctaBlock}>
-      {text ? (
+      {text || authoring ? (
         <p className={styles.paragraph}>
-          <Inline value={text} />
+          <Inline value={text} path={["text"]} />
         </p>
       ) : null}
       {internal ? (
@@ -70,9 +70,33 @@ type ReferenceContextValue = {
 
 const ReferenceContext = createContext<ReferenceContextValue>({ route: "learn", targets: new Map() });
 
-function Inline({ value }: { value: InlineText }) {
+/**
+ * How a block's text is made editable WHERE IT IS RENDERED.
+ *
+ * The builder used to show a read-only copy of the block and put its fields in
+ * a panel, so the words of a table were typed three hundred pixels from the
+ * table. Writing an editable twin of each of the thirteen block types would
+ * have been thirteen components drifting away from these ones — the exact
+ * failure `blockFields.ts` exists to prevent.
+ *
+ * Instead every text leaf here says WHERE IT LIVES, and an authoring caller
+ * supplies a render function for those addresses. This file stays ignorant of
+ * the builder: it hands over a path and a value and takes back a node.
+ */
+export type BlockAuthoring = {
+  field: (path: (string | number)[], value: InlineText) => ReactNode;
+};
+
+const AuthoringContext = createContext<BlockAuthoring | null>(null);
+
+function Inline({ value, path }: { value: InlineText | undefined; path?: (string | number)[] }) {
   const surfaceHref = useSurfaceHref();
   const references = useContext(ReferenceContext);
+  const authoring = useContext(AuthoringContext);
+  // An optional leaf the author has not written yet is an empty field, not a
+  // missing one — that is the whole reason the wrappers render regardless.
+  if (authoring && path) return <>{authoring.field(path, value ?? "")}</>;
+  if (value === undefined) return null;
   return (
     <>
       {toSpans(value).map((span, index) => {
@@ -150,6 +174,8 @@ export type BlockRendererProps = {
   courseSlug?: string;
   referenceTargets?: InternalReferenceTarget[];
   referenceRoute?: "learn" | "build";
+  /** Present only in the builder: makes every addressed text leaf editable. */
+  authoring?: BlockAuthoring | null;
 };
 
 export function BlockRenderer(props: BlockRendererProps) {
@@ -158,17 +184,23 @@ export function BlockRenderer(props: BlockRendererProps) {
     <ReferenceContext.Provider
       value={{ courseSlug: props.courseSlug, route: props.referenceRoute ?? "learn", targets }}
     >
-      <BlockRendererBody {...props} />
+      <AuthoringContext.Provider value={props.authoring ?? null}>
+        <BlockRendererBody {...props} />
+      </AuthoringContext.Provider>
     </ReferenceContext.Provider>
   );
 }
 
 function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }: BlockRendererProps) {
+  /* An empty optional leaf renders nothing for a learner and must still render
+     for an author — a title that only appears once it has been written is a
+     title that can never be written. */
+  const authoring = useContext(AuthoringContext);
   switch (block.type) {
     case "lesson_objective":
       return (
         <p className={styles.objective}>
-          <Inline value={block.text} />
+          <Inline value={block.text} path={["text"]} />
         </p>
       );
 
@@ -190,11 +222,11 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
           <div>
             {block.timing ? <span className={styles.stepTiming}>{block.timing}</span> : null}
             <h3 className={styles.stepTitle}>
-              <Inline value={block.title} />
+              <Inline value={block.title} path={["title"]} />
             </h3>
-            {block.text ? (
+            {block.text || authoring ? (
               <p className={styles.stepText}>
-                <Inline value={block.text} />
+                <Inline value={block.text} path={["text"]} />
               </p>
             ) : null}
           </div>
@@ -206,13 +238,13 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
         <section className={styles.practice}>
           <div className={styles.practiceHead}>
             <h3 className={styles.stepTitle}>
-              <Inline value={block.title} />
+              <Inline value={block.title} path={["title"]} />
             </h3>
             {block.durationMin ? <span className={styles.outlineState}>{block.durationMin} хв</span> : null}
           </div>
-          {block.text ? (
+          {block.text || authoring ? (
             <p className={styles.stepText}>
-              <Inline value={block.text} />
+              <Inline value={block.text} path={["text"]} />
             </p>
           ) : null}
         </section>
@@ -221,12 +253,12 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
     case "checklist":
       return (
         <section className={styles.checklist}>
-          {block.title ? (
+          {block.title || authoring ? (
             <h3 className={styles.checklistTitle}>
-              <Inline value={block.title} />
+              <Inline value={block.title} path={["title"]} />
             </h3>
           ) : null}
-          {block.items.map((item) => {
+          {block.items.map((item, index) => {
             const checked = checklist[item.id] === true;
             return (
               <label key={item.id} className={checked ? styles.checkItemDone : styles.checkItem}>
@@ -238,7 +270,7 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
                   onChange={(event) => onToggleChecklistItem(item.id, event.target.checked)}
                 />
                 <span>
-                  <Inline value={item.text} />
+                  <Inline value={item.text} path={["items", index, "text"]} />
                 </span>
               </label>
             );
@@ -276,9 +308,9 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
         <figure>
           {/* eslint-disable-next-line @next/next/no-img-element -- authored content, arbitrary remote hosts */}
           <img className={styles.image} src={block.src} alt={block.alt} loading="lazy" />
-          {block.caption ? (
+          {block.caption || authoring ? (
             <figcaption className={styles.caption}>
-              <Inline value={block.caption} />
+              <Inline value={block.caption} path={["caption"]} />
             </figcaption>
           ) : null}
         </figure>
@@ -287,7 +319,7 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
     case "quote":
       return (
         <blockquote className={styles.quote}>
-          <Inline value={block.text} />
+          <Inline value={block.text} path={["text"]} />
           {block.author ? <span className={styles.quoteAuthor}>{block.author}</span> : null}
         </blockquote>
       );
@@ -303,20 +335,20 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
       // Bounded health claims are a brand invariant — rendered, never hidden.
       return (
         <aside className={styles.boundary}>
-          <Inline value={block.text} />
+          <Inline value={block.text} path={["text"]} />
         </aside>
       );
 
     case "faq_block":
       return (
         <section>
-          {block.items.map((item) => (
-            <details key={item.id} className={styles.faqItem}>
+          {block.items.map((item, index) => (
+            <details key={item.id} className={styles.faqItem} open={authoring ? true : undefined}>
               <summary className={styles.faqQuestion}>
-                <Inline value={item.question} />
+                <Inline value={item.question} path={["items", index, "question"]} />
               </summary>
               <p className={styles.faqAnswer}>
-                <Inline value={item.answer} />
+                <Inline value={item.answer} path={["items", index, "answer"]} />
               </p>
             </details>
           ))}
@@ -326,9 +358,9 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
     case "table":
       return (
         <figure className={styles.tableBlock}>
-          {block.title ? (
+          {block.title || authoring ? (
             <figcaption className={styles.tableTitle}>
-              <Inline value={block.title} />
+              <Inline value={block.title} path={["title"]} />
             </figcaption>
           ) : null}
           {/* The scroller is the element that scrolls, and it is focusable so a
@@ -342,7 +374,7 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
                   <tr>
                     {block.head.map((cell, index) => (
                       <th key={index} scope="col">
-                        <Inline value={cell} />
+                        <Inline value={cell} path={["head", index]} />
                       </th>
                     ))}
                   </tr>
@@ -353,7 +385,7 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
                   <tr key={rowIndex}>
                     {row.map((cell, cellIndex) => (
                       <td key={cellIndex}>
-                        <Inline value={cell} />
+                        <Inline value={cell} path={["rows", rowIndex, cellIndex]} />
                       </td>
                     ))}
                   </tr>
@@ -365,6 +397,6 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
       );
 
     case "cta":
-      return <CtaBlock href={block.href} label={block.label} text={block.text} />;
+      return <CtaBlock href={block.href} label={block.label} text={block.text} authoring={authoring !== null} />;
   }
 }

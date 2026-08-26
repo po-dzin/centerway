@@ -25,7 +25,10 @@ const {
     listRoles,
     provisionAccess,
     recordManualPayment,
+    blockCourse,
+    reactivateCourse,
     revokeCourse,
+    unblockCourse,
     sanitizeSearch,
     setCourseAuthor,
     setEnrollmentDeadline,
@@ -560,17 +563,53 @@ describe("provisionAccess", () => {
 });
 
 describe("revokeCourse", () => {
-    it("deletes the enrollment and records how much progress went with it", async () => {
+    /* WHY THE ROW SURVIVES. Deleting it destroyed the learner's progress AND
+       undid the revoke: entitlement is derived from paid orders, which stay, so
+       the next visit re-created the enrollment. The status is what the door
+       reads now, and it outranks the purchase that paid for it. */
+    it("closes the seat without deleting it or the progress behind it", async () => {
         const result = await revokeCourse({ enrollmentId: "enr-1", actorId: ADMIN });
 
         expect(result).toMatchObject({
             courseSlug: "reset-day",
             email: "learner@example.com",
-            progressEventsDeleted: 2,
+            status: "revoked",
         });
-        expect(db.rows("lms_enrollments").some((row) => row.id === "enr-1")).toBe(false);
+
+        const row = db.rows("lms_enrollments").find((item) => item.id === "enr-1");
+        expect(row?.status).toBe("revoked");
+        expect(row?.revoked_at).toEqual(expect.any(String));
+        expect(db.rows("lms_progress_events").filter((item) => item.enrollment_id === "enr-1")).toHaveLength(2);
         expect(auditRows()[0]).toMatchObject({ action: "access.course.revoke", entity_id: "enr-1" });
-        expect((auditRows()[0] as { metadata: Row }).metadata).toMatchObject({ progress_events_deleted: 2 });
+    });
+
+    it("is lifted by reactivation, and the progress is still there", async () => {
+        await revokeCourse({ enrollmentId: "enr-1", actorId: ADMIN });
+        const result = await reactivateCourse({ enrollmentId: "enr-1", actorId: ADMIN });
+
+        expect(result).toMatchObject({ courseSlug: "reset-day", status: "active" });
+        const row = db.rows("lms_enrollments").find((item) => item.id === "enr-1");
+        expect(row?.status).toBe("active");
+        expect(row?.revoked_at).toBeNull();
+        expect(db.rows("lms_progress_events").filter((item) => item.enrollment_id === "enr-1")).toHaveLength(2);
+    });
+
+    /* A ban is the state a payment cannot argue with, so it is also the state a
+       grant cannot silently overwrite. */
+    it("refuses to reactivate or re-grant a banned seat", async () => {
+        await blockCourse({ enrollmentId: "enr-1", actorId: ADMIN, reason: "chargeback" });
+
+        await expect(reactivateCourse({ enrollmentId: "enr-1", actorId: ADMIN })).rejects.toMatchObject({
+            message: "enrollment_blocked",
+            status: 409,
+        });
+        await expect(
+            grantCourse({ email: "learner@example.com", courseSlug: "reset-day", actorId: ADMIN })
+        ).rejects.toMatchObject({ message: "enrollment_blocked" });
+
+        await unblockCourse({ enrollmentId: "enr-1", actorId: ADMIN });
+        const row = db.rows("lms_enrollments").find((item) => item.id === "enr-1");
+        expect(row?.blocked_at).toBeNull();
     });
 
     it("refuses an enrollment that is not there", async () => {

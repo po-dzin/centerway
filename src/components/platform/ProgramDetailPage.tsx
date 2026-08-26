@@ -9,7 +9,6 @@ import { OfferHeroActions, OfferHeroCommitment } from "@/components/platform/Off
 import { OfferAuthor, OfferBento } from "@/components/platform/OfferFacets";
 import { OfferStickyBar } from "@/components/platform/OfferStickyBar";
 import { OfferSupport } from "@/components/platform/OfferSupportState";
-import commerceStyles from "@/components/platform/PlatformOfferCommerce.module.css";
 import offerPanelStyles from "@/components/platform/PlatformOfferStyles";
 import { LeadForm } from "@/components/platform/LeadForm";
 import { CourseAuthorLink } from "@/components/platform/AuthorEntry";
@@ -17,6 +16,8 @@ import { getSnapshotCourseByProgram } from "@/lib/lms/catalog";
 import { resolveOfferCommerce, type OfferCommerce } from "@/lib/platform/offerCommerce";
 import type { PlatformOfferSurfaceType } from "@/lib/platform/content";
 import type { Author, Course } from "@/lms-core";
+import type { ReactNode } from "react";
+
 import { JsonLd } from "@/lib/seo/StructuredData";
 import { breadcrumbLd, courseLd, graph } from "@/lib/seo/jsonLd";
 
@@ -33,6 +34,16 @@ export type OfferSurface = {
   slug: string;
   title: string;
   fullTitle: string;
+  /**
+   * The line between the name and the tagline: what kind of thing this is.
+   *
+   * Optional, and empty for most offers. It exists because a title written in
+   * the builder often carries two jobs in one string — «Розвантажувальний день
+   * — практикум з умовного голодування» — and the half after the dash is not
+   * noise, it just cannot be part of a name. The name is the h1, this is under
+   * it, the tagline is under that. See `offerSubtitle`.
+   */
+  subtitle?: string;
   tag: string;
   duration: string;
   description: string;
@@ -79,6 +90,7 @@ export function ProgramDetailPage({
   course: given,
   commerce: givenCommerce,
   author = null,
+  purchase,
 }: {
   program: OfferSurface;
   /**
@@ -106,6 +118,13 @@ export function ProgramDetailPage({
    * a profile lives in a table only an async caller can reach.
    */
   author?: Author | null;
+  /**
+   * The confirmation, when the reader has just come back from paying.
+   *
+   * A slot rather than a flag: only the route can read the return parameters,
+   * and only it can resolve the offer they name.
+   */
+  purchase?: ReactNode;
 }) {
   const commerce = givenCommerce ?? resolveOfferCommerce(program.slug);
   // The SNAPSHOT on purpose: this page is statically prerendered and needs a
@@ -175,6 +194,7 @@ export function ProgramDetailPage({
         trail={[{ label: "Програми", href: "/programs" }, { label: program.title }]}
         hero={{
           title: program.fullTitle,
+          ...(program.subtitle ? { subtitle: program.subtitle } : {}),
           description: program.description,
           badge: `${program.tag} · ${program.duration}`,
           artwork: program.artwork,
@@ -208,6 +228,10 @@ export function ProgramDetailPage({
         }}
         afterHero={
           <>
+            {/* FIRST, above everything the page says about itself. Somebody who
+                has just paid is looking for one answer, and it must not be
+                below a sales pitch. */}
+            {purchase}
             {/* The offer, stated for machines, from the same three facts the page
                 prints: what it is, how long it takes, what it costs. The figure is
                 `commerce.amount` — the quotable one — so a page can never publish a
@@ -313,14 +337,11 @@ export function ProgramDetailPage({
           />
         }
         trailing={
-          <>
-            <div className={commerceStyles.stickyBarSpacer} aria-hidden="true" />
-            <OfferStickyBar
-              price={commerce.mode === "checkout" ? commerce.price : null}
-              buyHref={buyHref}
-              buyLabel={buyLabel}
-            />
-          </>
+          <OfferStickyBar
+            price={commerce.mode === "checkout" ? commerce.price : null}
+            buyHref={buyHref}
+            buyLabel={buyLabel}
+          />
         }
         boundary={{
           label: "Межі методу",

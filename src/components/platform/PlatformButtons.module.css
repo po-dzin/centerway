@@ -134,6 +134,17 @@
   aspect-ratio: auto;
 }
 
+/* ── round: a control that is a mark, not a plate ─────
+
+   The contract's radius is for a plate with a label in it. A control that is
+   pure geometry — the ring in a gap of a document, a step arrow — reads as a
+   circle or as nothing: at the contract's 1rem on a 3rem box it comes out a
+   squircle, which is neither the plate it is not nor the mark it is trying to
+   be. Use with `square`, which owns the box it rounds. */
+.round {
+  border-radius: 50%;
+}
+
 .square {
   width: var(--ds-touch-target-min);
   min-width: var(--ds-touch-target-min);

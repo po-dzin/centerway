@@ -135,6 +135,7 @@ export function BuilderInlineEditor({
   placeholder,
   autoFocus,
   bare,
+  phrasing,
   commands,
   references,
   onChange,
@@ -151,6 +152,16 @@ export function BuilderInlineEditor({
   autoFocus?: boolean;
   /** Drops the plate and the frame: the field IS the paragraph, not a box holding one. */
   bare?: boolean;
+  /**
+   * Renders as spans instead of divs.
+   *
+   * The field is placed INSIDE the block's own rendering when a block is being
+   * authored — inside a `<p>`, an `<h3>`, a `<summary>`. A `<div>` is not
+   * allowed there, and the browser silently reparents it, which in a hydrating
+   * app is not a nicety about markup: the server's tree and the client's stop
+   * matching and React throws the whole subtree away.
+   */
+  phrasing?: boolean;
   /** Offered when the author types "/" into an empty field. */
   commands?: SlashCommand[];
   /** Internal course entities offered by the separate `@` command. */
@@ -163,6 +174,7 @@ export function BuilderInlineEditor({
   onEmptyBackspace?: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const Box = (phrasing ? "span" : "div") as "div";
   const [focused, setFocused] = useState(false);
   const [asText, setAsText] = useState(false);
   const [linkDraft, setLinkDraft] = useState<string | null>(null);
@@ -437,15 +449,15 @@ export function BuilderInlineEditor({
 
   if (asText) {
     return (
-      <div className={styles.inlineField}>
-        <div className={styles.inlineBar}>
+      <Box className={styles.inlineField}>
+        <Box className={styles.inlineBar}>
           <span className={styles.inlineHint}>
             <code>**жирне**</code> · <code>*курсив*</code> · <code>[текст](посилання)</code>
           </span>
           <button className={styles.inlineToggle} type="button" onClick={() => setAsText(false)}>
             Кнопками
           </button>
-        </div>
+        </Box>
         <textarea
           className={`${styles.textarea} ${hasMarker ? styles.inputTodo : ""}`}
           aria-label={label}
@@ -463,7 +475,7 @@ export function BuilderInlineEditor({
             }
           }}
         />
-      </div>
+      </Box>
     );
   }
 
@@ -474,10 +486,10 @@ export function BuilderInlineEditor({
   };
 
   return (
-    <div className={styles.inlineField}>
-      <div
+    <Box className={styles.inlineField}>
+      <Box
         ref={ref}
-        className={`${bare ? styles.inlineBare : styles.inlineSurface} ${hasMarker ? styles.inputTodo : ""}`}
+        className={`${bare ? styles.inlineBare : styles.inlineSurface} ${hasMarker ? styles.inputTodo : ""} ${phrasing ? styles.inlinePhrasing : ""}`}
         data-placeholder={placeholder}
         data-empty={!hasText || undefined}
         contentEditable
@@ -773,7 +785,7 @@ export function BuilderInlineEditor({
             document.body
           )
         : null}
-    </div>
+    </Box>
   );
 
   function applyLink() {

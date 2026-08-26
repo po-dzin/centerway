@@ -18,6 +18,7 @@ import {
   type Lesson,
 } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
+import { OFFER_CARD_TITLE_MAX, OFFER_TITLE_MAX, offerCardOverflow } from "@/lib/platform/offerPreview";
 import { BuilderFailureNotice, BuilderShell } from "./BuilderShell";
 import { BuilderMenu } from "./BuilderMenu";
 import { BuilderCourseSettings } from "./BuilderCourseSettings";
@@ -32,9 +33,9 @@ import {
   type BuilderFailure,
 } from "./builderClient";
 import { BuilderGrip } from "./BuilderGrip";
-import { BuilderInlineEditor } from "./BuilderInlineEditor";
 import { BuilderHistory } from "./BuilderHistory";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
+import { BuilderRecordField } from "./BuilderRecordField";
 import { useCourseHistory } from "./useCourseHistory";
 import { useCourseAutosave } from "./useCourseAutosave";
 import { rememberZenPreviewReturn, zenPreviewHref } from "@/components/lms/ZenPreviewShell";
@@ -436,6 +437,9 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   // A published course can be edited as a next version. Its `course` is then
   // deliberately a draft while learners keep the stable live release.
   const published = state.data.liveStatus === "published";
+  /* How far past a card's line this title runs. Zero for every course on the
+     shelf today; the warning below only appears once one is written long. */
+  const titleOverflow = offerCardOverflow(course.title);
   const lessonCount = course.modules.reduce((total, module) => total + module.lessons.length, 0);
 
   return (
@@ -478,20 +482,34 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       <div className={styles.docHead}>
         <div className={styles.courseTitleRow}>
           <BuilderEditableTitle
+            register="record"
             value={course.title}
             label="Редагувати назву курсу"
+            maxLength={OFFER_TITLE_MAX}
             onChange={(value) => editCourse(["title"], value)}
           />
           <span className={published ? styles.pillPublished : styles.pill}>
             {published ? "Опубліковано" : "Чернетка"}
           </span>
         </div>
+        {/* TWO LIMITS, AND THEY ARE DIFFERENT KINDS OF LIMIT. The page cannot
+            clip, so its ceiling is hard and the field above simply stops at
+            OFFER_TITLE_MAX. A card CAN clip, so its ceiling is a warning: the
+            name is the author's, some names really are long, and an ellipsis on
+            a card is a smaller cost than a title they were not allowed to
+            write. What they may not have is the ellipsis as a surprise. */}
+        {titleOverflow > 0 ? (
+          <p className={styles.courseTitleHint}>
+            На картці в каталозі вміщається {OFFER_CARD_TITLE_MAX}{" "}
+            {plural(OFFER_CARD_TITLE_MAX, "символ", "символи", "символів")} — у назві на {titleOverflow}{" "}
+            {plural(titleOverflow, "символ", "символи", "символів")} більше. Там її буде обрізано.
+          </p>
+        ) : null}
         <div className={styles.pageLead}>
-          <BuilderInlineEditor
-            bare
+          <BuilderRecordField
             multiline
             value={course.summary}
-            label="Короткий опис курсу"
+            label="Редагувати короткий опис курсу"
             placeholder="Про що цей курс — одне-два речення."
             onChange={(next) => editCourse(["summary"], next)}
           />
@@ -850,6 +868,7 @@ function ModuleEditor({
         </button>
         <BuilderEditableTitle
           compact
+          register="record"
           level="h3"
           value={module.title}
           label={`Редагувати назву модуля ${moduleIndex + 1}`}

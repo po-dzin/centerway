@@ -26,6 +26,8 @@
   --builder-panel-pad-inline: var(--cw-space-lg);
   --builder-panel-pad-block: var(--cw-space-lg);
   --builder-panel-motion: 180ms;
+  /* Room beside the manuscript for a block's own handles. */
+  --builder-doc-gutter: 3rem;
   /* A DRAWN RULE, NOT A MATERIAL EDGE. `--cw-mat-stroke-inner` is the seam
      between two plates; the builder has no plates left to separate. What
      divides things here is a line someone put on paper, so the rule is the
@@ -44,6 +46,41 @@
   font-family: var(--cw-font-ui);
 }
 
+/* ── Moving between lessons ───────────────────────────
+
+   An in-course move is a state change now, not a navigation, so it lands
+   between two frames. That is the point — it used to cost seconds — but an
+   instant swap reads as ambiguous: the author cannot tell whether the document
+   changed or their own edit did. A short dissolve, keyed on the lesson, says
+   «this is a different lesson» in the only way that costs nothing. */
+@keyframes builderDocEnter {
+  from {
+    opacity: 0;
+    transform: translateY(0.4rem);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.docEnter {
+  animation: builderDocEnter 240ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* The body follows the head by a beat, which is what makes it read as one
+   sheet arriving rather than two elements fading in parallel. */
+.blockList.docEnter {
+  animation-delay: 60ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .docEnter {
+    animation: none;
+  }
+}
+
 /* ── One selection language ───────────────────────────
 
    Hover and selection are the SAME stroke at two strengths — faint under the
@@ -52,6 +89,15 @@
    pointer rests on it, which is what it did. Any row that can be pointed at or
    chosen composes `inkRow` and renders an `InkLabel`; nothing in the builder
    is allowed to invent a second answer. */
+/* A row that carries a grip. The grip is revealed by THIS row and no other:
+   `.dragRow:hover` used to do it, and a module block is a drag row containing
+   every one of its lesson rows — so pointing at one lesson lit the module's
+   handle as well, and a list read straight down was a column of handles
+   waiting for a gesture nobody was making. */
+.gripRow {
+  position: relative;
+}
+
 .inkRow {
   position: relative;
   border: 0;
@@ -581,14 +627,20 @@
   outline: 0;
 }
 
+/* Not a pointer any more: the words inside are the fields, so the cursor over
+   them has to be the caret it will leave behind. */
 .builderLearnerBlock {
   min-width: 0;
-  cursor: pointer;
 }
 
 @media (min-width: 901px) {
+  /* THE DOCUMENT KEEPS ITS 46rem; the page carries a gutter on each side of it
+     for the block handles. Hung outside the page they would be clipped — a
+     scrolling element is not `overflow: visible` on either axis — and hung
+     inside the text they would sit on the first word of every block. */
   .page[data-mode="document"] {
-    width: min(100%, 46rem);
+    width: min(100%, calc(46rem + var(--builder-doc-gutter) * 2));
+    padding-inline: var(--builder-doc-gutter);
     margin-inline: auto;
   }
 
@@ -824,6 +876,10 @@
   border-block-end: 1px solid var(--builder-rule);
 }
 
+.contentsModuleRow {
+  composes: gripRow;
+}
+
 .contentsHeader,
 .contentsModuleRow {
   display: flex;
@@ -876,6 +932,7 @@
    handles and dots. `.rowGrip` already reveals itself this way; the menu joins
    it so the two appear together rather than one at a time. */
 .contentsRow {
+  composes: gripRow;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
@@ -913,8 +970,9 @@
 
 .contentsLink {
   composes: inkRow;
+  text-decoration: none;
   display: grid;
-  grid-template-columns: 1.25rem 2rem minmax(0, 1fr);
+  grid-template-columns: 2rem minmax(0, 1fr);
   align-items: center;
   gap: var(--cw-space-xs);
   width: 100%;
@@ -1045,8 +1103,20 @@
    status pill with nothing between them. Set here rather than by wrapping the
    pair in a grid, so every screen that prints a title and a lead gets it. */
 .pageTitle + .pageLead,
-.courseTitleRow + .pageLead {
+.courseTitleRow + .pageLead,
+.courseTitleHint + .pageLead {
   margin-top: var(--cw-space-xs);
+}
+
+/* The storefront's title rule, explained where the title is written. Muted and
+   inline rather than a notice box: it reports a normal outcome, not a fault,
+   and a boxed warning over a working course would read as something to fix. */
+.courseTitleHint {
+  max-width: 44rem;
+  margin: var(--cw-space-xs) 0 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.8rem;
+  line-height: 1.45;
 }
 
 .panel {
@@ -1739,6 +1809,7 @@
 }
 
 .moduleHead {
+  composes: gripRow;
   position: relative;
 }
 
@@ -1891,6 +1962,7 @@
 }
 
 .lessonRowWrap {
+  composes: gripRow;
   position: relative;
   display: flex;
   align-items: center;
@@ -1983,24 +2055,58 @@
   position: relative;
 }
 
+/* THE GAP IS SILENT UNTIL IT IS ASKED FOR.
+   A ring parked in every gap of the document, and a rule permanently drawn
+   above the first block, made the manuscript look like a form with slots.
+   Pointing at a gap — or dragging a block anywhere near it — draws the rule
+   and puts the ring in it; nothing else does. */
 .blockInsert::before {
   content: "";
   position: absolute;
   inset-inline: 0;
-  border-block-start: 1px solid transparent;
+  border-block-start: 1px solid var(--builder-rule);
+  opacity: 0;
+  transition: opacity 140ms ease;
 }
 
 .blockInsert:hover::before,
-.blockInsert:focus-within::before {
-  border-color: var(--builder-rule);
+.blockInsert:focus-within::before,
+.blockInsert[data-open]::before,
+.blockInsert[data-drop]::before {
+  opacity: 1;
 }
 
+/* The ring SITS ON the rule and breaks it — one line divided by a circle,
+   rather than a line with a button floating over it. The paper behind the
+   ring is what cuts the gap, so it has to be the page's own ground. */
 .blockInsertAction {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
   composes: square from "../platform/PlatformButtons.module.css";
+  composes: round from "../platform/PlatformButtons.module.css";
   position: relative;
   color: var(--cw-platform-muted);
-  background: transparent;
+  background: var(--cw-platform-bg);
+  opacity: 0;
+  transition: opacity 140ms ease, color 140ms ease;
+}
+
+.blockInsert:hover .blockInsertAction,
+.blockInsert:focus-within .blockInsertAction,
+.blockInsert[data-open] .blockInsertAction,
+.blockInsert[data-drop] .blockInsertAction {
+  opacity: 1;
+}
+
+/* Where the block being carried will land. Full strength, and it does not wait
+   for the pointer to find the gap exactly — the list nominates the nearest one
+   the moment a drag starts moving. */
+.blockInsert[data-drop] .blockInsertAction {
+  color: var(--cw-sem-warmth-strong);
+}
+
+.blockInsert[data-drop]::before {
+  border-block-start-width: 2px;
+  border-block-start-color: var(--cw-sem-warmth-strong);
 }
 
 .blockInsertAction:hover,
@@ -2019,55 +2125,175 @@
   transform: translate(-50%, -50%) rotate(-4deg);
 }
 
-.blockPicker {
-  display: grid;
-  gap: var(--cw-space-sm);
-  margin-block: var(--cw-space-xs);
-  padding: var(--cw-space-md);
+/* The floating chooser. Fixed against the ring that opened it, so the document
+   under it does not move; see BuilderBlockPicker.tsx. */
+/* The chip the pointer carries out of the palette. Off-screen until the
+   browser snapshots it — it exists for exactly one frame. */
+.dragChip {
+  position: fixed;
+  inset-block-start: -1000px;
+  inset-inline-start: -1000px;
+  padding: var(--cw-space-2xs) var(--cw-space-sm);
   border: 1px solid var(--builder-rule);
   border-radius: var(--cw-radius-md);
-  background: var(--cw-mat-surface);
+  background: var(--cw-platform-bg);
+  box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-ui);
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
-.blockPickerGroup {
-  margin: 0;
-  font-family: var(--cw-font-data);
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.pickerPanel {
+  position: fixed;
+  z-index: var(--ds-z-popover, 60);
+  width: min(28.75rem, calc(100vw - 1rem));
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-sm) var(--cw-space-md) var(--cw-space-md);
+  border: 1px solid var(--builder-rule);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-platform-bg);
+  box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
+  animation: builderDocEnter 140ms ease both;
+}
+
+.pickerSearch {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-height: var(--ds-touch-target-min);
+  border-block-end: 1px solid var(--builder-rule);
   color: var(--cw-platform-muted);
+}
+
+.pickerSearch input {
+  min-width: 0;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: var(--cw-platform-text);
+  font: inherit;
+}
+
+.pickerSearch input:focus-visible {
+  outline: none;
+}
+
+/* Columns, so the whole vocabulary is one glance rather than one scroll. */
+.pickerBody {
+  min-height: 0;
+  overflow-y: auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: var(--cw-space-sm) var(--cw-space-lg);
+  align-content: start;
+}
+
+.pickerGroup {
+  display: grid;
+  align-content: start;
+  gap: 0.1rem;
+}
+
+.pickerGroup h3 {
+  margin: 0 0 var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: 0.72rem;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.pickerOption {
+  composes: inkRow;
+  display: flex;
+  align-items: center;
+  min-height: 2.25rem;
+  width: 100%;
+  font: inherit;
+  text-align: start;
 }
 
 .blockCard {
+  position: relative;
   display: grid;
   gap: var(--cw-space-xs);
-  padding: var(--cw-space-md);
-  border: 1px solid transparent;
-  border-radius: var(--cw-radius-md);
+  padding: var(--cw-space-2xs) 0;
+  border: 0;
   background: transparent;
-  transition: border-color 160ms ease, background 160ms ease;
 }
 
-.blockCard:hover,
-.blockCard:focus-within {
-  border-color: var(--builder-rule);
-  background: color-mix(in srgb, var(--cw-mat-surface) 42%, transparent);
+/* Selection is a rule in the margin, not a plate under the words. A tinted
+   fill on the block being edited puts a colour behind prose the author is
+   judging, and it was the same object as the hover tint above it. */
+.blockCard::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: calc(var(--cw-space-sm) * -1);
+  width: 2px;
+  background: var(--cw-sem-warmth-strong);
+  opacity: 0;
+  transition: opacity 140ms ease;
 }
 
-.blockHead {
-  display: flex;
-  align-items: center;
+.blockCard[data-selected]::before {
+  opacity: 1;
+}
+
+/* The handle rail: the grip and the block's menu, in the margin, asked for by
+   pointing at the block or selecting it. Absolutely placed, so it cannot add a
+   row above the content the way the old head did. */
+/* The selected block's own fields, under it in the document. A ruled sheet
+   rather than a plate: the block above is the thing being judged, and a panel
+   with its own material under it would compete with it. */
+.blockFields {
+  display: grid;
   gap: var(--cw-space-sm);
+  margin-block-start: var(--cw-space-sm);
+  padding-inline-start: var(--cw-space-sm);
+  border-inline-start: 1px solid var(--builder-rule);
+  animation: builderDocEnter 160ms ease both;
 }
 
-.blockType {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-family: var(--cw-font-data);
-  font-size: 0.75rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--cw-platform-muted);
+.blockRail {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 100%;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+
+.blockRail > .rowGrip {
+  opacity: 1;
+}
+
+.blockCard:hover > .blockRail,
+.blockCard:focus-within > .blockRail,
+.blockCard[data-selected] > .blockRail,
+.blockRail:focus-within {
+  opacity: 1;
+}
+
+/* No gutter to hang in below the desktop measure: the rail comes inside, at
+   the block's own leading edge, above the content rather than beside it. */
+@media (max-width: 900px) {
+  .blockRail {
+    position: static;
+    inset: auto;
+    flex-direction: row;
+    justify-content: flex-end;
+  }
 }
 
 /* The block picker. Each option is a PLATE carrying two lines — the name and
@@ -2154,16 +2380,6 @@
 .nodeCard:focus-within .nodeHead,
 .nodeHead:has([aria-expanded="true"]) {
   opacity: 1;
-}
-
-.nodeKindName {
-  flex: 1 1 auto;
-  min-width: 0;
-  font-family: var(--cw-font-data);
-  font-size: 0.72rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--cw-platform-muted);
 }
 
 .nodeKind {
@@ -3111,14 +3327,14 @@
     align-self: center;
     color: var(--cw-platform-muted);
     cursor: grab;
-    opacity: 0.55;
+    opacity: 0;
     transition: opacity 120ms ease;
   }
 
-  /* Revealed by the row, not by itself: a grip that only appears once the
+  /* Revealed by its own row, not by itself: a grip that only appears once the
      pointer is already on it is a control you have to know is there. */
-  .dragRow:hover .rowGrip,
-  .dragRow:focus-within .rowGrip,
+  .gripRow:hover > .rowGrip,
+  .gripRow:focus-within > .rowGrip,
   .rowGrip:active {
     opacity: 1;
   }
@@ -3166,6 +3382,12 @@
    holding one. Used everywhere the author is writing the document itself —
    the lesson title, its lead, the body of a text block. The frame is what made
    the builder feel like a form over a course instead of the course. */
+/* A span standing in for a block box: valid where a div is not, and laid out
+   the same. See `phrasing` in BuilderInlineEditor.tsx. */
+.inlinePhrasing {
+  display: block;
+}
+
 .inlineBare {
   width: 100%;
   padding: 0;
@@ -3267,6 +3489,56 @@
   background: var(--cw-mat-surface-sunk);
 }
 
+/* A field with the heading's shape and none of a field's furniture. The plate,
+   the border and the placeholder colour are the three things that would make it
+   read as a form control sitting where the title should be. */
+/* A value and the control that opens it, on one line — the shape every row of
+   the settings sheet below it already has. */
+.recordField {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cw-space-sm);
+}
+
+.recordField > p {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  cursor: text;
+}
+
+/* A record's heading takes the field's cursor: the words are the target. */
+.headingWritable {
+  cursor: text;
+}
+
+.titleField {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  caret-color: var(--cw-platform-text);
+  resize: none;
+  overflow: hidden;
+}
+
+.titleField::placeholder {
+  color: var(--cw-platform-muted);
+}
+
+.titleField:focus-visible {
+  outline: none;
+}
+
+.moduleTitleField {
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
 .titleEditing {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
   outline-offset: var(--ds-focus-ring-offset);
@@ -3345,17 +3617,6 @@
 .docHead {
   display: grid;
   gap: var(--cw-space-2xs);
-}
-
-.docMeta {
-  margin: 0;
-  color: var(--cw-platform-muted);
-  font-size: 0.85rem;
-}
-
-.docMeta > span {
-  padding-inline: var(--cw-space-2xs);
-  color: var(--cw-platform-text);
 }
 
 .page[data-mode="document"] .docHead .pageLead {

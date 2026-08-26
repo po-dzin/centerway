@@ -20,6 +20,16 @@ export type DetailHeroMeta = {
 
 type PlatformDetailHeroProps = {
   title: string;
+  /**
+   * What this is, between the name and the reason for it.
+   *
+   * Three rows, three different questions, and that is why it is its own line
+   * rather than a longer title: «Розвантажувальний день» is what it is called,
+   * «практикум з умовного голодування» is what it is, «Вийти з кола „стрес →
+   * їжа → провина"» is why anyone would. Absent on offers that have no second
+   * half to print.
+   */
+  subtitle?: string;
   description: string;
   badge: string;
   artwork?: PlatformOfferArtwork;
@@ -71,6 +81,7 @@ function resolveHeroPosition(position?: string) {
 
 export function PlatformDetailHero({
   title,
+  subtitle,
   description,
   badge,
   artwork,
@@ -118,6 +129,7 @@ export function PlatformDetailHero({
           <span>{badge}</span>
         </p>
         <h1 className={styles.detailHeroTitle}>{title}</h1>
+        {subtitle ? <p className={styles.detailHeroSubtitle}>{subtitle}</p> : null}
         <p className={styles.heroFeatureLead}>{description}</p>
         {meta && meta.length > 0 ? (
           <ul className={styles.heroMetaList}>

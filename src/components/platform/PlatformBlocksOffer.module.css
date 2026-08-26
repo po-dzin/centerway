@@ -99,14 +99,6 @@
     min-height: 0;
   }
 
-  .programShowcase .programTileBody p:not(.label),
-  .aggregateRail .programTileBody p:not(.label) {
-    display: -webkit-box;
-    overflow: hidden;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 3;
-  }
-
 }
 
 /* ── The tablet band ──────────────────────────────────
@@ -579,22 +571,49 @@
   margin: 0;
 }
 
+/* ── The preview format ───────────────────────────────
+
+   A card is a PREVIEW of an offer, not a small copy of its page, and its three
+   text rows have fixed heights so that a row of cards reads as one object:
+
+     .label  — one line, the offer page's badge (kind · duration);
+     h3      — one line, the name;
+     p       — three lines, why it exists.
+
+   What forced this: a course out of the builder carries whatever its author
+   typed, and Reset Day arrived with «Розвантажувальний день — практикум з
+   умовного голодування» over a two-line uppercase tagline. Four rows of title
+   in a 24rem tile, and the two cards beside it were pushed out of alignment by
+   a string. The string rules live in src/lib/platform/offerPreview.ts; these
+   are the ceilings that hold when an author writes past them anyway.
+
+   The title steps down from the display size to its own: a name that has to
+   survive on one line inside a card is not the same type job as a heading with
+   the width of a section. */
 .programTileBody h3 {
+  display: -webkit-box;
+  overflow: hidden;
   color: var(--program-tile-fg);
-  font-size: var(--ds-type-display-size);
-  line-height: var(--ds-type-display-line-height);
+  font-size: var(--ds-offer-card-title-size);
+  line-height: var(--ds-offer-card-title-line-height);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
 }
 
-.programTileBody p:not(.label) {
-  color: var(--program-tile-copy);
-  line-height: var(--ds-type-body-line-height);
-}
-
-.programTile[data-size="compact"] .programTileBody p:not(.label) {
+.programTileBody .label {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 1;
+}
+
+.programTileBody p:not(.label) {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--program-tile-copy);
+  line-height: var(--ds-type-body-line-height);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 /* Geometry, type and focus come from the contract; only the fill is local,

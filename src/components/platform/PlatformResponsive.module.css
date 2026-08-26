@@ -1112,13 +1112,15 @@
   /* The type step is set by the longest real name, not by the widest available
      one. "Розвантажувальний" is a single 17-character word: at the old 8vw step
      it measured 287px inside a 228px column and simply ran out of the card.
-     Ukrainian compounds are the normal case here, so the card sizes for them
-     and hyphenation is the safety net rather than the plan. */
+     Ukrainian compounds are the normal case here, so the card sizes for them.
+
+     Hyphenation is gone with the second line it existed for: the preview format
+     gives the name one line at every width (see PlatformBlocksOffer.module.css),
+     and the phone keeps the same card-title token rather than a step of its own
+     — a bigger step here would only decide which name gets an ellipsis. */
   .programTileBody h3 {
-    font-size: clamp(1.35rem, 5.6vw, 1.75rem);
-    line-height: 1.16;
-    hyphens: auto;
-    overflow-wrap: break-word;
+    font-size: var(--ds-offer-card-title-size);
+    line-height: var(--ds-offer-card-title-line-height);
   }
 
   .offerHeroVisualCard {

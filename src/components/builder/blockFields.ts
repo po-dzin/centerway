@@ -28,6 +28,16 @@ export type BlockField = {
   multiline?: boolean;
   /** One line under the input, for a rule the label cannot carry. */
   hint?: string;
+  /**
+   * Inline, but NOT drawn on the page.
+   *
+   * Inline text is edited where it is rendered — the builder hands each
+   * addressed leaf back to the author as a field in the block itself. A leaf
+   * the renderer never draws has no such place, so it stays in the short form
+   * under the block. One field is like this today and it says so here, beside
+   * the descriptor, rather than in a list somewhere else that would drift.
+   */
+  offPage?: true;
 };
 
 export const BLOCK_TYPE_LABELS: Record<LessonBlock["type"], string> = {
@@ -192,6 +202,7 @@ export function describeBlock(block: LessonBlock): BlockField[] {
           path: ["title"],
           label: "Назва відео для читалок екрана",
           kind: "inline",
+          offPage: true,
           hint: "Не видно на сторінці. Це те, що озвучить читалка замість «фрейм».",
         },
         { path: ["durationMin"], label: "Тривалість, хв", kind: "number" },

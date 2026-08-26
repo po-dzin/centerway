@@ -202,20 +202,41 @@ export function BuilderContents({
                             pick a row up by is in the same place on every row
                             of this list. */}
                         {editing ? <BuilderGrip drag={lessonDrag} row={lessonRow} label={item.title} /> : null}
-                        <button
+                        {/* AN ANCHOR, because this is the list an author opens
+                            lessons from, and a real address is what makes the
+                            browser's own menu — open in a new tab, copy the
+                            link — mean something. A plain left click is taken
+                            over so the editor can switch in place; every
+                            modified click is left to the browser. */}
+                        <a
                           className={styles.contentsLink}
-                          type="button"
+                          href={`/build/${course.slug}/${item.slug}`}
                           aria-current={item.slug === currentSlug ? "page" : undefined}
                           title={item.title}
-                          onClick={() => onNavigate(`/build/${course.slug}/${item.slug}`)}
+                          onClick={(event) => {
+                            if (event.defaultPrevented || event.button !== 0) return;
+                            if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
+                            event.preventDefault();
+                            onNavigate(`/build/${course.slug}/${item.slug}`);
+                          }}
                         >
-                          <Icon name="document" size={17} />
+                          {/* No page glyph. Every row in a course outline is a
+                              lesson, so an icon that says «lesson» on all of
+                              them says nothing — it was a column of filler
+                              between the grip and the number. */}
                           <span className={styles.contentsLessonOrdinal}>{String(lessonIndex + 1).padStart(2, "0")}</span>
                           <InkLabel className={styles.lessonName}>{item.title}</InkLabel>
-                        </button>
+                        </a>
                         {editing ? (
                           <BuilderMenu
                               label={`Дії з уроком «${item.title}»`}
+                              /* The row keeps the browser's own context menu.
+                                 Elsewhere the right click is the fast path to
+                                 these actions, but this list is how an author
+                                 OPENS lessons, and «відкрити в новій вкладці»
+                                 on a lesson is worth more than a second way
+                                 into a menu whose button is on the row. */
+                              contextArea={false}
                               items={[
                                 {
                                   label: "Підняти вище",

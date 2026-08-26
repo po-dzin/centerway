@@ -110,16 +110,40 @@ describe("payable product chain", () => {
     }
   });
 
-  it("builds a return destination carrying the order back to the platform", () => {
+  /**
+   * The paid destination SPLIT on 2026-08-26, and the split is the point.
+   *
+   * A course goes back to its own offer page, which shows it as owned — status,
+   * unlocked lessons, a way into the last one — instead of to a screen whose
+   * whole content is "you paid". Everything else keeps the confirmation, because
+   * a bot delivery and a herb order genuinely have nowhere better to land.
+   *
+   * What must hold for BOTH: the origin, and the parameters. The origin because
+   * it is baked into invoices WayForPay has already issued; the parameters
+   * because `order_ref` is what fires the browser Purchase with the event id the
+   * webhook pairs against, wherever the buyer lands.
+   */
+  it("returns a paid course to its offer page and everything else to the confirmation", () => {
     for (const code of payableCodes) {
       const paid = new URL(
         buildReturnDestination("paid", code, `qa_${code}`, { rrn: "QA1", amount: "1", currency: "UAH" }, 0)
       );
       expect(paid.origin).toBe(new URL(PLATFORM_THANKS_URL).origin);
-      expect(paid.pathname).toBe("/pay/thanks");
       expect(paid.searchParams.get("order_ref")).toBe(`qa_${code}`);
       expect(paid.searchParams.get("product")).toBe(code);
 
+      const fulfilment = PRODUCTS[code].fulfilment;
+      if (fulfilment.kind === "course") {
+        expect(paid.pathname, `${code} is a course and must land on its offer page`).toBe(
+          `/programs/${fulfilment.courseSlug}`
+        );
+      } else {
+        expect(paid.pathname, `${code} has no offer page and keeps the confirmation`).toBe("/pay/thanks");
+      }
+
+      // A FAILURE NEVER MOVES. The offer page shows a course as owned, and
+      // showing it to someone whose card was declined would be the platform
+      // handing over the goods on a payment that did not happen.
       const failed = new URL(buildReturnDestination("failed", code, `qa_${code}`, {}, 0));
       expect(failed.pathname).toBe("/pay/failed");
     }

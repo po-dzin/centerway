@@ -34,9 +34,9 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { writeCourseStructure } from "@/lib/lms/authoring";
-import { courseOfferCode, validateCourse, type Course } from "@/lms-core";
+import { accessStateOf, courseOfferCode, daysRemaining, validateCourse, type Course } from "@/lms-core";
 import { foldProgress, type ProgressEvent, type ProgressEventType } from "@/lms-core/progress";
-import { groupLearnersByAccount, learnerStatusOf } from "@/lib/admin/accessTypes";
+import { groupLearnersByAccount, learnerStatusOf, type GrantSource } from "@/lib/admin/accessTypes";
 import type {
     AccountRow,
     CourseRow,
@@ -77,7 +77,8 @@ export class AccessError extends Error {
     }
 }
 
-async function writeAudit(
+/** Exported so the catalogue writes its offer changes into the same log. */
+export async function writeAudit(
     db: Db,
     entry: { actorId: string; action: string; entityType: string; entityId: string | null; metadata: Record<string, unknown> }
 ) {
@@ -246,7 +247,9 @@ export async function listLearners(input: ListLearnersInput): Promise<{
 
     let query = db
         .from("lms_enrollments")
-        .select("id, course_id, auth_user_id, source, order_ref, started_at, expires_at")
+        .select(
+            "id, course_id, auth_user_id, source, order_ref, started_at, expires_at, status, revoked_at, blocked_at, blocked_reason"
+        )
         .order("started_at", { ascending: false })
         // One past the ceiling on purpose: the extra row is the signal that
         // there was more, which is what `truncated` reports.
@@ -289,6 +292,7 @@ export async function listLearners(input: ListLearnersInput): Promise<{
         progressByEnrollment(db, bounded.map((row) => row.id as string)),
     ]);
 
+    const now = new Date();
     const all: LearnerRow[] = bounded.map((row) => {
         const course = courses.get(row.course_id as string);
         const account = accounts.get(row.auth_user_id as string);
@@ -309,6 +313,19 @@ export async function listLearners(input: ListLearnersInput): Promise<{
             orderRef: (row.order_ref as string | null) ?? null,
             startedAt: row.started_at as string,
             expiresAt: (row.expires_at as string | null) ?? null,
+            // The panel's own answer to "can they open it right now", folded
+            // from the same rule the learner's door uses — a deadline that has
+            // passed reads as closed here without any sweep having run.
+            access: accessStateOf(
+                {
+                    status: row.status as string | null,
+                    blockedAt: (row.blocked_at as string | null) ?? null,
+                    expiresAt: (row.expires_at as string | null) ?? null,
+                },
+                now
+            ),
+            daysLeft: daysRemaining((row.expires_at as string | null) ?? null, now),
+            blockedReason: (row.blocked_reason as string | null) ?? null,
             lessonsTotal,
             lessonsCompleted: folded.completed,
             lastActivityAt: folded.lastActivityAt,
@@ -341,6 +358,8 @@ export async function grantCourse(input: {
     actorId: string;
     /** ISO instant, already normalized by the caller. `null`/absent means access does not end. */
     expiresAt?: string | null;
+    /** Why this seat exists. Defaults to a plain admin grant. */
+    source?: GrantSource;
 }) {
     const db = adminClient();
     const account = await resolveAccountByEmail(db, input.email);
@@ -355,14 +374,25 @@ export async function grantCourse(input: {
 
     const expiresAt = input.expiresAt ?? null;
 
+    const source: GrantSource = input.source ?? "manual";
+
     const { data: existing } = await db
         .from("lms_enrollments")
-        .select("id, source, started_at, expires_at")
+        .select("id, source, started_at, expires_at, status, blocked_at")
         .eq("course_id", course.id)
         .eq("auth_user_id", account.authUserId)
         .maybeSingle();
 
     if (existing) {
+        // A revoked seat is re-opened by the grant: the operator is saying "this
+        // person can open the course", and a stale `revoked` would keep the door
+        // shut behind their back. A BAN is not lifted here — that stays a
+        // separate, deliberate act (`unblockCourse`).
+        if (existing.blocked_at) throw new AccessError("enrollment_blocked", 409);
+        if (existing.status === "revoked") {
+            await reactivateCourse({ enrollmentId: existing.id as string, actorId: input.actorId });
+        }
+
         // Already enrolled is success, not an error — the operator's intent
         // ("this person can open the course") is already true. A deadline
         // typed alongside the grant is still applied: the operator asked for
@@ -382,7 +412,11 @@ export async function grantCourse(input: {
         .insert({
             course_id: course.id,
             auth_user_id: account.authUserId,
-            source: "manual",
+            source,
+            status: "active",
+            // Who handed this out. A purchase leaves `order_ref` to answer the
+            // same question; a gift had nothing to answer it with until now.
+            granted_by: input.actorId,
             // Day 1 starts now — same rule as `scripts/lms-grant.mjs`.
             started_at: new Date().toISOString(),
             expires_at: expiresAt,
@@ -402,7 +436,7 @@ export async function grantCourse(input: {
             course_status: course.status,
             grantee_email: account.email,
             grantee_auth_user_id: account.authUserId,
-            source: "manual",
+            source,
             expires_at: expiresAt,
         },
     });
@@ -671,6 +705,8 @@ export type ProvisionAccessInput = {
     createAccount?: boolean;
     /** Amount that arrived outside the provider. Omitted for a plain gift or a review grant. */
     payment?: { amount: number; currency: PaymentCurrency; note?: string | null } | null;
+    /** Why this seat exists — `manual` unless the operator says bonus or promo. */
+    source?: GrantSource;
     actorId: string;
 };
 
@@ -706,6 +742,9 @@ export async function provisionAccess(input: ProvisionAccessInput) {
         email: input.email,
         courseSlug: input.courseSlug,
         expiresAt: input.expiresAt ?? null,
+        // A hand-recorded sale is a purchase in every way that matters, so it
+        // is not filed as a gift: the money is real and the order exists.
+        source: input.source ?? (payment ? "manual" : undefined),
         actorId: input.actorId,
     });
 
@@ -716,33 +755,48 @@ export async function provisionAccess(input: ProvisionAccessInput) {
  * Revoke is a real reset: `lms_progress_events` cascades with the enrollment,
  * so the learner loses their history, not just the door. The UI says so.
  */
-export async function revokeCourse(input: { enrollmentId: string; actorId: string }) {
-    const db = adminClient();
-
-    const { data: enrollment, error: readError } = await db
+/**
+ * Reads one enrollment with the context every access action needs to log.
+ */
+async function enrollmentContext(db: ReturnType<typeof adminClient>, enrollmentId: string) {
+    const { data: enrollment, error } = await db
         .from("lms_enrollments")
-        .select("id, course_id, auth_user_id, source, started_at")
-        .eq("id", input.enrollmentId)
+        .select("id, course_id, auth_user_id, source, started_at, expires_at, status, blocked_at")
+        .eq("id", enrollmentId)
         .maybeSingle();
-    if (readError) throw new AccessError(readError.message, 500);
+    if (error) throw new AccessError(error.message, 500);
     if (!enrollment) throw new AccessError("enrollment_not_found", 404);
 
-    const { data: course } = await db
-        .from("lms_courses")
-        .select("slug")
-        .eq("id", enrollment.course_id)
-        .maybeSingle();
-    const { data: account } = await db
-        .from("platform_users")
-        .select("email")
-        .eq("auth_user_id", enrollment.auth_user_id)
-        .maybeSingle();
-    const { count: eventCount } = await db
-        .from("lms_progress_events")
-        .select("id", { count: "exact", head: true })
-        .eq("enrollment_id", enrollment.id);
+    const [{ data: course }, { data: account }] = await Promise.all([
+        db.from("lms_courses").select("slug").eq("id", enrollment.course_id).maybeSingle(),
+        db.from("platform_users").select("email").eq("auth_user_id", enrollment.auth_user_id).maybeSingle(),
+    ]);
 
-    const { error } = await db.from("lms_enrollments").delete().eq("id", enrollment.id);
+    return { enrollment, courseSlug: (course?.slug as string | null) ?? null, email: (account?.email as string | null) ?? null };
+}
+
+/**
+ * Closes the seat WITHOUT destroying it.
+ *
+ * It used to delete the row, and that was wrong twice over. Entitlement is
+ * derived from paid `orders`, which a delete leaves standing — so the learner's
+ * next visit re-created the enrollment and the revoke quietly undid itself,
+ * having thrown away every progress event on the way out. Now the row stays and
+ * says `revoked`, which outranks the purchase that paid for it.
+ *
+ * A LATER purchase does re-open it (see `planAccess`): the revoke closed the
+ * seat bought by the OLD payment, and refusing money already taken is not what
+ * an operator meant by "забрати доступ". When the intent is that nothing should
+ * re-open it, the action is `blockCourse`.
+ */
+export async function revokeCourse(input: { enrollmentId: string; actorId: string; reason?: string | null }) {
+    const db = adminClient();
+    const { enrollment, courseSlug, email } = await enrollmentContext(db, input.enrollmentId);
+
+    const { error } = await db
+        .from("lms_enrollments")
+        .update({ status: "revoked", revoked_at: new Date().toISOString(), updated_at: new Date().toISOString() })
+        .eq("id", enrollment.id);
     if (error) throw new AccessError(error.message, 500);
 
     await writeAudit(db, {
@@ -751,16 +805,124 @@ export async function revokeCourse(input: { enrollmentId: string; actorId: strin
         entityType: "lms_enrollment",
         entityId: enrollment.id as string,
         metadata: {
-            course_slug: course?.slug ?? null,
-            grantee_email: account?.email ?? null,
+            course_slug: courseSlug,
+            grantee_email: email,
             grantee_auth_user_id: enrollment.auth_user_id,
             source: enrollment.source,
-            // Recorded because the deletion is not recoverable from this table.
-            progress_events_deleted: eventCount ?? 0,
+            reason: input.reason ?? null,
         },
     });
 
-    return { courseSlug: course?.slug ?? null, email: account?.email ?? null, progressEventsDeleted: eventCount ?? 0 };
+    return { courseSlug, email, status: "revoked" as const };
+}
+
+/**
+ * Re-opens a revoked seat, optionally on a new deadline.
+ *
+ * The progress is still there — that is the whole point of not deleting — so
+ * the learner returns exactly where they stopped. A banned seat is NOT
+ * reactivated here: lifting a ban is `unblockCourse`, a separate decision that
+ * has to be taken deliberately.
+ */
+export async function reactivateCourse(input: {
+    enrollmentId: string;
+    actorId: string;
+    expiresAt?: string | null;
+}) {
+    const db = adminClient();
+    const { enrollment, courseSlug, email } = await enrollmentContext(db, input.enrollmentId);
+    if (enrollment.blocked_at) throw new AccessError("enrollment_blocked", 409);
+
+    const patch: Record<string, unknown> = {
+        status: "active",
+        revoked_at: null,
+        updated_at: new Date().toISOString(),
+    };
+    // `undefined` leaves the deadline alone; `null` deliberately clears it.
+    if (input.expiresAt !== undefined) patch.expires_at = input.expiresAt;
+
+    const { error } = await db.from("lms_enrollments").update(patch).eq("id", enrollment.id);
+    if (error) throw new AccessError(error.message, 500);
+
+    await writeAudit(db, {
+        actorId: input.actorId,
+        action: "access.course.reactivate",
+        entityType: "lms_enrollment",
+        entityId: enrollment.id as string,
+        metadata: {
+            course_slug: courseSlug,
+            grantee_email: email,
+            grantee_auth_user_id: enrollment.auth_user_id,
+            expires_at_before: (enrollment.expires_at as string | null) ?? null,
+            expires_at_after: input.expiresAt === undefined ? (enrollment.expires_at as string | null) ?? null : input.expiresAt,
+        },
+    });
+
+    return { courseSlug, email, status: "active" as const };
+}
+
+/**
+ * Bans this person from this course. No payment lifts it.
+ *
+ * Kept apart from the revoke because they answer to different things: a revoke
+ * is commercial and a fresh purchase re-opens it, while a ban is about the
+ * person and must not have a price. Folding them into one status would have
+ * made "did they pay again?" the question that decides both.
+ */
+export async function blockCourse(input: { enrollmentId: string; actorId: string; reason?: string | null }) {
+    const db = adminClient();
+    const { enrollment, courseSlug, email } = await enrollmentContext(db, input.enrollmentId);
+
+    const { error } = await db
+        .from("lms_enrollments")
+        .update({
+            blocked_at: new Date().toISOString(),
+            blocked_reason: input.reason ?? null,
+            updated_at: new Date().toISOString(),
+        })
+        .eq("id", enrollment.id);
+    if (error) throw new AccessError(error.message, 500);
+
+    await writeAudit(db, {
+        actorId: input.actorId,
+        action: "access.course.block",
+        entityType: "lms_enrollment",
+        entityId: enrollment.id as string,
+        metadata: {
+            course_slug: courseSlug,
+            grantee_email: email,
+            grantee_auth_user_id: enrollment.auth_user_id,
+            reason: input.reason ?? null,
+        },
+    });
+
+    return { courseSlug, email, status: "blocked" as const };
+}
+
+/** Lifts a ban. The seat returns to whatever its status and deadline already said. */
+export async function unblockCourse(input: { enrollmentId: string; actorId: string }) {
+    const db = adminClient();
+    const { enrollment, courseSlug, email } = await enrollmentContext(db, input.enrollmentId);
+
+    const { error } = await db
+        .from("lms_enrollments")
+        .update({ blocked_at: null, blocked_reason: null, updated_at: new Date().toISOString() })
+        .eq("id", enrollment.id);
+    if (error) throw new AccessError(error.message, 500);
+
+    await writeAudit(db, {
+        actorId: input.actorId,
+        action: "access.course.unblock",
+        entityType: "lms_enrollment",
+        entityId: enrollment.id as string,
+        metadata: {
+            course_slug: courseSlug,
+            grantee_email: email,
+            grantee_auth_user_id: enrollment.auth_user_id,
+        },
+    });
+
+    return { courseSlug, email };
 }
 
 export type ListAccountsInput = { q?: string; limit: number; offset: number };
@@ -1085,7 +1247,21 @@ export async function moderateCourse(input: {
     const hasPendingRevision = Boolean(course.pending_content);
     const reviewStatus = hasPendingRevision ? course.pending_review_status : course.review_status;
     if (input.action === "approve") {
-        if (reviewStatus !== "in_review") throw new AccessError("course_not_in_review", 409);
+        /* WHAT THIS RELAXATION FIXES. A course PUBLISHED IN THE BUILDER that
+           never passed through review sits at `review_status = 'draft'`. The
+           old rule refused to approve anything but `in_review`, while the
+           storefront refused any visibility but `hidden` unless it was
+           approved — so such a course could never be listed by anyone, and
+           `ideal-body` had been stuck in exactly that corner. An admin
+           approving already-published material is a legitimate act; it is
+           audited like every other.
+
+           A PENDING REVISION still requires the queue: that is unpublished
+           material waiting on a decision, and waving it through unreviewed is
+           the thing review exists to prevent. */
+        const approvable =
+            reviewStatus === "in_review" || (!hasPendingRevision && course.status === "published");
+        if (!approvable) throw new AccessError("course_not_in_review", 409);
         if (hasPendingRevision) {
             try {
                 validateCourse(course.pending_content, "pending_revision");
@@ -1116,7 +1292,9 @@ export async function moderateCourse(input: {
             : { review_status: "changes_requested", review_note: input.note?.trim() || "Потрібні зміни", approved_at: null, approved_by: null };
     } else {
         if (!input.visibility || !["hidden", "unlisted", "listed"].includes(input.visibility)) throw new AccessError("invalid_visibility", 400);
-        if (input.visibility !== "hidden" && (course.status !== "published" || course.review_status !== "approved")) {
+        // Hiding is always allowed: taking something OFF the storefront must
+        // never be gated on the state that put it there.
+        if (input.visibility !== "hidden" && (course.status !== "published" || reviewStatus !== "approved")) {
             throw new AccessError("course_not_ready_for_storefront", 409);
         }
         values = { visibility: input.visibility };

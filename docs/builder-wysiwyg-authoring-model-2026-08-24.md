@@ -37,6 +37,18 @@ These products are references for interaction principles, not visual templates. 
 
 Marketplace is not a fourth editor. It is a publication projection configured in course properties and `Публікація`.
 
+## Naming
+
+Ukrainian copy carries no Latin-script product names where an established
+Ukrainian anglicism exists: «білдер», not «Builder», in the cover hint and the
+tab title. `CenterWay Білдер` is the tab title now.
+
+The nav label formerly «Навчання» is «Бібліотека» — a shelf of what the learner
+already holds, read spatially against the platform's other rooms (`Профіль`,
+`Білдер`). It is not the final word on that vocabulary; the direction is toward
+consistent spatial metaphors across the layer/module system rather than mixed
+registers (an action noun beside a room noun beside an English loan).
+
 ## Course workspace
 
 The Builder shell is intentionally not the public marketplace shell. Public
@@ -110,6 +122,16 @@ workspace. An author restructuring a course does it WHILE reading the lessons,
 and being sent to another screen to move one lesson up meant leaving the thing
 they were judging it against.
 
+The outline reads as titles when nothing is being done to it. Grips and row
+menus are invisible until the pointer is on THAT row — `.dragRow:hover` used to
+reveal them, and a module block is a drag row containing all of its lesson rows,
+so pointing at one lesson lit the module's handle too and the list became a
+column of handles waiting for a gesture nobody was making. Lesson rows carry no
+page glyph: every row in a course outline is a lesson, so an icon saying
+«lesson» on all of them said nothing and was filler between the grip and the
+number. The lesson document opens on its title alone — the module and the title
+in small type above it repeated the breadcrumb word for word.
+
 The arithmetic is shared with that screen — `structureMoves.ts` owns every move
 and removal, and both surfaces call it — so the two cannot drift into
 disagreeing about what a move means. It also owns the refusals, which are the
@@ -124,6 +146,119 @@ beside it FIRST. The destination is computed from the course as it still stands,
 the removal is applied, and only the render after that commit navigates —
 otherwise the editor would be left with no lesson to render, and the author who
 deleted one would be looking at «Урок не знайдено».
+
+### Nothing in the document asks to be noticed
+
+The lesson used to carry its tools permanently: a pencil beside the title, a
+header row over every block with its type in mono caps, a ring parked in every
+gap with a rule drawn above the first one. None of that is content, and all of
+it was on screen while an author was reading their own words. Everything now
+waits to be asked for — pointing at a block brings up its handle rail in the
+margin, pointing at a gap draws its rule and puts the ring in it, and selection
+is a rule in the margin rather than a tint under the prose.
+
+The page carries a gutter on each side of the 46rem measure for those handles.
+Hung outside the page they would be clipped, since a scrolling element is not
+`overflow: visible` on either axis; hung inside the text they would sit on the
+first word of every block.
+
+Choosers float. The `+` opened a panel that REPLACED the gap in the flow, so
+pressing it threw the rest of the lesson down the page and closing it threw it
+back; it is now fixed against the ring that opened it, like the slash menu and
+the row menu. A chooser is a momentary thing and has no business moving the text
+it is about to be inserted into.
+
+A carried block lands in a GAP, not on a row. What an author aims at is the
+space between two blocks, and asking them to find the correct half of the
+correct block is asking them to hit a target they cannot see. The document owns
+the drop and nominates the nearest gap by distance, so the hint appears as soon
+as the drag starts moving and pulls to the nearest seam — and a block carried
+from the palette answers to exactly the same hint as one carried from the page.
+A palette drag carries a named chip rather than a snapshot of a tool-panel row.
+
+### Content is edited at the block; the panel holds properties
+
+Selecting a block opens its fields under it, in the document. They used to live
+in the right drawer, which meant editing the words of a table happened three
+hundred pixels from the table — the author read one thing and typed into
+another. Selection also stopped opening the panel: pointing at what you are
+writing should not rearrange a third of the screen.
+
+What stays in the panel is what the block IS rather than what it says — where it
+sits, what it is for, how often it repeats. Its own menu carries «Властивості
+блоку» so the panel is reached deliberately.
+
+The block IS the editor. It is the learner's own rendering with every addressed
+text leaf handed back as a field, so a table is typed in the table and a practice
+in the practice, at the size and face they will be read at. There is no editable
+twin of the thirteen block types to drift away from the ones learners see — the
+renderer says WHERE each leaf lives, an authoring caller supplies a render
+function for those addresses, and `LessonBlocks.tsx` stays ignorant of the
+builder. An optional leaf renders its wrapper anyway while authoring: a title
+that only appears once it has been written is a title that can never be written.
+
+Those fields render as spans, not divs. They sit inside the block's own markup —
+inside a `<p>`, an `<h3>`, a `<summary>` — where a div is not allowed; the
+browser reparents it silently, the server and client trees stop matching, and
+React throws the subtree away.
+
+What is left under the block is what the rendering could not take over: numbers,
+media, links, flags, and any inline leaf the renderer never draws. Exactly one
+leaf is in that last case — the video's title for screen readers — and it says
+so in `blockFields.ts` beside its own descriptor rather than in a list somewhere
+else that would drift.
+
+The title is the same idea one level up, and it takes exactly one form — a
+field shaped like the heading, no mode and no pencil, pointing at it puts the
+caret in it — inside the lesson document, where the words on screen ARE the
+words being written.
+
+### Two registers for a title
+
+The course screens are a different kind of surface, and the same field there
+was the wrong answer rather than a smaller version of the right one. A course
+title sits above a row of settings; a module title is one line in a list of
+modules read top to bottom. A reader scanning a structure is not the same
+posture as an author mid-sentence, and a column of live fields turns a
+structure into a form — every title looks pressable, and once one thing on the
+sheet has a caret waiting in it, so does everything else the eye passes over.
+
+`BuilderEditableTitle` now takes a `register`: `document` renders the field
+described above; `record` renders a heading with a pencil, editing opened on
+request, matching the pencil every settings row already carries. The course
+title and every module title are `record`. The lesson document's own title
+stays `document` — it is the one title on any course screen that a reader is
+actually there to write.
+
+The course's one-line summary got the same correction under a different name.
+It used to be a live field sitting inside a sheet of settings ROWS — label,
+value, pencil — and read as the one thing on the page you could type into
+without asking, in a stack of things you look at and then press to change.
+`BuilderRecordField` gives it the row's own shape: text, then the pencil,
+opening the ordinary inline editor on request rather than holding it open
+always.
+
+### Moving between lessons is not a navigation
+
+The editor holds the whole course, so a move to a sibling lesson is a state
+change and the URL follows it with `history.pushState`. It used to be a route
+change, which meant saving the course over the wire, waiting for the page to be
+rendered again, remounting the editor and refetching the course it had just
+sent — seconds, to look at something already in memory. Nothing is lost by not
+saving first: the course is one document and autosave owns writing it. Deep
+links, back and forward still work, because arriving by route seeds the state
+and `popstate` puts it back. Anything LEAVING the course still leaves the
+ordinary way — saved first, then routed.
+
+Because the swap now lands between two frames, the document carries a short
+dissolve keyed on the lesson, and the scroller returns to the top. Without them
+an author cannot tell whether the document changed or their own edit did.
+
+Lesson rows in the outline are anchors, not buttons. A plain left click is taken
+over for the in-place switch; every modified click, and the right click, is left
+to the browser, so «відкрити в новій вкладці» and «копіювати адресу» keep
+working on the list an author opens lessons from. The module head keeps the
+right click as its fast path to the row menu — it has no address to offer.
 
 ### One selection language
 

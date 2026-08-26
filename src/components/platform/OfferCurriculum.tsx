@@ -24,12 +24,13 @@
  */
 
 import Link from "next/link";
+import { useEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/Icon";
 import type { CwIconName } from "@/components/iconNames";
 import { useOfferAccess } from "@/components/platform/OfferAccess";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
-import type { Course, LessonAvailability } from "@/lms-core";
+import type { Course, CourseModule, LessonAvailability } from "@/lms-core";
 import styles from "./PlatformOfferCommerce.module.css";
 import offerStyles from "./PlatformOfferStyles";
 
@@ -39,6 +40,13 @@ type LessonState = {
   /** Why this row is shut, when the reason is the schedule rather than the purchase. */
   note: string | null;
 };
+
+/* Identity for the open/closed set. Falls back to the index because `id` and
+   `slug` are both optional on a module coming out of the snapshot, and two
+   modules may legitimately share a title. */
+function moduleKey(module: CourseModule, index: number): string {
+  return module.id ?? module.slug ?? `${index}`;
+}
 
 /** Only reachable on a hard-gated course, where the schedule really does shut the door. */
 function scheduleNote(availability: LessonAvailability): string {
@@ -59,6 +67,48 @@ export function OfferCurriculum({ course }: { course: Course }) {
   const owned = access.state === "owned";
   const outline = owned ? access.outline : null;
   const currentSlug = owned ? access.shelf.currentLessonSlug : null;
+
+  /* WHICH MODULES START OPEN. The first one, always — an accordion where
+     everything is shut is a list of headings, and a reader deciding whether to
+     buy has to click before the page tells them anything.
+
+     For an owner, also the module they are actually in. Landing on this page
+     with your current lesson folded away is the page forgetting where you were.
+
+     Held in state rather than computed inline because a person's own clicks
+     have to survive a re-render: `access` changes twice on this page (ownership,
+     then the outline), and a derived `open` would slam every module back to its
+     default underneath the reader's hand. */
+  const [openModules, setOpenModules] = useState<Set<string>>(
+    () => new Set(course.modules.length > 0 ? [moduleKey(course.modules[0], 0)] : [])
+  );
+
+  function toggleModule(key: string, open: boolean) {
+    setOpenModules((current) => {
+      if (current.has(key) === open) return current;
+      const next = new Set(current);
+      if (open) next.add(key);
+      else next.delete(key);
+      return next;
+    });
+  }
+
+  /* Opened ONCE, when the shelf first says where the learner stopped. Not on
+     every render: after this fires, the module is in `openModules` like any
+     other, so closing it stays closed. */
+  const revealedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (!currentSlug || revealedFor.current === currentSlug) return;
+    const index = course.modules.findIndex((module) =>
+      module.lessons.some((lesson) => lesson.slug === currentSlug)
+    );
+    if (index < 0) return;
+    revealedFor.current = currentSlug;
+    toggleModule(moduleKey(course.modules[index], index), true);
+    // `course.modules` is the authored structure and does not change between
+    // renders of one page; the lesson slug is what this reacts to.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentSlug]);
 
   /* The map is keyed by slug because that is the only identifier the authored
      course and the learner API are guaranteed to agree on — ids are stable in
@@ -99,13 +149,24 @@ export function OfferCurriculum({ course }: { course: Course }) {
         <h2 className={offerStyles.title}>Програма курсу</h2>
         <p className={offerStyles.lead}>{course.summary ? inlineToText(course.summary) : null}</p>
         <ul className={styles.outline}>
-          {course.modules.map((module) => (
-            <li className={styles.outlineModule} key={module.id ?? module.title}>
-              <div className={styles.outlineModuleHead}>
-                <h3 className={styles.outlineModuleTitle}>{module.title}</h3>
-                <span className={styles.outlineCount}>{module.lessons.length}</span>
-              </div>
-              <ul className={styles.outlineLessons}>
+          {course.modules.map((module, index) => (
+            <li key={module.id ?? module.title}>
+              {/* NATIVE `<details>`, not a div with a click handler. It is
+                  keyboard-operable, exposed to assistive tech, findable by the
+                  browser's own in-page search, and it opens with JavaScript
+                  off — four things a hand-rolled accordion has to reimplement
+                  and usually gets wrong. */}
+              <details
+                className={styles.outlineModule}
+                open={openModules.has(moduleKey(module, index))}
+                onToggle={(event) => toggleModule(moduleKey(module, index), event.currentTarget.open)}
+              >
+                <summary className={styles.outlineModuleHead}>
+                  <h3 className={styles.outlineModuleTitle}>{module.title}</h3>
+                  <span className={styles.outlineCount}>{module.lessons.length}</span>
+                  <Icon className={styles.outlineChevron} name="chevron-down" size={20} />
+                </summary>
+                <ul className={styles.outlineLessons}>
                 {module.lessons.map((lesson) => {
                   const state = stateFor(lesson.slug);
                   return (
@@ -129,7 +190,8 @@ export function OfferCurriculum({ course }: { course: Course }) {
                     </li>
                   );
                 })}
-              </ul>
+                </ul>
+              </details>
             </li>
           ))}
         </ul>

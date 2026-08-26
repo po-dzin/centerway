@@ -74,10 +74,19 @@ function edgeOf(event: DragEvent): DropEdge {
  * @param crossGroup Whether a row may leave its container. True for lessons,
  *   which move between modules exactly as the arrows already move them at a
  *   module edge; false for everything else.
+ * @param mime A payload type carried alongside the plain-text key. `dragover`
+ *   may read the TYPES of a drag but never its data, so a surface that has to
+ *   recognise this drag while it is still moving — the lesson document, which
+ *   nominates the gap a block will land in — has nothing else to recognise it
+ *   by.
+ * @param dropTargets Whether each row also accepts drops. False where the drop
+ *   is owned by something larger: block reordering lands in the GAPS between
+ *   blocks, and a row that also handled the drop would answer first and answer
+ *   differently.
  */
 export function useRowDrag(
   onMove: (from: DragRef, to: DragRef, edge: DropEdge) => void,
-  { crossGroup = false }: { crossGroup?: boolean } = {}
+  { crossGroup = false, mime, dropTargets = true }: { crossGroup?: boolean; mime?: string; dropTargets?: boolean } = {}
 ): RowDrag {
   const [dragging, setDragging] = useState<DragRef | null>(null);
   const [over, setOver] = useState<{ ref: DragRef; edge: DropEdge } | null>(null);
@@ -145,6 +154,7 @@ export function useRowDrag(
           event.dataTransfer.effectAllowed = "move";
           // Firefox refuses to start a drag with an empty payload.
           event.dataTransfer.setData("text/plain", key(ref));
+          if (mime) event.dataTransfer.setData(mime, key(ref));
           setDragging(ref);
         },
         onDragEnd: () => {
@@ -175,11 +185,12 @@ export function useRowDrag(
           if (same(dragging, ref)) return;
           onMove(dragging, ref, edge);
         },
+        ...(dropTargets ? {} : { onDragOver: undefined, onDragLeave: undefined, onDrop: undefined }),
         ...(isDragging ? { "data-dragging": "true" as const } : {}),
-        ...(isOver ? { "data-drop": over.edge } : {}),
+        ...(isOver && dropTargets ? { "data-drop": over.edge } : {}),
       };
     },
-    [accepts, armed, dragging, onMove, over]
+    [accepts, armed, dragging, dropTargets, mime, onMove, over]
   );
 
   return { handleProps, rowProps };

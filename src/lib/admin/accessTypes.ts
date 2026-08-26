@@ -1,3 +1,5 @@
+import type { AccessState } from "@/lms-core";
+
 /**
  * Shapes shared by the access API and the admin page.
  *
@@ -8,6 +10,21 @@
  */
 
 export type LearnerStatus = "not_started" | "in_progress" | "stalled" | "completed";
+
+/**
+ * Sources a hand-made grant may declare.
+ *
+ * `manual` is the plain admin grant and stays the default; `bonus` and
+ * `promotion` exist so that "why does this person have this?" is answerable
+ * from the row a year later, without a note in a Telegram thread. `order` and
+ * `token` are never chosen here — a purchase writes those itself.
+ */
+export const GRANT_SOURCES = ["manual", "bonus", "promotion"] as const;
+export type GrantSource = (typeof GRANT_SOURCES)[number];
+
+export function isGrantSource(value: unknown): value is GrantSource {
+    return typeof value === "string" && (GRANT_SOURCES as readonly string[]).includes(value);
+}
 
 export type LearnerRow = {
     enrollmentId: string;
@@ -23,6 +40,11 @@ export type LearnerRow = {
     orderRef: string | null;
     startedAt: string;
     expiresAt: string | null;
+    /** Whether the door is open right now, and if not, why. Derived, never stored. */
+    access: AccessState;
+    /** Whole days left on the window; `null` when it has no end. */
+    daysLeft: number | null;
+    blockedReason: string | null;
     lessonsTotal: number;
     lessonsCompleted: number;
     lastActivityAt: string | null;
