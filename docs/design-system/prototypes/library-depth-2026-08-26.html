@@ -90,6 +90,22 @@
 
        Верхнього блікy тут немає і не буде: у CenterWay скло матове, і
        inset-підсвітка згори — записана заборона, а не забутий штрих. */
+    /* ОДНА МОВА ВИБОРУ — ТА, ЩО ВЖЕ СТОЇТЬ У БІЛДЕРІ.
+       Builder.module.css каже це прямо, і каже давно: ховер і вибір —
+       ОДИН штрих у двох силах, слабший під вказівником, повний на
+       поточному рядку. І там же записано, чому не плитка: плитка
+       ховера і плитка вибору — це один об'єкт, отже щойно вказівник
+       спиниться на вибраному рядку, два стани стають нерозрізненні;
+       а прямокутник довкола рядка — це контур, і список назв від нього
+       перетворюється на список кнопок.
+       Тому смуга матеріалу з попередньої збірки тут не лишається: вона
+       була тією самою плиткою, тільки прямокутною. Значення — ті самі
+       --cw-ink-* із globals.css. */
+    --ink-hover-opacity: 0.42;    /* --cw-ink-hover-opacity */
+    --ink-hover-scale:   0.74;    /* --cw-ink-hover-scale */
+    --ink-stroke-height: 0.85rem; /* --cw-ink-stroke-height */
+    --nav-marker:        var(--ink);   /* --cw-nav-marker */
+
     --mat-tint:        color-mix(in srgb, var(--paper-lit) 76%, transparent);
     --mat-sunk:        color-mix(in srgb, var(--paper-deep) 62%, var(--paper-lit) 38%);
     --mat-shadow-soft: 0 1px 2px rgba(35, 29, 20, 0.05), 0 10px 28px rgba(35, 29, 20, 0.07);
@@ -175,6 +191,7 @@
       --ink-line:   color-mix(in srgb, var(--ink-value) 62%, transparent);
       --ink-hair:   color-mix(in srgb, var(--ink-value) 22%, transparent);
       --ink-faint:  color-mix(in srgb, var(--ink-value) 55%, var(--paper));
+      --nav-marker: var(--brass-lit);
       --mat-sunk:        color-mix(in srgb, var(--paper-deep) 62%, var(--paper-lit) 38%);
       --mat-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
       --mat-shadow-chrome: 0 1px 2px rgba(0, 0, 0, 0.18), 0 14px 34px rgba(0, 0, 0, 0.22);
@@ -207,6 +224,7 @@
     --ink-line:   color-mix(in srgb, var(--ink-value) 62%, transparent);
     --ink-hair:   color-mix(in srgb, var(--ink-value) 22%, transparent);
     --ink-faint:  color-mix(in srgb, var(--ink-value) 55%, var(--paper));
+    --nav-marker: var(--brass-lit);
     --mat-sunk:        color-mix(in srgb, var(--paper-deep) 62%, var(--paper-lit) 38%);
     --mat-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
     --mat-shadow-chrome: 0 1px 2px rgba(0, 0, 0, 0.18), 0 14px 34px rgba(0, 0, 0, 0.22);
@@ -933,20 +951,37 @@
      і чорнильна риска при лівому полі, у яку і впирається зсув. Це та
      сама пара «одна риска у двох силах», якою позначається все інше
      в кімнаті. */
-  .row:hover, .row:focus-visible, .row[data-hot="true"] {
-    padding-inline-start: 0.9rem;
-    background: var(--mat-tint);
-    border-block-end-color: var(--ink);
-    box-shadow: inset 2px 0 0 var(--ink);
+  .row:hover, .row:focus-visible, .row[data-hot="true"] { color: var(--ink); }
+  /* Натиск — єдине, де лишився матеріал: під пальцем поверхня сідає у
+     втоплений тон. Це не позначка стану, це відгук на дотик, і живе
+     він рівно стільки, скільки триває сам натиск. */
+  .row:active { background: var(--mat-sunk); }
+
+  /* ШТРИХ ПІД НАЗВОЮ, У ДВОХ СИЛАХ. Слабший — там, куди показують
+     (вказівник, клавіатура або ніша на стіні); повний — на тому, що
+     зараз відкрите. Той самий об'єкт, тому два стани не можуть злитись
+     в один. */
+  .inkLabel { position: relative; display: inline-block; max-width: 100%; }
+  .row__mark {
+    position: absolute;
+    inset-inline: -0.2rem;
+    inset-block-end: -0.42rem;
+    height: var(--ink-stroke-height);
+    color: var(--nav-marker);
+    opacity: 0;
+    pointer-events: none;
+    transform: scaleX(0.58);
+    transform-origin: center;
+    transition: opacity 160ms ease, transform 160ms ease;
   }
-  .row:hover .row__title,
-  .row[data-hot="true"] .row__title { color: var(--ink); }
-  /* Натиск — не глибша тінь, а втоплений ґрунт: матеріал не
-     піднімається під пальцем, він сідає. */
-  .row:active {
-    background: var(--mat-sunk);
-    box-shadow: inset 2px 0 0 var(--ink);
+  .row__mark svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .row:hover .row__mark,
+  .row:focus-visible .row__mark,
+  .row[data-hot="true"] .row__mark {
+    opacity: var(--ink-hover-opacity);
+    transform: scaleX(var(--ink-hover-scale));
   }
+  .row[data-current="true"] .row__mark { opacity: 1; transform: scaleX(1); }
   /* Той самий фокус, що в кнопок: кільце акценту, не голий outline. */
   .row:focus-visible { outline: none; box-shadow: var(--ds-button-ring); }
   .row__index { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
@@ -1277,7 +1312,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 41 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 42 · 27.08</span>
 
 
 <div class="stage" aria-hidden="true">
@@ -2363,7 +2398,9 @@
       row.className = "row";
       row.innerHTML =
         '<span class="row__index">' + String(i + 1).padStart(2, "0") + "</span>" +
-        '<span><span class="row__title"></span><span class="row__note"></span></span>' +
+        '<span><span class="inkLabel"><span class="row__title"></span>' +
+        '<span class="row__mark">' + rayInk(120, false, i * 5 + 3) + "</span></span>" +
+        '<span class="row__note"></span></span>' +
         '<span class="row__state" data-held="' + item.held + '"></span>';
       row.querySelector(".row__title").textContent = item.title;
       row.querySelector(".row__note").textContent = item.note;
@@ -2400,6 +2437,14 @@
   function hotRow(i) {
     Array.prototype.forEach.call(shelfList.children, function (r, k) {
       if (k === i) r.dataset.hot = "true"; else r.removeAttribute("data-hot");
+    });
+  }
+
+  /* Повна сила штриха — рівно на тому рядку, що зараз відкритий: у залі
+     жоден, у полиці — той, чия книга розгорнута. */
+  function currentRow(i) {
+    Array.prototype.forEach.call(shelfList.children, function (r, k) {
+      if (k === i) r.dataset.current = "true"; else r.removeAttribute("data-current");
     });
   }
 
@@ -2600,6 +2645,7 @@
   }
 
   function openSpread(ci, bi) {
+    if (view === "case") currentRow(bi);
     spreadState.ci = ci; spreadState.bi = bi; spreadState.folio = 1;
     paintSpread();
     spread.hidden = false;
@@ -2612,6 +2658,7 @@
   }
 
   function closeSpread() {
+    currentRow(-1);
     spread.dataset.open = "false";
     play("close");
     window.setTimeout(function () { spread.hidden = true; }, 520);
