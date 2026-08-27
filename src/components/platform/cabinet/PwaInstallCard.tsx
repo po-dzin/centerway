@@ -1,15 +1,22 @@
 "use client";
 
 /**
- * The offer to install the app — a line, not a panel, and mostly in the footer.
+ * The offer to install the app — one row, in the cabinet.
  *
- * WHERE IT LIVES. Installing is a once-per-device act, and it had a full card
- * on the shelf and another in the profile: two panels competing with the
- * courses for the top of the page, for something almost every reader does zero
- * or one times ever. It moved to where standing offers belong — the footer,
- * present on every page of the platform and of learning — and the profile keeps
- * one row of it, because "is this installed" is a fact about this account's
- * device and the account page is where facts about it are listed.
+ * WHERE IT LIVES. Installing is a once-per-device act, and it kept claiming
+ * page space for it: first a card on the shelf and another in the profile, then
+ * a row pinned under the shelf's last course. That row was the worse of the
+ * two. The learning tree renders `footer={false}` — a lesson has no footer, and
+ * neither does the shelf — so a full-width line under the grid read as a footer
+ * that had lost its footer: one sentence and a button, hanging off the bottom
+ * of the page with nothing around them.
+ *
+ * It lives in the two places a standing offer belongs on this platform: the
+ * account menu (the burger on a phone, the avatar popover on a desktop), which
+ * is the chrome every page carries, and this row in the cabinet, because "is
+ * this installed" is a fact about this account's device and the account page is
+ * where facts about it are listed. See `InstallEntry` in
+ * `layout/PlatformAccountMenu.tsx` for the menu half.
  *
  * WHICH HOST. `ownsInstall` is not a host name but a question — does this origin
  * serve the personal surfaces? On `www` the root is the storefront, and an
@@ -28,10 +35,8 @@
  * What it can do is name the crossing and take them across.
  *
  * So the rule is one sentence: PROMPT WHERE THIS ORIGIN IS THE APP, POINT AT THE
- * ORIGIN THAT IS. The library prompts; the platform and the profile between them
- * send the reader to the shelf and let it prompt. Returning null instead — which
- * is what this did — left the offer unreachable from the account page and from
- * every footer beside it, which is not a boundary, only a gap.
+ * ORIGIN THAT IS. The library prompts — from its menu; the profile sends the
+ * reader to the library and lets it prompt there.
  *
  * TWO BRANCHES, NEVER BOTH, and neither renders once the app is already running
  * installed: Chrome parks a real prompt, Safari never fires one and has to be
@@ -46,11 +51,13 @@ import type { getCabinetCopy } from "./copy";
 import styles from "./Cabinet.module.css";
 
 /**
- * The shelf, addressed absolutely and anchored at its own install row: from the
- * storefront this has to cross an origin, and landing on the row means the next
- * step is the one the reader came for rather than a page to search.
+ * The shelf, addressed absolutely: from the storefront this has to cross an
+ * origin. No hash any more — the offer on that side is in the account menu the
+ * shelf carries, not a row on the page, and a link to a `#app-install` that no
+ * longer exists there would land the reader at the top of the shelf with no
+ * sign of what they came for.
  */
-const SHELF_INSTALL_URL = `${personalUrl(canonicalPersonalPath(LEARNING_SHELF_HREF))}#app-install`;
+const SHELF_INSTALL_URL = personalUrl(canonicalPersonalPath(LEARNING_SHELF_HREF));
 
 /**
  * The profile's row. One line in the account section: what it is, and the
@@ -112,30 +119,4 @@ export function PwaInstallRow({ copy }: { copy: ReturnType<typeof getCabinetCopy
       <p className={styles.installRowText}>{copy.installBrowserLead}</p>
     </div>
   );
-}
-
-/**
- * The footer always keeps the installation route visible. Where the browser
- * exposes its native prompt it remains a one-tap action; elsewhere it points to
- * the last account row, which names the browser-specific next step.
- */
-export function PwaInstallFooterEntry({ label, fallbackHref }: { label: string; fallbackHref: string }) {
-  const install = usePwaInstall();
-  const ownsInstall = useOwnsPersonalSurfaces();
-
-  if (install.isStandalone) return null;
-
-  /* The storefront's footer keeps the offer, but sends it to the origin whose
-     root is the app rather than firing a prompt that would install the shop. */
-  if (!ownsInstall) return <a href={SHELF_INSTALL_URL}>{label}</a>;
-
-  if (install.canPrompt) {
-    return (
-      <button type="button" onClick={() => void install.install()}>
-        {label}
-      </button>
-    );
-  }
-
-  return <a href={fallbackHref}>{label}</a>;
 }

@@ -44,10 +44,16 @@ describe("offline.html stays self-contained", () => {
     }
   });
 
-  it("keeps the mark's stroke colour answerable to both themes", () => {
-    expect(offlineHtml).toMatch(/prefers-color-scheme:\s*dark/);
-    const darkBlock = /@media \(prefers-color-scheme: dark\)\s*\{([\s\S]*?)\}\s*<\/style>/.exec(offlineHtml)?.[1] ?? "";
-    expect(darkBlock).toContain(".mark");
+  /**
+   * This page holds the light gamma in both schemes. Under the dark inverse
+   * the whole viewport became one flat green field, and a full-bleed inverse
+   * is a surface this system only ever uses for a plate — never for the page
+   * itself. So there is deliberately no dark block here, and the ground must
+   * stay declared as light rather than left to `light dark`.
+   */
+  it("stays on the light ground in both schemes", () => {
+    expect(offlineHtml).toMatch(/color-scheme:\s*light\s*;/);
+    expect(offlineHtml).not.toMatch(/prefers-color-scheme/);
   });
 });
 

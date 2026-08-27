@@ -671,6 +671,83 @@
   content: none;
 }
 
+/* THE INSTALL FOLD. Safari fires no prompt, so the one thing the menu can offer
+   an iPhone is the two taps that do it by hand — and two lines of instruction
+   are not a row. The summary borrows the row's metrics so the closed state is
+   indistinguishable from the buttons around it; the steps under it are caption
+   ink, the same weight the address line at the top of the menu carries.
+
+   No marker: the default triangle is the one glyph in this bar that is not from
+   the sprite, and a row that grows when tapped needs no arrow to say so. */
+.menuFold summary {
+  min-height: var(--ds-touch-target-min);
+  display: flex;
+  align-items: center;
+  padding: 0 0.65rem;
+  border-radius: var(--cw-radius-sm);
+  color: var(--cw-platform-muted);
+  font-weight: 720;
+  cursor: pointer;
+  list-style: none;
+  transition: color 160ms ease;
+}
+
+.menuFold summary::-webkit-details-marker {
+  display: none;
+}
+
+.menuFold summary:hover,
+.menuFold summary:focus-visible {
+  color: var(--cw-platform-text);
+  outline: none;
+}
+
+.menuFold summary:hover .menuInkMark,
+.menuFold summary:focus-visible .menuInkMark,
+.menuFold[open] summary .menuInkMark {
+  opacity: var(--cw-nav-marker-hover-opacity);
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+}
+
+.menuFoldLead,
+.menuFoldSteps {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: var(--ds-type-label-line-height);
+}
+
+.menuFoldLead {
+  padding: 0.35rem 0.65rem 0.25rem;
+}
+
+.menuFoldSteps {
+  padding: 0 0.65rem 0.5rem 1.6rem;
+  display: grid;
+  gap: 0.2rem;
+}
+
+/* Inside the burger sheet the ground is the dark plate, so the ink is the
+   header's, not the global one — the same swap `.profileWrapMobile` makes for
+   its own rows, and at the sheet's left edge rather than the popover's. */
+.profileWrapMobile .menuFold summary {
+  padding: 0 0.9rem;
+  color: var(--platform-header-fg);
+}
+
+.profileWrapMobile .menuFoldLead,
+.profileWrapMobile .menuFoldSteps {
+  color: color-mix(in srgb, var(--platform-header-fg) 72%, transparent);
+}
+
+.profileWrapMobile .menuFoldLead {
+  padding-inline: 0.9rem;
+}
+
+.profileWrapMobile .menuFoldSteps {
+  padding-inline: 1.85rem 0.9rem;
+}
+
 .menuInkLabel {
   position: relative;
   display: inline-flex;

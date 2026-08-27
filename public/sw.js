@@ -13,7 +13,7 @@
 // reinstalls this worker when its own bytes differ, so a content-only edit to
 // the precached document needs this bump — otherwise an already-installed
 // client keeps serving the old cached page from the Cache API forever.
-const SHELL_CACHE = "cw-shell-v2";
+const SHELL_CACHE = "cw-shell-v3";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {

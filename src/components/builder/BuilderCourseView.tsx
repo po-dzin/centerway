@@ -498,6 +498,12 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             type="button"
             aria-label="Історія версій"
             title="Історія версій"
+            /* `.menuTrigger[aria-expanded="true"]` already carries the hover
+               background — this was the one caller that never set the
+               attribute, so the trigger gave no sign the drawer it opens is
+               open: it looked pressed for as long as the pointer sat on it and
+               forgot the moment it moved away. */
+            aria-expanded={versionHistoryOpen}
             onClick={() => setVersionHistoryOpen(true)}
           >
             <Icon name="clock" size={18} />

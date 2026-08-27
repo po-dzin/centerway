@@ -20,6 +20,8 @@ export type CabinetCopy = {
 
   learningTitle: string;
   learningLabel: string;
+  /** One sentence under the shelf's title: whose these are, and what a card does. */
+  learningLead: string;
   learningLoadingTitle: string;
   learningLoadingLead: string;
   learningEmptyTitle: string;
@@ -99,6 +101,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
 
       learningTitle: "My courses",
       learningLabel: "Library",
+      learningLead: "Courses you have access to. Open one and it resumes at the lesson you stopped on.",
       learningLoadingTitle: "Loading your courses…",
       learningLoadingLead: "Restoring access, progress and your next lesson.",
       learningEmptyTitle: "No courses in this profile yet",
@@ -166,6 +169,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
 
     learningTitle: "Мої курси",
     learningLabel: "Бібліотека",
+    learningLead: "Курси, до яких у вас є доступ. Відкриваються з того уроку, на якому ви зупинились.",
     learningLoadingTitle: "Завантажуємо ваші курси…",
     learningLoadingLead: "Відновлюємо доступ, поступ і ваш наступний урок.",
     learningEmptyTitle: "У кабінеті ще немає курсів",
