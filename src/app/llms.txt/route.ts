@@ -19,7 +19,8 @@
 
 import { BRAND, brandSummary } from "@/lib/brand/identity";
 import { programs } from "@/lib/platform/content";
-import { listStorefrontCourses } from "@/lib/platform/offers";
+import { formatPrice } from "@/lib/products";
+import { loadCourseOffer, listStorefrontCourses } from "@/lib/platform/offers";
 import { resolveOfferCommerce } from "@/lib/platform/offerCommerce";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 
@@ -48,11 +49,28 @@ export async function GET(): Promise<Response> {
     );
   });
 
+  /*
+   * A course DEDUPED BY PATH, not by matching its slug against `programs`.
+   *
+   * `programs` is the six hand-written entries, and an offer migrating off it
+   * onto the builder — which is exactly what happened to Reset Day on
+   * 2026-08-26 — used to fall out of the price lookup below silently: the
+   * price line came only from `resolveOfferCommerce`, which only knows the
+   * six. Matching by the rendered PATH instead of by membership in that array
+   * means a migrated offer keeps its price line the moment it starts serving
+   * from the database, with no second edit here.
+   */
+  const known = new Set(programs.map((program) => `/programs/${program.slug}`));
   const live = await listStorefrontCourses();
-  const known = new Set(programs.map((program) => program.slug));
-  const liveOffers = live
-    .filter((course) => !known.has(course.slug))
-    .map((course) => line(course.href, course.title, course.description || course.tag));
+  const liveOffers = await Promise.all(
+    live
+      .filter((course) => !known.has(`/programs/${course.slug}`))
+      .map(async (course) => {
+        const offer = await loadCourseOffer(course.slug);
+        const price = offer ? `Ціна: ${formatPrice(offer.listAmount ?? offer.amount, offer.currency)}.` : "Ціна узгоджується в розмові.";
+        return line(course.href, course.title, `${course.description || course.tag} ${price}`);
+      })
+  );
 
   const body = [
     `# ${BRAND.name}`,
@@ -78,8 +96,13 @@ export async function GET(): Promise<Response> {
     "",
     "## Програми і продукти",
     "",
+    // ONE list, not two. `offers` and `liveOffers` differ only in WHERE the
+    // facts live (a TypeScript file vs. `lms_course_offers`) — a heading that
+    // named that split would publish an internal fact as a category, same
+    // reasoning `PlatformProgramsIndexPage` already applies to the visible
+    // catalogue.
     ...offers,
-    ...(liveOffers.length ? ["", "## Курси авторів платформи", "", ...liveOffers] : []),
+    ...liveOffers,
     "",
     "## Мова і аудиторія",
     "",
