@@ -16,12 +16,12 @@ const ADMIN_KEY_PREFIXES = [
   "customers_",
 ];
 
-const FORBIDDEN_RU = [
-  /последн(ий|яя)\s+шанс/i,
-  /только\s+сегодня/i,
-  /срочно/i,
-  /купи\s+сейчас/i,
-  /не\s+упусти/i,
+const FORBIDDEN_UK = [
+  /останн(ій|я)\s+шанс/i,
+  /тільки\s+сьогодні/i,
+  /терміново/i,
+  /купи\s+зараз/i,
+  /не\s+проґав/i,
 ];
 
 const FORBIDDEN_EN = [
@@ -61,31 +61,31 @@ function parseTranslations(fileContent) {
 }
 
 function checkKeyParity(translations) {
-  const ru = translations.ru ?? {};
+  const uk = translations.uk ?? {};
   const en = translations.en ?? {};
-  const ruKeys = Object.keys(ru).filter(shouldCheckKey);
+  const ukKeys = Object.keys(uk).filter(shouldCheckKey);
   const enKeys = Object.keys(en).filter(shouldCheckKey);
 
-  const ruMissing = ruKeys.filter((key) => !(key in en));
-  const enMissing = enKeys.filter((key) => !(key in ru));
+  const ukMissing = ukKeys.filter((key) => !(key in en));
+  const enMissing = enKeys.filter((key) => !(key in uk));
 
-  if (ruMissing.length === 0 && enMissing.length === 0) {
-    pass("admin i18n key parity RU/EN is consistent");
+  if (ukMissing.length === 0 && enMissing.length === 0) {
+    pass("admin i18n key parity UK/EN is consistent");
     return;
   }
-  if (ruMissing.length > 0) fail(`admin keys missing in EN: ${ruMissing.join(", ")}`);
-  if (enMissing.length > 0) fail(`admin keys missing in RU: ${enMissing.join(", ")}`);
+  if (ukMissing.length > 0) fail(`admin keys missing in EN: ${ukMissing.join(", ")}`);
+  if (enMissing.length > 0) fail(`admin keys missing in UK: ${enMissing.join(", ")}`);
 }
 
 function checkTone(translations) {
-  const ru = translations.ru ?? {};
+  const uk = translations.uk ?? {};
   const en = translations.en ?? {};
 
-  for (const [key, value] of Object.entries(ru)) {
+  for (const [key, value] of Object.entries(uk)) {
     if (!shouldCheckKey(key) || typeof value !== "string") continue;
-    for (const pattern of FORBIDDEN_RU) {
+    for (const pattern of FORBIDDEN_UK) {
       if (pattern.test(value)) {
-        fail(`forbidden RU pressure phrase found in key "${key}": "${value}"`);
+        fail(`forbidden UK pressure phrase found in key "${key}": "${value}"`);
       }
     }
   }
