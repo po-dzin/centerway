@@ -219,7 +219,7 @@
 }
 
 .heroFeatureContent {
-  width: min(100% - 2rem, var(--cw-max-width));
+  width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
   max-width: var(--cw-max-width);
   min-width: 0;
   position: relative;
@@ -228,6 +228,32 @@
   gap: 1rem;
   margin-inline: auto;
   padding: clamp(5.75rem, 10vw, 8rem) 0 clamp(6.4rem, 10vw, 8.5rem);
+  color: var(--cw-platform-accent-contrast);
+}
+
+/* ── The hero's utility line ──────────────────────────
+
+   Where you are, and — for the person who wrote this — the way into the
+   Майстерня. Both used to sit in a row BELOW the hero: a reader had to scroll
+   past the whole offer to find out where the page lived, and the author's edit
+   control appeared under the thing they were editing. They belong at the top of
+   the page, which on this template is inside the photograph. */
+.heroUtilityRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+  margin-bottom: var(--cw-space-2xs);
+}
+
+.heroUtilityLink {
+  composes: text from "./PlatformButtons.module.css";
+  gap: 0.4rem;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
+}
+
+.heroUtilityLink:hover:not(:disabled) {
   color: var(--cw-platform-accent-contrast);
 }
 

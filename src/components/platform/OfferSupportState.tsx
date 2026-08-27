@@ -40,21 +40,24 @@ export function OfferSupport({ sales, title }: { sales: ReactNode; title: string
       : `/learn/${shelf.slug}`;
 
   return (
-    <>
-      <article className={styles.panel}>
-        <p className={styles.label}>Ваш доступ</p>
-        <h2 className={styles.title}>{`«${title}» вже відкрито`}</h2>
-        <p className={styles.lead}>
-          {finished
-            ? "Ви пройшли цей курс. Матеріали залишаються у кабінеті — протокол можна повторити будь-коли."
-            : shelf.currentLessonTitle
-              ? `Ви зупинилися на уроці «${shelf.currentLessonTitle}». Продовжити можна звідси або з полиці в кабінеті.`
-              : "Курс чекає у вашому кабінеті. Почати можна звідси або з полиці."}
-        </p>
-      </article>
-      <article className={styles.formPanel}>
-        <p className={styles.label}>Продовжити</p>
-        <h2 className={styles.title}>Перейти до матеріалів</h2>
+    /* ONE PANEL, NOT TWO. The standing and the way in used to be a pair of
+       cards side by side — the left one saying the course is open, the right
+       one holding the button that opens it. Nothing separated them but the
+       grid: the same sentence and its own verb, split across two surfaces,
+       with the second card carrying a label («Продовжити») and a heading
+       («Перейти до матеріалів») that only restated the button under them.
+       A state and its action belong on one plate. */
+    <article className={`${styles.panel} ${commerceStyles.ownedPanel}`}>
+      <p className={styles.label}>Ваш доступ</p>
+      <h2 className={styles.title}>{`«${title}» вже відкрито`}</h2>
+      <p className={styles.lead}>
+        {finished
+          ? "Ви пройшли цей курс. Матеріали залишаються у кабінеті — протокол можна повторити будь-коли."
+          : shelf.currentLessonTitle
+            ? `Ви зупинилися на уроці «${shelf.currentLessonTitle}». Продовжити можна звідси або з полиці в кабінеті.`
+            : "Курс чекає у вашому кабінеті. Почати можна звідси або з полиці."}
+      </p>
+      <div className={commerceStyles.ownedActions}>
         <Link className={commerceStyles.resumeAction} href={surfaceHref(resumeHref)} data-cw-offer-cta>
           {finished ? "Відкрити курс" : shelf.access === "available" ? "Почати навчання" : "Продовжити навчання"}
         </Link>
@@ -64,7 +67,7 @@ export function OfferSupport({ sales, title }: { sales: ReactNode; title: string
         <Link className={commerceStyles.shelfAction} href={surfaceHref("/learn")}>
           Усі мої курси
         </Link>
-      </article>
-    </>
+      </div>
+    </article>
   );
 }

@@ -171,3 +171,31 @@
     transition: none;
   }
 }
+
+/* ── On a hero photograph ─────────────────────────────
+
+   Same trail, other ground. The crumbs are ink on paper by default; over the
+   scrimmed hero they would be ink on a photograph, which is not a contrast
+   problem to be solved with opacity but the wrong palette. Cream, at the
+   hero's own two weights: the pressable steps lighter, the one you are on
+   dimmer, exactly as on paper. */
+.trail[data-tone="media"] {
+  margin-block-end: 0;
+}
+
+.trail[data-tone="media"] .backIcon,
+.trail[data-tone="media"] .sep {
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 72%, transparent);
+}
+
+.trail[data-tone="media"] .crumbLink {
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 92%, transparent);
+}
+
+.trail[data-tone="media"] .crumbLink:hover:not(:disabled) {
+  color: var(--cw-platform-accent-contrast);
+}
+
+.trail[data-tone="media"] .here {
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 74%, transparent);
+}

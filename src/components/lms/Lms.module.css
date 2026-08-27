@@ -3,7 +3,7 @@
    Tokens only — no local palettes, per AGENTS.md canon preflight. */
 
 .wrap {
-  width: min(100% - 2rem, 46rem);
+  width: min(100% - 2 * var(--cw-page-gutter), 46rem);
   /* Top breathing room is a MARGIN, not padding: the shell sets
      `.shellOverlay > main { padding-top: --platform-topbar-clearance }`, which
      out-specifies this rule. Margin stacks with that clearance instead of being
@@ -842,7 +842,7 @@
 }
 
 .ctaLink {
-  composes: quiet from "../platform/PlatformButtons.module.css";
+  composes: secondary from "../platform/PlatformButtons.module.css";
 }
 
 /* ── Completion bar ───────────────────────────────── */

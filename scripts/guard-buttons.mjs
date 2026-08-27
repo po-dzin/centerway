@@ -35,8 +35,24 @@ const networkTokens = path.join(repoRoot, "src/landing-static/shared/css/network
 const report = process.argv.includes("--report");
 
 /* A selector naming a button. Chips, badges and bars are not buttons and are
-   not checked — `.completeToggle` is a checkbox and says so. */
-const BUTTON_SELECTOR = /^\.[A-Za-z][A-Za-z0-9_]*(Button|Btn|Link|Action|Cta|Toggle)[A-Za-z0-9_]*$/;
+   not checked — `.completeToggle` is a checkbox and says so.
+
+   `Option|Trigger|Switch|Tab` joined the list on 2026-08-23. They were the
+   builder's blind spot: `.viewOption`, `.menuTrigger`, `.toolTab` and
+   `.viewSwitch` are all pressable controls with hover, focus and selected
+   states, and none of them matched the old suffixes — which is how the view
+   switch came to carry two whole recipes, a segmented one and an ink one,
+   arguing 2,700 lines apart with the later winning by position. A control the
+   guard cannot name is a control that drifts. */
+const BUTTON_SELECTOR =
+  /^\.[A-Za-z][A-Za-z0-9_]*(?:Button|Btn|Link|Action|Cta|Toggle|Option|Trigger|Switch|Tab)(?=$|[A-Z0-9_])[A-Za-z0-9_]*$/;
+
+/* The lookahead is what makes `Tab` safe to match on: it must end the name or
+   be followed by another camelCase word, so `.toolTab` is a control and
+   `.previewTable` is a table. It also draws a line this codebase already
+   observes by habit — a SINGULAR name is the control, a PLURAL one is the row
+   that holds controls. `.toolTabs`, `.pageHeadActions` and `.heroFeatureActions`
+   are containers, and none of them is checked. */
 
 /* Caught by the suffix match but not controls. Each is here with its reason —
    an exemption is a statement, not a silencer, and this list is one grep away
@@ -60,6 +76,20 @@ const NOT_BUTTONS = new Map([
       "undo. Deliberately shaped like the bar it composes; see docs \"One container per control\".",
   ],
   [
+    "courseRailLink",
+    "a row in the builder's course rail — the same shape as outlineLink: a list " +
+      "item sized by its content, whose `padding: 0` is a reset of the anchor's " +
+      "own, not a button geometry.",
+  ],
+  [
+    "diagnosticOption",
+    "a LAYOUT modifier on `.cw-choice-btn`, the globals-owned choice control the " +
+      "dosha test renders beside it — the fill, border and radius come from there, " +
+      "not from this rule. The real fix is putting .cw-choice-btn on the contract, " +
+      "which is the admin/globals wave; exempted until then rather than papered " +
+      "over by moving four literals into this file.",
+  ],
+  [
     "menuButton",
     "a utility control (the burger). Utility chrome carries no label and runs its " +
       "own square-ish --platform-utility-control-radius; see docs \"Utility controls carry no label\".",
@@ -70,14 +100,32 @@ const NOT_BUTTONS = new Map([
    which token the property must come from when a rule legitimately sets it
    (the contract file itself, and nothing else, may set them literally). */
 const OWNED = {
-  "min-height": "--ds-button-min-height",
-  "padding-inline": "--ds-button-padding-inline",
-  "border-radius": "--ds-button-radius",
-  "font-weight": "--ds-button-font-weight",
-  "font-size": "--ds-button-font-size",
-  "min-width": "--ds-button-min-width",
-  "max-width": "--ds-button-max-width",
+  /* The two size floors accept either token. They are the same 3rem, and which
+     one a rule names is a statement about WHY: a menu row is a touch target,
+     a button is a button. Forcing --ds-button-min-height onto a list row would
+     make the rule lie to read green. */
+  "min-height": ["--ds-button-min-height", "--ds-touch-target-min"],
+  "min-width": ["--ds-button-min-width", "--ds-touch-target-min"],
+  "padding-inline": ["--ds-button-padding-inline"],
+  "border-radius": ["--ds-button-radius"],
+  "font-weight": ["--ds-button-font-weight"],
+  "font-size": ["--ds-button-font-size"],
+  "max-width": ["--ds-button-max-width"],
 };
+
+/* A shorthand sets the longhand the contract owns, and the longhand check
+   cannot see it: `padding: .9rem 1rem` writes padding-inline, and `font:
+   inherit` writes font-size and font-weight. The builder's status cells passed
+   for months on exactly that technicality. A shorthand is only reported when
+   it actually carries the axis — `padding-block` alone is not padding-inline,
+   and `font: inherit` is the honest way to say "take the surrounding type",
+   so it is allowed while `font: 700 1rem/1.1 Manrope` is not. */
+const SHORTHANDS = [
+  { prop: "padding", axis: "padding-inline", token: "--ds-button-padding-inline",
+    carries: (v) => v.trim().split(/\s+/).length !== 1 || !/^var\(/.test(v.trim()) },
+  { prop: "font", axis: "font-size / font-weight", token: "--ds-button-font-size",
+    carries: (v) => v.trim() !== "inherit" },
+];
 
 /* The accent ramp has exactly one home. */
 const ACCENT_FILL = /linear-gradient\([^)]*--cw-platform-accent/;
@@ -140,14 +188,28 @@ for (const file of walk(componentsDir)) {
     const composes = /composes:\s*([^;]+);/.exec(body)?.[1] ?? "";
     seen.push({ rel, selector, composes: composes.trim() });
 
-    for (const [prop, token] of Object.entries(OWNED)) {
+    for (const [prop, tokens] of Object.entries(OWNED)) {
       const decl = new RegExp(`(^|[;{\\s])${prop}\\s*:\\s*([^;]+)`, "m").exec(body);
       if (!decl) continue;
-      if (decl[2].includes(token)) continue;
+      if (tokens.some((t) => decl[2].includes(t))) continue;
+      const token = tokens[0];
       violations.push(
         `${rel}\n    ${selector} { ${prop}: ${decl[2].trim()} }\n` +
           `    → the contract owns ${prop}. Compose a role from PlatformButtons.module.css,\n` +
           `      or if this really is a new case, use var(${token}).`,
+      );
+    }
+
+    for (const { prop, axis, token, carries } of SHORTHANDS) {
+      const decl = new RegExp(`(^|[;{\\s])${prop}\\s*:\\s*([^;]+)`, "m").exec(body);
+      if (!decl) continue;
+      const value = decl[2].trim();
+      if (!carries(value)) continue;
+      if (value.includes(token)) continue;
+      violations.push(
+        `${rel}\n    ${selector} { ${prop}: ${value} }\n` +
+          `    → the shorthand sets ${axis}, which the contract owns. Compose a role from\n` +
+          `      PlatformButtons.module.css, or set only the axes it does not own.`,
       );
     }
 

@@ -29,7 +29,6 @@ type PlatformOfferCardProps = {
   slug?: string;
   artwork?: PlatformOfferArtwork;
   ctaLabel?: string;
-  size?: "default" | "compact";
   /** Short format line (duration, question count) under the title. */
   meta?: string;
   /**
@@ -58,7 +57,6 @@ export function PlatformOfferCard({
   slug,
   artwork,
   ctaLabel = "Деталі продукту",
-  size = "default",
   meta,
   points,
   status = "active",
@@ -81,7 +79,6 @@ export function PlatformOfferCard({
     <article
       className={styles.programTile}
       data-visual={visual}
-      data-size={size}
       data-program={slug}
       data-status={isPlanned ? "planned" : "active"}
       data-has-art={artwork?.desktop ? "true" : "false"}

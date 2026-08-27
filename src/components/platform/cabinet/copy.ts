@@ -62,6 +62,9 @@ export type CabinetCopy = {
 
   installTitle: string;
   installLead: string;
+  /** Shown where this origin is the storefront: installing here would add the shop. */
+  installElsewhereLead: string;
+  installElsewhereAction: string;
   installBrowserLead: string;
   installInstalledTitle: string;
   installAction: string;
@@ -137,6 +140,9 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       installTitle: "Add CenterWay to your home screen",
       installLead:
         "It opens as an app — full screen, with its own icon, and your courses stay one tap away.",
+      installElsewhereLead:
+        "The app is added from your shelf, so the icon opens your courses rather than the shop.",
+      installElsewhereAction: "Open the shelf to add it",
       installBrowserLead: "Open your browser menu and choose \"Install app\" or \"Add to Home Screen\".",
       installInstalledTitle: "CenterWay is already added to your home screen.",
       installAction: "Add",
@@ -201,6 +207,9 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     installTitle: "Додати CenterWay на екран телефона",
     installLead:
       "Відкриватиметься як застосунок — на весь екран, з власною іконкою, і шлях лишається за один дотик.",
+    installElsewhereLead:
+      "Застосунок додається з вашої полиці — тоді іконка відкриває ваші курси, а не вітрину.",
+    installElsewhereAction: "Відкрити полицю, щоб додати",
     installBrowserLead: "Відкрийте меню браузера та оберіть «Встановити застосунок» або «На початковий екран».",
     installInstalledTitle: "CenterWay уже додано на ваш екран.",
     installAction: "Додати",

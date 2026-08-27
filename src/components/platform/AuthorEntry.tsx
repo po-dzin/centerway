@@ -25,6 +25,7 @@ import { Icon } from "@/components/Icon";
 import { BUILDER_PATH_PREFIX } from "@/lib/surfaces/catalog";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { supabaseClient } from "@/lib/supabaseClient";
+import heroStyles from "./PlatformHeroStyles";
 import styles from "./PlatformOfferCommerce.module.css";
 
 type AuthoringAccess = { isAdmin: boolean; editableCourseSlugs: string[] };
@@ -93,17 +94,31 @@ export function useAuthoringAccess(): AuthoringAccess | null {
  * course, and resolving one to the other is the offer page's job — it already
  * has to, to print the outline.
  */
-export function CourseAuthorLink({ courseSlug }: { courseSlug: string }) {
+export function CourseAuthorLink({
+  courseSlug,
+  tone = "page",
+}: {
+  courseSlug: string;
+  /**
+   * `media` drops the row wrapper and takes the hero's cream ink: on an offer
+   * page this control now sits in the hero's utility line beside the trail,
+   * where the author is already looking for the way back out.
+   */
+  tone?: "page" | "media";
+}) {
   const access = useAuthoringAccess();
   const builderHref = useBuilderHref();
   if (!access || !access.editableCourseSlugs.includes(courseSlug)) return null;
 
-  return (
-    <div className={styles.backRow}>
-      <a className={styles.backLink} href={builderHref(`/${courseSlug}`)}>
-        <Icon name="settings" size={20} />
-        <span>Редагувати цей курс у майстерні</span>
-      </a>
-    </div>
+  const link = (
+    <a
+      className={tone === "media" ? heroStyles.heroUtilityLink : styles.backLink}
+      href={builderHref(`/${courseSlug}`)}
+    >
+      <Icon name="settings" size={20} />
+      <span>Редагувати цей курс у майстерні</span>
+    </a>
   );
+
+  return tone === "media" ? link : <div className={styles.backRow}>{link}</div>;
 }

@@ -468,6 +468,25 @@ export const ICONS = {
     group: "Meta",
     d: ["M10 5h6.4", "M14.6 5 9.4 19", "M7.6 19H14"],
   },
+  /* The two node kinds the formatting set was missing. `list` and `list-ordered`
+     already name two of the four things a paragraph can become; without these,
+     half the kind menu wore icons and half did not.
+
+     Heading: the literal letterform, the same convention `bold` and `italic`
+     take — an H, not a stack of lines with one bigger, which at 18px is just
+     `paragraph` drawn unevenly. */
+  heading: {
+    group: "Meta",
+    d: ["M7.2 5v14", "M16.8 5v14", "M7.2 12h9.6"],
+  },
+  /* Paragraph: full-measure lines with a short last one — a block of set text,
+     and the one shape that says "prose" without a letter in it. NOT a pilcrow:
+     ¶ closes into a smudge at this size. It reads apart from `list` because
+     `list` is indented behind its bullets and this runs the full width. */
+  paragraph: {
+    group: "Meta",
+    d: ["M4.4 6.4h15.2", "M4.4 12h15.2", "M4.4 17.6h8.8"],
+  },
 
   // ── Dosha glyphs ───────────────────────────────────────────────────────
   vata: {

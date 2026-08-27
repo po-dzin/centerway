@@ -62,7 +62,10 @@
   --cw-text-tertiary: color-mix(in srgb, var(--cw-muted) 82%, #ffffff 18%);
   --cw-border-strong: color-mix(in srgb, var(--cw-border) 68%, var(--cw-text) 32%);
   --cw-accent-strong: color-mix(in srgb, var(--cw-accent) 78%, #3a2a22 22%);
-  --cw-container-inset: max(1rem, calc((100% - var(--cw-max-width)) / 2));
+  --cw-page-gutter: clamp(20px, 5vw, 40px);
+  --cw-bar-pad: 0.8rem;
+  --cw-bar-inset: max(0px, calc(var(--cw-page-gutter) - var(--cw-bar-pad)));
+  --cw-container-inset: max(var(--cw-page-gutter), calc((100% - var(--cw-max-width)) / 2));
   --cw-platform-visual-movement-start: #17332d;
   --cw-platform-visual-movement-mid: #25473f;
   --cw-platform-visual-movement-end: #102621;
@@ -201,7 +204,10 @@
   --cw-text-tertiary: color-mix(in srgb, var(--cw-muted) 82%, #141414 18%);
   --cw-border-strong: color-mix(in srgb, var(--cw-border) 70%, var(--cw-text) 30%);
   --cw-accent-strong: color-mix(in srgb, var(--cw-accent) 72%, #f4f1e9 28%);
-  --cw-container-inset: max(1rem, calc((100% - var(--cw-max-width)) / 2));
+  --cw-page-gutter: clamp(20px, 5vw, 40px);
+  --cw-bar-pad: 0.8rem;
+  --cw-bar-inset: max(0px, calc(var(--cw-page-gutter) - var(--cw-bar-pad)));
+  --cw-container-inset: max(var(--cw-page-gutter), calc((100% - var(--cw-max-width)) / 2));
 }
 
 [data-cw-theme="dark"] {

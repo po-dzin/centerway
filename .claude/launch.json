@@ -4,15 +4,61 @@
     {
       "name": "dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 8000,
       "autoPort": false,
       "url": "http://localhost:8000/"
     },
     {
+      "name": "dev-8030",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "8030"
+      ],
+      "port": 8030,
+      "autoPort": false,
+      "url": "http://localhost:8030/"
+    },
+    {
+      "name": "proto",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8932",
+        "--directory",
+        ".claude/worktrees/library-room-prototype-f17a4a/docs/design-system/prototypes"
+      ],
+      "port": 8932,
+      "autoPort": false,
+      "url": "http://localhost:8932"
+    },
+    {
+      "name": "dev-hero-worktree",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd .claude/worktrees/centerway-ds-audit-hero-500fad && npx next dev -p 8041"
+      ],
+      "port": 8041,
+      "autoPort": false,
+      "url": "http://localhost:8041/"
+    },
+    {
       "name": "dev-8041",
       "runtimeExecutable": "npx",
-      "runtimeArgs": ["next", "dev", "-p", "8041"],
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "8041"
+      ],
       "port": 8041,
       "autoPort": false,
       "url": "http://localhost:8041/"
