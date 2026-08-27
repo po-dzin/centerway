@@ -18,11 +18,14 @@ ASSETS = "docs/design-system/prototypes/assets"
 out = sys.argv[1] if len(sys.argv) > 1 else "dist-library-depth.html"
 html = open(SRC, encoding="utf-8").read()
 
+MIME = {".png": "image/png", ".webp": "image/webp", ".jpg": "image/jpeg"}
+
 for name in sorted(os.listdir(ASSETS)):
-    if not name.endswith(".png"):
+    mime = MIME.get(os.path.splitext(name)[1])
+    if not mime or "assets/" + name not in html:
         continue
     raw = open(os.path.join(ASSETS, name), "rb").read()
-    uri = "data:image/png;base64," + base64.b64encode(raw).decode("ascii")
+    uri = "data:%s;base64,%s" % (mime, base64.b64encode(raw).decode("ascii"))
     html = html.replace("assets/" + name, uri)
 
 # сторінку загортає хост — власні doctype/html/head/body зайві

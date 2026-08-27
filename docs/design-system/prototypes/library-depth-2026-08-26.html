@@ -56,6 +56,24 @@
     --editorial: "Zen Old Mincho", "Cormorant Garamond", "Times New Roman", serif;
 
     --module: 64px;
+
+    /* Завіса фону. У залі туш живе праворуч-унизу, ліворуч-угорі —
+       папір під заголовком. Кут узятий від самої сітки: 8vw поля плюс
+       колонка 46vw дають межу близько 54%. */
+    --scene-veil: linear-gradient(104deg,
+      transparent 0 34%,
+      rgba(0, 0, 0, 0.42) 56%,
+      #000 78%);
+  }
+
+  /* У ніші колонка з'їжджає вниз, тож і завіса перевертається: тепер
+     папір унизу під текстом, а туш тримає верхні дві третини разом
+     із самою нішею. */
+  body.in-case {
+    --scene-veil: linear-gradient(184deg,
+      #000 0 30%,
+      rgba(0, 0, 0, 0.34) 54%,
+      transparent 74%);
   }
 
   /* ТЕМНА — сіра глина, тепла нейтраль. Значення в одному місці:
@@ -299,14 +317,22 @@
     pointer-events: none;
     background: var(--ink-value);
     opacity: 0;
-    -webkit-mask-image: var(--scene-tex, none);
-    mask-image: var(--scene-tex, none);
-    -webkit-mask-size: cover;
-    mask-size: cover;
-    -webkit-mask-position: 50% 82%;
-    mask-position: 50% 82%;
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
+    /* ДВА МАСКУВАЛЬНІ ШАРИ, ПЕРЕТИН.
+       Перший — сам малюнок. Другий — «завіса»: діагональний градієнт,
+       що гасить туш рівно там, де лежить текстова колонка. Пейзаж і
+       набір перестають бути двома картинками одна на одній: порожнеча
+       малюнка і поле колонки — це одна й та сама порожнеча. Завіса
+       їде за макетом (у ніші колонка йде вниз — завіса теж). */
+    -webkit-mask-image: var(--scene-tex, none), var(--scene-veil);
+    mask-image: var(--scene-tex, none), var(--scene-veil);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+    -webkit-mask-size: cover, 100% 100%;
+    mask-size: cover, 100% 100%;
+    -webkit-mask-position: var(--scene-anchor, 50% 88%), 0 0;
+    mask-position: var(--scene-anchor, 50% 88%), 0 0;
+    -webkit-mask-repeat: no-repeat, no-repeat;
+    mask-repeat: no-repeat, no-repeat;
     transition: opacity 900ms ease;
   }
   :root[data-scene-tex="on"] .sceneTex { opacity: 0.62; }
@@ -720,7 +746,12 @@
     cursor: pointer;
     transition: padding-inline-start 620ms cubic-bezier(0.16, 0.5, 0.2, 1);
   }
-  .row:hover, .row:focus-visible { padding-inline-start: 0.9rem; }
+  /* Стан рядка не залежить від того, звідки прийшла увага: миша на
+     рядку, миша на ніші, клавіатура — один вигляд. Інакше половина
+     сцени підсвічується, а половина ні. */
+  .row:hover, .row:focus-visible, .row[data-hot="true"] { padding-inline-start: 0.9rem; }
+  .row[data-hot="true"] .row__title { color: var(--ink); }
+  .row[data-hot="true"] { border-block-end-color: var(--ink); }
   .row:focus-visible { outline: 1px solid var(--brass); outline-offset: 3px; }
   .row__index { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
   .row__title { font-family: var(--editorial); font-size: 1.3rem; line-height: 1.4; }
@@ -928,17 +959,26 @@
   .inkNote { margin: 0; color: var(--ink-faint); font-size: 0.6rem; line-height: 1.7; }
   .inks[data-locked="true"] .inkRow { cursor: default; opacity: 0.72; }
 
+  /* Ніша по центру у верхніх двох третинах — текст іде під неї, і на
+     широкому екрані також. Колонка вужчає: під предметом підпис, а не
+     друга колонка врівні з ним. */
+  body.in-case .sheet {
+    align-content: end;
+    padding-block: min(46vh, 400px) 4vh;
+    --measure: min(38rem, 42vw);
+  }
+
   @media (max-width: 1100px) {
     .console { inset-inline-end: 0.8rem; width: 15rem; }
   }
   @media (max-width: 900px) {
     :root { --measure: 100%; }
     .sheet { margin-inline: 6vw; width: calc(100% - 12vw); }
-    /* У ніші текст описує полицю ЗНИЗУ: полиця нагорі, колонка під
-       нею, і вони не накладаються. */
+    /* На вузькому те саме, лише щільніше. */
     body.in-case .sheet {
-      align-content: start;
-      padding-block-start: min(44vh, 320px);
+      align-content: end;
+      padding-block: min(48vh, 340px) 6vh;
+      --measure: 100%;
     }
     .stage { opacity: 0.75; }
     .draft__margin, .draft__dim, .draft__label { display: none; }
@@ -953,7 +993,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 15 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 16 · 27.08</span>
 
 <div class="draft" aria-hidden="true">
   <span class="draft__margin draft__margin--l"></span>
@@ -1049,9 +1089,10 @@
     <span class="console__legend">Пейзаж</span>
     <div class="chips" id="scenes">
       <button class="chip" data-scene="" type="button" aria-pressed="true">канвас</button>
-      <button class="chip" data-scene="assets/scene-ranges.png" type="button" aria-pressed="false">гряди</button>
-      <button class="chip" data-scene="assets/scene-rock.png" type="button" aria-pressed="false">скеля</button>
-      <button class="chip" data-scene="assets/scene-ma.png" type="button" aria-pressed="false">ма</button>
+      <button class="chip" data-scene="assets/art-ranges.webp" type="button" aria-pressed="false">гряди</button>
+      <button class="chip" data-scene="assets/art-rock.webp" type="button" aria-pressed="false">скеля</button>
+      <button class="chip" data-scene="assets/art-water.webp" type="button" aria-pressed="false">вода</button>
+      <button class="chip" data-scene="assets/art-ma.webp" type="button" aria-pressed="false">ма</button>
     </div>
   </div>
 
@@ -1406,6 +1447,15 @@
         if (e.target.closest(".book[data-book]")) return;
         enterCase(ci);
       });
+      /* Ніша — така сама поверхня уваги, як рядок списку: наведення на
+         саму комірку гріє її рядок і зводить на неї арматуру. Без
+         цього половина екрана відповідала на курсор, а половина ні.
+         Фокусу з клавіатури тут немає навмисно: сцена — aria-hidden,
+         її клавіатурний двійник — це список. */
+      el.addEventListener("mouseenter", function () {
+        if (view === "hall") focusCase(ci);
+      });
+      el.addEventListener("mouseleave", restCase);
       room.appendChild(el);
       caseEls.push(el);
     });
@@ -1414,6 +1464,10 @@
       b.addEventListener("click", function (e) {
         e.stopPropagation();
         openSpread(Number(b.dataset.case), Number(b.dataset.book));
+      });
+      b.addEventListener("mouseenter", function (e) {
+        e.stopPropagation();
+        if (view === "case") focusBook(Number(b.dataset.case), Number(b.dataset.book));
       });
     });
 
@@ -1458,14 +1512,14 @@
             held: held > 0,
             act: function () { enterCase(i); },
             /* У залі рядок гріє БЛОК, не книгу: книги — наступний рівень. */
-            live: function () { hotNiche(i); markArmature(i); }
+            live: function () { focusCase(i); }
           };
         })
       : CASES[openCase].books.map(function (b, bi) {
           return {
             title: b.title, note: b.note, state: b.state, held: b.held,
             act: function () { openSpread(openCase, bi); },
-            live: function () { highlight(openCase, bi); }
+            live: function () { focusBook(openCase, bi); }
           };
         });
 
@@ -1484,6 +1538,8 @@
       if (item.live) {
         row.addEventListener("mouseenter", item.live);
         row.addEventListener("focus", item.live);
+        row.addEventListener("mouseleave", restCase);
+        row.addEventListener("blur", restCase);
       }
       shelfList.appendChild(row);
     });
@@ -1493,6 +1549,36 @@
     caseEls.forEach(function (el, i) {
       if (i === ci) el.dataset.hot = "true"; else el.removeAttribute("data-hot");
     });
+  }
+
+  /* Дзеркало hotNiche: та сама увага, але в списку. */
+  function hotRow(i) {
+    Array.prototype.forEach.call(shelfList.children, function (r, k) {
+      if (k === i) r.dataset.hot = "true"; else r.removeAttribute("data-hot");
+    });
+  }
+
+  /* Увага на категорії, звідки б вона не прийшла: ніша, рядок,
+     клавіатура. Один виклик — щоб три поверхні не розійшлися. */
+  function focusCase(ci) {
+    hotNiche(ci);
+    hotRow(ci);
+    markArmature(ci);
+  }
+
+  /* Увага на конкретній праці — те саме на рівень глибше. */
+  function focusBook(ci, bi) {
+    highlight(ci, bi);
+    hotRow(bi);
+  }
+
+  /* Курсор пішов зі сцени — повертаємось до того, що вибрано, а не в
+     нікуди: інакше кожен відхід миші гасить і арматуру. */
+  function restCase() {
+    hotNiche(-1);
+    hotRow(-1);
+    if (view === "case") { highlight(openCase, -1); markArmature(openCase); }
+    else markArmature(1);
   }
 
   /* Єдине місце, де вмикається золото, і воно вмикається рівно на одній
@@ -1582,19 +1668,13 @@
     var ox = w * 0.14, oy = h * 0.14;
     var ecx = parseFloat(el.style.left) + el.offsetWidth / 2;
     var ecy = parseFloat(el.style.top) + el.offsetHeight / 2;
-    /* Полиця стає ПОРУЧ із колонкою тексту, не під нею: на широкому
-       екрані ціль — одразу праворуч від правого поля колонки, на
-       вузькому — верх екрана, а текст з'їжджає під неї (.in-case). */
-    var tX, tY;
-    if (w > 900) {
-      var measure = Math.min(44 * 16, w * 0.46);
-      tX = w * 0.08 + measure + 70 + el.offsetWidth / 2;
-      tX = Math.min(tX, w - el.offsetWidth / 2 - 40);
-      tY = h * 0.44;
-    } else {
-      tX = w * 0.5;
-      tY = h * 0.06 + el.offsetHeight / 2;
-    }
+    /* Полиця йде В ЦЕНТР КАДРУ і стає у верхніх двох третинах —
+       туди, куди й так дивишся. Збоку від колонки вона читалась як
+       ілюстрація до тексту; по центру вона — предмет, а текст під нею
+       його підписує. Тому в .in-case колонка з'їжджає вниз (і на
+       широкому екрані теж, не лише на вузькому). */
+    var tX = w * 0.5;
+    var tY = h * 0.34;
     camera(tX + ox - ecx, tY + oy - ecy, 250 - ci * 60);
 
     eyebrowEl.textContent = "Шафа " + CASES[ci].label;
