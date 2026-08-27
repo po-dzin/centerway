@@ -82,6 +82,19 @@
     --ray-hi:    var(--ink);
     --ray-halo:  none;
 
+    /* МАТЕРІАЛЬНИЙ ШАР ДС (--cw-mat-*), під тими самими іменами.
+       Рядок лишається рядком, не карткою: полиця в кімнаті це список,
+       і саме він тримає ритм колонки. Але СТАНИ рядка більше не свої:
+       під вказівником він стає тим самим теплим матеріалом, з якого
+       зроблені панелі платформи, і сідає під натиском у втоплений тон.
+
+       Верхнього блікy тут немає і не буде: у CenterWay скло матове, і
+       inset-підсвітка згори — записана заборона, а не забутий штрих. */
+    --mat-tint:        color-mix(in srgb, var(--paper-lit) 76%, transparent);
+    --mat-sunk:        color-mix(in srgb, var(--paper-deep) 62%, var(--paper-lit) 38%);
+    --mat-shadow-soft: 0 1px 2px rgba(35, 29, 20, 0.05), 0 10px 28px rgba(35, 29, 20, 0.07);
+    --mat-shadow-chrome: 0 1px 2px rgba(35, 29, 20, 0.06), 0 14px 34px rgba(35, 29, 20, 0.10);
+
     /* КОНТРАКТ КНОПОК ДС, дослівно (--ds-button-* із globals.css).
        Шість ролей, сьомої немає. Тут живуть дві:
          chrome — навігація і службове на власному рядку: «назад до
@@ -162,6 +175,9 @@
       --ink-line:   color-mix(in srgb, var(--ink-value) 62%, transparent);
       --ink-hair:   color-mix(in srgb, var(--ink-value) 22%, transparent);
       --ink-faint:  color-mix(in srgb, var(--ink-value) 55%, var(--paper));
+      --mat-sunk:        color-mix(in srgb, var(--paper-deep) 62%, var(--paper-lit) 38%);
+      --mat-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+      --mat-shadow-chrome: 0 1px 2px rgba(0, 0, 0, 0.18), 0 14px 34px rgba(0, 0, 0, 0.22);
       --hatch:      color-mix(in srgb, var(--ink-value) 30%, transparent);
       --brass:      #e5ae65;
       --brass-lit:  #f4cd96;
@@ -191,6 +207,9 @@
     --ink-line:   color-mix(in srgb, var(--ink-value) 62%, transparent);
     --ink-hair:   color-mix(in srgb, var(--ink-value) 22%, transparent);
     --ink-faint:  color-mix(in srgb, var(--ink-value) 55%, var(--paper));
+    --mat-sunk:        color-mix(in srgb, var(--paper-deep) 62%, var(--paper-lit) 38%);
+    --mat-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+    --mat-shadow-chrome: 0 1px 2px rgba(0, 0, 0, 0.18), 0 14px 34px rgba(0, 0, 0, 0.22);
     --hatch:      color-mix(in srgb, var(--ink-value) 30%, transparent);
     --brass:      #e5ae65;
     --brass-lit:  #f4cd96;
@@ -894,14 +913,34 @@
     font: inherit;
     text-align: start;
     cursor: pointer;
-    transition: padding-inline-start 620ms cubic-bezier(0.16, 0.5, 0.2, 1);
+    border-radius: var(--r-tool);
+    transition: padding-inline-start 220ms ease, background 180ms ease,
+                box-shadow 180ms ease, border-color 180ms ease, color 180ms ease;
   }
   /* Стан рядка не залежить від того, звідки прийшла увага: миша на
      рядку, миша на ніші, клавіатура — один вигляд. Інакше половина
-     сцени підсвічується, а половина ні. */
-  .row:hover, .row:focus-visible, .row[data-hot="true"] { padding-inline-start: 0.9rem; }
+     сцени підсвічується, а половина ні.
+
+     УВАГА ПІДКЛАДАЄ МАТЕРІАЛ. Рядок під вказівником — не підсвічений
+     рядок, а плитка того самого теплого матеріалу, що й панелі
+     платформи: тонований ґрунт і м'яка тінь матеріального шару. Лінія
+     знизу при цьому зникає — її роботу перебрала сама плитка. Зсув
+     поля лишився, але втричі коротший: тепер він супроводжує появу
+     матеріалу, а не заміняє її. */
+  .row:hover, .row:focus-visible, .row[data-hot="true"] {
+    padding-inline-start: 0.9rem;
+    background: var(--mat-tint);
+    box-shadow: var(--mat-shadow-soft);
+    border-block-end-color: transparent;
+  }
+  .row:hover .row__title,
   .row[data-hot="true"] .row__title { color: var(--ink); }
-  .row[data-hot="true"] { border-block-end-color: var(--ink); }
+  /* Натиск — не глибша тінь, а втоплений ґрунт: матеріал не
+     піднімається під пальцем, він сідає. */
+  .row:active {
+    background: var(--mat-sunk);
+    box-shadow: var(--mat-shadow-chrome);
+  }
   /* Той самий фокус, що в кнопок: кільце акценту, не голий outline. */
   .row:focus-visible { outline: none; box-shadow: var(--ds-button-ring); }
   .row__index { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
@@ -1232,7 +1271,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 39 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 40 · 27.08</span>
 
 
 <div class="stage" aria-hidden="true">
