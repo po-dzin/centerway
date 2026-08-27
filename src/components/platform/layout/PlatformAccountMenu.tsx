@@ -242,7 +242,7 @@ export function PlatformAccountMenu({
   /* SIGNED OUT: unchanged from the link this replaced. There is no account, so
      there is nothing to switch between, and the control is the way in. */
   if (!signedIn) {
-    const label = isAuthEnabled ? "Увійти" : "Профіль";
+    const label = isAuthEnabled ? "Увійти" : "Кабінет";
     const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
       if (!isAuthEnabled) {
         onNavigate?.();
@@ -354,7 +354,7 @@ export function PlatformAccountMenu({
           )}
         </span>
         <HandGraphic className={styles.profileInkRing} name="ink-ring" size={48} />
-        {compact ? null : <span className={styles.profileLabel}>Профіль</span>}
+        {compact ? null : <span className={styles.profileLabel}>Кабінет</span>}
       </button>
       {open && anchor && typeof document !== "undefined"
         ? createPortal(

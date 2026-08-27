@@ -20,15 +20,15 @@ import styles from "./Lms.module.css";
 const COPY: Record<LmsFailure, { title: string; text: string; href?: string; cta?: string }> = {
   unauthenticated: {
     title: "Потрібен вхід",
-    text: "Увійдіть у свій профіль, щоб відкрити курс — прогрес зберігається за вашим акаунтом.",
+    text: "Увійдіть у свій кабінет, щоб відкрити курс — прогрес зберігається за вашим акаунтом.",
     href: "/profile",
-    cta: "Перейти до профілю",
+    cta: "Перейти до кабінету",
   },
   unauthorized: {
     title: "Сесія завершилась",
     text: "Схоже, сесія застаріла. Оновіть сторінку або увійдіть ще раз.",
     href: "/profile",
-    cta: "Перейти до профілю",
+    cta: "Перейти до кабінету",
   },
   course_not_found: {
     title: "Курс не знайдено",
@@ -44,7 +44,7 @@ const COPY: Record<LmsFailure, { title: string; text: string; href?: string; cta
   },
   not_entitled: {
     title: "Доступ ще не відкрито",
-    text: "Цей курс відкривається після оплати. Якщо оплата вже пройшла — перевірте профіль: там видно всі покупки й доступи.",
+    text: "Цей курс відкривається після оплати. Якщо оплата вже пройшла — перевірте кабінет: там видно всі покупки й доступи.",
     href: "/profile",
     cta: "Мої покупки",
   },
@@ -52,7 +52,7 @@ const COPY: Record<LmsFailure, { title: string; text: string; href?: string; cta
     title: "Термін доступу минув",
     text: "Доступ до цього курсу завершився. Напишіть нам — розберемось.",
     href: "/profile",
-    cta: "Мій профіль",
+    cta: "Мій кабінет",
   },
   /* Closed by a person, not by a date, so the text does not blame the
      calendar and does not promise that paying again will help — for a ban it
@@ -61,13 +61,13 @@ const COPY: Record<LmsFailure, { title: string; text: string; href?: string; cta
     title: "Доступ до курсу закрито",
     text: "Доступ до цього курсу відкликано. Ваш поступ збережено — напишіть нам, і ми розберемось.",
     href: "/profile",
-    cta: "Мій профіль",
+    cta: "Мій кабінет",
   },
   blocked: {
     title: "Доступ до курсу закрито",
     text: "Доступ до цього курсу заблоковано. Напишіть нам — це вирішується тільки вручну.",
     href: "/profile",
-    cta: "Мій профіль",
+    cta: "Мій кабінет",
   },
   lesson_not_found: {
     title: "Урок не знайдено",

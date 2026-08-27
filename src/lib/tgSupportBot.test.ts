@@ -1,7 +1,10 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+
 import { describe, expect, it } from "vitest";
 
 import { PRODUCT_DELIVERY, PRODUCT_LABELS, assertProduct, normalizeEmail, normalizePhoneDigits } from "./tgSupportBot";
-import { botCopy, botProfile, CABINET_URL } from "./tgSupportBotCopy";
+import { botCopy, botProfile, CABINET_URL, GREETING_PHOTO_URL } from "./tgSupportBotCopy";
 
 describe("support bot — product routing", () => {
   it("has a delivery target and a label for every product it offers", () => {
@@ -68,12 +71,31 @@ describe("support bot — copy", () => {
   it("keeps the bot profile inside Telegram's own limits", () => {
     // Over the limit, the API rejects the whole call with a message that does
     // not name the field.
+    expect(botProfile.name.length).toBeLessThanOrEqual(64);
     expect(botProfile.description.length).toBeLessThanOrEqual(512);
     expect(botProfile.shortDescription.length).toBeLessThanOrEqual(120);
     for (const command of botProfile.commands) {
       expect(command.command).toMatch(/^[a-z0-9_]{1,32}$/);
       expect(command.description.length).toBeLessThanOrEqual(256);
     }
+  });
+
+  it("ships the images the profile promises", () => {
+    // Both are bake output (scripts/brand-mark-bake.mjs). Renaming an emit and
+    // leaving the path here is a `npm run tg:profile` that dies on the last
+    // call, after four fields are already live — so the mismatch is caught in
+    // the suite instead of halfway through a profile update.
+    for (const asset of [botProfile.photo, botProfile.descriptionPicture]) {
+      expect(existsSync(path.join(process.cwd(), asset)), asset).toBe(true);
+    }
+  });
+
+  it("keeps the greeting short enough to ride as a photo caption", () => {
+    // /start answers with the brand card captioned by the greeting, and
+    // Telegram caps a caption at 1024 — well under the 4096 a plain message
+    // gets. Copy grown past it would fail the send, not truncate.
+    expect(botCopy.greeting.length).toBeLessThanOrEqual(1024);
+    expect(GREETING_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
   });
 
   it("registers a command for every menu branch a command claims to open", () => {

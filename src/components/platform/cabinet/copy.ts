@@ -168,7 +168,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     learningLabel: "Бібліотека",
     learningLoadingTitle: "Завантажуємо ваші курси…",
     learningLoadingLead: "Відновлюємо доступ, поступ і ваш наступний урок.",
-    learningEmptyTitle: "У профілі ще немає курсів",
+    learningEmptyTitle: "У кабінеті ще немає курсів",
     learningEmptyLead: "Після придбання програма відкривається тут — з уроками, поступом і наступним уроком.",
     browsePrograms: "Подивитися програми",
 
@@ -217,7 +217,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     installIosSteps: ["Натисніть «Поділитися» на панелі Safari.", "Оберіть «На початковий екран»."],
 
     shelfErrorTitle: "Не вдалося завантажити курси",
-    shelfErrorLead: "Решта профілю показана — спробуйте завантажити курси ще раз.",
+    shelfErrorLead: "Решта кабінету показана — спробуйте завантажити курси ще раз.",
     retry: "Спробувати ще раз",
   };
 }

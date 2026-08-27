@@ -184,7 +184,7 @@ export function useProfileData(session: Session | null) {
       if (cancelled) return;
 
       if (!res?.ok) {
-        setError("Не вдалося завантажити профіль.");
+        setError("Не вдалося завантажити кабінет.");
         return;
       }
 

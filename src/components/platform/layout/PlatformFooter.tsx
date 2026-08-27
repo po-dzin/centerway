@@ -80,7 +80,7 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
               the two footers disagreed about their own shape. */}
           <div className={`${styles.footerLinks} ${styles.footerLegal}`}>
             <Link href={shelfHref}>Мої курси</Link>
-            <Link href={profileHref}>Профіль</Link>
+            <Link href={profileHref}>Кабінет</Link>
           </div>
           <div className={`${styles.footerLinks} ${styles.footerSocials}`}>
             <a href={SUPPORT_BOT_URL} target="_blank" rel="noopener noreferrer">

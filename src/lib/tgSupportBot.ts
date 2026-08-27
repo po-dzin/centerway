@@ -20,7 +20,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { ProductCode } from "@/lib/products";
 import { callTelegramBotApi, sendTelegramMessage } from "@/lib/tg";
 import { verifyTelegramLinkToken } from "@/lib/platform/telegramLink";
-import { botCopy, CABINET_URL } from "@/lib/tgSupportBotCopy";
+import { botCopy, CABINET_URL, GREETING_PHOTO_URL } from "@/lib/tgSupportBotCopy";
 
 type Supabase = ReturnType<typeof supabaseAdmin>;
 type BotProductCode = Extract<ProductCode, "short" | "irem" | "way21" | "reset-day">;
@@ -252,6 +252,31 @@ async function sendMessage(
     disable_web_page_preview: true,
     reply_markup: replyMarkup,
   });
+}
+
+/**
+ * The greeting, as a captioned brand card.
+ *
+ * ONE image, and only here. Telegram gives a photo the full width of the
+ * column, so a picture on every answer would turn a support thread into a
+ * feed — and the answers are the part someone came for. The first screen is
+ * the exception: it is the only message whose job is "you are in the right
+ * place", which is the one thing a picture says faster than a sentence.
+ *
+ * Falls back to plain text if the photo does not go through. The card is
+ * decoration; the greeting is the function, and a Telegram hiccup fetching an
+ * image must not be what makes /start answer nothing at all.
+ */
+async function sendGreeting(chatId: number): Promise<void> {
+  try {
+    await callTelegramBotApi("sendPhoto", {
+      chat_id: chatId,
+      photo: GREETING_PHOTO_URL,
+      caption: botCopy.greeting,
+    });
+  } catch {
+    await sendMessage(chatId, botCopy.greeting);
+  }
 }
 
 async function answerCallbackQuery(callbackQueryId: string): Promise<void> {
@@ -626,7 +651,7 @@ async function handleTextMessage(
     if (payload && (await tryLinkAccount(db, chatId, user, payload))) return;
 
     await saveSession(db, user, { state: "idle", contact: null });
-    await sendMessage(chatId, botCopy.greeting);
+    await sendGreeting(chatId);
     await sendMainMenu(chatId);
     return;
   }

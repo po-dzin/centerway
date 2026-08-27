@@ -71,6 +71,10 @@ const FIT = {
   maskable: 0.62, // inside Android's 80% safe zone, with room for a circle
   touch: 0.72, //   iOS home screen — the OS rounds the corners itself
   tab: 0.78, //     favicon: tab strip, address bar, search suggestions, Vercel's project list
+  // Telegram cuts a bot avatar to a circle, and the inscribed circle of a
+  // square is 70.7% of its side — so anything past that is clipped at the
+  // diagonals. 0.60 sits inside it with the same air the maskable tile keeps.
+  avatar: 0.6,
 };
 
 function readToken(tokens, name) {
@@ -217,31 +221,40 @@ function appIconSvg(build, { fill, background, fit, themed = null }) {
 }
 
 /**
- * The link-preview card, 1200x630. Gold on the deep ground rather than ink on
- * cream: a preview lands inside someone else's chat or feed, on a surface we do
- * not control, and the dark card holds its edges against both.
+ * The brand card — mark over wordmark on the deep ground. Gold on ink rather
+ * than ink on cream: a card lands inside someone else's chat or feed, on a
+ * surface we do not control, and the dark card holds its edges against both.
  *
  * The wordmark is inlined as the outlined paths the shipped file already
  * carries, so the card needs no font at bake time and cannot come out different
  * on a machine with a different fontconfig.
+ *
+ * Sized by HEIGHT, not by a per-size table. The link preview is 1200x630 and
+ * Telegram's empty-chat picture is 640x360 — two aspect ratios, one
+ * composition. Every measurement below is the 630-tall original expressed as a
+ * fraction of the height, so a second size is a call argument and not a second
+ * set of hand-tuned numbers that drift apart.
  */
-function ogCardSvg(build, { mark, background, wordmarkInner, wordmarkViewBox }) {
+function brandCardSvg(build, { mark, background, wordmarkInner, wordmarkViewBox, width = 1200, height = 630 }) {
   const paths = build.arcs.map((d) => `    <path d="${d}"/>`).join("\n");
-  const markSize = 190;
-  const wordWidth = 470;
+  const unit = height / 630;
+  const markSize = 190 * unit;
+  const wordWidth = 470 * unit;
   const wordHeight = wordWidth * (129.3 / 541.3);
   // Optically centred: the group runs markTop..wordmark bottom, so the top
   // margin is smaller than the bottom one by half the wordmark block.
-  const markTop = 138;
+  const markTop = 138 * unit;
+  const gap = 52 * unit;
+  const mid = width / 2;
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">`,
     `  <!-- ${BANNER} -->`,
-    `  <rect width="1200" height="630" fill="${background}"/>`,
-    `  <g fill="${mark}" transform="translate(${600 - markSize / 2} ${markTop}) scale(${markSize / 64})">`,
+    `  <rect width="${width}" height="${height}" fill="${background}"/>`,
+    `  <g fill="${mark}" transform="translate(${mid - markSize / 2} ${markTop}) scale(${markSize / 64})">`,
     paths,
     `    <circle cx="32" cy="32" r="${build.coreR}"/>`,
     `  </g>`,
-    `  <svg x="${600 - wordWidth / 2}" y="${markTop + markSize + 52}" width="${wordWidth}" height="${wordHeight.toFixed(2)}" viewBox="${wordmarkViewBox}">`,
+    `  <svg x="${mid - wordWidth / 2}" y="${markTop + markSize + gap}" width="${wordWidth.toFixed(2)}" height="${wordHeight.toFixed(2)}" viewBox="${wordmarkViewBox}">`,
     wordmarkInner,
     `  </svg>`,
     `</svg>`,
@@ -426,13 +439,22 @@ async function main() {
   emit(["public/cw/brand/cw-icon-512.png"], await rasterise(iconAny, 512, calm));
   emit(["public/cw/brand/cw-icon-maskable-512.png"], await rasterise(iconMaskable, 512, calm));
 
+  /* ── The Telegram bot's face ───────────────────────────────────────────
+     Gold on the deep ground, not the launcher's ink on cream, and for the
+     favicon's reason: a chat-list avatar sits on whatever ground the reader's
+     Telegram theme paints, a PNG cannot flip with it, and only one of the two
+     pairings survives both. Cream blazes in a dark chat list; the deep tile
+     reads as a dark disc with a gold spiral in it on either. */
+  const avatar = Buffer.from(appIconSvg(geometry.full, { fill: gold, background: ink, fit: FIT.avatar }));
+  emit(["public/cw/brand/cw-tg-avatar.png"], await rasterise(avatar, 512, ink));
+
   // Link preview. Also mirrored into shared/img so the funnel hosts, which
   // cannot see /cw/**, can point og:image at their own origin.
   const wordmark = await fs.readFile(WORDMARK_GOLD, "utf8");
   const wordmarkInner = wordmark.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "").trim();
   const wordmarkViewBox = /viewBox="([^"]+)"/.exec(wordmark)[1];
   const ogSource = Buffer.from(
-    ogCardSvg(geometry.full, { mark: gold, background: ink, wordmarkInner, wordmarkViewBox }),
+    brandCardSvg(geometry.full, { mark: gold, background: ink, wordmarkInner, wordmarkViewBox }),
   );
   // density oversamples the curves, then resize brings it back to the 1200x630
   // the scrapers actually want — rasterising at 1:1 leaves the arc edges chewed.
@@ -441,6 +463,18 @@ async function main() {
     .png({ compressionLevel: 9 })
     .toBuffer();
   emit(["public/cw/brand/cw-og-cover.png", "src/landing-static/shared/img/cw-og-cover.png"], ogPng);
+
+  /* The same card at Telegram's own ratio. Two consumers, one file: the picture
+     on the bot's empty-chat screen (640x360 is the size BotFather takes) and
+     the photo the greeting carries, so the frame someone sees before pressing
+     Start and the one that answers them are the same object. */
+  const tgCardSource = Buffer.from(
+    brandCardSvg(geometry.full, { mark: gold, background: ink, wordmarkInner, wordmarkViewBox, width: 640, height: 360 }),
+  );
+  emit(
+    ["public/cw/brand/cw-tg-cover.png"],
+    await sharp(tgCardSource, { density: 600 }).resize(640, 360).png({ compressionLevel: 9 }).toBuffer(),
+  );
 
   let failed = 0;
   for (const [rel, contents] of files) {

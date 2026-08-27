@@ -60,9 +60,9 @@ export function PlatformAuthModal({
         </button>
         <div className={styles.panelIntro}>
           <p className={styles.label}>Вхід</p>
-          <h2 className={styles.authModalTitle} id={titleId}>Увійдіть у профіль</h2>
+          <h2 className={styles.authModalTitle} id={titleId}>Увійдіть у кабінет</h2>
           <p className={styles.lead}>
-            Щоб зберігати персональні результати, прогрес і доступи у профілі CenterWay, потрібна авторизація.
+            Щоб зберігати персональні результати, прогрес і доступи у кабінеті CenterWay, потрібна авторизація.
           </p>
         </div>
         <div className={styles.authModalActions}>
