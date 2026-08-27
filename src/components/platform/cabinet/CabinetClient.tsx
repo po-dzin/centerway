@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation";
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { ProgressRail } from "@/components/platform/ProgressRail";
 import { ProgressRing } from "@/components/platform/ProgressRing";
+import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
@@ -177,6 +178,22 @@ export function CabinetClient() {
   /** The single course the dashboard offers to resume: latest real activity wins. */
   const resumeCourse = useMemo(() => pickResumeCourse(ownedCourses), [ownedCourses]);
 
+  /**
+   * The shelf has THREE states, and `null` is not one of the two obvious ones.
+   *
+   * `useLearnerShelf` returns null both while the read is in flight and when it
+   * was read for a different account, and this page used to collapse that into
+   * the empty state — so a learner who owns nine courses was told, for as long
+   * as the read took, that they own none, under a button offering to sell them
+   * some. The gate above waits for the session and the profile, not for this:
+   * the shelf is deliberately allowed to fail on its own, and the price of that
+   * independence is that its waiting has to be rendered here.
+   *
+   * `/learn` has drawn this distinction since it split off (`LearnShelfClient`);
+   * this is the same rule on the page that kept the resume card.
+   */
+  const shelfLoading = !shelfFailed && shelf === null;
+
   const gate = cabinetGate({
     lang,
     loading: sessionLoading || profileLoading,
@@ -222,7 +239,16 @@ export function CabinetClient() {
             </div>
             <div className={styles.identityStat}>
               <dt className={styles.sectionLabel}>{cab.learningLabel}</dt>
-              <dd>{ownedCourses.length > 0 ? cab.coursesCount(ownedCourses.length) : copy.emptyValue}</dd>
+              {/* "—" is an answer: it means none. While the shelf is still
+                  being read there is no answer yet, and an ellipsis says that
+                  without claiming the library is empty. */}
+              <dd>
+                {shelfLoading
+                  ? "…"
+                  : ownedCourses.length > 0
+                    ? cab.coursesCount(ownedCourses.length)
+                    : copy.emptyValue}
+              </dd>
             </div>
             <div className={styles.identityStat}>
               <dt className={styles.sectionLabel}>{copy.products}</dt>
@@ -279,6 +305,14 @@ export function CabinetClient() {
                look identical without this branch, and a learner who paid for
                something would be told to go buy it again. */
             <ShelfErrorCard copy={cab} onRetry={() => void reloadShelf()} />
+          ) : shelfLoading ? (
+            /* Same reasoning as the branch above, one state earlier: still
+               reading is not the same as nothing to read. */
+            <PlatformLoadingState
+              label={cab.learningLabel}
+              title={cab.learningLoadingTitle}
+              detail={cab.learningLoadingLead}
+            />
           ) : (
             <article className={styles.card} {...matte}>
               <h3 className={styles.cardTitle}>{cab.learningEmptyTitle}</h3>
