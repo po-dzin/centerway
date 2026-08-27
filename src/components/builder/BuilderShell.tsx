@@ -73,6 +73,12 @@ export function BuilderShell({
      root is not a path — it is the application's name written twice. */
   const showTrail = trail.length > 1;
 
+  /* Two ways to fold one panel, one thing the control has to say. `collapsed`
+     empties the rail, `compact` narrows it to its icon column — but from the
+     button's side both are "folded", and it must point the same way, name the
+     same action and report the same `aria-expanded` in either. */
+  const asideFolded = Boolean(asideCollapsed || asideCompact);
+
   const interceptNavigation = (event: MouseEvent<HTMLDivElement>) => {
     if (!onNavigate || event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
     const target = event.target;
@@ -123,10 +129,10 @@ export function BuilderShell({
                 className={styles.asideCollapseAction}
                 type="button"
                 onClick={onAsideToggle}
-                aria-label={asideCollapsed ? "Розгорнути структуру курсу" : "Згорнути структуру курсу"}
-                aria-expanded={!asideCollapsed}
+                aria-label={asideFolded ? "Розгорнути структуру курсу" : "Згорнути структуру курсу"}
+                aria-expanded={!asideFolded}
               >
-                <Icon name={asideCollapsed ? "arrow-right" : "arrow-left"} size={18} />
+                <Icon name={asideFolded ? "arrow-right" : "arrow-left"} size={18} />
                 <HandGraphic className={styles.stepInkRing} name="ink-ring" size={42} />
               </button>
             ) : null}
@@ -249,7 +255,7 @@ export function BuilderNotice({
 const FAILURE_COPY: Record<BuilderFailure, { title: string; text: string }> = {
   unauthenticated: {
     title: "Потрібен вхід",
-    text: "Білдер працює на власному домені, тому вхід тут окремий від платформи — навіть якщо ви вже увійшли там.",
+    text: "Майстерня працює на власному домені, тому вхід тут окремий від платформи — навіть якщо ви вже увійшли там.",
   },
   forbidden: {
     title: "Немає доступу",
