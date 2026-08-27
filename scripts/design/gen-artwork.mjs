@@ -42,6 +42,35 @@ const PROMPTS = {
   water:
     "A still wide lake in the lower third, one low far shore of hills, mist lying flat on the water, " +
     "the faintest second shore beyond. Horizontal calm. " + COMMON,
+
+  /* СЕРЕДОВИЩЕ, А НЕ ПЕЙЗАЖ.
+     Процедурна маса не тримала матеріалу: лінії лишались лініями, і
+     комірки випадали з неї, бо падати їм було нікуди. Тут середовище
+     малюється як інтер'єр — стіна з уже вирізаними порожніми нішами,
+     у які потім сідають справжні полиці. Тому в промпті ніші ПОРОЖНІ
+     і прямокутні: усе, що модель домалює всередину, доведеться
+     закривати нашими ж полицями.
+     Правий низ — хід углиб: лавка, у якої після входу виявились
+     внутрішні ходи в скелю. */
+  "room-niches":
+    "Interior of a small chamber hewn out of living clay and stone. The right two thirds of the " +
+    "frame is a rough rock wall with six or seven EMPTY rectangular alcoves cut into it at " +
+    "different depths and sizes, their cut edges chipped and uneven, deep shadow inside each. " +
+    "A low arched passage at the bottom right leads further down into darkness. " +
+    "Heavy stone mass, visible chisel work, grain of clay. " + COMMON,
+  "room-cave":
+    "Interior of a cave chamber cut into warm rock. An irregular vault overhead, uneven floor, " +
+    "the right half of the wall carrying four EMPTY hewn niches of different size, deep black " +
+    "inside them. Beyond, a narrow passage descends into the rock. Mass and weight, " +
+    "wet-edge washes for the shadowed rock, dry-brush for the lit faces. " + COMMON,
+  "room-shelf":
+    "Interior wall of a rock-cut library. A tall face of clay-stone on the right two thirds with " +
+    "EMPTY carved shelf openings in an irregular grid, no books, deep shadow in every opening, " +
+    "chipped stone lips. A low descending arch at the bottom. " + COMMON,
+  "room-passage":
+    "Standing inside a hewn stone room looking at its far wall. The wall carries three EMPTY " +
+    "carved recesses and, at its foot, an arched opening going down into a darker level. " +
+    "The vault and side walls of the near room frame the view from the top and right. " + COMMON,
 };
 
 const model = process.argv[2] || "bytedance/seedream-5.0-pro";

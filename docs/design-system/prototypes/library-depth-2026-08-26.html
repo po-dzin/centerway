@@ -281,29 +281,89 @@
      темі — далекі гори по нижній половині стіни; у темній ті самі
      форми, писані кремом, читаються туманом, що піднімається. Малює
      paintScene, seeded. */
-  /* Креслення самої кімнати: підлога, стеля, бічні повернення. Лежить
-     на площині стіни, бо в одноточковій перспективі вся архітектура
-     ЗБІГАЄТЬСЯ в одну точку — її не треба будувати площинами, її
-     треба накреслити. Так робили в 界畫 і так вона коштує один
-     канвас, а не чотири шари з preserve-3d. */
-  .arch {
+  /* СЕРЕДОВИЩЕ — МАЛЮНОК, А НЕ ГЕНЕРАТИВ.
+     Процедурна маса не тримала матеріалу: скільки не додавай плям і
+     ліній, це лишалось шумом, у який нема куди вбудувати комірку.
+     Кімнату малює модель (scripts/design/gen-artwork.mjs), а
+     scripts/design/prep-env.py знімає з неї дві речі: щільність туші —
+     у альфу, і самі отвори — у JSON. Колір, як і в пейзажі, дає тема
+     через mask-image: та сама скеля у світлій темі чорнильна, у
+     темній — кремова.
+     Полиці сідають у знайдені отвори (ENVS.seats). Саме тому вони
+     перестають випадати із середовища: їхні місця беруться з малюнка,
+     а не вигадуються поруч із ним. */
+  .env {
     position: absolute;
-    /* canvas — заміщений елемент: самі лише inset його не розтягують,
-       він лишається при своїх природних 300×150. Тому розмір явний, а
-       не через inset — інакше креслення кімнати малюється в марку. */
-    left: -16%; top: -16%;
-    width: 132%; height: 132%;
-    transform: translateZ(-428px);
+    inset: 0;
     pointer-events: none;
-    /* Та сама завіса, що гасить пейзаж під колонкою тексту: кімната не
-       має креслитись поверх набору. Порожнеча малюнка і поле колонки —
-       одна й та сама порожнеча. */
-    -webkit-mask-image: var(--scene-veil);
-    mask-image: var(--scene-veil);
-    -webkit-mask-size: 100% 100%;
-    mask-size: 100% 100%;
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
+    background: var(--ink-value);
+    opacity: 0;
+    -webkit-mask-image: var(--env-tex, none), var(--scene-veil);
+    mask-image: var(--env-tex, none), var(--scene-veil);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+    -webkit-mask-size: var(--env-size, cover), 100% 100%;
+    mask-size: var(--env-size, cover), 100% 100%;
+    -webkit-mask-position: var(--env-pos, 50% 50%), 0 0;
+    mask-position: var(--env-pos, 50% 50%), 0 0;
+    -webkit-mask-repeat: no-repeat, no-repeat;
+    mask-repeat: no-repeat, no-repeat;
+    transition: opacity 700ms ease;
+  }
+  :root[data-env="on"] .env { opacity: 0.92; }
+  /* ТЕМНА ТЕМА НЕ ІНВЕРТУЄ КІМНАТУ.
+     Однією маскою туші в темряві виходив негатив: отвори світились,
+     перемички чорніли — і саме це читалось «дивним». Тому в темній
+     темі шарів два. Нижній (::before) малює ТІЛО каменю світлішим за
+     ґрунт, верхній кладе ту саму тінь у ті самі отвори — вже не
+     кремом, а найтемнішим тоном ґрунту. Отвір лишається отвором. */
+  .env::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    background: var(--paper-lit);
+    -webkit-mask-image: var(--env-body, none), var(--scene-veil);
+    mask-image: var(--env-body, none), var(--scene-veil);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+    -webkit-mask-size: var(--env-size, cover), 100% 100%;
+    mask-size: var(--env-size, cover), 100% 100%;
+    -webkit-mask-position: var(--env-pos, 50% 50%), 0 0;
+    mask-position: var(--env-pos, 50% 50%), 0 0;
+    -webkit-mask-repeat: no-repeat, no-repeat;
+    mask-repeat: no-repeat, no-repeat;
+    transition: opacity 700ms ease;
+  }
+  :root.mode-dark[data-env="on"] .env,
+  :root[data-theme="dark"]:not(.mode-light)[data-env="on"] .env {
+    opacity: 1;
+    background: var(--wash-2);
+  }
+  :root.mode-dark[data-env="on"] .env::before,
+  :root[data-theme="dark"]:not(.mode-light)[data-env="on"] .env::before { opacity: 0.62; }
+  @media (prefers-color-scheme: dark) {
+    :root:not(.mode-light):not([data-theme="light"])[data-env="on"] .env {
+      opacity: 1;
+      background: var(--wash-2);
+    }
+    :root:not(.mode-light):not([data-theme="light"])[data-env="on"] .env::before { opacity: 0.62; }
+  }
+  /* У малюнку отвір уже вирізаний, зі своєю тінню і сколотою губою.
+     Наша комірка в ньому — тільки полиця з корінцями: жодного власного
+     дна, рамки і накресленої перспективи, інакше на один отвір
+     припадає два. */
+  :root[data-env="on"] .niche__box {
+    background: transparent;
+    box-shadow: none;
+  }
+  :root[data-env="on"] .niche__persp,
+  :root[data-env="on"] .niche__cast { display: none; }
+  :root[data-env="on"] .niche__box::after {
+    background: linear-gradient(180deg,
+      color-mix(in srgb, var(--paper-lit) 60%, transparent), transparent);
+    border-top-color: color-mix(in srgb, var(--ink-value) 34%, transparent);
+    box-shadow: none;
   }
 
   .scene {
@@ -1103,13 +1163,13 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 30 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 31 · 27.08</span>
 
 
 <div class="stage" aria-hidden="true">
   <div class="room is-eased" id="room">
     <div class="wall"></div>
-    <canvas class="arch" id="arch"></canvas>
+    <div class="env" id="env"></div>
     <canvas class="scene" id="sceneInk"></canvas>
     <div class="sceneTex" id="sceneTex"></div>
     <div class="ray" id="rayA"></div>
@@ -1184,6 +1244,16 @@
     <span class="console__legend">Чорнило · контраст до світлого паперу</span>
     <div class="inks" id="inks"></div>
     <p class="inkNote" id="inkNote" hidden>У темній темі чорнило кремове; ці шість значень порівнюються для світлої.</p>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Середовище · кімната</span>
+    <div class="chips" id="envs">
+      <button class="chip" data-env="room-shelf" type="button" aria-pressed="true">полиця в скелі</button>
+      <button class="chip" data-env="room-niches" type="button" aria-pressed="false">камера</button>
+      <button class="chip" data-env="room-cave" type="button" aria-pressed="false">печера</button>
+      <button class="chip" data-env="" type="button" aria-pressed="false">без малюнка</button>
+    </div>
   </div>
 
   <div class="console__group">
@@ -1509,6 +1579,188 @@
      цього дальня категорія поїхала б до точки сходу і залізла на
      сусідню. */
   var flatWall = false;
+
+  /* ГНІЗДА З МАЛЮНКА. Координати нормовані до самого артворка, тому
+     вони не залежать ні від екрана, ні від того, як його обрізало
+     `cover`: перерахунок робить seatRects. Пише їх prep-env.py —
+     руками сюди нічого не вписується. */
+  var ENVS = {
+  "room-shelf": {
+    "tex": "assets/env-room-shelf.webp",
+    "body": "env-room-shelf-body.webp",
+    "w": 1280,
+    "h": 712,
+    "pos": [
+      0.5,
+      0.5
+    ],
+    "posNarrow": [
+      0.82,
+      0.34
+    ],
+    "seats": [
+      {
+        "x": 0.7844,
+        "y": 0.7809,
+        "w": 0.1125,
+        "h": 0.1573
+      },
+      {
+        "x": 0.8063,
+        "y": 0.1517,
+        "w": 0.1062,
+        "h": 0.2472
+      },
+      {
+        "x": 0.8063,
+        "y": 0.3876,
+        "w": 0.075,
+        "h": 0.2079
+      },
+      {
+        "x": 0.9,
+        "y": 0.3876,
+        "w": 0.0938,
+        "h": 0.2247
+      },
+      {
+        "x": 0.7844,
+        "y": 0.618,
+        "w": 0.1094,
+        "h": 0.1461
+      },
+      {
+        "x": 0.9094,
+        "y": 0.6124,
+        "w": 0.0906,
+        "h": 0.1854
+      },
+      {
+        "x": 0.7063,
+        "y": 0.3202,
+        "w": 0.0844,
+        "h": 0.1798
+      },
+      {
+        "x": 0.6156,
+        "y": 0.382,
+        "w": 0.0813,
+        "h": 0.1629
+      },
+      {
+        "x": 0.5375,
+        "y": 0.7022,
+        "w": 0.0906,
+        "h": 0.1236
+      },
+      {
+        "x": 0.7,
+        "y": 0.5056,
+        "w": 0.0906,
+        "h": 0.1292
+      },
+      {
+        "x": 0.6969,
+        "y": 0.6517,
+        "w": 0.075,
+        "h": 0.1348
+      },
+      {
+        "x": 0.5406,
+        "y": 0.5169,
+        "w": 0.0625,
+        "h": 0.1573
+      },
+      {
+        "x": 0.6125,
+        "y": 0.5506,
+        "w": 0.075,
+        "h": 0.1124
+      },
+      {
+        "x": 0.4688,
+        "y": 0.6292,
+        "w": 0.0594,
+        "h": 0.1517
+      }
+    ]
+  },
+  "room-niches": {
+    "tex": "assets/env-room-niches.webp",
+    "body": "env-room-niches-body.webp",
+    "w": 1280,
+    "h": 712,
+    "pos": [
+      0.5,
+      0.5
+    ],
+    "posNarrow": [
+      0.82,
+      0.34
+    ],
+    "seats": [
+      {
+        "x": 0.7281,
+        "y": 0.6348,
+        "w": 0.1812,
+        "h": 0.3539
+      },
+      {
+        "x": 0.7875,
+        "y": 0.2416,
+        "w": 0.1125,
+        "h": 0.2921
+      },
+      {
+        "x": 0.625,
+        "y": 0.1461,
+        "w": 0.1125,
+        "h": 0.2528
+      },
+      {
+        "x": 0.5938,
+        "y": 0.5618,
+        "w": 0.075,
+        "h": 0.2247
+      },
+      {
+        "x": 0.4281,
+        "y": 0.5112,
+        "w": 0.0781,
+        "h": 0.1517
+      },
+      {
+        "x": 0.675,
+        "y": 0.4382,
+        "w": 0.05,
+        "h": 0.1011
+      }
+    ]
+  },
+  "room-cave": {
+    "tex": "assets/env-room-cave.webp",
+    "body": "env-room-cave-body.webp",
+    "w": 1280,
+    "h": 712,
+    "pos": [
+      0.5,
+      0.5
+    ],
+    "posNarrow": [
+      0.82,
+      0.34
+    ],
+    "seats": [
+      {
+        "x": 0.6937,
+        "y": 0.4944,
+        "w": 0.1031,
+        "h": 0.2135
+      }
+    ]
+  }
+};
+  var envNow = "";
   /* Смуга, у яку лягли полиці. Креслення кімнати бере її ж: хід має
      обіймати полиці, а не жити поруч із ними своїм життям. */
   var roomBand = null;
@@ -1518,10 +1770,143 @@
      триста праць це різниця між сотнею SVG і десятком. */
   var nicheCache = {};
 
+  /* КАРТИНА САДИТЬСЯ ПО СТІНІ, А НЕ ПО КАДРУ.
+     `cover` кладе малюнок за розміром вікна — і на широкому та
+     високому кадрі стіна з нішами виїжджала за правий край, бо
+     обрізало саме її. Тому масштаб і зсув рахуються тут: беремо
+     ділянку самого артворка, де стоять отвори (рамка довкола гнізд), і
+     вписуємо ЇЇ у смугу, віддану полицям. Далі та сама трансформація
+     йде і в mask-size/mask-position шару, і в координати гнізд — один
+     розрахунок на дві речі, тому вони не можуть розійтись. */
+  function envFit() {
+    var meta = ENVS[envNow];
+    if (!meta || !meta.seats.length) return null;
+    var RW = room.clientWidth, RH = room.clientHeight;
+    var w = window.innerWidth, h = window.innerHeight;
+    if (!RW || !RH) return null;
+
+    var x0 = 1, y0 = 1, x1 = 0, y1 = 0;
+    meta.seats.forEach(function (q) {
+      x0 = Math.min(x0, q.x); y0 = Math.min(y0, q.y);
+      x1 = Math.max(x1, q.x + q.w); y1 = Math.max(y1, q.y + q.h);
+    });
+    /* Запас довкола гнізд — це камінь: стіна не закінчується на
+       крайньому отворі. */
+    var padX = (x1 - x0) * 0.16, padY = (y1 - y0) * 0.22;
+    x0 = Math.max(0, x0 - padX); x1 = Math.min(1, x1 + padX);
+    y0 = Math.max(0, y0 - padY); y1 = Math.min(1, y1 + padY);
+
+    var narrow = w <= 900;
+    var band = narrow
+      ? { x: w * 0.02, y: h * 0.02, w: w * 0.96, h: h * 0.42 }
+      : { x: w * 0.48, y: h * 0.06, w: w * 0.50, h: h * 0.88 };
+    band.x += w * 0.14; band.y += h * 0.14;      /* .room має inset -14% */
+
+    var aw = (x1 - x0) * meta.w, ah = (y1 - y0) * meta.h;
+    var k = Math.min(band.w / aw, band.h / ah);
+    var iw = meta.w * k, ih = meta.h * k;
+    var ox = band.x + band.w / 2 - ((x0 + x1) / 2) * iw;
+    var oy = band.y + band.h / 2 - ((y0 + y1) / 2) * ih;
+    return { iw: iw, ih: ih, ox: ox, oy: oy, meta: meta };
+  }
+
+  function seatRects() {
+    var f = envFit();
+    if (!f) return null;
+    return f.meta.seats.map(function (q) {
+      return { x: f.ox + q.x * f.iw, y: f.oy + q.y * f.ih,
+               w: q.w * f.iw, h: q.h * f.ih };
+    });
+  }
+
+  /* РОЗКЛАДКА ПО ГНІЗДАХ. Найважча категорія — у найбільший отвір:
+     те саме правило, що й у гранях, тільки місця тепер не рахуються, а
+     беруться. Категорії, яким отвору не вистачило, лишаються в списку
+     ліворуч — стіна не вигадує собі полиць, яких у ній не висічено. */
+  function buildSeated(seats) {
+    var order = CASES.map(function (c, ci) { return { ci: ci, n: c.books.length }; })
+      .sort(function (a, b) { return b.n - a.n; });
+    var frag = document.createDocumentFragment();
+    var used = Math.min(seats.length, order.length);
+    var i;
+    for (i = 0; i < used; i++) {
+      var seat = seats[i], data = CASES[order[i].ci];
+      var cw = Math.round(seat.w), ch = Math.round(seat.h);
+      var pad = Math.max(3, Math.round(cw * 0.07));
+      var gap = Math.max(2, Math.round(cw * 0.05));
+      /* Скільки корінців стоїть у цьому отворі — питання отвору, а не
+         каталогу: полиця не гумова, решта чекає всередині. */
+      var bw = Math.max(6, Math.round(ch * 0.13));
+      var fit = Math.max(1, Math.floor((cw - pad * 2 + gap) / (bw + gap)));
+      var show = Math.min(fit, data.books.length);
+      var hid = data.books.length - show;
+
+      var el = document.createElement("div");
+      el.className = "niche";
+      el.dataset.case = String(order[i].ci);
+      el.style.width = cw + "px";
+      el.style.height = ch + "px";
+      el.style.left = Math.round(seat.x) + "px";
+      el.style.top = Math.round(seat.y) + "px";
+      el.style.transform = "none";
+      el.style.setProperty("--depth", (0.55 + 0.45 * (used > 1 ? 1 - i / (used - 1) : 1)).toFixed(2));
+      el.dataset.z = "0";
+      el.dataset.phi = "0";
+      el.dataset.axis = String(Math.round(seat.x + seat.w / 2));
+
+      var box = document.createElement("div");
+      box.className = "niche__box";
+      el.appendChild(box);
+
+      var label = document.createElement("span");
+      label.className = "niche__label";
+      label.textContent = data.label;
+      label.style.maxWidth = Math.round(cw * 1.6) + "px";
+      el.appendChild(label);
+
+      if (hid) {
+        var more = document.createElement("span");
+        more.className = "niche__more";
+        more.textContent = "+" + hid;
+        el.appendChild(more);
+      }
+
+      data.books.slice(0, show).forEach(function (book, j) {
+        var bh = Math.round((ch - pad * 2) * (0.68 + seeded(j + order[i].ci * 7) * 0.2));
+        var spine = document.createElement("button");
+        spine.className = "book";
+        spine.type = "button";
+        spine.dataset.case = String(order[i].ci);
+        spine.dataset.book = String(j);
+        spine.dataset.held = String(book.held);
+        spine.setAttribute("aria-label", book.title);
+        var plate = document.createElement("span");
+        plate.className = "book__plate";
+        spine.appendChild(plate);
+        spine.style.width = bw + "px";
+        spine.style.height = bh + "px";
+        spine.style.left = (pad + j * (bw + gap)) + "px";
+        spine.style.bottom = Math.max(2, Math.round(ch * 0.06)) + "px";
+        box.appendChild(spine);
+      });
+
+      frag.appendChild(el);
+      caseEls.push(el);
+    }
+    room.appendChild(frag);
+    room.dataset.dense = "true";
+    room.dataset.far = "false";
+    roomBand = null;
+    markArmature(openCase < 0 ? Number(caseEls[0] && caseEls[0].dataset.case) || 0 : openCase);
+  }
+
   function buildRoom() {
     caseEls.forEach(function (el) { el.remove(); });
     caseEls = [];
     nicheCache = {};
+
+    var fromArt = seatRects();
+    if (fromArt && fromArt.length) { buildSeated(fromArt); return; }
 
     var w = window.innerWidth;
     var h = window.innerHeight;
@@ -2380,24 +2765,48 @@
     return (((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114) < 128;
   }
 
+  /* Кольори матеріалу одним місцем: канвас не читає CSS-змінні сам. */
+  function rgbOf(name) {
+    var hex = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    var n = parseInt(hex.slice(1), 16);
+    if (isNaN(n)) return [0, 0, 0];
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function rgba(c, a) {
+    return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + Math.max(0, a).toFixed(3) + ")";
+  }
+
+  /* ТЕМНЕ — ЦЕ НЕ ЧОРНИЛО. У світлій темі чорнило справді найтемніше,
+     і ним можна писати і лінію, і тінь. У темній чорнило кремове: тією
+     самою фарбою пора в камені ставала блиском, а хід углиб —
+     світляним отвором. Тінь матеріалу має власне джерело — найтемніший
+     токен ґрунту. */
+  function shadeOf(dark) { return dark ? rgbOf("--wash-2") : rgbOf("--ink-value"); }
+
+  /* ФАКТУРА, А НЕ ШУМ.
+     Досі стіна була майже чистим папером із кількома блідими
+     розмивами — і кімната через це читалась кресленням на аркуші, а не
+     матеріалом, у який щось врізано. Глина і камінь мають три речі
+     одночасно: плямистість (маса лягла нерівно), зерно (дрібні пори)
+     і тріщини з відколами. Тайл несе всі три, тому виїмка стоїть у
+     ТІЛІ, а не на тлі.
+     Той самий тайл іде і на облямівку кожної виїмки — інакше рамка
+     отвору була б з іншого матеріалу, ніж стіна, і жодна тінь цього
+     не сховає. */
   function paintWallInk() {
     if (!wallEl) return;
-    var cs = getComputedStyle(document.documentElement);
-    var hex = cs.getPropertyValue("--ink-value").trim();
-    var n = parseInt(hex.slice(1), 16);
-    if (isNaN(n)) return;
-    var ir = (n >> 16) & 255, ig = (n >> 8) & 255, ib = n & 255;
-    var quiet = darkNow() ? 0.42 : 1;
-    var size = 560;
+    var lc = rgbOf("--paper-lit"), dc = rgbOf("--paper-deep");
+    var dark = darkNow();
+    var ic = shadeOf(dark);
+    var quiet = dark ? 0.8 : 1;
+    var size = 460;
     var c = document.createElement("canvas");
     c.width = c.height = size;
     var g = c.getContext("2d");
-    /* Розмиття на рівні пензля: без нього накопичення кроків читається
-       ланцюжком плям, а не втертим у папір розмивом. */
     var canBlur = typeof g.filter === "string";
-    if (canBlur) g.filter = "blur(10px)";
 
-    function soft(x, y, rr, a) {
+    /* Плями кладуться з обгортанням через край — інакше видно шов. */
+    function soft(col, x, y, rr, a) {
       var ox, oy;
       for (ox = -1; ox <= 1; ox++) {
         for (oy = -1; oy <= 1; oy++) {
@@ -2405,8 +2814,8 @@
           if (oy !== 0 && y > rr && y < size - rr) continue;
           var px = x + ox * size, py = y + oy * size;
           var grd = g.createRadialGradient(px, py, 0, px, py, rr);
-          grd.addColorStop(0, "rgba(" + ir + "," + ig + "," + ib + "," + a.toFixed(3) + ")");
-          grd.addColorStop(1, "rgba(" + ir + "," + ig + "," + ib + ",0)");
+          grd.addColorStop(0, rgba(col, a));
+          grd.addColorStop(1, rgba(col, 0));
           g.fillStyle = grd;
           g.beginPath();
           g.arc(px, py, rr, 0, Math.PI * 2);
@@ -2415,208 +2824,66 @@
       }
     }
 
-    var blob, i, x, y, r;
-    for (blob = 0; blob < 6; blob++) {
-      x = seeded(blob * 13 + 1) * size;
-      y = seeded(blob * 13 + 2) * size;
-      r = 60 + seeded(blob * 13 + 3) * 90;
-      for (i = 0; i < 14; i++) {
-        x = (x + (seeded(blob * 97 + i) - 0.5) * r * 0.5 + size) % size;
-        y = (y + (seeded(blob * 89 + i) - 0.5) * r * 0.5 + size) % size;
-        soft(x, y, r * (0.5 + seeded(blob * 71 + i) * 0.6),
-          (0.0045 + seeded(blob * 61 + i) * 0.005) * quiet);
-      }
+    /* 1. МАСА. Великі м'які плями двох знаків: темніші — там, де глина
+       лягла густіше, світліші — де вигоріла. Саме різниця між ними, а
+       не сама пляма, читається матеріалом. */
+    if (canBlur) g.filter = "blur(14px)";
+    var i, x, y, r, k;
+    for (i = 0; i < 26; i++) {
+      x = seeded(i * 13 + 1) * size;
+      y = seeded(i * 13 + 2) * size;
+      r = 70 + seeded(i * 13 + 3) * 130;
+      soft(ic, x, y, r, (0.020 + seeded(i * 13 + 4) * 0.030) * quiet);
     }
-    /* волокна паперу — тонші за розмиви, без блюру */
+    for (i = 0; i < 22; i++) {
+      x = seeded(i * 17 + 40) * size;
+      y = seeded(i * 17 + 41) * size;
+      r = 60 + seeded(i * 17 + 42) * 120;
+      soft(lc, x, y, r, (0.10 + seeded(i * 17 + 43) * 0.16) * (dark ? 0.5 : 1));
+    }
+    /* 2. ЗЕРНО. Дрібні пори, дві щільності: кучні й розсіяні. */
+    if (canBlur) g.filter = "blur(1.1px)";
+    for (i = 0; i < 260; i++) {
+      x = seeded(i * 7 + 200) * size;
+      y = seeded(i * 7 + 201) * size;
+      r = 1 + seeded(i * 7 + 202) * 2.6;
+      soft(ic, x, y, r, (0.05 + seeded(i * 7 + 203) * 0.10) * quiet);
+    }
+    /* 3. ТРІЩИНИ І ВІДКОЛИ. Тріщина йде не прямо: вона повертає на
+       кожній неоднорідності, тому це блукання з нахилом, а не відрізок.
+       Відкол — коротка світла риска поруч із темною: край, що відпав. */
     if (canBlur) g.filter = "none";
-    var k, fx, fy, ang, ln;
-    g.lineWidth = 0.5;
-    for (k = 0; k < 90; k++) {
-      fx = seeded(k * 7 + 500) * size;
-      fy = seeded(k * 7 + 501) * size;
-      ang = seeded(k * 7 + 502) * Math.PI;
-      ln = 6 + seeded(k * 7 + 503) * 20;
-      g.strokeStyle = "rgba(" + ir + "," + ig + "," + ib + "," +
-        ((0.012 + seeded(k + 7) * 0.02) * quiet).toFixed(3) + ")";
+    g.lineCap = "round";
+    for (i = 0; i < 22; i++) {
+      var cx = 40 + seeded(i * 23 + 300) * (size - 80);
+      var cy = 40 + seeded(i * 23 + 301) * (size - 80);
+      var ang = seeded(i * 23 + 302) * Math.PI * 2;
+      var steps = 6 + Math.floor(seeded(i * 23 + 303) * 9);
+      g.strokeStyle = rgba(ic, (0.06 + seeded(i * 23 + 304) * 0.09) * quiet);
+      g.lineWidth = 0.6 + seeded(i * 23 + 305) * 0.7;
       g.beginPath();
-      g.moveTo(fx, fy);
-      g.lineTo(fx + Math.cos(ang) * ln, fy + Math.sin(ang) * ln);
+      g.moveTo(cx, cy);
+      for (k = 0; k < steps; k++) {
+        ang += (seeded(i * 31 + k) - 0.5) * 1.1;
+        cx += Math.cos(ang) * (4 + seeded(i * 37 + k) * 9);
+        cy += Math.sin(ang) * (4 + seeded(i * 41 + k) * 9);
+        g.lineTo(cx, cy);
+      }
       g.stroke();
-    }
-    wallEl.style.backgroundImage = "url(" + c.toDataURL() + ")";
-  }
-
-  /* ---------- креслення кімнати ---------- */
-
-  /* ОБ'ЄМ БЕРЕТЬСЯ НЕ З ТІНЕЙ, А З ЛІНІЙ, ЩО СХОДЯТЬСЯ.
-     Досі кімнати не було: була площина, перед якою висіли полиці, і
-     скільки б їм не давали глибини, вони лишались предметами в
-     порожнечі. Кімната — це підлога, стеля і два повернення, і в
-     одноточковій перспективі всі їхні ребра йдуть в одну точку — ту
-     саму, довкола якої вже рахується глибина граней (VPX/VPY). Тому
-     це не нові площини в 3D, а одне креслення на площині стіни.
-
-     Малюється рукою: кожна лінія з дрібним прогином і змінним
-     натиском, seeded — щоб кімната була та сама в кожному сеансі. */
-  var archEl = document.getElementById("arch");
-
-  function paintArch() {
-    if (!archEl) return;
-    var w = window.innerWidth, h = window.innerHeight;
-    var W = Math.round(archEl.clientWidth), H = Math.round(archEl.clientHeight);
-    if (!W || !H) return;
-    var dpr = Math.min(2, window.devicePixelRatio || 1);
-    archEl.width = Math.round(W * dpr);
-    archEl.height = Math.round(H * dpr);
-    var g = archEl.getContext("2d");
-    g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    g.clearRect(0, 0, W, H);
-
-    var cs = getComputedStyle(document.documentElement);
-    var hex = cs.getPropertyValue("--ink-value").trim();
-    var n = parseInt(hex.slice(1), 16);
-    if (isNaN(n)) return;
-    var col = ((n >> 16) & 255) + "," + ((n >> 8) & 255) + "," + (n & 255);
-    var quiet = darkNow() ? 0.8 : 1;
-
-    /* Точка сходу в координатах цього шару. Перспектива масштабує все
-       ДОВКОЛА неї, отже локальна точка, яка проєктується в точку
-       сходу, — це вона сама. Лишається перевести з координат кадру в
-       координати шару. */
-    var ROOM = 0.14, WALLI = 0.16;
-    var offX = w * ROOM + w * (1 + 2 * ROOM) * WALLI;
-    var offY = h * ROOM + h * (1 + 2 * ROOM) * WALLI;
-    var vx = w * 0.68 + offX;
-    var vy = h * 0.5 + offY;
-
-    function ink(a) { return "rgba(" + col + "," + Math.max(0, a * quiet).toFixed(3) + ")"; }
-
-    /* ПРОФІЛЬ ХОДУ — не прямокутник.
-       Прямокутна коробка була не тією бібліотекою: вона креслила
-       кабінет, а не лавку, що врізана в скелю. Хід має підлогу
-       (нерівну, але підлогу — по ній ходять), два боки, які не
-       паралельні і не вертикальні, і склепіння. Профіль пишеться
-       один раз і потім тільки масштабується від точки сходу — бо в
-       одноточковій перспективі кожен наступний перетин ходу це той
-       самий переріз, тільки ближчий. */
-    /* Хід обіймає полиці: його переріз береться зі смуги, у яку вони
-       лягли, з запасом на камінь. Інакше кімната і стіна жили б двома
-       окремими малюнками — а саме через це прямокутний каркас і читався
-       кабінетом, а не лавкою, врізаною в скелю. */
-    var bd = roomBand || { x: w * 0.5, y: h * 0.08, w: w * 0.46, h: h * 0.74 };
-    var padX = Math.max(28, bd.w * 0.10), padY = Math.max(24, bd.h * 0.07);
-    var lx = bd.x - padX + offX, rx = bd.x + bd.w + padX + offX;
-    var floorY = bd.y + bd.h + padY * 1.6 + offY;
-    var shoulderY = bd.y + bd.h * 0.34 + offY;
-    var topY = bd.y - padY + offY;
-
-    function base() {
-      var p = [], i, t, a, cx = (lx + rx) / 2, halfW = (rx - lx) / 2;
-      for (i = 0; i <= 7; i++) {                   /* підлога, зліва направо */
-        t = i / 7;
-        p.push([lx + (rx - lx) * t, floorY + (seeded(i * 3 + 1) - 0.5) * 11]);
-      }
-      for (i = 1; i <= 5; i++) {                   /* правий бік, угору */
-        t = i / 5;
-        p.push([rx + (seeded(i * 5 + 2) - 0.5) * halfW * 0.1,
-                floorY + (shoulderY - floorY) * t]);
-      }
-      for (i = 1; i <= 12; i++) {                  /* склепіння, справа наліво */
-        t = i / 12; a = Math.PI * t;
-        p.push([cx + Math.cos(a) * halfW * (1 + (seeded(i * 7 + 3) - 0.5) * 0.09),
-                shoulderY - Math.sin(a) * (shoulderY - topY) *
-                  (1 + (seeded(i * 9 + 4) - 0.5) * 0.14)]);
-      }
-      for (i = 1; i < 5; i++) {                    /* лівий бік, униз */
-        t = i / 5;
-        p.push([lx + (seeded(i * 11 + 5) - 0.5) * halfW * 0.1,
-                shoulderY + (floorY - shoulderY) * t]);
-      }
-      return p;
-    }
-
-    var PROFILE = base();
-    /* Кожен переріз — той самий профіль, тільки ближчий. Але два
-       найглибші ще й СПУЩЕНІ й звужені: хід не йде прямо крізь скелю,
-       він завертає вниз. Саме це й відрізняє лавку з внутрішніми
-       ходами від коридору — з першого рівня видно, що є другий, і
-       видно, що до нього спускаються. */
-    function ring(st) {
-      return PROFILE.map(function (q) {
-        return [vx + (q[0] - vx) * st.k * st.sx,
-                vy + (q[1] - vy) * st.k + st.dy * h];
-      });
-    }
-
-    /* Лінія від руки: ламана з дрібним дрейфом і затухаючими кінцями. */
-    function poly(pts, wt, a, seed, close) {
-      if (a <= 0.004) return;
-      g.strokeStyle = ink(a);
-      g.lineWidth = wt;
-      g.lineCap = "round";
-      g.lineJoin = "round";
-      g.beginPath();
-      pts.forEach(function (q, i) {
-        var dx = (seeded(seed * 13 + i) - 0.5) * 1.6;
-        var dy = (seeded(seed * 17 + i) - 0.5) * 1.6;
-        if (i) g.lineTo(q[0] + dx, q[1] + dy); else g.moveTo(q[0] + dx, q[1] + dy);
-      });
-      if (close) g.closePath();
-      g.stroke();
-    }
-
-    /* ХОДИ ВГЛИБ. Перерізи ходу від найдальшого до найближчого. Далекий
-       накреслений упевнено — саме він і є те, куди йдеш; ближній рок
-       ледь намічений, бо він у глядача за плечем. */
-    var STEPS = [
-      { k: 0.30, dy: 0.215, sx: 0.46, w: 1.7, a: 0.58 },
-      { k: 0.58, dy: 0.105, sx: 0.76, w: 1.5, a: 0.40 },
-      { k: 1.00, dy: 0,     sx: 1,    w: 1.4, a: 0.30 },
-      { k: 1.55, dy: 0,     sx: 1,    w: 1.2, a: 0.19 },
-      { k: 2.35, dy: 0,     sx: 1,    w: 1.1, a: 0.11 },
-      { k: 3.40, dy: 0,     sx: 1,    w: 1.0, a: 0.06 }
-    ];
-    var rings = STEPS.map(ring);
-    /* Найдальший отвір — темніший за стіну: у скелі за ним нічого не
-       світить. Це і є другий рівень, який видно з першого. */
-    g.fillStyle = ink(0.22);
-    g.beginPath();
-    rings[0].forEach(function (q, i) { if (i) g.lineTo(q[0], q[1]); else g.moveTo(q[0], q[1]); });
-    g.closePath();
-    g.fill();
-
-    rings.forEach(function (r, i) {
-      poly(r, STEPS[i].w, STEPS[i].a, 11 + i * 6, i < 4);
-    });
-
-    /* РЕБРА СКЕЛІ. Не всі — кожне третє: камінь ріжеться уступами, а
-       не рівною сіткою. Вони і роблять боки боками. */
-    var i, k;
-    for (i = 0; i < PROFILE.length; i += 3) {
-      var chain = [];
-      for (k = 0; k < rings.length; k++) chain.push(rings[k][i]);
-      poly(chain, 1, 0.13 - (i % 6) * 0.02, 41 + i, false);
-    }
-
-    /* ШТРИХОВКА ПО СКЛЕПІННЮ — коротка, тільки там, де камінь
-       завертає: маса береться не заливкою, а тим, що перо йде
-       упоперек форми. */
-    var vaultFrom = 13, vaultTo = 24;
-    for (k = 1; k < 4; k++) {
-      for (i = vaultFrom; i < vaultTo; i += 2) {
-        var a1 = rings[k][i], a2 = rings[k + 1][i];
-        if (!a1 || !a2) continue;
-        var mx = a1[0] + (a2[0] - a1[0]) * 0.42, my = a1[1] + (a2[1] - a1[1]) * 0.42;
-        poly([a1, [mx, my]], 0.9, 0.075 - k * 0.016, 71 + i + k * 5, false);
+      if (seeded(i * 23 + 306) > 0.45) {
+        g.strokeStyle = rgba(lc, (0.16 + seeded(i * 23 + 307) * 0.2) * (dark ? 0.4 : 1));
+        g.lineWidth = 0.9;
+        g.beginPath();
+        g.moveTo(cx + 1.2, cy + 1.2);
+        g.lineTo(cx + 1.2 + Math.cos(ang) * 6, cy + 1.2 + Math.sin(ang) * 6);
+        g.stroke();
       }
     }
 
-    /* ПІДЛОГА. Уступи між перерізами — по ній і читається, що хід іде
-       вниз-углиб, а не просто далі. */
-    for (k = 1; k < rings.length - 1; k++) {
-      var floorPts = rings[k].slice(0, 8);
-      poly(floorPts, 1.1, 0.16 - k * 0.03, 91 + k * 7, false);
-    }
+    var url = "url(" + c.toDataURL() + ")";
+    wallEl.style.backgroundImage = url;
+    /* Той самий камінь — облямівці виїмок. */
+    document.documentElement.style.setProperty("--stone-tile", url);
   }
 
   /* ---------- тушевий пейзаж ---------- */
@@ -2980,7 +3247,6 @@
     paintWallInk();
     paintScene();
     paintGrain();
-    paintArch();
   }
 
   GROUNDS.forEach(function (g) {
@@ -3099,7 +3365,6 @@
     paintGrain();
     paintWallInk();
     paintScene();
-    paintArch();
     /* Вага пера — частина геометрії, а не кольору: у темряві лінія
        товща. Отже, зі зміною теми стіну треба перекреслити, а не
        перефарбувати. Стан (де ми і що вибрано) відновлюємо самі —
@@ -3125,6 +3390,42 @@
   /* Пейзаж: канвасний розмив або один із мальованих растрів. Вибір
      тримається в localStorage — інакше кожне перезавантаження скидало
      б порівняння варіантів. */
+  /* Середовище тримається в localStorage, як і решта порівнянь: інакше
+     кожне перезавантаження скидало б вибір кімнати. */
+  var envsBox = document.getElementById("envs");
+  function setEnv(key) {
+    var meta = ENVS[key];
+    var rootEl = document.documentElement;
+    envNow = meta ? key : "";
+    if (meta) {
+      rootEl.style.setProperty("--env-tex", 'url("' + meta.tex + '")');
+      rootEl.style.setProperty("--env-body", 'url("assets/' + meta.body + '")');
+      rootEl.setAttribute("data-env", "on");
+      var f = envFit();
+      if (f) {
+        rootEl.style.setProperty("--env-size",
+          Math.round(f.iw) + "px " + Math.round(f.ih) + "px");
+        rootEl.style.setProperty("--env-pos",
+          Math.round(f.ox) + "px " + Math.round(f.oy) + "px");
+      }
+    } else {
+      rootEl.style.removeProperty("--env-tex");
+      rootEl.style.removeProperty("--env-body");
+      rootEl.removeAttribute("data-env");
+    }
+    Array.prototype.forEach.call(envsBox.children, function (c) {
+      c.setAttribute("aria-pressed", String(c.dataset.env === envNow));
+    });
+    try { window.localStorage.setItem("cw-proto-env", envNow); } catch (e) { /* приватне вікно */ }
+  }
+  Array.prototype.forEach.call(envsBox.children, function (c) {
+    c.addEventListener("click", function () {
+      setEnv(c.dataset.env);
+      toHall();
+      boot();
+    });
+  });
+
   var scenesBox = document.getElementById("scenes");
   function setScene(src) {
     var rootEl = document.documentElement;
@@ -3176,12 +3477,14 @@
   });
 
   function boot() {
+    /* Позиція малюнка залежить від ширини кадру, тому вона
+       перевстановлюється на кожній перебудові, а не лише при виборі. */
+    if (envNow) setEnv(envNow);
     var savedScene = "";
     try { savedScene = window.localStorage.getItem("cw-proto-scene") || ""; } catch (e) { savedScene = ""; }
     setScene(savedScene);
     buildRoom();
     if (openCase >= 0) highlight(openCase, 0);
-    paintArch();
     paintGrain();
     paintInks();
     renderList();
@@ -3190,6 +3493,9 @@
 
   /* setTheme викликається ЗАВЖДИ, навіть для «системної»: інлайн-фарби
      на body — єдине, чого не переб'є жоден стиль хоста артефакта. */
+  var savedEnv = "room-shelf";
+  try { savedEnv = window.localStorage.getItem("cw-proto-env"); } catch (e) { savedEnv = "room-shelf"; }
+  setEnv(savedEnv === null ? "room-shelf" : savedEnv);
   var savedGround = "graphite";
   try { savedGround = window.localStorage.getItem("cw-proto-ground") || "graphite"; } catch (e) { /* приватне вікно */ }
   setGround(savedGround);
