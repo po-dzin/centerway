@@ -159,75 +159,6 @@
     color: var(--ink-faint);
   }
 
-  /* ---------- аркуш: сітка, поля, виноски ---------- */
-
-  .draft {
-    position: fixed;
-    inset: 0;
-    z-index: 3;
-    pointer-events: none;
-    background-image:
-      linear-gradient(to right, var(--ink-hair) 1px, transparent 1px),
-      linear-gradient(to bottom, var(--ink-hair) 1px, transparent 1px);
-    background-size: var(--module) var(--module);
-    /* Слабше, ніж було: сітка розмічає СТОРІНКУ, а стіна позаду —
-       матеріал. Дві однаково гучні системи читались як одна каша. */
-    opacity: 0.3;
-  }
-
-  .draft__margin {
-    position: absolute;
-    inset-block: 0;
-    width: 1px;
-    background: var(--ink-line);
-  }
-  .draft__margin--l { inset-inline-start: 8vw; }
-  .draft__margin--r { inset-inline-start: calc(8vw + var(--measure)); }
-
-  .draft__crop {
-    position: absolute;
-    width: 14px; height: 14px;
-    border: 0 solid var(--ink-line);
-  }
-  .draft__crop--tl { top: 18px; left: 18px; border-top-width: 1px; border-left-width: 1px; }
-  .draft__crop--tr { top: 18px; right: 18px; border-top-width: 1px; border-right-width: 1px; }
-  .draft__crop--bl { bottom: 18px; left: 18px; border-bottom-width: 1px; border-left-width: 1px; }
-  .draft__crop--br { bottom: 18px; right: 18px; border-bottom-width: 1px; border-right-width: 1px; }
-
-  /* Розмірна лінія над колонкою підписує саме ту цифру, заради якої
-     колонка така вузька — «ма» з ресерчу, 46vw. */
-  .draft__dim {
-    position: absolute;
-    top: 72px;
-    inset-inline-start: 8vw;
-    width: var(--measure);
-    height: 1px;
-    background: var(--redline);
-    opacity: 0.5;
-  }
-  .draft__dim::before,
-  .draft__dim::after {
-    content: "";
-    position: absolute;
-    top: -4px;
-    width: 1px; height: 9px;
-    background: var(--redline);
-  }
-  .draft__dim::before { inset-inline-start: 0; }
-  .draft__dim::after  { inset-inline-end: 0; }
-
-  .draft__label {
-    position: absolute;
-    font-family: var(--mono);
-    font-size: 0.62rem;
-    letter-spacing: 0.09em;
-    color: var(--redline);
-    opacity: 0.75;
-    white-space: nowrap;
-  }
-  .draft__label--measure { top: 78px; inset-inline-start: calc(8vw + 8px); }
-  .draft__label--lead { top: 50%; inset-inline-start: calc(8vw - 3.4rem); }
-
   /* ---------- кімната ---------- */
 
   .stage {
@@ -244,9 +175,15 @@
     position: absolute;
     inset: -14%;
     transform-style: preserve-3d;
+    /* Наближення робить scale, а не сама лише глибина: щоб дотягнути
+       полицю до кадру самим translateZ, її треба підвести майже до
+       площини перспективи, і сцена там уже не наближається, а
+       розлітається. Глибина лишається для паралаксу, масштаб — для
+       наїзду. */
     transform:
       translate3d(var(--px, 0px), var(--py, 0px), var(--cz, 0px))
-      rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+      rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg))
+      scale(var(--cs, 1));
     will-change: transform;
   }
   .room.is-eased { transition: transform 2300ms cubic-bezier(0.16, 0.5, 0.2, 1); }
@@ -388,7 +325,6 @@
      указка перед нею. */
   .ray {
     position: absolute;
-    width: 18px;
     transform: translateZ(-229px);
     pointer-events: none;
     color: var(--ray-hi);
@@ -396,6 +332,7 @@
     animation: rayBreath 9s ease-in-out infinite alternate;
     transition: top 2000ms cubic-bezier(0.16, 0.5, 0.2, 1),
                 left 2000ms cubic-bezier(0.16, 0.5, 0.2, 1),
+                width 2000ms cubic-bezier(0.16, 0.5, 0.2, 1),
                 height 2000ms cubic-bezier(0.16, 0.5, 0.2, 1);
   }
   .ray svg { width: 100%; height: 100%; display: block; overflow: visible; }
@@ -479,6 +416,11 @@
     pointer-events: none;
   }
   .niche[data-dim="true"] { opacity: 0.4; filter: none; }
+  /* У наїзді підписані лише ті полиці, у які зайшли: масштаб кімнати
+     тягне за собою і текст, і чужий ярлик через півкадру читається
+     плакатом, а не підписом. */
+  .niche[data-dim="true"] .niche__label,
+  .niche[data-dim="true"] .niche__more { opacity: 0; }
 
   /* Три рівні уваги, у порядку заглиблення:
      1. ховер категорії (рядок або сама ніша) — світловий КОНТУР блока;
@@ -538,15 +480,13 @@
   .room[data-far="true"] .niche__label,
   .room[data-far="true"] .niche__more { opacity: 0.5; font-size: 0.52rem; }
 
-  /* Ярлик категорії живе ВСЕРЕДИНІ отвору, по задній стінці — як
-     напис на самій стіні. Знадвору він сідав на нішу горішнього ряду,
-     щойно кладка ставала щільною, і жоден проміжок цього не рятував:
-     сусідні отвори врізані на різну глибину, тож перспектива з'їдає
-     зазор по-різному. */
+  /* Ярлик категорії стоїть НАД отвором — підпис до полиці, а не напис
+     на її задній стінці. Проміжок між рядами тримає під нього місце
+     (LABEL_H у buildRoom). */
   .niche__label {
     position: absolute;
-    inset-block-start: 6px;
-    inset-inline-start: 9px;
+    inset-block-start: -1.15rem;
+    inset-inline-start: 3px;
     z-index: 2;
     font-family: var(--mono);
     font-size: 0.6rem;
@@ -749,7 +689,19 @@
   .row:focus-visible { outline: 1px solid var(--brass); outline-offset: 3px; }
   .row__index { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
   .row__title { font-family: var(--editorial); font-size: 1.3rem; line-height: 1.4; }
-  .row__note { display: block; margin-block-start: 0.2rem; font-size: 0.8rem; line-height: 1.85; color: var(--ink-soft); }
+  /* Деталі — рівно один рядок. Другий рядок ламає ритм списку: рядки
+     перестають бути однаковими, і око більше не веде по колонці. */
+  .row__note {
+    display: block;
+    margin-block-start: 0.2rem;
+    font-size: 0.8rem;
+    line-height: 1.85;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .row > span:nth-child(2) { min-width: 0; }
   .row__state { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .row__state[data-held="true"] { color: var(--brass); }
 
@@ -990,7 +942,6 @@
     /* Виїмки більше не стоять під текстом, тож і гасити сцену нема
        за що: приглушений зал читався як вимкнене світло. */
     .stage { opacity: 1; }
-    .draft__margin, .draft__dim, .draft__label { display: none; }
     .console { inset-inline: 0.8rem; width: auto; inset-block-start: auto; inset-block-end: 0.8rem; }
     .book-open { grid-template-columns: 1fr; }
     .page + .page { display: none; }
@@ -1002,19 +953,8 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 23 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 25 · 27.08</span>
 
-<div class="draft" aria-hidden="true">
-  <span class="draft__margin draft__margin--l"></span>
-  <span class="draft__margin draft__margin--r"></span>
-  <span class="draft__crop draft__crop--tl"></span>
-  <span class="draft__crop draft__crop--tr"></span>
-  <span class="draft__crop draft__crop--bl"></span>
-  <span class="draft__crop draft__crop--br"></span>
-  <span class="draft__dim"></span>
-  <span class="draft__label draft__label--measure">колонка 46vw · «ма»</span>
-  <span class="draft__label draft__label--lead">lh 1.85</span>
-</div>
 
 <div class="stage" aria-hidden="true">
   <div class="room is-eased" id="room">
@@ -1114,7 +1054,6 @@
     <span class="console__legend">Глибина</span>
     <div class="chips">
       <button class="chip" id="parallax" type="button" aria-pressed="true">паралакс</button>
-      <button class="chip" id="grid" type="button" aria-pressed="true">сітка</button>
     </div>
   </div>
 </aside>
@@ -1391,7 +1330,12 @@
     /* Проміжок між рядами тримає не лише повітря, а й ярлик
        категорії: він стоїть НАД отвором і на тісній кладці сідав на
        нішу горішнього ряду. */
-    var GAP_X = narrow ? 10 : 18, GAP_Y = narrow ? 21 : 29;
+    /* Проміжок між рядами тримає ярлик категорії: він стоїть над
+       отвором і без цього місця сідає на нішу горішнього ряду. */
+    var LABEL_H = 17;
+    /* Перепад висот усередині одного рівня — маленький навмисно. */
+    var LEVEL = 14;
+    var GAP_X = narrow ? 10 : 18, GAP_Y = (narrow ? 14 : 20) + LABEL_H;
 
     /* СМУГА СТІНИ — прямокутник, у який кладеться скільки завгодно
        виїмок. Широкий екран віддає стіні праву половину (текст живе в
@@ -1409,72 +1353,73 @@
        Сходинки: що більше праць, то тонший корінець і дрібніша
        секція. Береться перша, на якій стіна вкладається у смугу. */
     var LADDER = [
-      { bw: 48, per: 9 }, { bw: 42, per: 9 }, { bw: 36, per: 8 },
-      { bw: 30, per: 8 }, { bw: 25, per: 7 }, { bw: 20, per: 7 },
-      { bw: 16, per: 6 }, { bw: 13, per: 6 }
+      { bw: 26, per: 9 }, { bw: 23, per: 9 }, { bw: 20, per: 8 },
+      { bw: 17, per: 8 }, { bw: 15, per: 7 }, { bw: 12, per: 7 },
+      { bw: 10, per: 6 }, { bw: 8, per: 6 }
     ];
 
     function sectionsFor(step) {
-      var gap = Math.max(3, Math.round(step.bw * 0.3));
+      var gap = Math.max(3, Math.round(step.bw * 0.34));
       var pad = Math.max(5, Math.round(step.bw * 0.34));
-      var unit = Math.max(40, Math.min(150, Math.round(step.bw * 2.7)));
-      var list = [];
+      /* Книга — не квадрат: корінець удвічі тонший за попередній і в
+         чотири-п'ять разів вищий за свою ширину. */
+      var unit = Math.max(46, Math.min(150, Math.round(step.bw * 4.7)));
+      var groups = [], list = [];
       CASES.forEach(function (data, ci) {
-        var n = data.books.length, i = 0, k = 0, take;
+        var n = data.books.length, i = 0, k = 0, take, secs = [], gw = 0;
         while (i < n) {
-          /* Секції РІЗНОГО розміру: на дві книги і на десять. Розкид
-             ±1 давав стіну з однакових комірок — це вже не кладка, а
-             сітка. Множник гуляє від третини до півтори норми. */
+          /* Секції РІЗНОГО розміру: на дві книги і на десять. */
           take = Math.round(step.per * (0.34 + seeded(ci * 17 + k) * 1.2));
           take = Math.max(2, Math.min(take, n - i));
           if (n - i - take === 1) take += 1;
-          list.push({
+          secs.push({
             ci: ci, from: i, count: take,
             w: take * (step.bw + gap) - gap + pad * 2,
             h: unit
           });
           i += take; k += 1;
         }
+        /* КАТЕГОРІЯ ЖИВЕ НА ОДНОМУ РІВНІ. Розрізана на два ряди, вона
+           перестає бути однією полицею: позначка селекту мусить тоді
+           обійти прямокутник у пів-стіни. Тому група вкладається в
+           ширину смуги, а що не влізло — рахується числом. */
+        var SGAP = Math.max(6, Math.round(step.bw * 0.5));
+        function width(list) {
+          return list.reduce(function (a, it) { return a + it.w; }, 0) +
+            SGAP * Math.max(0, list.length - 1);
+        }
+        var cut = 0;
+        while (secs.length > 1 && width(secs) > band.w) {
+          cut += secs.pop().count;
+        }
+        gw = width(secs);
+        groups.push({ ci: ci, secs: secs, w: gw, h: unit, hidden: cut, sgap: SGAP });
+        list = list.concat(secs);
       });
-      return { list: list, bw: step.bw, gap: gap, pad: pad, unit: unit };
+      return { groups: groups, list: list, bw: step.bw, gap: gap, pad: pad, unit: unit };
     }
 
-    /* Пакування в ряди: зліва направо, перенос по краю смуги. Ряд, що
-       перебирає смугу на кілька відсотків, не переноситься, а трохи
-       стискається — інакше секція їде на власний ряд через десяток
-       пікселів і стіна розповзається вниз. */
-    /* Сходинка ряду. Кілька окремих полиць, вирівняних по одній
-       лінії, читаються однією довгою полицею, розрізаною навпіл; щоб
-       вони лишились окремими, ряд іде сходинкою. Формула одна на
-       пакування і на розстановку — інакше рядам не вистачить висоти. */
-    function stepFor(li, hh) {
-      return Math.round(hh * (0.13 + seeded(li * 9 + 4) * 0.14));
-    }
-
+    /* Пакування рядами — тепер по КАТЕГОРІЯХ, не по секціях. */
     function pack(secs) {
       var lines = [], line = [], lineW = 0, total = 0;
       function flush() {
         if (!line.length) return;
-        if (lineW > secs.bandW) {
-          var k = secs.bandW / lineW;
-          line.forEach(function (it) { it.w = Math.floor(it.w * k); });
-          lineW = secs.bandW;
+        if (lineW > band.w) {
+          var k = band.w / lineW;
+          line.forEach(function (g) {
+            g.w = Math.floor(g.w * k);
+            g.secs.forEach(function (it) { it.w = Math.floor(it.w * k); });
+          });
+          lineW = band.w;
         }
-        lines.push({ items: line, w: lineW });
-        total += line[0].h + (line.length - 1) * stepFor(lines.length - 1, line[0].h) + GAP_Y;
+        lines.push({ groups: line, w: lineW });
+        total += line[0].h + LEVEL + GAP_Y;
         line = []; lineW = 0;
       }
-      secs.bandW = band.w;
-      /* Стіна має бути стіною, а не стрічкою: довжина ряду обмежена не
-         лише краєм смуги, а й формою самої смуги. Три секції в один
-         ряд — це полиця магазину; два на два — уже кладка. */
-      var maxPerLine = Math.max(1, Math.round(
-        Math.sqrt(secs.list.length * (band.w / band.h) * 0.9)));
-      secs.list.forEach(function (it) {
-        if (line.length && (line.length >= maxPerLine ||
-            lineW + GAP_X + it.w > band.w * 1.07)) flush();
-        lineW += (line.length ? GAP_X : 0) + it.w;
-        line.push(it);
+      secs.groups.forEach(function (g) {
+        if (line.length && lineW + GAP_X + g.w > band.w * 1.07) flush();
+        lineW += (line.length ? GAP_X : 0) + g.w;
+        line.push(g);
       });
       flush();
       return { lines: lines, height: Math.max(0, total - GAP_Y) };
@@ -1489,44 +1434,49 @@
 
     /* Коли й на найдрібнішій сходинці стіна не вкладається — а це вже
        сотні праць — з кінця знімаються цілі секції, і категорія каже
-       числом, скільки праць стоїть углиб. Повний перелік однаково
-       живе всередині ніші. */
-    var hidden = {};
+       числом, скільки праць стоїть углиб. */
     var guard = 0;
-    while (packed.height > band.h && secs.list.length > CASES.length && guard++ < 400) {
-      var worst = -1, count = {}, i;
-      for (i = 0; i < secs.list.length; i++) {
-        count[secs.list[i].ci] = (count[secs.list[i].ci] || 0) + 1;
+    while (packed.height > band.h && guard++ < 200) {
+      var fat = -1, i;
+      for (i = secs.groups.length - 1; i >= 0; i--) {
+        if (secs.groups[i].secs.length > 1) { fat = i; break; }
       }
-      for (i = secs.list.length - 1; i >= 0; i--) {
-        if (count[secs.list[i].ci] > 1) { worst = i; break; }
-      }
-      if (worst < 0) break;
-      hidden[secs.list[worst].ci] = (hidden[secs.list[worst].ci] || 0) + secs.list[worst].count;
-      secs.list.splice(worst, 1);
+      if (fat < 0) break;
+      var g = secs.groups[fat];
+      g.hidden += g.secs.pop().count;
+      g.w = g.secs.reduce(function (a, it) { return a + it.w; }, 0) +
+        g.sgap * Math.max(0, g.secs.length - 1);
+      secs.list = [];
+      secs.groups.forEach(function (gr) { secs.list = secs.list.concat(gr.secs); });
       packed = pack(secs);
     }
 
-    /* Розкладка. Ряди зсунуті один відносно одного, кожна секція ще й
-       трохи гуляє по вертикалі: полиці, поставлені ідеально одна над
-       одною, читаються таблицею, а не стіною. */
+    /* Розкладка. Ряди зсунуті один відносно одного; всередині категорії
+       секції гуляють по вертикалі лише трохи — рівно настільки, щоб
+       читались окремими полицями, а не однією довгою. */
     var cursorY = band.y + Math.max(0, (band.h - packed.height) / 2);
     var order = 0;
     packed.lines.forEach(function (ln, li) {
       var slide = (seeded(li * 13 + 3) - 0.5) * Math.min(46, band.w * 0.06);
       var x = Math.max(band.x,
         Math.min(band.x + (band.w - ln.w) / 2 + slide, band.x + band.w - ln.w));
-      var stp = stepFor(li, ln.items[0].h);
-      var down = seeded(li * 11 + 7) > 0.5;
-      ln.items.forEach(function (it, i) {
-        it.x = x;
-        it.y = cursorY + stp * (down ? i : ln.items.length - 1 - i);
-        it.z = -230 + (order % 4) * 28;
-        x += it.w + GAP_X;
-        order += 1;
+      ln.groups.forEach(function (gr) {
+        gr.secs.forEach(function (it, i) {
+          it.x = x;
+          it.y = cursorY + Math.round(seeded(order * 7 + 11) * LEVEL);
+          it.z = -230 + (order % 4) * 28;
+          x += it.w + gr.sgap;
+          order += 1;
+        });
+        x += GAP_X - gr.sgap;
       });
-      cursorY += ln.items[0].h + (ln.items.length - 1) * stp + GAP_Y;
+      cursorY += ln.groups[0].h + LEVEL + GAP_Y;
     });
+
+    /* Ряд, який стиснувся, змінив і ширину виїмки — отже, ряд корінців
+       усередині треба перерахувати під фактичну, а не під бажану. */
+    var hidden = {};
+    secs.groups.forEach(function (gr) { if (gr.hidden) hidden[gr.ci] = gr.hidden; });
 
     secs.list.forEach(function (sec, order) {
       var data = CASES[sec.ci];
@@ -1541,6 +1491,7 @@
       el.style.top = Math.round(oy + sec.y) + "px";
       /* Різна глибина врізання — саме вона й дає паралакс між нішами. */
       el.style.transform = "translateZ(" + sec.z + "px)";
+      el.dataset.z = String(sec.z);
 
       var cast = document.createElement("div");
       cast.className = "niche__cast";
@@ -1577,9 +1528,13 @@
 
       /* ПРАЦЬ — рівно стільки, скільки курсів: декоративних корінців-
          статистів немає, і секція завширшки рівно під свій ряд. */
+      /* Ряд, який стиснувся під ширину смуги, звузив і секцію — отже,
+         корінець рахується від ФАКТИЧНОЇ ширини, а не від бажаної. */
+      var bwFit = Math.max(5, Math.min(secs.bw,
+        Math.floor((cw - secs.pad * 2 + secs.gap) / sec.count) - secs.gap));
       data.books.slice(sec.from, sec.from + sec.count).forEach(function (book, j) {
         var bi = sec.from + j;
-        var lean = secs.bw > 30 ? Math.round(seeded(bi * 3 + sec.ci) * 5) : 0;
+        var lean = bwFit > 16 ? Math.round(seeded(bi * 3 + sec.ci) * 4) : 0;
         var bh = Math.round((ch - 14) * (0.72 + seeded(bi + sec.ci * 7) * 0.16));
 
         var spine = document.createElement("button");
@@ -1600,9 +1555,9 @@
         topFace.className = "book__top";
         spine.appendChild(topFace);
 
-        spine.style.width = secs.bw + "px";
+        spine.style.width = bwFit + "px";
         spine.style.height = bh + "px";
-        spine.style.left = (secs.pad + j * (secs.bw + secs.gap) + lean) + "px";
+        spine.style.left = (secs.pad + j * (bwFit + secs.gap) + lean) + "px";
         spine.style.bottom = "5px";
         spine.style.setProperty("--tilt",
           (seeded(bi * 5 + sec.ci) > 0.8 ? (3 + seeded(bi) * 4).toFixed(1) : "0") + "deg");
@@ -1633,8 +1588,8 @@
        ярлик: на такому віддаленні стіна читається кількістю отворів,
        а не текстом. Імена нікуди не діваються — вони в aria-label, у
        списку ліворуч і всередині ніші. */
-    room.dataset.dense = secs.bw < 26 ? "true" : "false";
-    room.dataset.far = secs.bw < 17 ? "true" : "false";
+    room.dataset.dense = secs.bw < 16 ? "true" : "false";
+    room.dataset.far = secs.bw < 11 ? "true" : "false";
 
     room.querySelectorAll(".book[data-book]").forEach(function (b) {
       b.addEventListener("click", function (e) {
@@ -1654,20 +1609,20 @@
     markArmature(openCase < 0 ? 1 : openCase);
   }
 
-  /* Штрих пера: тонкий на далекому кінці, важчий біля виїмки, з ледь
-     помітним прогином і одним-двома підйомами пензля. Той самий
-     профіль, що й у ліній ніші, — інакше позначка читалася б
-     надрукованою поверх мальованого. */
-  function rayInk(len, toNiche, seed) {
-    var W = 18, mid = W / 2;
+  /* Штрих пера завдовжки в лінію: тонкий на початку, важчий у тілі,
+     з ледь помітним прогином і одним-двома підйомами пензля. Той
+     самий профіль, що й у ліній ніші. */
+  function rayInk(len, vertical, seed) {
+    var T = 18, mid = T / 2;
     function jr(n) { return seeded(seed * 37 + n); }
-    var bow = (jr(1) * 2 - 1) * Math.min(3.4, len * 0.02);
+    var bow = (jr(1) * 2 - 1) * Math.min(3.4, len * 0.016);
+    /* Один підйом пензля, і то не завжди: два розриви перетворювали
+       штрих на пунктир, а це має лишитись однією лінією, просто
+       написаною рукою. */
     var lifts = [];
-    var g0 = 0.24 + jr(2) * 0.2;
-    lifts.push([g0, g0 + 0.03 + jr(3) * 0.05]);
     if (jr(4) > 0.45) {
-      var g1 = 0.62 + jr(5) * 0.16;
-      lifts.push([g1, g1 + 0.02 + jr(6) * 0.04]);
+      var g0 = 0.3 + jr(2) * 0.3;
+      lifts.push([g0, g0 + 0.02 + jr(3) * 0.03]);
     }
     function inLift(t) {
       for (var i = 0; i < lifts.length; i++) {
@@ -1675,42 +1630,45 @@
       }
       return false;
     }
-    var N = 46, out = "", run = [], i, t, x, y, wdt;
+    var N = 48, out = "", run = [], i, t, along, across, wdt;
     function flush() {
       if (run.length < 2) { run = []; return; }
-      var left = [], right = [], k;
+      var s1 = [], s2 = [], k, a, c, hw;
       for (k = 0; k < run.length; k++) {
-        left.push((run[k][0] - run[k][2] / 2).toFixed(1) + "," + run[k][1].toFixed(1));
-        right.push((run[k][0] + run[k][2] / 2).toFixed(1) + "," + run[k][1].toFixed(1));
+        a = run[k][0]; c = run[k][1]; hw = run[k][2] / 2;
+        s1.push(vertical ? (c - hw).toFixed(1) + "," + a.toFixed(1)
+                         : a.toFixed(1) + "," + (c - hw).toFixed(1));
+        s2.push(vertical ? (c + hw).toFixed(1) + "," + a.toFixed(1)
+                         : a.toFixed(1) + "," + (c + hw).toFixed(1));
       }
-      out += '<polygon points="' + left.join(" ") + " " + right.reverse().join(" ") +
+      out += '<polygon points="' + s1.join(" ") + " " + s2.reverse().join(" ") +
         '" fill="currentColor"/>';
       run = [];
     }
     for (i = 0; i <= N; i++) {
       t = i / N;
       if (inLift(t)) { flush(); continue; }
-      /* t = 0 — далекий кінець, t = 1 — біля виїмки */
-      y = toNiche ? len * t : len * (1 - t);
-      x = mid + bow * Math.sin(Math.PI * t) + (jr(i + 40) - 0.5) * 0.7;
-      wdt = (0.35 + 1.45 * t) * (0.72 + jr(i + 90) * 0.56);
-      if (i === 0) wdt = 0.22;
-      run.push([x, y, wdt]);
+      along = len * t;
+      across = mid + bow * Math.sin(Math.PI * t) + (jr(i + 40) - 0.5) * 0.7;
+      /* натиск наростає до середини і сходить нанівець на кінцях */
+      wdt = (0.3 + 1.5 * Math.sin(Math.PI * t)) * (0.72 + jr(i + 90) * 0.5);
+      if (i === 0 || i === N) wdt = 0.22;
+      run.push([along, across, wdt]);
     }
     flush();
-    return '<svg viewBox="0 0 ' + W + " " + Math.round(len) +
+    return '<svg viewBox="0 0 ' +
+      (vertical ? T + " " + Math.round(len) : Math.round(len) + " " + T) +
       '" preserveAspectRatio="none" aria-hidden="true">' + out + "</svg>";
   }
 
-  /* ДВА ВЕРТИКАЛЬНІ штрихи — згори і знизу активної категорії, впоперек
-     ряду. Горизонтальні йшли вздовж полиці й читалися ще однією її
-     лінією; вертикальний штрих перетинає ряд і тому видно, що це
-     позначка, а не частина креслення. Різної довжини і не по одній
-     осі — розмітка від руки, а не приціл. */
+  /* ДВІ ЛІНІЇ ПО КРАЮ КАТЕГОРІЇ. Вони йдуть уздовж крайніх комірок —
+     згори і знизу, якщо над стіною і під нею є місце; ліворуч і
+     праворуч, якщо місце збоку. Орієнтацію обирає не смак, а вільний
+     проміжок: штрихи лежать на стіні позаду отворів, і той, що
+     забігає за сусідній отвір, просто зникає разом із селектом. */
   function markArmature(ci) {
     var mine = sectionsOf(ci);
-    var el = mine[0];
-    if (!el) return;
+    if (!mine.length) { rayA.innerHTML = ""; rayB.innerHTML = ""; return; }
     var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
     mine.forEach(function (n) {
       var l = parseFloat(n.style.left), t = parseFloat(n.style.top);
@@ -1718,32 +1676,55 @@
       x1 = Math.max(x1, l + n.offsetWidth); y1 = Math.max(y1, t + n.offsetHeight);
     });
 
-    /* Штрихи лежать на стіні, позаду виїмок, тож довжина в них не
-       довільна: до сусіднього отвору. Забігши за нього, штрих просто
-       зникає — і селект перестає читатися. */
-    var freeUp = y0, freeDn = window.innerHeight * 1.28 - y1;
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var up = y0, dn = vh * 1.28 - y1, lf = x0, rt = vw * 1.28 - x1;
     caseEls.forEach(function (n) {
       if (Number(n.dataset.case) === ci) return;
       var l = parseFloat(n.style.left), t = parseFloat(n.style.top);
       var r = l + n.offsetWidth, bm = t + n.offsetHeight;
-      if (r < x0 - 6 || l > x1 + 6) return;
-      if (bm <= y0) freeUp = Math.min(freeUp, y0 - bm);
-      if (t >= y1) freeDn = Math.min(freeDn, t - y1);
+      var overX = r > x0 - 6 && l < x1 + 6;
+      var overY = bm > y0 - 6 && t < y1 + 6;
+      if (overX && bm <= y0) up = Math.min(up, y0 - bm);
+      if (overX && t >= y1) dn = Math.min(dn, t - y1);
+      if (overY && r <= x0) lf = Math.min(lf, x0 - r);
+      if (overY && l >= x1) rt = Math.min(rt, x1 - r > 0 ? l - x1 : 0);
     });
 
-    var cx = x0 + (x1 - x0) * 0.36;
-    var la = Math.max(24, Math.min(74 + seeded(ci + 11) * 40, freeUp - 14));
-    rayA.style.left = Math.round(cx - 9) + "px";
-    rayA.style.top = Math.round(y0 - la - 6) + "px";
-    rayA.style.height = Math.round(la) + "px";
-    rayA.innerHTML = rayInk(la, true, ci + 3);
+    var NEED = 16;
+    var horiz = Math.min(up, dn) >= NEED;
+    if (!horiz && Math.min(lf, rt) < NEED) horiz = Math.min(up, dn) >= Math.min(lf, rt);
 
-    var cx2 = x0 + (x1 - x0) * (0.62 + seeded(ci + 31) * 0.16);
-    var lb = Math.max(20, Math.min(46 + seeded(ci + 23) * 34, freeDn - 14));
-    rayB.style.left = Math.round(cx2 - 9) + "px";
-    rayB.style.top = Math.round(y1 + 6) + "px";
-    rayB.style.height = Math.round(lb) + "px";
-    rayB.innerHTML = rayInk(lb, false, ci + 9);
+    /* ПАРА штрихів, різної, але близької довжини — і кожен трохи
+       коротший за саму категорію: позначка від руки не міряє предмет
+       по краю, вона його супроводжує. */
+    var la = 0.78 + seeded(ci + 41) * 0.2;
+    var lb = 0.78 + seeded(ci + 53) * 0.2;
+    /* Стеля довжини: у широкої категорії позначка по всьому краю — це
+       вже не позначка, а підкреслення на пів-стіни. */
+    var CAP = 210;
+    if (horiz) {
+      var wA = Math.max(40, Math.min(CAP, (x1 - x0) * la));
+      var wB = Math.max(40, Math.min(CAP, (x1 - x0) * lb));
+      setRay(rayA, x0 + ((x1 - x0) - wA) * seeded(ci + 61),
+        y0 - Math.min(14, up * 0.6) - 9, wA, 18, false, ci + 3);
+      setRay(rayB, x0 + ((x1 - x0) - wB) * seeded(ci + 67),
+        y1 + Math.min(14, dn * 0.6) - 9, wB, 18, false, ci + 9);
+    } else {
+      var hA = Math.max(34, Math.min(CAP, (y1 - y0) * la));
+      var hB = Math.max(34, Math.min(CAP, (y1 - y0) * lb));
+      setRay(rayA, x0 - Math.min(14, lf * 0.6) - 9,
+        y0 + ((y1 - y0) - hA) * seeded(ci + 61), 18, hA, true, ci + 3);
+      setRay(rayB, x1 + Math.min(14, rt * 0.6) - 9,
+        y0 + ((y1 - y0) - hB) * seeded(ci + 67), 18, hB, true, ci + 9);
+    }
+  }
+
+  function setRay(el, x, y, w, h, vertical, seed) {
+    el.style.left = Math.round(x) + "px";
+    el.style.top = Math.round(y) + "px";
+    el.style.width = Math.round(w) + "px";
+    el.style.height = Math.round(h) + "px";
+    el.innerHTML = rayInk(vertical ? h : w, vertical, seed);
   }
 
   function renderList() {
@@ -1884,25 +1865,26 @@
   /* Загальний план стоїть далі від стіни: стіна має читатися стіною,
      а не полицею перед носом. */
   var HALL_Z = -170;
-  var baseX = 0, baseY = 0, baseZ = HALL_Z;
+  var baseX = 0, baseY = 0, baseZ = HALL_Z, baseS = 1;
   var tx = 0, ty = 0, cx = 0, cy = 0;
   var parallaxOn = true;
   var easing = false;
   var easeTimer = null;
-  var frameTimer = null;
 
   function apply() {
     room.style.setProperty("--px", (baseX + cx).toFixed(1) + "px");
     room.style.setProperty("--py", (baseY + cy).toFixed(1) + "px");
     room.style.setProperty("--cz", baseZ + "px");
+    room.style.setProperty("--cs", baseS.toFixed(3));
     /* Нахил спокою: сцена трохи повернена навіть без курсора, інакше
        глибина існує тільки поки рухаєш мишею. */
     room.style.setProperty("--rx", (1.6 - cy * 0.05).toFixed(2) + "deg");
     room.style.setProperty("--ry", (-6.5 + cx * 0.06).toFixed(2) + "deg");
   }
 
-  function camera(x, y, z) {
+  function camera(x, y, z, sc) {
     baseX = x; baseY = y; baseZ = z;
+    baseS = sc === undefined ? 1 : sc;
     easing = true;
     room.classList.add("is-eased");
     apply();
@@ -1938,11 +1920,6 @@
     this.setAttribute("aria-pressed", String(parallaxOn));
     if (!parallaxOn) { tx = 0; ty = 0; }
   });
-  document.getElementById("grid").addEventListener("click", function () {
-    var on = this.getAttribute("aria-pressed") !== "true";
-    this.setAttribute("aria-pressed", String(on));
-    document.querySelector(".draft").style.display = on ? "" : "none";
-  });
 
   function enterCase(ci) {
     tapArmed = null;
@@ -1957,39 +1934,7 @@
     });
     markArmature(ci);
 
-    /* Категорія — це вже кілька секцій, тож камера цілиться в їхній
-       спільний прямокутник, а не в першу-ліпшу. */
-    var mine = sectionsOf(ci);
-    var el = mine[0];
-    if (!el) return;
-    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
-    mine.forEach(function (n) {
-      var l = parseFloat(n.style.left), t = parseFloat(n.style.top);
-      x0 = Math.min(x0, l); y0 = Math.min(y0, t);
-      x1 = Math.max(x1, l + n.offsetWidth); y1 = Math.max(y1, t + n.offsetHeight);
-    });
-    var w = window.innerWidth, h = window.innerHeight;
-    var ox = w * 0.14, oy = h * 0.14;
-    var ecx = (x0 + x1) / 2;
-    var ecy = (y0 + y1) / 2;
-    /* На широкому екрані дві колонки лишаються двома колонками:
-       текст ліворуч, виїмки праворуч. Наїзд лише підтягує активну
-       полицю ближче до центру кадру — рівно настільки, щоб вона стала
-       предметом уваги, і не настільки, щоб полізти на текст.
-       На вузькому центр — єдине місце, де полиця поміщається. */
-    var tX, tY;
-    if (w > 900) {
-      var measure = Math.min(38 * 16, w * 0.38);
-      var free = w * 0.10 + measure + 48;          /* права межа колонки */
-      tX = Math.max(free + (x1 - x0) / 2, w * 0.68);
-      tX = Math.min(tX, w - (x1 - x0) / 2 - 40);
-      tY = h * 0.42;
-    } else {
-      tX = w * 0.5;
-      tY = h * 0.30;
-    }
-    camera(tX + ox - ecx, tY + oy - ecy, 210);
-    frameCase(ci, 0);
+    frameCase(ci);
 
     eyebrowEl.textContent = "Шафа " + CASES[ci].label;
     titleEl.textContent = CASES[ci].label.replace(/^[IV]+ · /, "");
@@ -1999,50 +1944,52 @@
     play("step");
   }
 
-  /* Перспектива і поворот стіни роблять із будь-якої розрахованої
-     позиції наближення: де полиця опиниться НА ЕКРАНІ, з формули не
-     видно. Тому після наїзду міряємо фактичний прямокутник категорії і
-     доводимо камеру — зсуваємо, а якщо полиця в кадр не влазить, ще й
-     відводимо назад. Два проходи: далі поправка вже менша за піксель. */
-  function frameCase(ci, pass) {
-    window.clearTimeout(frameTimer);
-    frameTimer = window.setTimeout(function () {
-      if (view !== "case" || openCase !== ci) return;
-      var mine = sectionsOf(ci);
-      if (!mine.length) return;
-      var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, k = 1;
-      mine.forEach(function (n) {
-        var r = n.getBoundingClientRect();
-        x0 = Math.min(x0, r.left); y0 = Math.min(y0, r.top);
-        x1 = Math.max(x1, r.right); y1 = Math.max(y1, r.bottom);
-        k = r.width / (n.offsetWidth || 1);
-      });
-      var vw = window.innerWidth, vh = window.innerHeight;
-      var narrow = vw <= 900;
-      /* Куди має стати центр: на широкому — у правій половині, під
-         текстову колонку ліворуч; на вузькому — у верхній смузі. */
-      var wantX = narrow ? vw * 0.5 : vw * 0.72;
-      var wantY = narrow ? vh * 0.24 : vh * 0.46;
-      var maxW = (narrow ? vw * 0.88 : vw * 0.44);
-      var maxH = (narrow ? vh * 0.40 : vh * 0.78);
+  /* НАЇЗД РАХУЄТЬСЯ, А НЕ ПІДГАНЯЄТЬСЯ. Раніше камера їхала за
+     формулою, а через 2.4 с доводилась другим рухом — звідси і ривок
+     «частинами», і не та зона в кадрі: у формулі не було перспективи.
+     Тепер вимірюємо стан ДО руху (де категорія на екрані і з яким
+     масштабом), рахуємо потрібний масштаб і зсув аналітично і робимо
+     один рух.
 
-      /* Кадр підганяється в обидва боки: велика категорія відводить
-         камеру назад, маленька — підтягує вперед. Інакше вибір розділу
-         на дві праці не читався як наближення взагалі: та сама
-         виїмка, тільки з позначкою. */
-      var fill = Math.min(maxW / Math.max(1, x1 - x0), maxH / Math.max(1, y1 - y0)) * 0.62;
-      var dz = Math.max(-460, Math.min(380, (fill - 1) * 760));
-      if (Math.abs(dz) < 12) dz = 0;
-      var dx = (wantX - (x0 + x1) / 2) / (k || 1);
-      var dy = (wantY - (y0 + y1) / 2) / (k || 1);
-      if (Math.abs(dx) < 2 && Math.abs(dy) < 2 && !dz) return;
-      camera(baseX + dx, baseY + dy, baseZ + dz);
-      if (pass < 1) frameCase(ci, pass + 1);
-    }, 2400);
+     Перспектива масштабує все відносно своєї точки сходу O:
+       C1 = O + (C0 - O) * k1/k0 + d * k1,
+     де k = P / (P - z). Звідси і зсув, і z. */
+  function frameCase(ci) {
+    var mine = sectionsOf(ci);
+    if (!mine.length) return;
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, k0 = 1;
+    mine.forEach(function (n) {
+      var r = n.getBoundingClientRect();
+      x0 = Math.min(x0, r.left); y0 = Math.min(y0, r.top);
+      x1 = Math.max(x1, r.right); y1 = Math.max(y1, r.bottom);
+      k0 = r.width / (n.offsetWidth || 1);
+    });
+
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var narrow = vw <= 900;
+    var wantX = narrow ? vw * 0.5 : vw * 0.71;
+    var wantY = narrow ? vh * 0.23 : vh * 0.46;
+    var maxW = narrow ? vw * 0.86 : vw * 0.46;
+    var maxH = narrow ? vh * 0.38 : vh * 0.74;
+
+    var bw = Math.max(1, x1 - x0), bh = Math.max(1, y1 - y0);
+    var f = Math.max(1.15, Math.min(4.2, Math.min(maxW / bw, maxH / bh) * 0.82));
+    var s1 = Math.max(0.5, Math.min(5, baseS * f));
+    f = s1 / baseS;
+
+    /* Масштаб тягне все до точки, яка від нього не залежить, — до
+       центру самої кімнати на екрані. Тому зсув рахується від неї, а
+       не від центру кадру: інакше камера наближає одну зону, а
+       показує іншу. */
+    var rr = room.getBoundingClientRect();
+    var qx = rr.left + rr.width / 2, qy = rr.top + rr.height / 2;
+    var kp = k0 / (baseS || 1);            /* перспектива без масштабу */
+    var dx = (wantX - qx - ((x0 + x1) / 2 - qx) * f) / kp;
+    var dy = (wantY - qy - ((y0 + y1) / 2 - qy) * f) / kp;
+    camera(baseX + dx, baseY + dy, baseZ, s1);
   }
 
   function toHall() {
-    window.clearTimeout(frameTimer);
     tapArmed = null;
     view = "hall";
     openCase = -1;
@@ -2053,7 +2000,7 @@
       el.removeAttribute("data-hot");
     });
     markArmature(1);
-    camera(0, 0, HALL_Z);
+    camera(0, 0, HALL_Z, 1);
     eyebrowEl.textContent = "Прототип середовища · 26.08.2026";
     titleEl.textContent = "Місце усвідомленої присутності. Тут тихо";
     standEl.textContent = "У стіні три ніші — по одній на кожну категорію, і в кожній рівно стільки праць, скільки в ній курсів. Підійди до ніші, торкнись корінця — книга розгорнеться.";
