@@ -1164,21 +1164,6 @@
     min-height: 100vh;
     min-height: 100svh;
     border-radius: 0;
-    /* The portrait master (PlatformHeroPhoto) is its own composition, not a
-       crop of the landscape plate. A centered vertical crop leaves too much
-       bare wall above the doorway on tall/narrow viewports, so the window is
-       shifted down and scaled up slightly to bring the doorway itself closer. */
-    --hero-photo-x: 50%;
-    --hero-photo-y: 68%;
-    --hero-photo-shift-y: 0%;
-    --hero-photo-scale: 1.14;
-    --hero-photo-origin: center 125%;
-  }
-
-  .heroPhotoLayer .expertImage {
-    object-position: var(--hero-photo-x) var(--hero-photo-y);
-    transform: translateY(var(--hero-photo-shift-y)) scale(var(--hero-photo-scale));
-    transform-origin: var(--hero-photo-origin);
   }
 
   .heroFeatureTitle {
@@ -1440,21 +1425,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .heroFeature {
-    /* Same plate as ≤560px, wider frame — less side crop, same centred leader. */
-    --hero-photo-x: 52%;
-    --hero-photo-y: 48%;
-    --hero-photo-shift-y: 0%;
-    --hero-photo-scale: 1.01;
-    --hero-photo-origin: center center;
-  }
-
-  .heroPhotoLayer .expertImage {
-    object-position: var(--hero-photo-x) var(--hero-photo-y);
-    transform: translateY(var(--hero-photo-shift-y)) scale(var(--hero-photo-scale));
-    transform-origin: var(--hero-photo-origin);
-  }
-
   .footerBrandBlock,
   .footerLegal,
   .footerSocials {
@@ -1531,10 +1501,6 @@
 @media (min-width: 1101px) {
   main[data-cw-detail-template] > .heroFeature {
     min-height: max(46rem, 100svh);
-    --hero-photo-x: var(--hero-photo-x-desktop, 50%);
-    --hero-photo-y: var(--hero-photo-y-desktop, 20%);
-    --hero-photo-shift-y: -2%;
-    --hero-photo-scale: 1.08;
   }
 
   /* Left edge pinned to `--cw-container-inset` — the SAME gutter `.container`
@@ -1618,11 +1584,6 @@
 @media (min-width: 561px) and (max-width: 1100px) {
   main[data-cw-detail-template] > .heroFeature {
     min-height: clamp(44rem, 88svh, 58rem);
-    --hero-photo-x: var(--hero-photo-x-mobile, var(--hero-photo-x-desktop, 50%));
-    --hero-photo-y: var(--hero-photo-y-mobile, var(--hero-photo-y-desktop, 20%));
-    --hero-photo-shift-y: -2%;
-    --hero-photo-scale: 1.02;
-    --hero-photo-origin: center center;
   }
 
   /* Same gutter as `.container`, same reasoning as the desktop band above —
@@ -1659,11 +1620,6 @@
 
   .heroFeature[data-cw-detail-template] {
     min-height: clamp(44rem, 88svh, 58rem);
-    --hero-photo-x: var(--hero-photo-x-mobile, var(--hero-photo-x-desktop, 50%));
-    --hero-photo-y: var(--hero-photo-y-mobile, var(--hero-photo-y-desktop, 20%));
-    --hero-photo-shift-y: -2%;
-    --hero-photo-scale: 1.02;
-    --hero-photo-origin: center center;
   }
 
   /* Duplicated selector for specificity — see the `main[...]` rule above. */
@@ -1706,11 +1662,6 @@
     min-height: 100vh;
     min-height: 100svh;
     align-items: stretch;
-    --hero-photo-x: var(--hero-photo-x-mobile, var(--hero-photo-x-desktop, 50%));
-    --hero-photo-y: var(--hero-photo-y-mobile, var(--hero-photo-y-desktop, 20%));
-    --hero-photo-shift-y: -2%;
-    --hero-photo-scale: 1.03;
-    --hero-photo-origin: center top;
   }
 
   main[data-cw-detail-template] .heroFeatureContent {
@@ -1757,11 +1708,6 @@
     min-height: 100vh;
     min-height: 100svh;
     align-items: stretch;
-    --hero-photo-x: var(--hero-photo-x-mobile, var(--hero-photo-x-desktop, 50%));
-    --hero-photo-y: var(--hero-photo-y-mobile, var(--hero-photo-y-desktop, 20%));
-    --hero-photo-shift-y: -2%;
-    --hero-photo-scale: 1.03;
-    --hero-photo-origin: center top;
   }
 
   .heroFeature[data-cw-detail-template] .heroFeatureContent {
@@ -1846,3 +1792,5 @@
     padding: clamp(6.5rem, 9vw, 8.5rem) 0 clamp(4rem, 6vw, 5.5rem);
   }
 }
+
+

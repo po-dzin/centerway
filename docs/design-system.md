@@ -413,6 +413,58 @@ Every content block on the platform is `PlatformBlock`: **head + body, and no su
 
 Before this, blocks were assembled three different ways on one page — a bare `h2` and a grid; an `h2` inside a flex row beside an empty `div`; and the panel-in-panel stack above. On a phone that reads as the page changing its mind every screen.
 
+## Hero framing contract (2026-08-27)
+
+Source: `src/components/platform/PlatformBlocksOrientation.module.css` (resolve),
+`src/components/platform/heroFraming.ts` (author). Every full-bleed photo hero on
+the platform runs through it — hub, detail, catalogue index, diagnostic entry,
+and the course hero the builder authors.
+
+**A hero declares focus. It never declares a frame.**
+
+| variable | what it says |
+|---|---|
+| `--hero-photo-x-desktop` / `-y-desktop` | focus on the landscape plate |
+| `--hero-photo-x-mobile` / `-y-mobile` | focus on the portrait master |
+| `--hero-photo-y-wide` | vertical focus past 16:9 — optional |
+| `--hero-photo-y-ultrawide` | vertical focus past 21:9 — optional |
+| `--hero-photo-zoom-mobile`, `--hero-photo-origin-mobile` | zoom on the portrait master — optional |
+
+Two lines decide which applies, and they are **different kinds of line**:
+
+1. **Width, at 560px** — the line where `PlatformHeroPhoto` swaps the plate file.
+   A different photograph deserves a different focus, so the mobile pair is keyed
+   to that width and nothing else is.
+2. **Aspect ratio** — because `cover` picks the axis it crops from the *shape* of
+   the viewport, never from its width. 1440×900 and 1440×810 are one width
+   breakpoint and opposite crops; framing tuned on a 16:10 laptop cut the home
+   hero's sandals off every 16:9 screen while looking perfect to the person who
+   tuned it. A viewport taller than the plate loses its sides (only x matters), a
+   wider one loses top and bottom (only y matters), and the wider it gets the
+   more a mid-range y eats **both** edges — hence the two relief steps.
+
+**No zoom above `cover`.** The plate is already the frame someone chose; scaling
+past it only throws away the edges they kept. Before this there were four scales
+in play (1.01 / 1.02 / 1.03 / 1.08) and two of them were dead — an inline
+`--hero-photo-scale` beats every stylesheet, so the breakpoint that set 1.08
+never ran. The one exception is a portrait master on a phone, where a hero opts
+in explicitly.
+
+**Where the contract lives is part of the contract.** It sits beside
+`.heroFeature` in `PlatformBlocksOrientation.module.css`, not in
+`PlatformResponsive.module.css`: `mergeStyleModules` merges the two per surface
+and the orientation module is emitted last, so a rule written in the responsive
+file loses every specificity tie — silently, and only for the properties that
+happen to tie. That is how the catalogue heroes ended up ignoring their own
+authored mobile focus.
+
+**The builder authors it too.** A course cover's crop points are the same focus
+pair (`cover.cropX/cropY` → desktop, `mobileCropX/mobileCropY` → portrait), and
+`cover.wideCropY` is the wide relief step. The cover editor shows all three
+frames — 16:9, 21:9, 9:16 — because one 16:9 box was a promise the platform does
+not keep. Absent `wideCropY` means "follow the main focus", so it is written as
+*undefined*, never as today's number.
+
 ## Material layer (tactile surfaces)
 
 ### Authoring material grammar (2026-08-24)

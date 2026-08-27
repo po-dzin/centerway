@@ -1,9 +1,10 @@
 import Link from "next/link";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Icon } from "@/components/Icon";
 import type { CwIconName } from "@/components/iconNames";
 import styles from "@/components/platform/PlatformHeroStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
+import { heroFraming } from "@/components/platform/heroFraming";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 
 type DetailHeroAction = {
@@ -65,20 +66,6 @@ type PlatformDetailHeroProps = {
   actions?: ReactNode;
 };
 
-function resolveHeroPosition(position?: string) {
-  if (!position) {
-    return {
-      x: "50%",
-      y: "20%",
-    };
-  }
-  const [x, y] = position.trim().split(/\s+/);
-  return {
-    x: x === "center" ? "50%" : x,
-    y: y ?? "20%",
-  };
-}
-
 export function PlatformDetailHero({
   title,
   subtitle,
@@ -93,22 +80,7 @@ export function PlatformDetailHero({
   commitment,
   actions,
 }: PlatformDetailHeroProps) {
-  const desktopFocus = resolveHeroPosition(artwork?.desktopPosition);
-  const mobileFocus = resolveHeroPosition(artwork?.mobilePosition ?? artwork?.desktopPosition);
-  /* Only the -desktop/-mobile pair is set inline. The unsuffixed
-     --hero-photo-x/y are deliberately left to PlatformResponsive.module.css,
-     which picks the right one per breakpoint: setting them here too would win
-     on specificity (inline beats every selector) and the mobile focal point
-     would never apply. */
-  const heroStyle = {
-    "--hero-photo-x-desktop": desktopFocus.x,
-    "--hero-photo-y-desktop": desktopFocus.y,
-    "--hero-photo-x-mobile": mobileFocus.x,
-    "--hero-photo-y-mobile": mobileFocus.y,
-    "--hero-photo-shift-y": "0%",
-    "--hero-photo-scale": "1.02",
-    "--hero-photo-origin": "center center",
-  } as CSSProperties;
+  const heroStyle = heroFraming(artwork);
 
   return (
     <section

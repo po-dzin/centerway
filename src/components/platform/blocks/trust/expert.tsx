@@ -1,7 +1,7 @@
-import type { CSSProperties } from "react";
 import Link from "next/link";
 import styles from "@/components/platform/PlatformTrustStyles";
 import { Icon } from "@/components/Icon";
+import { heroFraming } from "@/components/platform/heroFraming";
 import { educationTimeline, expertFacts, expertStory, platformPageArtwork } from "@/lib/platform/content";
 
 function CollapsibleTimeline({
@@ -46,13 +46,7 @@ export function ExpertHero() {
       className={styles.heroFeature}
       id="about-author"
       data-cw-topbar-tone="dark"
-      style={{
-        "--hero-photo-x": "50%",
-        "--hero-photo-y": "16%",
-        "--hero-photo-shift-y": "0%",
-        "--hero-photo-scale": "1.02",
-        "--hero-photo-origin": "center top",
-      } as CSSProperties}
+      style={heroFraming(platformPageArtwork.expert)}
     >
       <div className={styles.heroPhotoLayer}>
         {/* eslint-disable-next-line @next/next/no-img-element */}
