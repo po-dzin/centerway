@@ -1,0 +1,2211 @@
+<meta charset="utf-8">
+<title>Бібліотека в глибині</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Old+Mincho:wght@400;600&family=Manrope:wght@300;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ============================================================
+     ЧЕРНИЛЬНЕ КРЕСЛЕННЯ
+     Папір, чорнило, одна золота точка. Ніякого зеленого: зелень —
+     це тон платформи, а не тон паперу, і на кресленні вона читалась
+     як підсвічений екран, а не як аркуш.
+     ============================================================ */
+  :root {
+    /* СВІТЛА — папір і чорнило. */
+    --paper:        #f4f1e8;
+    --paper-lit:    #fbf9f3;
+    --paper-deep:   #e8e4d8;
+
+    --wash:         #ddd8c9;
+    --wash-2:       #cdc7b5;
+    --fill:         #faf7ef;
+
+    --ink-value:    #2f2e2a;
+    --ink:          var(--ink-value);
+    --ink-soft:     color-mix(in srgb, var(--ink-value) 70%, var(--paper));
+    --ink-faint:    color-mix(in srgb, var(--ink-value) 46%, var(--paper));
+    --ink-line:     color-mix(in srgb, var(--ink-value) 42%, transparent);
+    --ink-hair:     color-mix(in srgb, var(--ink-value) 15%, transparent);
+    --hatch:        color-mix(in srgb, var(--ink-value) 24%, transparent);
+
+    --brass:        #b97f2d;
+    --brass-lit:    #e5ae65;
+    --brass-line:   color-mix(in srgb, #b97f2d 60%, transparent);
+    --redline:      #b76045;
+    /* Падаюча тінь предметів — те, що робить сцену матеріальною. */
+    --cast:         rgba(44, 41, 34, 0.30);
+
+    /* УВАГА ЗА ТЕМОЮ. На папері увага — чорнильна: контур перечеркнутий
+       ще раз + короткі штрихи-позначки довкола. Сяйва на папері не
+       буває. У темряві навпаки: чорнилом нічого не позначиш — там глоу.
+       Стани нижче читають ці три перемикачі, а теми їх перевизначають. */
+    --mark-show: 1;
+    --glow-hot:  0 0 0 0 transparent;
+    --glow-sel:  0 0 0 0 transparent;
+    --ray-main:  var(--ink-line);
+    --ray-hi:    var(--ink);
+    --ray-halo:  none;
+
+    /* РАДІУС ЗА РОЛЛЮ, А НЕ ЗА РОЗМІРОМ. */
+    --r-rule:   0;
+    --r-object: 4px;
+    --r-tool:   11px;
+
+    --measure: min(44rem, 46vw);
+    --mono: "IBM Plex Mono", ui-monospace, monospace;
+    --ui: "Manrope", "Segoe UI", sans-serif;
+    --editorial: "Zen Old Mincho", "Cormorant Garamond", "Times New Roman", serif;
+
+    --module: 64px;
+  }
+
+  /* ТЕМНА — сіра глина, тепла нейтраль. Значення в одному місці:
+     перевизначаються кастом-властивості, а вмикають їх три різні
+     селектори нижче. Контраст піднято до гейтів ДС: чорнило до паперу
+     13.9, м'яке чорнило 7.8, лінії видно, а не вгадуються. */
+  @media (prefers-color-scheme: dark) {
+    :root:not(.mode-light):not([data-theme="light"]) {
+      --paper:      #262622;
+      --paper-lit:  #31312c;
+      --paper-deep: #1c1c19;
+      --wash:       #151512;
+      --wash-2:     #0e0e0c;
+      --fill:       #4a4a42;
+      --ink-value:  #f5f3ea;
+      --ink-line:   color-mix(in srgb, var(--ink-value) 62%, transparent);
+      --ink-hair:   color-mix(in srgb, var(--ink-value) 22%, transparent);
+      --hatch:      color-mix(in srgb, var(--ink-value) 30%, transparent);
+      --brass:      #dfab5e;
+      --brass-lit:  #f4cd96;
+      --brass-line: color-mix(in srgb, #dfab5e 55%, transparent);
+      --redline:    #d29076;
+      --cast:       rgba(0, 0, 0, 0.62);
+      --mark-show:  0;
+      --glow-hot:
+        0 0 28px 3px color-mix(in srgb, var(--brass) 34%, transparent),
+        0 0 90px 22px color-mix(in srgb, var(--brass) 13%, transparent);
+      --glow-sel:
+        0 0 34px 5px color-mix(in srgb, var(--brass) 28%, transparent),
+        0 0 120px 30px color-mix(in srgb, var(--brass) 11%, transparent);
+      --ray-main:  var(--brass-line);
+      --ray-hi:    var(--brass-lit);
+      --ray-halo:  drop-shadow(0 0 5px var(--brass-line));
+    }
+  }
+  /* Ручний вибір живе у класі .mode-*, не в data-theme: data-theme
+     штампує хост артефакту, і кнопка, що писала в той самий атрибут,
+     мовчки програвала хосту. Додатково setTheme кладе фон і колір
+     інлайном на body — інлайн не переб'є жоден стиль хоста. */
+  :root.mode-dark,
+  :root[data-theme="dark"]:not(.mode-light) {
+    --paper:      #262622;
+    --paper-lit:  #31312c;
+    --paper-deep: #1c1c19;
+    --wash:       #151512;
+    --wash-2:     #0e0e0c;
+    --fill:       #4a4a42;
+    --ink-value:  #f5f3ea;
+    --ink-line:   color-mix(in srgb, var(--ink-value) 62%, transparent);
+    --ink-hair:   color-mix(in srgb, var(--ink-value) 22%, transparent);
+    --hatch:      color-mix(in srgb, var(--ink-value) 30%, transparent);
+    --brass:      #dfab5e;
+    --brass-lit:  #f4cd96;
+    --brass-line: color-mix(in srgb, #dfab5e 55%, transparent);
+    --redline:    #d29076;
+    --cast:       rgba(0, 0, 0, 0.62);
+    --mark-show:  0;
+    --glow-hot:
+      0 0 28px 3px color-mix(in srgb, var(--brass) 34%, transparent),
+      0 0 90px 22px color-mix(in srgb, var(--brass) 13%, transparent);
+    --glow-sel:
+      0 0 34px 5px color-mix(in srgb, var(--brass) 28%, transparent),
+      0 0 120px 30px color-mix(in srgb, var(--brass) 11%, transparent);
+    --ray-main:  var(--brass-line);
+    --ray-hi:    var(--brass-lit);
+    --ray-halo:  drop-shadow(0 0 5px var(--brass-line));
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--ui);
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Мітка збірки: щоб відрізняти свіжу публікацію від кешу. */
+  .build {
+    position: fixed;
+    z-index: 6;
+    top: 19px;
+    left: 40px;
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- аркуш: сітка, поля, виноски ---------- */
+
+  .draft {
+    position: fixed;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    background-image:
+      linear-gradient(to right, var(--ink-hair) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--ink-hair) 1px, transparent 1px);
+    background-size: var(--module) var(--module);
+    /* Слабше, ніж було: сітка розмічає СТОРІНКУ, а стіна позаду —
+       матеріал. Дві однаково гучні системи читались як одна каша. */
+    opacity: 0.3;
+  }
+
+  .draft__margin {
+    position: absolute;
+    inset-block: 0;
+    width: 1px;
+    background: var(--ink-line);
+  }
+  .draft__margin--l { inset-inline-start: 8vw; }
+  .draft__margin--r { inset-inline-start: calc(8vw + var(--measure)); }
+
+  .draft__crop {
+    position: absolute;
+    width: 14px; height: 14px;
+    border: 0 solid var(--ink-line);
+  }
+  .draft__crop--tl { top: 18px; left: 18px; border-top-width: 1px; border-left-width: 1px; }
+  .draft__crop--tr { top: 18px; right: 18px; border-top-width: 1px; border-right-width: 1px; }
+  .draft__crop--bl { bottom: 18px; left: 18px; border-bottom-width: 1px; border-left-width: 1px; }
+  .draft__crop--br { bottom: 18px; right: 18px; border-bottom-width: 1px; border-right-width: 1px; }
+
+  /* Розмірна лінія над колонкою підписує саме ту цифру, заради якої
+     колонка така вузька — «ма» з ресерчу, 46vw. */
+  .draft__dim {
+    position: absolute;
+    top: 72px;
+    inset-inline-start: 8vw;
+    width: var(--measure);
+    height: 1px;
+    background: var(--redline);
+    opacity: 0.5;
+  }
+  .draft__dim::before,
+  .draft__dim::after {
+    content: "";
+    position: absolute;
+    top: -4px;
+    width: 1px; height: 9px;
+    background: var(--redline);
+  }
+  .draft__dim::before { inset-inline-start: 0; }
+  .draft__dim::after  { inset-inline-end: 0; }
+
+  .draft__label {
+    position: absolute;
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.09em;
+    color: var(--redline);
+    opacity: 0.75;
+    white-space: nowrap;
+  }
+  .draft__label--measure { top: 78px; inset-inline-start: calc(8vw + 8px); }
+  .draft__label--lead { top: 50%; inset-inline-start: calc(8vw - 3.4rem); }
+
+  /* ---------- кімната ---------- */
+
+  .stage {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    perspective: 1600px;
+    perspective-origin: 68% 50%;
+    background: var(--paper);
+  }
+
+  .room {
+    position: absolute;
+    inset: -14%;
+    transform-style: preserve-3d;
+    transform:
+      translate3d(var(--px, 0px), var(--py, 0px), var(--cz, 0px))
+      rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+    will-change: transform;
+  }
+  .room.is-eased { transition: transform 2300ms cubic-bezier(0.16, 0.5, 0.2, 1); }
+
+  .grain {
+    position: absolute; inset: 0;
+    transform: translateZ(150px);
+    pointer-events: none;
+    opacity: 0.58;
+    mix-blend-mode: multiply;
+  }
+  :root.mode-dark .grain,
+  :root[data-theme="dark"]:not(.mode-light) .grain { mix-blend-mode: screen; opacity: 0.14; }
+  @media (prefers-color-scheme: dark) {
+    :root:not(.mode-light):not([data-theme="light"]) .grain { mix-blend-mode: screen; opacity: 0.14; }
+  }
+
+  /* ---------- стіна, ніші, книги ----------
+     Регістр — 界畫: середньовічний азійський архітектурний малюнок по
+     лінійці. Глибина будується лінією, штриховкою і плоскою заливкою,
+     а не фотографічним світлом. Сучасне в ньому — точність волосини
+     та латунна арматура. */
+
+  .wall {
+    position: absolute;
+    inset: -6%;
+    transform: translateZ(-230px);
+    /* Туш на стіні малює canvas (paintWallInk): тайл із блукаючих
+       плям і волокон, seeded, перемальовується під чорнило теми.
+       CSS-градієнти давали рівні еліпси — туш так не лягає. */
+    background-color: var(--paper);
+    background-repeat: repeat;
+  }
+  /* Тушевий пейзаж: три гряди розмитих пагорбів за нішами. У світлій
+     темі — далекі гори по нижній половині стіни; у темній ті самі
+     форми, писані кремом, читаються туманом, що піднімається. Малює
+     paintScene, seeded. */
+  .scene {
+    position: absolute;
+    inset: -6%;
+    transform: translateZ(-222px);
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    opacity: 0.9;
+  }
+  :root.mode-dark .scene,
+  :root[data-theme="dark"]:not(.mode-light) .scene { mix-blend-mode: screen; opacity: 0.5; }
+  @media (prefers-color-scheme: dark) {
+    :root:not(.mode-light):not([data-theme="light"]) .scene { mix-blend-mode: screen; opacity: 0.5; }
+  }
+
+  /* Мальований фон — растр замість канваса. Файл несе тільки альфу
+     (щільність туші), колір дає тема через mask-image: та сама пляма
+     у світлій темі чорнильна, у темній — кремова. Порожній
+     --scene-tex вимикає шар і лишає канвасний пейзаж. */
+  .sceneTex {
+    position: absolute;
+    inset: -6%;
+    transform: translateZ(-224px);
+    pointer-events: none;
+    background: var(--ink-value);
+    opacity: 0;
+    -webkit-mask-image: var(--scene-tex, none);
+    mask-image: var(--scene-tex, none);
+    -webkit-mask-size: cover;
+    mask-size: cover;
+    -webkit-mask-position: 50% 82%;
+    mask-position: 50% 82%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    transition: opacity 900ms ease;
+  }
+  :root[data-scene-tex="on"] .sceneTex { opacity: 0.62; }
+  :root[data-scene-tex="on"] .scene { opacity: 0; }
+  :root.mode-dark[data-scene-tex="on"] .sceneTex,
+  :root[data-theme="dark"]:not(.mode-light)[data-scene-tex="on"] .sceneTex { opacity: 0.34; }
+  @media (prefers-color-scheme: dark) {
+    :root:not(.mode-light):not([data-theme="light"])[data-scene-tex="on"] .sceneTex { opacity: 0.34; }
+  }
+
+  /* Віньєтка туші по краях кадру — глибина простору, а не рамка. */
+  .stage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(120% 120% at 50% 42%,
+      transparent 52%,
+      color-mix(in srgb, var(--ink-value) 11%, transparent) 100%);
+  }
+  /* Шви плит — ruled lines, а не тіні. */
+  .wall::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to right, transparent calc(50% - 1px), var(--ink-hair) calc(50% - 1px) 50%, transparent 50%),
+      linear-gradient(to bottom, transparent calc(27% - 1px), var(--ink-hair) calc(27% - 1px) 27%, transparent 27%);
+  }
+
+  /* Світло — одна бліда заливка, не фотографічний промінь. */
+  /* Промінь — не різана діагональ тіні, а тепле розсіяне світло:
+     широкий градієнт, розмитий блюром, повільно дихає амплітудою
+     і позицією. */
+  .rake {
+    position: absolute; inset: -8%;
+    transform: translateZ(90px);
+    pointer-events: none;
+    background: linear-gradient(116deg,
+      transparent 0 12%,
+      color-mix(in srgb, var(--brass) 10%, transparent) 30%,
+      color-mix(in srgb, var(--brass) 4%, transparent) 46%,
+      transparent 62% 100%);
+    filter: blur(24px);
+    animation: beam 26s ease-in-out infinite alternate;
+  }
+  @keyframes beam {
+    0%   { opacity: 0.65; transform: translateZ(90px) translateX(-1.6%); }
+    100% { opacity: 1;    transform: translateZ(90px) translateX(1.8%); }
+  }
+
+  /* ---------- латунна арматура ---------- */
+
+  /* Фокус — не хрест на всю стіну, а лучі, що ЗІЙШЛИСЯ на виїмці:
+     два горизонтальні, різної довжини, на трохи різній висоті, з
+     затухаючими краями. Лівий приходить від колонки тексту, правий —
+     від медальйона. */
+  .ray {
+    position: absolute;
+    height: 1px;
+    transform: translateZ(-150px);
+    pointer-events: none;
+    background: linear-gradient(90deg,
+      transparent 0,
+      var(--ray-main) 30%,
+      var(--ray-hi) 84%,
+      transparent 100%);
+    filter: var(--ray-halo);
+    animation: rayBreath 9s ease-in-out infinite alternate;
+    transition: top 2000ms cubic-bezier(0.16, 0.5, 0.2, 1),
+                left 2000ms cubic-bezier(0.16, 0.5, 0.2, 1),
+                width 2000ms cubic-bezier(0.16, 0.5, 0.2, 1);
+  }
+  .ray--b {
+    background: linear-gradient(90deg,
+      transparent 0,
+      var(--ray-hi) 16%,
+      var(--ray-main) 72%,
+      transparent 100%);
+    animation-delay: -4s;
+  }
+  @keyframes rayBreath {
+    0%   { opacity: 0.5; }
+    100% { opacity: 1; }
+  }
+
+  /* Медальйон: три накреслені кола-квадрати і одна золота точка. */
+  .boss {
+    position: absolute;
+    width: 152px; height: 152px;
+    transform-style: preserve-3d;
+    pointer-events: none;
+    transition: transform 2000ms cubic-bezier(0.16, 0.5, 0.2, 1);
+  }
+  .boss > * { position: absolute; left: 50%; top: 50%; }
+  .boss__disc {
+    width: 152px; height: 152px; margin: -76px 0 0 -76px;
+    border-radius: 50%;
+    background: var(--fill);
+    border: 1px solid var(--ink-line);
+    transform: translateZ(-150px);
+  }
+  .boss__square {
+    width: 86px; height: 86px; margin: -43px 0 0 -43px;
+    background: var(--paper-lit);
+    border: 1px solid var(--ink-line);
+    transform: translateZ(-146px);
+  }
+  .boss__dome {
+    width: 42px; height: 42px; margin: -21px 0 0 -21px;
+    border-radius: 50%;
+    background: var(--brass);
+    box-shadow: 0 0 0 1px var(--ink-line), 0 0 14px var(--brass-line);
+    transform: translateZ(-142px);
+  }
+
+  /* ---------- ніша ---------- */
+
+  /* .niche — ЛИШЕ рамка позиції, нічого не обрізає. Матеріал отвору і
+     обрізання книг живуть у .niche__box.
+
+     Так було не завжди: `overflow: hidden` стояв на самій ніші, і все,
+     що виходило за її межі — чорнильні позначки уваги і підпис
+     категорії — зрізалось до нуля. Позначки малювались і були
+     невидимі. */
+  .niche {
+    position: absolute;
+    transform: translateZ(-150px);
+    cursor: pointer;
+    transition: opacity 900ms ease;
+  }
+
+  /* Тінь усього блока на стіні — світло згори-справа, тінь сповзає
+     вниз-вліво, м'яка і довга, як у предмета, що висить на стіні. */
+  .niche__cast {
+    position: absolute;
+    left: -26px;
+    right: 14px;
+    top: 12px;
+    bottom: -30px;
+    background: radial-gradient(closest-side at 42% 44%, var(--cast) 0%, transparent 100%);
+    filter: blur(14px);
+    opacity: 0.75;
+    pointer-events: none;
+  }
+
+  .niche__box {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--r-object);
+    background: var(--wash);
+    /* Реальна глибина отвору живе ПІД чорнильним малюнком: м'яка
+       внутрішня тінь зверху і зліва, підсвічене дно. Малюнок каже
+       «так це накреслено», тінь каже «так це вирізано». */
+    --niche-depth:
+      inset 0 22px 32px -14px var(--cast),
+      inset 18px 0 30px -16px var(--cast),
+      inset -8px -12px 24px -16px color-mix(in srgb, var(--paper-lit) 55%, transparent);
+    box-shadow: var(--niche-depth);
+    transition: box-shadow 1200ms ease, background 1200ms ease;
+    overflow: hidden;
+  }
+  /* Мальована глибина: задня стінка, лінії сходження, штриховані
+     внутрішні грані — одноточкова перспектива пером, як у 界畫. */
+  .niche__persp {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .niche__persp svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  /* Чорнильний штрих — залита форма зі змінною товщиною: тонкий вхід
+     пера, тіло, тонкий вихід. Малюється полігонами (nicheSvg), не
+     stroke'ом — у stroke товщина мертва, а штрих живе товщиною. */
+  .niche__persp svg { color: var(--ink); }
+
+  /* Нижня губа ніші — книги стоять за нею, їх низ трохи прикритий:
+     єдине перекриття, яке лишилось потрібним у горизонтальній полиці. */
+  .niche__box::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 6px;
+    background: linear-gradient(180deg, var(--fill), var(--wash));
+    border-top: 1px solid var(--ink-line);
+    box-shadow: 0 -4px 8px -3px var(--cast);
+    z-index: 2;
+    pointer-events: none;
+  }
+  .niche[data-dim="true"] { opacity: 0.4; filter: none; }
+
+  /* Три рівні уваги, у порядку заглиблення:
+     1. ховер категорії (рядок або сама ніша) — світловий КОНТУР блока;
+     2. вибрана ніша — легкий селект заливкою;
+     3. усередині — ховер конкретної праці підсвічує саму працю. */
+  .niche:hover .niche__box,
+  .niche[data-hot="true"] .niche__box {
+    box-shadow: var(--niche-depth), var(--glow-hot);
+  }
+  .niche[data-sel="true"] .niche__box {
+    background: color-mix(in srgb, var(--brass) 8%, var(--wash));
+    box-shadow: var(--niche-depth), var(--glow-sel);
+  }
+
+  /* Чорнильні позначки уваги: перечеркнутий контур + короткі штрихи
+     довкола. Живуть ПОЗА коробкою отвору, тому й винесені в .niche,
+     яка нічого не обрізає. На папері видимі, у темряві вимкнені
+     перемикачем --mark-show. */
+  .niche__mark {
+    position: absolute;
+    inset: -26px;
+    pointer-events: none;
+    color: var(--ink);
+    opacity: 0;
+    transition: opacity 700ms ease;
+    z-index: 3;
+  }
+  .niche__mark svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .niche:hover .niche__mark,
+  .niche[data-hot="true"] .niche__mark,
+  .niche[data-sel="true"] .niche__mark { opacity: var(--mark-show); }
+
+  .niche__label {
+    position: absolute;
+    inset-block-start: -1.65rem;
+    inset-inline-start: 2px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    white-space: nowrap;
+  }
+
+  /* Полиця — креслярська лінія по лінійці. */
+  /* ---------- книги ---------- */
+
+  .book {
+    position: absolute;
+    bottom: 2px;
+    border-radius: var(--r-object) var(--r-object) 0 0;
+    background-color: var(--fill);
+    /* Корінець чистий — об'єм несуть грань, кришка і падаюча тінь,
+       а не гравюрна штриховка. */
+    --book-shadow:
+      9px 12px 18px -6px var(--cast),
+      3px 4px 6px -3px var(--cast);
+    box-shadow: var(--book-shadow);
+    border: 1px solid var(--ink-line);
+    transform-origin: 50% 100%;
+    transform: translateZ(18px) rotate(var(--tilt, 0deg));
+    transition: transform 750ms cubic-bezier(0.16, 0.5, 0.2, 1),
+                background-color 600ms ease, border-color 600ms ease,
+                box-shadow 800ms ease;
+    cursor: pointer;
+    display: grid;
+    align-content: end;
+    justify-items: center;
+    padding-bottom: 6px;
+    /* Видимий overflow — праворуч і зверху добудований аксонометричний
+       об'єм, і його не можна різати. */
+    overflow: visible;
+  }
+  /* Кресленик набирає об'єму: бічна грань і кришка, добудовані як в
+     аксонометрії — штрихована площина, не фотографічна тінь. */
+  .book__side {
+    position: absolute;
+    top: 0; bottom: -2px; right: -6px;
+    width: 6px;
+    background: var(--wash-2);
+    border: 1px solid var(--ink-line);
+    border-left: 0;
+    transform: skewY(-40deg);
+    transform-origin: left top;
+    pointer-events: none;
+  }
+  .book__top {
+    position: absolute;
+    left: 1px; right: -7px; top: -4px;
+    height: 4px;
+    background: var(--fill);
+    border: 1px solid var(--ink-line);
+    transform: skewX(-46deg);
+    transform-origin: left bottom;
+    pointer-events: none;
+  }
+  /* Дві накреслені пов'язки на корінці. */
+  .book::before {
+    content: "";
+    position: absolute;
+    inset-inline: 2px;
+    top: 9px;
+    height: 1px;
+    background: var(--ink-line);
+    box-shadow: 0 5px 0 var(--ink-line);
+  }
+  .book__spine {
+    writing-mode: vertical-rl;
+    font-family: var(--mono);
+    font-size: 0.52rem;
+    letter-spacing: 0.06em;
+    color: var(--ink-soft);
+    max-height: 66%;
+    overflow: hidden;
+    white-space: nowrap;
+  }
+
+  /* ЗОЛОТО НА ОДНІЙ КНИЗІ. Раніше латунну підошву носили всі шість
+     придбаних курсів, і акцент переставав бути акцентом: шість
+     однакових вогників не показують нічого. Світиться рівно та, на яку
+     ви дивитесь. */
+  .book[data-live="true"] {
+    background-color: color-mix(in srgb, var(--brass) 9%, var(--fill));
+    border-color: var(--brass-line);
+    transform: translateZ(46px) rotate(var(--tilt, 0deg)) translateY(-9px);
+    box-shadow:
+      var(--book-shadow),
+      0 0 20px color-mix(in srgb, var(--brass) 40%, transparent),
+      0 0 52px color-mix(in srgb, var(--brass) 16%, transparent);
+  }
+  .book[data-live="true"]::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 3px;
+    background: var(--brass);
+    box-shadow: 0 0 10px var(--brass-line);
+  }
+  .book[data-live="true"] .book__spine { color: var(--ink); }
+  .book:hover {
+    background-color: color-mix(in srgb, var(--brass) 8%, var(--fill));
+    box-shadow:
+      var(--book-shadow),
+      0 0 16px color-mix(in srgb, var(--brass) 32%, transparent);
+  }
+  .book:focus-visible { outline: 1px solid var(--brass); outline-offset: 3px; }
+
+  .stack { position: absolute; bottom: 2px; transform: translateZ(14px); }
+  .stack__slab {
+    height: 6px;
+    border-radius: 1px;
+    background: var(--fill);
+    border: 1px solid var(--ink-line);
+    border-bottom: 0;
+  }
+  .stack__slab:last-child { border-bottom: 1px solid var(--ink-line); }
+
+  /* ---------- текст ---------- */
+
+  .sheet {
+    position: relative;
+    z-index: 1;
+    min-height: 100svh;
+    display: grid;
+    align-content: center;
+    justify-items: start;
+    gap: 1.3rem;
+    width: var(--measure);
+    margin-inline: 8vw;
+    padding-block: 12vh 8rem;
+  }
+
+  .eyebrow {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.16em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  h1 {
+    margin: 0;
+    font-family: var(--editorial);
+    font-weight: 400;
+    font-size: clamp(1.7rem, 3.2vw, 2.1rem);
+    line-height: 1.3;
+    text-wrap: balance;
+    max-width: 20ch;
+  }
+
+  .standfirst {
+    margin: 0;
+    max-width: 42ch;
+    font-size: 1rem;
+    line-height: 1.85;
+    color: var(--ink-soft);
+  }
+
+  .shelfList {
+    display: grid;
+    width: 100%;
+    border-block-start: 1px solid var(--ink-line);
+  }
+
+  .row {
+    appearance: none; -webkit-appearance: none;
+    display: grid;
+    grid-template-columns: 2.8rem 1fr auto;
+    align-items: baseline;
+    gap: 1rem;
+    width: 100%;
+    padding: 0.75rem 0.2rem;
+    border: 0;
+    border-block-end: 1px solid var(--ink-line);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    transition: padding-inline-start 620ms cubic-bezier(0.16, 0.5, 0.2, 1);
+  }
+  .row:hover, .row:focus-visible { padding-inline-start: 0.9rem; }
+  .row:focus-visible { outline: 1px solid var(--brass); outline-offset: 3px; }
+  .row__index { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .row__title { font-family: var(--editorial); font-size: 1.3rem; line-height: 1.4; }
+  .row__note { display: block; margin-block-start: 0.2rem; font-size: 0.8rem; line-height: 1.85; color: var(--ink-soft); }
+  .row__state { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .row__state[data-held="true"] { color: var(--brass); }
+
+  .back {
+    appearance: none; -webkit-appearance: none;
+    display: inline-flex; align-items: center; gap: 0.5rem;
+    min-height: 44px; padding: 0 0.2rem;
+    border: 0; background: transparent; color: var(--ink-soft);
+    font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em;
+    text-transform: uppercase; cursor: pointer;
+  }
+  /* [hidden] мусить перемагати display, інакше кнопка «назад» стоїть у залі. */
+  .back[hidden] { display: none; }
+  .back:hover { color: var(--ink); }
+  .back:focus-visible { outline: 1px solid var(--brass); outline-offset: 3px; }
+
+  /* ---------- розворот ---------- */
+
+  .spread {
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--paper-deep) 92%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 520ms ease;
+  }
+  .spread[data-open="true"] { opacity: 1; pointer-events: auto; }
+
+  .book-open {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: min(58rem, 88vw);
+    height: min(34rem, 74vh);
+    background: var(--paper-lit);
+    border: 1px solid var(--ink-line);
+    border-radius: var(--r-tool);
+    box-shadow: 0 30px 70px color-mix(in srgb, var(--ink-value) 26%, transparent);
+    transform: rotateX(8deg) scale(0.96);
+    opacity: 0;
+    transition: transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 460ms ease;
+  }
+  .spread[data-open="true"] .book-open { transform: rotateX(0deg) scale(1); opacity: 1; }
+
+  .book-open::before {
+    content: "";
+    position: absolute;
+    inset-block: 0; left: 50%;
+    width: 46px; margin-left: -23px;
+    background: linear-gradient(90deg,
+      transparent, color-mix(in srgb, var(--ink-value) 15%, transparent) 46%,
+      color-mix(in srgb, var(--ink-value) 18%, transparent) 54%, transparent);
+    pointer-events: none;
+  }
+
+  .page {
+    position: relative;
+    padding: clamp(1.4rem, 3.4vw, 2.6rem);
+    display: grid;
+    align-content: start;
+    gap: 0.9rem;
+    overflow: hidden;
+    background-image: linear-gradient(to bottom, var(--ink-hair) 1px, transparent 1px);
+    background-size: 100% 30px;
+    background-position: 0 calc(clamp(1.4rem, 3.4vw, 2.6rem) + 20px);
+  }
+  .page + .page { border-inline-start: 1px solid var(--ink-hair); }
+
+  .page__folio {
+    font-family: var(--mono);
+    font-size: 0.62rem;
+    letter-spacing: 0.14em;
+    color: var(--ink-faint);
+  }
+  .page__title {
+    margin: 0;
+    font-family: var(--editorial);
+    font-size: 1.5rem;
+    font-weight: 400;
+    line-height: 1.35;
+  }
+  .page p {
+    margin: 0;
+    font-size: 0.92rem;
+    line-height: 1.85;
+    color: var(--ink-soft);
+    max-width: 34ch;
+  }
+
+  .turnbar {
+    position: absolute;
+    inset-block-end: -3.2rem;
+    inset-inline: 0;
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+  }
+
+  /* ---------- пульт ---------- */
+
+  .console {
+    position: fixed;
+    z-index: 5;
+    inset-block-start: 1.2rem;
+    inset-inline-end: 1.2rem;
+    width: 17.5rem;
+    max-height: calc(100svh - 2.4rem);
+    transition: width 240ms ease;
+    overflow-y: auto;
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.9rem;
+    background: color-mix(in srgb, var(--clay) 22%, var(--paper));
+    border: 1px solid var(--ink-line);
+    border-radius: var(--r-tool);
+    box-shadow: 0 12px 30px color-mix(in srgb, var(--ink-value) 12%, transparent);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+  }
+  .console[data-collapsed="true"] { width: auto; }
+  .console[data-collapsed="true"] > *:not(.console__head) { display: none; }
+
+  .console__head {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+    color: var(--ink-faint);
+    text-transform: uppercase; letter-spacing: 0.14em;
+  }
+  .console__toggle {
+    appearance: none; -webkit-appearance: none;
+    min-width: 30px; min-height: 30px;
+    border: 1px solid var(--ink-line); background: transparent;
+    border-radius: calc(var(--r-tool) - 4px);
+    color: var(--ink-soft); font: inherit; cursor: pointer;
+  }
+  .console__toggle:focus-visible { outline: 1px solid var(--brass); outline-offset: 2px; }
+
+  .console__group { display: grid; gap: 0.45rem; }
+  .console__legend {
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    border-block-end: 1px solid var(--ink-hair);
+    padding-block-end: 0.3rem;
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  .chip {
+    appearance: none; -webkit-appearance: none;
+    padding: 0.3rem 0.55rem;
+    min-height: 30px;
+    border: 1px solid var(--ink-line);
+    border-radius: calc(var(--r-tool) - 4px);
+    background: transparent;
+    color: var(--ink-soft);
+    font: inherit; cursor: pointer;
+  }
+  .chip:hover { color: var(--ink); border-color: var(--brass-line); }
+  .chip:focus-visible { outline: 1px solid var(--brass); outline-offset: 2px; }
+  .chip[aria-pressed="true"] { color: var(--brass); border-color: var(--brass); }
+
+  .fader { display: grid; grid-template-columns: 5.6rem 1fr 2.2rem; align-items: center; gap: 0.45rem; }
+  .fader label { color: var(--ink-soft); }
+  .fader output { text-align: end; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .fader input[type="range"] {
+    appearance: none; -webkit-appearance: none;
+    width: 100%; height: 22px; background: transparent; cursor: pointer;
+  }
+  .fader input[type="range"]::-webkit-slider-runnable-track { height: 1px; background: var(--ink-line); }
+  .fader input[type="range"]::-moz-range-track { height: 1px; background: var(--ink-line); }
+  .fader input[type="range"]::-webkit-slider-thumb {
+    appearance: none; -webkit-appearance: none;
+    width: 9px; height: 16px; margin-top: -8px;
+    background: var(--brass); border: 0; border-radius: 3px;
+  }
+  .fader input[type="range"]::-moz-range-thumb {
+    width: 9px; height: 16px; background: var(--brass); border: 0; border-radius: 3px;
+  }
+  .fader input[type="range"]:focus-visible { outline: 1px solid var(--brass); outline-offset: 3px; }
+
+  .inks { display: grid; gap: 0.28rem; }
+  .inkRow {
+    appearance: none; -webkit-appearance: none;
+    display: grid; grid-template-columns: 14px 1fr auto auto;
+    align-items: center; gap: 0.45rem;
+    min-height: 30px; padding: 0.15rem 0.2rem;
+    border: 1px solid transparent; background: transparent;
+    color: var(--ink-soft); font: inherit; cursor: pointer; text-align: start;
+  }
+  .inkRow { border-radius: calc(var(--r-tool) - 5px); }
+  .inkRow:hover { border-color: var(--ink-line); }
+  .inkRow:focus-visible { outline: 1px solid var(--brass); outline-offset: 2px; }
+  .inkRow[aria-pressed="true"] { border-color: var(--brass); color: var(--ink); }
+  .inkRow__swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--ink-line); }
+  .inkRow__src { color: var(--ink-faint); font-size: 0.6rem; }
+  .inkRow__ratio { font-variant-numeric: tabular-nums; color: var(--ink-faint); }
+  .inkRow__ratio[data-pass="false"] { color: var(--redline); }
+  .inkNote { margin: 0; color: var(--ink-faint); font-size: 0.6rem; line-height: 1.7; }
+  .inks[data-locked="true"] .inkRow { cursor: default; opacity: 0.72; }
+
+  @media (max-width: 1100px) {
+    .console { inset-inline-end: 0.8rem; width: 15rem; }
+  }
+  @media (max-width: 900px) {
+    :root { --measure: 100%; }
+    .sheet { margin-inline: 6vw; width: calc(100% - 12vw); }
+    /* У ніші текст описує полицю ЗНИЗУ: полиця нагорі, колонка під
+       нею, і вони не накладаються. */
+    body.in-case .sheet {
+      align-content: start;
+      padding-block-start: min(44vh, 320px);
+    }
+    .stage { opacity: 0.75; }
+    .draft__margin, .draft__dim, .draft__label { display: none; }
+    .console { inset-inline: 0.8rem; width: auto; inset-block-start: auto; inset-block-end: 0.8rem; }
+    .book-open { grid-template-columns: 1fr; }
+    .page + .page { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .room, .room.is-eased, .book, .row, .book-open, .spread { transition: none; }
+    .rake, .ray { animation: none; }
+  }
+</style>
+
+<span class="build" aria-hidden="true">зб. 15 · 27.08</span>
+
+<div class="draft" aria-hidden="true">
+  <span class="draft__margin draft__margin--l"></span>
+  <span class="draft__margin draft__margin--r"></span>
+  <span class="draft__crop draft__crop--tl"></span>
+  <span class="draft__crop draft__crop--tr"></span>
+  <span class="draft__crop draft__crop--bl"></span>
+  <span class="draft__crop draft__crop--br"></span>
+  <span class="draft__dim"></span>
+  <span class="draft__label draft__label--measure">колонка 46vw · «ма»</span>
+  <span class="draft__label draft__label--lead">lh 1.85</span>
+</div>
+
+<div class="stage" aria-hidden="true">
+  <div class="room is-eased" id="room">
+    <div class="wall"></div>
+    <canvas class="scene" id="sceneInk"></canvas>
+    <div class="sceneTex" id="sceneTex"></div>
+    <div class="ray" id="rayA"></div>
+    <div class="ray ray--b" id="rayB"></div>
+    <div class="boss" id="boss">
+      <div class="boss__disc"></div>
+      <div class="boss__square"></div>
+      <div class="boss__dome"></div>
+    </div>
+    <div class="rake"></div>
+    <canvas class="grain" id="grain"></canvas>
+  </div>
+</div>
+
+<main class="sheet">
+  <p class="eyebrow" id="eyebrow">Прототип середовища · 26.08.2026</p>
+  <h1 id="title">Місце усвідомленої присутності. Тут тихо</h1>
+  <p class="standfirst" id="standfirst">
+    У стіні три ніші — по одній на кожну категорію, і в кожній рівно
+    стільки праць, скільки в ній курсів. Підійди до ніші, торкнись
+    корінця — книга розгорнеться.
+  </p>
+  <button class="back" id="back" type="button" hidden>← назад до зали</button>
+  <nav class="shelfList" id="shelfList" aria-label="Бібліотека"></nav>
+</main>
+
+<div class="spread" id="spread" data-open="false" role="dialog" aria-modal="true" aria-labelledby="spreadTitle" hidden>
+  <div class="book-open">
+    <div class="page">
+      <span class="page__folio" id="folioL">—</span>
+      <h2 class="page__title" id="spreadTitle">—</h2>
+      <p id="spreadLead">—</p>
+    </div>
+    <div class="page">
+      <span class="page__folio" id="folioR">—</span>
+      <p id="spreadBody">—</p>
+    </div>
+    <div class="turnbar">
+      <button class="chip" id="prevPage" type="button">← аркуш</button>
+      <button class="chip" id="closeSpread" type="button">закрити</button>
+      <button class="chip" id="nextPage" type="button">аркуш →</button>
+    </div>
+  </div>
+</div>
+
+<aside class="console" id="console" data-collapsed="true" aria-label="Пульт середовища">
+  <div class="console__head">
+    <span>Пульт</span>
+    <button class="console__toggle" id="consoleToggle" type="button" aria-expanded="false" aria-controls="console">+</button>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Тема</span>
+    <div class="chips" id="themes">
+      <button class="chip" data-theme-set="light" type="button" aria-pressed="false">світла</button>
+      <button class="chip" data-theme-set="dark" type="button" aria-pressed="false">темна</button>
+      <button class="chip" data-theme-set="system" type="button" aria-pressed="true">системна</button>
+    </div>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Звук · пресет</span>
+    <div class="chips" id="presets"></div>
+  </div>
+
+  <div class="console__group" id="mixer">
+    <span class="console__legend">Мікшер</span>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Чорнило · контраст до світлого паперу</span>
+    <div class="inks" id="inks"></div>
+    <p class="inkNote" id="inkNote" hidden>У темній темі чорнило кремове; ці шість значень порівнюються для світлої.</p>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Пейзаж</span>
+    <div class="chips" id="scenes">
+      <button class="chip" data-scene="" type="button" aria-pressed="true">канвас</button>
+      <button class="chip" data-scene="assets/scene-ranges.png" type="button" aria-pressed="false">гряди</button>
+      <button class="chip" data-scene="assets/scene-rock.png" type="button" aria-pressed="false">скеля</button>
+      <button class="chip" data-scene="assets/scene-ma.png" type="button" aria-pressed="false">ма</button>
+    </div>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Глибина</span>
+    <div class="chips">
+      <button class="chip" id="parallax" type="button" aria-pressed="true">паралакс</button>
+      <button class="chip" id="grid" type="button" aria-pressed="true">сітка</button>
+    </div>
+  </div>
+</aside>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ДЖЕРЕЛО ДАНИХ: статичний зліпок реального каталогу
+     src/lib/products.ts — шість продуктів, і рівно шість праць на
+     стіні. slug = ключ PRODUCTS; живе підтягування з /learn — крок
+     інтеграції, не прототипу. */
+  var CASES = [
+    {
+      label: "I · Протоколи",
+      books: [
+        { slug: "way21", title: "Way21 Detox", note: "21 день · протокол очищення", state: "11 / 21", held: true,
+          lead: "Протокол на двадцять один день: підготовка, вихід, супровід.",
+          body: "Кожен день має один крок і одну межу. Аркуш ліворуч — те, що робимо; аркуш праворуч — те, чого не робимо. Межа тут не менш важлива за крок." },
+        { slug: "way21-support", title: "Way21 Support", note: "супровід після протоколу", state: "у полиці", held: true,
+          lead: "Те, що йде після протоколу і тримає результат.",
+          body: "Супровід не повторює протокол. Він відповідає на одне питання: як не відкотитися, коли структура двадцяти одного дня закінчилась." }
+      ]
+    },
+    {
+      label: "II · Практики",
+      books: [
+        { slug: "reset-day", title: "Reset Day", note: "один день · перезапуск", state: "пройдено", held: true,
+          lead: "Один день, зібраний так, щоб його можна було пройти без підготовки.",
+          body: "Найкоротша форма в бібліотеці. Її сенс не в обсязі, а в тому, що вона поміщається в буденну суботу." },
+        { slug: "irem", title: "IREM", note: "жіноча програма · повний курс", state: "3 / 18", held: true,
+          lead: "Вісімнадцять частин, побудованих навколо циклу, а не навколо календаря.",
+          body: "Порядок частин має значення: кожна спирається на попередню. Тому полиця показує, де ви зупинились, а не скільки залишилось." }
+      ]
+    },
+    {
+      label: "III · Матеріали",
+      books: [
+        { slug: "short", title: "Short Reboot", note: "коротка форма · вхід", state: "пройдено", held: true,
+          lead: "Вхідна форма — те, з чого більшість починає.",
+          body: "Короткий курс тримає ту саму структуру, що й довгі: крок, межа, результат. Різниця тільки в масштабі." },
+        { slug: "herbs", title: "Herbal Blend", note: "трав'яний збір · не курс", state: "доставка", held: false,
+          lead: "Не курс. Фізичний предмет, який приїжджає поштою.",
+          body: "Він стоїть на цій полиці тому, що ви його маєте, а не тому, що його читають. Бібліотека показує все, що ваше." }
+      ]
+    }
+  ];
+
+  /* Seeded — кімната мусить збиратись однаково щоразу.
+     Те саме правило, що в bake іконок і в ProgressRail. */
+  function seeded(i) {
+    var x = Math.sin(i * 127.1 + 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  var room = document.getElementById("room");
+  var shelfList = document.getElementById("shelfList");
+  var backBtn = document.getElementById("back");
+  var titleEl = document.getElementById("title");
+  var standEl = document.getElementById("standfirst");
+  var eyebrowEl = document.getElementById("eyebrow");
+  var reduced = window.matchMedia("(prefers-reduced-motion: reduce)");
+
+  var view = "hall";
+  var openCase = -1;
+  var caseEls = [];
+
+  var rayA = document.getElementById("rayA");
+  var rayB = document.getElementById("rayB");
+  var boss = document.getElementById("boss");
+
+  /* Мальована перспектива ніші: кожна точка ледь збита seeded-рукою,
+     тому три ніші накреслені трьома різними рухами, але однаково в
+     кожному сеансі. viewBox 0..100, розтягується під нішу. */
+  /* ЧОРНИЛЬНИЙ ШТРИХ. Не пунктир: кожна лінія — залита форма зі
+     змінною товщиною. Перо входить тонко, тіло набирає вагу з
+     сідед-нерівністю, вихід сходить нанівець; легкий прогин — рука,
+     не злам. Координати ПІКСЕЛЬНІ (viewBox = розмір ніші), інакше
+     товщина штриха деформується розтягуванням. */
+  function nicheSvg(ci, W, H) {
+    function jr(n) { return seeded(ci * 53 + n); }
+
+    function stroke(x1, y1, x2, y2, wMax, op, n) {
+      var dx = x2 - x1, dy = y2 - y1;
+      var len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var nx = -dy / len, ny = dx / len;
+      var bow = (jr(n + 900) * 2 - 1) * Math.min(1.6, len * 0.012);
+      var N = 7, top = [], bot = [], i, t, cx, cy, w;
+      for (i = 0; i <= N; i++) {
+        t = i / N;
+        cx = x1 + dx * t + nx * bow * Math.sin(Math.PI * t);
+        cy = y1 + dy * t + ny * bow * Math.sin(Math.PI * t);
+        /* профіль пера: тонко-тіло-тонко, з дрібним тремтінням ваги */
+        w = wMax * (0.3 + 0.7 * Math.sin(Math.PI * t)) * (0.75 + jr(n * 7 + i) * 0.5);
+        if (i === 0 || i === N) w = wMax * 0.1;
+        top.push((cx + nx * w / 2).toFixed(1) + "," + (cy + ny * w / 2).toFixed(1));
+        bot.push((cx - nx * w / 2).toFixed(1) + "," + (cy - ny * w / 2).toFixed(1));
+      }
+      return '<polygon points="' + top.join(" ") + " " + bot.reverse().join(" ") +
+        '" fill="currentColor" opacity="' + op.toFixed(2) + '"/>';
+    }
+
+    /* Лінія = один-два проходи пера: основний на всю довжину і, коли
+       рука «повернулась», частковий другий — перекриття, як у туші. */
+    function line(x1, y1, x2, y2, wMax, op, n) {
+      var out = stroke(x1, y1, x2, y2, wMax, op, n);
+      if (jr(n + 300) > 0.45) {
+        var t0 = jr(n + 310) * 0.35;
+        var t1 = t0 + 0.35 + jr(n + 320) * 0.3;
+        out += stroke(
+          x1 + (x2 - x1) * t0, y1 + (y2 - y1) * t0,
+          x1 + (x2 - x1) * t1, y1 + (y2 - y1) * t1,
+          wMax * 0.8, op * 0.5, n + 17);
+      }
+      return out;
+    }
+
+    var bx = W * 0.14, by = H * 0.18, bX = W * 0.87, bY = H * 0.86;
+    var out = "";
+    var i, t;
+    /* штрихи внутрішніх граней (верх і лівий бік) — розріджені, легкі */
+    for (i = 1; i <= 4; i++) {
+      t = i / 5;
+      out += stroke(1 + (bx - 1) * t, 1 + (by - 1) * t, W - 1 + (bX - W + 1) * t, 1 + (by - 1) * t, 0.9, 0.16, 60 + i);
+      out += stroke(1 + (bx - 1) * t, 1 + (by - 1) * t, 1 + (bx - 1) * t, H - 1 + (bY - H + 1) * t, 0.9, 0.14, 70 + i);
+    }
+    /* лінії сходження */
+    out += stroke(1, 1, bx, by, 1, 0.22, 40);
+    out += stroke(W - 1, 1, bX, by, 1, 0.22, 41);
+    out += stroke(1, H - 1, bx, bY, 1, 0.2, 42);
+    out += stroke(W - 1, H - 1, bX, bY, 1, 0.2, 43);
+    /* задня стінка */
+    out += line(bx, by, bX, by, 1.5, 0.5, 50);
+    out += line(bX, by, bX, bY, 1.5, 0.5, 51);
+    out += line(bX, bY, bx, bY, 1.5, 0.5, 52);
+    out += line(bx, bY, bx, by, 1.5, 0.5, 53);
+    /* полиця тут більше не малюється: дошка — реальний DOM-об'єкт
+       (.plank) поверх книг, інакше перекриття було б намальованим */
+    /* зовнішній контур — штрихи перебігають кути, як у ручного креслення */
+    out += line(-4 - jr(1) * 3, 1, W + 4 + jr(2) * 3, 1, 1.9, 0.62, 54);
+    out += line(W - 1, -4 - jr(3) * 3, W - 1, H + 4 + jr(4) * 3, 1.9, 0.62, 55);
+    out += line(W + 4 + jr(5) * 3, H - 1, -4 - jr(6) * 3, H - 1, 1.9, 0.62, 56);
+    out += line(1, H + 4 + jr(7) * 3, 1, -4 - jr(8) * 3, 1.9, 0.62, 57);
+    return '<svg viewBox="0 0 ' + W + " " + H + '" aria-hidden="true" style="overflow:visible">' + out + "</svg>";
+  }
+
+  /* УВАГА НА ПАПЕРІ — рамка одним рухом пензля. Не приціл із кутиків:
+     один упевнений обхід периметра нерівним штрихом — товщина пливе
+     повільною хвилею, рука ледь зміщується від лінійки, і рух
+     розірваний двома-трьома короткими підйомами пензля. Полігон-стрічка
+     зі змінною шириною, все seeded. */
+  function attentionSvg(ci, W, H) {
+    var M = 26;
+    function jr(n) { return seeded(ci * 71 + n); }
+    var d = 8;
+    var x0 = M - d, y0 = M - d, x1 = M + W + d, y1 = M + H + d;
+    var Pm = 2 * ((x1 - x0) + (y1 - y0));
+
+    function pointAt(p) {
+      p = ((p % Pm) + Pm) % Pm;
+      if (p < x1 - x0) return [x0 + p, y0];
+      p -= x1 - x0;
+      if (p < y1 - y0) return [x1, y0 + p];
+      p -= y1 - y0;
+      if (p < x1 - x0) return [x1 - p, y1];
+      p -= x1 - x0;
+      return [x0, y1 - p];
+    }
+
+    /* 2–3 підйоми пензля, коротші за плече рамки, не в кутах */
+    var gapCount = 2 + (jr(2) > 0.55 ? 1 : 0);
+    var gaps = [], gi, gp;
+    for (gi = 0; gi < gapCount; gi++) {
+      gp = Pm * ((gi + 0.3 + jr(10 + gi) * 0.4) / gapCount);
+      gaps.push([gp, gp + 9 + jr(20 + gi) * 10]);
+    }
+    function inGap(p) {
+      p = ((p % Pm) + Pm) % Pm;
+      for (var k = 0; k < gaps.length; k++) {
+        if (p >= gaps[k][0] && p <= gaps[k][1]) return true;
+      }
+      return false;
+    }
+
+    /* обхід периметра: точки що ~8px, перпендикулярний дриф руки */
+    var startP = jr(1) * Pm;
+    var runs = [], cur = null;
+    var stepLen = 8, i, N = Math.ceil(Pm / stepLen);
+    for (i = 0; i <= N; i++) {
+      var p = startP + i * stepLen;
+      if (inGap(p)) {
+        if (cur && cur.length > 2) runs.push(cur);
+        cur = null;
+        continue;
+      }
+      var pt = pointAt(p);
+      var drift = (jr(i * 3 + 44) - 0.5) * 2.4;
+      /* товщина — повільна хвиля впевненого руху */
+      var wgt = 1.7 + 1.4 * Math.abs(Math.sin(i * 0.09 + jr(3) * 6)) + (jr(i + 7) - 0.5) * 0.6;
+      if (!cur) cur = [];
+      cur.push([pt[0] + drift * 0.6, pt[1] + drift * 0.6, wgt]);
+    }
+    if (cur && cur.length > 2) runs.push(cur);
+
+    /* кожен безперервний прогін — одна стрічка зі звуженими кінцями */
+    var out = "";
+    runs.forEach(function (run) {
+      var top = [], bot = [], L = run.length, q, prev, next, dx, dy, len, nx, ny, w, t;
+      for (i = 0; i < L; i++) {
+        q = run[i];
+        prev = run[Math.max(0, i - 1)];
+        next = run[Math.min(L - 1, i + 1)];
+        dx = next[0] - prev[0]; dy = next[1] - prev[1];
+        len = Math.sqrt(dx * dx + dy * dy) || 1;
+        nx = -dy / len; ny = dx / len;
+        t = Math.min(i / 2.2, (L - 1 - i) / 2.2, 1);
+        w = q[2] * (0.15 + 0.85 * t);
+        top.push((q[0] + nx * w / 2).toFixed(1) + "," + (q[1] + ny * w / 2).toFixed(1));
+        bot.push((q[0] - nx * w / 2).toFixed(1) + "," + (q[1] - ny * w / 2).toFixed(1));
+      }
+      out += '<polygon points="' + top.join(" ") + " " + bot.reverse().join(" ") +
+        '" fill="currentColor" opacity="0.78"/>';
+    });
+    return '<svg viewBox="0 0 ' + (W + M * 2) + " " + (H + M * 2) + '" aria-hidden="true" style="overflow:visible">' + out + "</svg>";
+  }
+
+  function buildRoom() {
+    caseEls.forEach(function (el) { el.remove(); });
+    caseEls = [];
+
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    var ox = w * 0.14, oy = h * 0.14;          /* .room має inset -14% */
+    /* Смуга стіни, яка реально вільна, вузька: ліворуч колонка тексту
+       (8vw + 46vw), праворуч пульт. Три ніші в один ряд туди не влазять,
+       тому вони стоять двома стовпцями зі зсувом — це й читається
+       кладкою стіни, а не полицею магазину. */
+    /* ГОРИЗОНТАЛЬНА полиця: всі книги категорії стоять одним рядом на
+       дні ніші. Ярусів і дошки всередині немає — ярус і Є сама ніша.
+
+       Ширина ніші НЕ фіксована: вона рахується з фактичного ряду
+       корінців. Порожня половина полиці була б такою ж неправдою, як
+       книги-статисти: виїмка в стіні рівно та, скільки праць у ній
+       лежить, і вона сама поїде вшир, коли в категорії з'явиться ще
+       один курс. */
+    var PAD_L = 18, PAD_R = 18, GAP = 16;
+    var ch = Math.max(126, Math.min(164, h * 0.175));
+    var SPOTS = [
+      { x: 0.545, y: 0.12 },
+      { x: 0.660, y: 0.40 },
+      { x: 0.545, y: 0.66 }
+    ];
+
+    /* Ряд рахується один раз і віддає і ширину ніші, і позиції книг:
+       два незалежні обчислення розійшлися б, щойно корінці стануть
+       різної ширини. */
+    function bookRow(ci, n) {
+      var x = PAD_L, out = [], bi, bw, lean;
+      for (bi = 0; bi < n; bi++) {
+        bw = 38 + Math.round(seeded(ci * 9 + bi) * 16);
+        lean = Math.round(seeded(bi * 3 + ci) * 6);
+        out.push({ w: bw, x: x + lean });
+        x += bw + lean + GAP;
+      }
+      return { books: out, width: x - GAP + PAD_R };
+    }
+
+    CASES.forEach(function (data, ci) {
+      var row = bookRow(ci, data.books.length);
+      var cw = row.width;
+
+      var el = document.createElement("div");
+      el.className = "niche";
+      el.dataset.case = String(ci);
+      el.style.width = cw + "px";
+      el.style.height = ch + "px";
+      /* Ніші мусять поміститись між колонкою тексту і пультом. */
+      var spot = SPOTS[ci];
+      el.style.left = Math.round(ox + w * spot.x) + "px";
+      el.style.top = Math.round(oy + h * spot.y) + "px";
+      /* Різна глибина врізання — саме вона й дає паралакс між нішами. */
+      /* Ширший розкид глибини: пів-3D читається лише тоді, коли ближнє
+         і дальнє реально розведені по осі. */
+      el.style.transform = "translateZ(" + (-210 + ci * 60) + "px)";
+
+      var cast = document.createElement("div");
+      cast.className = "niche__cast";
+      el.appendChild(cast);
+
+      var box = document.createElement("div");
+      box.className = "niche__box";
+      el.appendChild(box);
+
+      var persp = document.createElement("div");
+      persp.className = "niche__persp";
+      persp.innerHTML = nicheSvg(ci, Math.round(cw), Math.round(ch));
+      box.appendChild(persp);
+
+      var mark = document.createElement("div");
+      mark.className = "niche__mark";
+      mark.innerHTML = attentionSvg(ci, Math.round(cw), Math.round(ch));
+      el.appendChild(mark);
+
+      var label = document.createElement("span");
+      label.className = "niche__label";
+      label.textContent = data.label;
+      el.appendChild(label);
+
+      /* Полиця намальована пером усередині nicheSvg. ПРАЦЬ — рівно
+         стільки, скільки курсів у категорії: декоративних корінців-
+         статистів немає. */
+      data.books.forEach(function (book, bi) {
+        var slot = row.books[bi];
+        var bBottom = 5;
+        var bh = Math.round((ch - 14) * (0.72 + seeded(bi + ci * 7) * 0.16));
+
+        var spine = document.createElement("button");
+        spine.className = "book";
+        spine.type = "button";
+        spine.dataset.case = String(ci);
+        spine.dataset.book = String(bi);
+        spine.dataset.held = String(book.held);
+        spine.setAttribute("aria-label", book.title);
+        var sp = document.createElement("span");
+        sp.className = "book__spine";
+        sp.textContent = book.title;
+        spine.appendChild(sp);
+        var sideFace = document.createElement("span");
+        sideFace.className = "book__side";
+        spine.appendChild(sideFace);
+        var topFace = document.createElement("span");
+        topFace.className = "book__top";
+        spine.appendChild(topFace);
+
+        spine.style.width = slot.w + "px";
+        spine.style.height = bh + "px";
+        spine.style.left = slot.x + "px";
+        spine.style.bottom = bBottom + "px";
+        spine.style.setProperty("--tilt", (seeded(bi * 5 + ci) > 0.8 ? (3 + seeded(bi) * 4).toFixed(1) : "0") + "deg");
+        box.appendChild(spine);
+      });
+
+      el.addEventListener("click", function (e) {
+        if (e.target.closest(".book[data-book]")) return;
+        enterCase(ci);
+      });
+      room.appendChild(el);
+      caseEls.push(el);
+    });
+
+    room.querySelectorAll(".book[data-book]").forEach(function (b) {
+      b.addEventListener("click", function (e) {
+        e.stopPropagation();
+        openSpread(Number(b.dataset.case), Number(b.dataset.book));
+      });
+    });
+
+    markArmature(openCase < 0 ? 1 : openCase);
+  }
+
+  /* Латунний хрест і медальйон сходяться на активній ніші — так само,
+     як на знімку-референсі рейки сходяться на бані. */
+  function markArmature(ci) {
+    var el = caseEls[ci];
+    if (!el) return;
+    var nl = parseFloat(el.style.left);
+    var nt = parseFloat(el.style.top);
+    var nw = el.offsetWidth || 150;
+    var nh = el.offsetHeight || 200;
+    var midY = nt + nh * 0.46;
+    /* Лівий луч довший, правий коротший, і вони не на одній висоті —
+       два промені зійшлися на виїмці, а не координатна сітка. */
+    var la = 230 + seeded(ci + 11) * 70;
+    rayA.style.left = Math.round(nl - la) + "px";
+    rayA.style.width = Math.round(la - 8) + "px";
+    rayA.style.top = Math.round(midY) + "px";
+    var lb = 120 + seeded(ci + 23) * 50;
+    rayB.style.left = Math.round(nl + nw + 8) + "px";
+    rayB.style.width = Math.round(lb) + "px";
+    rayB.style.top = Math.round(midY + 16) + "px";
+    var half = 76;
+    boss.style.transform =
+      "translate3d(" + Math.round(nl + nw + 8 + lb + 30) + "px," +
+      Math.round(midY + 16 - half) + "px, 0)";
+  }
+
+  function renderList() {
+    shelfList.innerHTML = "";
+    var items = view === "hall"
+      ? CASES.map(function (c, i) {
+          var held = c.books.filter(function (b) { return b.held; }).length;
+          return {
+            title: c.label.replace(/^[IV]+ · /, ""),
+            note: c.books.map(function (b) { return b.title; }).join(" · "),
+            state: held + " / " + c.books.length,
+            held: held > 0,
+            act: function () { enterCase(i); },
+            /* У залі рядок гріє БЛОК, не книгу: книги — наступний рівень. */
+            live: function () { hotNiche(i); markArmature(i); }
+          };
+        })
+      : CASES[openCase].books.map(function (b, bi) {
+          return {
+            title: b.title, note: b.note, state: b.state, held: b.held,
+            act: function () { openSpread(openCase, bi); },
+            live: function () { highlight(openCase, bi); }
+          };
+        });
+
+    items.forEach(function (item, i) {
+      var row = document.createElement("button");
+      row.type = "button";
+      row.className = "row";
+      row.innerHTML =
+        '<span class="row__index">' + String(i + 1).padStart(2, "0") + "</span>" +
+        '<span><span class="row__title"></span><span class="row__note"></span></span>' +
+        '<span class="row__state" data-held="' + item.held + '"></span>';
+      row.querySelector(".row__title").textContent = item.title;
+      row.querySelector(".row__note").textContent = item.note;
+      row.querySelector(".row__state").textContent = item.state;
+      row.addEventListener("click", item.act);
+      if (item.live) {
+        row.addEventListener("mouseenter", item.live);
+        row.addEventListener("focus", item.live);
+      }
+      shelfList.appendChild(row);
+    });
+  }
+
+  function hotNiche(ci) {
+    caseEls.forEach(function (el, i) {
+      if (i === ci) el.dataset.hot = "true"; else el.removeAttribute("data-hot");
+    });
+  }
+
+  /* Єдине місце, де вмикається золото, і воно вмикається рівно на одній
+     книзі. Позначка «придбано» більше не світиться сама по собі: шість
+     однакових вогників не показують нічого. */
+  function highlight(ci, bi) {
+    room.querySelectorAll(".book[data-book]").forEach(function (b) {
+      var live = Number(b.dataset.case) === ci && Number(b.dataset.book) === bi;
+      if (live) b.dataset.live = "true"; else b.removeAttribute("data-live");
+    });
+  }
+
+  /* Наїзд камери і паралакс пишуть в один і той самий transform, тому вони
+     не можуть працювати одночасно: transition на 1100 мс, який
+     переписується щокадру, дає не плавність, а кашу. На час наїзду
+     петля паралаксу спить. */
+  var baseX = 0, baseY = 0, baseZ = 0;
+  var tx = 0, ty = 0, cx = 0, cy = 0;
+  var parallaxOn = true;
+  var easing = false;
+  var easeTimer = null;
+
+  function apply() {
+    room.style.setProperty("--px", (baseX + cx).toFixed(1) + "px");
+    room.style.setProperty("--py", (baseY + cy).toFixed(1) + "px");
+    room.style.setProperty("--cz", baseZ + "px");
+    /* Нахил спокою: сцена трохи повернена навіть без курсора, інакше
+       глибина існує тільки поки рухаєш мишею. */
+    room.style.setProperty("--rx", (1.6 - cy * 0.05).toFixed(2) + "deg");
+    room.style.setProperty("--ry", (-6.5 + cx * 0.06).toFixed(2) + "deg");
+  }
+
+  function camera(x, y, z) {
+    baseX = x; baseY = y; baseZ = z;
+    easing = true;
+    room.classList.add("is-eased");
+    apply();
+    window.clearTimeout(easeTimer);
+    easeTimer = window.setTimeout(function () {
+      easing = false;
+      room.classList.remove("is-eased");
+    }, 2350);
+  }
+
+  function loop() {
+    if (!easing) {
+      /* Повільніше: 0.06 доганяв курсор майже миттєво, і кімната
+         смикалась услід за рукою замість того, щоб пливти. */
+      /* Медитація: доганяємо курсор за секунди, не за кадри. */
+      cx += (tx - cx) * 0.01;
+      cy += (ty - cy) * 0.01;
+      apply();
+    }
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener("pointermove", function (e) {
+    if (!parallaxOn || reduced.matches) { tx = 0; ty = 0; return; }
+    tx = ((e.clientX / window.innerWidth) - 0.5) * -62;
+    ty = ((e.clientY / window.innerHeight) - 0.5) * -36;
+  }, { passive: true });
+
+  document.getElementById("parallax").addEventListener("click", function () {
+    parallaxOn = !parallaxOn;
+    this.setAttribute("aria-pressed", String(parallaxOn));
+    if (!parallaxOn) { tx = 0; ty = 0; }
+  });
+  document.getElementById("grid").addEventListener("click", function () {
+    var on = this.getAttribute("aria-pressed") !== "true";
+    this.setAttribute("aria-pressed", String(on));
+    document.querySelector(".draft").style.display = on ? "" : "none";
+  });
+
+  function enterCase(ci) {
+    view = "case";
+    openCase = ci;
+    document.body.classList.add("in-case");
+    caseEls.forEach(function (el, i) {
+      el.dataset.dim = String(i !== ci);
+      if (i === ci) el.dataset.sel = "true"; else el.removeAttribute("data-sel");
+      el.removeAttribute("data-hot");
+    });
+    markArmature(ci);
+
+    var el = caseEls[ci];
+    var w = window.innerWidth, h = window.innerHeight;
+    var ox = w * 0.14, oy = h * 0.14;
+    var ecx = parseFloat(el.style.left) + el.offsetWidth / 2;
+    var ecy = parseFloat(el.style.top) + el.offsetHeight / 2;
+    /* Полиця стає ПОРУЧ із колонкою тексту, не під нею: на широкому
+       екрані ціль — одразу праворуч від правого поля колонки, на
+       вузькому — верх екрана, а текст з'їжджає під неї (.in-case). */
+    var tX, tY;
+    if (w > 900) {
+      var measure = Math.min(44 * 16, w * 0.46);
+      tX = w * 0.08 + measure + 70 + el.offsetWidth / 2;
+      tX = Math.min(tX, w - el.offsetWidth / 2 - 40);
+      tY = h * 0.44;
+    } else {
+      tX = w * 0.5;
+      tY = h * 0.06 + el.offsetHeight / 2;
+    }
+    camera(tX + ox - ecx, tY + oy - ecy, 250 - ci * 60);
+
+    eyebrowEl.textContent = "Шафа " + CASES[ci].label;
+    titleEl.textContent = CASES[ci].label.replace(/^[IV]+ · /, "");
+    standEl.textContent = "На полицях те, що ви маєте. Оберіть корінець — книга розгорнеться.";
+    backBtn.hidden = false;
+    renderList();
+    play("step");
+  }
+
+  function toHall() {
+    view = "hall";
+    openCase = -1;
+    document.body.classList.remove("in-case");
+    caseEls.forEach(function (el) {
+      el.dataset.dim = "false";
+      el.removeAttribute("data-sel");
+      el.removeAttribute("data-hot");
+    });
+    markArmature(1);
+    camera(0, 0, 0);
+    eyebrowEl.textContent = "Прототип середовища · 26.08.2026";
+    titleEl.textContent = "Місце усвідомленої присутності. Тут тихо";
+    standEl.textContent = "У стіні три ніші — по одній на кожну категорію, і в кожній рівно стільки праць, скільки в ній курсів. Підійди до ніші, торкнись корінця — книга розгорнеться.";
+    backBtn.hidden = true;
+    highlight(-1, -1);
+    renderList();
+    play("step");
+  }
+  backBtn.addEventListener("click", toHall);
+
+  /* ---------- розворот ---------- */
+  var spread = document.getElementById("spread");
+  var spreadState = { ci: 0, bi: 0, folio: 1 };
+
+  function paintSpread() {
+    var b = CASES[spreadState.ci].books[spreadState.bi];
+    document.getElementById("spreadTitle").textContent = b.title;
+    document.getElementById("spreadLead").textContent = b.lead;
+    document.getElementById("spreadBody").textContent = b.body;
+    document.getElementById("folioL").textContent = String(spreadState.folio * 2 - 1).padStart(3, "0");
+    document.getElementById("folioR").textContent = String(spreadState.folio * 2).padStart(3, "0");
+  }
+
+  function openSpread(ci, bi) {
+    spreadState.ci = ci; spreadState.bi = bi; spreadState.folio = 1;
+    paintSpread();
+    spread.hidden = false;
+    /* Форсований reflow, а не requestAnimationFrame: у фоновій вкладці rAF
+       душиться, і розворот застигає на півдорозі з opacity 0.5. */
+    void spread.offsetHeight;
+    spread.dataset.open = "true";
+    play("open");
+    document.getElementById("closeSpread").focus();
+  }
+
+  function closeSpread() {
+    spread.dataset.open = "false";
+    play("close");
+    window.setTimeout(function () { spread.hidden = true; }, 520);
+  }
+
+  document.getElementById("closeSpread").addEventListener("click", closeSpread);
+  document.getElementById("nextPage").addEventListener("click", function () {
+    spreadState.folio++; paintSpread(); play("turn");
+  });
+  document.getElementById("prevPage").addEventListener("click", function () {
+    spreadState.folio = Math.max(1, spreadState.folio - 1); paintSpread(); play("turn");
+  });
+  window.addEventListener("keydown", function (e) {
+    if (spread.dataset.open !== "true") return;
+    if (e.key === "Escape") closeSpread();
+    if (e.key === "ArrowRight") { spreadState.folio++; paintSpread(); play("turn"); }
+    if (e.key === "ArrowLeft") { spreadState.folio = Math.max(1, spreadState.folio - 1); paintSpread(); play("turn"); }
+  });
+
+  /* ---------- туш на стіні ---------- */
+  var wallEl = document.querySelector(".wall");
+
+  /* Тайл туші: плями блукаючим пером (random walk дрібними м'якими
+     колами) + волокна паперу. Все seeded — стіна однакова в кожному
+     сеансі. Плями, що торкаються краю, домальовуються з обгортанням,
+     тому шов тайла невидимий. Викликається з setTheme: колір туші
+     належить темі. */
+  function paintWallInk() {
+    if (!wallEl) return;
+    var cs = getComputedStyle(document.documentElement);
+    var hex = cs.getPropertyValue("--ink-value").trim();
+    var n = parseInt(hex.slice(1), 16);
+    if (isNaN(n)) return;
+    var ir = (n >> 16) & 255, ig = (n >> 8) & 255, ib = n & 255;
+    var size = 560;
+    var c = document.createElement("canvas");
+    c.width = c.height = size;
+    var g = c.getContext("2d");
+    /* Розмиття на рівні пензля: без нього накопичення кроків читається
+       ланцюжком плям, а не втертим у папір розмивом. */
+    var canBlur = typeof g.filter === "string";
+    if (canBlur) g.filter = "blur(10px)";
+
+    function soft(x, y, rr, a) {
+      var ox, oy;
+      for (ox = -1; ox <= 1; ox++) {
+        for (oy = -1; oy <= 1; oy++) {
+          if (ox !== 0 && x > rr && x < size - rr) continue;
+          if (oy !== 0 && y > rr && y < size - rr) continue;
+          var px = x + ox * size, py = y + oy * size;
+          var grd = g.createRadialGradient(px, py, 0, px, py, rr);
+          grd.addColorStop(0, "rgba(" + ir + "," + ig + "," + ib + "," + a.toFixed(3) + ")");
+          grd.addColorStop(1, "rgba(" + ir + "," + ig + "," + ib + ",0)");
+          g.fillStyle = grd;
+          g.beginPath();
+          g.arc(px, py, rr, 0, Math.PI * 2);
+          g.fill();
+        }
+      }
+    }
+
+    var blob, i, x, y, r;
+    for (blob = 0; blob < 6; blob++) {
+      x = seeded(blob * 13 + 1) * size;
+      y = seeded(blob * 13 + 2) * size;
+      r = 60 + seeded(blob * 13 + 3) * 90;
+      for (i = 0; i < 14; i++) {
+        x = (x + (seeded(blob * 97 + i) - 0.5) * r * 0.5 + size) % size;
+        y = (y + (seeded(blob * 89 + i) - 0.5) * r * 0.5 + size) % size;
+        soft(x, y, r * (0.5 + seeded(blob * 71 + i) * 0.6), 0.0045 + seeded(blob * 61 + i) * 0.005);
+      }
+    }
+    /* волокна паперу — тонші за розмиви, без блюру */
+    if (canBlur) g.filter = "none";
+    var k, fx, fy, ang, ln;
+    g.lineWidth = 0.5;
+    for (k = 0; k < 90; k++) {
+      fx = seeded(k * 7 + 500) * size;
+      fy = seeded(k * 7 + 501) * size;
+      ang = seeded(k * 7 + 502) * Math.PI;
+      ln = 6 + seeded(k * 7 + 503) * 20;
+      g.strokeStyle = "rgba(" + ir + "," + ig + "," + ib + "," + (0.012 + seeded(k + 7) * 0.02).toFixed(3) + ")";
+      g.beginPath();
+      g.moveTo(fx, fy);
+      g.lineTo(fx + Math.cos(ang) * ln, fy + Math.sin(ang) * ln);
+      g.stroke();
+    }
+    wallEl.style.backgroundImage = "url(" + c.toDataURL() + ")";
+  }
+
+  /* ---------- тушевий пейзаж ---------- */
+  var sceneEl = document.getElementById("sceneInk");
+
+  /* Три гряди пагорбів, кожна — синусова суміш трьох частот, залита
+     тушшю під блюром. Ближня гряда нижча і щільніша, дальні вищі й
+     легші — глибина будується прозорістю, як у розмиві. У темній темі
+     ті самі форми, писані кремом, читаються туманом. */
+  function paintScene() {
+    if (!sceneEl) return;
+    var w = sceneEl.offsetWidth, h = sceneEl.offsetHeight;
+    if (!w || !h) return;
+    sceneEl.width = w;
+    sceneEl.height = h;
+    var g = sceneEl.getContext("2d");
+    var hex = getComputedStyle(document.documentElement).getPropertyValue("--ink-value").trim();
+    var n = parseInt(hex.slice(1), 16);
+    if (isNaN(n)) return;
+    var ir = (n >> 16) & 255, ig = (n >> 8) & 255, ib = n & 255;
+    var canBlur = typeof g.filter === "string";
+
+    var layers = [
+      { y: 0.82, amp: 0.030, a: 0.060, blur: 8 },
+      { y: 0.73, amp: 0.046, a: 0.040, blur: 13 },
+      { y: 0.64, amp: 0.062, a: 0.026, blur: 18 }
+    ];
+    layers.forEach(function (L, li) {
+      var f1 = 0.004 + seeded(li + 31) * 0.002;
+      var f2 = 0.012 + seeded(li + 7) * 0.006;
+      var ph = seeded(li + 3) * 6.28;
+      if (canBlur) g.filter = "blur(" + L.blur + "px)";
+      g.fillStyle = "rgba(" + ir + "," + ig + "," + ib + "," + L.a + ")";
+      g.beginPath();
+      g.moveTo(-60, h + 60);
+      for (var x = -60; x <= w + 60; x += 14) {
+        g.lineTo(x, h * L.y +
+          Math.sin(x * f1 + ph) * h * L.amp +
+          Math.sin(x * f2 + ph * 2.7) * h * L.amp * 0.45 +
+          Math.sin(x * f2 * 2.8 + ph * 1.3) * h * L.amp * 0.18);
+      }
+      g.lineTo(w + 60, h + 60);
+      g.closePath();
+      g.fill();
+    });
+    if (canBlur) g.filter = "none";
+  }
+
+  /* ---------- зерно ---------- */
+  var canvas = document.getElementById("grain");
+  var ctx = canvas.getContext("2d");
+  var tile = null;
+
+  function buildTile() {
+    var size = 200;
+    var t = document.createElement("canvas");
+    t.width = t.height = size;
+    var tc = t.getContext("2d");
+    var img = tc.createImageData(size, size);
+    var d = img.data;
+    for (var p = 0, n = 0; p < d.length; p += 4, n++) {
+      var v = seeded(n * 0.37) * 255;
+      d[p] = d[p + 1] = d[p + 2] = v;
+      d[p + 3] = 15;
+    }
+    tc.putImageData(img, 0, 0);
+    return t;
+  }
+
+  function paintGrain() {
+    var w = canvas.width = canvas.offsetWidth;
+    var h = canvas.height = canvas.offsetHeight;
+    if (!w || !h) return;
+    if (!tile) tile = buildTile();
+    ctx.fillStyle = ctx.createPattern(tile, "repeat");
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  /* ---------------------------------------------------------------
+     ЗВУК. Чотири канали, кожен зі своїм фейдером, усе синтезоване.
+     Твердого низу немає за конструкцією: на майстрі стоїть highpass
+     на 130 Гц, тож фундаментальні 40–80 Гц, які й давали «тверду
+     підлогу», просто не існують у тракті.
+     --------------------------------------------------------------- */
+  var CHANNELS = [
+    { id: "room", name: "кімната" },
+    { id: "paper", name: "папір" },
+    { id: "nature", name: "природа" },
+    { id: "pad", name: "ембієнт" }
+  ];
+
+  var PRESETS = [
+    { name: "тиша",     v: { room: 0,    paper: 0,    nature: 0,    pad: 0    } },
+    { name: "читальня", v: { room: 0.34, paper: 0.42, nature: 0,    pad: 0.10 } },
+    { name: "сад",      v: { room: 0.22, paper: 0.10, nature: 0.50, pad: 0.08 } },
+    { name: "ніч",      v: { room: 0.26, paper: 0,    nature: 0.12, pad: 0.44 } }
+  ];
+
+  var A = null;
+
+  function buildAudio() {
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    var ac = new Ctx();
+
+    var master = ac.createGain();
+    master.gain.value = 0.9;
+
+    var hp = ac.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 130;
+    hp.Q.value = 0.5;
+
+    var soften = ac.createBiquadFilter();
+    soften.type = "lowpass";
+    soften.frequency.value = 5200;
+    soften.Q.value = 0.4;
+
+    master.connect(hp).connect(soften).connect(ac.destination);
+
+    var bus = {};
+    CHANNELS.forEach(function (c) {
+      var g = ac.createGain();
+      g.gain.value = 0;
+      g.connect(master);
+      bus[c.id] = g;
+    });
+
+    var len = Math.floor(ac.sampleRate * 3);
+    var buf = ac.createBuffer(1, len, ac.sampleRate);
+    var ch0 = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) ch0[i] = seeded(i * 0.0131) * 2 - 1;
+
+    function noiseSource() {
+      var s = ac.createBufferSource();
+      s.buffer = buf; s.loop = true; s.start();
+      return s;
+    }
+
+    /* кімната — повітря, вузька смуга, повільне дихання */
+    (function () {
+      var bp = ac.createBiquadFilter();
+      bp.type = "bandpass"; bp.frequency.value = 480; bp.Q.value = 0.6;
+      var g = ac.createGain(); g.gain.value = 0.16;
+      noiseSource().connect(bp).connect(g).connect(bus.room);
+      var lfo = ac.createOscillator(); lfo.frequency.value = 0.045;
+      var lg = ac.createGain(); lg.gain.value = 0.05;
+      lfo.connect(lg).connect(g.gain); lfo.start();
+    })();
+
+    /* природа — вітер у листі: смуга гуляє, і саме це читається листям,
+       а не шиплячим шумом */
+    (function () {
+      var bp = ac.createBiquadFilter();
+      bp.type = "bandpass"; bp.frequency.value = 900; bp.Q.value = 0.9;
+      var g = ac.createGain(); g.gain.value = 0.14;
+      noiseSource().connect(bp).connect(g).connect(bus.nature);
+      var lfo = ac.createOscillator(); lfo.type = "sine"; lfo.frequency.value = 0.08;
+      var lg = ac.createGain(); lg.gain.value = 420;
+      lfo.connect(lg).connect(bp.frequency); lfo.start();
+      var lfo2 = ac.createOscillator(); lfo2.frequency.value = 0.19;
+      var lg2 = ac.createGain(); lg2.gain.value = 0.06;
+      lfo2.connect(lg2).connect(g.gain); lfo2.start();
+    })();
+
+    /* ембієнт — пад на квінтах, без основного тону */
+    (function () {
+      var lp = ac.createBiquadFilter();
+      lp.type = "lowpass"; lp.frequency.value = 1400; lp.Q.value = 0.3;
+      lp.connect(bus.pad);
+      [220, 330, 440, 660].forEach(function (hz, i) {
+        var o = ac.createOscillator();
+        o.type = "sine";
+        o.frequency.value = hz;
+        o.detune.value = (seeded(i + 5) - 0.5) * 9;
+        var g = ac.createGain();
+        g.gain.value = [0.11, 0.08, 0.05, 0.03][i];
+        o.connect(g).connect(lp);
+        o.start();
+        var lfo = ac.createOscillator();
+        lfo.frequency.value = 0.021 + seeded(i + 31) * 0.04;
+        var lg = ac.createGain(); lg.gain.value = 0.045;
+        lfo.connect(lg).connect(g.gain); lfo.start();
+      });
+    })();
+
+    return { ac: ac, bus: bus, buf: buf, master: master };
+  }
+
+  function ensureAudio() {
+    if (!A) A = buildAudio();
+    if (A && A.ac.state === "suspended") A.ac.resume();
+    return A;
+  }
+
+  function setChannel(id, value) {
+    if (!A) return;
+    var t = A.ac.currentTime;
+    var g = A.bus[id].gain;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(value, t + 0.5);
+  }
+
+  /* папір — шурхіт як зерно коротких сплесків, не як тон */
+  var paperTimer = null;
+  function paperTick() {
+    if (!A) { paperTimer = null; return; }
+    if (A.bus.paper.gain.value > 0.001) rustle(0.35 + seeded(A.ac.currentTime) * 0.4);
+    paperTimer = window.setTimeout(paperTick, 1400 + seeded(A.ac.currentTime * 7) * 2600);
+  }
+
+  function rustle(amount) {
+    if (!A) return;
+    var ac = A.ac, t = ac.currentTime;
+    var s = ac.createBufferSource();
+    s.buffer = A.buf;
+    s.playbackRate.value = 0.9 + seeded(t) * 0.4;
+    var bp = ac.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.setValueAtTime(2600, t);
+    bp.frequency.exponentialRampToValueAtTime(700, t + 0.22);
+    bp.Q.value = 0.8;
+    var g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.22 * amount, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+    s.connect(bp).connect(g).connect(A.bus.paper);
+    s.start(t, seeded(t * 3) * 2);
+    s.stop(t + 0.3);
+  }
+
+  /* Події — тільки папір і повітря, жодного дзвіночка. */
+  function play(kind) {
+    if (!A) return;
+    if (kind === "turn") { rustle(1); return; }
+    if (kind === "open") { rustle(0.8); window.setTimeout(function () { rustle(0.55); }, 130); return; }
+    if (kind === "close") { rustle(0.5); return; }
+    if (kind === "step") {
+      var ac = A.ac, t = ac.currentTime;
+      var s = ac.createBufferSource();
+      s.buffer = A.buf;
+      var lp = ac.createBiquadFilter();
+      lp.type = "lowpass"; lp.frequency.value = 420;
+      var g = ac.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.10, t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+      s.connect(lp).connect(g).connect(A.bus.room);
+      s.start(t, seeded(t) * 2);
+      s.stop(t + 0.45);
+    }
+  }
+
+  var mixer = document.getElementById("mixer");
+  var faders = {};
+  CHANNELS.forEach(function (c) {
+    var wrap = document.createElement("div");
+    wrap.className = "fader";
+    var id = "f-" + c.id;
+    wrap.innerHTML =
+      '<label for="' + id + '"></label>' +
+      '<input id="' + id + '" type="range" min="0" max="100" value="0">' +
+      "<output>0</output>";
+    wrap.querySelector("label").textContent = c.name;
+    var input = wrap.querySelector("input");
+    var out = wrap.querySelector("output");
+    input.addEventListener("input", function () {
+      var v = Number(input.value) / 100;
+      out.textContent = input.value;
+      ensureAudio();
+      setChannel(c.id, v);
+      if (c.id === "paper" && v > 0 && paperTimer === null) paperTick();
+    });
+    faders[c.id] = { input: input, out: out };
+    mixer.appendChild(wrap);
+  });
+
+  var presetsBox = document.getElementById("presets");
+  PRESETS.forEach(function (p, i) {
+    var b = document.createElement("button");
+    b.className = "chip";
+    b.type = "button";
+    b.textContent = p.name;
+    b.setAttribute("aria-pressed", String(i === 0));
+    b.addEventListener("click", function () {
+      ensureAudio();
+      Array.prototype.forEach.call(presetsBox.children, function (c) { c.setAttribute("aria-pressed", "false"); });
+      b.setAttribute("aria-pressed", "true");
+      CHANNELS.forEach(function (c) {
+        var v = p.v[c.id];
+        faders[c.id].input.value = String(Math.round(v * 100));
+        faders[c.id].out.textContent = String(Math.round(v * 100));
+        setChannel(c.id, v);
+      });
+      if (p.v.paper > 0 && paperTimer === null) paperTick();
+    });
+    presetsBox.appendChild(b);
+  });
+
+  /* ---------------------------------------------------------------
+     Порівняння чорнил — те саме питання, що в ресерчі: наше чорнило
+     темніше за весь заміряний регістр. Тут воно поруч, із контрастом,
+     порахованим на місці.
+     --------------------------------------------------------------- */
+  var INKS = [
+    { hex: "#0d1b17", src: "наше · --cw-platform-text" },
+    { hex: "#31403e", src: "наше · mineralInk" },
+    { hex: "#3e332a", src: "прототип · тепле" },
+    { hex: "#4e4e4e", src: "一保堂 Ippodo" },
+    { hex: "#555555", src: "KINTO" },
+    { hex: "#313131", src: "Aman" }
+  ];
+
+  function lum(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    return [16, 8, 0].map(function (sh) {
+      var c = ((n >> sh) & 255) / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    }).reduce(function (a, v, i) { return a + v * [0.2126, 0.7152, 0.0722][i]; }, 0);
+  }
+
+  function ratio(a, b) {
+    var l1 = lum(a), l2 = lum(b);
+    var hi = Math.max(l1, l2), lo = Math.min(l1, l2);
+    return (hi + 0.05) / (lo + 0.05);
+  }
+
+  var inksBox = document.getElementById("inks");
+
+  /* Ці шість — кандидати у чорнило СВІТЛОЇ теми, тому контраст рахується
+     до світлого паперу, а не до того, що зараз під ними. У темній темі
+     чорнило кремове, і підміна його цими значеннями поклала б майже
+     чорний текст на майже чорний аркуш. */
+  var LIGHT_PAPER = "#f2ede1";
+
+  function isDark() {
+    var cl = document.documentElement.classList;
+    if (cl.contains("mode-dark")) return true;
+    if (cl.contains("mode-light")) return false;
+    var stamped = document.documentElement.getAttribute("data-theme");
+    if (stamped === "dark") return true;
+    if (stamped === "light") return false;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+
+  function paintInks() {
+    var locked = isDark();
+    inksBox.dataset.locked = String(locked);
+    document.getElementById("inkNote").hidden = !locked;
+    inksBox.innerHTML = "";
+
+    INKS.forEach(function (ink) {
+      var r = ratio(ink.hex, LIGHT_PAPER);
+      var b = document.createElement("button");
+      b.className = "inkRow";
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(ink.hex === "#3e332a"));
+      b.innerHTML =
+        '<span class="inkRow__swatch"></span>' +
+        "<span></span>" +
+        '<span class="inkRow__src"></span>' +
+        '<span class="inkRow__ratio" data-pass="' + (r >= 4.5) + '"></span>';
+      b.querySelector(".inkRow__swatch").style.background = ink.hex;
+      b.children[1].textContent = ink.hex;
+      b.querySelector(".inkRow__src").textContent = ink.src;
+      b.querySelector(".inkRow__ratio").textContent = r.toFixed(1);
+      if (locked) {
+        b.disabled = true;
+      } else {
+        b.addEventListener("click", function () {
+          document.documentElement.style.setProperty("--ink-value", ink.hex);
+          Array.prototype.forEach.call(inksBox.querySelectorAll(".inkRow"), function (c) {
+            c.setAttribute("aria-pressed", "false");
+          });
+          b.setAttribute("aria-pressed", "true");
+        });
+      }
+      inksBox.appendChild(b);
+    });
+  }
+
+  /* Тема перемикається в самій сторінці. Досі вона бралася тільки з
+     системи, тож світлу вбудовану пару не можна було ані побачити, ані
+     порівняти з темною, не лізучи в налаштування ОС. */
+  var themesBox = document.getElementById("themes");
+  function setTheme(mode) {
+    var rootEl = document.documentElement;
+    rootEl.classList.remove("mode-dark", "mode-light");
+    if (mode !== "system") rootEl.classList.add("mode-" + mode);
+    /* Інлайн-страховка: після застосування класу знімаємо фактичні
+       токени і кладемо їх прямо на body. Якщо будь-який стиль хоста
+       перебиває каскад — інлайн він перебити не може. */
+    var cs = getComputedStyle(rootEl);
+    document.body.style.background = cs.getPropertyValue("--paper").trim();
+    document.body.style.color = cs.getPropertyValue("--ink-value").trim();
+    Array.prototype.forEach.call(themesBox.children, function (c) {
+      c.setAttribute("aria-pressed", String(c.dataset.themeSet === mode));
+    });
+    try { window.localStorage.setItem("cw-proto-theme", mode); } catch (e) { /* приватне вікно */ }
+    paintInks();
+    paintGrain();
+    paintWallInk();
+    paintScene();
+  }
+  Array.prototype.forEach.call(themesBox.children, function (c) {
+    c.addEventListener("click", function () { setTheme(c.dataset.themeSet); });
+  });
+
+  /* Пейзаж: канвасний розмив або один із мальованих растрів. Вибір
+     тримається в localStorage — інакше кожне перезавантаження скидало
+     б порівняння варіантів. */
+  var scenesBox = document.getElementById("scenes");
+  function setScene(src) {
+    var rootEl = document.documentElement;
+    if (src) {
+      rootEl.style.setProperty("--scene-tex", 'url("' + src + '")');
+      rootEl.setAttribute("data-scene-tex", "on");
+    } else {
+      rootEl.style.removeProperty("--scene-tex");
+      rootEl.removeAttribute("data-scene-tex");
+    }
+    Array.prototype.forEach.call(scenesBox.children, function (c) {
+      c.setAttribute("aria-pressed", String(c.dataset.scene === src));
+    });
+    try { window.localStorage.setItem("cw-proto-scene", src); } catch (e) { /* приватне вікно */ }
+  }
+  Array.prototype.forEach.call(scenesBox.children, function (c) {
+    c.addEventListener("click", function () { setScene(c.dataset.scene); });
+  });
+
+  var consoleEl = document.getElementById("console");
+  var consoleToggle = document.getElementById("consoleToggle");
+  consoleToggle.addEventListener("click", function () {
+    var collapsed = consoleEl.dataset.collapsed === "true";
+    consoleEl.dataset.collapsed = String(!collapsed);
+    consoleToggle.setAttribute("aria-expanded", String(collapsed));
+    consoleToggle.textContent = collapsed ? "–" : "+";
+  });
+
+  function boot() {
+    var savedScene = "";
+    try { savedScene = window.localStorage.getItem("cw-proto-scene") || ""; } catch (e) { savedScene = ""; }
+    setScene(savedScene);
+    buildRoom();
+    if (openCase >= 0) highlight(openCase, 0);
+    paintGrain();
+    paintInks();
+    renderList();
+    if (view === "case") enterCase(openCase); else camera(0, 0, 0);
+  }
+
+  /* setTheme викликається ЗАВЖДИ, навіть для «системної»: інлайн-фарби
+     на body — єдине, чого не переб'є жоден стиль хоста артефакта. */
+  var savedTheme = "system";
+  try { savedTheme = window.localStorage.getItem("cw-proto-theme") || "system"; } catch (e) { /* приватне вікно */ }
+  setTheme(savedTheme);
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
+    if (!document.documentElement.classList.contains("mode-dark") &&
+        !document.documentElement.classList.contains("mode-light")) setTheme("system");
+  });
+
+  window.addEventListener("resize", boot, { passive: true });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paintInks);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(paintGrain);
+  boot();
+  if (!reduced.matches) requestAnimationFrame(loop);
+})();
+</script>
