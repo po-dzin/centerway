@@ -50,7 +50,7 @@
     --r-object: 4px;
     --r-tool:   11px;
 
-    --measure: min(44rem, 46vw);
+    --measure: min(38rem, 38vw);
     --mono: "IBM Plex Mono", ui-monospace, monospace;
     --ui: "Manrope", "Segoe UI", sans-serif;
     --editorial: "Zen Old Mincho", "Cormorant Garamond", "Times New Roman", serif;
@@ -61,9 +61,9 @@
        папір під заголовком. Кут узятий від самої сітки: 8vw поля плюс
        колонка 46vw дають межу близько 54%. */
     --scene-veil: linear-gradient(104deg,
-      transparent 0 34%,
-      rgba(0, 0, 0, 0.42) 56%,
-      #000 78%);
+      transparent 0 30%,
+      rgba(0, 0, 0, 0.40) 52%,
+      #000 76%);
   }
 
 
@@ -508,10 +508,43 @@
   .niche[data-hot="true"] .niche__mark,
   .niche[data-sel="true"] .niche__mark { opacity: var(--mark-show); }
 
+  /* Дошка між ярусами. З'являється лише тоді, коли ярусів більше
+     одного: у виїмці на три корінці малювати нема чого. */
+  .niche__board {
+    position: absolute;
+    left: 6px; right: 6px;
+    height: 1px;
+    background: var(--ink-line);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--ink-value) 8%, transparent);
+    pointer-events: none;
+  }
+
+  /* Скільки праць не влізло на полицю. Не помилка розкладки, а
+     чесна цифра: решта чекає всередині ніші. */
+  .niche__more {
+    position: absolute;
+    inset-block-end: -1.35rem;
+    inset-inline-end: 2px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+  }
+
+  .room[data-dense="true"] .book__spine { opacity: 0; }
+  .room[data-far="true"] .niche__label,
+  .room[data-far="true"] .niche__more { opacity: 0.5; font-size: 0.52rem; }
+
+  /* Ярлик категорії живе ВСЕРЕДИНІ отвору, по задній стінці — як
+     напис на самій стіні. Знадвору він сідав на нішу горішнього ряду,
+     щойно кладка ставала щільною, і жоден проміжок цього не рятував:
+     сусідні отвори врізані на різну глибину, тож перспектива з'їдає
+     зазор по-різному. */
   .niche__label {
     position: absolute;
-    inset-block-start: -1.65rem;
-    inset-inline-start: 2px;
+    inset-block-start: 6px;
+    inset-inline-start: 9px;
+    z-index: 2;
     font-family: var(--mono);
     font-size: 0.6rem;
     letter-spacing: 0.15em;
@@ -645,7 +678,12 @@
     justify-items: start;
     gap: 1.3rem;
     width: var(--measure);
-    margin-inline: 8vw;
+    /* Колонка стоїть по центру СВОЄЇ половини, а не притиснута до
+       краю: 10vw поля плюс 38vw набору дають центр близько 29vw —
+       середина лівої половини. Виїмки так само центруються у правій
+       (offset у buildRoom). Між двома половинами лишається справжня
+       порожнеча, а не випадковий залишок. */
+    margin-inline: 10vw;
     padding-block: 12vh 8rem;
   }
 
@@ -928,14 +966,27 @@
         rgba(0, 0, 0, 0.18) 60%,
         #000 88%);
     }
-    .sheet { margin-inline: 6vw; width: calc(100% - 12vw); }
-    /* На вузькому те саме, лише щільніше. */
+    /* Стіна займає верхню смугу (band у buildRoom), текст починається
+       під нею — тому не центрування, а відступ згори. */
+    .sheet {
+      margin-inline: 6vw;
+      width: calc(100% - 12vw);
+      align-content: start;
+      gap: 0.9rem;
+      padding-block: 49vh 6vh;
+    }
+    .row { padding-block: 0.55rem; }
+    .row__note { margin-block-start: 0.1rem; line-height: 1.6; }
+    .standfirst { line-height: 1.7; }
+    /* У ніші те саме місце: полиця вгорі, текст під нею. */
     body.in-case .sheet {
-      align-content: end;
-      padding-block: min(48vh, 340px) 6vh;
+      align-content: start;
+      padding-block: 49vh 6vh;
       --measure: 100%;
     }
-    .stage { opacity: 0.75; }
+    /* Виїмки більше не стоять під текстом, тож і гасити сцену нема
+       за що: приглушений зал читався як вимкнене світло. */
+    .stage { opacity: 1; }
     .draft__margin, .draft__dim, .draft__label { display: none; }
     .console { inset-inline: 0.8rem; width: auto; inset-block-start: auto; inset-block-end: 0.8rem; }
     .book-open { grid-template-columns: 1fr; }
@@ -948,7 +999,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 17 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 20 · 27.08</span>
 
 <div class="draft" aria-hidden="true">
   <span class="draft__margin draft__margin--l"></span>
@@ -1046,6 +1097,16 @@
   </div>
 
   <div class="console__group">
+    <span class="console__legend">Навантаження · праць у категорії</span>
+    <div class="chips" id="loads">
+      <button class="chip" data-load="0" type="button" aria-pressed="true">як є</button>
+      <button class="chip" data-load="8" type="button" aria-pressed="false">8</button>
+      <button class="chip" data-load="24" type="button" aria-pressed="false">24</button>
+      <button class="chip" data-load="90" type="button" aria-pressed="false">90</button>
+    </div>
+  </div>
+
+  <div class="console__group">
     <span class="console__legend">Глибина</span>
     <div class="chips">
       <button class="chip" id="parallax" type="button" aria-pressed="true">паралакс</button>
@@ -1062,7 +1123,7 @@
      src/lib/products.ts — шість продуктів, і рівно шість праць на
      стіні. slug = ключ PRODUCTS; живе підтягування з /learn — крок
      інтеграції, не прототипу. */
-  var CASES = [
+  var BASE_CASES = [
     {
       label: "I · Протоколи",
       books: [
@@ -1097,6 +1158,25 @@
       ]
     }
   ];
+
+  /* НАВАНТАЖЕННЯ. Каталог у прототипі маленький, а стіна має тримати
+     і сотню праць. Множник розмножує наявні книги, щоб розкладку
+     можна було побачити під навантаженням, а не уявити. */
+  var CASES = BASE_CASES;
+  function setLoad(n) {
+    CASES = !n ? BASE_CASES : BASE_CASES.map(function (c) {
+      var out = [], i, src;
+      for (i = 0; i < n; i++) {
+        src = c.books[i % c.books.length];
+        out.push({
+          slug: src.slug, title: src.title + " " + (i + 1), note: src.note,
+          state: src.state, held: src.held && i % 3 !== 1, lead: src.lead, body: src.body
+        });
+      }
+      return { label: c.label, books: out };
+    });
+  }
+
 
   /* Seeded — кімната мусить збиратись однаково щоразу.
      Те саме правило, що в bake іконок і в ProgressRail. */
@@ -1281,85 +1361,148 @@
     var w = window.innerWidth;
     var h = window.innerHeight;
     var ox = w * 0.14, oy = h * 0.14;          /* .room має inset -14% */
-    /* Смуга стіни, яка реально вільна, вузька: ліворуч колонка тексту
-       (8vw + 46vw), праворуч пульт. Три ніші в один ряд туди не влазять,
-       тому вони стоять двома стовпцями зі зсувом — це й читається
-       кладкою стіни, а не полицею магазину. */
-    /* ГОРИЗОНТАЛЬНА полиця: всі книги категорії стоять одним рядом на
-       дні ніші. Ярусів і дошки всередині немає — ярус і Є сама ніша.
-
-       Ширина ніші НЕ фіксована: вона рахується з фактичного ряду
-       корінців. Порожня половина полиці була б такою ж неправдою, як
-       книги-статисти: виїмка в стіні рівно та, скільки праць у ній
-       лежить, і вона сама поїде вшир, коли в категорії з'явиться ще
-       один курс. */
-    var PAD_L = 18, PAD_R = 18, GAP = 16;
     var narrow = w <= 900;
-    /* На вузькому екрані виїмка мусить бути ближчою, а не меншою:
-       та сама висота, що на десктопі, з'їдала на телефоні всю
-       присутність — полиця відходила в стіну. */
-    var ch = narrow
-      ? Math.max(150, Math.min(196, h * 0.20))
-      : Math.max(126, Math.min(164, h * 0.175));
-    /* ДВІ РІЗНІ КОМПОЗИЦІЇ, а не одна, підтиснута медіазапитом.
-       Широкий екран: дві колонки — текст ліворуч, кладка виїмок
-       праворуч. Вузький: колонка на всю ширину, тож виїмки стають
-       НАД текстом і ПІД ним — одна згори, дві знизу, а середній пояс
-       екрана лишається текстові. */
-    var WIDE = [
-      { x: 0.545, y: 0.12 },
-      { x: 0.660, y: 0.40 },
-      { x: 0.545, y: 0.66 }
+    /* Проміжок між рядами тримає не лише повітря, а й ярлик
+       категорії: він стоїть НАД отвором і на тісній кладці сідав на
+       нішу горішнього ряду. */
+    var GAP_X = narrow ? 10 : 18, GAP_Y = narrow ? 21 : 29;
+
+    /* СМУГА СТІНИ — прямокутник, у який кладеться скільки завгодно
+       виїмок. Широкий екран віддає стіні праву половину (текст живе в
+       лівій), вузький — верхню смугу, а текст іде під нею. */
+    var band = narrow
+      ? { x: w * 0.045, y: h * 0.05, w: w * 0.91, h: h * 0.40 }
+      : { x: w * 0.50, y: h * 0.075, w: w * 0.46, h: h * 0.84 };
+
+    /* СЕКЦІЯ, А НЕ КАТЕГОРІЯ.
+       Категорія на сотню праць — це не одна виїмка на десять ярусів,
+       а десяток виїмок по десятку корінців. Стіна масштабується саме
+       так: множиться кількість отворів, а не поверхів усередині
+       одного. Отвір лишається тим, що бачить око, — полицею, до якої
+       можна підійти.
+       Сходинки: що більше праць, то тонший корінець і дрібніша
+       секція. Береться перша, на якій стіна вкладається у смугу. */
+    var LADDER = [
+      { bw: 48, per: 9 }, { bw: 42, per: 9 }, { bw: 36, per: 8 },
+      { bw: 30, per: 8 }, { bw: 25, per: 7 }, { bw: 20, per: 7 },
+      { bw: 16, per: 6 }, { bw: 13, per: 6 }
     ];
 
-    /* Ряд рахується один раз і віддає і ширину ніші, і позиції книг:
-       два незалежні обчислення розійшлися б, щойно корінці стануть
-       різної ширини. */
-    function bookRow(ci, n) {
-      var x = PAD_L, out = [], bi, bw, lean;
-      for (bi = 0; bi < n; bi++) {
-        bw = 38 + Math.round(seeded(ci * 9 + bi) * 16);
-        lean = Math.round(seeded(bi * 3 + ci) * 6);
-        out.push({ w: bw, x: x + lean });
-        x += bw + lean + GAP;
+    function sectionsFor(step) {
+      var gap = Math.max(3, Math.round(step.bw * 0.3));
+      var pad = Math.max(5, Math.round(step.bw * 0.34));
+      var unit = Math.max(40, Math.min(150, Math.round(step.bw * 2.7)));
+      var list = [];
+      CASES.forEach(function (data, ci) {
+        var n = data.books.length, i = 0, k = 0, take;
+        while (i < n) {
+          /* Секції нерівні: стіну кладе рука, а не таблиця. */
+          take = step.per + Math.round((seeded(ci * 17 + k) - 0.5) * 3);
+          take = Math.max(2, Math.min(take, n - i));
+          if (n - i - take === 1) take += 1;
+          list.push({
+            ci: ci, from: i, count: take,
+            w: take * (step.bw + gap) - gap + pad * 2,
+            h: unit
+          });
+          i += take; k += 1;
+        }
+      });
+      return { list: list, bw: step.bw, gap: gap, pad: pad, unit: unit };
+    }
+
+    /* Пакування в ряди: зліва направо, перенос по краю смуги. Ряд, що
+       перебирає смугу на кілька відсотків, не переноситься, а трохи
+       стискається — інакше секція їде на власний ряд через десяток
+       пікселів і стіна розповзається вниз. */
+    function pack(secs) {
+      var lines = [], line = [], lineW = 0, total = 0;
+      function flush() {
+        if (!line.length) return;
+        if (lineW > secs.bandW) {
+          var k = secs.bandW / lineW;
+          line.forEach(function (it) { it.w = Math.floor(it.w * k); });
+          lineW = secs.bandW;
+        }
+        lines.push({ items: line, w: lineW });
+        total += line[0].h + GAP_Y;
+        line = []; lineW = 0;
       }
-      return { books: out, width: x - GAP + PAD_R };
+      secs.bandW = band.w;
+      /* Стіна має бути стіною, а не стрічкою: довжина ряду обмежена не
+         лише краєм смуги, а й формою самої смуги. Три секції в один
+         ряд — це полиця магазину; два на два — уже кладка. */
+      var maxPerLine = Math.max(1, Math.round(
+        Math.sqrt(secs.list.length * (band.w / band.h) * 0.9)));
+      secs.list.forEach(function (it) {
+        if (line.length && (line.length >= maxPerLine ||
+            lineW + GAP_X + it.w > band.w * 1.07)) flush();
+        lineW += (line.length ? GAP_X : 0) + it.w;
+        line.push(it);
+      });
+      flush();
+      return { lines: lines, height: Math.max(0, total - GAP_Y) };
     }
 
-    /* Ширини потрібні ДО розстановки: на вузькому екрані дві нижні
-       виїмки стають поруч, і чи вони поміщаються — питання їхньої
-       фактичної ширини, а не припущення. */
-    var rows = CASES.map(function (data, ci) { return bookRow(ci, data.books.length); });
-    var SPOTS = WIDE;
-    if (narrow) {
-      var side = w * 0.05;
-      var pair = rows[1].width + rows[2].width + side * 2 + 14;
-      SPOTS = [
-        { px: side, y: 0.03 },
-        { px: side, y: 0.735 },
-        pair <= w
-          ? { px: w - side - rows[2].width, y: 0.80 }
-          : { px: side + rows[1].width * 0.42, y: 0.855 }
-      ];
+    var secs, packed, si;
+    for (si = 0; si < LADDER.length; si++) {
+      secs = sectionsFor(LADDER[si]);
+      packed = pack(secs);
+      if (packed.height <= band.h) break;
     }
 
-    CASES.forEach(function (data, ci) {
-      var row = rows[ci];
-      var cw = row.width;
+    /* Коли й на найдрібнішій сходинці стіна не вкладається — а це вже
+       сотні праць — з кінця знімаються цілі секції, і категорія каже
+       числом, скільки праць стоїть углиб. Повний перелік однаково
+       живе всередині ніші. */
+    var hidden = {};
+    var guard = 0;
+    while (packed.height > band.h && secs.list.length > CASES.length && guard++ < 400) {
+      var worst = -1, count = {}, i;
+      for (i = 0; i < secs.list.length; i++) {
+        count[secs.list[i].ci] = (count[secs.list[i].ci] || 0) + 1;
+      }
+      for (i = secs.list.length - 1; i >= 0; i--) {
+        if (count[secs.list[i].ci] > 1) { worst = i; break; }
+      }
+      if (worst < 0) break;
+      hidden[secs.list[worst].ci] = (hidden[secs.list[worst].ci] || 0) + secs.list[worst].count;
+      secs.list.splice(worst, 1);
+      packed = pack(secs);
+    }
+
+    /* Розкладка. Ряди зсунуті один відносно одного, кожна секція ще й
+       трохи гуляє по вертикалі: полиці, поставлені ідеально одна над
+       одною, читаються таблицею, а не стіною. */
+    var cursorY = band.y + Math.max(0, (band.h - packed.height) / 2);
+    var order = 0;
+    packed.lines.forEach(function (ln, li) {
+      var slide = (seeded(li * 13 + 3) - 0.5) * Math.min(46, band.w * 0.06);
+      var x = Math.max(band.x,
+        Math.min(band.x + (band.w - ln.w) / 2 + slide, band.x + band.w - ln.w));
+      ln.items.forEach(function (it) {
+        it.x = x;
+        it.y = cursorY + (seeded(order * 7 + 11) - 0.5) * Math.min(GAP_Y * 1.4, it.h * 0.22);
+        it.z = -230 + (order % 4) * 28;
+        x += it.w + GAP_X;
+        order += 1;
+      });
+      cursorY += ln.items[0].h + GAP_Y;
+    });
+
+    secs.list.forEach(function (sec, order) {
+      var data = CASES[sec.ci];
+      var cw = Math.round(sec.w), ch = Math.round(sec.h);
 
       var el = document.createElement("div");
       el.className = "niche";
-      el.dataset.case = String(ci);
+      el.dataset.case = String(sec.ci);
       el.style.width = cw + "px";
       el.style.height = ch + "px";
-      /* Ніші мусять поміститись між колонкою тексту і пультом. */
-      var spot = SPOTS[ci];
-      el.style.left = Math.round(ox + (spot.px !== undefined ? spot.px : w * spot.x)) + "px";
-      el.style.top = Math.round(oy + h * spot.y) + "px";
+      el.style.left = Math.round(ox + sec.x) + "px";
+      el.style.top = Math.round(oy + sec.y) + "px";
       /* Різна глибина врізання — саме вона й дає паралакс між нішами. */
-      /* Ширший розкид глибини: пів-3D читається лише тоді, коли ближнє
-         і дальнє реально розведені по осі. */
-      el.style.transform = "translateZ(" + (-210 + ci * 60) + "px)";
+      el.style.transform = "translateZ(" + sec.z + "px)";
 
       var cast = document.createElement("div");
       cast.className = "niche__cast";
@@ -1371,31 +1514,40 @@
 
       var persp = document.createElement("div");
       persp.className = "niche__persp";
-      persp.innerHTML = nicheSvg(ci, Math.round(cw), Math.round(ch));
+      persp.innerHTML = nicheSvg(order, cw, ch);
       box.appendChild(persp);
 
       var mark = document.createElement("div");
       mark.className = "niche__mark";
-      mark.innerHTML = attentionSvg(ci, Math.round(cw), Math.round(ch));
+      mark.innerHTML = attentionSvg(order, cw, ch);
       el.appendChild(mark);
 
-      var label = document.createElement("span");
-      label.className = "niche__label";
-      label.textContent = data.label;
-      el.appendChild(label);
+      /* Підпис — лише на першій секції категорії: тричі повторена
+         назва на сусідніх отворах читається як три різні полиці. */
+      if (!sec.from) {
+        var label = document.createElement("span");
+        label.className = "niche__label";
+        label.textContent = data.label;
+        el.appendChild(label);
+      }
+      if (hidden[sec.ci] && sec.from + sec.count >= data.books.length - hidden[sec.ci]) {
+        var more = document.createElement("span");
+        more.className = "niche__more";
+        more.textContent = "+" + hidden[sec.ci];
+        el.appendChild(more);
+      }
 
-      /* Полиця намальована пером усередині nicheSvg. ПРАЦЬ — рівно
-         стільки, скільки курсів у категорії: декоративних корінців-
-         статистів немає. */
-      data.books.forEach(function (book, bi) {
-        var slot = row.books[bi];
-        var bBottom = 5;
-        var bh = Math.round((ch - 14) * (0.72 + seeded(bi + ci * 7) * 0.16));
+      /* ПРАЦЬ — рівно стільки, скільки курсів: декоративних корінців-
+         статистів немає, і секція завширшки рівно під свій ряд. */
+      data.books.slice(sec.from, sec.from + sec.count).forEach(function (book, j) {
+        var bi = sec.from + j;
+        var lean = secs.bw > 30 ? Math.round(seeded(bi * 3 + sec.ci) * 5) : 0;
+        var bh = Math.round((ch - 14) * (0.72 + seeded(bi + sec.ci * 7) * 0.16));
 
         var spine = document.createElement("button");
         spine.className = "book";
         spine.type = "button";
-        spine.dataset.case = String(ci);
+        spine.dataset.case = String(sec.ci);
         spine.dataset.book = String(bi);
         spine.dataset.held = String(book.held);
         spine.setAttribute("aria-label", book.title);
@@ -1410,35 +1562,50 @@
         topFace.className = "book__top";
         spine.appendChild(topFace);
 
-        spine.style.width = slot.w + "px";
+        spine.style.width = secs.bw + "px";
         spine.style.height = bh + "px";
-        spine.style.left = slot.x + "px";
-        spine.style.bottom = bBottom + "px";
-        spine.style.setProperty("--tilt", (seeded(bi * 5 + ci) > 0.8 ? (3 + seeded(bi) * 4).toFixed(1) : "0") + "deg");
+        spine.style.left = (secs.pad + j * (secs.bw + secs.gap) + lean) + "px";
+        spine.style.bottom = "5px";
+        spine.style.setProperty("--tilt",
+          (seeded(bi * 5 + sec.ci) > 0.8 ? (3 + seeded(bi) * 4).toFixed(1) : "0") + "deg");
         box.appendChild(spine);
       });
 
       el.addEventListener("click", function (e) {
         if (e.target.closest(".book[data-book]")) return;
-        enterCase(ci);
+        if (tapConsumed()) return;
+        enterCase(sec.ci);
       });
+      armByTouch(el, function () { if (view === "hall") focusCase(sec.ci); });
       /* Ніша — така сама поверхня уваги, як рядок списку: наведення на
-         саму комірку гріє її рядок і зводить на неї арматуру. Без
-         цього половина екрана відповідала на курсор, а половина ні.
-         Фокусу з клавіатури тут немає навмисно: сцена — aria-hidden,
-         її клавіатурний двійник — це список. */
+         саму комірку гріє її рядок і зводить на неї арматуру. Фокусу з
+         клавіатури тут немає навмисно: сцена — aria-hidden, її
+         клавіатурний двійник — це список. */
       el.addEventListener("mouseenter", function () {
-        if (view === "hall") focusCase(ci);
+        if (view === "hall") focusCase(sec.ci);
       });
       el.addEventListener("mouseleave", restCase);
       room.appendChild(el);
       caseEls.push(el);
     });
 
+    /* ЩО ВУЖЧИЙ КОРІНЕЦЬ, ТО МЕНШЕ НА НЬОМУ ПИСАТИ. Назва на корінці
+       12 пікселів — не назва, а шум по всій стіні. Спершу гаснуть
+       підписи праць (лишаються ярлики категорій), далі гасне і сам
+       ярлик: на такому віддаленні стіна читається кількістю отворів,
+       а не текстом. Імена нікуди не діваються — вони в aria-label, у
+       списку ліворуч і всередині ніші. */
+    room.dataset.dense = secs.bw < 26 ? "true" : "false";
+    room.dataset.far = secs.bw < 17 ? "true" : "false";
+
     room.querySelectorAll(".book[data-book]").forEach(function (b) {
       b.addEventListener("click", function (e) {
         e.stopPropagation();
+        if (tapConsumed()) return;
         openSpread(Number(b.dataset.case), Number(b.dataset.book));
+      });
+      armByTouch(b, function () {
+        focusBook(Number(b.dataset.case), Number(b.dataset.book));
       });
       b.addEventListener("mouseenter", function (e) {
         e.stopPropagation();
@@ -1453,7 +1620,7 @@
      на різній висоті плюс медальйон виявилось забагато: три предмети
      сперечалися за ту саму увагу, яку мала тримати сама виїмка. */
   function markArmature(ci) {
-    var el = caseEls[ci];
+    var el = sectionsOf(ci)[0];
     if (!el) return;
     var nl = parseFloat(el.style.left);
     var nt = parseFloat(el.style.top);
@@ -1469,9 +1636,13 @@
     var items = view === "hall"
       ? CASES.map(function (c, i) {
           var held = c.books.filter(function (b) { return b.held; }).length;
+          /* Перелік праць у рядку — підказка, а не зміст: за десятком
+             назв рядок перестає бути рядком. Далі рахунок. */
+          var names = c.books.slice(0, 3).map(function (b) { return b.title; }).join(" · ");
+          if (c.books.length > 3) names += " · ще " + (c.books.length - 3);
           return {
             title: c.label.replace(/^[IV]+ · /, ""),
-            note: c.books.map(function (b) { return b.title; }).join(" · "),
+            note: names,
             state: held + " / " + c.books.length,
             held: held > 0,
             act: function () { enterCase(i); },
@@ -1498,7 +1669,11 @@
       row.querySelector(".row__title").textContent = item.title;
       row.querySelector(".row__note").textContent = item.note;
       row.querySelector(".row__state").textContent = item.state;
-      row.addEventListener("click", item.act);
+      row.addEventListener("click", function () {
+        if (tapConsumed()) return;
+        item.act();
+      });
+      if (item.live) armByTouch(row, item.live);
       if (item.live) {
         row.addEventListener("mouseenter", item.live);
         row.addEventListener("focus", item.live);
@@ -1509,9 +1684,16 @@
     });
   }
 
+  /* Категорія тепер живе в кількох секціях стіни, тож стан ставиться
+     на всі її отвори одразу: гріється полиця, а не один її шматок. */
+  function sectionsOf(ci) {
+    return caseEls.filter(function (el) { return Number(el.dataset.case) === ci; });
+  }
+
   function hotNiche(ci) {
-    caseEls.forEach(function (el, i) {
-      if (i === ci) el.dataset.hot = "true"; else el.removeAttribute("data-hot");
+    caseEls.forEach(function (el) {
+      if (Number(el.dataset.case) === ci) el.dataset.hot = "true";
+      else el.removeAttribute("data-hot");
     });
   }
 
@@ -1534,6 +1716,31 @@
   function focusBook(ci, bi) {
     highlight(ci, bi);
     hotRow(bi);
+  }
+
+  /* ДОТИК НЕ МАЄ ХОВЕРА. На миші увага і дія розділені в часі: спершу
+     наводиш, потім клацаєш. Пальцем це один рух, і без розведення
+     перший же дотик провалювався всередину — стан вибору побачити було
+     ніде. Тому перший тап ставить увагу, другий заходить; на миші
+     нічого не змінюється. */
+  var tapArmed = null;
+  var tapSwallow = false;
+
+  function armByTouch(el, focus) {
+    el.addEventListener("pointerdown", function (e) {
+      if (e.pointerType !== "touch") return;
+      if (tapArmed === el) return;
+      tapArmed = el;
+      tapSwallow = true;
+      focus();
+    });
+  }
+
+  /* Клік, який лише поставив увагу пальцем, не має ще й спрацювати. */
+  function tapConsumed() {
+    if (!tapSwallow) return false;
+    tapSwallow = false;
+    return true;
   }
 
   /* Курсор пішов зі сцени — повертаємось до того, що вибрано, а не в
@@ -1617,21 +1824,33 @@
   });
 
   function enterCase(ci) {
+    tapArmed = null;
     view = "case";
     openCase = ci;
     document.body.classList.add("in-case");
-    caseEls.forEach(function (el, i) {
-      el.dataset.dim = String(i !== ci);
-      if (i === ci) el.dataset.sel = "true"; else el.removeAttribute("data-sel");
+    caseEls.forEach(function (el) {
+      var mine = Number(el.dataset.case) === ci;
+      el.dataset.dim = String(!mine);
+      if (mine) el.dataset.sel = "true"; else el.removeAttribute("data-sel");
       el.removeAttribute("data-hot");
     });
     markArmature(ci);
 
-    var el = caseEls[ci];
+    /* Категорія — це вже кілька секцій, тож камера цілиться в їхній
+       спільний прямокутник, а не в першу-ліпшу. */
+    var mine = sectionsOf(ci);
+    var el = mine[0];
+    if (!el) return;
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    mine.forEach(function (n) {
+      var l = parseFloat(n.style.left), t = parseFloat(n.style.top);
+      x0 = Math.min(x0, l); y0 = Math.min(y0, t);
+      x1 = Math.max(x1, l + n.offsetWidth); y1 = Math.max(y1, t + n.offsetHeight);
+    });
     var w = window.innerWidth, h = window.innerHeight;
     var ox = w * 0.14, oy = h * 0.14;
-    var ecx = parseFloat(el.style.left) + el.offsetWidth / 2;
-    var ecy = parseFloat(el.style.top) + el.offsetHeight / 2;
+    var ecx = (x0 + x1) / 2;
+    var ecy = (y0 + y1) / 2;
     /* На широкому екрані дві колонки лишаються двома колонками:
        текст ліворуч, виїмки праворуч. Наїзд лише підтягує активну
        полицю ближче до центру кадру — рівно настільки, щоб вона стала
@@ -1639,16 +1858,16 @@
        На вузькому центр — єдине місце, де полиця поміщається. */
     var tX, tY;
     if (w > 900) {
-      var measure = Math.min(38 * 16, w * 0.46);
-      var free = w * 0.08 + measure + 40;          /* права межа колонки */
-      tX = Math.max(free + el.offsetWidth / 2, w * 0.62);
-      tX = Math.min(tX, w - el.offsetWidth / 2 - 40);
+      var measure = Math.min(38 * 16, w * 0.38);
+      var free = w * 0.10 + measure + 48;          /* права межа колонки */
+      tX = Math.max(free + (x1 - x0) / 2, w * 0.68);
+      tX = Math.min(tX, w - (x1 - x0) / 2 - 40);
       tY = h * 0.42;
     } else {
       tX = w * 0.5;
       tY = h * 0.30;
     }
-    camera(tX + ox - ecx, tY + oy - ecy, 250 - ci * 60);
+    camera(tX + ox - ecx, tY + oy - ecy, 210);
 
     eyebrowEl.textContent = "Шафа " + CASES[ci].label;
     titleEl.textContent = CASES[ci].label.replace(/^[IV]+ · /, "");
@@ -1659,6 +1878,7 @@
   }
 
   function toHall() {
+    tapArmed = null;
     view = "hall";
     openCase = -1;
     document.body.classList.remove("in-case");
@@ -2222,6 +2442,18 @@
   }
   Array.prototype.forEach.call(scenesBox.children, function (c) {
     c.addEventListener("click", function () { setScene(c.dataset.scene); });
+  });
+
+  var loadsBox = document.getElementById("loads");
+  Array.prototype.forEach.call(loadsBox.children, function (c) {
+    c.addEventListener("click", function () {
+      Array.prototype.forEach.call(loadsBox.children, function (o) {
+        o.setAttribute("aria-pressed", String(o === c));
+      });
+      setLoad(Number(c.dataset.load));
+      toHall();
+      boot();
+    });
   });
 
   var consoleEl = document.getElementById("console");
