@@ -54,11 +54,21 @@ export type AppAudience = {
  * it again. The panel stays last because the people who can open it are the
  * ones who least need it advertised.
  *
- * «Профіль», not «Кабінет». The page says «Профіль» in its own header and the
- * signed-out control has always said it too — a menu row is not the place to
- * introduce a third word for one destination.
+ * «Кабінет», renamed from «Профіль» on 2026-08-27, everywhere at once.
+ *
+ * The old note here argued for «Профіль» on the grounds that the page said it
+ * in its own header, and that a menu row is no place to introduce a third word
+ * for one destination. That reasoning is why this is a rename and not an
+ * override: the header, the footer, the auth modal, the LMS notices and both
+ * locales moved together, so there is still exactly one word.
+ *
+ * The word changed because this is a SPACE, and the spaces are named as places
+ * a person goes — Бібліотека, Майстерня, Кабінет. «Профіль» named a record
+ * instead, which is also what it collides with: the dosha profile and the
+ * Google profile are records, and they keep the word. The key stays `cabinet`,
+ * which it has been since before the label agreed with it.
  */
-const CABINET: PlatformApp = { key: "cabinet", label: "Профіль", path: "/profile", host: null };
+const CABINET: PlatformApp = { key: "cabinet", label: "Кабінет", path: "/profile", host: null };
 const LEARN: PlatformApp = { key: "learn", label: "Бібліотека", path: LEARNING_SHELF_HREF, host: PERSONAL_HOST };
 const BUILDER: PlatformApp = { key: "builder", label: "Майстерня", path: BUILDER_PATH_PREFIX, host: PERSONAL_HOST };
 const ADMIN: PlatformApp = { key: "admin", label: "Адмінка", path: "/admin", host: null };
