@@ -20,12 +20,37 @@
 .shell {
   --builder-topbar-height: calc(4rem + 1px);
   --builder-side-panel-width: clamp(15.25rem, 22vw, 21.25rem);
-  --builder-mode-rail-width: 4.75rem;
+  /* Both mode rails, one value — they are the same object on opposite edges of
+     the document. Narrowed from 4.75rem: the column carries a 3rem ink ring and
+     nothing else, so the rest was padding pretending to be a panel. */
+  --builder-mode-rail-width: 4.25rem;
   /* Shared by both side panels, so «symmetric» is a value rather than a habit:
      the same padding, the same foot height and the same easing on each side. */
   --builder-panel-pad-inline: var(--cw-space-lg);
   --builder-panel-pad-block: var(--cw-space-lg);
-  --builder-panel-motion: 180ms;
+  /* MOTION IS NAMED BY THE JOB, NOT BY THE NUMBER.
+
+     Five durations and three curves were in this file, and the split did not
+     follow anything: the same reveal ran 120ms on a block rail and 140ms on the
+     gap ring beside it, one keyframe (`builderDocEnter`) was driven at 240ms,
+     160ms and 140ms from three call sites, and the picker — a popover of the
+     same family as the menu — borrowed the document's keyframe on a flat
+     `ease` while its three siblings shared a curve. An axis with no token is an
+     axis that diverges (see docs/design-system.md, the button contract's own
+     statement of it); motion had exactly one token and diverged everywhere the
+     token did not reach.
+
+     Four durations, each answering one question, and two curves — the tool
+     curve for anything that ARRIVES near the document, the page curve for
+     anything that IS the document. Ink keeps its own name because it is the
+     selection language rather than a piece of chrome. */
+  --builder-motion-reveal: 120ms;
+  --builder-motion-ink: 160ms;
+  --builder-motion-tool: 140ms;
+  --builder-motion-panel: 180ms;
+  --builder-motion-page: 240ms;
+  --builder-ease-tool: cubic-bezier(0.16, 1, 0.3, 1);
+  --builder-ease-page: cubic-bezier(0.22, 0.61, 0.36, 1);
   /* Room beside the manuscript for a block's own handles. */
   --builder-doc-gutter: 3rem;
   /* A DRAWN RULE, NOT A MATERIAL EDGE. `--cw-mat-stroke-inner` is the seam
@@ -36,18 +61,31 @@
      analogy further (a real drafted line, weight varying along its length)
      belongs in the design system at art-direction level, not in one module. */
   --builder-rule: color-mix(in srgb, var(--cw-platform-text) 13%, transparent);
-  height: 100svh;
-  height: 100dvh;
+  /* THE SHELL IS A DESKTOP IDEA, AND BELOW THE SIDEBAR IT WAS COSTING A PHONE
+     THE TOP OF ITS SCREEN.
+
+     A pinned `100dvh` box with `overflow: hidden` means the DOCUMENT never
+     scrolls — only `.page` inside it does. Browsers collapse the address bar
+     off document scroll and nothing else, so on a phone that bar stayed up
+     permanently: ~60–90px gone, under three rows of chrome, on the narrowest
+     screen we serve. The same shape also gave the rail its own scroller with
+     `overscroll-behavior: contain`, so a wheel over a short rail did nothing
+     at all rather than moving the page — the "stuck rail".
+
+     So the app-shell starts at the sidebar breakpoint, where it earns its keep
+     (two independent panes beside a document). Below it the page is a page:
+     the document scrolls, the browser does its own chrome, and the panels are
+     drawers over it rather than columns beside it. */
+  min-height: 100svh;
   display: grid;
   /* THE COLUMN IS DEFINITE, like every other track in this file. As an implicit
      `auto` it was sized to the workspace's max-content — 1495px at a 1440px
-     viewport — and `overflow: hidden` right below swallowed the difference
-     silently: the three-column body was 55px too wide, so the right tool panel
-     hung off the edge of the screen with its text clipped. A track that can be
-     widened by its contents is not a layout, it is a suggestion. */
+     viewport — and the app-shell's own `overflow: hidden` swallowed the
+     difference silently: the three-column body was 55px too wide, so the right
+     tool panel hung off the edge of the screen with its text clipped. A track
+     that can be widened by its contents is not a layout, it is a suggestion. */
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
-  overflow: hidden;
   background: var(--cw-platform-bg);
   color: var(--cw-platform-text);
   font-family: var(--cw-font-ui);
@@ -77,6 +115,15 @@
   scrollbar-color: color-mix(in srgb, var(--cw-platform-text) 22%, transparent) transparent;
 }
 
+@media (min-width: 901px) {
+  .shell {
+    height: 100svh;
+    height: 100dvh;
+    min-height: 0;
+    overflow: hidden;
+  }
+}
+
 /* ── Moving between lessons ───────────────────────────
 
    An in-course move is a state change now, not a navigation, so it lands
@@ -97,7 +144,7 @@
 }
 
 .docEnter {
-  animation: builderDocEnter 240ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+  animation: builderDocEnter var(--builder-motion-page) var(--builder-ease-page) both;
 }
 
 /* The body follows the head by a beat, which is what makes it read as one
@@ -106,8 +153,40 @@
   animation-delay: 60ms;
 }
 
+/* REDUCED MOTION IS ONE BLOCK, AND MOST OF IT WORKS THROUGH THE TOKENS.
+
+   It used to be three blocks in three parts of the file, naming nine selectors
+   between them — which is exactly why half the surface still moved: the format
+   bar, the block picker, the selected block's fields and every reveal
+   transition were simply never on the list. Zeroing the durations at their
+   source covers all of those, and covers anything added later: a new consumer
+   of `--builder-motion-*` cannot forget to opt in.
+
+   Two things the tokens cannot reach, both named explicitly below.
+   `.blockList.docEnter` sits 60ms behind the head, and a delayed keyframe under
+   `both` fill holds its `from` state through the delay even at zero duration —
+   a blank flash of the document, which is the opposite of the request. And the
+   four portalled surfaces render on `document.body`, outside the `.shell` that
+   declares the tokens, so nothing there inherits a zero. */
 @media (prefers-reduced-motion: reduce) {
-  .docEnter {
+  .shell {
+    --builder-motion-reveal: 0ms;
+    --builder-motion-ink: 0ms;
+    --builder-motion-tool: 0ms;
+    --builder-motion-panel: 0ms;
+    --builder-motion-page: 0ms;
+  }
+
+  .docEnter,
+  .blockList.docEnter,
+  .blockFields,
+  .sheetBody,
+  /* Two classes deep, so the side drawer has to be named or it keeps sliding. */
+  .sheetSide .sheetBody,
+  .toolDrawer,
+  .menuList,
+  .pickerPanel,
+  .formatBar {
     animation: none;
   }
 }
@@ -270,20 +349,31 @@
 .body {
   min-width: 0;
   min-height: 0;
-  overflow: hidden;
 }
 
 /* One column on a phone: the rail is a drawer there, in flow above the page,
    because an overlay would need a scrim, a focus trap and an escape key to be
    honest — three things for a list the author can also reach by pressing the
    course crumb. */
+/* Below the sidebar breakpoint this is a plain block in a scrolling document:
+   no pinned height, no clipping. Both are restored at 901px, where the shell
+   goes back to being a fixed frame with independent panes. */
 .bodyWithAside {
   min-width: 0;
   min-height: 0;
-  height: 100%;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  overflow: hidden;
+}
+
+@media (min-width: 901px) {
+  .body,
+  .bodyWithAside {
+    overflow: hidden;
+  }
+
+  .bodyWithAside {
+    height: 100%;
+  }
 }
 
 .aside {
@@ -340,7 +430,7 @@
     grid-column: 1;
     justify-self: start;
     width: var(--builder-side-panel-width);
-    transition: width var(--builder-panel-motion) ease;
+    transition: width var(--builder-motion-panel) ease;
     display: grid;
     grid-template-rows: minmax(0, 1fr) auto;
     position: relative;
@@ -410,6 +500,33 @@
 
   .aside[data-compact] .asideContent {
     padding-inline: var(--cw-space-xs);
+  }
+
+  /* ── THE ICON COLUMN IS THE RAIL, NOT A STUB OF IT ──
+
+     `data-collapsed` empties the panel; `data-compact` narrows it. The course
+     workspace was wired to the first, so folding the rail produced a 4.75rem
+     strip with nothing in it — the three modes, which are the only permanent
+     navigation this screen has, simply left. The width was already named
+     `--builder-mode-rail-width` and the tool layer on the opposite edge already
+     keeps its `.toolModeRail` visible when closed; this is the left side
+     finally answering the same way.
+
+     Labels go, icons stay, and the accessible name does not depend on either:
+     every rail link carries its own `aria-label`. */
+  .aside[data-compact] .courseRailLink {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    gap: 0;
+  }
+
+  .aside[data-compact] .courseRailLink > .inkLabel,
+  .aside[data-compact] .courseRailStatusLine {
+    display: none;
+  }
+
+  .aside[data-compact] .courseRailNav {
+    padding-block-start: var(--cw-space-md);
   }
 
   /* The middle column IS the document's frame now, so centring is the whole
@@ -489,8 +606,8 @@
   position: static;
   display: flex;
   align-items: center;
-  gap: var(--cw-space-3xs, 0.25rem);
-  padding: var(--cw-space-3xs, 0.25rem);
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-2xs);
   border: 1px solid var(--builder-rule);
   border-block-end: 0;
   border-radius: var(--cw-radius-md) var(--cw-radius-md) 0 0;
@@ -498,11 +615,24 @@
   pointer-events: auto;
 }
 
+/* LIFTED OFF THE EDGE, ON BOTH SIDES, AT EVERY LEVEL.
+
+   The arrow sat on the last pixel of the panel, which is the last pixel of the
+   viewport — under the home indicator on a phone, and against the chrome on a
+   desktop. It reads as something that fell to the bottom rather than something
+   placed there.
+
+   The lift is the save bar's own recipe, not a number measured for this
+   control: `--cw-space-md`, or the safe area when that is larger. Two controls
+   that already share a role, a height and a rule now also share the distance
+   they keep from the bottom — which is the whole point of them being one
+   object. Applied here rather than in a breakpoint, so it holds at every level. */
 .toolCollapseAction,
 .asideCollapseAction {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
   composes: bar from "../platform/PlatformButtons.module.css";
   position: relative;
+  padding-block-end: max(var(--cw-space-md), env(safe-area-inset-bottom));
   color: var(--cw-platform-muted);
 }
 
@@ -541,8 +671,7 @@
   /* An ANIMATION, not a transition, because the closed panel is now gone from
      the layout rather than merely transparent — and a transition has nothing to
      run from when an element appears. Same rise as the sheet, same curve. */
-  animation: sheetIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
-}
+  animation: sheetIn var(--builder-motion-panel) var(--builder-ease-tool, cubic-bezier(0.16, 1, 0.3, 1));}
 
 /* GONE, not invisible. This is what the desktop band has always done; the
    compact band kept the box and paid for it with a stranded tab strip. */
@@ -726,7 +855,7 @@
     grid-column: 3;
     justify-self: end;
     width: var(--builder-side-panel-width);
-    transition: width var(--builder-panel-motion) ease;
+    transition: width var(--builder-motion-panel) ease;
     position: relative;
     inset: auto;
     z-index: auto;
@@ -773,7 +902,7 @@
     width: var(--builder-mode-rail-width);
     height: auto;
     display: block;
-    padding: var(--cw-space-3xs, 0.25rem);
+    padding: var(--cw-space-2xs);
     border: 1px solid var(--builder-rule);
     border-inline-end: 0;
     border-radius: var(--cw-radius-md) 0 0 var(--cw-radius-md);
@@ -785,7 +914,7 @@
     position: relative;
     inset: auto;
     width: auto;
-    padding: var(--builder-panel-pad-block) var(--cw-space-3xs, 0.25rem) 0;
+    padding: var(--builder-panel-pad-block) var(--cw-space-2xs) 0;
     border: 0;
     border-radius: 0;
     background: transparent;
@@ -903,7 +1032,7 @@
   pointer-events: none;
   opacity: 0;
   transform: translate(-50%, -50%) scale(0.6) rotate(-4deg);
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition: opacity var(--builder-motion-ink) ease, transform var(--builder-motion-ink) ease;
 }
 
 /* The tool rail's tab draws the same mark; `composes` resolves only against a
@@ -970,23 +1099,23 @@
    page rather than over it: an overlay would need a scrim, a focus trap and an
    escape key to be honest, and all three for a list the author can also reach
    by pressing the course crumb. */
-/* DEFINITE TRACKS, all the way down. Every one of these was an implicit `auto`
-   column, so the widest module line — a flex row of a title and two controls,
-   none of which shrinks — sized the whole outline to its max-content and the
-   panel scrolled sideways. The titles were clipped at the panel edge and the
-   only way to read one was a horizontal drag nobody looks for in a sidebar.
-   The rows already know how to truncate; they just needed a width to truncate
-   against. */
-.contentsPanel,
-.contentsTree,
-.contentsLessons,
-.contentsGroup {
-  grid-template-columns: minmax(0, 1fr);
-}
+/* THE COLUMN IS THE PANEL'S WIDTH, NOT THE LONGEST TITLE'S.
 
+   With no `grid-template-columns` the implicit column is `auto`, which sizes to
+   max-content — so one long lesson title set the width of the whole tree. The
+   panel itself was correctly 259px while its column measured 403px, and every
+   row under it inherited the 403: titles ran past the panel edge, their own
+   `text-overflow: ellipsis` fired at a width nobody could see, and the ink mark
+   (which overhangs its label by 0.2rem on each side) was cut off by the panel's
+   own `overflow: auto`.
+
+   `minmax(0, 1fr)` is the whole fix — the rows below already carry `minmax(0,
+   1fr)` and `min-width: 0`, so once the top of the chain stops growing, the
+   truncation they were always asking for finally has an edge to happen at. */
 .contentsPanel {
   padding: var(--cw-space-md);
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-md);
   align-content: start;
 }
@@ -1002,8 +1131,12 @@
   }
 }
 
+/* Same clamp as `.contentsPanel`, for the same reason: every nested grid in
+   this tree defaults to an `auto` column, and one un-clamped link in the chain
+   restores max-content sizing for everything under it. */
 .contentsGroup {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-xs);
   padding-block-end: var(--cw-space-md);
   border-block-end: 1px solid var(--builder-rule);
@@ -1036,6 +1169,7 @@
 .contentsTree,
 .contentsLessons {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-2xs);
 }
 
@@ -1080,7 +1214,7 @@
 .contentsRow > .menuTrigger,
 .contentsModuleRow > .menuTrigger {
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--builder-motion-reveal) ease;
 }
 
 .contentsRow:hover > .menuTrigger,
@@ -1154,8 +1288,6 @@
      shelf and shared chrome; individual text fields still own their readable
      measure. */
   width: min(calc(100% - 2rem), var(--cw-max-width));
-  height: 100%;
-  min-height: 0;
   margin: 0 auto;
   padding-block: var(--cw-space-lg) var(--cw-space-3xl);
   display: grid;
@@ -1167,14 +1299,26 @@
   grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-lg);
   align-content: start;
-  overflow-y: auto;
-  /* `clip`, NOT the `auto` it computes to by default. A single-axis `auto`
-     silently makes the other axis a scroll container too: one sub-pixel of
-     horizontal overflow then draws a real scrollbar. Clip keeps the page a
-     vertical scroller only. */
-  overflow-x: clip;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
+}
+
+/* The pane only becomes its own scroller where the shell is pinned. Below that
+   the document scrolls and this must NOT claim a height, or it would restore
+   exactly the inner scroller the shell just stopped creating — including
+   `scrollbar-gutter`, which was reserving a visible strip on a phone that has
+   no scrollbar to put in it. */
+@media (min-width: 901px) {
+  .page {
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;
+    /* `clip`, NOT the `auto` the other axis computes to by default. A
+       single-axis `auto` silently makes the other axis a scroll container
+       too, so one sub-pixel of horizontal overflow draws a real scrollbar
+       on a page that has no width to reveal. */
+    overflow-x: clip;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
 }
 
 /* The definite track above does the capping now. What is left is the one thing
@@ -1343,6 +1487,27 @@
 .workspacePreviewAction {
   composes: chrome from "../platform/PlatformButtons.module.css";
   composes: hug from "../platform/PlatformButtons.module.css";
+}
+
+/* The word next to the eye, on the surfaces that have room for it.
+
+   Below the sidebar breakpoint the workspace topbar carries a trail, a history
+   control and this — three things competing for a phone's width, where the one
+   that loses is the trail, which is the only way back. So the label drops and
+   the glyph carries the meaning, which is the whole reason the eye replaced a
+   `view-rows` glyph that never meant "preview" in the first place.
+
+   The button keeps its `aria-label` in BOTH states, so the accessible name
+   never depends on a media query — and `title` is not the fallback here,
+   because a phone has no hover to show it with. */
+.workspaceActionLabel {
+  display: none;
+}
+
+@media (min-width: 901px) {
+  .workspaceActionLabel {
+    display: inline;
+  }
 }
 
 /* The one control that destroys something. It is `secondary` wearing the
@@ -1694,7 +1859,7 @@
   min-width: 0;
   min-height: var(--ds-touch-target-min);
   padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border: 1px solid var(--cw-platform-border);
+  border: 1px solid var(--builder-rule);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface);
   color: var(--cw-platform-text);
@@ -1769,7 +1934,7 @@
 .courseStatusItem,
 .courseStatusItemButton {
   display: grid;
-  gap: var(--cw-space-3xs, 0.25rem);
+  gap: var(--cw-space-2xs);
   min-width: var(--ds-button-min-width);
   padding-block: var(--cw-space-sm);
   padding-inline: var(--ds-button-padding-inline);
@@ -1881,20 +2046,10 @@
   max-width: 100%;
 }
 
-.structureKicker {
-  display: block;
-  max-width: 42rem;
-  overflow: hidden;
-  color: var(--cw-platform-muted);
-  font-size: 0.78rem;
-  letter-spacing: 0.08em;
-  text-overflow: ellipsis;
-  text-transform: uppercase;
-  white-space: nowrap;
-}
-
 .structureTitle {
-  margin: var(--cw-space-2xs) 0 0;
+  /* Nothing above it any more — the kicker that this cleared space for was the
+     course title printed a second time. */
+  margin: 0;
   font-family: var(--cw-font-editorial);
   font-size: clamp(2rem, 3.2vw, 3rem);
   font-weight: 500;
@@ -1974,7 +2129,7 @@
   place-items: center;
   border-radius: var(--cw-radius-pill);
   background: var(--cw-mat-surface-sunk);
-  box-shadow: inset 0 0 0 1px var(--cw-platform-border);
+  box-shadow: inset 0 0 0 1px var(--builder-rule);
   font-family: var(--cw-font-data);
   font-size: 0.78rem;
   color: var(--cw-platform-muted);
@@ -2000,7 +2155,7 @@
   left: -1.28rem;
   top: -0.55rem;
   bottom: 0.9rem;
-  border-left: 2px dashed var(--cw-platform-border);
+  border-left: 2px dashed var(--builder-rule);
 }
 
 .lessonRowWrap::before {
@@ -2011,7 +2166,7 @@
   width: 0.5rem;
   height: 0.5rem;
   margin-top: -0.25rem;
-  border-radius: 50%;
+  border-radius: var(--cw-radius-pill);
   background: var(--cw-platform-accent);
 }
 
@@ -2215,7 +2370,7 @@
   inset-inline: 0;
   border-block-start: 1px solid var(--builder-rule);
   opacity: 0;
-  transition: opacity 140ms ease;
+  transition: opacity var(--builder-motion-reveal) ease;
 }
 
 .blockInsert:hover::before,
@@ -2228,15 +2383,30 @@
 /* The ring SITS ON the rule and breaks it — one line divided by a circle,
    rather than a line with a button floating over it. The paper behind the
    ring is what cuts the gap, so it has to be the page's own ground. */
+/* CENTRED ON THE RULE BY CONSTRUCTION, NOT BY ALIGNMENT.
+
+   The ring is a 48px control — the contract's touch minimum — and the gap it
+   lives in is 16px. As a grid item that is an item three times taller than its
+   row, and it hung BELOW the rule instead of sitting on it: measured, the rule
+   was at y1030 and the ring's centre at y1046. So the circle floated over the
+   next block's first line rather than breaking the line above it, which is the
+   one thing this control has to do.
+
+   Taking it out of flow fixes it permanently: the ring's centre is the gap's
+   centre is the rule, whatever either of them measures, and a 48px hit area can
+   no longer inflate or overhang a 16px gap. Same construction the ink ring
+   inside it already uses. */
 .blockInsertAction {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
   composes: square from "../platform/PlatformButtons.module.css";
   composes: round from "../platform/PlatformButtons.module.css";
-  position: relative;
+  position: absolute;
+  inset: 50% auto auto 50%;
+  transform: translate(-50%, -50%);
   color: var(--cw-platform-muted);
   background: var(--cw-platform-bg);
   opacity: 0;
-  transition: opacity 140ms ease, color 140ms ease;
+  transition: opacity var(--builder-motion-reveal) ease, color var(--builder-motion-reveal) ease;
 }
 
 .blockInsert:hover .blockInsertAction,
@@ -2258,8 +2428,27 @@
   border-block-start-color: var(--cw-sem-warmth-strong);
 }
 
-.blockInsertAction:hover,
-.blockInsertAction:focus-visible {
+/* THE GROUND IS STRUCTURE HERE, NOT DECORATION — SO IT SURVIVES HOVER.
+
+   `chromeBare` clears its background on hover, which is right for an icon
+   button sitting on paper: a pale plate under a baked ink ring reads as a
+   browser highlight. But this particular ring's background is doing a second
+   job — it is the paper that CUTS the rule, which is what makes «one line
+   divided by a circle» rather than a button floating on a line.
+
+   So hovering the ring erased the very thing that broke the line, and the rule
+   ran straight through the circle — while hovering the rule (not the ring) left
+   the background alone and the circle still split it. Same two elements, two
+   different pictures, decided by which one the pointer was over. The ground is
+   restored in both hover and focus for that reason.
+
+   Scoped through `.blockInsert` on purpose: `chromeBare`'s own hover rule is
+   `.chromeBare:hover:not(:disabled)`, which outweighs a bare
+   `.blockInsertAction:hover`. The parent adds the one point that decides it,
+   which is cheaper to read than `!important` and does not leak. */
+.blockInsert .blockInsertAction:hover:not(:disabled),
+.blockInsert .blockInsertAction:focus-visible {
+  background: var(--cw-platform-bg);
   color: var(--cw-platform-text);
 }
 
@@ -2294,9 +2483,22 @@
   pointer-events: none;
 }
 
+/* THE PICKER SAT UNDER EVERYTHING IT HAD TO OPEN OVER.
+
+   It asked for `--ds-z-popover`, and that token does not exist — it was the
+   only reference to the name anywhere in the repo, so the fallback was the
+   whole rule and the panel resolved to **60**. Everything else the builder
+   paints is on the sticky ladder: the save bar at `sticky`, the tool layer at
+   +1, this panel's own siblings (`.menuList`, `.slashList`) at +2, the format
+   bar at +3. The picker is `position: fixed` and portalled to `document.body`,
+   so nothing scoped it out of that comparison — a gap ring pressed low in a
+   lesson opened its chooser underneath the save bar.
+
+   It is the same object as the row menu — an anchored list of choices held
+   near the document — so it takes the same rung, not one invented for it. */
 .pickerPanel {
   position: fixed;
-  z-index: var(--ds-z-popover, 60);
+  z-index: calc(var(--ds-z-sticky) + 2);
   width: min(28.75rem, calc(100vw - 1rem));
   box-sizing: border-box;
   display: grid;
@@ -2307,7 +2509,7 @@
   border-radius: var(--cw-radius-md);
   background: var(--cw-platform-bg);
   box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
-  animation: builderDocEnter 140ms ease both;
+  animation: menuIn var(--builder-motion-tool, 140ms) var(--builder-ease-tool, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
 .pickerSearch {
@@ -2380,22 +2582,47 @@
   background: transparent;
 }
 
-/* Selection is a rule in the margin, not a plate under the words. A tinted
-   fill on the block being edited puts a colour behind prose the author is
-   judging, and it was the same object as the hover tint above it. */
+/* SELECTION IS A DRAWN CONTOUR, NOT A GOLD BAR IN THE MARGIN.
+
+   It used to be a 2px `--cw-sem-warmth-strong` rule down the left edge. Two
+   problems, and they only became obvious once the field inside it got its
+   proper corner: a saturated vertical bar is the loudest thing on a page of
+   warm paper — it reads as a status flag, not as "this is the one I am editing"
+   — and a straight gold bar beside a rounded field is two different drawing
+   languages an inch apart.
+
+   So the block is OUTLINED instead, in the page's own drafting ink at the same
+   radius the fields use. Dashed, because that is what a construction line looks
+   like on paper: present, clearly not part of the drawing, and impossible to
+   confuse with a border the block actually has. `inset` pulls it into the
+   margin the handles already live in, so it never crowds the words. */
 .blockCard::before {
   content: "";
   position: absolute;
-  inset-block: 0;
-  inset-inline-start: calc(var(--cw-space-sm) * -1);
-  width: 2px;
-  background: var(--cw-sem-warmth-strong);
+  inset: calc(var(--cw-space-2xs) * -1) calc(var(--cw-space-sm) * -1);
+  border: 1px dashed color-mix(in srgb, var(--cw-nav-marker) 62%, transparent);
+  border-radius: var(--cw-radius-btn);
   opacity: 0;
-  transition: opacity 140ms ease;
+  pointer-events: none;
+  transition: opacity var(--builder-motion-reveal) ease;
 }
 
 .blockCard[data-selected]::before {
   opacity: 1;
+}
+
+/* WHAT THE POINTER CARRIES IS THE BLOCK, NOT THE EDITOR AROUND IT.
+
+   Present for the single frame in which the browser photographs the row for its
+   drag image (see `portraitClass` in useRowDrag.ts). The selection rule and the
+   handle rail both live in the block's MARGIN — inside the draggable element,
+   outside its content — so the default snapshot picked up a coloured stripe and
+   two controls and flew them across the manuscript.
+
+   The row is still grabbable by the rule; it simply stops posing with it. */
+.blockCard.dragPortrait::before,
+.blockCard.dragPortrait > .blockRail {
+  opacity: 0;
 }
 
 /* The handle rail: the grip and the block's menu, in the margin, asked for by
@@ -2410,20 +2637,31 @@
   margin-block-start: var(--cw-space-sm);
   padding-inline-start: var(--cw-space-sm);
   border-inline-start: 1px solid var(--builder-rule);
-  animation: builderDocEnter 160ms ease both;
+  animation: builderDocEnter var(--builder-motion-ink) var(--builder-ease-page) both;
 }
 
+/* THE RIGHT GUTTER, NOT THE LEFT MARGIN.
+
+   It used to hang off the block's leading edge (`inset-inline-end: 100%`),
+   which put the grip in the same strip of margin as the pointer's natural path
+   to the words — a drag that started a hair too far right grabbed the block
+   instead of placing the caret. The right gutter is reserved for exactly this
+   (`--builder-doc-gutter`, both sides, see `.page[data-mode="document"]`) and
+   was sitting empty; `.nodeCard`'s own handle mirrors this same construction
+   below, so a block's controls and the controls of the node inside it now
+   read as one family instead of two different mechanisms on two different
+   sides. */
 .blockRail {
   position: absolute;
   inset-block-start: 0;
-  inset-inline-end: 100%;
+  inset-inline-start: 100%;
   z-index: 1;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--builder-motion-reveal) ease;
 }
 
 .blockRail > .rowGrip {
@@ -2468,6 +2706,7 @@
    control plate — three surfaces deep. A paragraph in a list of paragraphs is
    not an object; it needs a boundary, and a rule is the cheapest true one. */
 .nodeCard {
+  position: relative;
   display: grid;
   gap: var(--cw-space-2xs);
   padding-block: var(--cw-space-xs);
@@ -2480,19 +2719,54 @@
 /* Reveal, not furniture. A paragraph should look like a paragraph until the
    author reaches for it; this row used to carry a kind dropdown on every line
    of prose, which is what made a lesson read as a form about a lesson. */
+/* SAME GUTTER, SAME CONSTRUCTION, ONE LEVEL DEEPER.
+
+   This was an in-flow row above the node's own content at every width — the
+   block's mobile shape, worn permanently, because the desktop counterpart
+   `.blockRail` gets was never written for it. On a wide screen that put a
+   grip-and-menu row inside the manuscript's own measure, floating over
+   whichever paragraph or list happened to render there — "the menu is in a
+   random place" was this row landing in the text column because nothing ever
+   moved it to the gutter.
+
+   Base styles stay the in-flow, right-justified shape used below 901px, where
+   there IS no gutter to hang controls in (matches `.blockRail`'s own
+   `@media (max-width: 900px)` override). The desktop form — absolute, in the
+   gutter, aligned to this node's own top via `.nodeCard`'s new
+   `position: relative` — is declared further down, mirroring `.blockRail`
+   exactly so a block's rail and a node's head read as the same family stacked
+   one level apart, not two unrelated mechanisms. */
 .nodeHead {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: var(--cw-space-2xs);
   min-height: 1.25rem;
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--builder-motion-reveal) ease;
 }
 
 .nodeCard:hover .nodeHead,
 .nodeCard:focus-within .nodeHead,
 .nodeHead:has([aria-expanded="true"]) {
   opacity: 1;
+}
+
+/* The desktop form — `.blockRail`'s own construction, one level deeper. Lands
+   in the same right gutter, aligned to THIS node's top rather than the
+   block's, because `.nodeCard` is now the positioned ancestor instead of
+   `.blockCard`. Nothing here decides visibility; the reveal rule above already
+   covers both shapes. */
+@media (min-width: 901px) {
+  .nodeHead {
+    position: absolute;
+    inset-block-start: 0;
+    inset-inline-start: 100%;
+    z-index: 1;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0;
+  }
 }
 
 .nodeKind {
@@ -2887,6 +3161,9 @@
   z-index: var(--ds-z-sticky);
   display: flex;
   align-items: center;
+  /* Held from below, so the bar is the same height whether it is carrying a
+     short word, a long sentence, or an ellipsis of one. */
+  min-height: calc(var(--ds-touch-target-min) + var(--cw-space-sm) * 2);
   gap: var(--cw-space-xs);
   flex-wrap: nowrap;
   padding: var(--cw-space-sm);
@@ -2905,10 +3182,16 @@
   font-size: 0.88rem;
 }
 
+/* The action keeps its own width and never trades it with the status beside it.
+   The labels no longer change (see BuilderCourseView), so hugging is stable —
+   what this guards is the reverse direction: a long status must not be allowed
+   to squeeze the button, because the button is the control and the status is
+   commentary. */
 .saveBar .commitAction,
 .saveBar .quietAction {
   flex: 0 0 auto;
   min-width: 0;
+  justify-content: center;
 }
 
 /* ── Blockers ─────────────────────────────────────── */
@@ -3084,7 +3367,7 @@
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
-  animation: menuIn 140ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: menuIn var(--builder-motion-tool, 140ms) var(--builder-ease-tool, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
 @keyframes menuIn {
@@ -3193,7 +3476,7 @@
   border-start-end-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
-  animation: sheetIn 240ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: sheetIn var(--builder-motion-page) var(--builder-ease-tool);
 }
 
 @keyframes sheetIn {
@@ -3273,7 +3556,7 @@
 .courseSettingSummary {
   min-width: 0;
   display: grid;
-  gap: var(--cw-space-3xs, 0.25rem);
+  gap: var(--cw-space-2xs);
   color: var(--cw-platform-muted);
   font-size: 0.88rem;
   line-height: 1.45;
@@ -3425,15 +3708,6 @@
 }
 
 /* The one authored moment stays; the movement does not. */
-@media (prefers-reduced-motion: reduce) {
-  .menuList,
-  .sheetBody,
-  /* Two classes deep, so it has to be named here or the drawer keeps sliding. */
-  .sheetSide .sheetBody {
-    animation: none;
-  }
-}
-
 /* ── Undo ─────────────────────────────────────────── */
 
 /* The pair sits ahead of the save state in the bar, and stays one object: two
@@ -3474,7 +3748,7 @@
   display: grid;
   gap: var(--cw-space-sm);
   padding-block-end: var(--cw-space-lg);
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
 }
 
 .versionCheckpoint .commitAction,
@@ -3525,7 +3799,7 @@
   justify-content: space-between;
   gap: var(--cw-space-sm);
   padding-block: var(--cw-space-xs);
-  border-block-end: 1px solid var(--cw-mat-stroke-inner);
+  border-block-end: 1px solid var(--builder-rule);
 }
 
 /* ── Drag to reorder ──────────────────────────────── */
@@ -3549,7 +3823,7 @@
     color: var(--cw-platform-muted);
     cursor: grab;
     opacity: 0;
-    transition: opacity 120ms ease;
+    transition: opacity var(--builder-motion-reveal) ease;
   }
 
   /* Revealed by its own row, not by itself: a grip that only appears once the
@@ -3621,14 +3895,22 @@
   overflow-wrap: anywhere;
 }
 
-/* The writing surfaces focus like every other field — tight, not at the
-   standalone-control offset. `.inlineSurface` used to be declared twice with
-   the two different offsets, 500 lines apart; the later one won by position
-   and the field ended up ringed like a button. */
+/* THE RING FOLLOWS THE CORNER, AND THE CORNER IS THE SCALE'S.
+
+   `.inlineBare` is the in-place field: no plate, no border, no radius — so its
+   focus outline was drawn on a raw box and came out a hard rectangle around a
+   line of prose, the one square corner on a screen of soft ones. An outline
+   takes the border-radius of the box it wraps even when that box has no border,
+   so naming the radius here is the whole fix.
+
+   `--cw-radius-btn` because the scale already answered this: `md` 16 is
+   "buttons, inputs, list rows" (docs/design-system.md § Radii). A field and a
+   button are the same size of object and get the same corner. */
 .inlineBare:focus-visible,
 .inlineSurface:focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: var(--ds-focus-ring-offset-tight);
+  outline-offset: var(--ds-focus-ring-offset);
+  border-radius: var(--cw-radius-btn);
 }
 
 /* The prompt is the field, not a caption above it. `data-empty` rather than
@@ -3649,7 +3931,8 @@
   min-height: var(--ds-touch-target-min);
   padding: var(--cw-space-2xs) var(--cw-space-xs);
   border: 1px solid var(--builder-rule);
-  border-radius: var(--cw-radius-sm);
+  /* `sm` 12 was drift: the scale puts inputs on `md` 16 with buttons. */
+  border-radius: var(--cw-radius-btn);
   background: var(--cw-mat-surface);
   color: inherit;
   caret-color: var(--cw-platform-text);
@@ -3870,7 +4153,7 @@
   margin: 0;
   padding-inline-start: 1.4rem;
   display: grid;
-  gap: var(--cw-space-3xs, 0.25rem);
+  gap: var(--cw-space-2xs);
 }
 
 .nodeUl {
@@ -3914,15 +4197,19 @@
   transform: translate(-50%, calc(-100% - 0.5rem));
   display: flex;
   align-items: center;
-  gap: 2px;
+  /* Was 2px flush against every neighbour, which read fine for six words of
+     varying width but crowded a row of same-size glyphs — nothing told the eye
+     where one control ended and the next began except the divider lines. A
+     real gap plus the divider's own margin now does that job together. */
+  gap: var(--cw-space-2xs);
   max-width: calc(100vw - 1rem);
   overflow-x: auto;
   overflow-y: clip;
-  padding: 3px;
+  padding: var(--cw-space-2xs);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
-  animation: formatIn 120ms cubic-bezier(0.16, 1, 0.3, 1);
+  animation: formatIn var(--builder-motion-tool, 140ms) var(--builder-ease-tool, cubic-bezier(0.16, 1, 0.3, 1));
 }
 
 /* Selection too near the top of the window for the panel to sit above it. */
@@ -3938,7 +4225,9 @@
 
 /* Type, radius and padding are the contract's, not this panel's. A toolbar that
    shrank its own labels to stay narrow is the exact trade `guard:buttons`
-   exists to refuse — the panel wraps or gets wider instead. */
+   exists to refuse — the panel wraps or gets wider instead. Only «Додати»
+   (the link-address confirm) still wears this shape — every other action in
+   the bar is icon-only, see `.formatIconAction` below. */
 .formatAction {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
   white-space: nowrap;
@@ -3946,6 +4235,52 @@
 
 .formatAction:hover:not(:disabled) {
   background: var(--cw-mat-surface-sunk);
+}
+
+/* SIX WORDS BECOME SIX GLYPHS, AT THE PRICE OF A TOOLTIP.
+
+   The bar used to spell out «Жирний / Курсив / Посилання / Список / 1. Список
+   / Цитата / Код / Як текст» — a sentence hovering over a sentence, on the one
+   surface where the author is already looking at their own words. Every
+   editor this trains on reads bold/italic/link/list as glyphs; there is
+   nothing this bar can teach by spelling them out that the glyph does not
+   already say faster.
+   `title` carries the desktop tooltip; `aria-label` is unconditional, because
+   a touch session has no hover to reveal `title` at all and the name still has
+   to exist for anyone reading by voice. Square, matching every other icon-only
+   control in the builder (`.iconAction`, `.blockInsertAction`). */
+.formatIconAction {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
+}
+
+.formatIconAction:hover:not(:disabled),
+.formatIconAction:focus-visible {
+  color: var(--cw-platform-text);
+  background: var(--cw-mat-surface-sunk);
+}
+
+/* The paragraph-shape actions and the overflow that replaces them below
+   901px — see the comment at the call site. `display: contents` on the wide
+   group keeps its dividers and buttons direct flex children of `.formatBar`,
+   so hiding it does not leave an empty flex item taking up a gap. */
+.formatWideOnly {
+  display: contents;
+}
+
+.formatNarrowOnly {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .formatWideOnly {
+    display: none;
+  }
+
+  .formatNarrowOnly {
+    display: contents;
+  }
 }
 
 .formatDivider {
@@ -3998,10 +4333,20 @@
    the module/lesson hierarchy. Detail remains available in the release sheet,
    but each workspace mode stays quiet enough to scan like a manuscript. */
 
+/* STUCK BELOW THE HEADER, NOT UNDER IT.
+   Below 901px the platform header (`mode="workspace"`) is itself sticky at
+   `top: 0` — see PlatformResponsive.module.css's `.header.header[data-cw-
+   header-mode="workspace"]` — so pinning this strip to the same edge put two
+   sticky layers at the same coordinate and let the header's higher z-index
+   win: after any scroll the three mode tabs sat directly behind roughly 4rem
+   of chrome instead of below it. `--builder-topbar-height` is that header's
+   own measured box (`calc(4rem + 1px)`, declared on `.shell`, which this strip
+   is a descendant of) — the token that already existed for exactly this
+   number, used until now only for a min-height calc on the document. */
 .courseMobileNav {
   position: sticky;
   z-index: calc(var(--ds-z-sticky) - 1);
-  inset-block-start: 0;
+  inset-block-start: var(--builder-topbar-height);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;
@@ -4065,7 +4410,7 @@
      nav item has the same perceived stroke weight as the selected icon. */
   transform: scaleX(0.58) scaleY(3.4) rotate(-0.4deg);
   transform-origin: center;
-  transition: opacity 160ms ease, transform 160ms ease;
+  transition: opacity var(--builder-motion-ink) ease, transform var(--builder-motion-ink) ease;
 }
 
 .courseMobileNavItem:hover,
@@ -4233,7 +4578,7 @@
 
 .moduleLessonCount {
   flex: 0 0 auto;
-  padding: var(--cw-space-3xs, 0.25rem) var(--cw-space-xs);
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
   border-radius: var(--cw-radius-pill);
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-muted);
@@ -4552,24 +4897,5 @@
 @media (min-width: 1660px) {
   .courseStatusStrip {
     display: none;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .aside,
-  .toolLayer,
-  .toolLayerContent {
-    transition: none;
-  }
-
-  .toolDrawer {
-    animation: none;
-  }
-
-  /* The recipe, not a list of its users — .toolTabRing and .blockInsertInkRing
-     were missing here and kept animating for a reader who asked for no motion. */
-  .inkMark,
-  .inkRing {
-    transition: none;
   }
 }

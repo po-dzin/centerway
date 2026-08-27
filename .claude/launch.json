@@ -49,6 +49,19 @@
       "port": 8041,
       "autoPort": false,
       "url": "http://localhost:8041/"
+    },
+    {
+      "name": "dev-8041",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "8041"
+      ],
+      "port": 8041,
+      "autoPort": false,
+      "url": "http://localhost:8041/"
     }
   ]
 }

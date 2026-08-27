@@ -83,10 +83,26 @@ function edgeOf(event: DragEvent): DropEdge {
  *   is owned by something larger: block reordering lands in the GAPS between
  *   blocks, and a row that also handled the drop would answer first and answer
  *   differently.
+ * @param portraitClass A class put on the row for exactly the frame in which
+ *   the browser snapshots it, and taken off again on the next one.
+ *
+ *   WHAT IT IS FOR. The default drag image is a picture of the whole draggable
+ *   element — and a block carries things in its margin that are not the block:
+ *   the selection rule and the handle rail. Lifting a paragraph therefore
+ *   lifted a stripe and two controls with it, which is the editor's furniture
+ *   floating over the editor. The class hides that furniture for the snapshot
+ *   only, so what the pointer carries is the block's own content. The row is
+ *   still grabbable anywhere it was before — this changes the portrait, not the
+ *   handle.
  */
 export function useRowDrag(
   onMove: (from: DragRef, to: DragRef, edge: DropEdge) => void,
-  { crossGroup = false, mime, dropTargets = true }: { crossGroup?: boolean; mime?: string; dropTargets?: boolean } = {}
+  {
+    crossGroup = false,
+    mime,
+    dropTargets = true,
+    portraitClass,
+  }: { crossGroup?: boolean; mime?: string; dropTargets?: boolean; portraitClass?: string } = {}
 ): RowDrag {
   const [dragging, setDragging] = useState<DragRef | null>(null);
   const [over, setOver] = useState<{ ref: DragRef; edge: DropEdge } | null>(null);
@@ -155,6 +171,16 @@ export function useRowDrag(
           // Firefox refuses to start a drag with an empty payload.
           event.dataTransfer.setData("text/plain", key(ref));
           if (mime) event.dataTransfer.setData(mime, key(ref));
+          if (portraitClass) {
+            // `setDragImage` reads the element as it is painted at THIS moment,
+            // so the class only has to survive the call. Removing it on the next
+            // frame keeps the row on screen unchanged while it is being dragged.
+            const node = event.currentTarget as HTMLElement;
+            const rect = node.getBoundingClientRect();
+            node.classList.add(portraitClass);
+            event.dataTransfer.setDragImage(node, event.clientX - rect.left, event.clientY - rect.top);
+            requestAnimationFrame(() => node.classList.remove(portraitClass));
+          }
           setDragging(ref);
         },
         onDragEnd: () => {
@@ -190,7 +216,7 @@ export function useRowDrag(
         ...(isOver && dropTargets ? { "data-drop": over.edge } : {}),
       };
     },
-    [accepts, armed, dragging, dropTargets, mime, onMove, over]
+    [accepts, armed, dragging, dropTargets, mime, onMove, over, portraitClass]
   );
 
   return { handleProps, rowProps };

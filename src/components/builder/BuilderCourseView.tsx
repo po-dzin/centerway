@@ -502,8 +502,16 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           >
             <Icon name="clock" size={18} />
           </button>
-          <button className={styles.quietAction} type="button" onClick={preview} disabled={working} title={dirty ? "Зберегти й відкрити як учень" : "Відкрити як учень"}>
-            Переглянути
+          <button
+            className={styles.workspacePreviewAction}
+            type="button"
+            onClick={preview}
+            disabled={working}
+            aria-label="Переглянути як учень"
+            title={dirty ? "Зберегти й відкрити як учень" : "Відкрити як учень"}
+          >
+            <Icon name="eye" size={18} />
+            <span className={styles.workspaceActionLabel}>Переглянути</span>
           </button>
           <button
             className={`${styles.commitAction} ${styles.courseHeaderSave}`}
@@ -523,7 +531,11 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           onMode={selectWorkspaceMode}
         />
       }
-      asideCollapsed={railCollapsed}
+      /* COMPACT, NOT COLLAPSED. Folding this rail must leave the three modes on
+         screen as icons — they are the whole navigation of the course
+         workspace, and a fold that removes them is a fold that removes the way
+         out. `collapsed` empties the panel; `compact` narrows it. */
+      asideCompact={railCollapsed}
       onAsideToggle={() => setRailCollapsed((current) => !current)}
       onNavigate={navigate}
     >
@@ -642,7 +654,10 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       </div>
 
       <div className={styles.courseSettingsPanel}>
-        <h2 className={styles.panelTitle} id="course-overview-title">Огляд</h2>
+        {/* «Про курс», not «Огляд». This heading names the settings panel it
+            sits on, and the tab above already says «Огляд» — one word printed
+            twice in two rows is not a second fact. */}
+        <h2 className={styles.panelTitle} id="course-overview-title">Про курс</h2>
         <BuilderCourseSettings
           course={course}
           onChange={editCourse}
@@ -665,7 +680,9 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       <section id="course-structure" hidden={workspaceMode !== "content"} className={`${styles.panel} ${styles.structure} ${structureView === "cards" ? styles.structureCards : ""}`} aria-labelledby="course-structure-title">
         <header className={`${styles.panelHead} ${styles.structureHead}`}>
           <div>
-            <span className={styles.structureKicker}>{trailTitle(course.title, "Курс без назви")}</span>
+            {/* No kicker. It printed the course title one row under the trail
+                that already names it — on a phone that echo cost a whole line
+                of a screen where the first module was six rows down. */}
             <h2 className={styles.structureTitle} id="course-structure-title">Зміст</h2>
             <p className={styles.structureMeta}>
               {course.modules.length} {plural(course.modules.length, "модуль", "модулі", "модулів")} ·{" "}
@@ -761,22 +778,36 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </section>
       </section>
 
+      {/* ONE BAR, ONE SIZE, IN EVERY STATE.
+
+          It used to render two different things: three controls normally, and a
+          single sentence while a save-before-navigate was in flight. So the one
+          element that sits at the bottom edge of the document changed its own
+          height and its own column layout at the exact moment the author was
+          waiting on it — the thing you are looking at moved while you looked.
+
+          The slots are now fixed and only their CONTENT changes. Undo and save
+          are disabled rather than removed while a departure is pending, which
+          is also the truth: they are unavailable, not absent. */}
       <div className={`${styles.saveBar} ${styles.courseSaveBar}`} data-pending={pendingHref ? "" : undefined}>
-        {pendingHref ? (
-          <span className={styles.saveState} role="status" aria-live="polite">
-            Зберігаємо зміни перед переходом…
-          </span>
-        ) : (
-          <>
-            <BuilderHistory history={history} disabled={working} />
-            <span className={styles.saveState} role="status" aria-live="polite">
-              {note ?? autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
-            </span>
-            <button className={styles.commitAction} type="button" onClick={() => void save()} disabled={working || !dirty}>
-              {autosave.saving ? "Зберігаємо…" : "Зберегти зараз"}
-            </button>
-          </>
-        )}
+        <BuilderHistory history={history} disabled={working || pendingHref !== null} />
+        <span className={styles.saveState} role="status" aria-live="polite">
+          {pendingHref
+            ? "Зберігаємо зміни перед переходом…"
+            : note ?? autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
+        </span>
+        {/* The label never changes. It names what the button DOES, and the line
+            beside it already says what is happening — a button that relabels
+            itself mid-press is just a narrower button arriving under the
+            cursor. Progress is carried by `disabled` and by the status. */}
+        <button
+          className={styles.commitAction}
+          type="button"
+          onClick={() => void save()}
+          disabled={working || pendingHref !== null || !dirty}
+        >
+          Зберегти зараз
+        </button>
       </div>
     </BuilderShell>
   );

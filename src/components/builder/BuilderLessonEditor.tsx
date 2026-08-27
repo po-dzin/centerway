@@ -251,7 +251,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
    */
   const blockDrag = useRowDrag(
     useCallback(() => undefined, []),
-    { mime: BLOCK_MOVE_MIME, dropTargets: false }
+    { mime: BLOCK_MOVE_MIME, dropTargets: false, portraitClass: styles.dragPortrait }
   );
 
   /**
@@ -632,8 +632,16 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       }
       tools={
         <>
-          <button className={styles.workspacePreviewAction} type="button" onClick={preview} disabled={working} title={dirty ? "Зберегти й відкрити урок як учень" : "Відкрити урок як учень"}>
-            <Icon name="view-rows" size={18} /> Переглянути
+          <button
+            className={styles.workspacePreviewAction}
+            type="button"
+            onClick={preview}
+            disabled={working}
+            aria-label="Переглянути урок як учень"
+            title={dirty ? "Зберегти й відкрити урок як учень" : "Відкрити урок як учень"}
+          >
+            <Icon name="eye" size={18} />
+            <span className={styles.workspaceActionLabel}>Переглянути</span>
           </button>
           <span className={styles.workspaceSaveStatus} role="status" aria-live="polite">
             <Icon name="check" size={18} /> {autosave.saving ? "Зберігаємо…" : dirty ? "Є зміни" : "Збережено"}
@@ -874,7 +882,7 @@ function LessonToolContent({
                   }}
                   onClick={() => onInsert(insertPosition, type)}
                 >
-                  <Icon name={type === "practice_block" ? "motion" : type === "boundary_note" ? "boundary" : "document"} size={19} />
+                  <Icon name={type === "practice_block" ? "motion" : type === "boundary_note" ? "boundary" : "document"} size={20} />
                   <span><InkLabel strong>{BLOCK_TYPE_LABELS[type]}</InkLabel><small>{BLOCK_TYPE_HINTS[type]}</small></span>
                   <Icon name="grip" size={16} />
                 </button>
@@ -899,7 +907,7 @@ function LessonToolContent({
     return (
       <div className={styles.toolStack}>
         <div className={styles.toolSelectionTitle}>
-          <Icon name="boundary" size={22} />
+          <Icon name="boundary" size={20} />
           <span><small>Блок {selectedBlockIndex + 1}</small><strong>{BLOCK_TYPE_LABELS[selectedBlock.type]}</strong></span>
         </div>
         <p className={styles.toolHint}>{BLOCK_TYPE_HINTS[selectedBlock.type]}</p>
