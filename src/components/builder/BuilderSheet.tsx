@@ -1,21 +1,24 @@
 "use client";
 
 /**
- * A sheet for one whole task — today, the course's settings.
+ * A sheet for one whole task — today, the course's version history.
  *
  * NATIVE `<dialog>`, on purpose. `showModal()` brings a focus trap, Escape,
  * inertness of the page behind it and a `::backdrop` to style — four things a
  * hand-rolled overlay gets wrong in four different ways, and the design system's
  * own rule is to prefer the platform control and customise only the surface.
  *
- * WHY SETTINGS EARN A SHEET AT ALL. They used to be a panel in the page, and a
- * panel is right for something you read on the way past. Settings are the
- * opposite: entered deliberately, changed rarely, and irrelevant to the reason
- * an author opened the course. In the flow they cost every visit a scroll past
- * the entitlement codes to reach the lesson list.
+ * WHY THIS EARNS A SHEET AT ALL. A panel in the page is right for something you
+ * read on the way past. This is the opposite: entered deliberately, used rarely,
+ * and irrelevant to the reason an author opened the course — in the flow it cost
+ * every visit a scroll past it to reach the lesson list.
  *
- * It rises from the bottom on a phone and sits centred on a desk, because the
- * thumb is at the bottom and the eye is in the middle.
+ * TWO PLACEMENTS, and the difference is only where the surface lives. Both rise
+ * from the bottom on a phone, because the thumb is there. On a desk `center`
+ * sits in the middle, where the eye is, and `side` becomes a right drawer flush
+ * with the viewport edge — the same object as the builder's tool layer, so it
+ * carries that panel's ground and drawn rule rather than a floating plate's
+ * radius and shadow.
  */
 
 import { useEffect, useRef, type ReactNode } from "react";

@@ -39,11 +39,42 @@
   height: 100svh;
   height: 100dvh;
   display: grid;
+  /* THE COLUMN IS DEFINITE, like every other track in this file. As an implicit
+     `auto` it was sized to the workspace's max-content — 1495px at a 1440px
+     viewport — and `overflow: hidden` right below swallowed the difference
+     silently: the three-column body was 55px too wide, so the right tool panel
+     hung off the edge of the screen with its text clipped. A track that can be
+     widened by its contents is not a layout, it is a suggestion. */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
   background: var(--cw-platform-bg);
   color: var(--cw-platform-text);
   font-family: var(--cw-font-ui);
+}
+
+/* ── One bar, and it is quiet ─────────────────────────
+
+   Every scroller in the builder is the same object, so it gets one appearance:
+   a thin, warm thumb on no track. A tool with an outline, a document and a
+   panel on screen at once has three of these, and at the platform default they
+   read as three chrome edges competing with the page's own drawn rules. The
+   scroller that MOVES gets noticed; the rest disappear.
+
+   Thumb strength is the drawn rule's own ink, so a bar and a panel edge are the
+   same value — which is the point: a scrollbar is a line on the page, not a
+   widget on top of it. */
+.page,
+.asideContent,
+.toolDrawerBody,
+.pickerBody,
+.sheetScroll,
+.slashList,
+.previewTableWrap,
+.previewCode,
+.formatBar {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--cw-platform-text) 22%, transparent) transparent;
 }
 
 /* ── Moving between lessons ───────────────────────────
@@ -146,20 +177,29 @@
    kept in step with the platform's by hand. */
 
 /* Trail and page tools on one line. The tools are the course's or the lesson's,
-   never the application's, so they sit beside the line that names them. */
+   never the application's, so they sit beside the line that names them.
+
+   ONE LINE WHERE THERE IS ROOM, and it wraps where there is not: on a phone the
+   crumb and the handful of controls do not fit, and a row that refuses to wrap
+   does not get narrower — it makes the whole page scroll sideways. Wrapped, the
+   tools drop under the trail and stay at the trailing edge. */
 .pageTrail {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--cw-space-sm);
+  flex-wrap: wrap;
   min-width: 0;
 }
 
 .pageTools {
-  flex: 0 0 auto;
+  flex: 1 1 auto;
   display: flex;
   align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
   gap: var(--cw-space-2xs);
+  min-width: 0;
 }
 
 .workspaceTopbarContext {
@@ -171,8 +211,23 @@
   gap: var(--cw-space-lg);
 }
 
+/* THE TRAIL SITS ON THE BAR'S CENTRE LINE, and the bar's height does not depend
+   on how deep the route is. Two things were in the way, both inherited from the
+   trail's other life above page content.
+
+   It carries an 8rem-tenth bottom margin for the gap under it there. In a
+   centred row that margin is not spacing — the MARGIN BOX is what gets centred,
+   so 48px of crumb plus 8px of nothing centred as 56 puts the crumb 4px high
+   and grows the bar by the difference. Nothing sits under it here.
+
+   And it wraps. A four-step route in the lesson editor took two lines and made
+   the topbar 79px instead of 65 — the one part of the screen that is supposed
+   never to move. The steps already truncate with an ellipsis; on this row that
+   is the correct answer and wrapping never was. */
 .workspaceTopbarContext > :first-child {
   min-width: 0;
+  flex-wrap: nowrap;
+  margin-block-end: 0;
 }
 
 .workspaceTopbarTools {
@@ -316,6 +371,7 @@
   .asideContent {
     height: 100%;
     overflow-y: auto;
+    overflow-x: clip;
     overscroll-behavior: contain;
     min-height: 0;
   }
@@ -386,19 +442,44 @@
   position: fixed;
   z-index: calc(var(--ds-z-sticky) + 1);
   inset: auto 0 0;
+  /* ONE BOX WITH A CEILING, and the tab strip lives inside it.
+
+     The strip used to hang above the sheet on `inset: … 100% auto` — measured
+     from the sheet's top edge — and the sheet took 76svh whether it was open or
+     not, because closing it only changed opacity. Two consequences, both bad on
+     the tablet band: the strip was stranded halfway up the viewport permanently,
+     and it landed exactly on the page's own tools row, where it covered the save
+     control. A tab strip that hides the button it sits on is worse than no
+     strip.
+
+     Now the layer is one grid — strip, then panel — so the strip rides the
+     sheet's top edge without being positioned against it, a closed panel takes
+     no room at all, and a single ceiling on the layer governs how far the whole
+     thing can reach.
+
+     THE CEILING IS MEASURED FROM THE TOP, not as a fraction of the height. A
+     percentage moves the sheet's top edge with the viewport, so it clears the
+     page's chrome on a tall screen and cuts through it on a short one. Reserved
+     from the top, the edge lands in the same place on every screen — under the
+     topbar and under the trail row, which wraps to two lines on this band — and
+     a shorter viewport simply gets a shorter sheet. */
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  max-height: calc(100svh - var(--builder-topbar-height) - 13rem);
   pointer-events: none;
 }
 
-/* On a phone the layer is a bottom sheet whose rail floats above it, so the
-   desktop wrapper must not introduce a box here — it becomes the panel grid
-   only where there is a panel. */
+/* The layer's own grid holds the strip and the panel, so the wrapper must not
+   introduce a box between them — it becomes the panel grid only on desktop,
+   where there is a panel column to be. */
 .toolLayerContent {
   display: contents;
 }
 
 .toolModeRail {
-  position: absolute;
-  inset: auto var(--cw-space-xs) 100% auto;
+  position: relative;
+  justify-self: end;
+  margin-inline-end: var(--cw-space-xs);
   display: flex;
   align-items: center;
   pointer-events: auto;
@@ -445,45 +526,28 @@
   color: var(--cw-platform-text);
 }
 
-.toolTabRing {
-  position: absolute;
-  inset: 50% auto auto 50%;
-  width: 2.65rem;
-  height: 2.65rem;
-  color: var(--cw-nav-marker);
-  opacity: 0;
-  pointer-events: none;
-  transform: translate(-50%, -50%) scale(0.62) rotate(-5deg);
-  transition: opacity 160ms ease, transform 160ms ease;
-}
-
-.toolTab[aria-pressed="true"] .toolTabRing,
-.toolTab:hover .toolTabRing,
-.toolTab:focus-visible .toolTabRing,
-.toolClose:hover .toolTabRing,
-.toolClose:focus-visible .toolTabRing {
-  opacity: var(--cw-ink-hover-opacity);
-  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-5deg);
-}
-
 .toolDrawer {
-  max-height: min(76svh, 42rem);
+  justify-self: stretch;
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-height: 0;
   overflow: hidden;
   border: 1px solid var(--builder-rule);
   border-block-end: 0;
   border-radius: var(--cw-radius-lg) var(--cw-radius-lg) 0 0;
   background: var(--cw-platform-bg);
   box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
-  opacity: 0;
-  pointer-events: none;
-  transform: translateY(1.25rem);
-  transition: opacity 180ms ease, transform 180ms ease;
+  pointer-events: auto;
+  /* An ANIMATION, not a transition, because the closed panel is now gone from
+     the layout rather than merely transparent — and a transition has nothing to
+     run from when an element appears. Same rise as the sheet, same curve. */
+  animation: sheetIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.toolLayer[data-open] .toolDrawer {
-  opacity: 1;
-  pointer-events: auto;
-  transform: translateY(0);
+/* GONE, not invisible. This is what the desktop band has always done; the
+   compact band kept the box and paid for it with a stranded tab strip. */
+.toolLayer:not([data-open]) .toolDrawer {
+  display: none;
 }
 
 .toolDrawerHead {
@@ -499,9 +563,13 @@
   font-weight: 600;
 }
 
+/* The layer's ceiling governs the height now, so the body takes what is left of
+   it. The `calc(76svh - 4rem)` this replaces was the sheet's cap minus a guess
+   at the head, which drifted the moment either changed. */
 .toolDrawerBody {
-  max-height: calc(min(76svh, 42rem) - 4rem);
+  min-height: 0;
   overflow-y: auto;
+  overflow-x: clip;
   padding: var(--cw-space-md);
 }
 
@@ -666,6 +734,9 @@
     grid-template-rows: minmax(0, 1fr) auto;
     height: 100%;
     min-height: 0;
+    /* The compact sheet's ceiling has no meaning for a full-height column, and
+       left in place it cut 12rem off the bottom of the panel. */
+    max-height: none;
     box-sizing: border-box;
     overflow: visible;
     padding: var(--builder-panel-pad-block) 0 0;
@@ -695,6 +766,8 @@
 
   .toolModeRail {
     position: absolute;
+    justify-self: stretch;
+    margin-inline-end: 0;
     inset: var(--cw-space-md) 100% auto auto;
     z-index: 2;
     width: var(--builder-mode-rail-width);
@@ -744,10 +817,8 @@
     opacity: 1;
     transform: none;
     transition: none;
-  }
-
-  .toolLayer:not([data-open]) .toolDrawer {
-    display: none;
+    /* A column does not arrive from below. */
+    animation: none;
   }
 
   .toolDrawerBody {
@@ -807,7 +878,22 @@
   position: relative;
 }
 
-.stepInkRing {
+/* ── The ink ring, once ────────────────────────────
+
+   Four controls draw this mark — the header's step arrows, the tool rail's
+   tabs, the icon options in the course list, and the block inserter — and all
+   four render the SAME graphic: <HandGraphic name="ink-ring" size={42} />.
+   They had four stylesheets between them: rest scale 0.6 / 0.62 / 0.72 / none,
+   rotation -4deg / -5deg, and one that hardcoded a 2.65rem box while the other
+   three read --cw-ink-ring-size. Two of them were also missing from the
+   reduced-motion block, so a reader who asked for no motion still got the ring
+   springing open on hover.
+
+   One recipe, and the axes that vary are tokens: size and the hover pair come
+   from globals, and the rest scale is the single literal below because it is
+   the same number for every consumer. Anything that needs a different ring is
+   a different mark and needs a reason written next to it. */
+.inkRing {
   position: absolute;
   inset: 50% auto auto 50%;
   width: var(--cw-ink-ring-size);
@@ -820,10 +906,43 @@
   transition: opacity 160ms ease, transform 160ms ease;
 }
 
-.stepAction:hover:not(:disabled) .stepInkRing,
-.stepAction:focus-visible .stepInkRing {
+/* The tool rail's tab draws the same mark; `composes` resolves only against a
+   class already declared above it in this file. */
+.toolTabRing {
+  composes: inkRing;
+}
+
+/* Every way the ring is asked to appear, in one place: hover, keyboard focus,
+   and the two "this one is current" states (a pressed toggle, an open menu).
+   The selected states hold the ring at full strength; hover and focus show it
+   at the token's hover weight. */
+.stepAction:hover:not(:disabled) .inkRing,
+.stepAction:focus-visible .inkRing,
+.toolTab:hover .inkRing,
+.toolTab:focus-visible .inkRing,
+.toolClose:hover .inkRing,
+.toolClose:focus-visible .inkRing,
+.viewOption:hover .inkRing,
+.viewOption:focus-visible .inkRing,
+.menuTrigger:hover .inkRing,
+.menuTrigger:focus-visible .inkRing,
+.slugEditAction:hover .inkRing,
+.slugEditAction:focus-visible .inkRing,
+.titleEditAction:hover .inkRing,
+.titleEditAction:focus-visible .inkRing {
   opacity: var(--cw-ink-hover-opacity);
   transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+}
+
+.toolTab[aria-pressed="true"] .inkRing,
+.viewOption[aria-pressed="true"] .inkRing,
+.menuTrigger[aria-expanded="true"] .inkRing {
+  opacity: 0.9;
+  transform: translate(-50%, -50%) scale(1) rotate(-4deg);
+}
+
+.stepInkRing {
+  composes: inkRing;
 }
 
 .contentsAction {
@@ -851,6 +970,20 @@
    page rather than over it: an overlay would need a scrim, a focus trap and an
    escape key to be honest, and all three for a list the author can also reach
    by pressing the course crumb. */
+/* DEFINITE TRACKS, all the way down. Every one of these was an implicit `auto`
+   column, so the widest module line — a flex row of a title and two controls,
+   none of which shrinks — sized the whole outline to its max-content and the
+   panel scrolled sideways. The titles were clipped at the panel edge and the
+   only way to read one was a horizontal drag nobody looks for in a sidebar.
+   The rows already know how to truncate; they just needed a width to truncate
+   against. */
+.contentsPanel,
+.contentsTree,
+.contentsLessons,
+.contentsGroup {
+  grid-template-columns: minmax(0, 1fr);
+}
+
 .contentsPanel {
   padding: var(--cw-space-md);
   display: grid;
@@ -1006,14 +1139,11 @@
   font: inherit;
   text-align: start;
   cursor: pointer;
+  justify-self: start;
 }
 
 .contentsAdd {
   margin-inline-start: 2.25rem;
-}
-
-.contentsAddModule {
-  justify-self: start;
 }
 
 /* ── Page ─────────────────────────────────────────── */
@@ -1029,20 +1159,28 @@
   margin: 0 auto;
   padding-block: var(--cw-space-lg) var(--cw-space-3xl);
   display: grid;
+  /* THE TRACK IS DEFINITE, so nothing inside can widen the page. An implicit
+     `auto` column is sized to the widest row's max-content, which is how a
+     single long control row used to hand the whole document a horizontal
+     scrollbar — a bar the author sees on every screen and can do nothing with,
+     because the page has no width to reveal. */
+  grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-lg);
   align-content: start;
   overflow-y: auto;
+  /* `clip`, NOT the `auto` it computes to by default. A single-axis `auto`
+     silently makes the other axis a scroll container too: one sub-pixel of
+     horizontal overflow then draws a real scrollbar. Clip keeps the page a
+     vertical scroller only. */
+  overflow-x: clip;
   overscroll-behavior: contain;
   scrollbar-gutter: stable;
 }
 
-/* A grid child with a long unbroken control row must not redefine the mobile
-   page track. The page itself already owns a 1rem viewport gutter on both
-   sides; cap its direct surfaces to that same definite measure so intrinsic
-   widths cannot silently consume the right gutter. */
+/* The definite track above does the capping now. What is left is the one thing
+   a track cannot do for a child: let it shrink below its own content. */
 .page > * {
   min-width: 0;
-  max-inline-size: calc(100vw - 2rem);
 }
 
 /* Title and the single primary action on one row. Stacked, the button read as
@@ -1199,7 +1337,7 @@
 }
 
 .quietAction {
-  composes: quiet from "../platform/PlatformButtons.module.css";
+  composes: secondary from "../platform/PlatformButtons.module.css";
 }
 
 .workspacePreviewAction {
@@ -1285,7 +1423,7 @@
 
 /* "Add" is a tertiary action inside a card, which is what `quiet` is for. */
 .addAction {
-  composes: quiet from "../platform/PlatformButtons.module.css";
+  composes: secondary from "../platform/PlatformButtons.module.css";
   justify-self: start;
 }
 
@@ -1297,35 +1435,36 @@
 
 /* ── View switch ──────────────────────────────────── */
 
-/* A SOFT RECT, NOT A PILL. The switch holds two square icon targets now, and a
-   pill around two squares leaves a crescent of track showing at each end that
-   belongs to neither option. The button radius is the one every other control
-   in this toolbar already uses, so the switch sits in the row rather than
-   beside it. */
+/* Two icon targets and one ink mark — no track, no plate.
+
+   This control carried TWO recipes arguing with each other, both with a
+   comment defending itself: a segmented switch on a sunk track with the
+   pressed option raised on its own surface, and — 2,700 lines lower in this
+   same file, unconditionally — the ink version that overrode the track, the
+   plate and the shadow. The later one won by position, which is not a
+   decision. Ink wins on the platform's own rule: hover and select are one ink
+   stroke in two strengths, never a highlight and never a second plate. So the
+   track is gone rather than overridden.
+
+   `chromeBare`, not `chrome`: the option paints nothing at rest and the ring
+   IS the mark. `square` because the content is a 20px glyph — chrome's inline
+   padding is sized for a label beside one and draws a wide empty box without
+   it. The touch minimum still applies: a two-state icon switch is something a
+   thumb has to hit. */
 .viewSwitch {
   display: inline-flex;
   align-items: center;
-  gap: var(--cw-space-2xs);
-  padding: var(--cw-space-2xs);
-  border-radius: var(--cw-radius-btn);
-  background: var(--cw-mat-surface-sunk);
+  gap: var(--cw-space-sm);
 }
 
-/* Keeps chrome's touch target: a segmented option is still a thing a thumb has
-   to hit, and the contract's minimum is the floor whether it carries a word or
-   a glyph. Square, because the content is now a 20px icon and `chrome`'s inline
-   padding is sized for a label beside one — left alone it drew a wide empty
-   button with a small mark adrift in it. */
 .viewOption {
-  composes: chrome from "../platform/PlatformButtons.module.css";
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
   composes: square from "../platform/PlatformButtons.module.css";
-  border-radius: var(--cw-radius-sm);
+  position: relative;
   color: var(--cw-platform-muted);
 }
 
 .viewOption[aria-pressed="true"] {
-  background: var(--cw-mat-surface);
-  box-shadow: var(--cw-mat-shadow-soft);
   color: var(--cw-platform-text);
 }
 
@@ -1607,23 +1746,33 @@
 }
 
 /* One quiet summary replaces two full-width release panels. It answers the
-   three status questions, then moves detail into the release drawer on demand. */
+   three status questions, then moves detail into the release drawer on demand.
+
+   RULED, NOT PLATED. This carried a full card recipe here — 1px all round, a
+   large radius, a tinted surface, `overflow: hidden` to clip the corners — and
+   then dropped the inline borders, the radius and the fill again 2,400 lines
+   lower, unconditionally. The plate therefore never shipped at any width; only
+   the two block rules did. Written once as what it actually is. */
 .courseStatusStrip {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0;
-  border: 1px solid var(--builder-rule);
-  border-radius: var(--cw-radius-lg);
-  background: color-mix(in srgb, var(--cw-mat-surface) 72%, transparent);
-  overflow: hidden;
+  border-block: 1px solid var(--builder-rule);
 }
 
+/* A status cell is a ROW, not a button — it carries a term and its value, and
+   the pressable variant opens a sheet. It takes the contract's inline step so
+   it lines up with the controls above it, and nothing else from the button
+   recipe. The inline padding used to be set twice: --cw-space-md here and
+   --ds-button-padding-inline again 2,500 lines lower, unconditionally, so the
+   first value never shipped. */
 .courseStatusItem,
 .courseStatusItemButton {
   display: grid;
   gap: var(--cw-space-3xs, 0.25rem);
   min-width: var(--ds-button-min-width);
-  padding: var(--cw-space-sm) var(--cw-space-md);
+  padding-block: var(--cw-space-sm);
+  padding-inline: var(--ds-button-padding-inline);
   border: 0;
   border-block-end: 1px solid var(--builder-rule);
   background: transparent;
@@ -1655,7 +1804,7 @@
 
 .courseStatusItemButton:focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: calc(-1 * var(--ds-focus-ring-width));
+  outline-offset: var(--ds-focus-ring-offset-inset);
 }
 
 .releaseAction {
@@ -1936,7 +2085,7 @@
 
 .moduleTitleInput:focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: 1px;
+  outline-offset: var(--ds-focus-ring-offset-tight);
   background: var(--cw-mat-surface);
 }
 
@@ -2114,14 +2263,13 @@
   color: var(--cw-platform-text);
 }
 
+/* The one ring that is always on: it marks WHERE a block will be inserted, so
+   it is a target rather than a response to the pointer. Same geometry, held
+   open at full size. */
 .blockInsertInkRing {
-  position: absolute;
-  inset: 50% auto auto 50%;
-  width: var(--cw-ink-ring-size);
-  height: var(--cw-ink-ring-size);
+  composes: inkRing;
   color: var(--cw-platform-text);
   opacity: 0.72;
-  pointer-events: none;
   transform: translate(-50%, -50%) rotate(-4deg);
 }
 
@@ -2188,6 +2336,7 @@
 .pickerBody {
   min-height: 0;
   overflow-y: auto;
+  overflow-x: clip;
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
   gap: var(--cw-space-sm) var(--cw-space-lg);
@@ -2209,11 +2358,14 @@
   text-transform: uppercase;
 }
 
+/* The touch minimum, like `.menuItem` and `.slashItem` beside it. This row
+   carried a 2.25rem literal — 36px against a 48px floor — which is the kind of
+   number that only survives because nothing was watching the axis. */
 .pickerOption {
   composes: inkRow;
   display: flex;
   align-items: center;
-  min-height: 2.25rem;
+  min-height: var(--ds-touch-target-min);
   width: 100%;
   font: inherit;
   text-align: start;
@@ -2302,45 +2454,6 @@
 .typeGrid {
   display: grid;
   gap: var(--cw-space-xs);
-}
-
-.typeOption {
-  display: grid;
-  gap: var(--cw-space-2xs);
-  padding: var(--cw-space-sm);
-  border: 0;
-  border-radius: var(--cw-radius-md);
-  background: var(--cw-mat-surface-sunk);
-  color: inherit;
-  font: inherit;
-  text-align: start;
-  cursor: pointer;
-}
-
-.typeOption:hover {
-  background: color-mix(in srgb, var(--cw-platform-accent) 12%, var(--cw-mat-surface-sunk));
-}
-
-/* The picked one. Same treatment as `.choiceOption[aria-pressed]` — a plate
-   that is a choice rather than a command still has to say which is chosen. */
-.typeOption[aria-pressed="true"] {
-  background: color-mix(in srgb, var(--cw-platform-accent) 20%, var(--cw-mat-surface-sunk));
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cw-platform-accent) 45%, transparent);
-}
-
-.typeOption:focus-visible {
-  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: var(--ds-focus-ring-offset);
-}
-
-.typeName {
-  font-weight: 600;
-}
-
-.typeHint {
-  color: var(--cw-platform-muted);
-  font-size: 0.85rem;
-  line-height: 1.4;
 }
 
 /* ── Rich text nodes ──────────────────────────────── */
@@ -2454,7 +2567,7 @@
 .input:focus-visible,
 .textarea:focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: 1px;
+  outline-offset: var(--ds-focus-ring-offset-tight);
 }
 
 /* A field holding an unresolved [ЗАПОВНИ] marker. Marked in the editor, not
@@ -2485,7 +2598,7 @@
    cannot see this selector — its name does not end in a control word — so the
    consistency here is deliberate rather than enforced. */
 .choiceOption {
-  composes: quiet from "../platform/PlatformButtons.module.css";
+  composes: secondary from "../platform/PlatformButtons.module.css";
   white-space: nowrap;
 }
 
@@ -2670,7 +2783,7 @@
 }
 
 .coverResetAction {
-  composes: quiet from "../platform/PlatformButtons.module.css";
+  composes: secondary from "../platform/PlatformButtons.module.css";
   composes: hug from "../platform/PlatformButtons.module.css";
 }
 
@@ -2695,6 +2808,7 @@
    document, which on a phone gives every screen a horizontal scroll. */
 .previewTableWrap {
   overflow-x: auto;
+  overflow-y: clip;
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface);
 }
@@ -2725,6 +2839,7 @@
 
 .previewCode {
   overflow-x: auto;
+  overflow-y: clip;
   margin: 0;
   padding: var(--cw-space-sm);
   border-radius: var(--cw-radius-md);
@@ -2878,7 +2993,7 @@
    itself to fit its row is the first step of the drift that produced five
    different label weights before the contract existed. The bar wraps instead. */
 .inlineToggle {
-  composes: quiet from "../platform/PlatformButtons.module.css";
+  composes: secondary from "../platform/PlatformButtons.module.css";
   white-space: nowrap;
 }
 
@@ -2916,11 +3031,6 @@
 
 .inlineSurface[data-multiline] {
   min-height: 5rem;
-}
-
-.inlineSurface:focus-visible {
-  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: 1px;
 }
 
 /* An empty contenteditable has no height of its own and no sign that it is a
@@ -3011,7 +3121,7 @@
 
 .menuItem:focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: -2px;
+  outline-offset: var(--ds-focus-ring-offset-inset);
 }
 
 .menuItem:disabled {
@@ -3093,6 +3203,17 @@
   }
 }
 
+/* FROM THE RIGHT, because that is the edge it lives on. `sheetIn` rises — the
+   bottom sheet's own motion — and a panel that slides up from the floor and
+   then turns out to be pinned to the right edge reads as the wrong object
+   arriving. Same distance and same curve; only the axis changes. */
+@keyframes sheetSlideIn {
+  from {
+    transform: translateX(1.5rem);
+    opacity: 0;
+  }
+}
+
 /* Sticky, because the way out of a long form must not be at the bottom of it. */
 .sheetHead {
   position: sticky;
@@ -3110,6 +3231,7 @@
 
 .sheetScroll {
   overflow-y: auto;
+  overflow-x: clip;
   padding: var(--cw-space-lg);
   padding-block-end: max(var(--cw-space-lg), env(safe-area-inset-bottom));
 }
@@ -3253,8 +3375,26 @@
     border-radius: var(--cw-radius-lg) var(--cw-radius-lg) 0 0;
   }
 
+  /* ── The right drawer ───────────────────────────────
+
+     THE SAME OBJECT AS THE TOOL LAYER, and it has to look like it. This was a
+     rounded plate with a shadow, floating over the whole application from the
+     very top of the viewport — which is a centred dialog that happens to have
+     been pushed right, not a drawer. The builder already has a right panel and
+     it speaks plainly: the page's own ground, one drawn rule down its leading
+     edge, no radius and no shadow, because a surface flush with the viewport
+     edge is part of the chrome rather than something dropped on top of it.
+
+     What stays is the modality. It is still a native modal `<dialog>`: entered
+     deliberately, and the checkpoint it takes is about the whole course, so
+     editing behind it while it is open is not a thing to support. The scrim and
+     the focus trap say that honestly. */
   .sheetSide {
-    width: min(32rem, calc(100vw - var(--cw-space-lg)));
+    /* Wider than the outline — a revision line carries a name, a kind and a
+       timestamp — but nowhere near the 32rem it was, which made a third panel
+       width in a tool that has two. */
+    width: min(26rem, calc(100vw - var(--cw-space-2xl)));
+    max-width: none;
     height: 100svh;
     max-height: 100svh;
     margin: 0 0 0 auto;
@@ -3263,18 +3403,33 @@
   .sheetSide .sheetBody {
     height: 100svh;
     max-height: 100svh;
-    border-radius: var(--cw-radius-lg) 0 0 var(--cw-radius-lg);
+    border-radius: 0;
+    border-inline-start: 1px solid var(--builder-rule);
+    background: var(--cw-platform-bg);
+    box-shadow: none;
+    animation-name: sheetSlideIn;
   }
 
+  /* THE HEAD IS THE TOPBAR'S HEIGHT, so the rule under it continues the line
+     the application already draws across the top of the workspace instead of
+     cutting its own at an unrelated height. */
   .sheetSide .sheetHead {
-    border-radius: var(--cw-radius-lg) 0 0 0;
+    /* The height governs and the padding gets out of its way — with both, the
+       head came out seven pixels taller than the topbar, which is the worst of
+       the three options: two rules close enough to look like a mistake. */
+    min-height: var(--builder-topbar-height);
+    padding-block: 0;
+    border-radius: 0;
+    background: var(--cw-platform-bg);
   }
 }
 
 /* The one authored moment stays; the movement does not. */
 @media (prefers-reduced-motion: reduce) {
   .menuList,
-  .sheetBody {
+  .sheetBody,
+  /* Two classes deep, so it has to be named here or the drawer keeps sliding. */
+  .sheetSide .sheetBody {
     animation: none;
   }
 }
@@ -3337,7 +3492,7 @@
 }
 
 .versionItem {
-  composes: quiet from "../platform/PlatformButtons.module.css";
+  composes: secondary from "../platform/PlatformButtons.module.css";
   width: 100%;
   max-width: none;
   display: flex;
@@ -3466,10 +3621,14 @@
   overflow-wrap: anywhere;
 }
 
+/* The writing surfaces focus like every other field — tight, not at the
+   standalone-control offset. `.inlineSurface` used to be declared twice with
+   the two different offsets, 500 lines apart; the later one won by position
+   and the field ended up ringed like a button. */
 .inlineBare:focus-visible,
 .inlineSurface:focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: var(--ds-focus-ring-offset);
+  outline-offset: var(--ds-focus-ring-offset-tight);
 }
 
 /* The prompt is the field, not a caption above it. `data-empty` rather than
@@ -3621,6 +3780,7 @@
   z-index: calc(var(--ds-z-sticky) + 2);
   max-width: calc(100vw - 2 * var(--cw-space-sm));
   overflow-y: auto;
+  overflow-x: clip;
   display: grid;
   gap: var(--cw-space-2xs);
   padding: var(--cw-space-xs);
@@ -3757,6 +3917,7 @@
   gap: 2px;
   max-width: calc(100vw - 1rem);
   overflow-x: auto;
+  overflow-y: clip;
   padding: 3px;
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface);
@@ -3925,7 +4086,12 @@
 }
 
 .courseRail {
-  min-height: calc(100svh - 8rem);
+  /* FILLS ITS PANEL, and does not guess the viewport. This was
+     `calc(100svh - 8rem)` — a hand-measured allowance for the topbar and the
+     panel foot that came out nine pixels too tall, so the outline carried a
+     permanent scrollbar for content that fitted. The panel already knows its
+     own height; asking it is both shorter and correct. */
+  min-height: 100%;
   display: flex;
   flex-direction: column;
 }
@@ -4086,60 +4252,9 @@
   color: var(--cw-platform-muted);
 }
 
-/* The selected view uses the same ink mark as navigation. A faint filled
-   square was a third state language and almost disappeared on the paper tone. */
-.viewSwitch {
-  gap: var(--cw-space-sm);
-  padding: 0;
-  background: transparent;
-}
-
-.viewOption {
-  position: relative;
-  background: transparent;
-  box-shadow: none;
-}
-
 .iconInkRing {
-  position: absolute;
+  composes: inkRing;
   z-index: 1;
-  inset: 50% auto auto 50%;
-  width: var(--cw-ink-ring-size);
-  height: var(--cw-ink-ring-size);
-  overflow: visible;
-  color: var(--cw-nav-marker);
-  pointer-events: none;
-  opacity: 0;
-  transform: translate(-50%, -50%) scale(0.72) rotate(-4deg);
-  transition: opacity 160ms ease, transform 160ms ease;
-}
-
-.viewOption[aria-pressed="true"] {
-  background: transparent;
-  box-shadow: none;
-  color: var(--cw-platform-text);
-}
-
-.viewOption:hover .iconInkRing,
-.viewOption:focus-visible .iconInkRing,
-.menuTrigger:hover .iconInkRing,
-.menuTrigger:focus-visible .iconInkRing {
-  opacity: var(--cw-ink-hover-opacity);
-  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
-}
-
-.viewOption[aria-pressed="true"] .iconInkRing,
-.menuTrigger[aria-expanded="true"] .iconInkRing {
-  opacity: 0.9;
-  transform: translate(-50%, -50%) scale(1) rotate(-4deg);
-}
-
-/* Mobile keeps the release summary after the manuscript instead of spending
-   the first screen on operational state. */
-.courseStatusStrip {
-  border-inline: 0;
-  border-radius: 0;
-  background: transparent;
 }
 
 .courseSaveBar {
@@ -4155,11 +4270,6 @@
    one coordinate and overlap. Mobile keeps the in-flow save bar below. */
 .courseHeaderSave {
   display: none;
-}
-
-.courseStatusItem,
-.courseStatusItemButton {
-  padding-inline: var(--ds-button-padding-inline);
 }
 
 /* Row view is the manuscript. Card view remains an explicit alternate on wide
@@ -4452,9 +4562,14 @@
     transition: none;
   }
 
+  .toolDrawer {
+    animation: none;
+  }
+
+  /* The recipe, not a list of its users — .toolTabRing and .blockInsertInkRing
+     were missing here and kept animating for a reader who asked for no motion. */
   .inkMark,
-  .iconInkRing,
-  .stepInkRing {
+  .inkRing {
     transition: none;
   }
 }
