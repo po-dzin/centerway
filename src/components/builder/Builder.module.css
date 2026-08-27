@@ -522,8 +522,8 @@
   position: static;
   display: flex;
   align-items: center;
-  gap: var(--cw-space-3xs, 0.25rem);
-  padding: var(--cw-space-3xs, 0.25rem);
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-2xs);
   border: 1px solid var(--builder-rule);
   border-block-end: 0;
   border-radius: var(--cw-radius-md) var(--cw-radius-md) 0 0;
@@ -842,7 +842,7 @@
     width: var(--builder-mode-rail-width);
     height: auto;
     display: block;
-    padding: var(--cw-space-3xs, 0.25rem);
+    padding: var(--cw-space-2xs);
     border: 1px solid var(--builder-rule);
     border-inline-end: 0;
     border-radius: var(--cw-radius-md) 0 0 var(--cw-radius-md);
@@ -854,7 +854,7 @@
     position: relative;
     inset: auto;
     width: auto;
-    padding: var(--builder-panel-pad-block) var(--cw-space-3xs, 0.25rem) 0;
+    padding: var(--builder-panel-pad-block) var(--cw-space-2xs) 0;
     border: 0;
     border-radius: 0;
     background: transparent;
@@ -1813,7 +1813,7 @@
 .courseStatusItem,
 .courseStatusItemButton {
   display: grid;
-  gap: var(--cw-space-3xs, 0.25rem);
+  gap: var(--cw-space-2xs);
   min-width: var(--ds-button-min-width);
   padding: var(--cw-space-sm) var(--cw-space-md);
   border: 0;
@@ -3461,7 +3461,7 @@
 .courseSettingSummary {
   min-width: 0;
   display: grid;
-  gap: var(--cw-space-3xs, 0.25rem);
+  gap: var(--cw-space-2xs);
   color: var(--cw-platform-muted);
   font-size: 0.88rem;
   line-height: 1.45;
@@ -4026,7 +4026,7 @@
   margin: 0;
   padding-inline-start: 1.4rem;
   display: grid;
-  gap: var(--cw-space-3xs, 0.25rem);
+  gap: var(--cw-space-2xs);
 }
 
 .nodeUl {
@@ -4074,10 +4074,10 @@
      varying width but crowded a row of same-size glyphs — nothing told the eye
      where one control ended and the next began except the divider lines. A
      real gap plus the divider's own margin now does that job together. */
-  gap: var(--cw-space-3xs, 0.25rem);
+  gap: var(--cw-space-2xs);
   max-width: calc(100vw - 1rem);
   overflow-x: auto;
-  padding: var(--cw-space-3xs, 0.25rem);
+  padding: var(--cw-space-2xs);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
@@ -4435,7 +4435,7 @@
 
 .moduleLessonCount {
   flex: 0 0 auto;
-  padding: var(--cw-space-3xs, 0.25rem) var(--cw-space-xs);
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
   border-radius: var(--cw-radius-pill);
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-muted);
