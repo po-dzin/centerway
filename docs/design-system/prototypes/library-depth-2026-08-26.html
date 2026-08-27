@@ -66,15 +66,7 @@
       #000 78%);
   }
 
-  /* У ніші колонка з'їжджає вниз, тож і завіса перевертається: тепер
-     папір унизу під текстом, а туш тримає верхні дві третини разом
-     із самою нішею. */
-  body.in-case {
-    --scene-veil: linear-gradient(184deg,
-      #000 0 30%,
-      rgba(0, 0, 0, 0.34) 54%,
-      transparent 74%);
-  }
+
 
   /* ТЕМНА — сіра глина, тепла нейтраль. Значення в одному місці:
      перевизначаються кастом-властивості, а вмикають їх три різні
@@ -387,9 +379,8 @@
   /* ---------- латунна арматура ---------- */
 
   /* Фокус — не хрест на всю стіну, а лучі, що ЗІЙШЛИСЯ на виїмці:
-     два горизонтальні, різної довжини, на трохи різній висоті, з
-     затухаючими краями. Лівий приходить від колонки тексту, правий —
-     від медальйона. */
+     один горизонтальний, короткий, із затухаючими краями. Приходить
+     від колонки тексту до активної виїмки. */
   .ray {
     position: absolute;
     height: 1px;
@@ -406,47 +397,9 @@
                 left 2000ms cubic-bezier(0.16, 0.5, 0.2, 1),
                 width 2000ms cubic-bezier(0.16, 0.5, 0.2, 1);
   }
-  .ray--b {
-    background: linear-gradient(90deg,
-      transparent 0,
-      var(--ray-hi) 16%,
-      var(--ray-main) 72%,
-      transparent 100%);
-    animation-delay: -4s;
-  }
   @keyframes rayBreath {
     0%   { opacity: 0.5; }
     100% { opacity: 1; }
-  }
-
-  /* Медальйон: три накреслені кола-квадрати і одна золота точка. */
-  .boss {
-    position: absolute;
-    width: 152px; height: 152px;
-    transform-style: preserve-3d;
-    pointer-events: none;
-    transition: transform 2000ms cubic-bezier(0.16, 0.5, 0.2, 1);
-  }
-  .boss > * { position: absolute; left: 50%; top: 50%; }
-  .boss__disc {
-    width: 152px; height: 152px; margin: -76px 0 0 -76px;
-    border-radius: 50%;
-    background: var(--fill);
-    border: 1px solid var(--ink-line);
-    transform: translateZ(-150px);
-  }
-  .boss__square {
-    width: 86px; height: 86px; margin: -43px 0 0 -43px;
-    background: var(--paper-lit);
-    border: 1px solid var(--ink-line);
-    transform: translateZ(-146px);
-  }
-  .boss__dome {
-    width: 42px; height: 42px; margin: -21px 0 0 -21px;
-    border-radius: 50%;
-    background: var(--brass);
-    box-shadow: 0 0 0 1px var(--ink-line), 0 0 14px var(--brass-line);
-    transform: translateZ(-142px);
   }
 
   /* ---------- ніша ---------- */
@@ -959,20 +912,22 @@
   .inkNote { margin: 0; color: var(--ink-faint); font-size: 0.6rem; line-height: 1.7; }
   .inks[data-locked="true"] .inkRow { cursor: default; opacity: 0.72; }
 
-  /* Ніша по центру у верхніх двох третинах — текст іде під неї, і на
-     широкому екрані також. Колонка вужчає: під предметом підпис, а не
-     друга колонка врівні з ним. */
-  body.in-case .sheet {
-    align-content: end;
-    padding-block: min(46vh, 400px) 4vh;
-    --measure: min(38rem, 42vw);
-  }
-
   @media (max-width: 1100px) {
     .console { inset-inline-end: 0.8rem; width: 15rem; }
   }
   @media (max-width: 900px) {
     :root { --measure: 100%; }
+    /* На вузькому колонка займає всю ширину, тож бічної завіси не
+       буває: туш іде згори і знизу, папір лишається поясом посередині,
+       де лежить текст. Ніші стають у цей самий пояс — над текстом і
+       під ним (SPOTS у buildRoom). */
+    :root {
+      --scene-veil: linear-gradient(184deg,
+        #000 0 18%,
+        rgba(0, 0, 0, 0.18) 40%,
+        rgba(0, 0, 0, 0.18) 60%,
+        #000 88%);
+    }
     .sheet { margin-inline: 6vw; width: calc(100% - 12vw); }
     /* На вузькому те саме, лише щільніше. */
     body.in-case .sheet {
@@ -993,7 +948,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 16 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 17 · 27.08</span>
 
 <div class="draft" aria-hidden="true">
   <span class="draft__margin draft__margin--l"></span>
@@ -1013,12 +968,6 @@
     <canvas class="scene" id="sceneInk"></canvas>
     <div class="sceneTex" id="sceneTex"></div>
     <div class="ray" id="rayA"></div>
-    <div class="ray ray--b" id="rayB"></div>
-    <div class="boss" id="boss">
-      <div class="boss__disc"></div>
-      <div class="boss__square"></div>
-      <div class="boss__dome"></div>
-    </div>
     <div class="rake"></div>
     <canvas class="grain" id="grain"></canvas>
   </div>
@@ -1169,8 +1118,6 @@
   var caseEls = [];
 
   var rayA = document.getElementById("rayA");
-  var rayB = document.getElementById("rayB");
-  var boss = document.getElementById("boss");
 
   /* Мальована перспектива ніші: кожна точка ледь збита seeded-рукою,
      тому три ніші накреслені трьома різними рухами, але однаково в
@@ -1347,8 +1294,19 @@
        лежить, і вона сама поїде вшир, коли в категорії з'явиться ще
        один курс. */
     var PAD_L = 18, PAD_R = 18, GAP = 16;
-    var ch = Math.max(126, Math.min(164, h * 0.175));
-    var SPOTS = [
+    var narrow = w <= 900;
+    /* На вузькому екрані виїмка мусить бути ближчою, а не меншою:
+       та сама висота, що на десктопі, з'їдала на телефоні всю
+       присутність — полиця відходила в стіну. */
+    var ch = narrow
+      ? Math.max(150, Math.min(196, h * 0.20))
+      : Math.max(126, Math.min(164, h * 0.175));
+    /* ДВІ РІЗНІ КОМПОЗИЦІЇ, а не одна, підтиснута медіазапитом.
+       Широкий екран: дві колонки — текст ліворуч, кладка виїмок
+       праворуч. Вузький: колонка на всю ширину, тож виїмки стають
+       НАД текстом і ПІД ним — одна згори, дві знизу, а середній пояс
+       екрана лишається текстові. */
+    var WIDE = [
       { x: 0.545, y: 0.12 },
       { x: 0.660, y: 0.40 },
       { x: 0.545, y: 0.66 }
@@ -1368,8 +1326,25 @@
       return { books: out, width: x - GAP + PAD_R };
     }
 
+    /* Ширини потрібні ДО розстановки: на вузькому екрані дві нижні
+       виїмки стають поруч, і чи вони поміщаються — питання їхньої
+       фактичної ширини, а не припущення. */
+    var rows = CASES.map(function (data, ci) { return bookRow(ci, data.books.length); });
+    var SPOTS = WIDE;
+    if (narrow) {
+      var side = w * 0.05;
+      var pair = rows[1].width + rows[2].width + side * 2 + 14;
+      SPOTS = [
+        { px: side, y: 0.03 },
+        { px: side, y: 0.735 },
+        pair <= w
+          ? { px: w - side - rows[2].width, y: 0.80 }
+          : { px: side + rows[1].width * 0.42, y: 0.855 }
+      ];
+    }
+
     CASES.forEach(function (data, ci) {
-      var row = bookRow(ci, data.books.length);
+      var row = rows[ci];
       var cw = row.width;
 
       var el = document.createElement("div");
@@ -1379,7 +1354,7 @@
       el.style.height = ch + "px";
       /* Ніші мусять поміститись між колонкою тексту і пультом. */
       var spot = SPOTS[ci];
-      el.style.left = Math.round(ox + w * spot.x) + "px";
+      el.style.left = Math.round(ox + (spot.px !== undefined ? spot.px : w * spot.x)) + "px";
       el.style.top = Math.round(oy + h * spot.y) + "px";
       /* Різна глибина врізання — саме вона й дає паралакс між нішами. */
       /* Ширший розкид глибини: пів-3D читається лише тоді, коли ближнє
@@ -1474,30 +1449,19 @@
     markArmature(openCase < 0 ? 1 : openCase);
   }
 
-  /* Латунний хрест і медальйон сходяться на активній ніші — так само,
-     як на знімку-референсі рейки сходяться на бані. */
+  /* ОДИН промінь, який приходить до активної ніші зліва. Двох ліній
+     на різній висоті плюс медальйон виявилось забагато: три предмети
+     сперечалися за ту саму увагу, яку мала тримати сама виїмка. */
   function markArmature(ci) {
     var el = caseEls[ci];
     if (!el) return;
     var nl = parseFloat(el.style.left);
     var nt = parseFloat(el.style.top);
-    var nw = el.offsetWidth || 150;
     var nh = el.offsetHeight || 200;
-    var midY = nt + nh * 0.46;
-    /* Лівий луч довший, правий коротший, і вони не на одній висоті —
-       два промені зійшлися на виїмці, а не координатна сітка. */
-    var la = 230 + seeded(ci + 11) * 70;
+    var la = 120 + seeded(ci + 11) * 40;
     rayA.style.left = Math.round(nl - la) + "px";
     rayA.style.width = Math.round(la - 8) + "px";
-    rayA.style.top = Math.round(midY) + "px";
-    var lb = 120 + seeded(ci + 23) * 50;
-    rayB.style.left = Math.round(nl + nw + 8) + "px";
-    rayB.style.width = Math.round(lb) + "px";
-    rayB.style.top = Math.round(midY + 16) + "px";
-    var half = 76;
-    boss.style.transform =
-      "translate3d(" + Math.round(nl + nw + 8 + lb + 30) + "px," +
-      Math.round(midY + 16 - half) + "px, 0)";
+    rayA.style.top = Math.round(nt + nh * 0.46) + "px";
   }
 
   function renderList() {
@@ -1668,13 +1632,22 @@
     var ox = w * 0.14, oy = h * 0.14;
     var ecx = parseFloat(el.style.left) + el.offsetWidth / 2;
     var ecy = parseFloat(el.style.top) + el.offsetHeight / 2;
-    /* Полиця йде В ЦЕНТР КАДРУ і стає у верхніх двох третинах —
-       туди, куди й так дивишся. Збоку від колонки вона читалась як
-       ілюстрація до тексту; по центру вона — предмет, а текст під нею
-       його підписує. Тому в .in-case колонка з'їжджає вниз (і на
-       широкому екрані теж, не лише на вузькому). */
-    var tX = w * 0.5;
-    var tY = h * 0.34;
+    /* На широкому екрані дві колонки лишаються двома колонками:
+       текст ліворуч, виїмки праворуч. Наїзд лише підтягує активну
+       полицю ближче до центру кадру — рівно настільки, щоб вона стала
+       предметом уваги, і не настільки, щоб полізти на текст.
+       На вузькому центр — єдине місце, де полиця поміщається. */
+    var tX, tY;
+    if (w > 900) {
+      var measure = Math.min(38 * 16, w * 0.46);
+      var free = w * 0.08 + measure + 40;          /* права межа колонки */
+      tX = Math.max(free + el.offsetWidth / 2, w * 0.62);
+      tX = Math.min(tX, w - el.offsetWidth / 2 - 40);
+      tY = h * 0.42;
+    } else {
+      tX = w * 0.5;
+      tY = h * 0.30;
+    }
     camera(tX + ox - ecx, tY + oy - ecy, 250 - ci * 60);
 
     eyebrowEl.textContent = "Шафа " + CASES[ci].label;
