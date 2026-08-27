@@ -32,6 +32,7 @@ import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
 import { PwaInstallRow } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
+import { CabinetHero } from "./CabinetHero";
 import { ShelfErrorCard, courseAction, courseMapHref, matte } from "./CourseCard";
 import { CourseCover } from "./CourseCover";
 import {
@@ -210,57 +211,53 @@ export function CabinetClient() {
   return (
     <main className={surfaceStyles.profileMain} data-cw-platform-template="cabinet">
       <div className={styles.shell}>
-        {/* The profile's header is the first panel of the page, in the page's
-            own material. It used to be a landing-style photo hero carrying a
-            translucent identity card and three bordered stat tiles — a second
-            surface vocabulary two inches above the first. */}
-        <header className={styles.identity} {...matte}>
-          <div className={styles.identityMain}>
-            <span className={styles.avatar} aria-hidden="true">
-              {account.avatarUrl ? (
-                // Remote auth avatars stay on plain img to avoid introducing image config coupling into platform profile.
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={account.avatarUrl} alt="" referrerPolicy="no-referrer" />
-              ) : (
-                getUserInitial(session, account.fullName)
-              )}
-            </span>
-            <div className={styles.identityText}>
-              <p className={styles.sectionLabel}>{copy.profile}</p>
-              <h1 className={styles.identityName}>{account.fullName ?? copy.fallbackName}</h1>
-              <p className={styles.identityEmail}>{account.email ?? copy.fallbackEmail}</p>
-            </div>
-          </div>
+        {/* Identity, the three facts, and where you stopped — one block, and a
+            doorway out of it.
 
-          <dl className={styles.identityStats}>
-            <div className={styles.identityStat}>
-              <dt className={styles.sectionLabel}>{copy.dosha}</dt>
-              <dd>{formatDoshaResult(dosha?.resultType, lang)}</dd>
-            </div>
-            <div className={styles.identityStat}>
-              <dt className={styles.sectionLabel}>{cab.learningLabel}</dt>
-              {/* "—" is an answer: it means none. While the shelf is still
-                  being read there is no answer yet, and an ellipsis says that
-                  without claiming the library is empty. */}
-              <dd>
-                {shelfLoading
-                  ? "…"
-                  : ownedCourses.length > 0
-                    ? cab.coursesCount(ownedCourses.length)
-                    : copy.emptyValue}
-              </dd>
-            </div>
-            <div className={styles.identityStat}>
-              <dt className={styles.sectionLabel}>{copy.products}</dt>
-              <dd>{productPurchases.length > 0 ? cab.productsCount(productPurchases.length) : copy.emptyValue}</dd>
-            </div>
-          </dl>
-        </header>
-
-        {/* Where you stopped, first and alone. The dashboard's whole job is to
-            answer "what do I open right now", and everything below it is
-            reference that answer does not need. */}
-        <div className={styles.section}>
+            This page dropped a photo hero once, for a reason that still holds:
+            the old one was a LANDING hero, a full-viewport plate with a
+            translucent card floating on it, which put a second surface
+            vocabulary two inches above the first. `CabinetHero` is not that. It
+            is one panel in the page's own material at the page's own radius,
+            and the photograph inside it is a view THROUGH the room rather than
+            a ground under the page — the threshold plate framed on its opening,
+            with the opening linking to the library. */}
+        <CabinetHero
+          label={copy.profile}
+          name={account.fullName ?? copy.fallbackName}
+          email={account.email ?? copy.fallbackEmail}
+          avatar={
+            account.avatarUrl ? (
+              // Remote auth avatars stay on plain img to avoid introducing image config coupling into platform profile.
+              // eslint-disable-next-line @next/next/no-img-element
+              <img src={account.avatarUrl} alt="" referrerPolicy="no-referrer" />
+            ) : (
+              getUserInitial(session, account.fullName)
+            )
+          }
+          stats={[
+            { label: copy.dosha, value: formatDoshaResult(dosha?.resultType, lang) },
+            {
+              label: cab.learningLabel,
+              /* "—" is an answer: it means none. While the shelf is still being
+                 read there is no answer yet, and an ellipsis says that without
+                 claiming the library is empty. */
+              value: shelfLoading
+                ? "…"
+                : ownedCourses.length > 0
+                  ? cab.coursesCount(ownedCourses.length)
+                  : copy.emptyValue,
+            },
+            {
+              label: copy.products,
+              value:
+                productPurchases.length > 0 ? cab.productsCount(productPurchases.length) : copy.emptyValue,
+            },
+          ]}
+          doorwayTitle={cab.learningLabel}
+          doorwayLead={cab.allCourses}
+          doorwayHref={shelfHref}
+        >
           {resumeCourse ? (
             <article className={styles.continueCard} {...matte}>
               {/* Only here, and only for the one course being resumed: the
@@ -324,7 +321,10 @@ export function CabinetClient() {
               </div>
             </article>
           )}
+        </CabinetHero>
 
+        {/* Below the room: reference the answer above does not need. */}
+        <div className={styles.section}>
           {/* Everything else I own, at a glance. The resume card answers "what
               now"; this answers "and how do the rest stand" — and it is also
               the way INTO them from here, which the dashboard otherwise leaves
