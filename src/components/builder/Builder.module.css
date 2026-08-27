@@ -3738,32 +3738,55 @@
 
   /* ── The right drawer ───────────────────────────────
 
-     THE SAME OBJECT AS THE TOOL LAYER, and it has to look like it. This was a
-     rounded plate with a shadow, floating over the whole application from the
-     very top of the viewport — which is a centred dialog that happens to have
-     been pushed right, not a drawer. The builder already has a right panel and
-     it speaks plainly: the page's own ground, one drawn rule down its leading
-     edge, no radius and no shadow, because a surface flush with the viewport
-     edge is part of the chrome rather than something dropped on top of it.
+     THE SAME OBJECT AS THE TOOL LAYER, and it has to look like it — the page's
+     own ground, one drawn rule down its leading edge, no radius and no shadow,
+     because a surface flush with the viewport edge is part of the chrome
+     rather than something dropped on top of it. That much was already true and
+     is unchanged below.
 
-     What stays is the modality. It is still a native modal `<dialog>`: entered
-     deliberately, and the checkpoint it takes is about the whole course, so
-     editing behind it while it is open is not a thing to support. The scrim and
-     the focus trap say that honestly. */
+     WHAT WAS STILL WRONG: it started at the very top of the viewport and
+     covered the topbar with a second, fabricated one — a `min-height` chosen to
+     match `--builder-topbar-height` so its own rule lined up with a bar it was
+     hiding. And `showModal()` promotes the whole thing to the top layer, where
+     the UA paints a `::backdrop` behind it — dimmed and blurred, the same scrim
+     the CENTRED dialog earns for actually interrupting the author. A drawer
+     that dims the real topbar it is sitting beside is not reading as a drawer;
+     it is reading as a sheet of glass over the entire application, which is
+     exactly the "separate layer" it was built to stop looking like.
+
+     The fix is not to abandon the native dialog — Escape, the focus trap and
+     the inertness of the page behind it are still earned honestly by
+     `showModal()`, and the checkpoint this panel shows is still about the whole
+     course. It is to stop the dialog's OWN box from claiming the topbar's row,
+     and to stop its backdrop from painting over a topbar that is still fully
+     on screen right beside it. */
   .sheetSide {
     /* Wider than the outline — a revision line carries a name, a kind and a
        timestamp — but nowhere near the 32rem it was, which made a third panel
        width in a tool that has two. */
     width: min(26rem, calc(100vw - var(--cw-space-2xl)));
     max-width: none;
-    height: 100svh;
-    max-height: 100svh;
-    margin: 0 0 0 auto;
+    /* Below the topbar, not behind it — the same vertical extent `.aside` and
+       `.toolLayer` occupy as real grid columns in `.body`. */
+    height: calc(100svh - var(--builder-topbar-height));
+    max-height: calc(100svh - var(--builder-topbar-height));
+    margin: var(--builder-topbar-height) 0 0 auto;
+  }
+
+  /* Transparent, not dimmed. The centred placement still earns its scrim — it
+     is a real interruption — but a drawer beside a topbar that stays fully
+     lit and fully legible is the whole difference between "a panel of this
+     application" and "a dialog stacked on top of it". Inertness behind the
+     dialog is unaffected: `showModal()` grants that regardless of how the
+     backdrop paints. */
+  .sheetSide::backdrop {
+    background: transparent;
+    backdrop-filter: none;
   }
 
   .sheetSide .sheetBody {
-    height: 100svh;
-    max-height: 100svh;
+    height: 100%;
+    max-height: 100%;
     border-radius: 0;
     border-inline-start: 1px solid var(--builder-rule);
     background: var(--cw-platform-bg);
@@ -3771,15 +3794,13 @@
     animation-name: sheetSlideIn;
   }
 
-  /* THE HEAD IS THE TOPBAR'S HEIGHT, so the rule under it continues the line
-     the application already draws across the top of the workspace instead of
-     cutting its own at an unrelated height. */
+  /* THE PANEL'S OWN HEAD NOW, not a stand-in for the topbar's. It no longer has
+     a second bar's height to match — the real one is a full row above this
+     drawer's top edge — so the head is sized the way `.toolDrawerHead` is
+     sized: by its padding, for the title and the close control it actually
+     holds. */
   .sheetSide .sheetHead {
-    /* The height governs and the padding gets out of its way — with both, the
-       head came out seven pixels taller than the topbar, which is the worst of
-       the three options: two rules close enough to look like a mistake. */
-    min-height: var(--builder-topbar-height);
-    padding-block: 0;
+    padding: var(--cw-space-sm) var(--cw-space-md);
     border-radius: 0;
     background: var(--cw-platform-bg);
   }
