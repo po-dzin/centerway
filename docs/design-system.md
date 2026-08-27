@@ -413,6 +413,83 @@ Every content block on the platform is `PlatformBlock`: **head + body, and no su
 
 Before this, blocks were assembled three different ways on one page — a bare `h2` and a grid; an `h2` inside a flex row beside an empty `div`; and the panel-in-panel stack above. On a phone that reads as the page changing its mind every screen.
 
+## The depth ladder (2026-08-27)
+
+The showcase is warm glass, deep green, gold and cards. The workspaces are
+ceramic, ink and empty space. These were being argued about as two styles that
+had to be reconciled — and a reconciliation would have produced a third style,
+worse than both.
+
+**They are not two styles. They are one material at different distances from the
+entrance.** Glass, green and gold are what a surface looks like when light is on
+it; ceramic and ink are the same material once the light is off and the work has
+started. A building is stone, brass and glass at the door and plaster, paper and
+quiet inside. Nobody calls that two styles.
+
+So the register is not chosen by taste. It is a function of how deep the surface
+sits:
+
+| level | surfaces | ground | material | accent | cards |
+| --- | --- | --- | --- | --- | --- |
+| **0 · threshold** | the eight landings, the showcase, the offer | green (`--cw-mat-inverse-bg`) | glass + grain, photography | gold **and** green | yes — a card is a product |
+| **1 · hall** | `/learn`, course covers, checkout | ceramic (`--cw-sem-calm-bg`) / graphite in dark | object: shadow, edge, depth. No glass | gold as **gilding on an edge**, never as light | no — a niche, not a card |
+| **2 · work** | lesson player, builder, admin | ceramic / graphite | ink and line only | one gold per screen | no |
+
+**Invariants — what does not change at any level.** These, not the palette, are
+what make the three one product: one gold (`--cw-sem-warmth` / `-strong`), one
+type triple (`--cw-font-ui` / `-editorial` / `-data`), the soft-rect radius
+scale, ink instead of highlights, grain everywhere at different volumes, and
+never a top gloss highlight on glass.
+
+**What drops away with each step inward**, in this order: the coloured ground →
+photography → glass → shadow → everything but the line. A level may drop a
+register early; it may never pick one back up from a shallower level.
+
+### `/learn` is the hinge, and that is why it kept resisting
+
+The library was uncomfortable in the language of cards and equally uncomfortable
+in flat ink, because it is the surface where level 0 becomes level 1. Its
+language is therefore neither: it is **the object** — shelf, spine, gilded
+edge. The prototype
+(`docs/design-system/prototypes/library-depth-2026-08-26.html`) is where that is
+being settled, and the rules it has fixed so far are level-1 rules, not
+prototype quirks:
+
+- **Nothing glows.** A selected work carried two gold halos and a hovered one a
+  third, which made a shelf read as a lit shop window. Attention is what a
+  binder does: the book is pushed out of the row, its foot is gilded, its edge
+  takes a thin gold line. The dark theme does not swap strokes for glow either —
+  it writes the same stroke in gold.
+- **Selection is a contour, not another layer.** The bottom of a niche does not
+  change colour, its lip is not gilded, nothing is laid over it: the shelf is
+  *outlined*, with the same pen that drew the room. That is the first and only
+  layer that touches the object. The second layer is **two moving lines** and
+  nothing else — they travel to the selected category and say which of the
+  outlined shelves is being read.
+- **A spine carries no type.** A vertical line of text half a pixel wide swims
+  on a wide screen, frays on a narrow one and is noise across a wall of three
+  hundred. What a spine carries before a title is stamped is a blind plate
+  between two bands — a form, not text, so it survives every size. Names live in
+  the list, in `aria-label` and in the spread.
+- **The wall never writes what it cannot write.** A category label lives inside
+  the width of its own category and is clipped if it does not fit. This is the
+  answer to "many categories and the text lands on everything".
+- **Depth is geometry, not parallax.** Each category is a facet at its own
+  distance, size and turn, computed from its weight and its position relative to
+  the vanishing point. Nothing follows the cursor; the depth is there when
+  nobody moves.
+- **The room is hewn, not built.** A rectilinear box drew an office. The library
+  is a clay-and-stone house whose shop turns out to have inner passages cut
+  further into the rock, so the architecture is an irregular hewn section —
+  floor, two sides that are neither parallel nor vertical, a vault — scaled
+  around the single vanishing point, with the deepest openings dropped and
+  narrowed: the way in goes down.
+
+**Open, and deliberately not closed here:** level 0 has not been audited against
+this table. The showcase carries several things this ladder forbids at level 1
+and permits at level 0, and the boundary between them — the moment of crossing —
+has no designed transition yet.
+
 ## Material layer (tactile surfaces)
 
 ### Authoring material grammar (2026-08-24)

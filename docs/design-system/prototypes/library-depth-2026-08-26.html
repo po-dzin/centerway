@@ -78,8 +78,6 @@
        чорнила: він однаково видимий і однаково лишається штрихом. */
     --mark-show: 1;
     --mark-ink:  var(--ink);
-    --glow-hot:  0 0 0 0 transparent;
-    --glow-sel:  0 0 0 0 transparent;
     --ray-main:  var(--ink-line);
     --ray-hi:    var(--ink);
     --ray-halo:  none;
@@ -151,8 +149,6 @@
       --cast:       rgba(0, 0, 0, 0.62);
       --mark-show:  1;
       --mark-ink:   var(--brass-lit);
-      --glow-hot:   0 0 0 0 transparent;
-      --glow-sel:   0 0 0 0 transparent;
       --ray-main:  var(--brass-line);
       --ray-hi:    var(--brass-lit);
       --ray-halo:  drop-shadow(0 0 5px var(--brass-line));
@@ -182,8 +178,6 @@
     --cast:       rgba(0, 0, 0, 0.62);
     --mark-show:  1;
     --mark-ink:   var(--brass-lit);
-    --glow-hot:   0 0 0 0 transparent;
-    --glow-sel:   0 0 0 0 transparent;
     --ray-main:  var(--brass-line);
     --ray-hi:    var(--brass-lit);
     --ray-halo:  drop-shadow(0 0 5px var(--brass-line));
@@ -532,20 +526,19 @@
      1. ховер категорії (рядок або сама ніша) — світловий КОНТУР блока;
      2. вибрана ніша — легкий селект заливкою;
      3. усередині — ховер конкретної праці підсвічує саму працю. */
+  /* ВИБІР — ЦЕ КОНТУР, А НЕ ЩЕ ОДИН ШАР.
+     Дно виїмки не міняє кольору, губа не золотиться, нічого не
+     світиться і нічого не накладається зверху: полицю просто
+     ОБВОДЯТЬ — рамкою, писаною тим самим пером, що й уся кімната
+     (.niche__mark). Це перший шар уваги і єдиний, що торкається
+     самого предмета.
+     Другий шар — дві рухомі лінії (.ray), і більше нічого: вони
+     приходять до вибраної категорії від колонки тексту й показують,
+     ЯКА саме з обведених полиць зараз читається. */
   .niche:hover .niche__box,
-  .niche[data-hot="true"] .niche__box {
-    box-shadow: var(--niche-depth), var(--glow-hot);
-  }
+  .niche[data-hot="true"] .niche__box,
   .niche[data-sel="true"] .niche__box {
-    background: color-mix(in srgb, var(--brass) 8%, var(--wash));
-    box-shadow: var(--niche-depth), var(--glow-sel);
-  }
-  /* Замість сяйва — позолочена губа полиці: та сама латунь, але як
-     крайка предмета, а не як світло з-під нього. */
-  .niche:hover .niche__box::after,
-  .niche[data-hot="true"] .niche__box::after,
-  .niche[data-sel="true"] .niche__box::after {
-    border-top-color: var(--brass);
+    box-shadow: var(--niche-depth);
   }
 
   /* Чорнильні позначки уваги: перечеркнутий контур + короткі штрихи
@@ -691,10 +684,13 @@
      текст. Назви живуть у списку ліворуч, у aria-label і в розвороті. */
   .book__plate {
     position: absolute;
-    inset-inline: 2px;
-    top: 26%;
-    height: 26%;
-    min-height: 6px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 54%;
+    min-width: 3px;
+    top: 27%;
+    height: 22%;
+    min-height: 5px;
     border: 1px solid var(--ink-line);
     border-radius: 1px;
     background: color-mix(in srgb, var(--ink-value) 6%, transparent);
@@ -1107,7 +1103,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 29 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 30 · 27.08</span>
 
 
 <div class="stage" aria-hidden="true">
@@ -1513,6 +1509,9 @@
      цього дальня категорія поїхала б до точки сходу і залізла на
      сусідню. */
   var flatWall = false;
+  /* Смуга, у яку лягли полиці. Креслення кімнати бере її ж: хід має
+     обіймати полиці, а не жити поруч із ними своїм життям. */
+  var roomBand = null;
 
   /* Кеш накресленої виїмки: одна категорія — одна рука, отже дві
      секції однакового розміру не треба креслити двічі. На стіні в
@@ -1538,9 +1537,14 @@
     /* СМУГА СТІНИ — прямокутник, у який кладеться скільки завгодно
        виїмок. Широкий екран віддає стіні праву половину (текст живе в
        лівій), вузький — верхню смугу, а текст іде під нею. */
+    /* Низ смуги віддано ходу вниз: полиці не стоять на тому місці,
+       де в скелі спуск на другий рівень. Це не відступ заради повітря,
+       це місце під конкретний предмет. */
     var band = narrow
       ? { x: w * 0.045, y: h * 0.05, w: w * 0.91, h: h * 0.40 }
       : { x: w * 0.50, y: h * 0.075, w: w * 0.46, h: h * 0.84 };
+    band.h *= narrow ? 0.90 : 0.88;
+    roomBand = band;
 
     /* Точка сходу — та сама, що в CSS (.stage perspective-origin), і
        та сама перспектива. Дві копії одного числа розійшлись би на
@@ -2485,73 +2489,134 @@
     var vx = w * 0.68 + offX;
     var vy = h * 0.5 + offY;
 
-    function ink(a) { return "rgba(" + col + "," + (a * quiet).toFixed(3) + ")"; }
+    function ink(a) { return "rgba(" + col + "," + Math.max(0, a * quiet).toFixed(3) + ")"; }
 
-    /* Лінія від руки: прогин, змінний натиск, тонкі кінці. */
-    function hand(x1, y1, x2, y2, wt, a, seed) {
-      var dx = x2 - x1, dy = y2 - y1;
-      var len = Math.sqrt(dx * dx + dy * dy) || 1;
-      var nx = -dy / len, ny = dx / len;
-      var bow = (seeded(seed) * 2 - 1) * Math.min(2.6, len * 0.004);
-      var N = 16, i, t, cx, cy;
+    /* ПРОФІЛЬ ХОДУ — не прямокутник.
+       Прямокутна коробка була не тією бібліотекою: вона креслила
+       кабінет, а не лавку, що врізана в скелю. Хід має підлогу
+       (нерівну, але підлогу — по ній ходять), два боки, які не
+       паралельні і не вертикальні, і склепіння. Профіль пишеться
+       один раз і потім тільки масштабується від точки сходу — бо в
+       одноточковій перспективі кожен наступний перетин ходу це той
+       самий переріз, тільки ближчий. */
+    /* Хід обіймає полиці: його переріз береться зі смуги, у яку вони
+       лягли, з запасом на камінь. Інакше кімната і стіна жили б двома
+       окремими малюнками — а саме через це прямокутний каркас і читався
+       кабінетом, а не лавкою, врізаною в скелю. */
+    var bd = roomBand || { x: w * 0.5, y: h * 0.08, w: w * 0.46, h: h * 0.74 };
+    var padX = Math.max(28, bd.w * 0.10), padY = Math.max(24, bd.h * 0.07);
+    var lx = bd.x - padX + offX, rx = bd.x + bd.w + padX + offX;
+    var floorY = bd.y + bd.h + padY * 1.6 + offY;
+    var shoulderY = bd.y + bd.h * 0.34 + offY;
+    var topY = bd.y - padY + offY;
+
+    function base() {
+      var p = [], i, t, a, cx = (lx + rx) / 2, halfW = (rx - lx) / 2;
+      for (i = 0; i <= 7; i++) {                   /* підлога, зліва направо */
+        t = i / 7;
+        p.push([lx + (rx - lx) * t, floorY + (seeded(i * 3 + 1) - 0.5) * 11]);
+      }
+      for (i = 1; i <= 5; i++) {                   /* правий бік, угору */
+        t = i / 5;
+        p.push([rx + (seeded(i * 5 + 2) - 0.5) * halfW * 0.1,
+                floorY + (shoulderY - floorY) * t]);
+      }
+      for (i = 1; i <= 12; i++) {                  /* склепіння, справа наліво */
+        t = i / 12; a = Math.PI * t;
+        p.push([cx + Math.cos(a) * halfW * (1 + (seeded(i * 7 + 3) - 0.5) * 0.09),
+                shoulderY - Math.sin(a) * (shoulderY - topY) *
+                  (1 + (seeded(i * 9 + 4) - 0.5) * 0.14)]);
+      }
+      for (i = 1; i < 5; i++) {                    /* лівий бік, униз */
+        t = i / 5;
+        p.push([lx + (seeded(i * 11 + 5) - 0.5) * halfW * 0.1,
+                shoulderY + (floorY - shoulderY) * t]);
+      }
+      return p;
+    }
+
+    var PROFILE = base();
+    /* Кожен переріз — той самий профіль, тільки ближчий. Але два
+       найглибші ще й СПУЩЕНІ й звужені: хід не йде прямо крізь скелю,
+       він завертає вниз. Саме це й відрізняє лавку з внутрішніми
+       ходами від коридору — з першого рівня видно, що є другий, і
+       видно, що до нього спускаються. */
+    function ring(st) {
+      return PROFILE.map(function (q) {
+        return [vx + (q[0] - vx) * st.k * st.sx,
+                vy + (q[1] - vy) * st.k + st.dy * h];
+      });
+    }
+
+    /* Лінія від руки: ламана з дрібним дрейфом і затухаючими кінцями. */
+    function poly(pts, wt, a, seed, close) {
+      if (a <= 0.004) return;
       g.strokeStyle = ink(a);
       g.lineWidth = wt;
       g.lineCap = "round";
+      g.lineJoin = "round";
       g.beginPath();
-      for (i = 0; i <= N; i++) {
-        t = i / N;
-        cx = x1 + dx * t + nx * (bow * Math.sin(Math.PI * t) + (seeded(seed * 7 + i) - 0.5) * 0.6);
-        cy = y1 + dy * t + ny * (bow * Math.sin(Math.PI * t) + (seeded(seed * 11 + i) - 0.5) * 0.6);
-        if (i) g.lineTo(cx, cy); else g.moveTo(cx, cy);
-      }
+      pts.forEach(function (q, i) {
+        var dx = (seeded(seed * 13 + i) - 0.5) * 1.6;
+        var dy = (seeded(seed * 17 + i) - 0.5) * 1.6;
+        if (i) g.lineTo(q[0] + dx, q[1] + dy); else g.moveTo(q[0] + dx, q[1] + dy);
+      });
+      if (close) g.closePath();
       g.stroke();
     }
 
-    /* ЗАДНЯ СТІНА. Прямокутник довкола точки сходу — не весь кадр, а
-       менша його частина: саме різниця між ним і краєм кадру і є та
-       глибина, у якій стоять полиці. */
-    var bw = Math.min(w * 0.62, w * 0.52 + 180), bh = h * 0.46;
-    var x0 = vx - bw * 0.5, x1 = vx + bw * 0.5;
-    var y0 = vy - bh * 0.5, y1 = vy + bh * 0.5;
+    /* ХОДИ ВГЛИБ. Перерізи ходу від найдальшого до найближчого. Далекий
+       накреслений упевнено — саме він і є те, куди йдеш; ближній рок
+       ледь намічений, бо він у глядача за плечем. */
+    var STEPS = [
+      { k: 0.30, dy: 0.215, sx: 0.46, w: 1.7, a: 0.58 },
+      { k: 0.58, dy: 0.105, sx: 0.76, w: 1.5, a: 0.40 },
+      { k: 1.00, dy: 0,     sx: 1,    w: 1.4, a: 0.30 },
+      { k: 1.55, dy: 0,     sx: 1,    w: 1.2, a: 0.19 },
+      { k: 2.35, dy: 0,     sx: 1,    w: 1.1, a: 0.11 },
+      { k: 3.40, dy: 0,     sx: 1,    w: 1.0, a: 0.06 }
+    ];
+    var rings = STEPS.map(ring);
+    /* Найдальший отвір — темніший за стіну: у скелі за ним нічого не
+       світить. Це і є другий рівень, який видно з першого. */
+    g.fillStyle = ink(0.22);
+    g.beginPath();
+    rings[0].forEach(function (q, i) { if (i) g.lineTo(q[0], q[1]); else g.moveTo(q[0], q[1]); });
+    g.closePath();
+    g.fill();
 
-    hand(x0, y0, x1, y0, 1.3, 0.40, 11);
-    hand(x0, y1, x1, y1, 1.7, 0.52, 13);
-    hand(x0, y0, x0, y1, 1.3, 0.40, 17);
-    hand(x1, y0, x1, y1, 1.3, 0.40, 19);
-    /* Плінтус — подвійна лінія при підлозі: єдине місце, де кімната
-       каже, де саме стоїть глядач. */
-    hand(x0 + 6, y1 - 7, x1 - 6, y1 - 7, 1.1, 0.28, 23);
+    rings.forEach(function (r, i) {
+      poly(r, STEPS[i].w, STEPS[i].a, 11 + i * 6, i < 4);
+    });
 
-    /* РЕБРА, ЩО ЙДУТЬ ДО ГЛЯДАЧА. Продовжені за край кадру: кімната не
-       закінчується там, де закінчується вікно. */
-    function outward(px, py, k) {
-      return [vx + (px - vx) * k, vy + (py - vy) * k];
+    /* РЕБРА СКЕЛІ. Не всі — кожне третє: камінь ріжеться уступами, а
+       не рівною сіткою. Вони і роблять боки боками. */
+    var i, k;
+    for (i = 0; i < PROFILE.length; i += 3) {
+      var chain = [];
+      for (k = 0; k < rings.length; k++) chain.push(rings[k][i]);
+      poly(chain, 1, 0.13 - (i % 6) * 0.02, 41 + i, false);
     }
-    var K = 3.4, c;
-    [[x0, y0], [x1, y0], [x0, y1], [x1, y1]].forEach(function (pt, i) {
-      c = outward(pt[0], pt[1], K);
-      hand(pt[0], pt[1], c[0], c[1], 1.3, 0.34, 31 + i * 7);
-    });
 
-    /* ПІДЛОГА І СТЕЛЯ. Поперечні лінії з перспективним згущенням: що
-       ближче до глядача, то далі одна від одної. Саме вони і читаються
-       як «підлога», а не як смуги. */
-    var steps = [1.22, 1.5, 1.9, 2.45, 3.15];
-    steps.forEach(function (k, i) {
-      var a = outward(x0, y1, k), b = outward(x1, y1, k);
-      hand(a[0], a[1], b[0], b[1], 1.2, 0.26 - i * 0.035, 51 + i * 5);
-      var a2 = outward(x0, y0, k), b2 = outward(x1, y0, k);
-      hand(a2[0], a2[1], b2[0], b2[1], 1.1, 0.17 - i * 0.024, 71 + i * 5);
-    });
+    /* ШТРИХОВКА ПО СКЛЕПІННЮ — коротка, тільки там, де камінь
+       завертає: маса береться не заливкою, а тим, що перо йде
+       упоперек форми. */
+    var vaultFrom = 13, vaultTo = 24;
+    for (k = 1; k < 4; k++) {
+      for (i = vaultFrom; i < vaultTo; i += 2) {
+        var a1 = rings[k][i], a2 = rings[k + 1][i];
+        if (!a1 || !a2) continue;
+        var mx = a1[0] + (a2[0] - a1[0]) * 0.42, my = a1[1] + (a2[1] - a1[1]) * 0.42;
+        poly([a1, [mx, my]], 0.9, 0.075 - k * 0.016, 71 + i + k * 5, false);
+      }
+    }
 
-    /* Бічні повернення отримують по одній вертикалі — рівно стільки,
-       щоб стіна ліворуч і праворуч читалась стіною, а не порожнечею. */
-    [1.6, 2.4].forEach(function (k, i) {
-      var t = outward(x0, y0, k), b = outward(x0, y1, k);
-      hand(t[0], t[1], b[0], b[1], 1.1, 0.2 - i * 0.06, 91 + i * 5);
-      var t2 = outward(x1, y0, k), b2 = outward(x1, y1, k);
-      hand(t2[0], t2[1], b2[0], b2[1], 1.1, 0.2 - i * 0.06, 111 + i * 5);
-    });
+    /* ПІДЛОГА. Уступи між перерізами — по ній і читається, що хід іде
+       вниз-углиб, а не просто далі. */
+    for (k = 1; k < rings.length - 1; k++) {
+      var floorPts = rings[k].slice(0, 8);
+      poly(floorPts, 1.1, 0.16 - k * 0.03, 91 + k * 7, false);
+    }
   }
 
   /* ---------- тушевий пейзаж ---------- */
