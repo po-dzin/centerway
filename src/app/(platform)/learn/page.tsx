@@ -8,7 +8,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 export const metadata: Metadata = {
   ...pageMetadata({
     title: "Бібліотека",
-    description: describe("Ваші курси на CenterWay: уроки, поступ і наступний крок у кожній програмі.", {
+    description: describe("Ваші курси на CenterWay: уроки, прогрес і наступний крок у кожній програмі.", {
       bounded: false,
     }),
     noindex: true,

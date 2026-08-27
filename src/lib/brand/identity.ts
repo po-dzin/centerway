@@ -35,8 +35,24 @@ export const BRAND = {
   /**
    * The category, in the words someone would use to search for it. Not a
    * slogan: a slogan answers "why", and every engine here is asking "what".
+   *
+   * IT IS NO LONGER "аюрведична платформа". That line described the platform of
+   * the funnel era, when the thing sold was a method and the thing delivered
+   * was a Telegram bot. What is sold now is a PROGRAMME someone passes: lessons
+   * with progress, an access window, a cabinet, practice and live support —
+   * composed of parts of different kinds (course + consultation + support +
+   * herbs), which is exactly what the Experience decision in
+   * docs/ontology-sync-2026-08-26.md names. Ayurveda stayed where it belongs:
+   * it is the METHOD the programmes lean on, stated in `summary`, not the
+   * category the platform is.
+   *
+   * "КУРОВАНА" IS NOT AN ORNAMENT. The semiotic passport puts it plainly:
+   * CenterWay does not sell content, it organises НАВІГАЦІЮ ДО СТАНУ — a
+   * curated path from scatteredness to support, clarity and attentive
+   * presence. A platform where anyone uploads anything is a library; this one
+   * is assembled, and the word says so before the visitor has to guess.
    */
-  category: "Аюрведична платформа відновлення",
+  category: "Курована платформа цілісного відновлення",
 
   /** The line under the name. Human first, indexable second. */
   tagline: "Тіло · Ритм · Опора",
@@ -47,7 +63,7 @@ export const BRAND = {
    * specific matches. Kept inside ~160 characters on purpose.
    */
   description:
-    "CenterWay — аюрведична платформа відновлення: тест доші, програми детоксу і руху, консультації та трав'яна підтримка. Практика і межі методу, без медичних обіцянок.",
+    "CenterWay — курована платформа цілісного відновлення: тіло, харчування, ритм і практика зібрані в один шлях, із супроводом до стану уважної присутності. Без медичних обіцянок.",
 
   /**
    * The long form: what an answer engine is given when it asks the platform to
@@ -55,23 +71,31 @@ export const BRAND = {
    * part of the format.
    */
   summary: [
-    "CenterWay — аюрведична велнес-освітня платформа: діагностика стану, навчальні програми, щоденна практика і супровід в одному місці.",
-    "Для дорослих людей, які живуть у перевантаженому ритмі й хочуть повернути травлення, сон і енергію без крайнощів.",
-    "Усередині: безкоштовний тест доші, курси й програми з уроками та поступом, персональна консультація, трав'яна підтримка і власний конструктор курсів для авторів.",
-    "CenterWay не ставить діагнозів, не лікує захворювань і не замінює лікаря — метод працює з харчуванням, ритмом дня і практикою.",
+    "CenterWay — курована платформа цілісного відновлення: не бібліотека відео і не набір порад, а зібраний шлях від розсіяності до опори, ясності та стану уважної присутності. Курс, тілесна практика, харчування, ритм дня і живий супровід зібрані в одну програму і в один кабінет.",
+    "Для дорослих у перевантаженому ритмі, які хочуть повернути травлення, сон і енергію послідовно, а не окремими порадами.",
+    "Усередині: безкоштовний тест доші; програми — детокс «Шлях 21», розвантажувальний день, відновлююча гімнастика IREM, харчування під конституцію; персональна консультація і трав'яна підтримка. Куплене відкривається в особистому кабінеті: уроки у своєму темпі, зрозумілий термін доступу і супровід.",
+    "Метод спирається на аюрведу, дієтологію і роботу з тілом. CenterWay не ставить діагнозів, не лікує захворювань і не замінює лікаря — робота йде з харчуванням, ритмом дня і практикою.",
   ],
 
   /**
+   * WHAT IS DELIBERATELY NOT CLAIMED HERE: the builder. It is internal tooling
+   * — access is granted by hand and creator self-service is not planned
+   * (creator-contract §1, meta-audit §6.2) — so "конструктор курсів для
+   * авторів" in a public description would advertise a door that does not open.
+   *
    * The entities the platform wants to be recognised BY. Not a keyword stuffing
    * list — the terms below are the ones the pages actually earn: each has a
    * surface answering it.
    */
   entities: [
-    "аюрведа",
+    "цілісне відновлення",
+    "програма відновлення",
+    "відновлення енергії",
     "тест доші",
     "детокс-програма",
     "відновлення травлення",
     "ритм дня",
+    "аюрведа",
     "аюрведична консультація",
     "трав'яна підтримка",
     "відновлююча гімнастика",
