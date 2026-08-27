@@ -57,6 +57,48 @@ function writeCache(accessToken: string, identity: PlatformIdentity) {
 }
 
 /**
+ * The read itself, shared by token across concurrent callers.
+ *
+ * The header mounts this menu TWICE — once compact for the bar, once inline for
+ * the drawer (`PlatformHeader`) — and the sessionStorage cache below is only
+ * written after a response comes back. Two instances mounting together
+ * therefore both missed the cache and both posted. Keyed on the token so a
+ * refreshed one is a real second read, and cleared when it settles so a failure
+ * is retried rather than remembered.
+ */
+let inFlight: { token: string; read: Promise<PlatformIdentity | null> } | null = null;
+
+function bootstrapIdentity(token: string): Promise<PlatformIdentity | null> {
+  if (inFlight?.token === token) return inFlight.read;
+
+  const read = (async (): Promise<PlatformIdentity | null> => {
+    try {
+      const res = await fetch("/api/admin/bootstrap-role", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) return null;
+      const payload = (await res.json().catch(() => ({}))) as {
+        role?: string;
+        authorsCourses?: boolean;
+      };
+      return {
+        role: typeof payload.role === "string" ? payload.role : null,
+        authorsCourses: payload.authorsCourses === true,
+      };
+    } catch {
+      // Offline or transient: leave it unresolved rather than guessing.
+      return null;
+    } finally {
+      if (inFlight?.token === token) inFlight = null;
+    }
+  })();
+
+  inFlight = { token, read };
+  return read;
+}
+
+/**
  * The signed-in account's platform identity.
  *
  * The header's standing rule is that it does not fetch per page — that is why
@@ -96,26 +138,10 @@ export function usePlatformIdentity(session: Session | null): PlatformIdentity {
         return;
       }
 
-      try {
-        const res = await fetch("/api/admin/bootstrap-role", {
-          method: "POST",
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) return;
-        const payload = (await res.json().catch(() => ({}))) as {
-          role?: string;
-          authorsCourses?: boolean;
-        };
-        const identity: PlatformIdentity = {
-          role: typeof payload.role === "string" ? payload.role : null,
-          authorsCourses: payload.authorsCourses === true,
-        };
-        if (cancelled) return;
-        setResolved({ token, identity });
-        if (identity.role) writeCache(token, identity);
-      } catch {
-        // Offline or transient: leave it unresolved rather than guessing.
-      }
+      const identity = await bootstrapIdentity(token);
+      if (cancelled || !identity) return;
+      setResolved({ token, identity });
+      if (identity.role) writeCache(token, identity);
     })();
 
     return () => {

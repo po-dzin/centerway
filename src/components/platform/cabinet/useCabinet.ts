@@ -12,7 +12,7 @@
  * blank the dashboard, so it surfaces as a card, not a page state.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 
 import { supabaseClient } from "@/lib/supabaseClient";
@@ -65,6 +65,19 @@ export type CabinetSessionState = {
   signOut: () => Promise<void>;
 };
 
+/**
+ * Whether two sessions are the same answer to "who is signed in, with what".
+ *
+ * supabase-js hands back a NEW object for `INITIAL_SESSION` and `SIGNED_IN`
+ * even when they describe the session `getSession()` just returned. Published
+ * as-is, each one is a fresh identity for every consumer downstream.
+ */
+export function sameSession(a: Session | null, b: Session | null): boolean {
+  if (a === b) return true;
+  if (!a || !b) return false;
+  return a.user?.id === b.user?.id && a.access_token === b.access_token;
+}
+
 export function useCabinetSession(): CabinetSessionState {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(isAuthEnabled);
@@ -72,14 +85,20 @@ export function useCabinetSession(): CabinetSessionState {
   useEffect(() => {
     if (!isAuthEnabled) return;
 
+    /* Published through `sameSession` rather than straight into state: a page
+       load produces the restored session plus one or two auth events that
+       describe it again, and each one used to re-render the whole cabinet. */
+    const publish = (next: Session | null) =>
+      setSession((current) => (sameSession(current, next) ? current : next));
+
     void supabaseClient.auth.getSession().then(({ data }) => {
-      setSession(data.session);
+      publish(data.session);
       setLoading(false);
     });
 
     const {
       data: { subscription },
-    } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => setSession(nextSession));
+    } = supabaseClient.auth.onAuthStateChange((_event, nextSession) => publish(nextSession));
 
     return () => subscription.unsubscribe();
   }, []);
@@ -119,6 +138,27 @@ async function readWithToken(url: string, session: Session): Promise<Response | 
 }
 
 /**
+ * The freshest session, reachable from an effect that does not depend on it.
+ *
+ * The three reads below are keyed on the ACCOUNT, not on the session object or
+ * on its token — a refreshed token is the same person and the same answer, and
+ * re-reading three endpoints for it is work with no result. But the read still
+ * has to send the newest token, so it comes from here rather than from what the
+ * effect closed over. A stale token is survivable anyway: `readWithToken`
+ * refreshes once on a 401.
+ *
+ * The ref is written in an effect declared BEFORE the reads, so on the render
+ * where a session first appears it is already current by the time they run.
+ */
+function useLatestSession(session: Session | null) {
+  const ref = useRef(session);
+  useEffect(() => {
+    ref.current = session;
+  });
+  return ref;
+}
+
+/**
  * Data is stamped with the user it was read for, and the stamp is compared on
  * render rather than cleared in an effect. Clearing would be a setState inside
  * the effect body — a cascading render — and worse, it would leave one frame in
@@ -131,14 +171,16 @@ export function useProfileData(session: Session | null) {
     profile: null,
   });
   const [error, setError] = useState<string | null>(null);
+  const sessionRef = useLatestSession(session);
 
   useEffect(() => {
-    if (!session?.access_token) return;
+    const current = sessionRef.current;
+    if (!current?.access_token) return;
 
     let cancelled = false;
 
     void (async () => {
-      const res = await readWithToken("/api/platform/users/me/profile", session);
+      const res = await readWithToken("/api/platform/users/me/profile", current);
       if (cancelled) return;
 
       if (!res?.ok) {
@@ -146,7 +188,7 @@ export function useProfileData(session: Session | null) {
         return;
       }
 
-      setState({ userId: session.user?.id ?? null, profile: (await res.json()) as ProfileResponse });
+      setState({ userId: current.user?.id ?? null, profile: (await res.json()) as ProfileResponse });
       // Clears a failure left by an earlier attempt — React runs this effect
       // twice in dev, and the first pass can lose a token-refresh race.
       setError(null);
@@ -155,7 +197,7 @@ export function useProfileData(session: Session | null) {
     return () => {
       cancelled = true;
     };
-  }, [session]);
+  }, [userId, sessionRef]);
 
   const profile = state.userId === userId ? state.profile : null;
   const clear = useCallback(() => setState({ userId: null, profile: null }), []);
@@ -177,16 +219,18 @@ export function useLearnerShelf(session: Session | null) {
      the loader directly: the read belongs to the effect that owns the session,
      and one loader with one owner cannot race a second copy of itself. */
   const [attempt, setAttempt] = useState(0);
+  const sessionRef = useLatestSession(session);
 
   useEffect(() => {
-    if (!session?.access_token) return;
+    const current = sessionRef.current;
+    if (!current?.access_token) return;
 
     let cancelled = false;
     void (async () => {
       const result = await fetchMyCourses();
       if (cancelled) return;
       if (result.ok) {
-        setState({ userId: session.user?.id ?? null, courses: result.data.courses });
+        setState({ userId: current.user?.id ?? null, courses: result.data.courses });
         setFailed(false);
       } else {
         setFailed(true);
@@ -196,7 +240,7 @@ export function useLearnerShelf(session: Session | null) {
     return () => {
       cancelled = true;
     };
-  }, [session, attempt]);
+  }, [userId, attempt, sessionRef]);
 
   return {
     shelf: state.userId === userId ? state.courses : null,
@@ -214,16 +258,18 @@ export function useTelegramReach(session: Session | null) {
     userId: null,
     reach: null,
   });
+  const sessionRef = useLatestSession(session);
 
   useEffect(() => {
-    if (!session?.access_token) return;
+    const current = sessionRef.current;
+    if (!current?.access_token) return;
 
     let cancelled = false;
     void (async () => {
       try {
-        const res = await readWithToken("/api/platform/users/me/telegram", session);
+        const res = await readWithToken("/api/platform/users/me/telegram", current);
         if (cancelled || !res?.ok) return;
-        setState({ userId: session.user?.id ?? null, reach: (await res.json()) as TelegramReach });
+        setState({ userId: current.user?.id ?? null, reach: (await res.json()) as TelegramReach });
       } catch {
         // Non-fatal: the account section simply omits the reachability card.
       }
@@ -232,7 +278,7 @@ export function useTelegramReach(session: Session | null) {
     return () => {
       cancelled = true;
     };
-  }, [session]);
+  }, [userId, sessionRef]);
 
   return state.userId === userId ? state.reach : null;
 }
