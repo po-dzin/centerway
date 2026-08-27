@@ -82,7 +82,8 @@
     "smoke:dosha:qa": "npm run smoke:dosha:result && npm run smoke:dosha:api && npm run smoke:dosha:userflows && npm run smoke:dosha:responsive && npm run smoke:dosha:brand-fit",
     "ds:drift": "node scripts/design/ds-drift.mjs",
     "ds:drift:report": "node scripts/design/ds-drift.mjs --write",
-    "ds:drift:gate": "node scripts/design/ds-drift.mjs --gate"
+    "ds:drift:gate": "node scripts/design/ds-drift.mjs --gate",
+    "dev:alt": "next dev -p 8021"
   },
   "dependencies": {
     "@supabase/ssr": "^0.8.0",

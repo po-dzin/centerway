@@ -466,7 +466,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   if (state.status === "loading") {
     return (
       <BuilderShell trail={trail}>
-        <PlatformLoadingState label="Білдер" title="Завантажуємо урок…" detail="Відновлюємо блоки уроку і останню збережену версію." />
+        <PlatformLoadingState label="Майстерня" title="Завантажуємо урок…" detail="Відновлюємо блоки уроку і останню збережену версію." />
       </BuilderShell>
     );
   }

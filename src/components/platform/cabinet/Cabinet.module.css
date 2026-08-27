@@ -17,7 +17,7 @@
    other half of the seam. Tokens only, no raw hex. */
 
 .shell {
-  width: min(100% - 2rem, var(--cw-max-width));
+  width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
   margin: 0 auto;
   padding-block: var(--cw-space-lg) var(--cw-space-3xl);
   color: var(--cw-platform-text);
@@ -361,7 +361,7 @@
 }
 
 .actionGhost {
-  composes: quiet from "../PlatformButtons.module.css";
+  composes: secondary from "../PlatformButtons.module.css";
 }
 
 /* ── Score bars (dosha) ───────────────────────────── */

@@ -16,7 +16,7 @@
 }
 
 .container {
-  width: min(100% - 2rem, var(--cw-max-width));
+  width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
   margin: 0 auto;
 }
 
@@ -29,7 +29,7 @@
   position: sticky;
   top: 0.75rem;
   z-index: var(--ds-z-sticky);
-  width: min(100% - 2rem, var(--cw-max-width));
+  width: min(100% - 2 * var(--cw-bar-inset), calc(var(--cw-max-width) + 2 * var(--cw-bar-pad)));
   margin: 0 auto;
   overflow: clip;
   /* No `isolation: isolate` here, and it must not come back. Per spec, isolation
@@ -147,7 +147,7 @@
   top: 0.95rem;
   right: 0;
   left: 0;
-  width: min(100% - 2rem, var(--cw-max-width));
+  width: min(100% - 2 * var(--cw-bar-inset), calc(var(--cw-max-width) + 2 * var(--cw-bar-pad)));
   --platform-header-fg: var(--cw-platform-accent-contrast);
   --platform-header-muted-fg: var(--cw-platform-accent-contrast);
   --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 90%, transparent);
@@ -209,15 +209,25 @@
   background: var(--cw-mat-inverse-control);
 }
 
+/* The row carries `.container` too (see PlatformHeader.tsx), and must not take
+   its width. The bar is already one `--cw-bar-pad` wider than the content
+   column so that the mark and the burger land ON that column; letting the
+   column's own width apply here would centre the row inside the bar and then
+   pad it again, putting the mark a bar-pad past the line it is meant to hit.
+   Later in this sheet than `.container` and equal in specificity, so it wins
+   without `!important` — the phone rule needs one only because it lives in a
+   sheet that is emitted earlier. */
 .headerInner {
   position: relative;
   z-index: 1;
+  width: 100%;
+  max-width: none;
   min-height: 4rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 0.65rem;
-  padding: 0 1rem;
+  padding: 0 var(--cw-bar-pad);
 }
 
 .workspaceHeaderSlot {

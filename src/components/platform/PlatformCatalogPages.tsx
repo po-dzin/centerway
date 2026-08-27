@@ -102,7 +102,6 @@ export async function PlatformProgramsIndexPage() {
                 slug={course.slug}
                 artwork={course.artwork}
                 ctaLabel="Деталі курсу"
-                size="compact"
               />
             ))}
             {platformMiniCourses.map((program) => (
@@ -116,7 +115,6 @@ export async function PlatformProgramsIndexPage() {
                 slug={program.slug}
                 artwork={program.artwork}
                 ctaLabel="Деталі курсу"
-                size="compact"
               />
             ))}
           </div>
@@ -281,7 +279,6 @@ export function PlatformTestsHubPage() {
                 slug={test.slug}
                 status="planned"
                 statusLabel={testsHubCopy.soonLabel}
-                size="compact"
               />
             ))}
           </div>

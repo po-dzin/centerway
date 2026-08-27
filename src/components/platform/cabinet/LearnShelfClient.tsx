@@ -21,6 +21,7 @@ import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { cabinetGate } from "./CabinetGate";
 import { CourseCard, ShelfEmptyCard, ShelfErrorCard } from "./CourseCard";
+import { PwaInstallRow } from "./PwaInstallCard";
 import { dateLocaleFor } from "./format";
 import { getCabinetCopy } from "./copy";
 import { useCabinetSession, useLearnerShelf, useProfileLang } from "./useCabinet";
@@ -87,6 +88,13 @@ export function LearnShelfClient() {
             <ShelfEmptyCard copy={cab} programsHref={programsHref} />
           ) : null}
         </div>
+
+        {/* The shelf owns the app: this origin's root is what an install
+            actually adds, so the one place that can carry the instruction for a
+            browser with no prompt of its own has to be here. The profile used
+            to hold it alone, and the profile is a `www` path — reachable, but
+            on the host where installing would add the storefront instead. */}
+        <PwaInstallRow copy={cab} />
 
       </div>
     </main>

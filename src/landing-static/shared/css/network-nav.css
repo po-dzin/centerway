@@ -34,7 +34,7 @@
   right: 0;
   left: 0;
   z-index: 60;
-  width: min(100% - 2rem, var(--maxw, 1160px));
+  width: min(100% - 2 * var(--cw-bar-inset), calc(var(--maxw, 1160px) + 2 * var(--cw-bar-pad)));
   margin-inline: auto;
   border-radius: var(--cw-nav-radius);
   /* No CSS border here. An absolutely positioned pseudo insets against the
@@ -267,7 +267,7 @@
   justify-content: space-between;
   gap: 1rem;
   min-height: 3.9rem;
-  padding: 0.5rem 1.15rem;
+  padding: 0.5rem var(--cw-bar-pad);
 }
 
 .cwn__brand {

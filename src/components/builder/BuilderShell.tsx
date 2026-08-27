@@ -249,7 +249,7 @@ export function BuilderNotice({
 const FAILURE_COPY: Record<BuilderFailure, { title: string; text: string }> = {
   unauthenticated: {
     title: "Потрібен вхід",
-    text: "Білдер працює на власному домені, тому вхід тут окремий від платформи — навіть якщо ви вже увійшли там.",
+    text: "Майстерня працює на власному домені, тому вхід тут окремий від платформи — навіть якщо ви вже увійшли там.",
   },
   forbidden: {
     title: "Немає доступу",

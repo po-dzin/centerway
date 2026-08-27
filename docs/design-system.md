@@ -169,6 +169,22 @@ The general rule: a class that only ever appears inside `@media` blocks is a
 class with no base. If the merged bundle does not carry its unconditional rule,
 the browser's defaults are the base, and they will not match anything.
 
+### One offer card, one size (2026-08-27)
+
+The catalogue drew two cards: `compact` (24rem) for mini-courses, the default (29rem) for programmes, from a `size` prop on `PlatformOfferCard`. So /programs read as two catalogues stacked, and a reader weighing a mini-course against a programme was comparing two different objects — the smaller one looked like a smaller claim, which is not what "shorter" means.
+
+The phone rail had already settled this and said so in its own comment: *one height for every card on every rail*, fixed rather than min, because the card's three text rows are clamped to 1/1/3 lines and a card that grows is a card that stopped matching its row. The desktop kept the split. It now takes the same answer — `--ds-offer-card-height-desktop` (29rem), `height` not `min-height` — and the `compact` variant, its three tokens and the `size` prop are gone. A marketplace row is a row of one object at one size; the only thing that varies between two offers is what is printed inside them.
+
+### The hero carries the trail, and the author's way in (2026-08-27)
+
+`OfferTrail` used to render in a row **under** the hero, with a comment defending it: the hero is a photograph with a dark bar over it, and a quiet text control there is the first thing to disappear. True of ink on a photograph — but the fix for the wrong palette is the right palette, not a different position. "Where am I" printed below the thing it locates means a reader on a phone meets a full-height photograph, a headline, a price and two buttons before the page will say which section it belongs to.
+
+`PlatformTrail` now takes `tone` — `page` (ink on paper) or `media` (cream at the hero's two weights) — and the hero draws the trail as its first line, opposite a `utility` slot. The author's «Редагувати цей курс у майстерні» moved into that slot for the same reason in reverse: an editing control belongs in the page's chrome, not in the middle of the offer, under the thing it edits.
+
+### A state and its action are one plate (2026-08-27)
+
+For a reader who owns the course, the closing block printed two cards side by side: «Ваш доступ» with the standing, and «Продовжити» / «Перейти до матеріалів» holding the button. Nothing separated them but the grid — the second card's label and heading only restated the button under them, three ways of saying *continue*. One panel now, spanning the support row, with the actions in a wrapping row at its foot. The hero already carries the same standing and the same verb for someone at the top of the page; this is where it lands for someone who has read to the bottom.
+
 ### A list is text, not a stack of cards (2026-08-22)
 
 `.timeline` (`PlatformBlocksBase.module.css`) is the platform's **one** plain
@@ -219,18 +235,84 @@ the same chain.
 that composes another role must name `base` itself.** One-level composition is
 what actually arrives, so it is what we write.
 
-### Six roles, and there is no seventh
+### The builder's controls, and the guard that could not see them (2026-08-23)
+
+`guard:buttons` passed on the builder for months while the view switch shipped
+**two complete recipes**: a segmented control on a sunk track with the pressed
+option raised on its own plate, and — 2,700 lines lower in the same file, at top
+level rather than in a media query — an ink version that overrode the track, the
+plate and the shadow. Both carried a comment defending themselves. The later one
+won by position, which is not a decision, and the screenshot that started this
+pass is what that looks like: one glyph bare, one in a ring, in the same row.
+
+The guard could not see it because its selector regex named only
+`Button|Btn|Link|Action|Cta|Toggle`. `.viewOption`, `.viewSwitch`, `.menuTrigger`
+and `.toolTab` are pressable controls with hover, focus and selected states, and
+none of them matched. **A control the guard cannot name is a control that
+drifts.** The regex now also takes `Option|Trigger|Switch|Tab`, behind a
+lookahead that keeps `.previewTable` out of it — and that lookahead encodes a
+convention this codebase already followed by habit: a **singular** name is the
+control, a **plural** one is the row that holds controls, so `.toolTabs` and
+`.pageHeadActions` stay uncontrolled containers.
+
+Two more holes closed with it. A **shorthand** sets the longhand the contract
+owns — `padding: .9rem 1rem` writes `padding-inline`, `font: inherit` writes
+both font axes — and the longhand check could not see it; the builder's status
+cells had passed on exactly that technicality. And `min-height` / `min-width`
+now accept `--ds-touch-target-min` beside the button token: they are the same
+3rem, and which one a rule names says *why* it is 3rem. Forcing a menu row to
+claim a button's height would make the rule lie to read green. Coverage went
+from 59 platform rules to 79.
+
+**One ink mark.** Four controls draw the ring — the header's step arrows, the
+tool rail's tabs, the course list's view options, the block inserter — and all
+four render the same `<HandGraphic name="ink-ring" size={42} />`. They had four
+stylesheets between them: rest scale 0.6 / 0.62 / 0.72 / none, rotation -4deg /
+-5deg, and one hardcoding a 2.65rem box while the others read
+`--cw-ink-ring-size`. Two were also missing from the reduced-motion block, so a
+reader who asked for no motion still got the ring springing open. Now one
+`.inkRing` recipe, composed by all four, with every "the ring appears" state —
+hover, focus, `aria-pressed`, `aria-expanded` — in a single rule.
+
+**One focus offset vocabulary.** `--ds-focus-ring-offset` existed and was
+overridden with a literal seven times across the app in five different values
+(`1px`, `2px`, `-2px`, `-3px`, `-4px`). One token for three situations is a
+token with no vocabulary, so there are three now:
+`--ds-focus-ring-offset` (3px) for a standalone control,
+`--ds-focus-ring-offset-tight` (1px) for a field, and
+`--ds-focus-ring-offset-inset` (-2px) for a row whose container would clip the
+ring. The builder is fully on them; three platform rules that also deviate on
+the ring's *colour and width* (`.programTileOverlay`, `.outlineModuleHead`,
+`.completeMark`) are deliberately left for the admin/globals wave rather than
+half-converted.
+
+Also settled in the same pass, each a case of one class described twice at top
+level with the later winning silently: `.courseStatusStrip` declared a full card
+recipe (border, large radius, tinted fill, `overflow: hidden`) that **never
+shipped at any width** because a later unconditional rule stripped it back to
+two block rules — written once now as the ruled strip it actually is;
+`.inlineSurface:focus-visible` took the field offset in one place and the
+standalone-control offset in another, so the writing surface was ringed like a
+button; `.courseStatusItem`'s inline padding was set twice; `.pickerOption` sat
+at a 2.25rem touch target against the 3rem floor every other menu row in the
+file already met; and `.typeOption` — a whole control with hover, pressed and
+focus states — had no consumer anywhere in `src/` and is gone.
+
+### Five roles, and there is no sixth (2026-08-27)
 
 | role | where | fill | stroke | elevation |
 |---|---|---|---|---|
 | `primary` | the one action that advances money or progress — **max one per view** | gold ramp `accent → accent-pressed` | — | gold-tinted, lifts on hover |
-| `secondary` | an alternative of the same weight, standing on the page canvas | `--cw-platform-surface` | — | `--cw-mat-shadow-soft` → `raised` |
-| `quiet` | a tertiary action **inside** a card or on sunk ground | `--cw-mat-surface-sunk` | `--cw-mat-stroke-control` | none |
+| `secondary` | every other plated action, on any ground | `--cw-mat-surface-sunk` | `--cw-mat-stroke-control` | none at rest, `soft` on hover |
 | `chrome` | nav/utility on its own row — back, pager, drawer close | transparent at rest | — | arrives on hover/focus |
 | `onMedia` | a control over hero photography | night glass at the chrome floor | `--cw-mat-stroke` | `raised` |
 | `text` | an underlined text control — no plate, still a full touch target | transparent | — | none |
 
-`quiet` carries a stroke and `secondary` does not, and that is not decoration: a soft fill on a soft surface is not a control. The cabinet's sunk buttons measured **1.08** against the card behind them — readable label, no button. See "The control stroke".
+**`quiet` was folded into `secondary`, and the reason is the bug it kept producing.** They were one role split by the ground the control happened to stand on: `secondary` was a `--cw-platform-surface` plate, correct only where the canvas is a different colour, and `quiet` was the stroked version for inside a card. That is not a property of the action — it is a property of where a caller put it, which means the choice had to be re-made correctly at every call site, and nothing could check it. It was not made correctly: «Консультація» in the home page's video rail and «Більше про автора» in the author panel both took `secondary` **inside a card**, so both painted a surface-coloured plate on a surface-coloured card — a label with no button under it, at roughly **1.08**.
+
+Adding a lint for "is this selector inside a card" is not possible from a stylesheet, and asking every author to answer it is what already failed. So the role stopped asking: `secondary` now carries the stroke that made `quiet` legible (`--cw-mat-stroke-control`, the one stroke token held to WCAG 1.4.11's 3:1 in both themes — see "The control stroke") and sits on the sunk fill, which reads on the cream canvas and on a white card alike. Resting elevation went with the split: a stroked plate that also floats is two ways of saying the same thing.
+
+A role now answers **what the control is**, never **what is behind it**. That is the test for a sixth role if one is ever proposed.
 
 `onMedia` is the night glass, not the media tint: on the day surface it was the one light plate on the page and read as a *disabled* control beside the gold CTA.
 
@@ -274,15 +356,15 @@ What that closed:
 | `.btn` label | 1.02rem, overridden to 1.05rem in `.offer` and 1rem in `.fc-cta` | one size, no overrides |
 | `.btn` lift | −2px | `var(--btn-lift)` (−1px) |
 | `.btn-primary` | flat `--cta`, hover shadow hardcoded `rgba(219,165,79,.36)` | the gold ramp, shadow mixed off the skin's own gold |
-| `.btn-ghost` | 1.5px `--line-strong`, hover swapping border + text + background to the route green | the contract's `quiet`: sunk fill + `--cw-mat-stroke-control` |
+| `.btn-ghost` | 1.5px `--line-strong`, hover swapping border + text + background to the route green | the contract's `secondary`: sunk fill + `--cw-mat-stroke-control` |
 | `.cw-btn` (generator runtime) | `3.35rem` tall, **`border-radius: 999px`** — a pill — gradient at 180° | contract axes, soft rect, 135° |
 | utility pages (`pages.css`) | own 0.75rem corner, own padding | contract axes as fallbacks |
 | touch target | `2.75rem` in `tokens.css`, `44px` in two bridge fallbacks | 3rem everywhere — the canonical value |
 | `--landing-radius-cta-control` | 1rem (way21) vs **1.05rem** (reset-day) | `var(--r-btn)` |
 
-**`quiet`, not `secondary`, is the network's second action** — and that was settled by measuring, not by taste. `secondary` is a surface plate, which reads on the platform because its canvas and its surface are different colours. On a landing they are the same: the plate measured **1.09** against the ground behind it, which is the documented 1.08 failure over again. So the second action keeps a drawn boundary, now the control stroke rather than an arbitrary 1.5px line — measured in place at **3.37** against the canvas and **3.10** against its own fill, both past WCAG 1.4.11's 3:1, with the label at 8.70.
+**The network's second action is a stroked plate** — settled by measuring, not by taste, and since 2026-08-27 it is simply what `secondary` is everywhere (the role the landings needed turned out to be the only one worth having; see "Five roles"). `secondary` is a surface plate, which reads on the platform because its canvas and its surface are different colours. On a landing they are the same: the plate measured **1.09** against the ground behind it, which is the documented 1.08 failure over again. So the second action keeps a drawn boundary, now the control stroke rather than an arbitrary 1.5px line — measured in place at **3.37** against the canvas and **3.10** against its own fill, both past WCAG 1.4.11's 3:1, with the label at 8.70.
 
-The lesson generalises: **`secondary` is only available where the canvas and the surface differ.** Everywhere else the tertiary role is `quiet`, and the stroke is not decoration.
+The lesson generalised, and then took the role with it: a plate whose legibility depends on what it happens to be standing on is not a role, it is a coin flip made once per call site. The landings measured it first; the platform shipped the same failure twice (see "Five roles"). One stroked plate now, everywhere.
 
 The pill is the one worth naming: the doc had said "soft rect everywhere, never pill" since the type-and-shape migration, and a live generator surface had been running a 999px CTA the whole time. A rule nothing checks is a rule that is already broken somewhere.
 
@@ -592,6 +674,23 @@ Two rules, both learned by undoing the opposite (2026-08-17, when the hub hero m
 
 **One hero plate at every breakpoint.** A first pass swapped in a vertical portrait below 900px via `<picture>`; that was reverted — the hero is a single shared image and the breakpoints only re-frame it (`--hero-photo-x/y/scale`). The portrait is not hero furniture: it belongs to the author sections (platform "Про автора", the landings' author block) and to the consultation hero, where the subject *is* the author. Mixing the two put a different photograph behind the same headline depending on window width.
 
+**The offer heroes are the exception, and they carry two plates (2026-08-27).** The rule above is about the five landings, where the hero is one shared photograph re-framed by `--hero-photo-x/y/scale`. A platform offer hero is not that: `PlatformHeroPhoto` renders a `<picture>` and swaps to `artwork.mobile` in a portrait viewport. way21 had that pair from the start; every other offer shipped a single **portrait** master (863×1822) that desktop stretched — the phone plate blown up until one object filled the frame. The four missing landscape masters were generated 2026-08-27 through `img:generate --ref <the portrait plate>` and wired as `desktop`, with the portrait demoted to `mobile`:
+
+| Offer | desktop (3:2) | mobile (9:19) |
+|---|---|---|
+| reboot / short | `reboot-hero-desktop-v2.webp` | `reboot-card-v1.png` |
+| ideal-body | `ideal-body-hero-desktop-v2.webp` | `ideal-body-card-v1.png` |
+| irem | `irem-hero-desktop-v2.webp` | `irem-card-v1.png` |
+| reset-day | `reset-day-hero-desktop-v2.webp` | `reset-day-card-v1.png` |
+
+**A landscape master is not a crop of the portrait one — it is the same scene restaged.** A 3:2 box cut out of a 9:19 plate keeps about a fifth of the composition, which is how the dosha pair was already handled ("the portrait master is not a crop of the landscape one"). The two plates are the same ground, the same objects and the same light in two spatial registers: the portrait looks **straight down** at the surface, the landscape looks **across** it at a high three-quarter angle, so the frame has near and far and the objects cast long shadows away from one window light on the right. Objects gather right of centre; the left half stays empty ground, because that is where the headline sits.
+
+**Offer cards read `desktop` at every width** (`PlatformOfferCard` sets both `--program-photo-image` and `…-mobile` from it), so this pass also fixed the catalogue: a wide card was cropping a phone plate.
+
+**One `desktopPosition` serves both, because the two boxes crop on different axes.** The offer hero is a wide band (roughly 3:1) and a 3:2 plate covering it is scaled to fill the width — only the **y** of `object-position` does anything there. An offer card is 376×384–464, taller than wide, and the same plate is scaled to fill the height — only the **x** does anything there. So `x` is the card's focus and `y` is the hero's, in one declaration: `68% 50%` (irem, reboot), `70% 50%` (ideal-body), `66% 50%` (reset-day). The first wiring used `center 50%`, which centred the card on the empty ground the headline needs and left the objects half out of frame. `cropX` on a course cover is the same number; `mobileCropX: 50` has to be written beside it, or the desktop focus leaks into the portrait plate through the `mobileCropX ?? cropX ?? 50` fallback.
+
+A course-backed offer takes its artwork from `course.cover` (`src` / `mobileSrc` / `cropY` / `mobileCropY`), not from `content.ts` — so both had to be updated, and the course side only reaches the site through `lms:seed`.
+
 Photo roles, as wired:
 
 | Asset | Where |
@@ -611,6 +710,8 @@ Two commands, and every image entering the project goes through the second one w
 | `npm run img:grade -- in.png --out …webp` | The "CenterWay v1" grade, then the mandatory `webpmux -set icc`, then a verification read that throws if the profile did not stick. `--grade` on the generator chains both. |
 
 The photography contract from the research (light, palette, materials, "≤3 objects, air where the text goes") lives in `scripts/img/generate.mjs` as the prompt preamble, not in anyone's notes — that is what makes a set a series.
+
+**A hero plate needs `--resolution`.** The generator's default output is ~1264px on the long edge, and an offer hero is painted up to 1900 CSS px wide — the first four landscape plates shipped soft on a desktop monitor for exactly that reason. `--resolution 2K` / `4K` sets `google.imageConfig.imageSize` on the reference model (4K comes back ~5000px). The `v2` plates were re-rendered at 4K from their own `v1` as the reference — "reproduce this frame exactly, do not restage" holds the composition — then graded down with `img:grade --width 2400`, which lands each one at 128–249 KB. Ship the downscale, not the 19 MB master: the staging PNG is the negative.
 
 **Generate against references, not from prose.** With `--ref`, the request goes to a multimodal model with the approved frames attached and reads "a new frame in that same series"; without it, a pure image model renders from the prompt and style drifts frame to frame. Verified 2026-08-17: a light/dark backdrop pair generated this way came back with the same vase, bowl, stone, dish and sage sprig, mirrored so the text column swaps sides. Text mode is for exploration only.
 
@@ -705,6 +806,39 @@ The contract layer (`route_family_contracts.json` → `screen_manifests.json` �
   This replaced **three** overlapping scales that shipped at once: `--cw-radius-*` (12/18/28), an unused `--ds-radius-*` delivery alias (12/16/20), and a standalone `--cw-card-radius` (20). `md` therefore meant 18 in one file and 16 in another, and a single mobile screen rendered six different corners (12, 14.4, 16, 16.8, 20, 21.6 px). Viewport-interpolated radii (`clamp(1rem, 4vw, …)`) are gone for the same reason: a corner that changes with the window cannot belong to a scale.
 - Touch target minimum `--ds-touch-target-min: 3rem` (canonical since e0c7dbc).
 - Breakpoints: mobile ≤ 560px, tablet 561–900px, desktop ≥ 901px.
+- **One page gutter for the whole network, and the topbar's contents sit on it (2026-08-27).**
+  `--cw-page-gutter: clamp(20px, 5vw, 40px)` is where a page's content column
+  starts, on every surface: platform sections, cabinet, LMS, Builder shell and
+  the five landings. `--cw-container-inset` resolves from it.
+
+  Before this the network ran **four** gutters and none of them was written
+  down. The platform's was a flat `1rem` from the first platform commit
+  (`2eca585c`) that no document ever argued for — the middle step of the
+  spacing scale, taken as a default and then copy-pasted into fifteen rules.
+  Under `≤560px` a stray override cut the content column to `0.6rem` while the
+  topbar and footer stayed at `1rem`, so on every phone the bar read as
+  narrower than the page (the footer carried an explicit counter-override to
+  escape it — the tell that the rule was wrong). The tablet band gave the bar
+  its own `0.75rem`. The landings, meanwhile, had a *designed* fluid gutter,
+  hand-tuned; at 768px it was 38px against the platform's 16px, so an iPad
+  showed two products.
+
+  **The bar is not an exception to the column — it is measured from it.** The
+  mark and the burger are content, so they land on the same vertical line as
+  the text below them. That is what `--cw-bar-pad` (the pill's inner padding,
+  constant) and `--cw-bar-inset` (`gutter − bar-pad`, derived) are for: the
+  floating pill sits exactly one `bar-pad` *wider* than the column, and its
+  contents come back to the column's edge. Above `--cw-max-width` the bar's cap
+  is `max-width + 2 × bar-pad` for the same reason. A bar inset *at* the gutter
+  can never align — its contents are always gutter + padding — which is why the
+  padding had drifted through `1.15rem` / `0.9rem` / `1rem` / `0.6rem` in
+  separate hand-tunes, each one chasing the alignment from the wrong end.
+
+  The three tokens ship to the landings through `NETWORK_SPACE_TOKENS` in the
+  generator, listed explicitly for the same reason the button geometry is: so
+  widening a scale cannot silently enlarge the network payload. Nothing outside
+  the token file states a gutter — `grep "min(100% - [0-9]"` over `src/` should
+  stay empty.
 - **Course surfaces have one footer composition (2026-08-24).** Storefront,
   learner shelf and Builder may carry different links, but their footer uses
   the same `--cw-max-width` container, gutter and three-track grid. Content is

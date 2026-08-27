@@ -47,7 +47,6 @@ export async function HubMini() {
             slug={course.slug}
             artwork={course.artwork}
             ctaLabel="Деталі курсу"
-            size="compact"
           />
         ))}
         {miniCourses.map((program) => (
@@ -61,7 +60,6 @@ export async function HubMini() {
             slug={program.slug}
             artwork={program.artwork}
             ctaLabel="Деталі курсу"
-            size="compact"
           />
         ))}
       </div>

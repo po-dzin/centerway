@@ -18,12 +18,25 @@
    component stylesheet. `guard:buttons` fails the build on that.
 
      primary    the one action that advances money or progress. Max one per view.
-     secondary  an alternative of the same weight, standing on the page canvas.
-     quiet      a tertiary action INSIDE a card or on sunk ground.
+     secondary  every other plated action, on any ground.
      chrome     nav/utility on its own row — back, pager, drawer close, menu.
      onMedia    a control sitting over hero photography.
      text       an underlined text control — no plate, still a real target.
-*/
+
+   WHY FIVE AND NOT SIX (2026-08-27). `secondary` and `quiet` used to be two
+   roles separated by the ground they stood on: secondary was a plate the colour
+   of `--cw-platform-surface`, correct only where the canvas is a different
+   colour, and quiet was the stroked version for inside a card. That is not a
+   property of the ACTION — it is a property of where the caller happened to put
+   it, which means the choice had to be re-made correctly at every call site and
+   could not be checked by anything. It was not: «Консультація» in the video
+   rail and «Більше про автора» in the author panel both took `secondary` inside
+   a card, so both rendered a surface-coloured plate on a surface-coloured card
+   — a label with no button under it, at roughly 1.08 contrast.
+
+   One role now, and it carries the stroke that made `quiet` legible. A stroked
+   plate reads on the cream canvas and on a white card, so the role answers what
+   the control IS and never asks what is behind it. */
 
 .base {
   display: inline-flex;
@@ -180,18 +193,33 @@
 .primary {
   composes: base;
   color: var(--cw-platform-on-accent);
-  background: linear-gradient(135deg, var(--cw-platform-accent), var(--cw-platform-accent-pressed));
-  box-shadow: 0 16px 30px color-mix(in srgb, var(--cw-platform-accent) 20%, transparent);
+  /* Vertical, not diagonal: a 135deg ramp reads as one corner lit and the
+     opposite corner dark on a button this wide and short (mobile full-bleed
+     runs ~7:1), which looks lopsided rather than a sheen. Top-to-bottom stays
+     left-right symmetric at any aspect ratio.
+
+     The grain layer is the same noise `.onMedia` and every glass surface use
+     — a flat gradient alone reads as a rendered plastic chip; this is what
+     "matte" costs on a filled plate instead of a translucent one. */
+  background-image: var(--cw-mat-grain-image), linear-gradient(180deg, var(--cw-platform-accent), var(--cw-platform-accent-pressed));
+  /* Two shadows, two jobs: the first lifts the plate off the page (elevation),
+     the second is a tight zero-offset bloom — the actual glow — since a pure
+     drop shadow reads as a shadow, not as the gold lighting the air around it. */
+  box-shadow:
+    0 16px 30px color-mix(in srgb, var(--cw-platform-accent) 20%, transparent),
+    0 0 22px color-mix(in srgb, var(--cw-platform-accent) 38%, transparent);
 }
 
 .primary:hover:not(:disabled) {
   transform: translateY(var(--ds-button-lift));
-  background: linear-gradient(
-    135deg,
+  background-image: var(--cw-mat-grain-image), linear-gradient(
+    180deg,
     var(--cw-platform-accent-pressed),
     color-mix(in srgb, var(--cw-platform-accent-pressed) 86%, var(--cw-platform-on-accent))
   );
-  box-shadow: 0 20px 32px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent);
+  box-shadow:
+    0 20px 32px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent),
+    0 0 28px color-mix(in srgb, var(--cw-platform-accent) 46%, transparent);
 }
 
 .primary:active:not(:disabled) {
@@ -201,42 +229,27 @@
 
 /* ── secondary ────────────────────────────────────── */
 
+/* The stroke is the material's control boundary, the one stroke token held to
+   WCAG 1.4.11's 3:1 in both themes (see docs "The control stroke"). It is what
+   makes the plate a control rather than a tint: sunk-on-surface measured 1.08
+   without it, 3.37 with. No resting elevation — a stroked plate that also
+   floats reads as two ways of saying the same thing. */
 .secondary {
   composes: base;
+  border: 1px solid var(--cw-mat-stroke-control);
   color: var(--cw-platform-text);
-  background: var(--cw-platform-surface);
-  box-shadow: var(--cw-mat-shadow-soft);
+  background-color: var(--cw-mat-surface-sunk);
+  background-image: var(--cw-mat-grain-image);
 }
 
 .secondary:hover:not(:disabled) {
   transform: translateY(var(--ds-button-lift));
-  background: color-mix(in srgb, var(--cw-platform-surface) 72%, var(--cw-platform-surface-muted) 28%);
-  box-shadow: var(--cw-mat-shadow-raised);
+  background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
 .secondary:active:not(:disabled) {
   transform: translateY(calc(var(--ds-button-lift) * -1));
-}
-
-/* ── quiet ────────────────────────────────────────── */
-
-/* Inside a card, a soft fill on a soft surface is not a control: the cabinet's
-   sunk buttons measured 1.08 against the card behind them — readable label, no
-   button. The stroke is the material's control boundary, the one stroke token
-   held to WCAG 1.4.11's 3:1 in both themes. See docs "The control stroke".
-
-   `secondary` is only available where the canvas and the surface are different
-   colours. On the landings they are the same, so the network's second action is
-   this role, not that one — measured 1.09 as a plate, 3.37 with the stroke. */
-.quiet {
-  composes: base;
-  border: 1px solid var(--cw-mat-stroke-control);
-  color: var(--cw-platform-text);
-  background: var(--cw-mat-surface-sunk);
-}
-
-.quiet:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--cw-mat-surface-sunk) 70%, var(--cw-mat-surface) 30%);
 }
 
 /* ── chrome ───────────────────────────────────────── */

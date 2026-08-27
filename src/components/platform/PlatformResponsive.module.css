@@ -34,17 +34,9 @@
 }
 
 @media (max-width: 1100px) and (min-width: 901px) {
-  .header {
-    width: min(100% - 1.5rem, var(--cw-max-width));
-  }
-
-  .shellOverlay .header {
-    width: min(100% - 1.5rem, var(--cw-max-width));
-  }
-
   .headerInner {
     min-height: 3.85rem;
-    padding: 0 0.9rem;
+    padding: 0 var(--cw-bar-pad);
   }
 
   .nav a {
@@ -90,7 +82,7 @@
   }
 
   .heroFeatureContent {
-    width: min(100% - 2rem, var(--cw-max-width));
+    width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
   }
 }
 
@@ -128,7 +120,7 @@
     top: var(--platform-mobile-header-top);
     right: 0;
     left: 0;
-    width: min(100% - 2rem, var(--cw-max-width));
+    width: min(100% - 2 * var(--cw-bar-inset), calc(var(--cw-max-width) + 2 * var(--cw-bar-pad)));
     display: block;
     margin: 0 auto;
     /* The drawer hangs outside the bar's own box — clip would cut it off. */
@@ -158,7 +150,7 @@
     top: var(--platform-mobile-header-top);
     right: 0;
     left: 0;
-    width: min(100% - 2rem, var(--cw-max-width));
+    width: min(100% - 2 * var(--cw-bar-inset), calc(var(--cw-max-width) + 2 * var(--cw-bar-pad)));
     margin: 0 auto;
   }
 
@@ -171,7 +163,7 @@
     width: 100% !important;
     max-width: none !important;
     margin: 0;
-    padding: 0.5rem 1.15rem;
+    padding: 0.5rem var(--cw-bar-pad);
     box-sizing: border-box;
   }
 
@@ -231,7 +223,15 @@
   }
 
   /* The floating bar carries the symbol alone (see .brandWordmark below), so the
-     brand link is sized by the mark, not by a lockup. */
+     brand link is sized by the mark, not by a lockup.
+
+     PULLED OUT BY ITS OWN OPTICAL INSET. `--cw-bar-pad` measures the pill's
+     edge to the INK, not to the touch target: the target is 3rem because a
+     finger needs 3rem, the mark inside it is 2.25rem, and the difference is
+     invisible padding. Left as-is the glyph sat 6px inside the column every
+     other element on the page starts on. The negative margin is derived from
+     the two sizes rather than typed as a number, so re-sizing either one
+     cannot silently break the alignment again. */
   .header .brand:not([data-surface="footer"]) {
     width: auto;
     height: 3rem;
@@ -239,6 +239,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
+    margin-inline-start: calc((var(--ds-touch-target-min) - 2.25rem) / -2);
     box-shadow: none;
     backdrop-filter: none;
   }
@@ -285,13 +286,18 @@
     display: none;
   }
 
+  /* Same optical pull as the brand mark opposite it, from this control's own
+     numbers: a 3rem target around a 2rem glyph. This replaces a bare
+     `translateX(2px)`, which was the difference between the two controls'
+     insets (8px here, 6px on the mark) applied as a magic number — it made the
+     two glyphs symmetrical to each other while both sat off the column. Derive
+     both and they land on it. */
   .headerInner > .menuButton,
   .header .menuButton {
     display: grid;
     margin-left: auto;
-    margin-right: 0;
+    margin-inline-end: calc((var(--ds-touch-target-min) - 2rem) / -2);
     flex: 0 0 3rem;
-    transform: translateX(2px);
   }
 
   .shellOverlay .menuButton {
@@ -836,7 +842,7 @@
        bottom, that much padding is not breathing room, it is a 157px band of
        empty photograph under the CTA — and it put the plain heroes 77px lower
        than the product and program heroes on the same phone. */
-    padding: clamp(4.8rem, 14vw, 6rem) 1rem clamp(5rem, 16vw, 6.5rem);
+    padding: clamp(4.8rem, 14vw, 6rem) var(--cw-page-gutter) clamp(5rem, 16vw, 6.5rem);
   }
 
   /* One unbreakable word in the title (ДІАГНОСТИКА at 52px) sets the grid
@@ -1027,14 +1033,6 @@
 }
 
 @media (max-width: 560px) {
-  .container {
-    width: min(100% - 1.2rem, var(--cw-max-width));
-  }
-
-  .footer .container {
-    width: min(100% - 2rem, var(--cw-max-width));
-  }
-
   .heroTitle {
     max-width: 10ch;
     font-size: clamp(2.25rem, 13vw, 2.85rem);
@@ -1164,17 +1162,21 @@
     min-height: 100vh;
     min-height: 100svh;
     border-radius: 0;
-    /* A 16:10 plate in a portrait viewport crops hard on the sides: at 390x780
-       cover shows only ~31% of the plate width. On the threshold plate the whole
-       scene — doorway edge, kintsugi bowl, planting strip — sits right of 55%,
-       so a centred window would show bare stone and the door jamb and nothing
-       else. 82% lands that window on 56%..88%. Vertical position is inert here:
-       a portrait frame crops width only, so the full plate height is shown. */
-    --hero-photo-x: 82%;
-    --hero-photo-y: 50%;
+    /* Centred, because the home hero now ships a PORTRAIT MASTER (2026-08-27,
+       see hub.tsx) rather than a landscape plate cropped to the phone.
+
+       The 82% this replaces was the right answer to the old problem: a 16:10
+       plate in a portrait viewport shows only ~31% of its width, and the whole
+       threshold scene sat right of 55%, so a centred window framed bare stone
+       and a door jamb. With a 9:16 master the crop is a few percent, and 82%
+       became the bug it used to fix — it pushed the frame right and cut the
+       sandals off the left edge. Vertical position stays inert: a portrait
+       frame in a portrait viewport crops width, not height. */
+    --hero-photo-x: 50%;
+    --hero-photo-y: 68%;
     --hero-photo-shift-y: 0%;
-    --hero-photo-scale: 1;
-    --hero-photo-origin: center center;
+    --hero-photo-scale: 1.14;
+    --hero-photo-origin: center 125%;
   }
 
   .heroPhotoLayer .expertImage {
@@ -1567,7 +1569,7 @@
   }
 
   main[data-cw-detail-template] .heroFeatureActions {
-    width: min(100%, 22rem);
+    width: min(100%, var(--ds-button-max-width));
     gap: 0.78rem;
   }
 
@@ -1603,7 +1605,7 @@
   }
 
   .heroFeature[data-cw-detail-template] .heroFeatureActions {
-    width: min(100%, 22rem);
+    width: min(100%, var(--ds-button-max-width));
     gap: 0.78rem;
   }
 
@@ -1649,7 +1651,7 @@
   }
 
   main[data-cw-detail-template] .heroFeatureActions {
-    width: min(100%, 20rem);
+    width: min(100%, var(--ds-button-max-width));
     gap: 0.72rem;
   }
 
@@ -1689,7 +1691,7 @@
   }
 
   .heroFeature[data-cw-detail-template] .heroFeatureActions {
-    width: min(100%, 20rem);
+    width: min(100%, var(--ds-button-max-width));
     gap: 0.72rem;
   }
 
@@ -1720,7 +1722,7 @@
     max-width: 100%;
     min-height: 100svh;
     align-content: end;
-    padding: clamp(4.7rem, 14vw, 5.8rem) 1rem clamp(5rem, 16vw, 6.5rem);
+    padding: clamp(4.7rem, 14vw, 5.8rem) var(--cw-page-gutter) clamp(5rem, 16vw, 6.5rem);
     gap: 0.9rem;
   }
 
@@ -1771,7 +1773,7 @@
     max-width: 100%;
     min-height: 100svh;
     align-content: end;
-    padding: clamp(4.7rem, 14vw, 5.8rem) 1rem clamp(5rem, 16vw, 6.5rem);
+    padding: clamp(4.7rem, 14vw, 5.8rem) var(--cw-page-gutter) clamp(5rem, 16vw, 6.5rem);
     gap: 0.9rem;
   }
 
@@ -1842,7 +1844,7 @@
   }
 
   main[data-cw-detail-template] [data-cw-semantic-role="diagnostic-entry"] .heroFeatureContent {
-    width: min(100% - 2rem, var(--cw-max-width));
+    width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
     max-width: var(--cw-max-width);
     margin-inline: auto;
     padding: clamp(6.5rem, 9vw, 8.5rem) 0 clamp(4rem, 6vw, 5.5rem);

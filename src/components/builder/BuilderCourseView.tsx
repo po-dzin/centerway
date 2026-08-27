@@ -458,7 +458,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   if (state.status === "loading") {
     return (
       <BuilderShell trail={trail}>
-        <PlatformLoadingState label="Білдер" title="Завантажуємо курс…" detail="Відновлюємо структуру, налаштування і статус публікації." />
+        <PlatformLoadingState label="Майстерня" title="Завантажуємо курс…" detail="Відновлюємо структуру, налаштування і статус публікації." />
       </BuilderShell>
     );
   }
@@ -474,7 +474,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   if (!course) {
     return (
       <BuilderShell trail={trail}>
-        <PlatformLoadingState label="Білдер" title="Завантажуємо курс…" detail="Відновлюємо структуру, налаштування і статус публікації." />
+        <PlatformLoadingState label="Майстерня" title="Завантажуємо курс…" detail="Відновлюємо структуру, налаштування і статус публікації." />
       </BuilderShell>
     );
   }
@@ -537,7 +537,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         <BuilderDraftConflict onRecover={recoverConflictingDraft} onDiscard={discardConflictingDraft} />
       ) : null}
       <nav className={styles.courseMobileNav} aria-label="Розділи курсу">
-        <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={workspaceMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("course"); }}><BuilderInkLabel>Курс</BuilderInkLabel></a>
+        <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={workspaceMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("course"); }}><BuilderInkLabel>Огляд</BuilderInkLabel></a>
         <a className={styles.courseMobileNavItem} href="#course-structure" aria-current={workspaceMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("content"); }}><BuilderInkLabel>Зміст</BuilderInkLabel></a>
         <a className={styles.courseMobileNavItem} href="#course-release" aria-current={workspaceMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("release"); }}><BuilderInkLabel>Публікація</BuilderInkLabel></a>
       </nav>
@@ -642,7 +642,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       </div>
 
       <div className={styles.courseSettingsPanel}>
-        <h2 className={styles.panelTitle} id="course-overview-title">Про курс</h2>
+        <h2 className={styles.panelTitle} id="course-overview-title">Огляд</h2>
         <BuilderCourseSettings
           course={course}
           onChange={editCourse}
@@ -796,9 +796,9 @@ function BuilderCourseRail({
   return (
     <div className={styles.courseRail}>
       <nav className={styles.courseRailNav} aria-label="Розділи курсу">
-        <a className={styles.courseRailLink} href="#course-overview" aria-label="Курс" aria-current={activeMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("course"); }}>
+        <a className={styles.courseRailLink} href="#course-overview" aria-label="Огляд" aria-current={activeMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("course"); }}>
           <span className={styles.courseRailIcon}><Icon name="guide" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
-          <BuilderInkLabel>Курс</BuilderInkLabel>
+          <BuilderInkLabel>Огляд</BuilderInkLabel>
         </a>
         <a className={styles.courseRailLink} href="#course-structure" aria-label="Зміст" aria-current={activeMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("content"); }}>
           <span className={styles.courseRailIcon}><Icon name="view-rows" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
