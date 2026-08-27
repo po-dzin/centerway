@@ -485,6 +485,41 @@ prototype quirks:
   around the single vanishing point, with the deepest openings dropped and
   narrowed: the way in goes down.
 
+### State is a stroke, not a plate (levels 1 and 2)
+
+The material layer answers what a surface is MADE OF. It does not answer what
+shape attention takes, and letting it answer that turns a ruled list into a
+stack of rounded tiles — which is what happened in the library prototype the
+moment its rows were given the material tint plus a radius and a cast shadow.
+
+The rule, for every level-1 and level-2 surface:
+
+- **Hover and selection are one stroke at two strengths** — faint under the
+  pointer, full on the current row. `--cw-ink-hover-opacity` (0.42) and
+  `--cw-ink-hover-scale` (0.74) against full ink at scale 1. The builder settled
+  this first and wrote down why (`Builder.module.css`, "One selection
+  language"; `BuilderInkLabel.tsx`): a hover plate and a selection plate are the
+  same object, so the moment the pointer rests on the selected row the two
+  states become indistinguishable and selection reads as stuck hover. And a
+  rectangle drawn around a row is a contour, which turns a list of names into a
+  list of buttons.
+- **Material gives tone and the response to touch; the line gives the form of
+  the state.** A pressed surface may sink into `--cw-mat-surface-sunk` for as
+  long as the press lasts — that is an answer to a finger, not a mark of what is
+  chosen.
+- **Radius and cast shadow belong to level 0.** Inside, an edge is a rule and a
+  mark is ink. This is the same sentence as "no glass highlight", one step
+  further out: not only is the material matte, it also does not float.
+- **A literal character is not an icon.** `←`, `×`, `✓` render in whatever
+  weight the system font supplies and never match the baked set; every one of
+  them is a sprite glyph (`public/cw/icons/cw-icons.svg`). A control that keeps
+  its word capitalises it and carries the glyph beside it; a control whose glyph
+  says everything drops the word into `aria-label`.
+
+One object, two strengths, three places: under a row's name in the builder,
+under a section's name in the library list, and around an opening on the
+library wall.
+
 **Open, and deliberately not closed here:** level 0 has not been audited against
 this table. The showcase carries several things this ladder forbids at level 1
 and permits at level 0, and the boundary between them — the moment of crossing —
