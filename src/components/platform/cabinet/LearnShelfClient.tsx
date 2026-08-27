@@ -21,12 +21,12 @@ import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { cabinetGate } from "./CabinetGate";
 import { CourseCard, ShelfEmptyCard, ShelfErrorCard } from "./CourseCard";
-import { PwaInstallRow } from "./PwaInstallCard";
 import { dateLocaleFor } from "./format";
 import { getCabinetCopy } from "./copy";
 import { useCabinetSession, useLearnerShelf, useProfileLang } from "./useCabinet";
 import styles from "./Cabinet.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
+import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
 
 export function LearnShelfClient() {
   const lang = useProfileLang();
@@ -71,10 +71,13 @@ export function LearnShelfClient() {
   return (
     <main className={surfaceStyles.profileMain} data-cw-platform-template="shelf">
       <div className={styles.shell}>
-        <header className={styles.sectionHead}>
-          <p className={styles.sectionLabel}>{cab.learningLabel}</p>
-          <h1 className={styles.sectionTitle}>{cab.learningTitle}</h1>
-        </header>
+        {/* The shared head, not this file's own section scaffolding: the shelf
+            and the builder's course list are the same page in two applications,
+            and they were disagreeing about the size of their titles and about
+            whether a list says anything about itself at all. There are no
+            actions here — nothing on this page acts on the shelf as a whole;
+            everything you can do, you do to one course. */}
+        <PlatformPageHead label={cab.learningLabel} title={cab.learningTitle} lead={cab.learningLead} />
 
         <div className={styles.section}>
           {failed ? <ShelfErrorCard copy={cab} onRetry={() => void reload()} /> : null}
@@ -89,13 +92,12 @@ export function LearnShelfClient() {
           ) : null}
         </div>
 
-        {/* The shelf owns the app: this origin's root is what an install
-            actually adds, so the one place that can carry the instruction for a
-            browser with no prompt of its own has to be here. The profile used
-            to hold it alone, and the profile is a `www` path — reachable, but
-            on the host where installing would add the storefront instead. */}
-        <PwaInstallRow copy={cab} />
-
+        {/* NO INSTALL ROW HERE. This origin's root is what an install actually
+            adds, so the offer does belong on this side — but this tree renders
+            `footer={false}`, and a full-width line under the last course read as
+            a footer that had lost its footer. It moved into the account menu
+            this page already carries; see `InstallEntry` in
+            `layout/PlatformAccountMenu.tsx`. */}
       </div>
     </main>
   );

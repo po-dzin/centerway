@@ -119,7 +119,7 @@ export function CourseCard({
         {course.status === "draft" ? <span className={styles.chip}>{copy.courseDraft}</span> : null}
       </div>
 
-      <h3 className={styles.cardTitle}>{course.title}</h3>
+      <h3 className={styles.courseCardTitle}>{course.title}</h3>
       {course.summary ? <p className={styles.cardText}>{course.summary}</p> : null}
 
       {course.access === "enrolled" && total > 0 ? (
@@ -157,6 +157,79 @@ export function CourseCard({
             {copy.openCourseMap}
           </Link>
         ) : null}
+      </div>
+    </article>
+  );
+}
+
+/**
+ * The same course, one column narrower — the cabinet's shelf card.
+ *
+ * WHY A SECOND CARD AND NOT A PROP. The library's card is a full record: chips,
+ * summary, when it started, when the window closes. The dashboard's question is
+ * narrower — "what do I open, and how far in am I" — and the honest way to
+ * answer it in a row of four is to print less, not to squeeze the same card. It
+ * is the same OBJECT though, and that is why both live in this file and share
+ * `courseAction`: cover, name, where you stopped, the rail, one control. Two
+ * files would drift on where «Продовжити» goes within a week.
+ *
+ * ONE BUTTON, and that is the rule the whole row is built on. The resume card
+ * used to carry «Продовжити» plus «Усі мої курси» — the second one duplicating
+ * the doorway standing a few centimetres above it in the same block.
+ */
+export function CompactCourseCard({
+  course,
+  copy,
+  label,
+}: {
+  course: LearnerShelfCourseDto;
+  copy: CabinetCopy;
+  /**
+   * The kicker over the name, set only on the card being resumed — and with it,
+   * the one gold button in the row.
+   *
+   * MAX ONE PRIMARY PER VIEW is the button contract's rule, and a shelf is
+   * exactly where it bites: four courses, four "continue" buttons, four gold
+   * plates, and the card the dashboard is actually answering with disappears
+   * into the row. The rest keep the same control at the same size in the quiet
+   * role — still the whole card's width, still one click.
+   */
+  label?: string;
+}) {
+  const href = useSurfaceHref();
+  const action = courseAction(course, copy);
+  const done = course.standing?.completedLessons ?? 0;
+  const total = course.standing?.totalLessons ?? 0;
+  const resumable = course.access === "enrolled" && total > 0 && !course.standing?.isFinished;
+
+  return (
+    <article className={styles.shelfCard} {...matte}>
+      <CourseCover course={course} />
+      {label ? <p className={styles.sectionLabel}>{label}</p> : null}
+      <h3 className={styles.shelfCardTitle}>{course.title}</h3>
+      {/* Where you stopped, or — for a course not started — what it costs to
+          start. One line either way: a card in a row of four cannot afford a
+          paragraph, and the library is one click away for the full record. */}
+      <p className={styles.shelfCardNote}>
+        {course.currentLessonTitle && !course.standing?.isFinished
+          ? course.currentLessonTitle
+          : course.standing?.isFinished
+            ? copy.courseFinished
+            : copy.courseNotStarted}
+      </p>
+      {resumable ? (
+        <>
+          <ProgressRail value={done} total={total} label={course.title} />
+          <p className={styles.shelfCardMeta}>{copy.stepsOf(done, total)}</p>
+        </>
+      ) : null}
+      <div className={styles.shelfCardAction}>
+        <Link
+          className={label && action.primary ? styles.actionPrimary : styles.actionGhost}
+          href={href(action.href)}
+        >
+          {action.label}
+        </Link>
       </div>
     </article>
   );

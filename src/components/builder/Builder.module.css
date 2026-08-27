@@ -1007,6 +1007,32 @@
   position: relative;
 }
 
+/* The page head's two controls, in the same shape as the step arrows and the
+   view switch under them — one icon idiom on this page, not three.
+
+   THE PRIMARY KEEPS ITS GOLD. Both act on the list, but they are not the same
+   offer: importing is a side door for a file you already have, creating a
+   course is what this page is for. Made bare like its neighbour, the one action
+   an author comes here to take would be a grey glyph in a corner. Squared, so
+   the gold is a token rather than a banner. */
+.headIconAction {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  position: relative;
+}
+
+.headPrimaryIconAction {
+  composes: primary from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  min-width: var(--ds-touch-target-min);
+}
+
+.headIconAction:hover .iconInkRing,
+.headIconAction:focus-visible .iconInkRing {
+  opacity: var(--cw-ink-hover-opacity);
+  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+}
+
 /* ── The ink ring, once ────────────────────────────
 
    Four controls draw this mark — the header's step arrows, the tool rail's
@@ -1330,26 +1356,12 @@
 /* Title and the single primary action on one row. Stacked, the button read as
    a step in the page instead of the thing you do to it, and spent a whole band
    of vertical space above the shelf. */
-.pageHead {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--cw-space-sm);
-  flex-wrap: wrap;
-  margin-block-end: var(--cw-space-2xs);
-}
-
-.pageHead > .pageTitle {
-  flex: 0 1 auto;
-  min-width: 0;
-}
-
-.pageHeadActions {
-  display: flex;
-  align-items: center;
-  gap: var(--cw-space-xs);
-  flex-wrap: wrap;
-}
+/* The course list's own head recipe used to live here — a flex row of title and
+   actions, with its own title size and no application label. It is the shared
+   `PlatformPageHead` now, so that page and the learner's shelf open the same
+   way; see `platform/PlatformPageHead.tsx`. `.pageTitle` and `.pageLead` stay:
+   the course view and the lesson editor print a title and a sentence too, and
+   those are sections inside a document rather than the top of a list.  */
 
 /* The list's own bar: how many, and how to look at them. It belongs to the
    content, not to the app chrome — a view toggle in the header competed with
@@ -1706,21 +1718,15 @@
   gap: var(--cw-space-md);
 }
 
-/* TWO ROWS, AND THE FACE TAKES THE SLACK. `auto` rows let every card pack its
-   content to the top and leave the remainder under the last line, so the row
-   menu floated at a different height in each card of a row — three cards, three
-   places to look for the same control. With `1fr auto` the face absorbs the
-   height a taller neighbour forces and the controls sit on one line across the
-   row.
-
-   Card actions align to the INLINE END. The menu is a corner affordance, not a
-   line of content: left-aligned under a paragraph it read as one more item in
-   the card's body, and the eye had to distinguish it from `blockerLine` by
-   shape alone. */
+/* ONE ROW NOW, and the face fills it. The card used to reserve a second track
+   for the menu — `1fr auto`, so that three cards of different text length still
+   put their controls on one line across the row. The menu has moved into the
+   corner and out of flow, so the reservation is over: what is left is the face,
+   and it takes the height a taller neighbour in the row forces. */
 .courseCard {
   position: relative;
   display: grid;
-  grid-template-rows: 1fr auto;
+  grid-template-rows: minmax(0, 1fr);
   justify-items: stretch;
   gap: var(--cw-space-xs);
   padding: var(--cw-space-md);
@@ -1729,12 +1735,53 @@
   box-shadow: var(--cw-mat-shadow-soft);
 }
 
+/* THE MENU IS A CORNER AFFORDANCE, so it sits in the corner. At the foot of the
+   card it took a row of its own under the last line of meta — a control the
+   width of the card away from the thing it acts on, and a band of empty card
+   beside it. Over the cover's top-right it is where a hand already reaches for
+   "what else can I do with this one", and the card gives the space back to the
+   content.
+
+   It carries a plate, and that is not a contradiction of the ink rule. Ink is
+   how a surface says HOVERED or CURRENT; this is a control standing on a
+   photograph, and a glyph with no ground under it is unreadable on half the
+   covers an author will upload. The plate is the chrome material, at the shell
+   tint the header uses — the same object as the bar, not a new one. */
 .courseCard > .menuRoot {
-  justify-self: end;
+  position: absolute;
+  inset-block-start: calc(var(--cw-space-md) + var(--cw-space-2xs));
+  inset-inline-end: calc(var(--cw-space-md) + var(--cw-space-2xs));
+  z-index: 2;
 }
 
-.courseCard:hover {
-  box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
+.courseCard > .menuRoot > .menuTrigger {
+  color: var(--cw-platform-text);
+  background-color: var(--cw-mat-tint-chrome);
+  background-image: var(--cw-mat-grain-image);
+  box-shadow: var(--cw-mat-shadow-chrome);
+  backdrop-filter: var(--cw-mat-filter);
+}
+
+/* HOVER AND SELECT ARE INK, like every other list in this builder.
+   The card used to answer the pointer by lifting — a second shadow, which is
+   the plate-swap `InkLabel` was written to replace, and which said nothing at
+   all about which card the open menu belonged to. Now the title carries the
+   mark: faint while the pointer rests on the card, full while its menu is open.
+   Two strengths of one stroke, so «під курсором» and «оцей» cannot collapse
+   into the same appearance.
+
+   `:has` rather than a state prop: the trigger already reports `aria-expanded`
+   for the screen reader, and reading it is one selector against threading an
+   open flag out of the menu and into the card. */
+.courseCard:hover .courseTitle .inkMark,
+.courseCard:focus-within .courseTitle .inkMark {
+  opacity: var(--cw-ink-hover-opacity);
+  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+}
+
+.courseCard:has(.menuTrigger[aria-expanded="true"]) .courseTitle .inkMark {
+  opacity: 1;
+  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
 }
 
 .courseCardFace {
@@ -1871,7 +1918,12 @@
   outline-offset: var(--ds-focus-ring-offset);
 }
 
+/* Relative, because the card's ink stroke hangs off it — the title IS the card's
+   name, so it is the thing that gets marked. Not `.inkLabel`: that idiom clips
+   its text to one line with an ellipsis, and a course title on a card is
+   allowed the two lines it usually needs. */
 .courseTitle {
+  position: relative;
   margin: 0;
   font-family: var(--cw-font-editorial);
   font-size: 1.3rem;

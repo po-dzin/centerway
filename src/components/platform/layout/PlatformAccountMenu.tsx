@@ -16,9 +16,10 @@ import {
   currentAppKey,
   type PlatformAppKey,
 } from "@/lib/platform/apps";
+import { usePwaInstall } from "../pwa/usePwaInstall";
 import { usePlatformIdentity } from "./usePlatformIdentity";
 import { isAuthConfigured, usePlatformSession } from "./usePlatformSession";
-import { useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
+import { useOwnsPersonalSurfaces, useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
 
 /**
  * The account control: who am I, which applications may I enter, and how do I
@@ -44,6 +45,76 @@ import { useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
  * `--ds-*` into it is the cross-layer consumption `guard:ds-contract` bans — but
  * it reads the same list, so the two cannot disagree about where you may go.
  */
+
+/* Short on purpose: it stands in a column of two- and three-word rows, and the
+   cabinet's full sentence would be the one item that wraps. */
+const INSTALL_LABEL = "Додати на екран";
+
+/* Ukrainian and inline, like every other string in this bar. The cabinet ships
+   two languages and reads its own copy table; the shell ships one. */
+const IOS_INSTALL_LEAD = "На iPhone та iPad застосунок додає сам браузер, у два кроки:";
+const IOS_INSTALL_STEPS = [
+  "Натисніть «Поділитися» на панелі Safari.",
+  "Оберіть «На початковий екран».",
+];
+
+/**
+ * INSTALL, AS A ROW OF THIS MENU. It used to be a line pinned under the shelf's
+ * last course, on a tree that renders no footer — a full-width sentence and a
+ * button hanging off the bottom of the page, reading as a footer that had lost
+ * its footer. This is where a once-per-device offer belongs instead: in the
+ * chrome every page carries, one row among the other things you do to the
+ * account rather than a panel competing with the courses.
+ *
+ * ONLY WHERE THIS ORIGIN IS THE APP. `start_url` is relative, so a prompt fired
+ * on `www` would put the STOREFRONT on the home screen. From there the offer is
+ * the cabinet's row, which names the crossing and sends the reader to the
+ * library — this menu stays silent rather than offering the wrong install.
+ *
+ * SAFARI GETS THE TWO TAPS, folded. It never fires a prompt, so the only honest
+ * thing to offer is the instruction; two lines of it are not a row, hence the
+ * disclosure. Anything else — a desktop browser with no prompt and no Share
+ * sheet — renders nothing, because a row that leads nowhere is worse than no
+ * row.
+ */
+function InstallEntry({ onSelect }: { onSelect: () => void }) {
+  const install = usePwaInstall();
+  const ownsInstall = useOwnsPersonalSurfaces();
+
+  if (!ownsInstall || install.isStandalone) return null;
+
+  if (install.canPrompt) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          onSelect();
+          void install.install();
+        }}
+      >
+        <InkMenuLabel>{INSTALL_LABEL}</InkMenuLabel>
+      </button>
+    );
+  }
+
+  if (install.needsIosInstructions) {
+    return (
+      <details className={styles.menuFold}>
+        <summary>
+          <InkMenuLabel>{INSTALL_LABEL}</InkMenuLabel>
+        </summary>
+        <p className={styles.menuFoldLead}>{IOS_INSTALL_LEAD}</p>
+        <ol className={styles.menuFoldSteps}>
+          {IOS_INSTALL_STEPS.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
+      </details>
+    );
+  }
+
+  return null;
+}
 
 function getUserInitial(session: Session | null) {
   const name =
@@ -320,6 +391,12 @@ export function PlatformAccountMenu({
           </Link>
         );
       })}
+      <InstallEntry
+        onSelect={() => {
+          close();
+          onNavigate?.();
+        }}
+      />
       <button type="button" onClick={() => void signOut()}>
         <InkMenuLabel>Вийти</InkMenuLabel>
       </button>

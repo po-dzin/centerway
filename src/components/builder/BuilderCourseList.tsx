@@ -22,6 +22,7 @@ import {
 } from "./builderClient";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
+import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
 
 type State =
   | { status: "loading" }
@@ -247,51 +248,61 @@ export function BuilderCourseList() {
 
   return (
     <BuilderShell>
-      {/* Title and the one primary action share a row. Stacked in a column the
-          button read as a step in the page rather than as the thing you do to
-          it, and cost a full band of vertical space above the shelf. */}
-      <div>
-        {/* The action sits beside the TITLE, not beside the title-and-lead: the
-            lead is a full sentence and pushed the button onto its own row at
-            360px, which is the column the request was to get out of. */}
-        <div className={styles.pageHead}>
-          <h1 className={styles.pageTitle}>Курси</h1>
-          {state.canCreate ? (
-            <div className={styles.pageHeadActions}>
+      {/* The platform's page head, the same component the learner's shelf runs.
+          The two pages are one shelf seen from two sides — the courses you may
+          read and the courses you may edit — and they were opening differently
+          enough that the top of the page did not say which side you were on:
+          this one had no application label at all, a title a size larger, and
+          two wide text buttons where the shelf had nothing.
+
+          THE ACTIONS ARE ICONS NOW. They act on the LIST, and the list already
+          carries a bar of icon controls a few lines below (the view switch), so
+          two full-width words above it made the head read as the loudest thing
+          on a page whose subject is the courses. Both keep a tooltip and an
+          accessible name — an icon-only control that says nothing is a rebus. */}
+      <PlatformPageHead
+        label="Майстерня"
+        title="Курси"
+        /* One line for both audiences, and it describes the LIST rather than
+           the platform. «Усі курси платформи» was true for an admin and read
+           like a catalogue of the shop — this page is a workspace, and what is
+           on it is what this account may open. */
+        lead="Курси, доступні вам для редагування."
+        actions={
+          state.canCreate ? (
+            <>
               {!importing ? (
                 <button
-                  className={styles.quietAction}
+                  className={styles.headIconAction}
                   type="button"
+                  title="Імпортувати JSON"
                   onClick={() => {
                     setCreating(false);
                     setImporting(true);
                   }}
                 >
-                  Імпортувати JSON
+                  <Icon name="import" size={20} label="Імпортувати JSON" />
+                  <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
                 </button>
               ) : null}
               {!creating ? (
                 <button
-                  className={styles.commitAction}
+                  className={styles.headPrimaryIconAction}
                   type="button"
+                  title={busy ? "Створюємо…" : "Новий курс"}
                   onClick={() => {
                     setImporting(false);
                     void create();
                   }}
                   disabled={busy}
                 >
-                  {busy ? "Створюємо…" : "Новий курс"}
+                  <Icon name="plus" size={20} label={busy ? "Створюємо…" : "Новий курс"} />
                 </button>
               ) : null}
-            </div>
-          ) : null}
-        </div>
-        {/* One line for both audiences, and it describes the LIST rather than
-            the platform. «Усі курси платформи» was true for an admin and read
-            like a catalogue of the shop — this page is a workspace, and what is
-            on it is what this account may open. */}
-        <p className={styles.pageLead}>Курси, доступні вам для редагування.</p>
-      </div>
+            </>
+          ) : null
+        }
+      />
 
       {state.canCreate && importing ? (
         <ImportPanel
@@ -594,7 +605,12 @@ function CourseCard(props: EntryProps) {
         )}
         <span className={styles.courseCardBody}>
           <span className={styles.courseTitleRow}>
-            <span className={styles.courseTitle}>{course.title}</span>
+            <span className={styles.courseTitle}>
+              {course.title}
+              {/* The card's own mark. Two strengths of one stroke: faint under
+                  the pointer, full while this card's menu is open. */}
+              <HandGraphic className={styles.inkMark} name="ink-stroke" size={36} />
+            </span>
             <span className={course.status === "published" ? styles.pillPublished : styles.pill}>
               {course.status === "published" ? "Опубліковано" : "Чернетка"}
             </span>
