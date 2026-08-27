@@ -9,7 +9,7 @@ import { programs } from "@/lib/platform/content";
 export const metadata: Metadata = pageMetadata({
   title: "Програми і курси",
   description: describe(
-    "Усі програми CenterWay: детокс «Шлях 21», розвантажувальний день, гімнастика IREM, харчування під конституцію — з уроками, поступом і зрозумілим форматом."
+    "Усі програми CenterWay: детокс «Шлях 21», розвантажувальний день, гімнастика IREM, харчування під конституцію — з уроками, практикою і зрозумілим форматом."
   ),
   path: "/programs",
 });
