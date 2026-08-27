@@ -159,10 +159,20 @@
    The slot carries no surface of its own: the card inside it already declares
    the material, and a panel inside a panel at the same radius is the seam this
    page spent a pass removing. */
+/* Capped, not stretched. Without this the slot fills whatever the room gives
+   it — up to the full 1160px shell below 900px, where the room has not yet
+   split into two columns — and `.continueCard`'s 16:9 cover scaled with it: a
+   course cover the width of the page. `/learn`'s own cards answer the same
+   cover at `minmax(22rem, 1fr)` (Cabinet.module.css `.cardGrid`); this is that
+   same normal size, not a shelf tile's neighbour but the same scale as one.
+   Capping the SLOT rather than each card inside it (continueCard, the error
+   card, the empty card) keeps whichever one is showing at one consistent
+   width, so the room does not resize itself as the shelf read resolves. */
 .resume {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-md);
+  max-width: 26rem;
 }
 
 /* ── The doorway ──────────────────────────────────── */
