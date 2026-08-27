@@ -4205,10 +4205,20 @@
    the module/lesson hierarchy. Detail remains available in the release sheet,
    but each workspace mode stays quiet enough to scan like a manuscript. */
 
+/* STUCK BELOW THE HEADER, NOT UNDER IT.
+   Below 901px the platform header (`mode="workspace"`) is itself sticky at
+   `top: 0` — see PlatformResponsive.module.css's `.header.header[data-cw-
+   header-mode="workspace"]` — so pinning this strip to the same edge put two
+   sticky layers at the same coordinate and let the header's higher z-index
+   win: after any scroll the three mode tabs sat directly behind roughly 4rem
+   of chrome instead of below it. `--builder-topbar-height` is that header's
+   own measured box (`calc(4rem + 1px)`, declared on `.shell`, which this strip
+   is a descendant of) — the token that already existed for exactly this
+   number, used until now only for a min-height calc on the document. */
 .courseMobileNav {
   position: sticky;
   z-index: calc(var(--ds-z-sticky) - 1);
-  inset-block-start: 0;
+  inset-block-start: var(--builder-topbar-height);
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   align-items: center;

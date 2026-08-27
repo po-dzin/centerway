@@ -201,3 +201,22 @@ describe("spacing steps exist", () => {
     expect(code).not.toContain("--cw-space-3xs");
   });
 });
+
+describe("the course tabs sit below the header, not under it", () => {
+  /**
+   * Below 901px the platform header (`mode="workspace"`) is itself sticky at
+   * `top: 0` — see PlatformResponsive.module.css's `.header.header[data-cw-
+   * header-mode="workspace"]`. `.courseMobileNav` used to pin to the same
+   * edge (`inset-block-start: 0`), so after any scroll two sticky layers sat
+   * at the same coordinate and the header's higher z-index won: the three
+   * mode tabs sat directly behind roughly 4rem of chrome instead of below it.
+   * `--builder-topbar-height` is that header's own measured box, already
+   * declared on `.shell` (this strip's ancestor) for exactly this number —
+   * verified live to equal the header's real rendered height (65px at
+   * 700px width) before this test was written.
+   */
+  it("pins the strip to --builder-topbar-height, not to the viewport edge", () => {
+    const rule = /\.courseMobileNav\s*\{([\s\S]*?)\n\}/.exec(code)?.[1] ?? "";
+    expect(rule).toContain("inset-block-start: var(--builder-topbar-height)");
+  });
+});
