@@ -19,7 +19,7 @@ import json
 import os
 
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageFilter
 
 SRC = "docs/design-system/prototypes/assets/art"
 OUT = "docs/design-system/prototypes/assets"
@@ -34,6 +34,30 @@ def density(im):
     floor = float(np.percentile(a, 0.5))
     d = np.clip((paper - a) / max(paper - floor, 1e-3), 0, 1)
     return d ** 1.15
+
+
+def flatten(dens, radius=0.18, keep=0.42):
+    """Зняти з фактури композицію, лишити матеріал.
+
+    Модель малює картину: один кут густий, другий порожній. Стіні це
+    шкодить — половина смуги з полицями сидить у плямі, половина на
+    чистому аркуші, і жодна розкладка цього не виправить. Тут із
+    щільності віднімається її ж сильно розмита копія: великі перепади
+    (та сама композиція) зникають, дрібне зерно, тріщини й пори
+    лишаються. Далі контраст пригнічується — матова світла глина, а не
+    туш по мокрому.
+
+    radius — частка меншої сторони, за якою «велике» вважається
+    композицією; keep — скільки лишити від початкового розмаху.
+    """
+    h, w = dens.shape
+    r = max(8, int(min(w, h) * radius))
+    blur = np.asarray(
+        Image.fromarray((dens * 255).astype(np.uint8))
+        .filter(ImageFilter.GaussianBlur(r)), np.float32) / 255.0
+    flat = dens - blur + float(dens.mean())
+    flat = np.clip(flat, 0, 1)
+    return np.clip((flat - flat.mean()) * keep + flat.mean() * keep, 0, 1)
 
 
 def material_box(dens, edge=0.06):
@@ -67,6 +91,7 @@ def prep(name, key):
             im = im.crop(box)
             im = im.resize((W, round(W * im.size[1] / im.size[0])), Image.LANCZOS)
             dens = density(im)
+        dens = flatten(dens)
 
     rgba = np.zeros(dens.shape + (4,), np.uint8)
     rgba[..., 3] = (dens * 255).astype(np.uint8)

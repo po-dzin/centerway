@@ -486,6 +486,11 @@
     background: var(--paper);
     opacity: calc((1 - var(--depth, 1)) * 0.34);
   }
+  /* Повітряна перспектива була відповіддю на глибину, якої не було
+     видно інакше. У вирізаній стіні глибину несе сам виріз — укоси і
+     темрява дна, — і та сама димка поверх нього читалась брудом на
+     кожній комірці ще до будь-якого вибору. */
+  :root[data-env="on"] .niche__box::before { display: none; }
 
   /* Тінь усього блока на стіні — світло згори-справа, тінь сповзає
      вниз-вліво, м'яка і довга, як у предмета, що висить на стіні. */
@@ -646,10 +651,14 @@
   /* Полиця — креслярська лінія по лінійці. */
   /* ---------- книги ---------- */
 
+  /* КОРІНЕЦЬ НЕ ЗАОКРУГЛЮЄТЬСЯ ЗГОРИ. Радіус тут стояв від загального
+     правила «предмет має радіус», але книжка обрізана під ніж: верх
+     корінця — пряма грань, і саме нею він і читається книжкою, а не
+     плиткою. */
   .book {
     position: absolute;
     bottom: 2px;
-    border-radius: var(--r-object) var(--r-object) 0 0;
+    border-radius: 0 0 1px 1px;
     background-color: var(--fill);
     /* Корінець чистий — об'єм несуть грань, кришка і падаюча тінь,
        а не гравюрна штриховка. */
@@ -685,13 +694,19 @@
     transform-origin: left top;
     pointer-events: none;
   }
+  /* Кришка добудовується ЗА тілом корінця, а не поверх нього: раніше
+     вона вилазила праворуч на сім пікселів і зверху на чотири, і
+     книжка виглядала кривою, а не об'ємною. Тепер її права межа
+     збігається з бічною гранню, а нижня стоїть рівно на верхньому
+     ребрі. */
   .book__top {
     position: absolute;
-    left: 1px; right: -7px; top: -4px;
+    left: 0; right: -6px; top: -4px;
     height: 4px;
     background: var(--fill);
     border: 1px solid var(--ink-line);
-    transform: skewX(-46deg);
+    border-bottom: 0;
+    transform: skewX(-50deg);
     transform-origin: left bottom;
     pointer-events: none;
   }
@@ -1133,7 +1148,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 35 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 36 · 27.08</span>
 
 
 <div class="stage" aria-hidden="true">
@@ -1219,7 +1234,8 @@
   <div class="console__group">
     <span class="console__legend">Стіна · фактура</span>
     <div class="chips" id="envs">
-      <button class="chip" data-env="wall-rock" type="button" aria-pressed="true">камінь</button>
+      <button class="chip" data-env="wall-matte" type="button" aria-pressed="true">матова глина</button>
+      <button class="chip" data-env="wall-rock" type="button" aria-pressed="false">камінь</button>
       <button class="chip" data-env="wall-clay" type="button" aria-pressed="false">глина</button>
       <button class="chip" data-env="wall-plaster" type="button" aria-pressed="false">тиньк</button>
       <button class="chip" data-env="" type="button" aria-pressed="false">без малюнка</button>
@@ -1554,6 +1570,14 @@
      решту рахує envFit. Пише їх prep-env.py, руками сюди нічого не
      вписується. */
   var ENVS = {
+  "wall-matte": {
+    "tex": "assets/env-wall-matte.webp",
+    "body": "env-wall-matte-body.webp",
+    "w": 1280,
+    "h": 1266,
+    "pos": [0.5, 0.5],
+    "posNarrow": [0.5, 0.5]
+  },
   "wall-rock": {
     "tex": "assets/env-wall-rock.webp",
     "body": "env-wall-rock-body.webp",
@@ -2575,13 +2599,46 @@
 
   /* Отвори вибиваються з готового матеріалу і одразу отримують нутро. */
   function openings(g, dark, lc, sd, pc) {
-    caseEls.forEach(function (el, k) {
-      var x = parseFloat(el.style.left), y = parseFloat(el.style.top);
-      var w = el.offsetWidth, h = el.offsetHeight;
-      if (!w || !h) return;
-      var depth = parseFloat(el.style.getPropertyValue("--depth")) || 0.7;
-      var seed = Number(el.dataset.case) * 13 + k;
-      var bite = Math.max(1.2, Math.min(4.5, w * 0.03));
+    /* СПІЛЬНА ГРАНЬ — ОДНА ЛІНІЯ.
+       Категорія на десяток праць розрізана на кілька секцій, і кожна
+       досі вибивалась окремо. Там, де вони сходились, виходило два
+       краї впритул: дві губи, дві тіні, подвійна товщина каменю — шов,
+       якого в одній полиці не буває. Тепер сусідні секції ОДНІЄЇ
+       категорії, що стоять на одному рівні, вибиваються одним
+       отвором, а між ними лишається те, що й лишається в справжній
+       полиці: одна перемичка. */
+    var runs = [], cur = null;
+    var list = caseEls.map(function (el, k) {
+      return {
+        el: el, k: k, ci: Number(el.dataset.case),
+        x: parseFloat(el.style.left), y: parseFloat(el.style.top),
+        w: el.offsetWidth, h: el.offsetHeight,
+        t: Number(el.dataset.cut) || 6,
+        depth: parseFloat(el.style.getPropertyValue("--depth")) || 0.7
+      };
+    }).filter(function (q) { return q.w && q.h; });
+    list.sort(function (a, b) { return a.ci - b.ci || a.y - b.y || a.x - b.x; });
+    list.forEach(function (q) {
+      var join = cur && cur.ci === q.ci &&
+        Math.abs(cur.y - q.y) <= 2 && Math.abs(cur.h - q.h) <= 2 &&
+        q.x - (cur.x + cur.w) <= Math.max(10, cur.t * 1.6) &&
+        q.x >= cur.x;
+      if (join) {
+        cur.cuts.push(q.x - (q.x - (cur.x + cur.w)) / 2);   /* середина шва */
+        cur.w = q.x + q.w - cur.x;
+        cur.t = Math.min(cur.t, q.t);
+        cur.parts.push(q);
+      } else {
+        cur = { ci: q.ci, x: q.x, y: q.y, w: q.w, h: q.h, t: q.t,
+                depth: q.depth, cuts: [], parts: [q], k: q.k };
+        runs.push(cur);
+      }
+    });
+
+    runs.forEach(function (r) {
+      var x = r.x, y = r.y, w = r.w, h = r.h;
+      var seed = r.ci * 13 + r.k;
+      var bite = Math.max(1.2, Math.min(4.5, Math.min(w, h) * 0.05));
 
       /* 1. МАТЕРІАЛ ЗАКІНЧУЄТЬСЯ. */
       g.save();
@@ -2596,26 +2653,23 @@
       g.save();
       g.clip();
       var back = g.createLinearGradient(0, y, 0, y + h);
-      back.addColorStop(0, rgba(sd, 0.66 + depth * 0.22));
-      back.addColorStop(0.55, rgba(sd, 0.42 + depth * 0.2));
-      back.addColorStop(1, rgba(sd, 0.3 + depth * 0.16));
+      back.addColorStop(0, rgba(sd, 0.66 + r.depth * 0.22));
+      back.addColorStop(0.55, rgba(sd, 0.42 + r.depth * 0.2));
+      back.addColorStop(1, rgba(sd, 0.3 + r.depth * 0.16));
       g.fillStyle = back;
       g.fillRect(x, y, w, h);
 
       /* 3. УКОСИ — товщина стіни. Світло згори-праворуч: лівий укіс і
          дно ловлять його, верхній і правий лишаються в тіні. Малюються
          трапеціями від краю отвору до внутрішнього прямокутника — це і
-         є перспектива коробки, тільки чесна, без точки сходу. */
-      var t = Number(el.dataset.cut) ||
-        Math.max(3, Math.min(22, Math.min(w, h) * (0.10 + depth * 0.10)));
-      /* УКІС ЖИВЕ, ПОКИ ЙОГО ВИДНО. На стіні в сотню-триста праць
+         є перспектива коробки, тільки чесна, без точки сходу.
+         УКІС ЖИВЕ, ПОКИ ЙОГО ВИДНО: на стіні в сотню-триста праць
          отвір має сорок пікселів по короткій стороні, і чотири
          трапеції в ньому — не глибина, а брудна облямівка. Поріг тут
-         не власний: це той самий стан far, у якому стіна вже
-         відмовилась від назв на корінцях. Одне рішення на дві
-         відмови — на такій відстані стіна читається кількістю
-         отворів, а не тим, що всередині них. Лишається губа, і вона
+         не власний, це той самий стан far, у якому стіна вже
+         відмовилась від назв на корінцях. Лишається губа, і вона
          гучніша: тепер увесь виріз тримає вона. */
+      var t = r.t;
       var thin = t < 4.5 || room.dataset.far === "true";
       var ix = x + t, iy = y + t, iw = w - t * 2, ih = h - t * 2;
       function face(pts, col, a) {
@@ -2626,18 +2680,32 @@
         g.fill();
       }
       if (!thin) {
-      face([[x, y], [x + w, y], [ix + iw, iy], [ix, iy]], sd, 0.5);              /* верх — тінь */
-      face([[x + w, y], [x + w, y + h], [ix + iw, iy + ih], [ix + iw, iy]], sd, 0.3); /* правий */
-      /* У темряві виріз читається не тінню, а СВІТЛОМ на укосі: тінь
-         там нічим не відрізняється від ґрунту, бо ґрунт і сам темний.
-         Тому освітлені грані в темній темі гучніші, а не тихіші. */
-      face([[x, y], [ix, iy], [ix, iy + ih], [x, y + h]], lc, dark ? 0.3 : 0.3);
-      face([[x, y + h], [ix, iy + ih], [ix + iw, iy + ih], [x + w, y + h]],
-           lc, dark ? 0.4 : 0.42);
+        face([[x, y], [x + w, y], [ix + iw, iy], [ix, iy]], sd, 0.5);
+        face([[x + w, y], [x + w, y + h], [ix + iw, iy + ih], [ix + iw, iy]], sd, 0.3);
+        /* У темряві виріз читається не тінню, а СВІТЛОМ на укосі: тінь
+           там нічим не відрізняється від ґрунту, бо ґрунт і сам
+           темний. Тому освітлені грані в темній темі гучніші. */
+        face([[x, y], [ix, iy], [ix, iy + ih], [x, y + h]], lc, 0.3);
+        face([[x, y + h], [ix, iy + ih], [ix + iw, iy + ih], [x + w, y + h]],
+             lc, dark ? 0.4 : 0.42);
       }
+
+      /* 4. ПЕРЕМИЧКА між секціями однієї категорії — одна, і вона з
+         каменю: світло з правого боку, тінь з лівого. */
+      r.cuts.forEach(function (cx, n) {
+        var pw = Math.max(1.4, Math.min(6, t * 0.6));
+        var g1 = g.createLinearGradient(cx - pw, 0, cx + pw, 0);
+        g1.addColorStop(0, rgba(sd, 0.42));
+        g1.addColorStop(0.5, rgba(lc, dark ? 0.34 : 0.5));
+        g1.addColorStop(1, rgba(sd, 0.42));
+        g.fillStyle = g1;
+        var jitter = (seeded(seed * 17 + n) - 0.5) * 1.4;
+        g.fillRect(cx - pw / 2 + jitter, y + (thin ? 1 : t * 0.5),
+                   pw, h - (thin ? 2 : t));
+      });
       g.restore();
 
-      /* 4. ГУБА. Передній край різу: знизу і праворуч він ловить
+      /* 5. ГУБА. Передній край різу: знизу і праворуч він ловить
          світло, згори і ліворуч — темніє. Одна лінія в піксель тут не
          годиться: край сколотий, отже і лінія йде тим самим щербатим
          контуром. */
@@ -3405,9 +3473,9 @@
 
   /* setTheme викликається ЗАВЖДИ, навіть для «системної»: інлайн-фарби
      на body — єдине, чого не переб'є жоден стиль хоста артефакта. */
-  var savedEnv = "wall-rock";
-  try { savedEnv = window.localStorage.getItem("cw-proto-env"); } catch (e) { savedEnv = "wall-rock"; }
-  setEnv(savedEnv === null ? "wall-rock" : savedEnv);
+  var savedEnv = "wall-matte";
+  try { savedEnv = window.localStorage.getItem("cw-proto-env"); } catch (e) { savedEnv = "wall-matte"; }
+  setEnv(savedEnv === null ? "wall-matte" : savedEnv);
   var savedGround = "graphite";
   try { savedGround = window.localStorage.getItem("cw-proto-ground") || "graphite"; } catch (e) { /* приватне вікно */ }
   setGround(savedGround);

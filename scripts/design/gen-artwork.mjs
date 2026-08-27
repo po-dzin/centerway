@@ -43,6 +43,10 @@ const PROMPTS = {
     "A still wide lake in the lower third, one low far shore of hills, mist lying flat on the water, " +
     "the faintest second shore beyond. Horizontal calm. " + COMMON,
 
+  /* Фактурі не потрібне ані «ма», ані композиція: у ній не має бути
+     ні світлого кута, ні темного — інакше половина смуги з полицями
+     сидить у плямі, а половина на чистому аркуші. Тому для стін
+     власна спільна частина промпта, без правила порожнього верху. */
   /* ФРОНТАЛЬНА СТІНА — МАТЕРІАЛ, А НЕ СЦЕНА.
      Намальована кімната має власну перспективу, і комірки в ній
      статичні: гнізда з малюнка не множаться разом із каталогом. Тому
@@ -66,6 +70,14 @@ const PROMPTS = {
     "no corners, no floor, no ceiling — only the surface, edge to edge. Quiet, almost bare: " +
     "faint tide marks of damp, a few hairline cracks, one flaked patch, otherwise still. " +
     "Extreme restraint. No openings, no niches, no objects. " + COMMON,
+  "wall-matte":
+    "A matte pale clay wall, hand-smoothed, photographed straight on and evenly lit, filling " +
+    "the whole frame edge to edge. The surface is almost featureless: the faintest tonal " +
+    "unevenness of the clay, a very fine sand grain, one or two hairline cracks. No composition, " +
+    "no light and shade, no darker corner or lighter corner, no vignette, no brush strokes, " +
+    "no openings, no niches, no objects. Traditional East Asian ink-wash rendering on warm " +
+    "off-white paper, monochrome, extremely restrained. No text, no seals, no signature, " +
+    "no border, no watermark.",
 
 };
 
