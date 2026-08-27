@@ -684,7 +684,6 @@
     color: var(--ink-faint);
   }
 
-  .room[data-far="true"] .book__plate { opacity: 0.5; }
   .room[data-far="true"] .niche__label,
   .room[data-far="true"] .niche__more { opacity: 0.5; font-size: 0.52rem; }
 
@@ -713,104 +712,60 @@
      правила «предмет має радіус», але книжка обрізана під ніж: верх
      корінця — пряма грань, і саме нею він і читається книжкою, а не
      плиткою. */
+  /* КОРІНЕЦЬ — ОДНЕ КРЕСЛЕННЯ, А НЕ ТРИ ЕЛЕМЕНТИ.
+     Три грані складались із трьох дівів із власними рамками, і на
+     стиках виходило те, що й мусило: лице своєю рамкою і фоном лізло
+     на контур кришки, у кришки не було нижнього ребра (бо воно ж і є
+     верхнє ребро лиця), а на нахиленій книжці все це розходилось ще й
+     на півпікселя. Тепер це один SVG: три грані одним пером, спільне
+     ребро — одна лінія, а не дві накладені. */
   .book {
     position: absolute;
     bottom: 2px;
-    border-radius: 0 0 1px 1px;
-    background-color: var(--fill);
-    /* Корінець чистий — об'єм несуть грань, кришка і падаюча тінь,
-       а не гравюрна штриховка. */
-    /* КОНТУР — ЦЕ ЛІНІЯ, А НЕ ТІНЬ. Довга розмита тінь під нахиленою
-       книжкою добирала до контуру ще кілька пікселів темряви з одного
-       боку, і два сусідні корінці виглядали накресленими різним пером.
-       Тінь тепер коротка і щільна: вона каже, що предмет стоїть, і не
-       бере на себе роботу лінії. */
-    --book-shadow:
-      2px 3px 5px -2px var(--cast),
-      1px 1px 2px -1px var(--cast);
-    box-shadow: var(--book-shadow);
-    border: 1px solid var(--ink-line);
+    --face-front: var(--fill);
+    --face-top:   color-mix(in srgb, var(--paper-lit) 72%, var(--fill));
+    --face-side:  var(--wash-2);
+    --face-line:  var(--ink-line);
+    /* КОНТУР — ЦЕ ЛІНІЯ, А НЕ ТІНЬ: коротка щільна тінь каже, що
+       предмет стоїть, і не додає до контуру пікселів темряви з одного
+       боку. drop-shadow, а не box-shadow: тінь має йти по КРЕСЛЕННЮ, а
+       не по прямокутнику кнопки. */
+    filter: drop-shadow(2px 3px 4px var(--cast));
+    border: 0;
+    padding: 0;
+    background: transparent;
     transform-origin: 50% 100%;
     transform: translateZ(18px) rotate(var(--tilt, 0deg));
-    transition: transform 750ms cubic-bezier(0.16, 0.5, 0.2, 1),
-                background-color 600ms ease, border-color 600ms ease,
-                box-shadow 800ms ease;
+    transition: transform 750ms cubic-bezier(0.16, 0.5, 0.2, 1), filter 600ms ease;
     cursor: pointer;
-    display: grid;
-    align-content: end;
-    justify-items: center;
-    padding-bottom: 6px;
-    /* Видимий overflow — праворуч і зверху добудований аксонометричний
-       об'єм, і його не можна різати. */
     overflow: visible;
   }
-  /* Кресленик набирає об'єму: бічна грань і кришка, добудовані як в
-     аксонометрії — штрихована площина, не фотографічна тінь. */
-  /* АКСОНОМЕТРІЯ КОРІНЦЯ — ТРИ ГРАНІ, ЯКІ СХОДЯТЬСЯ.
-     Скіс тут не декоративний, у нього є арифметика, і поки її не було,
-     кришка не сходилась із боком: вона вилазила за тіло праворуч і
-     висіла над ним.
-
-       глибина      d = 6px  (ширина бічної грані)
-       підйом       r = d·tan40° ≈ 5px  (наскільки бік іде вгору)
-       кришка       h = r,  а її скіс β: tanβ = d / r  →  50°
-
-     Тобто висота кришки дорівнює підйому боку, а її скіс зсуває
-     верхнє ребро рівно на глибину. Ширина кришки — рівно ширина
-     корінця: зсув дає скіс, а не зайві пікселі в самому елементі.
-     Саме зайві шість пікселів праворуч і були тим, що «вилазило». */
-  .book__side {
+  .book__draw {
     position: absolute;
-    top: 0; bottom: 0; right: -6px;
-    width: 6px;
-    background: var(--wash-2);
-    border: 1px solid var(--ink-line);
-    border-left: 0;
-    transform: skewY(-40deg);
-    transform-origin: left top;
+    inset: 0;
+    overflow: visible;
     pointer-events: none;
   }
-  /* Кришка ловить світло, лице стоїть до нього ребром, бік у тіні —
-     три грані мусять мати три тони, інакше об'єм є тільки в контурі.
-     Досі кришка була того самого тону, що й лице, і корінець згори
-     читався плоским. */
-  .book__top {
-    position: absolute;
-    left: 0; right: 0; top: -5px;
-    height: 5px;
-    background: color-mix(in srgb, var(--paper-lit) 72%, var(--fill));
-    border: 1px solid var(--ink-line);
-    border-bottom: 0;
-    transform: skewX(-50deg);
-    transform-origin: left bottom;
-    pointer-events: none;
-  }
-  /* Дві накреслені пов'язки на корінці. */
-  .book::before {
-    content: "";
-    position: absolute;
-    inset-inline: 2px;
-    top: 9px;
-    height: 1px;
-    background: var(--ink-line);
-    box-shadow: 0 5px 0 var(--ink-line);
-  }
-  /* НА КОРІНЦІ НЕМАЄ НАЗВИ. Вертикальний рядок у півпікселя не
-     читався ніде: на широкому екрані він плив, на вузькому
-     перетворювався на бахрому, а на стіні в сотню праць — на шум по
-     всій стіні. Замість набору стоїть те, що стоїть на справжньому
-     корінці, коли назву ще не витиснули: сліпа табличка між двома
-     пов'язками. Вона працює на будь-якому розмірі, бо це форма, а не
-     текст. Назви живуть у списку ліворуч, у aria-label і в розвороті. */
-  /* НАЗВА НА КОРІНЦІ З'ЯВЛЯЄТЬСЯ, КОЛИ ДО ПОЛИЦІ ПІДІЙШЛИ. У залі її
-     нема навмисно: вертикальний рядок у півпікселя там не читається, а
-     на стіні в сотню отворів перетворюється на шум. У наїзді камера
-     збільшує сцену в кілька разів, корінець стає корінцем — і на ньому
-     є де витиснути назву. Тому вона вмикається лише на вибраній
-     категорії й лише у вигляді полиці. */
+  .book__draw .front { fill: var(--face-front); }
+  .book__draw .top   { fill: var(--face-top); }
+  .book__draw .side  { fill: var(--face-side); }
+  .book__draw .line  { fill: none; stroke: var(--face-line); stroke-width: 1;
+                       stroke-linejoin: round; stroke-linecap: round; }
+  .book__draw .plate { fill: color-mix(in srgb, var(--ink-value) 7%, transparent);
+                       stroke: var(--face-line); stroke-width: 1; }
+  .book__draw .foot  { fill: none; }
+
+  /* ЩО ВИДНО НА КОРІНЦІ — ПИТАННЯ ЙОГО РОЗМІРУ НА ЕКРАНІ, А НЕ РЕЖИМУ.
+     Корінець у два пікселі не носить ані назви, ані таблички; той
+     самий корінець, наближений камерою вчетверо, носить і те, і те.
+     Тому рівень деталізації рахується з ФАКТИЧНОЇ ширини корінця в
+     кадрі (applyLod), а не з того, у залі ми чи в полиці. */
+  .room[data-lod="bare"] .book__draw .plate,
+  .room[data-lod="bare"] .book__draw .band { display: none; }
+
   .book__spine {
     position: absolute;
-    inset-block: 12% 16%;
+    inset-block: 10% 14%;
     inset-inline: 0;
     display: grid;
     place-items: center;
@@ -822,58 +777,26 @@
     white-space: nowrap;
     overflow: hidden;
     opacity: 0;
-    transition: opacity 500ms ease 240ms;
+    transition: opacity 400ms ease 200ms;
     pointer-events: none;
   }
-  body.in-case .niche[data-sel="true"] .book__spine { opacity: 1; }
-  body.in-case .niche[data-sel="true"] .book__plate { opacity: 0; }
-  .book__plate { transition: opacity 400ms ease; }
+  /* Назва — лише на полиці, до якої підійшли, і лише коли корінець на
+     екрані справді достатньої ширини. */
+  .room[data-lod="name"] .niche[data-sel="true"] .book__spine { opacity: 1; }
+  .room[data-lod="name"] .niche[data-sel="true"] .book__draw .plate { opacity: 0; }
 
-  .book__plate {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    width: 54%;
-    min-width: 3px;
-    top: 27%;
-    height: 22%;
-    min-height: 5px;
-    border: 1px solid var(--ink-line);
-    border-radius: 1px;
-    background: color-mix(in srgb, var(--ink-value) 6%, transparent);
-    pointer-events: none;
-  }
-
-  /* ЗОЛОТО НА ОДНІЙ КНИЗІ. Раніше латунну підошву носили всі шість
-     придбаних курсів, і акцент переставав бути акцентом: шість
-     однакових вогників не показують нічого. Світиться рівно та, на яку
-     ви дивитесь. */
-  /* КНИГА НЕ СВІТИТЬСЯ. Раніше вибрана праця мала два ореоли, а
-     наведена — один, і полиця через це читалась вітриною з підсвіткою.
-     Книжка не джерело світла: вона предмет. Увага показується тим, що
-     робить палітурник, — книгу ВИСУВАЮТЬ із ряду, її корінець
-     золотять по нижньому обрізу, а грань набирає тонку золоту лінію.
-     Жодного розмитого сяйва. */
   .book[data-live="true"] {
-    background-color: color-mix(in srgb, var(--brass) 9%, var(--fill));
-    border-color: var(--brass-line);
+    --face-front: color-mix(in srgb, var(--brass) 9%, var(--fill));
+    --face-line: var(--brass-line);
     transform: translateZ(46px) rotate(var(--tilt, 0deg)) translateY(-9px);
   }
-  .book[data-live="true"]::after {
-    content: "";
-    position: absolute;
-    inset-inline: 0;
-    bottom: 0;
-    height: 3px;
-    background: var(--brass);
+  .book[data-live="true"] .book__draw .plate {
+    fill: color-mix(in srgb, var(--brass) 26%, transparent);
   }
-  .book[data-live="true"] .book__plate {
-    background: color-mix(in srgb, var(--brass) 24%, var(--fill));
-    border-color: var(--brass-line);
-  }
+  .book[data-live="true"] .book__draw .foot { fill: var(--brass); }
   .book:hover {
-    background-color: color-mix(in srgb, var(--brass) 8%, var(--fill));
-    border-color: var(--brass-line);
+    --face-front: color-mix(in srgb, var(--brass) 8%, var(--fill));
+    --face-line: var(--brass-line);
   }
   .book:focus-visible { outline: 1px solid var(--brass); outline-offset: 3px; }
 
@@ -1383,7 +1306,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 45 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 46 · 27.08</span>
 
 
 <svg class="sprite" aria-hidden="true" width="0" height="0" style="position:absolute"><symbol id="cw-arrow-left" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M19.93 11.75C19.81 11.75 19.46 11.75 19.23 11.75C19 11.75 18.76 11.75 18.53 11.75C18.3 11.75 18.07 11.75 17.84 11.76C17.61 11.76 17.38 11.76 17.15 11.76C16.93 11.76 16.7 11.76 16.47 11.76C16.24 11.77 16.01 11.77 15.78 11.77C15.56 11.77 15.33 11.78 15.1 11.78C14.87 11.78 14.65 11.79 14.42 11.79C14.19 11.79 13.96 11.8 13.74 11.8C13.51 11.81 13.28 11.81 13.06 11.82C12.83 11.83 12.6 11.83 12.37 11.84C12.14 11.85 11.92 11.86 11.69 11.87C11.46 11.87 11.23 11.88 11 11.89C10.77 11.9 10.54 11.91 10.32 11.93C10.09 11.94 9.86 11.95 9.63 11.96C9.4 11.98 9.17 12 8.95 12.02C8.72 12.04 8.5 12.06 8.27 12.08C8.05 12.11 7.83 12.13 7.6 12.16C7.38 12.18 7.16 12.21 6.94 12.24C6.72 12.26 6.38 12.31 6.27 12.32"/> <path d="M11.23 6.08C11.15 6.17 10.92 6.42 10.77 6.59C10.62 6.76 10.46 6.92 10.31 7.1C10.16 7.27 10 7.44 9.85 7.61C9.7 7.78 9.54 7.96 9.39 8.14C9.24 8.31 9.08 8.49 8.93 8.67C8.78 8.86 8.62 9.04 8.47 9.23C8.32 9.41 8.16 9.6 8.01 9.79C7.85 9.98 7.7 10.17 7.54 10.36C7.39 10.55 7.23 10.74 7.08 10.94C6.92 11.13 6.76 11.32 6.61 11.51C6.45 11.7 6.21 11.91 6.13 12.09C6.05 12.27 6.05 12.43 6.12 12.6C6.19 12.76 6.41 12.9 6.56 13.05C6.71 13.2 6.85 13.36 7 13.52C7.14 13.67 7.29 13.83 7.44 13.99C7.58 14.15 7.73 14.31 7.87 14.48C8.02 14.64 8.17 14.81 8.31 14.97C8.46 15.14 8.61 15.31 8.75 15.47C8.9 15.64 9.05 15.81 9.2 15.98C9.34 16.15 9.49 16.32 9.64 16.49C9.79 16.66 9.94 16.82 10.1 16.99C10.25 17.16 10.4 17.33 10.55 17.5C10.7 17.66 10.93 17.91 11.01 18"/> </g></symbol><symbol id="cw-arrow-right" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M4.38 12.56C4.49 12.55 4.82 12.51 5.04 12.48C5.26 12.45 5.49 12.42 5.71 12.39C5.93 12.37 6.15 12.34 6.37 12.31C6.59 12.28 6.81 12.25 7.03 12.23C7.25 12.2 7.48 12.17 7.7 12.15C7.92 12.12 8.14 12.1 8.37 12.07C8.59 12.05 8.82 12.03 9.04 12.01C9.27 11.99 9.5 11.97 9.73 11.96C9.95 11.94 10.18 11.93 10.41 11.92C10.64 11.91 10.87 11.9 11.1 11.89C11.33 11.88 11.56 11.87 11.79 11.86C12.01 11.85 12.24 11.85 12.47 11.84C12.7 11.83 12.93 11.82 13.15 11.82C13.38 11.81 13.61 11.81 13.83 11.8C14.06 11.8 14.29 11.79 14.52 11.79C14.74 11.78 14.97 11.78 15.2 11.78C15.43 11.77 15.65 11.77 15.88 11.77C16.11 11.77 16.34 11.76 16.57 11.76C16.79 11.76 17.02 11.76 17.25 11.76C17.48 11.76 17.83 11.76 17.94 11.76"/> <path d="M12.8 6.02C12.88 6.1 13.13 6.33 13.29 6.49C13.46 6.65 13.62 6.8 13.79 6.96C13.95 7.12 14.11 7.28 14.28 7.44C14.44 7.6 14.6 7.76 14.76 7.92C14.92 8.09 15.08 8.25 15.24 8.42C15.41 8.58 15.57 8.75 15.72 8.91C15.88 9.08 16.04 9.25 16.2 9.42C16.36 9.59 16.52 9.76 16.68 9.93C16.83 10.1 16.99 10.27 17.15 10.45C17.31 10.62 17.47 10.79 17.62 10.97C17.78 11.14 18.02 11.32 18.1 11.49C18.18 11.67 18.17 11.84 18.09 12.02C18.01 12.19 17.77 12.37 17.61 12.55C17.44 12.73 17.28 12.9 17.12 13.08C16.95 13.26 16.79 13.44 16.63 13.62C16.46 13.8 16.3 13.97 16.13 14.15C15.97 14.33 15.8 14.51 15.64 14.69C15.47 14.87 15.3 15.05 15.14 15.23C14.97 15.41 14.8 15.59 14.63 15.77C14.47 15.95 14.3 16.13 14.13 16.31C13.96 16.5 13.79 16.68 13.62 16.86C13.45 17.04 13.28 17.22 13.12 17.39C12.95 17.57 12.69 17.84 12.61 17.93"/> </g></symbol><symbol id="cw-close" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M6.18 6.1C6.26 6.17 6.49 6.39 6.65 6.54C6.81 6.68 6.97 6.82 7.13 6.97C7.29 7.11 7.45 7.26 7.61 7.4C7.77 7.54 7.93 7.69 8.09 7.83C8.25 7.98 8.41 8.12 8.56 8.27C8.72 8.41 8.88 8.56 9.04 8.71C9.2 8.86 9.36 9.01 9.52 9.16C9.68 9.32 9.84 9.47 9.99 9.63C10.15 9.79 10.31 9.95 10.47 10.11C10.63 10.27 10.78 10.44 10.94 10.6C11.09 10.77 11.24 10.93 11.4 11.1C11.55 11.26 11.7 11.43 11.85 11.6C12 11.77 12.16 11.94 12.31 12.1C12.46 12.27 12.61 12.44 12.76 12.61C12.91 12.79 13.06 12.96 13.21 13.13C13.36 13.3 13.51 13.47 13.66 13.64C13.81 13.81 13.96 13.99 14.11 14.16C14.26 14.33 14.41 14.5 14.57 14.67C14.72 14.84 14.87 15.01 15.02 15.19C15.18 15.36 15.33 15.53 15.49 15.7C15.64 15.87 15.8 16.04 15.95 16.21C16.11 16.38 16.26 16.55 16.42 16.72C16.58 16.89 16.74 17.05 16.89 17.22C17.05 17.39 17.21 17.56 17.37 17.72C17.53 17.89 17.77 18.14 17.85 18.22"/> <path d="M17.88 5.54C17.8 5.62 17.57 5.86 17.42 6.02C17.27 6.18 17.12 6.34 16.96 6.5C16.81 6.66 16.66 6.82 16.51 6.98C16.35 7.14 16.2 7.31 16.05 7.47C15.9 7.63 15.74 7.8 15.59 7.96C15.44 8.13 15.29 8.3 15.13 8.46C14.98 8.63 14.83 8.8 14.67 8.97C14.52 9.14 14.37 9.31 14.21 9.48C14.06 9.65 13.9 9.82 13.75 10C13.59 10.17 13.43 10.34 13.28 10.52C13.12 10.69 12.96 10.87 12.8 11.05C12.64 11.23 12.48 11.4 12.32 11.58C12.16 11.76 12 11.94 11.84 12.12C11.67 12.3 11.51 12.48 11.35 12.66C11.18 12.85 11.02 13.03 10.85 13.21C10.69 13.39 10.52 13.58 10.36 13.76C10.19 13.94 10.02 14.13 9.86 14.31C9.69 14.5 9.52 14.68 9.36 14.87C9.19 15.05 9.03 15.23 8.87 15.42C8.7 15.6 8.54 15.78 8.38 15.96C8.21 16.15 8.05 16.32 7.89 16.5C7.73 16.68 7.57 16.86 7.41 17.03C7.24 17.2 7.09 17.38 6.93 17.55C6.77 17.72 6.61 17.89 6.45 18.05C6.29 18.22 6.06 18.46 5.98 18.54"/> </g></symbol></svg>
@@ -2204,20 +2127,10 @@
            трьохстах працях коштують дорожче за все інше разом. Коли
            стіна віддалилась, корінець лишається корінцем, а не
            складається з чотирьох вузлів. */
-        /* Табличка є завжди — це форма, а не набір, і вона читається
-           навіть на шести пікселях. Аксонометричні грані — тільки поки
-           корінець достатньо товстий, щоб мати грані. */
-        var plate = document.createElement("span");
-        plate.className = "book__plate";
-        spine.appendChild(plate);
-        if (!dense) {
-          var sideFace = document.createElement("span");
-          sideFace.className = "book__side";
-          spine.appendChild(sideFace);
-          var topFace = document.createElement("span");
-          topFace.className = "book__top";
-          spine.appendChild(topFace);
-        }
+        var draw = document.createElement("span");
+        draw.className = "book__draw";
+        draw.innerHTML = bookInk(bwFit, bh);
+        spine.appendChild(draw);
 
         spine.style.width = bwFit + "px";
         spine.style.height = bh + "px";
@@ -2253,6 +2166,82 @@
 
     markArmature(openCase < 0 ? -1 : openCase);
     paintCarve();
+    applyLod();
+  }
+
+  /* РІВЕНЬ ДЕТАЛІЗАЦІЇ — З ФАКТИЧНОГО РОЗМІРУ В КАДРІ.
+     Питання «писати назву чи ні» не має відповіді ні в режимі, ні в
+     кількості праць: у полиці з двома книжками і в полиці з двадцятьма
+     камера наближає по-різному, а на телефоні той самий наїзд дає
+     вдвічі менший корінець, ніж на столі. Тому рахується те єдине, що
+     справді вирішує, — СКІЛЬКИ ПІКСЕЛІВ займає корінець на екрані
+     зараз, разом із наїздом і перспективою (getBoundingClientRect їх
+     уже враховує).
+
+       ≥ 22px і ≥ 80px заввишки  — назва: є де писати вертикально;
+       ≥ 9px                     — сліпа табличка і пов'язки: форма
+                                   читається, набір ні;
+       менше                     — саме тіло, лінія і тінь.
+
+     Це та сама відмова, що вже діє на стіні (ярлики категорій гаснуть,
+     коли не вміщаються) і на вирізі (укоси зникають, коли їх не
+     видно): не показувати того, чого на цьому розмірі не видно. */
+  function applyLod() {
+    var b = room.querySelector(".book[data-book]");
+    if (!b) { room.dataset.lod = "bare"; return; }
+    var r = b.getBoundingClientRect();
+    var lod = r.width >= 22 && r.height >= 80 ? "name"
+      : r.width >= 9 ? "plate" : "bare";
+    if (room.dataset.lod !== lod) room.dataset.lod = lod;
+  }
+
+  /* КРЕСЛЕННЯ КОРІНЦЯ. Три грані одним пером, спільні ребра — одна
+     лінія. Глибина береться від ширини (тонка книжка не має шести
+     пікселів боку), підйом — від глибини, і саме через це кришка
+     завжди сходиться з боком: обидва рахуються з одного числа.
+     Кеш за розміром: у ряду з двадцяти корінців розмір один. */
+  var bookCache = {};
+  function bookInk(w, h) {
+    var key = w + "x" + h;
+    if (bookCache[key]) return bookCache[key];
+    var d = Math.max(1.5, Math.min(6, w * 0.42));
+    var r = d * 0.84;
+    var W = w + d, H = h + r;
+    function p(pts) { return pts.map(function (q) { return q[0].toFixed(1) + "," + q[1].toFixed(1); }).join(" "); }
+    var front = [[0, r], [w, r], [w, r + h], [0, r + h]];
+    var top   = [[0, r], [w, r], [W, 0], [d, 0]];
+    var side  = [[w, r], [W, 0], [W, h], [w, r + h]];
+    var band1 = r + Math.max(4, h * 0.09), band2 = band1 + Math.max(3, h * 0.035);
+    var pw = w * 0.54, px = (w - pw) / 2, py = r + h * 0.27, ph = h * 0.22;
+    var out =
+      '<svg viewBox="0 0 ' + W.toFixed(1) + " " + H.toFixed(1) + '" ' +
+      'style="position:absolute;left:0;top:' + (-r).toFixed(1) + 'px;width:' +
+      W.toFixed(1) + 'px;height:' + H.toFixed(1) + 'px;overflow:visible" aria-hidden="true">' +
+      '<polygon class="side" points="' + p(side) + '"/>' +
+      '<polygon class="top" points="' + p(top) + '"/>' +
+      '<polygon class="front" points="' + p(front) + '"/>' +
+      /* Пов'язки і табличка — частина того самого креслення, тому вони
+         не можуть зсунутись відносно граней. */
+      '<g class="band">' +
+      '<path class="line" d="M1,' + band1.toFixed(1) + ' H' + (w - 1).toFixed(1) + '"/>' +
+      '<path class="line" d="M1,' + band2.toFixed(1) + ' H' + (w - 1).toFixed(1) + '"/>' +
+      "</g>" +
+      '<rect class="plate" x="' + px.toFixed(1) + '" y="' + py.toFixed(1) +
+      '" width="' + pw.toFixed(1) + '" height="' + ph.toFixed(1) + '" rx="1"/>' +
+      '<rect class="foot" x="0" y="' + (r + h - 3).toFixed(1) + '" width="' + w.toFixed(1) + '" height="3"/>' +
+      /* Контур — один замкнений обхід усіх трьох граней плюс два
+         спільні ребра. Саме тому ніде немає ані подвоєної лінії, ані
+         пропущеної. */
+      '<path class="line" d="M0,' + r.toFixed(1) + ' L' + d.toFixed(1) + ',0 L' +
+        W.toFixed(1) + ',0 L' + W.toFixed(1) + "," + h.toFixed(1) + ' L' +
+        w.toFixed(1) + "," + (r + h).toFixed(1) + ' L0,' + (r + h).toFixed(1) + ' Z"/>' +
+      '<path class="line" d="M0,' + r.toFixed(1) + ' H' + w.toFixed(1) +
+        ' L' + W.toFixed(1) + ',0"/>' +
+      '<path class="line" d="M' + w.toFixed(1) + "," + r.toFixed(1) +
+        ' V' + (r + h).toFixed(1) + '"/>' +
+      "</svg>";
+    bookCache[key] = out;
+    return out;
   }
 
   /* Виїмка креслиться на замовлення і лишається в кеші: ключ — рука
@@ -2628,10 +2617,13 @@
        скільки триває сам рух. */
     easeTimer = window.setTimeout(function () {
       room.classList.remove("is-eased");
-      /* Камера доїхала — перекреслюємо стіну під новий масштаб. Під час
-         самого руху це робити нема сенсу: масштаб міняється щокадру, а
-         полотно малюється мілісекунди. */
+      /* Камера доїхала — перекреслюємо стіну під новий масштаб і
+         перепитуємо рівень деталізації: корінець щойно став іншого
+         розміру в кадрі, отже змінилось і те, що на ньому видно. Під
+         час самого руху це робити нема сенсу: масштаб міняється
+         щокадру, а полотно малюється мілісекунди. */
       paintCarve();
+      applyLod();
     }, 2350);
   }
 
