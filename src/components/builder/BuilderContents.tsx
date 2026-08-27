@@ -280,7 +280,7 @@ export function BuilderContents({
                   })}
                   {onAddLesson ? (
                     <button className={styles.contentsAdd} type="button" onClick={() => onAddLesson(entry.id)}>
-                      <Icon name="plus" size={17} /> Додати урок
+                      <Icon name="plus" size={18} /> Додати урок
                     </button>
                   ) : null}
                 </div>

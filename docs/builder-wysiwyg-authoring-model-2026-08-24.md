@@ -39,15 +39,24 @@ Marketplace is not a fourth editor. It is a publication projection configured in
 
 ## Naming
 
-Ukrainian copy carries no Latin-script product names where an established
-Ukrainian anglicism exists: «білдер», not «Builder», in the cover hint and the
-tab title. `CenterWay Білдер` is the tab title now.
+Ukrainian copy carries no Latin-script product names, and no English loanword
+either: the app is «Майстерня», not «Білдер»/«Builder» — a workroom noun,
+matching the register of «Профіль» and «Бібліотека» (both rooms one enters)
+instead of an imported term beside two spatial ones. `CenterWay Майстерня` is
+the tab title now; the app-switcher entry, the sign-in gate copy, every
+`PlatformLoadingState` label, and the cover-hint/format-card copy all carry the
+same word.
 
 The nav label formerly «Навчання» is «Бібліотека» — a shelf of what the learner
 already holds, read spatially against the platform's other rooms (`Профіль`,
-`Білдер`). It is not the final word on that vocabulary; the direction is toward
-consistent spatial metaphors across the layer/module system rather than mixed
-registers (an action noun beside a room noun beside an English loan).
+`Майстерня`). This closes the naming direction this doc originally left open:
+`Профіль` · `Бібліотека` · `Майстерня` are now one consistent register.
+
+The course workspace's first tab, formerly «Курс», is «Огляд» — the app
+already says «Курс» twice (the app-switcher context and the iteration
+hierarchy), and a third, identically-worded tab was tautology rather than a
+third fact. «Огляд» names what the tab actually holds (title, cover, summary)
+without competing with either.
 
 ## Course workspace
 

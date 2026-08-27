@@ -114,7 +114,7 @@ export function BuilderBlockPicker({
       style={{ top: place.top, left: place.left, maxHeight: place.maxHeight }}
     >
       <label className={styles.pickerSearch}>
-        <Icon name="view-rows" size={17} />
+        <Icon name="view-rows" size={18} />
         <input
           ref={field}
           value={query}

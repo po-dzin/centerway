@@ -114,7 +114,7 @@ export function BuilderCoverEditor({
     <div className={styles.coverEditor}>
       <BuilderImageField
         label="Горизонтальна обкладинка"
-        hint="Основний файл для вітрини, білдера, бібліотеки та профілю. Рекомендовано 1600×900 або більше."
+        hint="Основний файл для вітрини, майстерні, бібліотеки та профілю. Рекомендовано 1600×900 або більше."
         courseSlug={course.slug}
         src={cover?.src}
         alt={cover?.alt}
@@ -128,7 +128,7 @@ export function BuilderCoverEditor({
             <div className={styles.coverFormatHead}>
               <div>
                 <h4 id="cover-landscape-title">Картки</h4>
-                <p>Вітрина · білдер · бібліотека · профіль</p>
+                <p>Вітрина · майстерня · бібліотека · профіль</p>
               </div>
               <span className={styles.formatBadge}>Основний</span>
             </div>

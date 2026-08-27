@@ -37,7 +37,7 @@ export const platformNav: NavItem[] = [
  * learner shelf and authoring workspace. Public navigation belongs to `www`
  * and is deliberately not repeated over a person's own courses or lessons.
  */
-export const builderNavItem: NavItem = { label: "Білдер", href: "/build", match: "prefix" };
+export const builderNavItem: NavItem = { label: "Майстерня", href: "/build", match: "prefix" };
 
 export const personalNav: NavItem[] = [
   { label: "Мої курси", href: LEARNING_SHELF_HREF, match: "exact" },

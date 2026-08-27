@@ -224,7 +224,7 @@ export function BuilderCourseList() {
   if (state.status === "loading") {
     return (
       <BuilderShell>
-        <PlatformLoadingState label="Білдер" title="Завантажуємо ваші курси…" detail="Відновлюємо чернетки, статуси й обкладинки." />
+        <PlatformLoadingState label="Майстерня" title="Завантажуємо ваші курси…" detail="Відновлюємо чернетки, статуси й обкладинки." />
       </BuilderShell>
     );
   }
@@ -240,7 +240,7 @@ export function BuilderCourseList() {
   if (creating) {
     return (
       <BuilderShell trail={[{ label: "Курси", href: "/build" }, { label: "Новий курс" }]}>
-        <PlatformLoadingState label="Білдер" title="Створюємо чернетку…" detail="Після створення одразу відкриється редактор курсу." />
+        <PlatformLoadingState label="Майстерня" title="Створюємо чернетку…" detail="Після створення одразу відкриється редактор курсу." />
       </BuilderShell>
     );
   }

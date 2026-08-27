@@ -102,7 +102,7 @@ export function CourseAuthorLink({ courseSlug }: { courseSlug: string }) {
     <div className={styles.backRow}>
       <a className={styles.backLink} href={builderHref(`/${courseSlug}`)}>
         <Icon name="settings" size={20} />
-        <span>Редагувати цей курс у білдері</span>
+        <span>Редагувати цей курс у майстерні</span>
       </a>
     </div>
   );
