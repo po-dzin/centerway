@@ -69,6 +69,10 @@
   --ds-button-font-size: 1rem;
   --ds-button-gap: 0.5rem;
   --ds-button-lift: -1px;
+  --cw-max-width: 1160px;
+  --cw-page-gutter: clamp(20px, 5vw, 40px);
+  --cw-bar-pad: 0.8rem;
+  --cw-bar-inset: max(0px, calc(var(--cw-page-gutter) - var(--cw-bar-pad)));
 }
 
 [data-cw-theme="dark"] {

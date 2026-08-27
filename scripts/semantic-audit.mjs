@@ -19,7 +19,14 @@ const blocks = readJson("data/generator/block_manifests.json");
 const semanticBlocks = readJson("data/generator/semantic_block_layer.json");
 const platformDetoxAliasPage = path.join(root, "src", "app", "(platform)", "programs", "detox", "page.tsx");
 const publicDetoxAliasPage = path.join(root, "src", "app", "(platform)", "detox", "page.tsx");
-const publicHerbsAliasPage = path.join(root, "src", "app", "(platform)", "herbs", "page.tsx");
+// /herbs stopped being a redirect alias on 2026-08-17 (docs/design-system.md,
+// "The imagery pipeline" section footnote) — it is a funnel entry now, served
+// raw by its own route handler the way way21 and reset-day are, so the check
+// below targets that file instead of a `(platform)` alias page.
+const herbsFunnelRoute = path.join(root, "src", "app", "herbs", "route.ts");
+const herbsCataloguePage = path.join(root, "src", "app", "(platform)", "products", "herbs", "page.tsx");
+const landingContractsPath = path.join(root, "src", "lib", "landing", "contracts.ts");
+const landingStaticBrandsSource = readInvariantSource(landingContractsPath, "/herbs") ?? "";
 
 function readInvariantSource(filePath, label) {
   if (!existsSync(filePath)) {
@@ -144,9 +151,34 @@ if (publicDetoxAliasSource !== null && !publicDetoxAliasSource.includes('permane
   fail("/detox invariant failed: alias route must permanently redirect to /programs/way21");
 }
 
-const publicHerbsAliasSource = readInvariantSource(publicHerbsAliasPage, "/herbs");
-if (publicHerbsAliasSource !== null && !publicHerbsAliasSource.includes('Redirect("/products/herbs")')) {
-  fail("/herbs invariant failed: alias route must redirect to /products/herbs");
+// The funnel entry: a raw route handler, not a page under the platform
+// layout — the same shape as way21/route.ts and reset-day/route.ts, and
+// deliberately not a redirect (that was the 2026-08-17 change: pointing
+// /herbs at the catalogue page left the landing unreachable on localhost
+// while every other funnel was one path away).
+const herbsFunnelSource = readInvariantSource(herbsFunnelRoute, "/herbs");
+if (herbsFunnelSource !== null) {
+  // Comments are allowed to say the word — the file's own header explains the
+  // 2026-08-17 change by naming what it replaced. Only executable code counts.
+  const herbsFunnelCode = herbsFunnelSource.replace(/\/\/.*$/gm, "").replace(/\/\*[\s\S]*?\*\//g, "");
+  if (/permanentRedirect|redirect\(/.test(herbsFunnelCode)) {
+    fail("/herbs invariant failed: the funnel entry must serve the landing directly, not redirect");
+  }
+  if (!herbsFunnelCode.includes('"herbs"')) {
+    fail("/herbs invariant failed: route handler must read src/landing-static/herbs");
+  }
+}
+
+if (existsSync(path.join(root, "src", "app", "(platform)", "herbs", "page.tsx"))) {
+  fail("/herbs invariant failed: src/app/(platform)/herbs/page.tsx must not exist — the platform route group would wrap the funnel entry in the platform layout");
+}
+
+// The catalogue page is a separate surface and must still exist at its own
+// URL — the funnel entry replaced the redirect to it, not the page itself.
+readInvariantSource(herbsCataloguePage, "/products/herbs");
+
+if (!landingStaticBrandsSource.includes('"herbs"')) {
+  fail('/herbs invariant failed: "herbs" must stay registered in LANDING_STATIC_BRANDS');
 }
 
 if (failures.length > 0) {

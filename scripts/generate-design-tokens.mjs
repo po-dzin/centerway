@@ -114,17 +114,41 @@ const NETWORK_BUTTON_TOKENS = [
   "--ds-button-lift",
 ];
 
-function pickButtonTokens(...maps) {
+/* The spatial contract: where a page's content column starts, and how the
+   topbar sits against it. Emitted for the same reason as the button geometry —
+   the landings cannot compose a CSS Module, so the only way they can reference
+   the column instead of re-deciding it is as tokens.
+
+   The network ran two gutters before this: the landings' hand-tuned fluid
+   clamp and the platform's flat 1rem, which was a first-commit default no
+   document ever argued for. On an iPad they differed by 24px. One value now.
+
+   --cw-bar-inset is derived from the other two rather than stated, because the
+   bar's inset is not an independent choice: the mark and the burger are
+   content, so the bar floats exactly one bar-pad wider than the column and its
+   contents land on the column's line. Listed explicitly, same as the button
+   set, so widening a scale does not silently enlarge the network payload. */
+const NETWORK_SPACE_TOKENS = ["--cw-max-width", "--cw-page-gutter", "--cw-bar-pad", "--cw-bar-inset"];
+
+function pickListedTokens(names, label, ...maps) {
   const merged = Object.assign({}, ...maps.map((m) => m ?? {}));
   const out = {};
-  for (const name of NETWORK_BUTTON_TOKENS) {
+  for (const name of names) {
     if (merged[name] !== undefined) out[name] = merged[name];
   }
-  const missing = NETWORK_BUTTON_TOKENS.filter((name) => out[name] === undefined);
+  const missing = names.filter((name) => out[name] === undefined);
   if (missing.length > 0) {
-    throw new Error(`Button contract tokens missing from cw.tokens.json: ${missing.join(", ")}`);
+    throw new Error(`${label} tokens missing from cw.tokens.json: ${missing.join(", ")}`);
   }
   return out;
+}
+
+function pickButtonTokens(...maps) {
+  return pickListedTokens(NETWORK_BUTTON_TOKENS, "Button contract", ...maps);
+}
+
+function pickSpaceTokens(...maps) {
+  return pickListedTokens(NETWORK_SPACE_TOKENS, "Spatial contract", ...maps);
 }
 
 function buildNetworkCss(tokens) {
@@ -135,6 +159,7 @@ function buildNetworkCss(tokens) {
       ...(layers.material?.light ?? {}),
     }),
     ...pickButtonTokens(tokens.base?.light, tokens.delivery?.dsAlias?.light),
+    ...pickSpaceTokens(tokens.base?.light),
   };
   const dark = pickNetworkTokens(layers.material?.dark ?? {});
 

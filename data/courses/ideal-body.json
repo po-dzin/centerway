@@ -12,8 +12,13 @@
   "version": 1,
   "summary": "21 урок про базові принципи Аюрведи, харчування, добовий ритм і баланс дош — із практичною інструкцією та матеріалами.",
   "cover": {
-    "src": "/cw/platform/programs/ideal-body-card-v1.png",
-    "alt": "Обкладинка курсу «Природнє тіло з Аюрведою»"
+    "src": "/cw/platform/programs/ideal-body-hero-desktop-v2.webp",
+    "mobileSrc": "/cw/platform/programs/ideal-body-card-v1.png",
+    "alt": "Обкладинка курсу «Природнє тіло з Аюрведою»",
+    "cropX": 70,
+    "cropY": 50,
+    "mobileCropX": 50,
+    "mobileCropY": 16
   },
   "schedule": {
     "mode": "sequential",

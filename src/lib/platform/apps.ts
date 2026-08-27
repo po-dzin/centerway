@@ -60,7 +60,7 @@ export type AppAudience = {
  */
 const CABINET: PlatformApp = { key: "cabinet", label: "Профіль", path: "/profile", host: null };
 const LEARN: PlatformApp = { key: "learn", label: "Бібліотека", path: LEARNING_SHELF_HREF, host: PERSONAL_HOST };
-const BUILDER: PlatformApp = { key: "builder", label: "Білдер", path: BUILDER_PATH_PREFIX, host: PERSONAL_HOST };
+const BUILDER: PlatformApp = { key: "builder", label: "Майстерня", path: BUILDER_PATH_PREFIX, host: PERSONAL_HOST };
 const ADMIN: PlatformApp = { key: "admin", label: "Адмінка", path: "/admin", host: null };
 
 /**

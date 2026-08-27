@@ -1,6 +1,5 @@
 import type { ComponentProps, ReactNode } from "react";
 import { LeadForm } from "@/components/platform/LeadForm";
-import { OfferTrail } from "@/components/platform/OfferCommerce";
 import type { TrailStep } from "@/components/platform/PlatformTrail";
 import { PlatformDetailHero } from "@/components/platform/PlatformDetailHero";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
@@ -167,9 +166,10 @@ export function PlatformOfferSurfaceTemplate({
           boundary paragraph clear and still lets the bar sit over the phone
           number. The shell owns the padding because the shell owns both. */}
       <main data-cw-detail-template={templateKind} data-cw-offer-sticky={trailing ? "true" : undefined}>
-        <PlatformDetailHero {...hero} />
-
-        {trail && trail.length > 0 ? <OfferTrail steps={trail} /> : null}
+        {/* The trail is the hero's own first line now (see PlatformDetailHero):
+            "where am I" belongs above the thing it locates, not in a row under
+            a full-height photograph. */}
+        <PlatformDetailHero {...hero} {...(trail && trail.length > 0 ? { trail } : {})} />
 
         {afterHero}
 

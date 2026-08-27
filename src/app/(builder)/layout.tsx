@@ -20,7 +20,7 @@ import { PLATFORM_GROUND } from "@/lib/platform/chrome";
  */
 export const metadata: Metadata = {
   metadataBase: new URL(PERSONAL_ORIGIN),
-  title: "CenterWay Білдер",
+  title: "CenterWay Майстерня",
   description: "Конструктор курсів CenterWay.",
   // Never indexed. Every route behind it is someone's unpublished draft.
   robots: { index: false, follow: false },

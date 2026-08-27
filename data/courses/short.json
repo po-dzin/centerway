@@ -23,9 +23,13 @@
     "reboot"
   ],
   "cover": {
-    "src": "/cw/platform/programs/reboot-card-v1.png",
+    "src": "/cw/platform/programs/reboot-hero-desktop-v2.webp",
+    "mobileSrc": "/cw/platform/programs/reboot-card-v1.png",
     "alt": "Обкладинка міні-курсу «Short-Перезавантаження»",
-    "cropY": 18
+    "cropX": 68,
+    "cropY": 50,
+    "mobileCropX": 50,
+    "mobileCropY": 18
   },
   "results": [
     "почати щоденну практику з десяти хвилин, які реально втримати",

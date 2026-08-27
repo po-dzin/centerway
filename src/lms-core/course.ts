@@ -134,6 +134,13 @@ export type Course = {
     /** 0–100 focal point for the shared 16:9 card crop. */
     cropX?: number;
     cropY?: number;
+    /**
+     * 0–100 vertical focus for the course hero once the screen is wider than
+     * 16:9. Past that line the hero crops top and bottom hard enough that one
+     * focal point cannot serve both a laptop and an ultra-wide monitor, so the
+     * author says which edge to keep. Absent means "same as cropY".
+     */
+    wideCropY?: number;
     /** Optional portrait master used only by the course offer's mobile hero. */
     mobileSrc?: string;
     /** 0–100 focal point for the 9:16 mobile hero crop. */
@@ -238,7 +245,7 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
     if (input.cover.mobileSrc !== undefined) {
       assert(isNonEmptyString(input.cover.mobileSrc), `lms_course_invalid_cover_mobile_src:${path}`);
     }
-    for (const cropKey of ["cropX", "cropY", "mobileCropX", "mobileCropY"] as const) {
+    for (const cropKey of ["cropX", "cropY", "wideCropY", "mobileCropX", "mobileCropY"] as const) {
       const value = input.cover[cropKey];
       if (value === undefined) continue;
       assert(

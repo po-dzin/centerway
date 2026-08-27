@@ -91,7 +91,10 @@
     --cw-card-border: 1px solid var(--cw-border);
     --cw-card-shadow: var(--cw-shadow-soft);
     --cw-max-width: 1160px;
-    --cw-container-inset: max(1rem, calc((100% - var(--cw-max-width)) / 2));
+    --cw-page-gutter: clamp(20px, 5vw, 40px);
+    --cw-bar-pad: 0.8rem;
+    --cw-bar-inset: max(0px, calc(var(--cw-page-gutter) - var(--cw-bar-pad)));
+    --cw-container-inset: max(var(--cw-page-gutter), calc((100% - var(--cw-max-width)) / 2));
     --cw-platform-visual-movement-start: #17332d;
     --cw-platform-visual-movement-mid: #25473f;
     --cw-platform-visual-movement-end: #102621;
@@ -243,13 +246,10 @@
     --ds-button-font-size: 1rem;
     --ds-button-gap: 0.5rem;
     --ds-button-lift: -1px;
-    --ds-offer-card-min-height-desktop: 29rem;
+    --ds-offer-card-height-desktop: 29rem;
     --ds-offer-card-min-height-tablet: 26rem;
     --ds-offer-card-min-height-mobile: 22rem;
     --ds-offer-card-height-rail: 26rem;
-    --ds-offer-card-compact-min-height-desktop: 24rem;
-    --ds-offer-card-compact-min-height-tablet: 22rem;
-    --ds-offer-card-compact-min-height-mobile: 20rem;
     --ds-offer-card-width-desktop: 24rem;
     --ds-offer-card-width-tablet: 21rem;
     --ds-offer-card-width-mobile: min(82vw, 19rem);
@@ -258,6 +258,8 @@
     --ds-offer-card-title-line-height: 1.2;
     --ds-focus-ring-width: 3px;
     --ds-focus-ring-offset: 3px;
+    --ds-focus-ring-offset-tight: 1px;
+    --ds-focus-ring-offset-inset: -2px;
     --ds-focus-ring-color: var(--cw-focus-ring);
     --ds-type-label-size: 0.75rem;
     --ds-type-label-line-height: 1rem;
@@ -365,7 +367,10 @@
     --cw-card-border: 1px solid var(--cw-border);
     --cw-card-shadow: var(--cw-shadow-soft);
     --cw-max-width: 1160px;
-    --cw-container-inset: max(1rem, calc((100% - var(--cw-max-width)) / 2));
+    --cw-page-gutter: clamp(20px, 5vw, 40px);
+    --cw-bar-pad: 0.8rem;
+    --cw-bar-inset: max(0px, calc(var(--cw-page-gutter) - var(--cw-bar-pad)));
+    --cw-container-inset: max(var(--cw-page-gutter), calc((100% - var(--cw-max-width)) / 2));
     /* CW_BASE_DARK_END */
 
     /* DS_ALIAS_DARK_START */

@@ -37,7 +37,7 @@ export const platformNav: NavItem[] = [
  * learner shelf and authoring workspace. Public navigation belongs to `www`
  * and is deliberately not repeated over a person's own courses or lessons.
  */
-export const builderNavItem: NavItem = { label: "Білдер", href: "/build", match: "prefix" };
+export const builderNavItem: NavItem = { label: "Майстерня", href: "/build", match: "prefix" };
 
 export const personalNav: NavItem[] = [
   { label: "Мої курси", href: LEARNING_SHELF_HREF, match: "exact" },
@@ -75,12 +75,23 @@ const rebootFunnelHref = getFunnelHostUrl("reboot") ?? "/reboot";
 export type PlatformOfferSurfaceType = "program" | "mini-course" | "product";
 export type PlatformOfferConversionMode = "lead" | "direct-pay" | "hybrid" | "redirect";
 export type PlatformOfferPrimaryActionKind = "enroll" | "buy";
+/* Two masters, one scene. `mobile` is the phone plate — a flat lay looking
+   straight down at the surface. `desktop` is the same objects, the same ground
+   and the same light restaged as a space: high three-quarter angle, near and
+   far, one window light, and the left half of the frame left empty because
+   that is where the headline sits. It is not a crop of the portrait — a 3:2
+   box cut out of a 9:19 plate keeps about a fifth of the composition, which is
+   what every offer except way21 shipped until 2026-08-27. Offer cards read
+   `desktop` at every width (see PlatformOfferCard); only the standalone offer
+   hero swaps to `mobile`, below 900px portrait. */
 export type PlatformOfferArtwork = {
   desktop: string;
   mobile?: string;
   altPreview?: string;
   desktopPosition?: string;
   mobilePosition?: string;
+  /** Vertical focus past 16:9 — see the hero framing contract. */
+  widePosition?: string;
 };
 
 export const programs = [
@@ -94,15 +105,16 @@ export const programs = [
     // (data/courses/reset-day.json) calls the other one "Розвантажувальний
     // день". The English placeholders on the platform were the odd ones out.
     title: "Short-Перезавантаження",
-    fullTitle: "Short-Перезавантаження — тілесний міні-курс",
+    fullTitle: "Short-Перезавантаження",
     href: getPlatformRoute("reboot") ?? "/programs/reboot",
     funnelHref: rebootFunnelHref,
     tag: "Міні-курс руху",
     duration: "короткий вхід",
     visual: "movement",
     artwork: {
-      desktop: "/cw/platform/programs/reboot-card-v1.png",
-      desktopPosition: "center 18%",
+      desktop: "/cw/platform/programs/reboot-hero-desktop-v2.webp",
+      mobile: "/cw/platform/programs/reboot-card-v1.png",
+      desktopPosition: "68% 50%",
       mobilePosition: "center 18%",
     },
     description: "Короткий тілесний міні-курс: розігрів, увага, дихання і м'яке повернення енергії.",
@@ -160,8 +172,9 @@ export const programs = [
     duration: "21 день",
     visual: "stone",
     artwork: {
-      desktop: "/cw/platform/programs/ideal-body-card-v1.png",
-      desktopPosition: "center 16%",
+      desktop: "/cw/platform/programs/ideal-body-hero-desktop-v2.webp",
+      mobile: "/cw/platform/programs/ideal-body-card-v1.png",
+      desktopPosition: "70% 50%",
       mobilePosition: "center 16%",
     },
     description: "Навчальна програма з 21 основного уроку про Аюрведу, харчування, добовий ритм і баланс дош.",
@@ -188,8 +201,9 @@ export const programs = [
     duration: "12 тижнів",
     visual: "mountain",
     artwork: {
-      desktop: "/cw/platform/programs/irem-card-v1.png",
-      desktopPosition: "center 16%",
+      desktop: "/cw/platform/programs/irem-hero-desktop-v2.webp",
+      mobile: "/cw/platform/programs/irem-card-v1.png",
+      desktopPosition: "68% 50%",
       mobilePosition: "center 18%",
     },
     description: "12-тижнева рухова практика для контакту з тілом, м'якшої мобільності, енергії і зняття побутової напруги.",
