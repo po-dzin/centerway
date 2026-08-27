@@ -63,11 +63,11 @@ const TEST_PRICE_UAH = 1;
 export const PRODUCTS = {
   short: {
     heading: {
-      ua: "Short Reboot — онлайн-курс",
+      uk: "Short Reboot — онлайн-курс",
       en: "Short Reboot — online course",
     },
     description: {
-      ua:
+      uk:
         "Оплата онлайн-курсу \"Short Reboot\" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
       en:
         "Online course payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
@@ -82,11 +82,11 @@ export const PRODUCTS = {
   },
   irem: {
     heading: {
-      ua: "IREM gymnastics — онлайн-система",
+      uk: "IREM gymnastics — онлайн-система",
       en: "IREM gymnastics — online system",
     },
     description: {
-      ua:
+      uk:
         "Оплата онлайн-системи \"IREM gymnastics\" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
       en:
         "Online system payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
@@ -101,11 +101,11 @@ export const PRODUCTS = {
   },
   way21: {
     heading: {
-      ua: "Шлях 21 — інтегративна детокс-програма",
+      uk: "Шлях 21 — інтегративна детокс-програма",
       en: "Way 21 — integrative detox program",
     },
     description: {
-      ua:
+      uk:
         "Оплата детокс-програми \"Шлях 21\" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
       en:
         "Detox program payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
@@ -120,11 +120,11 @@ export const PRODUCTS = {
   },
   "way21-support": {
     heading: {
-      ua: "Шлях 21 — індивідуальний супровід",
+      uk: "Шлях 21 — індивідуальний супровід",
       en: "Way 21 — guided package",
     },
     description: {
-      ua:
+      uk:
         "Оплата пакета \"Шлях 21 — індивідуальний супровід\" від Centerway: програма детоксу з 2 особистими консультаціями та персональним веденням. Після оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
       en:
         "Guided package payment by Centerway: the detox program with 2 personal consultations and individual guidance. After payment, a confirmation page opens with a Telegram bot entry button. Support: if you have questions, message us and we will help quickly.",
@@ -142,11 +142,11 @@ export const PRODUCTS = {
   },
   "reset-day": {
     heading: {
-      ua: "Розвантажувальний день — міні-курс",
+      uk: "Розвантажувальний день — міні-курс",
       en: "Reset Day — mini course",
     },
     description: {
-      ua:
+      uk:
         "Оплата міні-курсу \"Розвантажувальний день\" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
       en:
         "Mini course payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
@@ -161,11 +161,11 @@ export const PRODUCTS = {
   },
   herbs: {
     heading: {
-      ua: "Фітозбір — індивідуальний підбір",
+      uk: "Фітозбір — індивідуальний підбір",
       en: "Herbal blend — individual selection",
     },
     description: {
-      ua:
+      uk:
         "Оплата індивідуального підбору фітозбору від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка переходу до продукту в кабінеті — там же будуть подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
       en:
         "Individual herbal blend payment by Centerway. After successful payment, a confirmation page opens with a button to the product in the cabinet and next steps. Support: if you have questions, message us and we will help quickly.",
@@ -221,7 +221,7 @@ export type CourseProductCode = `course:${string}`;
 export type PayableProductCode = CatalogProductCode | CourseProductCode;
 export type LeadProductCode = (typeof LEAD_PRODUCT_CODES)[number];
 export type ProductCode = PayableProductCode | LeadProductCode;
-export type Locale = "ua" | "en";
+export type Locale = "uk" | "en";
 
 const DEFAULT_LOCALE: Locale = "en";
 
@@ -337,8 +337,8 @@ export function catalogOffer(code: CatalogProductCode): PayableOffer {
   const entry = PRODUCTS[code];
   return {
     code,
-    heading: { ua: entry.heading.ua, en: entry.heading.en },
-    description: { ua: entry.description.ua, en: entry.description.en },
+    heading: { uk: entry.heading.uk, en: entry.heading.en },
+    description: { uk: entry.description.uk, en: entry.description.en },
     amount: entry.amount,
     listAmount: entry.listAmount,
     currency: entry.currency,
@@ -436,7 +436,7 @@ export function formatPrice(amount: number, currency: string = "UAH"): string {
 export function normalizeLocale(input: string | null | undefined): Locale | null {
   if (!input) return null;
   const s = input.trim().toLowerCase();
-  if (s === "ua" || s === "uk" || s === "uk-ua" || s === "ua-ua") return "ua";
+  if (s === "ua" || s === "uk" || s === "uk-ua" || s === "ua-ua") return "uk";
   if (s === "en" || s.startsWith("en-")) return "en";
   return null;
 }

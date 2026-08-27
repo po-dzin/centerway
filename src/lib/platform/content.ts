@@ -90,6 +90,8 @@ export type PlatformOfferArtwork = {
   altPreview?: string;
   desktopPosition?: string;
   mobilePosition?: string;
+  /** Vertical focus past 16:9 — see the hero framing contract. */
+  widePosition?: string;
 };
 
 export const programs = [

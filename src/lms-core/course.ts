@@ -18,10 +18,10 @@ import { validateLessonBlock, type LessonBlock } from "./blocks";
 import { validateCourseTheme, type CourseTheme } from "./theme";
 
 /**
- * Content locale. Slot for the EN expansion (docs §3A) — the platform ships
- * uk/ru content only until the owner signals otherwise.
+ * Content locale. Two locales, and only two: uk is what the platform ships
+ * today, en is the surface the same course is expected to reach next.
  */
-export type CourseLocale = "uk" | "ru" | "en";
+export type CourseLocale = "uk" | "en";
 
 export type CourseStatus = "draft" | "published";
 
@@ -134,6 +134,13 @@ export type Course = {
     /** 0–100 focal point for the shared 16:9 card crop. */
     cropX?: number;
     cropY?: number;
+    /**
+     * 0–100 vertical focus for the course hero once the screen is wider than
+     * 16:9. Past that line the hero crops top and bottom hard enough that one
+     * focal point cannot serve both a laptop and an ultra-wide monitor, so the
+     * author says which edge to keep. Absent means "same as cropY".
+     */
+    wideCropY?: number;
     /** Optional portrait master used only by the course offer's mobile hero. */
     mobileSrc?: string;
     /** 0–100 focal point for the 9:16 mobile hero crop. */
@@ -217,7 +224,7 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
   assert(isNonEmptyString(input.programSlug), `lms_course_missing_program:${path}`);
   assert(isNonEmptyString(input.brand), `lms_course_missing_brand:${path}`);
   assert(
-    input.locale === "uk" || input.locale === "ru" || input.locale === "en",
+    input.locale === "uk" || input.locale === "en",
     `lms_course_invalid_locale:${path}`
   );
   assert(isNonEmptyString(input.translationGroupId), `lms_course_missing_translation_group:${path}`);
@@ -238,7 +245,7 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
     if (input.cover.mobileSrc !== undefined) {
       assert(isNonEmptyString(input.cover.mobileSrc), `lms_course_invalid_cover_mobile_src:${path}`);
     }
-    for (const cropKey of ["cropX", "cropY", "mobileCropX", "mobileCropY"] as const) {
+    for (const cropKey of ["cropX", "cropY", "wideCropY", "mobileCropX", "mobileCropY"] as const) {
       const value = input.cover[cropKey];
       if (value === undefined) continue;
       assert(

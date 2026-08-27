@@ -92,6 +92,9 @@ export function toOfferSurface(course: Course): OfferSurface {
             ...(course.cover.mobileSrc ? { mobile: course.cover.mobileSrc } : {}),
             desktopPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%`,
             mobilePosition: `${course.cover.mobileCropX ?? course.cover.cropX ?? 50}% ${course.cover.mobileCropY ?? course.cover.cropY ?? 50}%`,
+            ...(course.cover.wideCropY !== undefined
+              ? { widePosition: `${course.cover.cropX ?? 50}% ${course.cover.wideCropY}%` }
+              : {}),
           },
         }
       : {}),

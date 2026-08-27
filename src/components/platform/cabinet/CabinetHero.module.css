@@ -1,0 +1,334 @@
+/* The cabinet's hero — a room with a way out of it.
+
+   Two grounds in one panel, which is the whole point of the block. The LEFT is
+   drawn: the platform's own matte surface with a wash of light across it,
+   carrying who you are and what to open. The RIGHT is photographed: the same
+   threshold plate the home hero uses, framed on its doorway, and the doorway is
+   the link to the library. So the page says literally what the product means —
+   you pass through your own room to get to the shelves.
+
+   Why a photograph here at all, when this page deliberately dropped one. The
+   old hero was a LANDING hero: a full-viewport plate with a translucent card
+   floating on it, which is a second surface vocabulary two inches above the
+   first. This is not that. It is one panel in the page's own material and at
+   the page's own radius, and the photograph is a view THROUGH it rather than a
+   ground UNDER it. The seam between the two halves is a gradient of the room's
+   own surface colour, so they dissolve into each other instead of butting.
+
+   Mobile-first: every rule below is the phone layout, and the two-column form
+   only arrives at the width where a portrait crop of a 16:10 plate would stop
+   showing the doorway at all.
+
+   Tokens only, no raw hex, and no top inset highlight on any surface here —
+   the material is matte by contract. */
+
+.hero {
+  position: relative;
+  display: grid;
+  overflow: hidden;
+  border-radius: var(--cw-radius-xl);
+  margin-bottom: var(--cw-space-lg);
+  isolation: isolate;
+}
+
+/* ── The room ─────────────────────────────────────── */
+
+/* Depth without furniture: one vertical wash, lighter where the wall is and
+   a shade deeper where the floor would be. No hairline drawn across it — a
+   line at a fixed percentage lands in the middle of a name at some viewport,
+   and a room does not need one to read as a room. */
+.room {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  align-content: start;
+  gap: var(--cw-space-md);
+  padding: var(--cw-space-lg);
+  background:
+    linear-gradient(
+      180deg,
+      var(--cw-mat-surface) 0%,
+      var(--cw-mat-surface) 58%,
+      var(--cw-mat-surface-sunk) 100%
+    );
+}
+
+/* The same field label as the rest of the cabinet, repeated here rather than
+   imported: this module is the hero's, and reaching into the page's module for
+   one rule is how two files end up owning one look. */
+.sectionLabel {
+  margin: 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
+}
+
+.identityMain {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-md);
+}
+
+.avatar {
+  width: 3.75rem;
+  height: 3.75rem;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.identityText {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.identityName {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(1.6rem, 6vw, 2.2rem);
+  font-weight: 500;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+/* The one deliberate line in the room. Brass, the DS's warmth, set under the
+   name at the width of the text rather than the panel — a rule under a name,
+   not a divider across a card. */
+.identityName::after {
+  display: block;
+  width: 2.5rem;
+  height: 2px;
+  margin-top: 0.55rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-sem-warmth-strong);
+  content: "";
+}
+
+.identityEmail {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+/* Three facts about the account, as a meta row rather than three tiles. Same
+   contract as the row it replaces: a tile holds a VALUE — a dosha name, a
+   count, an em dash — never a sentence, and the row reserves two lines so a
+   compound result cannot shift what is under it. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--cw-space-sm);
+  margin: 0;
+  padding-top: var(--cw-space-md);
+  border-top: 1px solid var(--cw-mat-stroke-inner);
+}
+
+.stat {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.stat dd {
+  margin: 0;
+  min-height: 2.5em;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: normal;
+}
+
+/* Where the resume card, its loading state and its two failure states land.
+   The slot carries no surface of its own: the card inside it already declares
+   the material, and a panel inside a panel at the same radius is the seam this
+   page spent a pass removing. */
+.resume {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-md);
+}
+
+/* ── The doorway ──────────────────────────────────── */
+
+/* The whole photograph is the link. One target, and the label inside it is the
+   accessible name — which is why the image itself is alt="", decorative in the
+   strict sense: it carries the meaning, but the meaning is already written. */
+.doorway {
+  position: relative;
+  display: block;
+  min-height: 11rem;
+  overflow: hidden;
+  /* The DS's own ink for text on a dark material, and the reason it is this
+     token rather than `--cw-platform-accent-contrast` (which the home hero
+     uses): that one INVERTS with the theme, because on the public dark palette
+     the accent it contrasts is light. This ground is a photograph — it is dark
+     in both themes — so the ink over it has to be the one that does not flip.
+     `--cw-mat-inverse-text` is the same cream in light and dark alike. */
+  color: var(--cw-mat-inverse-text);
+  text-decoration: none;
+  background: var(--cw-platform-text);
+}
+
+.doorwayImage {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Landscape band: the doorway sits right of centre in the plate and the
+     objects that carry the scene are low in it. */
+  object-position: 78% 55%;
+}
+
+/* The seam. A wash of the ROOM's own surface colour running into the photo, so
+   the two grounds meet in a gradient rather than at a cut. Vertical here
+   because the room is above; it turns horizontal with the layout below. */
+.doorway::before {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  content: "";
+  pointer-events: none;
+  background:
+    linear-gradient(
+      180deg,
+      var(--cw-mat-surface-sunk) 0%,
+      color-mix(in srgb, var(--cw-mat-surface-sunk) 45%, transparent) 14%,
+      transparent 34%
+    );
+}
+
+/* The label's own ground. Shaped to the bottom of the frame where the label
+   is, not spread over the whole photograph — the plate is graded already
+   (the "CenterWay v1" pass) and a full wash is what turns a warm photo muddy. */
+.doorway::after {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  content: "";
+  pointer-events: none;
+  background:
+    linear-gradient(
+      0deg,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 94%, transparent) 0%,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 84%, transparent) 18%,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 46%, transparent) 38%,
+      transparent 66%
+    );
+}
+
+.doorwayLabel {
+  position: absolute;
+  z-index: 3;
+  right: var(--cw-space-lg);
+  bottom: var(--cw-space-lg);
+  left: var(--cw-space-lg);
+  display: grid;
+  gap: 0.15rem;
+}
+
+.doorwayTitle {
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(1.5rem, 3.2vw, 1.9rem);
+  font-weight: 500;
+  line-height: 1.1;
+}
+
+.doorwayLead {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: var(--cw-sem-warmth);
+  font-size: 0.92rem;
+  font-weight: 600;
+}
+
+/* The arrow steps through the opening on hover. 2px, once — the gesture says
+   "this goes somewhere", and anything larger says "this is animated". */
+.doorwayArrow {
+  transition: transform 200ms ease;
+}
+
+.doorway:hover .doorwayArrow,
+.doorway:focus-visible .doorwayArrow {
+  transform: translateX(2px);
+}
+
+.doorway:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: calc(var(--ds-focus-ring-offset) * -1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .doorwayArrow {
+    transition: none;
+  }
+
+  .doorway:hover .doorwayArrow,
+  .doorway:focus-visible .doorwayArrow {
+    transform: none;
+  }
+}
+
+/* ── Two columns ──────────────────────────────────── */
+
+/* 900px, and the number is the photograph's rather than the grid's. Below it
+   the doorway panel would be narrow enough that a cover crop of a 16:10 plate
+   shows a slice of dark stone and no opening — the one thing the block is for.
+   Above it the panel is wide enough to hold the doorway whole. */
+@media (min-width: 900px) {
+  .hero {
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    align-items: stretch;
+    /* The row is as tall as the room's content, and the room is shortest in
+       exactly the state where the doorway matters most — nothing bought yet,
+       so the only thing to do here is go and look. Left to itself the panel
+       would then be a wide, short slot showing a slice of jamb and no opening.
+       This is the height at which the crop still contains the doorway. */
+    min-height: 22rem;
+  }
+
+  .room {
+    padding: var(--cw-space-xl);
+  }
+
+  .doorway {
+    min-height: 100%;
+  }
+
+  /* Portrait framing: the panel is now taller than it is wide, so the crop
+     moves onto the opening itself and off the floor in front of it. */
+  .doorwayImage {
+    object-position: 79% 45%;
+  }
+
+  /* The seam turns with the layout — the room is to the left now, so the
+     wash comes in from the left edge. */
+  .doorway::before {
+    background:
+      linear-gradient(
+        90deg,
+        var(--cw-mat-surface-sunk) 0%,
+        color-mix(in srgb, var(--cw-mat-surface-sunk) 72%, transparent) 8%,
+        color-mix(in srgb, var(--cw-mat-surface-sunk) 30%, transparent) 20%,
+        transparent 38%
+      );
+  }
+}

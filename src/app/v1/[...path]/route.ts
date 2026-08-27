@@ -13,7 +13,7 @@ export async function GET(_req: NextRequest, ctx: { params: Promise<{ path: stri
   const { path } = await ctx.params;
   const joined = path.join("/");
 
-  if (joined === "me/profile") return ok({ id: null, name: null, locale: "ru" });
+  if (joined === "me/profile") return ok({ id: null, name: null, locale: "uk" });
   if (joined === "me/balance") return ok({ balance: 0, currency: "UAH" });
   if (joined === "me/photos") return ok({ photos: [] });
   if (joined === "packages") return ok({ packages: [] });

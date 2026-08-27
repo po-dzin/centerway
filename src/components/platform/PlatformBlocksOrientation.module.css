@@ -60,18 +60,91 @@
   box-shadow: none;
   isolation: isolate;
   scroll-margin-top: 5.25rem;
-  /* Framing for the 16:10 threshold plate. The plate ratio (1.61) all but
-     matches a 16:10 desktop viewport, so cover barely crops there; these values
-     only bite on off-ratio viewports. Taller viewports crop the sides, so x
-     leans right to protect the doorway, bowl and planting strip while the left
-     still keeps far more dark stone than the scrim needs. Wider-than-16:10
-     viewports crop top and bottom instead, so y leans low — everything that
-     carries the scene lives in the bottom half and the upper wall is empty. */
-  --hero-photo-x: 60%;
-  --hero-photo-y: 62%;
+  /* Defaults of the shared hero framing contract. Every photo hero authors the
+     same six variables and nothing else; the contract block right below this
+     rule resolves them per viewport (plate swap at 560px, vertical-crop relief
+     by aspect ratio). */
+  --hero-photo-x: var(--hero-photo-x-desktop, 50%);
+  --hero-photo-y: var(--hero-photo-y-desktop, 50%);
   --hero-photo-shift-y: 0%;
-  --hero-photo-scale: 1.02;
+  --hero-photo-scale: 1;
   --hero-photo-origin: center center;
+}
+
+/* ── The hero framing contract ───────────────────────────────────────────────
+   One set of rules for every photo hero on the platform. It replaced three
+   parallel sets of width breakpoints that each re-decided framing for one
+   family of heroes and disagreed with each other.
+
+   It lives here, beside `.heroFeature` itself, and not in PlatformResponsive:
+   the two files are merged per surface by mergeStyleModules, and this file's
+   rules are emitted last, so a contract written over there would lose every
+   tie to the defaults above it — silently, and only for the properties that
+   happen to be tied.
+
+   A hero authors focus, never framing:
+
+     --hero-photo-x-desktop / -y-desktop   focus on the landscape plate
+     --hero-photo-x-mobile  / -y-mobile    focus on the portrait master
+     --hero-photo-y-wide                   vertical focus past 16:9  (optional)
+     --hero-photo-y-ultrawide              vertical focus past 21:9  (optional)
+     --hero-photo-zoom-mobile              zoom on the portrait master (optional)
+     --hero-photo-origin-mobile            origin for that zoom       (optional)
+
+   Two lines decide which of them applies, and they are different kinds of line:
+
+   1. WIDTH, at 560px — the line where PlatformHeroPhoto swaps the plate file.
+      A different photograph deserves a different focus, so the mobile pair is
+      keyed to the same 560px and nothing else is.
+
+   2. ASPECT RATIO — because `cover` picks the axis it crops from the shape of
+      the viewport, never from its width. 1440×900 and 1440×810 are one width
+      breakpoint and opposite crops. A viewport taller than the plate loses its
+      sides (only x matters); a wider one loses top and bottom (only y matters),
+      and the wider it gets the more a mid-range y eats *both* edges — hence the
+      two optional relief steps, for the heroes whose composition needs them.
+
+   Above `cover` there is no zoom: the plate is already the frame an author
+   chose, and scaling past it only throws away the edges they kept. The one
+   exception is a portrait master read on a phone, where a hero may opt into a
+   zoom explicitly. */
+@media (min-width: 561px) {
+  .heroFeature {
+    --hero-photo-x: var(--hero-photo-x-desktop, 50%);
+    --hero-photo-y: var(--hero-photo-y-desktop, 50%);
+    --hero-photo-shift-y: 0%;
+    --hero-photo-scale: 1;
+    --hero-photo-origin: center center;
+  }
+}
+
+/* Past 16:9 the vertical overflow is large enough that the desktop focus starts
+   cutting the far edge of the scene. Heroes that care declare where the loss
+   should fall; the rest keep their authored focus. */
+@media (min-width: 561px) and (min-aspect-ratio: 16 / 9) {
+  .heroFeature {
+    --hero-photo-y: var(--hero-photo-y-wide, var(--hero-photo-y-desktop, 50%));
+  }
+}
+
+/* Ultra-wide. Nothing frames a 16:10 plate well at 21:9 — the overflow is a
+   third of it — so this step exists to say which third a hero would rather
+   lose. */
+@media (min-width: 561px) and (min-aspect-ratio: 21 / 9) {
+  .heroFeature {
+    --hero-photo-y: var(--hero-photo-y-ultrawide, var(--hero-photo-y-wide, var(--hero-photo-y-desktop, 50%)));
+  }
+}
+
+/* Below the plate swap: the portrait master, framed by its own focus. */
+@media (max-width: 560px) {
+  .heroFeature {
+    --hero-photo-x: var(--hero-photo-x-mobile, var(--hero-photo-x-desktop, 50%));
+    --hero-photo-y: var(--hero-photo-y-mobile, var(--hero-photo-y-desktop, 50%));
+    --hero-photo-shift-y: 0%;
+    --hero-photo-scale: var(--hero-photo-zoom-mobile, 1);
+    --hero-photo-origin: var(--hero-photo-origin-mobile, center center);
+  }
 }
 
 /* Top scrim only — enough for the topbar (which runs its dark tone here, i.e.

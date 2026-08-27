@@ -88,6 +88,14 @@ const pairs = [
   // lighter one binds. Label is 16px/800 — not WCAG "large", so body AA.
   { theme: "light", fg: "--cw-platform-on-accent", bg: "--cw-platform-accent", min: AA_BODY, context: "ink label on gold CTA (lighter gradient stop)" },
   { theme: "light", fg: "--cw-platform-on-accent", bg: "--cw-platform-accent-pressed", min: AA_BODY, context: "ink label on deep-gold CTA (darker stop / hover)" },
+  // The cabinet hero's doorway (CabinetHero.module.css) — a label over a
+  // photograph, which is why the pair is asserted against the SCRIM rather than
+  // against any surface: the ramp under the label reaches 94% of the scrim ink
+  // at the bottom edge and 84% where the title sits, so the scrim itself is the
+  // floor the text is guaranteed against and the photograph can only lighten
+  // it. Title is 24-30px serif => large AA; the lead is 15px/600 => body AA.
+  { theme: "light", fg: "--cw-mat-inverse-text", bg: "--cw-mat-scrim-ink", min: AA_LARGE, context: "doorway title on scrim" },
+  { theme: "light", fg: "--cw-sem-warmth", bg: "--cw-mat-scrim-ink", min: AA_BODY, context: "doorway lead on scrim" },
   // .cw-btn-primary — rendered primary button (RouteAuthGate, dosha test), 14px semibold label => body AA
   { theme: "light", fg: "--cw-btn-primary-text", bg: "--cw-btn-primary-bg", min: AA_BODY, context: "primary button label on fill" },
   { theme: "light", fg: "--cw-btn-primary-text-hover", bg: "--cw-btn-primary-bg-hover", min: AA_BODY, context: "primary button label on hover fill" },

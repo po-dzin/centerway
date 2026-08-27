@@ -14,8 +14,8 @@ import { catalogOffer, type PayableOffer } from "@/lib/products";
  */
 const courseOffer: PayableOffer = {
   code: "course:my-course",
-  heading: { ua: "Мій курс — CenterWay", en: "Мій курс — CenterWay" },
-  description: { ua: "Про що курс", en: "Про що курс" },
+  heading: { uk: "Мій курс — CenterWay", en: "Мій курс — CenterWay" },
+  description: { uk: "Про що курс", en: "Про що курс" },
   amount: 790,
   listAmount: 1200,
   currency: "UAH",
@@ -71,7 +71,7 @@ describe("createPaymentInvoice", () => {
     const { deps, fetchFn, inserted } = stubDeps();
 
     const result = await createPaymentInvoiceWithDeps(
-      { offer: courseOffer, locale: "ua", source: "pay_start", staff: true },
+      { offer: courseOffer, locale: "uk", source: "pay_start", staff: true },
       deps
     );
 
@@ -88,7 +88,7 @@ describe("createPaymentInvoice", () => {
     const { deps, fetchFn } = stubDeps();
 
     const result = await createPaymentInvoiceWithDeps(
-      { offer: courseOffer, locale: "ua", source: "pay_start", staff: true },
+      { offer: courseOffer, locale: "uk", source: "pay_start", staff: true },
       deps
     );
 
@@ -104,7 +104,7 @@ describe("createPaymentInvoice", () => {
     const { deps, fetchFn, inserted } = stubDeps();
 
     await createPaymentInvoiceWithDeps(
-      { offer: catalogOffer("reset-day"), locale: "ua", source: "pay_start", staff: true },
+      { offer: catalogOffer("reset-day"), locale: "uk", source: "pay_start", staff: true },
       deps
     );
 
