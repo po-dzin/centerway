@@ -82,6 +82,27 @@
     --ray-hi:    var(--ink);
     --ray-halo:  none;
 
+    /* КОНТРАКТ КНОПОК ДС, дослівно (--ds-button-* із globals.css).
+       Шість ролей, сьомої немає. Тут живуть дві:
+         chrome — навігація і службове на власному рядку: «назад до
+                  зали», гортання розвороту, закриття;
+         quiet  — третинна дія на втопленому ґрунті: пульт.
+       Пульт при цьому НЕ learner-facing — це вимірювальний інструмент,
+       і контракт прямо каже про поверхні для того, хто вчиться. Тому
+       він бере від контракту типографіку, радіус і фокус, але не бере
+       мінімальну висоту в 3rem: двадцять чипів по 48 пікселів — це вже
+       не пульт, це друга сторінка. */
+    --ds-touch-target-min: 3rem;
+    --ds-button-radius: 16px;      /* --cw-radius-btn → --cw-radius-md */
+    --ds-button-font-weight: 700;
+    --ds-button-font-size: 1rem;
+    --ds-button-gap: 0.5rem;
+    --ds-button-padding-inline: 1.15rem;
+    --ds-button-max-width: 22rem;
+    --ds-button-ring: 0 0 0 2px color-mix(in srgb, var(--brass) 28%, transparent);
+    --ds-button-motion: transform 180ms ease, box-shadow 180ms ease,
+      background 180ms ease, border-color 180ms ease, color 180ms ease;
+
     /* РАДІУС ЗА РОЛЛЮ, А НЕ ЗА РОЗМІРОМ. */
     --r-rule:   0;
     --r-object: 6px;    /* --cw-radius-inset */
@@ -881,7 +902,8 @@
   .row:hover, .row:focus-visible, .row[data-hot="true"] { padding-inline-start: 0.9rem; }
   .row[data-hot="true"] .row__title { color: var(--ink); }
   .row[data-hot="true"] { border-block-end-color: var(--ink); }
-  .row:focus-visible { outline: 1px solid var(--brass); outline-offset: 3px; }
+  /* Той самий фокус, що в кнопок: кільце акценту, не голий outline. */
+  .row:focus-visible { outline: none; box-shadow: var(--ds-button-ring); }
   .row__index { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
   /* Назва курсу — це заголовок картки полиці, а не заголовок сторінки.
      У ДС редакційним пишеться друге, а не перше; тому тут UI 600, як у
@@ -903,14 +925,31 @@
   .row__state { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
   .row__state[data-held="true"] { color: var(--brass); }
 
+  /* Роль chrome, у варіанті chromeBare: керування навігацією на
+     власному рядку, без плашки і без бічних полів. Слово лишається —
+     стрілка каже «назад», але тільки слово каже, назад КУДИ; ДС
+     знімає підпис лише там, де його повторює гліф. */
   .back {
     appearance: none; -webkit-appearance: none;
-    display: inline-flex; align-items: center; gap: 0.5rem;
-    min-height: 44px; padding: 0 0.2rem;
-    border: 0; background: transparent; color: var(--ink-soft);
-    font-family: var(--mono); font-size: 0.7rem; letter-spacing: 0.1em;
-    text-transform: uppercase; cursor: pointer;
+    display: inline-flex; align-items: center;
+    gap: var(--ds-button-gap);
+    min-height: var(--ds-touch-target-min);
+    min-width: var(--ds-touch-target-min);
+    padding-inline: 0;
+    border: 0;
+    border-radius: var(--ds-button-radius);
+    background: transparent;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: var(--ds-button-font-weight);
+    line-height: 1.1;
+    cursor: pointer;
+    transition: var(--ds-button-motion);
   }
+  .back:hover { color: var(--ink); }
+  /* Один фокус на всі ролі: кільце акценту, ніколи не голий outline. */
+  .back:focus-visible { outline: none; box-shadow: var(--ds-button-ring); }
   /* [hidden] мусить перемагати display, інакше кнопка «назад» стоїть у залі. */
   .back[hidden] { display: none; }
   .back:hover { color: var(--ink); }
@@ -1050,19 +1089,41 @@
   }
 
   .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  /* Пульт: роль quiet, з поправкою на те, що це інструмент, а не
+     поверхня для того, хто вчиться (див. контракт вище). Від ДС —
+     вага, радіус, рух і фокус; своя лише висота. */
   .chip {
     appearance: none; -webkit-appearance: none;
-    padding: 0.3rem 0.55rem;
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: var(--ds-button-gap);
+    padding: 0.3rem 0.6rem;
     min-height: 30px;
     border: 1px solid var(--ink-line);
-    border-radius: calc(var(--r-tool) - 4px);
+    border-radius: calc(var(--ds-button-radius) - 5px);
     background: transparent;
     color: var(--ink-soft);
-    font: inherit; cursor: pointer;
+    font: inherit;
+    font-weight: var(--ds-button-font-weight);
+    line-height: 1.1;
+    cursor: pointer;
+    transition: var(--ds-button-motion);
   }
   .chip:hover { color: var(--ink); border-color: var(--brass-line); }
-  .chip:focus-visible { outline: 1px solid var(--brass); outline-offset: 2px; }
+  .chip:focus-visible { outline: none; box-shadow: var(--ds-button-ring); }
   .chip[aria-pressed="true"] { color: var(--brass); border-color: var(--brass); }
+
+  /* Гортання розвороту і закриття — це вже не інструмент, а те, чим
+     користується читач: роль chrome, повний цільовий розмір. */
+  .turnbar .chip {
+    min-height: var(--ds-touch-target-min);
+    min-width: var(--ds-touch-target-min);
+    padding-inline: var(--ds-button-padding-inline);
+    max-width: var(--ds-button-max-width);
+    border: 0;
+    border-radius: var(--ds-button-radius);
+    font-size: 0.9rem;
+  }
+  .turnbar .chip:hover { background: color-mix(in srgb, var(--ink-value) 6%, transparent); }
 
   .fader { display: grid; grid-template-columns: 5.6rem 1fr 2.2rem; align-items: center; gap: 0.45rem; }
   .fader label { color: var(--ink-soft); }
@@ -1171,7 +1232,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 38 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 39 · 27.08</span>
 
 
 <div class="stage" aria-hidden="true">
