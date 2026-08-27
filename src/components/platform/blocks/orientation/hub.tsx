@@ -1,12 +1,35 @@
+import type { CSSProperties } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import styles from "@/components/platform/PlatformHeroStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 
+/* Focus for the threshold plate (1312×816, ratio 1.608), read through the
+   shared hero framing contract in PlatformResponsive.module.css. Measured off
+   the plate, as a fraction of its height: empty wall 0–12%, doorway lintel 12%,
+   threshold 87%, sandals 86–92%, paving 86–100%. Everything that carries the
+   photograph lives below the top eighth, so when the crop turns vertical the
+   frame is anchored low and the crop is spent on the bare wall. Sideways the
+   frame leans right, where the doorway (64–91% across) and the bamboo are; the
+   left is the wall the text scrim wants under it anyway. */
+const HERO_FRAMING = {
+  "--hero-photo-x-desktop": "62%",
+  "--hero-photo-y-desktop": "100%",
+  "--hero-photo-y-wide": "90%",
+  "--hero-photo-y-ultrawide": "82%",
+  /* The portrait master is its own composition, not a crop of the landscape
+     plate: a centred read leaves too much bare wall above the doorway, so the
+     window is pushed down and in. */
+  "--hero-photo-x-mobile": "50%",
+  "--hero-photo-y-mobile": "68%",
+  "--hero-photo-zoom-mobile": "1.14",
+  "--hero-photo-origin-mobile": "center 125%",
+} as CSSProperties;
+
 export function HubHero() {
   return (
-    <section className={styles.heroFeature} id="center" data-cw-topbar-tone="dark">
+    <section className={styles.heroFeature} id="center" data-cw-topbar-tone="dark" style={HERO_FRAMING}>
       <div className={styles.heroPhotoLayer}>
         {/* A PORTRAIT MASTER, not a crop. The landscape plate is a scene built
             across the frame — doorway right, sandals at the foot of the wall
