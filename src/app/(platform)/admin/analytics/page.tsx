@@ -1114,7 +1114,7 @@ export default function AnalyticsPage() {
 
   const formatCampaignSpend = (value: number, currency: string | null | undefined): string => {
     const normalizedCurrency = (currency ?? "UAH").toUpperCase();
-    const amount = Number(value ?? 0).toLocaleString(lang === "en" ? "en-US" : "ru-RU", {
+    const amount = Number(value ?? 0).toLocaleString(lang === "en" ? "en-US" : "uk-UA", {
       minimumFractionDigits: 0,
       maximumFractionDigits: 2,
     });
@@ -1177,7 +1177,7 @@ export default function AnalyticsPage() {
     funnelUiSettings.mode === "payment"
       ? t("analytics_primary_conversion_payment")
       : t("analytics_primary_conversion_access");
-  const dateLocale = lang === "en" ? "en-US" : "ru-RU";
+  const dateLocale = lang === "en" ? "en-US" : "uk-UA";
   const uniqueImpressions = marketingInputs?.reach ?? 0;
   const viewContentFromReachPercent =
     uniqueImpressions > 0
