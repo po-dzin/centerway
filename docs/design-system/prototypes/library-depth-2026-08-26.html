@@ -281,91 +281,19 @@
      темі — далекі гори по нижній половині стіни; у темній ті самі
      форми, писані кремом, читаються туманом, що піднімається. Малює
      paintScene, seeded. */
-  /* СЕРЕДОВИЩЕ — МАЛЮНОК, А НЕ ГЕНЕРАТИВ.
-     Процедурна маса не тримала матеріалу: скільки не додавай плям і
-     ліній, це лишалось шумом, у який нема куди вбудувати комірку.
-     Кімнату малює модель (scripts/design/gen-artwork.mjs), а
-     scripts/design/prep-env.py знімає з неї дві речі: щільність туші —
-     у альфу, і самі отвори — у JSON. Колір, як і в пейзажі, дає тема
-     через mask-image: та сама скеля у світлій темі чорнильна, у
-     темній — кремова.
-     Полиці сідають у знайдені отвори (ENVS.seats). Саме тому вони
-     перестають випадати із середовища: їхні місця беруться з малюнка,
-     а не вигадуються поруч із ним. */
-  .env {
-    position: absolute;
-    inset: 0;
-    pointer-events: none;
-    background: var(--ink-value);
-    opacity: 0;
-    -webkit-mask-image: var(--env-tex, none), var(--scene-veil);
-    mask-image: var(--env-tex, none), var(--scene-veil);
-    -webkit-mask-composite: source-in;
-    mask-composite: intersect;
-    -webkit-mask-size: var(--env-size, cover), 100% 100%;
-    mask-size: var(--env-size, cover), 100% 100%;
-    -webkit-mask-position: var(--env-pos, 50% 50%), 0 0;
-    mask-position: var(--env-pos, 50% 50%), 0 0;
-    -webkit-mask-repeat: no-repeat, no-repeat;
-    mask-repeat: no-repeat, no-repeat;
-    transition: opacity 700ms ease;
-  }
-  :root[data-env="on"] .env { opacity: 0.92; }
-  /* ТЕМНА ТЕМА НЕ ІНВЕРТУЄ КІМНАТУ.
-     Однією маскою туші в темряві виходив негатив: отвори світились,
-     перемички чорніли — і саме це читалось «дивним». Тому в темній
-     темі шарів два. Нижній (::before) малює ТІЛО каменю світлішим за
-     ґрунт, верхній кладе ту саму тінь у ті самі отвори — вже не
-     кремом, а найтемнішим тоном ґрунту. Отвір лишається отвором. */
-  .env::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    opacity: 0;
-    background: var(--paper-lit);
-    -webkit-mask-image: var(--env-body, none), var(--scene-veil);
-    mask-image: var(--env-body, none), var(--scene-veil);
-    -webkit-mask-composite: source-in;
-    mask-composite: intersect;
-    -webkit-mask-size: var(--env-size, cover), 100% 100%;
-    mask-size: var(--env-size, cover), 100% 100%;
-    -webkit-mask-position: var(--env-pos, 50% 50%), 0 0;
-    mask-position: var(--env-pos, 50% 50%), 0 0;
-    -webkit-mask-repeat: no-repeat, no-repeat;
-    mask-repeat: no-repeat, no-repeat;
-    transition: opacity 700ms ease;
-  }
-  :root.mode-dark[data-env="on"] .env,
-  :root[data-theme="dark"]:not(.mode-light)[data-env="on"] .env {
-    opacity: 1;
-    background: var(--wash-2);
-  }
-  :root.mode-dark[data-env="on"] .env::before,
-  :root[data-theme="dark"]:not(.mode-light)[data-env="on"] .env::before { opacity: 0.62; }
-  @media (prefers-color-scheme: dark) {
-    :root:not(.mode-light):not([data-theme="light"])[data-env="on"] .env {
-      opacity: 1;
-      background: var(--wash-2);
-    }
-    :root:not(.mode-light):not([data-theme="light"])[data-env="on"] .env::before { opacity: 0.62; }
-  }
-  /* У малюнку отвір уже вирізаний, зі своєю тінню і сколотою губою.
-     Наша комірка в ньому — тільки полиця з корінцями: жодного власного
-     дна, рамки і накресленої перспективи, інакше на один отвір
-     припадає два. */
-  :root[data-env-seats="on"] .niche__box {
-    background: transparent;
-    box-shadow: none;
-  }
-  :root[data-env-seats="on"] .niche__persp,
-  :root[data-env-seats="on"] .niche__cast { display: none; }
-  :root[data-env-seats="on"] .niche__box::after {
-    background: linear-gradient(180deg,
-      color-mix(in srgb, var(--paper-lit) 60%, transparent), transparent);
-    border-top-color: color-mix(in srgb, var(--ink-value) 34%, transparent);
-    box-shadow: none;
-  }
-
+  /* СЕРЕДОВИЩЕ — МАЛЮНОК, А НЕ ГЕНЕРАТИВ, І ТІЛЬКИ ФРОНТАЛЬНИЙ.
+     Мальовані кімнати (стіна в скелі з готовими нішами, камера,
+     печера) стояли тут із власною перспективою — і саме тому не
+     сходились із комірками: ніш у них рівно стільки, скільки їх
+     намалювала модель, на її ж глибинах і під її ж кутом, а комірок
+     має бути стільки, скільки розділів. Синхронізувати ці два числа
+     неможливо, і всі спроби давали або порожні намальовані отвори
+     поруч із зайнятими, або комірку, покладену впоперек чужої
+     перспективи. Лишились тільки стіни, зняті в лоб: у них нема чого
+     синхронізувати, бо отвори в них ріже розкладка.
+     Модель дає матеріал (scripts/design/gen-artwork.mjs), prep-env.py
+     знімає щільність туші в альфу, колір дає тема — та сама скеля у
+     світлій темі чорнильна, у темній кремова. */
   /* СТІНА З ВИРІЗАНИМИ ОТВОРАМИ — ОДИН КАНВАС.
      Комірка, покладена поверх фактури, лишається покладеною: матеріал
      проходить у неї за спиною, край отвору — рівна лінія в піксель, і
@@ -394,19 +322,17 @@
     -webkit-mask-repeat: no-repeat;
     mask-repeat: no-repeat;
   }
-  :root:not([data-env="on"]) .carve,
-  :root[data-env-seats="on"] .carve { display: none; }
-  :root[data-env="on"]:not([data-env-seats="on"]) .env { display: none; }
+  :root:not([data-env="on"]) .carve { display: none; }
 
   /* Коли стіну малює канвас, комірці не лишається нічого, крім
      корінців: дно, укоси і губа вже намальовані в матеріалі. */
-  :root[data-env="on"]:not([data-env-seats="on"]) .niche__box {
+  :root[data-env="on"] .niche__box {
     background: transparent;
     box-shadow: none;
   }
-  :root[data-env="on"]:not([data-env-seats="on"]) .niche__persp,
-  :root[data-env="on"]:not([data-env-seats="on"]) .niche__cast,
-  :root[data-env="on"]:not([data-env-seats="on"]) .niche__box::after { display: none; }
+  :root[data-env="on"] .niche__persp,
+  :root[data-env="on"] .niche__cast,
+  :root[data-env="on"] .niche__box::after { display: none; }
 
   .scene {
     position: absolute;
@@ -1207,13 +1133,12 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 34 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 35 · 27.08</span>
 
 
 <div class="stage" aria-hidden="true">
   <div class="room is-eased" id="room">
     <div class="wall"></div>
-    <div class="env" id="env"></div>
     <canvas class="carve" id="carve"></canvas>
     <canvas class="scene" id="sceneInk"></canvas>
     <div class="sceneTex" id="sceneTex"></div>
@@ -1292,13 +1217,11 @@
   </div>
 
   <div class="console__group">
-    <span class="console__legend">Стіна · фактура, і дві мальовані кімнати</span>
+    <span class="console__legend">Стіна · фактура</span>
     <div class="chips" id="envs">
       <button class="chip" data-env="wall-rock" type="button" aria-pressed="true">камінь</button>
       <button class="chip" data-env="wall-clay" type="button" aria-pressed="false">глина</button>
-      <button class="chip" data-env="room-shelf" type="button" aria-pressed="false">полиця в скелі</button>
-      <button class="chip" data-env="room-niches" type="button" aria-pressed="false">камера</button>
-      <button class="chip" data-env="room-cave" type="button" aria-pressed="false">печера</button>
+      <button class="chip" data-env="wall-plaster" type="button" aria-pressed="false">тиньк</button>
       <button class="chip" data-env="" type="button" aria-pressed="false">без малюнка</button>
     </div>
   </div>
@@ -1627,10 +1550,9 @@
      сусідню. */
   var flatWall = false;
 
-  /* ГНІЗДА З МАЛЮНКА. Координати нормовані до самого артворка, тому
-     вони не залежать ні від екрана, ні від того, як його обрізало
-     `cover`: перерахунок робить seatRects. Пише їх prep-env.py —
-     руками сюди нічого не вписується. */
+  /* ФАКТУРИ СТІНИ. Тільки фронтальні: розміри — самого артворка,
+     решту рахує envFit. Пише їх prep-env.py, руками сюди нічого не
+     вписується. */
   var ENVS = {
   "wall-rock": {
     "tex": "assets/env-wall-rock.webp",
@@ -1638,8 +1560,15 @@
     "w": 1280,
     "h": 491,
     "pos": [0.5, 0.5],
-    "posNarrow": [0.5, 0.5],
-    "seats": []
+    "posNarrow": [0.5, 0.5]
+  },
+  "wall-plaster": {
+    "tex": "assets/env-wall-plaster.webp",
+    "body": "env-wall-plaster-body.webp",
+    "w": 1280,
+    "h": 661,
+    "pos": [0.5, 0.5],
+    "posNarrow": [0.5, 0.5]
   },
   "wall-clay": {
     "tex": "assets/env-wall-clay.webp",
@@ -1647,183 +1576,8 @@
     "w": 1280,
     "h": 525,
     "pos": [0.5, 0.5],
-    "posNarrow": [0.5, 0.5],
-    "seats": []
+    "posNarrow": [0.5, 0.5]
   },
-  "room-shelf": {
-    "tex": "assets/env-room-shelf.webp",
-    "body": "env-room-shelf-body.webp",
-    "w": 1280,
-    "h": 712,
-    "pos": [
-      0.5,
-      0.5
-    ],
-    "posNarrow": [
-      0.82,
-      0.34
-    ],
-    "seats": [
-      {
-        "x": 0.7844,
-        "y": 0.7809,
-        "w": 0.1125,
-        "h": 0.1573
-      },
-      {
-        "x": 0.8063,
-        "y": 0.1517,
-        "w": 0.1062,
-        "h": 0.2472
-      },
-      {
-        "x": 0.8063,
-        "y": 0.3876,
-        "w": 0.075,
-        "h": 0.2079
-      },
-      {
-        "x": 0.9,
-        "y": 0.3876,
-        "w": 0.0938,
-        "h": 0.2247
-      },
-      {
-        "x": 0.7844,
-        "y": 0.618,
-        "w": 0.1094,
-        "h": 0.1461
-      },
-      {
-        "x": 0.9094,
-        "y": 0.6124,
-        "w": 0.0906,
-        "h": 0.1854
-      },
-      {
-        "x": 0.7063,
-        "y": 0.3202,
-        "w": 0.0844,
-        "h": 0.1798
-      },
-      {
-        "x": 0.6156,
-        "y": 0.382,
-        "w": 0.0813,
-        "h": 0.1629
-      },
-      {
-        "x": 0.5375,
-        "y": 0.7022,
-        "w": 0.0906,
-        "h": 0.1236
-      },
-      {
-        "x": 0.7,
-        "y": 0.5056,
-        "w": 0.0906,
-        "h": 0.1292
-      },
-      {
-        "x": 0.6969,
-        "y": 0.6517,
-        "w": 0.075,
-        "h": 0.1348
-      },
-      {
-        "x": 0.5406,
-        "y": 0.5169,
-        "w": 0.0625,
-        "h": 0.1573
-      },
-      {
-        "x": 0.6125,
-        "y": 0.5506,
-        "w": 0.075,
-        "h": 0.1124
-      },
-      {
-        "x": 0.4688,
-        "y": 0.6292,
-        "w": 0.0594,
-        "h": 0.1517
-      }
-    ]
-  },
-  "room-niches": {
-    "tex": "assets/env-room-niches.webp",
-    "body": "env-room-niches-body.webp",
-    "w": 1280,
-    "h": 712,
-    "pos": [
-      0.5,
-      0.5
-    ],
-    "posNarrow": [
-      0.82,
-      0.34
-    ],
-    "seats": [
-      {
-        "x": 0.7281,
-        "y": 0.6348,
-        "w": 0.1812,
-        "h": 0.3539
-      },
-      {
-        "x": 0.7875,
-        "y": 0.2416,
-        "w": 0.1125,
-        "h": 0.2921
-      },
-      {
-        "x": 0.625,
-        "y": 0.1461,
-        "w": 0.1125,
-        "h": 0.2528
-      },
-      {
-        "x": 0.5938,
-        "y": 0.5618,
-        "w": 0.075,
-        "h": 0.2247
-      },
-      {
-        "x": 0.4281,
-        "y": 0.5112,
-        "w": 0.0781,
-        "h": 0.1517
-      },
-      {
-        "x": 0.675,
-        "y": 0.4382,
-        "w": 0.05,
-        "h": 0.1011
-      }
-    ]
-  },
-  "room-cave": {
-    "tex": "assets/env-room-cave.webp",
-    "body": "env-room-cave-body.webp",
-    "w": 1280,
-    "h": 712,
-    "pos": [
-      0.5,
-      0.5
-    ],
-    "posNarrow": [
-      0.82,
-      0.34
-    ],
-    "seats": [
-      {
-        "x": 0.6937,
-        "y": 0.4944,
-        "w": 0.1031,
-        "h": 0.2135
-      }
-    ]
-  }
 };
   var envNow = "";
   /* Смуга, у яку лягли полиці. Креслення кімнати бере її ж: хід має
@@ -1835,145 +1589,19 @@
      триста праць це різниця між сотнею SVG і десятком. */
   var nicheCache = {};
 
-  /* КАРТИНА САДИТЬСЯ ПО СТІНІ, А НЕ ПО КАДРУ.
-     `cover` кладе малюнок за розміром вікна — і на широкому та
-     високому кадрі стіна з нішами виїжджала за правий край, бо
-     обрізало саме її. Тому масштаб і зсув рахуються тут: беремо
-     ділянку самого артворка, де стоять отвори (рамка довкола гнізд), і
-     вписуємо ЇЇ у смугу, віддану полицям. Далі та сама трансформація
-     йде і в mask-size/mask-position шару, і в координати гнізд — один
-     розрахунок на дві речі, тому вони не можуть розійтись. */
+  /* Фактура кладеться на весь кадр, як матеріал: суміщати з
+     розкладкою в ній нема чого, бо отвори в неї ріже сама розкладка.
+     Саме через це фронтальна стіна і лишилась єдиною: у мальованій
+     кімнаті отвори намальовані, і скільки їх — вирішує модель, а не
+     каталог. */
   function envFit() {
     var meta = ENVS[envNow];
     if (!meta) return null;
     var RW = room.clientWidth, RH = room.clientHeight;
-    var w = window.innerWidth, h = window.innerHeight;
     if (!RW || !RH) return null;
-
-    /* ФАКТУРА БЕЗ ГНІЗД кладеться на весь кадр, як матеріал: у ній
-       нема чого суміщати з розкладкою, бо отвори в неї ріже сама
-       розкладка. Це і є та стіна, у якій комірок рівно стільки,
-       скільки розділів, — на відміну від мальованої кімнати, де їх
-       рівно стільки, скільки їх намалювала модель. */
-    if (!meta.seats.length) {
-      var k0 = Math.max(RW / meta.w, RH / meta.h);
-      return { iw: meta.w * k0, ih: meta.h * k0,
-               ox: (RW - meta.w * k0) / 2, oy: (RH - meta.h * k0) / 2, meta: meta };
-    }
-
-    var x0 = 1, y0 = 1, x1 = 0, y1 = 0;
-    meta.seats.forEach(function (q) {
-      x0 = Math.min(x0, q.x); y0 = Math.min(y0, q.y);
-      x1 = Math.max(x1, q.x + q.w); y1 = Math.max(y1, q.y + q.h);
-    });
-    /* Запас довкола гнізд — це камінь: стіна не закінчується на
-       крайньому отворі. */
-    var padX = (x1 - x0) * 0.16, padY = (y1 - y0) * 0.22;
-    x0 = Math.max(0, x0 - padX); x1 = Math.min(1, x1 + padX);
-    y0 = Math.max(0, y0 - padY); y1 = Math.min(1, y1 + padY);
-
-    var narrow = w <= 900;
-    var band = narrow
-      ? { x: w * 0.02, y: h * 0.02, w: w * 0.96, h: h * 0.42 }
-      : { x: w * 0.48, y: h * 0.06, w: w * 0.50, h: h * 0.88 };
-    band.x += w * 0.14; band.y += h * 0.14;      /* .room має inset -14% */
-
-    var aw = (x1 - x0) * meta.w, ah = (y1 - y0) * meta.h;
-    var k = Math.min(band.w / aw, band.h / ah);
-    var iw = meta.w * k, ih = meta.h * k;
-    var ox = band.x + band.w / 2 - ((x0 + x1) / 2) * iw;
-    var oy = band.y + band.h / 2 - ((y0 + y1) / 2) * ih;
-    return { iw: iw, ih: ih, ox: ox, oy: oy, meta: meta };
-  }
-
-  function seatRects() {
-    var f = envFit();
-    if (!f) return null;
-    return f.meta.seats.map(function (q) {
-      return { x: f.ox + q.x * f.iw, y: f.oy + q.y * f.ih,
-               w: q.w * f.iw, h: q.h * f.ih };
-    });
-  }
-
-  /* РОЗКЛАДКА ПО ГНІЗДАХ. Найважча категорія — у найбільший отвір:
-     те саме правило, що й у гранях, тільки місця тепер не рахуються, а
-     беруться. Категорії, яким отвору не вистачило, лишаються в списку
-     ліворуч — стіна не вигадує собі полиць, яких у ній не висічено. */
-  function buildSeated(seats) {
-    var order = CASES.map(function (c, ci) { return { ci: ci, n: c.books.length }; })
-      .sort(function (a, b) { return b.n - a.n; });
-    var frag = document.createDocumentFragment();
-    var used = Math.min(seats.length, order.length);
-    var i;
-    for (i = 0; i < used; i++) {
-      var seat = seats[i], data = CASES[order[i].ci];
-      var cw = Math.round(seat.w), ch = Math.round(seat.h);
-      var pad = Math.max(3, Math.round(cw * 0.07));
-      var gap = Math.max(2, Math.round(cw * 0.05));
-      /* Скільки корінців стоїть у цьому отворі — питання отвору, а не
-         каталогу: полиця не гумова, решта чекає всередині. */
-      var bw = Math.max(6, Math.round(ch * 0.13));
-      var fit = Math.max(1, Math.floor((cw - pad * 2 + gap) / (bw + gap)));
-      var show = Math.min(fit, data.books.length);
-      var hid = data.books.length - show;
-
-      var el = document.createElement("div");
-      el.className = "niche";
-      el.dataset.case = String(order[i].ci);
-      el.style.width = cw + "px";
-      el.style.height = ch + "px";
-      el.style.left = Math.round(seat.x) + "px";
-      el.style.top = Math.round(seat.y) + "px";
-      el.style.transform = "none";
-      el.style.setProperty("--depth", (0.55 + 0.45 * (used > 1 ? 1 - i / (used - 1) : 1)).toFixed(2));
-      el.dataset.z = "0";
-      el.dataset.phi = "0";
-      el.dataset.axis = String(Math.round(seat.x + seat.w / 2));
-
-      var box = document.createElement("div");
-      box.className = "niche__box";
-      el.appendChild(box);
-
-      var label = document.createElement("span");
-      label.className = "niche__label";
-      label.textContent = data.label;
-      label.style.maxWidth = Math.round(cw * 1.6) + "px";
-      el.appendChild(label);
-
-      if (hid) {
-        var more = document.createElement("span");
-        more.className = "niche__more";
-        more.textContent = "+" + hid;
-        el.appendChild(more);
-      }
-
-      data.books.slice(0, show).forEach(function (book, j) {
-        var bh = Math.round((ch - pad * 2) * (0.68 + seeded(j + order[i].ci * 7) * 0.2));
-        var spine = document.createElement("button");
-        spine.className = "book";
-        spine.type = "button";
-        spine.dataset.case = String(order[i].ci);
-        spine.dataset.book = String(j);
-        spine.dataset.held = String(book.held);
-        spine.setAttribute("aria-label", book.title);
-        var plate = document.createElement("span");
-        plate.className = "book__plate";
-        spine.appendChild(plate);
-        spine.style.width = bw + "px";
-        spine.style.height = bh + "px";
-        spine.style.left = (pad + j * (bw + gap)) + "px";
-        spine.style.bottom = Math.max(2, Math.round(ch * 0.06)) + "px";
-        box.appendChild(spine);
-      });
-
-      frag.appendChild(el);
-      caseEls.push(el);
-    }
-    room.appendChild(frag);
-    room.dataset.dense = "true";
-    room.dataset.far = "false";
-    roomBand = null;
-    markArmature(openCase < 0 ? -1 : openCase);
+    var k = Math.max(RW / meta.w, RH / meta.h);
+    return { iw: meta.w * k, ih: meta.h * k,
+             ox: (RW - meta.w * k) / 2, oy: (RH - meta.h * k) / 2, meta: meta };
   }
 
   function buildRoom() {
@@ -1981,8 +1609,6 @@
     caseEls = [];
     nicheCache = {};
 
-    var fromArt = seatRects();
-    if (fromArt && fromArt.length) { buildSeated(fromArt); return; }
 
     var w = window.innerWidth;
     var h = window.innerHeight;
@@ -2906,7 +2532,7 @@
     var g = carveEl.getContext("2d");
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, W, H);
-    if (!meta || (meta.seats && meta.seats.length)) return;
+    if (!meta) return;
 
     var f = envFit();
     if (!f) return;
@@ -2982,6 +2608,15 @@
          є перспектива коробки, тільки чесна, без точки сходу. */
       var t = Number(el.dataset.cut) ||
         Math.max(3, Math.min(22, Math.min(w, h) * (0.10 + depth * 0.10)));
+      /* УКІС ЖИВЕ, ПОКИ ЙОГО ВИДНО. На стіні в сотню-триста праць
+         отвір має сорок пікселів по короткій стороні, і чотири
+         трапеції в ньому — не глибина, а брудна облямівка. Поріг тут
+         не власний: це той самий стан far, у якому стіна вже
+         відмовилась від назв на корінцях. Одне рішення на дві
+         відмови — на такій відстані стіна читається кількістю
+         отворів, а не тим, що всередині них. Лишається губа, і вона
+         гучніша: тепер увесь виріз тримає вона. */
+      var thin = t < 4.5 || room.dataset.far === "true";
       var ix = x + t, iy = y + t, iw = w - t * 2, ih = h - t * 2;
       function face(pts, col, a) {
         g.fillStyle = rgba(col, a);
@@ -2990,6 +2625,7 @@
         g.closePath();
         g.fill();
       }
+      if (!thin) {
       face([[x, y], [x + w, y], [ix + iw, iy], [ix, iy]], sd, 0.5);              /* верх — тінь */
       face([[x + w, y], [x + w, y + h], [ix + iw, iy + ih], [ix + iw, iy]], sd, 0.3); /* правий */
       /* У темряві виріз читається не тінню, а СВІТЛОМ на укосі: тінь
@@ -2998,6 +2634,7 @@
       face([[x, y], [ix, iy], [ix, iy + ih], [x, y + h]], lc, dark ? 0.3 : 0.3);
       face([[x, y + h], [ix, iy + ih], [ix + iw, iy + ih], [x + w, y + h]],
            lc, dark ? 0.4 : 0.42);
+      }
       g.restore();
 
       /* 4. ГУБА. Передній край різу: знизу і праворуч він ловить
@@ -3011,8 +2648,8 @@
       g.lineWidth = 1.2;
       g.stroke();
       chipPath(g, x, y + 1.4, w, h, seed + 7, bite * 0.7);
-      g.strokeStyle = rgba(lc, dark ? 0.42 : 0.5);
-      g.lineWidth = 1;
+      g.strokeStyle = rgba(lc, thin ? (dark ? 0.62 : 0.74) : (dark ? 0.42 : 0.5));
+      g.lineWidth = thin ? 1.4 : 1;
       g.stroke();
       g.restore();
     });
@@ -3676,8 +3313,6 @@
       rootEl.style.setProperty("--env-tex", 'url("' + meta.tex + '")');
       rootEl.style.setProperty("--env-body", 'url("assets/' + meta.body + '")');
       rootEl.setAttribute("data-env", "on");
-      if (meta.seats.length) rootEl.setAttribute("data-env-seats", "on");
-      else rootEl.removeAttribute("data-env-seats");
       var f = envFit();
       if (f) {
         rootEl.style.setProperty("--env-size",
@@ -3689,7 +3324,6 @@
       rootEl.style.removeProperty("--env-tex");
       rootEl.style.removeProperty("--env-body");
       rootEl.removeAttribute("data-env");
-      rootEl.removeAttribute("data-env-seats");
     }
     Array.prototype.forEach.call(envsBox.children, function (c) {
       c.setAttribute("aria-pressed", String(c.dataset.env === envNow));

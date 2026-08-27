@@ -1,19 +1,17 @@
 #!/usr/bin/env python3.12
 """Готує згенероване СЕРЕДОВИЩЕ до ролі кімнати прототипу.
 
-Різниця з prep-artwork.py: там пейзаж, тут інтер'єр, і з нього треба
-дістати не лише щільність туші, а й МІСЦЯ. Ніші в камені намальовані
-моделлю; полиці мають сідати саме в них, а не поруч. Тому скрипт:
+Різниця з prep-artwork.py: там пейзаж, тут матеріал стіни. Готуються
+ЛИШЕ фронтальні фактури. Мальовані кімнати з готовими нішами тут були
+і пішли: отворів у них рівно стільки, скільки їх намалювала модель, на
+її ж глибинах і під її ж кутом, а комірок має бути стільки, скільки
+розділів у каталозі, — ці два числа не синхронізуються ніяк.
 
-  1. знімає щільність туші (альфа = наскільки темніше за папір) — колір
-     потім дає тема через mask-image, як і в пейзажі;
-  2. знаходить самі отвори: найтемніші зв'язні плями, відфільтровані за
-     площею, пропорцією і заповненістю прямокутника;
-  3. пише поруч JSON із нормованими координатами цих отворів.
+Знімається дві речі:
 
-Прототип читає JSON і кладе комірки в знайдені гнізда. Саме тому
-комірки перестають «випадати» з середовища: їхні місця беруться з
-малюнка, а не вигадуються поруч із ним.
+  1. щільність туші в альфу — колір дає тема через mask-image;
+  2. окремо тіло каменю (середні щільності) — щоб темна тема не
+     показувала негатив.
 
     python scripts/design/prep-env.py
 """
@@ -30,75 +28,12 @@ W = 1280
 # Модель ставить свою позначку в правому нижньому куті.
 CROP_R, CROP_B = 0.035, 0.045
 
-# Порогові значення пошуку гнізда. Всі — частки кадру, не пікселі:
-# артворк може прийти будь-якого розміру.
-DARK = 0.60          # від якої щільності туші вважаємо, що це отвір
-MIN_AREA = 0.0022    # менше — це тріщина, а не ніша
-MAX_AREA = 0.09      # більше — це вже хід або тінь усієї стіни
-MIN_FILL = 0.52      # наскільки пляма заповнює свій прямокутник
-ASPECT = (0.35, 3.2)
-MAX_SEATS = 14
-
-
 def density(im):
     a = np.asarray(im, np.float32) / 255.0
     paper = float(np.percentile(a, 97))
     floor = float(np.percentile(a, 0.5))
     d = np.clip((paper - a) / max(paper - floor, 1e-3), 0, 1)
     return d ** 1.15
-
-
-def seats(dens):
-    """Зв'язні темні плями — обходом у ширину по зменшеній масці.
-
-    Зменшення тут не оптимізація, а частина методу: на повному розмірі
-    отвір розсипається на десяток плям через зерно паперу і сколи, і
-    жоден поріг цього не лікує. На 1/4 масштабу зерно зникає, а форма
-    отвору лишається.
-    """
-    h, w = dens.shape
-    sw, sh = w // 4, h // 4
-    small = np.asarray(Image.fromarray((dens * 255).astype(np.uint8))
-                       .resize((sw, sh), Image.BILINEAR), np.float32) / 255.0
-    mask = small > DARK
-    seen = np.zeros_like(mask, bool)
-    found = []
-    total = sw * sh
-    for y0 in range(sh):
-        for x0 in range(sw):
-            if not mask[y0, x0] or seen[y0, x0]:
-                continue
-            stack = [(y0, x0)]
-            seen[y0, x0] = True
-            pts = []
-            while stack:
-                y, x = stack.pop()
-                pts.append((y, x))
-                for dy, dx in ((1, 0), (-1, 0), (0, 1), (0, -1)):
-                    ny, nx = y + dy, x + dx
-                    if 0 <= ny < sh and 0 <= nx < sw and mask[ny, nx] and not seen[ny, nx]:
-                        seen[ny, nx] = True
-                        stack.append((ny, nx))
-            ys = [p[0] for p in pts]
-            xs = [p[1] for p in pts]
-            bx0, bx1, by0, by1 = min(xs), max(xs) + 1, min(ys), max(ys) + 1
-            bw, bh = bx1 - bx0, by1 - by0
-            area = len(pts) / total
-            fill = len(pts) / float(bw * bh)
-            asp = bw / float(bh)
-            if not (MIN_AREA <= area <= MAX_AREA):
-                continue
-            if fill < MIN_FILL or not (ASPECT[0] <= asp <= ASPECT[1]):
-                continue
-            found.append({
-                "x": round(bx0 / sw, 4), "y": round(by0 / sh, 4),
-                "w": round(bw / float(sw), 4), "h": round(bh / float(sh), 4),
-                "area": area,
-            })
-    found.sort(key=lambda s: -s["area"])
-    for s in found:
-        del s["area"]
-    return found[:MAX_SEATS]
 
 
 def material_box(dens, edge=0.06):
@@ -157,23 +92,15 @@ def prep(name, key):
     Image.fromarray(rgbb, "RGBA").save(os.path.join(OUT, "env-" + key + "-body.webp"),
                                        quality=55, alpha_quality=62, method=6)
 
-    # ФАКТУРА НЕ МАЄ ГНІЗД. У стіни, знятої в лоб, отворів не
-    # намальовано — їх ріже розкладка, і саме тому вона й масштабується.
-    # Темні плями в ній є (сколи, мокрий край), але це не ніші, і
-    # шукати їх там означало б посадити полицю в тріщину.
-    found = [] if key.startswith("wall-") else seats(dens)
     meta = {"tex": os.path.basename(tex), "body": "env-" + key + "-body.webp",
-            "w": rgba.shape[1], "h": rgba.shape[0],
-            "seats": found}
+            "w": rgba.shape[1], "h": rgba.shape[0]}
     with open(os.path.join(OUT, "env-" + key + ".json"), "w") as f:
         json.dump(meta, f, ensure_ascii=False, indent=1)
-    print("%-40s %5.0f KiB  %dx%d  гнізд: %d"
-          % (tex, os.path.getsize(tex) / 1024, meta["w"], meta["h"], len(found)))
-    for s in found:
-        print("    %.3f %.3f  %.3f x %.3f" % (s["x"], s["y"], s["w"], s["h"]))
+    print("%-40s %5.0f KiB  %dx%d"
+          % (tex, os.path.getsize(tex) / 1024, meta["w"], meta["h"]))
 
 
 if __name__ == "__main__":
     for f in sorted(os.listdir(SRC)):
-        if f.endswith(".png") and ("--room-" in f or "--wall-" in f):
+        if f.endswith(".png") and "--wall-" in f:
             prep(f, f.split("--")[-1][:-4])
