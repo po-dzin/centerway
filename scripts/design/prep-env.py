@@ -101,12 +101,37 @@ def seats(dens):
     return found[:MAX_SEATS]
 
 
+def material_box(dens, edge=0.06):
+    """Де на аркуші справді лежить матеріал.
+
+    Промпт навмисно лишає верх-ліворуч порожнім папером — це потрібно
+    пейзажу, під яким стоїть текст. Фактурі стіни це шкодить: у смузі
+    з полицями половина кадру виявляється чистим аркушем, і комірки
+    висять ні на чому. Тому для стін кадр обрізається до самої маси:
+    беруться рядки й стовпці, де середня щільність вища за поріг.
+    """
+    col = dens.mean(axis=0)
+    row = dens.mean(axis=1)
+    cx = np.where(col > edge)[0]
+    ry = np.where(row > edge)[0]
+    if not len(cx) or not len(ry):
+        return None
+    return int(cx[0]), int(ry[0]), int(cx[-1]) + 1, int(ry[-1]) + 1
+
+
 def prep(name, key):
     im = Image.open(os.path.join(SRC, name)).convert("L")
     w, h = im.size
     im = im.crop((0, 0, int(w * (1 - CROP_R)), int(h * (1 - CROP_B))))
     im = im.resize((W, round(W * im.size[1] / im.size[0])), Image.LANCZOS)
     dens = density(im)
+
+    if key.startswith("wall-"):
+        box = material_box(dens)
+        if box:
+            im = im.crop(box)
+            im = im.resize((W, round(W * im.size[1] / im.size[0])), Image.LANCZOS)
+            dens = density(im)
 
     rgba = np.zeros(dens.shape + (4,), np.uint8)
     rgba[..., 3] = (dens * 255).astype(np.uint8)
@@ -132,7 +157,11 @@ def prep(name, key):
     Image.fromarray(rgbb, "RGBA").save(os.path.join(OUT, "env-" + key + "-body.webp"),
                                        quality=55, alpha_quality=62, method=6)
 
-    found = seats(dens)
+    # ФАКТУРА НЕ МАЄ ГНІЗД. У стіни, знятої в лоб, отворів не
+    # намальовано — їх ріже розкладка, і саме тому вона й масштабується.
+    # Темні плями в ній є (сколи, мокрий край), але це не ніші, і
+    # шукати їх там означало б посадити полицю в тріщину.
+    found = [] if key.startswith("wall-") else seats(dens)
     meta = {"tex": os.path.basename(tex), "body": "env-" + key + "-body.webp",
             "w": rgba.shape[1], "h": rgba.shape[0],
             "seats": found}
@@ -146,5 +175,5 @@ def prep(name, key):
 
 if __name__ == "__main__":
     for f in sorted(os.listdir(SRC)):
-        if f.endswith(".png") and "--room-" in f:
+        if f.endswith(".png") and ("--room-" in f or "--wall-" in f):
             prep(f, f.split("--")[-1][:-4])

@@ -67,6 +67,30 @@ const PROMPTS = {
     "Interior wall of a rock-cut library. A tall face of clay-stone on the right two thirds with " +
     "EMPTY carved shelf openings in an irregular grid, no books, deep shadow in every opening, " +
     "chipped stone lips. A low descending arch at the bottom. " + COMMON,
+  /* ФРОНТАЛЬНА СТІНА — МАТЕРІАЛ, А НЕ СЦЕНА.
+     Намальована кімната має власну перспективу, і комірки в ній
+     статичні: гнізда з малюнка не множаться разом із каталогом. Тому
+     середовище повертається до ролі, у якій воно масштабується, —
+     до фактури. Стіна знята строго в лоб, без сходу ліній і без
+     готових ніш: отвори в неї ріже вже розкладка, і їх рівно стільки,
+     скільки розділів. Від моделі потрібен матеріал: маса, сколи,
+     тріщини, слід інструмента. */
+  "wall-clay":
+    "A flat wall of warm rammed clay photographed straight on, perfectly frontal, no perspective, " +
+    "no vanishing point, no corners, no floor and no ceiling in frame — only the surface itself, " +
+    "edge to edge. Uneven hand-smoothed plaster with trowel marks, hairline cracks, small chips " +
+    "and pits, patches where the clay dried lighter. No openings, no niches, no holes, no objects. " + COMMON,
+  "wall-rock":
+    "A flat face of cut sandstone photographed straight on, perfectly frontal, no perspective, " +
+    "no vanishing point, no corners, no floor and no ceiling in frame — only the surface, edge to " +
+    "edge. Visible chisel courses, shallow fractures, flaked scars, grain and pitting, weathered " +
+    "unevenly. No openings, no niches, no holes, no objects. " + COMMON,
+  "wall-plaster":
+    "A flat lime-plastered wall photographed straight on, perfectly frontal, no perspective, " +
+    "no corners, no floor, no ceiling — only the surface, edge to edge. Quiet, almost bare: " +
+    "faint tide marks of damp, a few hairline cracks, one flaked patch, otherwise still. " +
+    "Extreme restraint. No openings, no niches, no objects. " + COMMON,
+
   "room-passage":
     "Standing inside a hewn stone room looking at its far wall. The wall carries three EMPTY " +
     "carved recesses and, at its foot, an arched opening going down into a darker level. " +

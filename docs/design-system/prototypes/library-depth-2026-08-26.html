@@ -353,13 +353,13 @@
      Наша комірка в ньому — тільки полиця з корінцями: жодного власного
      дна, рамки і накресленої перспективи, інакше на один отвір
      припадає два. */
-  :root[data-env="on"] .niche__box {
+  :root[data-env-seats="on"] .niche__box {
     background: transparent;
     box-shadow: none;
   }
-  :root[data-env="on"] .niche__persp,
-  :root[data-env="on"] .niche__cast { display: none; }
-  :root[data-env="on"] .niche__box::after {
+  :root[data-env-seats="on"] .niche__persp,
+  :root[data-env-seats="on"] .niche__cast { display: none; }
+  :root[data-env-seats="on"] .niche__box::after {
     background: linear-gradient(180deg,
       color-mix(in srgb, var(--paper-lit) 60%, transparent), transparent);
     border-top-color: color-mix(in srgb, var(--ink-value) 34%, transparent);
@@ -1163,7 +1163,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 31 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 32 · 27.08</span>
 
 
 <div class="stage" aria-hidden="true">
@@ -1247,9 +1247,11 @@
   </div>
 
   <div class="console__group">
-    <span class="console__legend">Середовище · кімната</span>
+    <span class="console__legend">Стіна · фактура, і дві мальовані кімнати</span>
     <div class="chips" id="envs">
-      <button class="chip" data-env="room-shelf" type="button" aria-pressed="true">полиця в скелі</button>
+      <button class="chip" data-env="wall-rock" type="button" aria-pressed="true">камінь</button>
+      <button class="chip" data-env="wall-clay" type="button" aria-pressed="false">глина</button>
+      <button class="chip" data-env="room-shelf" type="button" aria-pressed="false">полиця в скелі</button>
       <button class="chip" data-env="room-niches" type="button" aria-pressed="false">камера</button>
       <button class="chip" data-env="room-cave" type="button" aria-pressed="false">печера</button>
       <button class="chip" data-env="" type="button" aria-pressed="false">без малюнка</button>
@@ -1585,6 +1587,24 @@
      `cover`: перерахунок робить seatRects. Пише їх prep-env.py —
      руками сюди нічого не вписується. */
   var ENVS = {
+  "wall-rock": {
+    "tex": "assets/env-wall-rock.webp",
+    "body": "env-wall-rock-body.webp",
+    "w": 1280,
+    "h": 491,
+    "pos": [0.5, 0.5],
+    "posNarrow": [0.5, 0.5],
+    "seats": []
+  },
+  "wall-clay": {
+    "tex": "assets/env-wall-clay.webp",
+    "body": "env-wall-clay-body.webp",
+    "w": 1280,
+    "h": 525,
+    "pos": [0.5, 0.5],
+    "posNarrow": [0.5, 0.5],
+    "seats": []
+  },
   "room-shelf": {
     "tex": "assets/env-room-shelf.webp",
     "body": "env-room-shelf-body.webp",
@@ -1780,10 +1800,21 @@
      розрахунок на дві речі, тому вони не можуть розійтись. */
   function envFit() {
     var meta = ENVS[envNow];
-    if (!meta || !meta.seats.length) return null;
+    if (!meta) return null;
     var RW = room.clientWidth, RH = room.clientHeight;
     var w = window.innerWidth, h = window.innerHeight;
     if (!RW || !RH) return null;
+
+    /* ФАКТУРА БЕЗ ГНІЗД кладеться на весь кадр, як матеріал: у ній
+       нема чого суміщати з розкладкою, бо отвори в неї ріже сама
+       розкладка. Це і є та стіна, у якій комірок рівно стільки,
+       скільки розділів, — на відміну від мальованої кімнати, де їх
+       рівно стільки, скільки їх намалювала модель. */
+    if (!meta.seats.length) {
+      var k0 = Math.max(RW / meta.w, RH / meta.h);
+      return { iw: meta.w * k0, ih: meta.h * k0,
+               ox: (RW - meta.w * k0) / 2, oy: (RH - meta.h * k0) / 2, meta: meta };
+    }
 
     var x0 = 1, y0 = 1, x1 = 0, y1 = 0;
     meta.seats.forEach(function (q) {
@@ -1935,8 +1966,14 @@
        та сама перспектива. Дві копії одного числа розійшлись би на
        першій же правці, тому вони поруч і названі. */
     var PERSP = 1600, VPX = w * 0.68, VPY = h * 0.5;
-    var Z_FAR = -360, Z_NEAR = -140;
-    var MAXPHI = narrow ? 4 : 9;
+    /* ФРОНТАЛЬНО. Поворот граней прибрано разом із мальованою
+       перспективою: фактура знята в лоб, і будь-який кут комірки
+       сперечається з нею замість того, щоб додавати глибину. Що
+       лишилось — мілкий перепад врізання: категорія може бути
+       вибрана глибше або мілкіше, і це видно тінню в отворі, а не
+       розворотом стіни. */
+    var Z_FAR = -280, Z_NEAR = -190;
+    var MAXPHI = 0;
     function kOf(z) { return PERSP / (PERSP - (HALL_Z + z)); }
 
     var maxN = 1;
@@ -3401,6 +3438,8 @@
       rootEl.style.setProperty("--env-tex", 'url("' + meta.tex + '")');
       rootEl.style.setProperty("--env-body", 'url("assets/' + meta.body + '")');
       rootEl.setAttribute("data-env", "on");
+      if (meta.seats.length) rootEl.setAttribute("data-env-seats", "on");
+      else rootEl.removeAttribute("data-env-seats");
       var f = envFit();
       if (f) {
         rootEl.style.setProperty("--env-size",
@@ -3412,6 +3451,7 @@
       rootEl.style.removeProperty("--env-tex");
       rootEl.style.removeProperty("--env-body");
       rootEl.removeAttribute("data-env");
+      rootEl.removeAttribute("data-env-seats");
     }
     Array.prototype.forEach.call(envsBox.children, function (c) {
       c.setAttribute("aria-pressed", String(c.dataset.env === envNow));
@@ -3493,9 +3533,9 @@
 
   /* setTheme викликається ЗАВЖДИ, навіть для «системної»: інлайн-фарби
      на body — єдине, чого не переб'є жоден стиль хоста артефакта. */
-  var savedEnv = "room-shelf";
-  try { savedEnv = window.localStorage.getItem("cw-proto-env"); } catch (e) { savedEnv = "room-shelf"; }
-  setEnv(savedEnv === null ? "room-shelf" : savedEnv);
+  var savedEnv = "wall-rock";
+  try { savedEnv = window.localStorage.getItem("cw-proto-env"); } catch (e) { savedEnv = "wall-rock"; }
+  setEnv(savedEnv === null ? "wall-rock" : savedEnv);
   var savedGround = "graphite";
   try { savedGround = window.localStorage.getItem("cw-proto-ground") || "graphite"; } catch (e) { /* приватне вікно */ }
   setGround(savedGround);
