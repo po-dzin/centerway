@@ -21,7 +21,6 @@ import { BRAND, brandSummary } from "@/lib/brand/identity";
 import { programs } from "@/lib/platform/content";
 import { listStorefrontCourses } from "@/lib/platform/offers";
 import { resolveOfferCommerce } from "@/lib/platform/offerCommerce";
-import { isPersonalHost } from "@/lib/platform/surfaceHref";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 
 /** Rebuilt at most once an hour: the live half is a database read. */
@@ -31,14 +30,12 @@ function line(path: string, name: string, note: string): string {
   return `- [${name}](${PLATFORM_ORIGIN}${path}): ${note}`;
 }
 
-export async function GET(request: Request): Promise<Response> {
-  // `my` is nobody's public surface — its robots.txt already disallows
-  // everything, and an index of somebody's shelf is not a thing to publish.
-  const host = request.headers.get("x-forwarded-host") ?? request.headers.get("host");
-  if (isPersonalHost(host)) {
-    return new Response("Not found", { status: 404 });
-  }
-
+/**
+ * `my` never reaches this handler at all: the proxy treats any path it does
+ * not own as a course lookup, and `llms.txt` is not a course — it 404s there,
+ * before routing gets here. Nothing to guard on this side.
+ */
+export async function GET(): Promise<Response> {
   const offers = programs.map((program) => {
     const commerce = resolveOfferCommerce(program.slug);
     const price =
