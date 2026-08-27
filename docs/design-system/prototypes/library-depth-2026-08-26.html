@@ -381,22 +381,25 @@
   /* Фокус — не хрест на всю стіну, а лучі, що ЗІЙШЛИСЯ на виїмці:
      один горизонтальний, короткий, із затухаючими краями. Приходить
      від колонки тексту до активної виїмки. */
+  /* Промені — не градієнт у CSS, а два штрихи, писані тим самим пером,
+     що й уся стіна: рівна лінія завтовшки в піксель була єдиним
+     ідеальним об'єктом у кресленні від руки. Вони лежать на ДРУГОМУ
+     плані — на самій стіні, позаду виїмок: позначка на стіні, а не
+     указка перед нею. */
   .ray {
     position: absolute;
-    height: 1px;
-    transform: translateZ(-150px);
+    height: 18px;
+    transform: translateZ(-229px);
     pointer-events: none;
-    background: linear-gradient(90deg,
-      transparent 0,
-      var(--ray-main) 30%,
-      var(--ray-hi) 84%,
-      transparent 100%);
+    color: var(--ray-hi);
     filter: var(--ray-halo);
     animation: rayBreath 9s ease-in-out infinite alternate;
     transition: top 2000ms cubic-bezier(0.16, 0.5, 0.2, 1),
                 left 2000ms cubic-bezier(0.16, 0.5, 0.2, 1),
                 width 2000ms cubic-bezier(0.16, 0.5, 0.2, 1);
   }
+  .ray svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .ray--b { animation-delay: -4.5s; }
   @keyframes rayBreath {
     0%   { opacity: 0.5; }
     100% { opacity: 1; }
@@ -999,7 +1002,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 20 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 21 · 27.08</span>
 
 <div class="draft" aria-hidden="true">
   <span class="draft__margin draft__margin--l"></span>
@@ -1019,6 +1022,7 @@
     <canvas class="scene" id="sceneInk"></canvas>
     <div class="sceneTex" id="sceneTex"></div>
     <div class="ray" id="rayA"></div>
+    <div class="ray ray--b" id="rayB"></div>
     <div class="rake"></div>
     <canvas class="grain" id="grain"></canvas>
   </div>
@@ -1198,6 +1202,7 @@
   var caseEls = [];
 
   var rayA = document.getElementById("rayA");
+  var rayB = document.getElementById("rayB");
 
   /* Мальована перспектива ніші: кожна точка ледь збита seeded-рукою,
      тому три ніші накреслені трьома різними рухами, але однаково в
@@ -1616,19 +1621,95 @@
     markArmature(openCase < 0 ? 1 : openCase);
   }
 
-  /* ОДИН промінь, який приходить до активної ніші зліва. Двох ліній
-     на різній висоті плюс медальйон виявилось забагато: три предмети
-     сперечалися за ту саму увагу, яку мала тримати сама виїмка. */
+  /* Штрих пера завдовжки в промінь: тонкий на далекому кінці, важчий
+     біля виїмки, з ледь помітним прогином і одним-двома підйомами
+     пензля. Той самий профіль, що й у ліній ніші, — інакше промінь
+     читався б надрукованим поверх мальованого. */
+  function rayInk(len, toRight, seed) {
+    var H = 18, mid = H / 2;
+    function jr(n) { return seeded(seed * 37 + n); }
+    var bow = (jr(1) * 2 - 1) * Math.min(3.4, len * 0.02);
+    /* Підйоми пензля: розриви, через які лінія не буває суцільною. */
+    var lifts = [];
+    var g0 = 0.24 + jr(2) * 0.2;
+    lifts.push([g0, g0 + 0.03 + jr(3) * 0.05]);
+    if (jr(4) > 0.45) {
+      var g1 = 0.62 + jr(5) * 0.16;
+      lifts.push([g1, g1 + 0.02 + jr(6) * 0.04]);
+    }
+    function inLift(t) {
+      for (var i = 0; i < lifts.length; i++) {
+        if (t > lifts[i][0] && t < lifts[i][1]) return true;
+      }
+      return false;
+    }
+    var N = 46, out = "", run = [], i, t, x, y, wdt;
+    function flush() {
+      if (run.length < 2) { run = []; return; }
+      var top = [], bot = [], k;
+      for (k = 0; k < run.length; k++) {
+        top.push(run[k][0].toFixed(1) + "," + (run[k][1] - run[k][2] / 2).toFixed(1));
+        bot.push(run[k][0].toFixed(1) + "," + (run[k][1] + run[k][2] / 2).toFixed(1));
+      }
+      out += '<polygon points="' + top.join(" ") + " " + bot.reverse().join(" ") +
+        '" fill="currentColor"/>';
+      run = [];
+    }
+    for (i = 0; i <= N; i++) {
+      t = i / N;
+      if (inLift(t)) { flush(); continue; }
+      x = toRight ? len * t : len * (1 - t);
+      y = mid + bow * Math.sin(Math.PI * t) + (jr(i + 40) - 0.5) * 0.7;
+      /* до виїмки перо тисне сильніше, від неї — сходить нанівець */
+      wdt = (0.35 + 1.45 * t) * (0.72 + jr(i + 90) * 0.56);
+      if (i === 0) wdt = 0.22;
+      run.push([x, y, wdt]);
+    }
+    flush();
+    return '<svg viewBox="0 0 ' + Math.round(len) + " " + H +
+      '" preserveAspectRatio="none" aria-hidden="true">' + out + "</svg>";
+  }
+
+  /* ДВА штрихи сходяться на активній категорії — зліва і справа, різної
+     довжини і не на одній висоті. Один рівний промінь був указкою; два
+     нерівні штрихи — це те, як розмічають від руки. */
   function markArmature(ci) {
-    var el = sectionsOf(ci)[0];
+    var mine = sectionsOf(ci);
+    var el = mine[0];
     if (!el) return;
-    var nl = parseFloat(el.style.left);
-    var nt = parseFloat(el.style.top);
-    var nh = el.offsetHeight || 200;
-    var la = 120 + seeded(ci + 11) * 40;
-    rayA.style.left = Math.round(nl - la) + "px";
-    rayA.style.width = Math.round(la - 8) + "px";
-    rayA.style.top = Math.round(nt + nh * 0.46) + "px";
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    mine.forEach(function (n) {
+      var l = parseFloat(n.style.left), t = parseFloat(n.style.top);
+      x0 = Math.min(x0, l); y0 = Math.min(y0, t);
+      x1 = Math.max(x1, l + n.offsetWidth); y1 = Math.max(y1, t + n.offsetHeight);
+    });
+    var midY = y0 + (y1 - y0) * 0.46;
+
+    /* Штрихи лежать на стіні, позаду виїмок, тож довжина в них не
+       довільна: до сусіднього отвору. Забігши за нього, штрих просто
+       зникає — і селект перестає читатися. Тому міряємо вільний
+       проміжок і вкладаємось у нього. */
+    var freeL = x0, freeR = window.innerWidth * 1.28 - x1;
+    caseEls.forEach(function (n) {
+      if (Number(n.dataset.case) === ci) return;
+      var l = parseFloat(n.style.left), t = parseFloat(n.style.top);
+      var r = l + n.offsetWidth, bm = t + n.offsetHeight;
+      if (midY < t - 6 || midY > bm + 6) return;
+      if (r <= x0) freeL = Math.min(freeL, x0 - r);
+      if (l >= x1) freeR = Math.min(freeR, l - x1);
+    });
+
+    var la = Math.max(30, Math.min(96 + seeded(ci + 11) * 54, freeL - 16));
+    rayA.style.left = Math.round(x0 - la) + "px";
+    rayA.style.width = Math.round(la - 10) + "px";
+    rayA.style.top = Math.round(midY - 9) + "px";
+    rayA.innerHTML = rayInk(la - 10, true, ci + 3);
+
+    var lb = Math.max(24, Math.min(58 + seeded(ci + 23) * 42, freeR - 16));
+    rayB.style.left = Math.round(x1 + 10) + "px";
+    rayB.style.width = Math.round(lb) + "px";
+    rayB.style.top = Math.round(midY + 13 + seeded(ci + 31) * 10) + "px";
+    rayB.innerHTML = rayInk(lb, false, ci + 9);
   }
 
   function renderList() {
