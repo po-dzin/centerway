@@ -366,6 +366,48 @@
     box-shadow: none;
   }
 
+  /* СТІНА З ВИРІЗАНИМИ ОТВОРАМИ — ОДИН КАНВАС.
+     Комірка, покладена поверх фактури, лишається покладеною: матеріал
+     проходить у неї за спиною, край отвору — рівна лінія в піксель, і
+     жодна внутрішня тінь цього не рятує. Виріз має бути вирізом:
+     матеріал у ньому ЗАКІНЧУЄТЬСЯ. Тому стіна і отвори малюються
+     разом — спершу фактура, потім із неї вибивається отвір
+     (destination-out) щербатим контуром, і аж у вибите кладеться
+     нутро: задня стінка, чотири укоси і губа.
+     Світло в кімнаті одне, згори-праворуч. Отже лівий укіс і дно
+     освітлені, верхній і правий — у тіні, а на задню стінку падає
+     тінь від верхньої губи. Це не стилізація, це те, як виглядає
+     коробчастий виріз при одному джерелі. */
+  .carve {
+    position: absolute;
+    /* Система координат канваса мусить збігатися з координатами
+       комірок — інакше отвір і його ж нутро розходяться. Комірки
+       живуть у координатах .room, отже і полотно теж: нуль у нулі,
+       розмір у розмір. */
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    -webkit-mask-image: var(--scene-veil);
+    mask-image: var(--scene-veil);
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+  }
+  :root:not([data-env="on"]) .carve,
+  :root[data-env-seats="on"] .carve { display: none; }
+  :root[data-env="on"]:not([data-env-seats="on"]) .env { display: none; }
+
+  /* Коли стіну малює канвас, комірці не лишається нічого, крім
+     корінців: дно, укоси і губа вже намальовані в матеріалі. */
+  :root[data-env="on"]:not([data-env-seats="on"]) .niche__box {
+    background: transparent;
+    box-shadow: none;
+  }
+  :root[data-env="on"]:not([data-env-seats="on"]) .niche__persp,
+  :root[data-env="on"]:not([data-env-seats="on"]) .niche__cast,
+  :root[data-env="on"]:not([data-env-seats="on"]) .niche__box::after { display: none; }
+
   .scene {
     position: absolute;
     inset: -16%;
@@ -1163,13 +1205,14 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 32 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 33 · 27.08</span>
 
 
 <div class="stage" aria-hidden="true">
   <div class="room is-eased" id="room">
     <div class="wall"></div>
     <div class="env" id="env"></div>
+    <canvas class="carve" id="carve"></canvas>
     <canvas class="scene" id="sceneInk"></canvas>
     <div class="sceneTex" id="sceneTex"></div>
     <div class="ray" id="rayA"></div>
@@ -1972,7 +2015,11 @@
        лишилось — мілкий перепад врізання: категорія може бути
        вибрана глибше або мілкіше, і це видно тінню в отворі, а не
        розворотом стіни. */
-    var Z_FAR = -280, Z_NEAR = -190;
+    /* Комірки лежать у площині самої стіни: виріз малюється на тому
+       ж канвасі, і будь-який зсув по z розвів би отвір із його ж
+       нутром. Глибина живе не в координаті, а в самому вирізі —
+       ширині укосів і темряві задньої стінки. */
+    var Z_FAR = 0, Z_NEAR = 0;
     var MAXPHI = 0;
     function kOf(z) { return PERSP / (PERSP - (HALL_Z + z)); }
 
@@ -2182,6 +2229,14 @@
       el.style.transform = "translateZ(" + Math.round(f.z) + "px) rotateY(" +
         phi.toFixed(2) + "deg)";
       el.style.setProperty("--depth", f.t.toFixed(2));
+      /* ТОВЩИНА КАМЕНЮ — одне число на дві речі: по ньому канвас
+         малює укоси, і на ньому ж стоять корінці. Порахувати його
+         двічі означало б, що книжка стоїть не на тому дні, яке
+         намальоване. */
+      var cut = Math.max(3, Math.min(22,
+        Math.min(cw, ch) * (0.10 + f.t * 0.10)));
+      el.style.setProperty("--cut", cut.toFixed(1) + "px");
+      el.dataset.cut = cut.toFixed(1);
       /* Грань пишеться на елемент, бо ту саму площину має зайняти й
          позначка уваги: штрих, накреслений на іншій стіні, поруч із
          виїмкою не ляже. */
@@ -2226,12 +2281,16 @@
 
       /* ПРАЦЬ — рівно стільки, скільки курсів: декоративних корінців-
          статистів немає, і секція завширшки рівно під свій ряд. */
+      /* Корінці стоять НА ДНІ вирізу, а не на його зовнішньому краю:
+         поле під них береться від товщини каменю, а не від довільного
+         відступу. */
+      var inner = Math.max(6, cw - cut * 2);
       var bwFit = Math.max(4, Math.min(Math.round(sec.bw / f.k),
-        Math.floor((cw - padL * 2 + gapL) / sec.count) - gapL));
+        Math.floor((inner + gapL) / sec.count) - gapL));
       data.books.slice(sec.from, sec.from + sec.count).forEach(function (book, j) {
         var bi = sec.from + j;
         var lean = bwFit > 16 ? Math.round(seeded(bi * 3 + sec.ci) * 4) : 0;
-        var bh = Math.round((ch - 14) * (0.72 + seeded(bi + sec.ci * 7) * 0.16));
+        var bh = Math.round((ch - cut * 2) * (0.74 + seeded(bi + sec.ci * 7) * 0.16));
 
         var spine = document.createElement("button");
         spine.className = "book";
@@ -2262,8 +2321,8 @@
 
         spine.style.width = bwFit + "px";
         spine.style.height = bh + "px";
-        spine.style.left = (padL + j * (bwFit + gapL) + lean) + "px";
-        spine.style.bottom = "5px";
+        spine.style.left = Math.round(cut + j * (bwFit + gapL) + lean) + "px";
+        spine.style.bottom = Math.round(cut * 0.82) + "px";
         if (bwFit > 12 && seeded(bi * 5 + sec.ci) > 0.8) {
           spine.style.setProperty("--tilt", (3 + seeded(bi) * 4).toFixed(1) + "deg");
         }
@@ -2286,6 +2345,7 @@
     room.dataset.far = far ? "true" : "false";
 
     markArmature(openCase < 0 ? 1 : openCase);
+    paintCarve();
   }
 
   /* Виїмка креслиться на замовлення і лишається в кеші: ключ — рука
@@ -2781,6 +2841,172 @@
     if (e.key === "ArrowRight") { spreadState.folio++; paintSpread(); play("turn"); }
     if (e.key === "ArrowLeft") { spreadState.folio = Math.max(1, spreadState.folio - 1); paintSpread(); play("turn"); }
   });
+
+
+  /* ---------- стіна з вирізами ---------- */
+
+  var carveEl = document.getElementById("carve");
+  var imgCache = {};
+
+  function img(src, done) {
+    if (imgCache[src]) { if (imgCache[src].complete) done(imgCache[src]); return; }
+    var im = new Image();
+    imgCache[src] = im;
+    im.onload = function () { done(im); };
+    im.src = src;
+  }
+
+  /* Щербатий контур отвору. Прямокутник із рівними кутами читається
+     наліпкою; камінь ріжеться уступами, і кожен край має свій дрібний
+     скол. Seeded — стіна щоразу та сама. */
+  function chipPath(g, x, y, w, h, seed, bite) {
+    var per = 2 * (w + h), step = Math.max(7, Math.min(16, per / 26));
+    var pts = [], t, i, n, px, py, d;
+    n = Math.max(12, Math.round(per / step));
+    for (i = 0; i < n; i++) {
+      t = (i / n) * per;
+      if (t < w) { px = x + t; py = y; d = 1; }
+      else if (t < w + h) { px = x + w; py = y + (t - w); d = 2; }
+      else if (t < w + h + w) { px = x + w - (t - w - h); py = y + h; d = 3; }
+      else { px = x; py = y + h - (t - w - h - w); d = 4; }
+      var j = (seeded(seed * 31 + i) - 0.5) * bite;
+      if (d === 1) py += j; else if (d === 3) py -= j;
+      else if (d === 2) px += j; else px -= j;
+      pts.push([px, py]);
+    }
+    g.beginPath();
+    pts.forEach(function (q, k) { if (k) g.lineTo(q[0], q[1]); else g.moveTo(q[0], q[1]); });
+    g.closePath();
+  }
+
+  function paintCarve() {
+    if (!carveEl) return;
+    var meta = ENVS[envNow];
+    var W = Math.round(carveEl.clientWidth), H = Math.round(carveEl.clientHeight);
+    if (!W || !H) return;
+    /* Полотно завбільшки з кімнату, а кімната — 132% кадру. На
+       ретині це вчетверо більше пікселів, ніж треба стіні, тому
+       щільність обмежена: різниці не видно, а пам'ять і час малювання
+       ростуть квадратом. */
+    var dpr = Math.min(1.5, window.devicePixelRatio || 1);
+    if (carveEl.width !== Math.round(W * dpr)) {
+      carveEl.width = Math.round(W * dpr);
+      carveEl.height = Math.round(H * dpr);
+    }
+    var g = carveEl.getContext("2d");
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, W, H);
+    if (!meta || (meta.seats && meta.seats.length)) return;
+
+    var f = envFit();
+    if (!f) return;
+    var dark = darkNow();
+    var lc = rgbOf("--paper-lit"), sd = shadeOf(dark), pc = rgbOf("--paper");
+    var ic = rgbOf("--ink-value");
+
+    function tex(src, col, alpha, cb) {
+      img(src, function (im) {
+        var t = document.createElement("canvas");
+        t.width = Math.max(1, Math.round(f.iw));
+        t.height = Math.max(1, Math.round(f.ih));
+        var tg = t.getContext("2d");
+        tg.drawImage(im, 0, 0, t.width, t.height);
+        tg.globalCompositeOperation = "source-in";
+        tg.fillStyle = rgba(col, 1);
+        tg.fillRect(0, 0, t.width, t.height);
+        g.globalAlpha = alpha;
+        g.drawImage(t, f.ox, f.oy);
+        g.globalAlpha = 1;
+        cb && cb();
+      });
+    }
+
+    /* Матеріал. У світлій темі одна щільність туші і є стіна. У темній
+       двоканально: тіло каменю світліше за ґрунт, тінь — найтемнішим
+       тоном; інакше маска дає негатив, у якому отвори світяться. */
+    function material(after) {
+      if (dark) {
+        tex("assets/" + meta.body, lc, 0.62, function () {
+          tex(meta.tex, sd, 0.9, after);
+        });
+      } else {
+        tex(meta.tex, ic, 0.9, after);
+      }
+    }
+
+    material(function () { openings(g, dark, lc, sd, pc); });
+  }
+
+  /* Отвори вибиваються з готового матеріалу і одразу отримують нутро. */
+  function openings(g, dark, lc, sd, pc) {
+    caseEls.forEach(function (el, k) {
+      var x = parseFloat(el.style.left), y = parseFloat(el.style.top);
+      var w = el.offsetWidth, h = el.offsetHeight;
+      if (!w || !h) return;
+      var depth = parseFloat(el.style.getPropertyValue("--depth")) || 0.7;
+      var seed = Number(el.dataset.case) * 13 + k;
+      var bite = Math.max(1.2, Math.min(4.5, w * 0.03));
+
+      /* 1. МАТЕРІАЛ ЗАКІНЧУЄТЬСЯ. */
+      g.save();
+      g.globalCompositeOperation = "destination-out";
+      chipPath(g, x, y, w, h, seed, bite);
+      g.fill();
+      g.restore();
+
+      /* 2. Задня стінка: темніша згори, бо на неї падає тінь верхньої
+         губи, і тим темніша, чим глибше врізано. */
+      chipPath(g, x, y, w, h, seed, bite);
+      g.save();
+      g.clip();
+      var back = g.createLinearGradient(0, y, 0, y + h);
+      back.addColorStop(0, rgba(sd, 0.66 + depth * 0.22));
+      back.addColorStop(0.55, rgba(sd, 0.42 + depth * 0.2));
+      back.addColorStop(1, rgba(sd, 0.3 + depth * 0.16));
+      g.fillStyle = back;
+      g.fillRect(x, y, w, h);
+
+      /* 3. УКОСИ — товщина стіни. Світло згори-праворуч: лівий укіс і
+         дно ловлять його, верхній і правий лишаються в тіні. Малюються
+         трапеціями від краю отвору до внутрішнього прямокутника — це і
+         є перспектива коробки, тільки чесна, без точки сходу. */
+      var t = Number(el.dataset.cut) ||
+        Math.max(3, Math.min(22, Math.min(w, h) * (0.10 + depth * 0.10)));
+      var ix = x + t, iy = y + t, iw = w - t * 2, ih = h - t * 2;
+      function face(pts, col, a) {
+        g.fillStyle = rgba(col, a);
+        g.beginPath();
+        pts.forEach(function (q, i) { if (i) g.lineTo(q[0], q[1]); else g.moveTo(q[0], q[1]); });
+        g.closePath();
+        g.fill();
+      }
+      face([[x, y], [x + w, y], [ix + iw, iy], [ix, iy]], sd, 0.5);              /* верх — тінь */
+      face([[x + w, y], [x + w, y + h], [ix + iw, iy + ih], [ix + iw, iy]], sd, 0.3); /* правий */
+      /* У темряві виріз читається не тінню, а СВІТЛОМ на укосі: тінь
+         там нічим не відрізняється від ґрунту, бо ґрунт і сам темний.
+         Тому освітлені грані в темній темі гучніші, а не тихіші. */
+      face([[x, y], [ix, iy], [ix, iy + ih], [x, y + h]], lc, dark ? 0.3 : 0.3);
+      face([[x, y + h], [ix, iy + ih], [ix + iw, iy + ih], [x + w, y + h]],
+           lc, dark ? 0.4 : 0.42);
+      g.restore();
+
+      /* 4. ГУБА. Передній край різу: знизу і праворуч він ловить
+         світло, згори і ліворуч — темніє. Одна лінія в піксель тут не
+         годиться: край сколотий, отже і лінія йде тим самим щербатим
+         контуром. */
+      g.save();
+      g.lineJoin = "round";
+      chipPath(g, x - 0.5, y - 0.5, w + 1, h + 1, seed, bite);
+      g.strokeStyle = rgba(sd, 0.32);
+      g.lineWidth = 1.2;
+      g.stroke();
+      chipPath(g, x, y + 1.4, w, h, seed + 7, bite * 0.7);
+      g.strokeStyle = rgba(lc, dark ? 0.42 : 0.5);
+      g.lineWidth = 1;
+      g.stroke();
+      g.restore();
+    });
+  }
 
   /* ---------- туш на стіні ---------- */
   var wallEl = document.querySelector(".wall");
@@ -3284,6 +3510,7 @@
     paintWallInk();
     paintScene();
     paintGrain();
+    paintCarve();
   }
 
   GROUNDS.forEach(function (g) {
@@ -3402,6 +3629,7 @@
     paintGrain();
     paintWallInk();
     paintScene();
+    paintCarve();
     /* Вага пера — частина геометрії, а не кольору: у темряві лінія
        товща. Отже, зі зміною теми стіну треба перекреслити, а не
        перефарбувати. Стан (де ми і що вибрано) відновлюємо самі —
