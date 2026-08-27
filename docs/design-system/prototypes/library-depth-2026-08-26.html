@@ -259,9 +259,9 @@
     mix-blend-mode: multiply;
   }
   :root.mode-dark .grain,
-  :root[data-theme="dark"]:not(.mode-light) .grain { mix-blend-mode: screen; opacity: 0.14; }
+  :root[data-theme="dark"]:not(.mode-light) .grain { mix-blend-mode: screen; opacity: 0.07; }
   @media (prefers-color-scheme: dark) {
-    :root:not(.mode-light):not([data-theme="light"]) .grain { mix-blend-mode: screen; opacity: 0.14; }
+    :root:not(.mode-light):not([data-theme="light"]) .grain { mix-blend-mode: screen; opacity: 0.07; }
   }
 
   /* ---------- стіна, ніші, книги ----------
@@ -293,9 +293,9 @@
     opacity: 0.9;
   }
   :root.mode-dark .scene,
-  :root[data-theme="dark"]:not(.mode-light) .scene { mix-blend-mode: screen; opacity: 0.5; }
+  :root[data-theme="dark"]:not(.mode-light) .scene { mix-blend-mode: screen; opacity: 0.32; }
   @media (prefers-color-scheme: dark) {
-    :root:not(.mode-light):not([data-theme="light"]) .scene { mix-blend-mode: screen; opacity: 0.5; }
+    :root:not(.mode-light):not([data-theme="light"]) .scene { mix-blend-mode: screen; opacity: 0.32; }
   }
 
   /* Мальований фон — растр замість канваса. Файл несе тільки альфу
@@ -330,9 +330,9 @@
   :root[data-scene-tex="on"] .sceneTex { opacity: 0.62; }
   :root[data-scene-tex="on"] .scene { opacity: 0; }
   :root.mode-dark[data-scene-tex="on"] .sceneTex,
-  :root[data-theme="dark"]:not(.mode-light)[data-scene-tex="on"] .sceneTex { opacity: 0.34; }
+  :root[data-theme="dark"]:not(.mode-light)[data-scene-tex="on"] .sceneTex { opacity: 0.22; }
   @media (prefers-color-scheme: dark) {
-    :root:not(.mode-light):not([data-theme="light"])[data-scene-tex="on"] .sceneTex { opacity: 0.34; }
+    :root:not(.mode-light):not([data-theme="light"])[data-scene-tex="on"] .sceneTex { opacity: 0.22; }
   }
 
   /* Віньєтка туші по краях кадру — глибина простору, а не рамка. */
@@ -388,7 +388,7 @@
      указка перед нею. */
   .ray {
     position: absolute;
-    height: 18px;
+    width: 18px;
     transform: translateZ(-229px);
     pointer-events: none;
     color: var(--ray-hi);
@@ -396,7 +396,7 @@
     animation: rayBreath 9s ease-in-out infinite alternate;
     transition: top 2000ms cubic-bezier(0.16, 0.5, 0.2, 1),
                 left 2000ms cubic-bezier(0.16, 0.5, 0.2, 1),
-                width 2000ms cubic-bezier(0.16, 0.5, 0.2, 1);
+                height 2000ms cubic-bezier(0.16, 0.5, 0.2, 1);
   }
   .ray svg { width: 100%; height: 100%; display: block; overflow: visible; }
   .ray--b { animation-delay: -4.5s; }
@@ -1002,7 +1002,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 21 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 23 · 27.08</span>
 
 <div class="draft" aria-hidden="true">
   <span class="draft__margin draft__margin--l"></span>
@@ -1101,12 +1101,12 @@
   </div>
 
   <div class="console__group">
-    <span class="console__legend">Навантаження · праць у категорії</span>
+    <span class="console__legend">Навантаження · праць у каталозі</span>
     <div class="chips" id="loads">
       <button class="chip" data-load="0" type="button" aria-pressed="true">як є</button>
-      <button class="chip" data-load="8" type="button" aria-pressed="false">8</button>
-      <button class="chip" data-load="24" type="button" aria-pressed="false">24</button>
-      <button class="chip" data-load="90" type="button" aria-pressed="false">90</button>
+      <button class="chip" data-load="30" type="button" aria-pressed="false">30</button>
+      <button class="chip" data-load="100" type="button" aria-pressed="false">100</button>
+      <button class="chip" data-load="300" type="button" aria-pressed="false">300</button>
     </div>
   </div>
 
@@ -1164,21 +1164,42 @@
   ];
 
   /* НАВАНТАЖЕННЯ. Каталог у прототипі маленький, а стіна має тримати
-     і сотню праць. Множник розмножує наявні книги, щоб розкладку
-     можна було побачити під навантаженням, а не уявити. */
+     і сотню праць. Множник задає ЗАГАЛЬНУ кількість праць і розкидає
+     її по категоріях — бо сто курсів у трьох категоріях не буває:
+     разом із каталогом росте і кількість розділів, і вони самі різні,
+     від двох праць до пари десятків. */
   var CASES = BASE_CASES;
-  function setLoad(n) {
-    CASES = !n ? BASE_CASES : BASE_CASES.map(function (c) {
-      var out = [], i, src;
-      for (i = 0; i < n; i++) {
-        src = c.books[i % c.books.length];
-        out.push({
-          slug: src.slug, title: src.title + " " + (i + 1), note: src.note,
-          state: src.state, held: src.held && i % 3 !== 1, lead: src.lead, body: src.body
+  var ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
+    "XI", "XII", "XIII", "XIV", "XV", "XVI"];
+  var TOPICS = ["Протоколи", "Практики", "Матеріали", "Дихання", "Рух",
+    "Сон", "Харчування", "Трави", "Спокій", "Розмови", "Записи", "Цикли",
+    "Вода", "Тиша", "Ранок", "Вечір"];
+
+  function setLoad(total) {
+    if (!total) { CASES = BASE_CASES; return; }
+    var groups = Math.max(3, Math.min(ROMAN.length, Math.round(total / 10)));
+    var wts = [], sum = 0, i;
+    for (i = 0; i < groups; i++) {
+      /* Розкид навмисно широкий: розділ на дві праці і розділ на два
+         десятки — це нормальна бібліотека, а не помилка даних. */
+      wts.push(0.25 + Math.pow(seeded(i * 13 + 5), 1.8) * 2.4);
+      sum += wts[i];
+    }
+    CASES = [];
+    for (i = 0; i < groups; i++) {
+      var n = Math.max(2, Math.round(total * wts[i] / sum));
+      var src = BASE_CASES[i % BASE_CASES.length];
+      var books = [], j, b;
+      for (j = 0; j < n; j++) {
+        b = src.books[j % src.books.length];
+        books.push({
+          slug: b.slug, title: b.title + " " + (j + 1), note: b.note,
+          state: b.state, held: b.held && (i + j) % 3 !== 1,
+          lead: b.lead, body: b.body
         });
       }
-      return { label: c.label, books: out };
-    });
+      CASES.push({ label: ROMAN[i] + " · " + TOPICS[i], books: books });
+    }
   }
 
 
@@ -1401,8 +1422,10 @@
       CASES.forEach(function (data, ci) {
         var n = data.books.length, i = 0, k = 0, take;
         while (i < n) {
-          /* Секції нерівні: стіну кладе рука, а не таблиця. */
-          take = step.per + Math.round((seeded(ci * 17 + k) - 0.5) * 3);
+          /* Секції РІЗНОГО розміру: на дві книги і на десять. Розкид
+             ±1 давав стіну з однакових комірок — це вже не кладка, а
+             сітка. Множник гуляє від третини до півтори норми. */
+          take = Math.round(step.per * (0.34 + seeded(ci * 17 + k) * 1.2));
           take = Math.max(2, Math.min(take, n - i));
           if (n - i - take === 1) take += 1;
           list.push({
@@ -1420,6 +1443,14 @@
        перебирає смугу на кілька відсотків, не переноситься, а трохи
        стискається — інакше секція їде на власний ряд через десяток
        пікселів і стіна розповзається вниз. */
+    /* Сходинка ряду. Кілька окремих полиць, вирівняних по одній
+       лінії, читаються однією довгою полицею, розрізаною навпіл; щоб
+       вони лишились окремими, ряд іде сходинкою. Формула одна на
+       пакування і на розстановку — інакше рядам не вистачить висоти. */
+    function stepFor(li, hh) {
+      return Math.round(hh * (0.13 + seeded(li * 9 + 4) * 0.14));
+    }
+
     function pack(secs) {
       var lines = [], line = [], lineW = 0, total = 0;
       function flush() {
@@ -1430,7 +1461,7 @@
           lineW = secs.bandW;
         }
         lines.push({ items: line, w: lineW });
-        total += line[0].h + GAP_Y;
+        total += line[0].h + (line.length - 1) * stepFor(lines.length - 1, line[0].h) + GAP_Y;
         line = []; lineW = 0;
       }
       secs.bandW = band.w;
@@ -1485,14 +1516,16 @@
       var slide = (seeded(li * 13 + 3) - 0.5) * Math.min(46, band.w * 0.06);
       var x = Math.max(band.x,
         Math.min(band.x + (band.w - ln.w) / 2 + slide, band.x + band.w - ln.w));
-      ln.items.forEach(function (it) {
+      var stp = stepFor(li, ln.items[0].h);
+      var down = seeded(li * 11 + 7) > 0.5;
+      ln.items.forEach(function (it, i) {
         it.x = x;
-        it.y = cursorY + (seeded(order * 7 + 11) - 0.5) * Math.min(GAP_Y * 1.4, it.h * 0.22);
+        it.y = cursorY + stp * (down ? i : ln.items.length - 1 - i);
         it.z = -230 + (order % 4) * 28;
         x += it.w + GAP_X;
         order += 1;
       });
-      cursorY += ln.items[0].h + GAP_Y;
+      cursorY += ln.items[0].h + (ln.items.length - 1) * stp + GAP_Y;
     });
 
     secs.list.forEach(function (sec, order) {
@@ -1621,15 +1654,14 @@
     markArmature(openCase < 0 ? 1 : openCase);
   }
 
-  /* Штрих пера завдовжки в промінь: тонкий на далекому кінці, важчий
-     біля виїмки, з ледь помітним прогином і одним-двома підйомами
-     пензля. Той самий профіль, що й у ліній ніші, — інакше промінь
-     читався б надрукованим поверх мальованого. */
-  function rayInk(len, toRight, seed) {
-    var H = 18, mid = H / 2;
+  /* Штрих пера: тонкий на далекому кінці, важчий біля виїмки, з ледь
+     помітним прогином і одним-двома підйомами пензля. Той самий
+     профіль, що й у ліній ніші, — інакше позначка читалася б
+     надрукованою поверх мальованого. */
+  function rayInk(len, toNiche, seed) {
+    var W = 18, mid = W / 2;
     function jr(n) { return seeded(seed * 37 + n); }
     var bow = (jr(1) * 2 - 1) * Math.min(3.4, len * 0.02);
-    /* Підйоми пензля: розриви, через які лінія не буває суцільною. */
     var lifts = [];
     var g0 = 0.24 + jr(2) * 0.2;
     lifts.push([g0, g0 + 0.03 + jr(3) * 0.05]);
@@ -1646,33 +1678,35 @@
     var N = 46, out = "", run = [], i, t, x, y, wdt;
     function flush() {
       if (run.length < 2) { run = []; return; }
-      var top = [], bot = [], k;
+      var left = [], right = [], k;
       for (k = 0; k < run.length; k++) {
-        top.push(run[k][0].toFixed(1) + "," + (run[k][1] - run[k][2] / 2).toFixed(1));
-        bot.push(run[k][0].toFixed(1) + "," + (run[k][1] + run[k][2] / 2).toFixed(1));
+        left.push((run[k][0] - run[k][2] / 2).toFixed(1) + "," + run[k][1].toFixed(1));
+        right.push((run[k][0] + run[k][2] / 2).toFixed(1) + "," + run[k][1].toFixed(1));
       }
-      out += '<polygon points="' + top.join(" ") + " " + bot.reverse().join(" ") +
+      out += '<polygon points="' + left.join(" ") + " " + right.reverse().join(" ") +
         '" fill="currentColor"/>';
       run = [];
     }
     for (i = 0; i <= N; i++) {
       t = i / N;
       if (inLift(t)) { flush(); continue; }
-      x = toRight ? len * t : len * (1 - t);
-      y = mid + bow * Math.sin(Math.PI * t) + (jr(i + 40) - 0.5) * 0.7;
-      /* до виїмки перо тисне сильніше, від неї — сходить нанівець */
+      /* t = 0 — далекий кінець, t = 1 — біля виїмки */
+      y = toNiche ? len * t : len * (1 - t);
+      x = mid + bow * Math.sin(Math.PI * t) + (jr(i + 40) - 0.5) * 0.7;
       wdt = (0.35 + 1.45 * t) * (0.72 + jr(i + 90) * 0.56);
       if (i === 0) wdt = 0.22;
       run.push([x, y, wdt]);
     }
     flush();
-    return '<svg viewBox="0 0 ' + Math.round(len) + " " + H +
+    return '<svg viewBox="0 0 ' + W + " " + Math.round(len) +
       '" preserveAspectRatio="none" aria-hidden="true">' + out + "</svg>";
   }
 
-  /* ДВА штрихи сходяться на активній категорії — зліва і справа, різної
-     довжини і не на одній висоті. Один рівний промінь був указкою; два
-     нерівні штрихи — це те, як розмічають від руки. */
+  /* ДВА ВЕРТИКАЛЬНІ штрихи — згори і знизу активної категорії, впоперек
+     ряду. Горизонтальні йшли вздовж полиці й читалися ще однією її
+     лінією; вертикальний штрих перетинає ряд і тому видно, що це
+     позначка, а не частина креслення. Різної довжини і не по одній
+     осі — розмітка від руки, а не приціл. */
   function markArmature(ci) {
     var mine = sectionsOf(ci);
     var el = mine[0];
@@ -1683,32 +1717,32 @@
       x0 = Math.min(x0, l); y0 = Math.min(y0, t);
       x1 = Math.max(x1, l + n.offsetWidth); y1 = Math.max(y1, t + n.offsetHeight);
     });
-    var midY = y0 + (y1 - y0) * 0.46;
 
     /* Штрихи лежать на стіні, позаду виїмок, тож довжина в них не
        довільна: до сусіднього отвору. Забігши за нього, штрих просто
-       зникає — і селект перестає читатися. Тому міряємо вільний
-       проміжок і вкладаємось у нього. */
-    var freeL = x0, freeR = window.innerWidth * 1.28 - x1;
+       зникає — і селект перестає читатися. */
+    var freeUp = y0, freeDn = window.innerHeight * 1.28 - y1;
     caseEls.forEach(function (n) {
       if (Number(n.dataset.case) === ci) return;
       var l = parseFloat(n.style.left), t = parseFloat(n.style.top);
       var r = l + n.offsetWidth, bm = t + n.offsetHeight;
-      if (midY < t - 6 || midY > bm + 6) return;
-      if (r <= x0) freeL = Math.min(freeL, x0 - r);
-      if (l >= x1) freeR = Math.min(freeR, l - x1);
+      if (r < x0 - 6 || l > x1 + 6) return;
+      if (bm <= y0) freeUp = Math.min(freeUp, y0 - bm);
+      if (t >= y1) freeDn = Math.min(freeDn, t - y1);
     });
 
-    var la = Math.max(30, Math.min(96 + seeded(ci + 11) * 54, freeL - 16));
-    rayA.style.left = Math.round(x0 - la) + "px";
-    rayA.style.width = Math.round(la - 10) + "px";
-    rayA.style.top = Math.round(midY - 9) + "px";
-    rayA.innerHTML = rayInk(la - 10, true, ci + 3);
+    var cx = x0 + (x1 - x0) * 0.36;
+    var la = Math.max(24, Math.min(74 + seeded(ci + 11) * 40, freeUp - 14));
+    rayA.style.left = Math.round(cx - 9) + "px";
+    rayA.style.top = Math.round(y0 - la - 6) + "px";
+    rayA.style.height = Math.round(la) + "px";
+    rayA.innerHTML = rayInk(la, true, ci + 3);
 
-    var lb = Math.max(24, Math.min(58 + seeded(ci + 23) * 42, freeR - 16));
-    rayB.style.left = Math.round(x1 + 10) + "px";
-    rayB.style.width = Math.round(lb) + "px";
-    rayB.style.top = Math.round(midY + 13 + seeded(ci + 31) * 10) + "px";
+    var cx2 = x0 + (x1 - x0) * (0.62 + seeded(ci + 31) * 0.16);
+    var lb = Math.max(20, Math.min(46 + seeded(ci + 23) * 34, freeDn - 14));
+    rayB.style.left = Math.round(cx2 - 9) + "px";
+    rayB.style.top = Math.round(y1 + 6) + "px";
+    rayB.style.height = Math.round(lb) + "px";
     rayB.innerHTML = rayInk(lb, false, ci + 9);
   }
 
@@ -1847,11 +1881,15 @@
      не можуть працювати одночасно: transition на 1100 мс, який
      переписується щокадру, дає не плавність, а кашу. На час наїзду
      петля паралаксу спить. */
-  var baseX = 0, baseY = 0, baseZ = 0;
+  /* Загальний план стоїть далі від стіни: стіна має читатися стіною,
+     а не полицею перед носом. */
+  var HALL_Z = -170;
+  var baseX = 0, baseY = 0, baseZ = HALL_Z;
   var tx = 0, ty = 0, cx = 0, cy = 0;
   var parallaxOn = true;
   var easing = false;
   var easeTimer = null;
+  var frameTimer = null;
 
   function apply() {
     room.style.setProperty("--px", (baseX + cx).toFixed(1) + "px");
@@ -1889,8 +1927,10 @@
 
   window.addEventListener("pointermove", function (e) {
     if (!parallaxOn || reduced.matches) { tx = 0; ty = 0; return; }
-    tx = ((e.clientX / window.innerWidth) - 0.5) * -62;
-    ty = ((e.clientY / window.innerHeight) - 0.5) * -36;
+    /* Розмах паралаксу зменшено: на 62 пікселях крайні секції стіни
+       виїжджали за кадр — рух коштував дорожче, ніж давав. */
+    tx = ((e.clientX / window.innerWidth) - 0.5) * -30;
+    ty = ((e.clientY / window.innerHeight) - 0.5) * -18;
   }, { passive: true });
 
   document.getElementById("parallax").addEventListener("click", function () {
@@ -1949,6 +1989,7 @@
       tY = h * 0.30;
     }
     camera(tX + ox - ecx, tY + oy - ecy, 210);
+    frameCase(ci, 0);
 
     eyebrowEl.textContent = "Шафа " + CASES[ci].label;
     titleEl.textContent = CASES[ci].label.replace(/^[IV]+ · /, "");
@@ -1958,7 +1999,50 @@
     play("step");
   }
 
+  /* Перспектива і поворот стіни роблять із будь-якої розрахованої
+     позиції наближення: де полиця опиниться НА ЕКРАНІ, з формули не
+     видно. Тому після наїзду міряємо фактичний прямокутник категорії і
+     доводимо камеру — зсуваємо, а якщо полиця в кадр не влазить, ще й
+     відводимо назад. Два проходи: далі поправка вже менша за піксель. */
+  function frameCase(ci, pass) {
+    window.clearTimeout(frameTimer);
+    frameTimer = window.setTimeout(function () {
+      if (view !== "case" || openCase !== ci) return;
+      var mine = sectionsOf(ci);
+      if (!mine.length) return;
+      var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, k = 1;
+      mine.forEach(function (n) {
+        var r = n.getBoundingClientRect();
+        x0 = Math.min(x0, r.left); y0 = Math.min(y0, r.top);
+        x1 = Math.max(x1, r.right); y1 = Math.max(y1, r.bottom);
+        k = r.width / (n.offsetWidth || 1);
+      });
+      var vw = window.innerWidth, vh = window.innerHeight;
+      var narrow = vw <= 900;
+      /* Куди має стати центр: на широкому — у правій половині, під
+         текстову колонку ліворуч; на вузькому — у верхній смузі. */
+      var wantX = narrow ? vw * 0.5 : vw * 0.72;
+      var wantY = narrow ? vh * 0.24 : vh * 0.46;
+      var maxW = (narrow ? vw * 0.88 : vw * 0.44);
+      var maxH = (narrow ? vh * 0.40 : vh * 0.78);
+
+      /* Кадр підганяється в обидва боки: велика категорія відводить
+         камеру назад, маленька — підтягує вперед. Інакше вибір розділу
+         на дві праці не читався як наближення взагалі: та сама
+         виїмка, тільки з позначкою. */
+      var fill = Math.min(maxW / Math.max(1, x1 - x0), maxH / Math.max(1, y1 - y0)) * 0.62;
+      var dz = Math.max(-460, Math.min(380, (fill - 1) * 760));
+      if (Math.abs(dz) < 12) dz = 0;
+      var dx = (wantX - (x0 + x1) / 2) / (k || 1);
+      var dy = (wantY - (y0 + y1) / 2) / (k || 1);
+      if (Math.abs(dx) < 2 && Math.abs(dy) < 2 && !dz) return;
+      camera(baseX + dx, baseY + dy, baseZ + dz);
+      if (pass < 1) frameCase(ci, pass + 1);
+    }, 2400);
+  }
+
   function toHall() {
+    window.clearTimeout(frameTimer);
     tapArmed = null;
     view = "hall";
     openCase = -1;
@@ -1969,7 +2053,7 @@
       el.removeAttribute("data-hot");
     });
     markArmature(1);
-    camera(0, 0, 0);
+    camera(0, 0, HALL_Z);
     eyebrowEl.textContent = "Прототип середовища · 26.08.2026";
     titleEl.textContent = "Місце усвідомленої присутності. Тут тихо";
     standEl.textContent = "У стіні три ніші — по одній на кожну категорію, і в кожній рівно стільки праць, скільки в ній курсів. Підійди до ніші, торкнись корінця — книга розгорнеться.";
@@ -2033,6 +2117,18 @@
      сеансі. Плями, що торкаються краю, домальовуються з обгортанням,
      тому шов тайла невидимий. Викликається з setTheme: колір туші
      належить темі. */
+  /* Та сама альфа читається в темряві вдвічі гучніше: світле по
+     темному лізе вперед, темне по світлому втирається в папір. Тому
+     всі фактури (стіна, зерно, пейзаж) у темній темі йдуть тихіше —
+     інакше стіна не матова, а рябить. */
+  function darkNow() {
+    var hex = getComputedStyle(document.documentElement)
+      .getPropertyValue("--paper").trim();
+    var n = parseInt(hex.slice(1), 16);
+    if (isNaN(n)) return false;
+    return (((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114) < 128;
+  }
+
   function paintWallInk() {
     if (!wallEl) return;
     var cs = getComputedStyle(document.documentElement);
@@ -2040,6 +2136,7 @@
     var n = parseInt(hex.slice(1), 16);
     if (isNaN(n)) return;
     var ir = (n >> 16) & 255, ig = (n >> 8) & 255, ib = n & 255;
+    var quiet = darkNow() ? 0.42 : 1;
     var size = 560;
     var c = document.createElement("canvas");
     c.width = c.height = size;
@@ -2075,7 +2172,8 @@
       for (i = 0; i < 14; i++) {
         x = (x + (seeded(blob * 97 + i) - 0.5) * r * 0.5 + size) % size;
         y = (y + (seeded(blob * 89 + i) - 0.5) * r * 0.5 + size) % size;
-        soft(x, y, r * (0.5 + seeded(blob * 71 + i) * 0.6), 0.0045 + seeded(blob * 61 + i) * 0.005);
+        soft(x, y, r * (0.5 + seeded(blob * 71 + i) * 0.6),
+          (0.0045 + seeded(blob * 61 + i) * 0.005) * quiet);
       }
     }
     /* волокна паперу — тонші за розмиви, без блюру */
@@ -2087,7 +2185,8 @@
       fy = seeded(k * 7 + 501) * size;
       ang = seeded(k * 7 + 502) * Math.PI;
       ln = 6 + seeded(k * 7 + 503) * 20;
-      g.strokeStyle = "rgba(" + ir + "," + ig + "," + ib + "," + (0.012 + seeded(k + 7) * 0.02).toFixed(3) + ")";
+      g.strokeStyle = "rgba(" + ir + "," + ig + "," + ib + "," +
+        ((0.012 + seeded(k + 7) * 0.02) * quiet).toFixed(3) + ")";
       g.beginPath();
       g.moveTo(fx, fy);
       g.lineTo(fx + Math.cos(ang) * ln, fy + Math.sin(ang) * ln);
@@ -2555,7 +2654,7 @@
     paintGrain();
     paintInks();
     renderList();
-    if (view === "case") enterCase(openCase); else camera(0, 0, 0);
+    if (view === "case") enterCase(openCase); else camera(0, 0, HALL_Z);
   }
 
   /* setTheme викликається ЗАВЖДИ, навіть для «системної»: інлайн-фарби
