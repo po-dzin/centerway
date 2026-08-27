@@ -61,6 +61,8 @@ export const CW_ICON_NAMES = [
   "code",
   "bold",
   "italic",
+  "heading",
+  "paragraph",
   "vata",
   "pitta",
   "kapha",

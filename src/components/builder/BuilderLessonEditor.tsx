@@ -31,7 +31,7 @@ import {
 } from "@/lms-core";
 import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
 import { BuilderContents } from "./BuilderContents";
-import { BuilderMenu } from "./BuilderMenu";
+import { BuilderMenu, type MenuItem } from "./BuilderMenu";
 import { FieldInput } from "./BuilderFields";
 import { BuilderInlineEditor, type InternalReferenceOption, type SlashCommand } from "./BuilderInlineEditor";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
@@ -1076,6 +1076,30 @@ function BlockEditor({
 
   const row: DragRef = { list: "block", group: 0, index };
 
+  /* The block's own four, as data — a rail draws them for every type except
+     rich text, which hands them to its paragraphs instead. Labels say «блок»
+     out loud here: inside a node menu they sit under items about one paragraph,
+     and «Видалити» / «Видалити блок» have to be tellable apart on sight. */
+  const blockActions: MenuItem[] = [
+    {
+      label: "Властивості блоку",
+      icon: "settings",
+      hint: "Налаштування блоку в панелі праворуч",
+      onSelect: onProperties,
+    },
+    { label: "Підняти блок вище", icon: "arrow-up", disabled: index === 0, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index - 1)) },
+    { label: "Опустити блок нижче", icon: "arrow-down", disabled: index === total - 1, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index + 1)) },
+    {
+      label: "Видалити блок",
+      icon: "trash",
+      danger: true,
+      // A lesson with no blocks fails `validateCourse`, and the author would
+      // meet that as a save error rather than a disabled item.
+      disabled: total === 1,
+      onSelect: () => onBlocks((blocks) => blocks.filter((_, position) => position !== index)),
+    },
+  ];
+
   return (
     <section
       id={`block-${block.id}`}
@@ -1098,37 +1122,34 @@ function BlockEditor({
           sat in pushed the content down by its own height on every block.
           What is left is the grip and the menu, in the margin, asked for by
           pointing at the block or selecting it. */}
-      <div className={styles.blockRail} aria-hidden={undefined}>
-        <BuilderGrip drag={drag} row={row} label={BLOCK_TYPE_LABELS[block.type]} />
-        <BuilderMenu
-          label={`Дії з блоком «${BLOCK_TYPE_LABELS[block.type]}»`}
-          items={[
-            {
-              label: "Властивості блоку",
-              icon: "settings" as const,
-              hint: "Налаштування блоку в панелі праворуч",
-              onSelect: onProperties,
-            },
-            { label: "Підняти вище", icon: "arrow-up" as const, disabled: index === 0, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index - 1)) },
-            { label: "Опустити нижче", icon: "arrow-down" as const, disabled: index === total - 1, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index + 1)) },
-            {
-              label: "Видалити блок",
-              icon: "trash",
-              danger: true,
-              // A lesson with no blocks fails `validateCourse`, and the author
-              // would meet that as a save error rather than a disabled item.
-              disabled: total === 1,
-              onSelect: () => onBlocks((blocks) => blocks.filter((_, position) => position !== index)),
-            },
-          ]}
-        />
-      </div>
+      {/* ONE HANDLE PER PARAGRAPH, so prose has one rail and not two.
+
+          A rich-text block CONTAINS the paragraphs, so it used to draw its own
+          grip and menu in the outer gutter while every node inside drew another
+          pair one indent in. Three «…» could be on screen at once — the block's,
+          the node holding the caret, and the node under the pointer — all the
+          same glyph at two indents, and nothing said which one would delete a
+          sentence and which one the whole block. The author has to guess, and a
+          menu you have to guess at is worse than a longer one.
+
+          The block's own actions are handed to the nodes instead and open as a
+          second group in the node menu, under a rule. THE COST, STATED: a
+          rich-text block can no longer be dragged as a whole — its move is the
+          menu's «Підняти блок вище / Опустити блок нижче». Nodes still drag
+          within the block, and every other block type keeps its own rail. */}
+      {block.type === "rich_text" ? null : (
+        <div className={styles.blockRail} aria-hidden={undefined}>
+          <BuilderGrip drag={drag} row={row} label={BLOCK_TYPE_LABELS[block.type]} />
+          <BuilderMenu label={`Дії з блоком «${BLOCK_TYPE_LABELS[block.type]}»`} items={blockActions} />
+        </div>
+      )}
 
       {block.type === "rich_text" ? (
         <RichTextEditor
           block={block}
           fresh={fresh}
           blockCommands={BLOCK_COMMANDS}
+          blockActions={blockActions}
           referenceOptions={referenceOptions}
           /* A block type chosen from inside the prose adds a NEW block after
              this one rather than converting it. Converting would throw away
@@ -1206,6 +1227,16 @@ const NODE_LABELS: Record<RichTextNode["kind"], string> = {
   h3: "Підзаголовок",
   ul: "Список",
   ol: "Нумерований список",
+};
+
+/* One glyph per kind, and `list`/`list-ordered` are deliberately the SAME two
+   the floating bar draws for `ul`/`ol` — the bar and the menu run the same
+   command, so they cannot look like two different offers. */
+const NODE_ICONS: Record<RichTextNode["kind"], MenuItem["icon"]> = {
+  p: "paragraph",
+  h3: "heading",
+  ul: "list",
+  ol: "list-ordered",
 };
 
 function internalReferenceOptions(
@@ -1308,6 +1339,7 @@ function RichTextEditor({
   block,
   fresh,
   blockCommands,
+  blockActions,
   referenceOptions,
   onBlockCommand,
   onChange,
@@ -1316,6 +1348,13 @@ function RichTextEditor({
   fresh?: boolean;
   /** Offered in the slash menu below the node kinds — see `BlockEditor`. */
   blockCommands?: SlashCommand[];
+  /**
+   * The containing block's own actions.
+   *
+   * Prose draws no block rail of its own, so these ride along in every node's
+   * menu as a second group. See the note at the rail's call site.
+   */
+  blockActions?: MenuItem[];
   referenceOptions: InternalReferenceOption[];
   onBlockCommand?: (id: string) => void;
   onChange: (path: (string | number)[], value: unknown) => void;
@@ -1397,14 +1436,24 @@ function RichTextEditor({
               <BuilderMenu
                 label={`Дії з ${NODE_LABELS[node.kind].toLowerCase()}`}
                 items={[
+                  /* The kinds wear the same glyphs the floating bar uses for the
+                     same two commands. They were the only items in this list
+                     with no icon at all, so a menu of seven rows drew four bare
+                     labels and then three with marks — which reads as three
+                     items that matter and four that do not. */
                   ...(Object.keys(NODE_LABELS) as RichTextNode["kind"][]).map((kind) => ({
                     label: NODE_LABELS[kind],
+                    icon: NODE_ICONS[kind],
                     disabled: kind === node.kind,
                     onSelect: () => runCommand(index, kind),
                   })),
-                  { label: "Підняти вище", icon: "arrow-up" as const, disabled: index === 0, onSelect: () => setContent(moveItem(block.content, index, index - 1)) },
+                  { label: "Підняти вище", icon: "arrow-up" as const, startsGroup: true, disabled: index === 0, onSelect: () => setContent(moveItem(block.content, index, index - 1)) },
                   { label: "Опустити нижче", icon: "arrow-down" as const, disabled: index === block.content.length - 1, onSelect: () => setContent(moveItem(block.content, index, index + 1)) },
                   { label: "Видалити", icon: "trash" as const, danger: true, disabled: block.content.length === 1, onSelect: () => setContent(block.content.filter((_, position) => position !== index)) },
+                  ...(blockActions ?? []).map((action, position) => ({
+                    ...action,
+                    startsGroup: position === 0,
+                  })),
                 ]}
               />
             </div>

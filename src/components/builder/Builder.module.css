@@ -3438,7 +3438,12 @@
   color: currentColor;
 }
 
-.menuItemDanger[data-first-danger] {
+/* One rule, two reasons to draw it: the destructive tail, and a second subject
+   inside one list. Same recipe, because they are the same object — a break in a
+   list of actions — and two ways to draw it would be a second answer. */
+.menuItemDanger[data-first-danger],
+.menuItem[data-group-start],
+.menuItemDanger[data-group-start] {
   margin-block-start: var(--cw-space-2xs);
   border-block-start: 1px solid var(--builder-rule);
   border-start-start-radius: 0;
