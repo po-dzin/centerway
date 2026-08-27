@@ -136,7 +136,7 @@ export function resolveLocaleFromRequest(headers: Headers, search: URLSearchPara
   if (override) return override;
 
   const country = countryFromHeaders(headers);
-  if (country === "UA") return "ua";
+  if (country === "UA") return "uk";
 
   const byAcceptLanguage = localeFromAcceptLanguage(headers);
   if (byAcceptLanguage) return byAcceptLanguage;

@@ -59,7 +59,7 @@ export function organizationLd(): JsonLdNode {
       contactType: "customer support",
       email: BRAND.contact.email,
       telephone: BRAND.contact.phone,
-      availableLanguage: ["uk", "ru", "en"],
+      availableLanguage: ["uk", "en"],
     },
   };
 }
@@ -160,7 +160,7 @@ export function serviceLd(facts: { path: string; name: string; description: stri
     availableChannel: {
       "@type": "ServiceChannel",
       serviceUrl: url,
-      availableLanguage: ["uk", "ru"],
+      availableLanguage: ["uk", "en"],
     },
   };
 }

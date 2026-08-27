@@ -21,7 +21,7 @@
 | Participation → State/Outcome | `lms_progress_events` (lesson.started/completed/uncompleted/checklist.toggled) | ✓ как слот; документ правильно отодвигает State/Outcome в LATER |
 | **Provider** = profiles + roles | `lms_courses.author_id` + `brand: string`; RLS по строке (creator-contract §1). Профиля провайдера, credentials, tradition, верификации — нет | ✗ есть «автор» как auth.uid, нет «провайдера» как сущности |
 | Trust: verification + editorial approval + claims fields | `review_status: draft/in_review/changes_requested/approved` + `approved_by` — есть. Claims-поля (traditional / evidence-informed / medical), contraindications — нет | ~ editorial ✓, verification ✗, claims ✗ |
-| Locale UA + RU first-class | Контент: `locale IN ('uk','ru','en')`, `translationGroupId` ✓. **Но** `src/lib/i18n.ts`: `Lang = "ru" \| "en"` — UI-словарь без `uk`; `I18nProvider` default `ru` | ✗ **противоречие внутри кода**: контент uk-first, интерфейс админки ru/en. Документ этого не видит |
+| Locale UA + RU first-class | Контент: `locale IN ('uk','ru','en')`, `translationGroupId` ✓. **Но** `src/lib/i18n.ts`: `Lang = "ru" \| "en"` — UI-словарь без `uk`; `I18nProvider` default `ru` | ✗ на момент аудита. **Закрыто 2026-08-27 (§6.4): `uk \| en` везде, RU снят как локаль** |
 | WayForPay, не Fondy; provider-agnostic | `wfp.ts / paymentStart.ts / pay.ts`, Fondy в коде нет; `EntitlementSource` независим от PSP | ✓ |
 | Provider earnings ledger, payout adapter | Ничего. `orders` = платформенная выручка, нет разделения на platform/provider | ✗ отсутствует; для «NOW» это самый дорогой пропуск |
 | Provider dashboard не MVP | Но `build.centerway.net.ua` (билдер) **уже существует** и растёт (drafts, zen preview, version history, import/export, review flow) | ✗ **документ противоречит фактическому вектору разработки**: последние ~15 коммитов — билдер и ридер, т.е. creator tooling, которое документ относит в LATER |
@@ -51,7 +51,7 @@
 
 Итог: **2 из 11**. Документ прав, что это нужно проверять разработкой, но стоило бы честно записать стартовую точку.
 
-**2.4 «Language first-class» заявлено, но не проверено.** Контент-схема uk/ru/en в порядке; UI-i18n без `uk` — прямой конфликт с «UA + RU first-class». Документ ссылается на research 3A.3, но не на `src/lib/i18n.ts`.
+**2.4 «Language first-class» заявлено, но не проверено.** Контент-схема uk/ru/en в порядке; UI-i18n без `uk` — прямой конфликт с «UA + RU first-class». Документ ссылается на research 3A.3, но не на `src/lib/i18n.ts`. → Закрыто 2026-08-27: см. §6.4, локалей две (`uk | en`), словарь админки переведён.
 
 **2.5 Два источника правды по Offer.** `PRODUCTS` (константа, старые воронки, тестовая цена 1 ₴ с 2026-08-21 — **актуальна, QA-окно открыто (подтверждено 2026-08-26)**) и `lms_course_offers` (таблица, билдер). `offerCommerce.ts` решает «продавать или форма» по обоим. Документ должен назвать, какой из них становится `Offer`, иначе «Offer» в документе — третий.
 
@@ -76,7 +76,7 @@
 4. **Run → отдельная сущность** только когда появится второй cohort одного курса. До этого — `schedule` в курсе достаточно; записать как осознанное решение.
 5. **Ledger минимально:** колонки `provider_id`, `platform_share`, `provider_share` в `orders` (или view) до любого внешнего автора с продажами. Payout — вручную, как документ и говорит.
 6. **Provider как таблица** до первого guest expert: profile, credentials, tradition, verified_at/by. `author_id` остаётся FK на неё или на users.
-7. **Исправить i18n:** `Lang = "uk" | "ru" | "en"`, default `uk` на публичных поверхностях — иначе «UA first-class» ложно.
+7. ~~**Исправить i18n:** `Lang = "uk" | "ru" | "en"`~~ → сделано 2026-08-27 в виде `Lang = "uk" | "en"`, default `uk`; RU снят решением владельца (§6.4).
 8. **Один Offer:** план миграции `PRODUCTS` → `lms_course_offers` (или обратно), `CW_TEST_PRICE_1UAH` остаётся до закрытия QA-окна.
 9. **Claims-поля и contraindications** — в NEXT с конкретным местом (поле на course/experience, не на provider).
 10. Записать stress-test §12 как живую таблицу с датой прогона; сейчас 2/11.
@@ -89,7 +89,7 @@
 × Course уже переименован в Experience — нет, ядро course-центрично.
 × Builder — это internal admin tooling — нет, это отдельный домен для внешних авторов.
 × Provider существует как сущность — нет, есть author_id.
-× UI уже двуязычен uk/ru — нет, словарь интерфейса ru/en.
+× UI двуязычен uk/ru — нет: с 2026-08-27 он двуязычен uk/en, RU не существует ни на одной поверхности.
 ```
 
 ---
@@ -151,14 +151,34 @@ experience_offers      — сегодняшний lms_course_offers, FK на exp
 
 Что **не** закладывать даже слотом: Journey/State/Outcome, recommendation, payout adapter, multi-currency витрина.
 
-### 6.4 Язык: три локали везде, сразу
+### 6.4 Язык: две локали везде, сразу
 
-Принято: `uk | ru | en` для контента, платформы и админки. Текущий разрыв: `src/lib/i18n.ts` `Lang = "ru" | "en"`, `I18nProvider` default `ru`. Шаги:
+> **Решение владельца 2026-08-27 — заменяет то, что этот раздел предлагал.**
+> Локалей две, `uk | en`, на всех поверхностях. `ru` не «позже» и не
+> «постепенно» — его нет: админка переведена в uk целиком, а не через fallback.
+> Причина простая: третья локаль стоит перевода каждой строки трижды и даёт
+> поверхность, на которой никто не говорит — аудитория RU/EN глобально, а
+> локальный язык продукта украинский.
 
-1. `Lang = CourseLocale` — один тип на всё, источник `src/lms-core/course.ts`.
-2. В словарь `translations` добавить `uk` (сейчас админка полностью ru — перевод админки в uk может быть постепенным: fallback `uk → ru → en` в `t()`, чтобы отсутствие ключа не ломало экран).
-3. Default локали — по поверхности: публичная платформа `uk`, админка — сохранённая пользователем, иначе `uk`.
-4. Тест-гард: ключи `ru` и `en` должны присутствовать в `uk` (или явно помечены fallback), чтобы разрыв не вернулся.
+Что сделано (закрыто в тот же день):
+
+1. `Lang = "uk" | "en"` (`src/lib/i18n.ts`), `CourseLocale = "uk" | "en"`
+   (`src/lms-core/course.ts`), `Locale = "uk" | "en"` (`src/lib/products.ts`) —
+   три диалекта, отмеченные в `ontology-sync` №16, схлопнуты в один код `uk`.
+   `normalizeLocale` по-прежнему **принимает** `ua`/`uk-ua` на входе: старые
+   ссылки с `?lang=ua` не должны ломаться, но внутрь идёт `uk`.
+2. Словарь `ru` переведён в `uk` строка в строку; ключей 528, паритет с `en`.
+3. Default локали: `I18nProvider` → `uk`; чекаут → `uk` для UA, иначе
+   Accept-Language, иначе `en` (глобальная аудитория, а не украинская).
+4. Тест-гард `src/lib/i18n.test.ts`: паритет ключей `uk`/`en`, пустых значений
+   нет, в `uk` не осталось русских букв `ыэъё`.
+5. Миграция `2026-08-27_two_locales.sql` сужает CHECK `lms_courses.locale` до
+   `('uk','en')` — иначе БД принимала бы значение, которое ридер отвергает.
+
+Вне скоупа намеренно: `docs/design-system.styleguide.html` — внутренний
+стайлгайд, написанный русской прозой; это документ для команды, а не поверхность
+продукта, и `lang="ru"` там честнее, чем `uk` над русским текстом. Русские
+комментарии в коде (`wfp/webhook`, `capi.ts`, `products.ts`) — по той же причине.
 
 ### 6.5 Тестовая цена
 
@@ -170,6 +190,6 @@ experience_offers      — сегодняшний lms_course_offers, FK на exp
 × Experience = переименованный Course      — нет: Course = Activity.kind внутри Experience.
 × Билдер = creator self-service             — нет: внутренний Composer, доступ вручную.
 × Provider существует как сущность          — пока нет; заводится 1:1 с founder до первого гостя.
-× UI двуязычен uk/ru                        — нет: ru/en; целевое — uk/ru/en везде.
+× UI двуязычен uk/ru                        — нет: uk/en везде, RU снят (§6.4, 2026-08-27).
 × Run нужен сейчас                          — нет, до второго cohort.
 ```

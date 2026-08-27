@@ -118,7 +118,7 @@ function ContactRow({ label, value, badge }: { label: string; value: string; bad
 
 export default function CustomerProfilePage() {
     const { lang, t } = useI18n();
-    const isRu = lang === "ru";
+    const isUk = lang === "uk";
     const locale = getAdminLocale(lang);
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
@@ -164,7 +164,7 @@ export default function CustomerProfilePage() {
     const displayName = customer.display_name ?? customer.email ?? customer.phone ?? t("customers_no_name");
     const ordersCountLabel = (() => {
         const value = orders.length;
-        if (!isRu) return `${value} ${t("orders_count_en")}`;
+        if (!isUk) return `${value} ${t("orders_count_en")}`;
         const mod10 = value % 10;
         const mod100 = value % 100;
         if (mod10 === 1 && mod100 !== 11) return `${value} ${t("orders_count_one")}`;

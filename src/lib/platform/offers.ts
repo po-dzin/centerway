@@ -246,8 +246,8 @@ export async function loadPayableOffer(code: unknown): Promise<PayableOffer | nu
     // One language, twice, on purpose: a course written by its author is
     // written in one language, and inventing a translation for a WayForPay
     // invoice line would put words in their mouth.
-    heading: { ua: heading, en: heading },
-    description: { ua: description, en: description },
+    heading: { uk: heading, en: heading },
+    description: { uk: description, en: description },
     amount: offer.amount,
     listAmount: offer.listAmount ?? offer.amount,
     currency: offer.currency,

@@ -18,10 +18,10 @@ import { validateLessonBlock, type LessonBlock } from "./blocks";
 import { validateCourseTheme, type CourseTheme } from "./theme";
 
 /**
- * Content locale. Slot for the EN expansion (docs §3A) — the platform ships
- * uk/ru content only until the owner signals otherwise.
+ * Content locale. Two locales, and only two: uk is what the platform ships
+ * today, en is the surface the same course is expected to reach next.
  */
-export type CourseLocale = "uk" | "ru" | "en";
+export type CourseLocale = "uk" | "en";
 
 export type CourseStatus = "draft" | "published";
 
@@ -217,7 +217,7 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
   assert(isNonEmptyString(input.programSlug), `lms_course_missing_program:${path}`);
   assert(isNonEmptyString(input.brand), `lms_course_missing_brand:${path}`);
   assert(
-    input.locale === "uk" || input.locale === "ru" || input.locale === "en",
+    input.locale === "uk" || input.locale === "en",
     `lms_course_invalid_locale:${path}`
   );
   assert(isNonEmptyString(input.translationGroupId), `lms_course_missing_translation_group:${path}`);
