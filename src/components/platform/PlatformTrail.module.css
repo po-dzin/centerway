@@ -40,6 +40,28 @@
   margin-block-end: var(--cw-space-xs);
 }
 
+/* THE TABLET BAND IS A NEW ROOM, NOT THE OLD ONE.
+   "ONE LINE, ALWAYS" above answers the topbar's own trail, which owns its
+   row. In the builder's page body at 561–900px the trail shares that row
+   with tools that do not shrink (preview, save status, blockers, contents) —
+   a room the flat rule never had to hold up in. Every crumb still floors at
+   the touch minimum (`chrome`'s own `min-width`, not a rewritten cap), so a
+   long title plus those tools can ask for more than the row has and the
+   excess has nowhere to go but under the tools or off the page.
+
+   Unlike the bug this rule replaced, wrapping here cannot run to 56rem: the
+   per-step caps are still `ch`-bounded, and a flex item only drops to the
+   next line once its own floor no longer fits what is left of the row — the
+   ellipsis inside each crumb keeps doing its job first. Untouched everywhere
+   else: mobile renders `.back` alone, and desktop moves this trail into the
+   header, where it still owns its line. */
+@media (min-width: 561px) and (max-width: 900px) {
+  .trail {
+    flex-wrap: wrap;
+    row-gap: var(--cw-space-2xs);
+  }
+}
+
 /* Hidden on a phone — the `.back` control above is the whole trail there. */
 .step {
   display: none;
