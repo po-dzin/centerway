@@ -913,25 +913,31 @@
     font: inherit;
     text-align: start;
     cursor: pointer;
-    border-radius: var(--r-tool);
+    /* Кут і тінь — це підпис КАРТКИ, і саме вони перетворювали список
+       на стос заокруглених плиток. Матеріальний шар відповідає на
+       питання, з чого зроблена поверхня, а не на питання, якої форми
+       набуває увага. У залі увага має форму креслення: смуга і лінія,
+       без радіуса і без відриву від аркуша. */
+    border-radius: 0;
     transition: padding-inline-start 220ms ease, background 180ms ease,
-                box-shadow 180ms ease, border-color 180ms ease, color 180ms ease;
+                border-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
   }
   /* Стан рядка не залежить від того, звідки прийшла увага: миша на
      рядку, миша на ніші, клавіатура — один вигляд. Інакше половина
      сцени підсвічується, а половина ні.
 
-     УВАГА ПІДКЛАДАЄ МАТЕРІАЛ. Рядок під вказівником — не підсвічений
-     рядок, а плитка того самого теплого матеріалу, що й панелі
-     платформи: тонований ґрунт і м'яка тінь матеріального шару. Лінія
-     знизу при цьому зникає — її роботу перебрала сама плитка. Зсув
-     поля лишився, але втричі коротший: тепер він супроводжує появу
-     матеріалу, а не заміняє її. */
+     УВАГА БЕРЕ ТОН МАТЕРІАЛУ І ФОРМУ КРЕСЛЕННЯ. Ґрунт під рядком —
+     той самий теплий матеріал, що в панелях платформи, але він лягає
+     СМУГОЮ: без кута, без падаючої тіні, без відриву від аркуша.
+     Замість них працюють дві лінії — та, що вже тримає список знизу,
+     і чорнильна риска при лівому полі, у яку і впирається зсув. Це та
+     сама пара «одна риска у двох силах», якою позначається все інше
+     в кімнаті. */
   .row:hover, .row:focus-visible, .row[data-hot="true"] {
     padding-inline-start: 0.9rem;
     background: var(--mat-tint);
-    box-shadow: var(--mat-shadow-soft);
-    border-block-end-color: transparent;
+    border-block-end-color: var(--ink);
+    box-shadow: inset 2px 0 0 var(--ink);
   }
   .row:hover .row__title,
   .row[data-hot="true"] .row__title { color: var(--ink); }
@@ -939,7 +945,7 @@
      піднімається під пальцем, він сідає. */
   .row:active {
     background: var(--mat-sunk);
-    box-shadow: var(--mat-shadow-chrome);
+    box-shadow: inset 2px 0 0 var(--ink);
   }
   /* Той самий фокус, що в кнопок: кільце акценту, не голий outline. */
   .row:focus-visible { outline: none; box-shadow: var(--ds-button-ring); }
@@ -1271,7 +1277,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 40 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 41 · 27.08</span>
 
 
 <div class="stage" aria-hidden="true">
