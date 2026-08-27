@@ -21,16 +21,20 @@
        --brass      --cw-sem-warmth-strong      #c8913f
        --brass-lit  --cw-sem-warmth             #e5ae65
        --redline    --cw-sem-boundary           #b76045
-       темна        --cw-mat-surface-night      #1a2a20 + тепла домішка
+       темна        base.dark (графіт адмінки)  #141414 / #1f1f1d / #e4e4e1
        --r-object   --cw-radius-inset           6px
        --r-tool     --cw-radius-md              16px
        шрифти       --cw-font-ui / -editorial / -data
 
+     Темний ґрунт — не нічний мінерал платформи, а графіт адмінки:
+     ДС записав це правилом 2026-08-20 («admin dark stays neutral
+     grey»), і кімната, поки стояла зеленою, його порушувала. Решта
+     аналогій (мінерал, глина, дерево, органіка) живе в пульті як
+     порівняння — див. GROUNDS.
+
      Те, чого в токенах немає — --wash (дно виїмки), --cast (падаюча
      тінь), --hatch (штриховка), — виведене з них, а не вигадане поруч:
      дно це папір, що зайшов у тінь, тінь це тінь матеріального шару.
-     Зелень при цьому не стала екраном рівно тому, що на неї не світять:
-     джерело світла в кімнаті одне, тепле і слабке.
      ============================================================ */
   :root {
     /* СВІТЛА — папір і чорнило. */
@@ -84,6 +88,18 @@
 
     --module: 64px;
 
+    /* ТЕМНИЙ ҐРУНТ ЗА ЗАМОВЧУВАННЯМ — графіт адмінки. Стоїть тут, а
+       не тільки в JS: сторінка мусить відкритись у правильній темряві
+       ще до першого рядка скрипта, інакше на кожному завантаженні
+       блимне чужий ґрунт. JS лише перекриває ці шість значень. */
+    --dk-paper:      #191918;
+    --dk-paper-lit:  #232322;
+    --dk-paper-deep: #121211;
+    --dk-wash:       #101010;
+    --dk-wash-2:     #0b0b0b;
+    --dk-fill:       #2e2e2c;
+    --dk-ink:        #e4e4e1;
+
     /* Завіса фону. У залі туш живе праворуч-унизу, ліворуч-угорі —
        папір під заголовком. Кут узятий від самої сітки: 8vw поля плюс
        колонка 46vw дають межу близько 54%. */
@@ -95,19 +111,27 @@
 
 
 
-  /* ТЕМНА — сіра глина, тепла нейтраль. Значення в одному місці:
-     перевизначаються кастом-властивості, а вмикають їх три різні
-     селектори нижче. Контраст піднято до гейтів ДС: чорнило до паперу
-     13.9, м'яке чорнило 7.8, лінії видно, а не вгадуються. */
+  /* ТЕМНА — НЕ ОДНА, А ҐРУНТ НА ВИБІР.
+     Зелений нічний мінерал тут стояв недовго і був помилкою: сам ДС
+     записав це правилом ще 2026-08-20 — «admin dark stays neutral
+     grey; ніколи не зелень на темному ґрунті», — і кімната його
+     порушила. Темна тема тепер тримається на нейтрально-теплому
+     графіті адмінки, а решта аналогій стоїть поруч як варіанти для
+     порівняння, а не як здогадки в чаті.
+
+     Значення живуть в одному місці — у наборі --dk-*, який кладе JS
+     (GROUNDS). Селектори нижче лише вмикають їх: медіа для системної
+     теми, клас для ручної. Контраст кожного ґрунту порахований і
+     стоїть у пульті поруч із назвою. */
   @media (prefers-color-scheme: dark) {
     :root:not(.mode-light):not([data-theme="light"]) {
-      --paper:      #1c2b21;
-      --paper-lit:  #24352a;
-      --paper-deep: #16211a;
-      --wash:       #131e17;
-      --wash-2:     #0f1712;
-      --fill:       #2c4635;
-      --ink-value:  #faefe0;
+      --paper:      var(--dk-paper);
+      --paper-lit:  var(--dk-paper-lit);
+      --paper-deep: var(--dk-paper-deep);
+      --wash:       var(--dk-wash);
+      --wash-2:     var(--dk-wash-2);
+      --fill:       var(--dk-fill);
+      --ink-value:  var(--dk-ink);
       --ink-line:   color-mix(in srgb, var(--ink-value) 62%, transparent);
       --ink-hair:   color-mix(in srgb, var(--ink-value) 22%, transparent);
       --ink-faint:  color-mix(in srgb, var(--ink-value) 55%, var(--paper));
@@ -135,13 +159,13 @@
      інлайном на body — інлайн не переб'є жоден стиль хоста. */
   :root.mode-dark,
   :root[data-theme="dark"]:not(.mode-light) {
-    --paper:      #1c2b21;
-    --paper-lit:  #24352a;
-    --paper-deep: #16211a;
-    --wash:       #131e17;
-    --wash-2:     #0f1712;
-    --fill:       #2c4635;
-    --ink-value:  #faefe0;
+    --paper:      var(--dk-paper);
+    --paper-lit:  var(--dk-paper-lit);
+    --paper-deep: var(--dk-paper-deep);
+    --wash:       var(--dk-wash);
+    --wash-2:     var(--dk-wash-2);
+    --fill:       var(--dk-fill);
+    --ink-value:  var(--dk-ink);
     --ink-line:   color-mix(in srgb, var(--ink-value) 62%, transparent);
     --ink-hair:   color-mix(in srgb, var(--ink-value) 22%, transparent);
     --ink-faint:  color-mix(in srgb, var(--ink-value) 55%, var(--paper));
@@ -1017,7 +1041,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 27 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 28 · 27.08</span>
 
 
 <div class="stage" aria-hidden="true">
@@ -1076,6 +1100,12 @@
       <button class="chip" data-theme-set="dark" type="button" aria-pressed="false">темна</button>
       <button class="chip" data-theme-set="system" type="button" aria-pressed="true">системна</button>
     </div>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Темний ґрунт · аналогія</span>
+    <div class="chips" id="grounds"></div>
+    <p class="inkNote" id="groundNote">Видно лише в темній темі. Контраст чорнила до ґрунту — поруч із назвою.</p>
   </div>
 
   <div class="console__group">
@@ -2626,6 +2656,82 @@
     presetsBox.appendChild(b);
   });
 
+
+  /* ---------------------------------------------------------------
+     ТЕМНІ ҐРУНТИ
+
+     Питання «яка в нас темна тема» не має однієї відповіді доти, доки
+     варіанти не стоять поруч у самій кімнаті. Тут їх п'ять, і всі
+     п'ять — це наші ж аналогії, а не смаки:
+
+       графіт   нейтрально-теплий сірий адмінки (base.dark у токенах:
+                #141414 / #1f1f1d / #e4e4e1). Ґрунт за замовчуванням —
+                бо це єдина темна поверхня, яка в нас уже РОБОЧА, і
+                кімната поруч із нею не має виглядати іншим продуктом.
+       мінерал  мокрий камінь: холодний сланець із ледь чутним синьо-
+                зеленим у тіні. Найближче до пака «мінерал», але без
+                його зелені в самому ґрунті.
+       глина    випалена глина: те саме значення, зсунуте в теплий
+                сіро-коричневий. Найтепліший ґрунт, який ще лишається
+                нейтральним.
+       дерево   горіх: уже не нейтраль, а матеріал. Найдалі від
+                адмінки і найближче до «бібліотеки» як меблів.
+       органіка глибока зелень платформи. Стоїть тут для повноти
+                порівняння і має проти себе власне правило ДС від
+                2026-08-20: «ніколи не зелень на темному ґрунті».
+
+     Золото одне на всіх — --cw-sem-warmth. Воно і є та константа, яка
+     тримає п'ять ґрунтів одним продуктом. */
+  var GROUNDS = [
+    { id: "graphite", name: "графіт",   paper: "#191918", lit: "#232322", deep: "#121211", wash: "#101010", wash2: "#0b0b0b", fill: "#2e2e2c", ink: "#e4e4e1" },
+    { id: "mineral",  name: "мінерал",  paper: "#1c2124", lit: "#262c2f", deep: "#151a1c", wash: "#12171a", wash2: "#0d1114", fill: "#313a3d", ink: "#e6e9e8" },
+    { id: "clay",     name: "глина",    paper: "#221d1a", lit: "#2d2723", deep: "#191512", wash: "#161210", wash2: "#100d0b", fill: "#3a312b", ink: "#ece4da" },
+    { id: "wood",     name: "дерево",   paper: "#1f1813", lit: "#2a211a", deep: "#17110d", wash: "#140f0b", wash2: "#0e0a07", fill: "#3b2e22", ink: "#f0e5d5" },
+    { id: "organic",  name: "органіка", paper: "#1c2b21", lit: "#24352a", deep: "#16211a", wash: "#131e17", wash2: "#0f1712", fill: "#2c4635", ink: "#faefe0" }
+  ];
+
+  var groundsBox = document.getElementById("grounds");
+  var groundNow = "graphite";
+
+  function setGround(id) {
+    var g = null, i;
+    for (i = 0; i < GROUNDS.length; i++) if (GROUNDS[i].id === id) g = GROUNDS[i];
+    if (!g) g = GROUNDS[0];
+    groundNow = g.id;
+    var st = document.documentElement.style;
+    st.setProperty("--dk-paper", g.paper);
+    st.setProperty("--dk-paper-lit", g.lit);
+    st.setProperty("--dk-paper-deep", g.deep);
+    st.setProperty("--dk-wash", g.wash);
+    st.setProperty("--dk-wash-2", g.wash2);
+    st.setProperty("--dk-fill", g.fill);
+    st.setProperty("--dk-ink", g.ink);
+    Array.prototype.forEach.call(groundsBox.children, function (c) {
+      c.setAttribute("aria-pressed", String(c.dataset.ground === g.id));
+    });
+    try { window.localStorage.setItem("cw-proto-ground", g.id); } catch (e) { /* приватне вікно */ }
+    /* Ґрунт не міняє ані геометрії, ані ваги пера — тільки колір. Отже
+       стіну не перебудовуємо: перефарбовуємо канваси і кладемо інлайн
+       на body ту саму страховку, що й у setTheme. */
+    var cs = getComputedStyle(document.documentElement);
+    document.body.style.background = cs.getPropertyValue("--paper").trim();
+    document.body.style.color = cs.getPropertyValue("--ink-value").trim();
+    paintWallInk();
+    paintScene();
+    paintGrain();
+  }
+
+  GROUNDS.forEach(function (g) {
+    var b = document.createElement("button");
+    b.className = "chip";
+    b.type = "button";
+    b.dataset.ground = g.id;
+    b.setAttribute("aria-pressed", "false");
+    b.textContent = g.name + " · " + ratio(g.ink, g.paper).toFixed(1);
+    b.addEventListener("click", function () { setGround(g.id); });
+    groundsBox.appendChild(b);
+  });
+
   /* ---------------------------------------------------------------
      Порівняння чорнил — те саме питання, що в ресерчі: наше чорнило
      темніше за весь заміряний регістр. Тут воно поруч, із контрастом,
@@ -2820,6 +2926,9 @@
 
   /* setTheme викликається ЗАВЖДИ, навіть для «системної»: інлайн-фарби
      на body — єдине, чого не переб'є жоден стиль хоста артефакта. */
+  var savedGround = "graphite";
+  try { savedGround = window.localStorage.getItem("cw-proto-ground") || "graphite"; } catch (e) { /* приватне вікно */ }
+  setGround(savedGround);
   var savedTheme = "system";
   try { savedTheme = window.localStorage.getItem("cw-proto-theme") || "system"; } catch (e) { /* приватне вікно */ }
   setTheme(savedTheme);
