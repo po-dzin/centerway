@@ -26,8 +26,12 @@ export function SupportForm({ route }: Pick<PlatformRouteBlockProps, "route">) {
             <p className={styles.lead}>
               Євгеній Корякін - дослідник і практик аюрведи, магістр комплементарної медицини та засновник CenterWay.
             </p>
+            {/* All six — the cap this used to carry (`.slice(0, 4)`) was
+                what left the panel shorter than the portrait beside it;
+                `expertFacts` is now sized to fill it, so the slice would
+                just be spelling out the array's own length. */}
             <div className={styles.factGrid}>
-              {expertFacts.slice(0, 4).map((fact) => (
+              {expertFacts.map((fact) => (
                 <span key={fact.label}>
                   <Icon name={fact.icon} size={20} className={styles.factIcon} />
                   {fact.label}
