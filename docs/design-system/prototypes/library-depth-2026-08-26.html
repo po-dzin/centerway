@@ -338,7 +338,7 @@
   .ray svg { width: 100%; height: 100%; display: block; overflow: visible; }
   .ray--b { animation-delay: -4.5s; }
   @keyframes rayBreath {
-    0%   { opacity: 0.5; }
+    0%   { opacity: 0.78; }
     100% { opacity: 1; }
   }
 
@@ -953,7 +953,7 @@
   }
 </style>
 
-<span class="build" aria-hidden="true">зб. 25 · 27.08</span>
+<span class="build" aria-hidden="true">зб. 26 · 27.08</span>
 
 
 <div class="stage" aria-hidden="true">
@@ -1172,10 +1172,19 @@
      сідед-нерівністю, вихід сходить нанівець; легкий прогин — рука,
      не злам. Координати ПІКСЕЛЬНІ (viewBox = розмір ніші), інакше
      товщина штриха деформується розтягуванням. */
+  /* Лінія тонша за піксель у темній темі не малюється — вона
+     семплюється: рушив паралакс на чверть пікселя, і кожен волосок
+     перескочив між двома рядами пікселів. На папері цього не видно,
+     бо темне по світлому лише блідне; кремове по темному в цей момент
+     блимає. Тому в темряві перо важче, а не яскравіше. */
+  function inkW() { return darkNow() ? 1.7 : 1; }
+
   function nicheSvg(ci, W, H) {
     function jr(n) { return seeded(ci * 53 + n); }
+    var IW = inkW();
 
     function stroke(x1, y1, x2, y2, wMax, op, n) {
+      wMax *= IW;
       var dx = x2 - x1, dy = y2 - y1;
       var len = Math.sqrt(dx * dx + dy * dy) || 1;
       var nx = -dy / len, ny = dx / len;
@@ -1246,6 +1255,7 @@
      зі змінною шириною, все seeded. */
   function attentionSvg(ci, W, H) {
     var M = 26;
+    var IW = inkW();
     function jr(n) { return seeded(ci * 71 + n); }
     var d = 8;
     var x0 = M - d, y0 = M - d, x1 = M + W + d, y1 = M + H + d;
@@ -1291,7 +1301,8 @@
       var pt = pointAt(p);
       var drift = (jr(i * 3 + 44) - 0.5) * 2.4;
       /* товщина — повільна хвиля впевненого руху */
-      var wgt = 1.7 + 1.4 * Math.abs(Math.sin(i * 0.09 + jr(3) * 6)) + (jr(i + 7) - 0.5) * 0.6;
+      var wgt = (1.7 + 1.4 * Math.abs(Math.sin(i * 0.09 + jr(3) * 6)) +
+        (jr(i + 7) - 0.5) * 0.6) * IW;
       if (!cur) cur = [];
       cur.push([pt[0] + drift * 0.6, pt[1] + drift * 0.6, wgt]);
     }
@@ -1613,7 +1624,7 @@
      з ледь помітним прогином і одним-двома підйомами пензля. Той
      самий профіль, що й у ліній ніші. */
   function rayInk(len, vertical, seed) {
-    var T = 18, mid = T / 2;
+    var T = 18, mid = T / 2, IW = inkW();
     function jr(n) { return seeded(seed * 37 + n); }
     var bow = (jr(1) * 2 - 1) * Math.min(3.4, len * 0.016);
     /* Один підйом пензля, і то не завжди: два розриви перетворювали
@@ -1651,7 +1662,7 @@
       along = len * t;
       across = mid + bow * Math.sin(Math.PI * t) + (jr(i + 40) - 0.5) * 0.7;
       /* натиск наростає до середини і сходить нанівець на кінцях */
-      wdt = (0.3 + 1.5 * Math.sin(Math.PI * t)) * (0.72 + jr(i + 90) * 0.5);
+      wdt = (0.3 + 1.5 * Math.sin(Math.PI * t)) * (0.72 + jr(i + 90) * 0.5) * IW;
       if (i === 0 || i === N) wdt = 0.22;
       run.push([along, across, wdt]);
     }
@@ -1871,9 +1882,13 @@
   var easing = false;
   var easeTimer = null;
 
+  /* Позиція кімнати кладеться на чвертьпіксельну сітку: різниця в
+     соту пікселя оком не читається, а перерахунок країв — читається. */
+  function q(v) { return (Math.round(v * 4) / 4).toFixed(2); }
+
   function apply() {
-    room.style.setProperty("--px", (baseX + cx).toFixed(1) + "px");
-    room.style.setProperty("--py", (baseY + cy).toFixed(1) + "px");
+    room.style.setProperty("--px", q(baseX + cx) + "px");
+    room.style.setProperty("--py", q(baseY + cy) + "px");
     room.style.setProperty("--cz", baseZ + "px");
     room.style.setProperty("--cs", baseS.toFixed(3));
     /* Нахил спокою: сцена трохи повернена навіть без курсора, інакше
@@ -1897,12 +1912,18 @@
 
   function loop() {
     if (!easing) {
-      /* Повільніше: 0.06 доганяв курсор майже миттєво, і кімната
-         смикалась услід за рукою замість того, щоб пливти. */
       /* Медитація: доганяємо курсор за секунди, не за кадри. */
-      cx += (tx - cx) * 0.01;
-      cy += (ty - cy) * 0.01;
-      apply();
+      var ndx = (tx - cx) * 0.01, ndy = (ty - cy) * 0.01;
+      /* І ЗУПИНЯЄМОСЬ. Експонента ніколи не доходить до нуля, тож
+         кімната смикалась на соті долі пікселя вічно — а кожен такий
+         зсув пересемплює всі волосяні лінії стіни. Стоїть — значить
+         стоїть. */
+      if (Math.abs(ndx) < 0.004 && Math.abs(ndy) < 0.004) {
+        if (cx !== tx || cy !== ty) { cx = tx; cy = ty; apply(); }
+      } else {
+        cx += ndx; cy += ndy;
+        apply();
+      }
     }
     requestAnimationFrame(loop);
   }
@@ -2544,6 +2565,23 @@
     paintGrain();
     paintWallInk();
     paintScene();
+    /* Вага пера — частина геометрії, а не кольору: у темряві лінія
+       товща. Отже, зі зміною теми стіну треба перекреслити, а не
+       перефарбувати. Стан (де ми і що вибрано) відновлюємо самі —
+       без наїзду камери і без звуку. */
+    if (caseEls.length) {
+      buildRoom();
+      if (view === "case") {
+        caseEls.forEach(function (el) {
+          var mine = Number(el.dataset.case) === openCase;
+          el.dataset.dim = String(!mine);
+          if (mine) el.dataset.sel = "true";
+        });
+        markArmature(openCase);
+      } else {
+        markArmature(1);
+      }
+    }
   }
   Array.prototype.forEach.call(themesBox.children, function (c) {
     c.addEventListener("click", function () { setTheme(c.dataset.themeSet); });
