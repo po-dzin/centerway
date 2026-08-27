@@ -211,7 +211,11 @@
 .heroFeatureTitle {
   max-width: min(9.8ch, 100%);
   margin: 0;
-  color: var(--cw-platform-accent-contrast);
+  /* The page's own paper tone, not the near-white on-dark contrast token —
+     against this hero's darker photo, stark white read as too clinical. Using
+     the same warm cream every section below the hero sits on ties the title to
+     the page it opens, instead of floating on top of it. */
+  color: var(--cw-sem-calm-bg);
   text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 38%, transparent), 0 10px 30px color-mix(in srgb, var(--cw-platform-text) 28%, transparent);
   font-family: var(--cw-font-ui);
   font-size: var(--ds-type-hero-size);
@@ -267,7 +271,7 @@
 .heroFeatureLead {
   max-width: min(29rem, 100%);
   margin: 0;
-  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 82%, transparent);
+  color: color-mix(in srgb, var(--cw-sem-calm-bg) 82%, transparent);
   text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
   font-size: var(--ds-type-lead-size);
   font-weight: 560;
@@ -412,7 +416,11 @@
 }
 
 .heroFeatureActions {
-  width: min(100%, 19.5rem);
+  /* Same cap the button contract itself uses (--ds-button-max-width), not a
+     second hand-picked number — three hero templates each had their own
+     hardcoded width here (19.5rem/22rem/20rem) and only one accidentally
+     matched the token. One source, so the button is one physical size. */
+  width: min(100%, var(--ds-button-max-width));
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.7rem;

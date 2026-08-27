@@ -171,7 +171,7 @@
     width: 100% !important;
     max-width: none !important;
     margin: 0;
-    padding: 0.5rem 1.15rem;
+    padding: 0.5rem 0.6rem;
     box-sizing: border-box;
   }
 
@@ -1164,17 +1164,15 @@
     min-height: 100vh;
     min-height: 100svh;
     border-radius: 0;
-    /* A 16:10 plate in a portrait viewport crops hard on the sides: at 390x780
-       cover shows only ~31% of the plate width. On the threshold plate the whole
-       scene — doorway edge, kintsugi bowl, planting strip — sits right of 55%,
-       so a centred window would show bare stone and the door jamb and nothing
-       else. 82% lands that window on 56%..88%. Vertical position is inert here:
-       a portrait frame crops width only, so the full plate height is shown. */
-    --hero-photo-x: 82%;
-    --hero-photo-y: 50%;
+    /* The portrait master (PlatformHeroPhoto) is its own composition, not a
+       crop of the landscape plate. A centered vertical crop leaves too much
+       bare wall above the doorway on tall/narrow viewports, so the window is
+       shifted down and scaled up slightly to bring the doorway itself closer. */
+    --hero-photo-x: 50%;
+    --hero-photo-y: 68%;
     --hero-photo-shift-y: 0%;
-    --hero-photo-scale: 1;
-    --hero-photo-origin: center center;
+    --hero-photo-scale: 1.14;
+    --hero-photo-origin: center 125%;
   }
 
   .heroPhotoLayer .expertImage {
@@ -1567,7 +1565,7 @@
   }
 
   main[data-cw-detail-template] .heroFeatureActions {
-    width: min(100%, 22rem);
+    width: min(100%, var(--ds-button-max-width));
     gap: 0.78rem;
   }
 
@@ -1603,7 +1601,7 @@
   }
 
   .heroFeature[data-cw-detail-template] .heroFeatureActions {
-    width: min(100%, 22rem);
+    width: min(100%, var(--ds-button-max-width));
     gap: 0.78rem;
   }
 
@@ -1649,7 +1647,7 @@
   }
 
   main[data-cw-detail-template] .heroFeatureActions {
-    width: min(100%, 20rem);
+    width: min(100%, var(--ds-button-max-width));
     gap: 0.72rem;
   }
 
@@ -1689,7 +1687,7 @@
   }
 
   .heroFeature[data-cw-detail-template] .heroFeatureActions {
-    width: min(100%, 20rem);
+    width: min(100%, var(--ds-button-max-width));
     gap: 0.72rem;
   }
 

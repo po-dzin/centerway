@@ -1,17 +1,30 @@
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import styles from "@/components/platform/PlatformHeroStyles";
+import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 
 export function HubHero() {
   return (
     <section className={styles.heroFeature} id="center" data-cw-topbar-tone="dark">
       <div className={styles.heroPhotoLayer}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          className={styles.expertImage}
-          src="/shared/img/home-hero-threshold-2026-08.webp"
+        {/* A PORTRAIT MASTER, not a crop. The landscape plate is a scene built
+            across the frame — doorway right, sandals at the foot of the wall
+            left — and a portrait viewport shows about a third of its width, so
+            the phone used to render the inside of the doorway and nothing else:
+            no wall, no threshold, no shoes. The portrait frame is the same room
+            recomposed for the tall shape, with the doorway lifted above the
+            lower third because the copy is bottom-anchored there. Swapped by
+            PlatformHeroPhoto on the same 560px line every other platform hero
+            uses. */}
+        <PlatformHeroPhoto
+          artwork={{
+            desktop: "/shared/img/home-hero-threshold-2026-08-v12.webp",
+            mobile: "/shared/img/home-hero-threshold-2026-08-v12-portrait.webp",
+          }}
           alt="Поріг: вхід у практику CenterWay"
+          className={styles.expertImage}
+          eager
         />
       </div>
       <div className={styles.heroFeatureContent}>

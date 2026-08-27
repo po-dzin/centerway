@@ -180,18 +180,33 @@
 .primary {
   composes: base;
   color: var(--cw-platform-on-accent);
-  background: linear-gradient(135deg, var(--cw-platform-accent), var(--cw-platform-accent-pressed));
-  box-shadow: 0 16px 30px color-mix(in srgb, var(--cw-platform-accent) 20%, transparent);
+  /* Vertical, not diagonal: a 135deg ramp reads as one corner lit and the
+     opposite corner dark on a button this wide and short (mobile full-bleed
+     runs ~7:1), which looks lopsided rather than a sheen. Top-to-bottom stays
+     left-right symmetric at any aspect ratio.
+
+     The grain layer is the same noise `.onMedia` and every glass surface use
+     — a flat gradient alone reads as a rendered plastic chip; this is what
+     "matte" costs on a filled plate instead of a translucent one. */
+  background-image: var(--cw-mat-grain-image), linear-gradient(180deg, var(--cw-platform-accent), var(--cw-platform-accent-pressed));
+  /* Two shadows, two jobs: the first lifts the plate off the page (elevation),
+     the second is a tight zero-offset bloom — the actual glow — since a pure
+     drop shadow reads as a shadow, not as the gold lighting the air around it. */
+  box-shadow:
+    0 16px 30px color-mix(in srgb, var(--cw-platform-accent) 20%, transparent),
+    0 0 22px color-mix(in srgb, var(--cw-platform-accent) 38%, transparent);
 }
 
 .primary:hover:not(:disabled) {
   transform: translateY(var(--ds-button-lift));
-  background: linear-gradient(
-    135deg,
+  background-image: var(--cw-mat-grain-image), linear-gradient(
+    180deg,
     var(--cw-platform-accent-pressed),
     color-mix(in srgb, var(--cw-platform-accent-pressed) 86%, var(--cw-platform-on-accent))
   );
-  box-shadow: 0 20px 32px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent);
+  box-shadow:
+    0 20px 32px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent),
+    0 0 28px color-mix(in srgb, var(--cw-platform-accent) 46%, transparent);
 }
 
 .primary:active:not(:disabled) {
@@ -204,13 +219,14 @@
 .secondary {
   composes: base;
   color: var(--cw-platform-text);
-  background: var(--cw-platform-surface);
+  background-color: var(--cw-platform-surface);
+  background-image: var(--cw-mat-grain-image);
   box-shadow: var(--cw-mat-shadow-soft);
 }
 
 .secondary:hover:not(:disabled) {
   transform: translateY(var(--ds-button-lift));
-  background: color-mix(in srgb, var(--cw-platform-surface) 72%, var(--cw-platform-surface-muted) 28%);
+  background-color: color-mix(in srgb, var(--cw-platform-surface) 72%, var(--cw-platform-surface-muted) 28%);
   box-shadow: var(--cw-mat-shadow-raised);
 }
 
