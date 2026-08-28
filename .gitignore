@@ -23,3 +23,4 @@ public/cw/img/_candidates/
 # python bytecode
 __pycache__/
 *.pyc
+dist-library-depth.html
