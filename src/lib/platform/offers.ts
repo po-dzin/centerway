@@ -26,9 +26,11 @@ import { COURSE_LIST_TAG, courseTag, getLiveCourse, listLiveCourses } from "@/li
 import {
   PLATFORM_FAILED_URL,
   PLATFORM_THANKS_URL,
+  PRODUCTS,
   catalogOffer,
   isCatalogProduct,
   normalizePayableProduct,
+  type CatalogProductCode,
   type PayableOffer,
 } from "@/lib/products";
 import { mediaSources } from "@/lib/lms/media";
@@ -245,14 +247,50 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
  * course nobody has priced. Only the owner writes `lms_course_offers`, so a
  * missing row is a decision, not an outage.
  */
+/**
+ * Hand-written codes that now name a course sold from the offer table.
+ *
+ * `reset-day` is sold twice: the platform charges `course:reset-day` and reads
+ * the price from `lms_course_offers`, while the funnel landing still links
+ * `?product=reset-day` and charged the figure written in `PRODUCTS`. Two
+ * numbers for one course, agreeing today only because both were typed as 1 and
+ * 795 — and the day the QA price is lifted in one place, the landing quotes 795
+ * and charges something else.
+ *
+ * So the legacy code resolves to the same row. What it keeps from the constant
+ * is the invoice PROSE, which the database path cannot express: a course row
+ * yields one title in one language, and the hand-written entry has a real
+ * sentence in both. Money, code and term come from the row; the words stay here.
+ *
+ * The consequence is deliberate: withdrawing the offer now stops the funnel too,
+ * instead of leaving one door selling a course the storefront calls closed.
+ */
+const COURSE_CODE_ALIASES: Partial<Record<CatalogProductCode, string>> = {
+  "reset-day": "reset-day",
+};
+
 export async function loadPayableOffer(code: unknown): Promise<PayableOffer | null> {
   const normalized = normalizePayableProduct(code);
   if (!normalized) return null;
-  if (isCatalogProduct(normalized)) return catalogOffer(normalized);
+
+  if (isCatalogProduct(normalized)) {
+    const aliasSlug = COURSE_CODE_ALIASES[normalized];
+    if (!aliasSlug) return catalogOffer(normalized);
+
+    const aliased = await loadCourseOfferFor(aliasSlug);
+    if (!aliased) return null;
+
+    const { heading, description } = PRODUCTS[normalized];
+    return { ...aliased, heading, description };
+  }
 
   const slug = parseCourseOfferCode(normalized);
   if (!slug) return null;
+  return loadCourseOfferFor(slug);
+}
 
+/** The commercial facts for one course, read from its own row. */
+async function loadCourseOfferFor(slug: string): Promise<PayableOffer | null> {
   const [course, offer] = await Promise.all([getLiveCourse(slug), loadCourseOffer(slug)]);
 
   // Both halves have to agree, and each says something different: the course
