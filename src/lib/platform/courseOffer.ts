@@ -47,6 +47,7 @@ export function toOfferSurface(course: Course): OfferSurface {
      and it rendered from this. */
   const kind = course.kind ? KIND[course.kind] : null;
   const isMini = kind ? kind.surface === "mini-course" : lessons <= 8;
+  const en = course.locale === "en";
 
   return {
     slug: course.slug,
@@ -57,6 +58,19 @@ export function toOfferSurface(course: Course): OfferSurface {
        tail is not lost — the tagline below says it in a sentence — and this is
        a display rule, not an edit: `course.title` in the database is untouched
        and still what the page's metadata and its schema.org name print.
+
+       UNCONDITIONAL, even once `posttitle` exists — see the subtitle test
+       below ("the title is still cut for the name"). `posttitle` answers
+       WHERE THE SUBTITLE COMES FROM, not whether the h1 keeps a legacy tail:
+       a course written before the field existed still has one string with two
+       jobs in it, and an author who has since filled `posttitle` has not
+       necessarily rewritten `title` to drop what `posttitle` now says better.
+       A name whose dash is genuinely part of it (no course does this today —
+       see courseOffer.test.ts) is a real gap in this rule, but fixing it needs
+       a way to tell "trailing explanation" from "the name itself" that the
+       data does not carry yet; skipping the cut whenever `posttitle` is set
+       would silently restore the four-line hero for every course written
+       before the field did.
 
        `fullTitle` is the same string on purpose. The six hand-written offers
        genuinely carry two names (see content.ts); a builder course carries one,
@@ -79,16 +93,22 @@ export function toOfferSurface(course: Course): OfferSurface {
        not lost: it leads, below. */
     tag: kind ? kind.badge : isMini ? "Міні-курс" : "Програма",
     /* THE GRAMMAR LIVES HERE, not in the author's field. `durationDays` is the
-       number 3; «3 дні» is one locale's way of saying it, and the day this page
-       is read in English the number is still 3. That is the whole reason the
+       number 3; «3 дні» is one locale's way of saying it, and an `en` course
+       says "3 days" — same number, its own noun. That is the whole reason the
        field stopped being prose. The count stays as the fallback for a course
        whose author has not said how long it takes. */
     duration:
       course.durationDays !== undefined
-        ? `${course.durationDays} ${plural(course.durationDays, "день", "дні", "днів")}`
+        ? en
+          ? `${course.durationDays} ${course.durationDays === 1 ? "day" : "days"}`
+          : `${course.durationDays} ${plural(course.durationDays, "день", "дні", "днів")}`
         : course.schedule.mode === "daily"
-          ? `${lessons} ${plural(lessons, "день", "дні", "днів")}`
-          : `${lessons} ${plural(lessons, "урок", "уроки", "уроків")}`,
+          ? en
+            ? `${lessons} ${lessons === 1 ? "day" : "days"}`
+            : `${lessons} ${plural(lessons, "день", "дні", "днів")}`
+          : en
+            ? `${lessons} ${lessons === 1 ? "lesson" : "lessons"}`
+            : `${lessons} ${plural(lessons, "урок", "уроки", "уроків")}`,
     /* The hook leads, the description explains. `summary` says what the course
        IS, which is the right answer to a question somebody has already decided
        to ask; the tagline says why they would ask it. The hero gets the hook

@@ -5,10 +5,9 @@ import { ReactNode, useState, useEffect, useCallback, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "@/components/Icon";
 import type { CwIconName } from "@/components/iconNames";
-import { ThemeSwitcher } from "@/components/ThemeSwitcher";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { I18nProvider, useI18n } from "@/components/I18nProvider";
-import { UserMenu } from "@/components/UserMenu";
+import { PlatformAccountMenu } from "@/components/platform/layout/PlatformAccountMenu";
 import { ToastProvider } from "@/components/ToastProvider";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { ADMIN_ROLE_CACHE_KEY, ADMIN_ROLE_CACHE_TTL_MS, isAdminRole } from "@/lib/platform/adminRole";
@@ -45,9 +44,6 @@ function AdminShell({ children }: { children: ReactNode }) {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [session, setSession] = useState<Session | null>(null);
     const [role, setRole] = useState<string | null>(null);
-    /* Decides the builder entry in the account menu. Ownership is per row
-       (`lms_courses.author_id`), so it cannot be read off the role. */
-    const [authorsCourses, setAuthorsCourses] = useState(false);
     const [authInitialized, setAuthInitialized] = useState(false);
     const [roleInitialized, setRoleInitialized] = useState(false);
     const roleFetchRef = useRef<{ token: string; at: number; inFlight: boolean }>({
@@ -75,7 +71,6 @@ function AdminShell({ children }: { children: ReactNode }) {
                 const fresh = typeof cached.at === "number" && Date.now() - cached.at < ADMIN_ROLE_CACHE_TTL_MS;
                 if (fresh && cached.tokenTail === tokenTail && typeof cached.role === "string") {
                     setRole(cached.role);
-                    setAuthorsCourses(cached.authorsCourses === true);
                     setRoleInitialized(true);
                     return;
                 }
@@ -112,7 +107,6 @@ function AdminShell({ children }: { children: ReactNode }) {
             const nextRole = typeof payload.role === "string" ? payload.role : null;
             const nextAuthors = payload.authorsCourses === true;
             setRole(nextRole);
-            setAuthorsCourses(nextAuthors);
             if (nextRole) {
                 try {
                     sessionStorage.setItem(
@@ -155,7 +149,6 @@ function AdminShell({ children }: { children: ReactNode }) {
             setSession(session);
             if (event === "SIGNED_OUT") {
                 setRole(null);
-                setAuthorsCourses(false);
                 setRoleInitialized(true);
             } else if ((event === "INITIAL_SESSION" || event === "SIGNED_IN") && session?.access_token) {
                 void loadRole(session.access_token);
@@ -321,14 +314,19 @@ function AdminShell({ children }: { children: ReactNode }) {
                     </button>
                     <div className="flex items-center gap-2 md:gap-4">
                         <LanguageSwitcher />
-                        <ThemeSwitcher />
-                        <UserMenu
-                            email={session?.user?.email}
-                            role={role}
-                            authorsCourses={authorsCourses}
-                            initial={session?.user?.email ? session.user.email.charAt(0).toUpperCase() : "?"}
-                            avatarUrl={session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture}
-                        />
+                        {/* THE SAME CONTROL AS EVERY OTHER SHELL (2026-08-29). Used
+                            to be a bespoke Tailwind dropdown whose one row was
+                            `signOut()`, then grew a second, ad hoc hover
+                            (`hover:bg-[var(--cw-surface-2)]`) that matched nothing
+                            else in the panel. `apps.ts` already made the two menus
+                            agree on WHERE an account may go; this makes them the
+                            same control, so they cannot drift on how a row answers
+                            a pointer again. `exclude` drops the admin row — a menu
+                            opened from inside `/admin` pointing back at `/admin` is
+                            a way to the room already standing in it. Theme lives
+                            inside this menu now (`PlatformThemeControl`), which is
+                            why the bar's own `ThemeSwitcher` button is gone. */}
+                        <PlatformAccountMenu compact exclude={["admin"]} />
                     </div>
                 </header>
                 <div data-admin-scroll className="custom-scrollbar flex-1 px-3 py-3 sm:px-4 sm:py-4 md:p-8 overflow-y-auto overflow-x-hidden w-full min-h-0 pb-4 md:pb-8">

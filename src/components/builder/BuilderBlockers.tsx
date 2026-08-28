@@ -51,7 +51,18 @@ const BLOCKER_LABELS: Record<string, string> = {
  */
 const LISTED = 12;
 
-export function BuilderBlockers({ course, blockers }: { course: Course; blockers: ReadinessBlocker[] }) {
+export function BuilderBlockers({
+  course,
+  blockers,
+  onNavigate,
+}: {
+  course: Course;
+  blockers: ReadinessBlocker[];
+  /** The course's own guarded move — flushes the pending save, then routes.
+      A blocker always points inside the same course, so this is `exit.navigate`,
+      never `exit.route`: see `useBuilderExit`. */
+  onNavigate: (href: string) => void;
+}) {
   if (blockers.length === 0) {
     return (
       <section className={styles.panel}>
@@ -84,6 +95,10 @@ export function BuilderBlockers({ course, blockers }: { course: Course; blockers
                   href={target.href}
                   aria-label={`Відкрити: ${target.label}`}
                   title={`Відкрити: ${target.label}`}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onNavigate(target.href);
+                  }}
                 >
                   <Icon name="arrow-right" size={18} />
                 </a>
