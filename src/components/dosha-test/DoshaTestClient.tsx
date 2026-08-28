@@ -634,7 +634,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                   </p>
                   <h1 className={styles.title}>Тест доші</h1>
                   <p className={styles.lead}>
-                    Швидка самодіагностика ритму, енергії, травлення і напруги — щоб побачити поточний стан і
+                    Швидка самооцінка ритму, енергії, травлення і напруги — щоб побачити поточний стан і
                     зрозуміти, з чого почати.
                   </p>
                 </div>
