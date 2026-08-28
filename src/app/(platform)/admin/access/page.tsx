@@ -32,7 +32,7 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/adminLocale";
 import type { AccountRow, CourseRow, LearnerAccountRow, LearnerRow, LearnerStatus, RoleRow } from "@/lib/admin/accessTypes";
-import { deadlineInputValue, grantDeadlineValue, GRANTABLE_ROLES, PAYMENT_CURRENCIES } from "@/lib/admin/accessTypes";
+import { deadlineInputValue, ELEVATED_ROLES, grantDeadlineValue, GRANTABLE_ROLES, PAYMENT_CURRENCIES } from "@/lib/admin/accessTypes";
 
 const LIMIT = 50;
 
@@ -1313,6 +1313,9 @@ function AccountsTab({
     const [debouncedQ, setDebouncedQ] = useState("");
     const [page, setPage] = useState(0);
 
+    /** A role to narrow to, or `staff` for any elevated one. Empty is everybody. */
+    const [roleFilter, setRoleFilter] = useState("");
+
     const [items, setItems] = useState<AccountRow[]>([]);
     const [total, setTotal] = useState(0);
     const [selfId, setSelfId] = useState<string | null>(null);
@@ -1341,6 +1344,7 @@ function AccountsTab({
         try {
             const params = new URLSearchParams();
             if (debouncedQ) params.set("q", debouncedQ);
+            if (roleFilter) params.set("role", roleFilter);
             params.set("limit", String(LIMIT));
             params.set("offset", String(page * LIMIT));
 
@@ -1359,7 +1363,7 @@ function AccountsTab({
         } finally {
             if (reqId === requestSeq.current) setLoading(false);
         }
-    }, [debouncedQ, page, errorText]);
+    }, [debouncedQ, roleFilter, page, errorText]);
 
     useEffect(() => {
         void load();
@@ -1400,12 +1404,36 @@ function AccountsTab({
         <div className="space-y-4">
             <p className="text-xs cw-muted">{t("access_accounts_hint")}</p>
 
-            <AdminSearchInput
-                value={q}
-                onChange={setQ}
-                placeholder={t("access_search_learners")}
-                onClear={q ? () => setQ("") : undefined}
-            />
+            {/* Search and the role facet on one line. The facet is what makes
+                this list able to answer the question the Roles tab exists for —
+                "who are my staff" — without being a second table of the same
+                people. See docs/admin-access-shape-2026-08-28.md. */}
+            <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1">
+                    <AdminSearchInput
+                        value={q}
+                        onChange={setQ}
+                        placeholder={t("access_search_learners")}
+                        onClear={q ? () => setQ("") : undefined}
+                    />
+                </div>
+                <select
+                    value={roleFilter}
+                    onChange={(e) => {
+                        setRoleFilter(e.target.value);
+                        // Page 3 of "everybody" is not page 3 of "coaches".
+                        setPage(0);
+                    }}
+                    aria-label={t("access_filter_role")}
+                    className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-56"
+                >
+                    <option value="">{t("access_filter_role_all")}</option>
+                    <option value="staff">{t("access_filter_role_staff")}</option>
+                    {ELEVATED_ROLES.map((role) => (
+                        <option key={role} value={role}>{role}</option>
+                    ))}
+                </select>
+            </div>
 
             {loading ? (
                 <AdminLoadingState variant="spinner" text={t("access_loading")} />

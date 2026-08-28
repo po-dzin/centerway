@@ -107,6 +107,16 @@ export type RoleRow = {
 
 /** Roles `user_roles` accepts — mirrors its CHECK, widened by the 2026-08-21 merge. */
 export const GRANTABLE_ROLES = ["user", "coach", "support", "admin"] as const;
+
+/**
+ * The roles that mean "this person can do something an ordinary account cannot".
+ *
+ * `user` is not one of them: it is what everybody is, and what "remove the role"
+ * writes back. Kept beside GRANTABLE_ROLES so the two cannot drift — adding a
+ * role to that list and forgetting this one would quietly hide its holders from
+ * the "staff" filter.
+ */
+export const ELEVATED_ROLES = GRANTABLE_ROLES.filter((role) => role !== "user");
 export type GrantableRole = (typeof GRANTABLE_ROLES)[number];
 
 /** Payment currencies the panel offers for a hand-recorded sale. UAH first — the merchant settles in it. */

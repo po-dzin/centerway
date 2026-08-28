@@ -368,6 +368,19 @@ describe("accounts", () => {
         await accounts.GET(get("http://x/api/admin/access/accounts?limit=abc&offset=-5"));
         expect(access.listAccounts).toHaveBeenCalledWith(expect.objectContaining({ limit: 50, offset: 0 }));
     });
+
+    it("passes a role facet through, including the `staff` shorthand", async () => {
+        await accounts.GET(get("http://x/api/admin/access/accounts?role=coach"));
+        expect(access.listAccounts).toHaveBeenCalledWith(expect.objectContaining({ role: "coach" }));
+
+        await accounts.GET(get("http://x/api/admin/access/accounts?role=staff"));
+        expect(access.listAccounts).toHaveBeenCalledWith(expect.objectContaining({ role: "staff" }));
+    });
+
+    it("drops a role it does not know rather than returning nobody", async () => {
+        await accounts.GET(get("http://x/api/admin/access/accounts?role=wizard"));
+        expect(access.listAccounts).toHaveBeenCalledWith(expect.objectContaining({ role: undefined }));
+    });
 });
 
 describe("roles", () => {
