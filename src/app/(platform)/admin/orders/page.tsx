@@ -140,9 +140,13 @@ function ResendAccessButton({ orderRef, labels }: {
         if (loading) return;
         setLoading(true);
         try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
             const res = await fetch("/api/tokens/create", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+                },
                 body: JSON.stringify({ order_ref: orderRef }),
             });
             const data = await res.json();

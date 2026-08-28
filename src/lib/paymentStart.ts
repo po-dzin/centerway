@@ -87,11 +87,16 @@ export function requiredPaymentEnv() {
  * of that intact, for no gain — the product is carried separately in
  * `orders.product_code` and in the return URL. Only the prefix is touched.
  */
-function orderRefToken(product: PayableProductCode): string {
+/**
+ * `course:<slug>` carries a colon, and the order_ref built from it travels through
+ * `orders`, `payments`, `access_tokens`, `events` and the return URL. Flattening the
+ * colon here keeps that key to one alphabet everywhere it is stored or parsed.
+ */
+export function orderRefToken(product: PayableProductCode): string {
   return product.replace(/[^a-z0-9-]+/gi, "-");
 }
 
-function makeOrderRef(product: PayableProductCode, nowMs: () => number, randomHex: (bytes: number) => string) {
+export function makeOrderRef(product: PayableProductCode, nowMs: () => number, randomHex: (bytes: number) => string) {
   const d = new Date(nowMs());
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");

@@ -3,8 +3,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import crypto from "crypto";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
-import { PayableProductCode } from "@/lib/products";
 import { loadPayableOffer } from "@/lib/platform/offers";
+import { makeOrderRef } from "@/lib/paymentStart";
+import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 
 export const runtime = "nodejs";
@@ -28,27 +29,49 @@ function asOptionalString(value: unknown): string | null {
   return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
-function cors(res: NextResponse) {
-  res.headers.set("Access-Control-Allow-Origin", "*");
-  res.headers.set("Access-Control-Allow-Methods", "GET,POST,OPTIONS");
-  res.headers.set("Access-Control-Allow-Headers", "Content-Type");
+/**
+ * This route writes a row that the entitlement later reads, so it answers to
+ * CenterWay pages only. It used to answer `Access-Control-Allow-Origin: *`,
+ * which let any page on the web file orders against our catalogue.
+ */
+const ALLOWED_ORIGIN = /^https:\/\/([a-z0-9-]+\.)*centerway\.net\.ua$/;
+
+function allowedOrigin(req: NextRequest): string | null {
+  const origin = req.headers.get("origin");
+  if (!origin) return null; // same-origin and server-side callers send no Origin
+  if (ALLOWED_ORIGIN.test(origin)) return origin;
+  if (process.env.NODE_ENV !== "production" && /^http:\/\/localhost(:\d+)?$/.test(origin)) {
+    return origin;
+  }
+  return null;
+}
+
+function cors(res: NextResponse, origin: string | null) {
+  // Vary matters even when nothing is allowed: the answer depends on Origin,
+  // and a shared cache must not hand one site's response to another.
+  res.headers.set("Vary", "Origin");
+  if (origin) {
+    res.headers.set("Access-Control-Allow-Origin", origin);
+    res.headers.set("Access-Control-Allow-Methods", "POST,OPTIONS");
+    res.headers.set("Access-Control-Allow-Headers", "Content-Type");
+  }
   return res;
 }
 
-export async function OPTIONS() {
-  return cors(new NextResponse(null, { status: 204 }));
+export async function OPTIONS(req: NextRequest) {
+  return cors(new NextResponse(null, { status: 204 }), allowedOrigin(req));
 }
 
-function makeOrderRef(product: PayableProductCode) {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  const rand = crypto.randomBytes(4).toString("hex");
-  return `${product}_${y}${m}${day}_${rand}`;
+function newOrderRef(product: Parameters<typeof makeOrderRef>[0]) {
+  return makeOrderRef(product, () => Date.now(), (bytes) => crypto.randomBytes(bytes).toString("hex"));
 }
 
 export async function POST(req: NextRequest) {
+  const origin = allowedOrigin(req);
+
+  const rl = await enforceRateLimit(req, { name: "orders_create", limit: 30, windowSeconds: 60 });
+  if (!rl.allowed) return cors(tooManyRequests(rl.retryAfter), origin);
+
   try {
     const body = (await req.json()) as Body;
 
@@ -58,12 +81,12 @@ export async function POST(req: NextRequest) {
        course. */
     const cfg = await loadPayableOffer(body.product_code);
     if (!cfg) {
-      return cors(NextResponse.json({ ok: false, error: "unknown_product" }, { status: 404 }));
+      return cors(NextResponse.json({ ok: false, error: "unknown_product" }, { status: 404 }), origin);
     }
     const product = cfg.code;
     const attrib = body.attrib ?? null;
 
-    const order_ref = makeOrderRef(product);
+    const order_ref = newOrderRef(product);
 
     const sb = supabaseAdmin();
 
@@ -87,7 +110,8 @@ export async function POST(req: NextRequest) {
         NextResponse.json(
           { ok: false, error: "db_order_insert_failed", details: error.message },
           { status: 500 }
-        )
+        ),
+        origin
       );
     }
 
@@ -149,14 +173,16 @@ export async function POST(req: NextRequest) {
         amount: cfg.amount,
         currency: cfg.currency,
         status: "created",
-      })
+      }),
+      origin
     );
   } catch (e: any) {
     return cors(
       NextResponse.json(
         { ok: false, error: "bad_request", details: String(e?.message ?? e) },
         { status: 400 }
-      )
+      ),
+      origin
     );
   }
 }
