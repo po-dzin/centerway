@@ -11,6 +11,7 @@
 import Link from "next/link";
 
 import { ProgressRail } from "@/components/platform/ProgressRail";
+import { ProgressRing } from "@/components/platform/ProgressRing";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import type { LearnerShelfCourseDto } from "@/components/lms/lmsClient";
 import { CourseCover } from "./CourseCover";
@@ -23,6 +24,14 @@ import styles from "./Cabinet.module.css";
    in globals.css owns stroke, grain and shadow, and the cabinet's own CSS is
    layout only. See docs/design-system.md "Material layer". */
 export const matte = { "data-cw-material": "matte" } as const;
+
+/* The cabinet's first screen stands ON a photograph, and an opaque panel there
+   is a sheet of paper taped over the room: four white rectangles were the
+   brightest thing on a screen whose subject is the picture behind them. Glass
+   is the material written for exactly that ground — a warm tint with the blur
+   under it, so the room still reads through the shelf. One depth only: the
+   glances are glass, the card they stand beside is glass, and nothing nests. */
+export const glassMedia = { "data-cw-material": "glass-media" } as const;
 
 export function courseMapHref(course: LearnerShelfCourseDto) {
   return `/learn/${course.slug}`;
@@ -176,25 +185,33 @@ export function CourseCard({
  * ONE BUTTON, and that is the rule the whole row is built on. The resume card
  * used to carry «Продовжити» plus «Усі мої курси» — the second one duplicating
  * the doorway standing a few centimetres above it in the same block.
+ *
+ * AND NO KICKER OVER THE NAME. «Продовжити з місця зупинки» stood above the
+ * title explaining the button at the foot of the same card, which already says
+ * «Продовжити». A caption that narrates the control beside it is a label for a
+ * reader who has not looked at the card.
  */
 export function CompactCourseCard({
   course,
   copy,
-  label,
+  primary,
 }: {
   course: LearnerShelfCourseDto;
   copy: CabinetCopy;
   /**
-   * The kicker over the name, set only on the card being resumed — and with it,
-   * the one gold button in the row.
+   * Whether this card carries the row's one gold button.
    *
    * MAX ONE PRIMARY PER VIEW is the button contract's rule, and a shelf is
    * exactly where it bites: four courses, four "continue" buttons, four gold
    * plates, and the card the dashboard is actually answering with disappears
-   * into the row. The rest keep the same control at the same size in the quiet
-   * role — still the whole card's width, still one click.
+   * into the row.
+   *
+   * It used to be inferred from a `label` prop — the kicker over the name, «
+   * Продовжити з місця зупинки». That kicker is gone (the button under it says
+   * «Продовжити», and a card does not need a caption explaining its own
+   * control), so the flag says what it means instead of riding on a string.
    */
-  label?: string;
+  primary?: boolean;
 }) {
   const href = useSurfaceHref();
   const action = courseAction(course, copy);
@@ -203,9 +220,8 @@ export function CompactCourseCard({
   const resumable = course.access === "enrolled" && total > 0 && !course.standing?.isFinished;
 
   return (
-    <article className={styles.shelfCard} {...matte}>
+    <article className={styles.shelfCard} {...glassMedia}>
       <CourseCover course={course} />
-      {label ? <p className={styles.sectionLabel}>{label}</p> : null}
       <h3 className={styles.shelfCardTitle}>{course.title}</h3>
       {/* Where you stopped, or — for a course not started — what it costs to
           start. One line either way: a card in a row of four cannot afford a
@@ -225,13 +241,56 @@ export function CompactCourseCard({
       ) : null}
       <div className={styles.shelfCardAction}>
         <Link
-          className={label && action.primary ? styles.actionPrimary : styles.actionGhost}
+          className={primary && action.primary ? styles.actionPrimary : styles.actionGhost}
           href={href(action.href)}
         >
           {action.label}
         </Link>
       </div>
     </article>
+  );
+}
+
+/**
+ * Every other course, as one line of instrument rather than a card.
+ *
+ * The dashboard answers ONE question — what do I open now — and the answer is
+ * the card above. A row of four full cards made four equal answers and four
+ * buttons; what the rest of the shelf owes the reader is smaller: what it is,
+ * where they stopped, how far in they are. The whole tile is the link, so it
+ * needs no control of its own, and the library is one click away for the
+ * record.
+ */
+export function CourseGlance({ course, copy }: { course: LearnerShelfCourseDto; copy: CabinetCopy }) {
+  const href = useSurfaceHref();
+  const action = courseAction(course, copy);
+  const done = course.standing?.completedLessons ?? 0;
+  const total = course.standing?.totalLessons ?? 0;
+  const running = course.access === "enrolled" && total > 0 && !course.standing?.isFinished;
+
+  return (
+    <Link className={styles.glance} href={href(action.href)} {...glassMedia}>
+      {/* THE RING, NOT THE RAIL. A rail is drawn along a card and takes its
+          width; a column of them beside a card made wide bars saying what a
+          48px glyph says — the ring is the same marks (one dash per lesson, the
+          finished ones in accent) at a fraction of the room. See
+          `ProgressRing`. */}
+      {running ? (
+        <ProgressRing className={styles.glanceRing} value={done} total={total} label={course.title} size={48} />
+      ) : (
+        <span className={styles.glanceRing} aria-hidden="true" />
+      )}
+      <span className={styles.glanceText}>
+        <span className={styles.glanceTitle}>{course.title}</span>
+        <span className={styles.glanceNote}>
+          {running
+            ? copy.stepsOf(done, total)
+            : course.standing?.isFinished
+              ? copy.courseFinished
+              : copy.courseNotStarted}
+        </span>
+      </span>
+    </Link>
   );
 }
 

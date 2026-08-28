@@ -14,7 +14,6 @@ import { useState, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
 import {
-  COURSE_TEMPLATES,
   COURSE_HEADING_FONTS,
   COURSE_PALETTES,
   COURSE_TYPE_SCALES,
@@ -25,7 +24,6 @@ import {
   type CourseScheduleMode,
   type CourseTypeScale,
   type CourseVisibility,
-  type CourseTemplateId,
 } from "@/lms-core";
 import { BuilderCoverEditor } from "./BuilderCoverEditor";
 import { ChoiceRow, FieldInput } from "./BuilderFields";
@@ -197,14 +195,10 @@ function SettingsSection({
 export function BuilderCourseSettings({
   course,
   onChange,
-  onApplyTemplate,
 }: {
   course: Course;
   onChange: (path: (string | number)[], value: unknown) => void;
-  onApplyTemplate: (template: CourseTemplateId) => void;
 }) {
-  const [pendingTemplate, setPendingTemplate] = useState<CourseTemplateId | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<CourseTemplateId>(COURSE_TEMPLATES[0]?.id ?? "blank");
   const [editing, setEditing] = useState<SettingsSectionId | null>(null);
   const theme = { ...DEFAULT_COURSE_THEME, ...(course.theme ?? {}) };
   const gate = course.schedule.gate ?? "soft";
@@ -378,33 +372,20 @@ export function BuilderCourseSettings({
       </SettingsSection>
 
       <details className={styles.courseSettingsAdvanced}>
-        <summary>Додатково</summary>
+        {/* THE GLYPH IS FROM THE SPRITE, like every other icon in this shell.
+            It used to be a typed "+" and "−" in CSS `content` — the plus of the
+            UI font at 1.1rem beside a set of baked hand-drawn icons, which is
+            the one mark on this screen that came from somewhere else. The
+            chevron also says the true thing: this opens, it does not add. */}
+        <summary>
+          Додатково
+          <Icon className={styles.courseSettingsAdvancedGlyph} name="chevron-down" size={18} />
+        </summary>
+        {/* NO «Стартова структура» HERE ANY MORE. It moved to «Зміст», beside
+            the modules and lessons it writes — see `BuilderStructureStart`. It
+            was the one control able to rewrite the whole structure, and it sat
+            on a different tab, folded away from everything it acts on. */}
         <div className={styles.courseSettingsAdvancedBody}>
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>Стартова структура</span>
-            <div className={styles.choiceRow} role="group" aria-label="Стартова структура">
-              {COURSE_TEMPLATES.map((option) => (
-                <button
-                  key={option.id}
-                  className={styles.choiceOption}
-                  type="button"
-                  aria-pressed={selectedTemplate === option.id}
-                  onClick={() => setSelectedTemplate(option.id)}
-                >
-                  {option.title}
-                </button>
-              ))}
-            </div>
-            <span className={styles.fieldHint}>Замінює модулі й уроки. Назва, обкладинка та доступ залишаться.</span>
-            <button className={styles.courseSettingsTextAction} type="button" onClick={() => setPendingTemplate(selectedTemplate)}>Замінити структуру…</button>
-          </div>
-          {pendingTemplate ? (
-            <div className={styles.confirmRow}>
-              <span className={styles.confirmText}>Замінити поточну структуру? Дію можна скасувати через «Назад».</span>
-              <button className={styles.courseSettingsTextAction} type="button" onClick={() => setPendingTemplate(null)}>Ні</button>
-              <button className={styles.courseSettingsTextAction} type="button" onClick={() => { onApplyTemplate(pendingTemplate); setPendingTemplate(null); }}>Застосувати</button>
-            </div>
-          ) : null}
           <FieldInput
             field={{ path: [], label: "Коди продуктів, що відкривають курс", kind: "text", hint: "Технічне поле. Коди вказуються через кому." }}
             value={course.entitlementProductCodes.join(", ")}

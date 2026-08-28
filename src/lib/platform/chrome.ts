@@ -8,16 +8,23 @@
  * deliberately NOT covered: it follows the browser theme, and no page can
  * repaint it. That is a browser rule, not a gap here.
  *
- * One value, no `prefers-color-scheme` pair, because the platform ships one
- * theme: the dark palette exists in globals.css under `[data-cw-theme="dark"]`
- * and nothing sets that attribute yet. A dark `theme-color` here would hand a
- * dark-OS user a dark title bar over a page that is still cream. When the dark
- * theme is switched on this becomes a keyed pair — and, because the choice will
- * be a toggle rather than the OS setting, a runtime meta update rather than a
- * media query.
+ * TWO VALUES SINCE 2026-08-28, and they are swapped at RUNTIME rather than by
+ * a `prefers-color-scheme` pair in the metadata. The comment here used to
+ * predict exactly that, and the prediction holds for the same reason it was
+ * made: the theme follows a stored choice first and the OS setting only as a
+ * fallback, so a media-keyed pair would hand a dark-OS reader who chose light
+ * a dark title bar over a cream page. `applyPlatformTheme` writes the meta
+ * whenever it writes the attribute — one decision, one place.
  *
- * Mirrors `--cw-sem-calm-bg`. It is a literal because Next serialises this into
- * <head> on the server, where no custom property has been resolved yet; the one
- * copy lives here so the manifest and the three route-group roots cannot drift.
+ * The light value is still what the server serialises into <head>, because the
+ * server does not know the reader's choice and light is what a page without
+ * JavaScript renders.
+ *
+ * Mirror `--cw-sem-calm-bg` / the dark scope's `--cw-platform-bg`. They are
+ * literals because Next serialises them into <head> on the server, where no
+ * custom property has been resolved yet; the one copy lives here so the
+ * manifest and the three route-group roots cannot drift.
  */
 export const PLATFORM_GROUND = "#faefe0";
+
+export const PLATFORM_GROUND_DARK = "#191918";

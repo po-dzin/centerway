@@ -8,7 +8,7 @@
       "cropY" : 50,
       "mobileCropX" : 50,
       "mobileCropY" : 15,
-      "mobileSrc" : "/cw/platform/programs/irem-card-v1.png",
+      "mobileSrc" : "/cw/platform/programs/irem-card-v1.webp",
       "src" : "/cw/platform/programs/irem-hero-desktop-v2.webp"
    },
    "entitlementProductCodes" : [

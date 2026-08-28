@@ -640,7 +640,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
             aria-label="Переглянути урок як учень"
             title={dirty ? "Зберегти й відкрити урок як учень" : "Відкрити урок як учень"}
           >
-            <Icon name="eye" size={18} />
+            <Icon name="eye" size={20} />
             <span className={styles.workspaceActionLabel}>Переглянути</span>
           </button>
           <span className={styles.workspaceSaveStatus} role="status" aria-live="polite">
@@ -924,9 +924,19 @@ function LessonToolContent({
   if (mode === "page") {
     return (
       <div className={styles.toolStack}>
+        {/* IT SAYS REPLACE, BECAUSE IT REPLACES. There are two document imports
+            in the builder now and they do opposite things: the structure's adds
+            new lessons to a module, this one overwrites the open one. Both
+            labelled «Імпортувати» they would read as the same offer in two
+            places, and the destructive one is the one an author would reach for
+            by mistake. See the lifecycle note for why this level can only ever
+            mean replace: by the time you are on the page, the lesson exists. */}
         <button className={styles.quietAction} type="button" disabled={working} onClick={() => importPicker.current?.click()}>
-          <Icon name="import" size={20} /> Імпортувати документ
+          <Icon name="import" size={20} /> Замінити з документа
         </button>
+        <p className={styles.toolHint}>
+          Замінить назву, опис і всі блоки цього уроку. Адреса, порядок і день лишаються. Скасовується через ⌘Z до збереження.
+        </p>
         <input
           ref={importPicker}
           className={styles.visuallyHidden}

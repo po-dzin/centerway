@@ -22,8 +22,6 @@ import { useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
 
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
-import { ProgressRail } from "@/components/platform/ProgressRail";
-import { ProgressRing } from "@/components/platform/ProgressRing";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { getProfileCopy } from "@/components/platform/profile/copy";
@@ -33,8 +31,8 @@ import { PwaInstallRow } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
 import { CabinetHero } from "./CabinetHero";
-import { ShelfErrorCard, courseAction, courseMapHref, matte } from "./CourseCard";
-import { CourseCover } from "./CourseCover";
+import { DoshaWheel } from "./DoshaWheel";
+import { CompactCourseCard, CourseGlance, ShelfErrorCard, glassMedia, matte } from "./CourseCard";
 import {
   dateLocaleFor,
   fmtDate,
@@ -66,6 +64,18 @@ import styles from "./Cabinet.module.css";
  * and turned into the route it became. The other three collapsed into this one
  * page, so they are cleaned off the URL rather than redirected.
  */
+/**
+ * How many courses stand in the row beside the one being resumed.
+ *
+ * THREE, and the fourth row of the column is «Усі мої курси →». The first version
+ * of this row printed every course the account owns, which on a nine-course
+ * shelf turned the middle of the composition into a two-column table — the
+ * dashboard answering "what do I own" at the length of the library instead of
+ * "what do I open now". The cap is not silent: the count stands in the room
+ * above and the way to the full record is the last row of the same list.
+ */
+const GLANCE_ROWS = 3;
+
 const MIGRATED_HASHES = new Set(["#tests", "#products", "#account", "#overview"]);
 
 function useHashMigration() {
@@ -143,41 +153,26 @@ export function CabinetClient() {
   const href = useSurfaceHref();
   const doshaTestHref = href(DOSHA_TEST_ROUTE);
   const programsHref = href("/programs");
+  const productsHref = href("/products");
   const shelfHref = href(LEARNING_SHELF_HREF);
   const homeHref = href("/");
-
-  const scoreBars = useMemo(() => {
-    const scores = profile?.profile.dosha?.scores;
-    if (!scores) return [];
-    const max = Math.max(scores.vata ?? 0, scores.pitta ?? 0, scores.kapha ?? 0, 1);
-    return (["vata", "pitta", "kapha"] as const).map((key) => ({
-      key,
-      label: copy.doshaLabels[key],
-      value: scores[key] ?? 0,
-      width: `${Math.max(12, Math.round(((scores[key] ?? 0) / max) * 100))}%`,
-    }));
-  }, [copy.doshaLabels, profile]);
 
   const ownedCourses = useMemo(
     () => (shelf ?? []).filter((course) => course.access !== "locked"),
     [shelf],
   );
 
-  /**
-   * The compact overview: every owned course as one ring of dots.
-   *
-   * Only courses whose length is known can be drawn — a ring with no lessons to
-   * count is a circle, not progress — and only from two upwards, because with
-   * one course the resume card above already IS the overview and this would
-   * repeat it in a smaller hand.
-   */
-  const overviewCourses = useMemo(
-    () => ownedCourses.filter((course) => (course.standing?.totalLessons ?? 0) > 0),
-    [ownedCourses],
-  );
-
   /** The single course the dashboard offers to resume: latest real activity wins. */
   const resumeCourse = useMemo(() => pickResumeCourse(ownedCourses), [ownedCourses]);
+
+  /**
+   * The rest of the shelf, beside the one course being resumed — `GLANCE_ROWS`
+   * of them, in the order the shelf came in.
+   */
+  const glanceCourses = useMemo(() => {
+    if (!resumeCourse) return ownedCourses.slice(0, GLANCE_ROWS);
+    return ownedCourses.filter((course) => course.slug !== resumeCourse.slug).slice(0, GLANCE_ROWS);
+  }, [ownedCourses, resumeCourse]);
 
   /**
    * The shelf has THREE states, and `null` is not one of the two obvious ones.
@@ -209,19 +204,12 @@ export function CabinetClient() {
   const { account, contacts, dosha } = profile.profile;
 
   return (
-    <main className={surfaceStyles.profileMain} data-cw-platform-template="cabinet">
-      <div className={styles.shell}>
-        {/* Identity, the three facts, and where you stopped — one block, and a
-            doorway out of it.
-
-            This page dropped a photo hero once, for a reason that still holds:
-            the old one was a LANDING hero, a full-viewport plate with a
-            translucent card floating on it, which put a second surface
-            vocabulary two inches above the first. `CabinetHero` is not that. It
-            is one panel in the page's own material at the page's own radius,
-            and the photograph inside it is a view THROUGH the room rather than
-            a ground under the page — the threshold plate framed on its opening,
-            with the opening linking to the library. */}
+    <main className={surfaceStyles.profileMain} data-cw-platform-template="cabinet" data-cw-hero="bleed">
+      {/* THE PHOTOGRAPH IS THE SCREEN'S GROUND, so the hero stands OUTSIDE the
+          page container: the plate runs edge to edge under the floating bar,
+          and only its contents sit on the page's own column. Inside the shell
+          it was a picture in a frame with the paper visible around it, which is
+          a photograph of a room rather than being in one. */}
         <CabinetHero
           label={copy.profile}
           name={account.fullName ?? copy.fallbackName}
@@ -235,13 +223,17 @@ export function CabinetClient() {
               getUserInitial(session, account.fullName)
             )
           }
+          /* THREE FACTS, ONE ROW. The count came back beside the dosha — a
+             room with one dash under «Продукти» and nothing else is a room
+             missing a fact, not a room kept clean. What did NOT come back is
+             the word «Бібліотека»: that names the ROUTE, and every course it
+             used to stand for is printed by name a few centimetres below. */
           stats={[
             { label: copy.dosha, value: formatDoshaResult(dosha?.resultType, lang) },
             {
-              label: cab.learningLabel,
-              /* "—" is an answer: it means none. While the shelf is still being
-                 read there is no answer yet, and an ellipsis says that without
-                 claiming the library is empty. */
+              label: cab.coursesLabel,
+              /* An ellipsis while the shelf is still being read: "—" would
+                 claim an empty library to somebody who owns nine courses. */
               value: shelfLoading
                 ? "…"
                 : ownedCourses.length > 0
@@ -250,157 +242,118 @@ export function CabinetClient() {
             },
             {
               label: copy.products,
+              /* "—" is an answer: it means none. */
               value:
                 productPurchases.length > 0 ? cab.productsCount(productPurchases.length) : copy.emptyValue,
             },
           ]}
-          doorwayTitle={cab.learningLabel}
-          doorwayLead={cab.allCourses}
-          doorwayHref={shelfHref}
         >
-          {resumeCourse ? (
-            <article className={styles.continueCard} {...matte}>
-              {/* Only here, and only for the one course being resumed: the
-                  dashboard answers "what do I open right now", and a cover per
-                  owned course would turn that answer into a gallery. */}
-              <CourseCover course={resumeCourse} />
-              <p className={styles.sectionLabel}>{cab.continueTitle}</p>
-              <h2 className={styles.cardTitle}>{resumeCourse.title}</h2>
-              {resumeCourse.currentLessonTitle && !resumeCourse.standing?.isFinished ? (
-                <p className={styles.continueNext}>{resumeCourse.currentLessonTitle}</p>
-              ) : (
-                <p className={styles.cardText}>{cab.continueLead}</p>
-              )}
-              {resumeCourse.standing && resumeCourse.standing.totalLessons > 0 ? (
-                <>
-                  <ProgressRail
-                    value={resumeCourse.standing.completedLessons}
-                    total={resumeCourse.standing.totalLessons}
-                    label={resumeCourse.title}
-                  />
-                  <p className={styles.cardText}>
-                    {cab.stepsOf(resumeCourse.standing.completedLessons, resumeCourse.standing.totalLessons)}
-                  </p>
-                </>
-              ) : null}
-              <div className={styles.actions}>
-                <Link
-                  className={styles.actionPrimary}
-                  href={href(courseAction(resumeCourse, cab).href)}
-                >
-                  {courseAction(resumeCourse, cab).label}
-                </Link>
-                {/* The shelf, not this one course's map: from the dashboard the
-                    useful second step is "everything I own". */}
-                <Link className={styles.actionGhost} href={shelfHref}>
-                  {cab.allCourses}
-                </Link>
-              </div>
-            </article>
-          ) : shelfFailed ? (
-            /* Not "no courses yet" — the shelf just could not be read. Those
-               look identical without this branch, and a learner who paid for
-               something would be told to go buy it again. */
-            <ShelfErrorCard copy={cab} onRetry={() => void reloadShelf()} />
-          ) : shelfLoading ? (
-            /* Same reasoning as the branch above, one state earlier: still
-               reading is not the same as nothing to read. */
-            <PlatformLoadingState
-              label={cab.learningLabel}
-              title={cab.learningLoadingTitle}
-              detail={cab.learningLoadingLead}
-            />
-          ) : (
-            <article className={styles.card} {...matte}>
-              <h3 className={styles.cardTitle}>{cab.learningEmptyTitle}</h3>
-              <p className={styles.cardText}>{cab.learningEmptyLead}</p>
-              <div className={styles.actions}>
-                <Link className={styles.actionPrimary} href={programsHref}>
-                  {cab.browsePrograms}
-                </Link>
-              </div>
-            </article>
-          )}
-        </CabinetHero>
+          {/* THE WHOLE FIRST SCREEN IS THE ANSWER, in one row of three: the
+              course to resume, the rest of the shelf as glances, and the dosha
+              result — the three things this person holds. The dosha used to be
+              a card in a section below the photograph, which put a scroll
+              between somebody and the test they took. */}
+          <div className={styles.shelfRow} data-shelf={resumeCourse ? "courses" : "single"}>
+            {resumeCourse ? (
+              /* The one answer: cover, where you stopped, and the only control
+                 in the row. */
+              <CompactCourseCard course={resumeCourse} copy={cab} primary />
+            ) : shelfFailed ? (
+              /* Not "no courses yet" — the shelf just could not be read. Those
+                 look identical without this branch, and a learner who paid for
+                 something would be told to go buy it again. */
+              <ShelfErrorCard copy={cab} onRetry={() => void reloadShelf()} />
+            ) : shelfLoading ? (
+              /* Same reasoning as the branch above, one state earlier: still
+                 reading is not the same as nothing to read. */
+              <PlatformLoadingState
+                label={cab.learningLabel}
+                title={cab.learningLoadingTitle}
+                detail={cab.learningLoadingLead}
+              />
+            ) : (
+              <article className={styles.shelfCard} {...glassMedia}>
+                <h3 className={styles.shelfCardTitle}>{cab.learningEmptyTitle}</h3>
+                <p className={styles.shelfCardNote}>{cab.learningEmptyLead}</p>
+                <div className={styles.shelfCardAction}>
+                  <Link className={styles.actionPrimary} href={programsHref}>
+                    {cab.browsePrograms}
+                  </Link>
+                </div>
+              </article>
+            )}
 
-        {/* Below the room: reference the answer above does not need. */}
-        <div className={styles.section}>
-          {/* Everything else I own, at a glance. The resume card answers "what
-              now"; this answers "and how do the rest stand" — and it is also
-              the way INTO them from here, which the dashboard otherwise leaves
-              entirely to the header's app switcher. One glyph per course, so
-              five courses cost one row rather than five cards. */}
-          {overviewCourses.length > 1 ? (
-            <section className={styles.overview} {...matte} aria-labelledby="cw-profile-overview">
-              <p className={styles.sectionLabel} id="cw-profile-overview">
-                {cab.learningLabel}
-              </p>
-              <ul className={styles.ringList}>
-                {overviewCourses.map((course) => (
-                  <li key={course.slug}>
-                    <Link className={styles.ringItem} href={href(courseMapHref(course))}>
-                      <ProgressRing
-                        value={course.standing?.completedLessons ?? 0}
-                        total={course.standing?.totalLessons ?? 0}
-                        label={course.title}
-                      />
-                      <span className={styles.ringTitle}>{course.title}</span>
-                      <span className={styles.ringMeta}>
-                        {cab.stepsOf(
-                          course.standing?.completedLessons ?? 0,
-                          course.standing?.totalLessons ?? 0,
-                        )}
-                      </span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-              <div className={styles.actions}>
-                <Link className={styles.actionGhost} href={shelfHref}>
-                  {cab.allCourses}
-                </Link>
-              </div>
-            </section>
-          ) : null}
+            {/* Everything else, as instrument rather than as more answers —
+                ONE COLUMN of them, ending in the way onward. Two columns of
+                glances made the middle of the row a table, and «Усі мої курси»
+                floated above the whole composition as a fourth object; as the
+                last row of the same list it stands where the list runs out,
+                which is the only place that sentence is true. */}
+            <div className={styles.shelfGlances}>
+              {glanceCourses.map((course) => (
+                <CourseGlance key={course.slug} course={course} copy={cab} />
+              ))}
+              <Link className={styles.glanceMore} href={shelfHref} {...glassMedia}>
+                <span className={styles.glanceMoreText}>{cab.allCourses}</span>
+                <span className={styles.glanceMoreArrow} aria-hidden="true">
+                  →
+                </span>
+              </Link>
+            </div>
 
-          <div className={styles.cardGrid}>
             {/* The dosha RESULT, not the tests catalogue. What the test is and
-                what else exists is the showcase's business — this card holds
-                the answer that belongs to this person. */}
-            <article className={styles.card} {...matte}>
+                what else exists is the showcase's business — this tile holds
+                the answer that belongs to this person, at the size of a glance
+                rather than of a card: the shape, the type, one way back in. */}
+            <article className={styles.shelfAside} {...glassMedia}>
               <p className={styles.sectionLabel}>{copy.dosha}</p>
-              <h2 className={styles.cardTitle}>{copy.doshaCurrent}</h2>
               {dosha ? (
                 <>
-                  <p className={styles.cardText}>
-                    {formatDoshaResult(dosha.resultType, lang)} · {copy.completedShort}{" "}
-                    {fmtDate(dosha.completedAt, dateLocale)}
+                  {/* The shape, the type and the three scores — three
+                      horizontal meters cost a card's width to say the same
+                      thing less densely. See `DoshaWheel`. */}
+                  <DoshaWheel
+                    scores={dosha.scores ?? { vata: 0, pitta: 0, kapha: 0 }}
+                    labels={copy.doshaLabels}
+                    resultLabel={formatDoshaResult(dosha.resultType, lang)}
+                    lang={lang}
+                  />
+                  <p className={styles.shelfCardMeta}>
+                    {copy.completedShort} {fmtDate(dosha.completedAt, dateLocale)}
                   </p>
-                  <div className={styles.scoreList}>
-                    {scoreBars.map((item) => (
-                      <div key={item.key} className={styles.scoreRow}>
-                        <div className={styles.scoreMeta}>
-                          <span>{item.label}</span>
-                          <strong>{item.value}</strong>
-                        </div>
-                        <div className={styles.meter}>
-                          <span className={styles.meterFill} style={{ width: item.width }} />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
                 </>
               ) : (
-                <p className={styles.cardText}>{copy.doshaEmptyLead}</p>
+                <p className={styles.shelfCardNote}>{copy.doshaEmptyLead}</p>
               )}
-              <div className={styles.actions}>
+              <div className={styles.shelfCardAction}>
                 <Link className={dosha ? styles.actionGhost : styles.actionPrimary} href={doshaTestHref}>
                   {dosha ? copy.retakeTest : copy.startTest}
                 </Link>
               </div>
             </article>
           </div>
-        </div>
+
+          {/* THE ONE THING THAT NEEDS DOING, and only when it does. A dashboard
+              that lists every state a person is in is a report; what makes it a
+              dashboard is that it surfaces the gap that costs them something.
+              An unconnected Telegram means the lesson reminders this account
+              pays for never arrive — so it says that here, once, as a line
+              rather than a panel. The account fold below still holds the
+              record; this is the alarm, not the field.
+
+              Nothing renders when the channel is linked, or when the reach API
+              is unavailable: an empty alarm bar is a broken dashboard. */}
+          {reach && !reach.linked && reach.linkUrl ? (
+            <a className={styles.shelfAlert} href={reach.linkUrl} target="_blank" rel="noopener noreferrer">
+              <span>{cab.notificationsMissing}</span>
+              <span className={styles.shelfAlertAction} aria-hidden="true">
+                →
+              </span>
+            </a>
+          ) : null}
+        </CabinetHero>
+
+      <div className={styles.shell}>
 
         {/* Folded shut on a phone. A receipt is reference, not the answer the
             dashboard exists to give, and one column of them was a ribbon
@@ -445,8 +398,13 @@ export function CabinetClient() {
             <article className={styles.card} {...matte}>
               <p className={styles.cardText}>{copy.noProductsLead}</p>
               <div className={styles.actions}>
-                <Link className={styles.actionPrimary} href={programsHref}>
-                  {cab.browsePrograms}
+                {/* The PRODUCTS catalogue, from the products fold. It offered
+                    programmes, which is an answer to a question this fold does
+                    not ask — and the one place on the page where a reader is
+                    told they own no products is the worst place to change the
+                    subject. */}
+                <Link className={styles.actionPrimary} href={productsHref}>
+                  {cab.browseProducts}
                 </Link>
               </div>
             </article>

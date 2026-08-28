@@ -93,7 +93,7 @@
     --cw-max-width: 1160px;
     --cw-page-gutter: clamp(20px, 5vw, 40px);
     --cw-bar-pad: 0.8rem;
-    --cw-bar-inset: max(0px, calc(var(--cw-page-gutter) - var(--cw-bar-pad)));
+    --cw-bar-inset: var(--cw-page-gutter);
     --cw-container-inset: max(var(--cw-page-gutter), calc((100% - var(--cw-max-width)) / 2));
     --cw-platform-visual-movement-start: #17332d;
     --cw-platform-visual-movement-mid: #25473f;
@@ -127,6 +127,9 @@
     --cw-sem-on-warmth: #203126;
     --cw-sem-boundary: #b76045;
     --cw-sem-trust: #4a6577;
+    --cw-sem-dosha-vata: var(--cw-sem-trust);
+    --cw-sem-dosha-pitta: var(--cw-sem-warmth-strong);
+    --cw-sem-dosha-kapha: var(--cw-sem-embodied);
     --cw-sem-muted-ink: #48544c;
     --cw-brand-asset-logo-symbol: url("/cw/brand/cw-mark.svg");
     --cw-brand-asset-logo-symbol-compact: url("/cw/brand/cw-mark-compact.svg");
@@ -163,6 +166,8 @@
     --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
+    --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-mat-surface: color-mix(in srgb, var(--cw-sem-calm-surface) 94%, var(--cw-sem-warmth) 6%);
     --cw-mat-surface-night: color-mix(in srgb, #1a2a20 94%, var(--cw-sem-warmth) 6%);
     --cw-mat-surface-sunk: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-mat-surface) 38%);
@@ -283,13 +288,13 @@
 
   .dark {
     /* CW_BASE_DARK_START */
-    --background: #141414;
+    --background: #191918;
     --foreground: #e4e4e1;
-    --cw-bg: #141414;
+    --cw-bg: #191918;
     --cw-surface: rgba(32, 32, 32, 0.72);
     --cw-surface-2: rgba(40, 40, 40, 0.72);
     --cw-surface-muted: rgba(36, 36, 35, 0.9);
-    --cw-surface-solid: #1f1f1d;
+    --cw-surface-solid: #232322;
     --cw-border: #4a4a46;
     --cw-text: #e4e4e1;
     --cw-muted: #a9a9a3;
@@ -369,7 +374,7 @@
     --cw-max-width: 1160px;
     --cw-page-gutter: clamp(20px, 5vw, 40px);
     --cw-bar-pad: 0.8rem;
-    --cw-bar-inset: max(0px, calc(var(--cw-page-gutter) - var(--cw-bar-pad)));
+    --cw-bar-inset: var(--cw-page-gutter);
     --cw-container-inset: max(var(--cw-page-gutter), calc((100% - var(--cw-max-width)) / 2));
     /* CW_BASE_DARK_END */
 
@@ -397,8 +402,33 @@
      of /admin onto public routes. Public surfaces therefore must NOT key their
      palette off `.dark`, or an admin visit would silently darken the whole site.
 
-     `[data-cw-theme="dark"]` is the public platform's own dark scope. Nothing
-     sets it yet — the palette is authored and gated, not shipped half-on.
+     `[data-cw-theme="dark"]` is the public platform's own dark scope, and as
+     of 2026-08-28 it SHIPS. `src/lib/platform/theme.ts` stamps it onto <html>
+     before first paint, from the reader's stored choice or, absent one, from
+     `prefers-color-scheme`.
+
+     WHAT HAD TO BE TRUE FIRST, and now is. Switching this on used to put
+     near-black ink on the night ground: every entry in CW_COURSE_PACKS was a
+     COMPLETE LIGHT PALETTE, so a course preview nested inside this scope won
+     for its own subtree and dropped the light gamma back on top of the dark
+     one. The packs are now a LIGHT-SIDE AXIS in the generator: their platform
+     tokens, grounds and inks are emitted under
+     `:root:not([data-cw-theme="dark"])`, and inside the dark scope a pack
+     contributes its HUE roles and nothing else.
+
+     THE STAMP IS ALWAYS WRITTEN, and no `prefers-color-scheme` rule shadows
+     it. One switch, one selector: with the media query as a second source the
+     pack scoping above would need to answer to both, and the two would drift
+     the first time one of them moved. Without JavaScript the page stays light,
+     which is what it was before this shipped.
+
+     THE GROUND IS GRAPHITE, NOT THE GREEN NIGHT it was authored as. The green
+     was a mineral read from the brand sheet, and it lost on its own terms: the
+     sheet's rule is "never green on a dark ground", which is exactly why the
+     admin shell is neutral. One warm graphite now serves both sides — admin
+     `base.dark` and this scope share the same ground and surface — so the
+     product has one night, not two that almost match. The warmth comes from
+     the brass accent and the grain, not from the ground.
 
      The material is shared by both: admin and public render the same surfaces.
 
@@ -411,8 +441,8 @@
   [data-cw-header-tone="dark"] {
     /* CW_MATERIAL_DARK_START */
     --cw-mat-surface: var(--cw-mat-surface-night);
-    --cw-mat-surface-night: color-mix(in srgb, #1a2a20 94%, var(--cw-sem-warmth) 6%);
-    --cw-mat-surface-sunk: color-mix(in srgb, #131e17 62%, var(--cw-mat-surface) 38%);
+    --cw-mat-surface-night: color-mix(in srgb, #232322 94%, var(--cw-sem-warmth) 6%);
+    --cw-mat-surface-sunk: color-mix(in srgb, #191918 62%, var(--cw-mat-surface) 38%);
     --cw-mat-tint: color-mix(in srgb, var(--cw-mat-surface) 76%, transparent);
     --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
     --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 86%, transparent);
@@ -450,17 +480,19 @@
   /* Public platform dark palette. Scoped away from `.dark` on purpose (above). */
   [data-cw-theme="dark"] {
     /* CW_PLATFORM_DARK_START */
-    --cw-platform-bg: #131e17;
-    --cw-platform-surface: #1a2a20;
-    --cw-platform-surface-muted: #24382b;
-    --cw-platform-text: #f5ece0;
+    --cw-platform-bg: #191918;
+    --cw-platform-surface: #232322;
+    --cw-platform-surface-muted: #2e2e2c;
+    --cw-platform-text: #e4e4e1;
     --cw-platform-muted: color-mix(in srgb, var(--cw-platform-text) 68%, var(--cw-platform-bg) 32%);
     --cw-platform-border: color-mix(in srgb, var(--cw-platform-text) 16%, var(--cw-platform-bg) 84%);
     --cw-platform-accent: var(--cw-sem-warmth);
-    --cw-platform-accent-strong: #8fae8b;
+    --cw-platform-accent-strong: #0f0f0e;
     --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
-    --cw-platform-on-accent: var(--cw-sem-on-warmth);
-    --cw-platform-accent-contrast: #0e1811;
+    --cw-platform-on-accent: #191918;
+    --cw-platform-accent-contrast: #fff8ef;
+    --cw-platform-ink-strong: var(--cw-platform-text);
+    --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-warmth) 0%, var(--cw-sem-warmth-strong) 100%);
     /* CW_PLATFORM_DARK_END */
   }
 
@@ -509,8 +541,13 @@
 
   /* Mineral pack — the earlier warm-mineral gamma, kept for individual programs
      and author landings. It re-points the same `--cw-sem-*` role names, so a
-     scope opts in with class="cw-pack-mineral" and nothing else changes. */
-  .cw-pack-mineral {
+     scope opts in with class="cw-pack-mineral" and nothing else changes.
+
+     Light-side only, for the reason written at the dark scopes above: this
+     block pins `--cw-platform-text` to a near-black ink, and a pack is not
+     allowed to do that on the night ground. The attribute form
+     (`[data-cw-pack="mineral"]`) carries the dark half. */
+  :root:not([data-cw-theme="dark"]) .cw-pack-mineral {
     /* CW_PACK_MINERAL_START */
     --cw-sem-calm-bg: #f6f2ea;
     --cw-sem-calm-surface: #fbfaf6;
@@ -540,6 +577,11 @@
      which is why it now answers to both forms. */
   /* CW_COURSE_PACKS_START */
   [data-cw-pack="mineral"] {
+    --cw-pack-sample-ink: #4f7e76;
+    --cw-pack-sample-ground: #f6f2ea;
+  }
+
+  :root:not([data-cw-theme="dark"]) [data-cw-pack="mineral"] {
     --cw-platform-bg: var(--cw-sem-calm-bg);
     --cw-platform-surface: var(--cw-sem-calm-surface);
     --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
@@ -551,6 +593,8 @@
     --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
+    --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-sem-calm-bg: #f6f2ea;
     --cw-sem-calm-surface: #fbfaf6;
     --cw-sem-calm-surface-muted: #e9e2d6;
@@ -569,7 +613,22 @@
     --cw-platform-accent-contrast: #fff8eb;
   }
 
+  [data-cw-theme="dark"] [data-cw-pack="mineral"] {
+    --cw-sem-guide-primary: #4f7e76;
+    --cw-sem-embodied: #6e8668;
+    --cw-sem-progress: #c1906b;
+    --cw-sem-warmth: #dba54f;
+    --cw-sem-warmth-strong: #c2902f;
+    --cw-sem-boundary: #b76045;
+    --cw-sem-trust: #35535f;
+  }
+
   [data-cw-pack="way21"] {
+    --cw-pack-sample-ink: #3f6350;
+    --cw-pack-sample-ground: #faefe0;
+  }
+
+  :root:not([data-cw-theme="dark"]) [data-cw-pack="way21"] {
     --cw-platform-bg: var(--cw-sem-calm-bg);
     --cw-platform-surface: var(--cw-sem-calm-surface);
     --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
@@ -581,6 +640,8 @@
     --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
+    --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-sem-calm-surface-muted: #f5f1e7;
     --cw-sem-method-ink: #1f2e24;
     --cw-sem-guide-primary: #3f6350;
@@ -588,7 +649,17 @@
     --cw-sem-embodied: #456b58;
   }
 
+  [data-cw-theme="dark"] [data-cw-pack="way21"] {
+    --cw-sem-guide-primary: #3f6350;
+    --cw-sem-embodied: #456b58;
+  }
+
   [data-cw-pack="reset-day"] {
+    --cw-pack-sample-ink: #517a65;
+    --cw-pack-sample-ground: #fdf6ec;
+  }
+
+  :root:not([data-cw-theme="dark"]) [data-cw-pack="reset-day"] {
     --cw-platform-bg: var(--cw-sem-calm-bg);
     --cw-platform-surface: var(--cw-sem-calm-surface);
     --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
@@ -600,6 +671,8 @@
     --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
+    --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-sem-calm-bg: #fdf6ec;
     --cw-sem-calm-surface-muted: #f7f2e8;
     --cw-sem-method-ink: #26372c;
@@ -608,7 +681,17 @@
     --cw-sem-embodied: #6b957c;
   }
 
+  [data-cw-theme="dark"] [data-cw-pack="reset-day"] {
+    --cw-sem-guide-primary: #517a65;
+    --cw-sem-embodied: #6b957c;
+  }
+
   [data-cw-pack="herbs"] {
+    --cw-pack-sample-ink: #537c4c;
+    --cw-pack-sample-ground: #faefe0;
+  }
+
+  :root:not([data-cw-theme="dark"]) [data-cw-pack="herbs"] {
     --cw-platform-bg: var(--cw-sem-calm-bg);
     --cw-platform-surface: var(--cw-sem-calm-surface);
     --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
@@ -620,10 +703,17 @@
     --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
     --cw-platform-on-accent: var(--cw-sem-on-warmth);
     --cw-platform-accent-contrast: #fff8ef;
+    --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
     --cw-sem-calm-surface-muted: #f7f2e7;
     --cw-sem-method-ink: #283b2b;
     --cw-sem-guide-primary: #537c4c;
     --cw-sem-guide-strong: #2b4526;
+    --cw-sem-embodied: #628c5a;
+  }
+
+  [data-cw-theme="dark"] [data-cw-pack="herbs"] {
+    --cw-sem-guide-primary: #537c4c;
     --cw-sem-embodied: #628c5a;
   }
     /* CW_COURSE_PACKS_END */
@@ -680,6 +770,53 @@ body {
   font-family: var(--cw-font-ui), "Manrope", sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+/* The body is the sheet BEHIND the shell, and on a public page that is the
+   platform's ground, not the app chrome's. `--background` is an admin-tier
+   token: it is repointed by `.dark` and by nothing else, so with the public
+   dark theme on, the shell went graphite and the strip the reader hits when
+   they overscroll past the end stayed the light app grey. One rule, scoped to
+   the public dark theme, so admin and the light side are untouched. */
+[data-cw-theme="dark"] body {
+  color: var(--cw-platform-text);
+  background: var(--cw-platform-bg);
+}
+
+/* ── The rule ─────────────────────────────────────────────────────────────────
+   A DRAWN LINE, NOT A TABLE EDGE. A hairline that runs the full width and stops
+   dead at both ends is the edge of a CELL: it says "this box ends here", and a
+   column of titles under a stack of them stops reading as a list and starts
+   reading as a grid. A separator owes less than that — only where one row ends
+   and the next begins — so it lives inside the row's own measure and fades out
+   before the margin.
+
+   This was already written down as owed: `Builder.module.css` says a real
+   drafted line, weight varying along its length, "belongs in the design system
+   at art-direction level, not in one module". Here it is, at that level.
+
+   TWO PARTS, AND THE SPLIT IS THE POINT. `--cw-rule-ink` is the colour, and a
+   consumer re-points it on its own scope (the builder points it at
+   `--builder-rule`). `--cw-rule-fade-x` / `-y` are the shape, and they read
+   that colour, so one gradient serves every surface without any of them
+   restating the geometry.
+
+   Taken as `border-image` rather than a pseudo-element on purpose: the rule
+   stays a BORDER, so it costs no element, shifts no layout, and there is
+   nothing extra for a hover or a selected state to clean up. The price is that
+   `border-image` outranks `border-color`, so a rule that CHANGES colour with
+   state drops the fade in that state and takes the full line — which is the
+   right reading anyway: a field's underline should show how far the field runs
+   exactly when the field is in use.
+
+   Eight percent at each end is about one gutter: the line stops where the row
+   has nothing in it. Do not use these on a box that has borders on more than
+   one side — `border-image` paints all four, and a bordered card is an edge,
+   not a rule. */
+:root {
+  --cw-rule-ink: var(--cw-platform-border);
+  --cw-rule-fade-x: linear-gradient(90deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
+  --cw-rule-fade-y: linear-gradient(180deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
 }
 
 /* ── Material (M0 matte / M1 glass) ───────────────────────────────────────────

@@ -40,7 +40,10 @@ type LogoMarkProps = Omit<SVGProps<SVGSVGElement>, "children" | "width" | "heigh
 };
 
 const TONE_COLOUR: Record<LogoMarkTone, string | undefined> = {
-  ink: "var(--cw-sem-guide-strong)",
+  // Not `--cw-sem-guide-strong`: "ink" means the strongest mark on THIS
+  // ground, and on the night ground that is the cream, not the deep green.
+  // Same value as before in the light theme.
+  ink: "var(--cw-platform-ink-strong)",
   gold: "var(--cw-sem-warmth)",
   current: undefined,
 };

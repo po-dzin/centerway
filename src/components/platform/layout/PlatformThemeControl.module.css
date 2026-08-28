@@ -1,0 +1,108 @@
+/* The theme toggle: three glyphs and the menu's own mark.
+
+   THREE ICONS, NOT THREE WORDS. It sat in the menu as "Світла · Темна ·
+   Системна" under a "ТЕМА" label — four pieces of text for a control the
+   reader operates once and then forgets, in a menu whose every other row is a
+   place to go. A row of words reads as three more destinations. Icons read as
+   one control, and the name goes to `aria-label` and the tooltip, where it is
+   still there for whoever needs it.
+
+   NOTHING HERE MAY BE AN `::after`. This renders inside `.profileMenu`, and
+   that scope sets `content: none` on the pseudo-element of every button it
+   contains, deliberately: its rows draw a real ink stroke from the sprite
+   because a text-decoration cannot be transitioned in width. A CSS bar under
+   the glyph is therefore not a different-looking mark, it is an erased one —
+   which is exactly why the gold never showed. The mark below is the same
+   graphic the rows carry, at the same three numbers, sized to a glyph.
+
+   The selectors are two classes deep on purpose. `.profileMenu button` is
+   (0,1,1) and owns row height, padding and weight for everything in the menu;
+   a bare `.option` at (0,1,0) would lose to it and the icons would come out as
+   3rem-tall rows. */
+
+.control {
+  display: flex;
+  align-items: center;
+  gap: 0.1rem;
+  /* Optically flush with the row's right edge: the glyph boxes carry their own
+     side bearing, so the last one is pushed back by that much. */
+  margin-inline-end: -0.4rem;
+}
+
+.control .option {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 0;
+  width: 2.1rem;
+  height: 2.1rem;
+  border: 0;
+  border-radius: var(--cw-radius-inset);
+  background: transparent;
+  padding: 0;
+  color: var(--cw-platform-muted);
+  cursor: pointer;
+  transition: color 160ms ease;
+}
+
+.control .option:hover,
+.control .option:focus-visible {
+  color: var(--cw-platform-text);
+  background: transparent;
+  outline: none;
+}
+
+/* The one focus ring the button contract gives every role. */
+.control .option:focus-visible {
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 28%, transparent),
+    var(--cw-mat-shadow-soft);
+}
+
+.mark {
+  position: absolute;
+  /* WIDTH IS STATED, NOT LEFT TO `auto`. An `<svg>` is a replaced element, so
+     `width: auto` on it resolves to its intrinsic size and ignores the two
+     insets — the mark came out 13px wide inside a 33px button and read as a
+     smudge rather than a rule. `.menuInkMark` states its width for exactly
+     this reason and this follows it. */
+  inset-inline-start: 0.15rem;
+  inset-block-end: 0.1rem;
+  width: calc(100% - 0.3rem);
+  height: var(--cw-ink-stroke-height);
+  overflow: visible;
+  /* The header scope publishes the toned marker; the fallback is for anywhere
+     this control is used outside it. */
+  color: var(--platform-header-nav-marker, var(--cw-nav-marker));
+  pointer-events: none;
+  opacity: 0;
+  /* Same vertical scale as `.menuInkMark`: the graphic and the round selector
+     share one source stroke, and this narrow band needs the stretch to keep
+     that weight on screen. */
+  transform: scaleX(0.38) scaleY(3.4) rotate(-0.4deg);
+  transform-origin: center;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.control .option:hover .mark,
+.control .option:focus-visible .mark {
+  opacity: var(--cw-nav-marker-hover-opacity);
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+}
+
+/* Current: the mark run to full, and the glyph at full foreground. Both,
+   because on three icons of one weight the mark alone is what the icon under
+   the cursor also carries, at 42%. */
+.control .option[aria-pressed="true"] {
+  color: var(--cw-platform-text);
+}
+
+.control .option[aria-pressed="true"] .mark {
+  opacity: 1;
+  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
+}
+
+.control .option svg {
+  display: block;
+}

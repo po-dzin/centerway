@@ -16,9 +16,15 @@
     <meta name="twitter:card" content="summary_large_image">
     <meta name="twitter:image" content="https://reboot.centerway.net.ua/shared/img/cw-og-cover.png">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+    <!-- Google Fonts removed 2026-08-28. Two preconnects and a render-blocking
+         third-party stylesheet were being requested for "Open Sans", which this
+         page has not rendered since the design tokens landed: the family reads
+         `var(--landing-font-family-base, var(--ds-font-family-base, "Open Sans",
+         sans-serif))`, both tokens are defined, and a browser check confirmed
+         every element on the page resolves to Formular. The Next shell rebuilds
+         this document's head and was already dropping these three lines, so the
+         live page never paid for them — but the file is the source of truth and
+         should not describe a dependency that does not exist. -->
 
     <link rel="stylesheet" href="js/themes/simple.css" defer="">
     <link rel="stylesheet" href="css/fonts.css">
@@ -98,7 +104,12 @@
     <section class="s1 section-hero has-video-bg" data-section="hero" data-flow-index="1">
         <div class="hero-bg" aria-hidden="true" data-cw-video-bg>
             <video class="hero-bg__video" muted loop playsinline preload="none" poster="img/hero-bg-poster.jpg">
-                <source src="img/hero-bg.mp4" type="video/mp4">
+                <!-- `data-src`, not `src`: with a real source in the markup the
+                     browser starts buffering the clip regardless of
+                     `preload="none"`, and it was measured arriving at 314 ms,
+                     ahead of the page it sits behind. The runtime attaches the
+                     source when it has decided to play — see landing-runtime.js. -->
+                <source data-src="img/hero-bg.mp4" type="video/mp4">
             </video>
             <div class="hero-bg__scrim"></div>
         </div>
@@ -160,8 +171,14 @@
             <p class="hero-proof__quote hero-proof__quote-after-list">Цей метод розроблений та практикується моїм вчителем протягом 44 років</p>
             </div>
 
-            <iframe class="img desk hero-image" src="https://www.youtube.com/embed/csSZPaVSy6U" title="Short intro video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-            <iframe class="img mob" src="https://www.youtube.com/embed/csSZPaVSy6U" title="Short intro video mobile" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+            <!-- TWO IFRAMES, ONE VIDEO: the same embed twice, one shown on
+                 desktop and one on mobile, so a visitor was loading a whole
+                 second YouTube player they never see. `loading="lazy"` fixes
+                 that as a side effect — a lazy iframe that is display:none is
+                 not fetched at all — as well as taking the visible one out of
+                 the initial load. -->
+            <iframe class="img desk hero-image" src="https://www.youtube.com/embed/csSZPaVSy6U" title="Short intro video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>
+            <iframe class="img mob" src="https://www.youtube.com/embed/csSZPaVSy6U" title="Short intro video mobile" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>
         </div>
     </section>
 
@@ -271,7 +288,7 @@
         <div class="section-program-grid">
             <div class="items">
                 <div class="program-media">
-                    <img src="img/short-lesson1.jpeg" class="lazyload" alt="Комплекс «Перезавантаження» курсу Short-Перезавантаження" width="1186" height="672" decoding="async">
+                    <img src="img/short-lesson1.webp" class="lazyload" alt="Комплекс «Перезавантаження» курсу Short-Перезавантаження" width="1186" height="672" decoding="async">
                 </div>
                 <h3 class="program-title">1. Комплекс «Перезавантаження»</h3>
                 <p class="program-subtitle">Базовий комплекс для зняття напруги та запуску відновлення організму.</p>
@@ -366,7 +383,7 @@
                 <button class="carousel-btn next" type="button" aria-label="Наступний відгук">›</button>
             </div>
             <div class="reviews-video">
-               <iframe id="iframe" src="https://www.youtube-nocookie.com/embed/2cxLE4GUuRw" title="Відгук" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+               <iframe id="iframe" src="https://www.youtube-nocookie.com/embed/2cxLE4GUuRw" title="Відгук" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>
             </div>
         </div>
     </section>
@@ -374,7 +391,7 @@
     <section class="s7 section-expert" id="expert" data-section="expert" data-flow-index="7">
         <div class="container">
             <div class="section-expert-grid">
-                <img data-src="img/expert-photo.jpg" class="lazyload section-expert-image" alt="Євгеній Корякін" width="360" height="480" decoding="async">
+                <img data-src="img/expert-photo.webp" class="lazyload section-expert-image" alt="Євгеній Корякін" width="360" height="480" decoding="async">
                 <div class="section-expert-text section-expert-text-content">
                     <h2>Куратор курсу</h2>
                     <p>👋 Давайте знайомитись: я — Євгеній Корякін, дослідник і практик аюрведи, йоги та інших систем вивчення руху</p>
@@ -470,7 +487,7 @@
                     <img src="../shared/img/cw-mark-ink.svg" alt="Логотип CenterWay" class="footer-logo" width="74" height="74" decoding="async">
 
                     <div class="footer-logo-payments">
-                        <img data-src="img/visa-mc.png" alt="Visa/Mastercard" class="lazyload">
+                        <img data-src="img/visa-mc.webp" alt="Visa/Mastercard" class="lazyload">
                    </div>
                 </div>
                 

@@ -49,18 +49,6 @@
   gap: var(--cw-space-md);
 }
 
-.sectionHead {
-  display: grid;
-  gap: 0.15rem;
-}
-
-/* The shelf's page title is a header for the whole page, not for the first
-   card — without this it sat 10px above the panel it names and read as its
-   caption. */
-.shell > .sectionHead {
-  margin-bottom: var(--cw-space-lg);
-}
-
 /* The page's single label idiom. The hero used to run a second one (mono, in
    the data face) two inches above this one; there is now only this. */
 .sectionLabel {
@@ -135,20 +123,335 @@
 
 /* Tone shifts, material does not. Class + attribute outranks the recipe's bare
    attribute selector deterministically, rather than relying on sheet order. */
-.continueCard {
-  composes: card;
+/* ── The dashboard's shelf ────────────────────────────
+
+   One column per course, at one size, whatever the count — the cards sit on the
+   paper end of the hero plate and are read as a row of the same object. Narrow
+   on purpose: `15rem` is the width at which a 16:9 cover still reads and four
+   fit a 1160px page. `auto-fit` rather than a fixed four because the number is
+   data.
+
+   A card here ends in exactly ONE control (see `CompactCourseCard`): the second
+   one used to be «Усі мої курси», which is the doorway printed a few
+   centimetres below itself. */
+/* ONE ANSWER, THEN THE INSTRUMENTS. The row used to be four equal cards with
+   four buttons, which is four equal answers to a question that has one: the
+   course you were in. That card keeps its cover and its control; the rest are
+   glances — name, where you stopped, a rail — and the whole tile is the link.
+
+   The grid says the same thing: the card takes a fixed column, the glances fill
+   what is left and wrap among themselves. */
+.shelfRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-md);
 }
 
-.continueCard[data-cw-material] {
-  background-color: var(--cw-mat-tone-support);
+/* ONE COLUMN, ENDING IN THE WAY ONWARD. The glances briefly wrapped into as
+   many columns as fit, which turned the middle of the row into a table — a
+   dashboard answering "what do I own" at the length of the library. One column
+   of four, then «Усі мої курси →» as its last row: the list is a list, and the
+   doorway is where it runs out.
+
+   THE ROWS DO NOT STRETCH. They did, to make the column exactly as tall as the
+   card beside it — and five rows sharing a card's height turned four courses
+   nobody is currently reading into four objects the size of the answer. A
+   THREE, AND THEY FILL THE CARD. Four rows plus the doorway left the column
+   ragged against the card beside it and put a course nobody has opened at the
+   bottom of the answer; three rows and the doorway divide the card's height
+   evenly, so the column is one object with the card rather than a list that
+   ran out. The library holds the rest — the count in the room says how many. */
+.shelfGlances {
+  display: grid;
+  grid-auto-rows: minmax(0, 1fr);
+  align-content: stretch;
+  gap: var(--cw-space-2xs);
 }
 
-.continueNext {
+/* A tile, not a card: no cover, no button, no shadow at rest. It is a line of
+   instrument that happens to be pressable, so the whole thing is the target. */
+/* A LINE, NOT A PANEL. Ring on the left, two lines of type on the right, and
+   the whole tile is the target. The first pass gave each glance a card's
+   padding and a full-width rail, which made three of them a second stack of
+   cards beside the one card that matters. */
+.glance {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-xs);
+  padding: 0.3rem var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+/* Reserved even when there is no ring to draw — a course with no lessons yet
+   still lines its name up with the two above it. */
+.glanceRing {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+/* The last row of the column: same tile, no ring, no state — the list ends in
+   a doorway rather than in a link floating over the composition. */
+.glanceMore {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+  min-height: 2.75rem;
+  padding: var(--cw-space-2xs) var(--cw-space-sm) var(--cw-space-2xs) calc(2.75rem + var(--cw-space-xs) + var(--cw-space-sm));
+  border-radius: var(--cw-radius-md);
+  color: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.glanceMore:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.glanceMore:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+/* 2px, once — the gesture says "this goes somewhere", anything larger says
+   "this is animated". Same step as every other arrow in the platform. */
+.glanceMoreArrow {
+  color: var(--cw-sem-warmth-strong);
+  transition: transform 200ms ease;
+}
+
+.glanceMore:hover .glanceMoreArrow,
+.glanceMore:focus-visible .glanceMoreArrow {
+  transform: translateX(2px);
+}
+
+.glanceText {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.glance:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.glance:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.glanceTitle {
+  overflow: hidden;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The count in the DATA face, like every other number the platform prints in a
+   meter's company (see the mirror's ring list). It is what makes four glances,
+   a rail and a dosha wheel read as one instrument panel rather than as four
+   paragraphs. */
+.glanceNote {
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+}
+
+@media (min-width: 900px) {
+  /* AN ISLAND, NOT A BAND. Spread across the full content column the row read
+     as a strip pinned to the bottom of the screen rather than as one object
+     standing in the room. Capped and centred, it sits under the middle of the
+     photograph — which is also where the eye already is, having come down from
+     the name on the wall.
+
+     THREE EQUAL COLUMNS, MEASURED BY THE CARD — in both directions.
+
+     Height: they stretch to the tallest part, which is the course card, the one
+     whose height is set by real content (cover, name, where you stopped, the
+     control). The other two fill it rather than setting their own.
+
+     Width: the column is `15rem`, the card's own width, and the row is only as
+     wide as three of them. `1fr` columns in a `54rem` box made every part 18rem
+     — the row grew the card to fill the page instead of the page holding three
+     cards. A dashboard row is a group of objects standing in a room, and a
+     group has a size; it does not spread to whatever it is given.
+
+     LEFT, ON THE CONTENT'S OWN EDGE. Centred, the group floated free of the
+     name and the three facts standing above it — two blocks of one composition
+     on two different verticals. `justify-content: start` puts its left edge on
+     the same line as the avatar. */
+  .shelfRow {
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 15rem));
+    justify-content: start;
+    align-items: stretch;
+  }
+
+  /* Nothing to resume, so nothing to keep narrow: the state card takes the
+     room the glances would have. */
+  /* Nothing to resume: what stands in the first column is a state — loading,
+     failed, or "no courses yet" — and a state is a sentence, not a card of
+     fixed width. It gets the room the glances would have had; the dosha keeps
+     its own column at the card's width. */
+  .shelfRow[data-shelf="single"] {
+    grid-template-columns: minmax(0, 21rem) minmax(0, 15rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glanceMore,
+  .glanceMoreArrow {
+    transition: none;
+  }
+
+  .glanceMore:hover {
+    transform: none;
+  }
+
+  .glanceMore:hover .glanceMoreArrow,
+  .glanceMore:focus-visible .glanceMoreArrow {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glance {
+    transition: none;
+  }
+
+  .glance:hover {
+    transform: none;
+  }
+}
+
+/* FLEX, not grid, and the reason is the button. `margin-top: auto` on the
+   action is what lines four buttons up under four different copy lengths; in a
+   grid the auto margin has no free space in its track to eat, so the cards came
+   out the same height with their buttons at four different heights. */
+.shelfCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: var(--cw-space-md);
+  border-radius: var(--cw-radius-lg);
+}
+
+.shelfCardTitle {
   margin: 0;
   font-size: 1.05rem;
   font-weight: 600;
-  line-height: 1.4;
+  line-height: 1.3;
 }
+
+.shelfCardNote {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.45;
+}
+
+.shelfCardMeta {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.85rem;
+}
+
+/* The action pins to the card's own bottom, so four cards with three different
+   copy lengths still line their buttons up. */
+.shelfCardAction {
+  composes: row from "../PlatformButtons.module.css";
+  margin-top: auto;
+  padding-top: var(--cw-space-2xs);
+}
+
+/* THE ONE GAP THAT COSTS SOMETHING, as a line under the row.
+   Boundary tone rather than a card: a panel here would be a fourth object in a
+   composition of three, and what it says is one sentence long. It renders only
+   while there is something to do about it — see `CabinetClient`. */
+.shelfAlert {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  width: min(100%, 47rem);
+  padding: var(--cw-space-xs) var(--cw-space-md);
+  border-radius: var(--cw-radius-md);
+  border: 1px solid color-mix(in srgb, var(--cw-sem-boundary) 45%, transparent);
+  background: var(--cw-mat-tone-boundary);
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  text-decoration: none;
+}
+
+.shelfAlertAction {
+  color: var(--cw-sem-warmth-strong);
+  transition: transform 200ms ease;
+}
+
+.shelfAlert:hover .shelfAlertAction {
+  transform: translateX(2px);
+}
+
+.shelfAlert:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shelfAlertAction {
+    transition: none;
+  }
+
+  .shelfAlert:hover .shelfAlertAction {
+    transform: none;
+  }
+}
+
+/* THE DOSHA, AT THE SIZE OF A GLANCE. It was a full card in a section under the
+   photograph, which put a scroll between a person and their own result. Here it
+   is the row's third part: the wheel, the type, one way back into the test. */
+.shelfAside {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border-radius: var(--cw-radius-lg);
+}
+
+/* Smaller than the card version — the tile is a fifth of the row's width, and
+   the wheel is read as a shape here, not measured. */
+.shelfAside .wheelRing {
+  width: clamp(5rem, 16vw, 6.5rem);
+}
+
+/* The tile is as tall as the course card now, so the wheel takes the middle of
+   it rather than sitting under the label with a field of tint below. The
+   control keeps its own foot (`.shelfCardAction`, `margin-top: auto`). */
+.shelfAside .wheel {
+  margin-block: auto;
+}
+
+
+
+
+
 
 /* ── Chips, meters, meta ──────────────────────────── */
 
@@ -173,29 +476,6 @@
   background: var(--cw-platform-accent);
   color: var(--cw-platform-on-accent);
   font-weight: 600;
-}
-
-/* One meter recipe with the dosha test's, which is where it was designed: the
-   same track and the same success→pending gradient, so a bar means the same
-   thing wherever the platform draws one. Before this the cabinet had its own
-   pair — a track at 1.08 against the card and a gold fill at 1.75 against the
-   track — which rendered as three grey hairlines. Both legs of the gradient are
-   asserted against the track in scripts/guard-contrast.mjs. */
-.meter {
-  height: 0.5rem;
-  border-radius: var(--cw-radius-pill);
-  background: var(--cw-mat-meter-track);
-  overflow: hidden;
-}
-
-.meterFill {
-  /* It is a <span>: without this the fill is an inline box, `width` does
-     nothing, and the bar renders empty at every score. */
-  display: block;
-  height: 100%;
-  border-radius: var(--cw-radius-pill);
-  background: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
-  transition: width 240ms ease;
 }
 
 .metaList {
@@ -248,32 +528,109 @@
   composes: secondary from "../PlatformButtons.module.css";
 }
 
-/* ── Score bars (dosha) ───────────────────────────── */
+/* ── The dosha wheel ──────────────────────────────────
 
-/* The card is full width — the dosha result is the only thing in its row since
-   reachability moved to the account — but a meter is read by comparing three
-   lengths, and three 1200px bars are compared no better than three 500px ones.
-   Capped so the row stays a chart rather than a horizon. */
-.scoreList {
-  max-width: 34rem;
+   One ring divided into three arcs, in place of three horizontal meters. The
+   meters cost a card's width to say what the result line already said in words;
+   the wheel says the SHAPE, and the numbers arrive on hover or focus. */
+/* THE WHEEL IS CENTRED IN ITS TILE. Only the numbers under it are a list, and
+   a list is read down a left edge — the ring is a picture, and a picture pushed
+   against one wall of a panel reads as a mistake rather than as alignment. */
+.wheel {
   display: grid;
-  gap: var(--cw-space-sm);
+  justify-items: center;
+  gap: 0.35rem;
+  padding-block: var(--cw-space-2xs);
 }
 
-.scoreRow {
-  display: grid;
-  gap: 0.3rem;
+.wheelRing {
+  width: clamp(7rem, 22vw, 9rem);
+  height: auto;
 }
 
-.scoreMeta {
+.wheelTrack {
+  stroke: color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+}
+
+.wheelArc {
+  transition: opacity 180ms ease;
+}
+
+.wheelArc[data-dosha="vata"] {
+  stroke: var(--cw-sem-dosha-vata);
+}
+
+.wheelArc[data-dosha="pitta"] {
+  stroke: var(--cw-sem-dosha-pitta);
+}
+
+.wheelArc[data-dosha="kapha"] {
+  stroke: var(--cw-sem-dosha-kapha);
+}
+
+.wheelType {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: 1.2rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* PRINTED, NOT HOVERED. The three numbers were revealed on hover, on the
+   argument that the wheel says the shape and the numbers are for whoever asks.
+   On a tile of its own, with room under the wheel, that argument buys nothing
+   and costs a pointer: a touch screen has no hover, and a result you have to
+   discover is a result the dashboard did not give you. */
+.wheelLegend {
+  display: grid;
+  gap: 0.15rem;
+  width: 100%;
+  margin: 0;
+}
+
+.wheelLegendRow {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
-  font-size: 0.9rem;
+  gap: 0.5rem;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
 }
 
-.scoreMeta strong {
-  font-family: var(--cw-font-data);
+.wheelLegendRow dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.wheelLegendRow dd {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-weight: 600;
+}
+
+.wheelDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--cw-radius-pill);
+}
+
+.wheelLegendRow[data-dosha="vata"] .wheelDot {
+  background: var(--cw-sem-dosha-vata);
+}
+
+.wheelLegendRow[data-dosha="pitta"] .wheelDot {
+  background: var(--cw-sem-dosha-pitta);
+}
+
+.wheelLegendRow[data-dosha="kapha"] .wheelDot {
+  background: var(--cw-sem-dosha-kapha);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheelArc {
+    transition: none;
+  }
 }
 
 /* Top-level blocks used to touch: the shell is not a grid and nothing set a
@@ -354,76 +711,24 @@
 
 /* A panel like any other — the rings are the only new thing here, and they are
    drawn by ProgressRing, not by this file. */
-.overview {
-  composes: card;
-}
 
 /* Scrolls sideways on a phone instead of wrapping into a second row: three
    courses on one line is the whole reason the ring exists, and a wrap turns the
    compact summary back into a stack. `auto-fill` off a fixed track so a lone
    pair does not stretch to half the panel each. */
-.ringList {
-  display: grid;
-  grid-auto-flow: column;
-  grid-auto-columns: 6.5rem;
-  gap: var(--cw-space-md);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  overflow-x: auto;
-  overscroll-behavior-inline: contain;
-  scrollbar-width: thin;
-}
 
-.ringItem {
-  display: grid;
-  justify-items: center;
-  gap: 0.35rem;
-  padding: var(--cw-space-2xs);
-  border-radius: var(--cw-radius-md);
-  color: inherit;
-  text-align: center;
-  text-decoration: none;
-}
 
-.ringItem:hover {
-  background: var(--cw-mat-surface-sunk);
-}
 
-.ringItem:focus-visible {
-  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: var(--ds-focus-ring-offset);
-}
 
 /* Two lines, then an ellipsis. A ring is a glyph 4rem wide and the label under
    it is a caption for it, not the course's name in full — «Розвантажувальний
    день — практикум з умовного голодування» ran to six lines and made one column
    three times the height of its neighbours. The full title is on the card the
    ring links to. */
-.ringTitle {
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
-  line-clamp: 2;
-  overflow: hidden;
-  font-size: 0.86rem;
-  font-weight: 600;
-  line-height: 1.25;
-  overflow-wrap: anywhere;
-}
 
 /* Baselines line up across the row even when one label takes one line and the
    next takes two. */
-.ringItem {
-  align-content: start;
-}
 
-.ringMeta {
-  color: var(--cw-platform-muted);
-  font-family: var(--cw-font-data);
-  font-size: 0.7rem;
-  letter-spacing: 0.04em;
-}
 
 /* ── Course cover ─────────────────────────────────── */
 
@@ -449,7 +754,11 @@
     color-mix(in srgb, var(--cw-sem-guide-primary) 20%, var(--cw-mat-surface-sunk)),
     var(--cw-mat-surface-sunk)
   );
-  color: var(--cw-sem-guide-strong);
+  /* The strongest mark ON the ground, which is not the same role as the
+     strongest FILL. In the light gamma both are `guide-strong` and the
+     difference never had to be stated; on graphite a plate wants to go darker
+     and a mark wants to go lighter, and one value cannot do both. */
+  color: var(--cw-platform-ink-strong);
   font-family: var(--cw-font-editorial);
   font-size: 2rem;
   font-weight: 500;
@@ -549,30 +858,6 @@
 @media (min-width: 561px) {
   .shell {
     padding-block-start: var(--cw-space-xl);
-  }
-
-  .identity {
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: center;
-    gap: var(--cw-space-xl);
-    padding: var(--cw-space-xl);
-  }
-
-  /* Side by side once there is room: identity left, the three facts right,
-     with the hairline turning from a horizontal rule into a vertical one. */
-  /* No two-line reserve once the columns can grow: a compound name fits on one
-     line here, so the space would be dead. */
-  .identityStat dd {
-    min-height: 0;
-  }
-
-  .identityStats {
-    grid-template-columns: repeat(3, minmax(6rem, auto));
-    gap: var(--cw-space-lg);
-    padding-top: 0;
-    padding-inline-start: var(--cw-space-lg);
-    border-top: 0;
-    border-inline-start: 1px solid var(--cw-mat-stroke-inner);
   }
 
   /* auto-fit, not a fixed pair: a lone course card reading as a half-width tile

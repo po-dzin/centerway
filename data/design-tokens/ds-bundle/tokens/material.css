@@ -46,8 +46,8 @@
 [data-cw-theme="dark"],
 .dark {
   --cw-mat-surface: var(--cw-mat-surface-night);
-  --cw-mat-surface-night: color-mix(in srgb, #1a2a20 94%, var(--cw-sem-warmth) 6%);
-  --cw-mat-surface-sunk: color-mix(in srgb, #131e17 62%, var(--cw-mat-surface) 38%);
+  --cw-mat-surface-night: color-mix(in srgb, #232322 94%, var(--cw-sem-warmth) 6%);
+  --cw-mat-surface-sunk: color-mix(in srgb, #191918 62%, var(--cw-mat-surface) 38%);
   --cw-mat-tint: color-mix(in srgb, var(--cw-mat-surface) 76%, transparent);
   --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
   --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 86%, transparent);

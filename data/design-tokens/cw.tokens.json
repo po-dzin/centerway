@@ -87,7 +87,7 @@
       "--cw-max-width": "1160px",
       "--cw-page-gutter": "clamp(20px, 5vw, 40px)",
       "--cw-bar-pad": "0.8rem",
-      "--cw-bar-inset": "max(0px, calc(var(--cw-page-gutter) - var(--cw-bar-pad)))",
+      "--cw-bar-inset": "var(--cw-page-gutter)",
       "--cw-container-inset": "max(var(--cw-page-gutter), calc((100% - var(--cw-max-width)) / 2))",
       "--cw-platform-visual-movement-start": "#17332d",
       "--cw-platform-visual-movement-mid": "#25473f",
@@ -107,13 +107,13 @@
       "--cw-platform-visual-sand-button-base": "#f7efe3"
     },
     "dark": {
-      "--background": "#141414",
+      "--background": "#191918",
       "--foreground": "#e4e4e1",
-      "--cw-bg": "#141414",
+      "--cw-bg": "#191918",
       "--cw-surface": "rgba(32, 32, 32, 0.72)",
       "--cw-surface-2": "rgba(40, 40, 40, 0.72)",
       "--cw-surface-muted": "rgba(36, 36, 35, 0.9)",
-      "--cw-surface-solid": "#1f1f1d",
+      "--cw-surface-solid": "#232322",
       "--cw-border": "#4a4a46",
       "--cw-text": "#e4e4e1",
       "--cw-muted": "#a9a9a3",
@@ -193,7 +193,7 @@
       "--cw-max-width": "1160px",
       "--cw-page-gutter": "clamp(20px, 5vw, 40px)",
       "--cw-bar-pad": "0.8rem",
-      "--cw-bar-inset": "max(0px, calc(var(--cw-page-gutter) - var(--cw-bar-pad)))",
+      "--cw-bar-inset": "var(--cw-page-gutter)",
       "--cw-container-inset": "max(var(--cw-page-gutter), calc((100% - var(--cw-max-width)) / 2))"
     }
   },
@@ -233,6 +233,9 @@
       "--cw-sem-on-warmth": "#203126",
       "--cw-sem-boundary": "#b76045",
       "--cw-sem-trust": "#4a6577",
+      "--cw-sem-dosha-vata": "var(--cw-sem-trust)",
+      "--cw-sem-dosha-pitta": "var(--cw-sem-warmth-strong)",
+      "--cw-sem-dosha-kapha": "var(--cw-sem-embodied)",
       "--cw-sem-muted-ink": "#48544c",
       "--cw-brand-asset-logo-symbol": "url(\"/cw/brand/cw-mark.svg\")",
       "--cw-brand-asset-logo-symbol-compact": "url(\"/cw/brand/cw-mark-compact.svg\")",
@@ -271,20 +274,24 @@
         "--cw-platform-accent-strong": "var(--cw-sem-guide-strong)",
         "--cw-platform-accent-pressed": "var(--cw-sem-warmth-strong)",
         "--cw-platform-on-accent": "var(--cw-sem-on-warmth)",
-        "--cw-platform-accent-contrast": "#fff8ef"
+        "--cw-platform-accent-contrast": "#fff8ef",
+        "--cw-platform-ink-strong": "var(--cw-sem-guide-strong)",
+        "--cw-platform-meter": "linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%)"
       },
       "platformDark": {
-        "--cw-platform-bg": "#131e17",
-        "--cw-platform-surface": "#1a2a20",
-        "--cw-platform-surface-muted": "#24382b",
-        "--cw-platform-text": "#f5ece0",
+        "--cw-platform-bg": "#191918",
+        "--cw-platform-surface": "#232322",
+        "--cw-platform-surface-muted": "#2e2e2c",
+        "--cw-platform-text": "#e4e4e1",
         "--cw-platform-muted": "color-mix(in srgb, var(--cw-platform-text) 68%, var(--cw-platform-bg) 32%)",
         "--cw-platform-border": "color-mix(in srgb, var(--cw-platform-text) 16%, var(--cw-platform-bg) 84%)",
         "--cw-platform-accent": "var(--cw-sem-warmth)",
-        "--cw-platform-accent-strong": "#8fae8b",
+        "--cw-platform-accent-strong": "#0f0f0e",
         "--cw-platform-accent-pressed": "var(--cw-sem-warmth-strong)",
-        "--cw-platform-on-accent": "var(--cw-sem-on-warmth)",
-        "--cw-platform-accent-contrast": "#0e1811"
+        "--cw-platform-on-accent": "#191918",
+        "--cw-platform-accent-contrast": "#fff8ef",
+        "--cw-platform-ink-strong": "var(--cw-platform-text)",
+        "--cw-platform-meter": "linear-gradient(90deg, var(--cw-sem-warmth) 0%, var(--cw-sem-warmth-strong) 100%)"
       }
     },
     "material": {
@@ -326,8 +333,8 @@
       },
       "dark": {
         "--cw-mat-surface": "var(--cw-mat-surface-night)",
-        "--cw-mat-surface-night": "color-mix(in srgb, #1a2a20 94%, var(--cw-sem-warmth) 6%)",
-        "--cw-mat-surface-sunk": "color-mix(in srgb, #131e17 62%, var(--cw-mat-surface) 38%)",
+        "--cw-mat-surface-night": "color-mix(in srgb, #232322 94%, var(--cw-sem-warmth) 6%)",
+        "--cw-mat-surface-sunk": "color-mix(in srgb, #191918 62%, var(--cw-mat-surface) 38%)",
         "--cw-mat-tint": "color-mix(in srgb, var(--cw-mat-surface) 76%, transparent)",
         "--cw-mat-tint-hover": "color-mix(in srgb, var(--cw-mat-surface) 84%, transparent)",
         "--cw-mat-tint-media": "color-mix(in srgb, var(--cw-mat-surface) 86%, transparent)",

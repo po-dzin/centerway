@@ -15,6 +15,7 @@ import {
   uniqueSlug,
   type Course,
   type CourseModule,
+  type CourseTemplateId,
   type Lesson,
 } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
@@ -22,9 +23,11 @@ import { OFFER_CARD_TITLE_MAX, OFFER_TITLE_MAX, offerCardOverflow } from "@/lib/
 import { BuilderFailureNotice, BuilderShell } from "./BuilderShell";
 import { BuilderMenu } from "./BuilderMenu";
 import { BuilderCourseSettings } from "./BuilderCourseSettings";
+import { BuilderStructureStart, isPristineStructure } from "./BuilderStructureStart";
 import { BuilderBlockers } from "./BuilderBlockers";
 import {
   exportLessonFile,
+  importLessonFiles,
   loadCourse,
   renameCourseSlug,
   saveCourse,
@@ -52,6 +55,7 @@ import {
 import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
+import { courseSaveFailureCopy } from "./courseSaveCopy";
 import { lessonDocumentFailureCopy } from "./lessonDocumentCopy";
 import {
   clearDurableCourseDraft,
@@ -273,6 +277,105 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     { crossGroup: true }
   );
 
+  /**
+   * N files in, N NEW lessons at the end of one module.
+   *
+   * TWO IMPORTS, TWO VERBS, and they are not interchangeable. The lesson editor
+   * imports INTO the open lesson: it replaces title, summary, duration and
+   * blocks in the working copy while identity, slug, order and day survive
+   * (docs/lms-builder-course-lifecycle-2026-08-23.md). This one CREATES —
+   * nothing that exists is touched, and the result needs somewhere to go.
+   *
+   * Which is why it belongs here and could not stay in the editor. A new lesson
+   * needs a module and a position, and the only surface that knows both is the
+   * structure. Without it an author holding five chapters in Word had to create
+   * five empty lessons by hand, open each and import over it — three steps per
+   * chapter, the middle one existing only to give the file somewhere to land.
+   *
+   * It restores what `4bca366f` removed. That commit is titled "move lesson
+   * import into editor", but a replace is not a move of a create: the batch
+   * path went with it and nothing took its place.
+   *
+   * Everything it writes is a draft edit like any other — one history entry, so
+   * ⌘Z takes all of it back, and nothing reaches the server until the course is
+   * saved.
+   */
+  /**
+   * One applier for both formats of the structure chooser.
+   *
+   * It used to live inline on the settings panel's prop, which is why the
+   * control could only ever be in one place: the behaviour was written into the
+   * call rather than into the surface. Lifted here it is the course's own
+   * action, and «З чого почнемо» and «Замінити структуру» are two presentations
+   * of it rather than two implementations.
+   *
+   * The schedule travels WITH the modules, deliberately: a 21-day programme's
+   * shape is not just its lessons, and applying its structure while leaving the
+   * course `open` would produce a template that half-applied.
+   */
+  const applyTemplate = useCallback((template: CourseTemplateId) => {
+    history.edit(null, (current) => {
+      const preset = newCourseFromTemplate(ids, {
+        slug: current.slug,
+        title: current.title,
+        programSlug: current.programSlug,
+        template,
+      });
+      return { ...current, schedule: preset.schedule, modules: preset.modules };
+    });
+    setNote("Структуру застосовано. Перевірте модулі й збережіть курс.");
+    /* `ids` is module scope, not state — listing it would claim this callback
+       re-forms when it changes, and it cannot. */
+  }, [history]);
+
+  async function importLessons(moduleIndex: number, files: File[]) {
+    if (!files.length || working) return;
+    setBusy(true);
+    setNote(null);
+    const result = await importLessonFiles(slug, files);
+    setBusy(false);
+    if (!result.ok) {
+      setNote(lessonDocumentFailureCopy(result.detail, "Не вдалося прочитати файли уроків."));
+      return;
+    }
+
+    history.edit(null, (current) => {
+      /* Slugs are claimed against the WHOLE course, not the module, and the
+         running list is appended to as they are taken — two files with the same
+         heading would otherwise both resolve to the same free slug. */
+      const taken = current.modules.flatMap((entry) => entry.lessons.map((lesson) => lesson.slug));
+      let dayIndex = nextDayIndex(current);
+      return {
+        ...current,
+        modules: renumber(
+          current.modules.map((entry, index) => {
+            if (index !== moduleIndex) return entry;
+            const imported = result.data.lessons.map((lesson, importedIndex) => {
+              const lessonSlug = uniqueSlug(lesson.title, taken);
+              taken.push(lessonSlug);
+              const nextLesson: Lesson = {
+                ...lesson,
+                slug: lessonSlug,
+                order: entry.lessons.length + importedIndex + 1,
+                /* A reference module holds no place in the sequence, so its
+                   lessons carry no day and the counter does not advance. */
+                dayIndex: entry.reference ? undefined : dayIndex,
+              };
+              if (!entry.reference && dayIndex !== undefined) dayIndex += 1;
+              return nextLesson;
+            });
+            return { ...entry, lessons: [...entry.lessons, ...imported] };
+          }),
+        ),
+      };
+    });
+
+    const count = result.data.lessons.length;
+    setNote(
+      `${count} ${plural(count, "урок додано", "уроки додано", "уроків додано")}. Перевірте структуру й збережіть курс.`,
+    );
+  }
+
   async function exportLesson(lesson: Lesson, format: LessonDocumentFormat) {
     if (working) return;
     setBusy(true);
@@ -303,7 +406,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       if (result.failure === "conflict") {
         return { ok: false as const, message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни." };
       }
-      return { ok: false as const, message: result.detail ?? "Не вдалося зберегти. Спробуйте ще раз." };
+      /* The server's `detail` is an assertion id, not a sentence — see
+         `courseSaveCopy`. It used to be printed raw, so a course whose cover
+         had no alt text answered every save with
+         `lms_course_cover_missing_alt:builder`. */
+      return {
+        ok: false as const,
+        message: courseSaveFailureCopy(result.detail, "Не вдалося зберегти. Спробуйте ще раз."),
+      };
     }
     draftGeneration.current = result.data.draftGeneration;
     // Keep server-derived readiness current without reloading the document. A
@@ -516,7 +626,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             aria-label="Переглянути як учень"
             title={dirty ? "Зберегти й відкрити як учень" : "Відкрити як учень"}
           >
-            <Icon name="eye" size={18} />
+            <Icon name="eye" size={20} />
             <span className={styles.workspaceActionLabel}>Переглянути</span>
           </button>
           <button
@@ -659,26 +769,20 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </div>
       </div>
 
+      {/* NO VISIBLE HEADING HERE ANY MORE. «Про курс» sat above a list whose
+          every row already carries its own caption — ВІТРИНА, РИТМ, ВИГЛЯД,
+          ОБКЛАДИНКА — so it named nothing the reader could not see, and it
+          landed under a tab that says «Огляд» three rows above. A heading that
+          titles a titled list is a line to skip.
+
+          It stays as the section's ACCESSIBLE name, because
+          `aria-labelledby` on the panel above points at it and a screen
+          reader still needs to hear what this region is. */}
       <div className={styles.courseSettingsPanel}>
-        {/* «Про курс», not «Огляд». This heading names the settings panel it
-            sits on, and the tab above already says «Огляд» — one word printed
-            twice in two rows is not a second fact. */}
-        <h2 className={styles.panelTitle} id="course-overview-title">Про курс</h2>
+        <h2 className={styles.visuallyHidden} id="course-overview-title">Про курс</h2>
         <BuilderCourseSettings
           course={course}
           onChange={editCourse}
-          onApplyTemplate={(template) => {
-            history.edit(null, (current) => {
-              const preset = newCourseFromTemplate(ids, {
-                slug: current.slug,
-                title: current.title,
-                programSlug: current.programSlug,
-                template,
-              });
-              return { ...current, schedule: preset.schedule, modules: preset.modules };
-            });
-            setNote("Стартову структуру застосовано. Перевірте модулі й збережіть курс.");
-          }}
         />
       </div>
       </section>
@@ -689,7 +793,16 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             {/* No kicker. It printed the course title one row under the trail
                 that already names it — on a phone that echo cost a whole line
                 of a screen where the first module was six rows down. */}
-            <h2 className={styles.structureTitle} id="course-structure-title">Зміст</h2>
+            {/* THE TAB ALREADY SAYS «Зміст», two rows above and in the control
+                the author just pressed to get here. Printing it again as the
+                panel's heading is the same word twice on one screen with
+                nothing added between them — and on a phone it cost a line of a
+                view where the first module was already far down.
+
+                What stays visible is the count under it, which the tab cannot
+                carry; the word itself stays as the region's accessible name,
+                because `aria-labelledby` points at it. */}
+            <h2 className={styles.visuallyHidden} id="course-structure-title">Зміст</h2>
             <p className={styles.structureMeta}>
               {course.modules.length} {plural(course.modules.length, "модуль", "модулі", "модулів")} ·{" "}
               {lessonCount} {plural(lessonCount, "урок", "уроки", "уроків")}
@@ -709,6 +822,19 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           ) : null}
         </header>
 
+        {/* THE OPENING STATE OF THIS TAB, when there is nothing here yet. A new
+            course cannot be empty — `validateCourse` refuses zero modules, so
+            `createCourse` seeds one — and an author therefore lands on
+            `Модуль 1 / Урок 1` whether that shape suits their course or not.
+            Offering the four shapes here is the choice that seeding took away.
+
+            It sits ABOVE the list rather than replacing it: the placeholder
+            module below is real, and a control that hides the document it acts
+            on is the one thing this panel must not do. */}
+        {isPristineStructure(course) ? (
+          <BuilderStructureStart format="start" onApply={applyTemplate} />
+        ) : null}
+
         <div className={styles.structureModules}>
           {course.modules.map((module, moduleIndex) => (
             <ModuleEditor
@@ -723,6 +849,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
               onNote={setNote}
               onOpenLesson={openLesson}
               busy={working}
+              onImportLessons={(files) => importLessons(moduleIndex, files)}
               onExportLesson={exportLesson}
             />
           ))}
@@ -740,6 +867,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         >
           <span className={styles.addGlyph} aria-hidden="true">+</span> Додати модуль
         </button>
+
+        {/* THE SAME CONTROL, FOLDED, once there is work to lose. On a course
+            with content the templates stop being a starting point and become a
+            wrecking ball, so this one is closed by default, sits after
+            everything it would destroy, and asks before it does. */}
+        {isPristineStructure(course) ? null : (
+          <BuilderStructureStart format="replace" onApply={applyTemplate} />
+        )}
       </section>
 
       <section className={styles.releaseWorkspace} id="course-release" hidden={workspaceMode !== "release"} aria-labelledby="course-release-title">
@@ -897,6 +1032,7 @@ function ModuleEditor({
   onNote,
   onOpenLesson,
   busy,
+  onImportLessons,
   onExportLesson,
 }: {
   course: Course;
@@ -910,9 +1046,11 @@ function ModuleEditor({
   /** Answers whether the row may follow its own href, or is being held back. */
   onOpenLesson: (href: string) => "allow" | "held";
   busy: boolean;
+  onImportLessons: (files: File[]) => Promise<void>;
   onExportLesson: (lesson: Lesson, format: LessonDocumentFormat) => Promise<void>;
 }) {
   const isOnlyModule = course.modules.length === 1;
+  const importPicker = useRef<HTMLInputElement>(null);
   const [collapsed, setCollapsed] = useState(false);
   const sequenceIndex = module.reference
     ? null
@@ -1114,6 +1252,42 @@ function ModuleEditor({
         >
           <Icon name="plus" size={20} /> Новий урок
         </button>
+        {/* NEXT TO THE HAND-MADE ONE, because it makes the same thing — but as
+            a GLYPH, not a second sentence. Two full labels side by side read as
+            two equal offers and doubled the width of a row that repeats once per
+            module; on a phone they wrapped. The words belong to the one an
+            author takes ten times a day, and the side door keeps a tooltip and
+            an accessible name — the same split as the course list's head, where
+            «Новий курс» is the gold button and import is the glyph beside it.
+
+            `multiple` is the point of it: five files are five lessons in one
+            press, appended in the order the picker returns them. */}
+        <button
+          className={styles.moduleImportAction}
+          type="button"
+          disabled={busy}
+          onClick={() => importPicker.current?.click()}
+          title={busy ? "Опрацьовуємо…" : "Імпортувати уроки з файлів"}
+          aria-label={busy ? "Опрацьовуємо…" : "Імпортувати уроки з файлів"}
+        >
+          <Icon name="import" size={20} />
+          <HandGraphic className={styles.stepInkRing} name="ink-ring" size={42} />
+        </button>
+        <input
+          ref={importPicker}
+          className={styles.visuallyHidden}
+          type="file"
+          accept=".md,.markdown,.docx,.txt,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          multiple
+          tabIndex={-1}
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+            /* Cleared before the work starts, so picking the same files again
+               still fires a change event. */
+            event.target.value = "";
+            if (files.length) void onImportLessons(files);
+          }}
+        />
       </div>
       </>}
     </div>

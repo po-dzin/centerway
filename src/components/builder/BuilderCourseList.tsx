@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "
 import { courseThemeAttributes, moveItem } from "@/lms-core";
 import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
 import { BuilderMenu } from "./BuilderMenu";
+import { BuilderSheet } from "./BuilderSheet";
 import { HandGraphic, Icon } from "@/components/Icon";
 import {
   commitCourseImport,
@@ -20,6 +21,7 @@ import {
   type BuilderCourseSummary,
   type BuilderFailure,
 } from "./builderClient";
+import { MEDIA_SIZES, mediaSources } from "@/lib/lms/media";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
@@ -260,14 +262,17 @@ export function BuilderCourseList() {
           two full-width words above it made the head read as the loudest thing
           on a page whose subject is the courses. Both keep a tooltip and an
           accessible name — an icon-only control that says nothing is a rebus. */}
+      {/* NO LEAD HERE, and the shelf keeps its own. Four statements about one
+          list were stacked at the top of this page — the application
+          («Майстерня»), the page («Курси»), the sentence («доступні вам для
+          редагування») and the count («9 курсів») — and the third is the one
+          that adds nothing: «available to you for editing» is what Майстерня
+          MEANS. The learner's shelf keeps its lead because there the sentence
+          carries a fact the title cannot («відкриваються з того уроку, на якому
+          ви зупинились»). */}
       <PlatformPageHead
         label="Майстерня"
         title="Курси"
-        /* One line for both audiences, and it describes the LIST rather than
-           the platform. «Усі курси платформи» was true for an admin and read
-           like a catalogue of the shop — this page is a workspace, and what is
-           on it is what this account may open. */
-        lead="Курси, доступні вам для редагування."
         actions={
           state.canCreate ? (
             <>
@@ -304,16 +309,33 @@ export function BuilderCourseList() {
         }
       />
 
-      {state.canCreate && importing ? (
-        <ImportPanel
-          onCancel={() => setImporting(false)}
-          onImported={async (slug) => {
-            setImporting(false);
-            setNote(`Курс імпортовано як чернетку: ${slug}`);
-            await load();
-          }}
-        />
-      ) : null}
+      {/* A SHEET, NOT A ROW IN THE PAGE. Dropped into the flow this panel shoved
+          the whole shelf down by its own height — every card moved, and the one
+          you were looking at was somewhere else by the time the form appeared.
+          It is also a task you enter deliberately, finish, and leave, which is
+          exactly what `BuilderSheet` is for: the same object the version history
+          opens in, with the scrim and the focus trap that say the list behind is
+          not what you are working on.
+
+          The children unmount with it on purpose — that is what resets a
+          half-picked file, so opening the form twice does not show the first
+          attempt's filename. */}
+      <BuilderSheet
+        open={state.canCreate && importing}
+        title="Імпорт курсу"
+        onClose={() => setImporting(false)}
+      >
+        {state.canCreate && importing ? (
+          <ImportPanel
+            onCancel={() => setImporting(false)}
+            onImported={async (slug) => {
+              setImporting(false);
+              setNote(`Курс імпортовано як чернетку: ${slug}`);
+              await load();
+            }}
+          />
+        ) : null}
+      </BuilderSheet>
 
       {note ? <p className={styles.noticeLine}>{note}</p> : null}
 
@@ -430,8 +452,10 @@ function ImportPanel({ onCancel, onImported }: { onCancel: () => void; onImporte
   const ready = state.status === "ready" || state.status === "committing" ? state : null;
 
   return (
-    <section className={styles.panel}>
-      <h2 className={styles.panelTitle}>Імпорт курсу</h2>
+    /* No `.panel` and no heading of its own: the sheet is already a surface with
+       a titled head, and a card inside it would be a second plate at a second
+       radius holding one form. */
+    <div className={styles.importForm}>
       <p className={styles.panelText}>
         Виберіть JSON, експортований з Builder або сумісний з <code>lms:import</code>. Спершу ми покажемо
         перевірку; запис відбудеться лише після підтвердження.
@@ -493,7 +517,7 @@ function ImportPanel({ onCancel, onImported }: { onCancel: () => void; onImporte
           {state.status === "committing" ? "Імпортуємо…" : "Імпортувати чернетку"}
         </button>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -592,8 +616,11 @@ function CourseCard(props: EntryProps) {
           // eslint-disable-next-line @next/next/no-img-element
           <img
             className={styles.courseCover}
-            src={course.cover.src}
+            {...mediaSources(course.cover.src)}
+            sizes={MEDIA_SIZES.card}
             alt={course.cover.alt}
+            loading="lazy"
+            decoding="async"
             style={{ objectPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%` }}
           />
         ) : (

@@ -74,15 +74,16 @@ describe("appHref", () => {
     expect(appIsOffOrigin(builder, PERSONAL_HOST)).toBe(false);
   });
 
-  it("names the platform for a public app seen from the personal host", () => {
-    // The crossing goes both ways: the cabinet stayed on `www`.
-    expect(appHref(cabinet, PERSONAL_HOST)).toBe("https://www.centerway.net.ua/profile");
-    expect(appIsOffOrigin(cabinet, PERSONAL_HOST)).toBe(true);
+  it("keeps the cabinet relative on the personal host, which owns it now", () => {
+    // Moved 2026-08-27: the cabinet is the personal app's home page, so from
+    // `my` it is a client-side navigation like the shelf and the builder.
+    expect(appHref(cabinet, PERSONAL_HOST)).toBe("/profile");
+    expect(appIsOffOrigin(cabinet, PERSONAL_HOST)).toBe(false);
   });
 
-  it("keeps a public app relative on the public host", () => {
-    expect(appHref(cabinet, "www.centerway.net.ua")).toBe("/profile");
-    expect(appIsOffOrigin(cabinet, "www.centerway.net.ua")).toBe(false);
+  it("names the personal origin for the cabinet seen from the showcase", () => {
+    expect(appHref(cabinet, "www.centerway.net.ua")).toBe(`https://${PERSONAL_HOST}/profile`);
+    expect(appIsOffOrigin(cabinet, "www.centerway.net.ua")).toBe(true);
   });
 
   it("stays on paths where no second host exists", () => {
@@ -100,7 +101,7 @@ describe("currentAppKey", () => {
   it("names the application behind a path", () => {
     expect(currentAppKey("my.centerway.net.ua", "/learn")).toBe("learn");
     expect(currentAppKey("my.centerway.net.ua", "/learn/way21/day-1")).toBe("learn");
-    expect(currentAppKey("www.centerway.net.ua", "/profile")).toBe("cabinet");
+    expect(currentAppKey("my.centerway.net.ua", "/profile")).toBe("cabinet");
     expect(currentAppKey("www.centerway.net.ua", "/admin/orders")).toBe("admin");
     expect(currentAppKey("localhost", "/build/way21")).toBe("builder");
   });

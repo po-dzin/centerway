@@ -215,6 +215,7 @@
   margin-top: var(--cw-space-2xl);
   padding-top: var(--cw-space-lg);
   border-top: 1px solid var(--cw-platform-border);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .referenceHeading {
@@ -908,6 +909,7 @@
 
 .faqItem {
   border-bottom: 1px solid var(--cw-platform-border);
+  border-image: var(--cw-rule-fade-x);
   padding: var(--cw-space-sm) 0;
 }
 

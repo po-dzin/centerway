@@ -21,6 +21,7 @@ import {
   type RichTextNode,
 } from "@/lms-core";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
+import { MEDIA_SIZES, mediaSources } from "@/lib/lms/media";
 import styles from "./Lms.module.css";
 
 /** A course link that starts with `/` is a CenterWay route, not a foreign URL. */
@@ -303,11 +304,23 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
         </figure>
       );
 
-    case "image":
+    case "image": {
+      // A figure in the reading column is never wider than the column; the
+      // smaller rendition is the whole image on a phone. Only images this
+      // application stored have one — see `mediaSources`.
+      const art = mediaSources(block.src);
       return (
         <figure>
           {/* eslint-disable-next-line @next/next/no-img-element -- authored content, arbitrary remote hosts */}
-          <img className={styles.image} src={block.src} alt={block.alt} loading="lazy" />
+          <img
+            className={styles.image}
+            src={art.src}
+            srcSet={art.srcSet}
+            sizes={art.srcSet ? MEDIA_SIZES.figure : undefined}
+            alt={block.alt}
+            loading="lazy"
+            decoding="async"
+          />
           {block.caption || authoring ? (
             <figcaption className={styles.caption}>
               <Inline value={block.caption} path={["caption"]} />
@@ -315,6 +328,7 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
           ) : null}
         </figure>
       );
+    }
 
     case "quote":
       return (

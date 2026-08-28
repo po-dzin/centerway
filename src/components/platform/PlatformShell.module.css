@@ -11,7 +11,13 @@
   --platform-topbar-clearance: clamp(5.8rem, 7.5vw, 7.35rem);
   background:
     radial-gradient(circle at 12% 0%, color-mix(in srgb, var(--cw-platform-accent) 13%, transparent), transparent 26rem),
-    linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-calm-surface-muted) 42%, transparent), transparent 28rem),
+    /* The wash was mixed from `--cw-sem-calm-surface-muted`, which is the
+       LIGHT gamma's ground and is not re-pointed by the dark theme — only the
+       `--cw-platform-*` names are. So on a dark page the shell painted a cream
+       diagonal across its top-left 28rem and then cut to graphite where the
+       gradient ran out: the light band with a hard seam under it. Same value
+       in the light theme, correct in the dark one. */
+    linear-gradient(135deg, color-mix(in srgb, var(--cw-platform-surface-muted) 42%, transparent), transparent 28rem),
     var(--cw-platform-bg);
 }
 
@@ -29,7 +35,7 @@
   position: sticky;
   top: 0.75rem;
   z-index: var(--ds-z-sticky);
-  width: min(100% - 2 * var(--cw-bar-inset), calc(var(--cw-max-width) + 2 * var(--cw-bar-pad)));
+  width: min(100% - 2 * var(--cw-bar-inset), var(--cw-max-width));
   margin: 0 auto;
   overflow: clip;
   /* No `isolation: isolate` here, and it must not come back. Per spec, isolation
@@ -147,7 +153,7 @@
   top: 0.95rem;
   right: 0;
   left: 0;
-  width: min(100% - 2 * var(--cw-bar-inset), calc(var(--cw-max-width) + 2 * var(--cw-bar-pad)));
+  width: min(100% - 2 * var(--cw-bar-inset), var(--cw-max-width));
   --platform-header-fg: var(--cw-platform-accent-contrast);
   --platform-header-muted-fg: var(--cw-platform-accent-contrast);
   --platform-header-nav-muted-fg: color-mix(in srgb, var(--cw-platform-accent-contrast) 90%, transparent);
@@ -179,7 +185,15 @@
   --platform-header-popover-bg: var(--cw-mat-surface);
 }
 
-.shellOverlay > main:not(:has(> [class*="heroFeature"]:first-child)) {
+/* The clearance is for a page whose first element is NOT a hero: without it the
+   floating bar would sit on the first paragraph.
+   `data-cw-hero="bleed"` is the second way to say "this page starts with a
+   full-bleed hero" — the cabinet's plate is one, but it is not a `heroFeature`,
+   and the missing opt-out printed a band of page ground above a photograph that
+   is supposed to run to the top of the screen. An attribute rather than another
+   class-substring match: the page states the fact, instead of the shell
+   guessing it from a class name. */
+.shellOverlay > main:not(:has(> [class*="heroFeature"]:first-child)):not([data-cw-hero="bleed"]) {
   padding-top: var(--platform-topbar-clearance);
 }
 
@@ -210,13 +224,11 @@
 }
 
 /* The row carries `.container` too (see PlatformHeader.tsx), and must not take
-   its width. The bar is already one `--cw-bar-pad` wider than the content
-   column so that the mark and the burger land ON that column; letting the
-   column's own width apply here would centre the row inside the bar and then
-   pad it again, putting the mark a bar-pad past the line it is meant to hit.
-   Later in this sheet than `.container` and equal in specificity, so it wins
-   without `!important` — the phone rule needs one only because it lives in a
-   sheet that is emitted earlier. */
+   its width: the bar IS the column now (see the gutter note in
+   docs/design-system.md), so applying the column again inside it would inset
+   the row by a second gutter. Later in this sheet than `.container` and equal
+   in specificity, so it wins without `!important` — the phone rule needs one
+   only because it lives in a sheet that is emitted earlier. */
 .headerInner {
   position: relative;
   z-index: 1;
@@ -228,6 +240,40 @@
   justify-content: space-between;
   gap: 0.65rem;
   padding: 0 var(--cw-bar-pad);
+}
+
+/* ── Chrome that yields ─────────────────────────────
+
+   The reading surfaces let the bar step aside on the way down and bring it back
+   on the first scroll up; `useChromeReveal` owns when, this owns how. Only a
+   bar that opted in carries the transition, so nothing else pays for a property
+   it never animates.
+
+   TRANSFORM, NOT `top`. The bar is `position: sticky`, so animating its offset
+   would relayout the sticky container on every frame; a transform is composited
+   and leaves the sticky maths alone. The extra rem past its own height carries
+   the shadow off screen with it — stopping at exactly -100% leaves a soft grey
+   line hanging at the top of the page, which reads as a rendering fault rather
+   than as a bar that left. */
+.header[data-cw-header-autohide="true"] {
+  /* The literal is deliberate: this module carries no easing token — its
+     neighbours all write `ease` inline — and a `var()` whose only backing is
+     its own fallback is a token that does not exist. */
+  transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
+}
+
+.header[data-cw-header-autohide="true"][data-cw-header-hidden="true"] {
+  transform: translateY(calc(-100% - 1rem));
+}
+
+/* The bar still moves — a reader who asked for less motion asked for less
+   MOTION, not for 65px of chrome back on every screen — but it stops sliding
+   and simply is not there. */
+@media (prefers-reduced-motion: reduce) {
+  .header[data-cw-header-autohide="true"] {
+    transition: none;
+  }
 }
 
 .workspaceHeaderSlot {
@@ -628,10 +674,41 @@
   overflow-wrap: anywhere;
 }
 
+/* The one rule in this menu, and it separates the two registers: everywhere
+   you can go, above; this device, below. Fades at both ends like every other
+   separator in the system — a hairline that runs the full plate and stops dead
+   draws a cell edge, and a stack of names under one reads as a table. */
 .profileMenuDivider {
   height: 1px;
   margin: var(--ds-space-1) var(--ds-space-2);
-  background: color-mix(in srgb, currentColor 14%, transparent);
+  background: linear-gradient(
+    90deg,
+    transparent 0,
+    color-mix(in srgb, currentColor 14%, transparent) 8%,
+    color-mix(in srgb, currentColor 14%, transparent) 92%,
+    transparent 100%
+  );
+}
+
+/* A SETTING IS NOT A DESTINATION, so it does not take the shape of one. The
+   rows above are places, left-aligned and marked with the ink stroke when you
+   are in one. This is a name and a state: the name holds the same upright and
+   the same row height as the rows, and the control sits at the far end where a
+   setting's value belongs. Without it the icons floated in the middle of a
+   list of destinations and read as two more of them. */
+.menuSetting {
+  min-height: var(--ds-touch-target-min);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  padding: 0 0.65rem;
+}
+
+.menuSettingLabel {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: var(--ds-type-label-line-height);
 }
 
 .profileMenu a,

@@ -16,6 +16,22 @@ type Listener = () => void;
 
 let deferred: InstallPromptEvent | null = null;
 let installed = false;
+/**
+ * Whether a control that can actually offer installation is on screen.
+ *
+ * WHY THIS EXISTS. Suppressing the browser's own offer is only honest if ours
+ * replaces it. The install row lives in the account menu and renders for a
+ * signed-in reader on the personal origin; a GUEST there had the native prompt
+ * cancelled by this module and nothing put in its place, so installation became
+ * unreachable until they signed in — which is not a rule anyone decided, just
+ * where a `preventDefault()` at module scope happened to land.
+ *
+ * So the suppression is conditional on the offer existing: `InstallEntry` marks
+ * the surface while it is mounted, and `beforeinstallprompt` is only cancelled
+ * while that mark is set. If the event arrives before any of ours is on screen,
+ * the browser keeps its own affordance and we let it.
+ */
+let surfaceReady = false;
 const listeners = new Set<Listener>();
 
 function emit() {
@@ -24,9 +40,10 @@ function emit() {
 
 if (typeof window !== "undefined") {
   window.addEventListener("beforeinstallprompt", (event) => {
-    // Suppressing the mini-infobar is the price of showing the offer where it
-    // belongs — in the cabinet, next to the courses the person owns.
-    event.preventDefault();
+    /* Cancel the browser's own offer ONLY when ours is on screen to take its
+       place (see `surfaceReady`). Parked either way: if our control mounts
+       later, `install()` still has an event to fire. */
+    if (surfaceReady) event.preventDefault();
     deferred = event as InstallPromptEvent;
     emit();
   });
@@ -36,6 +53,22 @@ if (typeof window !== "undefined") {
     installed = true;
     emit();
   });
+}
+
+/**
+ * Declared by whichever control offers installation, for as long as it is
+ * mounted. Ref-counted: two surfaces may overlap during a navigation, and the
+ * first unmount must not clear the mark the second still needs.
+ */
+let surfaceCount = 0;
+
+export function markInstallSurface(): () => void {
+  surfaceCount += 1;
+  surfaceReady = true;
+  return () => {
+    surfaceCount = Math.max(0, surfaceCount - 1);
+    surfaceReady = surfaceCount > 0;
+  };
 }
 
 export function subscribeInstall(listener: Listener) {

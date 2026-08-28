@@ -41,6 +41,22 @@ function sourceDirectoryForPrefix(prefix: string): string {
   return prefix;
 }
 
+/**
+ * Browser: an hour, as before. CDN: until the next deployment.
+ *
+ * These files live in the repository and are read off the function's own disk,
+ * so every cache miss is an invocation — and with `max-age` alone the edge
+ * entry expired hourly, which measured as `x-vercel-cache: MISS` on a cold
+ * asset all day long. `s-maxage` is what the shared cache reads, and a year of
+ * it is safe precisely BECAUSE the files are baked into the deployment: a
+ * changed image is a new deployment, and a new deployment is a new cache.
+ *
+ * The browser half stays short on purpose. A visitor who saw a landing this
+ * morning should see this afternoon's price photo, and one hour of staleness
+ * is the price of not having to fingerprint filenames on a hand-written page.
+ */
+const ASSET_CACHE = "public, max-age=3600, s-maxage=31536000, stale-while-revalidate=86400";
+
 export async function serveStaticAsset(prefix: string, segments: string[]): Promise<Response> {
   const safe = safeSegments(segments);
   if (!safe) {
@@ -55,7 +71,7 @@ export async function serveStaticAsset(prefix: string, segments: string[]): Prom
       status: 200,
       headers: {
         "content-type": contentTypeByExt(filePath),
-        "cache-control": isDev ? "no-store, max-age=0" : "public, max-age=3600",
+        "cache-control": isDev ? "no-store, max-age=0" : ASSET_CACHE,
       },
     });
   } catch {

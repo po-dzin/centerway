@@ -1,4 +1,5 @@
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
+import { MEDIA_SIZES, mediaSources } from "@/lib/lms/media";
 
 /**
  * Below this width the platform hero switches to portrait framing
@@ -22,12 +23,22 @@ type PlatformHeroPhotoProps = {
 export function PlatformHeroPhoto({ artwork, alt, className, eager }: PlatformHeroPhotoProps) {
   if (!artwork?.desktop) return null;
 
+  // An author's cover arrives here as one URL. When it is one this application
+  // stored, the smaller rendition exists and a phone should be given it — the
+  // hero is full-bleed, so `sizes` is simply the viewport.
+  const desktop = mediaSources(artwork.desktop);
+  const mobile = artwork.mobile ? mediaSources(artwork.mobile) : undefined;
+
   return (
     <picture>
-      {artwork.mobile ? <source media={PORTRAIT_MEDIA} srcSet={artwork.mobile} /> : null}
+      {mobile ? (
+        <source media={PORTRAIT_MEDIA} srcSet={mobile.srcSet ?? mobile.src} sizes={mobile.srcSet ? MEDIA_SIZES.full : undefined} />
+      ) : null}
       <img
         className={className}
-        src={artwork.desktop}
+        src={desktop.src}
+        srcSet={desktop.srcSet}
+        sizes={desktop.srcSet ? MEDIA_SIZES.full : undefined}
         alt={alt}
         loading={eager ? "eager" : undefined}
         fetchPriority={eager ? "high" : undefined}

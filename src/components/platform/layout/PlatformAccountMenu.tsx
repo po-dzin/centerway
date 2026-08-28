@@ -16,10 +16,12 @@ import {
   currentAppKey,
   type PlatformAppKey,
 } from "@/lib/platform/apps";
+import { markInstallSurface } from "../pwa/installStore";
 import { usePwaInstall } from "../pwa/usePwaInstall";
 import { usePlatformIdentity } from "./usePlatformIdentity";
 import { isAuthConfigured, usePlatformSession } from "./usePlatformSession";
 import { useOwnsPersonalSurfaces, useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
+import { PlatformThemeControl } from "@/components/platform/layout/PlatformThemeControl";
 
 /**
  * The account control: who am I, which applications may I enter, and how do I
@@ -81,7 +83,18 @@ function InstallEntry({ onSelect }: { onSelect: () => void }) {
   const install = usePwaInstall();
   const ownsInstall = useOwnsPersonalSurfaces();
 
-  if (!ownsInstall || install.isStandalone) return null;
+  /* Declares that an install offer is on screen, which is what lets
+     `installStore` cancel the browser's own. Without the pairing, suppression
+     happened at module scope and a guest on this origin lost the native prompt
+     with nothing put in its place. Marked only where the row can actually
+     render — the personal origin, outside the installed app. */
+  const canOffer = ownsInstall && !install.isStandalone;
+  useEffect(() => {
+    if (!canOffer) return;
+    return markInstallSurface();
+  }, [canOffer]);
+
+  if (!canOffer) return null;
 
   if (install.canPrompt) {
     return (
@@ -391,12 +404,33 @@ export function PlatformAccountMenu({
           </Link>
         );
       })}
+      {/* THE MENU HAS THREE REGISTERS, AND THE THEME BELONGS TO THE THIRD.
+          Above the rule: who this is, and everywhere they can go. Below it:
+          THIS DEVICE — put the app on its home screen, and choose how it
+          looks. Then the way out.
+
+          The icons had been dropped between "Додати на екран" and "Вийти" with
+          nothing around them, so they read as two destinations someone forgot
+          to name. What was missing was not a label on the control but a place
+          for it: a setting is not a row you travel to, so it takes the shape a
+          setting takes — its name at the left, its state at the right — and it
+          joins the group whose other member is also about this machine rather
+          than about the product.
+
+          `role="none"` on the wrapper because the three buttons are ONE
+          control; a menu whose items are two thirds of a segmented switch is a
+          menu that cannot be arrowed through. */}
+      <div className={styles.profileMenuDivider} role="none" />
       <InstallEntry
         onSelect={() => {
           close();
           onNavigate?.();
         }}
       />
+      <div className={styles.menuSetting} role="none">
+        <span className={styles.menuSettingLabel}>Вигляд</span>
+        <PlatformThemeControl />
+      </div>
       <button type="button" onClick={() => void signOut()}>
         <InkMenuLabel>Вийти</InkMenuLabel>
       </button>

@@ -5,7 +5,7 @@ import { PurchaseSignal } from "@/components/platform/PurchaseSignal";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
 import styles from "@/components/platform/PlatformOfferCommerce.module.css";
 import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
-import { surfaceUrl } from "@/lib/surfaces/catalog";
+import { PROFILE_PATH_PREFIX, surfaceUrl } from "@/lib/surfaces/catalog";
 import { loadPayableOffer } from "@/lib/platform/offers";
 import {
   formatPrice,
@@ -77,7 +77,11 @@ export async function PayStatusPage({
           // always lands on `www` while the course now lives on `my`. This link
           // is the hand-off between the two.
           { href: surfaceUrl(`/learn/${fulfilment.courseSlug}`), label: "Перейти до курсу", external: false }
-        : { href: "/profile", label: "Перейти в кабінет", external: false }
+        : /* ABSOLUTE for the same reason the course link above is: this page
+             always answers on `www` (its URL is baked into invoices WayForPay
+             has already issued) and the cabinet moved to `my`. Naming the
+             owner skips the 308. */
+          { href: surfaceUrl(PROFILE_PATH_PREFIX), label: "Перейти в кабінет", external: false }
     : { href: "/programs", label: "Повернутися до програм", external: false };
 
   const lead = paid

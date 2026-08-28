@@ -128,7 +128,12 @@
 .diagnosticProgressBar {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
+  /* One meter fill for the system, and it changes with the theme. The green
+     ramp clears its track at 4.92 / 11.26 on cream and disappears on graphite —
+     a deep green on a near-black ground is not a low-contrast bar, it is no bar
+     at all. `--cw-platform-meter` carries the ramp each ground can show: the
+     green on light, the gold on dark. */
+  background: var(--cw-platform-meter);
   transition: width 0.3s ease;
 }
 
@@ -474,7 +479,7 @@
     linear-gradient(
       180deg,
       transparent 0%,
-      color-mix(in srgb, var(--cw-platform-bg) 96%, var(--cw-sem-calm-surface-muted) 4%) 18%,
+      color-mix(in srgb, var(--cw-platform-bg) 96%, var(--cw-platform-surface-muted) 4%) 18%,
       color-mix(in srgb, var(--cw-platform-bg) 98%, white 2%) 56%,
       color-mix(in srgb, var(--cw-platform-bg) 97%, white 3%) 100%
     );

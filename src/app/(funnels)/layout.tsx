@@ -47,6 +47,19 @@ export default function FunnelsRootLayout({
   return (
     <html lang="uk" suppressHydrationWarning>
       <body suppressHydrationWarning>
+        {/* NO THEME STAMP HERE, and that is the whole decision.
+
+            The platform and the builder are token-built, so the dark palette
+            reaches every surface they draw. A landing is not: it is served by
+            `landing.css` over `cw-tokens.generated.css`, and the generated file
+            carries the platform's MATERIAL for the dark scope but not its
+            palette — the landings' colours are light literals. Stamping
+            `data-cw-theme="dark"` here would give a landing dark glass on a
+            cream page, which is worse than no dark theme at all.
+
+            Turning it on for the funnels means giving the five landings a dark
+            palette of their own first. Until then they stay light, which is
+            what they were. (`src/lib/platform/theme.ts`.) */}
         <Suspense fallback={null}>
           <GoogleTagProvider measurementId={GOOGLE_TAG_ID} />
         </Suspense>

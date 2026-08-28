@@ -73,14 +73,27 @@ export function HubIntro() {
     <section className={`${styles.container} ${styles.section}`} id="signals">
       <div className={styles.videoSection} data-cw-hub-intro="layout">
         <div className={styles.videoPanel} id="intro-video" data-cw-hub-intro="video">
-          <iframe
-            className={styles.videoEmbed}
-            src="https://www.youtube-nocookie.com/embed/6jmhNMj_Duo?rel=0&modestbranding=1"
-            title="Вступне відео CenterWay"
-            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-            referrerPolicy="strict-origin-when-cross-origin"
-            allowFullScreen
-          />
+          {/* The panel is the object beside the card and matches its height; the
+              PLAYER inside it keeps 16:9 and centres on the panel's own dark
+              ground. Stretching the iframe itself is what used to turn the
+              player into a near-square on desktop — that is a property of the
+              video, not of the row. */}
+          <div className={styles.videoFrame}>
+            <iframe
+              className={styles.videoEmbed}
+              src="https://www.youtube-nocookie.com/embed/6jmhNMj_Duo?rel=0&modestbranding=1"
+              title="Вступне відео CenterWay"
+              /* The hero's CTA scrolls DOWN to this player, so it is below the
+                 fold by construction — and a YouTube embed is the heaviest
+                 thing on the page by a distance. Lazy, so it is fetched when
+                 the visitor is on their way to it rather than while they are
+                 still reading the first screen. */
+              loading="lazy"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              referrerPolicy="strict-origin-when-cross-origin"
+              allowFullScreen
+            />
+          </div>
         </div>
         <aside className={styles.videoAside} id="diagnostics" data-cw-hub-intro="aside">
           <div className={styles.videoDecisionIntro}>
@@ -89,12 +102,15 @@ export function HubIntro() {
             <p className={styles.videoDecisionText}>Перед програмами, тестами і консультаціями важливо побачити систему цілком.</p>
           </div>
           <div className={styles.videoDecisionRail}>
+            {/* ONE ACTION. This card used to offer the dosha test and a
+                consultation side by side, and the consultation is where the
+                last block of this very page ends — the same destination, twice
+                on one screen, with the second button making the first look like
+                one of two equal options. The card asks one thing: take the
+                test. */}
             <div className={styles.videoActionGrid} data-cw-hub-intro="actions">
               <Link className={styles.videoActionPrimary} href={DOSHA_TEST_ROUTE}>
                 Тест доші
-              </Link>
-              <Link className={styles.videoActionSecondary} href="/consult">
-                Консультація
               </Link>
             </div>
             {/* These two are entries in the diagnostics catalogue, not the

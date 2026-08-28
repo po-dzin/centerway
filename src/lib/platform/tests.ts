@@ -36,7 +36,7 @@ export const platformTests: PlatformTestEntry[] = [
     reads: "ритм, енергія, травлення, сон, напруга",
     visual: "stone",
     artwork: {
-      desktop: "/cw/platform/pages/dosha-hero-variant-ceramic-v1.png",
+      desktop: "/cw/platform/pages/dosha-hero-variant-ceramic-v1.webp",
       desktopPosition: "center 32%",
       mobilePosition: "center 34%",
     },

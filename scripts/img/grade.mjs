@@ -50,12 +50,50 @@ const WARM_RECOMB = [
  * Applies the grade and encodes. Returns the paths written.
  * `width` resizes the long edge; omit to keep the source size.
  */
-export async function gradeImage(input, { out, profile = "default", width, avif = false, jpeg = false, quality = 82 }) {
+export async function gradeImage(
+  input,
+  { out, profile = "default", width, avif = false, jpeg = false, quality = 82, fadeBottom = 0, fadeColor = "#fdf4e7" },
+) {
   const grade = GRADE_PROFILES[profile];
   if (!grade) throw new Error(`unknown grade profile "${profile}"`);
 
   let pipeline = sharp(input).toColorspace("srgb").modulate(grade).recomb(WARM_RECOMB).linear(0.93, 14).gamma(1.02);
   if (width) pipeline = pipeline.resize({ width, withoutEnlargement: true });
+
+  /* THE DISSOLVE IS BAKED, NOT PAINTED OVER (2026-08-27).
+
+     A hero whose photograph turns into the page's paper can do it in CSS — a
+     gradient of the surface colour drawn on top — and that is what the cabinet
+     shipped first. Over a dark plate it reads as a white veil laid on the
+     picture: two visible layers, and the veil follows the layout instead of the
+     photograph. Baked here, the frame itself ends in the paper colour, so the
+     seam lives in the file and the page only places an image.
+
+     Composited AFTER the grade on purpose. The grade moves every value it
+     touches, so a colour matched to the page beforehand would land somewhere
+     else; this is the last thing that happens to the pixels. */
+  if (fadeBottom > 0) {
+    /* Rendered to a buffer first, because `metadata()` on a pipeline reports the
+       INPUT's dimensions — the resize above has not happened yet — and an
+       overlay built from those is larger than the image sharp is compositing
+       onto. */
+    const rendered = await pipeline.png().toBuffer();
+    const meta = await sharp(rendered).metadata();
+    const w = meta.width ?? 0;
+    const h = meta.height ?? 0;
+    const band = Math.round(h * Math.min(1, fadeBottom));
+    const overlay = Buffer.from(
+      `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">` +
+        `<defs><linearGradient id="f" x1="0" y1="0" x2="0" y2="1">` +
+        `<stop offset="0" stop-color="${fadeColor}" stop-opacity="0"/>` +
+        `<stop offset="0.4" stop-color="${fadeColor}" stop-opacity="0.38"/>` +
+        `<stop offset="0.72" stop-color="${fadeColor}" stop-opacity="0.86"/>` +
+        `<stop offset="1" stop-color="${fadeColor}" stop-opacity="1"/>` +
+        `</linearGradient></defs>` +
+        `<rect x="0" y="${h - band}" width="${w}" height="${band}" fill="url(#f)"/></svg>`,
+    );
+    pipeline = sharp(rendered).composite([{ input: overlay, top: 0, left: 0 }]);
+  }
 
   await fs.mkdir(path.dirname(out), { recursive: true });
   await pipeline.clone().webp({ quality, effort: 5 }).toFile(out);
@@ -99,7 +137,7 @@ export async function tagSrgb(file) {
 }
 
 function parseArgs(argv) {
-  const args = { input: null, out: null, profile: "default", width: null, avif: false, jpeg: false };
+  const args = { input: null, out: null, profile: "default", width: null, avif: false, jpeg: false, fadeBottom: 0, fadeColor: "#fdf4e7" };
   for (let i = 2; i < argv.length; i += 1) {
     const arg = argv[i];
     if (arg === "--out") args.out = argv[++i];
@@ -107,6 +145,11 @@ function parseArgs(argv) {
     else if (arg === "--width") args.width = Number(argv[++i]);
     else if (arg === "--avif") args.avif = true;
     else if (arg === "--jpeg") args.jpeg = true;
+    /* The share of the frame's height that ends in `--fade-color`, e.g. 0.42.
+       The colour is the page's own surface, passed in rather than read: this
+       script knows about pixels, not about which surface a frame will land on. */
+    else if (arg === "--fade-bottom") args.fadeBottom = Number(argv[++i]);
+    else if (arg === "--fade-color") args.fadeColor = argv[++i];
     else if (!args.input) args.input = arg;
     else throw new Error(`unexpected argument: ${arg}`);
   }

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   LEARNING_PATH_PREFIX,
+  PROFILE_PATH_PREFIX,
   PUBLIC_ROOT_SEGMENTS,
   canonicalPersonalPath,
   isPublicRootPath,
@@ -22,9 +23,11 @@ describe("public root segments", () => {
     const routed = readdirSync(dir, { withFileTypes: true })
       .filter((entry) => entry.isDirectory())
       .map((entry) => entry.name)
-      // The learner tree is the one directory that is NOT public: it is the
-      // internal prefix the personal host rewrites onto.
-      .filter((name) => `/${name}` !== LEARNING_PATH_PREFIX)
+      /* Two directories in this tree are NOT public. `/learn` is the internal
+         prefix the personal host rewrites onto, and `/profile` is the cabinet,
+         which moved to that host on 2026-08-27 — both are routes here and
+         addresses on `my`. */
+      .filter((name) => ![LEARNING_PATH_PREFIX, PROFILE_PATH_PREFIX].includes(`/${name}`))
       .sort();
 
     expect(routed).toEqual([...PUBLIC_ROOT_SEGMENTS].sort());
@@ -47,6 +50,12 @@ describe("the personal address ↔ route pair", () => {
       expect(canonicalPersonalPath(route), route).toBe(address);
       expect(personalRouteFor(address), address).toBe(route);
     }
+  });
+
+  it("leaves the cabinet's prefix alone in both directions", () => {
+    // Same rule as the builder: `my/profile` IS the address.
+    expect(canonicalPersonalPath("/profile")).toBe("/profile");
+    expect(personalRouteFor("/profile")).toBe("/profile");
   });
 
   it("leaves the builder's prefix alone in both directions", () => {
