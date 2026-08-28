@@ -59,12 +59,16 @@ const OPTIONAL_COURSE_COLUMNS: ReadonlyArray<readonly [column: string, field: st
   ["theme", "theme"],
   ["cover", "cover"],
   ["sort_order", "sortOrder"],
+  ["pretitle", "pretitle"],
+  ["posttitle", "posttitle"],
   ["tagline", "tagline"],
+  ["kind", "kind"],
+  ["categories", "categories"],
   ["results", "results"],
   ["visibility", "visibility"],
   ["audience", "audience"],
   ["format", "format"],
-  ["duration", "duration"],
+  ["duration_days", "durationDays"],
   ["access_note", "accessNote"],
   ["author_note", "authorNote"],
 ];
@@ -108,14 +112,21 @@ export function courseRows(course: Course): CourseRows {
       // PRICE is not here and never will be — it lives in `lms_course_offers`,
       // which the authoring routes have no grant on. See the 2026-08-22
       // migration for why that is a different table rather than a policy.
+      pretitle: course.pretitle ?? null,
+      posttitle: course.posttitle ?? null,
       tagline: course.tagline ?? null,
+      // The card's badge, from closed lists. Both nullable: absent means the
+      // catalogue falls back to counting lessons, which is what it did before
+      // these columns existed.
+      kind: course.kind ?? null,
+      categories: course.categories ?? null,
       results: course.results ?? null,
       visibility: course.visibility ?? "hidden",
       // The offer surface (2026-08-26). Everything the six hand-written program
       // pages could say and a builder course could not.
       audience: course.audience ?? null,
       format: course.format ?? null,
-      duration: course.duration ?? null,
+      duration_days: course.durationDays ?? null,
       access_note: course.accessNote ?? null,
       author_note: course.authorNote ?? null,
     },
@@ -225,7 +236,13 @@ export function courseFromRows(
     // means the course is not on sale, which is the safe state and the default
     // the migration itself writes. So an older database reads back as hidden
     // rather than refusing to open.
+    ...(courseRow.pretitle ? { pretitle: courseRow.pretitle as string } : {}),
+    ...(courseRow.posttitle ? { posttitle: courseRow.posttitle as string } : {}),
     ...(courseRow.tagline ? { tagline: courseRow.tagline as string } : {}),
+    ...(courseRow.kind ? { kind: courseRow.kind as never } : {}),
+    ...(Array.isArray(courseRow.categories) && courseRow.categories.length > 0
+      ? { categories: courseRow.categories as never }
+      : {}),
     ...(Array.isArray(courseRow.results) && courseRow.results.length > 0
       ? { results: courseRow.results as string[] }
       : {}),
@@ -246,7 +263,9 @@ export function courseFromRows(
     ...(Array.isArray(courseRow.format) && courseRow.format.length > 0
       ? { format: courseRow.format as string[] }
       : {}),
-    ...(courseRow.duration ? { duration: courseRow.duration as string } : {}),
+    ...(courseRow.duration_days === null || courseRow.duration_days === undefined
+      ? {}
+      : { durationDays: Number(courseRow.duration_days) }),
     ...(courseRow.access_note ? { accessNote: courseRow.access_note as string } : {}),
     ...(courseRow.author_note ? { authorNote: courseRow.author_note as string } : {}),
     modules,

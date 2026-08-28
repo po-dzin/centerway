@@ -4,7 +4,7 @@ import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
 import { Icon } from "@/components/Icon";
 import type { Course } from "@/lms-core";
-import { BuilderImageField } from "./BuilderImageField";
+import { BuilderImageField, type ImageSpec } from "./BuilderImageField";
 import styles from "./Builder.module.css";
 
 type CropPreviewProps = {
@@ -36,6 +36,25 @@ const FRAME = {
   wide: { className: "coverPreviewWide", axis: "y", note: "21:9 · hero на широкому екрані", label: "Широкий" },
   portrait: { className: "coverPreviewPortrait", axis: "both", note: "9:16 · hero на mobile", label: "Вертикальний" },
 } as const;
+
+/**
+ * What each master actually has to be, and why those numbers.
+ *
+ * MODULE-LEVEL, not written inline at the call site — the field measures the
+ * image in an effect keyed on this object, and a fresh literal every render
+ * would re-measure the same file forever.
+ *
+ * 1600 is not a preference: it is `FULL_WIDTH` in `mediaPipeline.ts`, the
+ * widest rendition the upload route produces, and it never enlarges. Asking for
+ * more is asking for a file the pipeline will throw away; accepting less is
+ * accepting a soft hero on any laptop.
+ */
+const LANDSCAPE_SPEC: ImageSpec = { minWidth: 1600, ratio: 16 / 9, recommended: "1600×900" };
+
+/* The portrait master is bounded by the same 1600px ceiling, so its useful
+   height caps around 1920 at 9:16 — «1080×1920» is what an author's phone
+   actually produces and is comfortably above the floor. */
+const PORTRAIT_SPEC: ImageSpec = { minWidth: 1080, ratio: 9 / 16, recommended: "1080×1920" };
 
 const clamp = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
@@ -155,10 +174,12 @@ export function BuilderCoverEditor({
     <div className={styles.coverEditor}>
       <BuilderImageField
         label="Горизонтальна обкладинка"
-        hint="Основний файл для вітрини, майстерні, бібліотеки та кабінету. Рекомендовано 1600×900 або більше."
+        hint="Основний файл для вітрини, майстерні, бібліотеки та кабінету. Рекомендовано 1600×900 або більше; JPEG, PNG, WebP, AVIF або GIF, до 20 МБ. Ширші за 1600 px стискаються — це нормально."
         courseSlug={course.slug}
         src={cover?.src}
         alt={cover?.alt}
+        spec={LANDSCAPE_SPEC}
+        required
         showPreview={false}
         onChange={(next) => onChange(["cover", "src"], next)}
       />
@@ -223,6 +244,7 @@ export function BuilderCoverEditor({
               courseSlug={course.slug}
               src={cover.mobileSrc}
               alt={cover.alt}
+              spec={PORTRAIT_SPEC}
               showPreview={false}
               onChange={(next) => onChange(["cover", "mobileSrc"], next)}
             />

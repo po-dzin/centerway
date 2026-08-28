@@ -29,6 +29,36 @@ export type BlockField = {
   /** One line under the input, for a rule the label cannot carry. */
   hint?: string;
   /**
+   * Marks the field with a star and tells assistive tech it is required.
+   *
+   * The star is a PROMISE ABOUT A GATE, not decoration, so nothing gets one
+   * unless `courseReadiness` actually refuses to publish without it. A star on
+   * a field nothing enforces teaches an author to ignore stars.
+   */
+  required?: true;
+  /**
+   * The ceiling this value has downstream, in characters.
+   *
+   * Present means the field counts as you type and refuses to accept more —
+   * the same number the validator in `lms-core` holds, passed in rather than
+   * re-declared, so the form and the contract cannot disagree about what fits.
+   */
+  maxLength?: number;
+  /**
+   * The soft line: past this the field warns and keeps the value.
+   *
+   * Two different limits, because they are two different failures. Past
+   * `maxLength` a surface BREAKS — an invoice line truncates, an h1 wraps to
+   * four lines — and the honest answer is to refuse. Past `softLength` a
+   * surface merely ELLIPSISES on one card, which the author may well accept for
+   * a name that is genuinely long. Refusing that would be the builder overruling
+   * an author about their own title.
+   */
+  softLength?: number;
+  /** Bounds for a `number` field — the validator's own, not a second opinion. */
+  min?: number;
+  max?: number;
+  /**
    * Inline, but NOT drawn on the page.
    *
    * Inline text is edited where it is rendered — the builder hands each

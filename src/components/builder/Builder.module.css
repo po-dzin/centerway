@@ -1695,7 +1695,7 @@
   white-space: normal;
 }
 
-.courseCard > .confirmRow :is(.quietAction, .dangerAction) {
+.courseCard > .confirmRow :is(.quietAction, .dangerAction, .retreatAction) {
   min-width: auto;
   min-height: var(--ds-touch-target-min);
   padding-inline: var(--cw-space-sm);
@@ -3032,6 +3032,7 @@
 /* No gutter to hang in below the desktop measure: the rail comes inside, at
    the block's own leading edge, above the content rather than beside it. */
 @media (max-width: 900px) {
+
   .blockRail {
     position: static;
     inset: auto;
@@ -3558,6 +3559,23 @@
   box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
 }
 
+/* IT STEPS OVER THE TOOL LAYER (2026-08-28). From 901px the tools are a column
+   on the right and the bottom belongs to this bar alone. Below that the layer
+   is a strip fixed across the foot of the viewport at a higher z-index, so the
+   two came to rest in the same 41px and the strip covered the right half of the
+   bar — undo, redo and «Усі зміни збережено» sat under the block palette's tab
+   row. The bar clears the strip's own height, which is a touch target plus its
+   padding; the reader's «to the top» button steps over the completion toggle
+   the same way and for the same reason. */
+@media (max-width: 900px) {
+  .saveBar {
+    bottom: calc(
+      max(var(--cw-space-md), env(safe-area-inset-bottom)) + var(--ds-touch-target-min) +
+        var(--cw-space-sm)
+    );
+  }
+}
+
 .saveState {
   flex: 1 1 auto;
   min-width: 0;
@@ -3590,12 +3608,37 @@
   gap: var(--cw-space-xs);
 }
 
+/* TWO COLUMNS NOW: what is wrong, and the way to it. The arrow keeps its own
+   column at the end so the address and the sentence wrap under each other
+   without ever wrapping under the control. */
 .blockerItem {
   display: grid;
-  gap: var(--cw-space-2xs);
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--cw-space-2xs) var(--cw-space-sm);
   padding: var(--cw-space-xs) var(--cw-space-sm);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
+}
+
+.blockerItem > :not(.blockerOpen) {
+  grid-column: 1;
+}
+
+/* The door, in the margin of the line it belongs to. It spans both text rows,
+   so a two-line blocker does not push it off its own row. */
+.blockerOpen {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  grid-column: 2;
+  grid-row: 1 / -1;
+  color: var(--cw-platform-muted);
+}
+
+.blockerOpen:hover,
+.blockerOpen:focus-visible {
+  color: var(--cw-platform-text);
+  background: var(--cw-mat-surface);
 }
 
 .blockerPath {
@@ -4506,6 +4549,26 @@
   white-space: nowrap;
 }
 
+/* TWO LINES ON A PHONE, and the rule sits AFTER the one it overrides on
+   purpose: both are one class deep, so source order is what decides, and an
+   override written up in the file's mobile block lost silently.
+
+   At 375px the row keeps a rail indent and a menu column, which leaves the
+   title about twenty characters — every lesson in a real course came out as
+   «Технічна інформаці…», «Розпорядок дня для…», «Етап 2. Розвантажув…», and a
+   list where the titles are interchangeable is not a list. Ellipsis is right
+   when a row has one line to give; this one can give two. */
+@media (max-width: 900px) {
+  .editableTitleLink {
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+    overflow: hidden;
+    white-space: normal;
+    text-overflow: clip;
+  }
+}
+
 /* THE LAST OF THE GREEN. The row's hover was moved to ink in an earlier pass
    and this one was missed — it sits on the LINK inside the row, so it kept
    painting the lesson title in the guide gamma while everything around it had
@@ -4861,6 +4924,32 @@
   color: var(--cw-sem-boundary);
   font-size: 0.82rem;
   line-height: 1.4;
+}
+
+/* THE MIDDLE TONE, and it needs one of its own. A soft limit is not an error —
+   the value is accepted and kept — but it is not a hint either, or nobody would
+   read it. `warmth-strong` is the palette's "look at this" without the
+   boundary's "this is wrong", which is exactly the distinction being drawn. */
+.fieldWarning {
+  color: var(--cw-sem-warmth-strong);
+  font-size: 0.82rem;
+  line-height: 1.4;
+}
+
+/* The star is a mark, not a word, so it carries no weight of its own — the
+   label beside it is already 600. It sits in the boundary tone because that is
+   the colour this builder uses for "a gate is watching this". */
+.fieldRequired {
+  color: var(--cw-sem-boundary);
+  margin-inline-start: 0.15em;
+}
+
+/* A value the validator will refuse, marked while the caret is still in it. The
+   border alone would be colour carrying meaning on its own; the message under
+   the field is the part that actually says what is wrong, and this only points
+   at it. */
+.inputInvalid {
+  border-color: var(--cw-sem-boundary);
 }
 
 /* ── Course workspace: paper-first composition ──────────────────────────────

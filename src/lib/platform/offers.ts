@@ -60,6 +60,7 @@ import {
   inlineToPlainText,
   parseCourseOfferCode,
   type Course,
+  type CourseCategory,
   type CourseVisibility,
 } from "@/lms-core";
 
@@ -165,6 +166,42 @@ export type StorefrontCard = {
   visual: string;
   /** How the catalogue's two rails are split — see the offer page. */
   lessons: number;
+  /**
+   * The author's own line above the title, when they wrote one. Not the badge:
+   * the badge is the kind and the duration, in the platform's words on every
+   * card; this is the one line that is theirs.
+   */
+  pretitle?: string;
+  /** The line below the title — what kind of thing this is, in their words. */
+  posttitle?: string;
+  /**
+   * What the course is about, as codes from the closed list. Codes, not labels,
+   * because the same card is the thing a category filter will read.
+   */
+  categories?: CourseCategory[];
+  /**
+   * The kind, as the word a card prints in its corner. Absent for a course
+   * whose author has not said, and the kind then stays inside `tag` — which is
+   * exactly what every card did before this existed.
+   */
+  kindBadge?: string;
+  /** `categories`, in the words a reader sees. Codes never reach a component. */
+  categoryLabels?: string[];
+};
+
+/**
+ * The sections, in the words a card prints.
+ *
+ * Here rather than in the component because this module is the storefront's
+ * one translation point between the model's closed codes and the reader's
+ * language — the same place `VISUAL_BY_PALETTE` turns a palette into a card
+ * variant. A component that knew the vocabulary would have to be edited every
+ * time the vocabulary grew.
+ */
+const CATEGORY_LABELS: Record<CourseCategory, string> = {
+  movement: "Рух",
+  nutrition: "Харчування",
+  cleansing: "Очищення",
 };
 
 /** Course palette → the card variant closest to it. */
@@ -211,7 +248,13 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
       return {
         slug: course.slug,
         title: surface.title,
-        tag: offerEyebrow(surface.tag, surface.duration),
+        /* THE EYEBROW LOSES THE KIND WHEN THE CORNER GAINS IT. Printing
+           «Міні-курс» in a chip on the plate and again in the line under it is
+           the same word twice on a card with three text rows. A course whose
+           author has not set a kind keeps the old, joined eyebrow — the
+           derivation still runs, it just has nowhere better to go. */
+        tag: course.kind ? surface.duration : offerEyebrow(surface.tag, surface.duration),
+        ...(course.kind ? { kindBadge: surface.tag } : {}),
         description: course.summary ? inlineToPlainText(course.summary) : "",
         href: `/programs/${course.slug}`,
         ...(course.cover
@@ -229,6 +272,18 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
           : {}),
         visual: VISUAL_BY_PALETTE[course.theme?.palette ?? ""] ?? "stone",
         lessons: course.modules.reduce((total, module) => total + module.lessons.length, 0),
+        // The cover's own three lines, carried to the card that shows them. The
+        // subtitle falls back to the dash-split for courses authored before
+        // `posttitle` existed — the same fallback `toOfferSurface` uses, read
+        // from it rather than repeated here.
+        ...(course.pretitle ? { pretitle: course.pretitle } : {}),
+        ...(surface.subtitle ? { posttitle: surface.subtitle } : {}),
+        ...(course.categories
+          ? {
+              categories: course.categories,
+              categoryLabels: course.categories.map((one) => CATEGORY_LABELS[one]),
+            }
+          : {}),
       };
     });
 }

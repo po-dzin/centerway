@@ -187,6 +187,52 @@
   box-shadow: var(--program-tile-shadow);
 }
 
+/* THE KIND, ON THE PLATE. Top-left because that is where a reader's eye lands
+   first in a left-to-right grid, and because the bottom of every tile is
+   already spoken for by the body block.
+
+   It draws its own ground rather than sitting on the photo bare: a cover is an
+   arbitrary photograph, and white text over "whatever the author uploaded" is
+   the one contrast failure a design system cannot check for. The ground is the
+   card's own accent at high opacity, so the chip belongs to the card rather
+   than looking like a sticker on the picture. */
+.programTileKind {
+  position: absolute;
+  inset-block-start: var(--cw-space-sm);
+  inset-inline-start: var(--cw-space-sm);
+  z-index: 1;
+  margin: 0;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--cw-radius-sm);
+  background: color-mix(in srgb, var(--cw-platform-accent-strong) 88%, transparent);
+  color: var(--cw-platform-accent-contrast);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  backdrop-filter: blur(6px);
+}
+
+/* The sections, under the name. A row, wrapping, because a course with three of
+   them must not push the description out of the tile's fixed height — the two
+   text rows below are clamped and this one has to behave like them. */
+.programTileCategories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.72rem;
+  color: var(--program-tile-copy);
+}
+
+.programTileCategories li {
+  padding: 0.15rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--cw-platform-accent-contrast) 30%, transparent);
+  border-radius: var(--cw-radius-sm);
+}
+
 .offerHeroVisualCard {
   min-height: 31rem;
   position: relative;

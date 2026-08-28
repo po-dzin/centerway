@@ -43,6 +43,24 @@ type PlatformOfferCardProps = {
    * and a third product without writing a new panel for each.
    */
   points?: readonly string[];
+  /**
+   * WHAT KIND OF THING THIS IS, in the corner of the plate.
+   *
+   * Separate from `tag` on purpose. The eyebrow is a line of prose in the body
+   * («Міні-курс · 3 дні») and is read after the picture; this is a chip ON the
+   * picture, which is read WITH it — and "am I looking at a course or a
+   * checklist" is the question a reader answers before they read anything.
+   *
+   * Only authored courses set it, because only they carry `kind`. A card
+   * without one is the card as it has always been: the kind stays in the
+   * eyebrow, where the six hand-written offers still put it.
+   */
+  kindBadge?: string;
+  /**
+   * What it is about — one to three words each, already translated. Codes never
+   * reach this component; a card renders, it does not own a vocabulary.
+   */
+  categories?: readonly string[];
   /** "planned" renders the tile without a link, as a surface that does not exist yet. */
   status?: "active" | "planned";
   statusLabel?: string;
@@ -59,6 +77,8 @@ export function PlatformOfferCard({
   ctaLabel = "Деталі продукту",
   meta,
   points,
+  kindBadge,
+  categories,
   status = "active",
   statusLabel = "Скоро",
 }: PlatformOfferCardProps) {
@@ -95,6 +115,10 @@ export function PlatformOfferCard({
       style={cardStyle}
     >
       <div className={styles.programPhoto} aria-hidden="true" />
+      {/* ON the plate, not in the body — see `kindBadge`. It sits before the
+          link overlay in the DOM and under it in z-order, so it is a label the
+          card carries rather than a second thing to click. */}
+      {kindBadge ? <p className={styles.programTileKind}>{kindBadge}</p> : null}
       {/* The card IS the choice, so the whole card routes — the visible CTA below
           is its label, not the only way in. This overlay is the single real link
           in the card: making the CTA a link too would put two links with the same
@@ -109,6 +133,13 @@ export function PlatformOfferCard({
       >
         <p className={styles.label}>{tag}</p>
         <h3>{title}</h3>
+        {categories && categories.length > 0 ? (
+          <ul className={styles.programTileCategories}>
+            {categories.map((category) => (
+              <li key={category}>{category}</li>
+            ))}
+          </ul>
+        ) : null}
         {meta ? <p className={styles.programTileMeta}>{meta}</p> : null}
         <p>{description}</p>
         {points && points.length > 0 ? (
