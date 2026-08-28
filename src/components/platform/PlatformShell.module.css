@@ -651,18 +651,52 @@
   gap: 0.25rem;
   padding: 0.7rem;
   border: 0;
-  /* The bar's own material, not a second one. The popover used to be opaque
-     matte at the nested radius, which made it a card that happened to hang off
-     a sheet of glass — a different surface at a different corner, an inch
-     apart. Same tint, same grain, same filter, same shell radius: one plate,
-     extended downward. */
+  /* A BAR IS CHROME ON THE PAGE; A MENU IS A SHEET LAID ON IT.
+
+     This took the bar's exact material — `--cw-mat-tint-chrome`, which is the
+     surface at 30% — on the argument that the popover and the bar should read
+     as one plate extended downward. The tint is the half of that argument that
+     does not survive: a bar hangs on a known band at the top of the page, but
+     this panel opens over whatever happens to be under it. Seventy per cent of
+     the ground showing through is bounded on the night side, where everything
+     behind is near-black, and unbounded on the light one — over the hero
+     photograph it came out as taupe mud with six names floating in it, and the
+     text's contrast was a property of the page behind rather than of the menu.
+
+     So the floor is opaque paper and the grain, the radius and the chrome
+     shadow stay: it is still the same family, still not a second material, and
+     it is now legible over anything. `backdrop-filter` goes with the
+     transparency it existed to rescue — blurring a ground nobody can see is
+     a filter run for nothing on every frame the menu is open. */
   border-radius: var(--cw-radius-lg);
   color: var(--cw-platform-text);
-  background-color: var(--cw-mat-tint-chrome);
+  background-color: var(--cw-mat-surface);
   background-image: var(--cw-mat-grain-image);
   box-shadow: var(--cw-mat-shadow-chrome);
-  backdrop-filter: var(--cw-mat-filter);
+  /* THE CEILING IS A SAFETY NET, NOT A LAYOUT (2026-08-28).
+
+     `overflow-y: auto` is here so a menu taller than the space under the bar
+     cannot run off the bottom of a short window — six rows and a setting, on a
+     laptop turned sideways. It was never meant to draw anything: a scroll track
+     down the right edge of a 17rem sheet is chrome inside chrome, and it lands
+     on the one panel in the system that is all padding and hairlines.
+
+     Two things stop it. The gutter is suppressed, so a panel that does clamp
+     scrolls by wheel, trackpad, touch and keyboard without painting a bar over
+     the paper; and `overflow-x` is pinned to `hidden` rather than being left to
+     compute — `overflow-y: auto` alone silently turns a `visible` cross axis
+     into `auto`, so any row a pixel too wide (the theme control is the widest
+     one, and it carries a negative end margin) hangs a horizontal bar off the
+     bottom of the sheet for no visible reason. */
   overflow-y: auto;
+  overflow-x: hidden;
+  overscroll-behavior: contain;
+  scrollbar-width: none;
+}
+
+.profileMenu::-webkit-scrollbar {
+  width: 0;
+  height: 0;
 }
 
 .profileMenu p {
@@ -672,6 +706,85 @@
   font-size: var(--ds-type-label-size);
   line-height: var(--ds-type-label-line-height);
   overflow-wrap: anywhere;
+}
+
+/* THE ACCOUNT HEADER: who, then where you can go. Both lines are captions —
+   neither is a destination, so neither takes the rows' inset-marked height or
+   their weight. They share the rows' left edge so the block reads as the top
+   of the same list rather than as a panel of its own, and the pair is set
+   tight together and loose from the first row: they are one statement. */
+.menuIdentity {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.35rem 0.65rem 0.7rem;
+}
+
+.menuIdentity p {
+  padding: 0;
+  overflow-wrap: anywhere;
+}
+
+.menuIdentityName {
+  color: var(--cw-platform-text);
+  font-weight: 720;
+}
+
+.menuIdentityMail {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: var(--ds-type-label-line-height);
+}
+
+/* Under a tone flip the muted global ink is a different colour, not a quieter
+   one — the same trap `.menuSettingLabel` fell into. */
+.profileMenu[data-cw-header-tone="dark"] .menuIdentityName {
+  color: var(--cw-platform-accent-contrast);
+}
+
+.profileMenu[data-cw-header-tone="dark"] .menuIdentityMail {
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 72%, transparent);
+}
+
+/* HOISTED TO THE TOP OF THE PHONE DRAWER (2026-08-28), where it is the sheet's
+   header rather than a caption between two groups — so it takes a header's
+   size. Inline it sits under five destinations and whispers at label size,
+   which is right there and wrong here: at the top of an opened menu, 12px
+   grey is the first thing a reader fails to find. The ink is the header
+   plate's, like every other word in this sheet, and the rule under it is the
+   same fading hairline the menu already uses between registers. */
+.menuIdentity[data-placement="hoisted"] {
+  gap: 0.15rem;
+  padding: 0.15rem 0.9rem 0.85rem;
+  /* The system's rule — `--cw-rule-fade-x`, with the ink re-pointed to the
+     sheet's own hairline. Never a gradient written out here: one shape, one
+     place, or the fades drift apart a percent at a time. */
+  border-bottom: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+}
+
+.menuIdentity[data-placement="hoisted"] .menuIdentityName {
+  color: var(--platform-header-fg);
+  font-size: 1.02rem;
+  line-height: 1.2;
+}
+
+.menuIdentity[data-placement="hoisted"] .menuIdentityMail {
+  color: color-mix(in srgb, var(--platform-header-fg) 76%, transparent);
+  font-size: 0.86rem;
+}
+
+/* In the burger sheet the ground is the header plate, so the ink is the
+   header's. */
+.profileWrapMobile .menuIdentity {
+  padding-inline: 0.9rem;
+}
+
+.profileWrapMobile .menuIdentityName {
+  color: var(--platform-header-fg);
+}
+
+.profileWrapMobile .menuIdentityMail {
+  color: color-mix(in srgb, var(--platform-header-fg) 72%, transparent);
 }
 
 /* The one rule in this menu, and it separates the two registers: everywhere
@@ -705,10 +818,17 @@
   padding: 0 0.65rem;
 }
 
+/* THE SAME TEXT AS THE ROWS, which is what "the same upright" above was
+   already claiming and did not deliver: it was caption ink at the label size
+   among six names set at 720, so the one row that is not a destination was
+   also the one row in a different typeface weight and size — it read as a
+   heading for the rows under it rather than as a line of the list. It takes
+   the row's own type now, at the row's resting colour; what says "this is a
+   setting, not a place" is the control at the far end and the absence of a
+   mark, not a shrunken word. */
 .menuSettingLabel {
   color: var(--cw-platform-muted);
-  font-size: var(--ds-type-label-size);
-  line-height: var(--ds-type-label-line-height);
+  font-weight: 720;
 }
 
 .profileMenu a,
@@ -838,8 +958,14 @@
   transform-origin: left center;
 }
 
-.profileMenu a:hover,
-.profileMenu button:hover,
+@media (hover: hover) {
+  .profileMenu a:hover,
+  .profileMenu button:hover {
+    color: var(--cw-platform-text);
+    background: transparent;
+  }
+}
+
 .profileMenu a:focus-visible,
 .profileMenu button:focus-visible {
   color: var(--cw-platform-text);
@@ -847,8 +973,27 @@
   outline: none;
 }
 
-.profileMenu a:hover .menuInkMark,
-.profileMenu button:hover .menuInkMark,
+/* HOVER IS A POINTER STATE, AND A PHONE HAS NO POINTER.
+
+   On touch, `:hover` latches onto the last element tapped and stays there —
+   so opening this menu from the cabinet showed TWO gold marks: the full one
+   under «Кабінет», which is where you are, and a 42% one under whichever row
+   the last tap happened to land near. Two marks in one menu is two answers to
+   «which one am I in», and the reader has no way to tell which of the two is
+   the claim and which is the residue.
+
+   `@media (hover: hover)` is the whole fix: a device that cannot hover never
+   paints the hover mark, and the current row is the only thing lit. Focus is
+   deliberately NOT inside the query — a keyboard has no pointer either, and
+   its ring must survive on every device. */
+@media (hover: hover) {
+  .profileMenu a:hover .menuInkMark,
+  .profileMenu button:hover .menuInkMark {
+    opacity: var(--cw-nav-marker-hover-opacity);
+    transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+  }
+}
+
 .profileMenu a:focus-visible .menuInkMark,
 .profileMenu button:focus-visible .menuInkMark {
   opacity: var(--cw-nav-marker-hover-opacity);
@@ -899,9 +1044,14 @@
 
 /* The resting rows step back from that full-strength cream rather than sitting
    at it, so the row under the cursor is the one that moves. 78% is the quietest
-   step that still clears 4.5 on this tint at the tone bound. */
+   step that still clears 4.5 on this tint at the tone bound.
+   The setting's label is one of these rows and takes the same step: it was
+   still on the global muted ink here, which under a tone flip is not a quieter
+   version of the rows but a different colour entirely — visibly grey among
+   cream, which is what «Вигляд» kept falling out of. */
 .profileMenu[data-cw-header-tone="dark"] a,
-.profileMenu[data-cw-header-tone="dark"] button {
+.profileMenu[data-cw-header-tone="dark"] button,
+.profileMenu[data-cw-header-tone="dark"] .menuSettingLabel {
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
 }
 
@@ -957,8 +1107,34 @@
   text-decoration: none;
 }
 
-.profileWrapMobile a:hover .menuInkMark,
-.profileWrapMobile button:hover .menuInkMark,
+/* THE SETTING ROW BELONGS TO THIS LIST, so it takes this list's metrics.
+
+   The shared `.menuSetting` is written for the desktop popover, whose rows are
+   padded 0.65rem; the burger sheet pads its rows 0.9rem, so «Вигляд» sat a
+   quarter of a rem to the left of every name above it — close enough to look
+   like a mistake rather than a category. The colour was the second half: rows
+   here are `--platform-header-fg`, and the label was still on the platform's
+   muted ink, which on this sheet is visibly dimmer than everything it is
+   listed with. Same inset, same brightness, same weight — a setting is
+   distinguished by what sits at the end of its row, not by being quieter. */
+.profileWrapMobile .menuSetting {
+  padding-inline: 0.9rem;
+}
+
+.profileWrapMobile .menuSettingLabel {
+  color: var(--platform-header-fg);
+}
+
+/* The burger sheet is the surface this actually bit on — see the note above
+   `.profileMenu`'s copy of this rule. */
+@media (hover: hover) {
+  .profileWrapMobile a:hover .menuInkMark,
+  .profileWrapMobile button:hover .menuInkMark {
+    opacity: var(--cw-nav-marker-hover-opacity);
+    transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+  }
+}
+
 .profileWrapMobile a:focus-visible .menuInkMark,
 .profileWrapMobile button:focus-visible .menuInkMark {
   opacity: var(--cw-nav-marker-hover-opacity);
