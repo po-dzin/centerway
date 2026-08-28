@@ -11,7 +11,7 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import type { GrantSource } from "@/lib/admin/accessTypes";
-import { isStaffRole } from "@/lib/platform/adminRole";
+import { isAdminRole, isStaffRole } from "@/lib/platform/adminRole";
 import {
   DEFAULT_TIMEZONE,
   accessRuleOf,
@@ -581,21 +581,39 @@ export async function listLearnerCourses(
 ): Promise<LearnerShelfEntry[]> {
   const db = adminClient();
 
-  const [{ data: enrollmentRows }, staff, settings, purchases] = await Promise.all([
+  const [{ data: enrollmentRows }, { data: roleRow }, settings, purchases] = await Promise.all([
     db
       .from("lms_enrollments")
       .select(ENROLLMENT_COLUMNS)
       .eq("auth_user_id", identity.authUserId),
-    isStaff(identity.authUserId),
+    db.from("user_roles").select("role").eq("user_id", identity.authUserId).maybeSingle(),
     getLearnerSettings(identity.authUserId),
     loadPurchases(identity),
   ]);
+
+  const role = (roleRow?.role as string | null | undefined) ?? null;
+  // Kept broad — an entitlement bypass on PUBLISHED content (line below), where
+  // "may preview anything already live" is the right question for support too.
+  const staff = isStaffRole(role);
+  const admin = isAdminRole(role);
 
   const enrollmentByCourse = new Map(
     ((enrollmentRows ?? []) as EnrollmentRow[]).map((row) => [row.course_id, row])
   );
 
   const courses = await listLiveCourses();
+
+  // Who authored each course, for the DRAFT-visibility question below. A
+  // narrower question than "may preview live content": a coach previewing an
+  // unfinished course they did not write is reading someone else's unreviewed
+  // draft, not testing their own material.
+  const { data: courseAuthorRows } = await db.from("lms_courses").select("id, author_id");
+  const authorByCourse = new Map(
+    ((courseAuthorRows ?? []) as Array<{ id: string; author_id: string | null }>).map((row) => [
+      row.id,
+      row.author_id,
+    ])
+  );
 
   // One read for every term rather than one per card: the shelf renders the
   // whole catalogue, and an offer lookup per course was the N+1 waiting to
@@ -656,9 +674,14 @@ export async function listLearnerCourses(
       const state = row || plan.grant ? accessStateOf(projected, now) : null;
       const open = state === "active";
 
-      // A draft is visible to staff, and to anyone holding a manual grant — the
-      // grant IS the enrollment row, so its presence is the check.
-      if (course.status !== "published" && !(row && open) && !staff) return null;
+      // A draft is visible to an admin (house-wide oversight), to a coach who
+      // authored it (previewing their own unfinished work), and to anyone
+      // holding a manual grant — the grant IS the enrollment row, so its
+      // presence is the check. `support` is NOT included: seeing every draft
+      // in the platform is an oversight power, not a support one, and support
+      // already has the admin catalogue for that (2026-08-29).
+      const ownDraft = role === "coach" && authorByCourse.get(course.id) === identity.authUserId;
+      if (course.status !== "published" && !(row && open) && !admin && !ownDraft) return null;
 
       const expiresAt = projected.expiresAt ?? null;
       const shared = {
