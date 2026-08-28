@@ -88,6 +88,80 @@ describe("writeCourseStructure", () => {
     expect(db.rows.lms_courses[0]).toMatchObject({ slug: "way21", status: "published" });
   });
 
+  /**
+   * The Reset Day wipe (2026-08-26): a publish carrying a course object captured
+   * before the offer-surface columns existed blanked the whole storefront, and the
+   * course fell off the shelf. Both halves are locked here, because the fix is a
+   * distinction — absence means "cleared" only when the caller says it does.
+   */
+  describe("a payload that does not carry a storefront", () => {
+    const stored = {
+      ...course,
+      tagline: "Двадцять один день",
+      audience: ["Для тих, хто починає"],
+      accessNote: "Доступ на рік",
+    };
+    const partial = { ...course };
+    delete (partial as Record<string, unknown>).tagline;
+    delete (partial as Record<string, unknown>).audience;
+    delete (partial as Record<string, unknown>).accessNote;
+
+    it("leaves the stored copy alone by default, rather than blanking it", async () => {
+      const db = fakeWriter();
+      await writeCourseStructure(db, partial);
+
+      const written = db.rows.lms_courses[0];
+      expect(Object.keys(written)).not.toContain("tagline");
+      expect(Object.keys(written)).not.toContain("audience");
+      expect(Object.keys(written)).not.toContain("access_note");
+    });
+
+    it("still writes the columns the payload does carry", async () => {
+      const db = fakeWriter();
+      await writeCourseStructure(db, stored);
+
+      expect(db.rows.lms_courses[0]).toMatchObject({
+        tagline: "Двадцять один день",
+        audience: ["Для тих, хто починає"],
+        access_note: "Доступ на рік",
+      });
+    });
+
+    it("blanks them when the caller speaks for the storefront, so an author can clear a field", async () => {
+      const db = fakeWriter();
+      await writeCourseStructure(db, partial, { optionalColumns: "authoritative" });
+
+      expect(db.rows.lms_courses[0]).toMatchObject({
+        tagline: null,
+        audience: null,
+        access_note: null,
+      });
+    });
+  });
+
+  /**
+   * Price is the owner's, not the author's. That boundary is currently held by
+   * the authoring code simply never naming `lms_course_offers` — RLS cannot hold
+   * it, because every authoring route runs as service role. So the convention is
+   * asserted here: the day someone generalises this write over "everything on the
+   * course", this fails instead of quietly handing authors their own pricing.
+   */
+  it("never writes the offer table, whatever the payload says", async () => {
+    const db = fakeWriter();
+    await writeCourseStructure(db, {
+      ...course,
+      // A payload trying to smuggle commerce in through the authoring door.
+      ...({ amount: 1, price: 795, offer: { code: "course:way21", amount: 1 } } as object),
+    });
+
+    const tablesTouched = db.log.map((entry) => entry.split(" ")[1]);
+    expect(tablesTouched).not.toContain("lms_course_offers");
+    expect(Object.keys(db.rows)).not.toContain("lms_course_offers");
+    expect(Object.keys(db.rows.lms_courses[0])).toEqual(
+      expect.not.arrayContaining(["amount", "price", "offer", "list_amount", "currency"])
+    );
+  });
+
   it("refuses to publish a course that still owes the learner content", async () => {
     // The marker goes in a LESSON title: courseReadiness scans the course title,
     // lesson titles and block text, and deliberately not module titles.

@@ -1,5 +1,3 @@
-import { PayableProductCode, normalizePayableProduct } from "@/lib/products";
-
 export type CheckoutStartRequest = {
   name?: unknown;
   site?: unknown;
@@ -30,24 +28,6 @@ function asCleanString(v: unknown): string | null {
   if (typeof v !== "string") return null;
   const s = v.trim();
   return s ? s : null;
-}
-
-export function resolveCheckoutProduct(body: CheckoutStartRequest): PayableProductCode {
-  const byProductField = normalizePayableProduct({
-    product: asCleanString(body.product) ?? undefined,
-    product_code: asCleanString(body.product_code) ?? undefined,
-  });
-  if (byProductField === "short" || byProductField === "irem") return byProductField;
-
-  const site = asCleanString(body.site)?.toLowerCase();
-  if (site === "irem") return "irem";
-  if (site === "short" || site === "reboot") return "short";
-
-  const offer = asCleanString(body.offer_id)?.toLowerCase() ?? "";
-  if (offer.includes("irem")) return "irem";
-  if (offer.includes("short") || offer.includes("reboot")) return "short";
-
-  return "short";
 }
 
 export function checkoutLeadId(orderRef: string): string {

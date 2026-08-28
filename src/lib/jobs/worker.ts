@@ -5,6 +5,8 @@ import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { normalizeTrackingString } from "@/lib/tracking/metaClickIds";
 import { getErrorMessage } from "@/lib/errors";
 import { processDoshaReminderJob } from "@/lib/doshaReminder";
+import { PRODUCTS, isCatalogProduct } from "@/lib/products";
+import { parseCourseOfferCode } from "@/lms-core";
 
 // Simple job registry
 type JobHandler = (payload: unknown) => Promise<void>;
@@ -23,6 +25,36 @@ export type PendingPurchaseCapiJobPayload = {
 type TelegramSaleReportJobPayload = {
     order_ref: string;
 };
+
+/**
+ * The agreed reporting label for a product code.
+ *
+ * `pixel_content_name` exists so one product is one name in Meta for as long as
+ * it is sold — the admin surface writes it once and never rewrites it. The
+ * browser Pixel has always sent it; this job sent the raw `product_code`
+ * instead, so the same order reached Meta under two names and which one
+ * survived deduplication was a race.
+ *
+ * Read straight from the row rather than through `loadPayableOffer`, because
+ * that path is wrapped in the Next request cache and this runs on a cron.
+ * Falls back to the code, which is what was being sent before.
+ */
+async function pixelContentNameFor(
+    db: ReturnType<typeof adminClient>,
+    productCode: string | null
+): Promise<string | null> {
+    if (!productCode) return null;
+    if (isCatalogProduct(productCode)) return PRODUCTS[productCode].pixelContentName;
+    if (!parseCourseOfferCode(productCode)) return null;
+
+    const { data } = await db
+        .from("lms_course_offers")
+        .select("pixel_content_name")
+        .eq("code", productCode)
+        .maybeSingle();
+
+    return normalizeTrackingString(data?.pixel_content_name) ?? null;
+}
 
 function isCapiEventPayload(payload: unknown): payload is CapiEventPayload {
     if (!payload || typeof payload !== "object") return false;
@@ -137,7 +169,10 @@ export async function buildPurchaseCapiEventPayload(payload: PendingPurchaseCapi
             normalizeTrackingString(initiatePayload?.event_source_url) ??
             normalizeTrackingString(checkoutPayload?.page_url),
         action_source: "website",
-        content_name: normalizeTrackingString(orderTracking?.product_code) ?? undefined,
+        content_name:
+            (await pixelContentNameFor(db, normalizeTrackingString(orderTracking?.product_code))) ??
+            normalizeTrackingString(orderTracking?.product_code) ??
+            undefined,
         content_type: normalizeTrackingString(orderTracking?.product_code) ? "product" : undefined,
         content_ids: normalizeTrackingString(orderTracking?.product_code)
             ? [normalizeTrackingString(orderTracking?.product_code)!]
