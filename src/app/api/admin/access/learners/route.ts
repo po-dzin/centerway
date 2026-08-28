@@ -5,7 +5,7 @@ import {
     isGrantableRole,
     isGrantSource,
     isPaymentCurrency,
-    listLearners,
+    listPeople,
     normalizeDeadline,
     provisionAccess,
     reactivateCourse,
@@ -34,29 +34,56 @@ function failed(error: unknown) {
     return serverErrorResponse(error instanceof Error ? error.message : "unknown_error");
 }
 
-// GET /api/admin/access/learners?q=&course=&status=&limit=&offset=
-export async function GET(req: NextRequest) {
+/**
+ * GET — the one list of people.
+ *
+ * `?q=` `?role=` `?access=` `?course=` `?status=` `?limit=` `?offset=`
+ *
+ * It used to be two: this one, which started from enrollments and so could not
+ * see an account holding no course, and `/access/accounts`, which started from
+ * accounts and so could not show what they held. That route is gone; every
+ * facet it had is a parameter here. See docs/admin-access-shape-2026-08-28.md.
+ *
+ * An unknown value for a facet is DROPPED rather than passed on: filtering on
+ * nonsense should read as "no filter", not as "nobody".
+ */
+export async function GET(req: NextRequest): Promise<NextResponse> {
     const session = await requireAdminSession(req);
     if (!session) return unauthorizedResponse();
 
     const { searchParams } = new URL(req.url);
     const parsed = parseLimitOffset(searchParams, { defaultLimit: 50, maxLimit: 100 });
     // `parseLimitOffset` passes a non-numeric ?limit= straight through as NaN,
-    // which slices to an empty page and reads as "no learners" rather than as
-    // the bad request it is.
+    // which slices to an empty page and reads as "nobody" rather than as the
+    // bad request it is.
     const limit = Number.isFinite(parsed.limit) && parsed.limit > 0 ? parsed.limit : 50;
     const offset = Number.isFinite(parsed.offset) && parsed.offset >= 0 ? parsed.offset : 0;
+
     const status = searchParams.get("status") ?? "";
+    const role = searchParams.get("role") ?? "";
+    const access = searchParams.get("access") ?? "";
 
     try {
-        const result = await listLearners({
+        const result = await listPeople({
             q: searchParams.get("q") ?? undefined,
+            role: role === "staff" || isGrantableRole(role) ? role : undefined,
+            access: access === "enrolled" || access === "none" ? access : "",
             courseSlug: searchParams.get("course") ?? undefined,
             status: STATUSES.includes(status as LearnerStatus) ? (status as LearnerStatus) : "",
             limit,
             offset,
         });
-        return NextResponse.json({ ...result, limit, offset });
+        // `canGrant` came from the accounts route and comes from here now:
+        // `support` may read this list and hand out a course, but the role
+        // control stays with admin. `selfId` lets the panel disable the row
+        // that would 409 with `cannot_change_own_role`.
+        return NextResponse.json({
+            ...result,
+            limit,
+            offset,
+            canGrant: session.role === "admin",
+            selfId: session.user.id,
+        });
     } catch (error) {
         return failed(error);
     }

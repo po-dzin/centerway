@@ -18,8 +18,7 @@ vi.mock("@/lib/auth/requireAdmin", () => ({
 }));
 
 const access = {
-    listLearners: vi.fn(),
-    listAccounts: vi.fn(),
+    listPeople: vi.fn(),
     provisionAccess: vi.fn(),
     setEnrollmentDeadline: vi.fn(),
     revokeCourse: vi.fn(),
@@ -41,7 +40,6 @@ vi.mock("@/lib/admin/access", async () => {
 });
 
 const learners = await import("@/app/api/admin/access/learners/route");
-const accounts = await import("@/app/api/admin/access/accounts/route");
 const roles = await import("@/app/api/admin/access/roles/route");
 const courses = await import("@/app/api/admin/access/courses/route");
 
@@ -62,8 +60,7 @@ function send(url: string, method: "POST" | "DELETE" | "PATCH", body?: unknown) 
 beforeEach(() => {
     session.value = ADMIN;
     for (const fn of Object.values(access)) fn.mockReset();
-    access.listLearners.mockResolvedValue({ items: [], total: 0, truncated: false, summary: {} });
-    access.listAccounts.mockResolvedValue({ items: [], total: 0 });
+    access.listPeople.mockResolvedValue({ items: [], total: 0, truncated: false, summary: {} });
     access.listCourses.mockResolvedValue([]);
 });
 
@@ -76,7 +73,7 @@ describe("authentication", () => {
             learners.POST(send("http://x/api/admin/access/learners", "POST", { email: "a@b.c", course: "reset-day" })),
             learners.DELETE(send("http://x/api/admin/access/learners?enrollmentId=e1", "DELETE")),
             learners.PATCH(send("http://x/api/admin/access/learners", "PATCH", { enrollmentId: "e1", expiresAt: "2026-09-30" })),
-            accounts.GET(get("http://x/api/admin/access/accounts")),
+            learners.GET(get("http://x/api/admin/access/learners")),
             roles.POST(send("http://x/api/admin/access/roles", "POST", { email: "a@b.c", role: "admin" })),
             courses.GET(get("http://x/api/admin/access/courses")),
             courses.PATCH(send("http://x/api/admin/access/courses", "PATCH", { courseId: "c1" })),
@@ -90,8 +87,10 @@ describe("authentication", () => {
 describe("learners", () => {
     it("passes filters through and reports the caps it applied", async () => {
         await learners.GET(get("http://x/api/admin/access/learners?q=ann&course=reset-day&status=stalled&limit=10&offset=20"));
-        expect(access.listLearners).toHaveBeenCalledWith({
+        expect(access.listPeople).toHaveBeenCalledWith({
             q: "ann",
+            role: undefined,
+            access: "",
             courseSlug: "reset-day",
             status: "stalled",
             limit: 10,
@@ -101,12 +100,12 @@ describe("learners", () => {
 
     it("drops a status it does not know rather than filtering on nonsense", async () => {
         await learners.GET(get("http://x/api/admin/access/learners?status=vip"));
-        expect(access.listLearners).toHaveBeenCalledWith(expect.objectContaining({ status: "" }));
+        expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ status: "" }));
     });
 
     it("falls back to a sane page when limit/offset are not numbers", async () => {
         await learners.GET(get("http://x/api/admin/access/learners?limit=abc&offset=-5"));
-        expect(access.listLearners).toHaveBeenCalledWith(expect.objectContaining({ limit: 50, offset: 0 }));
+        expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ limit: 50, offset: 0 }));
     });
 
     it("lets support grant and revoke course access", async () => {
@@ -254,7 +253,7 @@ describe("learners", () => {
     });
 
     it("reports an unexpected failure as a 500", async () => {
-        access.listLearners.mockRejectedValue(new Error("connection reset"));
+        access.listPeople.mockRejectedValue(new Error("connection reset"));
         const res = await learners.GET(get("http://x/api/admin/access/learners"));
         expect(res.status).toBe(500);
     });
@@ -351,32 +350,36 @@ describe("granting a role on the same form that creates the account", () => {
 });
 
 describe("accounts", () => {
-    it("pages the account list and tells the UI whether roles may be changed", async () => {
+    // The accounts endpoint was merged into this one; what it proved about
+    // `canGrant`, `selfId` and paging is proved of the merged route here.
+    it("pages the people list and tells the UI whether roles may be changed", async () => {
         session.value = SUPPORT;
-        const res = await accounts.GET(get("http://x/api/admin/access/accounts?q=ann&limit=10&offset=20"));
+        const res = await learners.GET(get("http://x/api/admin/access/learners?q=ann&limit=10&offset=20"));
 
         expect(res.status).toBe(200);
-        expect(access.listAccounts).toHaveBeenCalledWith({ q: "ann", limit: 10, offset: 20 });
+        expect(access.listPeople).toHaveBeenCalledWith(
+            expect.objectContaining({ q: "ann", limit: 10, offset: 20 })
+        );
         // `support` reads this list but may not hand out roles from it.
         expect(await res.json()).toMatchObject({ canGrant: false, selfId: "auth-support" });
     });
 
     it("falls back to a sane page when limit/offset are not numbers", async () => {
-        await accounts.GET(get("http://x/api/admin/access/accounts?limit=abc&offset=-5"));
-        expect(access.listAccounts).toHaveBeenCalledWith(expect.objectContaining({ limit: 50, offset: 0 }));
+        await learners.GET(get("http://x/api/admin/access/learners?limit=abc&offset=-5"));
+        expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ limit: 50, offset: 0 }));
     });
 
     it("passes a role facet through, including the `staff` shorthand", async () => {
-        await accounts.GET(get("http://x/api/admin/access/accounts?role=coach"));
-        expect(access.listAccounts).toHaveBeenCalledWith(expect.objectContaining({ role: "coach" }));
+        await learners.GET(get("http://x/api/admin/access/learners?role=coach"));
+        expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ role: "coach" }));
 
-        await accounts.GET(get("http://x/api/admin/access/accounts?role=staff"));
-        expect(access.listAccounts).toHaveBeenCalledWith(expect.objectContaining({ role: "staff" }));
+        await learners.GET(get("http://x/api/admin/access/learners?role=staff"));
+        expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ role: "staff" }));
     });
 
     it("drops a role it does not know rather than returning nobody", async () => {
-        await accounts.GET(get("http://x/api/admin/access/accounts?role=wizard"));
-        expect(access.listAccounts).toHaveBeenCalledWith(expect.objectContaining({ role: undefined }));
+        await learners.GET(get("http://x/api/admin/access/learners?role=wizard"));
+        expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ role: undefined }));
     });
 });
 

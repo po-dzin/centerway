@@ -18,10 +18,9 @@ vi.mock("@/lib/auth/adminClient", () => ({
 const {
     AccessError,
     createAccount,
-    listAccounts,
+    listPeople,
     grantCourse,
     listCourses,
-    listLearners,
     provisionAccess,
     recordManualPayment,
     blockCourse,
@@ -92,9 +91,13 @@ beforeEach(() => {
     vi.setSystemTime(NOW);
 });
 
-describe("listLearners", () => {
+describe("listPeople — the enrollment side", () => {
+    /* These were `listLearners`, whose shape WAS "people holding a course".
+       That is the `access: "enrolled"` facet now, so the tests say it out loud
+       instead of relying on the function to be narrow. */
+
     it("folds the event log into per-learner progress and a status", async () => {
-        const { items, total, summary } = await listLearners({ limit: 50, offset: 0 });
+        const { items, total, summary } = await listPeople({ access: "enrolled", limit: 50, offset: 0 });
 
         // Three people, each holding one course.
         expect(total).toBe(3);
@@ -117,46 +120,46 @@ describe("listLearners", () => {
 
     it("counts a course with no lessons as 0 of 0 rather than finished", async () => {
         // course-way21 has no lms_lessons rows at all.
-        const { items } = await listLearners({ courseSlug: "way21", limit: 50, offset: 0 });
+        const { items } = await listPeople({ courseSlug: "way21", limit: 50, offset: 0 });
         expect(items).toHaveLength(1);
         expect(items[0]).toMatchObject({ lessonsTotal: 0, status: "not_started" });
     });
 
     it("filters by course and rejects a slug that does not exist", async () => {
-        const { items } = await listLearners({ courseSlug: "reset-day", limit: 50, offset: 0 });
+        const { items } = await listPeople({ courseSlug: "reset-day", limit: 50, offset: 0 });
         expect(items.map((row) => row.email)).toEqual(
             expect.arrayContaining(["learner@example.com", "stalled@example.com"])
         );
         expect(items).toHaveLength(2);
 
-        await expect(listLearners({ courseSlug: "nope", limit: 50, offset: 0 })).rejects.toMatchObject({
+        await expect(listPeople({ courseSlug: "nope", limit: 50, offset: 0 })).rejects.toMatchObject({
             message: "course_not_found",
             status: 404,
         });
     });
 
     it("searches accounts by email and by name", async () => {
-        const byEmail = await listLearners({ q: "stalled@", limit: 50, offset: 0 });
+        const byEmail = await listPeople({ q: "stalled@", limit: 50, offset: 0 });
         expect(byEmail.items.map((row) => row.email)).toEqual(["stalled@example.com"]);
 
-        const byName = await listLearners({ q: "Learner", limit: 50, offset: 0 });
+        const byName = await listPeople({ q: "Learner", limit: 50, offset: 0 });
         expect(byName.items.map((row) => row.email)).toEqual(["learner@example.com"]);
     });
 
     it("returns an empty page — not everyone — when the search matches nobody", async () => {
-        const result = await listLearners({ q: "nobody-here", limit: 50, offset: 0 });
+        const result = await listPeople({ q: "nobody-here", limit: 50, offset: 0 });
         expect(result).toMatchObject({ items: [], total: 0, truncated: false });
     });
 
     it("filters by status after folding, and paginates the filtered set", async () => {
-        const stalled = await listLearners({ status: "stalled", limit: 50, offset: 0 });
+        const stalled = await listPeople({ status: "stalled", limit: 50, offset: 0 });
         expect(stalled.total).toBe(1);
         expect(stalled.items[0].email).toBe("stalled@example.com");
         // The summary still describes the whole set, not the filtered slice.
         expect(stalled.summary.in_progress).toBe(1);
 
-        const firstPage = await listLearners({ limit: 2, offset: 0 });
-        const secondPage = await listLearners({ limit: 2, offset: 2 });
+        const firstPage = await listPeople({ access: "enrolled", limit: 2, offset: 0 });
+        const secondPage = await listPeople({ access: "enrolled", limit: 2, offset: 2 });
         expect(firstPage.items).toHaveLength(2);
         expect(secondPage.items).toHaveLength(1);
         expect(firstPage.total).toBe(3);
@@ -167,7 +170,7 @@ describe("listLearners", () => {
             id: "enr-orphan", course_id: "course-gone", auth_user_id: "auth-1",
             source: "manual", order_ref: null, started_at: daysAgo(1), expires_at: null,
         });
-        const { items } = await listLearners({ limit: 50, offset: 0 });
+        const { items } = await listPeople({ limit: 50, offset: 0 });
         const orphan = items
             .flatMap((account) => account.courses)
             .find((row) => row.enrollmentId === "enr-orphan");
@@ -180,7 +183,7 @@ describe("listLearners", () => {
             source: "manual", order_ref: null, started_at: daysAgo(1), expires_at: null,
         });
 
-        const { items, total, summary } = await listLearners({ limit: 50, offset: 0 });
+        const { items, total, summary } = await listPeople({ access: "enrolled", limit: 50, offset: 0 });
 
         // Still three people, not four rows.
         expect(total).toBe(3);
@@ -200,7 +203,7 @@ describe("listLearners", () => {
             source: "manual", order_ref: null, started_at: daysAgo(1), expires_at: null,
         });
 
-        const idle = await listLearners({ status: "not_started", limit: 50, offset: 0 });
+        const idle = await listPeople({ status: "not_started", limit: 50, offset: 0 });
         // auth-1 qualifies through way21 even though reset-day is in progress.
         expect(idle.items.map((row) => row.email).sort()).toEqual([
             "fresh@example.com",
@@ -210,7 +213,7 @@ describe("listLearners", () => {
 
     it("surfaces a database error as a 500 instead of an empty list", async () => {
         db.failures["lms_courses:select"] = "boom";
-        await expect(listLearners({ limit: 50, offset: 0 })).rejects.toMatchObject({ status: 500 });
+        await expect(listPeople({ limit: 50, offset: 0 })).rejects.toMatchObject({ status: 500 });
     });
 });
 
@@ -283,9 +286,9 @@ describe("grantCourse", () => {
     });
 });
 
-describe("listAccounts", () => {
+describe("listPeople — the account side", () => {
     it("lists everyone with an account, including people no other tab can show", async () => {
-        const { items, total } = await listAccounts({ limit: 50, offset: 0 });
+        const { items, total } = await listPeople({ limit: 50, offset: 0 });
 
         // Five accounts are seeded; only two hold an elevated role and only
         // three hold a course, which is exactly why this list has to exist.
@@ -301,7 +304,7 @@ describe("listAccounts", () => {
        function. See docs/admin-access-shape-2026-08-28.md. */
 
     it("narrows to the elevated accounts, and only those", async () => {
-        const { items } = await listAccounts({ limit: 50, offset: 0, role: "staff" });
+        const { items } = await listPeople({ limit: 50, offset: 0, role: "staff" });
 
         expect(items.map((row) => row.email)).toEqual(
             expect.arrayContaining(["admin@example.com", "coach@example.com"])
@@ -311,23 +314,24 @@ describe("listAccounts", () => {
     });
 
     it("narrows to one named role", async () => {
-        const { items } = await listAccounts({ limit: 50, offset: 0, role: "coach" });
+        const { items } = await listPeople({ limit: 50, offset: 0, role: "coach" });
         expect(items.map((row) => row.email)).toEqual(["coach@example.com"]);
     });
 
     it("carries what a person authors, which used to live only in the Roles table", async () => {
-        const { items } = await listAccounts({ limit: 50, offset: 0, role: "coach" });
-        expect(items[0]).toMatchObject({ role: "coach", ownedCourses: 1, enrollments: 0 });
+        const { items } = await listPeople({ limit: 50, offset: 0, role: "coach" });
+        expect(items[0]).toMatchObject({ role: "coach", ownedCourses: 1 });
+        expect(items[0].courses).toEqual([]);
     });
 
     it("answers an empty page — not an error — when nobody holds the role", async () => {
         db.tables.user_roles = [{ user_id: "auth-1", role: "user", updated_at: daysAgo(1) }];
-        expect(await listAccounts({ limit: 50, offset: 0, role: "staff" })).toEqual({ items: [], total: 0 });
+        expect(await listPeople({ limit: 50, offset: 0, role: "staff" })).toMatchObject({ items: [], total: 0 });
     });
 
     it("normalises a legacy capitalised role", async () => {
         db.tables.user_roles = [{ user_id: "auth-1", role: "Admin", updated_at: daysAgo(1) }];
-        const { items } = await listAccounts({ limit: 50, offset: 0 });
+        const { items } = await listPeople({ limit: 50, offset: 0 });
         expect(items.find((row) => row.authUserId === "auth-1")).toMatchObject({ role: "admin" });
     });
 
@@ -338,18 +342,17 @@ describe("listAccounts", () => {
             { order_ref: "ord-b", product_code: "reset-day", status: "created", customer_id: "cus-1", created_at: daysAgo(8) }
         );
 
-        const { items } = await listAccounts({ limit: 50, offset: 0 });
+        const { items } = await listPeople({ limit: 50, offset: 0 });
         const byEmail = new Map(items.map((row) => [row.email, row]));
 
-        expect(byEmail.get("learner@example.com")).toMatchObject({
-            role: "user",
-            enrollments: 1,
-            purchases: 1,
-        });
-        expect(byEmail.get("coach@example.com")).toMatchObject({ role: "coach", enrollments: 0, purchases: 0 });
+        expect(byEmail.get("learner@example.com")).toMatchObject({ role: "user", purchases: 1 });
+        expect(byEmail.get("learner@example.com")!.courses).toHaveLength(1);
+        expect(byEmail.get("coach@example.com")).toMatchObject({ role: "coach", purchases: 0 });
+        expect(byEmail.get("coach@example.com")!.courses).toEqual([]);
         // No `user_roles` row at all — most people — reads as null, not as a
         // missing account.
-        expect(byEmail.get("fresh@example.com")).toMatchObject({ role: null, enrollments: 1 });
+        expect(byEmail.get("fresh@example.com")).toMatchObject({ role: null });
+        expect(byEmail.get("fresh@example.com")!.courses).toHaveLength(1);
     });
 
     it("counts a purchase made before the account existed, matched by email", async () => {
@@ -358,7 +361,7 @@ describe("listAccounts", () => {
         db.tables.customers.push({ id: "cus-2", email: "fresh@example.com", auth_user_id: null, created_at: daysAgo(20) });
         db.tables.orders.push({ order_ref: "ord-c", product_code: "way21", status: "paid", customer_id: "cus-2", created_at: daysAgo(19) });
 
-        const { items } = await listAccounts({ limit: 50, offset: 0 });
+        const { items } = await listPeople({ limit: 50, offset: 0 });
         expect(items.find((row) => row.email === "fresh@example.com")).toMatchObject({ purchases: 1 });
     });
 
@@ -366,24 +369,24 @@ describe("listAccounts", () => {
         db.tables.customers.push({ id: "cus-3", email: "fresh@example.com", auth_user_id: "auth-someone-else", created_at: daysAgo(20) });
         db.tables.orders.push({ order_ref: "ord-d", product_code: "way21", status: "paid", customer_id: "cus-3", created_at: daysAgo(19) });
 
-        const { items } = await listAccounts({ limit: 50, offset: 0 });
+        const { items } = await listPeople({ limit: 50, offset: 0 });
         expect(items.find((row) => row.email === "fresh@example.com")).toMatchObject({ purchases: 0 });
     });
 
     it("searches by email and by name, and reports the full count for paging", async () => {
-        const byEmail = await listAccounts({ q: "coach@", limit: 50, offset: 0 });
+        const byEmail = await listPeople({ q: "coach@", limit: 50, offset: 0 });
         expect(byEmail.items.map((row) => row.email)).toEqual(["coach@example.com"]);
 
-        const byName = await listAccounts({ q: "Never Started", limit: 50, offset: 0 });
+        const byName = await listPeople({ q: "Never Started", limit: 50, offset: 0 });
         expect(byName.items.map((row) => row.email)).toEqual(["fresh@example.com"]);
 
-        const firstPage = await listAccounts({ limit: 2, offset: 0 });
+        const firstPage = await listPeople({ limit: 2, offset: 0 });
         expect(firstPage.items).toHaveLength(2);
         expect(firstPage.total).toBe(5);
     });
 
     it("returns an empty page rather than everyone when nothing matches", async () => {
-        expect(await listAccounts({ q: "nobody-here", limit: 50, offset: 0 })).toEqual({ items: [], total: 0 });
+        expect(await listPeople({ q: "nobody-here", limit: 50, offset: 0 })).toMatchObject({ items: [], total: 0 });
     });
 });
 

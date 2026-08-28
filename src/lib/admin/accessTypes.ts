@@ -71,38 +71,6 @@ export type CourseRow = {
     updatedAt: string;
 };
 
-/**
- * One platform account, whatever it has or has not done yet.
- *
- * The other three lists each answer a narrower question — who holds an elevated
- * role, who is taking a course, who has paid — so an account that merely signed
- * in appeared in none of them. This is the row for "who exists".
- */
-export type AccountRow = {
-    authUserId: string;
-    email: string | null;
-    fullName: string | null;
-    avatarUrl: string | null;
-    /** Sign-in provider as recorded at sync; `manual` for an account the panel made. */
-    provider: string | null;
-    lastSignInAt: string | null;
-    /** `null` when there is no `user_roles` row at all, which is most people. */
-    role: string | null;
-    enrollments: number;
-    /** Paid orders reachable from this account, by link or by matching email. */
-    purchases: number;
-    /**
-     * Courses this account is the author of (`lms_courses.author_id`).
-     *
-     * Carried over from the Roles table when it was retired — it was the one
-     * number that lived only there. It belongs on a person either way: "owns
-     * three courses" is a fact about them, and it is what tells a `coach` who
-     * writes from one who only teaches.
-     */
-    ownedCourses: number;
-    /** When the role was last written. Also inherited from the Roles table. */
-    roleUpdatedAt: string | null;
-};
 
 export type RoleRow = {
     authUserId: string;
@@ -224,13 +192,42 @@ export type LearnerAccountRow = {
     email: string | null;
     fullName: string | null;
     avatarUrl: string | null;
-    /** Every enrollment this person holds, newest first. */
+    /** Every enrollment this person holds, newest first. Empty for an account with none. */
     courses: LearnerRow[];
     lessonsTotal: number;
     lessonsCompleted: number;
     lastActivityAt: string | null;
     status: LearnerStatus;
 };
+
+/**
+ * One person, with everything the panel knows about them.
+ *
+ * THE TWO LISTS WERE THE SAME LIST. `LearnerAccountRow` was accounts that hold
+ * a course; the account row was accounts, full stop. Merging them is step 2 of
+ * docs/admin-access-shape-2026-08-28.md — "holds a course" is an attribute of a
+ * person, so it belongs on a facet rather than on a tab of its own.
+ *
+ * `courses` is empty rather than absent for somebody who holds none. That is
+ * the whole point of the merge: an account that has never enrolled is a row
+ * here, not a gap.
+ */
+export type PersonRow = LearnerAccountRow & {
+    /** Sign-in provider as recorded at sync; `manual` for an account the panel made. */
+    provider: string | null;
+    lastSignInAt: string | null;
+    /** `null` when there is no `user_roles` row at all, which is most people. */
+    role: string | null;
+    /** When that role was last written. */
+    roleUpdatedAt: string | null;
+    /** Paid orders reachable from this account, by link or by matching email. */
+    purchases: number;
+    /** Courses this person authors (`lms_courses.author_id`). */
+    ownedCourses: number;
+};
+
+/** Which people a listing wants: everybody, only those holding a course, or only those with none. */
+export type AccessFacet = "" | "enrolled" | "none";
 
 /**
  * How one person's several courses collapse into one headline status.
