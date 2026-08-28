@@ -82,6 +82,10 @@
      analogy further (a real drafted line, weight varying along its length)
      belongs in the design system at art-direction level, not in one module. */
   --builder-rule: color-mix(in srgb, var(--cw-platform-text) 13%, transparent);
+  /* The line that varies along its length, promised in the paragraph above and
+     now owed to the design system rather than to this file: globals.css holds
+     the shape (`--cw-rule-fade-x` / `-y`), this scope hands it the colour. */
+  --cw-rule-ink: var(--builder-rule);
   /* THE SHELL IS A DESKTOP IDEA, AND BELOW THE SIDEBAR IT WAS COSTING A PHONE
      THE TOP OF ITS SCREEN.
 
@@ -466,6 +470,7 @@
     padding: var(--builder-panel-pad-block) 0 0;
     background: transparent;
     border-inline-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-y);
     box-shadow: none;
   }
 
@@ -514,6 +519,7 @@
     justify-self: stretch;
     margin: 0;
     border-block-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
     transform: none;
     z-index: 2;
     background: transparent;
@@ -707,6 +713,7 @@
   gap: var(--cw-space-sm);
   padding: var(--cw-space-sm) var(--cw-space-md);
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .toolDrawerTitle {
@@ -814,6 +821,7 @@
   gap: var(--cw-space-sm);
   padding-block-end: var(--cw-space-sm);
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .toolBlockers {
@@ -828,6 +836,7 @@
   gap: 0.2rem;
   padding-block: var(--cw-space-xs);
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
   font-size: 0.76rem;
   overflow-wrap: anywhere;
 }
@@ -892,6 +901,7 @@
     padding: var(--builder-panel-pad-block) 0 0;
     background: transparent;
     border-inline-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-y);
     pointer-events: auto;
   }
 
@@ -1189,6 +1199,7 @@
   gap: var(--cw-space-xs);
   padding-block-end: var(--cw-space-md);
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .contentsModuleRow {
@@ -1896,7 +1907,7 @@
     color-mix(in srgb, var(--cw-sem-guide-primary) 22%, var(--cw-mat-surface-sunk)),
     var(--cw-mat-surface-sunk)
   );
-  color: var(--cw-sem-guide-strong);
+  color: var(--cw-platform-ink-strong);
   font-family: var(--cw-font-editorial);
   font-size: 2rem;
   font-weight: 500;
@@ -2141,6 +2152,7 @@
   gap: var(--cw-space-sm);
   padding-block-start: var(--cw-space-md);
   border-block-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 /* ── Structure ────────────────────────────────────── */
@@ -2215,6 +2227,7 @@
   margin-block-start: var(--cw-space-sm);
   padding-block-start: var(--cw-space-md);
   border-block-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .structureCards .structureModules {
@@ -2523,6 +2536,7 @@
   position: absolute;
   inset-inline: 0;
   border-block-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
   opacity: 0;
   transition: opacity var(--builder-motion-reveal) ease;
 }
@@ -2703,6 +2717,7 @@
   gap: var(--cw-space-xs);
   min-height: var(--ds-touch-target-min);
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
   color: var(--cw-platform-muted);
 }
 
@@ -2822,6 +2837,7 @@
   margin-block-start: var(--cw-space-sm);
   padding-inline-start: var(--cw-space-sm);
   border-inline-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-y);
   animation: builderDocEnter var(--builder-motion-ink) var(--builder-ease-page) both;
 }
 
@@ -2899,6 +2915,7 @@
 
 .nodeCard + .nodeCard {
   border-block-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 /* Reveal, not furniture. A paragraph should look like a paragraph until the
@@ -3079,8 +3096,12 @@
   border-radius: var(--cw-radius-pill);
   background: linear-gradient(
     135deg,
-    var(--cw-sem-guide-primary) 0 50%,
-    var(--cw-sem-calm-bg) 50% 100%
+    /* The swatch samples the gamma, so it must keep showing the gamma's LIGHT
+       colours even when the builder around it is dark — a course chooses its
+       palette for the light theme. The generator emits these two per pack in a
+       scope that applies in both themes, for exactly that. */
+    var(--cw-pack-sample-ink, var(--cw-sem-guide-primary)) 0 50%,
+    var(--cw-pack-sample-ground, var(--cw-sem-calm-bg)) 50% 100%
   );
   box-shadow: inset 0 0 0 1px var(--builder-rule);
 }
@@ -3255,6 +3276,7 @@
   gap: var(--cw-space-2xs);
   padding-block-start: var(--cw-space-xs);
   border-block-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .coverPreviewTools {
@@ -3307,6 +3329,7 @@
 .previewTable td {
   padding: var(--cw-space-xs) var(--cw-space-sm);
   border-bottom: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
   text-align: start;
   vertical-align: top;
 }
@@ -3761,6 +3784,7 @@
 .settingsForm {
   display: grid;
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .courseSettingSection {
@@ -3768,6 +3792,7 @@
   gap: var(--cw-space-sm);
   padding-block: var(--cw-space-sm);
   border-block-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 /* NOT TWICE. `.courseSettingsPanel` already draws the rule that separates the
@@ -3854,6 +3879,7 @@
 
 .courseSettingsAdvanced {
   border-block-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 /* THE GLYPH FOLLOWS THE WORD, it does not sit against the far edge. With
@@ -4025,6 +4051,7 @@
   gap: var(--cw-space-sm);
   padding-block-end: var(--cw-space-lg);
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .versionCheckpoint .commitAction,
@@ -4076,6 +4103,7 @@
   gap: var(--cw-space-sm);
   padding-block: var(--cw-space-xs);
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 /* ── Drag to reorder ──────────────────────────────── */
@@ -4369,6 +4397,7 @@
 .slashGroup + .slashGroup {
   padding-block-start: var(--cw-space-xs);
   border-block-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .slashGroupTitle {
@@ -4641,6 +4670,7 @@
   box-sizing: border-box;
   padding-inline: var(--cw-space-xs);
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
   background: var(--cw-platform-bg);
   white-space: nowrap;
 }
@@ -4833,6 +4863,7 @@
   gap: var(--cw-space-md);
   padding-block-start: var(--cw-space-lg);
   border-block-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .releaseWorkspace {
@@ -4849,6 +4880,7 @@
   flex-wrap: wrap;
   padding-block-end: var(--cw-space-md);
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .releaseWorkspace .releaseSection {
@@ -4915,6 +4947,7 @@
 .structure:not(.structureCards) > .panelHead {
   padding-block: var(--cw-space-md) var(--cw-space-lg);
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .structure:not(.structureCards) .structureModules {
@@ -4936,12 +4969,14 @@
   min-height: 4.25rem;
   padding-block: var(--cw-space-xs);
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .structure:not(.structureCards) .moduleCollapsedPreview {
   margin-inline: 9.55rem 4rem;
   padding-block: 0 var(--cw-space-sm);
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .structure:not(.structureCards) .moduleBlock[data-collapsed] .moduleHead {
@@ -4958,6 +4993,7 @@
   margin: 0 0 0 4.8rem;
   padding-inline: 0;
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .structure:not(.structureCards) .lessonList {
@@ -4968,6 +5004,7 @@
 .structure:not(.structureCards) .lessonRowWrap {
   gap: var(--cw-space-xs);
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .structure:not(.structureCards) .lessonRow {
@@ -5012,6 +5049,7 @@
   min-height: 3.7rem;
   margin-inline-start: 4.8rem;
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 /* Inset by the GRIP COLUMN, which is the one the whole module is indented by:
@@ -5091,6 +5129,7 @@
 
 .structureCards .lessonRowWrap {
   border-block-end: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .structureCards .lessonRow {
@@ -5329,6 +5368,7 @@
 .structureReplace {
   margin-block-start: var(--cw-space-lg);
   border-block-start: 1px solid var(--builder-rule);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .structureReplace > summary {

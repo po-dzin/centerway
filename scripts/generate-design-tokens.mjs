@@ -213,16 +213,74 @@ async function main() {
   // repaints. Declaring the aliases again in the scope re-resolves them against
   // the pack. They come first, so a pack that pins a platform value of its own
   // (mineral's ink) still wins.
+  //
+  // AND THAT RE-EMISSION IS EXACTLY WHAT KEPT THE DARK THEME OFF. Every pack
+  // block was a COMPLETE LIGHT PALETTE, so a course preview nested inside the
+  // dark scope put the light gamma's cream ground and near-black ink back on
+  // top of the night — which is what was found by switching dark on, and why
+  // the palette sat authored-but-unshipped until now. The fix is not to drop
+  // the re-emission but to SCOPE it: a pack is a LIGHT-SIDE axis.
+  //
+  // Two rules per pack, and they can never both match:
+  //   light — the aliases re-resolved against the pack, then the pack's own
+  //           values, including any platform value it pins (mineral's ink).
+  //   dark  — the pack's HUE roles only, listed below. The grounds, the inks
+  //           and every platform token are left to inherit from the dark root,
+  //           so a course changes its colour on the night ground instead of
+  //           dragging a cream sheet into it.
+  //
+  // The dark side is an ALLOW list, not a deny list, and that is the point: a
+  // pack that grows a new token tomorrow contributes it to the light theme and
+  // NOTHING to the dark one until someone adds it here on purpose. A deny list
+  // would have let the next `--cw-sem-calm-*` leak a light ground back in,
+  // which is the exact failure this is written against.
+  //
+  // The dark side is attribute-only on purpose: the pre-paint script stamps
+  // `data-cw-theme` before first paint (see src/lib/platform/theme.ts), so
+  // there is no media query to keep in step with these selectors.
   const platformAliases = tokens.layers?.modeOverrides?.platform ?? {};
+  const aliases = tokens.layers?.semanticAliases ?? {};
+  const PACK_DARK_ROLES = new Set([
+    "--cw-sem-guide-primary",
+    "--cw-sem-embodied",
+    "--cw-sem-progress",
+    "--cw-sem-warmth",
+    "--cw-sem-warmth-strong",
+    "--cw-sem-boundary",
+    "--cw-sem-trust",
+  ]);
   const coursePackDecls = Object.entries(tokens.layers?.packs ?? {})
-    .map(([name, values]) =>
-      [
+    .map(([name, values]) => {
+      const hueOnly = Object.fromEntries(
+        Object.entries(values).filter(([token]) => PACK_DARK_ROLES.has(token))
+      );
+      // The SWATCH the builder shows for this gamma, and it applies in both
+      // themes on purpose. A swatch is not the surface — it is a picture OF the
+      // surface, and a course's gamma is a light-side choice, so the sample has
+      // to keep showing the light values even while the builder around it is
+      // dark. Without this the scoping above made every swatch collapse to the
+      // root's colours and the palette picker went blind, which is the failure
+      // the mineral pack's own comment warns about ("a palette chosen from five
+      // words is a palette chosen blind").
+      const sample = {
+        "--cw-pack-sample-ink": values["--cw-sem-guide-primary"] ?? aliases["--cw-sem-guide-primary"],
+        "--cw-pack-sample-ground": values["--cw-sem-calm-bg"] ?? aliases["--cw-sem-calm-bg"],
+      };
+      return [
         `  [data-cw-pack="${name}"] {`,
+        toDecls(sample, "    "),
+        "  }",
+        "",
+        `  :root:not([data-cw-theme="dark"]) [data-cw-pack="${name}"] {`,
         toDecls(platformAliases, "    "),
         toDecls(values, "    "),
         "  }",
-      ].join("\n")
-    )
+        "",
+        `  [data-cw-theme="dark"] [data-cw-pack="${name}"] {`,
+        toDecls(hueOnly, "    "),
+        "  }",
+      ].join("\n");
+    })
     .join("\n\n");
 
   const baseLightDecls = toDecls(tokens.base?.light ?? {}, "    ");

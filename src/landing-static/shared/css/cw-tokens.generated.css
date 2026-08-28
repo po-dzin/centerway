@@ -22,6 +22,9 @@
   --cw-sem-on-warmth: #203126;
   --cw-sem-boundary: #b76045;
   --cw-sem-trust: #4a6577;
+  --cw-sem-dosha-vata: var(--cw-sem-trust);
+  --cw-sem-dosha-pitta: var(--cw-sem-warmth-strong);
+  --cw-sem-dosha-kapha: var(--cw-sem-embodied);
   --cw-sem-muted-ink: #48544c;
   --cw-sem-texture-arcs: repeating-radial-gradient(circle at 78% 22%, color-mix(in srgb, var(--cw-sem-guide-primary) 42%, transparent) 0 1px, transparent 1px 14px);
   --cw-sem-texture-rings: repeating-radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--cw-sem-guide-primary) 34%, transparent) 0 1px, transparent 1px 22px);
@@ -72,13 +75,13 @@
   --cw-max-width: 1160px;
   --cw-page-gutter: clamp(20px, 5vw, 40px);
   --cw-bar-pad: 0.8rem;
-  --cw-bar-inset: max(0px, calc(var(--cw-page-gutter) - var(--cw-bar-pad)));
+  --cw-bar-inset: var(--cw-page-gutter);
 }
 
 [data-cw-theme="dark"] {
   --cw-mat-surface: var(--cw-mat-surface-night);
-  --cw-mat-surface-night: color-mix(in srgb, #1a2a20 94%, var(--cw-sem-warmth) 6%);
-  --cw-mat-surface-sunk: color-mix(in srgb, #131e17 62%, var(--cw-mat-surface) 38%);
+  --cw-mat-surface-night: color-mix(in srgb, #232322 94%, var(--cw-sem-warmth) 6%);
+  --cw-mat-surface-sunk: color-mix(in srgb, #191918 62%, var(--cw-mat-surface) 38%);
   --cw-mat-tint: color-mix(in srgb, var(--cw-mat-surface) 76%, transparent);
   --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
   --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 86%, transparent);

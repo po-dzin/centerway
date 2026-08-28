@@ -19,7 +19,7 @@
  * computable on the server, in a test, and in three different renderers.
  */
 
-import { BUILDER_PATH_PREFIX, PERSONAL_HOST } from "@/lib/surfaces/catalog";
+import { BUILDER_PATH_PREFIX, PERSONAL_HOST, PROFILE_PATH_PREFIX } from "@/lib/surfaces/catalog";
 import { isPersonalHost, resolveSurfaceHref, servesEveryPath } from "./surfaceHref";
 import { LEARNING_SHELF_HREF } from "./content";
 import { isAdminRole } from "./adminRole";
@@ -68,7 +68,12 @@ export type AppAudience = {
  * Google profile are records, and they keep the word. The key stays `cabinet`,
  * which it has been since before the label agreed with it.
  */
-const CABINET: PlatformApp = { key: "cabinet", label: "Кабінет", path: "/profile", host: null };
+/* MOVED TO THE PERSONAL HOST (2026-08-27). The cabinet is the personal app's
+   home page — it resumes a course, it links to the library and the Майстерня,
+   and it is where an installed app should land — and all of those are on `my`.
+   On `www` it was the one personal surface a redirect away from everything it
+   points at. */
+const CABINET: PlatformApp = { key: "cabinet", label: "Кабінет", path: PROFILE_PATH_PREFIX, host: PERSONAL_HOST };
 const LEARN: PlatformApp = { key: "learn", label: "Бібліотека", path: LEARNING_SHELF_HREF, host: PERSONAL_HOST };
 const BUILDER: PlatformApp = { key: "builder", label: "Майстерня", path: BUILDER_PATH_PREFIX, host: PERSONAL_HOST };
 const ADMIN: PlatformApp = { key: "admin", label: "Адмінка", path: "/admin", host: null };

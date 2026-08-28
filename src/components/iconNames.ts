@@ -40,6 +40,7 @@ export const CW_ICON_NAMES = [
   "globe",
   "sun",
   "moon",
+  "display",
   "mail",
   "phone",
   "telegram",

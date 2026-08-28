@@ -279,6 +279,18 @@ export const ICONS = {
     group: "Meta",
     d: ["M19.6 14.4A8.4 8.4 0 0 1 9.6 4.4a8.4 8.4 0 1 0 10 10z"],
   },
+  /* The third theme state: follow the device. Sun and moon already say "light"
+     and "dark", and the thing that is neither is not a dimmer between them —
+     it is the machine deciding. A half-filled disc is the usual mark for it and
+     is wrong twice here: this set fills nothing but accent dots, and at 18px a
+     circle with a diameter through it reads as `globe` with a line. A screen
+     with a stand says the same thing in monoline and collides with nothing —
+     the only other rectangles in the set carry text (`document`) or a layout
+     (`view-cards`), and neither has a foot. */
+  display: {
+    group: "Meta",
+    d: ["M3.6 5.2h16.8v10.6H3.6z", "M12 15.8v3.2", "M8.4 19h7.2"],
+  },
   mail: {
     group: "Meta",
     d: ["M3.6 6.2h16.8v11.6H3.6z", "M3.6 7 12 13.2 20.4 7"],

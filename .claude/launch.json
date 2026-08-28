@@ -62,6 +62,32 @@
       "port": 8041,
       "autoPort": false,
       "url": "http://localhost:8041/"
+    },
+    {
+      "name": "dev-8060",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "8060"
+      ],
+      "port": 8060,
+      "autoPort": false,
+      "url": "http://localhost:8060/"
+    },
+    {
+      "name": "prod-8061",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "start",
+        "-p",
+        "8061"
+      ],
+      "port": 8061,
+      "autoPort": false,
+      "url": "http://localhost:8061/"
     }
   ]
 }

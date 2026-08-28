@@ -1,56 +1,173 @@
-/* The cabinet's hero — a room with a way out of it.
+/* The cabinet's hero — one plate, two grounds, and the seam between them.
 
-   Two grounds in one panel, which is the whole point of the block. The LEFT is
-   drawn: the platform's own matte surface with a wash of light across it,
-   carrying who you are and what to open. The RIGHT is photographed: the same
-   threshold plate the home hero uses, framed on its doorway, and the doorway is
-   the link to the library. So the page says literally what the product means —
-   you pass through your own room to get to the shelves.
+   THE PHOTOGRAPH IS THE GROUND, not a picture inside a slot. The first version
+   of this block set the room as a drawn panel on the left and the doorway plate
+   as a card on the right; it read as a photograph of a room pinned beside a
+   dashboard. The plate covers the whole block now: identity stands IN the
+   photograph, and the photograph dissolves down into the page's own paper,
+   where the shelf of courses is drawn. That is the product's sentence — your
+   room becomes the library — said once, by the surface itself.
 
-   Why a photograph here at all, when this page deliberately dropped one. The
-   old hero was a LANDING hero: a full-viewport plate with a translucent card
-   floating on it, which is a second surface vocabulary two inches above the
-   first. This is not that. It is one panel in the page's own material and at
-   the page's own radius, and the photograph is a view THROUGH it rather than a
-   ground UNDER it. The seam between the two halves is a gradient of the room's
-   own surface colour, so they dissolve into each other instead of butting.
+   THE DISSOLVE IS A GRADIENT OF THE PAPER, not an opacity ramp on the image.
+   Fading the photograph out would grey it against the panel; painting the paper
+   IN over it keeps the image at full grade until the paper takes over, which is
+   what makes the transition read as "turning into" rather than "fading".
 
-   Mobile-first: every rule below is the phone layout, and the two-column form
-   only arrives at the width where a portrait crop of a 16:10 plate would stop
-   showing the doorway at all.
+   Text on the photograph takes `--cw-mat-inverse-text` rather than
+   `--cw-platform-accent-contrast`: that one INVERTS with the theme (on the
+   public dark palette the accent it contrasts is light), and this ground is a
+   photograph — dark in both themes — so the ink over it must be the one that
+   does not flip.
 
-   Tokens only, no raw hex, and no top inset highlight on any surface here —
-   the material is matte by contract. */
+   Mobile-first: every rule below is the phone layout. Tokens only, no raw hex,
+   and no top inset highlight on any surface here — the material is matte by
+   contract. */
 
+/* FULL BLEED, FULL SCREEN. The plate is the ground of the first screen, not a
+   card on it: it runs edge to edge, up under the floating bar, and down to
+   `100svh`. Only its CONTENTS come back to the page's own column
+   (`--cw-page-gutter`, `--cw-max-width` — the network gutter rule). Inside the
+   page container it was a photograph in a frame with paper down all four
+   margins, which is a picture of a room rather than being in one. No radius,
+   for the same reason: a screen has no corners.
+
+   THE DISSOLVE IS IN THE FILE. `room-v1.webp` ends in `--cw-mat-surface` — see
+   `grade.mjs --fade-bottom` — so the shelf below simply continues the colour
+   the photograph finishes on. The CSS gradient this replaced was a white veil
+   painted over a dark picture: two layers you could see, moving with the
+   layout rather than with the image. */
 .hero {
   position: relative;
   display: grid;
+  grid-template-rows: auto auto;
   overflow: hidden;
-  border-radius: var(--cw-radius-xl);
   margin-bottom: var(--cw-space-lg);
+  background: var(--cw-mat-surface);
   isolation: isolate;
+}
+
+/* The plate's own box: the first screen. `min-height`, not `height` — a long
+   name or a third stat line grows the room rather than being clipped by it. */
+/* The plate's own box: the first screen, and everything the cabinet answers
+   with lives inside it. The room is pinned to the top (the wall), the shelf to
+   the bottom (the floor, where the photograph has turned to paper), and the
+   empty middle is the picture. */
+/* A FULL SCREEN, WITH THE CONTENT IN THE MIDDLE OF IT (2026-08-28).
+
+   The plate is `100svh` again — a room you stand in, not a band across the top.
+   What changed is where the content sits inside it. The first version pinned
+   the room to the top row and the shelf to the bottom and left a `1fr` between
+   them, so every screen taller than the content showed a column of empty
+   photograph between a person's name and the thing they came to press. The
+   second version fixed that by shrinking the box, which cured the gap by
+   throwing away the room.
+
+   Both were the same mistake: treating the two blocks as separate anchors. They
+   are ONE block — identity, then what to open — and it is centred in the screen
+   as one. The empty photograph is above and below it now, where a picture's
+   margins belong, instead of running down its middle.
+
+   The top pad is the floating bar's own clearance: centring cannot know about a
+   bar that overlays the page, and an avatar sliding behind a pill is the one
+   thing an overlay header cannot forgive. On a short screen the padding wins
+   and the block simply starts under the bar. */
+.plateWrap {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto;
+  align-content: center;
+  row-gap: clamp(var(--cw-space-lg), 5vh, var(--cw-space-2xl));
+  min-height: 100svh;
+  /* `max(...)`, because the clearance is not one number: from 901px up the bar
+     floats over the page and reserves ~6rem, and below that the shell drops it
+     to 0.75rem for a bar that sits in normal flow — which on this page, where
+     the plate runs under everything, would put a person's name behind it. The
+     floor is the pad the room used to carry itself. */
+  padding-block: max(var(--platform-topbar-clearance, 5.8rem), 4.75rem) var(--cw-space-2xl);
+}
+
+.plateWrap > .room {
+  grid-row: 1;
+}
+
+.plateWrap > .shelf {
+  grid-row: 2;
+}
+
+/* The contents come back to the page's column, so the name, the facts and the
+   cards line up with everything below. The SHELF itself stays full width — it
+   carries the paper the photograph ends on, and paper that stopped at the
+   column would leave the page's ground showing down both margins. */
+.room,
+.shelf > * {
+  width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
+  margin-inline: auto;
+}
+
+/* ── The two grounds ──────────────────────────────── */
+
+.plate {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Held on the BOTTOM edge, always: that is where the baked dissolve is, and a
+     crop that trims it would put the shelf's paper against raw photograph. */
+  object-position: center bottom;
+}
+
+/* THE PLATE CARRIES ITS OWN DARK, so this layer is nearly nothing.
+
+   The frame is composed for the copy — deep shadowed wall on the left, the lit
+   opening on the right — and the first version painted an 82% ink ramp over it
+   anyway, which is what a scrim written for a bright landscape photograph does
+   to a room that was already dark: it swallowed the picture, and the screen
+   read as a grey gradient with a name on it.
+
+   What is left is a floor under the text, not a tint over the image: enough to
+   hold the label and the email at any crop, gone before the middle. */
+.wash {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      170deg,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent) 0%,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 20%, transparent) 30%,
+      transparent 52%
+    );
+}
+
+.seamMark {
+  position: absolute;
+  z-index: 2;
+  right: 8%;
+  top: 30%;
+  width: 9rem;
+  height: 9rem;
+  color: var(--cw-sem-warmth-strong);
+  opacity: 0.22;
+  pointer-events: none;
 }
 
 /* ── The room ─────────────────────────────────────── */
 
-/* Depth without furniture: one vertical wash, lighter where the wall is and
-   a shade deeper where the floor would be. No hairline drawn across it — a
-   line at a fixed percentage lands in the middle of a name at some viewport,
-   and a room does not need one to read as a room. */
 .room {
   position: relative;
-  z-index: 1;
+  z-index: 3;
   display: grid;
+  align-self: start;
   align-content: start;
-  gap: var(--cw-space-md);
-  padding: var(--cw-space-lg);
-  background:
-    linear-gradient(
-      180deg,
-      var(--cw-mat-surface) 0%,
-      var(--cw-mat-surface) 58%,
-      var(--cw-mat-surface-sunk) 100%
-    );
+  gap: var(--cw-space-lg);
+  /* NO TOP PAD OF ITS OWN. It used to push itself down into the picture's upper
+     third — a second answer to "where does this sit vertically", competing with
+     the box that now centres it. Clearance for the floating bar is the plate's
+     padding, one level up. */
+  color: var(--cw-mat-inverse-text);
 }
 
 /* The same field label as the rest of the cabinet, repeated here rather than
@@ -61,7 +178,7 @@
   font-size: 0.76rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--cw-platform-muted);
+  color: color-mix(in srgb, var(--cw-mat-inverse-text) 68%, transparent);
 }
 
 .identityMain {
@@ -78,8 +195,9 @@
   place-items: center;
   overflow: hidden;
   border-radius: var(--cw-radius-pill);
-  background: var(--cw-mat-surface-sunk);
-  color: var(--cw-platform-text);
+  border: 1px solid color-mix(in srgb, var(--cw-mat-inverse-text) 30%, transparent);
+  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 55%, transparent);
+  color: var(--cw-mat-inverse-text);
   font-family: var(--cw-font-data);
   font-size: 1.15rem;
   font-weight: 700;
@@ -101,7 +219,7 @@
 .identityName {
   margin: 0;
   font-family: var(--cw-font-editorial);
-  font-size: clamp(1.6rem, 6vw, 2.2rem);
+  font-size: clamp(1.6rem, 6vw, 2.4rem);
   font-weight: 500;
   line-height: 1.1;
   overflow-wrap: anywhere;
@@ -122,22 +240,21 @@
 
 .identityEmail {
   margin: 0;
-  color: var(--cw-platform-muted);
+  color: color-mix(in srgb, var(--cw-mat-inverse-text) 76%, transparent);
   font-size: 0.92rem;
   overflow-wrap: anywhere;
 }
 
-/* Three facts about the account, as a meta row rather than three tiles. Same
-   contract as the row it replaces: a tile holds a VALUE — a dosha name, a
-   count, an em dash — never a sentence, and the row reserves two lines so a
-   compound result cannot shift what is under it. */
+/* Three facts about the account, as a meta row rather than three tiles. A tile
+   holds a VALUE — a dosha name, a count, an em dash — never a sentence, and the
+   row reserves two lines so a compound result cannot shift what is under it. */
 .stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: var(--cw-space-sm);
   margin: 0;
   padding-top: var(--cw-space-md);
-  border-top: 1px solid var(--cw-mat-stroke-inner);
+  border-top: 1px solid color-mix(in srgb, var(--cw-mat-inverse-text) 22%, transparent);
 }
 
 .stat {
@@ -155,180 +272,45 @@
   overflow-wrap: normal;
 }
 
-/* Where the resume card, its loading state and its two failure states land.
-   The slot carries no surface of its own: the card inside it already declares
-   the material, and a panel inside a panel at the same radius is the seam this
-   page spent a pass removing. */
-.resume {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: var(--cw-space-md);
-}
+/* ── The shelf ────────────────────────────────────── */
 
-/* ── The doorway ──────────────────────────────────── */
-
-/* The whole photograph is the link. One target, and the label inside it is the
-   accessible name — which is why the image itself is alt="", decorative in the
-   strict sense: it carries the meaning, but the meaning is already written. */
-.doorway {
+/* Standing on the paper end of the plate, INSIDE the first screen: what a
+   returning learner came to do is «продовжити», and it was under the fold while
+   the shelf lived below the plate. No surface of its own — the photograph has
+   already become the page's paper by this height, and each card declares the
+   material itself. */
+.shelf {
   position: relative;
-  display: block;
-  min-height: 11rem;
-  overflow: hidden;
-  /* The DS's own ink for text on a dark material, and the reason it is this
-     token rather than `--cw-platform-accent-contrast` (which the home hero
-     uses): that one INVERTS with the theme, because on the public dark palette
-     the accent it contrasts is light. This ground is a photograph — it is dark
-     in both themes — so the ink over it has to be the one that does not flip.
-     `--cw-mat-inverse-text` is the same cream in light and dark alike. */
-  color: var(--cw-mat-inverse-text);
-  text-decoration: none;
-  background: var(--cw-platform-text);
-}
-
-.doorwayImage {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  /* Landscape band: the doorway sits right of centre in the plate and the
-     objects that carry the scene are low in it. */
-  object-position: 78% 55%;
-}
-
-/* The seam. A wash of the ROOM's own surface colour running into the photo, so
-   the two grounds meet in a gradient rather than at a cut. Vertical here
-   because the room is above; it turns horizontal with the layout below. */
-.doorway::before {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  content: "";
-  pointer-events: none;
-  background:
-    linear-gradient(
-      180deg,
-      var(--cw-mat-surface-sunk) 0%,
-      color-mix(in srgb, var(--cw-mat-surface-sunk) 45%, transparent) 14%,
-      transparent 34%
-    );
-}
-
-/* The label's own ground. Shaped to the bottom of the frame where the label
-   is, not spread over the whole photograph — the plate is graded already
-   (the "CenterWay v1" pass) and a full wash is what turns a warm photo muddy. */
-.doorway::after {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
-  content: "";
-  pointer-events: none;
-  background:
-    linear-gradient(
-      0deg,
-      color-mix(in srgb, var(--cw-mat-scrim-ink) 94%, transparent) 0%,
-      color-mix(in srgb, var(--cw-mat-scrim-ink) 84%, transparent) 18%,
-      color-mix(in srgb, var(--cw-mat-scrim-ink) 46%, transparent) 38%,
-      transparent 66%
-    );
-}
-
-.doorwayLabel {
-  position: absolute;
   z-index: 3;
-  right: var(--cw-space-lg);
-  bottom: var(--cw-space-lg);
-  left: var(--cw-space-lg);
   display: grid;
-  gap: 0.15rem;
+  align-content: start;
+  gap: var(--cw-space-md);
+  /* OFF THE FLOOR. The row used to end a hair above the bottom edge of the
+     screen, which reads as content that ran out of room rather than as an
+     object standing in one. The pad below it is the same air the room keeps
+     above the name. */
+  padding: 0;
 }
 
-.doorwayTitle {
-  font-family: var(--cw-font-editorial);
-  font-size: clamp(1.5rem, 3.2vw, 1.9rem);
-  font-weight: 500;
-  line-height: 1.1;
-}
 
-.doorwayLead {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.4rem;
-  color: var(--cw-sem-warmth);
-  font-size: 0.92rem;
-  font-weight: 600;
-}
+/* ── Wider ────────────────────────────────────────── */
 
-/* The arrow steps through the opening on hover. 2px, once — the gesture says
-   "this goes somewhere", and anything larger says "this is animated". */
-.doorwayArrow {
-  transition: transform 200ms ease;
-}
-
-.doorway:hover .doorwayArrow,
-.doorway:focus-visible .doorwayArrow {
-  transform: translateX(2px);
-}
-
-.doorway:focus-visible {
-  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: calc(var(--ds-focus-ring-offset) * -1);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .doorwayArrow {
-    transition: none;
-  }
-
-  .doorway:hover .doorwayArrow,
-  .doorway:focus-visible .doorwayArrow {
-    transform: none;
-  }
-}
-
-/* ── Two columns ──────────────────────────────────── */
-
-/* 900px, and the number is the photograph's rather than the grid's. Below it
-   the doorway panel would be narrow enough that a cover crop of a 16:10 plate
-   shows a slice of dark stone and no opening — the one thing the block is for.
-   Above it the panel is wide enough to hold the doorway whole. */
 @media (min-width: 900px) {
-  .hero {
-    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
-    align-items: stretch;
-    /* The row is as tall as the room's content, and the room is shortest in
-       exactly the state where the doorway matters most — nothing bought yet,
-       so the only thing to do here is go and look. Left to itself the panel
-       would then be a wide, short slot showing a slice of jamb and no opening.
-       This is the height at which the crop still contains the doorway. */
-    min-height: 22rem;
+  /* EVERYTHING STAYS ON THE SHADOWED SIDE. The room's copy is cream ink, and
+     the frame is composed with its dark wall on the left and the lit opening on
+     the right — so the column keeps to the left half and the photograph's own
+     subject stays uncovered. The way through used to sit bottom-right, over the
+     brightest part of the picture, where cream on cream needed a shadow to
+     survive; a control that has to be propped up is in the wrong place. */
+  .identityMain,
+  .stats {
+    width: min(100%, 34rem);
   }
 
-  .room {
-    padding: var(--cw-space-xl);
-  }
-
-  .doorway {
-    min-height: 100%;
-  }
-
-  /* Portrait framing: the panel is now taller than it is wide, so the crop
-     moves onto the opening itself and off the floor in front of it. */
-  .doorwayImage {
-    object-position: 79% 45%;
-  }
-
-  /* The seam turns with the layout — the room is to the left now, so the
-     wash comes in from the left edge. */
-  .doorway::before {
-    background:
-      linear-gradient(
-        90deg,
-        var(--cw-mat-surface-sunk) 0%,
-        color-mix(in srgb, var(--cw-mat-surface-sunk) 72%, transparent) 8%,
-        color-mix(in srgb, var(--cw-mat-surface-sunk) 30%, transparent) 20%,
-        transparent 38%
-      );
+  .seamMark {
+    right: 10%;
+    top: 26%;
+    width: 13rem;
+    height: 13rem;
   }
 }

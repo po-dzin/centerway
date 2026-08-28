@@ -160,12 +160,18 @@
   background: linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 34%, transparent), transparent 24%);
 }
 
+/* The ground BEHIND the photograph — what shows in the letterbox before the
+   image decodes and wherever it does not cover. `--cw-mat-scrim-ink` and not
+   `--cw-platform-text`: the ink is the same neutral #171817 in both themes,
+   which is what the note further down already argues for on its own terms (a
+   green-black does not darken a photograph, it repaints it) — and it is what
+   keeps this a dark backdrop once the platform text is cream. */
 .heroPhotoLayer {
   position: absolute;
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  background: var(--cw-platform-text);
+  background: var(--cw-mat-scrim-ink);
 }
 
 /* Heroes that carry a portrait master wrap the photo in <picture>. The wrapper
@@ -563,15 +569,32 @@
   box-shadow: var(--cw-mat-shadow-soft);
 }
 
+/* THE PANEL MATCHES THE CARD; THE PLAYER KEEPS ITS RATIO. The panel used to be
+   the player: `aspect-ratio: 16/9` with `align-self: start`, so the two grid
+   items were two different objects — a wide short one beside a tall card, with
+   the row's spare height showing as page ground under the video. Stretching the
+   iframe instead was the earlier fix and was worse: a near-square player.
+
+   Now the panel stretches and the 16:9 frame inside it centres on the panel's
+   own dark ground. The row's height is whichever is taller — the player at the
+   column's width, or the card's copy — and both columns are that height. */
 .videoPanel {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
-  background: var(--cw-platform-text);
-  /* Keep the player itself 16:9 even when the adjacent decision card is taller.
-     Stretching the grid item silently turned it into a near-square on desktop. */
-  align-self: start;
+  display: grid;
+  align-content: center;
+  align-self: stretch;
+  /* The letterbox around the 16:9 frame — the same neutral scrim ink as the
+     hero's photo layer, for the same reason: it must stay dark when the
+     platform's own text turns cream. */
+  background: var(--cw-mat-scrim-ink);
   scroll-margin-top: 5.25rem;
+}
+
+.videoFrame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
 }
 
 .videoPanel::after {
@@ -604,17 +627,10 @@
   width: 100%;
 }
 
-/* The video rail's two actions. A third verbatim copy of the gold ramp lived
-   here until the contract took it. They were `[data-kind]` variants of one
-   class; `composes` only works on a plain class selector, and the role split
-   is real, so they are two classes now. */
+/* The video rail's action. A third verbatim copy of the gold ramp lived here
+   until the contract took it. */
 .videoActionPrimary {
   composes: primary from "./PlatformButtons.module.css";
-  composes: fill from "./PlatformButtons.module.css";
-}
-
-.videoActionSecondary {
-  composes: secondary from "./PlatformButtons.module.css";
   composes: fill from "./PlatformButtons.module.css";
 }
 

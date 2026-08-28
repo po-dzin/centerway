@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
+import { PERSONAL_ORIGIN, PLATFORM_ORIGIN, isPersonalPath } from "@/lib/surfaces/catalog";
 
 /**
  * The way off a funnel host and back onto the platform.
@@ -49,6 +49,10 @@ export function isPlatformEscapePath(pathname: string): boolean {
  * browser that ever followed it, and taking it back later would be impossible.
  */
 export function redirectToPlatformOrigin(req: NextRequest): NextResponse {
-  const target = new URL(`${req.nextUrl.pathname}${req.nextUrl.search}`, PLATFORM_ORIGIN);
+  /* The origin that OWNS the path, not the platform's by default: `/profile`
+     and `/learn` live on `my` now, and sending them to `www` would spend a
+     second hop on a 308 that already exists there. */
+  const owner = isPersonalPath(req.nextUrl.pathname) ? PERSONAL_ORIGIN : PLATFORM_ORIGIN;
+  const target = new URL(`${req.nextUrl.pathname}${req.nextUrl.search}`, owner);
   return NextResponse.redirect(target, 307);
 }

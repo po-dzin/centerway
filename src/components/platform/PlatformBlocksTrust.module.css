@@ -123,6 +123,126 @@
   border-radius: calc(var(--cw-card-radius) - var(--cw-radius-inset));
 }
 
+/* ── The guides ───────────────────────────────────────
+
+   One card per author, one size, at every count. `auto-fit` rather than a fixed
+   three because the number of guides is data — the same reason the products
+   rail is written this way.
+
+   `data-layout="single"` is the lone-card case, and it is not a smaller grid:
+   one column with three empty cells beside it reads as a page waiting for
+   people who have not arrived. A single guide takes the panorama — portrait
+   beside the copy — which is a finished object on its own and becomes a column
+   the moment a second guide lands. */
+.guideRail {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+  gap: var(--cw-space-md);
+}
+
+.guideCard {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-content: start;
+  gap: clamp(1rem, 2.4vw, 1.5rem);
+  padding: clamp(1.25rem, 4vw, 2rem);
+  border-radius: var(--cw-card-radius);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.guideRail[data-layout="single"] .guideCard {
+  grid-template-columns: minmax(14rem, 0.5fr) minmax(0, 1.5fr);
+  align-items: start;
+}
+
+.guideMedia {
+  min-width: 0;
+}
+
+.guidePortrait {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: calc(var(--cw-card-radius) - var(--cw-radius-inset));
+}
+
+.guideBody {
+  display: grid;
+  align-content: start;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.guideIdentity {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.guideName {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-ui);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
+}
+
+.guideRole {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.4;
+}
+
+.guideNote {
+  margin: 0;
+  color: color-mix(in srgb, var(--cw-platform-text) 78%, var(--cw-platform-muted) 22%);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line-height);
+}
+
+/* Text with a marker in the margin — the platform's one list recipe. */
+.guideFacts {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.45;
+}
+
+.guideFacts li {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.6rem;
+}
+
+.guideFactIcon {
+  margin-top: 0.05rem;
+  color: color-mix(in srgb, var(--cw-platform-text) 52%, transparent);
+}
+
+@media (max-width: 900px) {
+  /* The panorama needs two columns' worth of width. Below that a lone guide is
+     a column like any other — the same card, not a second design. */
+  .guideRail[data-layout="single"] .guideCard {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 1rem;
+  }
+}
+
+/* The card is the measure — see the button contract's `fill`. A guide card is
+   the same object at every count, so its action cannot be sized by its label. */
+.guideLink {
+  composes: secondary from "./PlatformButtons.module.css";
+  composes: fill from "./PlatformButtons.module.css";
+  margin-top: 0.25rem;
+}
+
 .copyStack {
   display: grid;
   gap: 0.85rem;
@@ -337,7 +457,7 @@
     radial-gradient(circle at 23% 28%, color-mix(in srgb, var(--cw-platform-accent) 18%, transparent) 0 0.28rem, transparent 0.3rem),
     radial-gradient(circle at 71% 62%, color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent) 0 0.24rem, transparent 0.26rem),
     repeating-linear-gradient(102deg, color-mix(in srgb, var(--cw-sem-warmth) 12%, transparent) 0 0.34rem, transparent 0.34rem 0.82rem),
-    linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-warmth) 14%, var(--cw-platform-surface)) 0%, color-mix(in srgb, var(--cw-sem-calm-surface-muted) 74%, var(--cw-platform-surface) 26%) 52%, color-mix(in srgb, var(--cw-sem-guide-strong) 16%, var(--cw-platform-text)) 100%);
+    linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-warmth) 14%, var(--cw-platform-surface)) 0%, color-mix(in srgb, var(--cw-platform-surface-muted) 74%, var(--cw-platform-surface) 26%) 52%, color-mix(in srgb, var(--cw-sem-guide-strong) 16%, var(--cw-platform-text)) 100%);
   background-position:
     var(--support-photo-position, center 24%),
     center,

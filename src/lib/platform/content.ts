@@ -1,3 +1,4 @@
+import type { CwIconName } from "@/components/iconNames";
 import { getFunnelHostUrl, getPlatformRoute } from "@/lib/surfaces/catalog";
 
 export const platformHomeHref = "/";
@@ -393,6 +394,54 @@ export const expertFacts = [
   { label: "Інструктор з йоги та практикуючий йогін", icon: "body" as const },
   { label: "Засновник центру Centerway", icon: "support" as const },
 ];
+
+/* ── The guides ───────────────────────────────────────
+
+   ONE AUTHOR, WRITTEN AS A LIST, on purpose. The platform is moving to more
+   than one author — `lms_authors` already exists, a course carries an
+   `author_profile_id`, and the builder is edited by whoever owns the course —
+   but the home page still had Євгеній hard-coded into the block's markup: his
+   photo, his sentence and his four facts inline, in a panel shaped for exactly
+   one person. A second author would have needed the block rewritten rather
+   than a row added.
+
+   So the block reads a list. It has one entry today, and the card it renders is
+   built to look finished alone (the rail gives a lone card the panorama shape,
+   the same switch the products block uses) — not like a grid with the other
+   three missing. When these come from `lms_authors`, only the source changes.
+
+   `href` is on the record rather than derived: the founder's profile is
+   `/consult` (see the `/expert` merge, 2026-08-23), and the next author's will
+   be `/expert/<slug>`. A rule that has one exception on day one is not a rule. */
+export type PlatformGuide = {
+  slug: string;
+  name: string;
+  /** What they are, in the line under the name — not a job title, a practice. */
+  role: string;
+  /** One sentence: why this person, for this. */
+  note: string;
+  photo: { src: string; alt: string };
+  href: string;
+  linkLabel: string;
+  facts: { label: string; icon: CwIconName }[];
+};
+
+export const platformGuides = [
+  {
+    slug: "evgeniy-koryakin",
+    name: "Євгеній Корякін",
+    role: "Дослідник і практик аюрведи · засновник CenterWay",
+    note: "Веде програми, консультації і супровід практики — від першої діагностики стану до довгих циклів відновлення.",
+    photo: { src: "/shared/img/author-evgeniy-2026-08.webp", alt: "Євгеній Корякін" },
+    href: "/consult",
+    linkLabel: "Більше про автора",
+    facts: [
+      { label: "12 років практики", icon: "clock" },
+      { label: "Магістр комплементарної медицини та інтегративної психології", icon: "shield-check" },
+      { label: "Інструктор з йоги та практикуючий йогін", icon: "body" },
+    ],
+  },
+] satisfies PlatformGuide[];
 
 export const educationTimeline = [
   "Київський політехнічний інститут, інформатика і обчислювальна техніка.",

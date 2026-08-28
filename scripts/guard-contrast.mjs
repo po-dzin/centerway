@@ -116,7 +116,14 @@ const pairs = [
   { theme: "platform-dark", fg: "--cw-platform-text", bg: "--cw-platform-surface-muted", min: AA_BODY, context: "body text on muted surface" },
   { theme: "platform-dark", fg: "--cw-platform-muted", bg: "--cw-platform-bg", min: AA_BODY, context: "secondary text on page" },
   { theme: "platform-dark", fg: "--cw-platform-muted", bg: "--cw-platform-surface", min: AA_BODY, context: "secondary text on card" },
-  { theme: "platform-dark", fg: "--cw-platform-accent-contrast", bg: "--cw-platform-accent", min: AA_LARGE, context: "CTA label on gold fill (large/semibold)" },
+  /* No `accent-contrast on accent` row here, and the light block above does not
+     have one either — the label on a GOLD fill is `--cw-platform-on-accent`,
+     asserted two rows down. This assertion did exist, and it passed only by
+     accident: the dark palette used to be the green night, where
+     accent-contrast happened to be a near-black (#0e1811) and so read on gold.
+     Once dark became graphite and its accent-contrast became the same cream as
+     the light theme's, the row failed — correctly, because it was describing a
+     pairing no component makes. */
   { theme: "platform-dark", fg: "--cw-platform-accent-contrast", bg: "--cw-platform-accent-strong", min: AA_LARGE, context: "CTA label on strong accent (large/semibold)" },
   { theme: "platform-dark", fg: "--cw-platform-on-accent", bg: "--cw-platform-accent", min: AA_BODY, context: "ink label on gold CTA (lighter gradient stop)" },
   { theme: "platform-dark", fg: "--cw-platform-on-accent", bg: "--cw-platform-accent-pressed", min: AA_BODY, context: "ink label on deep-gold CTA (darker stop / hover)" },

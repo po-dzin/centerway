@@ -9,8 +9,10 @@ describe("resolveSurfaceHref", () => {
   it("keeps a link relative when the current origin owns the path", () => {
     // Relative is what keeps a client-side navigation client-side.
     expect(resolveSurfaceHref("/programs", WWW)).toBe("/programs");
-    expect(resolveSurfaceHref("/profile", WWW)).toBe("/profile");
     expect(resolveSurfaceHref("/learn", MY)).toBe("/");
+    // The cabinet moved to the personal host on 2026-08-27; it keeps its
+    // segment there, the way the builder does.
+    expect(resolveSurfaceHref("/profile", MY)).toBe("/profile");
     // The learner tree loses its prefix entirely — that is the address on `my`.
     expect(resolveSurfaceHref("/learn/way21/day-1", MY)).toBe("/way21/day-1");
     expect(resolveSurfaceHref("/build/way21", MY)).toBe("/build/way21");
@@ -21,7 +23,7 @@ describe("resolveSurfaceHref", () => {
     // now, and a link should name the destination, not the 308 in front of it.
     expect(resolveSurfaceHref("/learn", WWW)).toBe("https://my.centerway.net.ua/");
     expect(resolveSurfaceHref("/build", WWW)).toBe("https://my.centerway.net.ua/build");
-    expect(resolveSurfaceHref("/profile", MY)).toBe("https://www.centerway.net.ua/profile");
+    expect(resolveSurfaceHref("/profile", WWW)).toBe("https://my.centerway.net.ua/profile");
     expect(resolveSurfaceHref("/", MY)).toBe("https://www.centerway.net.ua/");
   });
 
