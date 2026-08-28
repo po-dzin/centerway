@@ -14,10 +14,14 @@ const root = process.cwd();
 const tokensPath = path.join(root, "data", "design-tokens", "cw.tokens.json");
 const tokens = JSON.parse(readFileSync(tokensPath, "utf8"));
 
-// Two rendered themes: platform light (:root) and admin dark (.dark).
-// Each theme resolves against its own token map. The light map layers the
-// semantic/platform/recipe tokens over base.light; the dark map is the admin
-// chrome (base.dark) — it does not use --cw-sem-*/--cw-platform-*.
+// ONE LIGHT MAP AND ONE DARK MAP, because as of 2026-08-28 the product has one
+// theme. The admin used to carry its own (`.dark` + base.dark, a neutral grey
+// palette resolved without --cw-sem-*/--cw-platform-*); it now runs on the same
+// stamp as every other surface, and the legacy `--cw-*` chrome family is an
+// alias layer over the platform and material tokens rather than a palette of
+// its own. So the `dark` theme below resolves through exactly the same layers
+// as `platform-dark` — the two names are kept apart only so a failure still
+// says WHICH surface a pair was asserted for.
 function buildMap(...objs) {
   const map = new Map();
   for (const obj of objs) {
@@ -33,13 +37,17 @@ const lightMap = buildMap(
   tokens.layers?.componentRecipes?.depth,
   tokens.layers?.material?.light,
 );
-// The dark map is admin chrome (base.dark) plus the material dark half. The
-// semantic aliases ride along because material dark mixes --cw-sem-warmth into
-// its surface; they define no base.dark names, so nothing is shadowed.
+// The admin/app-chrome map at night. Same layers as platformDarkMap below —
+// see the note above; it is built separately so the two stay independently
+// nameable if a surface ever earns a palette of its own again.
 const darkMap = buildMap(
-  tokens.base?.dark,
+  tokens.base?.light,
   tokens.layers?.semanticAliases,
+  tokens.layers?.modeOverrides?.platform,
+  tokens.layers?.componentRecipes?.depth,
+  tokens.layers?.material?.light,
   tokens.layers?.material?.dark,
+  tokens.layers?.modeOverrides?.platformDark,
 );
 
 // The public platform's own dark scope ([data-cw-theme="dark"]), which is a
@@ -100,6 +108,21 @@ const pairs = [
   { theme: "light", fg: "--cw-btn-primary-text", bg: "--cw-btn-primary-bg", min: AA_BODY, context: "primary button label on fill" },
   { theme: "light", fg: "--cw-btn-primary-text-hover", bg: "--cw-btn-primary-bg-hover", min: AA_BODY, context: "primary button label on hover fill" },
   { theme: "light", fg: "--cw-btn-primary-text-active", bg: "--cw-btn-primary-bg-active", min: AA_BODY, context: "primary button label on active fill" },
+  /* THE FOUR STATES, as text on the panel they are printed on. A job row says
+     "виконано" in the state's own colour and wears a 12-22% wash of it behind
+     the word; the wash is thin enough that the panel is the real backdrop, so
+     that is what the pair is asserted against. Both gammas, because the hues
+     are brand roles (guide / trust / warmth-strong / boundary) and a role that
+     reads on cream does not automatically read on graphite — the night lifts
+     each one toward the cream ink, and these rows are what says how far. */
+  { theme: "light", fg: "--cw-status-success", bg: "--cw-surface-solid", min: AA_BODY, context: "success state on a panel" },
+  { theme: "light", fg: "--cw-status-running", bg: "--cw-surface-solid", min: AA_BODY, context: "running state on a panel" },
+  { theme: "light", fg: "--cw-status-pending", bg: "--cw-surface-solid", min: AA_BODY, context: "pending state on a panel" },
+  { theme: "light", fg: "--cw-status-failed", bg: "--cw-surface-solid", min: AA_BODY, context: "failed state on a panel" },
+  { theme: "dark", fg: "--cw-status-success", bg: "--cw-surface-solid", min: AA_BODY, context: "success state on a panel" },
+  { theme: "dark", fg: "--cw-status-running", bg: "--cw-surface-solid", min: AA_BODY, context: "running state on a panel" },
+  { theme: "dark", fg: "--cw-status-pending", bg: "--cw-surface-solid", min: AA_BODY, context: "pending state on a panel" },
+  { theme: "dark", fg: "--cw-status-failed", bg: "--cw-surface-solid", min: AA_BODY, context: "failed state on a panel" },
   // admin dark (.dark) — real rendered text pairs only
   { theme: "dark", fg: "--cw-text", bg: "--cw-bg", min: AA_BODY, context: "admin body text on page" },
   { theme: "dark", fg: "--cw-text", bg: "--cw-surface-solid", min: AA_BODY, context: "admin body text on panel" },

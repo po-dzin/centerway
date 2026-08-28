@@ -264,7 +264,15 @@
 }
 
 .header[data-cw-header-autohide="true"][data-cw-header-hidden="true"] {
-  transform: translateY(calc(-100% - 1rem));
+  /* Its own height is not the whole distance. The storefront bar is a floating
+     plate held `--platform-mobile-header-top` (0.75rem, 0.95rem over a hero)
+     below the top edge, so travelling exactly its height parks it with that gap
+     still on screen — and its shadow with it. The offset is added back, and the
+     rem past that carries the shadow off too: stopping short leaves a soft grey
+     line hanging at the top of the page, which reads as a rendering fault
+     rather than as a bar that left. The fallback is the desktop `top`; the
+     workspace bar sits at 0 and simply travels a little further than it must. */
+  transform: translateY(calc(-100% - var(--platform-mobile-header-top, 0.75rem) - 1rem));
 }
 
 /* The bar still moves — a reader who asked for less motion asked for less

@@ -56,9 +56,7 @@ const banner = (title, note) =>
 function buildFiles(tokens) {
   const { base = {}, layers = {}, delivery = {} } = tokens;
   const light = base.light ?? {};
-  const dark = base.dark ?? {};
   const chromeLight = pick(light, (k) => !isGeometry(k) && !isType(k));
-  const chromeDark = pick(dark, (k) => !isGeometry(k) && !isType(k));
 
   const files = {};
 
@@ -73,9 +71,8 @@ function buildFiles(tokens) {
 
   files["tokens/colors.css"] =
     banner("COLOR — chrome base, semantic roles, platform modes, packs.",
-      "Themes: :root public light · .dark admin · [data-cw-theme=\"dark\"] public dark\n   (authored and gated, not switched on — and deliberately not keyed off\n   .dark, which is the admin theme class and survives navigation).") +
+      "Themes: :root light · [data-cw-theme=\"dark\"] dark — ONE pair for the whole\n   product since 2026-08-28. The admin's separate `.dark` class is retired; the\n   chrome family in :root is an alias layer over the platform and material\n   roles, so it flips with them and has no dark half of its own.") +
     `:root {\n${decls(chromeLight)}\n\n  /* semantic roles */\n${decls(layers.semanticAliases ?? {})}\n\n  /* platform mode */\n${decls(layers.modeOverrides?.platform ?? {})}\n}\n\n` +
-    `.dark {\n${decls(chromeDark)}\n}\n\n` +
     `[data-cw-theme="dark"] {\n${decls(layers.modeOverrides?.platformDark ?? {})}\n}\n\n` +
     Object.entries(layers.packs ?? {})
       .map(([name, map]) => `.cw-pack-${name} {\n${decls(map)}\n}\n`)
@@ -84,18 +81,18 @@ function buildFiles(tokens) {
   files["tokens/geometry.css"] =
     banner("GEOMETRY — spacing, radii, card recipe, container.",
       "Values are exact and never snapped to a 4/8-px grid.") +
-    `:root {\n${decls(pick(light, isGeometry))}\n}\n\n.dark {\n${decls(pick(dark, isGeometry))}\n}\n`;
+    `:root {\n${decls(pick(light, isGeometry))}\n}\n`;
 
   files["tokens/material.css"] =
     banner("MATERIAL — the tactile surface layer (layers.material).",
       "One warm grainy glass, its matte and inverse siblings. Cards are matte;\n   glass is chrome and panels over media. No inset top highlight — it reads\n   as gloss, not matte. One glass depth only; never nest glass in glass.") +
     `:root {\n${decls(layers.material?.light ?? {})}\n}\n\n` +
-    `[data-cw-theme="dark"],\n.dark {\n${decls(layers.material?.dark ?? {})}\n}\n\n` +
+    `[data-cw-theme="dark"],\n[data-cw-header-tone="dark"] {\n${decls(layers.material?.dark ?? {})}\n}\n\n` +
     MATERIAL_RECIPE + LEGACY_SHIM;
 
   files["tokens/delivery.css"] =
     banner("DELIVERY — the --ds-* alias contract shared with the landings.", "") +
-    `:root {\n${decls(delivery.dsAlias?.light ?? {})}\n}\n\n.dark {\n${decls(delivery.dsAlias?.dark ?? {})}\n}\n`;
+    `:root {\n${decls(delivery.dsAlias?.light ?? {})}\n}\n`;
 
   files["styles.css"] =
     "/* CenterWay Design System — entry point. @import lines only.\n" +

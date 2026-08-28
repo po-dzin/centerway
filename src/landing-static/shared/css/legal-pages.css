@@ -4,6 +4,7 @@
 body[data-cw-page="index2"],
 body[data-cw-page="public-offer"]{
   min-height:100vh;
+  min-height:100dvh;
   margin:0;
   color:var(--cw-sem-method-ink,var(--ds-color-text,#203126));
   background:var(--cw-sem-calm-bg,var(--ds-color-bg-canvas,#faefe0));

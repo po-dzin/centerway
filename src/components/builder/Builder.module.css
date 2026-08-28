@@ -4180,6 +4180,58 @@
   }
 }
 
+
+/* ── The decision dialogue ────────────────────────────
+
+   A question with a small closed set of answers: «you are leaving with unsaved
+   changes», «a draft from a session that ended badly is on this device».
+
+   IT IS THE SHEET'S MATERIAL, NARROWER. Same plate, same rise, same backdrop —
+   the builder has one raised surface and adding a second one for a box with
+   three buttons in it is how a tool ends up with two kinds of «on top». What
+   changes is only the box: no sticky head, no scroller, a measure set by the
+   sentence rather than by a form.
+
+   THE ACTIONS SIT AT THE END and wrap in place. On a phone that is a column,
+   because three labels of this length do not fit across 375px and a row that
+   wraps mid-label puts «Вийти без» above «збереження». */
+.decision {
+  max-width: 100%;
+}
+
+.decisionBody {
+  display: grid;
+  grid-template-rows: none;
+  gap: var(--cw-space-sm);
+  max-height: none;
+  padding: var(--cw-space-lg);
+  padding-block-end: max(var(--cw-space-lg), env(safe-area-inset-bottom));
+}
+
+.decisionActions {
+  display: grid;
+  gap: var(--cw-space-xs);
+  margin-block-start: var(--cw-space-2xs);
+}
+
+@media (min-width: 561px) {
+  .decision {
+    max-width: 27rem;
+  }
+
+  .decisionBody {
+    padding-block-end: var(--cw-space-lg);
+  }
+
+  /* Answers side by side once they fit, first one first: it is the one the
+     author is most likely to want, and on both dialogues it is the safe one. */
+  .decisionActions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+}
+
 /* The one authored moment stays; the movement does not. */
 /* ── Undo ─────────────────────────────────────────── */
 

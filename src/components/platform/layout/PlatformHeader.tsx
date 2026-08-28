@@ -34,9 +34,10 @@ export function PlatformHeader({
   /** Route context and document actions inside an internal editor topbar. */
   workspaceContent?: ReactNode;
   /**
-   * Let the bar step aside while the reader scrolls down, and bring it back on
-   * the first scroll up. Reading surfaces only — see `useChromeReveal` for why
-   * this is wrong for the builder, which keeps controls in its bar.
+   * Let the bar step aside while the page scrolls down, and bring it back on
+   * the first scroll up. Every surface that is READ opts in — see
+   * `useChromeReveal` for why this is wrong for the builder, whose bar holds
+   * controls in use.
    */
   autoHide?: boolean;
 }) {

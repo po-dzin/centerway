@@ -10,13 +10,14 @@ import { randomUUID } from "node:crypto";
 import { revalidateTag } from "next/cache";
 import { NextRequest, NextResponse } from "next/server";
 
-import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import {
   importBuilderCourse,
   listBuilderCourses,
   previewBuilderCourseImport,
 } from "@/lib/lms/builder";
-import { canCreateCourse, courseFilterFor, resolveBuilderIdentity } from "@/lib/lms/builderAccess";
+import { canCreateCourse, courseFilterFor } from "@/lib/lms/builderAccess";
+import { withBuilderIdentity } from "@/lib/lms/courseAccess";
+import { LMS_COURSE_CREATE } from "@/lib/lms/rateRules";
 import { COURSE_LIST_TAG, PURGE, courseTag } from "@/lib/lms/liveCatalog";
 
 export const runtime = "nodejs";
@@ -27,57 +28,55 @@ export const runtime = "nodejs";
 const MAX_BODY_BYTES = 5 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
-  const user = await requireUserFromBearer(req.headers.get("authorization"));
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
-  const declaredSize = Number(req.headers.get("content-length") ?? "0");
-  if (Number.isFinite(declaredSize) && declaredSize > MAX_BODY_BYTES) {
-    return NextResponse.json({ error: "lms_builder_import_too_large" }, { status: 413 });
-  }
-
-  const identity = await resolveBuilderIdentity(user);
-  const owned = await listBuilderCourses(courseFilterFor(identity)).catch(() => null);
-  if (!owned) return NextResponse.json({ error: "lms_builder_list_failed" }, { status: 500 });
-  if (!canCreateCourse(identity, owned.length)) {
-    return NextResponse.json({ error: "forbidden" }, { status: 403 });
-  }
-
-  const rawBody = await req.text();
-  if (Buffer.byteLength(rawBody, "utf8") > MAX_BODY_BYTES) {
-    return NextResponse.json({ error: "lms_builder_import_too_large" }, { status: 413 });
-  }
-  let body: { course?: unknown; commit?: unknown } | null = null;
-  try {
-    body = JSON.parse(rawBody) as { course?: unknown; commit?: unknown };
-  } catch {
-    // Kept distinct from a structurally invalid course: this is a broken
-    // transport file, so the author should choose/fix the JSON itself.
-  }
-  if (!body || body.course === undefined) {
-    return NextResponse.json({ error: "lms_builder_import_missing_course" }, { status: 400 });
-  }
-
-  try {
-    const preview = await previewBuilderCourseImport(body.course, randomUUID);
-
-    if (body.commit !== true) {
-      return NextResponse.json({
-        preview: {
-          ...preview.summary,
-          blockerCount: preview.readiness.blockers.length,
-          blockers: preview.readiness.blockers.slice(0, 20),
-          changes: ["status:draft", "visibility:hidden", "commerce:detached", "ids:remapped"],
-        },
-      });
+  return withBuilderIdentity(req, async (identity) => {
+    const declaredSize = Number(req.headers.get("content-length") ?? "0");
+    if (Number.isFinite(declaredSize) && declaredSize > MAX_BODY_BYTES) {
+      return NextResponse.json({ error: "lms_builder_import_too_large" }, { status: 413 });
     }
 
-    const result = await importBuilderCourse(preview.course, identity.authUserId);
-    revalidateTag(courseTag(result.slug), PURGE);
-    revalidateTag(COURSE_LIST_TAG, PURGE);
-    return NextResponse.json(result, { status: 201 });
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "unknown_error";
-    const isAuthorError = message.startsWith("lms_");
-    return NextResponse.json({ error: message }, { status: isAuthorError ? 422 : 500 });
-  }
+    const owned = await listBuilderCourses(courseFilterFor(identity)).catch(() => null);
+    if (!owned) return NextResponse.json({ error: "lms_builder_list_failed" }, { status: 500 });
+    if (!canCreateCourse(identity, owned.length)) {
+      return NextResponse.json({ error: "forbidden" }, { status: 403 });
+    }
+
+    const rawBody = await req.text();
+    if (Buffer.byteLength(rawBody, "utf8") > MAX_BODY_BYTES) {
+      return NextResponse.json({ error: "lms_builder_import_too_large" }, { status: 413 });
+    }
+    let body: { course?: unknown; commit?: unknown } | null = null;
+    try {
+      body = JSON.parse(rawBody) as { course?: unknown; commit?: unknown };
+    } catch {
+      // Kept distinct from a structurally invalid course: this is a broken
+      // transport file, so the author should choose/fix the JSON itself.
+    }
+    if (!body || body.course === undefined) {
+      return NextResponse.json({ error: "lms_builder_import_missing_course" }, { status: 400 });
+    }
+
+    try {
+      const preview = await previewBuilderCourseImport(body.course, randomUUID);
+
+      if (body.commit !== true) {
+        return NextResponse.json({
+          preview: {
+            ...preview.summary,
+            blockerCount: preview.readiness.blockers.length,
+            blockers: preview.readiness.blockers.slice(0, 20),
+            changes: ["status:draft", "visibility:hidden", "commerce:detached", "ids:remapped"],
+          },
+        });
+      }
+
+      const result = await importBuilderCourse(preview.course, identity.authUserId);
+      revalidateTag(courseTag(result.slug), PURGE);
+      revalidateTag(COURSE_LIST_TAG, PURGE);
+      return NextResponse.json(result, { status: 201 });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "unknown_error";
+      const isAuthorError = message.startsWith("lms_");
+      return NextResponse.json({ error: message }, { status: isAuthorError ? 422 : 500 });
+    }
+  }, LMS_COURSE_CREATE);
 }

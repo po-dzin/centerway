@@ -27,10 +27,10 @@ import { randomUUID } from "node:crypto";
 
 import { NextRequest, NextResponse } from "next/server";
 
-import { requireUserFromBearer } from "@/lib/auth/requireUser";
-import { canEditCourse, resolveBuilderIdentity } from "@/lib/lms/builderAccess";
-import { loadBuilderCourse } from "@/lib/lms/builder";
+import { denialResponse, isDenied, resolveCourseAccessForIdentity, resolveIdentityFromRequest } from "@/lib/lms/courseAccess";
 import { MAX_INPUT_BYTES, isPrepareFailure, prepareMedia } from "@/lib/lms/mediaPipeline";
+import { LMS_MEDIA_UPLOAD } from "@/lib/lms/rateRules";
+import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
@@ -53,8 +53,15 @@ const BUCKET = "course-media";
 const TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
 
 export async function POST(req: NextRequest) {
-  const user = await requireUserFromBearer(req.headers.get("authorization"));
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  // Identity first, body second. The slug lives inside the multipart body, so
+  // this route cannot use `withCourseAccess` wholesale — but parsing twenty
+  // megabytes from a caller nobody has identified yet is work done for a
+  // stranger, and the order is the only thing preventing it.
+  const auth = await resolveIdentityFromRequest(req);
+  if (isDenied(auth)) return denialResponse(auth);
+
+  const limit = await enforceRateLimit(req, LMS_MEDIA_UPLOAD, auth.identity.authUserId);
+  if (!limit.allowed) return tooManyRequests(limit.retryAfter);
 
   let form: FormData;
   try {
@@ -86,11 +93,13 @@ export async function POST(req: NextRequest) {
   // The course is resolved BEFORE the bytes go anywhere: an upload that turns
   // out to belong to a course the caller cannot edit would otherwise already be
   // sitting in the bucket by the time anyone said no.
-  const identity = await resolveBuilderIdentity(user);
-  const loaded = await loadBuilderCourse(slug);
-  if (!loaded || !canEditCourse(identity, loaded.authorId)) {
-    return NextResponse.json({ error: "course_not_found" }, { status: 404 });
-  }
+  //
+  // Ownership only — the course is NOT rebuilt here. It used to be, and that
+  // made adding an image to a course impossible while any part of that course
+  // failed validation: the picture meant to fill the hole was refused by it.
+  const access = await resolveCourseAccessForIdentity(auth.identity, slug);
+  if (isDenied(access)) return denialResponse(access);
+  const { grant } = access;
 
   const prepared = await prepareMedia(Buffer.from(await file.arrayBuffer()), file.type);
   if (isPrepareFailure(prepared)) {
@@ -106,7 +115,7 @@ export async function POST(req: NextRequest) {
   // filename: two authors uploading `cover.jpg` must not be one upload, and a
   // filename is attacker-shaped input that would otherwise become a path.
   const assetId = randomUUID();
-  const folder = `courses/${loaded.course.id}/${assetId}`;
+  const folder = `courses/${grant.courseId}/${assetId}`;
 
   const admin = supabaseAdmin();
   const storage = admin.storage.from(BUCKET);
@@ -142,7 +151,7 @@ export async function POST(req: NextRequest) {
   // a success is treated as a failure.
   const ledger = await admin.from("lms_media_assets").insert({
     id: assetId,
-    course_id: loaded.course.id,
+    course_id: grant.courseId,
     asset_key: folder,
     canonical_path: canonical,
     paths: stored,
@@ -150,7 +159,7 @@ export async function POST(req: NextRequest) {
     content_type: prepared.renditions[0].contentType,
     width: prepared.width,
     height: prepared.height,
-    uploaded_by: user.id,
+    uploaded_by: grant.identity.authUserId,
   });
 
   if (ledger.error) {

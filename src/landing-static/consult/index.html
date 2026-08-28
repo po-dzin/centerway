@@ -2,7 +2,7 @@
 <html lang="uk" data-cw-landing="consult" data-cw-page="consult" data-cw-hero="photo">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <base href="/consult/">
 <meta name="theme-color" content="#faefe0">
 <link rel="icon" href="/shared/img/cw-icon-tab.svg" type="image/svg+xml">
@@ -209,15 +209,15 @@
       <form class="lead-form" data-cw-lead-form data-product-code="consult" data-source="static_consult_form" data-cta-place="consult_primary_form">
         <div class="lead-field">
           <label for="c-name">Ім'я</label>
-          <input class="lead-input" id="c-name" name="name" autocomplete="name" required>
+          <input class="lead-input" id="c-name" name="name" autocomplete="name" required type="text" autocapitalize="words" enterkeyhint="next">
         </div>
         <div class="lead-field">
           <label for="c-phone">Телефон</label>
-          <input class="lead-input" id="c-phone" name="phone" autocomplete="tel" inputmode="tel" required>
+          <input class="lead-input" id="c-phone" name="phone" autocomplete="tel" inputmode="tel" required type="tel" enterkeyhint="next">
         </div>
         <div class="lead-field">
           <label for="c-email">Email</label>
-          <input class="lead-input" id="c-email" name="email" autocomplete="email" inputmode="email">
+          <input class="lead-input" id="c-email" name="email" autocomplete="email" inputmode="email" type="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
         </div>
         <div class="lead-field">
           <label for="c-interest">Що хочете прояснити</label>
@@ -230,7 +230,7 @@
         </div>
         <div class="lead-field">
           <label for="c-message">Коротко про ваш стан</label>
-          <textarea class="lead-input" id="c-message" name="message" placeholder="Що турбує найбільше і як давно"></textarea>
+          <textarea class="lead-input" id="c-message" name="message" placeholder="Що турбує найбільше і як давно" autocapitalize="sentences"></textarea>
         </div>
         <button class="btn btn-primary lead-form__submit" type="submit" data-default-label="Надіслати запит">Надіслати запит</button>
         <p class="lead-form__status" data-form-status></p>

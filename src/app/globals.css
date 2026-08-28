@@ -7,68 +7,59 @@
 @layer base {
   :root {
     /* CW_BASE_LIGHT_START */
-    --background: #f2f2f0;
-    --foreground: #2d2d2b;
-    --cw-bg: #f2f2f0;
-    --cw-surface: rgba(255, 255, 255, 0.72);
-    --cw-surface-2: rgba(238, 238, 236, 0.72);
-    --cw-surface-muted: rgba(236, 232, 225, 0.9);
-    --cw-surface-solid: #f6f6f4;
-    --cw-border: #d1d1cd;
-    --cw-text: #2d2d2b;
-    --cw-muted: #777773;
-    --cw-accent: #8a8a86;
-    --cw-accent-soft: rgba(236, 236, 233, 0.72);
-    --cw-accent-contrast: #ffffff;
-    --cw-interactive-hover-bg: rgba(228, 228, 224, 0.92);
-    --cw-interactive-hover-border: #c2c2bd;
-    --cw-interactive-active-bg: #e8e8e4;
-    --cw-interactive-active-border: #b7b7b1;
-    --cw-interactive-active-shadow: 0 0 0 1px rgba(183, 183, 177, 0.35);
-    --cw-focus-ring: color-mix(in srgb, var(--cw-accent-strong) 34%, transparent);
+    --background: var(--cw-platform-bg);
+    --foreground: var(--cw-platform-text);
+    --cw-bg: var(--cw-platform-bg);
+    --cw-surface: var(--cw-mat-tint);
+    --cw-surface-2: var(--cw-mat-surface-sunk);
+    --cw-surface-muted: var(--cw-platform-surface-muted);
+    --cw-surface-solid: var(--cw-mat-surface);
+    --cw-border: var(--cw-platform-border);
+    --cw-text: var(--cw-platform-text);
+    --cw-muted: var(--cw-platform-muted);
+    --cw-accent: var(--cw-platform-accent);
+    --cw-accent-soft: var(--cw-mat-tone-support);
+    --cw-accent-contrast: var(--cw-platform-accent-contrast);
+    --cw-interactive-hover-bg: var(--cw-mat-hover-bg);
+    --cw-interactive-hover-border: var(--cw-mat-hover-stroke);
+    --cw-interactive-active-bg: var(--cw-mat-active-bg);
+    --cw-interactive-active-border: var(--cw-mat-active-stroke);
+    --cw-interactive-active-shadow: var(--cw-mat-active-shadow);
+    --cw-focus-ring: color-mix(in srgb, var(--cw-platform-accent) 34%, transparent);
     --ds-radius-button-soft: 1rem;
     --cw-radius-btn: var(--cw-radius-md);
-    --cw-brand-hover-border: color-mix(in srgb, var(--cw-accent) 72%, var(--cw-border) 28%);
-    --cw-btn-primary-bg: color-mix(in srgb, var(--cw-status-success) 55%, var(--cw-text) 45%);
-    --cw-btn-primary-bg-hover: color-mix(in srgb, var(--cw-status-success) 60%, var(--cw-text) 40%);
-    --cw-btn-primary-bg-active: color-mix(in srgb, var(--cw-status-success) 50%, var(--cw-text) 50%);
-    --cw-btn-primary-text: var(--cw-accent-contrast);
-    --cw-btn-primary-text-hover: var(--cw-accent-contrast);
-    --cw-btn-primary-text-active: var(--cw-accent-contrast);
-    --cw-btn-primary-border-hover: color-mix(in srgb, var(--cw-accent) 74%, var(--cw-border) 26%);
-    --cw-btn-primary-border-active: color-mix(in srgb, var(--cw-accent) 66%, var(--cw-border) 34%);
-    --cw-btn-primary-focus-ring: color-mix(in srgb, var(--cw-accent) 36%, transparent);
+    --cw-brand-hover-border: color-mix(in srgb, var(--cw-platform-accent) 72%, var(--cw-platform-border) 28%);
+    --cw-btn-primary-bg: var(--cw-platform-accent);
+    --cw-btn-primary-bg-hover: var(--cw-platform-accent-pressed);
+    --cw-btn-primary-bg-active: var(--cw-platform-accent-pressed);
+    --cw-btn-primary-text: var(--cw-platform-on-accent);
+    --cw-btn-primary-text-hover: var(--cw-platform-on-accent);
+    --cw-btn-primary-text-active: var(--cw-platform-on-accent);
+    --cw-btn-primary-border-hover: color-mix(in srgb, var(--cw-platform-accent-pressed) 70%, var(--cw-platform-border) 30%);
+    --cw-btn-primary-border-active: color-mix(in srgb, var(--cw-platform-accent-pressed) 78%, var(--cw-platform-border) 22%);
+    --cw-btn-primary-focus-ring: color-mix(in srgb, var(--cw-platform-accent) 36%, transparent);
     --cw-btn-outline-bg: transparent;
-    --cw-btn-outline-bg-hover: var(--cw-surface-solid);
-    --cw-btn-outline-bg-active: var(--cw-surface-solid);
+    --cw-btn-outline-bg-hover: var(--cw-mat-hover-bg);
+    --cw-btn-outline-bg-active: var(--cw-mat-active-bg);
     --cw-btn-ghost-bg: transparent;
-    --cw-btn-ghost-bg-hover: color-mix(in srgb, var(--cw-text) 8%, transparent);
-    --cw-btn-ghost-bg-active: color-mix(in srgb, var(--cw-text) 12%, transparent);
-    --cw-choice-bg: #ffffff;
-    --cw-choice-bg-hover: color-mix(in srgb, var(--cw-text) 7%, #ffffff 93%);
-    --cw-choice-bg-selected: color-mix(in srgb, var(--cw-accent-soft) 84%, #ffffff 16%);
-    --cw-danger: #d9475e;
-    --cw-status-success: #2f9f63;
-    --cw-status-success-soft: rgba(47, 159, 99, 0.12);
-    --cw-status-running: #5f88d9;
-    --cw-status-running-soft: rgba(95, 136, 217, 0.12);
-    --cw-status-pending: #b08a24;
-    --cw-status-pending-soft: rgba(176, 138, 36, 0.12);
-    --cw-status-failed: #cf4e62;
-    --cw-status-failed-soft: rgba(207, 78, 98, 0.12);
-    --cw-shadow: 0 10px 22px rgba(16, 16, 16, 0.08);
-    --cw-overlay: rgba(20, 20, 20, 0.36);
-    --cw-glass-blur: 12px;
+    --cw-btn-ghost-bg-hover: var(--cw-mat-hover-bg);
+    --cw-btn-ghost-bg-active: var(--cw-mat-active-bg);
+    --cw-choice-bg: var(--cw-platform-surface);
+    --cw-choice-bg-hover: color-mix(in srgb, var(--cw-platform-text) 6%, var(--cw-platform-surface) 94%);
+    --cw-choice-bg-selected: var(--cw-platform-surface-muted);
+    --cw-shadow: var(--cw-mat-shadow-soft);
+    --cw-overlay: var(--cw-mat-scrim);
+    --cw-glass-blur: var(--cw-mat-blur);
     --cw-glass-backdrop-filter: blur(var(--cw-glass-blur));
-    --cw-glass-stroke: rgba(255, 255, 255, 0.2);
+    --cw-glass-stroke: var(--cw-mat-stroke);
     --cw-glass-glow: transparent;
     --cw-border-width: 1px;
     --cw-font-ui: "Manrope", "Segoe UI", sans-serif;
     --cw-font-editorial: "Cormorant Garamond", "Times New Roman", serif;
     --cw-font-data: "IBM Plex Mono", ui-monospace, monospace;
-    --cw-text-tertiary: color-mix(in srgb, var(--cw-muted) 82%, #ffffff 18%);
-    --cw-border-strong: color-mix(in srgb, var(--cw-border) 68%, var(--cw-text) 32%);
-    --cw-accent-strong: color-mix(in srgb, var(--cw-accent) 78%, #3a2a22 22%);
+    --cw-text-tertiary: color-mix(in srgb, var(--cw-platform-muted) 76%, var(--cw-platform-surface) 24%);
+    --cw-border-strong: color-mix(in srgb, var(--cw-platform-border) 58%, var(--cw-platform-text) 42%);
+    --cw-accent-strong: var(--cw-platform-accent-pressed);
     --cw-space-2xs: 0.25rem;
     --cw-space-xs: 0.5rem;
     --cw-space-sm: 0.75rem;
@@ -84,12 +75,12 @@
     --cw-radius-xl: 28px;
     --cw-radius-inset: 6px;
     --cw-radius-pill: 999px;
-    --cw-shadow-soft: 0 10px 22px rgba(16, 16, 16, 0.08);
-    --cw-shadow-strong: 0 12px 28px rgba(16, 16, 16, 0.18);
+    --cw-shadow-soft: var(--cw-mat-shadow-soft);
+    --cw-shadow-strong: var(--cw-mat-shadow-raised);
     --cw-card-padding: clamp(1.1rem, 1.8vw, 1.45rem);
     --cw-card-radius: var(--cw-radius-lg);
-    --cw-card-border: 1px solid var(--cw-border);
-    --cw-card-shadow: var(--cw-shadow-soft);
+    --cw-card-border: 1px solid var(--cw-mat-stroke);
+    --cw-card-shadow: var(--cw-mat-shadow-soft);
     --cw-max-width: 1160px;
     --cw-page-gutter: clamp(20px, 5vw, 40px);
     --cw-bar-pad: 0.8rem;
@@ -131,6 +122,10 @@
     --cw-sem-dosha-pitta: var(--cw-sem-warmth-strong);
     --cw-sem-dosha-kapha: var(--cw-sem-embodied);
     --cw-sem-muted-ink: #48544c;
+    --cw-sem-state-success: var(--cw-sem-guide-primary);
+    --cw-sem-state-running: var(--cw-sem-trust);
+    --cw-sem-state-pending: var(--cw-sem-warmth-strong);
+    --cw-sem-state-failed: var(--cw-sem-boundary);
     --cw-brand-asset-logo-symbol: url("/cw/brand/cw-mark.svg");
     --cw-brand-asset-logo-symbol-compact: url("/cw/brand/cw-mark-compact.svg");
     --cw-brand-asset-logo-symbol-header: url("/cw/brand/cw-mark.svg");
@@ -160,7 +155,7 @@
     --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
     --cw-platform-text: #18261d;
     --cw-platform-muted: var(--cw-sem-muted-ink);
-    --cw-platform-border: color-mix(in srgb, var(--cw-sem-progress) 38%, var(--cw-platform-bg) 62%);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-method-ink) 14%, var(--cw-platform-bg) 86%);
     --cw-platform-accent: var(--cw-sem-warmth);
     --cw-platform-accent-strong: var(--cw-sem-guide-strong);
     --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
@@ -168,23 +163,44 @@
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
+    --cw-status-success: var(--cw-sem-state-success);
+    --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
+    --cw-status-running: var(--cw-sem-state-running);
+    --cw-status-running-soft: color-mix(in srgb, var(--cw-sem-state-running) 12%, transparent);
+    --cw-status-pending: color-mix(in srgb, var(--cw-sem-state-pending) 58%, var(--cw-sem-method-ink) 42%);
+    --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-state-pending) 14%, transparent);
+    --cw-status-failed: color-mix(in srgb, var(--cw-sem-state-failed) 76%, var(--cw-sem-method-ink) 24%);
+    --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-state-failed) 12%, transparent);
+    --cw-danger: var(--cw-sem-state-failed);
     --cw-mat-surface: color-mix(in srgb, var(--cw-sem-calm-surface) 94%, var(--cw-sem-warmth) 6%);
     --cw-mat-surface-night: color-mix(in srgb, #1a2a20 94%, var(--cw-sem-warmth) 6%);
     --cw-mat-surface-sunk: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-mat-surface) 38%);
     --cw-mat-tint: color-mix(in srgb, var(--cw-mat-surface) 76%, transparent);
     --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
-    --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 86%, transparent);
+    --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 82%, transparent);
     --cw-mat-tint-chrome: color-mix(in srgb, var(--cw-mat-surface) 30%, transparent);
     --cw-mat-tint-floor: 76%;
-    --cw-mat-tint-media-floor: 86%;
+    --cw-mat-tint-media-floor: 82%;
     --cw-mat-tint-chrome-floor: 30%;
     --cw-mat-blur: 20px;
     --cw-mat-saturate: 1.08;
     --cw-mat-filter: blur(var(--cw-mat-blur)) saturate(var(--cw-mat-saturate));
+    --cw-mat-blur-media: 34px;
+    --cw-mat-saturate-media: 1.24;
+    --cw-mat-filter-media: blur(var(--cw-mat-blur-media)) saturate(var(--cw-mat-saturate-media));
     --cw-mat-stroke: color-mix(in srgb, #ffffff 55%, transparent);
     --cw-mat-stroke-inner: color-mix(in srgb, #16211a 8%, transparent);
     --cw-mat-stroke-control: color-mix(in srgb, #16211a 52%, transparent);
     --cw-mat-scrim-ink: #171817;
+    --cw-mat-hover-bg: color-mix(in srgb, var(--cw-platform-text) 6%, transparent);
+    --cw-mat-hover-stroke: color-mix(in srgb, var(--cw-platform-text) 14%, var(--cw-platform-border));
+    --cw-mat-active-bg: color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+    --cw-mat-active-stroke: color-mix(in srgb, var(--cw-platform-text) 22%, var(--cw-platform-border));
+    --cw-mat-active-shadow: 0 0 0 1px color-mix(in srgb, var(--cw-platform-text) 12%, transparent);
+    --cw-mat-scrim: color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent);
+    --cw-mat-scroll-thumb: color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
+    --cw-mat-scroll-thumb-hover: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+    --cw-mat-scroll-track: transparent;
     --cw-mat-meter-track: color-mix(in srgb, var(--cw-platform-border) 72%, var(--cw-platform-surface) 28%);
     --cw-mat-shadow-soft: 0 1px 2px rgba(35, 29, 20, 0.05), 0 10px 28px rgba(35, 29, 20, 0.07);
     --cw-mat-shadow-raised: 0 2px 6px rgba(35, 29, 20, 0.07), 0 24px 56px rgba(35, 29, 20, 0.12);
@@ -286,157 +302,56 @@
 
   }
 
-  .dark {
-    /* CW_BASE_DARK_START */
-    --background: #191918;
-    --foreground: #e4e4e1;
-    --cw-bg: #191918;
-    --cw-surface: rgba(32, 32, 32, 0.72);
-    --cw-surface-2: rgba(40, 40, 40, 0.72);
-    --cw-surface-muted: rgba(36, 36, 35, 0.9);
-    --cw-surface-solid: #232322;
-    --cw-border: #4a4a46;
-    --cw-text: #e4e4e1;
-    --cw-muted: #a9a9a3;
-    --cw-accent: #a9a9a3;
-    --cw-accent-soft: rgba(43, 43, 40, 0.72);
-    --cw-accent-contrast: #f2f2ef;
-    --cw-interactive-hover-bg: rgba(56, 56, 52, 0.92);
-    --cw-interactive-hover-border: #5a5a55;
-    --cw-interactive-active-bg: #3c3c38;
-    --cw-interactive-active-border: #6a6a64;
-    --cw-interactive-active-shadow: 0 0 0 1px rgba(106, 106, 100, 0.38);
-    --cw-focus-ring: color-mix(in srgb, var(--cw-accent-contrast) 40%, transparent);
-    --ds-radius-button-soft: 1rem;
-    --cw-radius-btn: var(--cw-radius-md);
-    --cw-brand-hover-border: color-mix(in srgb, var(--cw-accent) 74%, var(--cw-border) 26%);
-    --cw-btn-primary-bg: color-mix(in srgb, var(--cw-status-success) 44%, var(--cw-bg) 56%);
-    --cw-btn-primary-bg-hover: color-mix(in srgb, var(--cw-status-success) 49%, var(--cw-bg) 51%);
-    --cw-btn-primary-bg-active: color-mix(in srgb, var(--cw-status-success) 39%, var(--cw-bg) 61%);
-    --cw-btn-primary-text: var(--cw-accent-contrast);
-    --cw-btn-primary-text-hover: var(--cw-accent-contrast);
-    --cw-btn-primary-text-active: var(--cw-accent-contrast);
-    --cw-btn-primary-border-hover: color-mix(in srgb, var(--cw-accent) 74%, var(--cw-border) 26%);
-    --cw-btn-primary-border-active: color-mix(in srgb, var(--cw-accent) 66%, var(--cw-border) 34%);
-    --cw-btn-primary-focus-ring: color-mix(in srgb, var(--cw-accent) 42%, transparent);
-    --cw-btn-outline-bg: transparent;
-    --cw-btn-outline-bg-hover: var(--cw-surface-solid);
-    --cw-btn-outline-bg-active: var(--cw-surface-solid);
-    --cw-btn-ghost-bg: transparent;
-    --cw-btn-ghost-bg-hover: color-mix(in srgb, var(--cw-text) 12%, transparent);
-    --cw-btn-ghost-bg-active: color-mix(in srgb, var(--cw-text) 18%, transparent);
-    --cw-choice-bg: color-mix(in srgb, var(--cw-surface-solid) 78%, #ffffff 22%);
-    --cw-choice-bg-hover: color-mix(in srgb, var(--cw-text) 14%, var(--cw-choice-bg) 86%);
-    --cw-choice-bg-selected: color-mix(in srgb, var(--cw-accent-soft) 74%, var(--cw-choice-bg) 26%);
-    --cw-danger: #ff7f93;
-    --cw-status-success: #68c58f;
-    --cw-status-success-soft: rgba(104, 197, 143, 0.16);
-    --cw-status-running: #8aacff;
-    --cw-status-running-soft: rgba(138, 172, 255, 0.16);
-    --cw-status-pending: #d0ac4d;
-    --cw-status-pending-soft: rgba(208, 172, 77, 0.16);
-    --cw-status-failed: #ff8ea1;
-    --cw-status-failed-soft: rgba(255, 142, 161, 0.16);
-    --cw-shadow: 0 12px 28px rgba(0, 0, 0, 0.34);
-    --cw-overlay: rgba(8, 8, 8, 0.58);
-    --cw-glass-blur: 12px;
-    --cw-glass-backdrop-filter: blur(var(--cw-glass-blur));
-    --cw-glass-stroke: rgba(255, 255, 255, 0.08);
-    --cw-glass-glow: transparent;
-    --cw-border-width: 1px;
-    --cw-font-ui: "Manrope", "Segoe UI", sans-serif;
-    --cw-font-editorial: "Cormorant Garamond", "Times New Roman", serif;
-    --cw-font-data: "IBM Plex Mono", ui-monospace, monospace;
-    --cw-text-tertiary: color-mix(in srgb, var(--cw-muted) 82%, #141414 18%);
-    --cw-border-strong: color-mix(in srgb, var(--cw-border) 70%, var(--cw-text) 30%);
-    --cw-accent-strong: color-mix(in srgb, var(--cw-accent) 72%, #f4f1e9 28%);
-    --cw-space-2xs: 0.25rem;
-    --cw-space-xs: 0.5rem;
-    --cw-space-sm: 0.75rem;
-    --cw-space-md: 1rem;
-    --cw-space-lg: 1.5rem;
-    --cw-space-xl: 2rem;
-    --cw-space-2xl: 3rem;
-    --cw-space-3xl: 4.5rem;
-    --cw-space-section-y: clamp(3.6rem, 7.5vw, 6rem);
-    --cw-radius-sm: 12px;
-    --cw-radius-md: 16px;
-    --cw-radius-lg: 20px;
-    --cw-radius-xl: 28px;
-    --cw-radius-inset: 6px;
-    --cw-radius-pill: 999px;
-    --cw-shadow-soft: var(--cw-shadow);
-    --cw-shadow-strong: 0 18px 36px rgba(0, 0, 0, 0.4);
-    --cw-card-padding: clamp(1.1rem, 1.8vw, 1.45rem);
-    --cw-card-radius: var(--cw-radius-lg);
-    --cw-card-border: 1px solid var(--cw-border);
-    --cw-card-shadow: var(--cw-shadow-soft);
-    --cw-max-width: 1160px;
-    --cw-page-gutter: clamp(20px, 5vw, 40px);
-    --cw-bar-pad: 0.8rem;
-    --cw-bar-inset: var(--cw-page-gutter);
-    --cw-container-inset: max(var(--cw-page-gutter), calc((100% - var(--cw-max-width)) / 2));
-    /* CW_BASE_DARK_END */
 
-    /* DS_ALIAS_DARK_START */
-    --ds-color-bg-canvas: var(--cw-bg);
-    --ds-color-bg-soft: var(--cw-surface-2);
-    --ds-color-surface: var(--cw-surface-solid);
-    --ds-color-text: var(--cw-text);
-    --ds-color-text-muted: var(--cw-muted);
-    --ds-color-primary: var(--cw-accent);
-    --ds-color-primary-strong: var(--cw-accent-strong);
-    --ds-color-accent: var(--cw-accent);
-    --ds-color-accent-strong: var(--cw-accent-strong);
-    --ds-color-border-soft: var(--cw-border);
-    --ds-shadow-sm: var(--cw-shadow-soft);
-    --ds-shadow-md: var(--cw-shadow-strong);
-    /* DS_ALIAS_DARK_END */
+  /* Dark scopes — one theme, and one local context.
 
-  }
+     `[data-cw-theme="dark"]` is THE dark theme, for every surface the product
+     has: public pages, the learner's shelf, the builder and the admin. It is
+     stamped onto <html> by `src/lib/platform/theme.ts` before first paint, from
+     the reader's stored choice or, absent one, from `prefers-color-scheme`.
 
-  /* Dark theme scopes — deliberately two selectors, not one.
+     THERE IS NO LONGER A SECOND ONE (2026-08-28). `.dark` was the admin's own
+     theme class, written by ThemeSwitcher into a different storage key, and the
+     two disagreed in ways that all showed: the admin had no boot script (a
+     graphite flash on every load), no `color-scheme` (a dark page scrolling
+     past its own end into white), and no light theme that actually worked —
+     `/admin` lives in the `(platform)` route group, so the public boot script
+     stamped the document too, and taking `.dark` off left a light shell
+     standing on a graphite body. The class also survived a client-side
+     navigation out of /admin, which is why no public surface was ever allowed
+     to key off it.
 
-     `.dark` is admin chrome. ThemeSwitcher writes it onto <html> and persists it
-     in localStorage, so during a client-side session it survives navigation out
-     of /admin onto public routes. Public surfaces therefore must NOT key their
-     palette off `.dark`, or an admin visit would silently darken the whole site.
-
-     `[data-cw-theme="dark"]` is the public platform's own dark scope, and as
-     of 2026-08-28 it SHIPS. `src/lib/platform/theme.ts` stamps it onto <html>
-     before first paint, from the reader's stored choice or, absent one, from
-     `prefers-color-scheme`.
-
-     WHAT HAD TO BE TRUE FIRST, and now is. Switching this on used to put
-     near-black ink on the night ground: every entry in CW_COURSE_PACKS was a
-     COMPLETE LIGHT PALETTE, so a course preview nested inside this scope won
-     for its own subtree and dropped the light gamma back on top of the dark
-     one. The packs are now a LIGHT-SIDE AXIS in the generator: their platform
-     tokens, grounds and inks are emitted under
-     `:root:not([data-cw-theme="dark"])`, and inside the dark scope a pack
-     contributes its HUE roles and nothing else.
+     So the admin joins the product's theme instead of keeping its own: one
+     switch, one storage key, three choices, one selector. The legacy `--cw-*`
+     chrome family is an alias layer over the platform and material tokens now
+     (see `base.light` in cw.tokens.json), so it flips with them and needs no
+     dark half of its own — which is why the `.dark` block that used to stand
+     here is gone rather than renamed.
 
      THE STAMP IS ALWAYS WRITTEN, and no `prefers-color-scheme` rule shadows
      it. One switch, one selector: with the media query as a second source the
-     pack scoping above would need to answer to both, and the two would drift
+     pack scoping below would need to answer to both, and the two would drift
      the first time one of them moved. Without JavaScript the page stays light,
      which is what it was before this shipped.
 
-     THE GROUND IS GRAPHITE, NOT THE GREEN NIGHT it was authored as. The green
-     was a mineral read from the brand sheet, and it lost on its own terms: the
-     sheet's rule is "never green on a dark ground", which is exactly why the
-     admin shell is neutral. One warm graphite now serves both sides — admin
-     `base.dark` and this scope share the same ground and surface — so the
-     product has one night, not two that almost match. The warmth comes from
-     the brass accent and the grain, not from the ground.
+     WHAT HAD TO BE TRUE FIRST, and now is: every entry in CW_COURSE_PACKS used
+     to be a COMPLETE LIGHT PALETTE, so a course preview nested inside this
+     scope won for its own subtree and dropped the light gamma back on top of
+     the dark one. The packs are a LIGHT-SIDE AXIS in the generator now — their
+     platform tokens, grounds and inks are emitted under
+     `:root:not([data-cw-theme="dark"])`, and inside the dark scope a pack
+     contributes its HUE roles and nothing else.
 
-     The material is shared by both: admin and public render the same surfaces.
+     THE GROUND IS GRAPHITE, NOT THE GREEN NIGHT it was authored as. The brand
+     sheet's rule is "never green on a dark ground". One warm graphite serves
+     the whole product; the warmth comes from the brass accent and the grain,
+     not from the ground.
 
-     `[data-cw-header-tone="dark"]` is the third selector and not a theme at all —
-     it is a local context. The topbar measures what it floats over and, when
-     that is a dark hero, switches its own material to the night side while the
-     page around it stays light. One material, scoped; not a second recipe. */
-  .dark,
+     `[data-cw-header-tone="dark"]` is the second selector here and not a theme
+     at all — it is a local context. The topbar measures what it floats over
+     and, when that is a dark hero, switches its own material to the night side
+     while the page around it stays light. One material, scoped; not a second
+     recipe. */
   [data-cw-theme="dark"],
   [data-cw-header-tone="dark"] {
     /* CW_MATERIAL_DARK_START */
@@ -445,25 +360,37 @@
     --cw-mat-surface-sunk: color-mix(in srgb, #191918 62%, var(--cw-mat-surface) 38%);
     --cw-mat-tint: color-mix(in srgb, var(--cw-mat-surface) 76%, transparent);
     --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
-    --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 86%, transparent);
+    --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 82%, transparent);
     --cw-mat-tint-chrome: color-mix(in srgb, var(--cw-mat-surface) 30%, transparent);
     --cw-mat-tint-floor: 76%;
-    --cw-mat-tint-media-floor: 86%;
+    --cw-mat-tint-media-floor: 82%;
     --cw-mat-tint-chrome-floor: 30%;
     --cw-mat-blur: 20px;
     --cw-mat-saturate: 1.08;
     --cw-mat-filter: blur(var(--cw-mat-blur)) saturate(var(--cw-mat-saturate));
+    --cw-mat-blur-media: 34px;
+    --cw-mat-saturate-media: 1.24;
+    --cw-mat-filter-media: blur(var(--cw-mat-blur-media)) saturate(var(--cw-mat-saturate-media));
     --cw-mat-stroke: color-mix(in srgb, #ffffff 14%, transparent);
     --cw-mat-stroke-inner: color-mix(in srgb, #ffffff 4%, transparent);
     --cw-mat-stroke-control: color-mix(in srgb, #faefe0 42%, transparent);
     --cw-mat-scrim-ink: #171817;
+    --cw-mat-hover-bg: color-mix(in srgb, var(--cw-platform-text) 6%, transparent);
+    --cw-mat-hover-stroke: color-mix(in srgb, var(--cw-platform-text) 14%, var(--cw-platform-border));
+    --cw-mat-active-bg: color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+    --cw-mat-active-stroke: color-mix(in srgb, var(--cw-platform-text) 22%, var(--cw-platform-border));
+    --cw-mat-active-shadow: 0 0 0 1px color-mix(in srgb, var(--cw-platform-text) 12%, transparent);
+    --cw-mat-scrim: color-mix(in srgb, var(--cw-mat-scrim-ink) 62%, transparent);
+    --cw-mat-scroll-thumb: color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
+    --cw-mat-scroll-thumb-hover: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+    --cw-mat-scroll-track: transparent;
     --cw-mat-meter-track: color-mix(in srgb, var(--cw-platform-border) 72%, var(--cw-platform-surface) 28%);
     --cw-mat-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
     --cw-mat-shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.35), 0 28px 60px rgba(0, 0, 0, 0.5);
     --cw-mat-shadow-chrome: 0 1px 2px rgba(0, 0, 0, 0.18), 0 14px 34px rgba(0, 0, 0, 0.22);
     --cw-mat-shadow-deep: 0 3px 8px rgba(0, 0, 0, 0.4), 0 32px 68px rgba(0, 0, 0, 0.55);
-    --cw-mat-tone-support: color-mix(in srgb, var(--cw-mat-surface) 88%, #ffffff 12%);
-    --cw-mat-tone-proof: color-mix(in srgb, var(--cw-mat-surface) 78%, #ffffff 22%);
+    --cw-mat-tone-support: color-mix(in srgb, var(--cw-mat-surface) 95%, #faefe0 5%);
+    --cw-mat-tone-proof: color-mix(in srgb, var(--cw-mat-surface) 90%, #faefe0 10%);
     --cw-mat-tone-boundary: color-mix(in srgb, var(--cw-mat-surface) 84%, var(--cw-sem-boundary) 16%);
     --cw-mat-tone-icon: color-mix(in srgb, var(--cw-mat-surface) 86%, var(--cw-sem-warmth) 14%);
     --cw-mat-grain-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
@@ -477,7 +404,7 @@
     /* CW_MATERIAL_DARK_END */
   }
 
-  /* Public platform dark palette. Scoped away from `.dark` on purpose (above). */
+  /* The dark palette. One theme for the whole product — see above. */
   [data-cw-theme="dark"] {
     /* CW_PLATFORM_DARK_START */
     --cw-platform-bg: #191918;
@@ -493,6 +420,15 @@
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-platform-text);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-warmth) 0%, var(--cw-sem-warmth-strong) 100%);
+    --cw-status-success: color-mix(in srgb, var(--cw-sem-state-success) 42%, #faefe0 58%);
+    --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 22%, transparent);
+    --cw-status-running: color-mix(in srgb, var(--cw-sem-state-running) 40%, #faefe0 60%);
+    --cw-status-running-soft: color-mix(in srgb, var(--cw-sem-state-running) 22%, transparent);
+    --cw-status-pending: color-mix(in srgb, var(--cw-sem-state-pending) 74%, #faefe0 26%);
+    --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-state-pending) 20%, transparent);
+    --cw-status-failed: color-mix(in srgb, var(--cw-sem-state-failed) 48%, #faefe0 52%);
+    --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-state-failed) 22%, transparent);
+    --cw-danger: color-mix(in srgb, var(--cw-sem-state-failed) 48%, #faefe0 52%);
     /* CW_PLATFORM_DARK_END */
   }
 
@@ -533,7 +469,6 @@
     --cw-nav-marker-hover-scale: var(--cw-ink-hover-scale);
   }
 
-  .dark,
   [data-cw-theme="dark"],
   [data-cw-header-tone="dark"] {
     --cw-nav-marker: var(--cw-platform-accent);
@@ -587,7 +522,7 @@
     --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
     --cw-platform-text: #18261d;
     --cw-platform-muted: var(--cw-sem-muted-ink);
-    --cw-platform-border: color-mix(in srgb, var(--cw-sem-progress) 38%, var(--cw-platform-bg) 62%);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-method-ink) 14%, var(--cw-platform-bg) 86%);
     --cw-platform-accent: var(--cw-sem-warmth);
     --cw-platform-accent-strong: var(--cw-sem-guide-strong);
     --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
@@ -595,6 +530,15 @@
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
+    --cw-status-success: var(--cw-sem-state-success);
+    --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
+    --cw-status-running: var(--cw-sem-state-running);
+    --cw-status-running-soft: color-mix(in srgb, var(--cw-sem-state-running) 12%, transparent);
+    --cw-status-pending: color-mix(in srgb, var(--cw-sem-state-pending) 58%, var(--cw-sem-method-ink) 42%);
+    --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-state-pending) 14%, transparent);
+    --cw-status-failed: color-mix(in srgb, var(--cw-sem-state-failed) 76%, var(--cw-sem-method-ink) 24%);
+    --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-state-failed) 12%, transparent);
+    --cw-danger: var(--cw-sem-state-failed);
     --cw-sem-calm-bg: #f6f2ea;
     --cw-sem-calm-surface: #fbfaf6;
     --cw-sem-calm-surface-muted: #e9e2d6;
@@ -634,7 +578,7 @@
     --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
     --cw-platform-text: #18261d;
     --cw-platform-muted: var(--cw-sem-muted-ink);
-    --cw-platform-border: color-mix(in srgb, var(--cw-sem-progress) 38%, var(--cw-platform-bg) 62%);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-method-ink) 14%, var(--cw-platform-bg) 86%);
     --cw-platform-accent: var(--cw-sem-warmth);
     --cw-platform-accent-strong: var(--cw-sem-guide-strong);
     --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
@@ -642,6 +586,15 @@
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
+    --cw-status-success: var(--cw-sem-state-success);
+    --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
+    --cw-status-running: var(--cw-sem-state-running);
+    --cw-status-running-soft: color-mix(in srgb, var(--cw-sem-state-running) 12%, transparent);
+    --cw-status-pending: color-mix(in srgb, var(--cw-sem-state-pending) 58%, var(--cw-sem-method-ink) 42%);
+    --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-state-pending) 14%, transparent);
+    --cw-status-failed: color-mix(in srgb, var(--cw-sem-state-failed) 76%, var(--cw-sem-method-ink) 24%);
+    --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-state-failed) 12%, transparent);
+    --cw-danger: var(--cw-sem-state-failed);
     --cw-sem-calm-surface-muted: #f5f1e7;
     --cw-sem-method-ink: #1f2e24;
     --cw-sem-guide-primary: #3f6350;
@@ -665,7 +618,7 @@
     --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
     --cw-platform-text: #18261d;
     --cw-platform-muted: var(--cw-sem-muted-ink);
-    --cw-platform-border: color-mix(in srgb, var(--cw-sem-progress) 38%, var(--cw-platform-bg) 62%);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-method-ink) 14%, var(--cw-platform-bg) 86%);
     --cw-platform-accent: var(--cw-sem-warmth);
     --cw-platform-accent-strong: var(--cw-sem-guide-strong);
     --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
@@ -673,6 +626,15 @@
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
+    --cw-status-success: var(--cw-sem-state-success);
+    --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
+    --cw-status-running: var(--cw-sem-state-running);
+    --cw-status-running-soft: color-mix(in srgb, var(--cw-sem-state-running) 12%, transparent);
+    --cw-status-pending: color-mix(in srgb, var(--cw-sem-state-pending) 58%, var(--cw-sem-method-ink) 42%);
+    --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-state-pending) 14%, transparent);
+    --cw-status-failed: color-mix(in srgb, var(--cw-sem-state-failed) 76%, var(--cw-sem-method-ink) 24%);
+    --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-state-failed) 12%, transparent);
+    --cw-danger: var(--cw-sem-state-failed);
     --cw-sem-calm-bg: #fdf6ec;
     --cw-sem-calm-surface-muted: #f7f2e8;
     --cw-sem-method-ink: #26372c;
@@ -697,7 +659,7 @@
     --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
     --cw-platform-text: #18261d;
     --cw-platform-muted: var(--cw-sem-muted-ink);
-    --cw-platform-border: color-mix(in srgb, var(--cw-sem-progress) 38%, var(--cw-platform-bg) 62%);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-method-ink) 14%, var(--cw-platform-bg) 86%);
     --cw-platform-accent: var(--cw-sem-warmth);
     --cw-platform-accent-strong: var(--cw-sem-guide-strong);
     --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
@@ -705,6 +667,15 @@
     --cw-platform-accent-contrast: #fff8ef;
     --cw-platform-ink-strong: var(--cw-sem-guide-strong);
     --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
+    --cw-status-success: var(--cw-sem-state-success);
+    --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
+    --cw-status-running: var(--cw-sem-state-running);
+    --cw-status-running-soft: color-mix(in srgb, var(--cw-sem-state-running) 12%, transparent);
+    --cw-status-pending: color-mix(in srgb, var(--cw-sem-state-pending) 58%, var(--cw-sem-method-ink) 42%);
+    --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-state-pending) 14%, transparent);
+    --cw-status-failed: color-mix(in srgb, var(--cw-sem-state-failed) 76%, var(--cw-sem-method-ink) 24%);
+    --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-state-failed) 12%, transparent);
+    --cw-danger: var(--cw-sem-state-failed);
     --cw-sem-calm-surface-muted: #f7f2e7;
     --cw-sem-method-ink: #283b2b;
     --cw-sem-guide-primary: #537c4c;
@@ -773,11 +744,10 @@ body {
 }
 
 /* The body is the sheet BEHIND the shell, and on a public page that is the
-   platform's ground, not the app chrome's. `--background` is an admin-tier
-   token: it is repointed by `.dark` and by nothing else, so with the public
-   dark theme on, the shell went graphite and the strip the reader hits when
-   they overscroll past the end stayed the light app grey. One rule, scoped to
-   the public dark theme, so admin and the light side are untouched. */
+   platform's ground, not the app chrome's. `--background` is an alias of
+   `--cw-platform-bg` now, so it follows the theme on its own; this rule stays
+   because the body also has to carry the ink, and because the strip a reader
+   hits when they overscroll past the end is painted from it. */
 [data-cw-theme="dark"] body {
   color: var(--cw-platform-text);
   background: var(--cw-platform-bg);
@@ -819,9 +789,35 @@ body {
   --cw-rule-fade-y: linear-gradient(180deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
 }
 
+/* WHICH INK, DECLARED AS A SCOPE (2026-08-28).
+   `--cw-rule-ink` defaults to the page's border, which is right for a rule
+   drawn on the page and wrong everywhere else: on a photograph it disappears,
+   and on the topbar's sheet — whose tone flips independently of the theme — it
+   is simply the wrong colour. Consumers used to re-point the ink in their own
+   module, which the platform canon forbids for good reason (a token defined in
+   fifteen files is fifteen tokens). So the variants live here, named, and a
+   component states which surface its rule is drawn on:
+
+     data-cw-rule="inverse"   over a photograph — cream ink that does not flip
+     data-cw-rule="chrome"    on the topbar sheet — follows the bar's own tone
+     data-cw-rule="inner"     inside a card — the material's inner hairline
+
+   The SHAPE is never restated. One gradient, three inks. */
+[data-cw-rule="inverse"] {
+  --cw-rule-ink: color-mix(in srgb, var(--cw-mat-inverse-text) 22%, transparent);
+}
+
+[data-cw-rule="chrome"] {
+  --cw-rule-ink: color-mix(in srgb, var(--platform-header-fg, var(--cw-platform-text)) 13%, transparent);
+}
+
+[data-cw-rule="inner"] {
+  --cw-rule-ink: var(--cw-mat-stroke-inner);
+}
+
 /* ── Material (M0 matte / M1 glass) ───────────────────────────────────────────
    The tactile surface layer. Values come from cw.tokens.json → layers.material
-   (light in :root, dark in .dark); this recipe is the hand-maintained shape of
+   (light in :root, dark in the theme scope); this recipe is the hand-maintained shape of
    the material, not its palette. Nothing renders it until a component opts in
    with data-cw-material, so adding it changes no existing surface.
 
@@ -849,18 +845,26 @@ body {
   background-color: var(--cw-mat-surface);
 }
 
-[data-cw-material="glass"],
-[data-cw-material="glass-media"] {
-  backdrop-filter: var(--cw-mat-filter);
-}
-
 [data-cw-material="glass"] {
+  backdrop-filter: var(--cw-mat-filter);
   background-color: var(--cw-mat-tint);
 }
 
+/* GLASS OVER A PHOTOGRAPH IS NOT GLASS OVER PAPER, and the difference is not
+   only the tint floor (2026-08-28). A panel on the cabinet's room read as an
+   opaque slab beside the topbar's own glass, and the reason it did is worth
+   stating: the tint has to stay high here — muted text over a photograph is
+   asserted against a WHITE worst case in `guard-contrast.mjs`, and the plate's
+   own baked paper edge makes that worst case real rather than theoretical, so
+   82% is the floor and there is no honest way past it. What CAN carry the
+   material is the filter under it. A deeper blur and more saturation let the
+   room's colour and structure move through the panel at the same opacity, which
+   is what the eye reads as glass; a heavier drop shadow does the opposite,
+   darkening the picture around the panel until it reads as a cut-out, so this
+   surface takes the soft shadow the rest of the material takes. */
 [data-cw-material="glass-media"] {
+  backdrop-filter: var(--cw-mat-filter-media);
   background-color: var(--cw-mat-tint-media);
-  box-shadow: var(--cw-mat-shadow-raised);
 }
 
 [data-cw-material="glass"]:where(a, button):hover,
@@ -1138,25 +1142,48 @@ body {
     border-color: var(--cw-interactive-active-border);
   }
 
-  /* A select whose mark belongs to the field.
-     The platform arrow is painted against the border edge and ignores padding
-     entirely, so on a wide select it drifted far away from the value it points
-     at — which is what made these controls read as broken. `appearance: none`
-     is what makes the padding real, and the caret is drawn here instead.
-     Two gradients rather than an SVG data URI, because a data URI cannot read a
-     CSS variable: a hard-coded arrow colour would stay dark in dark mode.
-     Pair with `pl-3` (not `px-3`) — the right padding is this rule's, and it is
-     reserving room for the caret. */
+  /* A SELECT'S MARK IS A CHEVRON DRAWN IN INK, NOT A FILLED TRIANGLE
+     (2026-08-28).
+
+     Two things were wrong and only one of them was the shape. The platform's
+     native arrow is painted against the border edge and ignores padding, so on
+     a wide select it drifted far from the value it points at — `appearance:
+     none` is what makes the padding real, and that part was already here. What
+     was still borrowed is what got drawn instead: a solid ▼, which is the one
+     mark in the product that is a filled shape. Everything else this system
+     draws is a monoline stroke, `chevron-down` included.
+
+     So the mark is a chevron now: two stripes in adjacent squares, `\` then
+     `/`, meeting at the vertex below them. The gradient ANGLE points along the
+     gradient line and the band runs perpendicular to it, which is why the
+     left half is `45deg` and not `135deg` — get that backwards and the mark
+     points up, which is what a menu that is already open would say. Gradients rather than an SVG data URI for the
+     reason the old comment already gave and which still binds — a data URI
+     cannot read a CSS variable, so a baked-in arrow colour would stay dark at
+     night. This way the mark is `--cw-muted`, which is ink in both gammas.
+
+     Pair with `pl-3` (not `px-3`): the right padding is this rule's, and it is
+     reserving room for the mark. */
   .cw-select {
     appearance: none;
     -webkit-appearance: none;
     padding-right: 2rem;
     background-image:
-      linear-gradient(45deg, transparent 50%, var(--cw-muted) 50%),
-      linear-gradient(135deg, var(--cw-muted) 50%, transparent 50%);
-    background-position: calc(100% - 1.05rem) center, calc(100% - 0.75rem) center;
+      linear-gradient(45deg, transparent 42%, var(--cw-muted) 42% 58%, transparent 58%),
+      linear-gradient(135deg, transparent 42%, var(--cw-muted) 42% 58%, transparent 58%);
+    background-position: calc(100% - 1.06rem) center, calc(100% - 0.76rem) center;
     background-size: 0.3rem 0.3rem;
     background-repeat: no-repeat;
+    transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+  }
+
+  /* The field answers the way every other row in the system answers: one ink
+     wash, no second colour. `background-color` needs the specificity bump
+     because the admin scope sets it with `!important` on every field. */
+  .cw-admin-theme .cw-select:hover,
+  .cw-admin-theme .cw-input:hover {
+    background-color: var(--cw-mat-hover-bg) !important;
+    border-color: var(--cw-mat-hover-stroke) !important;
   }
 
   .cw-btn {
@@ -1427,7 +1454,7 @@ body {
 
   .cw-icon-btn {
     padding: 0.5rem;
-    border-radius: 0.75rem;
+    border-radius: var(--cw-radius-sm);
     border: 1px solid transparent;
     color: var(--cw-muted);
     transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, opacity 0.2s ease;
@@ -1449,13 +1476,13 @@ body {
 
   .cw-list-item {
     border: 1px solid var(--cw-border);
-    border-radius: 0.75rem;
+    border-radius: var(--cw-radius-sm);
     background-color: var(--cw-surface);
     transition: background-color 0.2s ease;
   }
 
   .cw-list-item:hover {
-    background-color: var(--cw-accent-soft);
+    background-color: var(--cw-mat-hover-bg);
   }
 
   .cw-row-hover {
@@ -1463,7 +1490,7 @@ body {
   }
 
   .cw-row-hover:hover {
-    background-color: var(--cw-accent-soft);
+    background-color: var(--cw-mat-hover-bg);
   }
 
   .cw-link-hover {
@@ -1484,7 +1511,7 @@ body {
     overflow-y: hidden;
     min-height: var(--ds-touch-target-min);
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--cw-text) 20%, transparent) transparent;
+    scrollbar-color: var(--cw-mat-scroll-thumb) var(--cw-mat-scroll-track);
   }
 
   .cw-tabbar::-webkit-scrollbar {
@@ -1496,8 +1523,8 @@ body {
   }
 
   .cw-tabbar::-webkit-scrollbar-thumb {
-    background-color: color-mix(in srgb, var(--cw-text) 24%, transparent);
-    border-radius: 999px;
+    background-color: var(--cw-mat-scroll-thumb);
+    border-radius: var(--cw-radius-pill);
   }
 
   .cw-tab {
@@ -1508,8 +1535,8 @@ body {
     margin-bottom: -1px;
     border: 1px solid transparent;
     border-bottom: 1px solid transparent;
-    border-top-left-radius: 0.5rem;
-    border-top-right-radius: 0.5rem;
+    border-top-left-radius: var(--cw-radius-sm);
+    border-top-right-radius: var(--cw-radius-sm);
     font-size: 0.875rem;
     line-height: 1.25rem;
     font-weight: 500;
@@ -1572,14 +1599,14 @@ body {
 
   .cw-page-btn {
     padding: 0.5rem;
-    border-radius: 0.75rem;
+    border-radius: var(--cw-radius-sm);
     color: var(--cw-muted);
     transition: color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
   }
 
   .cw-page-btn:hover {
     color: var(--cw-text);
-    background-color: var(--cw-accent-soft);
+    background-color: var(--cw-mat-hover-bg);
   }
 
   .cw-page-btn:disabled {
@@ -1592,14 +1619,14 @@ body {
   }
 
   .cw-skeleton-row {
-    border-radius: 0.75rem;
+    border-radius: var(--cw-radius-sm);
     background-color: var(--cw-surface-2);
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   .cw-empty-state {
     border: 1px dashed var(--cw-border);
-    border-radius: 1rem;
+    border-radius: var(--cw-radius-md);
     color: var(--cw-muted);
   }
 
@@ -1617,9 +1644,21 @@ body {
     background-color: color-mix(in srgb, var(--cw-muted) 68%, transparent);
   }
 
+  /* THE ONE SCROLLBAR RECIPE (2026-08-28). It came out of the admin, where a
+     dense table has to be scrollable and cannot afford a native bar sitting on
+     the panel, and it is DS-owned now because the same question comes up
+     wherever a surface clamps: the account popover suppresses its gutter
+     entirely (`.profileMenu`), the tab strip runs a 4px one, this is the
+     full-size one for a scroll viewport.
+
+     Two rules keep it honest. The thumb is INK, not a colour of its own — a
+     translucent wash of the page's own text, so it darkens the surface it lies
+     on instead of introducing a grey nobody chose; and the track is nothing.
+     The night half needs no override any more: `--cw-mat-scroll-*` are written
+     against `--cw-platform-text`, which flips with the theme. */
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--cw-text) 28%, transparent) transparent;
+    scrollbar-color: var(--cw-mat-scroll-thumb) var(--cw-mat-scroll-track);
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -1628,27 +1667,21 @@ body {
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--cw-mat-scroll-track);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: color-mix(in srgb, var(--cw-text) 28%, transparent);
+    background-color: var(--cw-mat-scroll-thumb);
+    /* The inset is what makes a 10px bar read as a 6px hairline: the thumb is
+       clipped to its padding box, so the border is transparent margin rather
+       than a second colour. */
     border: 2px solid transparent;
     background-clip: padding-box;
-    border-radius: 999px;
+    border-radius: var(--cw-radius-pill);
   }
 
-  .dark .custom-scrollbar {
-    scrollbar-color: color-mix(in srgb, #ffffff 58%, transparent) color-mix(in srgb, var(--cw-surface-2) 70%, transparent);
-  }
-
-  .dark .custom-scrollbar::-webkit-scrollbar-track {
-    background: color-mix(in srgb, var(--cw-surface-2) 70%, transparent);
-    border-radius: 999px;
-  }
-
-  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: color-mix(in srgb, #ffffff 64%, var(--cw-border) 36%);
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: var(--cw-mat-scroll-thumb-hover);
   }
 }
 

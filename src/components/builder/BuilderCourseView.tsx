@@ -62,7 +62,9 @@ import {
   inspectDurableCourseDraft,
   type DurableCourseDraft,
 } from "./courseDraftStore";
-import { BuilderDraftConflict } from "./BuilderDraftConflict";
+import { BuilderDraftRecovery } from "./BuilderDraftRecovery";
+import { BuilderExitPrompt } from "./BuilderExitPrompt";
+import { useBuilderExit } from "./useBuilderExit";
 import { BuilderVersionHistory } from "./BuilderVersionHistory";
 
 type State =
@@ -124,8 +126,12 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const [railCollapsed, setRailCollapsed] = useState(false);
   const [slugEditing, setSlugEditing] = useState(false);
   const [slugDraft, setSlugDraft] = useState("");
-  const [pendingHref, setPendingHref] = useState<string | null>(null);
-  const [draftConflict, setDraftConflict] = useState<DurableCourseDraft | null>(null);
+  /* The draft found on this device, and what it is: `recover` is a session
+     that ended badly, `conflict` is one that ended badly while another tab
+     moved the server on. Neither is applied until the author answers. */
+  const [draftDecision, setDraftDecision] = useState<
+    { kind: "recover" | "conflict"; draft: DurableCourseDraft } | null
+  >(null);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const draftGeneration = useRef<number | null>(null);
   const router = useRouter();
@@ -168,16 +174,9 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     if (result.ok) {
       draftGeneration.current = result.data.draftGeneration;
       const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration);
-      setDraftConflict(durable.kind === "conflict" ? durable.draft : null);
-      if (durable.kind === "recover") {
-        history.recover(result.data.course, durable.draft.course);
-        setNote("Відновлено локальні зміни. Вони збережуться автоматично.");
-      } else {
-        history.reset(result.data.course);
-        if (durable.kind === "conflict") {
-          setNote("Локальна копія збережена окремо: серверна версія змінилася в іншій вкладці.");
-        }
-      }
+      // The server version is what the editor holds until the author answers.
+      history.reset(result.data.course);
+      setDraftDecision(durable.kind === "none" ? null : { kind: durable.kind, draft: durable.draft });
     }
     setState(
       result.ok
@@ -197,16 +196,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         draftGeneration.current = result.data.draftGeneration;
         const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration);
         if (cancelled) return;
-        setDraftConflict(durable.kind === "conflict" ? durable.draft : null);
-        if (durable.kind === "recover") {
-          history.recover(result.data.course, durable.draft.course);
-          setNote("Відновлено локальні зміни. Вони збережуться автоматично.");
-        } else {
-          history.reset(result.data.course);
-          if (durable.kind === "conflict") {
-            setNote("Локальна копія збережена окремо: серверна версія змінилася в іншій вкладці.");
-          }
-        }
+        history.reset(result.data.course);
+        setDraftDecision(durable.kind === "none" ? null : { kind: durable.kind, draft: durable.draft });
       }
       setState(
         result.ok
@@ -441,10 +432,26 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     };
   }, [slug]);
 
+  /* The exit question decides whether autosave may run, and answering it runs
+     a save — so one of the two has to be reached through a ref. It is the save,
+     because it is the later of the two to exist and the only one a press can
+     ask for: nothing can be pressed before the first commit assigns it. */
+  const saveRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
+  const exit = useBuilderExit({
+    slug,
+    courseId: course?.id ?? null,
+    dirty,
+    save: useCallback(() => saveRef.current(), []),
+  });
+  const { pendingHref, navigate, route } = exit;
+
   const autosave = useCourseAutosave({
     course,
     dirty,
-    paused: busy,
+    // An unanswered exit question freezes the timer; an unanswered recovery
+    // question also freezes the local mirror. See `useCourseAutosave`.
+    paused: busy || exit.prompt !== null,
+    suspended: draftDecision !== null,
     persist: persistCourse,
     markSaved: history.markSaved,
     getDraftGeneration: () => draftGeneration.current,
@@ -452,15 +459,9 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const working = busy || autosave.saving;
   const save = autosave.saveNow;
 
-  const navigate = useCallback((href: string) => {
-    if (!dirty) return router.push(href);
-    if (pendingHref) return;
-    setPendingHref(href);
-    void save().then((saved) => {
-      if (saved) router.push(href);
-      else setPendingHref(null);
-    });
-  }, [dirty, pendingHref, router, save]);
+  useEffect(() => {
+    saveRef.current = save;
+  }, [save]);
 
   const openLesson = useCallback((href: string): "allow" | "held" => {
     if (!dirty) return "allow";
@@ -549,17 +550,17 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     window.dispatchEvent(new Event(STRUCTURE_VIEW_EVENT));
   };
 
-  const recoverConflictingDraft = () => {
-    if (state.status !== "ready" || !draftConflict) return;
-    history.recover(state.data.course, draftConflict.course);
-    setDraftConflict(null);
+  const recoverDraft = () => {
+    if (state.status !== "ready" || !draftDecision) return;
+    history.recover(state.data.course, draftDecision.draft.course);
+    setDraftDecision(null);
     setNote("Локальну копію відновлено. Вона збережеться як поточна версія.");
   };
 
-  const discardConflictingDraft = () => {
-    if (!draftConflict) return;
-    void clearDurableCourseDraft(draftConflict.courseId).catch(() => undefined);
-    setDraftConflict(null);
+  const discardDraft = () => {
+    if (!draftDecision) return;
+    void clearDurableCourseDraft(draftDecision.draft.courseId).catch(() => undefined);
+    setDraftDecision(null);
     setNote("Залишено актуальну серверну версію.");
   };
 
@@ -600,7 +601,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
 
   return (
     <BuilderShell
-      trail={[{ label: "Курси", onNavigate: () => navigate("/build") }, { label: trailTitle(course.title, "Курс без назви") }]}
+      trail={[{ label: "Курси", onNavigate: () => route("/build") }, { label: trailTitle(course.title, "Курс без назви") }]}
       tools={
         <>
           <button
@@ -653,7 +654,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
          out. `collapsed` empties the panel; `compact` narrows it. */
       asideCompact={railCollapsed}
       onAsideToggle={() => setRailCollapsed((current) => !current)}
-      onNavigate={navigate}
+      onNavigate={route}
     >
       <BuilderVersionHistory
         slug={slug}
@@ -661,9 +662,21 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         checkpointDisabled={working || dirty}
         onClose={() => setVersionHistoryOpen(false)}
       />
-      {draftConflict ? (
-        <BuilderDraftConflict onRecover={recoverConflictingDraft} onDiscard={discardConflictingDraft} />
-      ) : null}
+      <BuilderDraftRecovery
+        open={draftDecision !== null}
+        variant={draftDecision?.kind ?? "recover"}
+        savedAt={draftDecision?.draft.updatedAt ?? 0}
+        onRecover={recoverDraft}
+        onDiscard={discardDraft}
+      />
+      <BuilderExitPrompt
+        open={exit.prompt !== null}
+        saving={Boolean(exit.prompt?.saving)}
+        failure={exit.prompt?.refused ? autosave.failureMessage : null}
+        onSave={exit.saveAndLeave}
+        onLeave={exit.leaveWithoutSaving}
+        onStay={exit.stay}
+      />
       <nav className={styles.courseMobileNav} aria-label="Розділи курсу">
         <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={workspaceMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("course"); }}><BuilderInkLabel>Огляд</BuilderInkLabel></a>
         <a className={styles.courseMobileNavItem} href="#course-structure" aria-current={workspaceMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("content"); }}><BuilderInkLabel>Зміст</BuilderInkLabel></a>

@@ -63,7 +63,9 @@ import {
   inspectDurableCourseDraft,
   type DurableCourseDraft,
 } from "./courseDraftStore";
-import { BuilderDraftConflict } from "./BuilderDraftConflict";
+import { BuilderDraftRecovery } from "./BuilderDraftRecovery";
+import { BuilderExitPrompt } from "./BuilderExitPrompt";
+import { useBuilderExit } from "./useBuilderExit";
 
 type State =
   | { status: "loading" }
@@ -99,7 +101,6 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const [note, setNote] = useState<string | null>(null);
   const [contentsOpen, setContentsOpen] = useState(false);
   const [structureCollapsed, setStructureCollapsed] = useState(false);
-  const [pendingHref, setPendingHref] = useState<string | null>(null);
   /**
    * WHICH LESSON IS ON SCREEN — state, not the route.
    *
@@ -128,7 +129,11 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
    * list that had not been rewritten yet.
    */
   const [leaveFor, setLeaveFor] = useState<string | null>(null);
-  const [draftConflict, setDraftConflict] = useState<DurableCourseDraft | null>(null);
+  /* Same question as on the course page, asked by the same dialogue: a draft
+     this device kept from a session that ended without a save. */
+  const [draftDecision, setDraftDecision] = useState<
+    { kind: "recover" | "conflict"; draft: DurableCourseDraft } | null
+  >(null);
   const importPicker = useRef<HTMLInputElement>(null);
   const docRef = useRef<HTMLDivElement>(null);
   const draftGeneration = useRef<number | null>(null);
@@ -153,16 +158,9 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         serverCourse.current = result.data.course;
         const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration);
         if (cancelled) return;
-        setDraftConflict(durable.kind === "conflict" ? durable.draft : null);
-        if (durable.kind === "recover") {
-          history.recover(result.data.course, durable.draft.course);
-          setNote("Відновлено локальні зміни. Вони збережуться автоматично.");
-        } else {
-          history.reset(result.data.course);
-          if (durable.kind === "conflict") {
-            setNote("Локальна копія збережена окремо: серверна версія змінилася в іншій вкладці.");
-          }
-        }
+        // The server version stands until the author answers the dialogue.
+        history.reset(result.data.course);
+        setDraftDecision(durable.kind === "none" ? null : { kind: durable.kind, draft: durable.draft });
       }
       setState(
         result.ok
@@ -303,16 +301,33 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     };
   }, [slug]);
 
+  /* One of the two hooks has to reach the other through a ref — see the same
+     pair on the course page. The exit question gates autosave; answering it
+     asks for a save, and nothing can be pressed before the first commit. */
+  const saveRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
+  const exit = useBuilderExit({
+    slug,
+    courseId: course?.id ?? null,
+    dirty,
+    save: useCallback(() => saveRef.current(), []),
+  });
+  const { pendingHref } = exit;
+
   const autosave = useCourseAutosave({
     course,
     dirty,
-    paused: busy,
+    paused: busy || exit.prompt !== null,
+    suspended: draftDecision !== null,
     persist: persistCourse,
     markSaved: history.markSaved,
     getDraftGeneration: () => draftGeneration.current,
   });
   const working = busy || autosave.saving;
   const save = autosave.saveNow;
+
+  useEffect(() => {
+    saveRef.current = save;
+  }, [save]);
 
   const importIntoLesson = useCallback(
     async (file: File) => {
@@ -360,18 +375,15 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     [history]
   );
 
+  /* Leaving the course asks; anything still inside it saves and goes. The lead
+     is `useBuilderExit`; this wrapper only closes the outline drawer, which
+     must happen either way — including when the author decides to stay. */
   const navigate = useCallback(
     (href: string) => {
       setContentsOpen(false);
-      if (!dirty) return router.push(href);
-      if (pendingHref) return;
-      setPendingHref(href);
-      void save().then((saved) => {
-        if (saved) router.push(href);
-        else setPendingHref(null);
-      });
+      exit.route(href);
     },
-    [dirty, pendingHref, router, save]
+    [exit]
   );
 
   /** `/build/<this course>/<lesson>` — and only that — is an in-course move. */
@@ -444,17 +456,17 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     navigate(zenPreviewHref(`/learn/${encodeURIComponent(slug)}/${encodeURIComponent(activeSlug)}`, returnTo));
   };
 
-  const recoverConflictingDraft = () => {
-    if (!draftConflict || !serverCourse.current) return;
-    history.recover(serverCourse.current, draftConflict.course);
-    setDraftConflict(null);
+  const recoverDraft = () => {
+    if (!draftDecision || !serverCourse.current) return;
+    history.recover(serverCourse.current, draftDecision.draft.course);
+    setDraftDecision(null);
     setNote("Локальну копію відновлено. Вона збережеться як поточна версія.");
   };
 
-  const discardConflictingDraft = () => {
-    if (!draftConflict) return;
-    void clearDurableCourseDraft(draftConflict.courseId).catch(() => undefined);
-    setDraftConflict(null);
+  const discardDraft = () => {
+    if (!draftDecision) return;
+    void clearDurableCourseDraft(draftDecision.draft.courseId).catch(() => undefined);
+    setDraftDecision(null);
     setNote("Залишено актуальну серверну версію.");
   };
 
@@ -666,9 +678,21 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         </>
       }
     >
-      {draftConflict ? (
-        <BuilderDraftConflict onRecover={recoverConflictingDraft} onDiscard={discardConflictingDraft} />
-      ) : null}
+      <BuilderDraftRecovery
+        open={draftDecision !== null}
+        variant={draftDecision?.kind ?? "recover"}
+        savedAt={draftDecision?.draft.updatedAt ?? 0}
+        onRecover={recoverDraft}
+        onDiscard={discardDraft}
+      />
+      <BuilderExitPrompt
+        open={exit.prompt !== null}
+        saving={Boolean(exit.prompt?.saving)}
+        failure={exit.prompt?.refused ? autosave.failureMessage : null}
+        onSave={exit.saveAndLeave}
+        onLeave={exit.leaveWithoutSaving}
+        onStay={exit.stay}
+      />
       {/* THE DOCUMENT HEAD, and it is the document. The title used to be an
           `<h1>` echoing a «Назва» field in a panel below it: the same words
           twice, with the copy being the one you could change. Now the heading

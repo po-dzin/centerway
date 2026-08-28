@@ -8,10 +8,11 @@
    where the shelf of courses is drawn. That is the product's sentence — your
    room becomes the library — said once, by the surface itself.
 
-   THE DISSOLVE IS A GRADIENT OF THE PAPER, not an opacity ramp on the image.
-   Fading the photograph out would grey it against the panel; painting the paper
-   IN over it keeps the image at full grade until the paper takes over, which is
-   what makes the transition read as "turning into" rather than "fading".
+   THE DISSOLVE IS A MASK ON THE PHOTOGRAPH — the block's own surface is what
+   comes through it, so the picture turns into whichever ground the theme is
+   currently painting. It has been a paper gradient drawn over the image and a
+   paper edge baked into the file; both named ONE surface, and the platform has
+   had two since the night palette shipped. The long version is at `.plate`.
 
    Text on the photograph takes `--cw-mat-inverse-text` rather than
    `--cw-platform-accent-contrast`: that one INVERTS with the theme (on the
@@ -31,19 +32,35 @@
    margins, which is a picture of a room rather than being in one. No radius,
    for the same reason: a screen has no corners.
 
-   THE DISSOLVE IS IN THE FILE. `room-v1.webp` ends in `--cw-mat-surface` — see
-   `grade.mjs --fade-bottom` — so the shelf below simply continues the colour
-   the photograph finishes on. The CSS gradient this replaced was a white veil
-   painted over a dark picture: two layers you could see, moving with the
-   layout rather than with the image. */
+   THE DISSOLVE IS A MASK, NOT A COLOUR IN THE FILE — see `.plate` below. It
+   was baked with `grade.mjs --fade-bottom` while the platform had one theme,
+   and a baked paper edge is a lie on the night palette. */
+/* NO STROKE AND NO SHADOW, though the block declares the matte material.
+   `[data-cw-material]` draws a hairline and a soft shadow on every surface that
+   names it, which is right for a card and wrong for a screen: at 375px it
+   printed a 1px rule down both margins and across the top of the photograph —
+   the picture visibly framed, which is the one thing this block was rebuilt to
+   stop being. The material is still what supplies the ground and the grain; it
+   is only the card's two edges that are dropped. */
 .hero {
   position: relative;
   display: grid;
   grid-template-rows: auto auto;
   overflow: hidden;
   margin-bottom: var(--cw-space-lg);
+  border: 0;
+  box-shadow: none;
   background: var(--cw-mat-surface);
   isolation: isolate;
+}
+
+/* The material's grain layer also carries the card's INNER hairline
+   (`inset 0 0 0 1px --cw-mat-stroke-inner` in globals.css), which is the second
+   half of the frame the rule above drops. Doubled selector because the two
+   declarations are the same specificity and the stylesheet order between a
+   global sheet and a module is not something this file should be betting on. */
+.hero.hero::before {
+  box-shadow: none;
 }
 
 /* The plate's own box: the first screen. `min-height`, not `height` — a long
@@ -78,12 +95,21 @@
   align-content: center;
   row-gap: clamp(var(--cw-space-lg), 5vh, var(--cw-space-2xl));
   min-height: 100svh;
-  /* `max(...)`, because the clearance is not one number: from 901px up the bar
-     floats over the page and reserves ~6rem, and below that the shell drops it
-     to 0.75rem for a bar that sits in normal flow — which on this page, where
-     the plate runs under everything, would put a person's name behind it. The
-     floor is the pad the room used to carry itself. */
-  padding-block: max(var(--platform-topbar-clearance, 5.8rem), 4.75rem) var(--cw-space-2xl);
+  /* THE PAD IS THE BAR PLUS ONE GAP, MEASURED (2026-08-28).
+
+     `--platform-topbar-clearance` is the wrong number for this page: it answers
+     "how much room does a page that starts with TEXT owe the bar", and on a
+     phone the shell drops it to 0.75rem because the bar is normally in flow.
+     Here the plate runs under everything, so what the room owes is the space
+     the bar actually occupies — `--platform-topbar-block`, which the shell now
+     states — plus a gap. The old floor of 4.75rem was three pixels short of the
+     bar's lower edge, so the account name ran under the pill.
+
+     The gap is `--cw-space-lg`, and it is not a taste: it is the same distance
+     the email keeps from the rule beneath it, one screen further down. Two
+     equal gaps around the identity read as one block with air; two different
+     ones read as a block that was pushed. */
+  padding-block: calc(var(--platform-topbar-block, 4.85rem) + var(--cw-space-lg)) var(--cw-space-2xl);
 }
 
 .plateWrap > .room {
@@ -106,6 +132,21 @@
 
 /* ── The two grounds ──────────────────────────────── */
 
+/* THE DISSOLVE IS A MASK ON THE IMAGE, NOT A COLOUR BAKED INTO IT (2026-08-28).
+
+   The bake was right while the platform had one theme and wrong the day it had
+   two. `grade.mjs --fade-bottom` ends the frame in the light surface's own
+   cream, so on the night palette the bottom half of the cabinet came out as a
+   cream slab sitting on a graphite page, with a hard edge where the picture
+   stopped. A file cannot know which theme it will be opened in.
+
+   Masking asks nothing of the file: the photograph fades to TRANSPARENT and
+   what comes through is `.hero`'s own `--cw-mat-surface`, which is paper by day
+   and graphite by night. Same seamless dissolve, both themes, one plate.
+
+   This is not the "white veil" the bake replaced. A veil is a colour drawn ON
+   TOP of the picture — visible as its own layer, following the layout. A mask
+   removes the picture instead, so there is nothing over it to see. */
 .plate {
   position: absolute;
   inset: 0;
@@ -113,9 +154,21 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  /* Held on the BOTTOM edge, always: that is where the baked dissolve is, and a
-     crop that trims it would put the shelf's paper against raw photograph. */
+  /* Held on the BOTTOM edge, always: the frame is composed from the floor up,
+     and a crop that trims it would put the shelf on a slice of wall. */
   object-position: center bottom;
+  /* Six stops, the same easing curve the bake used: the endpoints do the work
+     and the middle of the band does very little, so the eye finds a gradient
+     rather than a lit line travelling across the picture. */
+  mask-image: linear-gradient(
+    to bottom,
+    rgb(0 0 0) 0%,
+    rgb(0 0 0 / 0.93) 42%,
+    rgb(0 0 0 / 0.72) 58%,
+    rgb(0 0 0 / 0.4) 72%,
+    rgb(0 0 0 / 0.11) 86%,
+    transparent 96%
+  );
 }
 
 /* THE PLATE CARRIES ITS OWN DARK, so this layer is nearly nothing.
@@ -254,7 +307,15 @@
   gap: var(--cw-space-sm);
   margin: 0;
   padding-top: var(--cw-space-md);
-  border-top: 1px solid color-mix(in srgb, var(--cw-mat-inverse-text) 22%, transparent);
+  /* THE DS RULE, NOT A LOCAL HAIRLINE (2026-08-28). Every separator in the
+     system is the same object: a drafted line that fades out at both ends
+     (`--cw-rule-fade-x` in globals.css). This one ran edge to edge, which draws
+     a cell edge rather than a rule — and next to the drawer's dividers, which
+     do fade, it read as a second kind of line. The ink is re-pointed rather
+     than the shape restated: this rule sits on a photograph, so it takes the
+     inverse text, and `--cw-rule-fade-x` reads whatever `--cw-rule-ink` says. */
+  border-top: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
 }
 
 .stat {
@@ -302,6 +363,14 @@
      subject stays uncovered. The way through used to sit bottom-right, over the
      brightest part of the picture, where cream on cream needed a shadow to
      survive; a control that has to be propped up is in the wrong place. */
+  /* `--platform-topbar-block` is a phone variable — from here up the bar is the
+     desktop one and `--platform-topbar-clearance` is already the room it owes.
+     Restated rather than inherited so the phone's measured pad above cannot
+     silently become the desktop's. */
+  .plateWrap {
+    padding-block-start: max(var(--platform-topbar-clearance, 5.8rem), 4.75rem);
+  }
+
   .identityMain,
   .stats {
     width: min(100%, 34rem);

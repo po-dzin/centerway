@@ -11,7 +11,6 @@
 import Link from "next/link";
 
 import { ProgressRail } from "@/components/platform/ProgressRail";
-import { ProgressRing } from "@/components/platform/ProgressRing";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import type { LearnerShelfCourseDto } from "@/components/lms/lmsClient";
 import { CourseCover } from "./CourseCover";
@@ -248,49 +247,6 @@ export function CompactCourseCard({
         </Link>
       </div>
     </article>
-  );
-}
-
-/**
- * Every other course, as one line of instrument rather than a card.
- *
- * The dashboard answers ONE question — what do I open now — and the answer is
- * the card above. A row of four full cards made four equal answers and four
- * buttons; what the rest of the shelf owes the reader is smaller: what it is,
- * where they stopped, how far in they are. The whole tile is the link, so it
- * needs no control of its own, and the library is one click away for the
- * record.
- */
-export function CourseGlance({ course, copy }: { course: LearnerShelfCourseDto; copy: CabinetCopy }) {
-  const href = useSurfaceHref();
-  const action = courseAction(course, copy);
-  const done = course.standing?.completedLessons ?? 0;
-  const total = course.standing?.totalLessons ?? 0;
-  const running = course.access === "enrolled" && total > 0 && !course.standing?.isFinished;
-
-  return (
-    <Link className={styles.glance} href={href(action.href)} {...glassMedia}>
-      {/* THE RING, NOT THE RAIL. A rail is drawn along a card and takes its
-          width; a column of them beside a card made wide bars saying what a
-          48px glyph says — the ring is the same marks (one dash per lesson, the
-          finished ones in accent) at a fraction of the room. See
-          `ProgressRing`. */}
-      {running ? (
-        <ProgressRing className={styles.glanceRing} value={done} total={total} label={course.title} size={48} />
-      ) : (
-        <span className={styles.glanceRing} aria-hidden="true" />
-      )}
-      <span className={styles.glanceText}>
-        <span className={styles.glanceTitle}>{course.title}</span>
-        <span className={styles.glanceNote}>
-          {running
-            ? copy.stepsOf(done, total)
-            : course.standing?.isFinished
-              ? copy.courseFinished
-              : copy.courseNotStarted}
-        </span>
-      </span>
-    </Link>
   );
 }
 

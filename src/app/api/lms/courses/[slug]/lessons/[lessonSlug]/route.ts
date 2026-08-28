@@ -10,8 +10,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { loadLearnerCourse, recordProgressEvent } from "@/lib/lms/server";
-import { loadBuilderCourse } from "@/lib/lms/builder";
-import { canEditCourse, resolveBuilderIdentity } from "@/lib/lms/builderAccess";
+import { isDenied, resolveCourseAccess } from "@/lib/lms/courseAccess";
 import {
   buildOutline,
   buildInternalReferenceTargets,
@@ -49,11 +48,12 @@ export async function GET(
 
   let context;
   if (draftPreview) {
-    const identity = await resolveBuilderIdentity(user);
-    const loaded = await loadBuilderCourse(slug).catch(() => null);
-    if (!loaded || !canEditCourse(identity, loaded.authorId)) {
-      return NextResponse.json({ error: "course_not_found" }, { status: 404 });
-    }
+    // The preview is the AUTHORING permission asked from the learner's route,
+    // so it asks the authoring module rather than re-deriving the rule here.
+    const access = await resolveCourseAccess(user, slug);
+    if (isDenied(access)) return NextResponse.json({ error: "course_not_found" }, { status: 404 });
+    const loaded = await access.grant.load().catch(() => null);
+    if (!loaded) return NextResponse.json({ error: "course_not_found" }, { status: 404 });
     context = {
       course: loaded.course,
       enrollment: { id: "builder-preview", startedAt: now },

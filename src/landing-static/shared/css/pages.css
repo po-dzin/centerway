@@ -156,7 +156,15 @@ code,
 }
 
 body.utility-page {
+  /* CENTRED IN WHAT YOU CAN SEE (2026-08-28).
+     This box does not just paint a ground, it centres the panel inside itself —
+     so its height has to be the height of the visible window. On iOS `100vh` is
+     the window with the browser bars RETRACTED, which is taller than the screen
+     while they are showing: the panel settled below centre and the page carried
+     a scroll it had no content for. `dvh` is that same number measured live,
+     with the `vh` line kept under it for anything that cannot read it. */
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
