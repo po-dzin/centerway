@@ -598,10 +598,16 @@ export async function listLearnerCourses(
   // One read for every term rather than one per card: the shelf renders the
   // whole catalogue, and an offer lookup per course was the N+1 waiting to
   // happen once the catalogue grows past the six programs it has today.
+  //
+  // NOT FILTERED TO `active`, for the same reason `readAccessRule` is not: a
+  // withdrawn offer still carries the term the people who bought it are owed.
+  // This read used to filter, so the shelf and the door disagreed about the
+  // same enrollment — a withdrawn offer showed as perpetual on the shelf and
+  // as time-boxed the moment the learner opened the course. One row per course
+  // (`code` is unique), so there is nothing to choose between.
   const { data: offerRows } = await db
     .from("lms_course_offers")
-    .select("course_id, access_days, access_lifetime, active")
-    .eq("active", true);
+    .select("course_id, access_days, access_lifetime");
 
   const ruleByCourse = new Map<string, AccessRule | null>(
     ((offerRows ?? []) as Array<Record<string, unknown>>).map((row) => [
