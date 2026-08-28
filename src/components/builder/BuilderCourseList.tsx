@@ -354,9 +354,31 @@ export function BuilderCourseList() {
     const remaining = REMOVE_MS - (performance.now() - startedAt);
     if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, remaining));
 
-    await load();
+    /* THE GAP CLOSES THE MOMENT THE CARD IS GONE, NOT AFTER A SECOND ROUND
+       TRIP (2026-08-29). This used to `await load()` here — a full refetch —
+       before the course left `state.courses`. The delete had already
+       succeeded and the fade had already finished, so for however long that
+       refetch took, the shelf held an invisible card open in its grid cell:
+       the neighbours had nothing left to close up around, because as far as
+       React knew the course was still there. That is the reflow `useShelfReflow`
+       promises "after the item is gone" — it just was not gone yet.
+
+       Removed here, locally, the moment the network confirms it — which is
+       also the moment `useShelfReflow`'s effect can see it missing and animate
+       the gap shut in the same frame the DOM drops the node.
+
+       `load()` still runs, just after and unawaited: nothing about the OTHER
+       courses changed, but `canCreate` can (`canCreateCourse` gates a
+       non-admin on owning at least one), and that one flag is worth a quiet
+       background reconcile rather than blocking the shelf on it. */
+    setState((current) =>
+      current.status === "ready"
+        ? { ...current, courses: current.courses.filter((entry) => entry.slug !== slug) }
+        : current
+    );
     setRemoving(null);
     setBusy(false);
+    void load();
   }
 
   /**
