@@ -27,6 +27,8 @@ export type PageMetadataInput = {
   path?: string;
   /** Page-specific share image; the brand cover is used otherwise. */
   image?: string;
+  /** Alt text for a page-specific `image`. Ignored when the brand cover is used. */
+  imageAlt?: string;
   /** Private surfaces: out of the index and out of the sitemap. */
   noindex?: boolean;
   /**
@@ -46,7 +48,12 @@ export type PageMetadataInput = {
  */
 export function pageMetadata(input: PageMetadataInput): Metadata {
   const { title, description, path, noindex, absoluteTitle } = input;
-  const image = input.image ?? BRAND_COVER;
+  // The 1200×630 dimensions and the brand alt are true of `cw-og-cover.png`
+  // specifically, not of an arbitrary caller-supplied image — a course cover
+  // has its own aspect ratio and its own alt text (or none at all).
+  const image = input.image
+    ? { url: input.image, ...(input.imageAlt ? { alt: input.imageAlt } : {}) }
+    : { url: BRAND_COVER, width: 1200, height: 630, alt: BRAND.name };
 
   return {
     title: absoluteTitle ? { absolute: title } : title,
@@ -59,13 +66,13 @@ export function pageMetadata(input: PageMetadataInput): Metadata {
       siteName: BRAND.name,
       locale: BRAND_LOCALE,
       ...(path ? { url: path } : {}),
-      images: [{ url: image, width: 1200, height: 630, alt: BRAND.name }],
+      images: [image],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      images: [image],
+      images: [image.url],
     },
     ...(noindex ? { robots: { index: false, follow: false } } : {}),
   };
