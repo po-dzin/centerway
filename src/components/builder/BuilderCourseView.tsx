@@ -635,7 +635,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             onClick={() => void save()}
             disabled={working || !dirty}
           >
-            {autosave.saving ? "Зберігаємо…" : "Зберегти зараз"}
+            {autosave.saving ? "Зберігаємо…" : "Зберегти"}
           </button>
         </>
       }
@@ -947,7 +947,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           onClick={() => void save()}
           disabled={working || pendingHref !== null || !dirty}
         >
-          Зберегти зараз
+          Зберегти
         </button>
       </div>
     </BuilderShell>

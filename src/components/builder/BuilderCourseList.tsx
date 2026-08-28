@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { courseThemeAttributes, moveItem } from "@/lms-core";
 import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
@@ -91,6 +91,90 @@ function subscribeToWidth(onChange: () => void) {
  * rows and on a desktop wants the grid — and a column would have made it one
  * global opinion that follows them onto the wrong device.
  */
+/**
+ * How long a course takes to leave, and the one place that number lives.
+ *
+ * The CSS transition on `[data-removing]` runs for `--builder-motion-page`;
+ * this is the same duration in the one unit JavaScript can wait in. They have
+ * to agree, because the delete request is raced against it: whichever finishes
+ * last decides when the shelf closes up.
+ */
+const REMOVE_MS = 240;
+
+/**
+ * FLIP, so the gap left by a deleted course closes instead of teleporting.
+ *
+ * Grid and flex reflow is not animatable — there is no transition between two
+ * layouts, only the second one. FLIP gets around that without owning the
+ * layout: read where every item was on the previous commit, read where it is
+ * now, and if it moved, play it from the old position back to the new one with
+ * a transform. The layout is already correct the entire time; the transform is
+ * a lie told for 260ms about where the browser has finished putting things.
+ *
+ * `useLayoutEffect`, not `useEffect`: the measurement has to happen before the
+ * browser paints the new positions, or the reader sees the jump this exists to
+ * hide and then sees it animate a second time.
+ *
+ * Items are matched by `data-flip-key` rather than by index, so a deletion in
+ * the middle moves the cards that actually moved instead of shifting every key
+ * by one. Anything mid-leave is skipped — it is running its own animation in
+ * place and has not moved.
+ *
+ * `resetKey` is the one thing this must NOT animate. Switching grid↔rows moves
+ * every card by hundreds of pixels, and playing that back is not a shelf
+ * closing a gap — it is one layout flying into another, which reads as chaos
+ * and says nothing. When the key changes the run measures and records without
+ * animating, so the new view starts from a clean baseline.
+ */
+function useShelfReflow(resetKey: string, deps: unknown[]) {
+  const container = useRef<HTMLDivElement & HTMLUListElement>(null);
+  const lastRects = useRef(new Map<string, DOMRect>());
+  const lastResetKey = useRef(resetKey);
+
+  useLayoutEffect(() => {
+    const root = container.current;
+    if (!root) return;
+
+    const reduced =
+      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const rebased = lastResetKey.current !== resetKey;
+    lastResetKey.current = resetKey;
+
+    const items = Array.from(root.querySelectorAll<HTMLElement>("[data-flip-key]"));
+    const nextRects = new Map<string, DOMRect>();
+
+    for (const item of items) {
+      const key = item.dataset.flipKey;
+      if (!key) continue;
+      const rect = item.getBoundingClientRect();
+      nextRects.set(key, rect);
+
+      if (reduced || rebased || item.hasAttribute("data-removing")) continue;
+
+      const previous = lastRects.current.get(key);
+      if (!previous) continue;
+
+      const dx = previous.left - rect.left;
+      const dy = previous.top - rect.top;
+      // Sub-pixel drift is not movement; animating it would fire an animation
+      // on every card on every reload.
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
+
+      item.animate(
+        [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }],
+        { duration: 260, easing: "cubic-bezier(0.22, 0.61, 0.36, 1)" },
+      );
+    }
+
+    lastRects.current = nextRects;
+    // The caller passes the list identity and the removal in flight; this hook
+    // has no opinion about what makes the shelf change shape.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetKey, ...deps]);
+
+  return container;
+}
+
 export function BuilderCourseList() {
   const router = useRouter();
   const [state, setState] = useState<State>({ status: "loading" });
@@ -104,6 +188,15 @@ export function BuilderCourseList() {
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+  /* The course that is on its way out. It stays in `state.courses` — and so on
+     screen — for as long as this is set, which is what gives the leaving
+     something to play on. */
+  const [removing, setRemoving] = useState<string | null>(null);
+  /* Both views hang this off the same ref — only one of them is mounted at a
+     time, and the hook re-measures from scratch whenever `view` changes, so
+     switching grid↔rows is a fresh baseline rather than a false «everything
+     moved». */
+  const shelf = useShelfReflow(view, [state, removing]);
 
   const load = useCallback(async () => {
     const result = await listCourses();
@@ -194,14 +287,34 @@ export function BuilderCourseList() {
     if (busy) return;
     setBusy(true);
     setNote(null);
-    const result = await deleteCourse(slug);
-    setBusy(false);
+    /* The question is answered, so it goes at once — leaving it up while the
+       card fades underneath it would be asking twice. The card starts leaving
+       now, BEFORE the request, because the answer to «which one» has to be on
+       screen at the moment the reader commits, not after the server agrees. */
     setConfirmingDelete(null);
+    setRemoving(slug);
+
+    const startedAt = performance.now();
+    const result = await deleteCourse(slug);
+
     if (!result.ok) {
+      /* Nothing was destroyed, so nothing may disappear: the flag clears and
+         the card transitions back from wherever it had got to. */
+      setRemoving(null);
+      setBusy(false);
       setNote(deleteFailureCopy(result.detail));
       return;
     }
+
+    /* A fast delete would otherwise unmount the card mid-fade and turn the
+       whole sequence back into the jump it replaces. A slow one has already
+       outlasted the animation and waits for nothing. */
+    const remaining = REMOVE_MS - (performance.now() - startedAt);
+    if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, remaining));
+
     await load();
+    setRemoving(null);
+    setBusy(false);
   }
 
   async function exportOne(slug: string) {
@@ -359,7 +472,7 @@ export function BuilderCourseList() {
             </div>
           ) : null}
           {view === "grid" ? (
-        <div className={styles.courseGrid}>
+        <div className={styles.courseGrid} ref={shelf}>
           {state.courses.map((course, index) => (
             <CourseCard
               key={course.slug}
@@ -368,6 +481,7 @@ export function BuilderCourseList() {
               total={state.courses.length}
               busy={busy}
               confirming={confirmingDelete === course.slug}
+              removing={removing === course.slug}
               onMove={move}
               onAskDelete={setConfirmingDelete}
               onDelete={remove}
@@ -376,7 +490,7 @@ export function BuilderCourseList() {
           ))}
         </div>
       ) : (
-        <ul className={styles.courseRows}>
+        <ul className={styles.courseRows} ref={shelf}>
           {state.courses.map((course, index) => (
             <CourseRow
               key={course.slug}
@@ -385,6 +499,7 @@ export function BuilderCourseList() {
               total={state.courses.length}
               busy={busy}
               confirming={confirmingDelete === course.slug}
+              removing={removing === course.slug}
               onMove={move}
               onAskDelete={setConfirmingDelete}
               onDelete={remove}
@@ -567,6 +682,8 @@ type EntryProps = {
   onMove: (index: number, delta: number) => void;
   onAskDelete: (slug: string | null) => void;
   onDelete: (slug: string) => void;
+  /** True while this course is playing its leaving animation. */
+  removing?: boolean;
   onExport: (slug: string) => void;
 };
 
@@ -582,7 +699,7 @@ type EntryProps = {
 function CourseRow(props: EntryProps) {
   const { course } = props;
   return (
-    <li className={styles.courseRow}>
+    <li className={styles.courseRow} data-flip-key={course.slug} data-removing={props.removing || undefined}>
       <Link className={styles.courseRowMain} href={`/build/${course.slug}`}>
         <span className={styles.courseRowTitle}>{course.title}</span>
         {/* One wrapping line, not three stacked ones. Status, size and what is
@@ -607,7 +724,12 @@ function CourseRow(props: EntryProps) {
 function CourseCard(props: EntryProps) {
   const { course } = props;
   return (
-    <article className={styles.courseCard} {...courseThemeAttributes(course.theme ?? undefined)}>
+    <article
+      className={styles.courseCard}
+      data-flip-key={course.slug}
+      data-removing={props.removing || undefined}
+      {...courseThemeAttributes(course.theme ?? undefined)}
+    >
       <Link className={styles.courseCardFace} href={`/build/${course.slug}`}>
         {course.cover ? (
           // Plain <img>: the cover is an author-supplied path that may point
@@ -632,12 +754,10 @@ function CourseCard(props: EntryProps) {
         )}
         <span className={styles.courseCardBody}>
           <span className={styles.courseTitleRow}>
-            <span className={styles.courseTitle}>
-              {course.title}
-              {/* The card's own mark. Two strengths of one stroke: faint under
-                  the pointer, full while this card's menu is open. */}
-              <HandGraphic className={styles.inkMark} name="ink-stroke" size={36} />
-            </span>
+            {/* No mark inside the title: the card's own contour carries it —
+                see the note beside `.courseCard::after`. An underline measures
+                a label; the thing under the pointer here is the whole card. */}
+            <span className={styles.courseTitle}>{course.title}</span>
             <span className={course.status === "published" ? styles.pillPublished : styles.pill}>
               {course.status === "published" ? "Опубліковано" : "Чернетка"}
             </span>

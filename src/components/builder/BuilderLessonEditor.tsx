@@ -772,7 +772,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
               {note ?? autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
             </span>
             <button className={styles.commitAction} type="button" onClick={() => void save()} disabled={working || !dirty}>
-              {autosave.saving ? "Зберігаємо…" : "Зберегти зараз"}
+              {autosave.saving ? "Зберігаємо…" : "Зберегти"}
             </button>
           </>
         )}
