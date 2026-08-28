@@ -304,7 +304,10 @@ export async function createPaymentInvoiceWithDeps(
         user_agent: input.client_ua ?? null,
         event_source_url: input.page_url ?? null,
         action_source: "website",
-        content_name: offerHeading(cfg, input.locale),
+        // The agreed reporting label, not the invoice line. This used to send
+        // the localized heading, which made the same product arrive in Meta
+        // under a different name per language and per surface.
+        content_name: cfg.pixelContentName,
         content_type: "product",
         content_ids: [product],
       };

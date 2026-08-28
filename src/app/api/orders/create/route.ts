@@ -154,7 +154,9 @@ export async function POST(req: NextRequest) {
         user_agent: asOptionalString(attrib?.client_ua),
         event_source_url: asOptionalString(attrib?.page_url),
         action_source: "website",
-        content_name: product,
+        // The agreed reporting label, not the raw code — same signal the browser
+        // Pixel and the Purchase job send, so one product is one name in Meta.
+        content_name: cfg.pixelContentName,
         content_type: "product",
         content_ids: [product],
       };
