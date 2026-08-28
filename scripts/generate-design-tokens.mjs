@@ -18,12 +18,8 @@ const NETWORK_CSS_PATH = path.join(
 
 const LIGHT_START = "/* DS_ALIAS_LIGHT_START */";
 const LIGHT_END = "/* DS_ALIAS_LIGHT_END */";
-const DARK_START = "/* DS_ALIAS_DARK_START */";
-const DARK_END = "/* DS_ALIAS_DARK_END */";
 const BASE_LIGHT_START = "/* CW_BASE_LIGHT_START */";
 const BASE_LIGHT_END = "/* CW_BASE_LIGHT_END */";
-const BASE_DARK_START = "/* CW_BASE_DARK_START */";
-const BASE_DARK_END = "/* CW_BASE_DARK_END */";
 const RUNTIME_START = "/* CW_RUNTIME_TOKENS_START */";
 const RUNTIME_END = "/* CW_RUNTIME_TOKENS_END */";
 const MATERIAL_DARK_START = "/* CW_MATERIAL_DARK_START */";
@@ -192,7 +188,6 @@ async function main() {
   const globals = await readFile(GLOBALS_CSS_PATH, "utf8");
   const dsAlias = tokens.delivery?.dsAlias ?? {};
   const lightDecls = toDecls(dsAlias.light ?? {}, "    ");
-  const darkDecls = toDecls(dsAlias.dark ?? {}, "    ");
   const runtimeDecls = toDecls(flattenRuntimeLayers(tokens.layers), "    ");
   const materialDarkDecls = toDecls(tokens.layers?.material?.dark ?? {}, "    ");
   const platformDarkDecls = toDecls(tokens.layers?.modeOverrides?.platformDark ?? {}, "    ");
@@ -284,15 +279,12 @@ async function main() {
     .join("\n\n");
 
   const baseLightDecls = toDecls(tokens.base?.light ?? {}, "    ");
-  const baseDarkDecls = toDecls(tokens.base?.dark ?? {}, "    ");
 
   let nextGlobals = upsertBefore(globals, BASE_LIGHT_START, BASE_LIGHT_END, RUNTIME_START, baseLightDecls);
-  nextGlobals = upsertBefore(nextGlobals, BASE_DARK_START, BASE_DARK_END, DARK_START, baseDarkDecls);
   nextGlobals = upsertBefore(nextGlobals, RUNTIME_START, RUNTIME_END, "/* Platform DS contract:", runtimeDecls);
   nextGlobals = upsertBefore(nextGlobals, LIGHT_START, LIGHT_END, "/* Platform DS contract:", lightDecls);
-  nextGlobals = upsertBefore(nextGlobals, DARK_START, DARK_END, "/* Platform DS contract, dark theme */", darkDecls);
-  nextGlobals = upsertBefore(nextGlobals, MATERIAL_DARK_START, MATERIAL_DARK_END, DARK_START, materialDarkDecls);
-  nextGlobals = upsertBefore(nextGlobals, PLATFORM_DARK_START, PLATFORM_DARK_END, DARK_START, platformDarkDecls);
+  nextGlobals = upsertBefore(nextGlobals, MATERIAL_DARK_START, MATERIAL_DARK_END, "/* Public platform dark palette", materialDarkDecls);
+  nextGlobals = upsertBefore(nextGlobals, PLATFORM_DARK_START, PLATFORM_DARK_END, "/* Public platform dark palette", platformDarkDecls);
   nextGlobals = replaceBetween(nextGlobals, PACK_MINERAL_START, PACK_MINERAL_END, packMineralDecls);
   nextGlobals = replaceBetween(nextGlobals, COURSE_PACKS_START, COURSE_PACKS_END, coursePackDecls);
 

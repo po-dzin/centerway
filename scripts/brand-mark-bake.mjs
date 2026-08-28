@@ -77,6 +77,17 @@ const FIT = {
   avatar: 0.6,
 };
 
+/**
+ * Corner radius for tiles the OS does not shape itself, as a fraction of the
+ * tile side — the browser tab icon and the desktop/Windows "any" tile. iOS
+ * rounds the touch icon and Android crops the maskable one to its own launcher
+ * shape, so those two stay square-cornered here; everywhere else a flat square
+ * next to rounded neighbours (Win11's Start tiles, an installed-PWA taskbar
+ * icon) reads as unfinished. Matches iOS's own squircle closely enough at icon
+ * sizes that no one asks which shape it is.
+ */
+const ROUND = 0.22;
+
 function readToken(tokens, name) {
   const found = [];
   const walk = (node) => {
@@ -189,8 +200,13 @@ function fitTransform(build, fit) {
  *
  * `themed` swaps the two tones on `prefers-color-scheme: dark` instead of
  * painting one pair. Only the SVG can do this — see the tab-icon call site.
+ *
+ * `rounded` gives the tile itself a squircle-ish corner (ROUND) instead of a
+ * plain square — for the two surfaces that draw the icon exactly as given and
+ * do not shape it themselves (the browser tab and the desktop/Windows "any"
+ * tile), so it does not look unfinished next to the OS-shaped ones.
  */
-function appIconSvg(build, { fill, background, fit, themed = null }) {
+function appIconSvg(build, { fill, background, fit, themed = null, rounded = false }) {
   const paths = build.arcs.map((d) => `    <path d="${d}"/>`).join("\n");
   const style = themed
     ? [
@@ -206,11 +222,12 @@ function appIconSvg(build, { fill, background, fit, themed = null }) {
     : [];
   const tileAttr = themed ? `class="tile"` : `fill="${background}"`;
   const markAttr = themed ? `class="mark"` : `fill="${fill}"`;
+  const rx = rounded ? ` rx="${(64 * ROUND).toFixed(3)}"` : "";
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512">`,
     `  <!-- ${BANNER} -->`,
     ...style,
-    `  <rect width="64" height="64" ${tileAttr}/>`,
+    `  <rect width="64" height="64"${rx} ${tileAttr}/>`,
     `  <g ${markAttr} transform="${fitTransform(build, fit)}">`,
     paths,
     `    <circle cx="32" cy="32" r="${build.coreR}"/>`,
@@ -263,18 +280,15 @@ function brandCardSvg(build, { mark, background, wordmarkInner, wordmarkViewBox,
 }
 
 /**
- * Flattened onto the calm ground — see the call site for why nothing here is
- * transparent. ensureAlpha still matters after the flatten: Next's ICO decoder
- * rejects an embedded PNG that is not RGBA, and sharp would otherwise drop the
- * now-opaque alpha channel and emit RGB.
+ * `background` is optional: pass it to flatten onto an opaque tile (iOS/Android,
+ * which shape the icon themselves and expect no transparency), or omit it to
+ * keep the SVG's own alpha — which is how a rounded tile's corners actually end
+ * up transparent instead of squared off by a same-colour flatten underneath.
  */
 async function rasterise(svg, size, background) {
-  return sharp(svg, { density: 600 })
-    .resize(size, size)
-    .flatten({ background })
-    .ensureAlpha()
-    .png({ compressionLevel: 9, palette: false })
-    .toBuffer();
+  const pipeline = sharp(svg, { density: 600 }).resize(size, size);
+  if (background) pipeline.flatten({ background });
+  return pipeline.ensureAlpha().png({ compressionLevel: 9, palette: false }).toBuffer();
 }
 
 /**
@@ -405,7 +419,7 @@ async function main() {
      favicon sits inline with text. */
   const tabLight = { fill: gold, background: ink };
   const tabDark = { fill: ink, background: calm };
-  const tabIcon = appIconSvg(geometry.compact, { ...tabLight, fit: FIT.tab, themed: tabDark });
+  const tabIcon = appIconSvg(geometry.compact, { ...tabLight, fit: FIT.tab, themed: tabDark, rounded: true });
   // Every surface reads the same file: the platform's Next-convention icon and
   // the eight landings, which cannot see /app and link shared/img by hand.
   emit(["src/app/icon.svg", "src/landing-static/shared/img/cw-icon-tab.svg"], tabIcon);
@@ -414,8 +428,8 @@ async function main() {
   // before 17). One file cannot flip, so it ships the light-UI pairing — the
   // browsers in question are also the ones least likely to be running a dark
   // chrome.
-  const tabRaster = Buffer.from(appIconSvg(geometry.compact, { ...tabLight, fit: FIT.tab }));
-  emit(["src/app/favicon.ico"], toIco(await rasterise(tabRaster, 64, ink)));
+  const tabRaster = Buffer.from(appIconSvg(geometry.compact, { ...tabLight, fit: FIT.tab, rounded: true }));
+  emit(["src/app/favicon.ico"], toIco(await rasterise(tabRaster, 64)));
 
   /* ── Installed-app icons ───────────────────────────────────────────────
      `any` runs close to the edge because nothing crops it — a desktop launcher
@@ -425,7 +439,7 @@ async function main() {
 
      Full build, not compact: these render at 180-512px, where the turns the
      compact build drops are the whole mark. */
-  const iconAny = Buffer.from(appIconSvg(geometry.full, { fill: ink, background: calm, fit: FIT.launcher }));
+  const iconAny = Buffer.from(appIconSvg(geometry.full, { fill: ink, background: calm, fit: FIT.launcher, rounded: true }));
   const iconMaskable = Buffer.from(appIconSvg(geometry.full, { fill: ink, background: calm, fit: FIT.maskable }));
   // iOS rounds the corners itself and composites a transparent icon onto black,
   // so the touch icon is opaque and keeps a little more air than the square
@@ -434,9 +448,9 @@ async function main() {
 
   // Mirrored into shared/img as well: the funnel hosts cannot see /cw/**, and a
   // landing still needs a raster favicon for the browsers without SVG support.
-  emit(["public/cw/brand/cw-icon-192.png", "src/landing-static/shared/img/cw-icon-192.png"], await rasterise(iconAny, 192, calm));
+  emit(["public/cw/brand/cw-icon-192.png", "src/landing-static/shared/img/cw-icon-192.png"], await rasterise(iconAny, 192));
   emit(["src/app/apple-icon.png", "src/landing-static/shared/img/cw-apple-touch.png"], await rasterise(touchIcon, 180, calm));
-  emit(["public/cw/brand/cw-icon-512.png"], await rasterise(iconAny, 512, calm));
+  emit(["public/cw/brand/cw-icon-512.png"], await rasterise(iconAny, 512));
   emit(["public/cw/brand/cw-icon-maskable-512.png"], await rasterise(iconMaskable, 512, calm));
 
   /* ── The Telegram bot's face ───────────────────────────────────────────

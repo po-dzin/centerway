@@ -381,47 +381,107 @@
   padding-top: var(--cw-space-2xs);
 }
 
-/* THE ONE GAP THAT COSTS SOMETHING, as a line under the row.
-   Boundary tone rather than a card: a panel here would be a fourth object in a
-   composition of three, and what it says is one sentence long. It renders only
-   while there is something to do about it — see `CabinetClient`. */
-.shelfAlert {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--cw-space-sm);
-  width: min(100%, 47rem);
-  padding: var(--cw-space-xs) var(--cw-space-md);
+/* THE DOT, ON THE AVATAR — not a line under the row any more. Reachability is
+   a fact about THIS ACCOUNT, so it rides the identity that names the account
+   rather than standing a full screen's height away as its own object. See
+   CabinetHero.tsx for why these classes live here instead of that module. */
+.avatarNoticeWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.avatarNotice {
+  position: absolute;
+  inset-block-end: -0.05rem;
+  inset-inline-end: -0.05rem;
+  display: grid;
+  place-items: center;
+}
+
+/* The visible mark is 0.7rem — a status dot, not a control. What it has to be
+   is easy to REST on, which is a larger area than the dot: the catch is grown
+   with an invisible pseudo-element rather than by inflating the dot itself,
+   which would stop reading as a dot at all. */
+.avatarNotice::before {
+  content: "";
+  position: absolute;
+  inset: -0.5rem;
+}
+
+.avatarNoticeDot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-sem-boundary);
+  /* Cut from the same dark the avatar sits in, not the page paper: the mark
+     has to read against the photograph, and only one of the two grounds under
+     it is that colour on every theme. */
+  border: 0.15rem solid var(--cw-mat-scrim-ink);
+}
+
+/* WHAT THE DOT SAYS, SAID BEFORE ANYTHING IS PRESSED. The dot is the mark and
+   nothing else; this is the notice it stands for, and the link out of it lives
+   in here rather than on the mark. It opens from the dot's centre RIGHTWARD
+   (`inset-inline-start: 50%`) because the avatar sits at the left edge of the
+   identity row and a panel centred on the dot would hang off it.
+
+   Hidden with opacity and `pointer-events`, not `visibility` or unmounting:
+   the link inside has to stay tabbable, so that reaching it with a keyboard is
+   what reveals the panel — `:focus-within` on the same container that answers
+   `:hover`. One rule serves the pointer and the keyboard, and no open flag is
+   threaded through the component to do it. */
+.avatarNoticePop {
+  position: absolute;
+  inset-block-start: calc(100% + 0.55rem);
+  inset-inline-start: 50%;
+  z-index: 3;
+  display: grid;
+  gap: var(--cw-space-2xs);
+  width: max-content;
+  max-width: 20rem;
+  padding: var(--cw-space-sm) var(--cw-space-md);
   border-radius: var(--cw-radius-md);
-  border: 1px solid color-mix(in srgb, var(--cw-sem-boundary) 45%, transparent);
-  background: var(--cw-mat-tone-boundary);
-  color: var(--cw-platform-text);
-  font-size: var(--ds-type-body-sm-size);
-  text-decoration: none;
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-raised);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-0.25rem);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
 }
 
-.shelfAlertAction {
-  color: var(--cw-sem-warmth-strong);
-  transition: transform 200ms ease;
-}
-
-.shelfAlert:hover .shelfAlertAction {
-  transform: translateX(2px);
-}
-
-.shelfAlert:focus-visible {
-  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
-  outline-offset: var(--ds-focus-ring-offset);
+.avatarNotice:hover .avatarNoticePop,
+.avatarNotice:focus-within .avatarNoticePop {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .shelfAlertAction {
+  .avatarNoticePop {
     transition: none;
-  }
-
-  .shelfAlert:hover .shelfAlertAction {
     transform: none;
   }
+}
+
+.avatarNoticeText {
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.avatarNoticeLink {
+  justify-self: start;
+  color: var(--cw-sem-warmth);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.avatarNoticeLink:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+  border-radius: var(--cw-radius-sm);
 }
 
 /* THE DOSHA, AT THE SIZE OF A GLANCE. It was a full card in a section under the

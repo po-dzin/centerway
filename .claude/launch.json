@@ -88,6 +88,28 @@
       "port": 8061,
       "autoPort": false,
       "url": "http://localhost:8061/"
+    },
+    {
+      "name": "hero-worktree",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd .claude/worktrees/dark-theme-cabinet-hero && npx next dev -p 8070"
+      ],
+      "port": 8070,
+      "autoPort": false,
+      "url": "http://localhost:8070/"
+    },
+    {
+      "name": "dev-dark-worktree-8070",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd .claude/worktrees/dark-theme-cabinet-hero && npx next dev -p 8070"
+      ],
+      "port": 8070,
+      "autoPort": false,
+      "url": "http://localhost:8070/"
     }
   ]
 }

@@ -441,6 +441,15 @@
 .field input,
 .field select,
 .field textarea {
+  /* WHERE THE BROWSER PARKS A FOCUSED FIELD (2026-08-28).
+     Tapping a field, or moving to the next one with the keyboard's own «next»,
+     makes the browser scroll it into view — and its idea of «in view» is the
+     top of the viewport, where this product keeps a floating topbar. Without a
+     margin the label and the first line of the field land underneath it.
+     `--platform-topbar-block` is the shell's own statement of how much room the
+     bar takes; the fallback is that same sum for the surfaces that do not
+     declare it. */
+  scroll-margin-block: calc(var(--platform-topbar-block, 4.65rem) + var(--cw-space-md)) var(--cw-space-lg);
   width: 100%;
   min-height: var(--ds-touch-target-min);
   font-size: var(--ds-type-body-size);

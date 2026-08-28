@@ -129,6 +129,12 @@ function InstallEntry({ onSelect }: { onSelect: () => void }) {
   return null;
 }
 
+/** The account's own name, when the provider gave one. */
+function displayNameOf(session: Session | null) {
+  const name = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name;
+  return typeof name === "string" && name.trim().length > 0 ? name.trim() : null;
+}
+
 function getUserInitial(session: Session | null) {
   const name =
     session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email;
@@ -144,14 +150,41 @@ function InkMenuLabel({ children }: { children: string }) {
   );
 }
 
+/**
+ * WHOSE ACCOUNT THIS IS, ON ITS OWN.
+ *
+ * The block used to exist only inside the rows below, which put it halfway down
+ * the phone drawer — under the five public destinations, where it read as a
+ * caption on the apps beneath it rather than as the header of the sheet. On a
+ * phone the first thing a menu should answer is «whose session am I in», so the
+ * drawer hoists this to its top and asks the rows to skip it
+ * (`showIdentity={false}`). The desktop popover keeps it inline: there the menu
+ * hangs off the avatar, which has already answered the question.
+ */
+export function PlatformAccountIdentity() {
+  const session = usePlatformSession();
+  const accountName = displayNameOf(session);
+  const accountEmail = session?.user?.email ?? null;
+  if (!session?.user || (!accountName && !accountEmail)) return null;
+  return (
+    <div className={styles.menuIdentity} data-placement="hoisted" data-cw-rule="inner">
+      {accountName ? <p className={styles.menuIdentityName}>{accountName}</p> : null}
+      {accountEmail ? <p className={styles.menuIdentityMail}>{accountEmail}</p> : null}
+    </div>
+  );
+}
+
 export function PlatformAccountMenu({
   variant = "menu",
   compact = false,
   exclude,
   onNavigate,
+  showIdentity = true,
 }: {
   variant?: "menu" | "inline";
   compact?: boolean;
+  /** False where the surrounding surface has hoisted the identity block itself. */
+  showIdentity?: boolean;
   /**
    * Applications the surrounding surface already lists, so they are not offered
    * twice. The burger sheet names the shelf in its own nav — the account block
@@ -353,13 +386,28 @@ export function PlatformAccountMenu({
     );
   }
 
-  const email = session?.user?.email ?? null;
   const avatarUrl =
     session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || null;
+  const accountName = displayNameOf(session);
+  const accountEmail = session?.user?.email ?? null;
 
   const rows = (
     <>
-      {email ? <p>{email}</p> : null}
+      {/* WHOSE MENU THIS IS, BEFORE WHAT IT CAN DO. The address alone was cut
+          once as a line that answered nothing — and it did read that way,
+          because an address on its own is a field, not an identity. The name
+          above it is what makes the block an account header: on a shared
+          machine, or with two of these signed in, «which of me is this» is a
+          real question and it has to be answered before «Вийти» is pressed.
+
+          A caption block, not two rows: neither line is a place to go, so
+          neither takes the row's height, weight or mark. */}
+      {showIdentity && (accountName || accountEmail) ? (
+        <div className={styles.menuIdentity}>
+          {accountName ? <p className={styles.menuIdentityName}>{accountName}</p> : null}
+          {accountEmail ? <p className={styles.menuIdentityMail}>{accountEmail}</p> : null}
+        </div>
+      ) : null}
       {/* First, above the account's own applications — the same place the panel
           puts it. Rendered only inside the shelf or the builder: on the public
           site it would point at the family of pages the reader is already in.

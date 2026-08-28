@@ -11,7 +11,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
+import { LMS_LEARNER_WRITE } from "@/lib/lms/rateRules";
 import { loadLearnerCourse, loadProgress, recordProgressEvent } from "@/lib/lms/server";
+import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import {
   buildOutline,
   canCompleteLesson,
@@ -51,6 +53,11 @@ type IncomingEvent = {
 export async function POST(req: NextRequest) {
   const user = await requireUserFromBearer(req.headers.get("authorization"));
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
+  // Keyed by learner, not by address: a batch is already the offline flush
+  // shape, so the ceiling has to bound a loop rather than a person reading.
+  const limit = await enforceRateLimit(req, LMS_LEARNER_WRITE, user.id);
+  if (!limit.allowed) return tooManyRequests(limit.retryAfter);
 
   let body: { courseSlug?: unknown; events?: unknown };
   try {

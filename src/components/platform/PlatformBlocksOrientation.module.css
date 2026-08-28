@@ -157,7 +157,7 @@
   z-index: 1;
   content: "";
   pointer-events: none;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 34%, transparent), transparent 24%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent), transparent 24%);
 }
 
 /* The ground BEHIND the photograph — what shows in the letterbox before the
@@ -321,7 +321,7 @@
      the same warm cream every section below the hero sits on ties the title to
      the page it opens, instead of floating on top of it. */
   color: var(--cw-sem-calm-bg);
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 38%, transparent), 0 10px 30px color-mix(in srgb, var(--cw-platform-text) 28%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent), 0 10px 30px color-mix(in srgb, var(--cw-mat-scrim-ink) 28%, transparent);
   font-family: var(--cw-font-ui);
   font-size: var(--ds-type-hero-size);
   font-weight: 900;
@@ -342,7 +342,7 @@
   max-width: min(15ch, 100%);
   margin: 0;
   color: var(--cw-platform-accent-contrast);
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 38%, transparent), 0 10px 30px color-mix(in srgb, var(--cw-platform-text) 28%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent), 0 10px 30px color-mix(in srgb, var(--cw-mat-scrim-ink) 28%, transparent);
   font-family: var(--cw-font-ui);
   font-size: var(--ds-type-hero-size);
   font-weight: 800;
@@ -366,7 +366,7 @@
   max-width: min(24rem, 100%);
   margin: 0;
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 90%, transparent);
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
   font-family: var(--cw-font-editorial);
   font-size: var(--ds-type-hero-subtitle-size);
   font-weight: 500;
@@ -377,7 +377,7 @@
   max-width: min(29rem, 100%);
   margin: 0;
   color: color-mix(in srgb, var(--cw-sem-calm-bg) 82%, transparent);
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
   font-size: var(--ds-type-lead-size);
   font-weight: 560;
   line-height: var(--ds-type-lead-line-height);
@@ -443,7 +443,7 @@
   gap: 0.5rem;
   margin: 0.3rem 0 0;
   color: var(--cw-platform-accent-contrast);
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
 }
 
 .heroPriceValue {
@@ -497,7 +497,7 @@
 .heroStatusNote {
   margin: 0;
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
   font-size: var(--ds-type-body-sm-size);
   font-weight: 560;
 }

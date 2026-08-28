@@ -2,7 +2,7 @@
 <html lang="uk" data-cw-landing="irem" data-cw-page="irem">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <base href="/irem/">
 <meta name="theme-color" content="#faefe0">
 <link rel="icon" href="/shared/img/cw-icon-tab.svg" type="image/svg+xml">
@@ -655,10 +655,10 @@
     <h3 id="leadModalTitle" class="lead-modal__title">Залиште заявку на супровід</h3>
     <p class="lead-modal__sub">Ми зв'яжемось з вами, щоб узгодити старт персонального ведення з автором системи.</p>
     <form data-lead-form data-lead-product="irem-individual" novalidate>
-      <input class="lead-modal__input" name="name" type="text" autocomplete="name" placeholder="Ім'я" required>
-      <input class="lead-modal__input" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="Телефон">
-      <input class="lead-modal__input" name="email" type="email" autocomplete="email" placeholder="Email">
-      <textarea class="lead-modal__input" name="message" rows="3" placeholder="Коментар (необов'язково)"></textarea>
+      <input class="lead-modal__input" name="name" type="text" autocomplete="name" placeholder="Ім'я" required autocapitalize="words" enterkeyhint="next">
+      <input class="lead-modal__input" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="Телефон" enterkeyhint="next">
+      <input class="lead-modal__input" name="email" type="email" autocomplete="email" placeholder="Email" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
+      <textarea class="lead-modal__input" name="message" rows="3" placeholder="Коментар (необов'язково)" autocapitalize="sentences"></textarea>
       <button type="submit" class="btn btn-primary lead-modal__submit">Надіслати заявку <span class="arr">→</span></button>
       <p class="lead-modal__status" data-lead-status hidden></p>
     </form>

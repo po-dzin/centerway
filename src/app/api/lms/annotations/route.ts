@@ -18,7 +18,9 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
+import { LMS_LEARNER_WRITE } from "@/lib/lms/rateRules";
 import { loadLearnerCourse } from "@/lib/lms/server";
+import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import { deleteAnnotation, listAnnotations, saveAnnotation } from "@/lib/lms/annotations";
 import { findLesson, flattenLessons, type AnnotationKind } from "@/lms-core";
 
@@ -33,10 +35,16 @@ const FAILURE_STATUS: Record<string, number> = {
   blocked: 403,
 };
 
-async function context(req: NextRequest, courseSlug: string) {
+/** @param limited writes pass true: a mark being drawn is a person, a loop is not. */
+async function context(req: NextRequest, courseSlug: string, limited = false) {
   const user = await requireUserFromBearer(req.headers.get("authorization"));
   if (!user) return { error: NextResponse.json({ error: "unauthorized" }, { status: 401 }) } as const;
   if (!courseSlug) return { error: NextResponse.json({ error: "missing_course_slug" }, { status: 400 }) } as const;
+
+  if (limited) {
+    const limit = await enforceRateLimit(req, LMS_LEARNER_WRITE, user.id);
+    if (!limit.allowed) return { error: tooManyRequests(limit.retryAfter) } as const;
+  }
 
   const result = await loadLearnerCourse(
     { authUserId: user.id, email: user.email ?? null, emailVerified: Boolean(user.email_confirmed_at) },
@@ -80,7 +88,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "invalid_json" }, { status: 400 });
   }
 
-  const resolved = await context(req, typeof body.courseSlug === "string" ? body.courseSlug : "");
+  const resolved = await context(req, typeof body.courseSlug === "string" ? body.courseSlug : "", true);
   if (resolved.error) return resolved.error;
   const { course, enrollment } = resolved.ok;
 
@@ -129,7 +137,7 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const resolved = await context(req, req.nextUrl.searchParams.get("courseSlug") ?? "");
+  const resolved = await context(req, req.nextUrl.searchParams.get("courseSlug") ?? "", true);
   if (resolved.error) return resolved.error;
 
   const clientId = req.nextUrl.searchParams.get("clientId") ?? "";

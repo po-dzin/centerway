@@ -659,6 +659,17 @@
   composes: chromeBare from "../platform/PlatformButtons.module.css";
   composes: bar from "../platform/PlatformButtons.module.css";
   position: relative;
+  /* THE RULE ABOVE THE ARROW IS A MARGIN, NOT AN EDGE, so it keeps the same
+     distance the bottom does. Only the block-end was stated, so the glyph
+     centred in a content box that had been pushed up by that padding: it sat
+     tight under the rule with a band of empty panel beneath it. Stating the
+     start as well centres the arrow between two equal gaps — which reads as
+     the rule moving up, and is what makes the foot symmetric.
+
+     Only the base value is mirrored. `env(safe-area-inset-bottom)` is a
+     device's chin, not a design gap; adding it to the top would open a hole
+     above the rule on exactly the phones that have one. */
+  padding-block-start: var(--cw-space-md);
   padding-block-end: max(var(--cw-space-md), env(safe-area-inset-bottom));
   color: var(--cw-platform-muted);
 }
@@ -753,7 +764,12 @@
   padding-inline: var(--cw-space-sm);
   /* A field is a line ruled on the page, not a sunk white well cut into it. */
   border: 0;
-  border-block-end: 1px solid var(--builder-rule);
+  /* The system's rule, fading at both ends (`--cw-rule-fade-x`).
+     Was a straight hairline; the file already draws every other
+     separator with the token. */
+  --cw-rule-ink: var(--builder-rule);
+  border-block-end: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
   border-radius: 0;
   background: transparent;
   color: var(--cw-platform-muted);
@@ -1635,33 +1651,48 @@
   overflow-wrap: anywhere;
 }
 
-/* On the shelf, confirmation belongs to one course but must not become card
-   content: if it joins the grid flow, one open confirmation stretches every
-   card in that row. It therefore replaces the card's action corner as a local
-   boundary surface. The course title remains directly above it and in the
-   accessible label, so repeating a long title inside this compact state adds
-   height without adding certainty. */
+/* THE WHOLE CARD ASKS, rather than a bar being dropped on top of it.
+
+   It must not join the grid flow — cards in a row stretch to the tallest, so
+   one open confirmation would grow every card beside it. But the previous
+   answer, a raised strip pinned across the card's bottom inset, was worse than
+   the problem: on a short card it landed squarely over the meta lines, it kept
+   a `nowrap` question in a box narrower than the question, and it carried a
+   left accent bar and a raised shadow — a third object, floating over the
+   card, at a moment when the reader has to be certain WHICH card they are
+   about to destroy.
+
+   Covering the card outright removes every one of those. The footprint is
+   unchanged, so the grid does not move; the card the question belongs to is
+   the card that is wearing it, so there is nothing to trace; and there is room
+   for the question to sit on its own line above its two answers. The ground is
+   the card's own paper carrying a little of the boundary hue — a warning
+   register, not a red panel. */
 .courseCard > .confirmRow {
   position: absolute;
-  right: var(--cw-space-md);
-  bottom: var(--cw-space-md);
-  left: var(--cw-space-md);
+  inset: 0;
+  /* Above the card's face and its corner menu, and no higher: this is a layer
+     WITHIN a card, not one of the builder's six overlay rungs, so it stays in
+     the 1–2 band those rungs are measured above rather than inventing a third
+     number beside them. */
   z-index: 2;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto auto;
-  min-height: var(--ds-touch-target-min);
-  padding: var(--cw-space-2xs);
-  border-inline-start: 0.2rem solid var(--cw-sem-boundary);
-  border-radius: var(--cw-radius-btn);
-  background: color-mix(in srgb, var(--cw-sem-boundary) 10%, var(--cw-mat-surface));
-  box-shadow: var(--cw-mat-shadow-raised);
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: var(--cw-space-xs);
+  padding: var(--cw-space-md);
+  border-radius: inherit;
+  background: color-mix(in srgb, var(--cw-sem-boundary) 8%, var(--cw-mat-surface));
 }
 
 .courseCard > .confirmRow .confirmText {
-  min-width: 0;
-  padding-inline-start: var(--cw-space-xs);
+  flex: 1 1 100%;
+  text-align: center;
   font-weight: 600;
-  white-space: nowrap;
+  /* The card view has a full line for it, so the question wraps rather than
+     being clipped — the list view is the one that keeps it on one line. */
+  white-space: normal;
 }
 
 .courseCard > .confirmRow :is(.quietAction, .dangerAction) {
@@ -1745,6 +1776,61 @@
 
 /* ── The shelf: rows ──────────────────────────────── */
 
+/* ── A SHELF THAT OPENS AND CLOSES ─────────────────────
+   Adding and removing a course used to be two frames: the item was there, and
+   then it was not, and every card after it teleported into the gap. Nothing in
+   that sequence tells a reader WHICH card went, or that anything moved at all
+   — the eye reads it as the whole shelf having been replaced.
+
+   Three separate pieces do the work, and they are deliberately not one:
+
+     entry   — the keyframes below, played on mount. React keeps the DOM for
+               unchanged `key`s, so only genuinely new courses play it; a
+               reload plays it once for the whole shelf, which is the shelf
+               arriving.
+     leaving — `[data-removing]`, set before the request goes out. The card
+               fades and settles in PLACE, keeping its footprint, so the answer
+               to "which one" is still on screen while it goes.
+     reflow  — FLIP in `useShelfReflow`, after the item is gone. The gap
+               closing is its own beat, after the leaving, not during it.
+
+   The leaving is a transition rather than keyframes so it can be interrupted:
+   a failed delete clears the flag and the card returns from wherever it got
+   to, instead of snapping back from the end of an animation.
+
+   Reduced motion is NOT answered here. Both the entry and the leaving are
+   written in `--builder-motion-page`, and the file's single
+   `prefers-reduced-motion` block zeroes that token — so they are already
+   answered at the one place the builder answers it, and a second block would
+   be the drift `builderDesignSystem.test.ts` exists to catch. The reflow is
+   the one piece the tokens cannot reach, being a JS animation; it checks the
+   query itself. */
+@keyframes courseEntryIn {
+  from {
+    opacity: 0;
+    transform: translateY(0.5rem) scale(0.985);
+  }
+}
+
+.courseCard,
+.courseRow {
+  animation: courseEntryIn var(--builder-motion-page) var(--builder-ease-page) both;
+}
+
+.courseCard[data-removing],
+.courseRow[data-removing] {
+  /* The entry keyframes hold `opacity`/`transform` at their end state with
+     `both`, and a held animation outranks any transition on the same
+     properties — so it has to be dropped before the leaving can be seen. */
+  animation: none;
+  opacity: 0;
+  transform: scale(0.96);
+  pointer-events: none;
+  transition:
+    opacity var(--builder-motion-page) ease,
+    transform var(--builder-motion-page) var(--builder-ease-page);
+}
+
 .courseRows {
   margin: 0;
   padding: 0;
@@ -1755,12 +1841,34 @@
 
 .courseRow {
   display: flex;
+  /* THE WRAP THE CONFIRMATION WAS ALREADY ASKING FOR. `.confirmRow` declares
+     `flex: 1 1 100%` — "give me my own line" — and this container was
+     `nowrap`, so instead of taking a line it squeezed into the existing one,
+     competing with the title and forcing the meta to break mid-phrase. The
+     basis was never wrong; the container never let it mean anything. */
+  flex-wrap: wrap;
   align-items: flex-start;
   gap: var(--cw-space-2xs);
   padding: var(--cw-space-sm);
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-soft);
+}
+
+/* The same warning register as the card's, at the shape a row can hold: one
+   line under the course it belongs to, on the card's own paper. */
+.courseRow > .confirmRow {
+  align-items: center;
+  margin-block-start: var(--cw-space-2xs);
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-btn);
+  background: color-mix(in srgb, var(--cw-sem-boundary) 8%, var(--cw-mat-surface));
+}
+
+.courseRow > .confirmRow .confirmText {
+  flex: 1 1 auto;
+  min-width: 0;
+  font-weight: 600;
 }
 
 .courseRowMain {
@@ -1829,11 +1937,15 @@
    "what else can I do with this one", and the card gives the space back to the
    content.
 
-   It carries a plate, and that is not a contradiction of the ink rule. Ink is
-   how a surface says HOVERED or CURRENT; this is a control standing on a
-   photograph, and a glyph with no ground under it is unreadable on half the
-   covers an author will upload. The plate is the chrome material, at the shell
-   tint the header uses — the same object as the bar, not a new one. */
+   It carries a floor, and that is not a contradiction of the ink rule: a glyph
+   with no ground under it is unreadable on half the covers an author will
+   upload. What it must NOT carry is a floor that also reads as a mark. It used
+   to take the chrome material at the header's shell tint — tint plus elevation
+   plus blur plus stroke, which is the topbar's own OBJECT material — and with
+   the ink ring on top of it the control said "here I am" twice, in two
+   different languages. It is a scrim now: see the "one surface, one mark" note
+   in PlatformButtons.module.css for the rule this obeys, and for why the
+   recipe lives here rather than as a composable class there. */
 .courseCard > .menuRoot {
   position: absolute;
   inset-block-start: calc(var(--cw-space-md) + var(--cw-space-2xs));
@@ -1841,34 +1953,65 @@
   z-index: 2;
 }
 
+/* The scrim, not a plate: the neutral scrim ink — fixed in both themes, so it
+   darkens a bright cover and a dark one alike — with no elevation, no blur and
+   no stroke, in a full pill so it reads as ground beneath the glyph rather
+   than as a box drawn around it. The ink ring `BuilderMenu` already renders
+   stays the only thing that moves with state, which is why the hover rule
+   below restates the same background instead of deepening it: a floor is not
+   a state. */
 .courseCard > .menuRoot > .menuTrigger {
-  color: var(--cw-platform-text);
-  background-color: var(--cw-mat-tint-chrome);
-  background-image: var(--cw-mat-grain-image);
-  box-shadow: var(--cw-mat-shadow-chrome);
-  backdrop-filter: var(--cw-mat-filter);
+  padding-inline: 0;
+  color: var(--cw-mat-inverse-text);
+  background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
+  border-radius: var(--cw-radius-pill);
+  box-shadow: none;
+  backdrop-filter: none;
 }
 
-/* HOVER AND SELECT ARE INK, like every other list in this builder.
-   The card used to answer the pointer by lifting — a second shadow, which is
-   the plate-swap `InkLabel` was written to replace, and which said nothing at
-   all about which card the open menu belonged to. Now the title carries the
-   mark: faint while the pointer rests on the card, full while its menu is open.
-   Two strengths of one stroke, so «під курсором» and «оцей» cannot collapse
-   into the same appearance.
+.courseCard > .menuRoot > .menuTrigger:hover:not(:disabled),
+.courseCard > .menuRoot > .menuTrigger:focus-visible,
+.courseCard > .menuRoot > .menuTrigger[aria-expanded="true"] {
+  color: var(--cw-mat-inverse-text);
+  background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
+  box-shadow: none;
+}
+
+/* HOVER AND SELECT ARE INK — DRAWN IN THE SHAPE OF THE THING THEY MARK.
+
+   The card used to answer the pointer by lifting, which said nothing about
+   WHICH card an open menu belonged to; that was replaced by a stroke under the
+   title, and the stroke was the wrong shape. An underline measures a LABEL —
+   it works because a label has a length and the rule can be as long as it. The
+   thing under the pointer here is not the title, it is the CARD: a bounded
+   area, whose shape is its outline. Underlining one line inside it to say the
+   whole card is current is the same category error as ringing a word.
+
+   So the mark is the card's own contour, at the same two strengths the rest of
+   the system uses: faint while the pointer rests on it, full while its menu is
+   open. A contour is a line, not a plate — nothing fills, nothing lifts.
 
    `:has` rather than a state prop: the trigger already reports `aria-expanded`
    for the screen reader, and reading it is one selector against threading an
    open flag out of the menu and into the card. */
-.courseCard:hover .courseTitle .inkMark,
-.courseCard:focus-within .courseTitle .inkMark {
-  opacity: var(--cw-ink-hover-opacity);
-  transform: scaleX(var(--cw-ink-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+.courseCard::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  border: 1px solid var(--cw-nav-marker);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--builder-motion-tool) ease;
 }
 
-.courseCard:has(.menuTrigger[aria-expanded="true"]) .courseTitle .inkMark {
+.courseCard:hover::after,
+.courseCard:focus-within::after {
+  opacity: var(--cw-ink-hover-opacity);
+}
+
+.courseCard:has(.menuTrigger[aria-expanded="true"])::after {
   opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
 }
 
 .courseCardFace {
@@ -2078,7 +2221,12 @@
   padding-block: var(--cw-space-sm);
   padding-inline: var(--ds-button-padding-inline);
   border: 0;
-  border-block-end: 1px solid var(--builder-rule);
+  /* The system's rule, fading at both ends (`--cw-rule-fade-x`).
+     Was a straight hairline; the file already draws every other
+     separator with the token. */
+  --cw-rule-ink: var(--builder-rule);
+  border-block-end: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
   background: transparent;
   color: inherit;
   text-align: start;
@@ -2135,7 +2283,12 @@
 
 .releaseSheetContent .blockerItem {
   padding: var(--cw-space-sm) 0;
-  border-block-end: 1px solid var(--builder-rule);
+  /* The system's rule, fading at both ends (`--cw-rule-fade-x`).
+     Was a straight hairline; the file already draws every other
+     separator with the token. */
+  --cw-rule-ink: var(--builder-rule);
+  border-block-end: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
   border-radius: 0;
   background: transparent;
 }
@@ -3685,7 +3838,12 @@
 .menuItem[data-group-start],
 .menuItemDanger[data-group-start] {
   margin-block-start: var(--cw-space-2xs);
-  border-block-start: 1px solid var(--builder-rule);
+  /* The system's rule, fading at both ends (`--cw-rule-fade-x`).
+     Was a straight hairline; the file already draws every other
+     separator with the token. */
+  --cw-rule-ink: var(--builder-rule);
+  border-block-start: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
   border-start-start-radius: 0;
   border-start-end-radius: 0;
   padding-block-start: var(--cw-space-2xs);
@@ -3768,7 +3926,12 @@
   justify-content: space-between;
   gap: var(--cw-space-sm);
   padding: var(--cw-space-sm) var(--cw-space-sm) var(--cw-space-sm) var(--cw-space-lg);
-  border-block-end: 1px solid var(--builder-rule);
+  /* The system's rule, fading at both ends (`--cw-rule-fade-x`).
+     Was a straight hairline; the file already draws every other
+     separator with the token. */
+  --cw-rule-ink: var(--builder-rule);
+  border-block-end: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
   background: var(--cw-mat-surface);
   border-start-start-radius: var(--cw-radius-lg);
   border-start-end-radius: var(--cw-radius-lg);
@@ -3975,10 +4138,18 @@
      and to stop its backdrop from painting over a topbar that is still fully
      on screen right beside it. */
   .sheetSide {
-    /* Wider than the outline — a revision line carries a name, a kind and a
-       timestamp — but nowhere near the 32rem it was, which made a third panel
-       width in a tool that has two. */
-    width: min(26rem, calc(100vw - var(--cw-space-2xl)));
+    /* THE SIDE PANEL'S WIDTH, NOT A WIDTH OF ITS OWN. This was 32rem, then
+       26rem — each time a number picked to look right beside the outline, and
+       each time a third measure in a tool that has one. It is the same object
+       as the tool drawer on the same edge: a panel you open beside the work.
+       So it takes the same token, and «the two side panels are the same width»
+       becomes a fact of the stylesheet rather than a coincidence two people
+       have to keep re-establishing.
+
+       `--builder-side-panel-width` resolves here because the dialog is a child
+       of `.shell` in the DOM — the top layer changes where it PAINTS, not what
+       it inherits. */
+    width: min(var(--builder-side-panel-width), calc(100vw - var(--cw-space-2xl)));
     max-width: none;
     /* Below the topbar, not behind it — the same vertical extent `.aside` and
        `.toolLayer` occupy as real grid columns in `.body`. */
@@ -4006,6 +4177,58 @@
     padding: var(--cw-space-sm) var(--cw-space-md);
     border-radius: 0;
     background: var(--cw-platform-bg);
+  }
+}
+
+
+/* ── The decision dialogue ────────────────────────────
+
+   A question with a small closed set of answers: «you are leaving with unsaved
+   changes», «a draft from a session that ended badly is on this device».
+
+   IT IS THE SHEET'S MATERIAL, NARROWER. Same plate, same rise, same backdrop —
+   the builder has one raised surface and adding a second one for a box with
+   three buttons in it is how a tool ends up with two kinds of «on top». What
+   changes is only the box: no sticky head, no scroller, a measure set by the
+   sentence rather than by a form.
+
+   THE ACTIONS SIT AT THE END and wrap in place. On a phone that is a column,
+   because three labels of this length do not fit across 375px and a row that
+   wraps mid-label puts «Вийти без» above «збереження». */
+.decision {
+  max-width: 100%;
+}
+
+.decisionBody {
+  display: grid;
+  grid-template-rows: none;
+  gap: var(--cw-space-sm);
+  max-height: none;
+  padding: var(--cw-space-lg);
+  padding-block-end: max(var(--cw-space-lg), env(safe-area-inset-bottom));
+}
+
+.decisionActions {
+  display: grid;
+  gap: var(--cw-space-xs);
+  margin-block-start: var(--cw-space-2xs);
+}
+
+@media (min-width: 561px) {
+  .decision {
+    max-width: 27rem;
+  }
+
+  .decisionBody {
+    padding-block-end: var(--cw-space-lg);
+  }
+
+  /* Answers side by side once they fit, first one first: it is the one the
+     author is most likely to want, and on both dialogues it is the safe one. */
+  .decisionActions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
   }
 }
 
@@ -4922,7 +5145,12 @@
 .courseSaveBar {
   position: static;
   border-radius: 0;
-  border-block-start: 1px solid var(--builder-rule);
+  /* The system's rule, fading at both ends (`--cw-rule-fade-x`).
+     Was a straight hairline; the file already draws every other
+     separator with the token. */
+  --cw-rule-ink: var(--builder-rule);
+  border-block-start: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
   background: transparent;
   box-shadow: none;
 }

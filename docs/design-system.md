@@ -177,7 +177,9 @@ The photograph is the ground of the **first screen** now — full bleed, edge to
 
 **The dissolve into paper is baked into the file, not painted over it.** Three CSS attempts failed the same way, and the third one is worth recording: painting `--cw-mat-surface` in from the bottom is correct in principle, but over a dark plate a viewer sees two layers — a white veil laid on a picture — and the veil follows the layout rather than the image. `scripts/img/grade.mjs --fade-bottom <fraction> --fade-color <hex>` composites the ramp **after** the grade (the grade moves every value it touches, so a colour matched beforehand lands somewhere else) and the frame itself ends in the page's surface colour. The page then places an image and the shelf simply continues the colour the photograph finishes on. `object-position: center bottom` is not a taste call either — it keeps the baked band at the bottom edge under any crop.
 
-The plates are the cabinet's own (`/cw/platform/cabinet/room-v1.webp` + a portrait master for phones), not the home hero's threshold photograph: a shared plate cannot carry a fade to one surface, and a cover crop of a landscape frame on a phone shows a slice of wall and neither the opening nor the shelves in it.
+The plates are the cabinet's own (`/cw/platform/cabinet/room-v3.webp` + a portrait master for phones), not the home hero's threshold photograph: a cover crop of a landscape frame on a phone shows a slice of wall and neither the opening nor the shelves in it. The dissolve into the page is a **mask on the image**, not a fade baked into the file — a baked edge names one surface, and since the night palette shipped there are two.
+
+**The ramp is a length as well as a curve.** v1 baked 0.42 of the frame and put most of the dissolve inside a fifth of that band, which the eye reads as a lit edge rather than a gradient — the failure looks like a CSS veil even when it is in the file. v2 bakes 0.72 (0.62 portrait) with a six-stop ease whose middle barely moves. Widen the band to soften; the stops are the shape, the band is the time it takes.
 
 Two more things the frame decides, because it was composed for this screen:
 
@@ -214,7 +216,7 @@ The plate carries the bar's clearance as its own top padding — centring cannot
 
 **The dashboard shows the gap, not every state.** What makes a dashboard rather than a report is that it surfaces the one thing that costs the reader something. An unconnected Telegram means the lesson reminders this account is owed never arrive, so that — and only that — stands as a line under the row, in boundary tone, and only while it is true. It is not a panel: a fourth object in a composition of three, holding one sentence, is a card charging rent. The account fold below still carries the record; this is the alarm, not the field.
 
-**On a photograph, the shelf is glass (2026-08-28).** Every panel in the cabinet was `data-cw-material="matte"`, which is right for the reading surfaces below and wrong on the first screen: an opaque warm panel over the room is a sheet of paper taped to it, and four of them were the brightest thing on a screen whose subject is the picture behind them. The resume card, the glances and the dosha tile take `glass-media` — the material written for exactly that ground, an 86% tint over the blur, so the room reads through the shelf. One depth only, nothing nested, and it degrades to the opaque tint where the blur cannot be paid for or the reader asked for less transparency.
+**On a photograph, the shelf is glass (2026-08-28).** Every panel in the cabinet was `data-cw-material="matte"`, which is right for the reading surfaces below and wrong on the first screen: an opaque warm panel over the room is a sheet of paper taped to it, and four of them were the brightest thing on a screen whose subject is the picture behind them. The resume card, the glances and the dosha tile take `glass-media` — the material written for exactly that ground, an 82% tint over a deeper blur, so the room reads through the shelf. One depth only, nothing nested, and it degrades to the opaque tint where the blur cannot be paid for or the reader asked for less transparency.
 
 **The way onward stands over the shelf; the heading is gone.** «Бібліотека» + «Усі мої курси →» stood in the room first, and wherever they were placed there they landed on the lit half — cream on cream, propped up by a text shadow. A control that needs propping is in the wrong place, so both moved onto the paper. Then the heading went too: it named what the cards already are, on a screen whose whole subject is this person's courses. What is left is the link, alone and pointing right, towards the shelves standing in the photograph behind it — and the row it sits over is capped at `54rem` and centred, so the block reads as one object in the room rather than a strip pinned across the bottom of the screen. One brass orbit stays in the frame as the drawn room's signature (the library's vocabulary is ink and brass line — see `docs/design-system/prototypes/library-depth-2026-08-26.html`), at 0.22 opacity: a mark, not a badge.
 
@@ -473,7 +475,7 @@ Target architecture is three layers (see roadmap stage 3). Current state, prefix
 
 | Prefix | Layer | Source of truth | Consumers | Guarded by |
 |---|---|---|---|---|
-| `--cw-bg/text/accent/status-*` etc. | app-chrome base (light `:root` + admin dark `.dark`) | `cw.tokens.json` → `base.light` / `base.dark` (codegen-owned since 2026-07-03) | app/admin components, DS delivery refs | tokens:check (drift), canon:guard (hex allowlist) |
+| `--cw-bg/text/accent/status-*` etc. | app-chrome **alias** over platform + material (one half, no dark twin) | `cw.tokens.json` → `base.light` (codegen-owned since 2026-07-03; `base.dark` deleted 2026-08-28) | app/admin components, DS delivery refs | tokens:check (drift), canon:guard (hex allowlist), guard:contrast (`dark` theme) |
 | `--cw-sem-*` | semantic (visual roles) | `cw.tokens.json` → `layers.semanticAliases` | platform component CSS | canon:guard (hex allowlist only) |
 | `--cw-platform-*` | mode alias over semantic (`visual-*` gradients stay hand-maintained in `globals.css`) | `cw.tokens.json` → `layers.modeOverrides.platform` | platform shell/blocks | canon:guard (hex allowlist only) |
 | `--cw-mat-*` | **material** (tactile surface layer; light + dark halves) | `cw.tokens.json` → `layers.material.{light,dark}` (codegen-owned: `CW_RUNTIME_TOKENS` / `CW_MATERIAL_DARK`) | `[data-cw-material]` recipe in `globals.css`; platform shell (topbar, mobile menu, profile card, hero controls) | guard:contrast (glass pairs), canon:guard |
@@ -660,7 +662,7 @@ Added 2026-08-15 as the first step of the tactile redesign (research: `docs/arch
 |---|---|---|
 | `matte` | opaque warm ground (`--cw-mat-surface`), no blur | reading surfaces, forms, dense text |
 | `glass` | tint 76% + `blur(34px) saturate(1.18)` | cards, chips — anything over the page canvas |
-| `glass-media` | tint 86%, raised shadow | panels sitting over a photo |
+| `glass-media` | tint 82%, deeper blur (`--cw-mat-filter-media`), soft shadow | panels sitting over a photo |
 | chrome tint 55% | the same glass, far more transparent, **no stroke** | the topbar — see below |
 | `inverse` | dark mineral gradient `#182a20 → #2c4635` (165deg) | offer blocks — the night side of the same material |
 | tones | the material shifted by a semantic hue: `--cw-mat-tone-{support,proof,boundary,icon}` | role-tinted panels, icon slots, boundary notes |
@@ -673,7 +675,7 @@ The grain is **one token, `--cw-mat-grain-image`, carrying its own strength** (a
 **Why two glass tints and not one.** Glass has no fixed background, so contrast must hold against the worst backdrop the context allows, and there are two contexts. Over the canvas the backdrop is always the warm page, so 76% carries body *and* muted text. Over a photo the backdrop can be anything a photograph contains — measured against black, body ink still clears AA at 11.83, but the muted label only reaches 3.83. Hence the rule and the second tint:
 
 - muted/secondary text on `glass-media` must be **large/semibold** (WCAG large tier, the same treatment CTA fills already get);
-- `--cw-mat-tint-floor` (76%) and `--cw-mat-tint-media-floor` (86%) are tokens precisely so `guard:contrast` can assert them. Lowering either fails the gate — verified by regression test.
+- `--cw-mat-tint-floor` (76%) and `--cw-mat-tint-media-floor` (82%) are tokens precisely so `guard:contrast` can assert them. Lowering either fails the gate — verified by regression test. The media floor moved 86% → 82% on 2026-08-28 and stops there: 82% is the last value at which the muted label still clears the large tier over a white backdrop, and white is not a hypothetical — the cabinet's own plate ends in baked paper, so the brightest thing a panel there can sit on really is near-white. A panel over a photograph that still reads as glass has to earn it in the filter, not the alpha, which is what `--cw-mat-filter-media` (34px blur, 1.24 saturate) and the soft shadow are for: a heavy drop shadow darkens the picture around the panel until it reads as a cut-out.
 
 ### The hero scrim's ink is neutral (2026-08-20)
 
@@ -705,7 +707,7 @@ Degradation is part of the contract: `@supports not (backdrop-filter)` and `pref
 
 The topbar reads as **matte but transparent, with no outline**: the blur and the grain carry the material, the tint stays out of the way, and there is no 1px stroke — a bordered bar reads as a component pasted on the page rather than a surface floating over it.
 
-That is affordable because the topbar is **tone-managed**, which the media floor's reasoning does not account for. `headerTone` samples what is actually behind the bar and flips its palette at luminance 0.34, so the backdrop is bounded rather than arbitrary. Holding it to the 86% media floor would be false rigour: it forces an opaque bar to defend against a backdrop the tone switch already prevents. `guard:contrast` asserts the topbar against `#b0b0b0` (luminance ≈ 0.42, a margin past the switch point, covering a backdrop that is mixed under different parts of the bar).
+That is affordable because the topbar is **tone-managed**, which the media floor's reasoning does not account for. `headerTone` samples what is actually behind the bar and flips its palette at luminance 0.34, so the backdrop is bounded rather than arbitrary. Holding it to the 82% media floor would be false rigour: it forces an opaque bar to defend against a backdrop the tone switch already prevents. `guard:contrast` asserts the topbar against `#b0b0b0` (luminance ≈ 0.42, a margin past the switch point, covering a backdrop that is mixed under different parts of the bar).
 
 The trade is explicit and enforced: **transparency is paid for with full-strength labels.** The topbar's secondary nav state runs at 86–90% of the foreground, never the 62–78% a solid surface would allow. Measured at the tone bound: primary label 12.19 (light) / 5.41 (dark), secondary 8.77 / 4.76. Lower the chrome floor or dilute the labels and the gate fails.
 
@@ -742,13 +744,46 @@ The landing-style photo hero went with it. A full-bleed photo block pushed the c
 
 ### Public dark mode: authored, scoped, not switched on
 
-`--cw-platform-*` now has a dark half (`layers.modeOverrides.platformDark`), so a dark public surface renders correctly. It lives under **`[data-cw-theme="dark"]`, deliberately not `.dark`**:
+`--cw-platform-*` has a dark half (`layers.modeOverrides.platformDark`), and it is the product's only night. It lives under **`[data-cw-theme="dark"]`**, stamped by `src/lib/platform/theme.ts` before first paint.
 
-`ThemeSwitcher` writes `.dark` onto `<html>` and persists it in `localStorage`. It is mounted only in admin, but the class survives client-side navigation out of `/admin` onto public routes. Keying the public palette off `.dark` would therefore darken the whole site for anyone who has visited admin. The two scopes are separate for that reason, and the comment beside them in `globals.css` says so.
+Two selectors share the material dark half now: `[data-cw-theme="dark"]` and `[data-cw-header-tone="dark"]` — the second is not a theme but a *local context*, letting the topbar flip to the night material while the page around it stays light. `.dark` was the third until 2026-08-28; see below.
 
-Three selectors share the material dark half: `.dark` (admin), `[data-cw-theme="dark"]` (public, unset today), and `[data-cw-header-tone="dark"]` — the last is not a theme but a *local context*, letting the topbar flip to the night material while the page around it stays light.
+`guard:contrast` checks the dark palette at the same bar as light, under two theme names (`dark` for app chrome, `platform-dark` for the public surfaces) that resolve through identical layers — kept apart only so a failure still says which surface a pair was asserted for.
 
-`guard:contrast` checks the public dark palette as a third theme (`platform-dark`, 11 pairs) at the same bar as light. Nothing sets `data-cw-theme` yet: the palette is authored and gated, not shipped half-on. Adding the toggle is a product decision, not a token one.
+### The line is ink, not a hue (2026-08-28)
+
+`--cw-platform-border` was `color-mix(--cw-sem-progress 38%, --cw-platform-bg 62%)` on the light side — a peach (`#edc693`) thinned over cream, which resolves to `rgb(245, 223, 195)`. Every panel outline, every row rule and every field border in the product was drawn in it, and on a warm ground it reads **pink**. It went unnoticed while the surfaces it outlined were the admin's own neutral grey; the moment the app chrome joined the brand gamma there was nothing left to break the pink up, and the admin and the builder both came out rosé.
+
+The night half had never had the problem: `platformDark` sets the border to `--cw-platform-text` at 16%, which is ink. The light half now says the same thing — `--cw-sem-method-ink` at 14% over the ground.
+
+**The rule this settles: a hue names a role, a line does not have a role.** `progress` is the colour of a rail that is filling; borrowing it for "the edge of a thing" gave every edge in the system a meaning it does not carry. The topbar was the tell — it is drawn with `--cw-mat-stroke-inner` (a neutral ink at 8%) and stayed graphite while everything under it went pink, which is what the material layer had been quietly getting right the whole time.
+
+### The admin joins the product's theme, and pays four tokens back into it (2026-08-28)
+
+The admin ran a design system of its own. Not a stated one — an accumulated one: a neutral grey palette in `base.dark`, its own theme class, its own storage key, its own hover colours, its own radii written as bare rem values. The decision of 2026-08-20 that "the admin stays neutral grey" is what kept it there; that decision is **superseded**. The admin is the same product, and a person who set the shelf to dark and then opened `/admin` was entitled to find it dark for the same reason.
+
+**What the second theme actually cost.** Three faults, all of them visible, all of them consequences of having two writers:
+
+- No boot script, so a dark admin flashed light on every load. The public surfaces have inlined `THEME_BOOT_SCRIPT` since the dark theme shipped; the admin's `useEffect` toggle could not run before the first frame.
+- No `color-scheme`, so the browser's own painting — form controls, native scrollbars, the canvas past an overscroll — stayed light under a dark page.
+- **No working light theme at all.** `/admin` lives in the `(platform)` route group, so the public boot script stamped `data-cw-theme` on the same document. Taking `.dark` off left the shell light (`--cw-bg: #f2f2f0`) standing on a body painted graphite by `[data-cw-theme="dark"]`. Two sources, one document, and the answer depended on which one you asked.
+
+**The fix is subtraction.** `.dark` is retired: `ThemeSwitcher` is now the admin's *button* over `@/lib/platform/theme`, cycling світла → темна → системна (one control, because the admin bar has no room for three icons beside the language switcher and the avatar). `base.dark` is **deleted** — the legacy `--cw-*` chrome family is an alias layer over `--cw-platform-*` and `--cw-mat-*` now, so it flips with them and needs no dark twin. One writer, one key (`cw-theme`), one selector.
+
+That also makes the alias layer honest: `--cw-surface-solid` IS `--cw-mat-surface`, `--cw-shadow` IS `--cw-mat-shadow-soft`, `--cw-btn-primary-bg` IS the gold CTA. Where the admin had a value nobody chose (`#8a8a86` for "accent"), it now has a role.
+
+**Four things the admin had that the system did not, and now does.** This went both ways on purpose — the older surface had answers to questions the new DS had never been asked:
+
+| Promoted | Where it lives now | Why it was worth keeping |
+|---|---|---|
+| The four states — success / running / pending / failed, each with a `-soft` wash | `--cw-sem-state-*` (hues) + `--cw-status-*` (the readable pair per gamma) | The DS could name exactly one state: `boundary`. A queue of background jobs, an order, a reconciliation have four, and they were four literal hexes per theme. They are brand roles now — guide / trust / warmth-strong / boundary — and `guard:contrast` asserts all eight against the panel they are printed on. Light `pending` and `failed` had to be deepened into `method-ink` to clear body AA on cream; the night lifts all four toward the cream ink. |
+| The interaction triple — hover and active, as background + stroke + inset shadow | `--cw-mat-hover-bg` / `-stroke`, `--cw-mat-active-bg` / `-stroke` / `-shadow` | The DS answered "how does a control respond" per component: an ink stroke under a nav label, a ring around a glyph. It had no answer for a ROW or a TILE, so every list in the product invented one. These are ink washes of `--cw-platform-text`, not pale tiles — the same rule the nav marks follow. |
+| The scrollbar | `--cw-mat-scroll-thumb` / `-hover` / `-track`, consumed by `.custom-scrollbar` and `.cw-tabbar` | The system had nothing, which is why the account popover's scrollbar had to be dealt with blind. The thumb is ink, the track is nothing, and the night needs no override because the tokens are written against text that already flips. |
+| The dense-data language — tabs, skeleton row, empty state, pagination, the modal scrim | `.cw-tab*`, `.cw-skeleton-row`, `.cw-empty-state`, `.cw-pagination` (retokened onto the radius scale), `--cw-mat-scrim` | A contract for vertical tabs did not exist anywhere else in the system, and the platform will need one. These stop being admin-only utilities that happen to live in `globals.css` and become the layer the DS uses when a screen is a table rather than a page. |
+
+The radii went with them: `0.75rem` / `1rem` / `0.5rem` written by hand are `--cw-radius-sm` / `-md` now. Three jobs, one scale — the same rule the cabinet is held to.
+
+**The icons and the select went too.** The admin carried nine inline feather-style SVGs at stroke 1.8 — a borrowed outline set in the one route that had also kept its own palette and its own theme class. They are the sprite now (`chart` was added to `icon-glyphs.mjs` for analytics; background jobs took `clock`, because a queue is a thing that has not happened yet and the gear it wore did not say that). And `.cw-select` drew a **filled triangle** — the only filled mark in a system whose every other mark is a monoline stroke. It is a chevron now, built from two gradient stripes rather than an SVG data URI, for the reason the rule's own comment gives: a data URI cannot read a CSS variable, so a baked-in arrow colour would stay dark at night.
 
 ### The landing network reads the platform's tokens instead of copying them
 
@@ -791,7 +826,7 @@ Card faces lost their `1px solid var(--line)` and gained a resting shadow, mirro
 
 The sticky CTA is chrome, so it takes the glass: chrome tint, material filter, grain, no top rule. The dark offer block takes `--cw-mat-inverse-bg` — the same gradient the platform's inverse panels use.
 
-**2026-08-17: the hero badge/chips/hv-stat (`consult`/`herbs`/`dosha`) are one glass recipe, not two.** The hero badge moves between two backdrops — the cream page beside the photo (desktop), and the photo itself (mobile, plus `.hv-stat` always). The first pass gave the photo context a separate dark scrim (`--cw-mat-inverse-control`, 34% dark, light text) — the same token the platform's own `.heroBadge` uses. Checking it against the worst case found a real gap: over a bright photo region the composited background lands around a mid-light gray, and light text on it measures ~2.0 contrast against a 4.5 requirement. Bumping the scrim would fix it but changes the platform hero's look too, which is out of scope for the network migration alone. Instead the network badge/chips/`hv-stat` all use the same warm tint family as everywhere else, at the **media floor** (`--cw-mat-tint-media`, 86%, bridged as `--cw-net-mat-tint-media`) instead of the canvas floor (76%) when sitting on the photo, with the same dark ink text throughout. That pair is already the one `guard:contrast` holds to AA over both worst-case photo colors (see the `glass-media` pairs above), so no new gate entry was needed — and there is now exactly one hero-chip recipe, not a light one and a dark one.
+**2026-08-17: the hero badge/chips/hv-stat (`consult`/`herbs`/`dosha`) are one glass recipe, not two.** The hero badge moves between two backdrops — the cream page beside the photo (desktop), and the photo itself (mobile, plus `.hv-stat` always). The first pass gave the photo context a separate dark scrim (`--cw-mat-inverse-control`, 34% dark, light text) — the same token the platform's own `.heroBadge` uses. Checking it against the worst case found a real gap: over a bright photo region the composited background lands around a mid-light gray, and light text on it measures ~2.0 contrast against a 4.5 requirement. Bumping the scrim would fix it but changes the platform hero's look too, which is out of scope for the network migration alone. Instead the network badge/chips/`hv-stat` all use the same warm tint family as everywhere else, at the **media floor** (`--cw-mat-tint-media`, 82%, bridged as `--cw-net-mat-tint-media`) instead of the canvas floor (76%) when sitting on the photo, with the same dark ink text throughout. That pair is already the one `guard:contrast` holds to AA over both worst-case photo colors (see the `glass-media` pairs above), so no new gate entry was needed — and there is now exactly one hero-chip recipe, not a light one and a dark one.
 
 The platform's own hero followed the same day: `.heroBadge` and `.heroSecondaryButton` in `PlatformBlocksOrientation.module.css` (used by `HubHero` and `PlatformDetailHero`) moved off `--cw-mat-inverse-control` onto the same `--cw-mat-tint-media` + `--cw-platform-text` recipe, and gained the `backdrop-filter` they never had. One badge recipe now spans platform and network. `--cw-mat-inverse-control` survives for `.shellOverlay .ghostButton` in `PlatformShell.module.css` — the topbar's ghost control in overlay mode. That one carries the same theoretical gap but is a different surface (tone-managed chrome, not a content badge) and was left alone deliberately.
 
@@ -933,8 +968,7 @@ Note for local checking: `/way21`, `/reset-day` and `/herbs` resolve to the stat
 
 ## Theming
 
-- Public platform: single light theme in `:root`.
-- Admin: dark theme via `.dark` class, toggled by `src/components/ThemeSwitcher.tsx` (mounted in `src/app/(platform)/admin/layout.tsx` only).
+- **One theme pair for the whole product** since 2026-08-28: `:root` light, `[data-cw-theme="dark"]` dark, for public pages, the shelf, the builder AND the admin. There is no second mechanism — see "The admin joins the product's theme" below for what the second one cost.
 - Public: dark theme via `[data-cw-theme="dark"]`, shipped 2026-08-28. `src/lib/platform/theme.ts` owns it — `THEME_BOOT_SCRIPT` is inlined in all three route-group roots and stamps the attribute, `color-scheme` and `theme-color` before first paint; `PlatformThemeControl` renders the three choices in the account menu, and only there — three icons (`sun` / `moon` / `display`), not three words, marked with the same `--cw-nav-marker` stroke the menu rows carry. It stood in the footer too for a while, on the argument that a guest has no avatar and so no menu; a guest also has no theme to keep, and two copies of one control on one page was the worse trade. The third glyph is `display` and not a half-filled disc: the state is not a dimmer between the other two, it is "whatever the device says", and this set fills nothing but accent dots. The stored value is the CHOICE, not the resolved theme, so `system` keeps following the OS.
 - **One source for the attribute, and no `prefers-color-scheme` rule beside it.** The media query lives in the boot script. The stylesheet keys the packs off `:root:not([data-cw-theme="dark"])`, and a second source would have to be repeated in every one of those selectors and would drift the first time either moved. Without JavaScript nothing is stamped and the page is light, which is what it was before.
 - **Packs are a light-side axis.** Every `[data-cw-pack]` block used to be a complete light palette, which is what kept the dark theme off: a course preview nested in the dark scope put cream ground and near-black ink back on top of the night. The generator now emits each pack twice — the full palette under `:root:not([data-cw-theme="dark"])`, and inside the dark scope an ALLOW-LISTED set of hue roles only (`guide-primary`, `embodied`, `progress`, `warmth`, `warmth-strong`, `boundary`, `trust`). An allow list rather than a deny list so the next token a pack grows contributes nothing to dark until someone adds it on purpose.
@@ -1018,6 +1052,36 @@ The contract layer (`route_family_contracts.json` → `screen_manifests.json` �
 
   Card height, copy clamps and gaps stay the rail's values. The cards are matched objects on a tablet for the same reason they are on a phone.
 - **Stat tiles take values, not sentences.** A tile in a column row (cabinet identity: доша / навчання / продукти) holds a name, a count, or `—`. An empty state is the em dash; the sentence that explains it belongs to the card below, with the action that resolves it. The row reserves two lines of value so a compound result (`Вата-Пітта`, which wraps at 320px) cannot shove the rest of the page down, and breaking is at the hyphen — never `overflow-wrap: anywhere`, which splits words mid-letter.
+
+## Fields on a phone — the keyboard contract (2026-08-28)
+
+A form on a handheld is not the markup plus a keyboard that happens to appear. The keyboard IS part of the field: which one opens, whether the first letter arrives capitalised, what the return key promises, and whether the browser offers what it already knows about this person. Left unstated, the phone guesses — and its guess is the alphabetic keyboard, a capital first letter and a return key labelled «go».
+
+Every public field states all of it. Money-path forms are `LeadForm` (platform) and the lead forms on `consult`, `herbs`, `irem`, `way21`.
+
+| Field | Attributes |
+|---|---|
+| name | `type="text"` · `autocomplete="name"` · `autocapitalize="words"` · `enterkeyhint="next"` |
+| phone | `type="tel"` · `inputmode="tel"` · `autocomplete="tel"` · `enterkeyhint="next"` |
+| email | `type="email"` · `inputmode="email"` · `autocomplete="email"` · `autocapitalize="none"` · `autocorrect="off"` · `spellcheck="false"` · `enterkeyhint="next"` |
+| free text | `autocapitalize="sentences"`, and **no** `enterkeyhint` — return means a new line, and «send» would promise a submit the key does not do |
+
+`type` and `inputmode` are not one instruction. `inputmode` picks the keypad; `type` is what puts the field in the browser's autofill bucket, so a saved number or address is offered at all. Neither validates a phone number, which is correct — the form takes them in every shape a person writes them.
+
+**A field is never parked under the chrome.** Tapping a field, or moving on with the keyboard's own «next», makes the browser scroll it into view, and its idea of «in view» is the top of the viewport — where this product keeps a floating topbar. Fields carry `scroll-margin-block`: the platform's read `--platform-topbar-block`, the network's a literal for the fixed nav.
+
+**The sticky CTA yields while a field has focus.** It is `position: fixed`, and on iOS a fixed element rides the visual viewport when the keyboard opens — so it parks itself over the field being filled, at the one moment it has nothing left to offer: whoever is typing has already answered the call to action. It leaves on the same transform the scroll handler uses, so there is one way for that bar to be away, not two.
+
+**Font size is 16px or the phone zooms.** `--ds-type-body-size` is `1rem` and fields inherit it. Anything smaller makes iOS scale the page on focus and leave it scaled.
+
+### The safe area, and what `viewport-fit` actually turns on (2026-08-28)
+
+`env(safe-area-inset-*)` is **zero** until the document opts into drawing under the system's furniture. The three Next route roots have carried `viewportFit: "cover"` from the start; the 8 static landings did not, so every inset in their sheets was a no-op — including the fixed CTA, whose lower half sat on the home indicator's gesture strip. They now carry it too, and with it:
+
+- `.wrap` pads to `max(gutter, inset)` on both sides. Cover means the layout runs under the sensor housing in landscape; the gutter has to grow past the notch on whichever side it lands, or a line of text sits behind it.
+- `.sticky-in` pads its bottom to `max(.6rem, env(safe-area-inset-bottom))`.
+
+**`vh` is not what you can see.** On iOS `100vh` is the window with the browser bars retracted — taller than the screen while they show. A box that only paints a ground can live with that; a box that CENTRES its content in itself cannot, and the utility page settled its panel below centre with a scroll it had no content for. Those boxes are `100dvh` with the `vh` line kept under them as the fallback. `svh` remains the choice where a full-height plate must never exceed the visible window (`CabinetHero`, the zen preview).
 
 ## Installed-app chrome (PWA)
 

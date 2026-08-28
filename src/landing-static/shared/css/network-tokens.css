@@ -71,7 +71,7 @@
   /* Denser floor for glass sitting over photo media rather than the page canvas
      — same warm tint family, just less see-through, so dark ink text stays
      legible over any photo content (verified against black and white). */
-  --cw-net-mat-tint-media: var(--cw-mat-tint-media, rgba(251, 249, 242, .86));
+  --cw-net-mat-tint-media: var(--cw-mat-tint-media, rgba(251, 249, 242, .82));
   --cw-net-mat-blur: var(--cw-mat-blur, 20px);
   --cw-net-mat-filter: var(--cw-mat-filter, blur(20px) saturate(1.08));
   --cw-net-mat-stroke: var(--cw-mat-stroke, rgba(255, 255, 255, .55));

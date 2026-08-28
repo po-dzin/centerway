@@ -277,12 +277,32 @@
 
 /* The course map belongs after the lesson material: it is a route away from
    the current reading, not a peer of the lesson title in the top bar. */
+/* TWO ROWS ON A PHONE, ONE FROM 561px (2026-08-28).
+
+   The marker and the reader's tools shared a row, so at 375px the marker got
+   whatever was left beside three controls — and it is a wrapping flex list
+   («3 / 11», «Тиждень 1 · ВХІД», «·», «12 хв»). It broke across three lines
+   with the separator ORPHANED at the start of the last one: a middot alone
+   under a chip, which reads as a bullet for a list that is not there.
+
+   Given the full width the marker fits on one line at 375px with room to
+   spare, so the tools take their own line under it, held to the right where
+   they already sat. Nothing is hidden and nothing is scaled down. */
 .lessonMetaRow {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: var(--cw-space-sm);
   margin-bottom: var(--cw-space-2xs);
+}
+
+.lessonMetaRow .stepMarker {
+  flex: 1 1 100%;
+}
+
+.lessonMetaRow .readerTools {
+  margin-left: auto;
 }
 
 .lessonMetaRow .stepMarker {
@@ -1322,6 +1342,15 @@
    lockup. Kept in px, like every other breakpoint on the platform: these are
    viewport sizes, not type-relative measures. */
 @media (min-width: 561px) {
+  /* Room for both again: the marker and the tools go back on one line. */
+  .lessonMetaRow {
+    flex-wrap: nowrap;
+  }
+
+  .lessonMetaRow .stepMarker {
+    flex: 0 1 auto;
+  }
+
   .wrap {
     margin-block-start: var(--cw-space-2xl);
   }
@@ -1448,10 +1477,22 @@
      with nothing under it is unreadable the moment a line of text passes
      behind it. */
   color: var(--cw-platform-text);
-  background-color: var(--cw-mat-tint-chrome);
+  /* OPAQUE, for the same reason the offer page's thumb bar is (2026-08-28). The
+     chrome tint is 30% of the surface, which is a ground only when there is a
+     PHOTOGRAPH behind it — the topbar's case. Here the thing behind it is the
+     reading page in that same colour, so 30% of it over 100% of it came out as
+     a glyph and a faint ring with a line of body copy running through both. A
+     control standing on the reading brings the reading's own paper with it. */
+  /* `--cw-mat-stroke-control`, not `--cw-mat-stroke`: the page under this button
+     is the reading surface and the button's own ground is the same paper, so an
+     opaque circle on it is still invisible — only the soft shadow separated
+     them. The control stroke is the one outline in the material the contrast
+     gate holds at 3:1 on both surfaces in both themes, and it exists for
+     exactly this: a secondary control that otherwise does not read as one. */
+  border: 1px solid var(--cw-mat-stroke-control);
+  background-color: var(--cw-mat-surface);
   background-image: var(--cw-mat-grain-image);
-  backdrop-filter: var(--cw-mat-filter);
-  box-shadow: var(--cw-mat-shadow-chrome);
+  box-shadow: var(--cw-mat-shadow-raised);
   /* Not `display: none`: the control fades and lifts into place, and an element
      that is not laid out cannot transition. Pointer events go with the opacity
      so an invisible button is never in the way of the text under it. */

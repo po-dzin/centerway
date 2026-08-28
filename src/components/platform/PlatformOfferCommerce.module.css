@@ -36,9 +36,18 @@
        without it the button's lower half is under the system gesture area, and
        the tap that lands there dismisses the app instead. */
     padding: 0.6rem var(--cw-space-md) max(0.6rem, env(safe-area-inset-bottom));
-    background-color: color-mix(in srgb, var(--cw-mat-surface) var(--cw-mat-tint-chrome-floor), transparent);
+    /* OPAQUE, NOT THE CHROME TINT (2026-08-28). The topbar's glass works because
+       it floats over a photograph — there is something behind it to see through
+       to. This bar sits on the page's own canvas, and 30% of the surface over
+       the surface is nothing: on the night palette the price and the button
+       came out standing on bare page, with the section card behind them
+       scrolling straight through the bar. Text contrast was never the problem;
+       being a SHEET was. The grain and the raised shadow stay — this is the
+       same material, at full strength — and the hairline gives it the edge a
+       sheet lying on the page has. */
+    border-top: 1px solid var(--cw-mat-stroke);
+    background-color: var(--cw-mat-surface);
     background-image: var(--cw-mat-grain-image);
-    backdrop-filter: var(--cw-mat-filter);
     box-shadow: var(--cw-mat-shadow-raised);
     /* Its own compositor layer. Without it Safari repaints the blurred backdrop
        on every scroll frame and the bar visibly lags the content behind it. */
@@ -319,7 +328,11 @@
   align-items: center;
   gap: 0.5rem;
   padding-bottom: 0.75rem;
-  border-bottom: 1px solid var(--cw-mat-stroke-inner);
+  /* The system's rule, fading at both ends (`--cw-rule-fade-x`).
+     Was a straight hairline; the file already draws every other
+     separator with the token. */
+  border-bottom: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
   color: var(--cw-platform-muted);
 }
 

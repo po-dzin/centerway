@@ -7,26 +7,56 @@
    one control, and the name goes to `aria-label` and the tooltip, where it is
    still there for whoever needs it.
 
-   NOTHING HERE MAY BE AN `::after`. This renders inside `.profileMenu`, and
-   that scope sets `content: none` on the pseudo-element of every button it
-   contains, deliberately: its rows draw a real ink stroke from the sprite
-   because a text-decoration cannot be transitioned in width. A CSS bar under
-   the glyph is therefore not a different-looking mark, it is an erased one —
-   which is exactly why the gold never showed. The mark below is the same
-   graphic the rows carry, at the same three numbers, sized to a glyph.
+   THE MARK IS THE INK RING, which the system already owns for exactly this:
+   an icon-only control. It is what the header's menu button and the avatar
+   wear, it has its own size token, and the numbers below are the ones those
+   two use. A short stroke under a glyph was a second answer to a question that
+   already had one — an underline measures a LABEL, and these have none.
+
+   (It also could not have been a pseudo-element: `.profileMenu` sets
+   `content: none` on every button's `::after` on purpose, so a CSS bar here is
+   not a different-looking mark but an erased one.)
 
    The selectors are two classes deep on purpose. `.profileMenu button` is
    (0,1,1) and owns row height, padding and weight for everything in the menu;
    a bare `.option` at (0,1,0) would lose to it and the icons would come out as
    3rem-tall rows. */
 
+/* ONE CONTROL, SO ONE SHAPE HOLDS IT.
+
+   Three bare glyphs at the end of a menu row are three things until something
+   says otherwise: the reader has to infer from their spacing that they are the
+   three positions of a single switch rather than three more places to go. A
+   shallow recess says it outright — one object, with the ring moving between
+   three seats inside it.
+
+   A recess rather than a raised plate, because this row is not somewhere the
+   panel lifts off. `--cw-mat-surface-sunk` is the system's own sunk ground and
+   is defined in both gammas, so it darkens on paper and lightens on graphite
+   without a second rule. No stroke and no highlight: the depth is the tone
+   step by itself.
+
+   The negative end margin goes with it. It pulled bare ring boxes flush with
+   the row's edge; the recess is now the edge, and it should stop where every
+   other row's content stops. The padding is deliberately smaller than the
+   ring's overhang so the recess hugs the three seats rather than becoming a
+   fourth shape around them. */
+/* THE RECESS IS A STEP OFF THE SHEET IT SITS ON, NOT A GLOBAL SUNK GROUND
+   (2026-08-28). `--cw-mat-surface-sunk` answers "one step under the page", and
+   this control is not on the page: in the phone drawer it rides the header
+   plate, which flips to the night material whenever the bar floats over a dark
+   hero. On the cabinet that put a near-black pill (0.13) on a sheet whose own
+   ink is cream — a hole punched in the menu. A tint of the sheet's OWN
+   foreground steps the same amount whichever tone the plate is currently
+   wearing, and it is the tint the rest of the chrome already uses for a
+   resting surface. */
 .control {
   display: flex;
   align-items: center;
   gap: 0.1rem;
-  /* Optically flush with the row's right edge: the glyph boxes carry their own
-     side bearing, so the last one is pushed back by that much. */
-  margin-inline-end: -0.4rem;
+  padding: 0.15rem;
+  border-radius: var(--cw-radius-pill);
+  background: color-mix(in srgb, var(--platform-header-fg, var(--cw-platform-text)) 10%, transparent);
 }
 
 .control .option {
@@ -34,21 +64,28 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-height: 0;
-  width: 2.1rem;
-  height: 2.1rem;
+  /* The ring's own size, which is also the touch target minimum — the two
+     tokens are the same 3rem and that is not a coincidence: the ring is drawn
+     around the area a finger lands on. */
+  min-height: var(--cw-ink-ring-size);
+  width: var(--cw-ink-ring-size);
+  height: var(--cw-ink-ring-size);
   border: 0;
-  border-radius: var(--cw-radius-inset);
+  border-radius: var(--cw-radius-pill);
   background: transparent;
   padding: 0;
-  color: var(--cw-platform-muted);
+  /* The sheet's ink, stepped back — not `--cw-platform-muted`, which is the
+     PAGE's muted ink and does not follow the plate's tone. Under the dark tone
+     it resolved to a dark green-grey, so three near-black glyphs sat on a
+     near-black recess inside a cream-inked menu. */
+  color: color-mix(in srgb, var(--platform-header-fg, var(--cw-platform-text)) 70%, transparent);
   cursor: pointer;
   transition: color 160ms ease;
 }
 
 .control .option:hover,
 .control .option:focus-visible {
-  color: var(--cw-platform-text);
+  color: var(--platform-header-fg, var(--cw-platform-text));
   background: transparent;
   outline: none;
 }
@@ -60,47 +97,50 @@
     var(--cw-mat-shadow-soft);
 }
 
-.mark {
+/* Same geometry and the same three numbers as `.iconInkRing` / `.profileInkRing`
+   in the shell — one ring, drawn once, wherever an icon carries a state. */
+.ring {
   position: absolute;
-  /* WIDTH IS STATED, NOT LEFT TO `auto`. An `<svg>` is a replaced element, so
-     `width: auto` on it resolves to its intrinsic size and ignores the two
-     insets — the mark came out 13px wide inside a 33px button and read as a
-     smudge rather than a rule. `.menuInkMark` states its width for exactly
-     this reason and this follows it. */
-  inset-inline-start: 0.15rem;
-  inset-block-end: 0.1rem;
-  width: calc(100% - 0.3rem);
-  height: var(--cw-ink-stroke-height);
+  z-index: 2;
+  inset: 50% auto auto 50%;
+  width: var(--cw-ink-ring-size);
+  height: var(--cw-ink-ring-size);
   overflow: visible;
-  /* The header scope publishes the toned marker; the fallback is for anywhere
-     this control is used outside it. */
   color: var(--platform-header-nav-marker, var(--cw-nav-marker));
   pointer-events: none;
   opacity: 0;
-  /* Same vertical scale as `.menuInkMark`: the graphic and the round selector
-     share one source stroke, and this narrow band needs the stretch to keep
-     that weight on screen. */
-  transform: scaleX(0.38) scaleY(3.4) rotate(-0.4deg);
-  transform-origin: center;
+  transform: translate(-50%, -50%) scale(0.72) rotate(-4deg);
   transition: opacity 160ms ease, transform 160ms ease;
 }
 
-.control .option:hover .mark,
-.control .option:focus-visible .mark {
-  opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+.control .option:hover .ring,
+.control .option:focus-visible .ring {
+  opacity: var(--cw-ink-hover-opacity);
+  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
 }
 
-/* Current: the mark run to full, and the glyph at full foreground. Both,
-   because on three icons of one weight the mark alone is what the icon under
-   the cursor also carries, at 42%. */
-.control .option[aria-pressed="true"] {
-  color: var(--cw-platform-text);
-}
+/* Current: the ring, and only the ring.
 
-.control .option[aria-pressed="true"] .mark {
-  opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
+   It used to also take the glyph to full foreground, on the argument that a
+   ring alone is what the hovered glyph wears at 42% and the two would be
+   confusable. Two things have since removed that argument: hover is now gated
+   to pointer devices, and the recess groups the three seats so the full ring
+   reads as a seat being occupied rather than as a stray circle. What is left
+   is a doubled mark — and on the LIGHT side it was the loud one, because a
+   closed ring in near-black ink carries several times the ink of the short
+   rule the current menu row is marked with, and the glyph darkening under it
+   added a second step on top. The seat is marked once.
+
+   No colour rule at all, rather than one restating the resting colour: the
+   pressed seat simply keeps whatever the three options are set to, including
+   under a tone flip where the menu re-points them. `color: inherit` was the
+   wrong repair — it resolves to the CONTAINER's ink, which is the full-strength
+   text the rows deliberately step back from, so it darkened the glyph again by
+   a different route. */
+
+.control .option[aria-pressed="true"] .ring {
+  opacity: 0.9;
+  transform: translate(-50%, -50%) scale(1) rotate(-4deg);
 }
 
 .control .option svg {

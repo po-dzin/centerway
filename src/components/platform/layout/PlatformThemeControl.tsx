@@ -8,9 +8,10 @@ import {
   applyPlatformTheme,
   readThemeChoice,
   resolveTheme,
+  setThemeChoice,
+  subscribeThemeChoice,
   THEME_CHOICES,
   THEME_LABELS,
-  THEME_STORAGE_KEY,
   type ThemeChoice,
 } from "@/lib/platform/theme";
 
@@ -37,26 +38,9 @@ const THEME_GLYPH: Record<ThemeChoice, CwIconName> = {
  * account menu.
  */
 
-const THEME_EVENT = "cw:theme-choice";
-
-function subscribe(onChange: () => void) {
-  const relay = (event: Event) => {
-    if (event instanceof StorageEvent && event.key !== null && event.key !== THEME_STORAGE_KEY) return;
-    onChange();
-  };
-  // `storage` is the OTHER tab; the custom event is this one. The same person
-  // can have the shelf open beside a lesson, and a switch that moves one and
-  // leaves the other reads as the site being broken rather than as two tabs.
-  window.addEventListener("storage", relay);
-  window.addEventListener(THEME_EVENT, relay);
-  return () => {
-    window.removeEventListener("storage", relay);
-    window.removeEventListener(THEME_EVENT, relay);
-  };
-}
 
 export function PlatformThemeControl() {
-  const choice = useSyncExternalStore<ThemeChoice | null>(subscribe, readThemeChoice, () => null);
+  const choice = useSyncExternalStore<ThemeChoice | null>(subscribeThemeChoice, readThemeChoice, () => null);
 
   // The OS flipping under an open tab matters only while the choice is
   // `system` — that is what `system` means, and re-reading the store here
@@ -80,17 +64,9 @@ export function PlatformThemeControl() {
     return () => window.removeEventListener("storage", repaint);
   }, []);
 
-  const pick = useCallback((next: ThemeChoice) => {
-    try {
-      window.localStorage.setItem(THEME_STORAGE_KEY, next);
-    } catch {
-      // Private window. The theme still changes for this document; it is the
-      // remembering that this browser refuses, and there is nothing to do
-      // about that but carry on.
-    }
-    applyPlatformTheme(resolveTheme(next));
-    window.dispatchEvent(new Event(THEME_EVENT));
-  }, []);
+  // One writer for the three things a theme change is: the stored choice, the
+  // document, and the other copies of this control. See `setThemeChoice`.
+  const pick = useCallback((next: ThemeChoice) => setThemeChoice(next), []);
 
   return (
     <div className={styles.control} role="group" aria-label="Тема">
@@ -115,7 +91,19 @@ export function PlatformThemeControl() {
               as a pseudo-element here does not merely look different — it is
               erased, which is why the gold never appeared. Same graphic, same
               three numbers, sized to a glyph instead of a word. */}
-          <HandGraphic className={styles.mark} name="ink-stroke" size={28} />
+          {/* THE RING, NOT A STROKE. The system already answers "how is an
+              ICON-ONLY control marked" and the answer is the ink ring — it is
+              what the header's menu button and the avatar wear, it has its own
+              token (`--cw-ink-ring-size`), and PlatformButtons says it in one
+              line: icon-only chrome is guided by the baked ink ring supplied by
+              its consumer. A short stroke under a glyph was a second answer to
+              a question that had one; the underline belongs to labels, because
+              a label has a length for a rule to measure.
+
+              (It also cannot be a pseudo-element here: `.profileMenu` sets
+              `content: none` on every button's `::after` on purpose, so a CSS
+              bar is not a different-looking mark but an erased one.) */}
+          <HandGraphic className={styles.ring} name="ink-ring" size={48} />
         </button>
       ))}
     </div>

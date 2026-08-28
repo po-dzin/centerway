@@ -27,6 +27,12 @@ import type { ReactNode } from "react";
 
 import { HandGraphic } from "@/components/Icon";
 import styles from "./CabinetHero.module.css";
+// The reach notice is a CabinetClient concern wearing the avatar as a
+// mounting point — the badge, its colour and its text all come from
+// `reach`, which this file has never known about and should not have to.
+// Its three classes live in Cabinet.module.css, beside the alert they
+// replaced, rather than in this module.
+import cabinetStyles from "./Cabinet.module.css";
 
 /**
  * The threshold plate, shared with the home hero rather than copied.
@@ -40,19 +46,29 @@ import styles from "./CabinetHero.module.css";
  * The cabinet's own plate, generated for this screen (2026-08-27).
  *
  * NOT the home hero's threshold photograph any more, and not because of the
- * subject: the dissolve into the page's paper is BAKED INTO THESE FILES. The
- * cabinet used to paint that gradient in CSS over the shared plate, which on a
- * dark photograph reads as a white veil laid on top — two visible layers, with
- * the veil following the layout instead of the picture. Here the frame itself
- * ends in `--cw-mat-surface`, so the page places an image and the seam is
- * already inside it. `scripts/img/grade.mjs --fade-bottom` is what bakes it.
+ * subject: this screen needs a frame composed to be STOOD IN, and a shared
+ * plate cropped to a phone is not one.
+ *
+ * These are the ungraded-fade masters. The v2 pair ended in the light surface's
+ * cream — `grade.mjs --fade-bottom` bakes the page's paper into the last third
+ * of the frame — which was exactly right until the night palette shipped and the
+ * bottom of the cabinet came out as a cream slab on a graphite page. The
+ * dissolve is a mask in the CSS module now, so the file states the room and the
+ * theme states the ground.
  *
  * Two masters for the two shapes of a full screen: a 16:9 room, and the same
  * room restaged tall — a cover crop of the landscape one on a phone would show
  * a slice of wall and neither the opening nor the shelves in it.
+ *
+ * v3 (2026-08-28) is v1's frame and v1's grade with no fade at all — the two
+ * earlier pairs differ from it only in how much paper was painted into the
+ * bottom. Regenerating them is one line each:
+ * `node scripts/img/grade.mjs public/cw/img/_staging/cabinet/backdrop-cabinet-room-dark-16x9-1.png
+ *  --out public/cw/platform/cabinet/room-v3.webp --width 2560` (and the 9x16
+ * source at `--width 1400` for the portrait master).
  */
-const ROOM_PLATE = "/cw/platform/cabinet/room-v1.webp";
-const ROOM_PLATE_PORTRAIT = "/cw/platform/cabinet/room-portrait-v1.webp";
+const ROOM_PLATE = "/cw/platform/cabinet/room-v3.webp";
+const ROOM_PLATE_PORTRAIT = "/cw/platform/cabinet/room-portrait-v3.webp";
 
 export type CabinetHeroStat = {
   /** The field name: "Доша", "Бібліотека", "Продукти". */
@@ -61,11 +77,20 @@ export type CabinetHeroStat = {
   value: ReactNode;
 };
 
+export type CabinetHeroNotice = {
+  /** The notice itself, revealed beside the dot — a sentence, not a tooltip title. */
+  label: string;
+  /** The label on the way out of it. The dot marks; only this navigates. */
+  action: string;
+  href: string;
+};
+
 export function CabinetHero({
   label,
   name,
   email,
   avatar,
+  notice,
   stats,
   children,
 }: {
@@ -74,6 +99,8 @@ export function CabinetHero({
   email: string;
   /** The account picture, or the initial standing in for one. */
   avatar: ReactNode;
+  /** A fact worth a glance, not a sentence — see the reach dot below. */
+  notice?: CabinetHeroNotice;
   stats: CabinetHeroStat[];
   /** The shelf: the course to resume, the rest of them, or a single state card. */
   children: ReactNode;
@@ -108,8 +135,42 @@ export function CabinetHero({
 
         <div className={styles.room}>
           <div className={styles.identityMain}>
-            <span className={styles.avatar} aria-hidden="true">
-              {avatar}
+            {/* THE DOT, NOT THE BAR. This used to be a full-width line under
+                the shelf, stated once at the weight of a panel — an answer to
+                a fact that is about THIS ACCOUNT, sitting a full screen away
+                from where the account is named. Reachability is a property of
+                the identity above the fold, so it rides the identity: a status
+                dot on the avatar's own corner, the way a chat client marks an
+                account rather than posting a banner about it.
+
+                THE DOT DOES NOT NAVIGATE. A 0.7rem mark that leaves the site
+                the moment it is touched is a trapdoor: it asks for a click
+                before it has said what it is, and the thing on the far side is
+                Telegram. So the dot only marks. Resting on it — or reaching it
+                with a keyboard — states the notice, and the way out sits inside
+                that statement as an ordinary link, read first and pressed
+                second. Hover and focus-within do the revealing between them; no
+                open flag is threaded through this component for it. */}
+            <span className={cabinetStyles.avatarNoticeWrap}>
+              <span className={styles.avatar} aria-hidden="true">
+                {avatar}
+              </span>
+              {notice ? (
+                <span className={cabinetStyles.avatarNotice}>
+                  <span className={cabinetStyles.avatarNoticeDot} aria-hidden="true" />
+                  <span className={cabinetStyles.avatarNoticePop}>
+                    <span className={cabinetStyles.avatarNoticeText}>{notice.label}</span>
+                    <a
+                      className={cabinetStyles.avatarNoticeLink}
+                      href={notice.href}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {notice.action}
+                    </a>
+                  </span>
+                </span>
+              ) : null}
             </span>
             <div className={styles.identityText}>
               <p className={styles.sectionLabel}>{label}</p>
@@ -118,7 +179,7 @@ export function CabinetHero({
             </div>
           </div>
 
-          <dl className={styles.stats}>
+          <dl className={styles.stats} data-cw-rule="inverse">
             {stats.map((stat) => (
               <div className={styles.stat} key={stat.label}>
                 <dt className={styles.sectionLabel}>{stat.label}</dt>

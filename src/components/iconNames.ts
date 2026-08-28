@@ -57,6 +57,7 @@ export const CW_ICON_NAMES = [
   "more",
   "link",
   "list",
+  "chart",
   "list-ordered",
   "quote",
   "code",

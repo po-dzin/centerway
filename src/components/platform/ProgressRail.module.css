@@ -49,7 +49,16 @@
   min-width: 0.3rem;
   height: 0.19rem;
   border-radius: var(--cw-radius-pill);
-  background: var(--cw-platform-border);
+  /* THE TRACK IS QUIET INK, NOT A HAIRLINE COLOUR (2026-08-28).
+     `--cw-platform-border` is 14% of the method ink on the page ground — the
+     right weight for a 1px rule and far too little for a 3px dash that has to
+     say "eleven lessons, nine of them ahead". On paper the undone half of the
+     rail was all but invisible, so the card showed two gold marks floating with
+     nothing to be part of. The page's own ink at a quarter strength reads as a
+     track in both gammas without becoming a second mark: it follows the theme,
+     which a scrim must never do and a track on the page's own surface always
+     must. */
+  background: color-mix(in srgb, var(--cw-platform-text) 26%, transparent);
   transform: rotate(var(--cw-dash-tilt, 0deg)) scaleX(var(--cw-dash-len, 1));
   transition: background-color 260ms ease;
 }
@@ -68,7 +77,7 @@
   border-radius: var(--cw-radius-pill);
   background: repeating-linear-gradient(
     90deg,
-    var(--cw-platform-border) 0 0.4rem,
+    color-mix(in srgb, var(--cw-platform-text) 26%, transparent) 0 0.4rem,
     transparent 0.4rem 0.64rem
   );
 }

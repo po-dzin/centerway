@@ -70,6 +70,35 @@ async function readCourseRow(slug: string): Promise<CourseRow | null> {
 }
 
 /**
+ * Who owns this course — and nothing else.
+ *
+ * Separate from `loadBuilderCourse` on purpose. Rebuilding a course runs
+ * `courseFromRows` and `validateCourse`, so a STORED course that no longer
+ * satisfies the contract throws — and a caller that only needed to ask "may
+ * this identity touch this slug?" would then answer "no such course" to the one
+ * person entitled to repair it. Ownership is three columns and cannot fail that
+ * way; content validity is a separate question with a separate answer (422).
+ */
+export async function readCourseOwnership(
+  slug: string
+): Promise<{ id: string; slug: string; authorId: string | null } | null> {
+  const db = adminClient();
+  const { data, error } = await db
+    .from("lms_courses")
+    .select("id, slug, author_id")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (error) throw new Error(`lms_builder_course_read_failed:${error.message}`);
+  if (!data) return null;
+  const row = data as CourseRow;
+  return {
+    id: row.id as string,
+    slug: row.slug as string,
+    authorId: (row.author_id as string | null) ?? null,
+  };
+}
+
+/**
  * The full authored course, rebuilt from rows.
  *
  * Returns `null` for a course that has no rows yet — which is a real state:

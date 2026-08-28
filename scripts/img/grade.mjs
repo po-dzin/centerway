@@ -85,9 +85,19 @@ export async function gradeImage(
     const overlay = Buffer.from(
       `<svg width="${w}" height="${h}" xmlns="http://www.w3.org/2000/svg">` +
         `<defs><linearGradient id="f" x1="0" y1="0" x2="0" y2="1">` +
+        /* SIX STOPS, NOT FOUR (2026-08-28). The first ramp put 0.38 of the
+           colour in by 40% of the band and 0.86 by 72%, which over a dark room
+           reads as a lit edge travelling across the picture: most of the
+           dissolve happened inside a fifth of the band's height, so the eye
+           found a line where there should only be a gradient. These stops keep
+           the same endpoints and spend the middle of the band doing very
+           little — an ease, not a wipe. Widen `--fade-bottom` to soften
+           further; the curve is the shape, the band is the length. */
         `<stop offset="0" stop-color="${fadeColor}" stop-opacity="0"/>` +
-        `<stop offset="0.4" stop-color="${fadeColor}" stop-opacity="0.38"/>` +
-        `<stop offset="0.72" stop-color="${fadeColor}" stop-opacity="0.86"/>` +
+        `<stop offset="0.3" stop-color="${fadeColor}" stop-opacity="0.07"/>` +
+        `<stop offset="0.55" stop-color="${fadeColor}" stop-opacity="0.28"/>` +
+        `<stop offset="0.75" stop-color="${fadeColor}" stop-opacity="0.6"/>` +
+        `<stop offset="0.9" stop-color="${fadeColor}" stop-opacity="0.89"/>` +
         `<stop offset="1" stop-color="${fadeColor}" stop-opacity="1"/>` +
         `</linearGradient></defs>` +
         `<rect x="0" y="${h - band}" width="${w}" height="${band}" fill="url(#f)"/></svg>`,

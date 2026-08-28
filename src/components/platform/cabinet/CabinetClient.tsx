@@ -32,7 +32,7 @@ import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
 import { CabinetHero } from "./CabinetHero";
 import { DoshaWheel } from "./DoshaWheel";
-import { CompactCourseCard, CourseGlance, ShelfErrorCard, glassMedia, matte } from "./CourseCard";
+import { CompactCourseCard, ShelfErrorCard, glassMedia, matte } from "./CourseCard";
 import {
   dateLocaleFor,
   fmtDate,
@@ -65,17 +65,18 @@ import styles from "./Cabinet.module.css";
  * page, so they are cleaned off the URL rather than redirected.
  */
 /**
- * How many courses stand in the row beside the one being resumed.
+ * NO SECOND LIST OF COURSES ON THE DASHBOARD (2026-08-28).
  *
- * THREE, and the fourth row of the column is «Усі мої курси →». The first version
- * of this row printed every course the account owns, which on a nine-course
- * shelf turned the middle of the composition into a two-column table — the
- * dashboard answering "what do I own" at the length of the library instead of
- * "what do I open now". The cap is not silent: the count stands in the room
- * above and the way to the full record is the last row of the same list.
+ * This screen used to print three more courses under the one being resumed,
+ * with «Усі мої курси →» as the fourth row. Three was already a cap on a
+ * question this page does not ask: the dashboard answers "what do I open now",
+ * and «what do I own» is the library's whole job one tap away. On a phone the
+ * three glances were also the difference between a first screen and a scroll.
+ *
+ * What is left is the one course and the way to the rest. The count has not
+ * gone anywhere — «КУРСИ · 9 курсів» stands in the room above, so nothing is
+ * silently dropped; the list is simply where lists live.
  */
-const GLANCE_ROWS = 3;
-
 const MIGRATED_HASHES = new Set(["#tests", "#products", "#account", "#overview"]);
 
 function useHashMigration() {
@@ -166,15 +167,6 @@ export function CabinetClient() {
   const resumeCourse = useMemo(() => pickResumeCourse(ownedCourses), [ownedCourses]);
 
   /**
-   * The rest of the shelf, beside the one course being resumed — `GLANCE_ROWS`
-   * of them, in the order the shelf came in.
-   */
-  const glanceCourses = useMemo(() => {
-    if (!resumeCourse) return ownedCourses.slice(0, GLANCE_ROWS);
-    return ownedCourses.filter((course) => course.slug !== resumeCourse.slug).slice(0, GLANCE_ROWS);
-  }, [ownedCourses, resumeCourse]);
-
-  /**
    * The shelf has THREE states, and `null` is not one of the two obvious ones.
    *
    * `useLearnerShelf` returns null both while the read is in flight and when it
@@ -214,6 +206,11 @@ export function CabinetClient() {
           label={copy.profile}
           name={account.fullName ?? copy.fallbackName}
           email={account.email ?? copy.fallbackEmail}
+          notice={
+            reach && !reach.linked && reach.linkUrl
+              ? { label: cab.notificationsMissing, action: cab.connectTelegram, href: reach.linkUrl }
+              : undefined
+          }
           avatar={
             account.avatarUrl ? (
               // Remote auth avatars stay on plain img to avoid introducing image config coupling into platform profile.
@@ -283,16 +280,11 @@ export function CabinetClient() {
               </article>
             )}
 
-            {/* Everything else, as instrument rather than as more answers —
-                ONE COLUMN of them, ending in the way onward. Two columns of
-                glances made the middle of the row a table, and «Усі мої курси»
-                floated above the whole composition as a fourth object; as the
-                last row of the same list it stands where the list runs out,
-                which is the only place that sentence is true. */}
+            {/* The way onward, and nothing else in this column. It used to
+                stand at the end of three more courses; with those gone it is
+                what it always was — one crossing, to the place the whole shelf
+                lives. */}
             <div className={styles.shelfGlances}>
-              {glanceCourses.map((course) => (
-                <CourseGlance key={course.slug} course={course} copy={cab} />
-              ))}
               <Link className={styles.glanceMore} href={shelfHref} {...glassMedia}>
                 <span className={styles.glanceMoreText}>{cab.allCourses}</span>
                 <span className={styles.glanceMoreArrow} aria-hidden="true">
@@ -332,25 +324,6 @@ export function CabinetClient() {
               </div>
             </article>
           </div>
-
-          {/* THE ONE THING THAT NEEDS DOING, and only when it does. A dashboard
-              that lists every state a person is in is a report; what makes it a
-              dashboard is that it surfaces the gap that costs them something.
-              An unconnected Telegram means the lesson reminders this account
-              pays for never arrive — so it says that here, once, as a line
-              rather than a panel. The account fold below still holds the
-              record; this is the alarm, not the field.
-
-              Nothing renders when the channel is linked, or when the reach API
-              is unavailable: an empty alarm bar is a broken dashboard. */}
-          {reach && !reach.linked && reach.linkUrl ? (
-            <a className={styles.shelfAlert} href={reach.linkUrl} target="_blank" rel="noopener noreferrer">
-              <span>{cab.notificationsMissing}</span>
-              <span className={styles.shelfAlertAction} aria-hidden="true">
-                →
-              </span>
-            </a>
-          ) : null}
         </CabinetHero>
 
       <div className={styles.shell}>

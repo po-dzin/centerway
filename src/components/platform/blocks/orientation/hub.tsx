@@ -23,8 +23,18 @@ const HERO_FRAMING = {
      window is pushed down and in. */
   "--hero-photo-x-mobile": "50%",
   "--hero-photo-y-mobile": "68%",
+  /* THE ANCHOR CANNOT SIT PAST THE EDGE IT ANCHORS.
+     For any transform-origin below the box, scaling drags the bottom edge
+     UP with it — only an origin sitting exactly AT the bottom (100%) is a
+     fixed point under a y-scale. This was 125%, a 211px overshoot past the
+     box's own bottom that reads as "push the crop down further" but instead
+     pulled the covered image's bottom edge 30px short of the viewport at
+     844px tall, exposing the layer's scrim-ink background as a dark band
+     under the CTA. 100% keeps the algebra honest: bottom stays pinned at
+     every viewport height, and the zoom still reveals more of what sits
+     above it exactly as intended. */
   "--hero-photo-zoom-mobile": "1.14",
-  "--hero-photo-origin-mobile": "center 125%",
+  "--hero-photo-origin-mobile": "center 100%",
 } as CSSProperties;
 
 export function HubHero() {

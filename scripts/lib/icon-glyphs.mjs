@@ -440,6 +440,14 @@ export const ICONS = {
   // instead of level dots — the shape this set already uses for "climbing in
   // order" (`week`, `phase`), so a numbered list reads as a sequence rather
   // than a second bullet style.
+  /* Chart: three bars off one baseline, and the baseline is the point — a
+     dashboard is a page that measures things against a floor. Added 2026-08-28
+     for the admin's analytics tab, which was the last route still wearing a
+     borrowed outline set. */
+  chart: {
+    group: "Meta",
+    d: ["M4.2 19.4h15.6", "M7.6 19.4v-5.2", "M12 19.4v-9.6", "M16.4 19.4v-6.8"],
+  },
   "list-ordered": {
     group: "Meta",
     d: ["M9 6.4h11", "M9 12h11", "M9 17.6h11", "M4.4 8v-2.6", "M4.4 13.6v-4.2", "M4.4 19.2v-5.8"],

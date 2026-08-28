@@ -83,18 +83,3 @@
   --ds-type-hero-subtitle-size: clamp(1.2rem, 1.7vw, 1.6rem);
   --ds-type-hero-subtitle-line-height: 1.25;
 }
-
-.dark {
-  --ds-color-bg-canvas: var(--cw-bg);
-  --ds-color-bg-soft: var(--cw-surface-2);
-  --ds-color-surface: var(--cw-surface-solid);
-  --ds-color-text: var(--cw-text);
-  --ds-color-text-muted: var(--cw-muted);
-  --ds-color-primary: var(--cw-accent);
-  --ds-color-primary-strong: var(--cw-accent-strong);
-  --ds-color-accent: var(--cw-accent);
-  --ds-color-accent-strong: var(--cw-accent-strong);
-  --ds-color-border-soft: var(--cw-border);
-  --ds-shadow-sm: var(--cw-shadow-soft);
-  --ds-shadow-md: var(--cw-shadow-strong);
-}
