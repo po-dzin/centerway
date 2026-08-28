@@ -1483,7 +1483,13 @@
      reading page in that same colour, so 30% of it over 100% of it came out as
      a glyph and a faint ring with a line of body copy running through both. A
      control standing on the reading brings the reading's own paper with it. */
-  border: 1px solid var(--cw-mat-stroke);
+  /* `--cw-mat-stroke-control`, not `--cw-mat-stroke`: the page under this button
+     is the reading surface and the button's own ground is the same paper, so an
+     opaque circle on it is still invisible — only the soft shadow separated
+     them. The control stroke is the one outline in the material the contrast
+     gate holds at 3:1 on both surfaces in both themes, and it exists for
+     exactly this: a secondary control that otherwise does not read as one. */
+  border: 1px solid var(--cw-mat-stroke-control);
   background-color: var(--cw-mat-surface);
   background-image: var(--cw-mat-grain-image);
   box-shadow: var(--cw-mat-shadow-raised);
