@@ -91,6 +91,17 @@ export type AccountRow = {
     enrollments: number;
     /** Paid orders reachable from this account, by link or by matching email. */
     purchases: number;
+    /**
+     * Courses this account is the author of (`lms_courses.author_id`).
+     *
+     * Carried over from the Roles table when it was retired — it was the one
+     * number that lived only there. It belongs on a person either way: "owns
+     * three courses" is a fact about them, and it is what tells a `coach` who
+     * writes from one who only teaches.
+     */
+    ownedCourses: number;
+    /** When the role was last written. Also inherited from the Roles table. */
+    roleUpdatedAt: string | null;
 };
 
 export type RoleRow = {

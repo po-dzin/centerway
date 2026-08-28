@@ -23,7 +23,6 @@ const access = {
     provisionAccess: vi.fn(),
     setEnrollmentDeadline: vi.fn(),
     revokeCourse: vi.fn(),
-    listRoles: vi.fn(),
     setRole: vi.fn(),
     listCourses: vi.fn(),
     setCourseAuthor: vi.fn(),
@@ -65,7 +64,6 @@ beforeEach(() => {
     for (const fn of Object.values(access)) fn.mockReset();
     access.listLearners.mockResolvedValue({ items: [], total: 0, truncated: false, summary: {} });
     access.listAccounts.mockResolvedValue({ items: [], total: 0 });
-    access.listRoles.mockResolvedValue([]);
     access.listCourses.mockResolvedValue([]);
 });
 
@@ -79,13 +77,12 @@ describe("authentication", () => {
             learners.DELETE(send("http://x/api/admin/access/learners?enrollmentId=e1", "DELETE")),
             learners.PATCH(send("http://x/api/admin/access/learners", "PATCH", { enrollmentId: "e1", expiresAt: "2026-09-30" })),
             accounts.GET(get("http://x/api/admin/access/accounts")),
-            roles.GET(get("http://x/api/admin/access/roles")),
             roles.POST(send("http://x/api/admin/access/roles", "POST", { email: "a@b.c", role: "admin" })),
             courses.GET(get("http://x/api/admin/access/courses")),
             courses.PATCH(send("http://x/api/admin/access/courses", "PATCH", { courseId: "c1" })),
         ]);
 
-        expect(responses.map((res) => res.status)).toEqual([401, 401, 401, 401, 401, 401, 401, 401, 401]);
+        expect(responses.map((res: Response) => res.status)).toEqual([401, 401, 401, 401, 401, 401, 401, 401]);
         for (const fn of Object.values(access)) expect(fn).not.toHaveBeenCalled();
     });
 });
@@ -384,16 +381,10 @@ describe("accounts", () => {
 });
 
 describe("roles", () => {
-    it("lets support read the role map but tells the UI it may not grant", async () => {
-        session.value = SUPPORT;
-        const res = await roles.GET(get("http://x/api/admin/access/roles"));
-        expect(res.status).toBe(200);
-        expect(await res.json()).toMatchObject({ canGrant: false });
-    });
-
-    it("marks an admin as able to grant", async () => {
-        expect(await (await roles.GET(get("http://x/api/admin/access/roles"))).json()).toMatchObject({ canGrant: true });
-    });
+    // There is no GET here any more: the role TABLE was the accounts list
+    // filtered by an attribute of the account, and `/accounts?role=` answers it
+    // from the one list. `canGrant` for the UI comes from the accounts route,
+    // which has its own assertions above. This route is only the write.
 
     it("refuses a role change from support — reading is not granting", async () => {
         session.value = SUPPORT;

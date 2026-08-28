@@ -22,7 +22,6 @@ const {
     grantCourse,
     listCourses,
     listLearners,
-    listRoles,
     provisionAccess,
     recordManualPayment,
     blockCourse,
@@ -294,6 +293,42 @@ describe("listAccounts", () => {
         const emails = items.map((row) => row.email);
         expect(emails).toContain("fresh@example.com");
         expect(emails).toContain("coach@example.com");
+    });
+
+    /* ── What the Roles table used to prove ────────────────────────────────
+       Its list was this list filtered by an attribute of the account, so the
+       assertions moved here with the filter rather than being deleted with the
+       function. See docs/admin-access-shape-2026-08-28.md. */
+
+    it("narrows to the elevated accounts, and only those", async () => {
+        const { items } = await listAccounts({ limit: 50, offset: 0, role: "staff" });
+
+        expect(items.map((row) => row.email)).toEqual(
+            expect.arrayContaining(["admin@example.com", "coach@example.com"])
+        );
+        // A plain `user` is everybody, so it is not staff.
+        expect(items.some((row) => row.email === "learner@example.com")).toBe(false);
+    });
+
+    it("narrows to one named role", async () => {
+        const { items } = await listAccounts({ limit: 50, offset: 0, role: "coach" });
+        expect(items.map((row) => row.email)).toEqual(["coach@example.com"]);
+    });
+
+    it("carries what a person authors, which used to live only in the Roles table", async () => {
+        const { items } = await listAccounts({ limit: 50, offset: 0, role: "coach" });
+        expect(items[0]).toMatchObject({ role: "coach", ownedCourses: 1, enrollments: 0 });
+    });
+
+    it("answers an empty page — not an error — when nobody holds the role", async () => {
+        db.tables.user_roles = [{ user_id: "auth-1", role: "user", updated_at: daysAgo(1) }];
+        expect(await listAccounts({ limit: 50, offset: 0, role: "staff" })).toEqual({ items: [], total: 0 });
+    });
+
+    it("normalises a legacy capitalised role", async () => {
+        db.tables.user_roles = [{ user_id: "auth-1", role: "Admin", updated_at: daysAgo(1) }];
+        const { items } = await listAccounts({ limit: 50, offset: 0 });
+        expect(items.find((row) => row.authUserId === "auth-1")).toMatchObject({ role: "admin" });
     });
 
     it("carries the role, the course count and the purchase count", async () => {
@@ -692,36 +727,6 @@ describe("setRole", () => {
         await expect(
             setRole({ email: "ghost@example.com", role: "admin", actorId: ADMIN })
         ).rejects.toMatchObject({ message: "account_not_found" });
-    });
-});
-
-describe("listRoles", () => {
-    it("lists elevated accounts only, with what each one holds", async () => {
-        const rows = await listRoles({});
-
-        expect(rows.map((row) => row.email)).toEqual(
-            expect.arrayContaining(["admin@example.com", "coach@example.com"])
-        );
-        // auth-1 is a plain 'user' — everyone is, so it is not a role listing.
-        expect(rows.some((row) => row.email === "learner@example.com")).toBe(false);
-
-        const coach = rows.find((row) => row.email === "coach@example.com");
-        expect(coach).toMatchObject({ role: "coach", ownedCourses: 1, enrollments: 0 });
-    });
-
-    it("filters by email or name", async () => {
-        expect((await listRoles({ q: "coach" })).map((row) => row.email)).toEqual(["coach@example.com"]);
-        expect(await listRoles({ q: "nobody" })).toEqual([]);
-    });
-
-    it("returns nothing — without querying for a sentinel id — when no one is elevated", async () => {
-        db.tables.user_roles = [{ user_id: "auth-1", role: "user", updated_at: daysAgo(1) }];
-        expect(await listRoles({})).toEqual([]);
-    });
-
-    it("normalises legacy capitalised roles", async () => {
-        db.tables.user_roles = [{ user_id: "auth-1", role: "Admin", updated_at: daysAgo(1) }];
-        expect((await listRoles({}))[0]).toMatchObject({ role: "admin" });
     });
 });
 

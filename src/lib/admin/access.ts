@@ -45,7 +45,6 @@ import type {
     LearnerAccountRow,
     LearnerRow,
     LearnerStatus,
-    RoleRow,
 } from "@/lib/admin/accessTypes";
 
 export * from "@/lib/admin/accessTypes";
@@ -1042,9 +1041,13 @@ export async function listAccounts(input: ListAccountsInput): Promise<{
 
     const ids = rows.map((row) => row.auth_user_id as string);
 
-    const [{ data: roles }, { data: enrollments }, customerIdByAccount] = await Promise.all([
-        db.from("user_roles").select("user_id, role").in("user_id", ids),
+    const [{ data: roles }, { data: enrollments }, { data: owned }, customerIdByAccount] = await Promise.all([
+        db.from("user_roles").select("user_id, role, updated_at").in("user_id", ids),
         db.from("lms_enrollments").select("auth_user_id").in("auth_user_id", ids),
+        // Not narrowed by `ids`: authorship is a column on the course and the
+        // set of courses is small, so folding all of them here is cheaper than
+        // a second round trip per page.
+        db.from("lms_courses").select("author_id").not("author_id", "is", null),
         customersByAccount(
             db,
             rows.map((row) => ({
@@ -1055,6 +1058,13 @@ export async function listAccounts(input: ListAccountsInput): Promise<{
     ]);
 
     const roleById = new Map((roles ?? []).map((row) => [row.user_id as string, String(row.role).toLowerCase()]));
+    const roleUpdatedById = new Map((roles ?? []).map((row) => [row.user_id as string, (row.updated_at as string | null) ?? null]));
+
+    const ownedByAuthor = new Map<string, number>();
+    for (const row of owned ?? []) {
+        const key = row.author_id as string;
+        ownedByAuthor.set(key, (ownedByAuthor.get(key) ?? 0) + 1);
+    }
 
     const enrolledCount = new Map<string, number>();
     for (const row of enrollments ?? []) {
@@ -1078,6 +1088,10 @@ export async function listAccounts(input: ListAccountsInput): Promise<{
                 role: roleById.get(authUserId) ?? null,
                 enrollments: enrolledCount.get(authUserId) ?? 0,
                 purchases: customers.reduce((sum, id) => sum + (paidByCustomer.get(id) ?? 0), 0),
+                // Both inherited from the Roles table when it was retired —
+                // they were the only facts that lived nowhere else.
+                ownedCourses: ownedByAuthor.get(authUserId) ?? 0,
+                roleUpdatedAt: roleUpdatedById.get(authUserId) ?? null,
             } satisfies AccountRow;
         }),
         total: count ?? rows.length,
@@ -1156,63 +1170,6 @@ async function paidOrderCounts(db: Db, customerIds: string[]): Promise<Map<strin
         counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     return counts;
-}
-
-export async function listRoles(input: { q?: string }): Promise<RoleRow[]> {
-    const db = adminClient();
-
-    const { data: roles, error } = await db
-        .from("user_roles")
-        .select("user_id, role, updated_at")
-        .order("updated_at", { ascending: false });
-    if (error) throw new AccessError(error.message, 500);
-
-    // Only elevated roles are worth a table — 'user' is everyone, and listing
-    // everyone here would just be a worse version of /admin/customers.
-    const elevated = (roles ?? []).filter((row) => String(row.role).toLowerCase() !== "user");
-    if (elevated.length === 0) return [];
-    const ids = elevated.map((row) => row.user_id as string);
-
-    const [{ data: profiles }, { data: owned }, { data: enrolled }] = await Promise.all([
-        db
-            .from("platform_users")
-            .select("auth_user_id, email, full_name, avatar_url, last_sign_in_at")
-            .in("auth_user_id", ids),
-        db.from("lms_courses").select("author_id").not("author_id", "is", null),
-        db.from("lms_enrollments").select("auth_user_id").in("auth_user_id", ids),
-    ]);
-
-    const profileById = new Map((profiles ?? []).map((row) => [row.auth_user_id as string, row]));
-    const ownedCount = new Map<string, number>();
-    for (const row of owned ?? []) {
-        const key = row.author_id as string;
-        ownedCount.set(key, (ownedCount.get(key) ?? 0) + 1);
-    }
-    const enrolledCount = new Map<string, number>();
-    for (const row of enrolled ?? []) {
-        const key = row.auth_user_id as string;
-        enrolledCount.set(key, (enrolledCount.get(key) ?? 0) + 1);
-    }
-
-    const q = input.q?.trim().toLowerCase() ?? "";
-    return elevated
-        .map((row) => {
-            const profile = profileById.get(row.user_id as string);
-            return {
-                authUserId: row.user_id as string,
-                email: (profile?.email as string | null) ?? null,
-                fullName: (profile?.full_name as string | null) ?? null,
-                avatarUrl: (profile?.avatar_url as string | null) ?? null,
-                role: String(row.role).toLowerCase(),
-                lastSignInAt: (profile?.last_sign_in_at as string | null) ?? null,
-                updatedAt: (row.updated_at as string | null) ?? null,
-                ownedCourses: ownedCount.get(row.user_id as string) ?? 0,
-                enrollments: enrolledCount.get(row.user_id as string) ?? 0,
-            } satisfies RoleRow;
-        })
-        .filter((row) =>
-            q ? `${row.email ?? ""} ${row.fullName ?? ""}`.toLowerCase().includes(q) : true
-        );
 }
 
 export async function setRole(input: { email: string; role: GrantableRole; actorId: string }) {
