@@ -31,10 +31,28 @@ import {
   normalizePayableProduct,
   type PayableOffer,
 } from "@/lib/products";
+import { mediaSources } from "@/lib/lms/media";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 import { toOfferSurface } from "@/lib/platform/courseOffer";
 import { offerEyebrow } from "@/lib/platform/offerPreview";
+
+/**
+ * The card-sized copy of an uploaded cover, when there is one.
+ *
+ * `mediaSources` answers "does this address have smaller renditions" for
+ * exactly one kind of address — an upload this application made — and returns
+ * nothing for a repository path or a pasted link. A catalogue card is ~370 CSS
+ * pixels wide, so the 640 rendition is the right one to hand it.
+ */
+function coverCard(src: string): string | undefined {
+  const set = mediaSources(src).srcSet;
+  if (!set) return undefined;
+  return set
+    .split(", ")
+    .map((candidate) => candidate.split(" ")[0])
+    .find((url) => url.endsWith("/640.webp"));
+}
 import {
   courseOfferCode,
   inlineToPlainText,
@@ -187,6 +205,7 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
          as the eyebrow, the raw title as the name — and it drifted the moment
          a course was authored with a long title. */
       const surface = toOfferSurface(course);
+      const card = course.cover ? coverCard(course.cover.src) : undefined;
       return {
         slug: course.slug,
         title: surface.title,
@@ -197,6 +216,11 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
           ? {
               artwork: {
                 desktop: course.cover.src,
+                // An author's own upload has a 640px rendition beside it, and a
+                // catalogue card is the place that wants it. A cover that came
+                // from the repository instead has no such sibling to promise,
+                // so the card falls back to the full plate as it always did.
+                ...(card ? { card } : {}),
                 desktopPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%`,
               },
             }

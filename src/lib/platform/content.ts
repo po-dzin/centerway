@@ -86,6 +86,20 @@ export type PlatformOfferPrimaryActionKind = "enroll" | "buy";
    hero swaps to `mobile`, below 900px portrait. */
 export type PlatformOfferArtwork = {
   desktop: string;
+  /**
+   * The same picture at 960px, for the places that draw it small.
+   *
+   * A program card in the catalogue grid is about 370 CSS pixels wide and was
+   * drawing the full 1600px plate as a background — six of those on the home
+   * page measured at just over a megabyte. Named rather than derived from
+   * `desktop`: a rule like "append -960" is a promise about a file that exists
+   * nowhere in the type system, and it fails as a 404 on a public page. Written
+   * out, it is checked by `npm run guard:assets` like every other path here.
+   *
+   * Optional because not every plate has one: a small original stays one file.
+   * `desktop` is the fallback, which is exactly what happened before.
+   */
+  card?: string;
   mobile?: string;
   altPreview?: string;
   desktopPosition?: string;
@@ -113,7 +127,8 @@ export const programs = [
     visual: "movement",
     artwork: {
       desktop: "/cw/platform/programs/reboot-hero-desktop-v2.webp",
-      mobile: "/cw/platform/programs/reboot-card-v1.png",
+      card: "/cw/platform/programs/reboot-hero-desktop-v2-960.webp",
+      mobile: "/cw/platform/programs/reboot-card-v1.webp",
       desktopPosition: "68% 50%",
       mobilePosition: "center 18%",
     },
@@ -144,9 +159,10 @@ export const programs = [
     duration: "21 день",
     visual: "water",
     artwork: {
-      desktop: "/cw/platform/programs/way21-home-desktop-v1.png",
-      mobile: "/cw/platform/programs/way21-home-mobile-v1.png",
-      altPreview: "/cw/platform/programs/way21-home-alt-v1.png",
+      desktop: "/cw/platform/programs/way21-home-desktop-v1.webp",
+      card: "/cw/platform/programs/way21-home-desktop-v1-960.webp",
+      mobile: "/cw/platform/programs/way21-home-mobile-v1.webp",
+      altPreview: "/cw/platform/programs/way21-home-alt-v1.webp",
     },
     description: "21-денна аюрведична програма розвантаження: харчування, трави, режим і щоденні опори без жорсткого тиску.",
     longDescription:
@@ -173,7 +189,8 @@ export const programs = [
     visual: "stone",
     artwork: {
       desktop: "/cw/platform/programs/ideal-body-hero-desktop-v2.webp",
-      mobile: "/cw/platform/programs/ideal-body-card-v1.png",
+      card: "/cw/platform/programs/ideal-body-hero-desktop-v2-960.webp",
+      mobile: "/cw/platform/programs/ideal-body-card-v1.webp",
       desktopPosition: "70% 50%",
       mobilePosition: "center 16%",
     },
@@ -202,7 +219,8 @@ export const programs = [
     visual: "mountain",
     artwork: {
       desktop: "/cw/platform/programs/irem-hero-desktop-v2.webp",
-      mobile: "/cw/platform/programs/irem-card-v1.png",
+      card: "/cw/platform/programs/irem-hero-desktop-v2-960.webp",
+      mobile: "/cw/platform/programs/irem-card-v1.webp",
       desktopPosition: "68% 50%",
       mobilePosition: "center 18%",
     },
@@ -230,7 +248,8 @@ export const programs = [
     duration: "підбір за станом",
     visual: "leaf",
     artwork: {
-      desktop: "/cw/platform/aggregates/products-hero-v1.png",
+      desktop: "/cw/platform/aggregates/products-hero-v1.webp",
+      card: "/cw/platform/aggregates/products-hero-v1-960.webp",
       desktopPosition: "center 24%",
       mobilePosition: "center 22%",
     },
@@ -279,12 +298,14 @@ export const platformProductOffers = programs.filter((program) => program.surfac
 
 export const platformAggregateArtwork = {
   programs: {
-    desktop: "/cw/platform/aggregates/programs-hero-v1.png",
+    desktop: "/cw/platform/aggregates/programs-hero-v1.webp",
+    card: "/cw/platform/aggregates/programs-hero-v1-960.webp",
     desktopPosition: "center 18%",
     mobilePosition: "center 16%",
   },
   products: {
-    desktop: "/cw/platform/aggregates/products-hero-v1.png",
+    desktop: "/cw/platform/aggregates/products-hero-v1.webp",
+      card: "/cw/platform/aggregates/products-hero-v1-960.webp",
     desktopPosition: "center 16%",
     mobilePosition: "center 18%",
   },
@@ -303,12 +324,14 @@ export const platformPageArtwork = {
     mobilePosition: "center 34%",
   },
   consult: {
-    desktop: "/cw/platform/pages/consult-hero-v1.png",
+    desktop: "/cw/platform/pages/consult-hero-v1.webp",
+    card: "/cw/platform/pages/consult-hero-v1-960.webp",
     desktopPosition: "center 18%",
     mobilePosition: "center 16%",
   },
   expert: {
-    desktop: "/cw/platform/pages/expert-hero-v1.png",
+    desktop: "/cw/platform/pages/expert-hero-v1.webp",
+    card: "/cw/platform/pages/expert-hero-v1-960.webp",
     desktopPosition: "center 16%",
     mobilePosition: "center 18%",
   },

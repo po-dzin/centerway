@@ -62,12 +62,22 @@ export function PlatformOfferCard({
   status = "active",
   statusLabel = "Скоро",
 }: PlatformOfferCardProps) {
-  const cardStyle = artwork?.desktop
+  /* THE CARD IS NOT A HERO. It is roughly 370 CSS pixels wide in the grid, and
+     it was drawing the same 1600px plate the full-bleed hero draws — six of them
+     on the home page, measured at just over a megabyte of background image. The
+     960px copy covers this card on a 2× screen at about a fifth of the weight.
+
+     `desktop` remains the fallback, so a plate with no small copy — a cover a
+     course carries from the database, an author's own upload — behaves exactly
+     as it did before. */
+  const photo = artwork?.card ?? artwork?.desktop;
+
+  const cardStyle = artwork && photo
     ? ({
-        "--program-photo-image": `url("${artwork.desktop}")`,
+        "--program-photo-image": `url("${photo}")`,
         /* Cards keep one horizontal master at every breakpoint. The optional
            portrait is reserved for the standalone offer hero on mobile. */
-        "--program-photo-image-mobile": `url("${artwork.desktop}")`,
+        "--program-photo-image-mobile": `url("${photo}")`,
         "--program-photo-position-desktop": artwork.desktopPosition ?? "center 20%",
         "--program-photo-position-mobile": artwork.desktopPosition ?? "center 20%",
       } as CSSProperties)

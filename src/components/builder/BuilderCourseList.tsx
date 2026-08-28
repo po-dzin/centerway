@@ -21,6 +21,7 @@ import {
   type BuilderCourseSummary,
   type BuilderFailure,
 } from "./builderClient";
+import { MEDIA_SIZES, mediaSources } from "@/lib/lms/media";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
@@ -615,8 +616,11 @@ function CourseCard(props: EntryProps) {
           // eslint-disable-next-line @next/next/no-img-element
           <img
             className={styles.courseCover}
-            src={course.cover.src}
+            {...mediaSources(course.cover.src)}
+            sizes={MEDIA_SIZES.card}
             alt={course.cover.alt}
+            loading="lazy"
+            decoding="async"
             style={{ objectPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%` }}
           />
         ) : (

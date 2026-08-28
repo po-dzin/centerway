@@ -13,11 +13,19 @@
  * ONE VALUE UNDERNEATH. Both write the same `src` string, so nothing downstream
  * — the renderer, the export, the validator — has to know which door it came
  * through. The uploaded one is simply a link that this application made.
+ *
+ * WHAT THE AUTHOR IS TOLD. Since 2026-08-28 the route resizes and re-encodes,
+ * so the file that arrives is not the file that is stored. That is worth one
+ * line rather than a silent substitution: an author who uploads a 6 MB
+ * photograph and later downloads a 180 KB WebP should have been told, once,
+ * where the difference went.
  */
 
 import { useRef, useState } from "react";
 
 import { Icon } from "@/components/Icon";
+
+import { MEDIA_SIZES, mediaSources } from "@/lib/lms/media";
 
 import { uploadMedia } from "./builderClient";
 import styles from "./Builder.module.css";
@@ -26,18 +34,42 @@ const FAILURES: Record<string, string> = {
   media_missing_file: "Файл не дійшов. Спробуйте ще раз.",
   media_missing_course: "Спершу збережіть курс — зображення кладеться в його теку.",
   media_expected_form_data: "Файл не дійшов. Спробуйте ще раз.",
+  media_not_an_image: "Це не зображення — файл пошкоджений або має чуже розширення.",
+  // Only an animation can be too big AFTER the pipeline: everything else is
+  // re-encoded down. Saying so keeps the message actionable.
+  media_encode_too_large: "Зображення не вдалося стиснути. Спробуйте інший файл.",
 };
+
+/** Kilobytes under a megabyte, megabytes above it — the way a person reads sizes. */
+function weigh(bytes: number): string {
+  return bytes < 1024 * 1024 ? `${Math.round(bytes / 1024)} КБ` : `${(bytes / (1024 * 1024)).toFixed(1)} МБ`;
+}
+
+function megabytes(detail: string): string {
+  const bytes = Number(detail.split(":")[1]);
+  return Number.isFinite(bytes) ? (bytes / (1024 * 1024)).toFixed(1) : "?";
+}
 
 /** The error codes the route returns carry their cause after a colon. */
 function explain(detail: string | undefined): string {
   if (!detail) return "Не вдалося завантажити. Спробуйте ще раз.";
   if (detail.startsWith("media_too_large:")) {
-    const bytes = Number(detail.split(":")[1]);
-    const mb = Number.isFinite(bytes) ? (bytes / (1024 * 1024)).toFixed(1) : "?";
-    return `Завеликий файл — ${mb} МБ. Межа 5 МБ.`;
+    const mb = megabytes(detail);
+    return `Завеликий файл — ${mb} МБ. Межа 20 МБ.`;
+  }
+  if (detail.startsWith("media_animation_too_large:")) {
+    const mb = megabytes(detail);
+    return `Анімація зберігається як є, тому межа для неї 5 МБ — а тут ${mb} МБ.`;
   }
   if (detail.startsWith("media_unsupported_type:")) {
     return "Такий формат не приймається. JPEG, PNG, WebP, GIF або AVIF.";
+  }
+  // Storage said no, or the ledger did. Either way the route removed whatever
+  // reached the bucket, so the upload did not half-happen and a retry is the
+  // whole of the advice. The cause after the colon is for the server log, not
+  // for a person looking at a form.
+  if (detail.startsWith("media_upload_failed:") || detail.startsWith("media_ledger_failed:")) {
+    return "Сховище не прийняло файл. Спробуйте ще раз.";
   }
   return FAILURES[detail] ?? "Не вдалося завантажити. Спробуйте ще раз.";
 }
@@ -65,16 +97,24 @@ export function BuilderImageField({
   const input = useRef<HTMLInputElement>(null);
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
+  const [report, setReport] = useState<string | null>(null);
 
   const send = async (file: File) => {
     setBusy(true);
     setNote(null);
+    setReport(null);
     const result = await uploadMedia(courseSlug, file);
     setBusy(false);
 
     if (!result.ok) {
       setNote(explain(result.detail));
       return;
+    }
+    // Said once, in passing, and only when the pipeline actually changed
+    // something worth mentioning — a file that was already small says nothing.
+    const { bytes, sourceBytes, width } = result.data;
+    if (bytes && sourceBytes && sourceBytes > bytes * 1.2) {
+      setReport(`Стиснуто: ${weigh(sourceBytes)} → ${weigh(bytes)}${width ? `, ${width}px` : ""}`);
     }
     onChange(result.data.src);
   };
@@ -85,7 +125,13 @@ export function BuilderImageField({
 
       {src && showPreview ? (
         /* eslint-disable-next-line @next/next/no-img-element -- authored content, arbitrary remote hosts */
-        <img className={styles.previewImage} src={src} alt={alt ?? ""} />
+        <img
+          className={styles.previewImage}
+          {...mediaSources(src)}
+          sizes={MEDIA_SIZES.figure}
+          alt={alt ?? ""}
+          decoding="async"
+        />
       ) : null}
 
       <div className={styles.itemRow}>
@@ -150,6 +196,7 @@ export function BuilderImageField({
       />
 
       {note ? <span className={styles.fieldError}>{note}</span> : null}
+      {report ? <span className={styles.fieldHint}>{report}</span> : null}
       {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
     </div>
   );

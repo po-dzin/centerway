@@ -238,7 +238,10 @@ export function renameCourseSlug(slug: string, nextSlug: string): Promise<Builde
  * its own multipart boundary and getting in the way of that breaks the parse on
  * the other side.
  */
-export function uploadMedia(courseSlug: string, file: File): Promise<BuilderResult<{ src: string; path: string }>> {
+export function uploadMedia(
+  courseSlug: string,
+  file: File,
+): Promise<BuilderResult<{ src: string; path: string; width: number; height: number; bytes: number; sourceBytes: number }>> {
   const body = new FormData();
   body.set("courseSlug", courseSlug);
   body.set("file", file);

@@ -24,6 +24,7 @@
  */
 
 import { inlineToPlainText, PLACEHOLDER_MARKER, type LessonBlock } from "@/lms-core";
+import { MEDIA_SIZES, mediaSources } from "@/lib/lms/media";
 import styles from "./Builder.module.css";
 
 function unfilled(value: string | undefined): boolean {
@@ -55,7 +56,14 @@ export function BlockPreview({ block }: { block: LessonBlock }) {
       // Plain <img>: authored content points at arbitrary hosts, and next/image
       // would need every one of them configured before it rendered at all.
       // eslint-disable-next-line @next/next/no-img-element
-      <img className={styles.previewImage} src={block.src} alt={block.alt ?? ""} loading="lazy" />
+      <img
+        className={styles.previewImage}
+        {...mediaSources(block.src)}
+        sizes={MEDIA_SIZES.figure}
+        alt={block.alt ?? ""}
+        loading="lazy"
+        decoding="async"
+      />
     );
   }
 

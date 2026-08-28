@@ -256,7 +256,14 @@
    markup on purpose — we decide whether to play at all, so users on
    prefers-reduced-motion or a metered/slow connection just get the poster
    frame (already the first frame of the clip) as a static hero image instead
-   of downloading and animating video for no benefit to them. */
+   of downloading and animating video for no benefit to them.
+
+   AND NOT UNTIL THE PAGE HAS LOADED (2026-08-28). The clip is 566 KB and it
+   was being fetched from DOMContentLoaded, which put it in the same queue as
+   the stylesheets and the first images of the page it sits behind. The poster
+   is already on screen by then and is the clip's own first frame, so nothing
+   is missing while it waits — the hero simply starts moving a moment later,
+   on the first idle after load. */
 (function () {
   if (typeof document === "undefined") return;
 
@@ -275,14 +282,52 @@
     for (var i = 0; i < boxes.length; i += 1) {
       var video = boxes[i].querySelector("video");
       if (!video) continue;
-      video.setAttribute("preload", "auto");
-      video.play && video.play().catch(function () {});
+
+      /* The markup ships the source in `data-src` so that nothing is fetched
+         until here. `preload="none"` alone was not enough: the clip was
+         measured starting at 314 ms, in front of the stylesheets and images of
+         the screen it sits behind. Attaching the source and calling load() is
+         the point at which this page asks for 566 KB — after the load event,
+         on an idle callback, with the poster already on screen. */
+      var source = video.querySelector("source[data-src]");
+      if (source) {
+        source.setAttribute("src", source.getAttribute("data-src"));
+        source.removeAttribute("data-src");
+        video.setAttribute("preload", "auto");
+        video.load();
+      }
+
+      play(video);
     }
   }
 
-  if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", init);
-  } else {
-    init();
+  /* A hidden tab refuses playback, and a visitor who opened this page in a
+     background tab would come back to a frozen first frame. So a rejected
+     play() is not the end of it: try again the next time the document is
+     actually visible. */
+  function play(video) {
+    if (!video.play) return;
+    var attempt = video.play();
+    if (!attempt || !attempt.catch) return;
+    attempt.catch(function () {
+      if (!document.hidden) return;
+      document.addEventListener(
+        "visibilitychange",
+        function again() {
+          if (document.hidden) return;
+          document.removeEventListener("visibilitychange", again);
+          video.play && video.play().catch(function () {});
+        },
+        false
+      );
+    });
   }
+
+  function whenIdle() {
+    if (window.requestIdleCallback) window.requestIdleCallback(init, { timeout: 3000 });
+    else window.setTimeout(init, 1200);
+  }
+
+  if (document.readyState === "complete") whenIdle();
+  else window.addEventListener("load", whenIdle);
 })();

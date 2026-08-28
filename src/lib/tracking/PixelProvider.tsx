@@ -31,6 +31,26 @@ import { META_PIXEL_ID } from "./pixelId";
  * Mirrors src/landing-static/shared/js/landing-pixel.js. The two cannot be one
  * file — the landings are static HTML that never loads the app bundle — so the
  * contract is stated in both and the pixel id has a single source (./pixelId).
+ *
+ * ─── Why the SDK is loaded late, and why the STUB is not (2026-08-28) ───────
+ *
+ * Measured on a production build: `fbevents.js` and its config are 224 KB —
+ * about a third of every page's bytes, and the largest single thing on most of
+ * them. It was on `afterInteractive`, which is after hydration but still inside
+ * the load, competing with the application's own JavaScript for bandwidth and
+ * main thread.
+ *
+ * Moving the WHOLE thing to `lazyOnload` would have been one word and a real
+ * bug: `window.fbq` would then not exist until the load event, and a Purchase
+ * fired before that — on a thanks page that renders and reports immediately —
+ * would go to `window.fbq?.(…)`, find nothing, and vanish. The event this
+ * entire file exists for.
+ *
+ * So the two halves are split along the line Meta's own snippet already draws.
+ * The stub is installed synchronously and QUEUES every call (`n.queue.push`);
+ * the SDK is fetched at idle, or at the first interaction if idle never comes,
+ * and drains that queue when it arrives. Nothing is lost, and the 224 KB is out
+ * of the critical path.
  */
 
 const STAFF_EVENT = "cw:staff-flag";
@@ -134,9 +154,17 @@ export function PixelProvider({ pixelId = META_PIXEL_ID }: { pixelId?: string })
 {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
 n.callMethod.apply(n,arguments):n.queue.push(arguments)};
 if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-n.queue=[];t=b.createElement(e);t.async=!0;
-t.src=v;s=b.getElementsByTagName(e)[0];
-s.parentNode.insertBefore(t,s)}(window, document,'script',
+n.queue=[];
+var load=function(){if(f.__cwPixelSdk)return;f.__cwPixelSdk=1;
+t=b.createElement(e);t.async=!0;t.src=v;s=b.getElementsByTagName(e)[0];
+s.parentNode.insertBefore(t,s)};
+// Idle first, with a ceiling: an idle callback that never fires on a busy page
+// would hold the queue forever. And on ANY interaction, immediately — a click
+// that is about to become a conversion must not wait for a quiet moment.
+if(f.requestIdleCallback)f.requestIdleCallback(load,{timeout:4000});else f.setTimeout(load,2500);
+['pointerdown','keydown','touchstart'].forEach(function(name){
+b.addEventListener(name,load,{once:!0,passive:!0})});
+}(window, document,'script',
 'https://connect.facebook.net/en_US/fbevents.js');
 (function(){
   var ud = {};
