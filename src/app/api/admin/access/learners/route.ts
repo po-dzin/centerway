@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
     AccessError,
     blockCourse,
+    isGrantableRole,
     isGrantSource,
     isPaymentCurrency,
     listLearners,
@@ -10,12 +11,14 @@ import {
     reactivateCourse,
     revokeCourse,
     setEnrollmentDeadline,
+    setRole,
     unblockCourse,
     type LearnerStatus,
     type PaymentCurrency,
 } from "@/lib/admin/access";
 import {
     badRequestResponse,
+    forbiddenResponse,
     parseLimitOffset,
     requireAdminSession,
     serverErrorResponse,
@@ -69,10 +72,21 @@ type ProvisionBody = {
     payment?: { amount?: unknown; currency?: unknown; note?: string } | null;
     /** `manual` (default), `bonus` or `promotion` — why this seat exists. */
     source?: string;
+    /**
+     * An elevated role to give the account, admin-only and optional.
+     *
+     * Absent means "leave the role alone", which is not the same as `user`:
+     * sending `user` to an existing coach would quietly demote them, and the
+     * panel omits the field rather than defaulting it for exactly that reason.
+     */
+    role?: string;
 };
 
-// POST /api/admin/access/learners { email, course, fullName?, expiresAt?, createAccount?, payment? }
-export async function POST(req: NextRequest) {
+// POST /api/admin/access/learners { email, course, fullName?, expiresAt?, createAccount?, payment?, role? }
+// The return type is stated rather than inferred: this handler has six exit
+// points, and the union of their response shapes was wide enough that callers
+// (the route tests' `Promise.all` over every endpoint) fell back to `any`.
+export async function POST(req: NextRequest): Promise<NextResponse> {
     const session = await requireAdminSession(req);
     if (!session) return unauthorizedResponse();
 
@@ -94,6 +108,15 @@ export async function POST(req: NextRequest) {
         payment = { amount, currency: body.payment.currency, note: body.payment.note ?? null };
     }
 
+    // Checked BEFORE anything is written: a role the caller may not hand out
+    // should fail the whole request, not leave a seat granted and a 403 on the
+    // half that mattered. `support` may sell a course; only admin sets roles,
+    // which is the same line the roles route draws.
+    if (body.role !== undefined) {
+        if (!isGrantableRole(body.role)) return badRequestResponse("email_and_valid_role_required");
+        if (session.role !== "admin") return forbiddenResponse();
+    }
+
     try {
         const result = await provisionAccess({
             email: body.email,
@@ -105,9 +128,19 @@ export async function POST(req: NextRequest) {
             payment,
             actorId: session.user.id,
         });
+        // AFTER provisioning, never before: the account may not have existed
+        // until `provisionAccess` created it, and `setRole` resolves by email
+        // and 404s on an account that is not there yet.
+        let role: string | null = null;
+        if (body.role !== undefined && isGrantableRole(body.role)) {
+            const assigned = await setRole({ email: body.email, role: body.role, actorId: session.user.id });
+            role = assigned.role;
+        }
+
         return NextResponse.json({
             created: result.grant.created,
             accountCreated: result.accountCreated,
+            role,
             orderRef: result.payment?.orderRef ?? null,
             expiresAt: result.grant.expiresAt,
             enrollmentId: result.grant.enrollmentId,

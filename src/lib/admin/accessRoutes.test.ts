@@ -263,6 +263,96 @@ describe("learners", () => {
     });
 });
 
+describe("granting a role on the same form that creates the account", () => {
+    beforeEach(() => {
+        access.provisionAccess.mockResolvedValue({
+            accountCreated: true,
+            payment: null,
+            account: { email: "new@b.c" },
+            grant: {
+                created: true,
+                enrollmentId: "enr-1",
+                expiresAt: null,
+                course: { slug: "reset-day", title: "Reset Day", status: "published" },
+            },
+        });
+        access.setRole.mockResolvedValue({ account: { email: "new@b.c" }, previous: null, role: "coach" });
+    });
+
+    it("assigns the role AFTER provisioning, so a just-created account can be found", async () => {
+        const order: string[] = [];
+        access.provisionAccess.mockImplementation(async () => {
+            order.push("provision");
+            return {
+                accountCreated: true,
+                payment: null,
+                account: { email: "new@b.c" },
+                grant: {
+                    created: true,
+                    enrollmentId: "enr-1",
+                    expiresAt: null,
+                    course: { slug: "reset-day", title: "Reset Day", status: "published" },
+                },
+            };
+        });
+        access.setRole.mockImplementation(async () => {
+            order.push("role");
+            return { account: { email: "new@b.c" }, previous: null, role: "coach" };
+        });
+
+        const res = await learners.POST(
+            send("http://x/api/admin/access/learners", "POST", {
+                email: "new@b.c",
+                course: "reset-day",
+                createAccount: true,
+                role: "coach",
+            })
+        );
+
+        expect(res.status).toBe(200);
+        expect(order).toEqual(["provision", "role"]);
+        expect(await res.json()).toMatchObject({ accountCreated: true, role: "coach" });
+    });
+
+    it("leaves the role alone when the field is absent, rather than writing `user`", async () => {
+        const res = await learners.POST(
+            send("http://x/api/admin/access/learners", "POST", { email: "a@b.c", course: "reset-day" })
+        );
+
+        expect(res.status).toBe(200);
+        expect(access.setRole).not.toHaveBeenCalled();
+        expect(await res.json()).toMatchObject({ role: null });
+    });
+
+    it("refuses support before writing anything — no seat granted on a rejected role", async () => {
+        session.value = SUPPORT;
+        const res = await learners.POST(
+            send("http://x/api/admin/access/learners", "POST", {
+                email: "a@b.c",
+                course: "reset-day",
+                role: "admin",
+            })
+        );
+
+        expect(res.status).toBe(403);
+        expect(access.provisionAccess).not.toHaveBeenCalled();
+        expect(access.setRole).not.toHaveBeenCalled();
+    });
+
+    it("refuses a role that is not a role, before writing anything", async () => {
+        const res = await learners.POST(
+            send("http://x/api/admin/access/learners", "POST", {
+                email: "a@b.c",
+                course: "reset-day",
+                role: "superuser",
+            })
+        );
+
+        expect(res.status).toBe(400);
+        expect(access.provisionAccess).not.toHaveBeenCalled();
+    });
+});
+
 describe("accounts", () => {
     it("pages the account list and tells the UI whether roles may be changed", async () => {
         session.value = SUPPORT;
