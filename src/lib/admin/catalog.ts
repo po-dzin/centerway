@@ -180,10 +180,17 @@ export async function saveOffer(input: SaveOfferInput) {
     }
 
     const code = courseOfferCode(course.slug as string);
+    // Keyed on the COURSE, not on the code. `code` is derived from the slug, so
+    // a renamed draft course produces a new code — looking up by it would miss
+    // the row that already exists and try to insert a second one for the same
+    // course, which `lms_course_offers_one_per_course` (2026-08-28) now refuses.
+    // Finding it by course_id updates the code in place instead, and carries
+    // `pixel_content_name` across the rename, which is the one field that must
+    // never change once set.
     const { data: existing } = await db
         .from("lms_course_offers")
         .select("id, pixel_content_name")
-        .eq("code", code)
+        .eq("course_id", course.id)
         .maybeSingle();
 
     const payload = {
@@ -199,7 +206,7 @@ export async function saveOffer(input: SaveOfferInput) {
         updated_at: new Date().toISOString(),
     };
 
-    const { error } = await db.from("lms_course_offers").upsert(payload, { onConflict: "code" });
+    const { error } = await db.from("lms_course_offers").upsert(payload, { onConflict: "course_id" });
     if (error) throw new AccessError(error.message, 500);
 
     await writeAudit(db, {
@@ -232,9 +239,15 @@ export async function setOfferActive(input: { courseId: string; active: boolean;
     const { data: course } = await db.from("lms_courses").select("id, slug").eq("id", input.courseId).maybeSingle();
     if (!course) throw new AccessError("course_not_found", 404);
 
-    const code = courseOfferCode(course.slug as string);
-    const { data: existing } = await db.from("lms_course_offers").select("id").eq("code", code).maybeSingle();
+    // By course, for the same reason as saveOffer: after a draft rename the
+    // stored code no longer matches the one the slug would produce.
+    const { data: existing } = await db
+        .from("lms_course_offers")
+        .select("id, code")
+        .eq("course_id", course.id)
+        .maybeSingle();
     if (!existing) throw new AccessError("offer_not_found", 404);
+    const code = (existing.code as string | null) ?? courseOfferCode(course.slug as string);
 
     const { error } = await db
         .from("lms_course_offers")

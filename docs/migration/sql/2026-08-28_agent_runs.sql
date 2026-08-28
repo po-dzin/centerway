@@ -27,6 +27,11 @@
 -- runner when the contour actually starts writing rows.
 --
 -- Safe to re-run.
+--
+-- APPLIED 2026-08-28 through the session pooler and recorded in
+-- supabase_migrations.schema_migrations as version 20260828030000. Pre-flight:
+-- neither table existed; public.get_my_role() (used by both staff policies)
+-- already exists. Purely additive — no existing table touched.
 
 CREATE TABLE IF NOT EXISTS public.agent_runs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),

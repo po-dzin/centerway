@@ -251,9 +251,11 @@ async function loadPurchases(
  *
  * NOT FILTERED TO `active`. Withdrawing an offer (`setOfferActive`) stops new
  * sales; it does not un-happen the ones already made, and their term is on
- * this same row — `code` is unique per course, so there is exactly one, never
- * a history of them. Reading only the active one used to make a withdrawn
- * offer look unconfigured, and an unconfigured offer reads as perpetual: a
+ * this same row — `lms_course_offers_one_per_course` (UNIQUE on `course_id`,
+ * 2026-08-28) makes that exactly one row, never a history of them. `code` is
+ * unique globally, which says nothing about a course; the constraint is what
+ * this paragraph actually rests on. Reading only the active one used to make a
+ * withdrawn offer look unconfigured, and an unconfigured offer reads as perpetual: a
  * buyer whose first visit landed after the offer closed would have received
  * access forever instead of the term they paid for.
  */

@@ -2,6 +2,12 @@
 -- Run in Supabase SQL editor (public schema).
 -- Contract: src/lms-core/course.ts (`CourseLocale`)
 --
+-- APPLIED 2026-08-28 through the session pooler and recorded in
+-- supabase_migrations.schema_migrations as version 20260828020000 (not the
+-- 000000 stamp db:stage would derive from the date — that slot and 010000 were
+-- already taken that day). Pre-flight on live data before applying: zero rows
+-- with locale='ru' in public.lms_courses.
+--
 -- WHY. `2026-08-15_lms_foundation.sql` opened `lms_courses.locale` to
 -- ('uk', 'ru', 'en') on the assumption recorded in the audit doc: three locales
 -- everywhere. That assumption is withdrawn — the surfaces ship uk + en, the
