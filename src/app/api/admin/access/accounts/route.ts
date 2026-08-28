@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AccessError, listAccounts } from "@/lib/admin/access";
+import { AccessError, isGrantableRole, listAccounts } from "@/lib/admin/access";
 import {
     parseLimitOffset,
     requireAdminSession,
@@ -14,7 +14,7 @@ function failed(error: unknown) {
     return serverErrorResponse(error instanceof Error ? error.message : "unknown_error");
 }
 
-// GET /api/admin/access/accounts?q=&limit=&offset=
+// GET /api/admin/access/accounts?q=&role=&limit=&offset=
 export async function GET(req: NextRequest) {
     const session = await requireAdminSession(req);
     if (!session) return unauthorizedResponse();
@@ -28,7 +28,16 @@ export async function GET(req: NextRequest) {
     const offset = Number.isFinite(parsed.offset) && parsed.offset >= 0 ? parsed.offset : 0;
 
     try {
-        const result = await listAccounts({ q: searchParams.get("q") ?? undefined, limit, offset });
+        // An unknown ?role= is dropped rather than passed on, the same way the
+        // learners route drops an unknown ?status=: filtering on nonsense should
+        // read as "no filter", not as "no people".
+        const role = searchParams.get("role") ?? "";
+        const result = await listAccounts({
+            q: searchParams.get("q") ?? undefined,
+            role: role === "staff" || isGrantableRole(role) ? role : undefined,
+            limit,
+            offset,
+        });
         // `canGrant` mirrors the roles route: `support` may read this list and
         // hand out a course, but the role control stays with admin.
         return NextResponse.json({

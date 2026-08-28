@@ -36,7 +36,7 @@ import { adminClient } from "@/lib/auth/adminClient";
 import { writeCourseStructure } from "@/lib/lms/authoring";
 import { accessStateOf, courseOfferCode, daysRemaining, validateCourse, type Course } from "@/lms-core";
 import { foldProgress, type ProgressEvent, type ProgressEventType } from "@/lms-core/progress";
-import { groupLearnersByAccount, learnerStatusOf, type GrantSource } from "@/lib/admin/accessTypes";
+import { ELEVATED_ROLES, groupLearnersByAccount, learnerStatusOf, type GrantSource } from "@/lib/admin/accessTypes";
 import type {
     AccountRow,
     CourseRow,
@@ -964,7 +964,22 @@ export async function unblockCourse(input: { enrollmentId: string; actorId: stri
     return { courseSlug, email };
 }
 
-export type ListAccountsInput = { q?: string; limit: number; offset: number };
+export type ListAccountsInput = {
+    q?: string;
+    /**
+     * A role to narrow to, or `staff` for "any elevated one".
+     *
+     * POSITIVE FILTERS ONLY, deliberately. `user_roles` holds a row only for
+     * somebody who has been given a role, so every value here resolves to a
+     * short `IN` list. The tempting extra value — "people with no role" — is
+     * the complement of that set, which is a `NOT IN` over every account there
+     * has ever been, and it grows without bound while the answer it gives is
+     * the one "all" already shows.
+     */
+    role?: string;
+    limit: number;
+    offset: number;
+};
 
 /**
  * Everyone who has an account, which no other list in the panel answers.
@@ -999,6 +1014,25 @@ export async function listAccounts(input: ListAccountsInput): Promise<{
 
     const q = sanitizeSearch(input.q);
     if (q) query = query.or(`email.ilike.%${q}%,full_name.ilike.%${q}%`);
+
+    // The role narrows the account query rather than the page it returns:
+    // filtering after `range()` would page through accounts and then throw most
+    // of the page away, so "coaches" could come back empty on page 1 while
+    // three sat on page 2.
+    if (input.role) {
+        const wanted = input.role === "staff" ? ELEVATED_ROLES : [input.role];
+        const { data: holders, error: roleError } = await db
+            .from("user_roles")
+            .select("user_id")
+            .in("role", wanted);
+        if (roleError) throw new AccessError(roleError.message, 500);
+
+        const ids = (holders ?? []).map((row) => row.user_id as string);
+        // Nobody holds it: an empty `in()` is a query Postgres rejects, and the
+        // honest answer is an empty page rather than an error.
+        if (ids.length === 0) return { items: [], total: 0 };
+        query = query.in("auth_user_id", ids);
+    }
 
     const { data, error, count } = await query;
     if (error) throw new AccessError(error.message, 500);

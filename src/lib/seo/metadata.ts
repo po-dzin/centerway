@@ -17,7 +17,7 @@
 
 import type { Metadata } from "next";
 
-import { BRAND_LOCALE } from "@/lib/brand/identity";
+import { BRAND, BRAND_COVER, BRAND_LOCALE } from "@/lib/brand/identity";
 
 export type PageMetadataInput = {
   /** Without the brand suffix — the layout's template appends it. */
@@ -25,8 +25,10 @@ export type PageMetadataInput = {
   description: string;
   /** Site-relative, canonical form. Omit for a page that must not claim one. */
   path?: string;
-  /** Page-specific share image; the layout's brand cover is used otherwise. */
+  /** Page-specific share image; the brand cover is used otherwise. */
   image?: string;
+  /** Alt text for a page-specific `image`. Ignored when the brand cover is used. */
+  imageAlt?: string;
   /** Private surfaces: out of the index and out of the sitemap. */
   noindex?: boolean;
   /**
@@ -36,8 +38,22 @@ export type PageMetadataInput = {
   absoluteTitle?: boolean;
 };
 
+/**
+ * WHY THE COVER IS REPEATED HERE. Next merges metadata per top-level field, not
+ * per key: a page that declares `openGraph` REPLACES the layout's `openGraph`
+ * wholesale, taking `images` and `siteName` down with it. Every page built here
+ * declares one, so every page was shipping a preview with no picture and no
+ * site name — the layout's cover was inherited by exactly the pages that never
+ * called this function. The defaults belong on this side of the merge.
+ */
 export function pageMetadata(input: PageMetadataInput): Metadata {
-  const { title, description, path, image, noindex, absoluteTitle } = input;
+  const { title, description, path, noindex, absoluteTitle } = input;
+  // The 1200×630 dimensions and the brand alt are true of `cw-og-cover.png`
+  // specifically, not of an arbitrary caller-supplied image — a course cover
+  // has its own aspect ratio and its own alt text (or none at all).
+  const image = input.image
+    ? { url: input.image, ...(input.imageAlt ? { alt: input.imageAlt } : {}) }
+    : { url: BRAND_COVER, width: 1200, height: 630, alt: BRAND.name };
 
   return {
     title: absoluteTitle ? { absolute: title } : title,
@@ -47,15 +63,16 @@ export function pageMetadata(input: PageMetadataInput): Metadata {
       title,
       description,
       type: "website",
+      siteName: BRAND.name,
       locale: BRAND_LOCALE,
       ...(path ? { url: path } : {}),
-      ...(image ? { images: [{ url: image }] } : {}),
+      images: [image],
     },
     twitter: {
       card: "summary_large_image",
       title,
       description,
-      ...(image ? { images: [image] } : {}),
+      images: [image.url],
     },
     ...(noindex ? { robots: { index: false, follow: false } } : {}),
   };

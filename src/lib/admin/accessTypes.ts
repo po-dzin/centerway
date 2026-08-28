@@ -107,6 +107,16 @@ export type RoleRow = {
 
 /** Roles `user_roles` accepts — mirrors its CHECK, widened by the 2026-08-21 merge. */
 export const GRANTABLE_ROLES = ["user", "coach", "support", "admin"] as const;
+
+/**
+ * The roles that mean "this person can do something an ordinary account cannot".
+ *
+ * `user` is not one of them: it is what everybody is, and what "remove the role"
+ * writes back. Kept beside GRANTABLE_ROLES so the two cannot drift — adding a
+ * role to that list and forgetting this one would quietly hide its holders from
+ * the "staff" filter.
+ */
+export const ELEVATED_ROLES = GRANTABLE_ROLES.filter((role) => role !== "user");
 export type GrantableRole = (typeof GRANTABLE_ROLES)[number];
 
 /** Payment currencies the panel offers for a hand-recorded sale. UAH first — the merchant settles in it. */
@@ -171,6 +181,24 @@ export function normalizeDeadline(raw: unknown): { ok: true; value: string | nul
 
     const parsed = new Date(trimmed);
     return Number.isNaN(parsed.getTime()) ? { ok: false } : { ok: true, value: parsed.toISOString() };
+}
+
+/**
+ * What the grant form sends for a deadline, given its two controls.
+ *
+ * THE CHECKBOX DECIDES, NOT THE DATE. Ticked means perpetual whatever the date
+ * field still holds — it goes dim rather than empty, so an operator who typed a
+ * date and then changed their mind gets it back on untick instead of retyping.
+ * That leaves two controls describing one value, which is the shape that drifts,
+ * so the collapse to one value happens here and both the panel and its test read
+ * it from the same place.
+ *
+ * Unticked with nothing typed is perpetual too. It has to be: an empty date has
+ * always meant `null` everywhere downstream, and inventing a different answer
+ * for it here would make the form disagree with the API it posts to.
+ */
+export function grantDeadlineValue(forever: boolean, dateInput: string): string | null {
+    return forever ? null : dateInput || null;
 }
 
 /** The `<input type="date">` value for a stored deadline, in UTC to match how it was written. */

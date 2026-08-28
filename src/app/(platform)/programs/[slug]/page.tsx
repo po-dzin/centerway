@@ -62,7 +62,7 @@ export async function generateMetadata({
     // inherit the layout's default, which describes the platform and not this.
     description: description || describe(`${course.title} — курс на платформі CenterWay.`),
     path: `/programs/${course.slug}`,
-    ...(course.cover ? { image: course.cover.src } : {}),
+    ...(course.cover ? { image: course.cover.src, imageAlt: course.cover.alt } : {}),
     // Unlisted means "not in the catalogue and not in search". A page that is
     // reachable by link but indexed anyway would make the setting a lie.
     noindex: course.visibility === "unlisted",

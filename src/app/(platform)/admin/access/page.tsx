@@ -20,6 +20,9 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { useToast } from "@/components/ToastProvider";
 import { AdminTabs } from "@/components/admin/AdminTabs";
+import { AdminTabPanel, useStickyTab } from "@/components/admin/AdminTabPanel";
+import { AdminDateField } from "@/components/admin/AdminDateField";
+import { AdminModal } from "@/components/admin/AdminModal";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
 import { AdminEmptyState } from "@/components/admin/AdminEmptyState";
@@ -29,9 +32,12 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/adminLocale";
 import type { AccountRow, CourseRow, LearnerAccountRow, LearnerRow, LearnerStatus, RoleRow } from "@/lib/admin/accessTypes";
-import { deadlineInputValue, GRANTABLE_ROLES, PAYMENT_CURRENCIES } from "@/lib/admin/accessTypes";
+import { deadlineInputValue, ELEVATED_ROLES, grantDeadlineValue, GRANTABLE_ROLES, PAYMENT_CURRENCIES } from "@/lib/admin/accessTypes";
 
 const LIMIT = 50;
+
+const ACCESS_TABS = ["learners", "accounts", "roles", "builder"] as const;
+type AccessTab = (typeof ACCESS_TABS)[number];
 
 const STATUS_KEYS: LearnerStatus[] = ["not_started", "in_progress", "stalled", "completed"];
 
@@ -78,6 +84,14 @@ function EmptyIcon() {
     );
 }
 
+function PlusGlyph() {
+    return (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+        </svg>
+    );
+}
+
 function ChevronIcon({ open }: { open: boolean }) {
     return (
         <svg
@@ -103,7 +117,7 @@ export default function AccessPage() {
     const locale = getAdminLocale(lang);
     const toast = useToast();
 
-    const [tab, setTab] = useState<"learners" | "accounts" | "roles" | "builder">("learners");
+    const [tab, setTab] = useStickyTab<AccessTab>("access", "learners", ACCESS_TABS);
 
     // Shared: the course list feeds the grant form, the course filter and the
     // builder tab, so it is fetched once for the page rather than per tab.
@@ -162,13 +176,24 @@ export default function AccessPage() {
             <AdminTabs
                 items={TABS}
                 activeKey={tab}
-                onChange={(key) => setTab(key as typeof tab)}
+                onChange={(key) => setTab(key as AccessTab)}
                 className="overflow-x-auto no-scrollbar"
             />
 
-            {tab === "learners" ? (
-                <LearnersTab courses={courses} locale={locale} errorText={errorText} onCoursesChanged={reloadCourses} />
-            ) : tab === "accounts" ? (
+            {/* Panels, not a ternary: a tab you have opened stays mounted, so a
+                half-typed grant, a refined search and an opened accordion are
+                still there when you come back from checking a role. See
+                AdminTabPanel for why this is not a saved-state store. */}
+            <AdminTabPanel active={tab === "learners"}>
+                <LearnersTab
+                    courses={courses}
+                    canGrantRoles={canGrantRoles}
+                    locale={locale}
+                    errorText={errorText}
+                    onCoursesChanged={reloadCourses}
+                />
+            </AdminTabPanel>
+            <AdminTabPanel active={tab === "accounts"}>
                 <AccountsTab
                     courses={courses}
                     canGrant={canGrantRoles}
@@ -176,12 +201,73 @@ export default function AccessPage() {
                     errorText={errorText}
                     onCoursesChanged={reloadCourses}
                 />
-            ) : tab === "roles" ? (
+            </AdminTabPanel>
+            <AdminTabPanel active={tab === "roles"}>
                 <RolesTab canGrant={canGrantRoles} locale={locale} errorText={errorText} />
-            ) : (
+            </AdminTabPanel>
+            <AdminTabPanel active={tab === "builder"}>
                 <BuilderTab courses={courses} canGrant={canGrantRoles} locale={locale} errorText={errorText} onChanged={reloadCourses} />
-            )}
+            </AdminTabPanel>
         </div>
+    );
+}
+
+/** The date field's labels, in one place: three call sites, one wording. */
+function useDateLabels() {
+    const { t } = useI18n();
+    return useMemo(
+        () => ({
+            open: t("access_date_open"),
+            clear: t("access_deadline_clear"),
+            today: t("access_date_today"),
+            placeholder: t("access_date_placeholder"),
+        }),
+        [t]
+    );
+}
+
+/**
+ * Changing one account's role — the only writer, called from both tables.
+ *
+ * IT WAS TWO. `RolesTab` and `AccountsTab` each had their own copy: same POST,
+ * same "user means remove" toast, and same confirmation before demoting an
+ * admin. That last one is a safety rule, and a safety rule with two copies is
+ * one that will eventually exist in only one of them — the next guard anybody
+ * adds (refusing to demote the last admin, say) lands in whichever file they
+ * had open and leaves the other hole standing.
+ *
+ * The busy flag stays with the caller: one table disables a row, the other
+ * disables its own control, and that is a rendering decision rather than part
+ * of the write.
+ *
+ * Returns whether anything was written, so a caller can skip its reload.
+ */
+function useRoleWrite(errorText: (message: string) => string, reload: () => Promise<void> | void) {
+    const { t } = useI18n();
+    const toast = useToast();
+
+    return useCallback(
+        async (input: { email: string | null; current: string | null; next: string }) => {
+            // `null` is the ordinary role, not a missing one: `user_roles` holds
+            // a row per account and the tables that omit it mean "user".
+            const current = input.current ?? "user";
+            if (!input.email || input.next === current) return false;
+            if (current === "admin" && !window.confirm(t("access_role_demote_confirm"))) return false;
+
+            try {
+                await authFetch("/api/admin/access/roles", {
+                    method: "POST",
+                    body: JSON.stringify({ email: input.email, role: input.next }),
+                });
+                toast.success(input.next === "user" ? t("access_role_removed") : t("access_role_set"));
+                await reload();
+                return true;
+            } catch (e) {
+                toast.error(errorText(getErrorMessage(e)));
+                return false;
+            }
+        },
+        [t, toast, errorText, reload]
     );
 }
 
@@ -189,11 +275,14 @@ export default function AccessPage() {
 
 function LearnersTab({
     courses,
+    canGrantRoles,
     locale,
     errorText,
     onCoursesChanged,
 }: {
     courses: CourseRow[];
+    /** Admin-only. Role writes are refused for `support` by the API, so the control is not offered. */
+    canGrantRoles: boolean;
     locale: string;
     errorText: (message: string) => string;
     onCoursesChanged: () => void;
@@ -224,12 +313,32 @@ function LearnersTab({
     const [grantName, setGrantName] = useState("");
     const [grantCreateAccount, setGrantCreateAccount] = useState(false);
     const [grantExpiresAt, setGrantExpiresAt] = useState("");
+    /* Perpetual is the DEFAULT, and stated rather than implied. An empty date
+       has always meant "never expires" — the API reads `null` that way and
+       `isEnrollmentExpired` agrees — but a blank date field says that to nobody,
+       and the one form that sells a course by hand should not make its most
+       common outcome the one you have to know a rule to get. Ticked, the date
+       goes dim rather than away: hiding it moves the row underneath, and an
+       operator who typed a date before ticking should get it back on untick. */
+    const [grantForever, setGrantForever] = useState(true);
     const [grantAmount, setGrantAmount] = useState("");
     const [grantCurrency, setGrantCurrency] = useState<string>(PAYMENT_CURRENCIES[0]);
     const [grantNote, setGrantNote] = useState("");
+    /* The role, set on the same form that can create the account.
+       `user` is "no elevation" and is what an account gets anyway, so the field
+       is only sent when it is something else — see `grant`. Assigning a role
+       used to require the account to exist first (`setRole` resolves by email
+       and 404s otherwise), which put the one form that CREATES accounts and the
+       one form that assigns roles on opposite sides of that requirement. */
+    const [grantRole, setGrantRole] = useState<string>("user");
 
     // Deadline edits, keyed by enrollment so two open rows never share a draft.
     const [deadlineDraft, setDeadlineDraft] = useState<Record<string, string>>({});
+    /** Which account is being given another course, so only its own row goes busy. */
+    const [grantingTo, setGrantingTo] = useState<string | null>(null);
+    const dateLabels = useDateLabels();
+    /** The grant form's dialog. Closed on arrival: reading the list is the common visit. */
+    const [grantOpen, setGrantOpen] = useState(false);
     const [savingDeadline, setSavingDeadline] = useState<string | null>(null);
 
     // Which people have their course list open. Keyed by account id rather than
@@ -303,12 +412,16 @@ function LearnersTab({
                     course: grantCourse,
                     fullName: grantName.trim() || null,
                     createAccount: grantCreateAccount,
-                    expiresAt: grantExpiresAt || null,
+                    expiresAt: grantDeadlineValue(grantForever, grantExpiresAt),
+                    // Omitted rather than sent as "user": the API treats absence
+                    // as "leave the role alone", which is what an operator who
+                    // never touched the field meant.
+                    role: canGrantRoles && grantRole !== "user" ? grantRole : undefined,
                     payment: grantAmount.trim()
                         ? { amount: Number(grantAmount), currency: grantCurrency, note: grantNote.trim() || null }
                         : null,
                 }),
-            }) as { created: boolean; accountCreated: boolean; orderRef: string | null };
+            }) as { created: boolean; accountCreated: boolean; orderRef: string | null; role: string | null };
 
             // Three things may have happened; the toast names the one the
             // operator is least sure about — money is the part they cannot
@@ -321,18 +434,51 @@ function LearnersTab({
                       : t("access_already_enrolled")
             );
             if (payload.accountCreated) toast.info(t("access_account_created"));
+            if (payload.role) toast.info(`${t("access_role_set")}: ${payload.role}`);
 
             setGrantEmail("");
             setGrantName("");
             setGrantAmount("");
             setGrantNote("");
             setGrantCreateAccount(false);
+            setGrantRole("user");
+            // Only on success: a failed grant keeps the dialog and everything
+            // typed into it, which is the whole point of failing inside one.
+            setGrantOpen(false);
             onCoursesChanged();
             await load();
         } catch (e) {
             toast.error(errorText(getErrorMessage(e)));
         } finally {
             setGranting(false);
+        }
+    };
+
+    /**
+     * A second course for somebody already listed.
+     *
+     * Deliberately the plain case only: no deadline, no payment, no account
+     * creation — the account is right there, and the seat can be dated
+     * afterwards on the row this creates. The big form stays the place where a
+     * sale with money attached is recorded.
+     */
+    const grantMore = async (account: LearnerAccountRow, slug: string) => {
+        if (!account.email) return;
+        setGrantingTo(account.authUserId);
+        try {
+            const payload = await authFetch("/api/admin/access/learners", {
+                method: "POST",
+                body: JSON.stringify({ email: account.email, course: slug }),
+            }) as { created: boolean };
+            toast[payload.created ? "success" : "info"](
+                payload.created ? t("access_granted") : t("access_already_enrolled")
+            );
+            onCoursesChanged();
+            await load();
+        } catch (e) {
+            toast.error(errorText(getErrorMessage(e)));
+        } finally {
+            setGrantingTo(null);
         }
     };
 
@@ -430,12 +576,49 @@ function LearnersTab({
 
     return (
         <div className="space-y-4">
-            {/* Grant — person, access, deadline, and the money if there was any */}
-            <div className="cw-panel p-4 space-y-3">
-                <div>
-                    <p className="text-sm font-semibold cw-text">{t("access_grant_title")}</p>
-                    <p className="text-xs cw-muted mt-1">{t("access_grant_hint")}</p>
-                </div>
+            {/* THE FORM IS BEHIND A BUTTON NOW. It is the rarest thing on this
+                screen — most visits are to read the list or to fix one seat —
+                and it was the first and largest thing on it: eight fields and
+                two checkboxes pushing the learners it is about below the fold.
+                A dialog also gives it room to breathe, which a strip crammed
+                into twelve columns never had. */}
+            <div className="flex justify-end">
+                <button
+                    type="button"
+                    onClick={() => setGrantOpen(true)}
+                    className="px-4 py-2 cw-btn cw-surface-2 text-sm inline-flex items-center gap-2"
+                >
+                    <PlusGlyph />
+                    {t("access_grant_open")}
+                </button>
+            </div>
+
+            {grantOpen ? (
+                <AdminModal
+                    title={t("access_grant_title")}
+                    description={t("access_grant_hint")}
+                    size="lg"
+                    onClose={() => setGrantOpen(false)}
+                    footer={(
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setGrantOpen(false)}
+                                className="px-4 py-2 cw-btn text-sm"
+                            >
+                                {t("common_close")}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={grant}
+                                disabled={granting || !grantEmail.trim() || !grantCourse}
+                                className="px-4 py-2 cw-btn cw-surface-2 text-sm disabled:opacity-50"
+                            >
+                                {t("access_grant_submit")}
+                            </button>
+                        </>
+                    )}
+                >
 
                 {/* Who and what, on one line at desktop width. A twelve-column
                     track rather than a row of flex-1 fields: an email needs
@@ -477,15 +660,32 @@ function LearnersTab({
                     this row keeps its captions; the fields above do not need
                     them, their placeholders say it. */}
                 <div className="grid grid-cols-2 sm:grid-cols-12 gap-2">
-                    <label className="col-span-2 sm:col-span-3 flex flex-col gap-1">
-                        <span className="text-xs cw-muted">{t("access_grant_deadline")}</span>
-                        <input
-                            type="date"
-                            value={grantExpiresAt}
-                            onChange={(e) => setGrantExpiresAt(e.target.value)}
-                            className="cw-input px-3 py-2 text-sm"
-                        />
-                    </label>
+                    {/* Two labels, not one wrapping both: a <label> binds to its
+                        first labelable descendant, so nesting the checkbox under
+                        the date's label would make "Безстроково" focus the date
+                        field instead of ticking the box, and read the two out as
+                        one name. */}
+                    <div className="col-span-2 sm:col-span-3 flex flex-col gap-1">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-xs cw-muted">{t("access_grant_deadline")}</span>
+                            <AdminDateField
+                                value={grantExpiresAt}
+                                onChange={setGrantExpiresAt}
+                                disabled={grantForever}
+                                locale={locale}
+                                labels={dateLabels}
+                            />
+                        </div>
+                        <label className="flex items-center gap-1.5 text-xs cw-muted">
+                            <input
+                                type="checkbox"
+                                checked={grantForever}
+                                onChange={(e) => setGrantForever(e.target.checked)}
+                                className="shrink-0"
+                            />
+                            {t("access_grant_forever")}
+                        </label>
+                    </div>
                     <label className="sm:col-span-2 flex flex-col gap-1">
                         <span className="text-xs cw-muted">{t("access_grant_amount")}</span>
                         <input
@@ -531,16 +731,31 @@ function LearnersTab({
                         />
                         <span>{t("access_grant_create_account")}</span>
                     </label>
-                    <button
-                        type="button"
-                        onClick={grant}
-                        disabled={granting || !grantEmail.trim() || !grantCourse}
-                        className="px-4 py-2 cw-btn cw-surface-2 text-sm disabled:opacity-50 w-full sm:w-auto shrink-0"
-                    >
-                        {t("access_grant_submit")}
-                    </button>
-                </div>
-            </div>
+
+                    {/* Beside "create the account", because that is when it
+                        matters: a brand-new coach or author had to be made here,
+                        then found again on another tab to be given their role.
+                        Admin-only — the roles API refuses `support`, and a
+                        control that 403s is worse than no control. */}
+                    {canGrantRoles ? (
+                        <label className="flex items-center gap-2 text-xs cw-muted shrink-0">
+                            <span>{t("access_grant_role")}</span>
+                            <select
+                                value={grantRole}
+                                onChange={(e) => setGrantRole(e.target.value)}
+                                className="cw-input cw-select pl-3 py-2 text-sm"
+                            >
+                                {GRANTABLE_ROLES.map((value) => (
+                                    <option key={value} value={value}>
+                                        {value === "user" ? t("access_grant_role_none") : value}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    ) : null}
+                    </div>
+                </AdminModal>
+            ) : null}
 
             {/* Summary */}
             {summary ? (
@@ -639,14 +854,14 @@ function LearnersTab({
                                         </div>
                                     </div>
 
-                                    <div className="text-right shrink-0 hidden sm:block">
-                                        <p className="text-sm cw-text tabular-nums">
-                                            {account.lessonsTotal > 0
-                                                ? `${account.lessonsCompleted}/${account.lessonsTotal}`
-                                                : t("access_no_lessons")}
-                                        </p>
-                                    </div>
-
+                                    {/* No lesson tally here. Summed across every
+                                        course a person holds, "7/77" answers no
+                                        question anybody has: it is not progress
+                                        in anything, since the courses are of
+                                        different lengths and only some are even
+                                        started. The per-COURSE count inside the
+                                        fold is the real one, and it is one click
+                                        away. */}
                                     <ChevronIcon open={open} />
                                 </button>
 
@@ -730,13 +945,14 @@ function LearnersTab({
 
                                                     <div className="flex flex-wrap items-center gap-2 pl-5">
                                                         <span className="text-xs cw-muted">{t("access_deadline_label")}</span>
-                                                        <input
-                                                            type="date"
+                                                        <AdminDateField
                                                             value={draft}
-                                                            onChange={(e) =>
-                                                                setDeadlineDraft((prev) => ({ ...prev, [row.enrollmentId]: e.target.value }))
+                                                            onChange={(next) =>
+                                                                setDeadlineDraft((prev) => ({ ...prev, [row.enrollmentId]: next }))
                                                             }
-                                                            className="cw-input px-2 py-1 text-xs"
+                                                            locale={locale}
+                                                            labels={dateLabels}
+                                                            className="w-44"
                                                         />
                                                         <button
                                                             type="button"
@@ -765,6 +981,23 @@ function LearnersTab({
                                                 </div>
                                             );
                                         })}
+
+                                        {/* ANOTHER COURSE, FROM HERE. Giving a
+                                            second course to somebody already on
+                                            the shelf meant scrolling back to the
+                                            form at the top and retyping an email
+                                            that is on screen — with the risk of
+                                            typing it wrong and quietly creating
+                                            a second account. The person is
+                                            already identified; only the course
+                                            is missing. */}
+                                        <AddCourseRow
+                                            email={account.email}
+                                            courses={courses}
+                                            taken={account.courses.map((row) => row.courseSlug)}
+                                            busy={grantingTo === account.authUserId}
+                                            onGrant={(slug) => void grantMore(account, slug)}
+                                        />
                                     </div>
                                 ) : null}
                             </div>
@@ -786,6 +1019,69 @@ function LearnersTab({
 }
 
 /* ────────────────────────────── Roles ─────────────────────────────── */
+
+/**
+ * "Give this person another course", inside their own card.
+ *
+ * COURSES THEY ALREADY HAVE ARE NOT OFFERED. The list above shows what they
+ * hold, so repeating those here is offering an action whose only outcome is the
+ * "already enrolled" notice. When nothing is left, the row says so instead of
+ * showing an empty select beside a button that cannot do anything.
+ */
+function AddCourseRow({
+    email,
+    courses,
+    taken,
+    busy,
+    onGrant,
+}: {
+    email: string | null;
+    courses: CourseRow[];
+    taken: string[];
+    busy: boolean;
+    onGrant: (slug: string) => void;
+}) {
+    const { t } = useI18n();
+    const available = useMemo(
+        () => courses.filter((course) => !taken.includes(course.slug)),
+        [courses, taken]
+    );
+    const [slug, setSlug] = useState("");
+
+    // The first course that is actually on offer, re-picked when the list
+    // changes underneath — granting one removes it from `available`.
+    const selected = available.some((course) => course.slug === slug) ? slug : available[0]?.slug ?? "";
+
+    if (!email) return null;
+
+    if (available.length === 0) {
+        return <p className="text-xs cw-muted pl-5 pt-1">{t("access_add_course_all")}</p>;
+    }
+
+    return (
+        <div className="flex flex-wrap items-center gap-2 pl-5 pt-1">
+            <span className="text-xs cw-muted">{t("access_add_course")}</span>
+            <select
+                value={selected}
+                onChange={(e) => setSlug(e.target.value)}
+                aria-label={t("access_add_course")}
+                className="cw-input cw-select pl-3 py-1.5 text-xs"
+            >
+                {available.map((course) => (
+                    <option key={course.id} value={course.slug}>{course.title}</option>
+                ))}
+            </select>
+            <button
+                type="button"
+                disabled={busy || !selected}
+                onClick={() => onGrant(selected)}
+                className="px-3 py-1.5 cw-btn cw-surface-2 text-xs disabled:opacity-50"
+            >
+                {t("access_add_course_submit")}
+            </button>
+        </div>
+    );
+}
 
 function RolesTab({
     canGrant,
@@ -825,6 +1121,8 @@ function RolesTab({
         }
     }, [errorText]);
 
+    const writeRole = useRoleWrite(errorText, load);
+
     useEffect(() => {
         void load();
     }, [load]);
@@ -862,24 +1160,9 @@ function RolesTab({
      * table, which only lists elevated roles.
      */
     const setRowRole = async (row: RoleRow, nextRole: string) => {
-        if (!row.email || nextRole === row.role) return;
-        // Losing the last admin is the one mistake here that cannot be undone
-        // from the panel, so demoting an admin asks first.
-        if (row.role === "admin" && !window.confirm(t("access_role_demote_confirm"))) return;
-
         setSavingId(row.authUserId);
-        try {
-            await authFetch("/api/admin/access/roles", {
-                method: "POST",
-                body: JSON.stringify({ email: row.email, role: nextRole }),
-            });
-            toast.success(nextRole === "user" ? t("access_role_removed") : t("access_role_set"));
-            await load();
-        } catch (e) {
-            toast.error(errorText(getErrorMessage(e)));
-        } finally {
-            setSavingId(null);
-        }
+        await writeRole({ email: row.email, current: row.role, next: nextRole });
+        setSavingId(null);
     };
 
     return (
@@ -1030,6 +1313,9 @@ function AccountsTab({
     const [debouncedQ, setDebouncedQ] = useState("");
     const [page, setPage] = useState(0);
 
+    /** A role to narrow to, or `staff` for any elevated one. Empty is everybody. */
+    const [roleFilter, setRoleFilter] = useState("");
+
     const [items, setItems] = useState<AccountRow[]>([]);
     const [total, setTotal] = useState(0);
     const [selfId, setSelfId] = useState<string | null>(null);
@@ -1058,6 +1344,7 @@ function AccountsTab({
         try {
             const params = new URLSearchParams();
             if (debouncedQ) params.set("q", debouncedQ);
+            if (roleFilter) params.set("role", roleFilter);
             params.set("limit", String(LIMIT));
             params.set("offset", String(page * LIMIT));
 
@@ -1076,11 +1363,13 @@ function AccountsTab({
         } finally {
             if (reqId === requestSeq.current) setLoading(false);
         }
-    }, [debouncedQ, page, errorText]);
+    }, [debouncedQ, roleFilter, page, errorText]);
 
     useEffect(() => {
         void load();
     }, [load]);
+
+    const writeRole = useRoleWrite(errorText, load);
 
     const grant = async (row: AccountRow) => {
         const slug = grantDraft[row.authUserId] ?? courses[0]?.slug;
@@ -1104,22 +1393,9 @@ function AccountsTab({
     };
 
     const setRowRole = async (row: AccountRow, nextRole: string) => {
-        if (!row.email || nextRole === (row.role ?? "user")) return;
-        if (row.role === "admin" && !window.confirm(t("access_role_demote_confirm"))) return;
-
         setBusyId(row.authUserId);
-        try {
-            await authFetch("/api/admin/access/roles", {
-                method: "POST",
-                body: JSON.stringify({ email: row.email, role: nextRole }),
-            });
-            toast.success(nextRole === "user" ? t("access_role_removed") : t("access_role_set"));
-            await load();
-        } catch (e) {
-            toast.error(errorText(getErrorMessage(e)));
-        } finally {
-            setBusyId(null);
-        }
+        await writeRole({ email: row.email, current: row.role, next: nextRole });
+        setBusyId(null);
     };
 
     const totalPages = Math.ceil(total / LIMIT);
@@ -1128,12 +1404,36 @@ function AccountsTab({
         <div className="space-y-4">
             <p className="text-xs cw-muted">{t("access_accounts_hint")}</p>
 
-            <AdminSearchInput
-                value={q}
-                onChange={setQ}
-                placeholder={t("access_search_learners")}
-                onClear={q ? () => setQ("") : undefined}
-            />
+            {/* Search and the role facet on one line. The facet is what makes
+                this list able to answer the question the Roles tab exists for —
+                "who are my staff" — without being a second table of the same
+                people. See docs/admin-access-shape-2026-08-28.md. */}
+            <div className="flex flex-col sm:flex-row gap-2">
+                <div className="flex-1">
+                    <AdminSearchInput
+                        value={q}
+                        onChange={setQ}
+                        placeholder={t("access_search_learners")}
+                        onClear={q ? () => setQ("") : undefined}
+                    />
+                </div>
+                <select
+                    value={roleFilter}
+                    onChange={(e) => {
+                        setRoleFilter(e.target.value);
+                        // Page 3 of "everybody" is not page 3 of "coaches".
+                        setPage(0);
+                    }}
+                    aria-label={t("access_filter_role")}
+                    className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-56"
+                >
+                    <option value="">{t("access_filter_role_all")}</option>
+                    <option value="staff">{t("access_filter_role_staff")}</option>
+                    {ELEVATED_ROLES.map((role) => (
+                        <option key={role} value={role}>{role}</option>
+                    ))}
+                </select>
+            </div>
 
             {loading ? (
                 <AdminLoadingState variant="spinner" text={t("access_loading")} />
