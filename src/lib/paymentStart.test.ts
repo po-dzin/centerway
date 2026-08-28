@@ -32,14 +32,42 @@ function stubDeps() {
       headers: { "Content-Type": "application/json" },
     })
   );
+  /**
+   * Enough of the client for the analytics path to run rather than fall into
+   * its own catch: the CAPI job first ASKS whether one already exists, and a
+   * stub that only understands `insert` made that lookup throw, so the job
+   * payload was never built and nothing about it could be asserted.
+   */
   const db = {
-    from() {
-      return {
+    from(table: string) {
+      const rows = {
         insert(row: Record<string, unknown>) {
-          inserted.push(row);
-          return Promise.resolve({ error: null });
+          inserted.push({ __table: table, ...row });
+          const result = { error: null, data: { id: "job-1" } };
+          return Object.assign(Promise.resolve(result), {
+            select: () => ({ maybeSingle: async () => result }),
+          });
+        },
+        select() {
+          return rows;
+        },
+        contains() {
+          return rows;
+        },
+        eq() {
+          return rows;
+        },
+        limit() {
+          return rows;
+        },
+        order() {
+          return rows;
+        },
+        async maybeSingle() {
+          return { data: null, error: null };
         },
       };
+      return rows;
     },
   } as unknown as Parameters<typeof createPaymentInvoiceWithDeps>[1]["db"];
 
@@ -82,6 +110,39 @@ describe("createPaymentInvoice", () => {
     expect(body.currency).toBe("UAH");
     expect(inserted[0].product_code).toBe("course:my-course");
     expect(inserted[0].amount).toBe(790);
+  });
+
+  it("reports the offer's agreed label to Meta, not the invoice heading", async () => {
+    const { deps, inserted } = stubDeps();
+
+    await createPaymentInvoiceWithDeps(
+      { offer: courseOffer, locale: "uk", source: "pay_start" },
+      deps
+    );
+
+    const capiJob = inserted.find((row) => row.__table === "jobs");
+    const payload = capiJob?.payload as Record<string, unknown>;
+    expect(payload.event_name).toBe("InitiateCheckout");
+    // The label is agreed once and kept verbatim, so one product is one name in
+    // Meta. The heading is per-locale prose and would have split the report in
+    // two the first time somebody bought in English.
+    expect(payload.content_name).toBe("Мій курс");
+    expect(payload.content_name).not.toBe(courseOffer.heading.uk);
+    expect(payload.content_ids).toEqual(["course:my-course"]);
+  });
+
+  it("marks a staff checkout so the webhook can keep it out of Meta", async () => {
+    const { deps, inserted } = stubDeps();
+
+    await createPaymentInvoiceWithDeps(
+      { offer: courseOffer, locale: "uk", source: "pay_start", staff: true },
+      deps
+    );
+
+    // The browser flag cannot reach the WayForPay callback, so the order carries
+    // the mark instead.
+    expect(inserted.some((row) => row.type === "staff_checkout")).toBe(true);
+    expect(inserted.some((row) => row.__table === "jobs")).toBe(false);
   });
 
   it("keeps the colon out of the order reference, and the product out of the guesswork", async () => {

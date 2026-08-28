@@ -122,7 +122,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             email: body.email,
             fullName: body.fullName ?? null,
             courseSlug: body.course,
-            expiresAt: deadline.value,
+            // ABSENT, not "blank", is what means "leave the term to the offer".
+            // The grant form sends nothing when the operator has not overridden
+            // it (`grantDeadlineValue`), so `provisionAccess` fills the term in
+            // from the course's own offer — a hand-recorded sale of a time-boxed
+            // course used to grant it for good unless somebody remembered to type
+            // a date. An explicit `null` ("Безстроково", ticked) still means
+            // forever, on purpose: the operator said so.
+            expiresAt: body.expiresAt === undefined ? undefined : deadline.value,
             source: isGrantSource(body.source) ? body.source : undefined,
             createAccount: Boolean(body.createAccount),
             payment,

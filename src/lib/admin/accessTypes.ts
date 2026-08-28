@@ -186,19 +186,26 @@ export function normalizeDeadline(raw: unknown): { ok: true; value: string | nul
 /**
  * What the grant form sends for a deadline, given its two controls.
  *
- * THE CHECKBOX DECIDES, NOT THE DATE. Ticked means perpetual whatever the date
- * field still holds — it goes dim rather than empty, so an operator who typed a
- * date and then changed their mind gets it back on untick instead of retyping.
- * That leaves two controls describing one value, which is the shape that drifts,
- * so the collapse to one value happens here and both the panel and its test read
- * it from the same place.
+ * THREE ANSWERS, NOT TWO. Ticked ("Безстроково") is the operator stating
+ * perpetual access explicitly — sent as `null`, which overrides whatever term
+ * the course is normally sold with. A typed date, once unticked, is the other
+ * explicit override. Unticked with nothing typed is neither: it is the
+ * operator not having said anything about the term, so nothing is sent
+ * (`undefined`, dropped by JSON.stringify) and `provisionAccess` fills it in
+ * from the course's own offer.
  *
- * Unticked with nothing typed is perpetual too. It has to be: an empty date has
- * always meant `null` everywhere downstream, and inventing a different answer
- * for it here would make the form disagree with the API it posts to.
+ * That last answer changed shape on 2026-08-28. An empty date used to mean
+ * `null` unconditionally — the checkbox above only gave that existing meaning
+ * a name. It could not stay that once a hand-recorded sale started reading the
+ * offer's own term: selling a 30-day course by hand was granting it forever
+ * whenever nobody typed a date, which was every sale before the term became
+ * something the checkout itself would have applied. The checkbox still means
+ * exactly what its label says — the silent default underneath it moved instead,
+ * from "forever" to "whatever this course is normally sold with".
  */
-export function grantDeadlineValue(forever: boolean, dateInput: string): string | null {
-    return forever ? null : dateInput || null;
+export function grantDeadlineValue(forever: boolean, dateInput: string): string | null | undefined {
+    if (forever) return null;
+    return dateInput || undefined;
 }
 
 /** The `<input type="date">` value for a stored deadline, in UTC to match how it was written. */

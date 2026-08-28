@@ -437,6 +437,8 @@ export const translations = {
         access_filter_role: "Роль",
         access_filter_role_all: "Усі ролі",
         access_filter_role_staff: "Тільки з роллю",
+        access_grant_deadline_hint:
+            "Якщо не позначено «Безстроково» і дата порожня — термін береться з оферу курсу.",
         access_grant_create_account: "Створити акаунт, якщо цей email ще не заходив на платформу. Адреса вважається підтвердженою — покупки за нею привʼяжуться одразу.",
         access_grant_payment_hint: "Оплата повз еквайринг — переказ, готівка, рахунок партнера. Залиште суму порожньою, якщо це подарунок або доступ для ревʼю.",
         access_grant_amount: "Сума",
@@ -998,6 +1000,8 @@ export const translations = {
         access_filter_role: "Role",
         access_filter_role_all: "All roles",
         access_filter_role_staff: "Anyone with a role",
+        access_grant_deadline_hint:
+            'Unless "No deadline" is checked and the date is empty, the term comes from the course offer.',
         access_grant_create_account: "Create an account when this email has never signed in. The address counts as confirmed, so purchases made with it are claimed straight away.",
         access_grant_payment_hint: "Money that arrived outside the payment provider — a transfer, cash, a partner invoice. Leave the amount empty for a gift or a review grant.",
         access_grant_amount: "Amount",

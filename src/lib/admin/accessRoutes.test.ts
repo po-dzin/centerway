@@ -134,7 +134,11 @@ describe("learners", () => {
             email: "a@b.c",
             fullName: null,
             courseSlug: "reset-day",
-            expiresAt: null,
+            // Nothing typed is NOT the same as "no deadline": the module reads
+            // an absent date as "the offer's term applies", and only an
+            // explicit one overrides it.
+            expiresAt: undefined,
+            source: undefined,
             createAccount: false,
             payment: null,
             actorId: "auth-support",
@@ -143,6 +147,55 @@ describe("learners", () => {
         const revoked = await learners.DELETE(send("http://x/api/admin/access/learners?enrollmentId=enr-9", "DELETE"));
         expect(revoked.status).toBe(200);
         expect(access.revokeCourse).toHaveBeenCalledWith({ enrollmentId: "enr-9", actorId: "auth-support" });
+    });
+
+    it("treats a missing deadline key as 'not overridden', so the offer's own term applies", async () => {
+        access.provisionAccess.mockResolvedValue({
+            accountCreated: false,
+            payment: { orderRef: "manual_course-reset-day_20260828_aaa" },
+            account: { email: "a@b.c" },
+            grant: { created: true, enrollmentId: "enr-11", expiresAt: null, course: { slug: "reset-day", title: "Reset Day", status: "published" } },
+        });
+
+        // The grant form's checkbox sends nothing at all — the key is absent —
+        // when the operator has not overridden the term. `JSON.stringify` drops
+        // an `undefined` property, so this is what `grantDeadlineValue` actually
+        // produces on the wire.
+        await learners.POST(
+            send("http://x/api/admin/access/learners", "POST", {
+                email: "a@b.c",
+                course: "reset-day",
+                payment: { amount: "795", currency: "UAH" },
+            })
+        );
+
+        expect(access.provisionAccess).toHaveBeenCalledWith(
+            expect.objectContaining({ expiresAt: undefined })
+        );
+    });
+
+    it("treats an explicit but empty date as a deliberate 'no deadline', not as 'inherit the offer'", async () => {
+        // Different from the missing-key case above: a caller that SENDS the
+        // field, even blank, is answering the question rather than skipping it
+        // — the same rule `normalizeDeadline` and the PATCH handler already use.
+        access.provisionAccess.mockResolvedValue({
+            accountCreated: false,
+            payment: null,
+            account: { email: "a@b.c" },
+            grant: { created: true, enrollmentId: "enr-12", expiresAt: null, course: { slug: "reset-day", title: "Reset Day", status: "published" } },
+        });
+
+        await learners.POST(
+            send("http://x/api/admin/access/learners", "POST", {
+                email: "a@b.c",
+                course: "reset-day",
+                expiresAt: "   ",
+            })
+        );
+
+        expect(access.provisionAccess).toHaveBeenCalledWith(
+            expect.objectContaining({ expiresAt: null })
+        );
     });
 
     it("carries a deadline, an account request and a payment through to the module", async () => {

@@ -2,8 +2,14 @@ import { NextRequest, NextResponse } from "next/server";
 import { sendConfirmedSaleTelegramReport } from "@/lib/reporting/analyticsReports";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { extractPaymentMeta } from "@/lib/paymentMeta";
-import { isWfpApproved, verifyWfpCallbackSignature, wfpEventTypeFromStatus } from "@/lib/wfp";
+import {
+  isWfpApproved,
+  verifyWfpCallbackSignature,
+  wfpEventTypeFromStatus,
+  type WfpSignatureCheck,
+} from "@/lib/wfp";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
+import { isStaffOrder } from "@/lib/tracking/staffOrders";
 import {
   buildPurchaseCapiEventPayload,
   type PendingPurchaseCapiJobPayload,
@@ -217,18 +223,27 @@ export async function POST(req: NextRequest) {
   const status = paid ? "paid" : "created"; // твоя бинарная модель
   const eventType = wfpEventTypeFromStatus(payload);
 
-  // SHADOW MODE: verify the WayForPay callback signature but do NOT change behaviour yet.
-  // This measures how many real callbacks arrive with a missing/invalid signature before
-  // we start enforcing (which would close the forged-webhook → phantom-Purchase vector).
-  // Grep Vercel logs for `[wfp-sig-shadow]` to see the match/mismatch ratio.
+  // The signature is the gate, and it stands before every write below: an unsigned or
+  // wrongly-signed callback must not reach `payments`, must not flip `orders.status`,
+  // and must not enqueue a Purchase. Anyone can POST here, so without this check a
+  // forged `orderReference` bought free access and sent Meta a sale that never happened.
+  let sig: WfpSignatureCheck;
   try {
-    const sig = verifyWfpCallbackSignature(payload);
-    console.log(
-      "[wfp-sig-shadow]",
-      JSON.stringify({ orderRef, paid, ok: sig.ok, reason: sig.reason, present: sig.present })
-    );
+    sig = verifyWfpCallbackSignature(payload);
   } catch (sigErr) {
-    console.warn("[wfp-sig-shadow] check errored:", sigErr instanceof Error ? sigErr.message : String(sigErr));
+    console.error("[wfp-sig] verification errored", {
+      orderRef,
+      error: sigErr instanceof Error ? sigErr.message : String(sigErr),
+    });
+    return NextResponse.json({ ok: false, error: "signature_check_failed" }, { status: 500 });
+  }
+
+  if (!sig.ok) {
+    // Logged, never stored: this endpoint is unauthenticated, so writing a row per
+    // rejected call would hand an attacker a way to fill the database.
+    console.warn("[wfp-sig] rejected callback", { orderRef, reason: sig.reason, present: sig.present });
+    const httpStatus = sig.reason === "missing_secret" ? 500 : 403;
+    return NextResponse.json({ ok: false, error: "invalid_signature" }, { status: httpStatus });
   }
 
   const sb = supabaseAdmin();
@@ -335,9 +350,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "db_write_failed", details: errors.join("; ") }, { status: 200 });
     }
 
+    // A QA payment made with `cw_staff=1` is a real order and a real WayForPay
+    // callback; only Meta must not hear about it. The flag lived in the browser,
+    // which this request does not have — `/api/pay/start` left the mark for us.
+    const staffOrder = paid ? await isStaffOrder(sb, orderRef) : false;
+    if (staffOrder) {
+      console.log("[wfp webhook] staff order, no Meta Purchase", { orderRef });
+    }
+
     // Paid webhook work stays on the queue.
     // The request path only persists the payment signal and enqueues follow-up delivery.
-    if (paid) {
+    if (paid && !staffOrder) {
       try {
         const { data: existingPurchaseJob } = await sb
           .from("jobs")
@@ -388,7 +411,11 @@ export async function POST(req: NextRequest) {
         // Non-fatal: don't fail the webhook for CAPI errors
         console.warn("[wfp webhook] Failed to queue CAPI job:", capiErr);
       }
+    }
 
+    // The sale report is not analytics — the operator wants to see a QA payment
+    // land too, so it is deliberately outside the staff guard above.
+    if (paid) {
       try {
         await sendConfirmedSaleTelegramReport(orderRef);
       } catch (telegramErr) {
