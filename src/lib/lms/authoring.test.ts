@@ -346,6 +346,14 @@ describe("builder → rows → builder", () => {
     delete unconfigured.theme;
     delete unconfigured.cover;
     delete unconfigured.sortOrder;
+    // And no VISIBILITY either, which is the same scenario read one step
+    // further: a course that chose nothing has not chosen to be in the
+    // catalogue. Since 2026-08-28 the two are linked — the showcase blockers
+    // (cover, section, duration, tagline) fire only once a course is pointed at
+    // strangers — so a fixture that strips the cover while claiming a listed
+    // shelf position is not "unconfigured", it is half-configured and
+    // unpublishable. Absent reads back as `hidden`.
+    delete unconfigured.visibility;
 
     const db = fakeWriter();
     await writeCourseStructure(db, unconfigured);

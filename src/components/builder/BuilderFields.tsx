@@ -33,6 +33,55 @@ function markerPrompt(value: string): string | undefined {
   return match?.[1];
 }
 
+/**
+ * The star beside a label of a field the publish gate actually holds.
+ *
+ * `aria-hidden` on the glyph and a real word for a screen reader: a person
+ * listening to the form hears «обов'язково», not "asterisk". The input itself
+ * carries `aria-required`, which is what assistive tech acts on; this is the
+ * visible half of the same statement.
+ */
+export function RequiredMark() {
+  return (
+    <>
+      <span className={styles.fieldRequired} aria-hidden="true">*</span>
+      <span className={styles.visuallyHidden}> — обов&apos;язково</span>
+    </>
+  );
+}
+
+/**
+ * The counter under a bounded field.
+ *
+ * Silent until it is worth saying something. A counter that is always on turns
+ * every field into a test the author is failing by not having finished typing;
+ * it appears at three quarters of the ceiling, which is where the number stops
+ * being trivia and starts being a warning.
+ *
+ * The two limits read differently on purpose — the hard one says what will not
+ * be accepted, the soft one says what will be cut on a card — because the
+ * author's choice is different in each case.
+ */
+function FieldCount({ value, max, soft }: { value: string; max?: number; soft?: number }) {
+  const length = [...value].length;
+  if (max !== undefined && length >= Math.floor(max * 0.75)) {
+    return (
+      <span className={length >= max ? styles.fieldError : styles.fieldHint} aria-live="polite">
+        {length} / {max}
+        {length >= max ? " — довше не приймається" : ""}
+      </span>
+    );
+  }
+  if (soft !== undefined && length > soft) {
+    return (
+      <span className={styles.fieldWarning} aria-live="polite">
+        {length} символів — на картці вміщається {soft}, решту буде обрізано
+      </span>
+    );
+  }
+  return null;
+}
+
 export function FieldInput({
   field,
   value,
@@ -65,14 +114,30 @@ export function FieldInput({
   }
 
   if (field.kind === "number") {
+    const number = typeof value === "number" ? value : undefined;
+    // The bounds are the validator's, handed in as `min`/`max` on the field
+    // descriptor. Out of range is SHOWN rather than swallowed: a number field
+    // that silently ignores 400 looks broken, and one that silently keeps it
+    // fails at save time on a screen the author has already left.
+    const out =
+      number !== undefined &&
+      ((field.min !== undefined && number < field.min) || (field.max !== undefined && number > field.max));
+
     return (
       <label className={styles.field}>
-        <span className={styles.fieldLabel}>{field.label}</span>
+        <span className={styles.fieldLabel}>
+          {field.label}
+          {field.required ? <RequiredMark /> : null}
+        </span>
         <input
-          className={styles.input}
+          className={out ? `${styles.input} ${styles.inputInvalid}` : styles.input}
           type="number"
           inputMode="numeric"
-          value={typeof value === "number" ? String(value) : ""}
+          min={field.min}
+          max={field.max}
+          aria-required={field.required ? true : undefined}
+          aria-invalid={out || undefined}
+          value={number === undefined ? "" : String(number)}
           // Empty means ABSENT, not zero: an optional number written as 0 is a
           // different claim ("takes no time") from an unset one.
           onChange={(event) =>
@@ -80,6 +145,12 @@ export function FieldInput({
           }
           onKeyDown={closeOnEnter}
         />
+        {out ? (
+          <span className={styles.fieldError}>
+            Має бути від {field.min ?? 1} до {field.max}. Поки так — курс не збережеться.
+          </span>
+        ) : null}
+        {field.hint ? <span className={styles.fieldHint}>{field.hint}</span> : null}
       </label>
     );
   }
@@ -140,17 +211,31 @@ export function FieldInput({
       onChange(field.path, undefined);
       return;
     }
-    onChange(field.path, next);
+    // Clipped rather than refused. A paste one character over the ceiling would
+    // otherwise be silently dropped in full, and the author sees an input that
+    // did nothing when they pressed ⌘V. `maxLength` on the element does the
+    // same for typing; this covers the paths it does not (paste, drop, IME).
+    onChange(field.path, field.maxLength ? [...next].slice(0, field.maxLength).join("") : next);
+  };
+
+  const shared = {
+    className,
+    value: visibleText,
+    placeholder,
+    "aria-required": field.required ? (true as const) : undefined,
+    maxLength: field.maxLength,
+    onChange: (event: { target: { value: string } }) => handle(event.target.value),
+    onKeyDown: closeOnEnter,
   };
 
   return (
     <label className={styles.field}>
-      <span className={styles.fieldLabel}>{field.label}</span>
-      {field.multiline ? (
-        <textarea className={className} value={visibleText} placeholder={placeholder} onChange={(event) => handle(event.target.value)} onKeyDown={closeOnEnter} rows={3} />
-      ) : (
-        <input className={className} type="text" value={visibleText} placeholder={placeholder} onChange={(event) => handle(event.target.value)} onKeyDown={closeOnEnter} />
-      )}
+      <span className={styles.fieldLabel}>
+        {field.label}
+        {field.required ? <RequiredMark /> : null}
+      </span>
+      {field.multiline ? <textarea {...shared} rows={3} /> : <input {...shared} type="text" />}
+      <FieldCount value={visibleText} max={field.maxLength} soft={field.softLength} />
       {field.hint ? <span className={styles.fieldHint}>{field.hint}</span> : null}
     </label>
   );
@@ -228,32 +313,109 @@ export function ChoiceRow<T extends string>({
   hint,
   options,
   value,
+  required,
+  clearable,
   onChange,
 }: {
   label: string;
   hint?: string;
   options: Array<{ value: T; label: string; swatch?: string }>;
-  value: T;
-  onChange: (next: T) => void;
+  value: T | undefined;
+  required?: true;
+  /**
+   * Whether pressing the chosen option again unsets the field.
+   *
+   * Off by default, because most closed lists in this builder answer a question
+   * that always has an answer — a course HAS a palette, a schedule HAS a mode,
+   * and there is no such thing as unsetting them. A field that is genuinely
+   * optional is the other case, and it needs a way back to "not said" that is
+   * not "pick something wrong".
+   */
+  clearable?: true;
+  onChange: (next: T | undefined) => void;
 }) {
   return (
     <div className={styles.field}>
-      <span className={styles.fieldLabel}>{label}</span>
+      <span className={styles.fieldLabel}>
+        {label}
+        {required ? <RequiredMark /> : null}
+      </span>
       <div className={styles.choiceRow} role="group" aria-label={label}>
-        {options.map((option) => (
-          <button
-            key={option.value}
-            className={styles.choiceOption}
-            type="button"
-            aria-pressed={option.value === value}
-            onClick={() => onChange(option.value)}
-          >
-            {option.swatch ? (
-              <span className={styles.choiceSwatch} data-cw-pack={option.swatch} aria-hidden="true" />
-            ) : null}
-            {option.label}
-          </button>
-        ))}
+        {options.map((option) => {
+          const on = option.value === value;
+          return (
+            <button
+              key={option.value}
+              className={styles.choiceOption}
+              type="button"
+              aria-pressed={on}
+              onClick={() => onChange(on && clearable ? undefined : option.value)}
+            >
+              {option.swatch ? (
+                <span className={styles.choiceSwatch} data-cw-pack={option.swatch} aria-hidden="true" />
+              ) : null}
+              {option.label}
+            </button>
+          );
+        })}
+      </div>
+      {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
+    </div>
+  );
+}
+
+/**
+ * The same closed list, when more than one answer is true at once.
+ *
+ * Sections are like that — a course can be about цleansing and харчування
+ * together — and forcing one would make the author pick the least wrong of two
+ * true answers. Drawn identically to `ChoiceRow` on purpose: the difference
+ * between "pick one" and "pick any" is carried by `role="group"` +
+ * `aria-pressed` on checkboxes rather than by a different-looking control,
+ * because two shapes of chip row would be two things to learn.
+ */
+export function ChoiceSet<T extends string>({
+  label,
+  hint,
+  options,
+  values,
+  required,
+  onChange,
+}: {
+  label: string;
+  hint?: string;
+  options: Array<{ value: T; label: string }>;
+  values: T[];
+  required?: true;
+  onChange: (next: T[] | undefined) => void;
+}) {
+  // EMPTY IS ABSENT, the rule the whole builder follows: the validator rejects
+  // a stored `[]`, so unchecking the last one deletes the field.
+  const write = (next: T[]) => onChange(next.length > 0 ? next : undefined);
+
+  return (
+    <div className={styles.field}>
+      <span className={styles.fieldLabel}>
+        {label}
+        {required ? <RequiredMark /> : null}
+      </span>
+      <div className={styles.choiceRow} role="group" aria-label={label}>
+        {options.map((option) => {
+          const on = values.includes(option.value);
+          return (
+            <button
+              key={option.value}
+              className={styles.choiceOption}
+              type="button"
+              aria-pressed={on}
+              onClick={() =>
+                write(on ? values.filter((one) => one !== option.value) : [...values, option.value])
+              }
+            >
+              {option.label}
+            </button>
+          );
+        })}
       </div>
       {hint ? <span className={styles.fieldHint}>{hint}</span> : null}
     </div>

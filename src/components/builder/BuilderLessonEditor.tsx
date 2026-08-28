@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 
 import { HandGraphic, Icon } from "@/components/Icon";
@@ -93,7 +92,6 @@ const trailTitle = (value: string, fallback: string) =>
  * and links from two thirds of the real content on first save.
  */
 export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lessonSlug: string }) {
-  const router = useRouter();
   const [state, setState] = useState<State>({ status: "loading" });
   const history = useCourseHistory();
   const { course, dirty } = history;
@@ -143,7 +141,24 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [insertPosition, setInsertPosition] = useState(0);
   const [toolMode, setToolMode] = useState<BuilderToolMode>("blocks");
+  /* OPEN ON A DESK, CLOSED ON A PHONE (2026-08-28).
+
+     The tool rail is a column BESIDE the document from 901px up, so having it
+     open on arrival is the right greeting: the blocks are simply there. Below
+     that width it is a sheet, and the same `true` made every lesson open with
+     two thirds of the screen covered — the title and the first paragraph of the
+     thing the author came to edit were behind the palette, and the first
+     gesture on every lesson was to dismiss it.
+
+     Set in an effect rather than from `matchMedia` in the initialiser, because
+     the initialiser runs on the server too: a value that differs between the
+     server's render and the client's first one is a hydration mismatch, and
+     React does not patch attributes up afterwards. */
   const [toolOpen, setToolOpen] = useState(true);
+
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 900px)").matches) setToolOpen(false);
+  }, []);
   const [blockSearch, setBlockSearch] = useState("");
 
   useEffect(() => {
@@ -422,6 +437,24 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   useEffect(() => {
     setActiveSlug(lessonSlug);
   }, [lessonSlug]);
+
+  /**
+   * Arriving with a block named in the hash — the arrow in the release panel.
+   *
+   * The id is resolved against the lesson on screen rather than trusted: the
+   * link may be minutes old and the block may be gone, and selecting a block
+   * that does not exist leaves the tool rail describing nothing. Runs after the
+   * course is loaded, because until then there are no blocks to match.
+   */
+  useEffect(() => {
+    if (state.status !== "ready") return;
+    const id = window.location.hash.startsWith("#block-") ? window.location.hash.slice(7) : null;
+    if (!id) return;
+    const target = document.getElementById(`block-${id}`);
+    if (!target) return;
+    setSelectedBlockId(id);
+    target.scrollIntoView({ block: "center", behavior: "auto" });
+  }, [state.status, activeSlug]);
 
   /**
    * The new lesson starts at its own beginning.

@@ -19,6 +19,7 @@ import {
   type Lesson,
 } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
+import { plural } from "@/lib/plural";
 import { OFFER_CARD_TITLE_MAX, OFFER_TITLE_MAX, offerCardOverflow } from "@/lib/platform/offerPreview";
 import { BuilderFailureNotice, BuilderShell } from "./BuilderShell";
 import { BuilderMenu } from "./BuilderMenu";
@@ -75,7 +76,20 @@ type State =
 const ids = () => crypto.randomUUID();
 
 type StructureView = "rows" | "cards";
-type WorkspaceMode = "course" | "content" | "release";
+/**
+ * The four screens of a course, in the order the work happens.
+ *
+ * `course` is the COVER — the catalogue card and everything on it. `offer` is
+ * the OFFER PAGE — what a buyer reads after they clicked. They were one tab
+ * called «Огляд» until 2026-08-28, and one tab was the reason the offer half
+ * looked optional: it lived below the fold of the card half.
+ *
+ * The key stays `course` rather than becoming `cover`, and the hash stays
+ * `#course-overview`, because blocker arrows already point course-level
+ * blockers there (`blockerTargets.ts`) and links to it are already in the
+ * wild. Renaming the identifier would have renamed a URL to fix a label.
+ */
+type WorkspaceMode = "course" | "content" | "offer" | "release";
 const STRUCTURE_VIEW_KEY = "cw.builder.structureView";
 const STRUCTURE_VIEW_EVENT = "cw:builder-structure-view";
 const trailTitle = (value: string, fallback: string) =>
@@ -147,6 +161,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     const hash: Record<WorkspaceMode, string> = {
       course: "#course-overview",
       content: "#course-structure",
+      offer: "#course-offer",
       release: "#course-release",
     };
     setWorkspaceMode(mode);
@@ -159,6 +174,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       const next: Record<string, WorkspaceMode> = {
         "#course-overview": "course",
         "#course-structure": "content",
+        "#course-offer": "offer",
         "#course-release": "release",
       };
       const mode = next[window.location.hash] ?? "content";
@@ -678,8 +694,9 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         onStay={exit.stay}
       />
       <nav className={styles.courseMobileNav} aria-label="Розділи курсу">
-        <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={workspaceMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("course"); }}><BuilderInkLabel>Огляд</BuilderInkLabel></a>
+        <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={workspaceMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("course"); }}><BuilderInkLabel>Обкладинка</BuilderInkLabel></a>
         <a className={styles.courseMobileNavItem} href="#course-structure" aria-current={workspaceMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("content"); }}><BuilderInkLabel>Зміст</BuilderInkLabel></a>
+        <a className={styles.courseMobileNavItem} href="#course-offer" aria-current={workspaceMode === "offer" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("offer"); }}><BuilderInkLabel>Сторінка</BuilderInkLabel></a>
         <a className={styles.courseMobileNavItem} href="#course-release" aria-current={workspaceMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("release"); }}><BuilderInkLabel>Публікація</BuilderInkLabel></a>
       </nav>
 
@@ -795,9 +812,26 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         <h2 className={styles.visuallyHidden} id="course-overview-title">Про курс</h2>
         <BuilderCourseSettings
           course={course}
+          scope="cover"
           onChange={editCourse}
         />
       </div>
+      </section>
+
+      {/* THE OFFER PAGE, on its own screen. Same component, other half of its
+          sections — see `SettingsScope`. It has no document head of its own on
+          purpose: the name, the short description and the address belong to the
+          course, are edited once on the cover tab, and a second copy here would
+          be a second place to change them from. */}
+      <section className={styles.courseWorkspacePanel} id="course-offer" hidden={workspaceMode !== "offer"} aria-labelledby="course-offer-title">
+        <div className={styles.courseSettingsPanel}>
+          <h2 className={styles.visuallyHidden} id="course-offer-title">Сторінка програми</h2>
+          <BuilderCourseSettings
+            course={course}
+            scope="page"
+            onChange={editCourse}
+          />
+        </div>
       </section>
 
       <section id="course-structure" hidden={workspaceMode !== "content"} className={`${styles.panel} ${styles.structure} ${structureView === "cards" ? styles.structureCards : ""}`} aria-labelledby="course-structure-title">
@@ -902,7 +936,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           </div>
         </header>
         {note ? <p className={styles.noticeLine} aria-live="polite">{note}</p> : null}
-        <BuilderBlockers blockers={readiness.blockers} />
+        <BuilderBlockers course={course} blockers={readiness.blockers} />
         <section className={styles.releaseSection}>
           <h3 className={styles.panelTitle}>Дія публікації</h3>
           <p className={styles.panelText}>
@@ -981,13 +1015,17 @@ function BuilderCourseRail({
   return (
     <div className={styles.courseRail}>
       <nav className={styles.courseRailNav} aria-label="Розділи курсу">
-        <a className={styles.courseRailLink} href="#course-overview" aria-label="Огляд" aria-current={activeMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("course"); }}>
-          <span className={styles.courseRailIcon}><Icon name="guide" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
-          <BuilderInkLabel>Огляд</BuilderInkLabel>
+        <a className={styles.courseRailLink} href="#course-overview" aria-label="Обкладинка" aria-current={activeMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("course"); }}>
+          <span className={styles.courseRailIcon}><Icon name="display" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
+          <BuilderInkLabel>Обкладинка</BuilderInkLabel>
         </a>
         <a className={styles.courseRailLink} href="#course-structure" aria-label="Зміст" aria-current={activeMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("content"); }}>
           <span className={styles.courseRailIcon}><Icon name="view-rows" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
           <BuilderInkLabel>Зміст</BuilderInkLabel>
+        </a>
+        <a className={styles.courseRailLink} href="#course-offer" aria-label="Сторінка програми" aria-current={activeMode === "offer" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("offer"); }}>
+          <span className={styles.courseRailIcon}><Icon name="document" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
+          <BuilderInkLabel>Сторінка</BuilderInkLabel>
         </a>
         <a className={styles.courseRailLink} href="#course-release" aria-label="Публікація" aria-current={activeMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("release"); }}>
           <span className={styles.courseRailIcon}><Icon name="shield-check" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
@@ -1307,14 +1345,6 @@ function ModuleEditor({
   );
 }
 
-function plural(count: number, one: string, few: string, many: string): string {
-  const mod100 = count % 100;
-  if (mod100 >= 11 && mod100 <= 14) return many;
-  const mod10 = count % 10;
-  if (mod10 === 1) return one;
-  if (mod10 >= 2 && mod10 <= 4) return few;
-  return many;
-}
 
 function reviewStatusLabel(data: BuilderCourseDto): string {
   if (data.course.status === "published") return "Курс відкритий учням";

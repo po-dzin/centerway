@@ -95,6 +95,8 @@ export async function PlatformProgramsIndexPage() {
                 visual={course.visual}
                 slug={course.slug}
                 artwork={course.artwork}
+                kindBadge={course.kindBadge}
+                categories={course.categoryLabels}
                 ctaLabel="Деталі курсу"
               />
             ))}
@@ -138,6 +140,8 @@ export async function PlatformProgramsIndexPage() {
                 visual={course.visual}
                 slug={course.slug}
                 artwork={course.artwork}
+                kindBadge={course.kindBadge}
+                categories={course.categoryLabels}
                 ctaLabel="Деталі програми"
               />
             ))}

@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { validateLessonBlock, collectRequiredChecklistItemIds, youtubeIdFrom } from "./blocks";
-import { validateCourse, flattenLessons, type Course } from "./course";
+import {
+  COURSE_DURATION_DAYS_MAX,
+  COURSE_POSTTITLE_MAX,
+  COURSE_PRETITLE_MAX,
+  flattenLessons,
+  validateCourse,
+  type Course,
+} from "./course";
 import { calendarDaysBetween, enrollmentDayNumber, localHour, resolveTimeZone } from "./time";
 import { foldProgress, checklistSatisfied, type ProgressEvent } from "./progress";
 import {
@@ -134,6 +141,63 @@ describe("course validation", () => {
     const course = dailyCourse();
     course.cover = { src: "/course.webp", alt: "Course cover", mobileCropY: 101 };
     expect(() => validateCourse(course)).toThrow(/lms_course_invalid_cover_crop/);
+  });
+
+  /* THE CARD'S OWN VOCABULARY. Everything here is optional — a course written
+     before these fields existed must still validate — so each test is about
+     what happens when a value IS given and is wrong. That is the only failure
+     mode a closed list has. */
+  it("accepts the card fields a catalogue entry is made of", () => {
+    const course = dailyCourse();
+    course.pretitle = "Авторський курс";
+    course.posttitle = "практикум з умовного голодування";
+    course.kind = "mini";
+    course.categories = ["nutrition", "cleansing"];
+    course.durationDays = 3;
+    expect(() => validateCourse(course)).not.toThrow();
+  });
+
+  it("rejects a kind that is not one of the three", () => {
+    const course = dailyCourse() as unknown as Record<string, unknown>;
+    course.kind = "programme";
+    expect(() => validateCourse(course)).toThrow(/lms_course_invalid_kind/);
+  });
+
+  it("rejects a category outside the closed list", () => {
+    const course = dailyCourse() as unknown as Record<string, unknown>;
+    course.categories = ["nutrition", "sleep"];
+    expect(() => validateCourse(course)).toThrow(/lms_course_invalid_categories/);
+  });
+
+  it("rejects an empty category list rather than storing a heading over nothing", () => {
+    const course = dailyCourse() as unknown as Record<string, unknown>;
+    course.categories = [];
+    expect(() => validateCourse(course)).toThrow(/lms_course_invalid_categories/);
+  });
+
+  it("rejects the same category twice — a card would print it twice", () => {
+    const course = dailyCourse() as unknown as Record<string, unknown>;
+    course.categories = ["nutrition", "nutrition"];
+    expect(() => validateCourse(course)).toThrow(/lms_course_duplicate_categories/);
+  });
+
+  it("holds the ceiling on the two lines around the title", () => {
+    const course = dailyCourse() as unknown as Record<string, unknown>;
+    course.pretitle = "я".repeat(COURSE_PRETITLE_MAX + 1);
+    expect(() => validateCourse(course)).toThrow(/lms_course_pretitle_too_long/);
+
+    course.pretitle = "я".repeat(COURSE_PRETITLE_MAX);
+    course.posttitle = "я".repeat(COURSE_POSTTITLE_MAX + 1);
+    expect(() => validateCourse(course)).toThrow(/lms_course_posttitle_too_long/);
+  });
+
+  it("refuses a duration that is not a plausible number of days", () => {
+    const course = dailyCourse() as unknown as Record<string, unknown>;
+    // Zero is not "unset": absence is how a course says it has not stated one.
+    for (const wrong of [0, -3, 2.5, COURSE_DURATION_DAYS_MAX + 1, "3 дні"]) {
+      course.durationDays = wrong;
+      expect(() => validateCourse(course)).toThrow(/lms_course_invalid_duration_days/);
+    }
   });
 
   it("requires a dayIndex on every lesson of a daily course", () => {

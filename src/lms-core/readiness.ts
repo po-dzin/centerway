@@ -199,6 +199,36 @@ export function courseReadiness(course: Course): CourseReadiness {
     add("lms_ready_missing_boundary", course.slug);
   }
 
+  /* WHAT A CARD OWES A STRANGER.
+   *
+   * These blockers are conditional on VISIBILITY, and that is the whole design.
+   * A hidden course is material delivered to people who already own it — it has
+   * never needed a cover and still does not, and making one mandatory would
+   * have failed every course already on the shelf on the day this shipped. The
+   * moment somebody points the course at strangers, a different contract
+   * starts: a catalogue tile with no image is a grey rectangle beside real
+   * ones, and a tile with no section cannot be filtered to.
+   *
+   * So: required is not a property of the field, it is a property of the
+   * surface the field is about to appear on. The builder stars exactly these
+   * five, read from this list rather than from a second one kept in the UI.
+   *
+   * `kind` is deliberately NOT here. The catalogue can still answer "what kind
+   * of thing is this" without the author — it counts lessons, as it did for
+   * months — so an unset kind degrades to a worse label, not to a broken card.
+   * A blocker is for what nothing downstream can substitute for. */
+  if ((course.visibility ?? "hidden") !== "hidden") {
+    if (!course.cover?.src) add("lms_ready_missing_cover", course.slug);
+    // Alt is already mandatory on a cover that exists (`validateCourse`); this
+    // catches the other order — a cover added through an import that skipped it
+    // — because a public image with no description is an accessibility failure
+    // on a page strangers reach, not a draft-time nicety.
+    else if (!course.cover.alt.trim()) add("lms_ready_missing_cover_alt", course.slug);
+    if (!course.tagline?.trim()) add("lms_ready_missing_tagline", course.slug);
+    if (course.durationDays === undefined) add("lms_ready_missing_duration", course.slug);
+    if (!course.categories?.length) add("lms_ready_missing_category", course.slug);
+  }
+
   return { ready: blockers.length === 0, blockers };
 }
 
