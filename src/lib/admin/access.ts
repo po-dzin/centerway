@@ -1350,6 +1350,12 @@ export async function moderateCourse(input: {
                 status: "published",
                 visibility: course.visibility ?? "hidden",
                 version: Number(course.version ?? revision.version) + 1,
+            }, {
+                // `pending_content` is the author's own saved payload, reviewed as
+                // it stands — so it speaks for the storefront columns exactly as the
+                // builder's save does. Approving must publish what was reviewed,
+                // including a field the author deliberately emptied.
+                optionalColumns: "authoritative",
             });
             values = {
                 review_status: "approved", review_note: null, approved_at: new Date().toISOString(), approved_by: input.actorId,

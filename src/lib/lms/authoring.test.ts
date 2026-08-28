@@ -88,6 +88,57 @@ describe("writeCourseStructure", () => {
     expect(db.rows.lms_courses[0]).toMatchObject({ slug: "way21", status: "published" });
   });
 
+  /**
+   * The Reset Day wipe (2026-08-26): a publish carrying a course object captured
+   * before the offer-surface columns existed blanked the whole storefront, and the
+   * course fell off the shelf. Both halves are locked here, because the fix is a
+   * distinction — absence means "cleared" only when the caller says it does.
+   */
+  describe("a payload that does not carry a storefront", () => {
+    const stored = {
+      ...course,
+      tagline: "Двадцять один день",
+      audience: ["Для тих, хто починає"],
+      accessNote: "Доступ на рік",
+    };
+    const partial = { ...course };
+    delete (partial as Record<string, unknown>).tagline;
+    delete (partial as Record<string, unknown>).audience;
+    delete (partial as Record<string, unknown>).accessNote;
+
+    it("leaves the stored copy alone by default, rather than blanking it", async () => {
+      const db = fakeWriter();
+      await writeCourseStructure(db, partial);
+
+      const written = db.rows.lms_courses[0];
+      expect(Object.keys(written)).not.toContain("tagline");
+      expect(Object.keys(written)).not.toContain("audience");
+      expect(Object.keys(written)).not.toContain("access_note");
+    });
+
+    it("still writes the columns the payload does carry", async () => {
+      const db = fakeWriter();
+      await writeCourseStructure(db, stored);
+
+      expect(db.rows.lms_courses[0]).toMatchObject({
+        tagline: "Двадцять один день",
+        audience: ["Для тих, хто починає"],
+        access_note: "Доступ на рік",
+      });
+    });
+
+    it("blanks them when the caller speaks for the storefront, so an author can clear a field", async () => {
+      const db = fakeWriter();
+      await writeCourseStructure(db, partial, { optionalColumns: "authoritative" });
+
+      expect(db.rows.lms_courses[0]).toMatchObject({
+        tagline: null,
+        audience: null,
+        access_note: null,
+      });
+    });
+  });
+
   it("refuses to publish a course that still owes the learner content", async () => {
     // The marker goes in a LESSON title: courseReadiness scans the course title,
     // lesson titles and block text, and deliberately not module titles.

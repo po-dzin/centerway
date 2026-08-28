@@ -481,6 +481,11 @@ export async function saveBuilderCourse(input: unknown, expectedGeneration: unkn
     // Catalogue visibility is governed in admin, never accepted from an
     // authoring payload even if a stale client still sends it.
     visibility: (existing?.visibility as Course["visibility"] | undefined) ?? "hidden",
+  }, {
+    // The author had the storefront form in front of them: a field they left
+    // empty is a field they meant to clear, so this write speaks for those
+    // columns. Every other caller keeps the safe default.
+    optionalColumns: "authoritative",
   });
   if (reviewEnabled && incoming.status === "draft" && existing?.review_status !== "draft") {
     const { error } = await db.from("lms_courses").update({
