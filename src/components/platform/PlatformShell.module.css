@@ -803,6 +803,28 @@
   );
 }
 
+/* A RULE IS FURNITURE, NOT INK (2026-08-29). `currentColor` ties the divider
+   to whatever the surrounding text happens to be, and under a tone flip that
+   text is `--cw-platform-accent-contrast` — a warm, fairly saturated cream
+   (#fff8ef) chosen to read AS TEXT over a photograph. At 14% it stopped being
+   furniture and started reading as a thin gold line, on both the popover (a
+   photo-tone bar) and the burger sheet (always over the header's own photo).
+   A separator should recede regardless of what colour the words around it
+   are; here it takes a plain white ink instead of the text colour, which is
+   the same "why the darkening ink is neutral" argument `.heroPhotoLayer::after`
+   already makes two rules up the file — a hue at low opacity over warm
+   material reads as a colour cast, not as absence. */
+[data-cw-header-tone="dark"] .profileWrapMobile .profileMenuDivider,
+.profileMenu[data-cw-header-tone="dark"] .profileMenuDivider {
+  background: linear-gradient(
+    90deg,
+    transparent 0,
+    color-mix(in srgb, white 16%, transparent) 8%,
+    color-mix(in srgb, white 16%, transparent) 92%,
+    transparent 100%
+  );
+}
+
 /* A SETTING IS NOT A DESTINATION, so it does not take the shape of one. The
    rows above are places, left-aligned and marked with the ink stroke when you
    are in one. This is a name and a state: the name holds the same upright and
