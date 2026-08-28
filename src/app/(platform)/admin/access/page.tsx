@@ -320,7 +320,12 @@ function LearnersTab({
        common outcome the one you have to know a rule to get. Ticked, the date
        goes dim rather than away: hiding it moves the row underneath, and an
        operator who typed a date before ticking should get it back on untick. */
-    const [grantForever, setGrantForever] = useState(true);
+    // Unticked by default: the safe answer for a course with a paid offer is
+    // to sell it on that offer's own term, not to override it with forever
+    // every time someone opens this form. A course with no offer to inherit
+    // (a gift, a review grant) still ends up perpetual — the same as ticking
+    // this by hand — because `provisionAccess` reads no term as no deadline.
+    const [grantForever, setGrantForever] = useState(false);
     const [grantAmount, setGrantAmount] = useState("");
     const [grantCurrency, setGrantCurrency] = useState<string>(PAYMENT_CURRENCIES[0]);
     const [grantNote, setGrantNote] = useState("");
@@ -654,6 +659,7 @@ function LearnersTab({
                 </div>
 
                 <p className="text-xs cw-muted">{t("access_grant_payment_hint")}</p>
+                <p className="text-xs cw-muted">{t("access_grant_deadline_hint")}</p>
 
                 {/* Deadline and money — the two optional halves, on one line.
                     A bare date input says nothing about which date it is, so

@@ -34,7 +34,15 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { writeCourseStructure } from "@/lib/lms/authoring";
-import { accessStateOf, courseOfferCode, daysRemaining, validateCourse, type Course } from "@/lms-core";
+import {
+    accessRuleOf,
+    accessStateOf,
+    accessWindowEnd,
+    courseOfferCode,
+    daysRemaining,
+    validateCourse,
+    type Course,
+} from "@/lms-core";
 import { foldProgress, type ProgressEvent, type ProgressEventType } from "@/lms-core/progress";
 import { ELEVATED_ROLES, groupLearnersByAccount, learnerStatusOf, type GrantSource } from "@/lib/admin/accessTypes";
 import type {
@@ -360,6 +368,17 @@ export async function grantCourse(input: {
     expiresAt?: string | null;
     /** Why this seat exists. Defaults to a plain admin grant. */
     source?: GrantSource;
+    /**
+     * The purchase this seat was opened for, when there is one.
+     *
+     * Without it a hand-recorded sale left the seat with no anchor, and the
+     * learner's first visit read the manual order as a purchase nobody had
+     * counted yet: `planAccess` then stacked the offer's term on top of the
+     * date the operator typed, or replaced it with "forever" on a lifetime
+     * offer. Naming the order here makes it already spent, so the window the
+     * operator agreed is the window that stands.
+     */
+    orderRef?: string | null;
 }) {
     const db = adminClient();
     const account = await resolveAccountByEmail(db, input.email);
@@ -417,6 +436,7 @@ export async function grantCourse(input: {
             // Who handed this out. A purchase leaves `order_ref` to answer the
             // same question; a gift had nothing to answer it with until now.
             granted_by: input.actorId,
+            ...(input.orderRef ? { order_ref: input.orderRef } : {}),
             // Day 1 starts now — same rule as `scripts/lms-grant.mjs`.
             started_at: new Date().toISOString(),
             expires_at: expiresAt,
@@ -644,7 +664,37 @@ export async function recordManualPayment(input: {
         },
     });
 
-    return { orderRef, customerId, amount: input.amount, currency: input.currency, productCode };
+    return { orderRef, customerId, amount: input.amount, currency: input.currency, productCode, paidAt };
+}
+
+/**
+ * When a seat sold by hand should close, according to the offer.
+ *
+ * Anchored at the payment, exactly as `planAccess` anchors a checkout purchase,
+ * so the same course sold at the till and sold in admin ends on the same day.
+ * A course with no offer row, or one sold for good, has no end — the same
+ * "unconfigured means perpetual" direction the door already takes.
+ */
+async function offerExpiryFor(db: Db, courseSlug: string, paidAt: string): Promise<string | null> {
+    const { data: course } = await db.from("lms_courses").select("id").eq("slug", courseSlug).maybeSingle();
+    if (!course?.id) return null;
+
+    const { data: offer } = await db
+        .from("lms_course_offers")
+        .select("access_days, access_lifetime")
+        .eq("course_id", course.id)
+        .maybeSingle();
+    if (!offer) return null;
+
+    const rule = accessRuleOf({
+        accessDays: (offer.access_days as number | null) ?? null,
+        accessLifetime: (offer.access_lifetime as boolean | null) ?? null,
+    });
+    if (!rule || rule.lifetime) return null;
+
+    const from = new Date(paidAt);
+    if (!Number.isFinite(from.getTime())) return null;
+    return accessWindowEnd(from, rule);
 }
 
 /**
@@ -777,14 +827,27 @@ export async function provisionAccess(input: ProvisionAccessInput) {
           })
         : null;
 
+    /* The term comes from the offer unless the operator overrode it.
+       A hand-recorded sale used to ignore `access_days` entirely: selling a
+       30-day course by hand granted it forever unless somebody remembered to
+       type a date. The offer is where the term is agreed, so a sale made in
+       admin is sold on the same terms as one made at the checkout. */
+    const expiresAt =
+        input.expiresAt !== undefined
+            ? input.expiresAt
+            : payment
+              ? await offerExpiryFor(db, input.courseSlug, payment.paidAt)
+              : null;
+
     const grant = await grantCourse({
         email: input.email,
         courseSlug: input.courseSlug,
-        expiresAt: input.expiresAt ?? null,
+        expiresAt,
         // A hand-recorded sale is a purchase in every way that matters, so it
         // is not filed as a gift: the money is real and the order exists.
         source: input.source ?? (payment ? "manual" : undefined),
         actorId: input.actorId,
+        orderRef: payment?.orderRef ?? null,
     });
 
     return { accountCreated: account.created, account: grant.account, payment, grant };
