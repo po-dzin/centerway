@@ -54,6 +54,15 @@ export function PlatformShell({
         initialTone={headerMode === "overlay" ? "dark" : "light"}
         mode={headerMode === "learn" ? "workspace" : headerMode}
         surface={surface}
+        /* THE READING SURFACES ONLY. `learn` and `workspace` reach the header as
+           one mode — they wear the same bar — but they are opposite cases for
+           this: the builder's bar holds save state, undo and the preview button,
+           and a bar that walks off mid-edit hides the controls in use. Here the
+           bar is only the way out, which is the one thing a reader is not doing
+           while reading. Keyed on the mode this shell was ASKED for, not on the
+           one it forwards, because that distinction is exactly what is lost in
+           the forwarding. */
+        autoHide={headerMode === "learn"}
       />
       {children}
       {/* The storefront's close — phone, four social networks — is the wrong

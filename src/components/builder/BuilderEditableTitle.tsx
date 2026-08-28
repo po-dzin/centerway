@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState, type MouseEventHandler } from "react";
 
-import { Icon } from "@/components/Icon";
+import { HandGraphic, Icon } from "@/components/Icon";
 import { PLACEHOLDER_MARKER } from "@/lms-core";
 import styles from "./Builder.module.css";
 
@@ -157,8 +157,13 @@ export function BuilderEditableTitle({
           visibleValue || placeholder
         )}
       </Heading>
+      {/* The ring the stylesheet has been styling all along. `.titleEditAction
+          :hover .inkRing` existed and matched nothing, because no ring was
+          rendered — so the pencil answered the pointer with the sunk plate
+          instead, the one highlight the builder is not supposed to draw. */}
       <button className={styles.titleEditAction} type="button" aria-label={label} title={label} onClick={open}>
         <Icon name="edit" size={16} />
+        <HandGraphic className={styles.inkRing} name="ink-ring" size={42} />
       </button>
     </div>
   );

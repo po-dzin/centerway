@@ -10,6 +10,7 @@ import { currentAppKey, type PlatformAppKey } from "@/lib/platform/apps";
 import styles from "@/components/platform/PlatformShellStyles";
 import { HandGraphic, Icon } from "@/components/Icon";
 import { PlatformAccountMenu } from "./PlatformAccountMenu";
+import { useChromeReveal } from "./useChromeReveal";
 import { useHeaderTone } from "./headerTone";
 import { useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
 
@@ -25,12 +26,19 @@ export function PlatformHeader({
   mode = "default",
   surface = "auto",
   workspaceContent,
+  autoHide = false,
 }: {
   initialTone?: "light" | "dark";
   mode?: "default" | "overlay" | "learn" | "workspace";
   surface?: "auto" | "personal";
   /** Route context and document actions inside an internal editor topbar. */
   workspaceContent?: ReactNode;
+  /**
+   * Let the bar step aside while the reader scrolls down, and bring it back on
+   * the first scroll up. Reading surfaces only — see `useChromeReveal` for why
+   * this is wrong for the builder, which keeps controls in its bar.
+   */
+  autoHide?: boolean;
 }) {
   const focusedMode = mode === "learn" || mode === "workspace";
   const [openMenuPath, setOpenMenuPath] = useState<string | null>(null);
@@ -67,6 +75,9 @@ export function PlatformHeader({
   const currentPath = pathname ?? null;
   const menuOpen = openMenuPath !== null && openMenuPath === currentPath;
   const headerTone = useHeaderTone(initialTone, pathname, menuOpen);
+  /* Locked open while the sheet is: the burger drawer IS this element, so a bar
+     that walked off would take the open dialog with it. */
+  const { hidden: chromeHidden } = useChromeReveal(autoHide, headerRef, { locked: menuOpen });
 
   // The mobile menu keeps the geometry of a drawer, but behaves as a modal:
   // background surfaces are inert, scrolling is locked and keyboard focus
@@ -188,6 +199,11 @@ export function PlatformHeader({
       data-cw-glass={mode === "workspace" ? undefined : "shell"}
       data-cw-header-tone={headerTone}
       data-cw-header-mode={mode}
+      /* Two attributes, not one. The first says this bar is allowed to move —
+         it carries the transition, so a bar that never yields also never pays
+         for one. The second is the state. */
+      data-cw-header-autohide={autoHide ? "true" : undefined}
+      data-cw-header-hidden={chromeHidden ? "true" : undefined}
       data-menu-open={menuOpen ? "true" : "false"}
       role={menuOpen ? "dialog" : undefined}
       aria-modal={menuOpen ? "true" : undefined}

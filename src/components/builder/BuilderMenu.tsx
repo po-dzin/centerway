@@ -32,7 +32,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { Icon } from "@/components/Icon";
+import { HandGraphic, Icon } from "@/components/Icon";
 import type { CW_ICON_NAMES } from "@/components/iconNames";
 import styles from "./Builder.module.css";
 
@@ -216,6 +216,10 @@ export function BuilderMenu({
         onClick={() => (open ? close() : openAtTrigger())}
       >
         <Icon name="more" size={18} />
+        {/* Same as every other icon control in the shell — and the rules for it
+            (`.menuTrigger:hover .inkRing`, `[aria-expanded="true"] .inkRing`)
+            were already written; only the graphic was missing. */}
+        <HandGraphic className={styles.inkRing} name="ink-ring" size={42} />
       </button>
 
       {open && typeof document !== "undefined"
