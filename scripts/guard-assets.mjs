@@ -28,8 +28,13 @@
  * take the money. A typo there is a hole in a sales page that nothing else in
  * the repository would notice.
  *
- * External URLs, database-supplied paths and `_staging` output are not ours to
- * verify.
+ * External URLs, database-supplied paths, `_staging` output and test fixtures
+ * are not ours to verify: a `*.test.ts` is free to name a path that has never
+ * existed on disk — see `src/lib/lms/media.ts`'s own test, which asserts on
+ * `/cw/platform/cabinet/cover.webp` as a stand-in for "some repo asset", not as
+ * a claim that file exists. Checking it produced exactly the false failure this
+ * comment warns about, the day another change happened to populate that
+ * directory for real.
  *
  * Usage: npm run guard:assets
  */
@@ -56,6 +61,7 @@ const files = execFileSync("git", ["ls-files", "src", "data"], { encoding: "utf8
   .split("\n")
   .filter(Boolean)
   .filter((file) => /\.(ts|tsx|mjs|js|json|css|md|html)$/.test(file))
+  .filter((file) => !/\.(test|spec)\.[jt]sx?$/.test(file))
   .filter((file) => !file.startsWith("src/landing-static/legacy/"));
 
 function resolves(reference) {
