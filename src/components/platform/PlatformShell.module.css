@@ -721,8 +721,17 @@
    their weight. They share the rows' left edge so the block reads as the top
    of the same list rather than as a panel of its own, and the pair is set
    tight together and loose from the first row: they are one statement. */
+/* THE PHONE DRAWER'S HEADER, NOT THE DESKTOP BAR'S (2026-08-28). This block
+   and `.nav` share one markup (`PlatformHeader.tsx` renders `.navLayer` once),
+   and on the wide bar that same row IS the visible nav — `.navLayer` there is
+   `position: absolute`, not a hidden sheet. Without a base `display: none`
+   this identity caption rode along into that row too: a flex child fighting
+   the nav links for width, shrunk past its own text and wrapping the address
+   one letter per line. `.mobileProfileSlot` already carries this same base
+   hide / mobile-`flex` pair for exactly this reason — this is its missing
+   twin, not a new pattern. */
 .menuIdentity {
-  display: grid;
+  display: none;
   gap: 0.1rem;
   padding: 0.35rem 0.65rem 0.7rem;
 }

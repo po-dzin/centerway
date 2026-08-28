@@ -571,6 +571,12 @@
     }
   }
 
+  /* The drawer's own header — see the base `display: none` in
+     PlatformShell.module.css for why this cannot be the unconditional rule. */
+  .navLayer .menuIdentity {
+    display: grid;
+  }
+
   /* Profile is not a sixth nav item — it is where the list stops and the account
      begins. A hairline says that in the space the list already had, without a
      heading or a gap wide enough to read as a missing row. */
