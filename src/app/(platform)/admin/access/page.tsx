@@ -29,7 +29,7 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/adminLocale";
 import type { AccountRow, CourseRow, LearnerAccountRow, LearnerRow, LearnerStatus, RoleRow } from "@/lib/admin/accessTypes";
-import { deadlineInputValue, GRANTABLE_ROLES, PAYMENT_CURRENCIES } from "@/lib/admin/accessTypes";
+import { deadlineInputValue, grantDeadlineValue, GRANTABLE_ROLES, PAYMENT_CURRENCIES } from "@/lib/admin/accessTypes";
 
 const LIMIT = 50;
 
@@ -224,6 +224,14 @@ function LearnersTab({
     const [grantName, setGrantName] = useState("");
     const [grantCreateAccount, setGrantCreateAccount] = useState(false);
     const [grantExpiresAt, setGrantExpiresAt] = useState("");
+    /* Perpetual is the DEFAULT, and stated rather than implied. An empty date
+       has always meant "never expires" — the API reads `null` that way and
+       `isEnrollmentExpired` agrees — but a blank date field says that to nobody,
+       and the one form that sells a course by hand should not make its most
+       common outcome the one you have to know a rule to get. Ticked, the date
+       goes dim rather than away: hiding it moves the row underneath, and an
+       operator who typed a date before ticking should get it back on untick. */
+    const [grantForever, setGrantForever] = useState(true);
     const [grantAmount, setGrantAmount] = useState("");
     const [grantCurrency, setGrantCurrency] = useState<string>(PAYMENT_CURRENCIES[0]);
     const [grantNote, setGrantNote] = useState("");
@@ -303,7 +311,7 @@ function LearnersTab({
                     course: grantCourse,
                     fullName: grantName.trim() || null,
                     createAccount: grantCreateAccount,
-                    expiresAt: grantExpiresAt || null,
+                    expiresAt: grantDeadlineValue(grantForever, grantExpiresAt),
                     payment: grantAmount.trim()
                         ? { amount: Number(grantAmount), currency: grantCurrency, note: grantNote.trim() || null }
                         : null,
@@ -477,15 +485,32 @@ function LearnersTab({
                     this row keeps its captions; the fields above do not need
                     them, their placeholders say it. */}
                 <div className="grid grid-cols-2 sm:grid-cols-12 gap-2">
-                    <label className="col-span-2 sm:col-span-3 flex flex-col gap-1">
-                        <span className="text-xs cw-muted">{t("access_grant_deadline")}</span>
-                        <input
-                            type="date"
-                            value={grantExpiresAt}
-                            onChange={(e) => setGrantExpiresAt(e.target.value)}
-                            className="cw-input px-3 py-2 text-sm"
-                        />
-                    </label>
+                    {/* Two labels, not one wrapping both: a <label> binds to its
+                        first labelable descendant, so nesting the checkbox under
+                        the date's label would make "Безстроково" focus the date
+                        field instead of ticking the box, and read the two out as
+                        one name. */}
+                    <div className="col-span-2 sm:col-span-3 flex flex-col gap-1">
+                        <label className="flex flex-col gap-1">
+                            <span className="text-xs cw-muted">{t("access_grant_deadline")}</span>
+                            <input
+                                type="date"
+                                value={grantExpiresAt}
+                                onChange={(e) => setGrantExpiresAt(e.target.value)}
+                                disabled={grantForever}
+                                className="cw-input px-3 py-2 text-sm disabled:opacity-40"
+                            />
+                        </label>
+                        <label className="flex items-center gap-1.5 text-xs cw-muted">
+                            <input
+                                type="checkbox"
+                                checked={grantForever}
+                                onChange={(e) => setGrantForever(e.target.checked)}
+                                className="shrink-0"
+                            />
+                            {t("access_grant_forever")}
+                        </label>
+                    </div>
                     <label className="sm:col-span-2 flex flex-col gap-1">
                         <span className="text-xs cw-muted">{t("access_grant_amount")}</span>
                         <input
