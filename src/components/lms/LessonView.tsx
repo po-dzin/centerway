@@ -271,7 +271,16 @@ export function LessonView({
       if (
         target &&
         (target.isContentEditable ||
-          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName))
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) ||
+          /* Any button, or anything inside a composite widget or dialog — the
+             size menu (`role="menu"`) and the note editor (`role="dialog"`)
+             both hold buttons of their own, and this guard only excluded form
+             fields. A reader arrowing through text-size options, or pressing
+             "Прибрати позначку" with a keyboard, moved the lesson out from
+             under them — arrow keys inside a menu should navigate the menu,
+             and a stray keystroke in an open note dialog should never be able
+             to discard it by leaving the page. */
+          target.closest('button, [role="menu"], [role="dialog"], [role="listbox"]'))
       ) {
         return;
       }
@@ -478,6 +487,12 @@ export function LessonView({
               data-marked={marks.bookmarked(lessonSlug) ? "true" : undefined}
               aria-pressed={marks.bookmarked(lessonSlug)}
               aria-label={marks.bookmarked(lessonSlug) ? "Прибрати закладку" : "Додати закладку"}
+              /* Held until the course's first fetch resolves, same as
+                 ReaderMarkLayer below. A press that lands first writes an
+                 optimistic bookmark that GET then has no way to know about —
+                 the fetch overwrites the whole list wholesale — so the star
+                 saved to the server comes back unmarked until reload. */
+              disabled={!marks.ready}
               onClick={() => void marks.toggleBookmark(lessonSlug)}
             >
               <Icon name="star" size={18} />

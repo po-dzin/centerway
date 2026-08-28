@@ -23,9 +23,22 @@ import {
   saveAnnotation as saveRemote,
 } from "./lmsClient";
 
-/** One bookmark per lesson, so the id IS the lesson — pressing twice toggles. */
-function bookmarkId(lessonSlug: string): string {
-  return `bookmark:${lessonSlug}`;
+/**
+ * The lesson's own bookmark, if any — found by WHAT it is, not by what this
+ * device happened to name it.
+ *
+ * A deterministic `bookmark:<lessonSlug>` clientId looked like the simpler
+ * rule, and it is wrong the moment a second device is in the picture: a
+ * bookmark made on a phone gets a real clientId from `annotationClientId()`,
+ * this device's fetch returns it under that id, and a lookup keyed on the
+ * guessed id never finds it. The star then reads as unmarked forever, and
+ * pressing it tries to CREATE a second bookmark for a lesson that already has
+ * one — which the server's one-bookmark-per-enrollment-and-lesson index
+ * refuses, so the press just fails. `kind` and `lessonSlug` are the only two
+ * facts that are actually true of a bookmark; nothing else needs guessing.
+ */
+function findBookmark(all: Annotation[], lessonSlug: string): Annotation | undefined {
+  return all.find((item) => item.kind === "bookmark" && item.lessonSlug === lessonSlug);
 }
 
 export type AnnotationsState = {
@@ -92,20 +105,20 @@ export function useAnnotations(courseSlug: string, enabled: boolean): Annotation
 
   const toggleBookmark = useCallback(
     async (lessonSlug: string) => {
-      const id = bookmarkId(lessonSlug);
       const previous = all;
-      const existing = all.find((item) => item.clientId === id);
+      const existing = findBookmark(all, lessonSlug);
 
       if (existing) {
-        setAll((current) => current.filter((item) => item.clientId !== id));
-        const result = await deleteRemote(courseSlug, id);
+        const existingId = existing.clientId;
+        setAll((current) => current.filter((item) => item.clientId !== existingId));
+        const result = await deleteRemote(courseSlug, existingId);
         if (!result.ok) setAll(previous);
         return;
       }
 
       const now = new Date().toISOString();
       const next: Annotation = {
-        clientId: id,
+        clientId: annotationClientId(),
         kind: "bookmark",
         lessonSlug,
         anchor: null,
@@ -167,7 +180,7 @@ export function useAnnotations(courseSlug: string, enabled: boolean): Annotation
     () => ({
       all,
       forLesson: (lessonSlug: string) => all.filter((item) => item.lessonSlug === lessonSlug),
-      bookmarked: (lessonSlug: string) => all.some((item) => item.clientId === bookmarkId(lessonSlug)),
+      bookmarked: (lessonSlug: string) => findBookmark(all, lessonSlug) !== undefined,
       toggleBookmark,
       mark,
       setNote,
