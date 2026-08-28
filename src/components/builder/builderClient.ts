@@ -10,7 +10,7 @@
  */
 
 import { supabaseClient } from "@/lib/supabaseClient";
-import type { Course, CourseTheme, Lesson, ReadinessBlocker } from "@/lms-core";
+import type { Author, Course, CourseTheme, Lesson, ReadinessBlocker } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 import type { CourseRevisionSummary } from "@/lib/lms/revisions";
 
@@ -173,6 +173,32 @@ export function deleteCourse(slug: string): Promise<BuilderResult<{ ok: true }>>
 }
 
 /**
+ * Withdraws a published course from the shelf, from the shelf itself.
+ *
+ * There is no status-only endpoint — the write contract is deliberately whole-
+ * course (see the route's own comment), so this is `loadCourse` then
+ * `saveCourse` with one field changed, the same two calls the course workspace
+ * already makes for its own "Зняти з публікації" button. The list has no
+ * course loaded yet, hence the extra round trip; a shelf full of courses is
+ * still one author acting on one course at a time, not a loop this needs to
+ * be fast for.
+ */
+export async function unpublishCourse(slug: string): Promise<BuilderResult<{ status: Course["status"] }>> {
+  const loaded = await loadCourse(slug);
+  if (!loaded.ok) return loaded;
+  if (loaded.data.course.status !== "published") {
+    return { ok: true, data: { status: loaded.data.course.status } };
+  }
+  const saved = await saveCourse(
+    slug,
+    { ...loaded.data.course, status: "draft" },
+    loaded.data.draftGeneration,
+  );
+  if (!saved.ok) return saved;
+  return { ok: true, data: { status: saved.data.status } };
+}
+
+/**
  * Writes the whole order, not one moved card.
  *
  * "Move up" is a statement about the sequence: sending only the moved slug
@@ -195,6 +221,22 @@ export function saveCourse(
   return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}`, {
     method: "PUT",
     body: JSON.stringify({ course, expectedGeneration }),
+  });
+}
+
+export type CourseAuthorLinkDto = { eligible: boolean; ownAuthor: Author | null; linkedAuthor: Author | null; linkedAuthorId: string | null };
+
+export function loadCourseAuthorLink(slug: string): Promise<BuilderResult<CourseAuthorLinkDto>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/author`);
+}
+
+export function setCourseAuthorLink(
+  slug: string,
+  action: "attach-self" | "detach",
+): Promise<BuilderResult<{ linkedAuthor: Author | null; linkedAuthorId: string | null }>> {
+  return request(`/api/lms/authoring/courses/${encodeURIComponent(slug)}/author`, {
+    method: "PATCH",
+    body: JSON.stringify({ action }),
   });
 }
 

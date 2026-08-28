@@ -31,6 +31,7 @@ import { PwaInstallRow } from "./PwaInstallCard";
 import { cabinetGate } from "./CabinetGate";
 import { CabinetFold } from "./CabinetFold";
 import { CabinetHero } from "./CabinetHero";
+import { AuthorProfileFold } from "./AuthorProfileFold";
 import { DoshaWheel } from "./DoshaWheel";
 import { CompactCourseCard, ShelfErrorCard, glassMedia, matte } from "./CourseCard";
 import {
@@ -47,6 +48,7 @@ import {
 import { getCabinetCopy } from "./copy";
 import { pickResumeCourse } from "./resumeCourse";
 import {
+  useAuthorProfile,
   useCabinetSession,
   useLearnerShelf,
   useProfileData,
@@ -108,6 +110,7 @@ export function CabinetClient() {
   const { profile, loading: profileLoading, error, clear: clearProfile } = useProfileData(session);
   const { shelf, failed: shelfFailed, reload: reloadShelf } = useLearnerShelf(session);
   const reach = useTelegramReach(session);
+  const authorProfile = useAuthorProfile(session);
 
   const purchases = useMemo(() => profile?.profile.purchases ?? [], [profile]);
 
@@ -383,6 +386,17 @@ export function CabinetClient() {
             </article>
           )}
         </CabinetFold>
+
+        {authorProfile.eligible && session ? (
+          <AuthorProfileFold
+            session={session}
+            author={authorProfile.author}
+            saving={authorProfile.saving}
+            saveError={authorProfile.saveError}
+            save={authorProfile.save}
+            lang={lang}
+          />
+        ) : null}
 
         <CabinetFold label={cab.accountLabel} title={cab.accountTitle} lead={cab.accountLead}>
           <div className={styles.cardGrid}>

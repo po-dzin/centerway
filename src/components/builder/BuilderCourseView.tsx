@@ -24,6 +24,7 @@ import { OFFER_CARD_TITLE_MAX, OFFER_TITLE_MAX, offerCardOverflow } from "@/lib/
 import { BuilderFailureNotice, BuilderShell } from "./BuilderShell";
 import { BuilderMenu } from "./BuilderMenu";
 import { BuilderCourseSettings } from "./BuilderCourseSettings";
+import { BuilderCourseAuthor } from "./BuilderCourseAuthor";
 import { BuilderStructureStart, isPristineStructure } from "./BuilderStructureStart";
 import { BuilderBlockers } from "./BuilderBlockers";
 import {
@@ -88,8 +89,14 @@ type StructureView = "rows" | "cards";
  * `#course-overview`, because blocker arrows already point course-level
  * blockers there (`blockerTargets.ts`) and links to it are already in the
  * wild. Renaming the identifier would have renamed a URL to fix a label.
+ *
+ * `author` joined 2026-08-28: who this course's byline is, and the one line
+ * (`authorNote`) that changes about them from course to course. It used to be
+ * a field buried at the bottom of `offer`'s settings; a byline that a course
+ * cannot exist without printing correctly earned a screen of its own, not a
+ * row at the end of someone else's form.
  */
-type WorkspaceMode = "course" | "content" | "offer" | "release";
+type WorkspaceMode = "course" | "content" | "offer" | "author" | "release";
 const STRUCTURE_VIEW_KEY = "cw.builder.structureView";
 const STRUCTURE_VIEW_EVENT = "cw:builder-structure-view";
 const trailTitle = (value: string, fallback: string) =>
@@ -162,6 +169,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       course: "#course-overview",
       content: "#course-structure",
       offer: "#course-offer",
+      author: "#course-author",
       release: "#course-release",
     };
     setWorkspaceMode(mode);
@@ -175,6 +183,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         "#course-overview": "course",
         "#course-structure": "content",
         "#course-offer": "offer",
+        "#course-author": "author",
         "#course-release": "release",
       };
       const mode = next[window.location.hash] ?? "content";
@@ -697,6 +706,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={workspaceMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("course"); }}><BuilderInkLabel>Обкладинка</BuilderInkLabel></a>
         <a className={styles.courseMobileNavItem} href="#course-structure" aria-current={workspaceMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("content"); }}><BuilderInkLabel>Зміст</BuilderInkLabel></a>
         <a className={styles.courseMobileNavItem} href="#course-offer" aria-current={workspaceMode === "offer" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("offer"); }}><BuilderInkLabel>Сторінка</BuilderInkLabel></a>
+        <a className={styles.courseMobileNavItem} href="#course-author" aria-current={workspaceMode === "author" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("author"); }}><BuilderInkLabel>Автор</BuilderInkLabel></a>
         <a className={styles.courseMobileNavItem} href="#course-release" aria-current={workspaceMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("release"); }}><BuilderInkLabel>Публікація</BuilderInkLabel></a>
       </nav>
 
@@ -834,6 +844,17 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </div>
       </section>
 
+      <section className={styles.courseWorkspacePanel} id="course-author" hidden={workspaceMode !== "author"} aria-labelledby="course-author-title">
+        <div className={styles.courseSettingsPanel}>
+          <h2 className={styles.visuallyHidden} id="course-author-title">Автор</h2>
+          <BuilderCourseAuthor
+            course={course}
+            slug={course.slug}
+            onChange={editCourse}
+          />
+        </div>
+      </section>
+
       <section id="course-structure" hidden={workspaceMode !== "content"} className={`${styles.panel} ${styles.structure} ${structureView === "cards" ? styles.structureCards : ""}`} aria-labelledby="course-structure-title">
         <header className={`${styles.panelHead} ${styles.structureHead}`}>
           <div>
@@ -936,7 +957,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           </div>
         </header>
         {note ? <p className={styles.noticeLine} aria-live="polite">{note}</p> : null}
-        <BuilderBlockers course={course} blockers={readiness.blockers} />
+        <BuilderBlockers course={course} blockers={readiness.blockers} onNavigate={navigate} />
         <section className={styles.releaseSection}>
           <h3 className={styles.panelTitle}>Дія публікації</h3>
           <p className={styles.panelText}>
@@ -1026,6 +1047,10 @@ function BuilderCourseRail({
         <a className={styles.courseRailLink} href="#course-offer" aria-label="Сторінка програми" aria-current={activeMode === "offer" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("offer"); }}>
           <span className={styles.courseRailIcon}><Icon name="document" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
           <BuilderInkLabel>Сторінка</BuilderInkLabel>
+        </a>
+        <a className={styles.courseRailLink} href="#course-author" aria-label="Автор" aria-current={activeMode === "author" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("author"); }}>
+          <span className={styles.courseRailIcon}><Icon name="user" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
+          <BuilderInkLabel>Автор</BuilderInkLabel>
         </a>
         <a className={styles.courseRailLink} href="#course-release" aria-label="Публікація" aria-current={activeMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("release"); }}>
           <span className={styles.courseRailIcon}><Icon name="shield-check" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>

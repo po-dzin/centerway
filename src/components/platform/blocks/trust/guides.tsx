@@ -3,7 +3,22 @@ import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { PlatformBlock } from "@/components/platform/PlatformBlock";
 import styles from "@/components/platform/PlatformTrustStyles";
-import { platformGuides, type PlatformGuide } from "@/lib/platform/content";
+import { listListedAuthors } from "@/lib/lms/authors";
+import type { Author } from "@/lms-core";
+
+/**
+ * The founder's page is `/consult`, not `/expert/evgeniy-koryakin` — see the
+ * `/expert` merge (2026-08-23): the consultation is the destination someone
+ * actually arrives wanting, and the founder's credentials are evidence on it
+ * rather than a page of their own. Every other listed author gets the address
+ * their profile actually has. One exception on day one, named rather than
+ * derived, so it stops being one the day a second author needs the same rule.
+ */
+const FOUNDER_SLUG = "evgeniy-koryakin";
+
+function authorHref(author: Author): string {
+  return author.slug === FOUNDER_SLUG ? "/consult" : `/expert/${author.slug}`;
+}
 
 /**
  * Who runs this — as a list with one entry, not as one person's panel.
@@ -14,15 +29,16 @@ import { platformGuides, type PlatformGuide } from "@/lib/platform/content";
  * author id and whose builder is used by whoever owns a course — a second guide
  * would have meant rewriting the block rather than adding a row.
  *
- * It renders `platformGuides`, and it is built so the single card looks
- * finished on its own. `data-layout="single"` is the same switch the products
- * block uses for one product: a lone card takes the panorama shape (portrait
- * beside the copy) instead of standing as one column with three empty cells
- * beside it. Two or more, and every card becomes a column with the portrait on
- * top — the marketplace shape, at one size.
+ * It renders `listListedAuthors()` now, not a hand-written constant — the
+ * profile an author fills in from their own cabinet is what shows up here.
+ * `data-layout="single"` is the same switch the products block uses for one
+ * product: a lone card takes the panorama shape (portrait beside the copy)
+ * instead of standing as one column with three empty cells beside it. Two or
+ * more, and every card becomes a column with the portrait on top — the
+ * marketplace shape, at one size.
  */
-export function HubGuides() {
-  const guides = platformGuides;
+export async function HubGuides() {
+  const guides = await listListedAuthors();
   if (guides.length === 0) return null;
 
   const single = guides.length === 1;
@@ -45,32 +61,36 @@ export function HubGuides() {
   );
 }
 
-function GuideCard({ guide }: { guide: PlatformGuide }) {
+function GuideCard({ guide }: { guide: Author }) {
   return (
     <article className={styles.guideCard}>
-      <div className={styles.guideMedia}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className={styles.guidePortrait} src={guide.photo.src} alt={guide.photo.alt} loading="lazy" decoding="async" />
-      </div>
+      {guide.photo ? (
+        <div className={styles.guideMedia}>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img className={styles.guidePortrait} src={guide.photo.src} alt={guide.photo.alt} loading="lazy" decoding="async" />
+        </div>
+      ) : null}
       <div className={styles.guideBody}>
         <div className={styles.guideIdentity}>
           <h3 className={styles.guideName}>{guide.name}</h3>
-          <p className={styles.guideRole}>{guide.role}</p>
+          {guide.role ? <p className={styles.guideRole}>{guide.role}</p> : null}
         </div>
-        <p className={styles.guideNote}>{guide.note}</p>
+        {guide.bio ? <p className={styles.guideNote}>{guide.bio}</p> : null}
         {/* A list is text (see docs/design-system.md). These were four plates in
             a 2×2 grid inside a card — six surfaces to say four short facts, and
             the plates read as pressable when none of them are. */}
-        <ul className={styles.guideFacts}>
-          {guide.facts.map((fact) => (
-            <li key={fact.label}>
-              <Icon className={styles.guideFactIcon} name={fact.icon} size={20} />
-              <span>{fact.label}</span>
-            </li>
-          ))}
-        </ul>
-        <Link className={styles.guideLink} href={guide.href}>
-          {guide.linkLabel}
+        {guide.credentials && guide.credentials.length > 0 ? (
+          <ul className={styles.guideFacts}>
+            {guide.credentials.map((line) => (
+              <li key={line}>
+                <Icon className={styles.guideFactIcon} name="star" size={20} />
+                <span>{line}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+        <Link className={styles.guideLink} href={authorHref(guide)}>
+          Більше про автора
         </Link>
       </div>
     </article>
