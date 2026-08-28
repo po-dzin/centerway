@@ -14,10 +14,14 @@ const root = process.cwd();
 const tokensPath = path.join(root, "data", "design-tokens", "cw.tokens.json");
 const tokens = JSON.parse(readFileSync(tokensPath, "utf8"));
 
-// Two rendered themes: platform light (:root) and admin dark (.dark).
-// Each theme resolves against its own token map. The light map layers the
-// semantic/platform/recipe tokens over base.light; the dark map is the admin
-// chrome (base.dark) — it does not use --cw-sem-*/--cw-platform-*.
+// ONE LIGHT MAP AND ONE DARK MAP, because as of 2026-08-28 the product has one
+// theme. The admin used to carry its own (`.dark` + base.dark, a neutral grey
+// palette resolved without --cw-sem-*/--cw-platform-*); it now runs on the same
+// stamp as every other surface, and the legacy `--cw-*` chrome family is an
+// alias layer over the platform and material tokens rather than a palette of
+// its own. So the `dark` theme below resolves through exactly the same layers
+// as `platform-dark` — the two names are kept apart only so a failure still
+// says WHICH surface a pair was asserted for.
 function buildMap(...objs) {
   const map = new Map();
   for (const obj of objs) {
@@ -33,13 +37,17 @@ const lightMap = buildMap(
   tokens.layers?.componentRecipes?.depth,
   tokens.layers?.material?.light,
 );
-// The dark map is admin chrome (base.dark) plus the material dark half. The
-// semantic aliases ride along because material dark mixes --cw-sem-warmth into
-// its surface; they define no base.dark names, so nothing is shadowed.
+// The admin/app-chrome map at night. Same layers as platformDarkMap below —
+// see the note above; it is built separately so the two stay independently
+// nameable if a surface ever earns a palette of its own again.
 const darkMap = buildMap(
-  tokens.base?.dark,
+  tokens.base?.light,
   tokens.layers?.semanticAliases,
+  tokens.layers?.modeOverrides?.platform,
+  tokens.layers?.componentRecipes?.depth,
+  tokens.layers?.material?.light,
   tokens.layers?.material?.dark,
+  tokens.layers?.modeOverrides?.platformDark,
 );
 
 // The public platform's own dark scope ([data-cw-theme="dark"]), which is a
@@ -88,10 +96,33 @@ const pairs = [
   // lighter one binds. Label is 16px/800 — not WCAG "large", so body AA.
   { theme: "light", fg: "--cw-platform-on-accent", bg: "--cw-platform-accent", min: AA_BODY, context: "ink label on gold CTA (lighter gradient stop)" },
   { theme: "light", fg: "--cw-platform-on-accent", bg: "--cw-platform-accent-pressed", min: AA_BODY, context: "ink label on deep-gold CTA (darker stop / hover)" },
+  // The cabinet hero's doorway (CabinetHero.module.css) — a label over a
+  // photograph, which is why the pair is asserted against the SCRIM rather than
+  // against any surface: the ramp under the label reaches 94% of the scrim ink
+  // at the bottom edge and 84% where the title sits, so the scrim itself is the
+  // floor the text is guaranteed against and the photograph can only lighten
+  // it. Title is 24-30px serif => large AA; the lead is 15px/600 => body AA.
+  { theme: "light", fg: "--cw-mat-inverse-text", bg: "--cw-mat-scrim-ink", min: AA_LARGE, context: "doorway title on scrim" },
+  { theme: "light", fg: "--cw-sem-warmth", bg: "--cw-mat-scrim-ink", min: AA_BODY, context: "doorway lead on scrim" },
   // .cw-btn-primary — rendered primary button (RouteAuthGate, dosha test), 14px semibold label => body AA
   { theme: "light", fg: "--cw-btn-primary-text", bg: "--cw-btn-primary-bg", min: AA_BODY, context: "primary button label on fill" },
   { theme: "light", fg: "--cw-btn-primary-text-hover", bg: "--cw-btn-primary-bg-hover", min: AA_BODY, context: "primary button label on hover fill" },
   { theme: "light", fg: "--cw-btn-primary-text-active", bg: "--cw-btn-primary-bg-active", min: AA_BODY, context: "primary button label on active fill" },
+  /* THE FOUR STATES, as text on the panel they are printed on. A job row says
+     "виконано" in the state's own colour and wears a 12-22% wash of it behind
+     the word; the wash is thin enough that the panel is the real backdrop, so
+     that is what the pair is asserted against. Both gammas, because the hues
+     are brand roles (guide / trust / warmth-strong / boundary) and a role that
+     reads on cream does not automatically read on graphite — the night lifts
+     each one toward the cream ink, and these rows are what says how far. */
+  { theme: "light", fg: "--cw-status-success", bg: "--cw-surface-solid", min: AA_BODY, context: "success state on a panel" },
+  { theme: "light", fg: "--cw-status-running", bg: "--cw-surface-solid", min: AA_BODY, context: "running state on a panel" },
+  { theme: "light", fg: "--cw-status-pending", bg: "--cw-surface-solid", min: AA_BODY, context: "pending state on a panel" },
+  { theme: "light", fg: "--cw-status-failed", bg: "--cw-surface-solid", min: AA_BODY, context: "failed state on a panel" },
+  { theme: "dark", fg: "--cw-status-success", bg: "--cw-surface-solid", min: AA_BODY, context: "success state on a panel" },
+  { theme: "dark", fg: "--cw-status-running", bg: "--cw-surface-solid", min: AA_BODY, context: "running state on a panel" },
+  { theme: "dark", fg: "--cw-status-pending", bg: "--cw-surface-solid", min: AA_BODY, context: "pending state on a panel" },
+  { theme: "dark", fg: "--cw-status-failed", bg: "--cw-surface-solid", min: AA_BODY, context: "failed state on a panel" },
   // admin dark (.dark) — real rendered text pairs only
   { theme: "dark", fg: "--cw-text", bg: "--cw-bg", min: AA_BODY, context: "admin body text on page" },
   { theme: "dark", fg: "--cw-text", bg: "--cw-surface-solid", min: AA_BODY, context: "admin body text on panel" },
@@ -108,7 +139,14 @@ const pairs = [
   { theme: "platform-dark", fg: "--cw-platform-text", bg: "--cw-platform-surface-muted", min: AA_BODY, context: "body text on muted surface" },
   { theme: "platform-dark", fg: "--cw-platform-muted", bg: "--cw-platform-bg", min: AA_BODY, context: "secondary text on page" },
   { theme: "platform-dark", fg: "--cw-platform-muted", bg: "--cw-platform-surface", min: AA_BODY, context: "secondary text on card" },
-  { theme: "platform-dark", fg: "--cw-platform-accent-contrast", bg: "--cw-platform-accent", min: AA_LARGE, context: "CTA label on gold fill (large/semibold)" },
+  /* No `accent-contrast on accent` row here, and the light block above does not
+     have one either — the label on a GOLD fill is `--cw-platform-on-accent`,
+     asserted two rows down. This assertion did exist, and it passed only by
+     accident: the dark palette used to be the green night, where
+     accent-contrast happened to be a near-black (#0e1811) and so read on gold.
+     Once dark became graphite and its accent-contrast became the same cream as
+     the light theme's, the row failed — correctly, because it was describing a
+     pairing no component makes. */
   { theme: "platform-dark", fg: "--cw-platform-accent-contrast", bg: "--cw-platform-accent-strong", min: AA_LARGE, context: "CTA label on strong accent (large/semibold)" },
   { theme: "platform-dark", fg: "--cw-platform-on-accent", bg: "--cw-platform-accent", min: AA_BODY, context: "ink label on gold CTA (lighter gradient stop)" },
   { theme: "platform-dark", fg: "--cw-platform-on-accent", bg: "--cw-platform-accent-pressed", min: AA_BODY, context: "ink label on deep-gold CTA (darker stop / hover)" },

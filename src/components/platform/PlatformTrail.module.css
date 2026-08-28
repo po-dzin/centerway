@@ -17,12 +17,49 @@
   color: var(--cw-platform-muted);
 }
 
+/* ONE LINE, AND THE CAPS ARE COUNTED IN CHARACTERS.
+
+   The component's own contract says "ONE LINE, ALWAYS" — and this file said
+   `flex-wrap: wrap`, so it wrapped. With four levels at `max-width: 14rem` a
+   trail could ask for 56rem on a topbar that has nowhere near it, and the
+   overflow went down instead of into the ellipsis that was already waiting.
+
+   The caps are in `ch` on purpose: `ch` is the width of a "0", so these read as
+   what they are — a budget of characters per level — rather than as a
+   millimetre measurement that happens to fit today's titles. The LAST step is
+   tighter than the ones above it because it is the page you are already on, and
+   it is restated in full as the heading directly below; the crumbs worth
+   reading are the ones you can still go back to. */
 .trail {
+  --trail-step-max: 22ch;
+  --trail-here-max: 16ch;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   min-width: 0;
   margin-block-end: var(--cw-space-xs);
+}
+
+/* THE TABLET BAND IS A NEW ROOM, NOT THE OLD ONE.
+   "ONE LINE, ALWAYS" above answers the topbar's own trail, which owns its
+   row. In the builder's page body at 561–900px the trail shares that row
+   with tools that do not shrink (preview, save status, blockers, contents) —
+   a room the flat rule never had to hold up in. Every crumb still floors at
+   the touch minimum (`chrome`'s own `min-width`, not a rewritten cap), so a
+   long title plus those tools can ask for more than the row has and the
+   excess has nowhere to go but under the tools or off the page.
+
+   Unlike the bug this rule replaced, wrapping here cannot run to 56rem: the
+   per-step caps are still `ch`-bounded, and a flex item only drops to the
+   next line once its own floor no longer fits what is left of the row — the
+   ellipsis inside each crumb keeps doing its job first. Untouched everywhere
+   else: mobile renders `.back` alone, and desktop moves this trail into the
+   header, where it still owns its line. */
+@media (min-width: 561px) and (max-width: 900px) {
+  .trail {
+    flex-wrap: wrap;
+    row-gap: var(--cw-space-2xs);
+  }
 }
 
 /* Hidden on a phone — the `.back` control above is the whole trail there. */
@@ -32,7 +69,12 @@
   min-width: 0;
   /* Truncation lives on the STEP, not on the control inside it: `max-width` is
      an axis the button contract owns. */
-  max-width: 14rem;
+  max-width: var(--trail-step-max);
+}
+
+/* Where you already are — see the note on `.trail`. */
+.step:last-child {
+  max-width: var(--trail-here-max);
 }
 
 .sep {
@@ -128,4 +170,32 @@
   .inkMark {
     transition: none;
   }
+}
+
+/* ── On a hero photograph ─────────────────────────────
+
+   Same trail, other ground. The crumbs are ink on paper by default; over the
+   scrimmed hero they would be ink on a photograph, which is not a contrast
+   problem to be solved with opacity but the wrong palette. Cream, at the
+   hero's own two weights: the pressable steps lighter, the one you are on
+   dimmer, exactly as on paper. */
+.trail[data-tone="media"] {
+  margin-block-end: 0;
+}
+
+.trail[data-tone="media"] .backIcon,
+.trail[data-tone="media"] .sep {
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 72%, transparent);
+}
+
+.trail[data-tone="media"] .crumbLink {
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 92%, transparent);
+}
+
+.trail[data-tone="media"] .crumbLink:hover:not(:disabled) {
+  color: var(--cw-platform-accent-contrast);
+}
+
+.trail[data-tone="media"] .here {
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 74%, transparent);
 }

@@ -15,16 +15,20 @@ import {
   uniqueSlug,
   type Course,
   type CourseModule,
+  type CourseTemplateId,
   type Lesson,
 } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
+import { plural } from "@/lib/plural";
 import { OFFER_CARD_TITLE_MAX, OFFER_TITLE_MAX, offerCardOverflow } from "@/lib/platform/offerPreview";
 import { BuilderFailureNotice, BuilderShell } from "./BuilderShell";
 import { BuilderMenu } from "./BuilderMenu";
 import { BuilderCourseSettings } from "./BuilderCourseSettings";
+import { BuilderStructureStart, isPristineStructure } from "./BuilderStructureStart";
 import { BuilderBlockers } from "./BuilderBlockers";
 import {
   exportLessonFile,
+  importLessonFiles,
   loadCourse,
   renameCourseSlug,
   saveCourse,
@@ -52,13 +56,16 @@ import {
 import { writePath } from "./blockFields";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
+import { courseSaveFailureCopy } from "./courseSaveCopy";
 import { lessonDocumentFailureCopy } from "./lessonDocumentCopy";
 import {
   clearDurableCourseDraft,
   inspectDurableCourseDraft,
   type DurableCourseDraft,
 } from "./courseDraftStore";
-import { BuilderDraftConflict } from "./BuilderDraftConflict";
+import { BuilderDraftRecovery } from "./BuilderDraftRecovery";
+import { BuilderExitPrompt } from "./BuilderExitPrompt";
+import { useBuilderExit } from "./useBuilderExit";
 import { BuilderVersionHistory } from "./BuilderVersionHistory";
 
 type State =
@@ -69,7 +76,20 @@ type State =
 const ids = () => crypto.randomUUID();
 
 type StructureView = "rows" | "cards";
-type WorkspaceMode = "course" | "content" | "release";
+/**
+ * The four screens of a course, in the order the work happens.
+ *
+ * `course` is the COVER — the catalogue card and everything on it. `offer` is
+ * the OFFER PAGE — what a buyer reads after they clicked. They were one tab
+ * called «Огляд» until 2026-08-28, and one tab was the reason the offer half
+ * looked optional: it lived below the fold of the card half.
+ *
+ * The key stays `course` rather than becoming `cover`, and the hash stays
+ * `#course-overview`, because blocker arrows already point course-level
+ * blockers there (`blockerTargets.ts`) and links to it are already in the
+ * wild. Renaming the identifier would have renamed a URL to fix a label.
+ */
+type WorkspaceMode = "course" | "content" | "offer" | "release";
 const STRUCTURE_VIEW_KEY = "cw.builder.structureView";
 const STRUCTURE_VIEW_EVENT = "cw:builder-structure-view";
 const trailTitle = (value: string, fallback: string) =>
@@ -120,8 +140,12 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const [railCollapsed, setRailCollapsed] = useState(false);
   const [slugEditing, setSlugEditing] = useState(false);
   const [slugDraft, setSlugDraft] = useState("");
-  const [pendingHref, setPendingHref] = useState<string | null>(null);
-  const [draftConflict, setDraftConflict] = useState<DurableCourseDraft | null>(null);
+  /* The draft found on this device, and what it is: `recover` is a session
+     that ended badly, `conflict` is one that ended badly while another tab
+     moved the server on. Neither is applied until the author answers. */
+  const [draftDecision, setDraftDecision] = useState<
+    { kind: "recover" | "conflict"; draft: DurableCourseDraft } | null
+  >(null);
   const [versionHistoryOpen, setVersionHistoryOpen] = useState(false);
   const draftGeneration = useRef<number | null>(null);
   const router = useRouter();
@@ -137,6 +161,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     const hash: Record<WorkspaceMode, string> = {
       course: "#course-overview",
       content: "#course-structure",
+      offer: "#course-offer",
       release: "#course-release",
     };
     setWorkspaceMode(mode);
@@ -149,6 +174,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       const next: Record<string, WorkspaceMode> = {
         "#course-overview": "course",
         "#course-structure": "content",
+        "#course-offer": "offer",
         "#course-release": "release",
       };
       const mode = next[window.location.hash] ?? "content";
@@ -164,16 +190,9 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     if (result.ok) {
       draftGeneration.current = result.data.draftGeneration;
       const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration);
-      setDraftConflict(durable.kind === "conflict" ? durable.draft : null);
-      if (durable.kind === "recover") {
-        history.recover(result.data.course, durable.draft.course);
-        setNote("Відновлено локальні зміни. Вони збережуться автоматично.");
-      } else {
-        history.reset(result.data.course);
-        if (durable.kind === "conflict") {
-          setNote("Локальна копія збережена окремо: серверна версія змінилася в іншій вкладці.");
-        }
-      }
+      // The server version is what the editor holds until the author answers.
+      history.reset(result.data.course);
+      setDraftDecision(durable.kind === "none" ? null : { kind: durable.kind, draft: durable.draft });
     }
     setState(
       result.ok
@@ -193,16 +212,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         draftGeneration.current = result.data.draftGeneration;
         const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration);
         if (cancelled) return;
-        setDraftConflict(durable.kind === "conflict" ? durable.draft : null);
-        if (durable.kind === "recover") {
-          history.recover(result.data.course, durable.draft.course);
-          setNote("Відновлено локальні зміни. Вони збережуться автоматично.");
-        } else {
-          history.reset(result.data.course);
-          if (durable.kind === "conflict") {
-            setNote("Локальна копія збережена окремо: серверна версія змінилася в іншій вкладці.");
-          }
-        }
+        history.reset(result.data.course);
+        setDraftDecision(durable.kind === "none" ? null : { kind: durable.kind, draft: durable.draft });
       }
       setState(
         result.ok
@@ -273,6 +284,105 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     { crossGroup: true }
   );
 
+  /**
+   * N files in, N NEW lessons at the end of one module.
+   *
+   * TWO IMPORTS, TWO VERBS, and they are not interchangeable. The lesson editor
+   * imports INTO the open lesson: it replaces title, summary, duration and
+   * blocks in the working copy while identity, slug, order and day survive
+   * (docs/lms-builder-course-lifecycle-2026-08-23.md). This one CREATES —
+   * nothing that exists is touched, and the result needs somewhere to go.
+   *
+   * Which is why it belongs here and could not stay in the editor. A new lesson
+   * needs a module and a position, and the only surface that knows both is the
+   * structure. Without it an author holding five chapters in Word had to create
+   * five empty lessons by hand, open each and import over it — three steps per
+   * chapter, the middle one existing only to give the file somewhere to land.
+   *
+   * It restores what `4bca366f` removed. That commit is titled "move lesson
+   * import into editor", but a replace is not a move of a create: the batch
+   * path went with it and nothing took its place.
+   *
+   * Everything it writes is a draft edit like any other — one history entry, so
+   * ⌘Z takes all of it back, and nothing reaches the server until the course is
+   * saved.
+   */
+  /**
+   * One applier for both formats of the structure chooser.
+   *
+   * It used to live inline on the settings panel's prop, which is why the
+   * control could only ever be in one place: the behaviour was written into the
+   * call rather than into the surface. Lifted here it is the course's own
+   * action, and «З чого почнемо» and «Замінити структуру» are two presentations
+   * of it rather than two implementations.
+   *
+   * The schedule travels WITH the modules, deliberately: a 21-day programme's
+   * shape is not just its lessons, and applying its structure while leaving the
+   * course `open` would produce a template that half-applied.
+   */
+  const applyTemplate = useCallback((template: CourseTemplateId) => {
+    history.edit(null, (current) => {
+      const preset = newCourseFromTemplate(ids, {
+        slug: current.slug,
+        title: current.title,
+        programSlug: current.programSlug,
+        template,
+      });
+      return { ...current, schedule: preset.schedule, modules: preset.modules };
+    });
+    setNote("Структуру застосовано. Перевірте модулі й збережіть курс.");
+    /* `ids` is module scope, not state — listing it would claim this callback
+       re-forms when it changes, and it cannot. */
+  }, [history]);
+
+  async function importLessons(moduleIndex: number, files: File[]) {
+    if (!files.length || working) return;
+    setBusy(true);
+    setNote(null);
+    const result = await importLessonFiles(slug, files);
+    setBusy(false);
+    if (!result.ok) {
+      setNote(lessonDocumentFailureCopy(result.detail, "Не вдалося прочитати файли уроків."));
+      return;
+    }
+
+    history.edit(null, (current) => {
+      /* Slugs are claimed against the WHOLE course, not the module, and the
+         running list is appended to as they are taken — two files with the same
+         heading would otherwise both resolve to the same free slug. */
+      const taken = current.modules.flatMap((entry) => entry.lessons.map((lesson) => lesson.slug));
+      let dayIndex = nextDayIndex(current);
+      return {
+        ...current,
+        modules: renumber(
+          current.modules.map((entry, index) => {
+            if (index !== moduleIndex) return entry;
+            const imported = result.data.lessons.map((lesson, importedIndex) => {
+              const lessonSlug = uniqueSlug(lesson.title, taken);
+              taken.push(lessonSlug);
+              const nextLesson: Lesson = {
+                ...lesson,
+                slug: lessonSlug,
+                order: entry.lessons.length + importedIndex + 1,
+                /* A reference module holds no place in the sequence, so its
+                   lessons carry no day and the counter does not advance. */
+                dayIndex: entry.reference ? undefined : dayIndex,
+              };
+              if (!entry.reference && dayIndex !== undefined) dayIndex += 1;
+              return nextLesson;
+            });
+            return { ...entry, lessons: [...entry.lessons, ...imported] };
+          }),
+        ),
+      };
+    });
+
+    const count = result.data.lessons.length;
+    setNote(
+      `${count} ${plural(count, "урок додано", "уроки додано", "уроків додано")}. Перевірте структуру й збережіть курс.`,
+    );
+  }
+
   async function exportLesson(lesson: Lesson, format: LessonDocumentFormat) {
     if (working) return;
     setBusy(true);
@@ -303,7 +413,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       if (result.failure === "conflict") {
         return { ok: false as const, message: "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку, щоб не втратити чужі зміни." };
       }
-      return { ok: false as const, message: result.detail ?? "Не вдалося зберегти. Спробуйте ще раз." };
+      /* The server's `detail` is an assertion id, not a sentence — see
+         `courseSaveCopy`. It used to be printed raw, so a course whose cover
+         had no alt text answered every save with
+         `lms_course_cover_missing_alt:builder`. */
+      return {
+        ok: false as const,
+        message: courseSaveFailureCopy(result.detail, "Не вдалося зберегти. Спробуйте ще раз."),
+      };
     }
     draftGeneration.current = result.data.draftGeneration;
     // Keep server-derived readiness current without reloading the document. A
@@ -331,10 +448,26 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     };
   }, [slug]);
 
+  /* The exit question decides whether autosave may run, and answering it runs
+     a save — so one of the two has to be reached through a ref. It is the save,
+     because it is the later of the two to exist and the only one a press can
+     ask for: nothing can be pressed before the first commit assigns it. */
+  const saveRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
+  const exit = useBuilderExit({
+    slug,
+    courseId: course?.id ?? null,
+    dirty,
+    save: useCallback(() => saveRef.current(), []),
+  });
+  const { pendingHref, navigate, route } = exit;
+
   const autosave = useCourseAutosave({
     course,
     dirty,
-    paused: busy,
+    // An unanswered exit question freezes the timer; an unanswered recovery
+    // question also freezes the local mirror. See `useCourseAutosave`.
+    paused: busy || exit.prompt !== null,
+    suspended: draftDecision !== null,
     persist: persistCourse,
     markSaved: history.markSaved,
     getDraftGeneration: () => draftGeneration.current,
@@ -342,15 +475,9 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const working = busy || autosave.saving;
   const save = autosave.saveNow;
 
-  const navigate = useCallback((href: string) => {
-    if (!dirty) return router.push(href);
-    if (pendingHref) return;
-    setPendingHref(href);
-    void save().then((saved) => {
-      if (saved) router.push(href);
-      else setPendingHref(null);
-    });
-  }, [dirty, pendingHref, router, save]);
+  useEffect(() => {
+    saveRef.current = save;
+  }, [save]);
 
   const openLesson = useCallback((href: string): "allow" | "held" => {
     if (!dirty) return "allow";
@@ -439,17 +566,17 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     window.dispatchEvent(new Event(STRUCTURE_VIEW_EVENT));
   };
 
-  const recoverConflictingDraft = () => {
-    if (state.status !== "ready" || !draftConflict) return;
-    history.recover(state.data.course, draftConflict.course);
-    setDraftConflict(null);
+  const recoverDraft = () => {
+    if (state.status !== "ready" || !draftDecision) return;
+    history.recover(state.data.course, draftDecision.draft.course);
+    setDraftDecision(null);
     setNote("Локальну копію відновлено. Вона збережеться як поточна версія.");
   };
 
-  const discardConflictingDraft = () => {
-    if (!draftConflict) return;
-    void clearDurableCourseDraft(draftConflict.courseId).catch(() => undefined);
-    setDraftConflict(null);
+  const discardDraft = () => {
+    if (!draftDecision) return;
+    void clearDurableCourseDraft(draftDecision.draft.courseId).catch(() => undefined);
+    setDraftDecision(null);
     setNote("Залишено актуальну серверну версію.");
   };
 
@@ -458,7 +585,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   if (state.status === "loading") {
     return (
       <BuilderShell trail={trail}>
-        <PlatformLoadingState label="Білдер" title="Завантажуємо курс…" detail="Відновлюємо структуру, налаштування і статус публікації." />
+        <PlatformLoadingState label="Майстерня" title="Завантажуємо курс…" detail="Відновлюємо структуру, налаштування і статус публікації." />
       </BuilderShell>
     );
   }
@@ -474,7 +601,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   if (!course) {
     return (
       <BuilderShell trail={trail}>
-        <PlatformLoadingState label="Білдер" title="Завантажуємо курс…" detail="Відновлюємо структуру, налаштування і статус публікації." />
+        <PlatformLoadingState label="Майстерня" title="Завантажуємо курс…" detail="Відновлюємо структуру, налаштування і статус публікації." />
       </BuilderShell>
     );
   }
@@ -490,7 +617,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
 
   return (
     <BuilderShell
-      trail={[{ label: "Курси", onNavigate: () => navigate("/build") }, { label: trailTitle(course.title, "Курс без назви") }]}
+      trail={[{ label: "Курси", onNavigate: () => route("/build") }, { label: trailTitle(course.title, "Курс без назви") }]}
       tools={
         <>
           <button
@@ -498,12 +625,26 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             type="button"
             aria-label="Історія версій"
             title="Історія версій"
+            /* `.menuTrigger[aria-expanded="true"]` already carries the hover
+               background — this was the one caller that never set the
+               attribute, so the trigger gave no sign the drawer it opens is
+               open: it looked pressed for as long as the pointer sat on it and
+               forgot the moment it moved away. */
+            aria-expanded={versionHistoryOpen}
             onClick={() => setVersionHistoryOpen(true)}
           >
             <Icon name="clock" size={18} />
           </button>
-          <button className={styles.quietAction} type="button" onClick={preview} disabled={working} title={dirty ? "Зберегти й відкрити як учень" : "Відкрити як учень"}>
-            Переглянути
+          <button
+            className={styles.workspacePreviewAction}
+            type="button"
+            onClick={preview}
+            disabled={working}
+            aria-label="Переглянути як учень"
+            title={dirty ? "Зберегти й відкрити як учень" : "Відкрити як учень"}
+          >
+            <Icon name="eye" size={20} />
+            <span className={styles.workspaceActionLabel}>Переглянути</span>
           </button>
           <button
             className={`${styles.commitAction} ${styles.courseHeaderSave}`}
@@ -511,7 +652,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             onClick={() => void save()}
             disabled={working || !dirty}
           >
-            {autosave.saving ? "Зберігаємо…" : "Зберегти зараз"}
+            {autosave.saving ? "Зберігаємо…" : "Зберегти"}
           </button>
         </>
       }
@@ -523,9 +664,13 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           onMode={selectWorkspaceMode}
         />
       }
-      asideCollapsed={railCollapsed}
+      /* COMPACT, NOT COLLAPSED. Folding this rail must leave the three modes on
+         screen as icons — they are the whole navigation of the course
+         workspace, and a fold that removes them is a fold that removes the way
+         out. `collapsed` empties the panel; `compact` narrows it. */
+      asideCompact={railCollapsed}
       onAsideToggle={() => setRailCollapsed((current) => !current)}
-      onNavigate={navigate}
+      onNavigate={route}
     >
       <BuilderVersionHistory
         slug={slug}
@@ -533,12 +678,25 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         checkpointDisabled={working || dirty}
         onClose={() => setVersionHistoryOpen(false)}
       />
-      {draftConflict ? (
-        <BuilderDraftConflict onRecover={recoverConflictingDraft} onDiscard={discardConflictingDraft} />
-      ) : null}
+      <BuilderDraftRecovery
+        open={draftDecision !== null}
+        variant={draftDecision?.kind ?? "recover"}
+        savedAt={draftDecision?.draft.updatedAt ?? 0}
+        onRecover={recoverDraft}
+        onDiscard={discardDraft}
+      />
+      <BuilderExitPrompt
+        open={exit.prompt !== null}
+        saving={Boolean(exit.prompt?.saving)}
+        failure={exit.prompt?.refused ? autosave.failureMessage : null}
+        onSave={exit.saveAndLeave}
+        onLeave={exit.leaveWithoutSaving}
+        onStay={exit.stay}
+      />
       <nav className={styles.courseMobileNav} aria-label="Розділи курсу">
-        <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={workspaceMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("course"); }}><BuilderInkLabel>Курс</BuilderInkLabel></a>
+        <a className={styles.courseMobileNavItem} href="#course-overview" aria-current={workspaceMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("course"); }}><BuilderInkLabel>Обкладинка</BuilderInkLabel></a>
         <a className={styles.courseMobileNavItem} href="#course-structure" aria-current={workspaceMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("content"); }}><BuilderInkLabel>Зміст</BuilderInkLabel></a>
+        <a className={styles.courseMobileNavItem} href="#course-offer" aria-current={workspaceMode === "offer" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("offer"); }}><BuilderInkLabel>Сторінка</BuilderInkLabel></a>
         <a className={styles.courseMobileNavItem} href="#course-release" aria-current={workspaceMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); selectWorkspaceMode("release"); }}><BuilderInkLabel>Публікація</BuilderInkLabel></a>
       </nav>
 
@@ -641,32 +799,57 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </div>
       </div>
 
+      {/* NO VISIBLE HEADING HERE ANY MORE. «Про курс» sat above a list whose
+          every row already carries its own caption — ВІТРИНА, РИТМ, ВИГЛЯД,
+          ОБКЛАДИНКА — so it named nothing the reader could not see, and it
+          landed under a tab that says «Огляд» three rows above. A heading that
+          titles a titled list is a line to skip.
+
+          It stays as the section's ACCESSIBLE name, because
+          `aria-labelledby` on the panel above points at it and a screen
+          reader still needs to hear what this region is. */}
       <div className={styles.courseSettingsPanel}>
-        <h2 className={styles.panelTitle} id="course-overview-title">Про курс</h2>
+        <h2 className={styles.visuallyHidden} id="course-overview-title">Про курс</h2>
         <BuilderCourseSettings
           course={course}
+          scope="cover"
           onChange={editCourse}
-          onApplyTemplate={(template) => {
-            history.edit(null, (current) => {
-              const preset = newCourseFromTemplate(ids, {
-                slug: current.slug,
-                title: current.title,
-                programSlug: current.programSlug,
-                template,
-              });
-              return { ...current, schedule: preset.schedule, modules: preset.modules };
-            });
-            setNote("Стартову структуру застосовано. Перевірте модулі й збережіть курс.");
-          }}
         />
       </div>
+      </section>
+
+      {/* THE OFFER PAGE, on its own screen. Same component, other half of its
+          sections — see `SettingsScope`. It has no document head of its own on
+          purpose: the name, the short description and the address belong to the
+          course, are edited once on the cover tab, and a second copy here would
+          be a second place to change them from. */}
+      <section className={styles.courseWorkspacePanel} id="course-offer" hidden={workspaceMode !== "offer"} aria-labelledby="course-offer-title">
+        <div className={styles.courseSettingsPanel}>
+          <h2 className={styles.visuallyHidden} id="course-offer-title">Сторінка програми</h2>
+          <BuilderCourseSettings
+            course={course}
+            scope="page"
+            onChange={editCourse}
+          />
+        </div>
       </section>
 
       <section id="course-structure" hidden={workspaceMode !== "content"} className={`${styles.panel} ${styles.structure} ${structureView === "cards" ? styles.structureCards : ""}`} aria-labelledby="course-structure-title">
         <header className={`${styles.panelHead} ${styles.structureHead}`}>
           <div>
-            <span className={styles.structureKicker}>{trailTitle(course.title, "Курс без назви")}</span>
-            <h2 className={styles.structureTitle} id="course-structure-title">Зміст</h2>
+            {/* No kicker. It printed the course title one row under the trail
+                that already names it — on a phone that echo cost a whole line
+                of a screen where the first module was six rows down. */}
+            {/* THE TAB ALREADY SAYS «Зміст», two rows above and in the control
+                the author just pressed to get here. Printing it again as the
+                panel's heading is the same word twice on one screen with
+                nothing added between them — and on a phone it cost a line of a
+                view where the first module was already far down.
+
+                What stays visible is the count under it, which the tab cannot
+                carry; the word itself stays as the region's accessible name,
+                because `aria-labelledby` points at it. */}
+            <h2 className={styles.visuallyHidden} id="course-structure-title">Зміст</h2>
             <p className={styles.structureMeta}>
               {course.modules.length} {plural(course.modules.length, "модуль", "модулі", "модулів")} ·{" "}
               {lessonCount} {plural(lessonCount, "урок", "уроки", "уроків")}
@@ -686,6 +869,19 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           ) : null}
         </header>
 
+        {/* THE OPENING STATE OF THIS TAB, when there is nothing here yet. A new
+            course cannot be empty — `validateCourse` refuses zero modules, so
+            `createCourse` seeds one — and an author therefore lands on
+            `Модуль 1 / Урок 1` whether that shape suits their course or not.
+            Offering the four shapes here is the choice that seeding took away.
+
+            It sits ABOVE the list rather than replacing it: the placeholder
+            module below is real, and a control that hides the document it acts
+            on is the one thing this panel must not do. */}
+        {isPristineStructure(course) ? (
+          <BuilderStructureStart format="start" onApply={applyTemplate} />
+        ) : null}
+
         <div className={styles.structureModules}>
           {course.modules.map((module, moduleIndex) => (
             <ModuleEditor
@@ -700,6 +896,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
               onNote={setNote}
               onOpenLesson={openLesson}
               busy={working}
+              onImportLessons={(files) => importLessons(moduleIndex, files)}
               onExportLesson={exportLesson}
             />
           ))}
@@ -717,6 +914,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         >
           <span className={styles.addGlyph} aria-hidden="true">+</span> Додати модуль
         </button>
+
+        {/* THE SAME CONTROL, FOLDED, once there is work to lose. On a course
+            with content the templates stop being a starting point and become a
+            wrecking ball, so this one is closed by default, sits after
+            everything it would destroy, and asks before it does. */}
+        {isPristineStructure(course) ? null : (
+          <BuilderStructureStart format="replace" onApply={applyTemplate} />
+        )}
       </section>
 
       <section className={styles.releaseWorkspace} id="course-release" hidden={workspaceMode !== "release"} aria-labelledby="course-release-title">
@@ -731,7 +936,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           </div>
         </header>
         {note ? <p className={styles.noticeLine} aria-live="polite">{note}</p> : null}
-        <BuilderBlockers blockers={readiness.blockers} />
+        <BuilderBlockers course={course} blockers={readiness.blockers} />
         <section className={styles.releaseSection}>
           <h3 className={styles.panelTitle}>Дія публікації</h3>
           <p className={styles.panelText}>
@@ -761,22 +966,36 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         </section>
       </section>
 
+      {/* ONE BAR, ONE SIZE, IN EVERY STATE.
+
+          It used to render two different things: three controls normally, and a
+          single sentence while a save-before-navigate was in flight. So the one
+          element that sits at the bottom edge of the document changed its own
+          height and its own column layout at the exact moment the author was
+          waiting on it — the thing you are looking at moved while you looked.
+
+          The slots are now fixed and only their CONTENT changes. Undo and save
+          are disabled rather than removed while a departure is pending, which
+          is also the truth: they are unavailable, not absent. */}
       <div className={`${styles.saveBar} ${styles.courseSaveBar}`} data-pending={pendingHref ? "" : undefined}>
-        {pendingHref ? (
-          <span className={styles.saveState} role="status" aria-live="polite">
-            Зберігаємо зміни перед переходом…
-          </span>
-        ) : (
-          <>
-            <BuilderHistory history={history} disabled={working} />
-            <span className={styles.saveState} role="status" aria-live="polite">
-              {note ?? autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
-            </span>
-            <button className={styles.commitAction} type="button" onClick={() => void save()} disabled={working || !dirty}>
-              {autosave.saving ? "Зберігаємо…" : "Зберегти зараз"}
-            </button>
-          </>
-        )}
+        <BuilderHistory history={history} disabled={working || pendingHref !== null} />
+        <span className={styles.saveState} role="status" aria-live="polite">
+          {pendingHref
+            ? "Зберігаємо зміни перед переходом…"
+            : note ?? autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
+        </span>
+        {/* The label never changes. It names what the button DOES, and the line
+            beside it already says what is happening — a button that relabels
+            itself mid-press is just a narrower button arriving under the
+            cursor. Progress is carried by `disabled` and by the status. */}
+        <button
+          className={styles.commitAction}
+          type="button"
+          onClick={() => void save()}
+          disabled={working || pendingHref !== null || !dirty}
+        >
+          Зберегти
+        </button>
       </div>
     </BuilderShell>
   );
@@ -796,13 +1015,17 @@ function BuilderCourseRail({
   return (
     <div className={styles.courseRail}>
       <nav className={styles.courseRailNav} aria-label="Розділи курсу">
-        <a className={styles.courseRailLink} href="#course-overview" aria-label="Курс" aria-current={activeMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("course"); }}>
-          <span className={styles.courseRailIcon}><Icon name="guide" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
-          <BuilderInkLabel>Курс</BuilderInkLabel>
+        <a className={styles.courseRailLink} href="#course-overview" aria-label="Обкладинка" aria-current={activeMode === "course" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("course"); }}>
+          <span className={styles.courseRailIcon}><Icon name="display" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
+          <BuilderInkLabel>Обкладинка</BuilderInkLabel>
         </a>
         <a className={styles.courseRailLink} href="#course-structure" aria-label="Зміст" aria-current={activeMode === "content" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("content"); }}>
           <span className={styles.courseRailIcon}><Icon name="view-rows" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
           <BuilderInkLabel>Зміст</BuilderInkLabel>
+        </a>
+        <a className={styles.courseRailLink} href="#course-offer" aria-label="Сторінка програми" aria-current={activeMode === "offer" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("offer"); }}>
+          <span className={styles.courseRailIcon}><Icon name="document" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
+          <BuilderInkLabel>Сторінка</BuilderInkLabel>
         </a>
         <a className={styles.courseRailLink} href="#course-release" aria-label="Публікація" aria-current={activeMode === "release" ? "page" : undefined} onClick={(event) => { event.preventDefault(); onMode("release"); }}>
           <span className={styles.courseRailIcon}><Icon name="shield-check" size={20} /><HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} /></span>
@@ -860,6 +1083,7 @@ function ModuleEditor({
   onNote,
   onOpenLesson,
   busy,
+  onImportLessons,
   onExportLesson,
 }: {
   course: Course;
@@ -873,9 +1097,11 @@ function ModuleEditor({
   /** Answers whether the row may follow its own href, or is being held back. */
   onOpenLesson: (href: string) => "allow" | "held";
   busy: boolean;
+  onImportLessons: (files: File[]) => Promise<void>;
   onExportLesson: (lesson: Lesson, format: LessonDocumentFormat) => Promise<void>;
 }) {
   const isOnlyModule = course.modules.length === 1;
+  const importPicker = useRef<HTMLInputElement>(null);
   const [collapsed, setCollapsed] = useState(false);
   const sequenceIndex = module.reference
     ? null
@@ -1077,20 +1303,48 @@ function ModuleEditor({
         >
           <Icon name="plus" size={20} /> Новий урок
         </button>
+        {/* NEXT TO THE HAND-MADE ONE, because it makes the same thing — but as
+            a GLYPH, not a second sentence. Two full labels side by side read as
+            two equal offers and doubled the width of a row that repeats once per
+            module; on a phone they wrapped. The words belong to the one an
+            author takes ten times a day, and the side door keeps a tooltip and
+            an accessible name — the same split as the course list's head, where
+            «Новий курс» is the gold button and import is the glyph beside it.
+
+            `multiple` is the point of it: five files are five lessons in one
+            press, appended in the order the picker returns them. */}
+        <button
+          className={styles.moduleImportAction}
+          type="button"
+          disabled={busy}
+          onClick={() => importPicker.current?.click()}
+          title={busy ? "Опрацьовуємо…" : "Імпортувати уроки з файлів"}
+          aria-label={busy ? "Опрацьовуємо…" : "Імпортувати уроки з файлів"}
+        >
+          <Icon name="import" size={20} />
+          <HandGraphic className={styles.stepInkRing} name="ink-ring" size={42} />
+        </button>
+        <input
+          ref={importPicker}
+          className={styles.visuallyHidden}
+          type="file"
+          accept=".md,.markdown,.docx,.txt,text/markdown,text/plain,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+          multiple
+          tabIndex={-1}
+          onChange={(event) => {
+            const files = Array.from(event.target.files ?? []);
+            /* Cleared before the work starts, so picking the same files again
+               still fires a change event. */
+            event.target.value = "";
+            if (files.length) void onImportLessons(files);
+          }}
+        />
       </div>
       </>}
     </div>
   );
 }
 
-function plural(count: number, one: string, few: string, many: string): string {
-  const mod100 = count % 100;
-  if (mod100 >= 11 && mod100 <= 14) return many;
-  const mod10 = count % 10;
-  if (mod10 === 1) return one;
-  if (mod10 >= 2 && mod10 <= 4) return few;
-  return many;
-}
 
 function reviewStatusLabel(data: BuilderCourseDto): string {
   if (data.course.status === "published") return "Курс відкритий учням";

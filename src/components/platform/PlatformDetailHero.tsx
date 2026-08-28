@@ -1,9 +1,11 @@
 import Link from "next/link";
-import type { CSSProperties, ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Icon } from "@/components/Icon";
 import type { CwIconName } from "@/components/iconNames";
 import styles from "@/components/platform/PlatformHeroStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
+import { PlatformTrail, type TrailStep } from "@/components/platform/PlatformTrail";
+import { heroFraming } from "@/components/platform/heroFraming";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 
 type DetailHeroAction = {
@@ -42,6 +44,19 @@ type PlatformDetailHeroProps = {
    * and no access term, and an empty pill row would say it did.
    */
   meta?: DetailHeroMeta[];
+  /**
+   * The way back to the index this page was reached from, drawn INSIDE the
+   * hero. It used to be a row under it, which put "where am I" below the thing
+   * it locates — and on a phone, below a full-height photograph.
+   */
+  trail?: TrailStep[];
+  /**
+   * A control for the person who maintains this page rather than the one
+   * reading it — today, the author's way into the Майстерня. Sits opposite the
+   * trail on the same line, so an editing affordance never lands in the middle
+   * of the offer.
+   */
+  utility?: ReactNode;
   primaryAction: DetailHeroAction;
   secondaryAction?: DetailHeroAction | null;
   /**
@@ -65,20 +80,6 @@ type PlatformDetailHeroProps = {
   actions?: ReactNode;
 };
 
-function resolveHeroPosition(position?: string) {
-  if (!position) {
-    return {
-      x: "50%",
-      y: "20%",
-    };
-  }
-  const [x, y] = position.trim().split(/\s+/);
-  return {
-    x: x === "center" ? "50%" : x,
-    y: y ?? "20%",
-  };
-}
-
 export function PlatformDetailHero({
   title,
   subtitle,
@@ -88,27 +89,14 @@ export function PlatformDetailHero({
   imageAlt,
   templateKind,
   meta,
+  trail,
+  utility,
   primaryAction,
   secondaryAction,
   commitment,
   actions,
 }: PlatformDetailHeroProps) {
-  const desktopFocus = resolveHeroPosition(artwork?.desktopPosition);
-  const mobileFocus = resolveHeroPosition(artwork?.mobilePosition ?? artwork?.desktopPosition);
-  /* Only the -desktop/-mobile pair is set inline. The unsuffixed
-     --hero-photo-x/y are deliberately left to PlatformResponsive.module.css,
-     which picks the right one per breakpoint: setting them here too would win
-     on specificity (inline beats every selector) and the mobile focal point
-     would never apply. */
-  const heroStyle = {
-    "--hero-photo-x-desktop": desktopFocus.x,
-    "--hero-photo-y-desktop": desktopFocus.y,
-    "--hero-photo-x-mobile": mobileFocus.x,
-    "--hero-photo-y-mobile": mobileFocus.y,
-    "--hero-photo-shift-y": "0%",
-    "--hero-photo-scale": "1.02",
-    "--hero-photo-origin": "center center",
-  } as CSSProperties;
+  const heroStyle = heroFraming(artwork);
 
   return (
     <section
@@ -125,6 +113,12 @@ export function PlatformDetailHero({
         <PlatformHeroPhoto artwork={artwork} alt={imageAlt} className={styles.expertImage} eager />
       </div>
       <div className={styles.heroFeatureContent}>
+        {(trail && trail.length > 0) || utility ? (
+          <div className={styles.heroUtilityRow}>
+            {trail && trail.length > 0 ? <PlatformTrail steps={trail} tone="media" /> : <span />}
+            {utility}
+          </div>
+        ) : null}
         <p className={styles.heroBadge}>
           <span>{badge}</span>
         </p>

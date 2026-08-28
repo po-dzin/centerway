@@ -71,27 +71,6 @@ export type CourseRow = {
     updatedAt: string;
 };
 
-/**
- * One platform account, whatever it has or has not done yet.
- *
- * The other three lists each answer a narrower question — who holds an elevated
- * role, who is taking a course, who has paid — so an account that merely signed
- * in appeared in none of them. This is the row for "who exists".
- */
-export type AccountRow = {
-    authUserId: string;
-    email: string | null;
-    fullName: string | null;
-    avatarUrl: string | null;
-    /** Sign-in provider as recorded at sync; `manual` for an account the panel made. */
-    provider: string | null;
-    lastSignInAt: string | null;
-    /** `null` when there is no `user_roles` row at all, which is most people. */
-    role: string | null;
-    enrollments: number;
-    /** Paid orders reachable from this account, by link or by matching email. */
-    purchases: number;
-};
 
 export type RoleRow = {
     authUserId: string;
@@ -107,6 +86,16 @@ export type RoleRow = {
 
 /** Roles `user_roles` accepts — mirrors its CHECK, widened by the 2026-08-21 merge. */
 export const GRANTABLE_ROLES = ["user", "coach", "support", "admin"] as const;
+
+/**
+ * The roles that mean "this person can do something an ordinary account cannot".
+ *
+ * `user` is not one of them: it is what everybody is, and what "remove the role"
+ * writes back. Kept beside GRANTABLE_ROLES so the two cannot drift — adding a
+ * role to that list and forgetting this one would quietly hide its holders from
+ * the "staff" filter.
+ */
+export const ELEVATED_ROLES = GRANTABLE_ROLES.filter((role) => role !== "user");
 export type GrantableRole = (typeof GRANTABLE_ROLES)[number];
 
 /** Payment currencies the panel offers for a hand-recorded sale. UAH first — the merchant settles in it. */
@@ -173,6 +162,31 @@ export function normalizeDeadline(raw: unknown): { ok: true; value: string | nul
     return Number.isNaN(parsed.getTime()) ? { ok: false } : { ok: true, value: parsed.toISOString() };
 }
 
+/**
+ * What the grant form sends for a deadline, given its two controls.
+ *
+ * THREE ANSWERS, NOT TWO. Ticked ("Безстроково") is the operator stating
+ * perpetual access explicitly — sent as `null`, which overrides whatever term
+ * the course is normally sold with. A typed date, once unticked, is the other
+ * explicit override. Unticked with nothing typed is neither: it is the
+ * operator not having said anything about the term, so nothing is sent
+ * (`undefined`, dropped by JSON.stringify) and `provisionAccess` fills it in
+ * from the course's own offer.
+ *
+ * That last answer changed shape on 2026-08-28. An empty date used to mean
+ * `null` unconditionally — the checkbox above only gave that existing meaning
+ * a name. It could not stay that once a hand-recorded sale started reading the
+ * offer's own term: selling a 30-day course by hand was granting it forever
+ * whenever nobody typed a date, which was every sale before the term became
+ * something the checkout itself would have applied. The checkbox still means
+ * exactly what its label says — the silent default underneath it moved instead,
+ * from "forever" to "whatever this course is normally sold with".
+ */
+export function grantDeadlineValue(forever: boolean, dateInput: string): string | null | undefined {
+    if (forever) return null;
+    return dateInput || undefined;
+}
+
 /** The `<input type="date">` value for a stored deadline, in UTC to match how it was written. */
 export function deadlineInputValue(expiresAt: string | null): string {
     if (!expiresAt) return "";
@@ -185,13 +199,42 @@ export type LearnerAccountRow = {
     email: string | null;
     fullName: string | null;
     avatarUrl: string | null;
-    /** Every enrollment this person holds, newest first. */
+    /** Every enrollment this person holds, newest first. Empty for an account with none. */
     courses: LearnerRow[];
     lessonsTotal: number;
     lessonsCompleted: number;
     lastActivityAt: string | null;
     status: LearnerStatus;
 };
+
+/**
+ * One person, with everything the panel knows about them.
+ *
+ * THE TWO LISTS WERE THE SAME LIST. `LearnerAccountRow` was accounts that hold
+ * a course; the account row was accounts, full stop. Merging them is step 2 of
+ * docs/admin-access-shape-2026-08-28.md — "holds a course" is an attribute of a
+ * person, so it belongs on a facet rather than on a tab of its own.
+ *
+ * `courses` is empty rather than absent for somebody who holds none. That is
+ * the whole point of the merge: an account that has never enrolled is a row
+ * here, not a gap.
+ */
+export type PersonRow = LearnerAccountRow & {
+    /** Sign-in provider as recorded at sync; `manual` for an account the panel made. */
+    provider: string | null;
+    lastSignInAt: string | null;
+    /** `null` when there is no `user_roles` row at all, which is most people. */
+    role: string | null;
+    /** When that role was last written. */
+    roleUpdatedAt: string | null;
+    /** Paid orders reachable from this account, by link or by matching email. */
+    purchases: number;
+    /** Courses this person authors (`lms_courses.author_id`). */
+    ownedCourses: number;
+};
+
+/** Which people a listing wants: everybody, only those holding a course, or only those with none. */
+export type AccessFacet = "" | "enrolled" | "none";
 
 /**
  * How one person's several courses collapse into one headline status.

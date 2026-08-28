@@ -200,6 +200,9 @@ export function ProgramDetailPage({
           artwork: program.artwork,
           imageAlt: program.title,
           templateKind: "program",
+          /* The author's own way in, on the hero's utility line. Renders for
+             nobody else, including the buyer looking at the same page. */
+          ...(course ? { utility: <CourseAuthorLink courseSlug={course.slug} tone="media" /> } : {}),
           meta: heroMeta,
           commitment: (
             <OfferHeroCommitment
@@ -259,9 +262,6 @@ export function ProgramDetailPage({
                 them. The hero says it now, in the place the contradiction was,
                 and a second announcement below would be the platform saying the
                 same thing twice in two voices. */}
-            {/* The author's own way in. Renders for nobody else, including the
-                buyer looking at the same page. */}
-            {course ? <CourseAuthorLink courseSlug={course.slug} /> : null}
             <OfferBento audience={program.audience} results={program.results} format={program.format} />
           </>
         }

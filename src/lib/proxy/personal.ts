@@ -11,10 +11,12 @@
  *
  *   my.centerway.net.ua/            → /learn                 the dashboard
  *   my.centerway.net.ua/way21/day-1 → /learn/way21/day-1     a lesson
+ *   my.centerway.net.ua/profile     → /profile               the cabinet
  *   my.centerway.net.ua/build/…     → /build/…               the builder
  *   my.centerway.net.ua/learn…      → 308 to the short form  it is not an address
  *   www.centerway.net.ua/learn…     → 404                    personal, only here
  *   www.centerway.net.ua/build/…    → 404                    same rule, same reason
+ *   www.centerway.net.ua/profile    → 308 to `my`            it had a public address
  *
  * The tree is the point. A dashboard at the root with lessons under `/learn/…`
  * meant children whose parent redirected away — so the prefix stopped being an
@@ -28,7 +30,7 @@
  * arrive at a 404 rather than at the dashboard.
  *
  * On the personal host an unclaimed path is a COURSE, so the public top-level
- * segments (`/profile`, `/legal/…`, `/programs`) forward to `www` instead of
+ * segments (`/legal/…`, `/programs`, `/products`) forward to `www` instead of
  * resolving as courses that do not exist. That list is `PUBLIC_ROOT_SEGMENTS`,
  * and a test walks the router to keep it from drifting.
  *
@@ -42,6 +44,7 @@ import { NextRequest, NextResponse } from "next/server";
 import {
   LEARNING_PATH_PREFIX,
   PLATFORM_ORIGIN,
+  PROFILE_PATH_PREFIX,
   canonicalPersonalPath,
   isPersonalPath,
   isPublicRootPath,
@@ -79,6 +82,19 @@ export function rewritePersonalHostRequest(req: NextRequest): NextResponse | nul
   if (!isPersonalHost(req)) {
     if (!isPersonalPath(pathname)) return null;
     if (allowsPersonalPath(req)) return NextResponse.next();
+
+    /* THE CABINET IS THE ONE PERSONAL PATH THAT FORWARDS (2026-08-27).
+       `/learn` and `/build` never had a public address, so 404 there closes an
+       address that was never given out. `/profile` DID: it was a public path
+       for months, it is in the account menu of every page already served, and
+       it is what an installed app was launched from. A 404 for it would break
+       links people are holding, so it forwards — once, permanently — to the
+       origin that owns it now. */
+    if (pathname === PROFILE_PATH_PREFIX || pathname.startsWith(`${PROFILE_PATH_PREFIX}/`)) {
+      const target = new URL(personalUrl(pathname));
+      target.search = req.nextUrl.search;
+      return NextResponse.redirect(target, 308);
+    }
 
     // Personal, and only here. No forward for either prefix.
     return new NextResponse(null, { status: 404 });

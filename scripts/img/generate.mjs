@@ -121,6 +121,7 @@ function parseArgs(argv) {
     seed: null,
     extra: "",
     model: null,
+    resolution: null,
   };
   for (let i = 2; i < argv.length; i += 1) {
     const arg = argv[i];
@@ -139,6 +140,7 @@ function parseArgs(argv) {
     else if (arg === "--seed") args.seed = Number(argv[++i]);
     else if (arg === "--extra") args.extra = argv[++i];
     else if (arg === "--model") args.model = argv[++i];
+    else if (arg === "--resolution") args.resolution = argv[++i];
     else throw new Error(`unknown argument: ${arg}`);
   }
   if (!args.listModels) {
@@ -183,13 +185,19 @@ async function referenceParts(refs) {
 
 /** Gateway adapter. A second adapter would implement the same two functions. */
 const gatewayAdapter = {
-  async generateWithReference({ prompt, refs, seed, model }) {
+  async generateWithReference({ prompt, refs, seed, model, resolution }) {
     const { generateText } = await import("ai");
     const result = await generateText({
       model: model ?? MODELS.reference,
       messages: [{ role: "user", content: [...(await referenceParts(refs)), { type: "text", text: prompt }] }],
       ...(seed == null ? {} : { seed }),
-      providerOptions: { gateway: { tags: ["feature:imagery", "env:local"] } },
+      providerOptions: {
+        gateway: { tags: ["feature:imagery", "env:local"] },
+        /* A hero plate is displayed 1900px wide. The model's default output is
+           ~1264px, which is why the first four offer plates read soft on a
+           desktop monitor — `--resolution 2K` (or 4K) is not a nicety here. */
+        ...(resolution ? { google: { imageConfig: { imageSize: resolution } } } : {}),
+      },
     });
     const images = (result.files ?? []).filter((f) => f.mediaType?.startsWith("image/"));
     if (!images.length) {
@@ -243,7 +251,13 @@ async function main() {
   for (let i = 1; i <= args.n; i += 1) {
     const seed = args.seed == null ? null : args.seed + i - 1;
     const results = useRefs
-      ? await gatewayAdapter.generateWithReference({ prompt, refs: args.refs, seed, model: args.model })
+      ? await gatewayAdapter.generateWithReference({
+          prompt,
+          refs: args.refs,
+          seed,
+          model: args.model,
+          resolution: args.resolution,
+        })
       : await gatewayAdapter.generateFromText({ prompt, ratio: args.ratio, seed, model: args.model });
 
     for (const [index, image] of results.entries()) {

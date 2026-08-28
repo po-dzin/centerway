@@ -1,7 +1,6 @@
 "use client";
 
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { PlatformAuthModal } from "@/components/platform/PlatformAuthModal";
@@ -12,6 +11,7 @@ import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
 import { CW_THEME_QUERY_KEYS } from "@/lib/generator/theme";
 import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT } from "@/lib/doshaRouting";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
+import { heroFraming } from "@/components/platform/heroFraming";
 import { platformPageArtwork } from "@/lib/platform/content";
 import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
 import { supabaseClient } from "@/lib/supabaseClient";
@@ -156,20 +156,6 @@ const BOUNDARY_NOTE =
 
 const DOSHA_DISCLOSURE =
   "У підході CenterWay доші описують природні патерни енергії, ритму й відновлення. Тест допомагає обрати доречні практики і матеріали в платформі.";
-
-function resolveHeroPosition(position?: string) {
-  if (!position) {
-    return {
-      x: "50%",
-      y: "20%",
-    };
-  }
-  const [x, y] = position.trim().split(/\s+/);
-  return {
-    x: x === "center" ? "50%" : x,
-    y: y ?? "20%",
-  };
-}
 
 function getCurrentQuestion(questions: TestQuestion[], currentQuestionIndex: number): TestQuestion | null {
   const idx = Math.max(1, currentQuestionIndex) - 1;
@@ -600,22 +586,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
           ? "Формуємо результат"
           : "Результат готовий";
   const doshaHeroArtwork = platformPageArtwork.dosha;
-  const desktopFocus = resolveHeroPosition(doshaHeroArtwork.desktopPosition);
-  const mobileFocus = resolveHeroPosition(doshaHeroArtwork.mobilePosition ?? doshaHeroArtwork.desktopPosition);
-  /* Only the -desktop/-mobile pair is set inline. The unsuffixed
-     --hero-photo-x/y are deliberately left to PlatformResponsive.module.css,
-     which picks the right one per breakpoint: setting them here too would win
-     on specificity (inline beats every selector) and the mobile focal point
-     would never apply. */
-  const heroStyle = {
-    "--hero-photo-x-desktop": desktopFocus.x,
-    "--hero-photo-y-desktop": desktopFocus.y,
-    "--hero-photo-x-mobile": mobileFocus.x,
-    "--hero-photo-y-mobile": mobileFocus.y,
-    "--hero-photo-shift-y": "0%",
-    "--hero-photo-scale": "1.02",
-    "--hero-photo-origin": "center center",
-  } as CSSProperties;
+  const heroStyle = heroFraming(doshaHeroArtwork);
 
   return (
     <>
@@ -663,7 +634,7 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
                   </p>
                   <h1 className={styles.title}>Тест доші</h1>
                   <p className={styles.lead}>
-                    Швидка самодіагностика ритму, енергії, травлення і напруги — щоб побачити поточний стан і
+                    Швидка самооцінка ритму, енергії, травлення і напруги — щоб побачити поточний стан і
                     зрозуміти, з чого почати.
                   </p>
                 </div>

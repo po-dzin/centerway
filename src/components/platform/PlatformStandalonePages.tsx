@@ -10,8 +10,8 @@ import { consultationExpectations, consultationSteps } from "@/components/platfo
 import { HubMini, HubPrograms } from "@/components/platform/blocks/offer/hub";
 import { HubHero, HubIntro } from "@/components/platform/blocks/orientation/hub";
 import { ExpertPath, ExpertProof } from "@/components/platform/blocks/trust/expert";
+import { HubGuides } from "@/components/platform/blocks/trust/guides";
 import { HubProof, HubSupport } from "@/components/platform/blocks/trust/hub";
-import { SupportForm } from "@/components/platform/blocks/trust/support";
 import { bodySignals, consultationCopy, platformPageArtwork } from "@/lib/platform/content";
 
 export function PlatformHomePage() {
@@ -24,7 +24,7 @@ export function PlatformHomePage() {
         <HubPrograms />
         <HubProof />
         <HubSupport />
-        <SupportForm route="platform-home" />
+        <HubGuides />
       </main>
     </PlatformShell>
   );

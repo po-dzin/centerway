@@ -279,6 +279,18 @@ export const ICONS = {
     group: "Meta",
     d: ["M19.6 14.4A8.4 8.4 0 0 1 9.6 4.4a8.4 8.4 0 1 0 10 10z"],
   },
+  /* The third theme state: follow the device. Sun and moon already say "light"
+     and "dark", and the thing that is neither is not a dimmer between them —
+     it is the machine deciding. A half-filled disc is the usual mark for it and
+     is wrong twice here: this set fills nothing but accent dots, and at 18px a
+     circle with a diameter through it reads as `globe` with a line. A screen
+     with a stand says the same thing in monoline and collides with nothing —
+     the only other rectangles in the set carry text (`document`) or a layout
+     (`view-cards`), and neither has a foot. */
+  display: {
+    group: "Meta",
+    d: ["M3.6 5.2h16.8v10.6H3.6z", "M12 15.8v3.2", "M8.4 19h7.2"],
+  },
   mail: {
     group: "Meta",
     d: ["M3.6 6.2h16.8v11.6H3.6z", "M3.6 7 12 13.2 20.4 7"],
@@ -349,6 +361,23 @@ export const ICONS = {
       "M12.8 12.8 H19.5 V19.5 H12.8 Z",
     ],
   },
+  /* Eye: «подивитися очима учня» — preview, on both authoring surfaces.
+
+     ONE closed almond rather than the two mirrored arcs most sets use. Two
+     arcs meet at a corner, and a corner is exactly what the hand bake rounds
+     away: at 18px — the size both toolbars call it at — the two-arc eye reads
+     as a plain circle, which is `dot` with extra steps.
+
+     The pupil is a DOT, not a stroked inner circle. A circle at r 2 carries a
+     1.5 stroke on a 4-wide shape, so its hole closes at small sizes; and a dot
+     is what a node looks like in this language anyway. */
+  eye: {
+    group: "Meta",
+    d: [
+      "M3.6 12C6.3 7.7 9.1 5.9 12 5.9C14.9 5.9 17.7 7.7 20.4 12C17.7 16.3 14.9 18.1 12 18.1C9.1 18.1 6.3 16.3 3.6 12Z",
+    ],
+    dots: [{ cx: 12, cy: 12, r: 1.9 }],
+  },
   // Edit: a compact pencil for inline-authored titles and addresses. Kept on
   // the same diagonal as the route arrows, with a separate cap rather than a
   // filled nib so it survives the hand-character bake at 16px.
@@ -396,6 +425,99 @@ export const ICONS = {
       { cx: 17.2, cy: 12, r: 1.35 },
     ],
   },
+  // Link: two hooked arcs reaching for each other, not two closed rings — a
+  // closed chain link reads as a padlock at 18px. The gap between the arcs IS
+  // the join; `unlink` is the same author action reusing this glyph.
+  link: {
+    group: "Meta",
+    d: [
+      "M9.6 14.4 6.8 17.2A3 3 0 1 0 11 21.4L13.8 18.6",
+      "M14.4 9.6 17.2 6.8A3 3 0 1 1 21.4 11L18.6 13.8",
+    ],
+  },
+  // List (bulleted): the same three rules as `menu`, indented one unit for the
+  // dots — a bullet list drawn in this set's own dot rather than a borrowed
+  // glyph disc.
+  list: {
+    group: "Meta",
+    d: ["M9 6.4h11", "M9 12h11", "M9 17.6h11"],
+    dots: [
+      { cx: 4.4, cy: 6.4, r: 1.15 },
+      { cx: 4.4, cy: 12, r: 1.15 },
+      { cx: 4.4, cy: 17.6, r: 1.15 },
+    ],
+  },
+  // List (ordered): the same three rules, with ascending steps at the left
+  // instead of level dots — the shape this set already uses for "climbing in
+  // order" (`week`, `phase`), so a numbered list reads as a sequence rather
+  // than a second bullet style.
+  /* Chart: three bars off one baseline, and the baseline is the point — a
+     dashboard is a page that measures things against a floor. Added 2026-08-28
+     for the admin's analytics tab, which was the last route still wearing a
+     borrowed outline set. */
+  chart: {
+    group: "Meta",
+    d: ["M4.2 19.4h15.6", "M7.6 19.4v-5.2", "M12 19.4v-9.6", "M16.4 19.4v-6.8"],
+  },
+  "list-ordered": {
+    group: "Meta",
+    d: ["M9 6.4h11", "M9 12h11", "M9 17.6h11", "M4.4 8v-2.6", "M4.4 13.6v-4.2", "M4.4 19.2v-5.8"],
+  },
+  // Quote: a mirrored pair of open hooks — the mark a raised comma leaves at
+  // this weight once it stops being a filled glyph.
+  quote: {
+    group: "Meta",
+    d: [
+      "M5.4 9C5.4 7 6.8 5.6 8.8 5.6",
+      "M5.4 9v3.6a2.2 2.2 0 0 0 2.2 2.2",
+      "M13.4 9c0-2 1.4-3.4 3.4-3.4",
+      "M13.4 9v3.6a2.2 2.2 0 0 0 2.2 2.2",
+    ],
+  },
+  // Code: the angle brackets every editor already uses for "this is markup",
+  // open on both sides so they read at 18px without closing into a diamond.
+  code: {
+    group: "Meta",
+    d: ["M9.6 7.5 4.6 12l5 4.5", "M14.4 7.5 19.4 12l-5 4.5"],
+  },
+  // Bold: same convention as `code`'s angle brackets — a literal letterform,
+  // not an abstract shape, because every rich-text editor already trained
+  // authors on exactly this glyph. Two lobes growing top to bottom off one
+  // spine, drawn open (no closed counters) so the bake's displacement cannot
+  // pinch a hole shut at 18px the way a filled "B" would.
+  bold: {
+    group: "Meta",
+    d: [
+      "M7.6 4.8V19.2",
+      "M7.6 4.8C11.6 4.8 13.4 6.3 13.4 8.4C13.4 10.5 11.6 12 7.6 12",
+      "M7.6 12C12 12 14.2 13.6 14.2 15.8C14.2 18 12 19.2 7.6 19.2",
+    ],
+  },
+  // Italic: the slanted stroke with a serif at each end — the other half of
+  // the same literal-letterform convention as `bold`.
+  italic: {
+    group: "Meta",
+    d: ["M10 5h6.4", "M14.6 5 9.4 19", "M7.6 19H14"],
+  },
+  /* The two node kinds the formatting set was missing. `list` and `list-ordered`
+     already name two of the four things a paragraph can become; without these,
+     half the kind menu wore icons and half did not.
+
+     Heading: the literal letterform, the same convention `bold` and `italic`
+     take — an H, not a stack of lines with one bigger, which at 18px is just
+     `paragraph` drawn unevenly. */
+  heading: {
+    group: "Meta",
+    d: ["M7.2 5v14", "M16.8 5v14", "M7.2 12h9.6"],
+  },
+  /* Paragraph: full-measure lines with a short last one — a block of set text,
+     and the one shape that says "prose" without a letter in it. NOT a pilcrow:
+     ¶ closes into a smudge at this size. It reads apart from `list` because
+     `list` is indented behind its bullets and this runs the full width. */
+  paragraph: {
+    group: "Meta",
+    d: ["M4.4 6.4h15.2", "M4.4 12h15.2", "M4.4 17.6h8.8"],
+  },
 
   // ── Dosha glyphs ───────────────────────────────────────────────────────
   vata: {
@@ -426,15 +548,26 @@ export const GRAPHICS = {
   /* A navigation mark, not a ruled underline. The baked hand pass gives the
      long stroke its irregular pressure; the two satellite dots are restrained
      ink drops that keep the gesture alive without turning it into decoration. */
+  /* ONE PASS OF A PEN, WITH THE INK IT LEAVES AT EITHER END.
+
+     It used to be TWO paths about 1.2 units apart, and that is what made it
+     read as a degraded double line rather than a stroke. The measurement is the
+     argument: this mark renders into a fixed 0.85rem band, so its vertical
+     scale is a constant ~1.38px per unit — which puts those two paths 1.7px
+     apart — while the hand bake (`hand2`) displaces every sample by up to 2.4
+     units, i.e. ~3.3px. The wobble was TWICE the gap, so the two lines crossed
+     and separated along their own length. No amount of nudging two parallel
+     curves survives that; one curve does.
+
+     The drops are the pen landing and leaving, the same idea `ink-ring` states
+     one line below. They sit ON the ends of the stroke rather than beside them,
+     which is where ink actually pools. */
   "ink-stroke": {
     group: "Graphics",
-    d: [
-      "M3.5 19.2C10.2 17.5 18.8 18.9 32.4 16.8",
-      "M6.2 20.4C13.8 19.7 22.6 20.3 29.4 18.9",
-    ],
+    d: ["M3.4 18.8C11.6 17.2 21.4 19.4 32.6 17.6"],
     dots: [
-      { cx: 4.1, cy: 16.2, r: 0.75 },
-      { cx: 32.1, cy: 20.4, r: 0.62 },
+      { cx: 3.4, cy: 18.8, r: 1.15 },
+      { cx: 32.6, cy: 17.6, r: 0.8 },
     ],
   },
   /* Hover/selection for icon-only controls. It is intentionally open at the

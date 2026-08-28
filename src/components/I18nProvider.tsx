@@ -10,9 +10,9 @@ interface I18nContextValue {
 }
 
 const I18nContext = createContext<I18nContextValue>({
-    lang: "ru",
+    lang: "uk",
     setLang: () => { },
-    t: (key) => translations.ru[key],
+    t: (key) => translations.uk[key],
 });
 
 const LANG_KEY = "lang";
@@ -30,9 +30,9 @@ const subscribeToLang = (onStoreChange: () => void) => {
 const getLangSnapshot = (): Lang => {
     try {
         const saved = localStorage.getItem(LANG_KEY);
-        return saved === "en" ? "en" : "ru";
+        return saved === "en" ? "en" : "uk";
     } catch {
-        return "ru";
+        return "uk";
     }
 };
 
@@ -40,7 +40,7 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     const lang = useSyncExternalStore<Lang>(
         subscribeToLang,
         getLangSnapshot,
-        () => "ru"
+        () => "uk"
     );
 
     const setLang = (newLang: Lang) => {

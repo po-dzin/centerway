@@ -3,13 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { type ReactNode, useEffect, useRef, useState } from "react";
-import { LEARNING_SHELF_HREF, personalNav, platformHomeHref, platformNav } from "@/lib/platform/content";
+import { personalNav, platformHomeHref, platformNav } from "@/lib/platform/content";
 import { canonicalPersonalPath } from "@/lib/surfaces/catalog";
 import { isPersonalHost } from "@/lib/platform/surfaceHref";
 import { currentAppKey, type PlatformAppKey } from "@/lib/platform/apps";
 import styles from "@/components/platform/PlatformShellStyles";
 import { HandGraphic, Icon } from "@/components/Icon";
-import { PlatformAccountMenu } from "./PlatformAccountMenu";
+import { PlatformAccountIdentity, PlatformAccountMenu } from "./PlatformAccountMenu";
+import { useChromeReveal } from "./useChromeReveal";
 import { useHeaderTone } from "./headerTone";
 import { useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
 
@@ -25,12 +26,20 @@ export function PlatformHeader({
   mode = "default",
   surface = "auto",
   workspaceContent,
+  autoHide = false,
 }: {
   initialTone?: "light" | "dark";
   mode?: "default" | "overlay" | "learn" | "workspace";
   surface?: "auto" | "personal";
   /** Route context and document actions inside an internal editor topbar. */
   workspaceContent?: ReactNode;
+  /**
+   * Let the bar step aside while the page scrolls down, and bring it back on
+   * the first scroll up. Every surface that is READ opts in — see
+   * `useChromeReveal` for why this is wrong for the builder, whose bar holds
+   * controls in use.
+   */
+  autoHide?: boolean;
 }) {
   const focusedMode = mode === "learn" || mode === "workspace";
   const [openMenuPath, setOpenMenuPath] = useState<string | null>(null);
@@ -46,11 +55,26 @@ export function PlatformHeader({
      That entry moved to the account menu, which needs the read anyway and does
      it there — so the rule the bar kept making an exception to is simply true
      again. */
-  /* The brand mark is a link to the root of THIS application, on every screen
-     of it. On `my` that is the dashboard — pointing it at the storefront would
-     make the one control that never changes the one that leaves. */
-  const brandTarget = focusedMode || onPersonalSurface ? LEARNING_SHELF_HREF : platformHomeHref;
-  const homeHref = href(brandTarget);
+  /* ONE DESTINATION, FROM EVERY SCREEN AND EVERY HOST.
+
+     This used to resolve per surface: the storefront root on `www`, the
+     dashboard on `my`. The reasoning was that the one control which never
+     changes should not be the one that leaves the app — a fair argument, and
+     it is being traded away deliberately for a plainer one. A mark that lands
+     somewhere different depending on where it was pressed is not a fixed
+     point; it is a control you have to know the context of before you can
+     predict it, which is the opposite of what a wordmark is for. The platform
+     root is now the answer everywhere.
+
+     `resolveSurfaceHref` already does the hard half: `/` is not a personal
+     path, so from `my` — and from the funnel hosts — it comes back as an
+     absolute `www` URL, while on `www` and in development it stays relative. */
+  const homeHref = href(platformHomeHref);
+  /* Which is why the mark cannot always be a `next/link`. Off-origin, the
+     router would prefetch a route this origin does not own and still full-load
+     on click — the same reason every other crossing in this bar and in the
+     account menu is a plain anchor. */
+  const homeIsOffOrigin = /^https?:\/\//i.test(homeHref);
   /* Two bars, one component: public routes stay on `www`; `my` keeps only the
      learner shelf and Builder. Lessons intentionally have no top-level route
      map, so the reading surface remains focused. */
@@ -67,6 +91,9 @@ export function PlatformHeader({
   const currentPath = pathname ?? null;
   const menuOpen = openMenuPath !== null && openMenuPath === currentPath;
   const headerTone = useHeaderTone(initialTone, pathname, menuOpen);
+  /* Locked open while the sheet is: the burger drawer IS this element, so a bar
+     that walked off would take the open dialog with it. */
+  const { hidden: chromeHidden } = useChromeReveal(autoHide, headerRef, { locked: menuOpen });
 
   // The mobile menu keeps the geometry of a drawer, but behaves as a modal:
   // background surfaces are inert, scrolling is locked and keyboard focus
@@ -82,8 +109,20 @@ export function PlatformHeader({
     const previouslyInert = backgroundSiblings.map((element) => element.hasAttribute("inert"));
     backgroundSiblings.forEach((element) => element.setAttribute("inert", ""));
 
+    /* LOCKING THE SCROLL MUST NOT MOVE THE PAGE (2026-08-28).
+       `overflow: hidden` on the body takes the classic scrollbar away with it,
+       and the page behind the drawer jumps sideways by its width — a flicker on
+       every open and close, visible on any platform that reserves a gutter for
+       the bar (Windows, Linux, and a macOS set to always-show). The lost width
+       is handed back as padding for exactly as long as the lock lasts. */
     const previousOverflow = document.body.style.overflow;
+    const previousPadRight = document.body.style.paddingRight;
+    const gutter = window.innerWidth - document.documentElement.clientWidth;
     document.body.style.overflow = "hidden";
+    if (gutter > 0) {
+      const current = Number.parseFloat(window.getComputedStyle(document.body).paddingRight) || 0;
+      document.body.style.paddingRight = `${current + gutter}px`;
+    }
 
     function onPointerDown(event: MouseEvent | TouchEvent) {
       const target = event.target;
@@ -125,6 +164,7 @@ export function PlatformHeader({
       document.removeEventListener("touchstart", onPointerDown);
       document.removeEventListener("keydown", onKeyDown);
       document.body.style.overflow = previousOverflow;
+      document.body.style.paddingRight = previousPadRight;
       backgroundSiblings.forEach((element, index) => {
         if (!previouslyInert[index]) element.removeAttribute("inert");
       });
@@ -188,6 +228,11 @@ export function PlatformHeader({
       data-cw-glass={mode === "workspace" ? undefined : "shell"}
       data-cw-header-tone={headerTone}
       data-cw-header-mode={mode}
+      /* Two attributes, not one. The first says this bar is allowed to move —
+         it carries the transition, so a bar that never yields also never pays
+         for one. The second is the state. */
+      data-cw-header-autohide={autoHide ? "true" : undefined}
+      data-cw-header-hidden={chromeHidden ? "true" : undefined}
       data-menu-open={menuOpen ? "true" : "false"}
       role={menuOpen ? "dialog" : undefined}
       aria-modal={menuOpen ? "true" : undefined}
@@ -201,10 +246,17 @@ export function PlatformHeader({
         onClick={closeMenu}
       />
       <div className={`${styles.container} ${styles.headerInner}`}>
-        <Link className={styles.brand} href={homeHref} onClick={closeMenu} aria-label="CenterWay">
-          <span className={styles.brandSymbol} aria-hidden="true" />
-          <span className={styles.brandWordmark} aria-hidden="true" />
-        </Link>
+        {homeIsOffOrigin ? (
+          <a className={styles.brand} href={homeHref} onClick={closeMenu} aria-label="CenterWay">
+            <span className={styles.brandSymbol} aria-hidden="true" />
+            <span className={styles.brandWordmark} aria-hidden="true" />
+          </a>
+        ) : (
+          <Link className={styles.brand} href={homeHref} onClick={closeMenu} aria-label="CenterWay">
+            <span className={styles.brandSymbol} aria-hidden="true" />
+            <span className={styles.brandWordmark} aria-hidden="true" />
+          </Link>
+        )}
         {mode === "workspace" && workspaceContent ? (
           <div className={styles.workspaceHeaderSlot}>{workspaceContent}</div>
         ) : null}
@@ -214,6 +266,13 @@ export function PlatformHeader({
           id="platform-mobile-menu"
         >
           <div className={styles.mobileMenuSurface} data-cw-glass={mode === "workspace" ? undefined : "shell"}>
+            {/* WHOSE SESSION THIS IS, FIRST. The block lives inside the account
+                rows on the desktop popover, which on the phone put it halfway
+                down the drawer — below the public destinations, reading as a
+                caption on the apps under it. A menu opened on a phone answers
+                «whose account» before it answers «where to». The rows below are
+                told not to draw it a second time. */}
+            <PlatformAccountIdentity />
             <nav className={`${styles.nav} ${styles.mobileMenuNav}`} aria-label="Основна навігація">
               {navItems.map((item) => (
                 <Link
@@ -229,10 +288,10 @@ export function PlatformHeader({
                 </Link>
               ))}
             </nav>
-            <div className={styles.mobileProfileSlot}>
+            <div className={styles.mobileProfileSlot} data-cw-rule="chrome">
               {/* Whatever the list above already names, the account block does
                   not repeat — and nothing more than that. */}
-              <PlatformAccountMenu variant="inline" exclude={navExcludes} onNavigate={closeMenu} />
+              <PlatformAccountMenu variant="inline" exclude={navExcludes} onNavigate={closeMenu} showIdentity={false} />
             </div>
           </div>
         </div>

@@ -53,7 +53,22 @@ export type TrailStep = {
   onNavigate?: () => void;
 };
 
-export function PlatformTrail({ steps, label = "Де ви зараз" }: { steps: TrailStep[]; label?: string }) {
+export function PlatformTrail({
+  steps,
+  label = "Де ви зараз",
+  tone = "page",
+}: {
+  steps: TrailStep[];
+  label?: string;
+  /**
+   * Which ground this trail stands on.
+   *
+   * `page` is the platform's paper; `media` is a hero photograph, where the ink
+   * colours the crumbs take on paper are invisible. Not a colour prop — the two
+   * palettes stay in the stylesheet; this only says which one applies.
+   */
+  tone?: "page" | "media";
+}) {
   if (steps.length === 0) return null;
 
   /* One level up: the deepest step that goes anywhere. On a trail whose last
@@ -61,7 +76,7 @@ export function PlatformTrail({ steps, label = "Де ви зараз" }: { steps
   const back = [...steps].reverse().find((step) => step.href || step.onNavigate);
 
   return (
-    <nav className={styles.trail} aria-label={label}>
+    <nav className={styles.trail} data-tone={tone} aria-label={label}>
       {back ? (
         <span className={styles.back}>
           <Icon className={styles.backIcon} name="arrow-left" size={16} />

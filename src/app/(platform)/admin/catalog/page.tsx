@@ -40,6 +40,8 @@ import { getAdminLocale } from "@/lib/adminLocale";
 import { getErrorMessage } from "@/lib/errors";
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { CatalogRow, SaleBlocker } from "@/lib/admin/catalogTypes";
+import type { CourseRow } from "@/lib/admin/accessTypes";
+import { CourseAuthorshipTab } from "@/components/admin/CourseAuthorshipTab";
 import { ACCESS_TERM_PRESETS } from "@/lib/admin/catalogTypes";
 
 async function authFetch(input: string, init: RequestInit = {}) {
@@ -78,7 +80,14 @@ export default function CatalogPage() {
     const { lang, t } = useI18n();
     const locale = getAdminLocale(lang);
 
-    const [tab, setTab] = useState<"publication" | "pricing">("publication");
+    const [tab, setTab] = useState<"publication" | "pricing" | "authorship">("publication");
+    /* Authorship needs the ACCESS shape of a course — `author_id` resolved to an
+       email, plus whether this operator may write it — which `/admin/catalog`
+       does not carry. It is fetched only when that tab is first opened: two
+       reads on arrival for a tab most visits never touch is the cost of merging
+       it here, and it is avoidable. */
+    const [authorCourses, setAuthorCourses] = useState<CourseRow[]>([]);
+    const [canAssignAuthor, setCanAssignAuthor] = useState(false);
     const [rows, setRows] = useState<CatalogRow[] | null>(null);
     const [canEdit, setCanEdit] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -104,6 +113,16 @@ export default function CatalogPage() {
             setRows(payload.items ?? []);
             setCanEdit(Boolean(payload.canEdit));
             setError(null);
+        } catch (e) {
+            setError(errorText(getErrorMessage(e)));
+        }
+    }, [errorText]);
+
+    const loadAuthorship = useCallback(async () => {
+        try {
+            const payload = (await authFetch("/api/admin/access/courses")) as { items?: CourseRow[]; canGrant?: boolean };
+            setAuthorCourses(payload.items ?? []);
+            setCanAssignAuthor(Boolean(payload.canGrant));
         } catch (e) {
             setError(errorText(getErrorMessage(e)));
         }
@@ -143,12 +162,30 @@ export default function CatalogPage() {
                 items={[
                     { key: "publication", label: t("catalog_tab_publication") },
                     { key: "pricing", label: t("catalog_tab_pricing") },
+                    { key: "authorship", label: t("access_tab_builder") },
                 ]}
                 activeKey={tab}
-                onChange={(key) => setTab(key as typeof tab)}
+                onChange={(key) => {
+                    const next = key as typeof tab;
+                    setTab(next);
+                    if (next === "authorship") void loadAuthorship();
+                }}
                 className="overflow-x-auto no-scrollbar"
             />
 
+            {/* Authorship brings its own list and its own read, so it stands in
+                place of the catalogue's rows rather than inside them — the
+                search below filters `rows`, which this tab does not use. */}
+            {tab === "authorship" ? (
+                <CourseAuthorshipTab
+                    courses={authorCourses}
+                    canGrant={canAssignAuthor}
+                    locale={locale}
+                    errorText={errorText}
+                    onChanged={loadAuthorship}
+                />
+            ) : (
+            <>
             <AdminSearchInput value={q} onChange={setQ} placeholder={t("catalog_search")} />
 
             {error ? (
@@ -193,6 +230,8 @@ export default function CatalogPage() {
                         )
                     )}
                 </div>
+            )}
+            </>
             )}
         </div>
     );

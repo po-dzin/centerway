@@ -28,6 +28,18 @@ export const CABINET_URL = surfaceUrl(LEARNING_SHELF_HREF);
 export const PROGRAMS_URL = platformUrl("/programs");
 export const SUPPORT_BOT_URL = "https://telegram.me/centerway_support_bot";
 
+/**
+ * The brand card the greeting carries, and the same file BotFather takes for
+ * the empty-chat picture — baked by scripts/brand-mark-bake.mjs off the one
+ * mark geometry, so the bot cannot end up wearing a logo the site retired.
+ *
+ * Passed to Telegram as a URL rather than an upload: Telegram fetches it once
+ * and serves its own copy afterwards, which keeps the webhook handler — a
+ * serverless function with a cold start to pay — free of file I/O on a path
+ * that runs on every single /start.
+ */
+export const GREETING_PHOTO_URL = platformUrl("/cw/brand/cw-tg-cover.png");
+
 export { PLATFORM_ORIGIN };
 
 export const botCopy = {
@@ -144,6 +156,24 @@ export const botCopy = {
    description a user reads before pressing Start is written in the same file,
    and the same voice, as everything they read after. */
 export const botProfile = {
+  /**
+   * The avatar, applied with setMyProfilePhoto.
+   *
+   * Gold on the deep ground rather than the launcher icon's ink on cream, for
+   * the reason the favicon flips: a chat-list avatar sits on whatever ground
+   * the reader's Telegram theme paints, and a PNG cannot follow it. See the
+   * bake script's call site.
+   */
+  photo: "public/cw/brand/cw-tg-avatar.png",
+  /** The display name. Max 64 chars. */
+  name: "CenterWay Support",
+  /**
+   * The picture on the empty-chat screen, above the description. 640x360 —
+   * BotFather's size. The Bot API has no method for it (probed: there is no
+   * setMyDescriptionPhoto), so this path is printed for the manual step rather
+   * than applied.
+   */
+  descriptionPicture: "public/cw/brand/cw-tg-cover.png",
   /** Shown on the empty chat screen, before /start. Max 512 chars. */
   description: [
     "Бот підтримки CenterWay.",

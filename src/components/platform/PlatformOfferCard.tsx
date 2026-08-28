@@ -29,7 +29,6 @@ type PlatformOfferCardProps = {
   slug?: string;
   artwork?: PlatformOfferArtwork;
   ctaLabel?: string;
-  size?: "default" | "compact";
   /** Short format line (duration, question count) under the title. */
   meta?: string;
   /**
@@ -44,6 +43,24 @@ type PlatformOfferCardProps = {
    * and a third product without writing a new panel for each.
    */
   points?: readonly string[];
+  /**
+   * WHAT KIND OF THING THIS IS, in the corner of the plate.
+   *
+   * Separate from `tag` on purpose. The eyebrow is a line of prose in the body
+   * («Міні-курс · 3 дні») and is read after the picture; this is a chip ON the
+   * picture, which is read WITH it — and "am I looking at a course or a
+   * checklist" is the question a reader answers before they read anything.
+   *
+   * Only authored courses set it, because only they carry `kind`. A card
+   * without one is the card as it has always been: the kind stays in the
+   * eyebrow, where the six hand-written offers still put it.
+   */
+  kindBadge?: string;
+  /**
+   * What it is about — one to three words each, already translated. Codes never
+   * reach this component; a card renders, it does not own a vocabulary.
+   */
+  categories?: readonly string[];
   /** "planned" renders the tile without a link, as a surface that does not exist yet. */
   status?: "active" | "planned";
   statusLabel?: string;
@@ -58,18 +75,29 @@ export function PlatformOfferCard({
   slug,
   artwork,
   ctaLabel = "Деталі продукту",
-  size = "default",
   meta,
   points,
+  kindBadge,
+  categories,
   status = "active",
   statusLabel = "Скоро",
 }: PlatformOfferCardProps) {
-  const cardStyle = artwork?.desktop
+  /* THE CARD IS NOT A HERO. It is roughly 370 CSS pixels wide in the grid, and
+     it was drawing the same 1600px plate the full-bleed hero draws — six of them
+     on the home page, measured at just over a megabyte of background image. The
+     960px copy covers this card on a 2× screen at about a fifth of the weight.
+
+     `desktop` remains the fallback, so a plate with no small copy — a cover a
+     course carries from the database, an author's own upload — behaves exactly
+     as it did before. */
+  const photo = artwork?.card ?? artwork?.desktop;
+
+  const cardStyle = artwork && photo
     ? ({
-        "--program-photo-image": `url("${artwork.desktop}")`,
+        "--program-photo-image": `url("${photo}")`,
         /* Cards keep one horizontal master at every breakpoint. The optional
            portrait is reserved for the standalone offer hero on mobile. */
-        "--program-photo-image-mobile": `url("${artwork.desktop}")`,
+        "--program-photo-image-mobile": `url("${photo}")`,
         "--program-photo-position-desktop": artwork.desktopPosition ?? "center 20%",
         "--program-photo-position-mobile": artwork.desktopPosition ?? "center 20%",
       } as CSSProperties)
@@ -81,13 +109,16 @@ export function PlatformOfferCard({
     <article
       className={styles.programTile}
       data-visual={visual}
-      data-size={size}
       data-program={slug}
       data-status={isPlanned ? "planned" : "active"}
       data-has-art={artwork?.desktop ? "true" : "false"}
       style={cardStyle}
     >
       <div className={styles.programPhoto} aria-hidden="true" />
+      {/* ON the plate, not in the body — see `kindBadge`. It sits before the
+          link overlay in the DOM and under it in z-order, so it is a label the
+          card carries rather than a second thing to click. */}
+      {kindBadge ? <p className={styles.programTileKind}>{kindBadge}</p> : null}
       {/* The card IS the choice, so the whole card routes — the visible CTA below
           is its label, not the only way in. This overlay is the single real link
           in the card: making the CTA a link too would put two links with the same
@@ -102,6 +133,13 @@ export function PlatformOfferCard({
       >
         <p className={styles.label}>{tag}</p>
         <h3>{title}</h3>
+        {categories && categories.length > 0 ? (
+          <ul className={styles.programTileCategories}>
+            {categories.map((category) => (
+              <li key={category}>{category}</li>
+            ))}
+          </ul>
+        ) : null}
         {meta ? <p className={styles.programTileMeta}>{meta}</p> : null}
         <p>{description}</p>
         {points && points.length > 0 ? (

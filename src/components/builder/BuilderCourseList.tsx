@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
 
 import { courseThemeAttributes, moveItem } from "@/lms-core";
 import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
 import { BuilderMenu } from "./BuilderMenu";
+import { BuilderSheet } from "./BuilderSheet";
 import { HandGraphic, Icon } from "@/components/Icon";
 import {
   commitCourseImport,
@@ -20,8 +21,10 @@ import {
   type BuilderCourseSummary,
   type BuilderFailure,
 } from "./builderClient";
+import { MEDIA_SIZES, mediaSources } from "@/lib/lms/media";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
+import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
 
 type State =
   | { status: "loading" }
@@ -88,6 +91,90 @@ function subscribeToWidth(onChange: () => void) {
  * rows and on a desktop wants the grid — and a column would have made it one
  * global opinion that follows them onto the wrong device.
  */
+/**
+ * How long a course takes to leave, and the one place that number lives.
+ *
+ * The CSS transition on `[data-removing]` runs for `--builder-motion-page`;
+ * this is the same duration in the one unit JavaScript can wait in. They have
+ * to agree, because the delete request is raced against it: whichever finishes
+ * last decides when the shelf closes up.
+ */
+const REMOVE_MS = 240;
+
+/**
+ * FLIP, so the gap left by a deleted course closes instead of teleporting.
+ *
+ * Grid and flex reflow is not animatable — there is no transition between two
+ * layouts, only the second one. FLIP gets around that without owning the
+ * layout: read where every item was on the previous commit, read where it is
+ * now, and if it moved, play it from the old position back to the new one with
+ * a transform. The layout is already correct the entire time; the transform is
+ * a lie told for 260ms about where the browser has finished putting things.
+ *
+ * `useLayoutEffect`, not `useEffect`: the measurement has to happen before the
+ * browser paints the new positions, or the reader sees the jump this exists to
+ * hide and then sees it animate a second time.
+ *
+ * Items are matched by `data-flip-key` rather than by index, so a deletion in
+ * the middle moves the cards that actually moved instead of shifting every key
+ * by one. Anything mid-leave is skipped — it is running its own animation in
+ * place and has not moved.
+ *
+ * `resetKey` is the one thing this must NOT animate. Switching grid↔rows moves
+ * every card by hundreds of pixels, and playing that back is not a shelf
+ * closing a gap — it is one layout flying into another, which reads as chaos
+ * and says nothing. When the key changes the run measures and records without
+ * animating, so the new view starts from a clean baseline.
+ */
+function useShelfReflow(resetKey: string, deps: unknown[]) {
+  const container = useRef<HTMLDivElement & HTMLUListElement>(null);
+  const lastRects = useRef(new Map<string, DOMRect>());
+  const lastResetKey = useRef(resetKey);
+
+  useLayoutEffect(() => {
+    const root = container.current;
+    if (!root) return;
+
+    const reduced =
+      typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const rebased = lastResetKey.current !== resetKey;
+    lastResetKey.current = resetKey;
+
+    const items = Array.from(root.querySelectorAll<HTMLElement>("[data-flip-key]"));
+    const nextRects = new Map<string, DOMRect>();
+
+    for (const item of items) {
+      const key = item.dataset.flipKey;
+      if (!key) continue;
+      const rect = item.getBoundingClientRect();
+      nextRects.set(key, rect);
+
+      if (reduced || rebased || item.hasAttribute("data-removing")) continue;
+
+      const previous = lastRects.current.get(key);
+      if (!previous) continue;
+
+      const dx = previous.left - rect.left;
+      const dy = previous.top - rect.top;
+      // Sub-pixel drift is not movement; animating it would fire an animation
+      // on every card on every reload.
+      if (Math.abs(dx) < 1 && Math.abs(dy) < 1) continue;
+
+      item.animate(
+        [{ transform: `translate(${dx}px, ${dy}px)` }, { transform: "none" }],
+        { duration: 260, easing: "cubic-bezier(0.22, 0.61, 0.36, 1)" },
+      );
+    }
+
+    lastRects.current = nextRects;
+    // The caller passes the list identity and the removal in flight; this hook
+    // has no opinion about what makes the shelf change shape.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [resetKey, ...deps]);
+
+  return container;
+}
+
 export function BuilderCourseList() {
   const router = useRouter();
   const [state, setState] = useState<State>({ status: "loading" });
@@ -101,6 +188,15 @@ export function BuilderCourseList() {
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
   const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+  /* The course that is on its way out. It stays in `state.courses` — and so on
+     screen — for as long as this is set, which is what gives the leaving
+     something to play on. */
+  const [removing, setRemoving] = useState<string | null>(null);
+  /* Both views hang this off the same ref — only one of them is mounted at a
+     time, and the hook re-measures from scratch whenever `view` changes, so
+     switching grid↔rows is a fresh baseline rather than a false «everything
+     moved». */
+  const shelf = useShelfReflow(view, [state, removing]);
 
   const load = useCallback(async () => {
     const result = await listCourses();
@@ -191,14 +287,34 @@ export function BuilderCourseList() {
     if (busy) return;
     setBusy(true);
     setNote(null);
-    const result = await deleteCourse(slug);
-    setBusy(false);
+    /* The question is answered, so it goes at once — leaving it up while the
+       card fades underneath it would be asking twice. The card starts leaving
+       now, BEFORE the request, because the answer to «which one» has to be on
+       screen at the moment the reader commits, not after the server agrees. */
     setConfirmingDelete(null);
+    setRemoving(slug);
+
+    const startedAt = performance.now();
+    const result = await deleteCourse(slug);
+
     if (!result.ok) {
+      /* Nothing was destroyed, so nothing may disappear: the flag clears and
+         the card transitions back from wherever it had got to. */
+      setRemoving(null);
+      setBusy(false);
       setNote(deleteFailureCopy(result.detail));
       return;
     }
+
+    /* A fast delete would otherwise unmount the card mid-fade and turn the
+       whole sequence back into the jump it replaces. A slow one has already
+       outlasted the animation and waits for nothing. */
+    const remaining = REMOVE_MS - (performance.now() - startedAt);
+    if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, remaining));
+
     await load();
+    setRemoving(null);
+    setBusy(false);
   }
 
   async function exportOne(slug: string) {
@@ -224,7 +340,7 @@ export function BuilderCourseList() {
   if (state.status === "loading") {
     return (
       <BuilderShell>
-        <PlatformLoadingState label="Білдер" title="Завантажуємо ваші курси…" detail="Відновлюємо чернетки, статуси й обкладинки." />
+        <PlatformLoadingState label="Майстерня" title="Завантажуємо ваші курси…" detail="Відновлюємо чернетки, статуси й обкладинки." />
       </BuilderShell>
     );
   }
@@ -240,69 +356,99 @@ export function BuilderCourseList() {
   if (creating) {
     return (
       <BuilderShell trail={[{ label: "Курси", href: "/build" }, { label: "Новий курс" }]}>
-        <PlatformLoadingState label="Білдер" title="Створюємо чернетку…" detail="Після створення одразу відкриється редактор курсу." />
+        <PlatformLoadingState label="Майстерня" title="Створюємо чернетку…" detail="Після створення одразу відкриється редактор курсу." />
       </BuilderShell>
     );
   }
 
   return (
     <BuilderShell>
-      {/* Title and the one primary action share a row. Stacked in a column the
-          button read as a step in the page rather than as the thing you do to
-          it, and cost a full band of vertical space above the shelf. */}
-      <div>
-        {/* The action sits beside the TITLE, not beside the title-and-lead: the
-            lead is a full sentence and pushed the button onto its own row at
-            360px, which is the column the request was to get out of. */}
-        <div className={styles.pageHead}>
-          <h1 className={styles.pageTitle}>Курси</h1>
-          {state.canCreate ? (
-            <div className={styles.pageHeadActions}>
+      {/* The platform's page head, the same component the learner's shelf runs.
+          The two pages are one shelf seen from two sides — the courses you may
+          read and the courses you may edit — and they were opening differently
+          enough that the top of the page did not say which side you were on:
+          this one had no application label at all, a title a size larger, and
+          two wide text buttons where the shelf had nothing.
+
+          THE ACTIONS ARE ICONS NOW. They act on the LIST, and the list already
+          carries a bar of icon controls a few lines below (the view switch), so
+          two full-width words above it made the head read as the loudest thing
+          on a page whose subject is the courses. Both keep a tooltip and an
+          accessible name — an icon-only control that says nothing is a rebus. */}
+      {/* NO LEAD HERE, and the shelf keeps its own. Four statements about one
+          list were stacked at the top of this page — the application
+          («Майстерня»), the page («Курси»), the sentence («доступні вам для
+          редагування») and the count («9 курсів») — and the third is the one
+          that adds nothing: «available to you for editing» is what Майстерня
+          MEANS. The learner's shelf keeps its lead because there the sentence
+          carries a fact the title cannot («відкриваються з того уроку, на якому
+          ви зупинились»). */}
+      <PlatformPageHead
+        label="Майстерня"
+        title="Курси"
+        actions={
+          state.canCreate ? (
+            <>
               {!importing ? (
                 <button
-                  className={styles.quietAction}
+                  className={styles.headIconAction}
                   type="button"
+                  title="Імпортувати JSON"
                   onClick={() => {
                     setCreating(false);
                     setImporting(true);
                   }}
                 >
-                  Імпортувати JSON
+                  <Icon name="import" size={20} label="Імпортувати JSON" />
+                  <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
                 </button>
               ) : null}
               {!creating ? (
                 <button
-                  className={styles.commitAction}
+                  className={styles.headPrimaryIconAction}
                   type="button"
+                  title={busy ? "Створюємо…" : "Новий курс"}
                   onClick={() => {
                     setImporting(false);
                     void create();
                   }}
                   disabled={busy}
                 >
-                  {busy ? "Створюємо…" : "Новий курс"}
+                  <Icon name="plus" size={20} label={busy ? "Створюємо…" : "Новий курс"} />
                 </button>
               ) : null}
-            </div>
-          ) : null}
-        </div>
-        {/* One line for both audiences, and it describes the LIST rather than
-            the platform. «Усі курси платформи» was true for an admin and read
-            like a catalogue of the shop — this page is a workspace, and what is
-            on it is what this account may open. */}
-        <p className={styles.pageLead}>Курси, доступні вам для редагування.</p>
-      </div>
+            </>
+          ) : null
+        }
+      />
 
-      {state.canCreate && importing ? (
-        <ImportPanel
-          onCancel={() => setImporting(false)}
-          onImported={async (slug) => {
-            setImporting(false);
-            setNote(`Курс імпортовано як чернетку: ${slug}`);
-            await load();
-          }}
-        />
-      ) : null}
+      {/* A SHEET, NOT A ROW IN THE PAGE. Dropped into the flow this panel shoved
+          the whole shelf down by its own height — every card moved, and the one
+          you were looking at was somewhere else by the time the form appeared.
+          It is also a task you enter deliberately, finish, and leave, which is
+          exactly what `BuilderSheet` is for: the same object the version history
+          opens in, with the scrim and the focus trap that say the list behind is
+          not what you are working on.
+
+          The children unmount with it on purpose — that is what resets a
+          half-picked file, so opening the form twice does not show the first
+          attempt's filename. */}
+      <BuilderSheet
+        open={state.canCreate && importing}
+        title="Імпорт курсу"
+        onClose={() => setImporting(false)}
+      >
+        {state.canCreate && importing ? (
+          <ImportPanel
+            onCancel={() => setImporting(false)}
+            onImported={async (slug) => {
+              setImporting(false);
+              setNote(`Курс імпортовано як чернетку: ${slug}`);
+              await load();
+            }}
+          />
+        ) : null}
+      </BuilderSheet>
 
       {note ? <p className={styles.noticeLine}>{note}</p> : null}
 
@@ -326,7 +472,7 @@ export function BuilderCourseList() {
             </div>
           ) : null}
           {view === "grid" ? (
-        <div className={styles.courseGrid}>
+        <div className={styles.courseGrid} ref={shelf}>
           {state.courses.map((course, index) => (
             <CourseCard
               key={course.slug}
@@ -335,6 +481,7 @@ export function BuilderCourseList() {
               total={state.courses.length}
               busy={busy}
               confirming={confirmingDelete === course.slug}
+              removing={removing === course.slug}
               onMove={move}
               onAskDelete={setConfirmingDelete}
               onDelete={remove}
@@ -343,7 +490,7 @@ export function BuilderCourseList() {
           ))}
         </div>
       ) : (
-        <ul className={styles.courseRows}>
+        <ul className={styles.courseRows} ref={shelf}>
           {state.courses.map((course, index) => (
             <CourseRow
               key={course.slug}
@@ -352,6 +499,7 @@ export function BuilderCourseList() {
               total={state.courses.length}
               busy={busy}
               confirming={confirmingDelete === course.slug}
+              removing={removing === course.slug}
               onMove={move}
               onAskDelete={setConfirmingDelete}
               onDelete={remove}
@@ -419,8 +567,10 @@ function ImportPanel({ onCancel, onImported }: { onCancel: () => void; onImporte
   const ready = state.status === "ready" || state.status === "committing" ? state : null;
 
   return (
-    <section className={styles.panel}>
-      <h2 className={styles.panelTitle}>Імпорт курсу</h2>
+    /* No `.panel` and no heading of its own: the sheet is already a surface with
+       a titled head, and a card inside it would be a second plate at a second
+       radius holding one form. */
+    <div className={styles.importForm}>
       <p className={styles.panelText}>
         Виберіть JSON, експортований з Builder або сумісний з <code>lms:import</code>. Спершу ми покажемо
         перевірку; запис відбудеться лише після підтвердження.
@@ -482,7 +632,7 @@ function ImportPanel({ onCancel, onImported }: { onCancel: () => void; onImporte
           {state.status === "committing" ? "Імпортуємо…" : "Імпортувати чернетку"}
         </button>
       </div>
-    </section>
+    </div>
   );
 }
 
@@ -532,6 +682,8 @@ type EntryProps = {
   onMove: (index: number, delta: number) => void;
   onAskDelete: (slug: string | null) => void;
   onDelete: (slug: string) => void;
+  /** True while this course is playing its leaving animation. */
+  removing?: boolean;
   onExport: (slug: string) => void;
 };
 
@@ -547,7 +699,7 @@ type EntryProps = {
 function CourseRow(props: EntryProps) {
   const { course } = props;
   return (
-    <li className={styles.courseRow}>
+    <li className={styles.courseRow} data-flip-key={course.slug} data-removing={props.removing || undefined}>
       <Link className={styles.courseRowMain} href={`/build/${course.slug}`}>
         <span className={styles.courseRowTitle}>{course.title}</span>
         {/* One wrapping line, not three stacked ones. Status, size and what is
@@ -572,7 +724,12 @@ function CourseRow(props: EntryProps) {
 function CourseCard(props: EntryProps) {
   const { course } = props;
   return (
-    <article className={styles.courseCard} {...courseThemeAttributes(course.theme ?? undefined)}>
+    <article
+      className={styles.courseCard}
+      data-flip-key={course.slug}
+      data-removing={props.removing || undefined}
+      {...courseThemeAttributes(course.theme ?? undefined)}
+    >
       <Link className={styles.courseCardFace} href={`/build/${course.slug}`}>
         {course.cover ? (
           // Plain <img>: the cover is an author-supplied path that may point
@@ -581,8 +738,11 @@ function CourseCard(props: EntryProps) {
           // eslint-disable-next-line @next/next/no-img-element
           <img
             className={styles.courseCover}
-            src={course.cover.src}
+            {...mediaSources(course.cover.src)}
+            sizes={MEDIA_SIZES.card}
             alt={course.cover.alt}
+            loading="lazy"
+            decoding="async"
             style={{ objectPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%` }}
           />
         ) : (
@@ -594,6 +754,9 @@ function CourseCard(props: EntryProps) {
         )}
         <span className={styles.courseCardBody}>
           <span className={styles.courseTitleRow}>
+            {/* No mark inside the title: the card's own contour carries it —
+                see the note beside `.courseCard::after`. An underline measures
+                a label; the thing under the pointer here is the whole card. */}
             <span className={styles.courseTitle}>{course.title}</span>
             <span className={course.status === "published" ? styles.pillPublished : styles.pill}>
               {course.status === "published" ? "Опубліковано" : "Чернетка"}

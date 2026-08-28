@@ -12,8 +12,13 @@
   "version": 1,
   "summary": "21 урок про базові принципи Аюрведи, харчування, добовий ритм і баланс дош — із практичною інструкцією та матеріалами.",
   "cover": {
-    "src": "/cw/platform/programs/ideal-body-card-v1.png",
-    "alt": "Обкладинка курсу «Природнє тіло з Аюрведою»"
+    "src": "/cw/platform/programs/ideal-body-hero-desktop-v2.webp",
+    "mobileSrc": "/cw/platform/programs/ideal-body-card-v1.webp",
+    "alt": "Обкладинка курсу «Природнє тіло з Аюрведою»",
+    "cropX": 70,
+    "cropY": 50,
+    "mobileCropX": 50,
+    "mobileCropY": 16
   },
   "schedule": {
     "mode": "sequential",
@@ -29,6 +34,9 @@
   },
   "sortOrder": 2,
   "tagline": "21 основний урок, щоб зібрати харчування і ритм під свою конституцію.",
+  "durationDays": 21,
+  "kind": "course",
+  "categories": ["nutrition"],
   "results": [
     "зрозуміти базові принципи Аюрведи та теорію дош",
     "зібрати щоденний ритм харчування, пиття і руху",
@@ -205,7 +213,7 @@
             {
               "id": "course-instruction-image-4",
               "type": "image",
-              "src": "/cw/courses/natural-body/instruction-ayurvedic-rhythm.jpg",
+              "src": "/cw/courses/natural-body/instruction-ayurvedic-rhythm.webp",
               "alt": "Яблука, чайник і намисто на дерев'яній поверхні як образ щоденного ритму"
             },
             {
@@ -357,7 +365,7 @@
             {
               "id": "course-instruction-image-8",
               "type": "image",
-              "src": "/cw/courses/natural-body/instruction-cooking-vegetables.jpg",
+              "src": "/cw/courses/natural-body/instruction-cooking-vegetables.webp",
               "alt": "Приготування різнокольорових овочів у воку"
             },
             {
@@ -445,7 +453,7 @@
             {
               "id": "course-instruction-image-10",
               "type": "image",
-              "src": "/cw/courses/natural-body/instruction-portion-guide.jpg",
+              "src": "/cw/courses/natural-body/instruction-portion-guide.webp",
               "alt": "Чотири приклади порцій, співвіднесених із розміром долонь"
             },
             {
@@ -578,7 +586,7 @@
             {
               "id": "course-instruction-image-12",
               "type": "image",
-              "src": "/cw/courses/natural-body/instruction-report-table.jpg",
+              "src": "/cw/courses/natural-body/instruction-report-table.webp",
               "alt": "Приклад заповненої таблиці харчування, сну і спорту"
             },
             {
@@ -751,7 +759,7 @@
             {
               "id": "course-instruction-image-17",
               "type": "image",
-              "src": "/cw/courses/natural-body/instruction-meal-example.jpg",
+              "src": "/cw/courses/natural-body/instruction-meal-example.webp",
               "alt": "Приклад страви з яйцями, зеленню та овочами"
             },
             {
@@ -2064,7 +2072,7 @@
             {
               "id": "recipes-image-1",
               "type": "image",
-              "src": "/cw/courses/natural-body/recipe-almond-candies.jpg",
+              "src": "/cw/courses/natural-body/recipe-almond-candies.webp",
               "alt": "Домашні горіхові цукерки в кунжуті на тарілці"
             },
             {
@@ -2239,7 +2247,7 @@
             {
               "id": "recipes-image-4",
               "type": "image",
-              "src": "/cw/courses/natural-body/recipe-nut-seed-candies.jpg",
+              "src": "/cw/courses/natural-body/recipe-nut-seed-candies.webp",
               "alt": "Горіхово-насіннєві цукерки у паперових формочках"
             },
             {
@@ -2483,7 +2491,7 @@
             {
               "id": "recipes-image-8",
               "type": "image",
-              "src": "/cw/courses/natural-body/recipe-baked-pears.jpg",
+              "src": "/cw/courses/natural-body/recipe-baked-pears.webp",
               "alt": "Запечені груші з прянощами на світлій тарілці"
             },
             {

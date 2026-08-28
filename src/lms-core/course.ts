@@ -18,10 +18,10 @@ import { validateLessonBlock, type LessonBlock } from "./blocks";
 import { validateCourseTheme, type CourseTheme } from "./theme";
 
 /**
- * Content locale. Slot for the EN expansion (docs §3A) — the platform ships
- * uk/ru content only until the owner signals otherwise.
+ * Content locale. Two locales, and only two: uk is what the platform ships
+ * today, en is the surface the same course is expected to reach next.
  */
-export type CourseLocale = "uk" | "ru" | "en";
+export type CourseLocale = "uk" | "en";
 
 export type CourseStatus = "draft" | "published";
 
@@ -94,6 +94,59 @@ export type CourseModule = {
   lessons: Lesson[];
 };
 
+/**
+ * WHAT KIND OF THING THIS IS — the badge in the corner of a catalogue card.
+ *
+ * Said by the author, not derived. The storefront used to answer this with
+ * `lessons <= 8 ? "Міні-курс" : "Програма"`, which is a guess dressed as a
+ * fact: a twelve-lesson checklist and a six-lesson course are the same number
+ * to a counter and different products to a buyer. The count is still printed
+ * beside it — as a count, where it is true.
+ */
+export const COURSE_KINDS = ["course", "mini", "checklist"] as const;
+
+export type CourseKind = (typeof COURSE_KINDS)[number];
+
+/**
+ * What the course is ABOUT, from a closed list.
+ *
+ * Closed on purpose, and the reason is the catalogue rather than tidiness: a
+ * category is the axis a shelf is filtered by, and free text gives three
+ * spellings of «очищення» within a month, none of which match a filter. Free
+ * hashtags are a separate, later thing — see the 2026-08-28 note; they answer
+ * "what else is in here", which is a search question, not a shelf one.
+ *
+ * Codes are English so they can be a database enum and a URL segment; the
+ * words a person reads are the builder's and the catalogue's, per locale.
+ */
+export const COURSE_CATEGORIES = ["movement", "nutrition", "cleansing"] as const;
+
+export type CourseCategory = (typeof COURSE_CATEGORIES)[number];
+
+/**
+ * The ceilings on what a card may say, in characters. HARD — the builder
+ * refuses a longer value and the validator rejects it.
+ *
+ * Every one of them is measured against a frame that does not grow: the
+ * catalogue tile at its tightest desktop step, and the hero's first line on a
+ * 360px phone. A value past the limit does not "look long", it re-wraps the
+ * card into a different shape than the cards beside it — which is the one
+ * failure a grid cannot absorb.
+ *
+ * `COURSE_TITLE_MAX` is not here: the title's ceiling is
+ * `OFFER_TITLE_MAX` and it guards more surfaces than a card (the h1, the tab,
+ * the invoice line). See src/lib/platform/offerPreview.ts.
+ */
+export const COURSE_PRETITLE_MAX = 24;
+export const COURSE_POSTTITLE_MAX = 64;
+
+/**
+ * The most days a course may claim, and the reason there is a ceiling at all:
+ * a typo in a number field is silent. «210 днів» is a plausible-looking string
+ * and an impossible product, and the badge would print it without blinking.
+ */
+export const COURSE_DURATION_DAYS_MAX = 366;
+
 export type Course = {
   id: string;
   slug: string;
@@ -134,6 +187,13 @@ export type Course = {
     /** 0–100 focal point for the shared 16:9 card crop. */
     cropX?: number;
     cropY?: number;
+    /**
+     * 0–100 vertical focus for the course hero once the screen is wider than
+     * 16:9. Past that line the hero crops top and bottom hard enough that one
+     * focal point cannot serve both a laptop and an ultra-wide monitor, so the
+     * author says which edge to keep. Absent means "same as cropY".
+     */
+    wideCropY?: number;
     /** Optional portrait master used only by the course offer's mobile hero. */
     mobileSrc?: string;
     /** 0–100 focal point for the 9:16 mobile hero crop. */
@@ -147,10 +207,46 @@ export type Course = {
    */
   sortOrder?: number;
   /**
+   * The small line ABOVE the title on the cover — «Авторський курс», «Практика
+   * дня». Optional, and absent is the normal state.
+   *
+   * It is not the category and not the kind: those two are a badge the
+   * catalogue draws from closed lists, in the same words on every card. This is
+   * the author's own line, and it exists because the badge cannot say
+   * «Спільно з IREM».
+   */
+  pretitle?: string;
+  /**
+   * The line BELOW the title on the cover — what kind of thing this is, in a
+   * sentence fragment: «практикум з умовного голодування».
+   *
+   * WHY IT IS A FIELD NOW. Authors were already writing it — into the title,
+   * after a dash — and `offerSubtitle` cut it back out by pattern-matching the
+   * dash. That worked until a title legitimately contained one. A field says
+   * the thing the parser was guessing, and the guess stays only as the fallback
+   * for courses written before this existed.
+   */
+  posttitle?: string;
+  /**
    * The line under the title on a card. NOT the summary: `summary` answers
    * "what is this", the tagline answers "why would I".
    */
   tagline?: string;
+  /**
+   * What kind of thing this is — the badge in the card's corner.
+   *
+   * Absent means the catalogue falls back to counting lessons, which is what it
+   * did before this field existed. See `COURSE_KINDS`.
+   */
+  kind?: CourseKind;
+  /**
+   * What it is about, from the closed list. Zero or more; absent means the
+   * author has not said, and the card prints no category chips.
+   *
+   * An empty array is rejected for the same reason `results` rejects one: the
+   * way to say "none" is to leave the field out.
+   */
+  categories?: CourseCategory[];
   /** What the buyer walks away with. Short statements, not paragraphs. */
   results?: string[];
   /**
@@ -166,14 +262,20 @@ export type Course = {
    */
   format?: string[];
   /**
-   * How long it takes, in the author's own words.
+   * How many DAYS the course is meant to take. A number, not prose.
    *
-   * Derived counts ("12 уроків") are true and useless: a course whose lessons
-   * are meant to be walked over three days says "3 дні", and no lesson count
-   * can know that. Absent falls back to the count, which is what the offer page
-   * did before this field existed.
+   * Derived counts ("12 уроків") are true and useless: reset-day is six lessons
+   * meant to be walked over three days, and no lesson count can know that. This
+   * is the author saying so.
+   *
+   * WHY A NUMBER, when it used to be the string «3 дні». Because two surfaces
+   * need the same fact in different words — the badge writes «3 дні», a filter
+   * would compare it to 7 — and a string can only serve the first. The
+   * grammar («день / дні / днів») belongs to the renderer and the locale, not
+   * to a value typed once by an author who then cannot change the UI that
+   * prints it. Absent falls back to the lesson count, exactly as before.
    */
-  duration?: string;
+  durationDays?: number;
   /**
    * How long access lasts, in the author's own words — "доступ назавжди",
    * "30 днів після покупки".
@@ -217,7 +319,7 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
   assert(isNonEmptyString(input.programSlug), `lms_course_missing_program:${path}`);
   assert(isNonEmptyString(input.brand), `lms_course_missing_brand:${path}`);
   assert(
-    input.locale === "uk" || input.locale === "ru" || input.locale === "en",
+    input.locale === "uk" || input.locale === "en",
     `lms_course_invalid_locale:${path}`
   );
   assert(isNonEmptyString(input.translationGroupId), `lms_course_missing_translation_group:${path}`);
@@ -238,7 +340,7 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
     if (input.cover.mobileSrc !== undefined) {
       assert(isNonEmptyString(input.cover.mobileSrc), `lms_course_invalid_cover_mobile_src:${path}`);
     }
-    for (const cropKey of ["cropX", "cropY", "mobileCropX", "mobileCropY"] as const) {
+    for (const cropKey of ["cropX", "cropY", "wideCropY", "mobileCropX", "mobileCropY"] as const) {
       const value = input.cover[cropKey];
       if (value === undefined) continue;
       assert(
@@ -257,6 +359,53 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
 
   if (input.tagline !== undefined) {
     assert(isNonEmptyString(input.tagline), `lms_course_invalid_tagline:${path}`);
+  }
+
+  // The two lines the cover hangs around the title. Bounded, because they sit in
+  // a frame the grid does not let grow — see the MAX constants above. The
+  // ceiling is checked here rather than only in the builder so that an import,
+  // a snapshot or the agent cannot write what the form refuses.
+  for (const [key, max] of [
+    ["pretitle", COURSE_PRETITLE_MAX],
+    ["posttitle", COURSE_POSTTITLE_MAX],
+  ] as const) {
+    const value = input[key];
+    if (value === undefined) continue;
+    assert(isNonEmptyString(value), `lms_course_invalid_${key}:${path}`);
+    assert(value.trim().length <= max, `lms_course_${key}_too_long:${path}`);
+  }
+
+  if (input.kind !== undefined) {
+    assert(
+      (COURSE_KINDS as readonly string[]).includes(input.kind as string),
+      `lms_course_invalid_kind:${path}`
+    );
+  }
+
+  if (input.categories !== undefined) {
+    // Empty is ABSENT here too, and duplicates are rejected rather than
+    // de-duplicated: a card that would print «Рух · Рух» is a mistake upstream,
+    // and silently fixing it hides the writer that made it.
+    assert(
+      Array.isArray(input.categories) &&
+        input.categories.length > 0 &&
+        input.categories.every((one) => (COURSE_CATEGORIES as readonly string[]).includes(one as string)),
+      `lms_course_invalid_categories:${path}`
+    );
+    assert(
+      new Set(input.categories as string[]).size === input.categories.length,
+      `lms_course_duplicate_categories:${path}`
+    );
+  }
+
+  if (input.durationDays !== undefined) {
+    assert(
+      typeof input.durationDays === "number" &&
+        Number.isInteger(input.durationDays) &&
+        input.durationDays >= 1 &&
+        input.durationDays <= COURSE_DURATION_DAYS_MAX,
+      `lms_course_invalid_duration_days:${path}`
+    );
   }
 
   if (input.results !== undefined) {
@@ -280,7 +429,7 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
     );
   }
 
-  for (const textKey of ["duration", "accessNote", "authorNote"] as const) {
+  for (const textKey of ["accessNote", "authorNote"] as const) {
     const value = input[textKey];
     if (value === undefined) continue;
     assert(isNonEmptyString(value), `lms_course_invalid_${textKey.toLowerCase()}:${path}`);

@@ -1,5 +1,7 @@
 node_modules
 .next/
+# The dev server's own output — see the distDir note in next.config.ts.
+.next-dev/
 .env*
 !.env.example
 .DS_Store

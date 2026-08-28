@@ -51,13 +51,10 @@
   --ds-button-font-size: 1rem;
   --ds-button-gap: 0.5rem;
   --ds-button-lift: -1px;
-  --ds-offer-card-min-height-desktop: 29rem;
+  --ds-offer-card-height-desktop: 29rem;
   --ds-offer-card-min-height-tablet: 26rem;
   --ds-offer-card-min-height-mobile: 22rem;
   --ds-offer-card-height-rail: 26rem;
-  --ds-offer-card-compact-min-height-desktop: 24rem;
-  --ds-offer-card-compact-min-height-tablet: 22rem;
-  --ds-offer-card-compact-min-height-mobile: 20rem;
   --ds-offer-card-width-desktop: 24rem;
   --ds-offer-card-width-tablet: 21rem;
   --ds-offer-card-width-mobile: min(82vw, 19rem);
@@ -66,6 +63,8 @@
   --ds-offer-card-title-line-height: 1.2;
   --ds-focus-ring-width: 3px;
   --ds-focus-ring-offset: 3px;
+  --ds-focus-ring-offset-tight: 1px;
+  --ds-focus-ring-offset-inset: -2px;
   --ds-focus-ring-color: var(--cw-focus-ring);
   --ds-type-label-size: 0.75rem;
   --ds-type-label-line-height: 1rem;
@@ -83,19 +82,4 @@
   --ds-type-display-line-height: 1.08;
   --ds-type-hero-subtitle-size: clamp(1.2rem, 1.7vw, 1.6rem);
   --ds-type-hero-subtitle-line-height: 1.25;
-}
-
-.dark {
-  --ds-color-bg-canvas: var(--cw-bg);
-  --ds-color-bg-soft: var(--cw-surface-2);
-  --ds-color-surface: var(--cw-surface-solid);
-  --ds-color-text: var(--cw-text);
-  --ds-color-text-muted: var(--cw-muted);
-  --ds-color-primary: var(--cw-accent);
-  --ds-color-primary-strong: var(--cw-accent-strong);
-  --ds-color-accent: var(--cw-accent);
-  --ds-color-accent-strong: var(--cw-accent-strong);
-  --ds-color-border-soft: var(--cw-border);
-  --ds-shadow-sm: var(--cw-shadow-soft);
-  --ds-shadow-md: var(--cw-shadow-strong);
 }

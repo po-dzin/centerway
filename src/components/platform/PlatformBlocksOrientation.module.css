@@ -60,18 +60,91 @@
   box-shadow: none;
   isolation: isolate;
   scroll-margin-top: 5.25rem;
-  /* Framing for the 16:10 threshold plate. The plate ratio (1.61) all but
-     matches a 16:10 desktop viewport, so cover barely crops there; these values
-     only bite on off-ratio viewports. Taller viewports crop the sides, so x
-     leans right to protect the doorway, bowl and planting strip while the left
-     still keeps far more dark stone than the scrim needs. Wider-than-16:10
-     viewports crop top and bottom instead, so y leans low — everything that
-     carries the scene lives in the bottom half and the upper wall is empty. */
-  --hero-photo-x: 60%;
-  --hero-photo-y: 62%;
+  /* Defaults of the shared hero framing contract. Every photo hero authors the
+     same six variables and nothing else; the contract block right below this
+     rule resolves them per viewport (plate swap at 560px, vertical-crop relief
+     by aspect ratio). */
+  --hero-photo-x: var(--hero-photo-x-desktop, 50%);
+  --hero-photo-y: var(--hero-photo-y-desktop, 50%);
   --hero-photo-shift-y: 0%;
-  --hero-photo-scale: 1.02;
+  --hero-photo-scale: 1;
   --hero-photo-origin: center center;
+}
+
+/* ── The hero framing contract ───────────────────────────────────────────────
+   One set of rules for every photo hero on the platform. It replaced three
+   parallel sets of width breakpoints that each re-decided framing for one
+   family of heroes and disagreed with each other.
+
+   It lives here, beside `.heroFeature` itself, and not in PlatformResponsive:
+   the two files are merged per surface by mergeStyleModules, and this file's
+   rules are emitted last, so a contract written over there would lose every
+   tie to the defaults above it — silently, and only for the properties that
+   happen to be tied.
+
+   A hero authors focus, never framing:
+
+     --hero-photo-x-desktop / -y-desktop   focus on the landscape plate
+     --hero-photo-x-mobile  / -y-mobile    focus on the portrait master
+     --hero-photo-y-wide                   vertical focus past 16:9  (optional)
+     --hero-photo-y-ultrawide              vertical focus past 21:9  (optional)
+     --hero-photo-zoom-mobile              zoom on the portrait master (optional)
+     --hero-photo-origin-mobile            origin for that zoom       (optional)
+
+   Two lines decide which of them applies, and they are different kinds of line:
+
+   1. WIDTH, at 560px — the line where PlatformHeroPhoto swaps the plate file.
+      A different photograph deserves a different focus, so the mobile pair is
+      keyed to the same 560px and nothing else is.
+
+   2. ASPECT RATIO — because `cover` picks the axis it crops from the shape of
+      the viewport, never from its width. 1440×900 and 1440×810 are one width
+      breakpoint and opposite crops. A viewport taller than the plate loses its
+      sides (only x matters); a wider one loses top and bottom (only y matters),
+      and the wider it gets the more a mid-range y eats *both* edges — hence the
+      two optional relief steps, for the heroes whose composition needs them.
+
+   Above `cover` there is no zoom: the plate is already the frame an author
+   chose, and scaling past it only throws away the edges they kept. The one
+   exception is a portrait master read on a phone, where a hero may opt into a
+   zoom explicitly. */
+@media (min-width: 561px) {
+  .heroFeature {
+    --hero-photo-x: var(--hero-photo-x-desktop, 50%);
+    --hero-photo-y: var(--hero-photo-y-desktop, 50%);
+    --hero-photo-shift-y: 0%;
+    --hero-photo-scale: 1;
+    --hero-photo-origin: center center;
+  }
+}
+
+/* Past 16:9 the vertical overflow is large enough that the desktop focus starts
+   cutting the far edge of the scene. Heroes that care declare where the loss
+   should fall; the rest keep their authored focus. */
+@media (min-width: 561px) and (min-aspect-ratio: 16 / 9) {
+  .heroFeature {
+    --hero-photo-y: var(--hero-photo-y-wide, var(--hero-photo-y-desktop, 50%));
+  }
+}
+
+/* Ultra-wide. Nothing frames a 16:10 plate well at 21:9 — the overflow is a
+   third of it — so this step exists to say which third a hero would rather
+   lose. */
+@media (min-width: 561px) and (min-aspect-ratio: 21 / 9) {
+  .heroFeature {
+    --hero-photo-y: var(--hero-photo-y-ultrawide, var(--hero-photo-y-wide, var(--hero-photo-y-desktop, 50%)));
+  }
+}
+
+/* Below the plate swap: the portrait master, framed by its own focus. */
+@media (max-width: 560px) {
+  .heroFeature {
+    --hero-photo-x: var(--hero-photo-x-mobile, var(--hero-photo-x-desktop, 50%));
+    --hero-photo-y: var(--hero-photo-y-mobile, var(--hero-photo-y-desktop, 50%));
+    --hero-photo-shift-y: 0%;
+    --hero-photo-scale: var(--hero-photo-zoom-mobile, 1);
+    --hero-photo-origin: var(--hero-photo-origin-mobile, center center);
+  }
 }
 
 /* Top scrim only — enough for the topbar (which runs its dark tone here, i.e.
@@ -84,15 +157,21 @@
   z-index: 1;
   content: "";
   pointer-events: none;
-  background: linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 34%, transparent), transparent 24%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent), transparent 24%);
 }
 
+/* The ground BEHIND the photograph — what shows in the letterbox before the
+   image decodes and wherever it does not cover. `--cw-mat-scrim-ink` and not
+   `--cw-platform-text`: the ink is the same neutral #171817 in both themes,
+   which is what the note further down already argues for on its own terms (a
+   green-black does not darken a photograph, it repaints it) — and it is what
+   keeps this a dark backdrop once the platform text is cream. */
 .heroPhotoLayer {
   position: absolute;
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  background: var(--cw-platform-text);
+  background: var(--cw-mat-scrim-ink);
 }
 
 /* Heroes that carry a portrait master wrap the photo in <picture>. The wrapper
@@ -146,7 +225,7 @@
 }
 
 .heroFeatureContent {
-  width: min(100% - 2rem, var(--cw-max-width));
+  width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
   max-width: var(--cw-max-width);
   min-width: 0;
   position: relative;
@@ -155,6 +234,32 @@
   gap: 1rem;
   margin-inline: auto;
   padding: clamp(5.75rem, 10vw, 8rem) 0 clamp(6.4rem, 10vw, 8.5rem);
+  color: var(--cw-platform-accent-contrast);
+}
+
+/* ── The hero's utility line ──────────────────────────
+
+   Where you are, and — for the person who wrote this — the way into the
+   Майстерня. Both used to sit in a row BELOW the hero: a reader had to scroll
+   past the whole offer to find out where the page lived, and the author's edit
+   control appeared under the thing they were editing. They belong at the top of
+   the page, which on this template is inside the photograph. */
+.heroUtilityRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+  margin-bottom: var(--cw-space-2xs);
+}
+
+.heroUtilityLink {
+  composes: text from "./PlatformButtons.module.css";
+  gap: 0.4rem;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
+}
+
+.heroUtilityLink:hover:not(:disabled) {
   color: var(--cw-platform-accent-contrast);
 }
 
@@ -211,8 +316,12 @@
 .heroFeatureTitle {
   max-width: min(9.8ch, 100%);
   margin: 0;
-  color: var(--cw-platform-accent-contrast);
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 38%, transparent), 0 10px 30px color-mix(in srgb, var(--cw-platform-text) 28%, transparent);
+  /* The page's own paper tone, not the near-white on-dark contrast token —
+     against this hero's darker photo, stark white read as too clinical. Using
+     the same warm cream every section below the hero sits on ties the title to
+     the page it opens, instead of floating on top of it. */
+  color: var(--cw-sem-calm-bg);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent), 0 10px 30px color-mix(in srgb, var(--cw-mat-scrim-ink) 28%, transparent);
   font-family: var(--cw-font-ui);
   font-size: var(--ds-type-hero-size);
   font-weight: 900;
@@ -233,7 +342,7 @@
   max-width: min(15ch, 100%);
   margin: 0;
   color: var(--cw-platform-accent-contrast);
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 38%, transparent), 0 10px 30px color-mix(in srgb, var(--cw-platform-text) 28%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent), 0 10px 30px color-mix(in srgb, var(--cw-mat-scrim-ink) 28%, transparent);
   font-family: var(--cw-font-ui);
   font-size: var(--ds-type-hero-size);
   font-weight: 800;
@@ -257,7 +366,7 @@
   max-width: min(24rem, 100%);
   margin: 0;
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 90%, transparent);
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
   font-family: var(--cw-font-editorial);
   font-size: var(--ds-type-hero-subtitle-size);
   font-weight: 500;
@@ -267,8 +376,8 @@
 .heroFeatureLead {
   max-width: min(29rem, 100%);
   margin: 0;
-  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 82%, transparent);
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+  color: color-mix(in srgb, var(--cw-sem-calm-bg) 82%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
   font-size: var(--ds-type-lead-size);
   font-weight: 560;
   line-height: var(--ds-type-lead-line-height);
@@ -334,7 +443,7 @@
   gap: 0.5rem;
   margin: 0.3rem 0 0;
   color: var(--cw-platform-accent-contrast);
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
 }
 
 .heroPriceValue {
@@ -388,7 +497,7 @@
 .heroStatusNote {
   margin: 0;
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
-  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
   font-size: var(--ds-type-body-sm-size);
   font-weight: 560;
 }
@@ -412,7 +521,11 @@
 }
 
 .heroFeatureActions {
-  width: min(100%, 19.5rem);
+  /* Same cap the button contract itself uses (--ds-button-max-width), not a
+     second hand-picked number — three hero templates each had their own
+     hardcoded width here (19.5rem/22rem/20rem) and only one accidentally
+     matched the token. One source, so the button is one physical size. */
+  width: min(100%, var(--ds-button-max-width));
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.7rem;
@@ -456,15 +569,32 @@
   box-shadow: var(--cw-mat-shadow-soft);
 }
 
+/* THE PANEL MATCHES THE CARD; THE PLAYER KEEPS ITS RATIO. The panel used to be
+   the player: `aspect-ratio: 16/9` with `align-self: start`, so the two grid
+   items were two different objects — a wide short one beside a tall card, with
+   the row's spare height showing as page ground under the video. Stretching the
+   iframe instead was the earlier fix and was worse: a near-square player.
+
+   Now the panel stretches and the 16:9 frame inside it centres on the panel's
+   own dark ground. The row's height is whichever is taller — the player at the
+   column's width, or the card's copy — and both columns are that height. */
 .videoPanel {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
-  background: var(--cw-platform-text);
-  /* Keep the player itself 16:9 even when the adjacent decision card is taller.
-     Stretching the grid item silently turned it into a near-square on desktop. */
-  align-self: start;
+  display: grid;
+  align-content: center;
+  align-self: stretch;
+  /* The letterbox around the 16:9 frame — the same neutral scrim ink as the
+     hero's photo layer, for the same reason: it must stay dark when the
+     platform's own text turns cream. */
+  background: var(--cw-mat-scrim-ink);
   scroll-margin-top: 5.25rem;
+}
+
+.videoFrame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
 }
 
 .videoPanel::after {
@@ -497,17 +627,10 @@
   width: 100%;
 }
 
-/* The video rail's two actions. A third verbatim copy of the gold ramp lived
-   here until the contract took it. They were `[data-kind]` variants of one
-   class; `composes` only works on a plain class selector, and the role split
-   is real, so they are two classes now. */
+/* The video rail's action. A third verbatim copy of the gold ramp lived here
+   until the contract took it. */
 .videoActionPrimary {
   composes: primary from "./PlatformButtons.module.css";
-  composes: fill from "./PlatformButtons.module.css";
-}
-
-.videoActionSecondary {
-  composes: secondary from "./PlatformButtons.module.css";
   composes: fill from "./PlatformButtons.module.css";
 }
 

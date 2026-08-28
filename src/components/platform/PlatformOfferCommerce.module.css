@@ -36,9 +36,18 @@
        without it the button's lower half is under the system gesture area, and
        the tap that lands there dismisses the app instead. */
     padding: 0.6rem var(--cw-space-md) max(0.6rem, env(safe-area-inset-bottom));
-    background-color: color-mix(in srgb, var(--cw-mat-surface) var(--cw-mat-tint-chrome-floor), transparent);
+    /* OPAQUE, NOT THE CHROME TINT (2026-08-28). The topbar's glass works because
+       it floats over a photograph — there is something behind it to see through
+       to. This bar sits on the page's own canvas, and 30% of the surface over
+       the surface is nothing: on the night palette the price and the button
+       came out standing on bare page, with the section card behind them
+       scrolling straight through the bar. Text contrast was never the problem;
+       being a SHEET was. The grain and the raised shadow stay — this is the
+       same material, at full strength — and the hairline gives it the edge a
+       sheet lying on the page has. */
+    border-top: 1px solid var(--cw-mat-stroke);
+    background-color: var(--cw-mat-surface);
     background-image: var(--cw-mat-grain-image);
-    backdrop-filter: var(--cw-mat-filter);
     box-shadow: var(--cw-mat-shadow-raised);
     /* Its own compositor layer. Without it Safari repaints the blurred backdrop
        on every scroll frame and the bar visibly lags the content behind it. */
@@ -85,7 +94,7 @@
    "back" — and over a dark hero photo the bar is the least visible thing on
    screen. */
 .backRow {
-  width: min(100% - 2rem, var(--cw-max-width));
+  width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
   margin: var(--cw-space-lg) auto 0;
 }
 
@@ -287,20 +296,43 @@
   list-style: none;
 }
 
+/* PAPER, NOT WHITE. These took `--cw-platform-surface` — the flat near-white —
+   on the section's cream ground, and read as three sheets of printer paper
+   dropped on a page not made of that. The material surface is the same value
+   warmed by 6% gold, which is the difference between a white card and a lit
+   one; the edge is the material's inner stroke, so the card has a drawn border
+   rather than only a shadow to say where it stops.
+
+   `--cw-mat-tone-proof` was tried first and is wrong here for the opposite
+   reason: it resolves to within a point of this section's own ground, so the
+   cards vanished into it. A card needs to be lighter than what it sits on. */
 .bentoCard {
   display: grid;
   align-content: start;
-  gap: 0.6rem;
+  gap: 0.9rem;
   padding: var(--cw-space-md);
+  border: 1px solid var(--cw-mat-stroke-inner);
   border-radius: var(--cw-radius-sm);
-  background: var(--cw-platform-surface);
+  background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-soft);
 }
 
+/* THE TITLE IS A TITLE. It was 1.02rem, one notch over the 0.9375rem list under
+   it, separated by a 0.6rem gap — near enough in size and position that the
+   card read as a four-item list whose first item was bold. It is a heading over
+   a list, so it takes the heading's size and the list gets a ruled line to
+   start under: the same drawing vocabulary as the rest of the platform, and
+   cheaper than another 4px of air. */
 .bentoCardHead {
   display: flex;
   align-items: center;
-  gap: 0.45rem;
+  gap: 0.5rem;
+  padding-bottom: 0.75rem;
+  /* The system's rule, fading at both ends (`--cw-rule-fade-x`).
+     Was a straight hairline; the file already draws every other
+     separator with the token. */
+  border-bottom: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
   color: var(--cw-platform-muted);
 }
 
@@ -308,9 +340,9 @@
   margin: 0;
   color: var(--cw-platform-text);
   font-family: var(--cw-font-ui);
-  font-size: 1.02rem;
+  font-size: 1.22rem;
   font-weight: 700;
-  line-height: 1.3;
+  line-height: 1.25;
 }
 
 .bentoList {
@@ -447,6 +479,26 @@
 
 /* What stands where the buy button stood, once the course is theirs. Same role
    and the same width — the panel keeps its shape, only its offer changes. */
+/* The owner's plate spans the support split's whole row: there is no second
+   card beside it any more, and a half-width panel with an empty cell next to it
+   is the pair problem again, drawn with one of the two missing. */
+.ownedPanel {
+  grid-column: 1 / -1;
+  display: grid;
+  align-content: start;
+  gap: 0.6rem;
+}
+
+/* Row when the pair fits, stacked when it does not — the card-actions rule from
+   the button contract, not a breakpoint. */
+.ownedActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
 .resumeAction {
   composes: primary from "./PlatformButtons.module.css";
   composes: fill from "./PlatformButtons.module.css";
@@ -457,7 +509,6 @@
 .shelfAction {
   composes: text from "./PlatformButtons.module.css";
   justify-self: start;
-  margin-top: 0.35rem;
 }
 
 .fineprint {

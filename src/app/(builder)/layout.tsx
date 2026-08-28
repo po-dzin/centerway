@@ -5,6 +5,7 @@ import { SurfaceHostProvider } from "@/components/platform/layout/SurfaceHost";
 
 import "../globals.css";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
+import { THEME_BOOT_SCRIPT } from "@/lib/platform/theme";
 
 /**
  * The builder's own root.
@@ -20,7 +21,7 @@ import { PLATFORM_GROUND } from "@/lib/platform/chrome";
  */
 export const metadata: Metadata = {
   metadataBase: new URL(PERSONAL_ORIGIN),
-  title: "CenterWay Білдер",
+  title: "CenterWay Майстерня",
   description: "Конструктор курсів CenterWay.",
   // Never indexed. Every route behind it is someone's unpublished draft.
   robots: { index: false, follow: false },
@@ -43,6 +44,12 @@ export default async function BuilderRootLayout({ children }: Readonly<{ childre
   return (
     <html lang="uk" suppressHydrationWarning>
       <body suppressHydrationWarning>
+        {/* The theme, stamped before the first frame. It is inline and not a
+            module on purpose: a module arrives after the first paint, and the
+            reader would watch a cream page turn graphite. See
+            src/lib/platform/theme.ts for why one script rather than a
+            `prefers-color-scheme` rule in the stylesheet. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         <SurfaceHostProvider host={host}>{children}</SurfaceHostProvider>
       </body>
     </html>

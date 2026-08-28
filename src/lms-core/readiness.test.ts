@@ -185,3 +185,59 @@ function tableCourse(rows: string[][]): Course {
     ],
   };
 }
+
+/**
+ * The showcase gate. Its whole design is that it is CONDITIONAL — none of these
+ * five blockers exist for a course nobody can find — so the tests are as much
+ * about what does NOT fire as about what does.
+ */
+describe("what a card owes a stranger", () => {
+  const complete: Partial<Course> = {
+    cover: { src: "/cover.webp", alt: "Обкладинка" },
+    tagline: "Навіщо це людині",
+    durationDays: 3,
+    categories: ["nutrition"],
+  };
+
+  it("asks a hidden course for nothing", () => {
+    // The default. A course with no cover, no section and no duration is a
+    // perfectly publishable private course — that is most of the shelf.
+    expect(courseReadiness(course()).ready).toBe(true);
+    expect(courseReadiness(course({ visibility: "hidden" })).ready).toBe(true);
+  });
+
+  it("asks an unlisted course for all five, because it still has a page", () => {
+    const codes = courseReadiness(course({ visibility: "unlisted" })).blockers.map((one) => one.code);
+    expect(codes).toContain("lms_ready_missing_cover");
+    expect(codes).toContain("lms_ready_missing_tagline");
+    expect(codes).toContain("lms_ready_missing_duration");
+    expect(codes).toContain("lms_ready_missing_category");
+  });
+
+  it("lets a listed course through once the five are answered", () => {
+    expect(courseReadiness(course({ visibility: "listed", ...complete })).ready).toBe(true);
+  });
+
+  it("never asks for a kind — the catalogue can still count lessons", () => {
+    const codes = courseReadiness(course({ visibility: "listed", ...complete })).blockers.map((one) => one.code);
+    expect(codes).not.toContain("lms_ready_missing_kind");
+  });
+
+  it("catches a cover whose description was never written", () => {
+    const codes = courseReadiness(
+      course({ ...complete, visibility: "listed", cover: { src: "/cover.webp", alt: "   " } })
+    ).blockers.map((one) => one.code);
+    expect(codes).toContain("lms_ready_missing_cover_alt");
+    // One complaint about the cover, not two: an image with a blank description
+    // is not also a missing image.
+    expect(codes).not.toContain("lms_ready_missing_cover");
+  });
+
+  it("counts a zero-day claim as a claim, not as silence", () => {
+    // `durationDays: 0` never reaches here — `validateCourse` rejects it — but
+    // the gate must key on `undefined` rather than on falsiness, or a course
+    // could satisfy it by being wrong.
+    const stated = courseReadiness(course({ visibility: "listed", ...complete, durationDays: 1 }));
+    expect(stated.ready).toBe(true);
+  });
+});

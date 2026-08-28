@@ -54,6 +54,20 @@ export function PlatformShell({
         initialTone={headerMode === "overlay" ? "dark" : "light"}
         mode={headerMode === "learn" ? "workspace" : headerMode}
         surface={surface}
+        /* EVERY SURFACE THIS SHELL WRAPS, because every one of them is read
+           rather than operated. It started on the lesson and it is the same
+           argument on the storefront, the catalogue and the dashboard: while
+           you are moving down a page the bar is only the way OUT, and the way
+           out is the one thing you are not reaching for. Scrolling up is
+           already the gesture that means «I am done here», so the chrome comes
+           back where the hand is, in one flick, from anywhere in the document.
+
+           The exception is not expressible here and does not need to be: the
+           builder does not go through this shell. It mounts PlatformHeader
+           itself (BuilderShell.tsx) and leaves this off, because its bar holds
+           save state, undo and the preview button — controls in use, which a
+           bar that walks off mid-edit would be hiding. */
+        autoHide
       />
       {children}
       {/* The storefront's close — phone, four social networks — is the wrong

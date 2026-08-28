@@ -18,15 +18,24 @@ describe("platform routes on a funnel host", () => {
     expect(isPlatformEscapePath("/thanks")).toBe(false);
   });
 
-  it("sends the cabinet back to the platform origin instead of 404ing", () => {
+  it("sends a public page back to the platform origin instead of 404ing", () => {
+    const response = rewriteFunnelHostRequest(request("way21.centerway.net.ua", "/programs"));
+    expect(response?.status).toBe(307);
+    expect(response?.headers.get("location")).toBe("https://www.centerway.net.ua/programs");
+  });
+
+  /* The cabinet and the shelf moved to the personal host, so the escape names
+     the origin that owns them — otherwise the hop off a funnel host would land
+     on a 308 and cost a second one. */
+  it("sends a personal page to the personal origin", () => {
     const response = rewriteFunnelHostRequest(request("way21.centerway.net.ua", "/profile"));
     expect(response?.status).toBe(307);
-    expect(response?.headers.get("location")).toBe("https://www.centerway.net.ua/profile");
+    expect(response?.headers.get("location")).toBe("https://my.centerway.net.ua/profile");
   });
 
   it("keeps the query string, which is where the return path rides", () => {
     const response = rewriteFunnelHostRequest(request("irem.centerway.net.ua", "/learn/irem?from=mail"));
-    expect(response?.headers.get("location")).toBe("https://www.centerway.net.ua/learn/irem?from=mail");
+    expect(response?.headers.get("location")).toBe("https://my.centerway.net.ua/learn/irem?from=mail");
   });
 
   /* The landing still owns its own root and its own thank-you page: the escape

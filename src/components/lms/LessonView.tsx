@@ -8,7 +8,15 @@
  * with every write, so a rejected event self-corrects rather than drifting.
  */
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+} from "react";
 import Link from "next/link";
 
 import { courseThemeAttributes, inlineToPlainText } from "@/lms-core";
@@ -20,6 +28,23 @@ import { lessonPagerLayout } from "@/lib/lms/lessonNavigation";
 import { BlockRenderer } from "./LessonBlocks";
 import { CourseContentsDrawer } from "./CourseContentsDrawer";
 import { LmsNotice } from "./LmsNotice";
+import { ReaderTopButton } from "./ReaderTopButton";
+import { ReaderTextSize } from "./ReaderTextSize";
+import { ReaderMarkLayer } from "./ReaderMarkLayer";
+import { useAnnotations } from "./useAnnotations";
+import {
+  clearMark,
+  MARK_MIN_OFFSET_PX,
+  minutesRemaining,
+  readMark,
+  readScaleId,
+  resolveMarkOffset,
+  scaleValue,
+  serverScaleId,
+  subscribeScale,
+  writeMark,
+  writeScaleId,
+} from "./readerSettings";
 import {
   ensureTimeZoneSynced,
   fetchLesson,
@@ -61,6 +86,28 @@ export function LessonView({
   const [contentsOpen, setContentsOpen] = useState(false);
   const [readingRatio, setReadingRatio] = useState(0);
   const bodyRef = useRef<HTMLDivElement>(null);
+  const previousLinkRef = useRef<HTMLAnchorElement>(null);
+  const nextLinkRef = useRef<HTMLAnchorElement>(null);
+  /* Nothing may be SAVED before the saved position has been restored: the
+     browser starts every navigation at the top, and a scroll handler that
+     believed that would overwrite the mark with a zero. */
+  const restoredRef = useRef(false);
+  const lastSaveRef = useRef(0);
+
+  /* A device setting, subscribed to rather than copied into state by an effect:
+     the server has no idea what this reader chose, so the markup goes out at the
+     design's own size and the stored choice arrives on hydration. */
+  const scaleId = useSyncExternalStore(subscribeScale, readScaleId, serverScaleId);
+  const chooseScale = useCallback((id: string) => writeScaleId(id), []);
+
+  /* The reader's own marks. Course-wide and fetched once, so walking the pager
+     between lessons does not re-ask. A draft preview is an authoring
+     perspective — it writes no progress and it writes no marks. */
+  const marks = useAnnotations(courseSlug, !draftPreview);
+  /* Memoised, and it matters: the mark layer keys its whole repaint cycle off
+     the identity of this array. A fresh `filter()` on every render would make
+     every render a new repaint, and every repaint a new render. */
+  const lessonMarks = useMemo(() => marks.forLesson(lessonSlug), [marks, lessonSlug]);
 
   const load = useCallback(async () => {
     const result = await fetchLesson(courseSlug, lessonSlug, draftPreview);
@@ -101,6 +148,23 @@ export function LessonView({
   useEffect(() => {
     if (state.status !== "ready") return;
 
+    const save = () => {
+      // A draft preview is an authoring perspective, not a read.
+      if (draftPreview || !restoredRef.current) return;
+      const y = window.scrollY;
+      const height = document.documentElement.scrollHeight;
+      // Near the top there is nothing to return to, and at the end the lesson
+      // is behind the reader — both drop the mark rather than pin them to it.
+      if (y < MARK_MIN_OFFSET_PX || y + window.innerHeight >= height - 80) {
+        clearMark(courseSlug, lessonSlug);
+        return;
+      }
+      const now = Date.now();
+      if (now - lastSaveRef.current < 400) return;
+      lastSaveRef.current = now;
+      writeMark(courseSlug, lessonSlug, { y, h: height });
+    };
+
     const update = () => {
       const body = bodyRef.current;
       if (!body) return;
@@ -108,20 +172,126 @@ export function LessonView({
       const scrollable = body.offsetHeight - window.innerHeight;
       if (scrollable <= 0) {
         setReadingRatio(1);
-        return;
+      } else {
+        const scrolled = window.scrollY - start;
+        setReadingRatio(Math.min(1, Math.max(0, scrolled / scrollable)));
       }
-      const scrolled = window.scrollY - start;
-      setReadingRatio(Math.min(1, Math.max(0, scrolled / scrollable)));
+      save();
+    };
+
+    // A tab closed or backgrounded mid-scroll is the normal way reading ends,
+    // and it never lands inside the throttle window.
+    const flush = () => {
+      lastSaveRef.current = 0;
+      save();
     };
 
     update();
     window.addEventListener("scroll", update, { passive: true });
     window.addEventListener("resize", update);
+    window.addEventListener("pagehide", flush);
+    document.addEventListener("visibilitychange", flush);
     return () => {
       window.removeEventListener("scroll", update);
       window.removeEventListener("resize", update);
+      window.removeEventListener("pagehide", flush);
+      document.removeEventListener("visibilitychange", flush);
+      flush();
     };
-  }, [state.status, lessonSlug]);
+  }, [state.status, lessonSlug, courseSlug, draftPreview]);
+
+  /**
+   * Back to where the reading stopped.
+   *
+   * The one function a serious reader owes a long text: a twenty-two block
+   * lesson closed in the middle used to reopen at its title, which means the
+   * reader pays for the interruption twice. An explicit `#block-…` in the URL
+   * wins — that is someone asking for a specific place, not for their own.
+   */
+  useEffect(() => {
+    restoredRef.current = false;
+    if (state.status !== "ready" || draftPreview) {
+      return;
+    }
+    if (window.location.hash) {
+      restoredRef.current = true;
+      return;
+    }
+    const mark = readMark(courseSlug, lessonSlug);
+    if (!mark) {
+      restoredRef.current = true;
+      return;
+    }
+    /* NOT ONE JUMP — the page is still growing while we aim at it. A lesson
+       renders its blocks, then its images arrive and the document can triple in
+       height; a single `scrollTo` right after the first paint lands at the
+       bottom of a page that is about to become three times longer, or gets
+       clamped to a max scroll that does not exist yet. So the offset is
+       re-aimed every frame for a short window, against the height the document
+       actually has at that moment, and the first gesture from the reader ends
+       it — the moment they scroll themselves, where they are is the answer. */
+    let frame = 0;
+    const started = Date.now();
+    const settle = () => {
+      restoredRef.current = true;
+      cancelAnimationFrame(frame);
+      window.removeEventListener("wheel", settle);
+      window.removeEventListener("touchstart", settle);
+      window.removeEventListener("keydown", settle);
+    };
+    const aim = () => {
+      const target = resolveMarkOffset(mark, document.documentElement.scrollHeight);
+      if (Math.abs(window.scrollY - target) > 4) window.scrollTo({ top: target, behavior: "auto" });
+      if (Date.now() - started > 1500) {
+        settle();
+        return;
+      }
+      frame = requestAnimationFrame(aim);
+    };
+    frame = requestAnimationFrame(aim);
+    window.addEventListener("wheel", settle, { passive: true });
+    window.addEventListener("touchstart", settle, { passive: true });
+    window.addEventListener("keydown", settle);
+    return settle;
+  }, [state.status, courseSlug, lessonSlug, draftPreview]);
+
+  /**
+   * ← and → walk the course on a desktop keyboard.
+   *
+   * They press the pager's own links rather than routing themselves, so the
+   * keys can never reach a neighbour the page decided not to offer — a locked
+   * next step, or the pager a reference page does not have.
+   */
+  useEffect(() => {
+    if (state.status !== "ready" || contentsOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== "ArrowLeft" && event.key !== "ArrowRight") return;
+      if (event.metaKey || event.ctrlKey || event.altKey || event.shiftKey) return;
+      const target = event.target as HTMLElement | null;
+      if (
+        target &&
+        (target.isContentEditable ||
+          ["INPUT", "TEXTAREA", "SELECT"].includes(target.tagName) ||
+          /* Any button, or anything inside a composite widget or dialog — the
+             size menu (`role="menu"`) and the note editor (`role="dialog"`)
+             both hold buttons of their own, and this guard only excluded form
+             fields. A reader arrowing through text-size options, or pressing
+             "Прибрати позначку" with a keyboard, moved the lesson out from
+             under them — arrow keys inside a menu should navigate the menu,
+             and a stray keystroke in an open note dialog should never be able
+             to discard it by leaving the page. */
+          target.closest('button, [role="menu"], [role="dialog"], [role="listbox"]'))
+      ) {
+        return;
+      }
+      const link = event.key === "ArrowLeft" ? previousLinkRef.current : nextLinkRef.current;
+      if (!link) return;
+      event.preventDefault();
+      link.click();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [state.status, contentsOpen]);
 
   const lesson = state.status === "ready" ? state.data.lesson : null;
 
@@ -255,6 +425,10 @@ export function LessonView({
         // learner walking between two courses with different palettes never sees
         // one course's green on the other's page.
         {...courseThemeAttributes(data.courseTheme ?? undefined)}
+        // The reader's size choice, multiplied into the course's own body size
+        // by `.blocks`. Scoped here rather than on `:root` so it moves the
+        // lesson text and nothing else on the platform.
+        style={{ "--cw-reader-scale": scaleValue(scaleId) } as CSSProperties}
       >
       <div className={styles.readingTrack} aria-hidden="true">
         <div className={styles.readingFill} style={{ width: `${Math.round(readingRatio * 100)}%` }} />
@@ -286,23 +460,57 @@ export function LessonView({
             <span className={styles.referenceTag}>Довідник</span>
           )}
           <span>{data.module.title}</span>
+          {/* Total length answers "should I start this now"; once reading has
+              started the only useful number is what is left, and the same
+              authored duration answers that against the scroll position. */}
           {data.lesson.durationMin ? (
             <>
               <span className={styles.stepDivider} aria-hidden="true">·</span>
-              <span>{data.lesson.durationMin} хв</span>
+              <span>
+                {readingRatio > 0.08 && readingRatio < 0.99
+                  ? `лишилось ~${minutesRemaining(data.lesson.durationMin, readingRatio)} хв`
+                  : `${data.lesson.durationMin} хв`}
+              </span>
             </>
           ) : null}
         </p>
 
-        <button
-          className={`${styles.iconButton} ${styles.contentsButton}`}
-          type="button"
-          onClick={() => setContentsOpen(true)}
-          aria-haspopup="dialog"
-        >
-          <Icon name="menu" size={18} />
-          <span>Зміст</span>
-        </button>
+        <div className={styles.readerTools}>
+          {/* A bookmark is about the LESSON, so it sits with the lesson's own
+              controls rather than in the text. It is not progress and never
+              becomes progress: «пройдено» is a claim about doing the work,
+              «закладка» is a note that this page is one to come back to. */}
+          {!draftPreview ? (
+            <button
+              className={`${styles.iconButton} ${styles.bookmarkButton}`}
+              type="button"
+              data-marked={marks.bookmarked(lessonSlug) ? "true" : undefined}
+              aria-pressed={marks.bookmarked(lessonSlug)}
+              aria-label={marks.bookmarked(lessonSlug) ? "Прибрати закладку" : "Додати закладку"}
+              /* Held until the course's first fetch resolves, same as
+                 ReaderMarkLayer below. A press that lands first writes an
+                 optimistic bookmark that GET then has no way to know about —
+                 the fetch overwrites the whole list wholesale — so the star
+                 saved to the server comes back unmarked until reload. */
+              disabled={!marks.ready}
+              onClick={() => void marks.toggleBookmark(lessonSlug)}
+            >
+              <Icon name="star" size={18} />
+            </button>
+          ) : null}
+
+          <ReaderTextSize value={scaleId} onChange={chooseScale} />
+
+          <button
+            className={`${styles.iconButton} ${styles.contentsButton}`}
+            type="button"
+            onClick={() => setContentsOpen(true)}
+            aria-haspopup="dialog"
+          >
+            <Icon name="menu" size={18} />
+            <span>Зміст</span>
+          </button>
+        </div>
       </div>
 
       <h1 className={styles.title}>{data.lesson.title}</h1>
@@ -330,6 +538,20 @@ export function LessonView({
             />
           </div>
         ))}
+
+        {/* Drawn over the column, never inside it — the block tree stays
+            exactly what BlockRenderer produced. */}
+        {!draftPreview && marks.ready ? (
+          <ReaderMarkLayer
+            bodyRef={bodyRef}
+            lessonSlug={lessonSlug}
+            annotations={lessonMarks}
+            onMark={(anchor, note) => marks.mark(lessonSlug, anchor, note)}
+            onSetNote={marks.setNote}
+            onRemove={marks.remove}
+            layoutKey={scaleId}
+          />
+        ) : null}
       </div>
 
       {data.isReference ? (
@@ -382,6 +604,7 @@ export function LessonView({
         <nav className={styles.pager} data-layout={pager.mode} aria-label="Навігація по уроках">
           {pager.showPrevious && nav.previous ? (
             <Link
+              ref={previousLinkRef}
               className={styles.pagerLink}
               href={surfaceHref(`/learn/${courseSlug}/${nav.previous.slug}${previewQuery}`)}
               aria-label={`Попередній урок: ${nav.previous.title}`}
@@ -394,6 +617,7 @@ export function LessonView({
 
           {pager.showNext && nav.next ? (
             <Link
+              ref={nextLinkRef}
               className={completed ? styles.pagerLinkNextAccent : styles.pagerLinkNext}
               href={surfaceHref(`/learn/${courseSlug}/${nav.next.slug}${previewQuery}`)}
               aria-label={`Наступний урок: ${nav.next.title}`}
@@ -407,6 +631,12 @@ export function LessonView({
       ) : null}
 
       </main>
+
+      {/* Outside `<main>`, because `main` goes inert while the contents drawer
+          is open and a control that stays on screen while it cannot be pressed
+          is worse than one that leaves with the page. `clearsCompletion` — the
+          lesson pins its completion toggle to the bottom of the column. */}
+      {!contentsOpen ? <ReaderTopButton clearsCompletion /> : null}
 
       {contentsOpen ? (
         <CourseContentsDrawer

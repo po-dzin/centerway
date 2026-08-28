@@ -32,11 +32,11 @@ export const platformTests: PlatformTestEntry[] = [
     tag: "Конституція",
     format: "12 питань • 3-5 хв",
     description:
-      "Самодіагностика ритму, енергії, травлення і напруги: короткий профіль доші як робоча гіпотеза і перший доречний крок у платформі.",
+      "Самооцінка ритму, енергії, травлення і напруги: короткий профіль доші як робоча гіпотеза і перший доречний крок у платформі.",
     reads: "ритм, енергія, травлення, сон, напруга",
     visual: "stone",
     artwork: {
-      desktop: "/cw/platform/pages/dosha-hero-variant-ceramic-v1.png",
+      desktop: "/cw/platform/pages/dosha-hero-variant-ceramic-v1.webp",
       desktopPosition: "center 32%",
       mobilePosition: "center 34%",
     },

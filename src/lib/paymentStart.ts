@@ -11,6 +11,7 @@ import {
 import { buildReturnUrl, buildWfpProductName } from "@/lib/pay";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
+import { STAFF_CHECKOUT_EVENT } from "@/lib/tracking/staffOrders";
 
 export type PaymentStartSuccess = {
   ok: true;
@@ -87,11 +88,16 @@ export function requiredPaymentEnv() {
  * of that intact, for no gain — the product is carried separately in
  * `orders.product_code` and in the return URL. Only the prefix is touched.
  */
-function orderRefToken(product: PayableProductCode): string {
+/**
+ * `course:<slug>` carries a colon, and the order_ref built from it travels through
+ * `orders`, `payments`, `access_tokens`, `events` and the return URL. Flattening the
+ * colon here keeps that key to one alphabet everywhere it is stored or parsed.
+ */
+export function orderRefToken(product: PayableProductCode): string {
   return product.replace(/[^a-z0-9-]+/gi, "-");
 }
 
-function makeOrderRef(product: PayableProductCode, nowMs: () => number, randomHex: (bytes: number) => string) {
+export function makeOrderRef(product: PayableProductCode, nowMs: () => number, randomHex: (bytes: number) => string) {
   const d = new Date(nowMs());
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, "0");
@@ -136,7 +142,7 @@ export function resolveLocaleFromRequest(headers: Headers, search: URLSearchPara
   if (override) return override;
 
   const country = countryFromHeaders(headers);
-  if (country === "UA") return "ua";
+  if (country === "UA") return "uk";
 
   const byAcceptLanguage = localeFromAcceptLanguage(headers);
   if (byAcceptLanguage) return byAcceptLanguage;
@@ -298,7 +304,10 @@ export async function createPaymentInvoiceWithDeps(
         user_agent: input.client_ua ?? null,
         event_source_url: input.page_url ?? null,
         action_source: "website",
-        content_name: offerHeading(cfg, input.locale),
+        // The agreed reporting label, not the invoice line. This used to send
+        // the localized heading, which made the same product arrive in Meta
+        // under a different name per language and per surface.
+        content_name: cfg.pixelContentName,
         content_type: "product",
         content_ids: [product],
       };
@@ -321,6 +330,28 @@ export async function createPaymentInvoiceWithDeps(
       console.warn("capi_initiate_checkout_failed", capiErr, { order_ref });
     }
   })();
+
+  /* The staff flag lives in the browser, and the WayForPay webhook has no browser.
+     Without a mark on the order itself, a 1 ₴ QA payment came back as a real
+     Purchase to Meta — the exact conversion this flag exists to suppress. The
+     mark is written here and read by the webhook; it is awaited rather than
+     fire-and-forget, because the suppression downstream depends on it existing. */
+  const staffMarkerPromise = input.staff
+    ? (async () => {
+        try {
+          const { error: staffMarkErr } = await sb.from("events").insert({
+            type: STAFF_CHECKOUT_EVENT,
+            order_ref,
+            payload: { product, source: input.source, host: input.host ?? null },
+          });
+          if (staffMarkErr) {
+            console.warn("staff_checkout_mark_failed", staffMarkErr.message, { order_ref });
+          }
+        } catch (staffMarkErr) {
+          console.warn("staff_checkout_mark_failed", staffMarkErr, { order_ref });
+        }
+      })()
+    : Promise.resolve();
 
   if (!input.staff) void (async () => {
     try {
@@ -354,6 +385,7 @@ export async function createPaymentInvoiceWithDeps(
   const [{ error: orderErr }, resp] = await Promise.all([orderInsertPromise, wfpResponsePromise]);
   // Keep the CAPI job overlapped with the WFP call without dropping it on the floor.
   await capiJobPromise;
+  await staffMarkerPromise;
 
   if (orderErr) {
     return {

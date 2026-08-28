@@ -71,7 +71,22 @@ const FIT = {
   maskable: 0.62, // inside Android's 80% safe zone, with room for a circle
   touch: 0.72, //   iOS home screen — the OS rounds the corners itself
   tab: 0.78, //     favicon: tab strip, address bar, search suggestions, Vercel's project list
+  // Telegram cuts a bot avatar to a circle, and the inscribed circle of a
+  // square is 70.7% of its side — so anything past that is clipped at the
+  // diagonals. 0.60 sits inside it with the same air the maskable tile keeps.
+  avatar: 0.6,
 };
+
+/**
+ * Corner radius for tiles the OS does not shape itself, as a fraction of the
+ * tile side — the browser tab icon and the desktop/Windows "any" tile. iOS
+ * rounds the touch icon and Android crops the maskable one to its own launcher
+ * shape, so those two stay square-cornered here; everywhere else a flat square
+ * next to rounded neighbours (Win11's Start tiles, an installed-PWA taskbar
+ * icon) reads as unfinished. Matches iOS's own squircle closely enough at icon
+ * sizes that no one asks which shape it is.
+ */
+const ROUND = 0.22;
 
 function readToken(tokens, name) {
   const found = [];
@@ -185,8 +200,13 @@ function fitTransform(build, fit) {
  *
  * `themed` swaps the two tones on `prefers-color-scheme: dark` instead of
  * painting one pair. Only the SVG can do this — see the tab-icon call site.
+ *
+ * `rounded` gives the tile itself a squircle-ish corner (ROUND) instead of a
+ * plain square — for the two surfaces that draw the icon exactly as given and
+ * do not shape it themselves (the browser tab and the desktop/Windows "any"
+ * tile), so it does not look unfinished next to the OS-shaped ones.
  */
-function appIconSvg(build, { fill, background, fit, themed = null }) {
+function appIconSvg(build, { fill, background, fit, themed = null, rounded = false }) {
   const paths = build.arcs.map((d) => `    <path d="${d}"/>`).join("\n");
   const style = themed
     ? [
@@ -202,11 +222,12 @@ function appIconSvg(build, { fill, background, fit, themed = null }) {
     : [];
   const tileAttr = themed ? `class="tile"` : `fill="${background}"`;
   const markAttr = themed ? `class="mark"` : `fill="${fill}"`;
+  const rx = rounded ? ` rx="${(64 * ROUND).toFixed(3)}"` : "";
   return [
     `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="512" height="512">`,
     `  <!-- ${BANNER} -->`,
     ...style,
-    `  <rect width="64" height="64" ${tileAttr}/>`,
+    `  <rect width="64" height="64"${rx} ${tileAttr}/>`,
     `  <g ${markAttr} transform="${fitTransform(build, fit)}">`,
     paths,
     `    <circle cx="32" cy="32" r="${build.coreR}"/>`,
@@ -217,31 +238,40 @@ function appIconSvg(build, { fill, background, fit, themed = null }) {
 }
 
 /**
- * The link-preview card, 1200x630. Gold on the deep ground rather than ink on
- * cream: a preview lands inside someone else's chat or feed, on a surface we do
- * not control, and the dark card holds its edges against both.
+ * The brand card — mark over wordmark on the deep ground. Gold on ink rather
+ * than ink on cream: a card lands inside someone else's chat or feed, on a
+ * surface we do not control, and the dark card holds its edges against both.
  *
  * The wordmark is inlined as the outlined paths the shipped file already
  * carries, so the card needs no font at bake time and cannot come out different
  * on a machine with a different fontconfig.
+ *
+ * Sized by HEIGHT, not by a per-size table. The link preview is 1200x630 and
+ * Telegram's empty-chat picture is 640x360 — two aspect ratios, one
+ * composition. Every measurement below is the 630-tall original expressed as a
+ * fraction of the height, so a second size is a call argument and not a second
+ * set of hand-tuned numbers that drift apart.
  */
-function ogCardSvg(build, { mark, background, wordmarkInner, wordmarkViewBox }) {
+function brandCardSvg(build, { mark, background, wordmarkInner, wordmarkViewBox, width = 1200, height = 630 }) {
   const paths = build.arcs.map((d) => `    <path d="${d}"/>`).join("\n");
-  const markSize = 190;
-  const wordWidth = 470;
+  const unit = height / 630;
+  const markSize = 190 * unit;
+  const wordWidth = 470 * unit;
   const wordHeight = wordWidth * (129.3 / 541.3);
   // Optically centred: the group runs markTop..wordmark bottom, so the top
   // margin is smaller than the bottom one by half the wordmark block.
-  const markTop = 138;
+  const markTop = 138 * unit;
+  const gap = 52 * unit;
+  const mid = width / 2;
   return [
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630" width="1200" height="630">`,
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">`,
     `  <!-- ${BANNER} -->`,
-    `  <rect width="1200" height="630" fill="${background}"/>`,
-    `  <g fill="${mark}" transform="translate(${600 - markSize / 2} ${markTop}) scale(${markSize / 64})">`,
+    `  <rect width="${width}" height="${height}" fill="${background}"/>`,
+    `  <g fill="${mark}" transform="translate(${mid - markSize / 2} ${markTop}) scale(${markSize / 64})">`,
     paths,
     `    <circle cx="32" cy="32" r="${build.coreR}"/>`,
     `  </g>`,
-    `  <svg x="${600 - wordWidth / 2}" y="${markTop + markSize + 52}" width="${wordWidth}" height="${wordHeight.toFixed(2)}" viewBox="${wordmarkViewBox}">`,
+    `  <svg x="${mid - wordWidth / 2}" y="${markTop + markSize + gap}" width="${wordWidth.toFixed(2)}" height="${wordHeight.toFixed(2)}" viewBox="${wordmarkViewBox}">`,
     wordmarkInner,
     `  </svg>`,
     `</svg>`,
@@ -250,18 +280,15 @@ function ogCardSvg(build, { mark, background, wordmarkInner, wordmarkViewBox }) 
 }
 
 /**
- * Flattened onto the calm ground — see the call site for why nothing here is
- * transparent. ensureAlpha still matters after the flatten: Next's ICO decoder
- * rejects an embedded PNG that is not RGBA, and sharp would otherwise drop the
- * now-opaque alpha channel and emit RGB.
+ * `background` is optional: pass it to flatten onto an opaque tile (iOS/Android,
+ * which shape the icon themselves and expect no transparency), or omit it to
+ * keep the SVG's own alpha — which is how a rounded tile's corners actually end
+ * up transparent instead of squared off by a same-colour flatten underneath.
  */
 async function rasterise(svg, size, background) {
-  return sharp(svg, { density: 600 })
-    .resize(size, size)
-    .flatten({ background })
-    .ensureAlpha()
-    .png({ compressionLevel: 9, palette: false })
-    .toBuffer();
+  const pipeline = sharp(svg, { density: 600 }).resize(size, size);
+  if (background) pipeline.flatten({ background });
+  return pipeline.ensureAlpha().png({ compressionLevel: 9, palette: false }).toBuffer();
 }
 
 /**
@@ -392,7 +419,7 @@ async function main() {
      favicon sits inline with text. */
   const tabLight = { fill: gold, background: ink };
   const tabDark = { fill: ink, background: calm };
-  const tabIcon = appIconSvg(geometry.compact, { ...tabLight, fit: FIT.tab, themed: tabDark });
+  const tabIcon = appIconSvg(geometry.compact, { ...tabLight, fit: FIT.tab, themed: tabDark, rounded: true });
   // Every surface reads the same file: the platform's Next-convention icon and
   // the eight landings, which cannot see /app and link shared/img by hand.
   emit(["src/app/icon.svg", "src/landing-static/shared/img/cw-icon-tab.svg"], tabIcon);
@@ -401,8 +428,8 @@ async function main() {
   // before 17). One file cannot flip, so it ships the light-UI pairing — the
   // browsers in question are also the ones least likely to be running a dark
   // chrome.
-  const tabRaster = Buffer.from(appIconSvg(geometry.compact, { ...tabLight, fit: FIT.tab }));
-  emit(["src/app/favicon.ico"], toIco(await rasterise(tabRaster, 64, ink)));
+  const tabRaster = Buffer.from(appIconSvg(geometry.compact, { ...tabLight, fit: FIT.tab, rounded: true }));
+  emit(["src/app/favicon.ico"], toIco(await rasterise(tabRaster, 64)));
 
   /* ── Installed-app icons ───────────────────────────────────────────────
      `any` runs close to the edge because nothing crops it — a desktop launcher
@@ -412,7 +439,7 @@ async function main() {
 
      Full build, not compact: these render at 180-512px, where the turns the
      compact build drops are the whole mark. */
-  const iconAny = Buffer.from(appIconSvg(geometry.full, { fill: ink, background: calm, fit: FIT.launcher }));
+  const iconAny = Buffer.from(appIconSvg(geometry.full, { fill: ink, background: calm, fit: FIT.launcher, rounded: true }));
   const iconMaskable = Buffer.from(appIconSvg(geometry.full, { fill: ink, background: calm, fit: FIT.maskable }));
   // iOS rounds the corners itself and composites a transparent icon onto black,
   // so the touch icon is opaque and keeps a little more air than the square
@@ -421,10 +448,19 @@ async function main() {
 
   // Mirrored into shared/img as well: the funnel hosts cannot see /cw/**, and a
   // landing still needs a raster favicon for the browsers without SVG support.
-  emit(["public/cw/brand/cw-icon-192.png", "src/landing-static/shared/img/cw-icon-192.png"], await rasterise(iconAny, 192, calm));
+  emit(["public/cw/brand/cw-icon-192.png", "src/landing-static/shared/img/cw-icon-192.png"], await rasterise(iconAny, 192));
   emit(["src/app/apple-icon.png", "src/landing-static/shared/img/cw-apple-touch.png"], await rasterise(touchIcon, 180, calm));
-  emit(["public/cw/brand/cw-icon-512.png"], await rasterise(iconAny, 512, calm));
+  emit(["public/cw/brand/cw-icon-512.png"], await rasterise(iconAny, 512));
   emit(["public/cw/brand/cw-icon-maskable-512.png"], await rasterise(iconMaskable, 512, calm));
+
+  /* ── The Telegram bot's face ───────────────────────────────────────────
+     Gold on the deep ground, not the launcher's ink on cream, and for the
+     favicon's reason: a chat-list avatar sits on whatever ground the reader's
+     Telegram theme paints, a PNG cannot flip with it, and only one of the two
+     pairings survives both. Cream blazes in a dark chat list; the deep tile
+     reads as a dark disc with a gold spiral in it on either. */
+  const avatar = Buffer.from(appIconSvg(geometry.full, { fill: gold, background: ink, fit: FIT.avatar }));
+  emit(["public/cw/brand/cw-tg-avatar.png"], await rasterise(avatar, 512, ink));
 
   // Link preview. Also mirrored into shared/img so the funnel hosts, which
   // cannot see /cw/**, can point og:image at their own origin.
@@ -432,7 +468,7 @@ async function main() {
   const wordmarkInner = wordmark.replace(/^[\s\S]*?<svg[^>]*>/, "").replace(/<\/svg>\s*$/, "").trim();
   const wordmarkViewBox = /viewBox="([^"]+)"/.exec(wordmark)[1];
   const ogSource = Buffer.from(
-    ogCardSvg(geometry.full, { mark: gold, background: ink, wordmarkInner, wordmarkViewBox }),
+    brandCardSvg(geometry.full, { mark: gold, background: ink, wordmarkInner, wordmarkViewBox }),
   );
   // density oversamples the curves, then resize brings it back to the 1200x630
   // the scrapers actually want — rasterising at 1:1 leaves the arc edges chewed.
@@ -441,6 +477,18 @@ async function main() {
     .png({ compressionLevel: 9 })
     .toBuffer();
   emit(["public/cw/brand/cw-og-cover.png", "src/landing-static/shared/img/cw-og-cover.png"], ogPng);
+
+  /* The same card at Telegram's own ratio. Two consumers, one file: the picture
+     on the bot's empty-chat screen (640x360 is the size BotFather takes) and
+     the photo the greeting carries, so the frame someone sees before pressing
+     Start and the one that answers them are the same object. */
+  const tgCardSource = Buffer.from(
+    brandCardSvg(geometry.full, { mark: gold, background: ink, wordmarkInner, wordmarkViewBox, width: 640, height: 360 }),
+  );
+  emit(
+    ["public/cw/brand/cw-tg-cover.png"],
+    await sharp(tgCardSource, { density: 600 }).resize(640, 360).png({ compressionLevel: 9 }).toBuffer(),
+  );
 
   let failed = 0;
   for (const [rel, contents] of files) {

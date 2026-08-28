@@ -2,7 +2,7 @@
 <html lang="uk" data-cw-landing="short-b" data-cw-runtime="static" data-cw-page="reboot-b">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <base href="/short-b/">
 <meta name="theme-color" content="#faefe0">
 <link rel="icon" href="/shared/img/cw-icon-tab.svg" type="image/svg+xml">
@@ -74,7 +74,8 @@
 <section class="hero hero-video">
   <div class="hero-bg" aria-hidden="true" data-cw-video-bg>
     <video class="hero-bg__video" muted loop playsinline preload="none" poster="/short/img/hero-bg-poster.jpg">
-      <source src="/short/img/hero-bg.mp4" type="video/mp4">
+      <!-- data-src on purpose — see short/index.html and landing-runtime.js. -->
+      <source data-src="/short/img/hero-bg.mp4" type="video/mp4">
     </video>
     <div class="hero-bg__scrim"></div>
   </div>
@@ -256,7 +257,7 @@
     </div>
     <div class="prog-grid">
       <article class="prog-card reveal">
-        <div class="prog-media"><img src="/short/img/short-lesson1.jpeg" width="1186" height="672" loading="lazy" decoding="async" alt="Комплекс «Перезавантаження»"></div>
+        <div class="prog-media"><img src="/short/img/short-lesson1.webp" width="1186" height="672" loading="lazy" decoding="async" alt="Комплекс «Перезавантаження»"></div>
         <div class="prog-body">
           <div class="prog-n">Комплекс 01</div>
           <h3>«Перезавантаження»</h3>
@@ -380,7 +381,7 @@
 <section class="sec sec-alt" id="expert">
   <div class="wrap">
     <div class="author reveal">
-      <div class="author-photo"><img src="/short/img/expert-photo.jpg" width="360" height="480" loading="lazy" decoding="async" alt="Євгеній Корякін — куратор курсу"></div>
+      <div class="author-photo"><img src="/short/img/expert-photo.webp" width="360" height="480" loading="lazy" decoding="async" alt="Євгеній Корякін — куратор курсу"></div>
       <div>
         <span class="kicker">Куратор курсу</span>
         <h2 class="a-name">Євгеній Корякін</h2>
@@ -466,7 +467,7 @@
     </div>
     <div class="footer-bottom">
       <span>© 2026 CenterWay · Усі права захищені</span>
-      <img src="/short/img/visa-mc.png" alt="Visa / Mastercard" class="pay-mark">
+      <img src="/short/img/visa-mc.webp" alt="Visa / Mastercard" class="pay-mark">
     </div>
   </div>
 </footer>

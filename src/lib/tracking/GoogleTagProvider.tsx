@@ -50,7 +50,13 @@ export function GoogleTagProvider({ measurementId }: GoogleTagProviderProps) {
 
   return (
     <>
-      <Script src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`} strategy="afterInteractive" />
+      {/* `lazyOnload`, not `afterInteractive`, and it costs nothing: the effect
+          above pushes every event into `dataLayer` whether or not gtag.js has
+          arrived, and gtag.js drains that array when it does. So the analytics
+          bundle waits for a quiet moment instead of competing with the page the
+          visitor came for. (The Meta pixel needed a hand-written version of the
+          same idea — see PixelProvider — because its stub must exist earlier.) */}
+      <Script src={`https://www.googletagmanager.com/gtag/js?id=${measurementId}`} strategy="lazyOnload" />
       <Script id="cw-google-tag" strategy="afterInteractive">
         {`window.dataLayer = window.dataLayer || [];`}
       </Script>

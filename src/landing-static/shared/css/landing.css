@@ -39,7 +39,15 @@ body::after{
   content:"";position:fixed;inset:0;z-index:0;pointer-events:none;opacity:.035;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:clamp(20px,5vw,40px);position:relative;z-index:1}
+/* THE GUTTER IS A FLOOR, NOT A CONSTANT (2026-08-28).
+   The pages now declare `viewport-fit=cover`, so on a notched phone held
+   sideways the layout runs UNDER the sensor housing — the gutter has to grow
+   past the notch on the side it lands on, or a line of text sits behind it.
+   In portrait, and on every phone without a cutout, both insets are 0 and this
+   is the gutter it always was. */
+.wrap{max-width:var(--maxw);margin-inline:auto;
+  padding-inline:max(var(--cw-page-gutter),env(safe-area-inset-left)) max(var(--cw-page-gutter),env(safe-area-inset-right));
+  position:relative;z-index:1}
 section{position:relative;z-index:1}
 h1,h2,h3{font-family:var(--f-display);font-variant-numeric:var(--f-display-nums,normal);font-weight:var(--f-display-weight,700);line-height:var(--f-display-leading,1.08);letter-spacing:var(--f-display-track,-.025em);color:var(--ink)}
 a{color:inherit;text-decoration:none}
@@ -938,7 +946,23 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
   will-change:transform;transform:translateZ(0);
   transition:transform .35s cubic-bezier(.2,.8,.2,1)}
 .sticky-cta.hidden{transform:translateY(110%)}
-.sticky-in{max-width:var(--maxw);margin-inline:auto;width:100%;padding:.6rem clamp(14px,4vw,40px)}
+/* The one bar that sits on the home indicator. Its padding was symmetrical,
+   which on an iPhone put the tap target's lower half under the system's own
+   gesture strip: a press near the bottom edge of the button dismissed the page
+   instead of buying anything. The bottom pad is now whichever is larger, the
+   design's own .6rem or the inset the device asks for. */
+.sticky-in{max-width:var(--maxw);margin-inline:auto;width:100%;
+  padding:.6rem max(var(--cw-page-gutter),env(safe-area-inset-right)) max(.6rem,env(safe-area-inset-bottom)) max(var(--cw-page-gutter),env(safe-area-inset-left))}
+
+/* THE BAR YIELDS TO THE KEYBOARD (2026-08-28).
+   It is `position:fixed`, and on iOS a fixed element rides the visual viewport
+   when the keyboard opens — so it parks itself directly over the field being
+   typed into, which is the one moment it has nothing to offer: someone filling
+   the lead form has already answered the call to action. It leaves on the same
+   transform the scroll handler uses, so there is one way for this bar to be
+   away rather than two. */
+body:has(.lead-form :is(input,select,textarea):focus) .sticky-cta,
+body:has(.lead-modal__input:focus) .sticky-cta{transform:translateY(110%)}
 .sticky-cta .btn{width:100%;text-align:center}
 
 /* ============ SOCIAL PROOF — carousels + lightbox ============ */
@@ -1027,6 +1051,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 body[data-cw-page="index2"],
 body[data-cw-page="public-offer"]{
   min-height:100vh;
+  min-height:100dvh;
   background:
     radial-gradient(1200px 640px at 88% -6%, color-mix(in srgb, var(--indigo) 18%, transparent), transparent 58%),
     radial-gradient(860px 520px at -10% 18%, rgba(219,165,79,.08), transparent 52%),
@@ -1163,6 +1188,9 @@ textarea.lead-modal__input{resize:vertical;min-height:3.2rem}
 .lead-form__note{color:var(--text-muted);font-size:.95rem;line-height:1.5;margin-bottom:1.2rem}
 .lead-field{display:block;margin-bottom:.85rem}
 .lead-field label{display:block;font-size:.85rem;font-weight:600;color:var(--ink);margin-bottom:.35rem}
+/* Same reason as the platform's fields: the network bar is fixed to the top
+   edge, so the browser's scroll-into-view has to stop short of it. */
+.lead-input,.lead-modal__input{scroll-margin-block:5.5rem var(--cw-space-lg,1.5rem)}
 .lead-input{width:100%;box-sizing:border-box;padding:.8rem .95rem;font:inherit;font-size:1rem;color:var(--ink);background:var(--surface-cool);border:1px solid var(--line-strong);border-radius:var(--r-sm)}
 .lead-input:focus{outline:2px solid var(--cta);outline-offset:1px;border-color:var(--cta)}
 textarea.lead-input{resize:vertical;min-height:5rem}

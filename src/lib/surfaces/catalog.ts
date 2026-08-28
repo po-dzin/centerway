@@ -47,7 +47,28 @@ export const BUILDER_PATH_PREFIX = "/build";
  */
 export const LEARNING_PATH_PREFIX = "/learn";
 
-export const PERSONAL_PATH_PREFIXES = [LEARNING_PATH_PREFIX, BUILDER_PATH_PREFIX] as const;
+/**
+ * The cabinet's prefix, a real address on the personal host: `my/profile`.
+ *
+ * MOVED HERE 2026-08-27, and the earlier decision is worth stating because it
+ * was deliberate: `/profile` lived on `www` as "the crossing" — the step
+ * between the public platform and the library, on the origin someone arrives
+ * at. What that missed is where the cabinet is actually USED. It is the screen
+ * a learner opens to resume a course, the one the installed app should open at,
+ * and the only page that links to both the library and the Майстерня — all of
+ * which are on `my`. Leaving it on `www` meant the personal app's home page was
+ * on the public origin, one redirect away from everything it points at.
+ *
+ * It keeps its segment, like `/build` and unlike the learner tree: `my/profile`
+ * IS the address, not a container to be stripped.
+ */
+export const PROFILE_PATH_PREFIX = "/profile";
+
+export const PERSONAL_PATH_PREFIXES = [
+  LEARNING_PATH_PREFIX,
+  BUILDER_PATH_PREFIX,
+  PROFILE_PATH_PREFIX,
+] as const;
 
 /** True for a path owned by the personal host, prefix-exact. */
 export function isPersonalPath(path: string): boolean {
@@ -105,7 +126,6 @@ export const PUBLIC_ROOT_SEGMENTS = [
   "pay",
   "platform-vision",
   "products",
-  "profile",
   "programs",
   "tests",
 ] as const;
@@ -122,8 +142,10 @@ export function isPublicRootPath(pathname: string): boolean {
  * the proxy, which is the only place that has to go this direction.
  */
 export function personalRouteFor(pathname: string): string {
-  if (pathname === BUILDER_PATH_PREFIX || pathname.startsWith(`${BUILDER_PATH_PREFIX}/`)) {
-    return pathname;
+  /* The two prefixes that are addresses in their own right. Everything else on
+     this host is a course, so it goes under the learner tree. */
+  for (const prefix of [BUILDER_PATH_PREFIX, PROFILE_PATH_PREFIX]) {
+    if (pathname === prefix || pathname.startsWith(`${prefix}/`)) return pathname;
   }
   return pathname === "/" ? LEARNING_PATH_PREFIX : `${LEARNING_PATH_PREFIX}${pathname}`;
 }

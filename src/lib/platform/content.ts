@@ -1,3 +1,4 @@
+import type { CwIconName } from "@/components/iconNames";
 import { getFunnelHostUrl, getPlatformRoute } from "@/lib/surfaces/catalog";
 
 export const platformHomeHref = "/";
@@ -75,12 +76,37 @@ const rebootFunnelHref = getFunnelHostUrl("reboot") ?? "/reboot";
 export type PlatformOfferSurfaceType = "program" | "mini-course" | "product";
 export type PlatformOfferConversionMode = "lead" | "direct-pay" | "hybrid" | "redirect";
 export type PlatformOfferPrimaryActionKind = "enroll" | "buy";
+/* Two masters, one scene. `mobile` is the phone plate — a flat lay looking
+   straight down at the surface. `desktop` is the same objects, the same ground
+   and the same light restaged as a space: high three-quarter angle, near and
+   far, one window light, and the left half of the frame left empty because
+   that is where the headline sits. It is not a crop of the portrait — a 3:2
+   box cut out of a 9:19 plate keeps about a fifth of the composition, which is
+   what every offer except way21 shipped until 2026-08-27. Offer cards read
+   `desktop` at every width (see PlatformOfferCard); only the standalone offer
+   hero swaps to `mobile`, below 900px portrait. */
 export type PlatformOfferArtwork = {
   desktop: string;
+  /**
+   * The same picture at 960px, for the places that draw it small.
+   *
+   * A program card in the catalogue grid is about 370 CSS pixels wide and was
+   * drawing the full 1600px plate as a background — six of those on the home
+   * page measured at just over a megabyte. Named rather than derived from
+   * `desktop`: a rule like "append -960" is a promise about a file that exists
+   * nowhere in the type system, and it fails as a 404 on a public page. Written
+   * out, it is checked by `npm run guard:assets` like every other path here.
+   *
+   * Optional because not every plate has one: a small original stays one file.
+   * `desktop` is the fallback, which is exactly what happened before.
+   */
+  card?: string;
   mobile?: string;
   altPreview?: string;
   desktopPosition?: string;
   mobilePosition?: string;
+  /** Vertical focus past 16:9 — see the hero framing contract. */
+  widePosition?: string;
 };
 
 export const programs = [
@@ -101,8 +127,10 @@ export const programs = [
     duration: "короткий вхід",
     visual: "movement",
     artwork: {
-      desktop: "/cw/platform/programs/reboot-card-v1.png",
-      desktopPosition: "center 18%",
+      desktop: "/cw/platform/programs/reboot-hero-desktop-v2.webp",
+      card: "/cw/platform/programs/reboot-hero-desktop-v2-960.webp",
+      mobile: "/cw/platform/programs/reboot-card-v1.webp",
+      desktopPosition: "68% 50%",
       mobilePosition: "center 18%",
     },
     description: "Короткий тілесний міні-курс: розігрів, увага, дихання і м'яке повернення енергії.",
@@ -129,12 +157,13 @@ export const programs = [
     href: getPlatformRoute("way21") ?? "/programs/way21",
     funnelHref: way21FunnelHref,
     tag: "Очищення",
-    duration: "21 урок",
+    duration: "21 день",
     visual: "water",
     artwork: {
-      desktop: "/cw/platform/programs/way21-home-desktop-v1.png",
-      mobile: "/cw/platform/programs/way21-home-mobile-v1.png",
-      altPreview: "/cw/platform/programs/way21-home-alt-v1.png",
+      desktop: "/cw/platform/programs/way21-home-desktop-v1.webp",
+      card: "/cw/platform/programs/way21-home-desktop-v1-960.webp",
+      mobile: "/cw/platform/programs/way21-home-mobile-v1.webp",
+      altPreview: "/cw/platform/programs/way21-home-alt-v1.webp",
     },
     description: "21-денна аюрведична програма розвантаження: харчування, трави, режим і щоденні опори без жорсткого тиску.",
     longDescription:
@@ -160,8 +189,10 @@ export const programs = [
     duration: "21 день",
     visual: "stone",
     artwork: {
-      desktop: "/cw/platform/programs/ideal-body-card-v1.png",
-      desktopPosition: "center 16%",
+      desktop: "/cw/platform/programs/ideal-body-hero-desktop-v2.webp",
+      card: "/cw/platform/programs/ideal-body-hero-desktop-v2-960.webp",
+      mobile: "/cw/platform/programs/ideal-body-card-v1.webp",
+      desktopPosition: "70% 50%",
       mobilePosition: "center 16%",
     },
     description: "Навчальна програма з 21 основного уроку про Аюрведу, харчування, добовий ритм і баланс дош.",
@@ -188,8 +219,10 @@ export const programs = [
     duration: "12 тижнів",
     visual: "mountain",
     artwork: {
-      desktop: "/cw/platform/programs/irem-card-v1.png",
-      desktopPosition: "center 16%",
+      desktop: "/cw/platform/programs/irem-hero-desktop-v2.webp",
+      card: "/cw/platform/programs/irem-hero-desktop-v2-960.webp",
+      mobile: "/cw/platform/programs/irem-card-v1.webp",
+      desktopPosition: "68% 50%",
       mobilePosition: "center 18%",
     },
     description: "12-тижнева рухова практика для контакту з тілом, м'якшої мобільності, енергії і зняття побутової напруги.",
@@ -216,7 +249,8 @@ export const programs = [
     duration: "підбір за станом",
     visual: "leaf",
     artwork: {
-      desktop: "/cw/platform/aggregates/products-hero-v1.png",
+      desktop: "/cw/platform/aggregates/products-hero-v1.webp",
+      card: "/cw/platform/aggregates/products-hero-v1-960.webp",
       desktopPosition: "center 24%",
       mobilePosition: "center 22%",
     },
@@ -265,12 +299,14 @@ export const platformProductOffers = programs.filter((program) => program.surfac
 
 export const platformAggregateArtwork = {
   programs: {
-    desktop: "/cw/platform/aggregates/programs-hero-v1.png",
+    desktop: "/cw/platform/aggregates/programs-hero-v1.webp",
+    card: "/cw/platform/aggregates/programs-hero-v1-960.webp",
     desktopPosition: "center 18%",
     mobilePosition: "center 16%",
   },
   products: {
-    desktop: "/cw/platform/aggregates/products-hero-v1.png",
+    desktop: "/cw/platform/aggregates/products-hero-v1.webp",
+      card: "/cw/platform/aggregates/products-hero-v1-960.webp",
     desktopPosition: "center 16%",
     mobilePosition: "center 18%",
   },
@@ -289,12 +325,14 @@ export const platformPageArtwork = {
     mobilePosition: "center 34%",
   },
   consult: {
-    desktop: "/cw/platform/pages/consult-hero-v1.png",
+    desktop: "/cw/platform/pages/consult-hero-v1.webp",
+    card: "/cw/platform/pages/consult-hero-v1-960.webp",
     desktopPosition: "center 18%",
     mobilePosition: "center 16%",
   },
   expert: {
-    desktop: "/cw/platform/pages/expert-hero-v1.png",
+    desktop: "/cw/platform/pages/expert-hero-v1.webp",
+    card: "/cw/platform/pages/expert-hero-v1-960.webp",
     desktopPosition: "center 16%",
     mobilePosition: "center 18%",
   },
@@ -350,12 +388,68 @@ export const platformEntryCards = [
    four hand-written Material-style paths inlined as CSS mask data-URIs — a
    second icon set, in a second hand, on the one block that is meant to read as
    the person behind the platform. */
+/* Six, not four: on the home page's compact card (`support.tsx`,
+   `.factGrid`'s two columns) four facts filled two rows next to a portrait
+   that ran taller — text and photo ended at different heights in the same
+   panel. The last two are shortened from `educationTimeline` below, not
+   invented for the count: 2016 Kerala and the 2017 title are both already on
+   the record at /consult, just condensed to this list's badge length. */
 export const expertFacts = [
   { label: "12 років практики", icon: "clock" as const },
   { label: "Магістр комплементарної медицини та інтегративної психології", icon: "shield-check" as const },
   { label: "Інструктор з йоги та практикуючий йогін", icon: "body" as const },
   { label: "Засновник центру Centerway", icon: "support" as const },
+  { label: "Аюрведична дієтологія — Керала, Індія", icon: "leaf" as const },
+  { label: "Заслужений натуропат Європи", icon: "star" as const },
 ];
+
+/* ── The guides ───────────────────────────────────────
+
+   ONE AUTHOR, WRITTEN AS A LIST, on purpose. The platform is moving to more
+   than one author — `lms_authors` already exists, a course carries an
+   `author_profile_id`, and the builder is edited by whoever owns the course —
+   but the home page still had Євгеній hard-coded into the block's markup: his
+   photo, his sentence and his four facts inline, in a panel shaped for exactly
+   one person. A second author would have needed the block rewritten rather
+   than a row added.
+
+   So the block reads a list. It has one entry today, and the card it renders is
+   built to look finished alone (the rail gives a lone card the panorama shape,
+   the same switch the products block uses) — not like a grid with the other
+   three missing. When these come from `lms_authors`, only the source changes.
+
+   `href` is on the record rather than derived: the founder's profile is
+   `/consult` (see the `/expert` merge, 2026-08-23), and the next author's will
+   be `/expert/<slug>`. A rule that has one exception on day one is not a rule. */
+export type PlatformGuide = {
+  slug: string;
+  name: string;
+  /** What they are, in the line under the name — not a job title, a practice. */
+  role: string;
+  /** One sentence: why this person, for this. */
+  note: string;
+  photo: { src: string; alt: string };
+  href: string;
+  linkLabel: string;
+  facts: { label: string; icon: CwIconName }[];
+};
+
+export const platformGuides = [
+  {
+    slug: "evgeniy-koryakin",
+    name: "Євгеній Корякін",
+    role: "Дослідник і практик аюрведи · засновник CenterWay",
+    note: "Веде програми, консультації і супровід практики — від першої діагностики стану до довгих циклів відновлення.",
+    photo: { src: "/shared/img/author-evgeniy-2026-08.webp", alt: "Євгеній Корякін" },
+    href: "/consult",
+    linkLabel: "Більше про автора",
+    facts: [
+      { label: "12 років практики", icon: "clock" },
+      { label: "Магістр комплементарної медицини та інтегративної психології", icon: "shield-check" },
+      { label: "Інструктор з йоги та практикуючий йогін", icon: "body" },
+    ],
+  },
+] satisfies PlatformGuide[];
 
 export const educationTimeline = [
   "Київський політехнічний інститут, інформатика і обчислювальна техніка.",

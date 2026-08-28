@@ -10,8 +10,10 @@
 import type { ProfileLang } from "../profile/types";
 
 export type CabinetCopy = {
-  continueTitle: string;
-  continueLead: string;
+  /* `continueTitle` and `continueLead` lived here for the resume card's kicker
+     and its one-line lead. Both are gone: the card's own control says
+     «Продовжити», and a caption narrating the button beside it is a label for a
+     reader who has not looked at the card. */
   continueAction: string;
   startAction: string;
   openCourseMap: string;
@@ -20,11 +22,21 @@ export type CabinetCopy = {
 
   learningTitle: string;
   learningLabel: string;
+  /** The stat over the count in the room. Not «Бібліотека» — that is the
+      library ROUTE, and the count standing beside «Доша» is about what this
+      account holds, not about where to go and read it. */
+  coursesLabel: string;
+  /** One sentence under the shelf's title: whose these are, and what a card does. */
+  learningLead: string;
   learningLoadingTitle: string;
   learningLoadingLead: string;
   learningEmptyTitle: string;
   learningEmptyLead: string;
   browsePrograms: string;
+  /** The empty PRODUCTS fold's way out. Not `browsePrograms`: that fold is
+      about products, and offering programmes from it answered a question the
+      reader had not asked. */
+  browseProducts: string;
 
   stepsOf: (done: number, total: number) => string;
   coursesCount: (count: number) => string;
@@ -62,6 +74,9 @@ export type CabinetCopy = {
 
   installTitle: string;
   installLead: string;
+  /** Shown where this origin is the storefront: installing here would add the shop. */
+  installElsewhereLead: string;
+  installElsewhereAction: string;
   installBrowserLead: string;
   installInstalledTitle: string;
   installAction: string;
@@ -86,8 +101,6 @@ function ukPlural(count: number, one: string, few: string, many: string): string
 export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
   if (lang === "en") {
     return {
-      continueTitle: "Continue where you stopped",
-      continueLead: "Your next step is already open.",
       continueAction: "Continue",
       startAction: "Start the course",
       openCourseMap: "Contents",
@@ -96,11 +109,14 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
 
       learningTitle: "My courses",
       learningLabel: "Library",
+      coursesLabel: "Courses",
+      learningLead: "Courses you have access to. Open one and it resumes at the lesson you stopped on.",
       learningLoadingTitle: "Loading your courses…",
       learningLoadingLead: "Restoring access, progress and your next lesson.",
       learningEmptyTitle: "No courses in this profile yet",
       learningEmptyLead: "Once a program is purchased, it opens here — with lessons, progress and the next step.",
       browsePrograms: "Browse programs",
+      browseProducts: "See products",
 
       stepsOf: (done, total) => `${done} of ${total} steps`,
       coursesCount: (count) => (count === 1 ? "1 course" : `${count} courses`),
@@ -137,6 +153,9 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       installTitle: "Add CenterWay to your home screen",
       installLead:
         "It opens as an app — full screen, with its own icon, and your courses stay one tap away.",
+      installElsewhereLead:
+        "The app is added from your shelf, so the icon opens your courses rather than the shop.",
+      installElsewhereAction: "Open the shelf to add it",
       installBrowserLead: "Open your browser menu and choose \"Install app\" or \"Add to Home Screen\".",
       installInstalledTitle: "CenterWay is already added to your home screen.",
       installAction: "Add",
@@ -150,8 +169,6 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
   }
 
   return {
-    continueTitle: "Продовжити з місця зупинки",
-    continueLead: "Наступний урок уже відкритий.",
     continueAction: "Продовжити",
     startAction: "Почати курс",
     openCourseMap: "Зміст",
@@ -160,11 +177,14 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
 
     learningTitle: "Мої курси",
     learningLabel: "Бібліотека",
+    coursesLabel: "Курси",
+    learningLead: "Курси, до яких у вас є доступ. Відкриваються з того уроку, на якому ви зупинились.",
     learningLoadingTitle: "Завантажуємо ваші курси…",
     learningLoadingLead: "Відновлюємо доступ, поступ і ваш наступний урок.",
-    learningEmptyTitle: "У профілі ще немає курсів",
+    learningEmptyTitle: "У кабінеті ще немає курсів",
     learningEmptyLead: "Після придбання програма відкривається тут — з уроками, поступом і наступним уроком.",
     browsePrograms: "Подивитися програми",
+    browseProducts: "Подивитися продукти",
 
     stepsOf: (done, total) => `${done} з ${total} уроків`,
     coursesCount: (count) => `${count} ${ukPlural(count, "курс", "курси", "курсів")}`,
@@ -201,6 +221,9 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     installTitle: "Додати CenterWay на екран телефона",
     installLead:
       "Відкриватиметься як застосунок — на весь екран, з власною іконкою, і шлях лишається за один дотик.",
+    installElsewhereLead:
+      "Застосунок додається з вашої полиці — тоді іконка відкриває ваші курси, а не вітрину.",
+    installElsewhereAction: "Відкрити полицю, щоб додати",
     installBrowserLead: "Відкрийте меню браузера та оберіть «Встановити застосунок» або «На початковий екран».",
     installInstalledTitle: "CenterWay уже додано на ваш екран.",
     installAction: "Додати",
@@ -208,7 +231,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     installIosSteps: ["Натисніть «Поділитися» на панелі Safari.", "Оберіть «На початковий екран»."],
 
     shelfErrorTitle: "Не вдалося завантажити курси",
-    shelfErrorLead: "Решта профілю показана — спробуйте завантажити курси ще раз.",
+    shelfErrorLead: "Решта кабінету показана — спробуйте завантажити курси ще раз.",
     retry: "Спробувати ще раз",
   };
 }

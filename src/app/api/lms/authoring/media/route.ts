@@ -11,27 +11,34 @@
  * the bucket has no write policy at all: nothing reaches it except this route,
  * holding the service role, after the check the rest of the authoring API makes.
  *
- * WHAT IT DOES NOT DO. No resizing, no format conversion, no stripping of EXIF.
- * Each of those is a real image pipeline and a dependency, and none of them is
- * what "I have a photo" needs today. The size ceiling is the crude version of
- * all three, and it is stated to the author rather than applied silently.
+ * WHAT CHANGED ON 2026-08-28. It used to store the bytes it was handed, and the
+ * 5 MB ceiling was the crude stand-in for a resize, a re-encode and an EXIF
+ * strip. It is a pipeline now — see `mediaPipeline.ts` for why that moved here
+ * rather than into the browser. The ceiling moved with it: 20 MB of camera
+ * photograph goes IN, a couple of hundred kilobytes of WebP comes out, and the
+ * author no longer has to know the difference.
+ *
+ * AND IT NOW WRITES A ROW. `lms_media_assets` records what went in — see the
+ * ledger migration for why that record is not the same thing as an inventory,
+ * and why the sweeper deliberately does not read it.
  */
 
 import { randomUUID } from "node:crypto";
 
 import { NextRequest, NextResponse } from "next/server";
 
-import { requireUserFromBearer } from "@/lib/auth/requireUser";
-import { canEditCourse, resolveBuilderIdentity } from "@/lib/lms/builderAccess";
-import { loadBuilderCourse } from "@/lib/lms/builder";
+import { denialResponse, isDenied, resolveCourseAccessForIdentity, resolveIdentityFromRequest } from "@/lib/lms/courseAccess";
+import { MAX_INPUT_BYTES, isPrepareFailure, prepareMedia } from "@/lib/lms/mediaPipeline";
+import { LMS_MEDIA_UPLOAD } from "@/lib/lms/rateRules";
+import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 
 export const runtime = "nodejs";
 
-const BUCKET = "course-media";
+/** Decoding and re-encoding a 20 MP photograph is seconds, not milliseconds. */
+export const maxDuration = 60;
 
-/** 5 MB, the same ceiling the bucket itself carries. */
-const MAX_BYTES = 5 * 1024 * 1024;
+const BUCKET = "course-media";
 
 /**
  * The types that are pictures and nothing else.
@@ -39,18 +46,22 @@ const MAX_BYTES = 5 * 1024 * 1024;
  * SVG is deliberately absent — see the bucket migration. It is a document that
  * can carry script, and while an `<img>` never runs it, a direct visit to the
  * object URL does.
+ *
+ * The values are gone: the stored extension is decided by the pipeline now, not
+ * by what the author's file happened to be.
  */
-const TYPES: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/gif": "gif",
-  "image/avif": "avif",
-};
+const TYPES = new Set(["image/jpeg", "image/png", "image/webp", "image/gif", "image/avif"]);
 
 export async function POST(req: NextRequest) {
-  const user = await requireUserFromBearer(req.headers.get("authorization"));
-  if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+  // Identity first, body second. The slug lives inside the multipart body, so
+  // this route cannot use `withCourseAccess` wholesale — but parsing twenty
+  // megabytes from a caller nobody has identified yet is work done for a
+  // stranger, and the order is the only thing preventing it.
+  const auth = await resolveIdentityFromRequest(req);
+  if (isDenied(auth)) return denialResponse(auth);
+
+  const limit = await enforceRateLimit(req, LMS_MEDIA_UPLOAD, auth.identity.authUserId);
+  if (!limit.allowed) return tooManyRequests(limit.retryAfter);
 
   let form: FormData;
   try {
@@ -69,44 +80,103 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "media_missing_file" }, { status: 400 });
   }
 
-  const extension = TYPES[file.type];
-  if (!extension) {
+  if (!TYPES.has(file.type)) {
     return NextResponse.json({ error: `media_unsupported_type:${file.type || "unknown"}` }, { status: 415 });
   }
-  if (file.size > MAX_BYTES) {
+  // Checked before the body is read into memory as well as inside the pipeline:
+  // there is no reason to hold twenty-five megabytes in a function's heap only
+  // to refuse them.
+  if (file.size > MAX_INPUT_BYTES) {
     return NextResponse.json({ error: `media_too_large:${file.size}` }, { status: 413 });
   }
 
   // The course is resolved BEFORE the bytes go anywhere: an upload that turns
   // out to belong to a course the caller cannot edit would otherwise already be
   // sitting in the bucket by the time anyone said no.
-  const identity = await resolveBuilderIdentity(user);
-  const loaded = await loadBuilderCourse(slug);
-  if (!loaded || !canEditCourse(identity, loaded.authorId)) {
-    return NextResponse.json({ error: "course_not_found" }, { status: 404 });
+  //
+  // Ownership only — the course is NOT rebuilt here. It used to be, and that
+  // made adding an image to a course impossible while any part of that course
+  // failed validation: the picture meant to fill the hole was refused by it.
+  const access = await resolveCourseAccessForIdentity(auth.identity, slug);
+  if (isDenied(access)) return denialResponse(access);
+  const { grant } = access;
+
+  const prepared = await prepareMedia(Buffer.from(await file.arrayBuffer()), file.type);
+  if (isPrepareFailure(prepared)) {
+    const status = prepared.error === "media_not_an_image" ? 415 : 413;
+    return NextResponse.json({ error: prepared.error }, { status });
   }
 
-  // Foldered by course so a deleted course's images can be found and swept, and
-  // named by uuid rather than by the original filename: two authors uploading
-  // `cover.jpg` must not be one upload, and a filename is attacker-shaped input
-  // that would otherwise become a path.
-  const path = `courses/${loaded.course.id}/${randomUUID()}.${extension}`;
+  // A FOLDER PER IMAGE, not a file per image. Foldered by course so a deleted
+  // course's images can be found and swept; foldered again by uuid because one
+  // upload is now several objects, and their relationship has to survive being
+  // read back from nothing but a URL — which is exactly what `mediaSources`
+  // does on the rendering side. Named by uuid rather than by the original
+  // filename: two authors uploading `cover.jpg` must not be one upload, and a
+  // filename is attacker-shaped input that would otherwise become a path.
+  const assetId = randomUUID();
+  const folder = `courses/${grant.courseId}/${assetId}`;
 
-  const storage = supabaseAdmin().storage.from(BUCKET);
-  const { error } = await storage.upload(path, await file.arrayBuffer(), {
-    contentType: file.type,
-    // Every path is unique, so an upsert could only ever mean a collision on a
-    // uuid — which is a bug worth hearing about rather than overwriting.
-    upsert: false,
-    // A year: the path is content-addressed by uuid, so the bytes at it never
-    // change. Replacing an image writes a new path.
-    cacheControl: "31536000",
+  const admin = supabaseAdmin();
+  const storage = admin.storage.from(BUCKET);
+  const stored: string[] = [];
+
+  for (const rendition of prepared.renditions) {
+    const path = `${folder}/${rendition.name}`;
+    const { error } = await storage.upload(path, rendition.bytes, {
+      contentType: rendition.contentType,
+      // Every path is unique, so an upsert could only ever mean a collision on a
+      // uuid — which is a bug worth hearing about rather than overwriting.
+      upsert: false,
+      // A year: the path is content-addressed by uuid, so the bytes at it never
+      // change. Replacing an image writes a new folder.
+      cacheControl: "31536000",
+    });
+
+    if (error) {
+      // Half an upload is worse than none: the survivors would be bytes nothing
+      // references, and the sweeper would not reach them for a week.
+      if (stored.length > 0) await storage.remove(stored);
+      return NextResponse.json({ error: `media_upload_failed:${error.message}` }, { status: 502 });
+    }
+    stored.push(path);
+  }
+
+  const canonical = `${folder}/${prepared.renditions[0].name}`;
+
+  // THE LEDGER IS WRITTEN BEFORE THE AUTHOR IS TOLD IT WORKED, and failing to
+  // write it un-does the upload. The alternative — keep the bytes, lose the
+  // row — is bytes that count against nobody's quota and that no usage report
+  // can explain. Those are precisely what the table exists to prevent, so half
+  // a success is treated as a failure.
+  const ledger = await admin.from("lms_media_assets").insert({
+    id: assetId,
+    course_id: grant.courseId,
+    asset_key: folder,
+    canonical_path: canonical,
+    paths: stored,
+    bytes: prepared.renditions.reduce((sum, rendition) => sum + rendition.bytes.byteLength, 0),
+    content_type: prepared.renditions[0].contentType,
+    width: prepared.width,
+    height: prepared.height,
+    uploaded_by: grant.identity.authUserId,
   });
 
-  if (error) {
-    return NextResponse.json({ error: `media_upload_failed:${error.message}` }, { status: 502 });
+  if (ledger.error) {
+    await storage.remove(stored);
+    return NextResponse.json({ error: `media_ledger_failed:${ledger.error.message}` }, { status: 502 });
   }
 
-  const { data } = storage.getPublicUrl(path);
-  return NextResponse.json({ src: data.publicUrl, path });
+  const { data } = storage.getPublicUrl(canonical);
+
+  return NextResponse.json({
+    src: data.publicUrl,
+    path: canonical,
+    // Reported so the field can tell the author what it did with their file
+    // rather than silently handing back a different image than they picked.
+    width: prepared.width,
+    height: prepared.height,
+    bytes: prepared.renditions[0].bytes.byteLength,
+    sourceBytes: file.size,
+  });
 }

@@ -13,22 +13,28 @@
 import { useState, type ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
+import { plural } from "@/lib/plural";
 import {
-  COURSE_TEMPLATES,
+  COURSE_CATEGORIES,
+  COURSE_DURATION_DAYS_MAX,
   COURSE_HEADING_FONTS,
+  COURSE_KINDS,
   COURSE_PALETTES,
+  COURSE_POSTTITLE_MAX,
+  COURSE_PRETITLE_MAX,
   COURSE_TYPE_SCALES,
   DEFAULT_COURSE_THEME,
   type Course,
+  type CourseCategory,
   type CourseHeadingFont,
+  type CourseKind,
   type CourseScheduleGate,
   type CourseScheduleMode,
   type CourseTypeScale,
   type CourseVisibility,
-  type CourseTemplateId,
 } from "@/lms-core";
 import { BuilderCoverEditor } from "./BuilderCoverEditor";
-import { ChoiceRow, FieldInput } from "./BuilderFields";
+import { ChoiceRow, ChoiceSet, FieldInput } from "./BuilderFields";
 import { PALETTE_LABELS } from "./coursePalettes";
 import styles from "./Builder.module.css";
 
@@ -58,6 +64,26 @@ const MODE_HINTS: Record<CourseScheduleMode, string> = {
 const GATE_LABELS: Record<CourseScheduleGate, string> = {
   soft: "День — підказка",
   hard: "День — замок",
+};
+
+/**
+ * WHAT KIND OF THING THIS IS. Called «Формат» to the author, because that is
+ * the word they use — and note that `course.format` already exists meaning
+ * something else entirely (the MEDIUM: «6 відео + чек-лист»). That older field
+ * is relabelled «З чого складається» on the page tab so the two never sit on
+ * one screen both called «Формат»; one author putting «чекліст» into the wrong
+ * one is a bug nobody would find, because both values look plausible.
+ */
+const KIND_LABELS: Record<CourseKind, string> = {
+  course: "Курс",
+  mini: "Міні-курс",
+  checklist: "Чек-лист",
+};
+
+const CATEGORY_LABELS: Record<CourseCategory, string> = {
+  movement: "Рух",
+  nutrition: "Харчування",
+  cleansing: "Очищення",
 };
 
 const VISIBILITY_LABELS: Record<CourseVisibility, string> = {
@@ -148,7 +174,22 @@ function StringListField({
   );
 }
 
-type SettingsSectionId = "storefront" | "rhythm" | "appearance" | "cover";
+type SettingsSectionId = "cover" | "titles" | "badge" | "rhythm" | "appearance" | "storefront";
+
+/**
+ * Which tab a settings block belongs to.
+ *
+ * TWO TABS, TWO QUESTIONS. «Обкладинка» is the CARD — everything a stranger
+ * scrolling a catalogue sees before they have decided to care: the picture, the
+ * three lines around the title, the badge. «Сторінка» is the OFFER — everything
+ * they read after they clicked, when they are deciding whether to buy.
+ *
+ * Splitting them is not tidying. They are filled at different times by
+ * different intents, and they fail differently: a bad card is never clicked, a
+ * bad page is clicked and abandoned. One long form made the second half of the
+ * work look optional because it was below the fold of the first.
+ */
+export type SettingsScope = "cover" | "page";
 
 /**
  * A setting reads as part of the course until the author explicitly reaches
@@ -196,26 +237,34 @@ function SettingsSection({
 
 export function BuilderCourseSettings({
   course,
+  scope,
   onChange,
-  onApplyTemplate,
 }: {
   course: Course;
+  scope: SettingsScope;
   onChange: (path: (string | number)[], value: unknown) => void;
-  onApplyTemplate: (template: CourseTemplateId) => void;
 }) {
-  const [pendingTemplate, setPendingTemplate] = useState<CourseTemplateId | null>(null);
-  const [selectedTemplate, setSelectedTemplate] = useState<CourseTemplateId>(COURSE_TEMPLATES[0]?.id ?? "blank");
   const [editing, setEditing] = useState<SettingsSectionId | null>(null);
   const theme = { ...DEFAULT_COURSE_THEME, ...(course.theme ?? {}) };
   const gate = course.schedule.gate ?? "soft";
   const visibility = course.visibility ?? "hidden";
+  const categories = course.categories ?? [];
+  // Every lesson, reference material included — the same count the catalogue
+  // card prints. `countLessons` answers a different question (steps a learner
+  // walks) and would quietly disagree with the shelf.
+  const lessonCount = course.modules.reduce((total, module) => total + module.lessons.length, 0);
 
-  return (
-    <div className={styles.settingsForm}>
-      {/* Name, summary and address live in the course heading, where they are
-          read. Repeating the address here made the automatic/locked state look
-          like a second setting rather than one route boundary. */}
+  /* THE STAR MEANS THE GATE, and this is where the two are tied together.
+     `courseReadiness` refuses to publish a VISIBLE course without these; a
+     hidden one it lets through, because a course nobody can find owes a
+     stranger nothing. So the star follows visibility rather than being painted
+     on for good — an author working on a hidden draft is not nagged about a
+     catalogue they have not entered yet. */
+  const showcase = visibility !== "hidden" ? (true as const) : undefined;
 
+  if (scope === "page") {
+    return (
+      <div className={styles.settingsForm}>
       {/* THE AUTHOR'S HALF OF THE STOREFRONT. What the course claims about
           itself is content, and content is the author's. The PRICE is not here
           and will not be: it is a commitment the business makes to a buyer, and
@@ -224,23 +273,20 @@ export function BuilderCourseSettings({
           precisely so the boundary is structural. */}
       <SettingsSection
         id="storefront"
-        title="Вітрина"
+        title="Сторінка програми"
         editing={editing === "storefront"}
         onEdit={setEditing}
         summary={
           <>
-            <strong>{course.tagline || "Рядок під назвою не додано"}</strong>
+            <strong>{VISIBILITY_LABELS[visibility]}</strong>
             {/* Counts rather than contents: the fold has to say whether the offer
                 page has anything to print without reprinting it. */}
             <span>
               {[
-                VISIBILITY_LABELS[visibility],
-                course.duration,
                 `${course.results?.length ?? 0} результатів`,
                 `${course.audience?.length ?? 0} для кого`,
-              ]
-                .filter(Boolean)
-                .join(" · ")}
+                `${course.format?.length ?? 0} у складі`,
+              ].join(" · ")}
             </span>
           </>
         }
@@ -248,11 +294,6 @@ export function BuilderCourseSettings({
         <p className={styles.readOnlyNote}>
           Видимість: <strong>{VISIBILITY_LABELS[visibility]}</strong>. {VISIBILITY_HINTS[visibility]} Автор готує матеріал і сторінку; видимість змінює адміністратор.
         </p>
-        <FieldInput
-          field={{ path: ["tagline"], label: "Рядок під назвою", kind: "text", hint: "Коротко: навіщо цей курс людині." }}
-          value={course.tagline}
-          onChange={onChange}
-        />
         <StringListField
           path="results"
           label="Що людина отримає"
@@ -269,22 +310,19 @@ export function BuilderCourseSettings({
           items={course.audience ?? []}
           onChange={onChange}
         />
+        {/* RENAMED, NOT MOVED. The key is still `format` and the data is
+            untouched; the LABEL changed because «Формат» now names the closed
+            list on the cover tab (курс / міні-курс / чек-лист). Two controls
+            called «Формат» on one product is how an author puts «чекліст» into
+            the wrong one — and both values look right afterwards, so nobody
+            finds it. This one always meant the MEDIUM, and its own hint already
+            read that way. */}
         <StringListField
           path="format"
-          label="Формат та інструменти"
-          itemLabel="Формат"
-          hint="З чого курс складається: відео, аудіо, чек-листи, рецепти. Не структура — саме носій."
+          label="З чого складається"
+          itemLabel="Складова"
+          hint="Носій, не структура: відео, аудіо, чек-листи, рецепти. Рід курсу — на вкладці «Обкладинка»."
           items={course.format ?? []}
-          onChange={onChange}
-        />
-        {/* WHY DURATION IS TYPED AND NOT COUNTED. The offer page derives «12
-            уроків» from the structure, which is true and answers a question
-            nobody asked. A course whose lessons are meant to be walked over
-            three days says «3 дні», and no lesson count can know that. Left
-            empty, the derived count stays — this field only overrides it. */}
-        <FieldInput
-          field={{ path: ["duration"], label: "Тривалість", kind: "text", hint: "Словами автора: «3 дні», «21 день». Порожньо — рахуємо уроки." }}
-          value={course.duration}
           onChange={onChange}
         />
         {/* Prose, not policy. What actually cuts access off is the expiry on the
@@ -303,36 +341,190 @@ export function BuilderCourseSettings({
         />
       </SettingsSection>
 
+      <details className={styles.courseSettingsAdvanced}>
+        {/* THE GLYPH IS FROM THE SPRITE, like every other icon in this shell.
+            It used to be a typed "+" and "−" in CSS `content` — the plus of the
+            UI font at 1.1rem beside a set of baked hand-drawn icons, which is
+            the one mark on this screen that came from somewhere else. The
+            chevron also says the true thing: this opens, it does not add. */}
+        <summary>
+          Додатково
+          <Icon className={styles.courseSettingsAdvancedGlyph} name="chevron-down" size={18} />
+        </summary>
+        {/* NO «Стартова структура» HERE ANY MORE. It moved to «Зміст», beside
+            the modules and lessons it writes — see `BuilderStructureStart`. It
+            was the one control able to rewrite the whole structure, and it sat
+            on a different tab, folded away from everything it acts on. */}
+        <div className={styles.courseSettingsAdvancedBody}>
+          <FieldInput
+            field={{ path: [], label: "Коди продуктів, що відкривають курс", kind: "text", hint: "Технічне поле. Коди вказуються через кому." }}
+            value={course.entitlementProductCodes.join(", ")}
+            onChange={(_path, value) => onChange(["entitlementProductCodes"], typeof value === "string" ? value.split(",").map((code) => code.trim()).filter(Boolean) : [])}
+          />
+        </div>
+      </details>
+      </div>
+    );
+  }
+
+  /* ─────────────────────────────────────────────────────────────────────────
+     THE COVER TAB — everything a catalogue card is made of.
+
+     Name, short description and address are NOT here: they are edited in the
+     page heading a few rows above this panel, where they are also READ. Moving
+     them into a fold would have made the course's own title a setting. */
+  return (
+    <div className={styles.settingsForm}>
       <SettingsSection
-        id="rhythm"
-        title="Ритм"
-        editing={editing === "rhythm"}
+        id="cover"
+        title="Обкладинка"
+        editing={editing === "cover"}
         onEdit={setEditing}
-        summary={<><strong>{MODE_LABELS[course.schedule.mode]}</strong><span>{MODE_HINTS[course.schedule.mode]}</span></>}
+        summary={
+          course.cover?.src
+            ? <><strong>{course.cover.alt || "Опис зображення не додано"}</strong><span>Горизонтальний кадр · mobile автокроп</span></>
+            : <span>Зображення ще не додано</span>
+        }
       >
-        <ChoiceRow
-          label="Розклад"
-          hint={MODE_HINTS[course.schedule.mode]}
-          options={(Object.keys(MODE_LABELS) as CourseScheduleMode[]).map((mode) => ({ value: mode, label: MODE_LABELS[mode] }))}
-          value={course.schedule.mode}
-          onChange={(next) => onChange(["schedule", "mode"], next)}
+        <BuilderCoverEditor course={course} onChange={onChange} />
+        {/* ALT IS REQUIRED WHENEVER THE IMAGE IS. `validateCourse` refuses a
+            cover with no alt outright — not at publish, at SAVE — so this star
+            is not the showcase gate and does not follow visibility like the
+            others. A picture on a page a stranger reaches with nothing for a
+            screen reader to say is an accessibility failure, and this repo
+            gates on those. */}
+        <FieldInput
+          field={{
+            path: ["cover", "alt"],
+            label: "Опис зображення",
+            kind: "text",
+            multiline: true,
+            required: course.cover?.src ? true : undefined,
+            hint: "Що на фото — одним реченням, для тих, хто його не бачить. Без «зображення» на початку.",
+          }}
+          value={course.cover?.alt}
+          onChange={onChange}
         />
-        {course.schedule.mode === "daily" ? (
+      </SettingsSection>
+
+      <SettingsSection
+        id="titles"
+        title="Заголовок"
+        editing={editing === "titles"}
+        onEdit={setEditing}
+        summary={
           <>
-            <ChoiceRow
-              label="Доступ до наступного дня"
-              hint={gate === "soft" ? "Наступний урок доступний раніше свого дня." : "Урок закритий до свого дня."}
-              options={(Object.keys(GATE_LABELS) as CourseScheduleGate[]).map((value) => ({ value, label: GATE_LABELS[value] }))}
-              value={gate}
-              onChange={(next) => onChange(["schedule", "gate"], next)}
-            />
-            <FieldInput
-              field={{ path: ["schedule", "reminderHour"], label: "Година нагадування", kind: "number", hint: "0–23 у часовому поясі учня." }}
-              value={course.schedule.reminderHour}
-              onChange={onChange}
-            />
+            <strong>{course.tagline || "Рядок під назвою не додано"}</strong>
+            <span>
+              {[course.pretitle, course.posttitle].filter(Boolean).join(" · ") ||
+                "Надзаголовок і підзаголовок не додані"}
+            </span>
           </>
-        ) : null}
+        }
+      >
+        {/* THREE LINES AROUND ONE NAME, and the name itself is not among them:
+            it is edited at the top of this page, where it is displayed. Putting
+            a second title field here would have given the course two names and
+            no rule about which one wins. */}
+        <FieldInput
+          field={{
+            path: ["pretitle"],
+            label: "Надзаголовок",
+            kind: "text",
+            maxLength: COURSE_PRETITLE_MAX,
+            hint: `Маленький рядок НАД назвою: «Авторський курс», «Спільно з IREM». До ${COURSE_PRETITLE_MAX} символів. Рід і тривалість тут не потрібні — їх друкує бейдж.`,
+          }}
+          value={course.pretitle}
+          onChange={onChange}
+        />
+        <FieldInput
+          field={{
+            path: ["posttitle"],
+            label: "Підзаголовок",
+            kind: "text",
+            maxLength: COURSE_POSTTITLE_MAX,
+            hint: `Рядок ПІД назвою — що це за річ: «практикум з умовного голодування». До ${COURSE_POSTTITLE_MAX} символів.`,
+          }}
+          value={course.posttitle}
+          onChange={onChange}
+        />
+        <FieldInput
+          field={{
+            path: ["tagline"],
+            label: "Рядок під назвою",
+            kind: "text",
+            required: showcase,
+            hint: "Навіщо цей курс людині — одне речення. Це те, що читають на картці замість опису.",
+          }}
+          value={course.tagline}
+          onChange={onChange}
+        />
+      </SettingsSection>
+
+      <SettingsSection
+        id="badge"
+        title="Бейдж"
+        editing={editing === "badge"}
+        onEdit={setEditing}
+        summary={
+          <>
+            <strong>{course.kind ? KIND_LABELS[course.kind] : "Рід не вказано"}</strong>
+            <span>
+              {[
+                course.durationDays !== undefined
+                  ? `${course.durationDays} ${plural(course.durationDays, "день", "дні", "днів")}`
+                  : null,
+                `${lessonCount} ${plural(lessonCount, "урок", "уроки", "уроків")}`,
+                categories.length > 0
+                  ? categories.map((one) => CATEGORY_LABELS[one]).join(", ")
+                  : "розділ не вказано",
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </span>
+          </>
+        }
+      >
+        {/* THE COUNT IS NOT A FIELD. It is read off the structure, it is always
+            true, and an author who could type it would be able to make it
+            false. It is shown here because it is part of the badge they are
+            editing — as a fact, in the place the other two facts are set. */}
+        <p className={styles.readOnlyNote}>
+          Уроків: <strong>{lessonCount}</strong>. Рахується зі змісту курсу — окремого поля немає.
+        </p>
+        <ChoiceRow
+          label="Формат"
+          clearable
+          hint="Що це за річ. Стоїть у лівому верхньому куті картки. Не вказано — каталог рахує уроки й вирішує сам."
+          options={COURSE_KINDS.map((value) => ({ value, label: KIND_LABELS[value] }))}
+          value={course.kind}
+          onChange={(next) => onChange(["kind"], next)}
+        />
+        <ChoiceSet
+          label="Розділ"
+          required={showcase}
+          hint="Про що курс. Можна кілька. Закритий список — за ним каталог фільтрує полицю."
+          options={COURSE_CATEGORIES.map((value) => ({ value, label: CATEGORY_LABELS[value] }))}
+          values={categories}
+          onChange={(next) => onChange(["categories"], next)}
+        />
+        {/* A NUMBER, NOT «3 дні». The badge writes the word, in the locale it is
+            being read in; the author writes the number once. This is the field
+            that used to be prose, and the prose could not be compared, filtered
+            or translated. */}
+        <FieldInput
+          field={{
+            path: ["durationDays"],
+            label: "Тривалість, днів",
+            kind: "number",
+            required: showcase,
+            min: 1,
+            max: COURSE_DURATION_DAYS_MAX,
+            hint: "Скільки днів курс займає в людини. Число — «дні/днів» допише сама вітрина. Порожньо — покажемо кількість уроків.",
+          }}
+          value={course.durationDays}
+          onChange={onChange}
+        />
       </SettingsSection>
 
       <SettingsSection
@@ -346,72 +538,53 @@ export function BuilderCourseSettings({
           label="Гама"
           options={COURSE_PALETTES.map((palette) => ({ value: palette, label: PALETTE_LABELS[palette], swatch: palette === "default" ? undefined : palette }))}
           value={theme.palette}
-          onChange={(next) => onChange(["theme", "palette"], next)}
+          onChange={(next) => next && onChange(["theme", "palette"], next)}
         />
         <ChoiceRow
           label="Заголовки"
           options={COURSE_HEADING_FONTS.map((font) => ({ value: font, label: FONT_LABELS[font] }))}
           value={theme.headingFont}
-          onChange={(next) => onChange(["theme", "headingFont"], next)}
+          onChange={(next) => next && onChange(["theme", "headingFont"], next)}
         />
         <ChoiceRow
           label="Щільність"
           options={COURSE_TYPE_SCALES.map((scale) => ({ value: scale, label: SCALE_LABELS[scale] }))}
           value={theme.scale}
-          onChange={(next) => onChange(["theme", "scale"], next)}
+          onChange={(next) => next && onChange(["theme", "scale"], next)}
         />
       </SettingsSection>
 
       <SettingsSection
-        id="cover"
-        title="Обкладинка"
-        editing={editing === "cover"}
+        id="rhythm"
+        title="Ритм"
+        editing={editing === "rhythm"}
         onEdit={setEditing}
-        summary={course.cover?.src ? <><strong>{course.cover.alt || "Обкладинку додано"}</strong><span>Горизонтальний кадр · mobile автокроп</span></> : <span>Зображення ще не додано</span>}
+        summary={<><strong>{MODE_LABELS[course.schedule.mode]}</strong><span>{MODE_HINTS[course.schedule.mode]}</span></>}
       >
-        <BuilderCoverEditor course={course} onChange={onChange} />
-        <FieldInput
-          field={{ path: ["cover", "alt"], label: "Опис зображення", kind: "text", multiline: true }}
-          value={course.cover?.alt}
-          onChange={onChange}
+        <ChoiceRow
+          label="Розклад"
+          hint={MODE_HINTS[course.schedule.mode]}
+          options={(Object.keys(MODE_LABELS) as CourseScheduleMode[]).map((mode) => ({ value: mode, label: MODE_LABELS[mode] }))}
+          value={course.schedule.mode}
+          onChange={(next) => next && onChange(["schedule", "mode"], next)}
         />
+        {course.schedule.mode === "daily" ? (
+          <>
+            <ChoiceRow
+              label="Доступ до наступного дня"
+              hint={gate === "soft" ? "Наступний урок доступний раніше свого дня." : "Урок закритий до свого дня."}
+              options={(Object.keys(GATE_LABELS) as CourseScheduleGate[]).map((value) => ({ value, label: GATE_LABELS[value] }))}
+              value={gate}
+              onChange={(next) => next && onChange(["schedule", "gate"], next)}
+            />
+            <FieldInput
+              field={{ path: ["schedule", "reminderHour"], label: "Година нагадування", kind: "number", min: 0, max: 23, hint: "0–23 у часовому поясі учня." }}
+              value={course.schedule.reminderHour}
+              onChange={onChange}
+            />
+          </>
+        ) : null}
       </SettingsSection>
-
-      <details className={styles.courseSettingsAdvanced}>
-        <summary>Додатково</summary>
-        <div className={styles.courseSettingsAdvancedBody}>
-          <div className={styles.field}>
-            <span className={styles.fieldLabel}>Стартова структура</span>
-            <div className={styles.choiceRow} role="group" aria-label="Стартова структура">
-              {COURSE_TEMPLATES.map((option) => (
-                <button
-                  key={option.id}
-                  className={styles.choiceOption}
-                  type="button"
-                  aria-pressed={selectedTemplate === option.id}
-                  onClick={() => setSelectedTemplate(option.id)}
-                >
-                  {option.title}
-                </button>
-              ))}
-            </div>
-            <span className={styles.fieldHint}>Замінює модулі й уроки. Назва, обкладинка та доступ залишаться.</span>
-            <button className={styles.courseSettingsTextAction} type="button" onClick={() => setPendingTemplate(selectedTemplate)}>Замінити структуру…</button>
-          </div>
-          {pendingTemplate ? (
-            <div className={styles.confirmRow}>
-              <span className={styles.confirmText}>Замінити поточну структуру? Дію можна скасувати через «Назад».</span>
-              <button className={styles.courseSettingsTextAction} type="button" onClick={() => setPendingTemplate(null)}>Ні</button>
-              <button className={styles.courseSettingsTextAction} type="button" onClick={() => { onApplyTemplate(pendingTemplate); setPendingTemplate(null); }}>Застосувати</button>
-            </div>
-          ) : null}
-          <FieldInput
-            field={{ path: [], label: "Коди продуктів, що відкривають курс", kind: "text", hint: "Технічне поле. Коди вказуються через кому." }}
-            value={course.entitlementProductCodes.join(", ")}
-            onChange={(_path, value) => onChange(["entitlementProductCodes"], typeof value === "string" ? value.split(",").map((code) => code.trim()).filter(Boolean) : [])}
-          />
-        </div>
-      </details>
     </div>
   );
 }

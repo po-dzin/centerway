@@ -16,24 +16,37 @@
  */
 
 import type { OfferSurface } from "@/components/platform/ProgramDetailPage";
+import { plural } from "@/lib/plural";
 import { offerName, offerSubtitle } from "@/lib/platform/offerPreview";
-import { inlineToPlainText, type Course } from "@/lms-core";
+import { inlineToPlainText, type Course, type CourseKind } from "@/lms-core";
 
-function plural(count: number, one: string, few: string, many: string): string {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  if (mod10 === 1 && mod100 !== 11) return one;
-  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) return few;
-  return many;
-}
+/**
+ * What each kind is CALLED on a card, and what shape of offer page it gets.
+ *
+ * Two different questions with one answer each, kept in one table so they
+ * cannot drift: the badge is what a buyer reads, `surface` is which of the two
+ * offer-page layouts the template picks. A checklist is a short thing to buy
+ * and reads best in the short layout, so it shares `mini-course` there while
+ * keeping its own word on the card.
+ */
+const KIND: Record<CourseKind, { badge: string; surface: "mini-course" | "program" }> = {
+  course: { badge: "Курс", surface: "program" },
+  mini: { badge: "Міні-курс", surface: "mini-course" },
+  checklist: { badge: "Чек-лист", surface: "mini-course" },
+};
 
 export function toOfferSurface(course: Course): OfferSurface {
   const lessons = course.modules.reduce((total, module) => total + module.lessons.length, 0);
   const summary = course.summary ? inlineToPlainText(course.summary) : "";
-  // The same threshold the catalogue's two rails use. A course is a "mini" one
-  // by how much of someone's life it asks for, and lesson count is the only
-  // honest proxy the data actually carries.
-  const isMini = lessons <= 8;
+  /* THE AUTHOR'S ANSWER FIRST, the guess only when they have not given one.
+     `lessons <= 8` was the whole definition of "is this a small thing" until
+     `kind` existed, and it is a guess dressed as a fact — a twelve-item
+     checklist and a six-lesson course are the same number to a counter and
+     different products to a buyer. It stays as the fallback rather than being
+     deleted: every course written before the field existed still has to render,
+     and it rendered from this. */
+  const kind = course.kind ? KIND[course.kind] : null;
+  const isMini = kind ? kind.surface === "mini-course" : lessons <= 8;
 
   return {
     slug: course.slug,
@@ -51,10 +64,12 @@ export function toOfferSurface(course: Course): OfferSurface {
        rule exists to remove. */
     title: offerName(course.title),
     fullTitle: offerName(course.title),
-    /* Where the tail went. Cutting the title at the dash removed a claim the
-       author wrote on purpose, so the page prints it — once, as a subtitle,
-       instead of as half of an unreadable h1. */
-    ...(offerSubtitle(course.title) ? { subtitle: offerSubtitle(course.title) } : {}),
+    /* Where the tail went, and the field that replaced the guess. The dash-split
+       of the title is what this had to infer before `posttitle` existed; the
+       author's own line wins, and the parse stays for courses written that way. */
+    ...(course.posttitle || offerSubtitle(course.title)
+      ? { subtitle: course.posttitle ?? offerSubtitle(course.title) }
+      : {}),
     /* THE CATEGORY, never the tagline. This used to read `course.tagline ??
        category`, which conflated two fields with different jobs: `tag` answers
        "what kind of thing is this" and is set in a small uppercase pill beside
@@ -62,16 +77,18 @@ export function toOfferSurface(course: Course): OfferSurface {
        Reset Day's — «Вийти з кола «стрес → їжа → провина» за три дні» — came
        out as a paragraph in capitals across the top of the hero. The tagline is
        not lost: it leads, below. */
-    tag: isMini ? "Міні-курс" : "Програма",
-    /* THE AUTHOR'S WORD WINS. The derived count is true and answers a question
-       nobody asked: reset-day is six lessons meant to be walked over three
-       days, and «6 уроків» is not what its buyer needs to read. The count stays
-       as the fallback for a course whose author has not said. */
+    tag: kind ? kind.badge : isMini ? "Міні-курс" : "Програма",
+    /* THE GRAMMAR LIVES HERE, not in the author's field. `durationDays` is the
+       number 3; «3 дні» is one locale's way of saying it, and the day this page
+       is read in English the number is still 3. That is the whole reason the
+       field stopped being prose. The count stays as the fallback for a course
+       whose author has not said how long it takes. */
     duration:
-      course.duration ??
-      (course.schedule.mode === "daily"
-        ? `${lessons} ${plural(lessons, "день", "дні", "днів")}`
-        : `${lessons} ${plural(lessons, "урок", "уроки", "уроків")}`),
+      course.durationDays !== undefined
+        ? `${course.durationDays} ${plural(course.durationDays, "день", "дні", "днів")}`
+        : course.schedule.mode === "daily"
+          ? `${lessons} ${plural(lessons, "день", "дні", "днів")}`
+          : `${lessons} ${plural(lessons, "урок", "уроки", "уроків")}`,
     /* The hook leads, the description explains. `summary` says what the course
        IS, which is the right answer to a question somebody has already decided
        to ask; the tagline says why they would ask it. The hero gets the hook
@@ -80,7 +97,7 @@ export function toOfferSurface(course: Course): OfferSurface {
     description: course.tagline ?? summary,
     longDescription: summary,
     results: course.results ?? [],
-    surfaceType: isMini ? "mini-course" : "program",
+    surfaceType: kind ? kind.surface : isMini ? "mini-course" : "program",
     ...(course.audience ? { audience: course.audience } : {}),
     ...(course.format ? { format: course.format } : {}),
     ...(course.accessNote ? { accessNote: course.accessNote } : {}),
@@ -92,6 +109,9 @@ export function toOfferSurface(course: Course): OfferSurface {
             ...(course.cover.mobileSrc ? { mobile: course.cover.mobileSrc } : {}),
             desktopPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%`,
             mobilePosition: `${course.cover.mobileCropX ?? course.cover.cropX ?? 50}% ${course.cover.mobileCropY ?? course.cover.cropY ?? 50}%`,
+            ...(course.cover.wideCropY !== undefined
+              ? { widePosition: `${course.cover.cropX ?? 50}% ${course.cover.wideCropY}%` }
+              : {}),
           },
         }
       : {}),

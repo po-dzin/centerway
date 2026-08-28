@@ -40,6 +40,56 @@ export type CourseRows = {
   lessons: Record<string, unknown>[];
 };
 
+/**
+ * Course-row columns a payload is allowed to leave out, paired with the field
+ * that carries them.
+ *
+ * In the builder, clearing a field DELETES the key (see `writePath`), so an
+ * absent `tagline` genuinely means "the author removed it". In a snapshot, an
+ * import, or a client that predates a column, the same absence means "this
+ * payload never knew about it" — and writing null then destroys work nobody
+ * asked to destroy. That is not hypothetical: on 2026-08-26 a builder publish
+ * carrying a pre-columns course object blanked the whole Reset Day offer
+ * surface, and `lms:seed` from the shipped snapshot would have done it again.
+ *
+ * One shape of absence, two meanings — so the caller has to say which it means.
+ */
+const OPTIONAL_COURSE_COLUMNS: ReadonlyArray<readonly [column: string, field: string]> = [
+  ["summary", "summary"],
+  ["theme", "theme"],
+  ["cover", "cover"],
+  ["sort_order", "sortOrder"],
+  ["pretitle", "pretitle"],
+  ["posttitle", "posttitle"],
+  ["tagline", "tagline"],
+  ["kind", "kind"],
+  ["categories", "categories"],
+  ["results", "results"],
+  ["visibility", "visibility"],
+  ["audience", "audience"],
+  ["format", "format"],
+  ["duration_days", "durationDays"],
+  ["access_note", "accessNote"],
+  ["author_note", "authorNote"],
+];
+
+export type WriteCourseOptions = {
+  /**
+   * Whether this payload speaks for the optional columns above.
+   *
+   * `"authoritative"` — the author was looking at these fields when they saved,
+   * so an absent one means "cleared" and is written as null.
+   * `"preserve"` (default) — the payload may simply not carry them, so absent
+   * columns are left out of the write entirely and the stored value stands.
+   *
+   * The default is the safe one on purpose: a caller that forgets to think
+   * about this cannot silently erase a storefront. The cost of guessing wrong
+   * in that direction is a field that needs clearing twice; in the other
+   * direction it is content gone with no record that it was ever there.
+   */
+  optionalColumns?: "authoritative" | "preserve";
+};
+
 export function courseRows(course: Course): CourseRows {
   return {
     course: {
@@ -62,14 +112,21 @@ export function courseRows(course: Course): CourseRows {
       // PRICE is not here and never will be — it lives in `lms_course_offers`,
       // which the authoring routes have no grant on. See the 2026-08-22
       // migration for why that is a different table rather than a policy.
+      pretitle: course.pretitle ?? null,
+      posttitle: course.posttitle ?? null,
       tagline: course.tagline ?? null,
+      // The card's badge, from closed lists. Both nullable: absent means the
+      // catalogue falls back to counting lessons, which is what it did before
+      // these columns existed.
+      kind: course.kind ?? null,
+      categories: course.categories ?? null,
       results: course.results ?? null,
       visibility: course.visibility ?? "hidden",
       // The offer surface (2026-08-26). Everything the six hand-written program
       // pages could say and a builder course could not.
       audience: course.audience ?? null,
       format: course.format ?? null,
-      duration: course.duration ?? null,
+      duration_days: course.durationDays ?? null,
       access_note: course.accessNote ?? null,
       author_note: course.authorNote ?? null,
     },
@@ -179,7 +236,13 @@ export function courseFromRows(
     // means the course is not on sale, which is the safe state and the default
     // the migration itself writes. So an older database reads back as hidden
     // rather than refusing to open.
+    ...(courseRow.pretitle ? { pretitle: courseRow.pretitle as string } : {}),
+    ...(courseRow.posttitle ? { posttitle: courseRow.posttitle as string } : {}),
     ...(courseRow.tagline ? { tagline: courseRow.tagline as string } : {}),
+    ...(courseRow.kind ? { kind: courseRow.kind as never } : {}),
+    ...(Array.isArray(courseRow.categories) && courseRow.categories.length > 0
+      ? { categories: courseRow.categories as never }
+      : {}),
     ...(Array.isArray(courseRow.results) && courseRow.results.length > 0
       ? { results: courseRow.results as string[] }
       : {}),
@@ -200,7 +263,9 @@ export function courseFromRows(
     ...(Array.isArray(courseRow.format) && courseRow.format.length > 0
       ? { format: courseRow.format as string[] }
       : {}),
-    ...(courseRow.duration ? { duration: courseRow.duration as string } : {}),
+    ...(courseRow.duration_days === null || courseRow.duration_days === undefined
+      ? {}
+      : { durationDays: Number(courseRow.duration_days) }),
     ...(courseRow.access_note ? { accessNote: courseRow.access_note as string } : {}),
     ...(courseRow.author_note ? { authorNote: courseRow.author_note as string } : {}),
     modules,
@@ -335,7 +400,8 @@ async function reconcileRemovedRows(db: StructureWriter, course: Course): Promis
 
 export async function writeCourseStructure(
   db: StructureWriter,
-  input: unknown
+  input: unknown,
+  options: WriteCourseOptions = {}
 ): Promise<WriteCourseResult> {
   validateCourse(input, "authoring");
   const course = input as Course;
@@ -394,6 +460,17 @@ export async function writeCourseStructure(
   const courseWithoutStatus = { ...rows.course };
   delete courseWithoutStatus.status;
   delete courseWithoutStatus.version;
+
+  // A column the payload does not carry is dropped from the write rather than
+  // written as null, unless the caller claims authority over it. The upsert then
+  // leaves the stored value alone on an existing row, and lets the table default
+  // apply on a new one (`visibility` is NOT NULL DEFAULT 'hidden').
+  if ((options.optionalColumns ?? "preserve") === "preserve") {
+    const carried = course as unknown as Record<string, unknown>;
+    for (const [column, field] of OPTIONAL_COURSE_COLUMNS) {
+      if (carried[field] === undefined) delete courseWithoutStatus[column];
+    }
+  }
   await write("lms_courses", [courseWithoutStatus]);
   await write("lms_modules", rows.modules);
   await write("lms_lessons", rows.lessons);

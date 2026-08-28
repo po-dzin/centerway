@@ -37,11 +37,20 @@ export function clientIp(req: NextRequest): string {
   return req.headers.get("x-real-ip")?.trim() || "unknown";
 }
 
+/**
+ * @param identityKey when the caller is authenticated, the stable id to count
+ * against instead of the IP. Two reasons it is not always the IP: authors and
+ * learners share addresses (one office, one mobile carrier NAT) and would
+ * throttle each other, and an agent session is billed to a PERSON — the unit
+ * that costs us tokens is the account, not the socket. Anonymous surfaces pass
+ * nothing and keep the IP behaviour they always had.
+ */
 export async function enforceRateLimit(
   req: NextRequest,
-  rule: RateLimitRule
+  rule: RateLimitRule,
+  identityKey?: string
 ): Promise<RateLimitResult> {
-  const key = `${rule.name}:${clientIp(req)}`;
+  const key = `${rule.name}:${identityKey ? `user:${identityKey}` : clientIp(req)}`;
   try {
     const sb = supabaseAdmin();
     const { data, error } = await sb.rpc("check_rate_limit", {

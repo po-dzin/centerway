@@ -62,7 +62,7 @@ export function OfferBento({
       <ul className={styles.bento}>
         {facets.map((facet) => (
           <li className={styles.bentoCard} key={facet.title}>
-            <div className={styles.bentoCardHead}>
+            <div className={styles.bentoCardHead} data-cw-rule="inner">
               <Icon name={facet.icon} size={20} />
               <h2 className={styles.bentoCardTitle}>{facet.title}</h2>
             </div>

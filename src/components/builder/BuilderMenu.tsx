@@ -32,7 +32,7 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
-import { Icon } from "@/components/Icon";
+import { HandGraphic, Icon } from "@/components/Icon";
 import type { CW_ICON_NAMES } from "@/components/iconNames";
 import styles from "./Builder.module.css";
 
@@ -48,6 +48,15 @@ export type MenuItem = {
   disabled?: boolean;
   /** Destructive items sit last, behind a divider, in the boundary tone. */
   danger?: boolean;
+  /**
+   * Opens a new group — a divider above this item.
+   *
+   * One list, two subjects: the rich-text node menu says what THIS paragraph
+   * is and does, then what the whole prose block does. Without the rule between
+   * them «Видалити» and «Видалити блок» are two adjacent lines that differ by
+   * one word, which is the reading an author gets wrong once and remembers.
+   */
+  startsGroup?: boolean;
 };
 
 /** Where the list was asked to appear, in viewport coordinates. */
@@ -88,15 +97,27 @@ export function BuilderMenu({
     setPlacement(null);
   }, []);
 
+  /* THE LIST OPENS ON THE SIDE THAT HAS ROOM, and it hangs off the trigger's
+     own edge either way.
+
+     It used to always align its RIGHT edge to the trigger's right edge, which
+     is correct for a control at the end of a wide row and wrong for every one
+     that is not. The block and node handles sit in a narrow left gutter, so a
+     192px list opening leftwards from a 24px control landed almost entirely
+     past it, over the page margin — a menu that reads as belonging to nothing.
+     Preferring the reading direction, and falling back to `end` only when the
+     list would not fit, keeps it attached to the thing it acts on. */
   const openAtTrigger = useCallback(() => {
     const rect = trigger.current?.getBoundingClientRect();
     if (!rect) return;
+    const roomAfter = window.innerWidth - rect.left - EDGE;
+    const alignStart = roomAfter >= MIN_WIDTH;
     setOrigin({
-      x: rect.right,
+      x: alignStart ? rect.left : rect.right,
       y: rect.bottom + GAP,
       below: window.innerHeight - rect.bottom - GAP,
       above: rect.top - GAP,
-      align: "end",
+      align: alignStart ? "start" : "end",
     });
   }, []);
 
@@ -195,6 +216,10 @@ export function BuilderMenu({
         onClick={() => (open ? close() : openAtTrigger())}
       >
         <Icon name="more" size={18} />
+        {/* Same as every other icon control in the shell — and the rules for it
+            (`.menuTrigger:hover .inkRing`, `[aria-expanded="true"] .inkRing`)
+            were already written; only the graphic was missing. */}
+        <HandGraphic className={styles.inkRing} name="ink-ring" size={42} />
       </button>
 
       {open && typeof document !== "undefined"
@@ -223,6 +248,7 @@ export function BuilderMenu({
                   disabled={item.disabled}
                   title={item.hint ?? item.label}
                   data-first-danger={item.danger && !items[index - 1]?.danger ? "" : undefined}
+                  data-group-start={item.startsGroup && index > 0 ? "" : undefined}
                   onClick={() => {
                     close();
                     item.onSelect();

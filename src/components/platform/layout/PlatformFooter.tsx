@@ -5,7 +5,6 @@ import { LEARNING_SHELF_HREF, contact, platformHomeHref, socialLinks } from "@/l
 import styles from "@/components/platform/PlatformShellStyles";
 import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
 import { useSurfaceHref } from "./SurfaceHost";
-import { PwaInstallFooterEntry } from "@/components/platform/cabinet/PwaInstallCard";
 
 /**
  * TWO FOOTERS, ONE PER APPLICATION — not one per page.
@@ -28,9 +27,11 @@ import { PwaInstallFooterEntry } from "@/components/platform/cabinet/PwaInstallC
  * scrolled past the last block of day 8 should not land in Instagram. Dropping
  * them is a different act from dropping the brand.
  *
- * The install entry sits in both. It is a standing offer, made once per device,
- * and it renders itself away where there is nothing to offer — on `www`,
- * without a live prompt, or once the app is already installed.
+ * NO INSTALL ENTRY, in either. It used to sit in both columns as a standing
+ * offer, which put a third copy of it one scroll below the account menu that
+ * carries it on every page — and on the learning tree, which renders no footer
+ * at all, that copy was never reachable anyway. The offer is in the menu and in
+ * the cabinet; see `InstallEntry` in `PlatformAccountMenu.tsx`.
  *
  * NO LEGAL PAIR ON `my`, by decision. The offer and the privacy policy are
  * carried on every page of `www`, which is where the selling happens and where
@@ -38,10 +39,6 @@ import { PwaInstallFooterEntry } from "@/components/platform/cabinet/PwaInstallC
  * builder put a contract at the bottom of a page whose reader has already
  * signed it. They stay one link away — from the shop, and from any receipt.
  */
-
-/* Short on purpose: it stands in a column of three-word links, and the card's
-   full sentence would be the one item that wraps. */
-const INSTALL_LABEL = "Додати на екран";
 
 /* Not the storefront's promise — nobody here is being sold to, and this is the
    author's line rather than a description of the software. Two short sentences,
@@ -80,13 +77,12 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
               the two footers disagreed about their own shape. */}
           <div className={`${styles.footerLinks} ${styles.footerLegal}`}>
             <Link href={shelfHref}>Мої курси</Link>
-            <Link href={profileHref}>Профіль</Link>
+            <Link href={profileHref}>Кабінет</Link>
           </div>
           <div className={`${styles.footerLinks} ${styles.footerSocials}`}>
             <a href={SUPPORT_BOT_URL} target="_blank" rel="noopener noreferrer">
               Підтримка
             </a>
-            <PwaInstallFooterEntry label={INSTALL_LABEL} fallbackHref={`${profileHref}#app-install`} />
           </div>
         </div>
       </footer>
@@ -110,7 +106,6 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
         <div className={`${styles.footerLinks} ${styles.footerLegal}`}>
           <Link href={publicOfferHref}>Публічний договір</Link>
           <Link href={privacyHref}>Політика конфіденційності</Link>
-          <PwaInstallFooterEntry label={INSTALL_LABEL} fallbackHref={`${profileHref}#app-install`} />
         </div>
         <div className={`${styles.footerLinks} ${styles.footerSocials}`}>
           <a href={`tel:${contact.phone.replace(/\s+/g, "")}`}>{contact.phone}</a>

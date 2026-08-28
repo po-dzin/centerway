@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { Fragment, useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 
 import { HandGraphic, Icon } from "@/components/Icon";
@@ -31,7 +30,7 @@ import {
 } from "@/lms-core";
 import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
 import { BuilderContents } from "./BuilderContents";
-import { BuilderMenu } from "./BuilderMenu";
+import { BuilderMenu, type MenuItem } from "./BuilderMenu";
 import { FieldInput } from "./BuilderFields";
 import { BuilderInlineEditor, type InternalReferenceOption, type SlashCommand } from "./BuilderInlineEditor";
 import { BuilderEditableTitle } from "./BuilderEditableTitle";
@@ -63,7 +62,9 @@ import {
   inspectDurableCourseDraft,
   type DurableCourseDraft,
 } from "./courseDraftStore";
-import { BuilderDraftConflict } from "./BuilderDraftConflict";
+import { BuilderDraftRecovery } from "./BuilderDraftRecovery";
+import { BuilderExitPrompt } from "./BuilderExitPrompt";
+import { useBuilderExit } from "./useBuilderExit";
 
 type State =
   | { status: "loading" }
@@ -91,7 +92,6 @@ const trailTitle = (value: string, fallback: string) =>
  * and links from two thirds of the real content on first save.
  */
 export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lessonSlug: string }) {
-  const router = useRouter();
   const [state, setState] = useState<State>({ status: "loading" });
   const history = useCourseHistory();
   const { course, dirty } = history;
@@ -99,7 +99,6 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const [note, setNote] = useState<string | null>(null);
   const [contentsOpen, setContentsOpen] = useState(false);
   const [structureCollapsed, setStructureCollapsed] = useState(false);
-  const [pendingHref, setPendingHref] = useState<string | null>(null);
   /**
    * WHICH LESSON IS ON SCREEN — state, not the route.
    *
@@ -128,7 +127,11 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
    * list that had not been rewritten yet.
    */
   const [leaveFor, setLeaveFor] = useState<string | null>(null);
-  const [draftConflict, setDraftConflict] = useState<DurableCourseDraft | null>(null);
+  /* Same question as on the course page, asked by the same dialogue: a draft
+     this device kept from a session that ended without a save. */
+  const [draftDecision, setDraftDecision] = useState<
+    { kind: "recover" | "conflict"; draft: DurableCourseDraft } | null
+  >(null);
   const importPicker = useRef<HTMLInputElement>(null);
   const docRef = useRef<HTMLDivElement>(null);
   const draftGeneration = useRef<number | null>(null);
@@ -138,7 +141,24 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const [selectedBlockId, setSelectedBlockId] = useState<string | null>(null);
   const [insertPosition, setInsertPosition] = useState(0);
   const [toolMode, setToolMode] = useState<BuilderToolMode>("blocks");
+  /* OPEN ON A DESK, CLOSED ON A PHONE (2026-08-28).
+
+     The tool rail is a column BESIDE the document from 901px up, so having it
+     open on arrival is the right greeting: the blocks are simply there. Below
+     that width it is a sheet, and the same `true` made every lesson open with
+     two thirds of the screen covered — the title and the first paragraph of the
+     thing the author came to edit were behind the palette, and the first
+     gesture on every lesson was to dismiss it.
+
+     Set in an effect rather than from `matchMedia` in the initialiser, because
+     the initialiser runs on the server too: a value that differs between the
+     server's render and the client's first one is a hydration mismatch, and
+     React does not patch attributes up afterwards. */
   const [toolOpen, setToolOpen] = useState(true);
+
+  useEffect(() => {
+    if (window.matchMedia("(max-width: 900px)").matches) setToolOpen(false);
+  }, []);
   const [blockSearch, setBlockSearch] = useState("");
 
   useEffect(() => {
@@ -153,16 +173,9 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         serverCourse.current = result.data.course;
         const durable = await inspectDurableCourseDraft(result.data.course, result.data.draftGeneration);
         if (cancelled) return;
-        setDraftConflict(durable.kind === "conflict" ? durable.draft : null);
-        if (durable.kind === "recover") {
-          history.recover(result.data.course, durable.draft.course);
-          setNote("Відновлено локальні зміни. Вони збережуться автоматично.");
-        } else {
-          history.reset(result.data.course);
-          if (durable.kind === "conflict") {
-            setNote("Локальна копія збережена окремо: серверна версія змінилася в іншій вкладці.");
-          }
-        }
+        // The server version stands until the author answers the dialogue.
+        history.reset(result.data.course);
+        setDraftDecision(durable.kind === "none" ? null : { kind: durable.kind, draft: durable.draft });
       }
       setState(
         result.ok
@@ -251,7 +264,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
    */
   const blockDrag = useRowDrag(
     useCallback(() => undefined, []),
-    { mime: BLOCK_MOVE_MIME, dropTargets: false }
+    { mime: BLOCK_MOVE_MIME, dropTargets: false, portraitClass: styles.dragPortrait }
   );
 
   /**
@@ -303,16 +316,33 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     };
   }, [slug]);
 
+  /* One of the two hooks has to reach the other through a ref — see the same
+     pair on the course page. The exit question gates autosave; answering it
+     asks for a save, and nothing can be pressed before the first commit. */
+  const saveRef = useRef<() => Promise<boolean>>(() => Promise.resolve(false));
+  const exit = useBuilderExit({
+    slug,
+    courseId: course?.id ?? null,
+    dirty,
+    save: useCallback(() => saveRef.current(), []),
+  });
+  const { pendingHref } = exit;
+
   const autosave = useCourseAutosave({
     course,
     dirty,
-    paused: busy,
+    paused: busy || exit.prompt !== null,
+    suspended: draftDecision !== null,
     persist: persistCourse,
     markSaved: history.markSaved,
     getDraftGeneration: () => draftGeneration.current,
   });
   const working = busy || autosave.saving;
   const save = autosave.saveNow;
+
+  useEffect(() => {
+    saveRef.current = save;
+  }, [save]);
 
   const importIntoLesson = useCallback(
     async (file: File) => {
@@ -360,18 +390,15 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     [history]
   );
 
+  /* Leaving the course asks; anything still inside it saves and goes. The lead
+     is `useBuilderExit`; this wrapper only closes the outline drawer, which
+     must happen either way — including when the author decides to stay. */
   const navigate = useCallback(
     (href: string) => {
       setContentsOpen(false);
-      if (!dirty) return router.push(href);
-      if (pendingHref) return;
-      setPendingHref(href);
-      void save().then((saved) => {
-        if (saved) router.push(href);
-        else setPendingHref(null);
-      });
+      exit.route(href);
     },
-    [dirty, pendingHref, router, save]
+    [exit]
   );
 
   /** `/build/<this course>/<lesson>` — and only that — is an in-course move. */
@@ -412,6 +439,24 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   }, [lessonSlug]);
 
   /**
+   * Arriving with a block named in the hash — the arrow in the release panel.
+   *
+   * The id is resolved against the lesson on screen rather than trusted: the
+   * link may be minutes old and the block may be gone, and selecting a block
+   * that does not exist leaves the tool rail describing nothing. Runs after the
+   * course is loaded, because until then there are no blocks to match.
+   */
+  useEffect(() => {
+    if (state.status !== "ready") return;
+    const id = window.location.hash.startsWith("#block-") ? window.location.hash.slice(7) : null;
+    if (!id) return;
+    const target = document.getElementById(`block-${id}`);
+    if (!target) return;
+    setSelectedBlockId(id);
+    target.scrollIntoView({ block: "center", behavior: "auto" });
+  }, [state.status, activeSlug]);
+
+  /**
    * The new lesson starts at its own beginning.
    *
    * A route change used to reset the scroller for free. Switching in place does
@@ -444,17 +489,17 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     navigate(zenPreviewHref(`/learn/${encodeURIComponent(slug)}/${encodeURIComponent(activeSlug)}`, returnTo));
   };
 
-  const recoverConflictingDraft = () => {
-    if (!draftConflict || !serverCourse.current) return;
-    history.recover(serverCourse.current, draftConflict.course);
-    setDraftConflict(null);
+  const recoverDraft = () => {
+    if (!draftDecision || !serverCourse.current) return;
+    history.recover(serverCourse.current, draftDecision.draft.course);
+    setDraftDecision(null);
     setNote("Локальну копію відновлено. Вона збережеться як поточна версія.");
   };
 
-  const discardConflictingDraft = () => {
-    if (!draftConflict) return;
-    void clearDurableCourseDraft(draftConflict.courseId).catch(() => undefined);
-    setDraftConflict(null);
+  const discardDraft = () => {
+    if (!draftDecision) return;
+    void clearDurableCourseDraft(draftDecision.draft.courseId).catch(() => undefined);
+    setDraftDecision(null);
     setNote("Залишено актуальну серверну версію.");
   };
 
@@ -466,7 +511,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   if (state.status === "loading") {
     return (
       <BuilderShell trail={trail}>
-        <PlatformLoadingState label="Білдер" title="Завантажуємо урок…" detail="Відновлюємо блоки уроку і останню збережену версію." />
+        <PlatformLoadingState label="Майстерня" title="Завантажуємо урок…" detail="Відновлюємо блоки уроку і останню збережену версію." />
       </BuilderShell>
     );
   }
@@ -632,8 +677,16 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       }
       tools={
         <>
-          <button className={styles.workspacePreviewAction} type="button" onClick={preview} disabled={working} title={dirty ? "Зберегти й відкрити урок як учень" : "Відкрити урок як учень"}>
-            <Icon name="view-rows" size={18} /> Переглянути
+          <button
+            className={styles.workspacePreviewAction}
+            type="button"
+            onClick={preview}
+            disabled={working}
+            aria-label="Переглянути урок як учень"
+            title={dirty ? "Зберегти й відкрити урок як учень" : "Відкрити урок як учень"}
+          >
+            <Icon name="eye" size={20} />
+            <span className={styles.workspaceActionLabel}>Переглянути</span>
           </button>
           <span className={styles.workspaceSaveStatus} role="status" aria-live="polite">
             <Icon name="check" size={18} /> {autosave.saving ? "Зберігаємо…" : dirty ? "Є зміни" : "Збережено"}
@@ -658,9 +711,21 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
         </>
       }
     >
-      {draftConflict ? (
-        <BuilderDraftConflict onRecover={recoverConflictingDraft} onDiscard={discardConflictingDraft} />
-      ) : null}
+      <BuilderDraftRecovery
+        open={draftDecision !== null}
+        variant={draftDecision?.kind ?? "recover"}
+        savedAt={draftDecision?.draft.updatedAt ?? 0}
+        onRecover={recoverDraft}
+        onDiscard={discardDraft}
+      />
+      <BuilderExitPrompt
+        open={exit.prompt !== null}
+        saving={Boolean(exit.prompt?.saving)}
+        failure={exit.prompt?.refused ? autosave.failureMessage : null}
+        onSave={exit.saveAndLeave}
+        onLeave={exit.leaveWithoutSaving}
+        onStay={exit.stay}
+      />
       {/* THE DOCUMENT HEAD, and it is the document. The title used to be an
           `<h1>` echoing a «Назва» field in a panel below it: the same words
           twice, with the copy being the one you could change. Now the heading
@@ -764,7 +829,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
               {note ?? autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
             </span>
             <button className={styles.commitAction} type="button" onClick={() => void save()} disabled={working || !dirty}>
-              {autosave.saving ? "Зберігаємо…" : "Зберегти зараз"}
+              {autosave.saving ? "Зберігаємо…" : "Зберегти"}
             </button>
           </>
         )}
@@ -874,7 +939,7 @@ function LessonToolContent({
                   }}
                   onClick={() => onInsert(insertPosition, type)}
                 >
-                  <Icon name={type === "practice_block" ? "motion" : type === "boundary_note" ? "boundary" : "document"} size={19} />
+                  <Icon name={type === "practice_block" ? "motion" : type === "boundary_note" ? "boundary" : "document"} size={20} />
                   <span><InkLabel strong>{BLOCK_TYPE_LABELS[type]}</InkLabel><small>{BLOCK_TYPE_HINTS[type]}</small></span>
                   <Icon name="grip" size={16} />
                 </button>
@@ -899,7 +964,7 @@ function LessonToolContent({
     return (
       <div className={styles.toolStack}>
         <div className={styles.toolSelectionTitle}>
-          <Icon name="boundary" size={22} />
+          <Icon name="boundary" size={20} />
           <span><small>Блок {selectedBlockIndex + 1}</small><strong>{BLOCK_TYPE_LABELS[selectedBlock.type]}</strong></span>
         </div>
         <p className={styles.toolHint}>{BLOCK_TYPE_HINTS[selectedBlock.type]}</p>
@@ -916,9 +981,19 @@ function LessonToolContent({
   if (mode === "page") {
     return (
       <div className={styles.toolStack}>
+        {/* IT SAYS REPLACE, BECAUSE IT REPLACES. There are two document imports
+            in the builder now and they do opposite things: the structure's adds
+            new lessons to a module, this one overwrites the open one. Both
+            labelled «Імпортувати» they would read as the same offer in two
+            places, and the destructive one is the one an author would reach for
+            by mistake. See the lifecycle note for why this level can only ever
+            mean replace: by the time you are on the page, the lesson exists. */}
         <button className={styles.quietAction} type="button" disabled={working} onClick={() => importPicker.current?.click()}>
-          <Icon name="import" size={20} /> Імпортувати документ
+          <Icon name="import" size={20} /> Замінити з документа
         </button>
+        <p className={styles.toolHint}>
+          Замінить назву, опис і всі блоки цього уроку. Адреса, порядок і день лишаються. Скасовується через ⌘Z до збереження.
+        </p>
         <input
           ref={importPicker}
           className={styles.visuallyHidden}
@@ -1068,6 +1143,30 @@ function BlockEditor({
 
   const row: DragRef = { list: "block", group: 0, index };
 
+  /* The block's own four, as data — a rail draws them for every type except
+     rich text, which hands them to its paragraphs instead. Labels say «блок»
+     out loud here: inside a node menu they sit under items about one paragraph,
+     and «Видалити» / «Видалити блок» have to be tellable apart on sight. */
+  const blockActions: MenuItem[] = [
+    {
+      label: "Властивості блоку",
+      icon: "settings",
+      hint: "Налаштування блоку в панелі праворуч",
+      onSelect: onProperties,
+    },
+    { label: "Підняти блок вище", icon: "arrow-up", disabled: index === 0, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index - 1)) },
+    { label: "Опустити блок нижче", icon: "arrow-down", disabled: index === total - 1, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index + 1)) },
+    {
+      label: "Видалити блок",
+      icon: "trash",
+      danger: true,
+      // A lesson with no blocks fails `validateCourse`, and the author would
+      // meet that as a save error rather than a disabled item.
+      disabled: total === 1,
+      onSelect: () => onBlocks((blocks) => blocks.filter((_, position) => position !== index)),
+    },
+  ];
+
   return (
     <section
       id={`block-${block.id}`}
@@ -1090,37 +1189,34 @@ function BlockEditor({
           sat in pushed the content down by its own height on every block.
           What is left is the grip and the menu, in the margin, asked for by
           pointing at the block or selecting it. */}
-      <div className={styles.blockRail} aria-hidden={undefined}>
-        <BuilderGrip drag={drag} row={row} label={BLOCK_TYPE_LABELS[block.type]} />
-        <BuilderMenu
-          label={`Дії з блоком «${BLOCK_TYPE_LABELS[block.type]}»`}
-          items={[
-            {
-              label: "Властивості блоку",
-              icon: "settings" as const,
-              hint: "Налаштування блоку в панелі праворуч",
-              onSelect: onProperties,
-            },
-            { label: "Підняти вище", icon: "arrow-up" as const, disabled: index === 0, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index - 1)) },
-            { label: "Опустити нижче", icon: "arrow-down" as const, disabled: index === total - 1, onSelect: () => onBlocks((blocks) => moveItem(blocks, index, index + 1)) },
-            {
-              label: "Видалити блок",
-              icon: "trash",
-              danger: true,
-              // A lesson with no blocks fails `validateCourse`, and the author
-              // would meet that as a save error rather than a disabled item.
-              disabled: total === 1,
-              onSelect: () => onBlocks((blocks) => blocks.filter((_, position) => position !== index)),
-            },
-          ]}
-        />
-      </div>
+      {/* ONE HANDLE PER PARAGRAPH, so prose has one rail and not two.
+
+          A rich-text block CONTAINS the paragraphs, so it used to draw its own
+          grip and menu in the outer gutter while every node inside drew another
+          pair one indent in. Three «…» could be on screen at once — the block's,
+          the node holding the caret, and the node under the pointer — all the
+          same glyph at two indents, and nothing said which one would delete a
+          sentence and which one the whole block. The author has to guess, and a
+          menu you have to guess at is worse than a longer one.
+
+          The block's own actions are handed to the nodes instead and open as a
+          second group in the node menu, under a rule. THE COST, STATED: a
+          rich-text block can no longer be dragged as a whole — its move is the
+          menu's «Підняти блок вище / Опустити блок нижче». Nodes still drag
+          within the block, and every other block type keeps its own rail. */}
+      {block.type === "rich_text" ? null : (
+        <div className={styles.blockRail} aria-hidden={undefined}>
+          <BuilderGrip drag={drag} row={row} label={BLOCK_TYPE_LABELS[block.type]} />
+          <BuilderMenu label={`Дії з блоком «${BLOCK_TYPE_LABELS[block.type]}»`} items={blockActions} />
+        </div>
+      )}
 
       {block.type === "rich_text" ? (
         <RichTextEditor
           block={block}
           fresh={fresh}
           blockCommands={BLOCK_COMMANDS}
+          blockActions={blockActions}
           referenceOptions={referenceOptions}
           /* A block type chosen from inside the prose adds a NEW block after
              this one rather than converting it. Converting would throw away
@@ -1198,6 +1294,16 @@ const NODE_LABELS: Record<RichTextNode["kind"], string> = {
   h3: "Підзаголовок",
   ul: "Список",
   ol: "Нумерований список",
+};
+
+/* One glyph per kind, and `list`/`list-ordered` are deliberately the SAME two
+   the floating bar draws for `ul`/`ol` — the bar and the menu run the same
+   command, so they cannot look like two different offers. */
+const NODE_ICONS: Record<RichTextNode["kind"], MenuItem["icon"]> = {
+  p: "paragraph",
+  h3: "heading",
+  ul: "list",
+  ol: "list-ordered",
 };
 
 function internalReferenceOptions(
@@ -1300,6 +1406,7 @@ function RichTextEditor({
   block,
   fresh,
   blockCommands,
+  blockActions,
   referenceOptions,
   onBlockCommand,
   onChange,
@@ -1308,6 +1415,13 @@ function RichTextEditor({
   fresh?: boolean;
   /** Offered in the slash menu below the node kinds — see `BlockEditor`. */
   blockCommands?: SlashCommand[];
+  /**
+   * The containing block's own actions.
+   *
+   * Prose draws no block rail of its own, so these ride along in every node's
+   * menu as a second group. See the note at the rail's call site.
+   */
+  blockActions?: MenuItem[];
   referenceOptions: InternalReferenceOption[];
   onBlockCommand?: (id: string) => void;
   onChange: (path: (string | number)[], value: unknown) => void;
@@ -1389,14 +1503,24 @@ function RichTextEditor({
               <BuilderMenu
                 label={`Дії з ${NODE_LABELS[node.kind].toLowerCase()}`}
                 items={[
+                  /* The kinds wear the same glyphs the floating bar uses for the
+                     same two commands. They were the only items in this list
+                     with no icon at all, so a menu of seven rows drew four bare
+                     labels and then three with marks — which reads as three
+                     items that matter and four that do not. */
                   ...(Object.keys(NODE_LABELS) as RichTextNode["kind"][]).map((kind) => ({
                     label: NODE_LABELS[kind],
+                    icon: NODE_ICONS[kind],
                     disabled: kind === node.kind,
                     onSelect: () => runCommand(index, kind),
                   })),
-                  { label: "Підняти вище", icon: "arrow-up" as const, disabled: index === 0, onSelect: () => setContent(moveItem(block.content, index, index - 1)) },
+                  { label: "Підняти вище", icon: "arrow-up" as const, startsGroup: true, disabled: index === 0, onSelect: () => setContent(moveItem(block.content, index, index - 1)) },
                   { label: "Опустити нижче", icon: "arrow-down" as const, disabled: index === block.content.length - 1, onSelect: () => setContent(moveItem(block.content, index, index + 1)) },
                   { label: "Видалити", icon: "trash" as const, danger: true, disabled: block.content.length === 1, onSelect: () => setContent(block.content.filter((_, position) => position !== index)) },
+                  ...(blockActions ?? []).map((action, position) => ({
+                    ...action,
+                    startsGroup: position === 0,
+                  })),
                 ]}
               />
             </div>

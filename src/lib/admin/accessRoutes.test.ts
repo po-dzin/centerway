@@ -18,12 +18,10 @@ vi.mock("@/lib/auth/requireAdmin", () => ({
 }));
 
 const access = {
-    listLearners: vi.fn(),
-    listAccounts: vi.fn(),
+    listPeople: vi.fn(),
     provisionAccess: vi.fn(),
     setEnrollmentDeadline: vi.fn(),
     revokeCourse: vi.fn(),
-    listRoles: vi.fn(),
     setRole: vi.fn(),
     listCourses: vi.fn(),
     setCourseAuthor: vi.fn(),
@@ -42,7 +40,6 @@ vi.mock("@/lib/admin/access", async () => {
 });
 
 const learners = await import("@/app/api/admin/access/learners/route");
-const accounts = await import("@/app/api/admin/access/accounts/route");
 const roles = await import("@/app/api/admin/access/roles/route");
 const courses = await import("@/app/api/admin/access/courses/route");
 
@@ -63,9 +60,7 @@ function send(url: string, method: "POST" | "DELETE" | "PATCH", body?: unknown) 
 beforeEach(() => {
     session.value = ADMIN;
     for (const fn of Object.values(access)) fn.mockReset();
-    access.listLearners.mockResolvedValue({ items: [], total: 0, truncated: false, summary: {} });
-    access.listAccounts.mockResolvedValue({ items: [], total: 0 });
-    access.listRoles.mockResolvedValue([]);
+    access.listPeople.mockResolvedValue({ items: [], total: 0, truncated: false, summary: {} });
     access.listCourses.mockResolvedValue([]);
 });
 
@@ -78,14 +73,13 @@ describe("authentication", () => {
             learners.POST(send("http://x/api/admin/access/learners", "POST", { email: "a@b.c", course: "reset-day" })),
             learners.DELETE(send("http://x/api/admin/access/learners?enrollmentId=e1", "DELETE")),
             learners.PATCH(send("http://x/api/admin/access/learners", "PATCH", { enrollmentId: "e1", expiresAt: "2026-09-30" })),
-            accounts.GET(get("http://x/api/admin/access/accounts")),
-            roles.GET(get("http://x/api/admin/access/roles")),
+            learners.GET(get("http://x/api/admin/access/learners")),
             roles.POST(send("http://x/api/admin/access/roles", "POST", { email: "a@b.c", role: "admin" })),
             courses.GET(get("http://x/api/admin/access/courses")),
             courses.PATCH(send("http://x/api/admin/access/courses", "PATCH", { courseId: "c1" })),
         ]);
 
-        expect(responses.map((res) => res.status)).toEqual([401, 401, 401, 401, 401, 401, 401, 401, 401]);
+        expect(responses.map((res: Response) => res.status)).toEqual([401, 401, 401, 401, 401, 401, 401, 401]);
         for (const fn of Object.values(access)) expect(fn).not.toHaveBeenCalled();
     });
 });
@@ -93,8 +87,10 @@ describe("authentication", () => {
 describe("learners", () => {
     it("passes filters through and reports the caps it applied", async () => {
         await learners.GET(get("http://x/api/admin/access/learners?q=ann&course=reset-day&status=stalled&limit=10&offset=20"));
-        expect(access.listLearners).toHaveBeenCalledWith({
+        expect(access.listPeople).toHaveBeenCalledWith({
             q: "ann",
+            role: undefined,
+            access: "",
             courseSlug: "reset-day",
             status: "stalled",
             limit: 10,
@@ -104,12 +100,12 @@ describe("learners", () => {
 
     it("drops a status it does not know rather than filtering on nonsense", async () => {
         await learners.GET(get("http://x/api/admin/access/learners?status=vip"));
-        expect(access.listLearners).toHaveBeenCalledWith(expect.objectContaining({ status: "" }));
+        expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ status: "" }));
     });
 
     it("falls back to a sane page when limit/offset are not numbers", async () => {
         await learners.GET(get("http://x/api/admin/access/learners?limit=abc&offset=-5"));
-        expect(access.listLearners).toHaveBeenCalledWith(expect.objectContaining({ limit: 50, offset: 0 }));
+        expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ limit: 50, offset: 0 }));
     });
 
     it("lets support grant and revoke course access", async () => {
@@ -134,7 +130,11 @@ describe("learners", () => {
             email: "a@b.c",
             fullName: null,
             courseSlug: "reset-day",
-            expiresAt: null,
+            // Nothing typed is NOT the same as "no deadline": the module reads
+            // an absent date as "the offer's term applies", and only an
+            // explicit one overrides it.
+            expiresAt: undefined,
+            source: undefined,
             createAccount: false,
             payment: null,
             actorId: "auth-support",
@@ -143,6 +143,55 @@ describe("learners", () => {
         const revoked = await learners.DELETE(send("http://x/api/admin/access/learners?enrollmentId=enr-9", "DELETE"));
         expect(revoked.status).toBe(200);
         expect(access.revokeCourse).toHaveBeenCalledWith({ enrollmentId: "enr-9", actorId: "auth-support" });
+    });
+
+    it("treats a missing deadline key as 'not overridden', so the offer's own term applies", async () => {
+        access.provisionAccess.mockResolvedValue({
+            accountCreated: false,
+            payment: { orderRef: "manual_course-reset-day_20260828_aaa" },
+            account: { email: "a@b.c" },
+            grant: { created: true, enrollmentId: "enr-11", expiresAt: null, course: { slug: "reset-day", title: "Reset Day", status: "published" } },
+        });
+
+        // The grant form's checkbox sends nothing at all — the key is absent —
+        // when the operator has not overridden the term. `JSON.stringify` drops
+        // an `undefined` property, so this is what `grantDeadlineValue` actually
+        // produces on the wire.
+        await learners.POST(
+            send("http://x/api/admin/access/learners", "POST", {
+                email: "a@b.c",
+                course: "reset-day",
+                payment: { amount: "795", currency: "UAH" },
+            })
+        );
+
+        expect(access.provisionAccess).toHaveBeenCalledWith(
+            expect.objectContaining({ expiresAt: undefined })
+        );
+    });
+
+    it("treats an explicit but empty date as a deliberate 'no deadline', not as 'inherit the offer'", async () => {
+        // Different from the missing-key case above: a caller that SENDS the
+        // field, even blank, is answering the question rather than skipping it
+        // — the same rule `normalizeDeadline` and the PATCH handler already use.
+        access.provisionAccess.mockResolvedValue({
+            accountCreated: false,
+            payment: null,
+            account: { email: "a@b.c" },
+            grant: { created: true, enrollmentId: "enr-12", expiresAt: null, course: { slug: "reset-day", title: "Reset Day", status: "published" } },
+        });
+
+        await learners.POST(
+            send("http://x/api/admin/access/learners", "POST", {
+                email: "a@b.c",
+                course: "reset-day",
+                expiresAt: "   ",
+            })
+        );
+
+        expect(access.provisionAccess).toHaveBeenCalledWith(
+            expect.objectContaining({ expiresAt: null })
+        );
     });
 
     it("carries a deadline, an account request and a payment through to the module", async () => {
@@ -257,40 +306,141 @@ describe("learners", () => {
     });
 
     it("reports an unexpected failure as a 500", async () => {
-        access.listLearners.mockRejectedValue(new Error("connection reset"));
+        access.listPeople.mockRejectedValue(new Error("connection reset"));
         const res = await learners.GET(get("http://x/api/admin/access/learners"));
         expect(res.status).toBe(500);
     });
 });
 
-describe("accounts", () => {
-    it("pages the account list and tells the UI whether roles may be changed", async () => {
-        session.value = SUPPORT;
-        const res = await accounts.GET(get("http://x/api/admin/access/accounts?q=ann&limit=10&offset=20"));
+describe("granting a role on the same form that creates the account", () => {
+    beforeEach(() => {
+        access.provisionAccess.mockResolvedValue({
+            accountCreated: true,
+            payment: null,
+            account: { email: "new@b.c" },
+            grant: {
+                created: true,
+                enrollmentId: "enr-1",
+                expiresAt: null,
+                course: { slug: "reset-day", title: "Reset Day", status: "published" },
+            },
+        });
+        access.setRole.mockResolvedValue({ account: { email: "new@b.c" }, previous: null, role: "coach" });
+    });
+
+    it("assigns the role AFTER provisioning, so a just-created account can be found", async () => {
+        const order: string[] = [];
+        access.provisionAccess.mockImplementation(async () => {
+            order.push("provision");
+            return {
+                accountCreated: true,
+                payment: null,
+                account: { email: "new@b.c" },
+                grant: {
+                    created: true,
+                    enrollmentId: "enr-1",
+                    expiresAt: null,
+                    course: { slug: "reset-day", title: "Reset Day", status: "published" },
+                },
+            };
+        });
+        access.setRole.mockImplementation(async () => {
+            order.push("role");
+            return { account: { email: "new@b.c" }, previous: null, role: "coach" };
+        });
+
+        const res = await learners.POST(
+            send("http://x/api/admin/access/learners", "POST", {
+                email: "new@b.c",
+                course: "reset-day",
+                createAccount: true,
+                role: "coach",
+            })
+        );
 
         expect(res.status).toBe(200);
-        expect(access.listAccounts).toHaveBeenCalledWith({ q: "ann", limit: 10, offset: 20 });
+        expect(order).toEqual(["provision", "role"]);
+        expect(await res.json()).toMatchObject({ accountCreated: true, role: "coach" });
+    });
+
+    it("leaves the role alone when the field is absent, rather than writing `user`", async () => {
+        const res = await learners.POST(
+            send("http://x/api/admin/access/learners", "POST", { email: "a@b.c", course: "reset-day" })
+        );
+
+        expect(res.status).toBe(200);
+        expect(access.setRole).not.toHaveBeenCalled();
+        expect(await res.json()).toMatchObject({ role: null });
+    });
+
+    it("refuses support before writing anything — no seat granted on a rejected role", async () => {
+        session.value = SUPPORT;
+        const res = await learners.POST(
+            send("http://x/api/admin/access/learners", "POST", {
+                email: "a@b.c",
+                course: "reset-day",
+                role: "admin",
+            })
+        );
+
+        expect(res.status).toBe(403);
+        expect(access.provisionAccess).not.toHaveBeenCalled();
+        expect(access.setRole).not.toHaveBeenCalled();
+    });
+
+    it("refuses a role that is not a role, before writing anything", async () => {
+        const res = await learners.POST(
+            send("http://x/api/admin/access/learners", "POST", {
+                email: "a@b.c",
+                course: "reset-day",
+                role: "superuser",
+            })
+        );
+
+        expect(res.status).toBe(400);
+        expect(access.provisionAccess).not.toHaveBeenCalled();
+    });
+});
+
+describe("accounts", () => {
+    // The accounts endpoint was merged into this one; what it proved about
+    // `canGrant`, `selfId` and paging is proved of the merged route here.
+    it("pages the people list and tells the UI whether roles may be changed", async () => {
+        session.value = SUPPORT;
+        const res = await learners.GET(get("http://x/api/admin/access/learners?q=ann&limit=10&offset=20"));
+
+        expect(res.status).toBe(200);
+        expect(access.listPeople).toHaveBeenCalledWith(
+            expect.objectContaining({ q: "ann", limit: 10, offset: 20 })
+        );
         // `support` reads this list but may not hand out roles from it.
         expect(await res.json()).toMatchObject({ canGrant: false, selfId: "auth-support" });
     });
 
     it("falls back to a sane page when limit/offset are not numbers", async () => {
-        await accounts.GET(get("http://x/api/admin/access/accounts?limit=abc&offset=-5"));
-        expect(access.listAccounts).toHaveBeenCalledWith(expect.objectContaining({ limit: 50, offset: 0 }));
+        await learners.GET(get("http://x/api/admin/access/learners?limit=abc&offset=-5"));
+        expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ limit: 50, offset: 0 }));
+    });
+
+    it("passes a role facet through, including the `staff` shorthand", async () => {
+        await learners.GET(get("http://x/api/admin/access/learners?role=coach"));
+        expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ role: "coach" }));
+
+        await learners.GET(get("http://x/api/admin/access/learners?role=staff"));
+        expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ role: "staff" }));
+    });
+
+    it("drops a role it does not know rather than returning nobody", async () => {
+        await learners.GET(get("http://x/api/admin/access/learners?role=wizard"));
+        expect(access.listPeople).toHaveBeenCalledWith(expect.objectContaining({ role: undefined }));
     });
 });
 
 describe("roles", () => {
-    it("lets support read the role map but tells the UI it may not grant", async () => {
-        session.value = SUPPORT;
-        const res = await roles.GET(get("http://x/api/admin/access/roles"));
-        expect(res.status).toBe(200);
-        expect(await res.json()).toMatchObject({ canGrant: false });
-    });
-
-    it("marks an admin as able to grant", async () => {
-        expect(await (await roles.GET(get("http://x/api/admin/access/roles"))).json()).toMatchObject({ canGrant: true });
-    });
+    // There is no GET here any more: the role TABLE was the accounts list
+    // filtered by an attribute of the account, and `/accounts?role=` answers it
+    // from the one list. `canGrant` for the UI comes from the accounts route,
+    // which has its own assertions above. This route is only the write.
 
     it("refuses a role change from support — reading is not granting", async () => {
         session.value = SUPPORT;

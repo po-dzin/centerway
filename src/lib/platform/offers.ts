@@ -26,20 +26,41 @@ import { COURSE_LIST_TAG, courseTag, getLiveCourse, listLiveCourses } from "@/li
 import {
   PLATFORM_FAILED_URL,
   PLATFORM_THANKS_URL,
+  PRODUCTS,
   catalogOffer,
   isCatalogProduct,
   normalizePayableProduct,
+  type CatalogProductCode,
   type PayableOffer,
 } from "@/lib/products";
+import { mediaSources } from "@/lib/lms/media";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 import { toOfferSurface } from "@/lib/platform/courseOffer";
 import { offerEyebrow } from "@/lib/platform/offerPreview";
+
+/**
+ * The card-sized copy of an uploaded cover, when there is one.
+ *
+ * `mediaSources` answers "does this address have smaller renditions" for
+ * exactly one kind of address — an upload this application made — and returns
+ * nothing for a repository path or a pasted link. A catalogue card is ~370 CSS
+ * pixels wide, so the 640 rendition is the right one to hand it.
+ */
+function coverCard(src: string): string | undefined {
+  const set = mediaSources(src).srcSet;
+  if (!set) return undefined;
+  return set
+    .split(", ")
+    .map((candidate) => candidate.split(" ")[0])
+    .find((url) => url.endsWith("/640.webp"));
+}
 import {
   courseOfferCode,
   inlineToPlainText,
   parseCourseOfferCode,
   type Course,
+  type CourseCategory,
   type CourseVisibility,
 } from "@/lms-core";
 
@@ -145,6 +166,42 @@ export type StorefrontCard = {
   visual: string;
   /** How the catalogue's two rails are split — see the offer page. */
   lessons: number;
+  /**
+   * The author's own line above the title, when they wrote one. Not the badge:
+   * the badge is the kind and the duration, in the platform's words on every
+   * card; this is the one line that is theirs.
+   */
+  pretitle?: string;
+  /** The line below the title — what kind of thing this is, in their words. */
+  posttitle?: string;
+  /**
+   * What the course is about, as codes from the closed list. Codes, not labels,
+   * because the same card is the thing a category filter will read.
+   */
+  categories?: CourseCategory[];
+  /**
+   * The kind, as the word a card prints in its corner. Absent for a course
+   * whose author has not said, and the kind then stays inside `tag` — which is
+   * exactly what every card did before this existed.
+   */
+  kindBadge?: string;
+  /** `categories`, in the words a reader sees. Codes never reach a component. */
+  categoryLabels?: string[];
+};
+
+/**
+ * The sections, in the words a card prints.
+ *
+ * Here rather than in the component because this module is the storefront's
+ * one translation point between the model's closed codes and the reader's
+ * language — the same place `VISUAL_BY_PALETTE` turns a palette into a card
+ * variant. A component that knew the vocabulary would have to be edited every
+ * time the vocabulary grew.
+ */
+const CATEGORY_LABELS: Record<CourseCategory, string> = {
+  movement: "Рух",
+  nutrition: "Харчування",
+  cleansing: "Очищення",
 };
 
 /** Course palette → the card variant closest to it. */
@@ -187,22 +244,46 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
          as the eyebrow, the raw title as the name — and it drifted the moment
          a course was authored with a long title. */
       const surface = toOfferSurface(course);
+      const card = course.cover ? coverCard(course.cover.src) : undefined;
       return {
         slug: course.slug,
         title: surface.title,
-        tag: offerEyebrow(surface.tag, surface.duration),
+        /* THE EYEBROW LOSES THE KIND WHEN THE CORNER GAINS IT. Printing
+           «Міні-курс» in a chip on the plate and again in the line under it is
+           the same word twice on a card with three text rows. A course whose
+           author has not set a kind keeps the old, joined eyebrow — the
+           derivation still runs, it just has nowhere better to go. */
+        tag: course.kind ? surface.duration : offerEyebrow(surface.tag, surface.duration),
+        ...(course.kind ? { kindBadge: surface.tag } : {}),
         description: course.summary ? inlineToPlainText(course.summary) : "",
         href: `/programs/${course.slug}`,
         ...(course.cover
           ? {
               artwork: {
                 desktop: course.cover.src,
+                // An author's own upload has a 640px rendition beside it, and a
+                // catalogue card is the place that wants it. A cover that came
+                // from the repository instead has no such sibling to promise,
+                // so the card falls back to the full plate as it always did.
+                ...(card ? { card } : {}),
                 desktopPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%`,
               },
             }
           : {}),
         visual: VISUAL_BY_PALETTE[course.theme?.palette ?? ""] ?? "stone",
         lessons: course.modules.reduce((total, module) => total + module.lessons.length, 0),
+        // The cover's own three lines, carried to the card that shows them. The
+        // subtitle falls back to the dash-split for courses authored before
+        // `posttitle` existed — the same fallback `toOfferSurface` uses, read
+        // from it rather than repeated here.
+        ...(course.pretitle ? { pretitle: course.pretitle } : {}),
+        ...(surface.subtitle ? { posttitle: surface.subtitle } : {}),
+        ...(course.categories
+          ? {
+              categories: course.categories,
+              categoryLabels: course.categories.map((one) => CATEGORY_LABELS[one]),
+            }
+          : {}),
       };
     });
 }
@@ -221,14 +302,50 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
  * course nobody has priced. Only the owner writes `lms_course_offers`, so a
  * missing row is a decision, not an outage.
  */
+/**
+ * Hand-written codes that now name a course sold from the offer table.
+ *
+ * `reset-day` is sold twice: the platform charges `course:reset-day` and reads
+ * the price from `lms_course_offers`, while the funnel landing still links
+ * `?product=reset-day` and charged the figure written in `PRODUCTS`. Two
+ * numbers for one course, agreeing today only because both were typed as 1 and
+ * 795 — and the day the QA price is lifted in one place, the landing quotes 795
+ * and charges something else.
+ *
+ * So the legacy code resolves to the same row. What it keeps from the constant
+ * is the invoice PROSE, which the database path cannot express: a course row
+ * yields one title in one language, and the hand-written entry has a real
+ * sentence in both. Money, code and term come from the row; the words stay here.
+ *
+ * The consequence is deliberate: withdrawing the offer now stops the funnel too,
+ * instead of leaving one door selling a course the storefront calls closed.
+ */
+const COURSE_CODE_ALIASES: Partial<Record<CatalogProductCode, string>> = {
+  "reset-day": "reset-day",
+};
+
 export async function loadPayableOffer(code: unknown): Promise<PayableOffer | null> {
   const normalized = normalizePayableProduct(code);
   if (!normalized) return null;
-  if (isCatalogProduct(normalized)) return catalogOffer(normalized);
+
+  if (isCatalogProduct(normalized)) {
+    const aliasSlug = COURSE_CODE_ALIASES[normalized];
+    if (!aliasSlug) return catalogOffer(normalized);
+
+    const aliased = await loadCourseOfferFor(aliasSlug);
+    if (!aliased) return null;
+
+    const { heading, description } = PRODUCTS[normalized];
+    return { ...aliased, heading, description };
+  }
 
   const slug = parseCourseOfferCode(normalized);
   if (!slug) return null;
+  return loadCourseOfferFor(slug);
+}
 
+/** The commercial facts for one course, read from its own row. */
+async function loadCourseOfferFor(slug: string): Promise<PayableOffer | null> {
   const [course, offer] = await Promise.all([getLiveCourse(slug), loadCourseOffer(slug)]);
 
   // Both halves have to agree, and each says something different: the course
@@ -246,8 +363,8 @@ export async function loadPayableOffer(code: unknown): Promise<PayableOffer | nu
     // One language, twice, on purpose: a course written by its author is
     // written in one language, and inventing a translation for a WayForPay
     // invoice line would put words in their mouth.
-    heading: { ua: heading, en: heading },
-    description: { ua: description, en: description },
+    heading: { uk: heading, en: heading },
+    description: { uk: description, en: description },
     amount: offer.amount,
     listAmount: offer.listAmount ?? offer.amount,
     currency: offer.currency,

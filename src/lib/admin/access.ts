@@ -34,18 +34,24 @@
 
 import { adminClient } from "@/lib/auth/adminClient";
 import { writeCourseStructure } from "@/lib/lms/authoring";
-import { accessStateOf, courseOfferCode, daysRemaining, validateCourse, type Course } from "@/lms-core";
+import {
+    accessRuleOf,
+    accessStateOf,
+    accessWindowEnd,
+    courseOfferCode,
+    daysRemaining,
+    validateCourse,
+    type Course,
+} from "@/lms-core";
 import { foldProgress, type ProgressEvent, type ProgressEventType } from "@/lms-core/progress";
-import { groupLearnersByAccount, learnerStatusOf, type GrantSource } from "@/lib/admin/accessTypes";
+import { ELEVATED_ROLES, groupLearnersByAccount, learnerStatusOf, type AccessFacet, type GrantSource, type PersonRow } from "@/lib/admin/accessTypes";
 import type {
-    AccountRow,
     CourseRow,
     GrantableRole,
     PaymentCurrency,
     LearnerAccountRow,
     LearnerRow,
     LearnerStatus,
-    RoleRow,
 } from "@/lib/admin/accessTypes";
 
 export * from "@/lib/admin/accessTypes";
@@ -207,40 +213,19 @@ export function sanitizeSearch(raw: string | undefined | null): string {
     return (raw ?? "").replace(/[,()*\\"']/g, " ").trim();
 }
 
-export type ListLearnersInput = {
-    q?: string;
-    courseSlug?: string;
-    status?: LearnerStatus | "";
-    limit: number;
-    offset: number;
-};
+/* `listLearners` and `listAccounts` were merged into `listPeople` above.
+ * They were the same list seen from two ends — enrollments-first, so an
+ * account holding no course was invisible; accounts-first, so what they held
+ * was not there. Step 2 of docs/admin-access-shape-2026-08-28.md. */
 
-/**
- * Learners, one row per person rather than one per enrollment.
- *
- * The panel's question is "who is learning here", and a person holding three
- * courses is one person, not three learners — the flat list made the same
- * account appear three times and buried that they were the same human. So the
- * enrollment rows are folded by account before paging, which means the page
- * size counts people and the status filter asks "does this person have any
- * course in that state".
- *
- * The summary counts people the same way, so a tile's number is exactly what
- * clicking its tab shows. Tiles therefore do not add up to the total: someone
- * stalled on one course and finished on another is counted under both, which is
- * true of them.
- */
-export async function listLearners(input: ListLearnersInput): Promise<{
-    items: LearnerAccountRow[];
-    total: number;
-    truncated: boolean;
-    summary: Record<LearnerStatus, number>;
-}> {
-    const db = adminClient();
+async function foldEnrollmentsByAccount(
+    db: Db,
+    authUserIds: string[],
+    courseSlug?: string
+): Promise<Map<string, LearnerAccountRow>> {
+    if (authUserIds.length === 0) return new Map();
 
-    const { data: courseRows, error: courseError } = await db
-        .from("lms_courses")
-        .select("id, slug, title, status");
+    const { data: courseRows, error: courseError } = await db.from("lms_courses").select("id, slug, title, status");
     if (courseError) throw new AccessError(courseError.message, 500);
 
     const courses = new Map((courseRows ?? []).map((row) => [row.id as string, row]));
@@ -250,50 +235,30 @@ export async function listLearners(input: ListLearnersInput): Promise<{
         .select(
             "id, course_id, auth_user_id, source, order_ref, started_at, expires_at, status, revoked_at, blocked_at, blocked_reason"
         )
+        .in("auth_user_id", authUserIds)
         .order("started_at", { ascending: false })
-        // One past the ceiling on purpose: the extra row is the signal that
-        // there was more, which is what `truncated` reports.
         .range(0, FOLD_CEILING);
 
-    if (input.courseSlug) {
-        const course = (courseRows ?? []).find((row) => row.slug === input.courseSlug);
+    if (courseSlug) {
+        const course = (courseRows ?? []).find((row) => row.slug === courseSlug);
         if (!course) throw new AccessError("course_not_found", 404);
         query = query.eq("course_id", course.id);
-    }
-
-    const q = sanitizeSearch(input.q);
-    if (q) {
-        // The searchable text (email, name) lives on platform_users, so the
-        // search resolves accounts first and filters enrollments by their ids.
-        const { data: matches, error: matchError } = await db
-            .from("platform_users")
-            .select("auth_user_id")
-            .or(`email.ilike.%${q}%,full_name.ilike.%${q}%`)
-            .limit(FOLD_CEILING);
-        if (matchError) throw new AccessError(matchError.message, 500);
-
-        const ids = (matches ?? []).map((row) => row.auth_user_id as string);
-        if (ids.length === 0) {
-            return { items: [], total: 0, truncated: false, summary: emptySummary() };
-        }
-        query = query.in("auth_user_id", ids);
     }
 
     const { data: enrollments, error } = await query;
     if (error) throw new AccessError(error.message, 500);
 
     const rows = enrollments ?? [];
-    const truncated = rows.length > FOLD_CEILING;
-    const bounded = truncated ? rows.slice(0, FOLD_CEILING) : rows;
+    if (rows.length === 0) return new Map();
 
     const [accounts, lessonCounts, progress] = await Promise.all([
-        accountsByIds(db, [...new Set(bounded.map((row) => row.auth_user_id as string))]),
-        lessonCountByCourse(db, [...new Set(bounded.map((row) => row.course_id as string))]),
-        progressByEnrollment(db, bounded.map((row) => row.id as string)),
+        accountsByIds(db, [...new Set(rows.map((row) => row.auth_user_id as string))]),
+        lessonCountByCourse(db, [...new Set(rows.map((row) => row.course_id as string))]),
+        progressByEnrollment(db, rows.map((row) => row.id as string)),
     ]);
 
     const now = new Date();
-    const all: LearnerRow[] = bounded.map((row) => {
+    const all: LearnerRow[] = rows.map((row) => {
         const course = courses.get(row.course_id as string);
         const account = accounts.get(row.auth_user_id as string);
         const folded = progress.get(row.id as string) ?? { completed: 0, lastActivityAt: null };
@@ -333,19 +298,155 @@ export async function listLearners(input: ListLearnersInput): Promise<{
         };
     });
 
-    const people = groupLearnersByAccount(all);
+    return new Map(groupLearnersByAccount(all).map((person) => [person.authUserId, person]));
+}
+
+export type ListPeopleInput = {
+    q?: string;
+    /** A role to narrow to, or `staff` for any elevated one. */
+    role?: string;
+    /** Whether to show everybody, only people holding a course, or only people holding none. */
+    access?: AccessFacet;
+    courseSlug?: string;
+    status?: LearnerStatus | "";
+    limit: number;
+    offset: number;
+};
+
+/**
+ * One person per row, with everything the panel knows about them.
+ *
+ * THIS IS THE MERGE OF TWO LISTS THAT WERE ONE LIST. `listLearners` started
+ * from enrollments and so could not see an account that held none;
+ * `listAccounts` started from accounts and so could not show what they held.
+ * The panel then had a tab for each, and "holds a course" — an attribute of a
+ * person — wore a tab instead of a facet. Step 2 of
+ * docs/admin-access-shape-2026-08-28.md.
+ *
+ * IT PAGES IN MEMORY, and that is not laziness. Status is a fold over the event
+ * log (`foldProgress` is the only definition of "done" this codebase has), so
+ * it cannot be a WHERE clause: filtering or counting by it means loading the
+ * candidates, folding them, and only then slicing. `listLearners` already made
+ * that trade; this keeps its ceiling and its `truncated` flag, which is what
+ * stops the trade from silently becoming a lie.
+ */
+export async function listPeople(input: ListPeopleInput): Promise<{
+    items: PersonRow[];
+    total: number;
+    truncated: boolean;
+    summary: Record<LearnerStatus, number>;
+}> {
+    const db = adminClient();
+
+    // ── 1. The candidate people ────────────────────────────────────────────
+    let accountQuery = db
+        .from("platform_users")
+        .select("auth_user_id, email, full_name, avatar_url, provider, last_sign_in_at")
+        .order("last_sign_in_at", { ascending: false, nullsFirst: false })
+        .limit(FOLD_CEILING + 1);
+
+    const q = sanitizeSearch(input.q);
+    if (q) accountQuery = accountQuery.or(`email.ilike.%${q}%,full_name.ilike.%${q}%`);
+
+    if (input.role) {
+        const wanted = input.role === "staff" ? ELEVATED_ROLES : [input.role];
+        const { data: holders, error: roleError } = await db.from("user_roles").select("user_id").in("role", wanted);
+        if (roleError) throw new AccessError(roleError.message, 500);
+
+        const ids = (holders ?? []).map((row) => row.user_id as string);
+        // An empty `in()` is a query Postgres rejects; nobody holding the role
+        // is an empty page, not an error.
+        if (ids.length === 0) return { items: [], total: 0, truncated: false, summary: emptySummary() };
+        accountQuery = accountQuery.in("auth_user_id", ids);
+    }
+
+    const { data: accountRows, error: accountError } = await accountQuery;
+    if (accountError) throw new AccessError(accountError.message, 500);
+
+    const accounts = accountRows ?? [];
+    const truncated = accounts.length > FOLD_CEILING;
+    const bounded = truncated ? accounts.slice(0, FOLD_CEILING) : accounts;
+    if (bounded.length === 0) return { items: [], total: 0, truncated, summary: emptySummary() };
+
+    const ids = bounded.map((row) => row.auth_user_id as string);
+
+    // ── 2. What they hold ──────────────────────────────────────────────────
+    const coursesByAccount = await foldEnrollmentsByAccount(db, ids, input.courseSlug);
+
+    // ── 3. What they are ───────────────────────────────────────────────────
+    const [{ data: roles }, { data: owned }, customerIdByAccount] = await Promise.all([
+        db.from("user_roles").select("user_id, role, updated_at").in("user_id", ids),
+        db.from("lms_courses").select("author_id").not("author_id", "is", null),
+        customersByAccount(
+            db,
+            bounded.map((row) => ({ authUserId: row.auth_user_id as string, email: (row.email as string | null) ?? null }))
+        ),
+    ]);
+
+    const roleById = new Map((roles ?? []).map((row) => [row.user_id as string, String(row.role).toLowerCase()]));
+    const roleUpdatedById = new Map((roles ?? []).map((row) => [row.user_id as string, (row.updated_at as string | null) ?? null]));
+
+    const ownedByAuthor = new Map<string, number>();
+    for (const row of owned ?? []) {
+        const key = row.author_id as string;
+        ownedByAuthor.set(key, (ownedByAuthor.get(key) ?? 0) + 1);
+    }
+
+    const paidByCustomer = await paidOrderCounts(db, [...new Set([...customerIdByAccount.values()].flat())]);
+
+    const people: PersonRow[] = bounded.map((row) => {
+        const authUserId = row.auth_user_id as string;
+        const held = coursesByAccount.get(authUserId);
+        const customers = customerIdByAccount.get(authUserId) ?? [];
+
+        return {
+            authUserId,
+            email: (row.email as string | null) ?? null,
+            fullName: (row.full_name as string | null) ?? null,
+            avatarUrl: (row.avatar_url as string | null) ?? null,
+            courses: held?.courses ?? [],
+            lessonsTotal: held?.lessonsTotal ?? 0,
+            lessonsCompleted: held?.lessonsCompleted ?? 0,
+            lastActivityAt: held?.lastActivityAt ?? null,
+            status: held?.status ?? "not_started",
+            provider: (row.provider as string | null) ?? null,
+            lastSignInAt: (row.last_sign_in_at as string | null) ?? null,
+            role: roleById.get(authUserId) ?? null,
+            roleUpdatedAt: roleUpdatedById.get(authUserId) ?? null,
+            purchases: customers.reduce((sum, id) => sum + (paidByCustomer.get(id) ?? 0), 0),
+            ownedCourses: ownedByAuthor.get(authUserId) ?? 0,
+        };
+    });
+
+    // ── 4. The facets ──────────────────────────────────────────────────────
+    // The summary counts what the OTHER facets left, before the status facet
+    // narrows it: the numbers are what you are choosing between, so a chosen
+    // status must not rewrite them to itself.
+    const scoped = people.filter((person) => {
+        // Asking about one course means asking about the people in it. Without
+        // this, somebody whose only enrollment is a different course would
+        // survive with an empty `courses` and read as "has no courses".
+        if (input.courseSlug && person.courses.length === 0) return false;
+        if (input.access === "enrolled") return person.courses.length > 0;
+        if (input.access === "none") return person.courses.length === 0;
+        return true;
+    });
 
     const summary = emptySummary();
-    for (const person of people) {
+    for (const person of scoped) {
         for (const status of new Set(person.courses.map((course) => course.status))) summary[status] += 1;
     }
 
     const filtered = input.status
-        ? people.filter((person) => person.courses.some((course) => course.status === input.status))
-        : people;
-    const page = filtered.slice(input.offset, input.offset + input.limit);
+        ? scoped.filter((person) => person.courses.some((course) => course.status === input.status))
+        : scoped;
 
-    return { items: page, total: filtered.length, truncated, summary };
+    return {
+        items: filtered.slice(input.offset, input.offset + input.limit),
+        total: filtered.length,
+        truncated,
+        summary,
+    };
 }
 
 function emptySummary(): Record<LearnerStatus, number> {
@@ -360,6 +461,17 @@ export async function grantCourse(input: {
     expiresAt?: string | null;
     /** Why this seat exists. Defaults to a plain admin grant. */
     source?: GrantSource;
+    /**
+     * The purchase this seat was opened for, when there is one.
+     *
+     * Without it a hand-recorded sale left the seat with no anchor, and the
+     * learner's first visit read the manual order as a purchase nobody had
+     * counted yet: `planAccess` then stacked the offer's term on top of the
+     * date the operator typed, or replaced it with "forever" on a lifetime
+     * offer. Naming the order here makes it already spent, so the window the
+     * operator agreed is the window that stands.
+     */
+    orderRef?: string | null;
 }) {
     const db = adminClient();
     const account = await resolveAccountByEmail(db, input.email);
@@ -417,6 +529,7 @@ export async function grantCourse(input: {
             // Who handed this out. A purchase leaves `order_ref` to answer the
             // same question; a gift had nothing to answer it with until now.
             granted_by: input.actorId,
+            ...(input.orderRef ? { order_ref: input.orderRef } : {}),
             // Day 1 starts now — same rule as `scripts/lms-grant.mjs`.
             started_at: new Date().toISOString(),
             expires_at: expiresAt,
@@ -644,7 +757,37 @@ export async function recordManualPayment(input: {
         },
     });
 
-    return { orderRef, customerId, amount: input.amount, currency: input.currency, productCode };
+    return { orderRef, customerId, amount: input.amount, currency: input.currency, productCode, paidAt };
+}
+
+/**
+ * When a seat sold by hand should close, according to the offer.
+ *
+ * Anchored at the payment, exactly as `planAccess` anchors a checkout purchase,
+ * so the same course sold at the till and sold in admin ends on the same day.
+ * A course with no offer row, or one sold for good, has no end — the same
+ * "unconfigured means perpetual" direction the door already takes.
+ */
+async function offerExpiryFor(db: Db, courseSlug: string, paidAt: string): Promise<string | null> {
+    const { data: course } = await db.from("lms_courses").select("id").eq("slug", courseSlug).maybeSingle();
+    if (!course?.id) return null;
+
+    const { data: offer } = await db
+        .from("lms_course_offers")
+        .select("access_days, access_lifetime")
+        .eq("course_id", course.id)
+        .maybeSingle();
+    if (!offer) return null;
+
+    const rule = accessRuleOf({
+        accessDays: (offer.access_days as number | null) ?? null,
+        accessLifetime: (offer.access_lifetime as boolean | null) ?? null,
+    });
+    if (!rule || rule.lifetime) return null;
+
+    const from = new Date(paidAt);
+    if (!Number.isFinite(from.getTime())) return null;
+    return accessWindowEnd(from, rule);
 }
 
 /**
@@ -777,14 +920,27 @@ export async function provisionAccess(input: ProvisionAccessInput) {
           })
         : null;
 
+    /* The term comes from the offer unless the operator overrode it.
+       A hand-recorded sale used to ignore `access_days` entirely: selling a
+       30-day course by hand granted it forever unless somebody remembered to
+       type a date. The offer is where the term is agreed, so a sale made in
+       admin is sold on the same terms as one made at the checkout. */
+    const expiresAt =
+        input.expiresAt !== undefined
+            ? input.expiresAt
+            : payment
+              ? await offerExpiryFor(db, input.courseSlug, payment.paidAt)
+              : null;
+
     const grant = await grantCourse({
         email: input.email,
         courseSlug: input.courseSlug,
-        expiresAt: input.expiresAt ?? null,
+        expiresAt,
         // A hand-recorded sale is a purchase in every way that matters, so it
         // is not filed as a gift: the money is real and the order exists.
         source: input.source ?? (payment ? "manual" : undefined),
         actorId: input.actorId,
+        orderRef: payment?.orderRef ?? null,
     });
 
     return { accountCreated: account.created, account: grant.account, payment, grant };
@@ -964,106 +1120,6 @@ export async function unblockCourse(input: { enrollmentId: string; actorId: stri
     return { courseSlug, email };
 }
 
-export type ListAccountsInput = { q?: string; limit: number; offset: number };
-
-/**
- * Everyone who has an account, which no other list in the panel answers.
- *
- * Roles show only elevated roles, Learners show only people holding a course,
- * Customers show only people who paid — so someone who signed in with Google
- * and did nothing else was invisible in a panel that knew about them all along.
- * That is the wrong shape for the surface you use to hand out access by hand:
- * to grant something to a person you first have to be able to FIND them.
- *
- * `platform_users` is the mirror of `auth.users`, written on every sign-in
- * (`/api/platform/users/sync`), and it is the only one of the two this codebase
- * may read with a plain query — so it is the list.
- *
- * Course and purchase counts are folded per page, not per row: one query each
- * for the fifty accounts on screen instead of a hundred round-trips.
- */
-export async function listAccounts(input: ListAccountsInput): Promise<{
-    items: AccountRow[];
-    total: number;
-}> {
-    const db = adminClient();
-
-    let query = db
-        .from("platform_users")
-        .select("auth_user_id, email, full_name, avatar_url, provider, last_sign_in_at", { count: "exact" })
-        // Most recent sign-in first; an account that has never signed in — one
-        // the panel just created for a hand-made sale — sorts last rather than
-        // to the top, where it would look like the newest activity.
-        .order("last_sign_in_at", { ascending: false, nullsFirst: false })
-        .range(input.offset, input.offset + input.limit - 1);
-
-    const q = sanitizeSearch(input.q);
-    if (q) query = query.or(`email.ilike.%${q}%,full_name.ilike.%${q}%`);
-
-    const { data, error, count } = await query;
-    if (error) throw new AccessError(error.message, 500);
-
-    const rows = data ?? [];
-    if (rows.length === 0) return { items: [], total: count ?? 0 };
-
-    const ids = rows.map((row) => row.auth_user_id as string);
-
-    const [{ data: roles }, { data: enrollments }, customerIdByAccount] = await Promise.all([
-        db.from("user_roles").select("user_id, role").in("user_id", ids),
-        db.from("lms_enrollments").select("auth_user_id").in("auth_user_id", ids),
-        customersByAccount(
-            db,
-            rows.map((row) => ({
-                authUserId: row.auth_user_id as string,
-                email: (row.email as string | null) ?? null,
-            }))
-        ),
-    ]);
-
-    const roleById = new Map((roles ?? []).map((row) => [row.user_id as string, String(row.role).toLowerCase()]));
-
-    const enrolledCount = new Map<string, number>();
-    for (const row of enrollments ?? []) {
-        const key = row.auth_user_id as string;
-        enrolledCount.set(key, (enrolledCount.get(key) ?? 0) + 1);
-    }
-
-    const paidByCustomer = await paidOrderCounts(db, [...new Set([...customerIdByAccount.values()].flat())]);
-
-    return {
-        items: rows.map((row) => {
-            const authUserId = row.auth_user_id as string;
-            const customers = customerIdByAccount.get(authUserId) ?? [];
-            return {
-                authUserId,
-                email: (row.email as string | null) ?? null,
-                fullName: (row.full_name as string | null) ?? null,
-                avatarUrl: (row.avatar_url as string | null) ?? null,
-                provider: (row.provider as string | null) ?? null,
-                lastSignInAt: (row.last_sign_in_at as string | null) ?? null,
-                role: roleById.get(authUserId) ?? null,
-                enrollments: enrolledCount.get(authUserId) ?? 0,
-                purchases: customers.reduce((sum, id) => sum + (paidByCustomer.get(id) ?? 0), 0),
-            } satisfies AccountRow;
-        }),
-        total: count ?? rows.length,
-    };
-}
-
-/**
- * Which customer rows belong to each account, by link and by address.
- *
- * Both, because the two are not the same set: a purchase made before the
- * account existed carries no `auth_user_id` until the buyer signs in, and the
- * panel's own manual sale links the row immediately. Counting only linked rows
- * would report "0 purchases" for exactly the people support is looking up.
- *
- * The address match is an exact `in` on lowercase rather than a per-row
- * `ilike`, which is one query instead of fifty. It holds because every writer
- * of `customers.email` normalizes — the WayForPay webhook through `normEmail`,
- * the support bot from the already-lowercased mirror, `recordManualPayment`
- * here. A future writer that does not is what would quietly break this count.
- */
 async function customersByAccount(
     db: Db,
     accounts: Array<{ authUserId: string; email: string | null }>
@@ -1122,63 +1178,6 @@ async function paidOrderCounts(db: Db, customerIds: string[]): Promise<Map<strin
         counts.set(key, (counts.get(key) ?? 0) + 1);
     }
     return counts;
-}
-
-export async function listRoles(input: { q?: string }): Promise<RoleRow[]> {
-    const db = adminClient();
-
-    const { data: roles, error } = await db
-        .from("user_roles")
-        .select("user_id, role, updated_at")
-        .order("updated_at", { ascending: false });
-    if (error) throw new AccessError(error.message, 500);
-
-    // Only elevated roles are worth a table — 'user' is everyone, and listing
-    // everyone here would just be a worse version of /admin/customers.
-    const elevated = (roles ?? []).filter((row) => String(row.role).toLowerCase() !== "user");
-    if (elevated.length === 0) return [];
-    const ids = elevated.map((row) => row.user_id as string);
-
-    const [{ data: profiles }, { data: owned }, { data: enrolled }] = await Promise.all([
-        db
-            .from("platform_users")
-            .select("auth_user_id, email, full_name, avatar_url, last_sign_in_at")
-            .in("auth_user_id", ids),
-        db.from("lms_courses").select("author_id").not("author_id", "is", null),
-        db.from("lms_enrollments").select("auth_user_id").in("auth_user_id", ids),
-    ]);
-
-    const profileById = new Map((profiles ?? []).map((row) => [row.auth_user_id as string, row]));
-    const ownedCount = new Map<string, number>();
-    for (const row of owned ?? []) {
-        const key = row.author_id as string;
-        ownedCount.set(key, (ownedCount.get(key) ?? 0) + 1);
-    }
-    const enrolledCount = new Map<string, number>();
-    for (const row of enrolled ?? []) {
-        const key = row.auth_user_id as string;
-        enrolledCount.set(key, (enrolledCount.get(key) ?? 0) + 1);
-    }
-
-    const q = input.q?.trim().toLowerCase() ?? "";
-    return elevated
-        .map((row) => {
-            const profile = profileById.get(row.user_id as string);
-            return {
-                authUserId: row.user_id as string,
-                email: (profile?.email as string | null) ?? null,
-                fullName: (profile?.full_name as string | null) ?? null,
-                avatarUrl: (profile?.avatar_url as string | null) ?? null,
-                role: String(row.role).toLowerCase(),
-                lastSignInAt: (profile?.last_sign_in_at as string | null) ?? null,
-                updatedAt: (row.updated_at as string | null) ?? null,
-                ownedCourses: ownedCount.get(row.user_id as string) ?? 0,
-                enrollments: enrolledCount.get(row.user_id as string) ?? 0,
-            } satisfies RoleRow;
-        })
-        .filter((row) =>
-            q ? `${row.email ?? ""} ${row.fullName ?? ""}`.toLowerCase().includes(q) : true
-        );
 }
 
 export async function setRole(input: { email: string; role: GrantableRole; actorId: string }) {
@@ -1316,6 +1315,12 @@ export async function moderateCourse(input: {
                 status: "published",
                 visibility: course.visibility ?? "hidden",
                 version: Number(course.version ?? revision.version) + 1,
+            }, {
+                // `pending_content` is the author's own saved payload, reviewed as
+                // it stands — so it speaks for the storefront columns exactly as the
+                // builder's save does. Approving must publish what was reviewed,
+                // including a field the author deliberately emptied.
+                optionalColumns: "authoritative",
             });
             values = {
                 review_status: "approved", review_note: null, approved_at: new Date().toISOString(), approved_by: input.actorId,

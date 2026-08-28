@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { AccessError, isGrantableRole, listRoles, setRole } from "@/lib/admin/access";
+import { AccessError, isGrantableRole, setRole } from "@/lib/admin/access";
 import {
     badRequestResponse,
     forbiddenResponse,
@@ -15,22 +15,15 @@ function failed(error: unknown) {
     return serverErrorResponse(error instanceof Error ? error.message : "unknown_error");
 }
 
-// GET /api/admin/access/roles?q=
-export async function GET(req: NextRequest) {
-    const session = await requireAdminSession(req);
-    if (!session) return unauthorizedResponse();
-
-    try {
-        const items = await listRoles({ q: new URL(req.url).searchParams.get("q") ?? undefined });
-        // `selfId` lets the panel disable the row that would fail with
-        // `cannot_change_own_role` instead of offering a control that 409s.
-        return NextResponse.json({ items, canGrant: session.role === "admin", selfId: session.user.id });
-    } catch (error) {
-        return failed(error);
-    }
-}
-
-// POST /api/admin/access/roles { email, role }
+/**
+ * POST /api/admin/access/roles { email, role }
+ *
+ * There is no GET any more. It backed a Roles TABLE — the accounts holding an
+ * elevated role — and that table was the accounts list filtered by an attribute
+ * of the account, which is a facet rather than a tab. `/access/accounts?role=`
+ * answers it now, from the one list, so this route is only the write.
+ * See docs/admin-access-shape-2026-08-28.md.
+ */
 export async function POST(req: NextRequest) {
     const session = await requireAdminSession(req);
     if (!session) return unauthorizedResponse();

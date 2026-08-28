@@ -38,6 +38,8 @@ const builder = {
   previewBuilderCourseImport: vi.fn(),
   importBuilderCourse: vi.fn(),
   loadBuilderCourse: vi.fn(),
+  // The ownership probe `courseAccess` runs before the full load.
+  readCourseOwnership: vi.fn(),
 };
 
 vi.mock("@/lib/auth/requireUser", () => ({
@@ -51,6 +53,14 @@ vi.mock("@/lib/lms/builderAccess", () => ({
   courseFilterFor: () => ({ authorId: "author-1" }),
   canCreateCourse: () => true,
   canEditCourse: () => true,
+}));
+
+// The routes now carry a rate limit, which talks to Postgres. These tests are
+// about what the routes do with a course, so the limiter answers "allowed"
+// rather than failing open through a real client that has no database.
+vi.mock("@/lib/rateLimit", async (importOriginal) => ({
+  ...(await importOriginal<typeof import("@/lib/rateLimit")>()),
+  enforceRateLimit: async () => ({ allowed: true, retryAfter: 0, count: 0 }),
 }));
 
 vi.mock("next/cache", () => ({
@@ -88,6 +98,7 @@ beforeEach(() => {
   });
   builder.importBuilderCourse.mockResolvedValue({ slug: course.slug });
   builder.loadBuilderCourse.mockResolvedValue({ course, authorId: "author-1", updatedAt: null });
+  builder.readCourseOwnership.mockResolvedValue({ id: course.id, slug: course.slug, authorId: "author-1" });
 });
 
 describe("portable course import route", () => {

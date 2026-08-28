@@ -19,6 +19,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useI18n } from "@/components/I18nProvider";
 import { useToast } from "@/components/ToastProvider";
+import { AdminDateField } from "@/components/admin/AdminDateField";
+import { AdminModal } from "@/components/admin/AdminModal";
 import { AdminTabs } from "@/components/admin/AdminTabs";
 import { AdminPagination } from "@/components/admin/AdminPagination";
 import { AdminSearchInput } from "@/components/admin/AdminSearchInput";
@@ -28,8 +30,8 @@ import { AdminErrorState } from "@/components/admin/AdminErrorState";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/adminLocale";
-import type { AccountRow, CourseRow, LearnerAccountRow, LearnerRow, LearnerStatus, RoleRow } from "@/lib/admin/accessTypes";
-import { deadlineInputValue, GRANTABLE_ROLES, PAYMENT_CURRENCIES } from "@/lib/admin/accessTypes";
+import type { CourseRow, LearnerAccountRow, LearnerRow, LearnerStatus, PersonRow } from "@/lib/admin/accessTypes";
+import { deadlineInputValue, ELEVATED_ROLES, grantDeadlineValue, GRANTABLE_ROLES, PAYMENT_CURRENCIES } from "@/lib/admin/accessTypes";
 
 const LIMIT = 50;
 
@@ -78,6 +80,14 @@ function EmptyIcon() {
     );
 }
 
+function PlusGlyph() {
+    return (
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+            <path d="M12 5v14M5 12h14" />
+        </svg>
+    );
+}
+
 function ChevronIcon({ open }: { open: boolean }) {
     return (
         <svg
@@ -103,7 +113,6 @@ export default function AccessPage() {
     const locale = getAdminLocale(lang);
     const toast = useToast();
 
-    const [tab, setTab] = useState<"learners" | "accounts" | "roles" | "builder">("learners");
 
     // Shared: the course list feeds the grant form, the course filter and the
     // builder tab, so it is fetched once for the page rather than per tab.
@@ -145,13 +154,6 @@ export default function AccessPage() {
         };
     }, [coursesToken, toast, errorText]);
 
-    const TABS = [
-        { key: "learners", label: t("access_tab_learners") },
-        { key: "accounts", label: t("access_tab_accounts") },
-        { key: "roles", label: t("access_tab_roles") },
-        { key: "builder", label: t("access_tab_builder") },
-    ];
-
     return (
         <div className="space-y-6 animate-in fade-in duration-500">
             <div>
@@ -159,41 +161,101 @@ export default function AccessPage() {
                 <p className="cw-page-subtitle">{t("access_subtitle")}</p>
             </div>
 
-            <AdminTabs
-                items={TABS}
-                activeKey={tab}
-                onChange={(key) => setTab(key as typeof tab)}
-                className="overflow-x-auto no-scrollbar"
+            {/* NO TAB BAR. There were four: three views of PEOPLE and one of
+                COURSES. The three collapsed into this one list with facets, and
+                the fourth moved to /admin/catalog, where the other views of a
+                course already were — one tab is not a tab.
+                See docs/admin-access-shape-2026-08-28.md. */}
+            <PeopleTab
+                courses={courses}
+                canGrantRoles={canGrantRoles}
+                locale={locale}
+                errorText={errorText}
+                onCoursesChanged={reloadCourses}
             />
-
-            {tab === "learners" ? (
-                <LearnersTab courses={courses} locale={locale} errorText={errorText} onCoursesChanged={reloadCourses} />
-            ) : tab === "accounts" ? (
-                <AccountsTab
-                    courses={courses}
-                    canGrant={canGrantRoles}
-                    locale={locale}
-                    errorText={errorText}
-                    onCoursesChanged={reloadCourses}
-                />
-            ) : tab === "roles" ? (
-                <RolesTab canGrant={canGrantRoles} locale={locale} errorText={errorText} />
-            ) : (
-                <BuilderTab courses={courses} canGrant={canGrantRoles} locale={locale} errorText={errorText} onChanged={reloadCourses} />
-            )}
         </div>
     );
 }
 
-/* ───────────────────────────── Learners ───────────────────────────── */
+/** The date field's labels, in one place: three call sites, one wording. */
+function useDateLabels() {
+    const { t } = useI18n();
+    return useMemo(
+        () => ({
+            open: t("access_date_open"),
+            clear: t("access_deadline_clear"),
+            today: t("access_date_today"),
+            placeholder: t("access_date_placeholder"),
+        }),
+        [t]
+    );
+}
 
-function LearnersTab({
+/**
+ * Changing one account's role — the only writer, called from both tables.
+ *
+ * IT WAS TWO. The Roles tab and the Accounts tab each had their own copy: same POST,
+ * same "user means remove" toast, and same confirmation before demoting an
+ * admin. That last one is a safety rule, and a safety rule with two copies is
+ * one that will eventually exist in only one of them — the next guard anybody
+ * adds (refusing to demote the last admin, say) lands in whichever file they
+ * had open and leaves the other hole standing.
+ *
+ * The busy flag stays with the caller: one table disables a row, the other
+ * disables its own control, and that is a rendering decision rather than part
+ * of the write.
+ *
+ * Returns whether anything was written, so a caller can skip its reload.
+ */
+function useRoleWrite(errorText: (message: string) => string, reload: () => Promise<void> | void) {
+    const { t } = useI18n();
+    const toast = useToast();
+
+    return useCallback(
+        async (input: { email: string | null; current: string | null; next: string }) => {
+            // `null` is the ordinary role, not a missing one: `user_roles` holds
+            // a row per account and the tables that omit it mean "user".
+            const current = input.current ?? "user";
+            if (!input.email || input.next === current) return false;
+            if (current === "admin" && !window.confirm(t("access_role_demote_confirm"))) return false;
+
+            try {
+                await authFetch("/api/admin/access/roles", {
+                    method: "POST",
+                    body: JSON.stringify({ email: input.email, role: input.next }),
+                });
+                toast.success(input.next === "user" ? t("access_role_removed") : t("access_role_set"));
+                await reload();
+                return true;
+            } catch (e) {
+                toast.error(errorText(getErrorMessage(e)));
+                return false;
+            }
+        },
+        [t, toast, errorText, reload]
+    );
+}
+
+/* ────────────────────────────── People ───────────────────────────── */
+
+/**
+ * One list of people, and everything about one of them in their own row.
+ *
+ * It was two tabs — Учні (accounts holding a course) and Акаунти (accounts) —
+ * which were one list seen from two ends. "Holds a course" is an attribute of a
+ * person, so it is the `access` facet here rather than a tab of its own. Step 2
+ * of docs/admin-access-shape-2026-08-28.md.
+ */
+function PeopleTab({
     courses,
+    canGrantRoles,
     locale,
     errorText,
     onCoursesChanged,
 }: {
     courses: CourseRow[];
+    /** Admin-only. Role writes are refused for `support` by the API, so the control is not offered. */
+    canGrantRoles: boolean;
     locale: string;
     errorText: (message: string) => string;
     onCoursesChanged: () => void;
@@ -205,12 +267,17 @@ function LearnersTab({
     const [debouncedQ, setDebouncedQ] = useState("");
     const [courseSlug, setCourseSlug] = useState("");
     const [status, setStatus] = useState<LearnerStatus | "">("");
+    /** A role to narrow to, or `staff` for any elevated one. Empty is everybody. */
+    const [roleFilter, setRoleFilter] = useState("");
+    /** Everybody, only people holding a course, or only people holding none. */
+    const [accessFilter, setAccessFilter] = useState<"" | "enrolled" | "none">("");
     const [page, setPage] = useState(0);
 
-    const [items, setItems] = useState<LearnerAccountRow[]>([]);
+    const [items, setItems] = useState<PersonRow[]>([]);
     const [total, setTotal] = useState(0);
     const [truncated, setTruncated] = useState(false);
     const [summary, setSummary] = useState<Record<LearnerStatus, number> | null>(null);
+    const [selfId, setSelfId] = useState<string | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -224,12 +291,37 @@ function LearnersTab({
     const [grantName, setGrantName] = useState("");
     const [grantCreateAccount, setGrantCreateAccount] = useState(false);
     const [grantExpiresAt, setGrantExpiresAt] = useState("");
+    /* Perpetual is the DEFAULT, and stated rather than implied. An empty date
+       has always meant "never expires" — the API reads `null` that way and
+       `isEnrollmentExpired` agrees — but a blank date field says that to nobody,
+       and the one form that sells a course by hand should not make its most
+       common outcome the one you have to know a rule to get. Ticked, the date
+       goes dim rather than away: hiding it moves the row underneath, and an
+       operator who typed a date before ticking should get it back on untick. */
+    // Unticked by default: the safe answer for a course with a paid offer is
+    // to sell it on that offer's own term, not to override it with forever
+    // every time someone opens this form. A course with no offer to inherit
+    // (a gift, a review grant) still ends up perpetual — the same as ticking
+    // this by hand — because `provisionAccess` reads no term as no deadline.
+    const [grantForever, setGrantForever] = useState(false);
     const [grantAmount, setGrantAmount] = useState("");
     const [grantCurrency, setGrantCurrency] = useState<string>(PAYMENT_CURRENCIES[0]);
     const [grantNote, setGrantNote] = useState("");
+    /* The role, set on the same form that can create the account.
+       `user` is "no elevation" and is what an account gets anyway, so the field
+       is only sent when it is something else — see `grant`. Assigning a role
+       used to require the account to exist first (`setRole` resolves by email
+       and 404s otherwise), which put the one form that CREATES accounts and the
+       one form that assigns roles on opposite sides of that requirement. */
+    const [grantRole, setGrantRole] = useState<string>("user");
 
     // Deadline edits, keyed by enrollment so two open rows never share a draft.
     const [deadlineDraft, setDeadlineDraft] = useState<Record<string, string>>({});
+    /** Which account is being given another course, so only its own row goes busy. */
+    const [grantingTo, setGrantingTo] = useState<string | null>(null);
+    const dateLabels = useDateLabels();
+    /** The grant form's dialog. Closed on arrival: reading the list is the common visit. */
+    const [grantOpen, setGrantOpen] = useState(false);
     const [savingDeadline, setSavingDeadline] = useState<string | null>(null);
 
     // Which people have their course list open. Keyed by account id rather than
@@ -266,27 +358,31 @@ function LearnersTab({
             if (debouncedQ) params.set("q", debouncedQ);
             if (courseSlug) params.set("course", courseSlug);
             if (status) params.set("status", status);
+            if (roleFilter) params.set("role", roleFilter);
+            if (accessFilter) params.set("access", accessFilter);
             params.set("limit", String(LIMIT));
             params.set("offset", String(page * LIMIT));
 
             const payload = await authFetch(`/api/admin/access/learners?${params}`) as {
-                items: LearnerAccountRow[];
+                items: PersonRow[];
                 total: number;
                 truncated: boolean;
                 summary: Record<LearnerStatus, number>;
+                selfId?: string;
             };
             if (reqId !== requestSeq.current) return;
             setItems(payload.items ?? []);
             setTotal(payload.total ?? 0);
             setTruncated(Boolean(payload.truncated));
             setSummary(payload.summary ?? null);
+            setSelfId(payload.selfId ?? null);
         } catch (e) {
             if (reqId !== requestSeq.current) return;
             setError(errorText(getErrorMessage(e)));
         } finally {
             if (reqId === requestSeq.current) setLoading(false);
         }
-    }, [debouncedQ, courseSlug, status, page, errorText]);
+    }, [debouncedQ, courseSlug, status, roleFilter, accessFilter, page, errorText]);
 
     useEffect(() => {
         void load();
@@ -303,12 +399,16 @@ function LearnersTab({
                     course: grantCourse,
                     fullName: grantName.trim() || null,
                     createAccount: grantCreateAccount,
-                    expiresAt: grantExpiresAt || null,
+                    expiresAt: grantDeadlineValue(grantForever, grantExpiresAt),
+                    // Omitted rather than sent as "user": the API treats absence
+                    // as "leave the role alone", which is what an operator who
+                    // never touched the field meant.
+                    role: canGrantRoles && grantRole !== "user" ? grantRole : undefined,
                     payment: grantAmount.trim()
                         ? { amount: Number(grantAmount), currency: grantCurrency, note: grantNote.trim() || null }
                         : null,
                 }),
-            }) as { created: boolean; accountCreated: boolean; orderRef: string | null };
+            }) as { created: boolean; accountCreated: boolean; orderRef: string | null; role: string | null };
 
             // Three things may have happened; the toast names the one the
             // operator is least sure about — money is the part they cannot
@@ -321,12 +421,17 @@ function LearnersTab({
                       : t("access_already_enrolled")
             );
             if (payload.accountCreated) toast.info(t("access_account_created"));
+            if (payload.role) toast.info(`${t("access_role_set")}: ${payload.role}`);
 
             setGrantEmail("");
             setGrantName("");
             setGrantAmount("");
             setGrantNote("");
             setGrantCreateAccount(false);
+            setGrantRole("user");
+            // Only on success: a failed grant keeps the dialog and everything
+            // typed into it, which is the whole point of failing inside one.
+            setGrantOpen(false);
             onCoursesChanged();
             await load();
         } catch (e) {
@@ -334,6 +439,42 @@ function LearnersTab({
         } finally {
             setGranting(false);
         }
+    };
+
+    /**
+     * A second course for somebody already listed.
+     *
+     * Deliberately the plain case only: no deadline, no payment, no account
+     * creation — the account is right there, and the seat can be dated
+     * afterwards on the row this creates. The big form stays the place where a
+     * sale with money attached is recorded.
+     */
+    const grantMore = async (account: LearnerAccountRow, slug: string) => {
+        if (!account.email) return;
+        setGrantingTo(account.authUserId);
+        try {
+            const payload = await authFetch("/api/admin/access/learners", {
+                method: "POST",
+                body: JSON.stringify({ email: account.email, course: slug }),
+            }) as { created: boolean };
+            toast[payload.created ? "success" : "info"](
+                payload.created ? t("access_granted") : t("access_already_enrolled")
+            );
+            onCoursesChanged();
+            await load();
+        } catch (e) {
+            toast.error(errorText(getErrorMessage(e)));
+        } finally {
+            setGrantingTo(null);
+        }
+    };
+
+    const writeRole = useRoleWrite(errorText, load);
+
+    const setPersonRole = async (account: PersonRow, nextRole: string) => {
+        setGrantingTo(account.authUserId);
+        await writeRole({ email: account.email, current: account.role, next: nextRole });
+        setGrantingTo(null);
     };
 
     // Takes the value explicitly rather than reading the draft map: "clear" sets
@@ -430,12 +571,49 @@ function LearnersTab({
 
     return (
         <div className="space-y-4">
-            {/* Grant — person, access, deadline, and the money if there was any */}
-            <div className="cw-panel p-4 space-y-3">
-                <div>
-                    <p className="text-sm font-semibold cw-text">{t("access_grant_title")}</p>
-                    <p className="text-xs cw-muted mt-1">{t("access_grant_hint")}</p>
-                </div>
+            {/* THE FORM IS BEHIND A BUTTON NOW. It is the rarest thing on this
+                screen — most visits are to read the list or to fix one seat —
+                and it was the first and largest thing on it: eight fields and
+                two checkboxes pushing the learners it is about below the fold.
+                A dialog also gives it room to breathe, which a strip crammed
+                into twelve columns never had. */}
+            <div className="flex justify-end">
+                <button
+                    type="button"
+                    onClick={() => setGrantOpen(true)}
+                    className="px-4 py-2 cw-btn cw-surface-2 text-sm inline-flex items-center gap-2"
+                >
+                    <PlusGlyph />
+                    {t("access_grant_open")}
+                </button>
+            </div>
+
+            {grantOpen ? (
+                <AdminModal
+                    title={t("access_grant_title")}
+                    description={t("access_grant_hint")}
+                    size="lg"
+                    onClose={() => setGrantOpen(false)}
+                    footer={(
+                        <>
+                            <button
+                                type="button"
+                                onClick={() => setGrantOpen(false)}
+                                className="px-4 py-2 cw-btn text-sm"
+                            >
+                                {t("common_close")}
+                            </button>
+                            <button
+                                type="button"
+                                onClick={grant}
+                                disabled={granting || !grantEmail.trim() || !grantCourse}
+                                className="px-4 py-2 cw-btn cw-surface-2 text-sm disabled:opacity-50"
+                            >
+                                {t("access_grant_submit")}
+                            </button>
+                        </>
+                    )}
+                >
 
                 {/* Who and what, on one line at desktop width. A twelve-column
                     track rather than a row of flex-1 fields: an email needs
@@ -471,21 +649,39 @@ function LearnersTab({
                 </div>
 
                 <p className="text-xs cw-muted">{t("access_grant_payment_hint")}</p>
+                <p className="text-xs cw-muted">{t("access_grant_deadline_hint")}</p>
 
                 {/* Deadline and money — the two optional halves, on one line.
                     A bare date input says nothing about which date it is, so
                     this row keeps its captions; the fields above do not need
                     them, their placeholders say it. */}
                 <div className="grid grid-cols-2 sm:grid-cols-12 gap-2">
-                    <label className="col-span-2 sm:col-span-3 flex flex-col gap-1">
-                        <span className="text-xs cw-muted">{t("access_grant_deadline")}</span>
-                        <input
-                            type="date"
-                            value={grantExpiresAt}
-                            onChange={(e) => setGrantExpiresAt(e.target.value)}
-                            className="cw-input px-3 py-2 text-sm"
-                        />
-                    </label>
+                    {/* Two labels, not one wrapping both: a <label> binds to its
+                        first labelable descendant, so nesting the checkbox under
+                        the date's label would make "Безстроково" focus the date
+                        field instead of ticking the box, and read the two out as
+                        one name. */}
+                    <div className="col-span-2 sm:col-span-3 flex flex-col gap-1">
+                        <div className="flex flex-col gap-1">
+                            <span className="text-xs cw-muted">{t("access_grant_deadline")}</span>
+                            <AdminDateField
+                                value={grantExpiresAt}
+                                onChange={setGrantExpiresAt}
+                                disabled={grantForever}
+                                locale={locale}
+                                labels={dateLabels}
+                            />
+                        </div>
+                        <label className="flex items-center gap-1.5 text-xs cw-muted">
+                            <input
+                                type="checkbox"
+                                checked={grantForever}
+                                onChange={(e) => setGrantForever(e.target.checked)}
+                                className="shrink-0"
+                            />
+                            {t("access_grant_forever")}
+                        </label>
+                    </div>
                     <label className="sm:col-span-2 flex flex-col gap-1">
                         <span className="text-xs cw-muted">{t("access_grant_amount")}</span>
                         <input
@@ -531,16 +727,31 @@ function LearnersTab({
                         />
                         <span>{t("access_grant_create_account")}</span>
                     </label>
-                    <button
-                        type="button"
-                        onClick={grant}
-                        disabled={granting || !grantEmail.trim() || !grantCourse}
-                        className="px-4 py-2 cw-btn cw-surface-2 text-sm disabled:opacity-50 w-full sm:w-auto shrink-0"
-                    >
-                        {t("access_grant_submit")}
-                    </button>
-                </div>
-            </div>
+
+                    {/* Beside "create the account", because that is when it
+                        matters: a brand-new coach or author had to be made here,
+                        then found again on another tab to be given their role.
+                        Admin-only — the roles API refuses `support`, and a
+                        control that 403s is worse than no control. */}
+                    {canGrantRoles ? (
+                        <label className="flex items-center gap-2 text-xs cw-muted shrink-0">
+                            <span>{t("access_grant_role")}</span>
+                            <select
+                                value={grantRole}
+                                onChange={(e) => setGrantRole(e.target.value)}
+                                className="cw-input cw-select pl-3 py-2 text-sm"
+                            >
+                                {GRANTABLE_ROLES.map((value) => (
+                                    <option key={value} value={value}>
+                                        {value === "user" ? t("access_grant_role_none") : value}
+                                    </option>
+                                ))}
+                            </select>
+                        </label>
+                    ) : null}
+                    </div>
+                </AdminModal>
+            ) : null}
 
             {/* Summary */}
             {summary ? (
@@ -567,6 +778,9 @@ function LearnersTab({
                 className="overflow-x-auto no-scrollbar"
             />
 
+            {/* THE FACETS, in the order a question is usually asked: who, then
+                what they hold, then which course. Each resets the page — page 3
+                of "everybody" is not page 3 of "coaches". */}
             <div className="flex flex-col sm:flex-row gap-2">
                 <AdminSearchInput
                     value={q}
@@ -576,11 +790,40 @@ function LearnersTab({
                     className="flex-1"
                 />
                 <select
+                    value={roleFilter}
+                    onChange={(e) => {
+                        setRoleFilter(e.target.value);
+                        setPage(0);
+                    }}
+                    aria-label={t("access_filter_role")}
+                    className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-44"
+                >
+                    <option value="">{t("access_filter_role_all")}</option>
+                    <option value="staff">{t("access_filter_role_staff")}</option>
+                    {ELEVATED_ROLES.map((role) => (
+                        <option key={role} value={role}>{role}</option>
+                    ))}
+                </select>
+                <select
+                    value={accessFilter}
+                    onChange={(e) => {
+                        setAccessFilter(e.target.value as "" | "enrolled" | "none");
+                        setPage(0);
+                    }}
+                    aria-label={t("access_filter_access")}
+                    className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-44"
+                >
+                    <option value="">{t("access_filter_access_all")}</option>
+                    <option value="enrolled">{t("access_filter_access_enrolled")}</option>
+                    <option value="none">{t("access_filter_access_none")}</option>
+                </select>
+                <select
                     value={courseSlug}
                     onChange={(e) => {
                         setCourseSlug(e.target.value);
                         setPage(0);
                     }}
+                    aria-label={t("access_grant_course")}
                     className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-56"
                 >
                     <option value="">{t("access_all_courses")}</option>
@@ -605,7 +848,7 @@ function LearnersTab({
                     )}
                 />
             ) : items.length === 0 ? (
-                <AdminEmptyState className="py-16" iconWrapperClassName="w-12 h-12 rounded-full" icon={<EmptyIcon />} description={t("access_empty_learners")} />
+                <AdminEmptyState className="py-16" iconWrapperClassName="w-12 h-12 rounded-full" icon={<EmptyIcon />} description={t("access_empty_accounts")} />
             ) : (
                 <div className="space-y-1.5">
                     {items.map((account) => {
@@ -625,28 +868,52 @@ function LearnersTab({
                                     />
 
                                     <div className="flex-1 min-w-0">
-                                        <p className="text-sm font-medium cw-text truncate">
-                                            {account.email ?? account.authUserId}
-                                        </p>
+                                        <div className="flex items-center gap-2 flex-wrap">
+                                            <p className="text-sm font-medium cw-text truncate">
+                                                {account.email ?? account.authUserId}
+                                            </p>
+                                            {/* Only an elevated role is worth a badge — `user` is everyone. */}
+                                            {account.role && account.role !== "user" ? (
+                                                <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">
+                                                    {account.role}
+                                                </span>
+                                            ) : null}
+                                            {account.authUserId === selfId ? (
+                                                <span className="text-[10px] cw-muted uppercase tracking-wide">{t("access_role_self")}</span>
+                                            ) : null}
+                                        </div>
                                         <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
                                             <span>{t("access_col_courses")}: {account.courses.length}</span>
                                             {account.fullName ? <span className="truncate">{account.fullName}</span> : null}
+                                            {account.ownedCourses > 0 ? (
+                                                <span>{t("access_role_owned_courses")}: {account.ownedCourses}</span>
+                                            ) : null}
+                                            {account.purchases > 0 ? (
+                                                <span>{t("access_accounts_purchases")}: {account.purchases}</span>
+                                            ) : null}
+                                            {/* Activity when there is any, otherwise
+                                                when they last signed in — an account
+                                                that holds no course has no activity to
+                                                report, and "немає активності" on every
+                                                such row says nothing. */}
                                             <span>
                                                 {account.lastActivityAt
                                                     ? `${t("access_col_last_activity")}: ${new Date(account.lastActivityAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}`
-                                                    : t("access_no_activity")}
+                                                    : account.lastSignInAt
+                                                      ? `${t("access_role_last_sign_in")}: ${new Date(account.lastSignInAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}`
+                                                      : t("access_accounts_never_signed_in")}
                                             </span>
                                         </div>
                                     </div>
 
-                                    <div className="text-right shrink-0 hidden sm:block">
-                                        <p className="text-sm cw-text tabular-nums">
-                                            {account.lessonsTotal > 0
-                                                ? `${account.lessonsCompleted}/${account.lessonsTotal}`
-                                                : t("access_no_lessons")}
-                                        </p>
-                                    </div>
-
+                                    {/* No lesson tally here. Summed across every
+                                        course a person holds, "7/77" answers no
+                                        question anybody has: it is not progress
+                                        in anything, since the courses are of
+                                        different lengths and only some are even
+                                        started. The per-COURSE count inside the
+                                        fold is the real one, and it is one click
+                                        away. */}
                                     <ChevronIcon open={open} />
                                 </button>
 
@@ -730,13 +997,14 @@ function LearnersTab({
 
                                                     <div className="flex flex-wrap items-center gap-2 pl-5">
                                                         <span className="text-xs cw-muted">{t("access_deadline_label")}</span>
-                                                        <input
-                                                            type="date"
+                                                        <AdminDateField
                                                             value={draft}
-                                                            onChange={(e) =>
-                                                                setDeadlineDraft((prev) => ({ ...prev, [row.enrollmentId]: e.target.value }))
+                                                            onChange={(next) =>
+                                                                setDeadlineDraft((prev) => ({ ...prev, [row.enrollmentId]: next }))
                                                             }
-                                                            className="cw-input px-2 py-1 text-xs"
+                                                            locale={locale}
+                                                            labels={dateLabels}
+                                                            className="w-44"
                                                         />
                                                         <button
                                                             type="button"
@@ -765,6 +1033,57 @@ function LearnersTab({
                                                 </div>
                                             );
                                         })}
+
+                                        {/* ANOTHER COURSE, FROM HERE. Giving a
+                                            second course to somebody already on
+                                            the shelf meant scrolling back to the
+                                            form at the top and retyping an email
+                                            that is on screen — with the risk of
+                                            typing it wrong and quietly creating
+                                            a second account. The person is
+                                            already identified; only the course
+                                            is missing. */}
+                                        <AddCourseRow
+                                            email={account.email}
+                                            courses={courses}
+                                            taken={account.courses.map((row) => row.courseSlug)}
+                                            busy={grantingTo === account.authUserId}
+                                            onGrant={(slug) => void grantMore(account, slug)}
+                                        />
+
+                                        {/* THE ROLE, on the person it belongs
+                                            to. It was on a table of its own, and
+                                            before that on a second table of the
+                                            same people; here it sits beside what
+                                            they hold, which is the other half of
+                                            the same question. Admin-only, and
+                                            never on your own row — the API
+                                            answers `cannot_change_own_role` with
+                                            a 409, and a control that cannot work
+                                            should not be offered. */}
+                                        {canGrantRoles && account.email && account.authUserId !== selfId ? (
+                                            <div className="flex flex-wrap items-center gap-2 pl-5 pt-1">
+                                                <span className="text-xs cw-muted">{t("access_filter_role")}</span>
+                                                <select
+                                                    value={account.role ?? "user"}
+                                                    disabled={grantingTo === account.authUserId}
+                                                    onChange={(e) => void setPersonRole(account, e.target.value)}
+                                                    aria-label={t("access_filter_role")}
+                                                    className="cw-input cw-select pl-3 py-1.5 text-xs disabled:opacity-50"
+                                                >
+                                                    {GRANTABLE_ROLES.map((role) => (
+                                                        <option key={role} value={role}>
+                                                            {role === "user" ? t("access_grant_role_none") : role}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                {account.roleUpdatedAt && account.role && account.role !== "user" ? (
+                                                    <span className="text-xs cw-muted">
+                                                        {new Date(account.roleUpdatedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
+                                                    </span>
+                                                ) : null}
+                                            </div>
+                                        ) : null}
                                     </div>
                                 ) : null}
                             </div>
@@ -787,583 +1106,65 @@ function LearnersTab({
 
 /* ────────────────────────────── Roles ─────────────────────────────── */
 
-function RolesTab({
-    canGrant,
-    locale,
-    errorText,
-}: {
-    canGrant: boolean;
-    locale: string;
-    errorText: (message: string) => string;
-}) {
-    const { t } = useI18n();
-    const toast = useToast();
-
-    const [q, setQ] = useState("");
-    const [items, setItems] = useState<RoleRow[]>([]);
-    const [selfId, setSelfId] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    const [email, setEmail] = useState("");
-    const [role, setRole] = useState<string>("coach");
-    const [saving, setSaving] = useState(false);
-    // The row currently being written, so only its own controls go disabled.
-    const [savingId, setSavingId] = useState<string | null>(null);
-
-    const load = useCallback(async () => {
-        setLoading(true);
-        setError(null);
-        try {
-            const payload = await authFetch("/api/admin/access/roles") as { items: RoleRow[]; selfId?: string };
-            setItems(payload.items ?? []);
-            setSelfId(payload.selfId ?? null);
-        } catch (e) {
-            setError(errorText(getErrorMessage(e)));
-        } finally {
-            setLoading(false);
-        }
-    }, [errorText]);
-
-    useEffect(() => {
-        void load();
-    }, [load]);
-
-    const filtered = useMemo(() => {
-        const needle = q.trim().toLowerCase();
-        if (!needle) return items;
-        return items.filter((row) => `${row.email ?? ""} ${row.fullName ?? ""}`.toLowerCase().includes(needle));
-    }, [items, q]);
-
-    const assign = async () => {
-        if (!email.trim()) return;
-        setSaving(true);
-        try {
-            await authFetch("/api/admin/access/roles", {
-                method: "POST",
-                body: JSON.stringify({ email: email.trim(), role }),
-            });
-            toast.success(t("access_role_set"));
-            setEmail("");
-            await load();
-        } catch (e) {
-            toast.error(errorText(getErrorMessage(e)));
-        } finally {
-            setSaving(false);
-        }
-    };
-
-    /**
-     * Change or drop one row's role.
-     *
-     * "Remove" is `user`, not a delete: `user_roles` is the one role store and
-     * every account is expected to have a row there, so taking a role away
-     * means writing the ordinary one back — after which the row leaves this
-     * table, which only lists elevated roles.
-     */
-    const setRowRole = async (row: RoleRow, nextRole: string) => {
-        if (!row.email || nextRole === row.role) return;
-        // Losing the last admin is the one mistake here that cannot be undone
-        // from the panel, so demoting an admin asks first.
-        if (row.role === "admin" && !window.confirm(t("access_role_demote_confirm"))) return;
-
-        setSavingId(row.authUserId);
-        try {
-            await authFetch("/api/admin/access/roles", {
-                method: "POST",
-                body: JSON.stringify({ email: row.email, role: nextRole }),
-            });
-            toast.success(nextRole === "user" ? t("access_role_removed") : t("access_role_set"));
-            await load();
-        } catch (e) {
-            toast.error(errorText(getErrorMessage(e)));
-        } finally {
-            setSavingId(null);
-        }
-    };
-
-    return (
-        <div className="space-y-4">
-            {canGrant ? (
-                <div className="cw-panel p-4 space-y-3">
-                    <div>
-                        <p className="text-sm font-semibold cw-text">{t("access_role_title")}</p>
-                        <p className="text-xs cw-muted mt-1">{t("access_role_hint")}</p>
-                    </div>
-                    <div className="flex flex-col sm:flex-row gap-2">
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder={t("access_grant_email")}
-                            className="cw-input px-3 py-2.5 text-sm flex-1"
-                        />
-                        <select
-                            value={role}
-                            onChange={(e) => setRole(e.target.value)}
-                            className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-40"
-                        >
-                            {GRANTABLE_ROLES.map((value) => (
-                                <option key={value} value={value}>{value}</option>
-                            ))}
-                        </select>
-                        <button
-                            type="button"
-                            onClick={assign}
-                            disabled={saving || !email.trim()}
-                            className="px-4 py-2.5 cw-btn cw-surface-2 text-sm disabled:opacity-50"
-                        >
-                            {t("access_role_submit")}
-                        </button>
-                    </div>
-                </div>
-            ) : (
-                <p className="text-xs cw-muted">{t("access_role_admin_only")}</p>
-            )}
-
-            <AdminSearchInput
-                value={q}
-                onChange={setQ}
-                placeholder={t("access_search_roles")}
-                onClear={q ? () => setQ("") : undefined}
-            />
-
-            {loading ? (
-                <AdminLoadingState variant="spinner" text={t("access_loading")} />
-            ) : error ? (
-                <AdminErrorState
-                    title={t("common_error")}
-                    message={error}
-                    action={(
-                        <button type="button" onClick={() => void load()} className="px-4 py-2 cw-btn cw-surface-2">
-                            {t("analytics_retry")}
-                        </button>
-                    )}
-                />
-            ) : filtered.length === 0 ? (
-                <AdminEmptyState className="py-16" iconWrapperClassName="w-12 h-12 rounded-full" icon={<EmptyIcon />} description={t("access_empty_roles")} />
-            ) : (
-                <div className="space-y-1.5">
-                    {filtered.map((row) => {
-                        const isSelf = row.authUserId === selfId;
-                        const editable = canGrant && !isSelf && Boolean(row.email);
-                        return (
-                        <div key={row.authUserId} className="cw-list-item flex flex-col sm:flex-row sm:items-center gap-3 sm:gap-4 p-4">
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <p className="text-sm font-medium cw-text truncate">{row.email ?? row.authUserId}</p>
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">
-                                        {row.role}
-                                    </span>
-                                    {isSelf ? <span className="text-[10px] cw-muted uppercase tracking-wide">{t("access_role_self")}</span> : null}
-                                </div>
-                                <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                                    <span>{t("access_role_owned_courses")}: {row.ownedCourses}</span>
-                                    <span>{t("access_role_enrollments")}: {row.enrollments}</span>
-                                    {row.lastSignInAt ? (
-                                        <span>
-                                            {t("access_role_last_sign_in")}: {new Date(row.lastSignInAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}
-                                        </span>
-                                    ) : null}
-                                </div>
-                            </div>
-
-                            {editable ? (
-                                <div className="flex items-center gap-2 shrink-0">
-                                    <select
-                                        value={row.role}
-                                        onChange={(e) => void setRowRole(row, e.target.value)}
-                                        disabled={savingId === row.authUserId}
-                                        aria-label={t("access_role_title")}
-                                        className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-36 disabled:opacity-50"
-                                    >
-                                        {GRANTABLE_ROLES.map((value) => (
-                                            <option key={value} value={value}>{value}</option>
-                                        ))}
-                                    </select>
-                                    <button
-                                        type="button"
-                                        onClick={() => void setRowRole(row, "user")}
-                                        disabled={savingId === row.authUserId}
-                                        className="px-3 py-2 cw-btn cw-btn-muted text-xs disabled:opacity-50"
-                                    >
-                                        {t("access_role_remove")}
-                                    </button>
-                                </div>
-                            ) : null}
-                        </div>
-                        );
-                    })}
-                </div>
-            )}
-        </div>
-    );
-}
-
-/* ──────────────────────────── Accounts ────────────────────────────── */
-
 /**
- * Everyone who has an account — the list the other three tabs cannot give.
+ * "Give this person another course", inside their own card.
  *
- * Roles show only elevated roles, Learners only people holding a course, and
- * Customers only people who paid. Someone who signed in and did nothing else
- * appeared nowhere, which made them impossible to find on the very surface
- * built for handing out access by hand.
+ * COURSES THEY ALREADY HAVE ARE NOT OFFERED. The list above shows what they
+ * hold, so repeating those here is offering an action whose only outcome is the
+ * "already enrolled" notice. When nothing is left, the row says so instead of
+ * showing an empty select beside a button that cannot do anything.
  */
-function AccountsTab({
+function AddCourseRow({
+    email,
     courses,
-    canGrant,
-    locale,
-    errorText,
-    onCoursesChanged,
+    taken,
+    busy,
+    onGrant,
 }: {
+    email: string | null;
     courses: CourseRow[];
-    canGrant: boolean;
-    locale: string;
-    errorText: (message: string) => string;
-    onCoursesChanged: () => void;
+    taken: string[];
+    busy: boolean;
+    onGrant: (slug: string) => void;
 }) {
     const { t } = useI18n();
-    const toast = useToast();
-
-    const [q, setQ] = useState("");
-    const [debouncedQ, setDebouncedQ] = useState("");
-    const [page, setPage] = useState(0);
-
-    const [items, setItems] = useState<AccountRow[]>([]);
-    const [total, setTotal] = useState(0);
-    const [selfId, setSelfId] = useState<string | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
-
-    // The course each row would be granted, and which row is being written.
-    const [grantDraft, setGrantDraft] = useState<Record<string, string>>({});
-    const [busyId, setBusyId] = useState<string | null>(null);
-
-    const requestSeq = useRef(0);
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            setDebouncedQ(q);
-            setPage(0);
-        }, 350);
-        return () => clearTimeout(timer);
-    }, [q]);
-
-    const load = useCallback(async () => {
-        requestSeq.current += 1;
-        const reqId = requestSeq.current;
-        setLoading(true);
-        setError(null);
-        try {
-            const params = new URLSearchParams();
-            if (debouncedQ) params.set("q", debouncedQ);
-            params.set("limit", String(LIMIT));
-            params.set("offset", String(page * LIMIT));
-
-            const payload = await authFetch(`/api/admin/access/accounts?${params}`) as {
-                items: AccountRow[];
-                total: number;
-                selfId?: string;
-            };
-            if (reqId !== requestSeq.current) return;
-            setItems(payload.items ?? []);
-            setTotal(payload.total ?? 0);
-            setSelfId(payload.selfId ?? null);
-        } catch (e) {
-            if (reqId !== requestSeq.current) return;
-            setError(errorText(getErrorMessage(e)));
-        } finally {
-            if (reqId === requestSeq.current) setLoading(false);
-        }
-    }, [debouncedQ, page, errorText]);
-
-    useEffect(() => {
-        void load();
-    }, [load]);
-
-    const grant = async (row: AccountRow) => {
-        const slug = grantDraft[row.authUserId] ?? courses[0]?.slug;
-        if (!row.email || !slug) return;
-        setBusyId(row.authUserId);
-        try {
-            const payload = await authFetch("/api/admin/access/learners", {
-                method: "POST",
-                body: JSON.stringify({ email: row.email, course: slug }),
-            }) as { created: boolean };
-            toast[payload.created ? "success" : "info"](
-                payload.created ? t("access_granted") : t("access_already_enrolled")
-            );
-            onCoursesChanged();
-            await load();
-        } catch (e) {
-            toast.error(errorText(getErrorMessage(e)));
-        } finally {
-            setBusyId(null);
-        }
-    };
-
-    const setRowRole = async (row: AccountRow, nextRole: string) => {
-        if (!row.email || nextRole === (row.role ?? "user")) return;
-        if (row.role === "admin" && !window.confirm(t("access_role_demote_confirm"))) return;
-
-        setBusyId(row.authUserId);
-        try {
-            await authFetch("/api/admin/access/roles", {
-                method: "POST",
-                body: JSON.stringify({ email: row.email, role: nextRole }),
-            });
-            toast.success(nextRole === "user" ? t("access_role_removed") : t("access_role_set"));
-            await load();
-        } catch (e) {
-            toast.error(errorText(getErrorMessage(e)));
-        } finally {
-            setBusyId(null);
-        }
-    };
-
-    const totalPages = Math.ceil(total / LIMIT);
-
-    return (
-        <div className="space-y-4">
-            <p className="text-xs cw-muted">{t("access_accounts_hint")}</p>
-
-            <AdminSearchInput
-                value={q}
-                onChange={setQ}
-                placeholder={t("access_search_learners")}
-                onClear={q ? () => setQ("") : undefined}
-            />
-
-            {loading ? (
-                <AdminLoadingState variant="spinner" text={t("access_loading")} />
-            ) : error ? (
-                <AdminErrorState
-                    title={t("common_error")}
-                    message={error}
-                    action={(
-                        <button type="button" onClick={() => void load()} className="px-4 py-2 cw-btn cw-surface-2">
-                            {t("analytics_retry")}
-                        </button>
-                    )}
-                />
-            ) : items.length === 0 ? (
-                <AdminEmptyState className="py-16" iconWrapperClassName="w-12 h-12 rounded-full" icon={<EmptyIcon />} description={t("access_empty_accounts")} />
-            ) : (
-                <div className="space-y-1.5">
-                    {items.map((row) => {
-                        const isSelf = row.authUserId === selfId;
-                        const busy = busyId === row.authUserId;
-                        return (
-                            <div key={row.authUserId} className="cw-list-item flex flex-col lg:flex-row lg:items-center gap-3 lg:gap-4 p-4">
-                                <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2 flex-wrap">
-                                        <p className="text-sm font-medium cw-text truncate">{row.email ?? row.authUserId}</p>
-                                        {/* Only an elevated role is worth a badge — `user` is everyone. */}
-                                        {row.role && row.role !== "user" ? (
-                                            <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">
-                                                {row.role}
-                                            </span>
-                                        ) : null}
-                                        {isSelf ? <span className="text-[10px] cw-muted uppercase tracking-wide">{t("access_role_self")}</span> : null}
-                                    </div>
-                                    <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                                        {row.fullName ? <span className="truncate">{row.fullName}</span> : null}
-                                        {row.provider ? <span>{row.provider}</span> : null}
-                                        <span>{t("access_role_enrollments")}: {row.enrollments}</span>
-                                        <span>{t("access_accounts_purchases")}: {row.purchases}</span>
-                                        <span>
-                                            {row.lastSignInAt
-                                                ? `${t("access_role_last_sign_in")}: ${new Date(row.lastSignInAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}`
-                                                : t("access_accounts_never_signed_in")}
-                                        </span>
-                                    </div>
-                                </div>
-
-                                <div className="flex items-center gap-2 shrink-0">
-                                    <select
-                                        value={grantDraft[row.authUserId] ?? courses[0]?.slug ?? ""}
-                                        onChange={(e) => setGrantDraft((prev) => ({ ...prev, [row.authUserId]: e.target.value }))}
-                                        aria-label={t("access_grant_course")}
-                                        className="cw-input cw-select pl-3 py-2 text-sm flex-1 lg:flex-none lg:w-48"
-                                    >
-                                        {courses.map((course) => (
-                                            <option key={course.id} value={course.slug}>{course.title}</option>
-                                        ))}
-                                    </select>
-                                    <button
-                                        type="button"
-                                        onClick={() => void grant(row)}
-                                        disabled={busy || !row.email || courses.length === 0}
-                                        className="px-3 py-2 cw-btn cw-surface-2 text-xs disabled:opacity-50 shrink-0"
-                                    >
-                                        {t("access_grant_submit")}
-                                    </button>
-                                    {canGrant && !isSelf && row.email ? (
-                                        <select
-                                            value={row.role ?? "user"}
-                                            onChange={(e) => void setRowRole(row, e.target.value)}
-                                            disabled={busy}
-                                            aria-label={t("access_role_title")}
-                                            className="cw-input cw-select pl-3 py-2 text-sm w-28 shrink-0 disabled:opacity-50"
-                                        >
-                                            {GRANTABLE_ROLES.map((value) => (
-                                                <option key={value} value={value}>{value}</option>
-                                            ))}
-                                        </select>
-                                    ) : null}
-                                </div>
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-
-            {!loading && !error && total > LIMIT ? (
-                <AdminPagination
-                    page={page}
-                    totalPages={totalPages}
-                    onPrev={() => setPage((p) => Math.max(0, p - 1))}
-                    onNext={() => setPage((p) => Math.min(totalPages - 1, p + 1))}
-                />
-            ) : null}
-        </div>
+    const available = useMemo(
+        () => courses.filter((course) => !taken.includes(course.slug)),
+        [courses, taken]
     );
-}
+    const [slug, setSlug] = useState("");
 
-/* ───────────────────────────── Builder ────────────────────────────── */
+    // The first course that is actually on offer, re-picked when the list
+    // changes underneath — granting one removes it from `available`.
+    const selected = available.some((course) => course.slug === slug) ? slug : available[0]?.slug ?? "";
 
-function BuilderTab({
-    courses,
-    canGrant,
-    locale,
-    errorText,
-    onChanged,
-}: {
-    courses: CourseRow[];
-    canGrant: boolean;
-    locale: string;
-    errorText: (message: string) => string;
-    onChanged: () => void;
-}) {
-    const { t } = useI18n();
-    const toast = useToast();
-    const [draft, setDraft] = useState<Record<string, string>>({});
-    const [savingId, setSavingId] = useState<string | null>(null);
-    const [reviewNotes, setReviewNotes] = useState<Record<string, string>>({});
+    if (!email) return null;
 
-    const save = async (course: CourseRow, email: string | null) => {
-        setSavingId(course.id);
-        try {
-            await authFetch("/api/admin/access/courses", {
-                method: "PATCH",
-                body: JSON.stringify({ courseId: course.id, email }),
-            });
-            toast.success(email ? t("access_author_set") : t("access_author_cleared"));
-            setDraft((prev) => ({ ...prev, [course.id]: "" }));
-            onChanged();
-        } catch (e) {
-            toast.error(errorText(getErrorMessage(e)));
-        } finally {
-            setSavingId(null);
-        }
-    };
-
-    const moderate = async (course: CourseRow, action: "approve" | "request_changes" | "set_visibility", visibility?: CourseRow["visibility"]) => {
-        setSavingId(course.id);
-        try {
-            await authFetch("/api/admin/access/courses", { method: "PATCH", body: JSON.stringify({ courseId: course.id, action, visibility, note: reviewNotes[course.id] }) });
-            toast.success(action === "approve" ? "Курс схвалено" : action === "request_changes" ? "Курс повернено автору" : "Видимість оновлено");
-            onChanged();
-        } catch (e) { toast.error(errorText(getErrorMessage(e))); }
-        finally { setSavingId(null); }
-    };
-
-    if (courses.length === 0) {
-        return <AdminEmptyState className="py-16" iconWrapperClassName="w-12 h-12 rounded-full" icon={<EmptyIcon />} description={t("access_empty_courses")} />;
+    if (available.length === 0) {
+        return <p className="text-xs cw-muted pl-5 pt-1">{t("access_add_course_all")}</p>;
     }
 
     return (
-        <div className="space-y-4">
-            <div className="cw-panel p-4">
-                <p className="text-sm font-semibold cw-text">{t("access_builder_title")}</p>
-                <p className="text-xs cw-muted mt-1">{t("access_builder_hint")}</p>
-                {!canGrant ? <p className="text-xs cw-muted mt-2">{t("access_role_admin_only")}</p> : null}
-            </div>
-
-            <div className="space-y-1.5">
-                {courses.map((course) => (
-                    <div key={course.id} className="cw-list-item p-4 space-y-3">
-                        <div className="flex items-center gap-3">
-                            <div className="flex-1 min-w-0">
-                                <div className="flex items-center gap-2">
-                                    <p className="text-sm font-medium cw-text truncate">{course.title}</p>
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">
-                                        {course.status}
-                                    </span>
-                                    <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-surface-2 cw-text uppercase tracking-wide">{course.hasPendingRevision ? `оновлення · ${course.reviewStatus}` : course.reviewStatus}</span>
-                                </div>
-                                <div className="text-xs cw-muted flex flex-wrap items-center gap-x-3 gap-y-0.5 mt-0.5">
-                                    <span className="font-mono">{course.slug}</span>
-                                    <span>{t("access_course_learners")}: {course.learners}</span>
-                                    <span>{new Date(course.updatedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}</span>
-                                </div>
-                            </div>
-                            <div className="text-right shrink-0 hidden sm:block">
-                                <p className="text-sm cw-text truncate max-w-[220px]">
-                                    {course.authorEmail ?? t("access_author_house")}
-                                </p>
-                            </div>
-                        </div>
-
-                        {canGrant && course.reviewEnabled ? (
-                            <div className="flex flex-col sm:flex-row gap-2">
-                                {course.reviewStatus === "in_review" ? (
-                                    <>
-                                        <input className="cw-input px-3 py-2 text-sm flex-1" value={reviewNotes[course.id] ?? ""} onChange={(e) => setReviewNotes((prev) => ({ ...prev, [course.id]: e.target.value }))} placeholder="Коментар автору, якщо потрібні зміни" />
-                                        <button className="px-4 py-2 cw-btn cw-surface-2 text-sm" disabled={savingId === course.id} onClick={() => void moderate(course, "approve")}>Схвалити</button>
-                                        <button className="px-4 py-2 cw-btn cw-btn-muted text-sm" disabled={savingId === course.id} onClick={() => void moderate(course, "request_changes")}>Повернути</button>
-                                    </>
-                                ) : course.status === "published" && course.reviewStatus === "approved" ? (
-                                    <select className="cw-input cw-select pl-3 py-2 text-sm w-full sm:w-48" value={course.visibility} disabled={savingId === course.id} onChange={(e) => void moderate(course, "set_visibility", e.target.value as CourseRow["visibility"])}>
-                                        <option value="hidden">Приховано</option><option value="unlisted">За посиланням</option><option value="listed">У каталозі</option>
-                                    </select>
-                                ) : <p className="text-xs cw-muted">Каталог стане доступним після схвалення й публікації.</p>}
-                            </div>
-                        ) : null}
-
-                        {canGrant ? (
-                            <div className="flex flex-col sm:flex-row gap-2">
-                                <input
-                                    type="email"
-                                    value={draft[course.id] ?? ""}
-                                    onChange={(e) => setDraft((prev) => ({ ...prev, [course.id]: e.target.value }))}
-                                    placeholder={t("access_author_email")}
-                                    className="cw-input px-3 py-2 text-sm flex-1"
-                                />
-                                <button
-                                    type="button"
-                                    onClick={() => save(course, (draft[course.id] ?? "").trim())}
-                                    disabled={savingId === course.id || !(draft[course.id] ?? "").trim()}
-                                    className="px-4 py-2 cw-btn cw-surface-2 text-sm disabled:opacity-50"
-                                >
-                                    {t("access_author_assign")}
-                                </button>
-                                {course.authorId ? (
-                                    <button
-                                        type="button"
-                                        onClick={() => save(course, null)}
-                                        disabled={savingId === course.id}
-                                        className="px-4 py-2 cw-btn cw-btn-muted text-sm disabled:opacity-50"
-                                    >
-                                        {t("access_author_clear")}
-                                    </button>
-                                ) : null}
-                            </div>
-                        ) : null}
-                    </div>
+        <div className="flex flex-wrap items-center gap-2 pl-5 pt-1">
+            <span className="text-xs cw-muted">{t("access_add_course")}</span>
+            <select
+                value={selected}
+                onChange={(e) => setSlug(e.target.value)}
+                aria-label={t("access_add_course")}
+                className="cw-input cw-select pl-3 py-1.5 text-xs"
+            >
+                {available.map((course) => (
+                    <option key={course.id} value={course.slug}>{course.title}</option>
                 ))}
-            </div>
+            </select>
+            <button
+                type="button"
+                disabled={busy || !selected}
+                onClick={() => onGrant(selected)}
+                className="px-3 py-1.5 cw-btn cw-surface-2 text-xs disabled:opacity-50"
+            >
+                {t("access_add_course_submit")}
+            </button>
         </div>
     );
 }

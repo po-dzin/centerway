@@ -2,34 +2,9 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import { Icon } from "@/components/Icon";
-import { PlatformTrail, type TrailStep } from "@/components/platform/PlatformTrail";
 import type { OfferCommerce } from "@/lib/platform/offerCommerce";
 import styles from "./PlatformOfferCommerce.module.css";
 import offerStyles from "./PlatformOfferStyles";
-
-/**
- * The way back up.
- *
- * A detail page is reached from an index, and until now it had no control that
- * said so — the only route back was the header item for the whole section, or
- * the browser's own button.
- *
- * Uses `PlatformTrail`, the same breadcrumb the course player and the builder
- * draw, rather than a back-link of its own. The platform briefly had both, and
- * two idioms for "where am I and how do I get out" is one more than a reader
- * should have to learn.
- *
- * Rendered under the hero rather than inside it: the hero is a photograph with
- * a dark topbar over it, and a quiet text control put there is the first thing
- * that disappears.
- */
-export function OfferTrail({ steps }: { steps: TrailStep[] }) {
-  return (
-    <div className={styles.backRow}>
-      <PlatformTrail steps={steps} />
-    </div>
-  );
-}
 
 /**
  * The panel that sells, in place of the form that asked.

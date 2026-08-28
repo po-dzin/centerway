@@ -34,17 +34,9 @@
 }
 
 @media (max-width: 1100px) and (min-width: 901px) {
-  .header {
-    width: min(100% - 1.5rem, var(--cw-max-width));
-  }
-
-  .shellOverlay .header {
-    width: min(100% - 1.5rem, var(--cw-max-width));
-  }
-
   .headerInner {
     min-height: 3.85rem;
-    padding: 0 0.9rem;
+    padding: 0 var(--cw-bar-pad);
   }
 
   .nav a {
@@ -90,7 +82,7 @@
   }
 
   .heroFeatureContent {
-    width: min(100% - 2rem, var(--cw-max-width));
+    width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
   }
 }
 
@@ -110,8 +102,40 @@
 
 @media (max-width: 900px) {
   .shell {
-    --platform-topbar-clearance: 0.75rem;
+    /* THE CLEARANCE IS A GAP, AND IT WAS ZERO (2026-08-28).
+
+       The bar sits in normal flow here, so it occupies its own 3.9rem from the
+       top of the page and is then nudged down by `--platform-mobile-header-top`.
+       A page's top padding therefore has to cover that nudge BEFORE any of it
+       becomes daylight: at 0.75rem the two cancelled exactly and the first card
+       began on the bar's lower edge — which is what the cabinet's loading state
+       showed, a panel apparently glued to the pill.
+
+       The gap is `--cw-space-lg`, the same one the identity keeps from its rule
+       and the plate keeps from the bar. Pages that run UNDER the bar (a bleed
+       hero) are excluded from this padding entirely and pay their own. */
+    --platform-topbar-clearance: calc(var(--platform-mobile-header-top) + var(--cw-space-lg));
+    /* THE BAR'S GEOMETRY IS DECLARED ON THE SHELL, NOT ON THE BAR (2026-08-28).
+       Two numbers describe where the floating pill sits, and a page whose
+       content runs UNDER it — a bleed hero — has to know them to keep its first
+       line clear of it. They lived on `.header` itself, so nothing outside the
+       bar could read them, and the cabinet's plate started 3px above the bar's
+       lower edge: the account name ran under the pill. Declared here they
+       inherit down to the bar exactly as before, and `--platform-topbar-block`
+       states the answer once: how much vertical room the bar occupies. */
+    --platform-mobile-header-top: 0.75rem;
+    --platform-mobile-header-height: 3.9rem;
+    --platform-topbar-block: calc(var(--platform-mobile-header-top) + var(--platform-mobile-header-height));
+    /* The drawer's motion, named once: the clip, the content's settle and
+       anything that joins them later all read these two rather than each
+       carrying its own copy of a duration nobody can then change in one go. */
+    --platform-menu-motion: 400ms;
+    --platform-menu-ease: cubic-bezier(0.22, 0.61, 0.24, 1);
     padding-bottom: 0;
+  }
+
+  .shellOverlay {
+    --platform-mobile-header-top: 0.95rem;
   }
 
   /* Mobile topbar = the network bar (shared/css/network-nav.css). It used to be
@@ -122,13 +146,11 @@
      Positioning semantics stay the platform's own (sticky in flow, fixed only
      when a hero is under it) — that part already worked. */
   .header.header {
-    --platform-mobile-header-top: 0.75rem;
-    --platform-mobile-header-height: 3.9rem;
     position: sticky;
     top: var(--platform-mobile-header-top);
     right: 0;
     left: 0;
-    width: min(100% - 2rem, var(--cw-max-width));
+    width: min(100% - 2 * var(--cw-bar-inset), calc(var(--cw-max-width) + 2 * var(--cw-bar-pad)));
     display: block;
     margin: 0 auto;
     /* The drawer hangs outside the bar's own box — clip would cut it off. */
@@ -149,16 +171,23 @@
     padding-inline: var(--cw-space-md);
   }
 
-  .shell:has(.heroFeature) .header.header {
+  /* THE BAR FLOATS OVER A FULL-BLEED HERO, WHICHEVER WAY THE PAGE SAYS SO.
+     `heroFeature` was the only spelling this rule knew, so the cabinet — whose
+     plate declares itself with `data-cw-hero="bleed"`, the second spelling the
+     shell already honours for the clearance — kept a bar in normal flow. On a
+     phone that printed a band of page ground above the photograph with the bar
+     sitting in it, and the screen read as two stacked headers with the picture
+     starting under the lower one. Both spellings, one behaviour. */
+  .shell:has(.heroFeature) .header.header,
+  .shell:has(> main[data-cw-hero="bleed"]) .header.header {
     position: fixed;
   }
 
   .shellOverlay .header.header {
-    --platform-mobile-header-top: 0.95rem;
     top: var(--platform-mobile-header-top);
     right: 0;
     left: 0;
-    width: min(100% - 2rem, var(--cw-max-width));
+    width: min(100% - 2 * var(--cw-bar-inset), calc(var(--cw-max-width) + 2 * var(--cw-bar-pad)));
     margin: 0 auto;
   }
 
@@ -171,7 +200,7 @@
     width: 100% !important;
     max-width: none !important;
     margin: 0;
-    padding: 0.5rem 1.15rem;
+    padding: 0.5rem var(--cw-bar-pad);
     box-sizing: border-box;
   }
 
@@ -188,13 +217,25 @@
   }
 
   /* The drawer is a modal plane, but it remains a drawer hung from the bar.
-     This transparent interaction shield blocks the page without tinting the
-     material beneath it: a tinted backdrop would be sampled by the drawer's
-     glass and make the menu itself dark and low-contrast. */
+
+     The shield below it used to be transparent, on the argument that a tinted
+     backdrop would be sampled by the drawer's own glass and darken the menu.
+     That fear was worth testing and did not survive it: the drawer's tone is
+     set by `headerTone` from what the BAR floats over, not by the scrim under
+     it, so the sheet keeps its own contrast while the page behind it goes
+     properly quiet. Measured on the cabinet and on an offer page, both tones. */
   .header[data-menu-open="true"] {
     z-index: var(--ds-z-modal);
   }
 
+  /* THE SCRIM IS THE BAR'S OWN MATERIAL, CONTINUED (2026-08-28). It used to be
+     transparent — a click-catcher and nothing else — so an open drawer left the
+     page behind it at full strength, gold buy-button included, and the phone
+     showed two live surfaces at once with no way to tell which one was
+     listening. It takes the chrome tint and the material's blur now, the same
+     pair the bar and the drawer are made of: one sheet laid over the page,
+     which is what a modal drawer is. Not a black dim — the platform darkens
+     nothing with raw ink, and the tint reads correctly in both themes. */
   .header[data-menu-open="true"] > .menuScrim {
     display: block;
     position: fixed;
@@ -205,7 +246,8 @@
     padding: 0;
     border: 0;
     border-radius: 0;
-    background: transparent;
+    background-color: var(--cw-mat-tint-chrome);
+    backdrop-filter: var(--cw-mat-filter);
     cursor: default;
   }
 
@@ -231,7 +273,15 @@
   }
 
   /* The floating bar carries the symbol alone (see .brandWordmark below), so the
-     brand link is sized by the mark, not by a lockup. */
+     brand link is sized by the mark, not by a lockup.
+
+     PULLED OUT BY ITS OWN OPTICAL INSET. `--cw-bar-pad` measures the pill's
+     edge to the INK, not to the touch target: the target is 3rem because a
+     finger needs 3rem, the mark inside it is 2.25rem, and the difference is
+     invisible padding. Left as-is the glyph sat 6px inside the column every
+     other element on the page starts on. The negative margin is derived from
+     the two sizes rather than typed as a number, so re-sizing either one
+     cannot silently break the alignment again. */
   .header .brand:not([data-surface="footer"]) {
     width: auto;
     height: 3rem;
@@ -239,6 +289,7 @@
     display: inline-flex;
     align-items: center;
     gap: 0.6rem;
+    margin-inline-start: calc((var(--ds-touch-target-min) - 2.25rem) / -2);
     box-shadow: none;
     backdrop-filter: none;
   }
@@ -285,13 +336,18 @@
     display: none;
   }
 
+  /* Same optical pull as the brand mark opposite it, from this control's own
+     numbers: a 3rem target around a 2rem glyph. This replaces a bare
+     `translateX(2px)`, which was the difference between the two controls'
+     insets (8px here, 6px on the mark) applied as a magic number — it made the
+     two glyphs symmetrical to each other while both sat off the column. Derive
+     both and they land on it. */
   .headerInner > .menuButton,
   .header .menuButton {
     display: grid;
     margin-left: auto;
-    margin-right: 0;
+    margin-inline-end: calc((var(--ds-touch-target-min) - 2rem) / -2);
     flex: 0 0 3rem;
-    transform: translateX(2px);
   }
 
   .shellOverlay .menuButton {
@@ -354,10 +410,16 @@
     opacity: 0;
     visibility: hidden;
     pointer-events: none;
+    /* SOFTER, AND ALL ONE MOVEMENT (2026-08-28). 280ms on a decelerating curve
+       is a snap: the clip races past the drawer's real height, so the last third
+       of the sheet does not animate at all — it is simply there. The longer
+       duration and the gentler curve let the whole list arrive, and the glass
+       band below the bar (`::before`, further down) now travels on the same two
+       numbers instead of jumping to full height on frame one. */
     transition:
-      max-height 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
-      opacity 160ms ease,
-      visibility 0s linear 280ms;
+      max-height var(--platform-menu-motion, 400ms) var(--platform-menu-ease, cubic-bezier(0.22, 0.61, 0.24, 1)),
+      opacity 200ms ease,
+      visibility 0s linear var(--platform-menu-motion, 400ms);
   }
 
   .navLayer.navLayer::before {
@@ -379,9 +441,21 @@
     visibility: visible;
     pointer-events: auto;
     transition:
-      max-height 280ms cubic-bezier(0.2, 0.8, 0.2, 1),
-      opacity 160ms ease 40ms,
+      max-height var(--platform-menu-motion, 400ms) var(--platform-menu-ease, cubic-bezier(0.22, 0.61, 0.24, 1)),
+      opacity 240ms ease 60ms,
       visibility 0s;
+  }
+
+  /* The content settles rather than appearing: a short lift, on the same curve
+     as the clip. Transform only — nothing here reflows. */
+  .navLayer .mobileMenuSurface {
+    transform: translateY(-0.4rem);
+    transition: transform var(--platform-menu-motion, 400ms)
+      var(--platform-menu-ease, cubic-bezier(0.22, 0.61, 0.24, 1));
+  }
+
+  .header[data-menu-open="true"] .mobileMenuSurface {
+    transform: translateY(0);
   }
 
   /* Workspace chrome is intentionally matte rather than glass. Its mobile
@@ -483,6 +557,26 @@
     border-radius: var(--platform-header-shell-radius);
   }
 
+  /* THE BAND IS NOT ANIMATED, AND MUST NOT BE. It follows
+     `--cw-menu-sheet-height`, which PlatformHeader measures from the drawer on
+     every resize — so while the clip grows, the observer is already feeding the
+     band the same curve, frame by frame. A transition here was tried and is
+     wrong: it makes the glass chase a value that is itself already moving, and
+     the last rows of the menu hang outside the plate for a third of a second. */
+
+  @media (prefers-reduced-motion: reduce) {
+    .navLayer.navLayer,
+    .navLayer .mobileMenuSurface {
+      transition: none;
+    }
+  }
+
+  /* The drawer's own header — see the base `display: none` in
+     PlatformShell.module.css for why this cannot be the unconditional rule. */
+  .navLayer .menuIdentity {
+    display: grid;
+  }
+
   /* Profile is not a sixth nav item — it is where the list stops and the account
      begins. A hairline says that in the space the list already had, without a
      heading or a gap wide enough to read as a missing row. */
@@ -494,7 +588,13 @@
     align-self: start;
     margin-top: 0.4rem;
     padding: 0.5rem 0 0;
-    border-top: 1px solid color-mix(in srgb, var(--platform-header-fg) 13%, transparent);
+    /* The system's rule, fading at both ends — see `--cw-rule-fade-x` in
+       globals.css. It was a straight hairline, which on a sheet this narrow
+       reads as the edge of a cell rather than as the place a list stops. The
+       ink is the sheet's own foreground, re-pointed here; the shape comes from
+       the token. */
+    border-top: 1px solid transparent;
+    border-image: var(--cw-rule-fade-x);
     box-sizing: border-box;
   }
 
@@ -836,7 +936,7 @@
        bottom, that much padding is not breathing room, it is a 157px band of
        empty photograph under the CTA — and it put the plain heroes 77px lower
        than the product and program heroes on the same phone. */
-    padding: clamp(4.8rem, 14vw, 6rem) 1rem clamp(5rem, 16vw, 6.5rem);
+    padding: clamp(4.8rem, 14vw, 6rem) var(--cw-page-gutter) clamp(5rem, 16vw, 6.5rem);
   }
 
   /* One unbreakable word in the title (ДІАГНОСТИКА at 52px) sets the grid
@@ -1027,14 +1127,6 @@
 }
 
 @media (max-width: 560px) {
-  .container {
-    width: min(100% - 1.2rem, var(--cw-max-width));
-  }
-
-  .footer .container {
-    width: min(100% - 2rem, var(--cw-max-width));
-  }
-
   .heroTitle {
     max-width: 10ch;
     font-size: clamp(2.25rem, 13vw, 2.85rem);
@@ -1164,23 +1256,6 @@
     min-height: 100vh;
     min-height: 100svh;
     border-radius: 0;
-    /* A 16:10 plate in a portrait viewport crops hard on the sides: at 390x780
-       cover shows only ~31% of the plate width. On the threshold plate the whole
-       scene — doorway edge, kintsugi bowl, planting strip — sits right of 55%,
-       so a centred window would show bare stone and the door jamb and nothing
-       else. 82% lands that window on 56%..88%. Vertical position is inert here:
-       a portrait frame crops width only, so the full plate height is shown. */
-    --hero-photo-x: 82%;
-    --hero-photo-y: 50%;
-    --hero-photo-shift-y: 0%;
-    --hero-photo-scale: 1;
-    --hero-photo-origin: center center;
-  }
-
-  .heroPhotoLayer .expertImage {
-    object-position: var(--hero-photo-x) var(--hero-photo-y);
-    transform: translateY(var(--hero-photo-shift-y)) scale(var(--hero-photo-scale));
-    transform-origin: var(--hero-photo-origin);
   }
 
   .heroFeatureTitle {
@@ -1442,21 +1517,6 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .heroFeature {
-    /* Same plate as ≤560px, wider frame — less side crop, same centred leader. */
-    --hero-photo-x: 52%;
-    --hero-photo-y: 48%;
-    --hero-photo-shift-y: 0%;
-    --hero-photo-scale: 1.01;
-    --hero-photo-origin: center center;
-  }
-
-  .heroPhotoLayer .expertImage {
-    object-position: var(--hero-photo-x) var(--hero-photo-y);
-    transform: translateY(var(--hero-photo-shift-y)) scale(var(--hero-photo-scale));
-    transform-origin: var(--hero-photo-origin);
-  }
-
   .footerBrandBlock,
   .footerLegal,
   .footerSocials {
@@ -1533,10 +1593,6 @@
 @media (min-width: 1101px) {
   main[data-cw-detail-template] > .heroFeature {
     min-height: max(46rem, 100svh);
-    --hero-photo-x: var(--hero-photo-x-desktop, 50%);
-    --hero-photo-y: var(--hero-photo-y-desktop, 20%);
-    --hero-photo-shift-y: -2%;
-    --hero-photo-scale: 1.08;
   }
 
   /* Left edge pinned to `--cw-container-inset` — the SAME gutter `.container`
@@ -1567,7 +1623,7 @@
   }
 
   main[data-cw-detail-template] .heroFeatureActions {
-    width: min(100%, 22rem);
+    width: min(100%, var(--ds-button-max-width));
     gap: 0.78rem;
   }
 
@@ -1603,7 +1659,7 @@
   }
 
   .heroFeature[data-cw-detail-template] .heroFeatureActions {
-    width: min(100%, 22rem);
+    width: min(100%, var(--ds-button-max-width));
     gap: 0.78rem;
   }
 
@@ -1620,11 +1676,6 @@
 @media (min-width: 561px) and (max-width: 1100px) {
   main[data-cw-detail-template] > .heroFeature {
     min-height: clamp(44rem, 88svh, 58rem);
-    --hero-photo-x: var(--hero-photo-x-mobile, var(--hero-photo-x-desktop, 50%));
-    --hero-photo-y: var(--hero-photo-y-mobile, var(--hero-photo-y-desktop, 20%));
-    --hero-photo-shift-y: -2%;
-    --hero-photo-scale: 1.02;
-    --hero-photo-origin: center center;
   }
 
   /* Same gutter as `.container`, same reasoning as the desktop band above —
@@ -1649,7 +1700,7 @@
   }
 
   main[data-cw-detail-template] .heroFeatureActions {
-    width: min(100%, 20rem);
+    width: min(100%, var(--ds-button-max-width));
     gap: 0.72rem;
   }
 
@@ -1661,11 +1712,6 @@
 
   .heroFeature[data-cw-detail-template] {
     min-height: clamp(44rem, 88svh, 58rem);
-    --hero-photo-x: var(--hero-photo-x-mobile, var(--hero-photo-x-desktop, 50%));
-    --hero-photo-y: var(--hero-photo-y-mobile, var(--hero-photo-y-desktop, 20%));
-    --hero-photo-shift-y: -2%;
-    --hero-photo-scale: 1.02;
-    --hero-photo-origin: center center;
   }
 
   /* Duplicated selector for specificity — see the `main[...]` rule above. */
@@ -1689,7 +1735,7 @@
   }
 
   .heroFeature[data-cw-detail-template] .heroFeatureActions {
-    width: min(100%, 20rem);
+    width: min(100%, var(--ds-button-max-width));
     gap: 0.72rem;
   }
 
@@ -1708,11 +1754,6 @@
     min-height: 100vh;
     min-height: 100svh;
     align-items: stretch;
-    --hero-photo-x: var(--hero-photo-x-mobile, var(--hero-photo-x-desktop, 50%));
-    --hero-photo-y: var(--hero-photo-y-mobile, var(--hero-photo-y-desktop, 20%));
-    --hero-photo-shift-y: -2%;
-    --hero-photo-scale: 1.03;
-    --hero-photo-origin: center top;
   }
 
   main[data-cw-detail-template] .heroFeatureContent {
@@ -1720,7 +1761,7 @@
     max-width: 100%;
     min-height: 100svh;
     align-content: end;
-    padding: clamp(4.7rem, 14vw, 5.8rem) 1rem clamp(5rem, 16vw, 6.5rem);
+    padding: clamp(4.7rem, 14vw, 5.8rem) var(--cw-page-gutter) clamp(5rem, 16vw, 6.5rem);
     gap: 0.9rem;
   }
 
@@ -1759,11 +1800,6 @@
     min-height: 100vh;
     min-height: 100svh;
     align-items: stretch;
-    --hero-photo-x: var(--hero-photo-x-mobile, var(--hero-photo-x-desktop, 50%));
-    --hero-photo-y: var(--hero-photo-y-mobile, var(--hero-photo-y-desktop, 20%));
-    --hero-photo-shift-y: -2%;
-    --hero-photo-scale: 1.03;
-    --hero-photo-origin: center top;
   }
 
   .heroFeature[data-cw-detail-template] .heroFeatureContent {
@@ -1771,7 +1807,7 @@
     max-width: 100%;
     min-height: 100svh;
     align-content: end;
-    padding: clamp(4.7rem, 14vw, 5.8rem) 1rem clamp(5rem, 16vw, 6.5rem);
+    padding: clamp(4.7rem, 14vw, 5.8rem) var(--cw-page-gutter) clamp(5rem, 16vw, 6.5rem);
     gap: 0.9rem;
   }
 
@@ -1842,9 +1878,11 @@
   }
 
   main[data-cw-detail-template] [data-cw-semantic-role="diagnostic-entry"] .heroFeatureContent {
-    width: min(100% - 2rem, var(--cw-max-width));
+    width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
     max-width: var(--cw-max-width);
     margin-inline: auto;
     padding: clamp(6.5rem, 9vw, 8.5rem) 0 clamp(4rem, 6vw, 5.5rem);
   }
 }
+
+

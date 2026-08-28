@@ -19,7 +19,7 @@
  * computable on the server, in a test, and in three different renderers.
  */
 
-import { BUILDER_PATH_PREFIX, PERSONAL_HOST } from "@/lib/surfaces/catalog";
+import { BUILDER_PATH_PREFIX, PERSONAL_HOST, PROFILE_PATH_PREFIX } from "@/lib/surfaces/catalog";
 import { isPersonalHost, resolveSurfaceHref, servesEveryPath } from "./surfaceHref";
 import { LEARNING_SHELF_HREF } from "./content";
 import { isAdminRole } from "./adminRole";
@@ -54,13 +54,28 @@ export type AppAudience = {
  * it again. The panel stays last because the people who can open it are the
  * ones who least need it advertised.
  *
- * «Профіль», not «Кабінет». The page says «Профіль» in its own header and the
- * signed-out control has always said it too — a menu row is not the place to
- * introduce a third word for one destination.
+ * «Кабінет», renamed from «Профіль» on 2026-08-27, everywhere at once.
+ *
+ * The old note here argued for «Профіль» on the grounds that the page said it
+ * in its own header, and that a menu row is no place to introduce a third word
+ * for one destination. That reasoning is why this is a rename and not an
+ * override: the header, the footer, the auth modal, the LMS notices and both
+ * locales moved together, so there is still exactly one word.
+ *
+ * The word changed because this is a SPACE, and the spaces are named as places
+ * a person goes — Бібліотека, Майстерня, Кабінет. «Профіль» named a record
+ * instead, which is also what it collides with: the dosha profile and the
+ * Google profile are records, and they keep the word. The key stays `cabinet`,
+ * which it has been since before the label agreed with it.
  */
-const CABINET: PlatformApp = { key: "cabinet", label: "Профіль", path: "/profile", host: null };
+/* MOVED TO THE PERSONAL HOST (2026-08-27). The cabinet is the personal app's
+   home page — it resumes a course, it links to the library and the Майстерня,
+   and it is where an installed app should land — and all of those are on `my`.
+   On `www` it was the one personal surface a redirect away from everything it
+   points at. */
+const CABINET: PlatformApp = { key: "cabinet", label: "Кабінет", path: PROFILE_PATH_PREFIX, host: PERSONAL_HOST };
 const LEARN: PlatformApp = { key: "learn", label: "Бібліотека", path: LEARNING_SHELF_HREF, host: PERSONAL_HOST };
-const BUILDER: PlatformApp = { key: "builder", label: "Білдер", path: BUILDER_PATH_PREFIX, host: PERSONAL_HOST };
+const BUILDER: PlatformApp = { key: "builder", label: "Майстерня", path: BUILDER_PATH_PREFIX, host: PERSONAL_HOST };
 const ADMIN: PlatformApp = { key: "admin", label: "Адмінка", path: "/admin", host: null };
 
 /**

@@ -25,7 +25,10 @@ import {
   type CourseViewDto,
   type LmsFailure,
 } from "./lmsClient";
+import { CourseNotes } from "./CourseNotes";
+import { useAnnotations } from "./useAnnotations";
 import { LmsNotice } from "./LmsNotice";
+import { ReaderTopButton } from "./ReaderTopButton";
 import styles from "./Lms.module.css";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 
@@ -77,6 +80,10 @@ export function CourseView({
   >({ status: "loading" });
 
   const [restarting, setRestarting] = useState(false);
+  /* The reader's own marks for this course — the map is where they are read
+     back. Not fetched at all in the builder's draft preview: an author looking
+     at their own draft has no marks in it. */
+  const marks = useAnnotations(courseSlug, !draftPreview);
 
   const load = useCallback(async () => {
     const result = await fetchCourse(courseSlug, draftPreview);
@@ -281,6 +288,22 @@ export function CourseView({
           </ul>
         </section>
       ) : null}
+
+      {!draftPreview ? (
+        <CourseNotes
+          courseSlug={course.slug}
+          outline={outline}
+          annotations={marks.all}
+          onRemove={(clientId) => void marks.remove(clientId)}
+          href={href}
+        />
+      ) : null}
+
+      {/* A course map runs to one row per lesson — twenty-one of them on the
+          longest one here — so getting back to the title is several screens of
+          flicking. Nothing is pinned to the bottom of this page, so it takes
+          the plain corner. */}
+      <ReaderTopButton />
     </main>
   );
 }

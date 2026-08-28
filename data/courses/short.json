@@ -23,9 +23,13 @@
     "reboot"
   ],
   "cover": {
-    "src": "/cw/platform/programs/reboot-card-v1.png",
+    "src": "/cw/platform/programs/reboot-hero-desktop-v2.webp",
+    "mobileSrc": "/cw/platform/programs/reboot-card-v1.webp",
     "alt": "Обкладинка міні-курсу «Short-Перезавантаження»",
-    "cropY": 18
+    "cropX": 68,
+    "cropY": 50,
+    "mobileCropX": 50,
+    "mobileCropY": 18
   },
   "results": [
     "почати щоденну практику з десяти хвилин, які реально втримати",
@@ -43,7 +47,7 @@
     "опис 15 вправ і технік",
     "3 нагадувалки-чек-листи"
   ],
-  "duration": "7 днів",
+  "durationDays": 7,
   "accessNote": "доступ до матеріалів залишається після курсу",
   "modules": [
     {
@@ -69,7 +73,7 @@
             {
               "id": "d1-cover-plan",
               "type": "image",
-              "src": "/cw/courses/short/plan.jpg",
+              "src": "/cw/courses/short/plan.webp",
               "alt": "Обкладинка курсу «Short-Перезавантаження»"
             },
             {
@@ -151,7 +155,7 @@
             {
               "id": "d1-cover",
               "type": "image",
-              "src": "/cw/courses/short/day-1-complex.jpg",
+              "src": "/cw/courses/short/day-1-complex.webp",
               "alt": "Обкладинка уроку: комплекс гімнастики Short-перезавантаження"
             },
             {
@@ -314,7 +318,7 @@
             {
               "id": "d2-cover-morning",
               "type": "image",
-              "src": "/cw/courses/short/day-2-morning.jpg",
+              "src": "/cw/courses/short/day-2-morning.webp",
               "alt": "Обкладинка уроку: ранковий дихальний комплекс"
             },
             {
@@ -429,7 +433,7 @@
             {
               "id": "d2-cover-evening",
               "type": "image",
-              "src": "/cw/courses/short/day-2-evening.jpg",
+              "src": "/cw/courses/short/day-2-evening.webp",
               "alt": "Обкладинка уроку: вечірній дихальний комплекс"
             },
             {
@@ -541,7 +545,7 @@
             {
               "id": "d3-cover",
               "type": "image",
-              "src": "/cw/courses/short/day-3-details.jpg",
+              "src": "/cw/courses/short/day-3-details.webp",
               "alt": "Обкладинка уроку: докладні відео розборів"
             },
             {
@@ -594,7 +598,7 @@
             {
               "id": "d4-cover",
               "type": "image",
-              "src": "/cw/courses/short/day-4-questions.jpg",
+              "src": "/cw/courses/short/day-4-questions.webp",
               "alt": "Обкладинка уроку: запитання по курсу"
             },
             {
@@ -633,7 +637,7 @@
             {
               "id": "d5-cover",
               "type": "image",
-              "src": "/cw/courses/short/day-5-feedback.jpg",
+              "src": "/cw/courses/short/day-5-feedback.webp",
               "alt": "Обкладинка уроку: зворотний зв'язок після перших занять"
             },
             {
@@ -676,7 +680,7 @@
             {
               "id": "d6-cover",
               "type": "image",
-              "src": "/cw/courses/short/day-6-digest.jpg",
+              "src": "/cw/courses/short/day-6-digest.webp",
               "alt": "Обкладинка уроку: дайджест матеріалів курсу"
             },
             {
@@ -729,7 +733,7 @@
             {
               "id": "d7-cover",
               "type": "image",
-              "src": "/cw/courses/short/day-7-ivem.jpg",
+              "src": "/cw/courses/short/day-7-ivem.webp",
               "alt": "Обкладинка уроку: ІВЕМ-гімнастика"
             },
             {

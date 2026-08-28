@@ -10,7 +10,18 @@
  */
 
 import { supabaseClient } from "@/lib/supabaseClient";
-import type { Course, CourseTheme, InternalReferenceTarget, LessonAvailability, LessonBlock, InlineText, ProgressEventType } from "@/lms-core";
+import type {
+  Annotation,
+  AnnotationAnchor,
+  AnnotationKind,
+  Course,
+  CourseTheme,
+  InternalReferenceTarget,
+  LessonAvailability,
+  LessonBlock,
+  InlineText,
+  ProgressEventType,
+} from "@/lms-core";
 
 export type LmsFailure =
   | "unauthenticated"
@@ -260,4 +271,51 @@ export function progressClientId(parts: {
   stamp?: string;
 }): string {
   return ["cw", parts.lessonId, parts.kind, parts.itemId ?? "-", parts.stamp ?? ""].join(":");
+}
+
+/* ── Annotations ──────────────────────────────────── */
+
+export type AnnotationsDto = { annotations: Annotation[]; courseVersion: number };
+
+/** Every mark the reader has made in this course — the lesson filters its own. */
+export function fetchAnnotations(courseSlug: string): Promise<LmsResult<AnnotationsDto>> {
+  return request<AnnotationsDto>(`/api/lms/annotations?courseSlug=${encodeURIComponent(courseSlug)}`);
+}
+
+export function saveAnnotation(
+  courseSlug: string,
+  annotation: {
+    clientId: string;
+    kind: AnnotationKind;
+    lessonSlug: string;
+    anchor: AnnotationAnchor | null;
+    note: string | null;
+  }
+): Promise<LmsResult<{ annotation: Annotation }>> {
+  return request<{ annotation: Annotation }>("/api/lms/annotations", {
+    method: "POST",
+    body: JSON.stringify({ courseSlug, annotation }),
+  });
+}
+
+export function deleteAnnotation(courseSlug: string, clientId: string): Promise<LmsResult<{ ok: true }>> {
+  return request<{ ok: true }>(
+    `/api/lms/annotations?courseSlug=${encodeURIComponent(courseSlug)}&clientId=${encodeURIComponent(clientId)}`,
+    { method: "DELETE" }
+  );
+}
+
+/**
+ * A mark's id, made on the device that drew it.
+ *
+ * Random rather than derived from the passage: the same sentence can carry two
+ * marks (a highlight the reader kept, and a note they added later somewhere
+ * inside it), and an id derived from the text would collapse them into one.
+ */
+export function annotationClientId(): string {
+  const random =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2) + Date.now().toString(36);
+  return `mark:${random}`;
 }

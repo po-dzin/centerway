@@ -3,7 +3,7 @@
    Tokens only — no local palettes, per AGENTS.md canon preflight. */
 
 .wrap {
-  width: min(100% - 2rem, 46rem);
+  width: min(100% - 2 * var(--cw-page-gutter), 46rem);
   /* Top breathing room is a MARGIN, not padding: the shell sets
      `.shellOverlay > main { padding-top: --platform-topbar-clearance }`, which
      out-specifies this rule. Margin stacks with that clearance instead of being
@@ -215,6 +215,7 @@
   margin-top: var(--cw-space-2xl);
   padding-top: var(--cw-space-lg);
   border-top: 1px solid var(--cw-platform-border);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .referenceHeading {
@@ -276,12 +277,32 @@
 
 /* The course map belongs after the lesson material: it is a route away from
    the current reading, not a peer of the lesson title in the top bar. */
+/* TWO ROWS ON A PHONE, ONE FROM 561px (2026-08-28).
+
+   The marker and the reader's tools shared a row, so at 375px the marker got
+   whatever was left beside three controls — and it is a wrapping flex list
+   («3 / 11», «Тиждень 1 · ВХІД», «·», «12 хв»). It broke across three lines
+   with the separator ORPHANED at the start of the last one: a middot alone
+   under a chip, which reads as a bullet for a list that is not there.
+
+   Given the full width the marker fits on one line at 375px with room to
+   spare, so the tools take their own line under it, held to the right where
+   they already sat. Nothing is hidden and nothing is scaled down. */
 .lessonMetaRow {
   display: flex;
   align-items: flex-start;
   justify-content: space-between;
+  flex-wrap: wrap;
   gap: var(--cw-space-sm);
   margin-bottom: var(--cw-space-2xs);
+}
+
+.lessonMetaRow .stepMarker {
+  flex: 1 1 100%;
+}
+
+.lessonMetaRow .readerTools {
+  margin-left: auto;
 }
 
 .lessonMetaRow .stepMarker {
@@ -290,6 +311,86 @@
 
 .contentsButton {
   flex: none;
+}
+
+/* The two reader controls travel together, opposite the step marker. */
+.readerTools {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  flex: none;
+}
+
+.sizeControl {
+  position: relative;
+  flex: none;
+}
+
+.sizeMenu {
+  position: absolute;
+  top: calc(100% + var(--cw-space-2xs));
+  right: 0;
+  z-index: 3;
+  display: grid;
+  min-width: 12.5rem;
+  padding: var(--cw-space-2xs);
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--cw-platform-text) 14%, transparent);
+}
+
+/* A row of the size menu: the contract's geometry, laid out as a grid so the
+   sample «Аа» and its name line up down the column whatever size the sample is
+   drawn at.
+
+   NO PLATE, on either state. Hover and "this is the one" are the same ink
+   stroke at two strengths — the platform's account menu already speaks this way
+   and a tinted rectangle here would make the chosen row read as stuck hover the
+   moment the pointer rests on it. */
+.sizeOption {
+  composes: base from "../platform/PlatformButtons.module.css";
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  align-items: center;
+  justify-items: start;
+  width: 100%;
+  color: var(--cw-platform-text);
+  background: transparent;
+  box-shadow: none;
+  text-align: start;
+}
+
+.sizeOption:hover:not(:disabled) {
+  background: transparent;
+}
+
+.sizeOption:hover .sizeInkMark,
+.sizeOption:focus-visible .sizeInkMark {
+  opacity: var(--cw-nav-marker-hover-opacity);
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+}
+
+.sizeOptionCurrent {
+  composes: sizeOption;
+}
+
+.sizeOptionCurrent .sizeInkMark {
+  opacity: 1;
+  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
+}
+
+.sizeInkLabel {
+  composes: menuInkLabel from "../platform/PlatformShell.module.css";
+}
+
+.sizeInkMark {
+  composes: menuInkMark from "../platform/PlatformShell.module.css";
+}
+
+.sizeLabel {
+  font-size: 0.85rem;
+  white-space: nowrap;
 }
 
 .backButton {
@@ -371,7 +472,15 @@
   background: var(--cw-platform-border);
 }
 
+/* Sticky, because the panel now opens scrolled to the current lesson: a title
+   and a close button that had already scrolled past would leave the reader in
+   the middle of a list with no visible way out. */
 .drawerHead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-block: var(--cw-space-2xs);
+  background: var(--cw-mat-surface);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -551,9 +660,15 @@
    space around it move TOGETHER: a "spacious" setting that only grew the letters
    would come out merely bigger, not roomier. */
 .blocks {
+  /* The mark layer is absolutely positioned against this column, so the column
+     is what its coordinates mean. */
+  position: relative;
   display: grid;
   gap: var(--cw-course-block-gap, var(--cw-space-lg));
-  font-size: var(--cw-course-body-size, 1rem);
+  /* The reader's own size choice multiplies the course's, and everything
+     inside this column is sized in `em` so one number moves the whole body —
+     headings, captions, list markers and all. */
+  font-size: calc(var(--cw-course-body-size, 1rem) * var(--cw-reader-scale, 1));
 }
 
 /* The lesson's one abstract, and it sits in the text column like everything
@@ -563,7 +678,7 @@
    accent to be found, it is the first thing after the title. */
 .objective {
   margin: 0 0 var(--cw-space-sm);
-  font-size: 1.08rem;
+  font-size: 1.08em;
   line-height: 1.55;
   color: var(--cw-platform-muted);
 }
@@ -582,7 +697,7 @@
 .heading {
   margin: var(--cw-space-sm) 0 0;
   font-family: var(--cw-course-heading-family, inherit);
-  font-size: calc(1.15rem * var(--cw-course-heading-scale, 1));
+  font-size: calc(1.15em * var(--cw-course-heading-scale, 1));
   font-weight: var(--cw-course-heading-weight, 600);
 }
 
@@ -651,7 +766,7 @@
   width: 1.25rem;
   text-align: left;
   font-family: var(--cw-font-data);
-  font-size: 0.82rem;
+  font-size: 0.82em;
   /* Matches the item's first line box, so the number sits on the first line's
      baseline rather than above it: 1.85rem / 0.82rem. It tracks `.list`'s
      line-height and has to be recomputed whenever that moves. */
@@ -674,12 +789,12 @@
   border-radius: var(--cw-radius-pill);
   background: var(--cw-mat-surface-sunk);
   font-family: var(--cw-font-data);
-  font-size: 0.85rem;
+  font-size: 0.85em;
 }
 
 .stepTiming {
   display: block;
-  font-size: 0.78rem;
+  font-size: 0.78em;
   letter-spacing: 0.05em;
   text-transform: uppercase;
   color: var(--cw-platform-muted);
@@ -688,7 +803,7 @@
 
 .stepTitle {
   margin: 0;
-  font-size: 1rem;
+  font-size: 1em;
   font-weight: 600;
 }
 
@@ -719,7 +834,7 @@
   background: var(--cw-mat-surface-sunk);
   padding: var(--cw-space-md);
   line-height: 1.6;
-  font-size: 0.94rem;
+  font-size: 0.94em;
 }
 
 .checklist {
@@ -732,7 +847,7 @@
 
 .checklistTitle {
   margin: 0 0 var(--cw-space-2xs);
-  font-size: 1rem;
+  font-size: 1em;
   font-weight: 600;
 }
 
@@ -779,7 +894,7 @@
 
 .caption {
   margin: var(--cw-space-2xs) 0 0;
-  font-size: 0.84rem;
+  font-size: 0.84em;
   color: var(--cw-platform-muted);
 }
 
@@ -788,7 +903,7 @@
   padding-left: var(--cw-space-md);
   border-left: 2px solid var(--cw-platform-border);
   font-family: var(--cw-font-editorial);
-  font-size: 1.15rem;
+  font-size: 1.15em;
   line-height: 1.5;
 }
 
@@ -796,7 +911,7 @@
   display: block;
   margin-top: var(--cw-space-2xs);
   font-family: var(--cw-font-ui);
-  font-size: 0.85rem;
+  font-size: 0.74em;
   color: var(--cw-platform-muted);
 }
 
@@ -814,6 +929,7 @@
 
 .faqItem {
   border-bottom: 1px solid var(--cw-platform-border);
+  border-image: var(--cw-rule-fade-x);
   padding: var(--cw-space-sm) 0;
 }
 
@@ -842,7 +958,7 @@
 }
 
 .ctaLink {
-  composes: quiet from "../platform/PlatformButtons.module.css";
+  composes: secondary from "../platform/PlatformButtons.module.css";
 }
 
 /* ── Completion bar ───────────────────────────────── */
@@ -957,6 +1073,266 @@
   color: var(--cw-platform-muted);
 }
 
+
+/* ── Reader's marks ───────────────────────────────── */
+
+/* THE LAYER IS OVER THE TEXT AND CATCHES NOTHING. Only the controls inside it
+   take the pointer; the paragraphs underneath must stay selectable, which is
+   the whole gesture this feature is built on. */
+.markLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.markLayer > * {
+  pointer-events: auto;
+}
+
+.markDots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Marginalia sits in the margin. Below the tablet boundary the column has no
+   margin to sit in, so the dot moves to the column's own edge rather than off
+   the screen. */
+/* A dot, and a target big enough to press. The mark itself is 0.4rem — the
+   size marginalia should be — and the button around it is a transparent square
+   at a thumb's size, which is why this control does not compose the button
+   contract: the contract's geometry is for buttons that carry a label, and here
+   the only visible thing is the mark. */
+.markDot {
+  position: absolute;
+  left: -1.15rem;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 0.1em;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.markDot::before {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-accent);
+  transition: transform 160ms ease;
+}
+
+.markDot:hover::before,
+.markDot:focus-visible::before {
+  transform: scale(1.4);
+}
+
+.markDot:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-inset);
+  border-radius: var(--cw-radius-pill);
+}
+
+/* The toolbar the selection raises. Centred on the selection and above it —
+   under it is where the phone's own selection menu lands. */
+.markToolbar {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-2xs);
+  transform: translate(-50%, calc(-100% - 0.5rem));
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--cw-platform-text) 16%, transparent);
+  white-space: nowrap;
+}
+
+.markAction {
+  composes: chrome from "../platform/PlatformButtons.module.css";
+  gap: var(--cw-space-2xs);
+}
+
+.markNotice {
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1.6rem;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--cw-platform-muted);
+}
+
+/* The note editor. A sheet on a phone, a centred panel above it — the same
+   pair the contents drawer already is, so the reader meets one kind of panel. */
+.noteEditorBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ds-z-modal, 60);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--cw-overlay);
+}
+
+.noteEditor {
+  width: min(100%, 32rem);
+  padding: var(--cw-space-md) var(--cw-space-md) max(var(--cw-space-lg), env(safe-area-inset-bottom));
+  border-radius: var(--cw-radius-xl) var(--cw-radius-xl) 0 0;
+  background: var(--cw-mat-surface);
+  box-shadow: 0 -12px 40px color-mix(in srgb, var(--cw-platform-text) 18%, transparent);
+}
+
+/* The passage, so the reader can see WHICH place they are writing about
+   without the sheet covering it. Two lines at most: it is a reminder of the
+   quote, not the quote. */
+.noteQuote {
+  margin: 0 0 var(--cw-space-sm);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--cw-platform-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.noteInput {
+  width: 100%;
+  padding: var(--cw-space-sm);
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.noteInput:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-tight);
+}
+
+.noteActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  margin-top: var(--cw-space-sm);
+}
+
+.noteDelete {
+  composes: text from "../platform/PlatformButtons.module.css";
+  color: var(--cw-sem-boundary);
+}
+
+.noteSave {
+  composes: secondary from "../platform/PlatformButtons.module.css";
+  composes: hug from "../platform/PlatformButtons.module.css";
+}
+
+/* A lesson that is bookmarked says so at full ink; one that is not offers the
+   outline. Same control, two states, no second button. */
+.bookmarkButton {
+  flex: none;
+}
+
+.bookmarkButton[data-marked] {
+  color: var(--cw-platform-accent);
+}
+
+
+/* ── The reader's notes on the course map ─────────── */
+
+.notesSection {
+  composes: referenceSection;
+}
+
+.notesGroup {
+  margin-top: var(--cw-space-md);
+}
+
+.notesLesson {
+  display: inline-block;
+  margin-bottom: var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.notesLesson:hover {
+  color: var(--cw-platform-text);
+}
+
+.notesList {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notesItem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: var(--cw-space-2xs);
+}
+
+.notesLink {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  gap: var(--cw-space-xs);
+  align-items: start;
+  /* Block only: a note row is a list item sized by its text, and the inline
+     padding the button contract owns would indent it out of the column. */
+  padding-block: var(--cw-space-2xs);
+  color: inherit;
+  text-decoration: none;
+}
+
+.notesGlyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.15rem;
+  color: var(--cw-platform-accent);
+}
+
+.notesBody {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+/* The passage, quoted. Two lines: enough to recognise it, never enough to be
+   a second copy of the lesson on the map. */
+.notesQuote {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--cw-platform-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* The reader's own words carry the row — they are the thing being looked for,
+   the quote is only where it was found. */
+.notesNote {
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
 /* ── Wider viewports: additive only ───────────────── */
 
 /* 561px is the platform's tablet boundary (docs/design-system.md: mobile ≤ 560,
@@ -966,6 +1342,15 @@
    lockup. Kept in px, like every other breakpoint on the platform: these are
    viewport sizes, not type-relative measures. */
 @media (min-width: 561px) {
+  /* Room for both again: the marker and the tools go back on one line. */
+  .lessonMetaRow {
+    flex-wrap: nowrap;
+  }
+
+  .lessonMetaRow .stepMarker {
+    flex: 0 1 auto;
+  }
+
   .wrap {
     margin-block-start: var(--cw-space-2xl);
   }
@@ -978,6 +1363,20 @@
   .drawer {
     border-radius: var(--cw-radius-xl);
     max-height: 78svh;
+  }
+
+  /* Room for marginalia arrives with the tablet column. */
+  .markDot {
+    left: -1.9rem;
+  }
+
+  /* The note sheet becomes a centred panel, like the contents drawer. */
+  .noteEditorBackdrop {
+    align-items: center;
+  }
+
+  .noteEditor {
+    border-radius: var(--cw-radius-xl);
   }
 }
 
@@ -994,7 +1393,7 @@
 
 .tableTitle {
   color: var(--cw-platform-muted);
-  font-size: 0.85rem;
+  font-size: 0.85em;
   font-weight: 600;
 }
 
@@ -1015,7 +1414,7 @@
 .table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.95rem;
+  font-size: 0.95em;
 }
 
 .table th,
@@ -1030,7 +1429,7 @@
 .table th {
   color: var(--cw-platform-muted);
   font-family: var(--cw-font-data);
-  font-size: 0.75rem;
+  font-size: 0.79em;
   font-weight: 600;
   letter-spacing: 0.05em;
   text-transform: uppercase;
@@ -1048,4 +1447,81 @@
   margin: 0;
   display: grid;
   gap: var(--cw-space-2xs);
+}
+
+/* ── The way back to the top ──────────────────────────
+
+   Chrome, and it behaves like the rest of this reader's chrome: absent while
+   the page is being read downward, present on the scroll-up that also brings
+   the topbar back. See `ReaderTopButton.tsx` for why it rides that gesture
+   rather than a depth threshold of its own.
+
+   FIXED TO THE VIEWPORT, not to the column. The reading column is capped at
+   46rem and centred, so on a desk it has gutters this can sit in without ever
+   touching a line of text; on a phone there are no gutters, which is what the
+   completion offset below is for. */
+.topButton {
+  /* The icon-button idiom the rest of the platform uses — `chromeBare` for the
+     glyph-sized box, `square` for the touch minimum it rounds, `round` because
+     this one floats free of any bar and a squircle adrift on a page reads as a
+     plate rather than a control. */
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  composes: round from "../platform/PlatformButtons.module.css";
+  position: fixed;
+  inset-block-end: max(var(--cw-space-md), env(safe-area-inset-bottom));
+  inset-inline-end: max(var(--cw-space-md), env(safe-area-inset-right));
+  z-index: var(--ds-z-sticky);
+  /* It stands ON the reading, so it brings a ground — the chrome material the
+     topbar and the workshop's card menu already use, not a new one. A glyph
+     with nothing under it is unreadable the moment a line of text passes
+     behind it. */
+  color: var(--cw-platform-text);
+  /* OPAQUE, for the same reason the offer page's thumb bar is (2026-08-28). The
+     chrome tint is 30% of the surface, which is a ground only when there is a
+     PHOTOGRAPH behind it — the topbar's case. Here the thing behind it is the
+     reading page in that same colour, so 30% of it over 100% of it came out as
+     a glyph and a faint ring with a line of body copy running through both. A
+     control standing on the reading brings the reading's own paper with it. */
+  /* `--cw-mat-stroke-control`, not `--cw-mat-stroke`: the page under this button
+     is the reading surface and the button's own ground is the same paper, so an
+     opaque circle on it is still invisible — only the soft shadow separated
+     them. The control stroke is the one outline in the material the contrast
+     gate holds at 3:1 on both surfaces in both themes, and it exists for
+     exactly this: a secondary control that otherwise does not read as one. */
+  border: 1px solid var(--cw-mat-stroke-control);
+  background-color: var(--cw-mat-surface);
+  background-image: var(--cw-mat-grain-image);
+  box-shadow: var(--cw-mat-shadow-raised);
+  /* Not `display: none`: the control fades and lifts into place, and an element
+     that is not laid out cannot transition. Pointer events go with the opacity
+     so an invisible button is never in the way of the text under it. */
+  opacity: 0;
+  transform: translateY(0.5rem);
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.topButton[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+/* The lesson pins its completion control to the bottom of the reading column,
+   which on a phone is nearly the full width. Stepping over it by the control's
+   own height plus a gap keeps the two from sharing a corner — the completion
+   toggle is the thing this page exists to let you press, and it wins the
+   bottom. */
+.topButton[data-clears="completion"] {
+  inset-block-end: calc(
+    max(var(--cw-space-md), env(safe-area-inset-bottom)) + var(--ds-touch-target-min) + var(--cw-space-sm)
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topButton {
+    transition: none;
+    transform: none;
+  }
 }

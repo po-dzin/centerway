@@ -1,10 +1,10 @@
-import type { CSSProperties } from "react";
 import Link from "next/link";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
 import heroStyles from "@/components/platform/PlatformHeroStyles";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
+import { heroFraming } from "@/components/platform/heroFraming";
 import { platformAggregateArtwork, platformMiniCourses, platformPageArtwork, platformProductOffers, platformProgramOffers, type PlatformOfferArtwork } from "@/lib/platform/content";
 import { activePlatformTests, plannedPlatformTests, testsHubCopy } from "@/lib/platform/tests";
 import { listStorefrontCourses } from "@/lib/platform/offers";
@@ -26,13 +26,7 @@ export async function PlatformProgramsIndexPage() {
   const authoredMini = authored.filter((course) => course.lessons <= 8);
   const authoredLong = authored.filter((course) => course.lessons > 8);
 
-  const heroStyle = {
-    "--hero-photo-x": "50%",
-    "--hero-photo-y": "18%",
-    "--hero-photo-shift-y": "0%",
-    "--hero-photo-scale": "1.02",
-    "--hero-photo-origin": "center top",
-  } as CSSProperties;
+  const heroStyle = heroFraming(platformAggregateArtwork.programs);
 
   return (
     <PlatformShell headerMode="overlay">
@@ -101,8 +95,9 @@ export async function PlatformProgramsIndexPage() {
                 visual={course.visual}
                 slug={course.slug}
                 artwork={course.artwork}
+                kindBadge={course.kindBadge}
+                categories={course.categoryLabels}
                 ctaLabel="Деталі курсу"
-                size="compact"
               />
             ))}
             {platformMiniCourses.map((program) => (
@@ -116,7 +111,6 @@ export async function PlatformProgramsIndexPage() {
                 slug={program.slug}
                 artwork={program.artwork}
                 ctaLabel="Деталі курсу"
-                size="compact"
               />
             ))}
           </div>
@@ -146,6 +140,8 @@ export async function PlatformProgramsIndexPage() {
                 visual={course.visual}
                 slug={course.slug}
                 artwork={course.artwork}
+                kindBadge={course.kindBadge}
+                categories={course.categoryLabels}
                 ctaLabel="Деталі програми"
               />
             ))}
@@ -171,13 +167,7 @@ export async function PlatformProgramsIndexPage() {
 
 export function PlatformTestsHubPage() {
   const heroArtwork = platformPageArtwork.dosha;
-  const heroStyle = {
-    "--hero-photo-x": "50%",
-    "--hero-photo-y": "18%",
-    "--hero-photo-shift-y": "0%",
-    "--hero-photo-scale": "1.02",
-    "--hero-photo-origin": "center top",
-  } as CSSProperties;
+  const heroStyle = heroFraming(heroArtwork);
   const consultHref = getPlatformRoute("consult") ?? "/consult";
 
   return (
@@ -281,7 +271,6 @@ export function PlatformTestsHubPage() {
                 slug={test.slug}
                 status="planned"
                 statusLabel={testsHubCopy.soonLabel}
-                size="compact"
               />
             ))}
           </div>
@@ -348,13 +337,7 @@ export async function PlatformProductsIndexPage() {
   const relatedPrograms = PRODUCT_RELATED_SLUGS.map(
     (slug) => authoredBySlug.get(slug) ?? staticBySlug.get(slug),
   ).filter((program) => program !== undefined);
-  const heroStyle = {
-    "--hero-photo-x": "50%",
-    "--hero-photo-y": "16%",
-    "--hero-photo-shift-y": "0%",
-    "--hero-photo-scale": "1.02",
-    "--hero-photo-origin": "center top",
-  } as CSSProperties;
+  const heroStyle = heroFraming(platformAggregateArtwork.products);
 
   if (!featuredProduct) {
     return (

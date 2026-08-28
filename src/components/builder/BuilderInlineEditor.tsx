@@ -39,6 +39,8 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
+import { Icon } from "@/components/Icon";
+import { BuilderMenu } from "./BuilderMenu";
 import { inlineToHtml, nodesToInline, type MarkupNode } from "@/lib/lms/inlineDom";
 import { inlineToMarkup, markupToInline } from "@/lib/lms/inlineMarkup";
 import { PLACEHOLDER_MARKER, inlineToPlainText, type InlineText } from "@/lms-core";
@@ -636,16 +638,23 @@ export function BuilderInlineEditor({
                 </>
               ) : (
                 <>
-                  <button className={styles.formatAction} type="button" title="Жирний" onClick={() => exec("bold")}>
-                    <b>Ж</b>
+                  {/* FOUR GROUPS, IN THE ORDER A HAND MOVES ACROSS THEM: what
+                      the selected characters look like, then where they point,
+                      then what surrounds them as a paragraph, then how the
+                      whole field is edited. A divider marks each seam so the
+                      icon-only row still reads as sentences rather than a
+                      single undifferentiated strip. */}
+                  <button className={styles.formatIconAction} type="button" title="Жирний" aria-label="Жирний" onClick={() => exec("bold")}>
+                    <Icon name="bold" size={18} />
                   </button>
-                  <button className={styles.formatAction} type="button" title="Курсив" onClick={() => exec("italic")}>
-                    <i>К</i>
+                  <button className={styles.formatIconAction} type="button" title="Курсив" aria-label="Курсив" onClick={() => exec("italic")}>
+                    <Icon name="italic" size={18} />
                   </button>
                   <button
-                    className={styles.formatAction}
+                    className={styles.formatIconAction}
                     type="button"
                     title="Посилання"
+                    aria-label="Посилання"
                     onClick={() => {
                       const element = ref.current;
                       if (!element) return;
@@ -661,37 +670,77 @@ export function BuilderInlineEditor({
                       setLinkDraft("");
                     }}
                   >
-                    Посилання
+                    <Icon name="link" size={18} />
                   </button>
-                  {onCommand && commands?.some((command) => command.id === "ul") ? (
-                    <>
-                      <span className={styles.formatDivider} aria-hidden="true" />
-                      <button className={styles.formatAction} type="button" onClick={() => { onCommand("ul"); closeBar(); }}>
-                        Список
-                      </button>
-                      <button className={styles.formatAction} type="button" onClick={() => { onCommand("ol"); closeBar(); }}>
-                        1. Список
-                      </button>
-                      <button className={styles.formatAction} type="button" onClick={() => { onCommand("block:quote"); closeBar(); }}>
-                        Цитата
-                      </button>
-                      <button className={styles.formatAction} type="button" onClick={() => { onCommand("block:code"); closeBar(); }}>
-                        Код
-                      </button>
-                    </>
-                  ) : null}
-                  <span className={styles.formatDivider} aria-hidden="true" />
-                  <button
-                    className={styles.formatAction}
-                    type="button"
-                    title="Правити як розмітку"
-                    onClick={() => {
-                      closeBar();
-                      setAsText(true);
-                    }}
-                  >
-                    Як текст
-                  </button>
+                  {/* PARAGRAPH SHAPE AND «AS TEXT», BEHIND ONE OVERFLOW BELOW
+                      901PX. Seven icon buttons plus three dividers do not fit
+                      the phone width this bar already clamps to
+                      (`max-width: calc(100vw - 1rem)`) without the strip
+                      itself scrolling sideways — a toolbar that scrolls out
+                      from under the thumb that opened it. Список / Нумерований
+                      список / Цитата / Код / Як текст move into one menu,
+                      because they are the four things this bar does to a
+                      PARAGRAPH rather than to the selected characters, plus
+                      the escape hatch — losing none of them, just asking for
+                      them by name instead of by row. */}
+                  <span className={styles.formatWideOnly}>
+                    {onCommand && commands?.some((command) => command.id === "ul") ? (
+                      <>
+                        <span className={styles.formatDivider} aria-hidden="true" />
+                        <button className={styles.formatIconAction} type="button" title="Список" aria-label="Список" onClick={() => { onCommand("ul"); closeBar(); }}>
+                          <Icon name="list" size={18} />
+                        </button>
+                        <button className={styles.formatIconAction} type="button" title="Нумерований список" aria-label="Нумерований список" onClick={() => { onCommand("ol"); closeBar(); }}>
+                          <Icon name="list-ordered" size={18} />
+                        </button>
+                        <span className={styles.formatDivider} aria-hidden="true" />
+                        <button className={styles.formatIconAction} type="button" title="Цитата" aria-label="Цитата" onClick={() => { onCommand("block:quote"); closeBar(); }}>
+                          <Icon name="quote" size={18} />
+                        </button>
+                        <button className={styles.formatIconAction} type="button" title="Код" aria-label="Код" onClick={() => { onCommand("block:code"); closeBar(); }}>
+                          <Icon name="code" size={18} />
+                        </button>
+                      </>
+                    ) : null}
+                    <span className={styles.formatDivider} aria-hidden="true" />
+                    <button
+                      className={styles.formatIconAction}
+                      type="button"
+                      title="Правити як розмітку"
+                      aria-label="Правити як розмітку"
+                      onClick={() => {
+                        closeBar();
+                        setAsText(true);
+                      }}
+                    >
+                      <Icon name="edit" size={18} />
+                    </button>
+                  </span>
+                  <span className={styles.formatNarrowOnly}>
+                    <span className={styles.formatDivider} aria-hidden="true" />
+                    <BuilderMenu
+                      label="Ще форматування"
+                      contextArea={false}
+                      items={[
+                        ...(onCommand && commands?.some((command) => command.id === "ul")
+                          ? [
+                              { label: "Список", icon: "list" as const, onSelect: () => { onCommand("ul"); closeBar(); } },
+                              { label: "Нумерований список", icon: "list-ordered" as const, onSelect: () => { onCommand("ol"); closeBar(); } },
+                              { label: "Цитата", icon: "quote" as const, onSelect: () => { onCommand("block:quote"); closeBar(); } },
+                              { label: "Код", icon: "code" as const, onSelect: () => { onCommand("block:code"); closeBar(); } },
+                            ]
+                          : []),
+                        {
+                          label: "Правити як розмітку",
+                          icon: "edit" as const,
+                          onSelect: () => {
+                            closeBar();
+                            setAsText(true);
+                          },
+                        },
+                      ]}
+                    />
+                  </span>
                 </>
               )}
             </div>,

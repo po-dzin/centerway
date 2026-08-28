@@ -3,23 +3,28 @@
  * through the one authoring service.
  *
  * SOURCE OF TRUTH, honestly. `docs/lms-authoring-pipeline-2026-08-19.md` settles
- * this as "database is the source, git is the export", with the switch triggered
- * by the first course someone else authors. That switch has NOT happened here:
- * `catalog.ts` still reads `data/courses/*.json`, so what a learner sees is what
- * shipped in the last deploy.
+ * this as "database is the source, git is the export", and since 2026-08-21 that
+ * is what actually runs: `liveCatalog.ts` serves a learner from the DATABASE,
+ * and `data/courses/*.json` is the SNAPSHOT underneath it — the last known good
+ * copy, served when the live read cannot answer. So the builder reads and writes
+ * the same rows the learner is served from, and "Publish" means published.
  *
- * So the builder reads and writes the DATABASE, and says so in the interface
- * rather than pretending. Two reasons not to flip the catalog in the same pass:
+ * WHY THE SNAPSHOT SURVIVED THE SWITCH. The old file-only path had one genuine
+ * virtue: a static import cannot fail at request time. A database read can, and
+ * the thing it would break is a person opening a course they paid for. Demoting
+ * the file rather than deleting it keeps that virtue as a floor without keeping
+ * it as the delivery path. `npm run lms:pull` refreshes it — a safety net to
+ * top up in a release, not a chore standing between an author and a learner.
  *
- *   * the learner path is currently infallible — a static import that cannot
- *     fail at request time — and making it a database read is a change with
- *     production risk that deserves its own wave, not a side effect of shipping
- *     an editor;
- *   * the trigger the doc names has not fired. Both courses are house-owned.
+ * WHAT THAT LEAVES IN THIS FILE. Two places still ask the snapshot a question,
+ * and both are about the file's new role, not about serving content:
  *
- * What that costs the author is one sentence of truth in the publish panel and
- * `npm run lms:pull` in the release. What flipping it blind would have cost is
- * every lesson request depending on a database that used to be irrelevant to it.
+ *   * a slug that exists only in the database is safe to hard-delete, and one
+ *     with a checked-in file is not — deleting the row would resurrect the file
+ *     (see `deleteBuilderCourse`);
+ *   * a slug backed by a file cannot be renamed even while the course looks
+ *     inert, because the file is addressed by slug and would not follow
+ *     (see `courseSlugCanChange`).
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
@@ -62,6 +67,35 @@ async function readCourseRow(slug: string): Promise<CourseRow | null> {
   const { data, error } = await db.from("lms_courses").select("*").eq("slug", slug).maybeSingle();
   if (error) throw new Error(`lms_builder_course_read_failed:${error.message}`);
   return (data as CourseRow | null) ?? null;
+}
+
+/**
+ * Who owns this course — and nothing else.
+ *
+ * Separate from `loadBuilderCourse` on purpose. Rebuilding a course runs
+ * `courseFromRows` and `validateCourse`, so a STORED course that no longer
+ * satisfies the contract throws — and a caller that only needed to ask "may
+ * this identity touch this slug?" would then answer "no such course" to the one
+ * person entitled to repair it. Ownership is three columns and cannot fail that
+ * way; content validity is a separate question with a separate answer (422).
+ */
+export async function readCourseOwnership(
+  slug: string
+): Promise<{ id: string; slug: string; authorId: string | null } | null> {
+  const db = adminClient();
+  const { data, error } = await db
+    .from("lms_courses")
+    .select("id, slug, author_id")
+    .eq("slug", slug)
+    .maybeSingle();
+  if (error) throw new Error(`lms_builder_course_read_failed:${error.message}`);
+  if (!data) return null;
+  const row = data as CourseRow;
+  return {
+    id: row.id as string,
+    slug: row.slug as string,
+    authorId: (row.author_id as string | null) ?? null,
+  };
 }
 
 /**
@@ -476,6 +510,11 @@ export async function saveBuilderCourse(input: unknown, expectedGeneration: unkn
     // Catalogue visibility is governed in admin, never accepted from an
     // authoring payload even if a stale client still sends it.
     visibility: (existing?.visibility as Course["visibility"] | undefined) ?? "hidden",
+  }, {
+    // The author had the storefront form in front of them: a field they left
+    // empty is a field they meant to clear, so this write speaks for those
+    // columns. Every other caller keeps the safe default.
+    optionalColumns: "authoritative",
   });
   if (reviewEnabled && incoming.status === "draft" && existing?.review_status !== "draft") {
     const { error } = await db.from("lms_courses").update({

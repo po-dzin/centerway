@@ -21,6 +21,7 @@
  */
 
 import type { LearnerShelfCourseDto } from "@/components/lms/lmsClient";
+import { MEDIA_SIZES, mediaSources } from "@/lib/lms/media";
 import styles from "./Cabinet.module.css";
 
 /** Up to two words, first letters — the builder's rule, so the two agree. */
@@ -35,16 +36,23 @@ function initialsOf(title: string): string {
 
 export function CourseCover({ course, dimmed }: { course: LearnerShelfCourseDto; dimmed?: boolean }) {
   if (course.cover) {
+    // Plain <img>: the cover is an author-supplied path that may point
+    // anywhere, and next/image would need every one of those hosts configured
+    // before it would render at all. Same call the builder made. `mediaSources`
+    // is what replaces it for the images that ARE ours — a card this size has
+    // no use for the 1600px rendition on a phone.
+    const art = mediaSources(course.cover.src);
     return (
-      // Plain <img>: the cover is an author-supplied path that may point
-      // anywhere, and next/image would need every one of those hosts configured
-      // before it would render at all. Same call the builder made.
       // eslint-disable-next-line @next/next/no-img-element
       <img
         className={styles.cover}
         data-dimmed={dimmed || undefined}
-        src={course.cover.src}
+        src={art.src}
+        srcSet={art.srcSet}
+        sizes={art.srcSet ? MEDIA_SIZES.card : undefined}
         alt={course.cover.alt}
+        loading="lazy"
+        decoding="async"
         style={{ objectPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%` }}
       />
     );

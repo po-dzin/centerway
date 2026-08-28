@@ -18,6 +18,7 @@
   justify-content: space-between;
   gap: var(--cw-space-xs);
   border-block-end: 1px solid var(--cw-platform-border);
+  border-image: var(--cw-rule-fade-x);
 }
 
 .back {

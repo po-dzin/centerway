@@ -7,6 +7,7 @@ import { headers } from "next/headers";
 import { SurfaceHostProvider } from "@/components/platform/layout/SurfaceHost";
 import "../globals.css";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
+import { THEME_BOOT_SCRIPT } from "@/lib/platform/theme";
 import { BRAND, BRAND_COVER, BRAND_LOCALE } from "@/lib/brand/identity";
 import { JsonLd } from "@/lib/seo/StructuredData";
 import { graph, organizationLd, personLd, websiteLd } from "@/lib/seo/jsonLd";
@@ -72,6 +73,12 @@ export default async function RootLayout({
   return (
     <html lang="uk" suppressHydrationWarning>
       <body suppressHydrationWarning>
+        {/* The theme, stamped before the first frame. It is inline and not a
+            module on purpose: a module arrives after the first paint, and the
+            reader would watch a cream page turn graphite. See
+            src/lib/platform/theme.ts for why one script rather than a
+            `prefers-color-scheme` rule in the stylesheet. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_BOOT_SCRIPT }} />
         <Suspense fallback={null}>
           <GoogleTagProvider measurementId={GOOGLE_TAG_ID} />
         </Suspense>

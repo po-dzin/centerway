@@ -128,7 +128,12 @@
 .diagnosticProgressBar {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
+  /* One meter fill for the system, and it changes with the theme. The green
+     ramp clears its track at 4.92 / 11.26 on cream and disappears on graphite —
+     a deep green on a near-black ground is not a low-contrast bar, it is no bar
+     at all. `--cw-platform-meter` carries the ramp each ground can show: the
+     green on light, the gold on dark. */
+  background: var(--cw-platform-meter);
   transition: width 0.3s ease;
 }
 
@@ -436,6 +441,15 @@
 .field input,
 .field select,
 .field textarea {
+  /* WHERE THE BROWSER PARKS A FOCUSED FIELD (2026-08-28).
+     Tapping a field, or moving to the next one with the keyboard's own «next»,
+     makes the browser scroll it into view — and its idea of «in view» is the
+     top of the viewport, where this product keeps a floating topbar. Without a
+     margin the label and the first line of the field land underneath it.
+     `--platform-topbar-block` is the shell's own statement of how much room the
+     bar takes; the fallback is that same sum for the surfaces that do not
+     declare it. */
+  scroll-margin-block: calc(var(--platform-topbar-block, 4.65rem) + var(--cw-space-md)) var(--cw-space-lg);
   width: 100%;
   min-height: var(--ds-touch-target-min);
   font-size: var(--ds-type-body-size);
@@ -474,7 +488,7 @@
     linear-gradient(
       180deg,
       transparent 0%,
-      color-mix(in srgb, var(--cw-platform-bg) 96%, var(--cw-sem-calm-surface-muted) 4%) 18%,
+      color-mix(in srgb, var(--cw-platform-bg) 96%, var(--cw-platform-surface-muted) 4%) 18%,
       color-mix(in srgb, var(--cw-platform-bg) 98%, white 2%) 56%,
       color-mix(in srgb, var(--cw-platform-bg) 97%, white 3%) 100%
     );
@@ -688,4 +702,70 @@
 
 .profileGridPair > * {
   min-width: 0;
+}
+
+/* ── Shared page head ───────────────────────────────
+   The top of every list page — see `PlatformPageHead.tsx` for what the three
+   parts are for. The metrics live here rather than in each surface's own module
+   because that is exactly what drifted: two shelves, two title sizes, one with
+   a caption and one without.
+
+   The title is EDITORIAL and the label and lead are UI. That contrast is the
+   whole hierarchy: the serif line is the page's name, everything around it is
+   the interface speaking. */
+.pageHeadBlock {
+  display: grid;
+  gap: var(--cw-space-xs);
+  margin-block-end: var(--cw-space-lg);
+}
+
+/* Title and tools on one line, and the tools wrap UNDER the naming block rather
+   than squeezing it: a two-word Ukrainian title next to two controls is the
+   case that decides this, and a title compressed to one word per line to keep a
+   button company is the wrong trade. */
+.pageHeadLine {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--cw-space-sm);
+}
+
+.pageHeadNaming {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* The platform's single caption idiom — the same numbers the loading state and
+   the cabinet's section labels carry. */
+.pageHeadLabel {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pageHeadTitle {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(1.6rem, 5vw, 2.1rem);
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.pageHeadLead {
+  margin: 0;
+  max-width: 44rem;
+  color: var(--cw-platform-muted);
+  line-height: 1.6;
+}
+
+.pageHeadTools {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  flex: 0 0 auto;
 }

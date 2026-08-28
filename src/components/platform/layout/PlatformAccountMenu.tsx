@@ -16,9 +16,12 @@ import {
   currentAppKey,
   type PlatformAppKey,
 } from "@/lib/platform/apps";
+import { markInstallSurface } from "../pwa/installStore";
+import { usePwaInstall } from "../pwa/usePwaInstall";
 import { usePlatformIdentity } from "./usePlatformIdentity";
 import { isAuthConfigured, usePlatformSession } from "./usePlatformSession";
-import { useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
+import { useOwnsPersonalSurfaces, useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
+import { PlatformThemeControl } from "@/components/platform/layout/PlatformThemeControl";
 
 /**
  * The account control: who am I, which applications may I enter, and how do I
@@ -45,6 +48,93 @@ import { useSurfaceHost, useSurfaceHref } from "./SurfaceHost";
  * it reads the same list, so the two cannot disagree about where you may go.
  */
 
+/* Short on purpose: it stands in a column of two- and three-word rows, and the
+   cabinet's full sentence would be the one item that wraps. */
+const INSTALL_LABEL = "Додати на екран";
+
+/* Ukrainian and inline, like every other string in this bar. The cabinet ships
+   two languages and reads its own copy table; the shell ships one. */
+const IOS_INSTALL_LEAD = "На iPhone та iPad застосунок додає сам браузер, у два кроки:";
+const IOS_INSTALL_STEPS = [
+  "Натисніть «Поділитися» на панелі Safari.",
+  "Оберіть «На початковий екран».",
+];
+
+/**
+ * INSTALL, AS A ROW OF THIS MENU. It used to be a line pinned under the shelf's
+ * last course, on a tree that renders no footer — a full-width sentence and a
+ * button hanging off the bottom of the page, reading as a footer that had lost
+ * its footer. This is where a once-per-device offer belongs instead: in the
+ * chrome every page carries, one row among the other things you do to the
+ * account rather than a panel competing with the courses.
+ *
+ * ONLY WHERE THIS ORIGIN IS THE APP. `start_url` is relative, so a prompt fired
+ * on `www` would put the STOREFRONT on the home screen. From there the offer is
+ * the cabinet's row, which names the crossing and sends the reader to the
+ * library — this menu stays silent rather than offering the wrong install.
+ *
+ * SAFARI GETS THE TWO TAPS, folded. It never fires a prompt, so the only honest
+ * thing to offer is the instruction; two lines of it are not a row, hence the
+ * disclosure. Anything else — a desktop browser with no prompt and no Share
+ * sheet — renders nothing, because a row that leads nowhere is worse than no
+ * row.
+ */
+function InstallEntry({ onSelect }: { onSelect: () => void }) {
+  const install = usePwaInstall();
+  const ownsInstall = useOwnsPersonalSurfaces();
+
+  /* Declares that an install offer is on screen, which is what lets
+     `installStore` cancel the browser's own. Without the pairing, suppression
+     happened at module scope and a guest on this origin lost the native prompt
+     with nothing put in its place. Marked only where the row can actually
+     render — the personal origin, outside the installed app. */
+  const canOffer = ownsInstall && !install.isStandalone;
+  useEffect(() => {
+    if (!canOffer) return;
+    return markInstallSurface();
+  }, [canOffer]);
+
+  if (!canOffer) return null;
+
+  if (install.canPrompt) {
+    return (
+      <button
+        type="button"
+        onClick={() => {
+          onSelect();
+          void install.install();
+        }}
+      >
+        <InkMenuLabel>{INSTALL_LABEL}</InkMenuLabel>
+      </button>
+    );
+  }
+
+  if (install.needsIosInstructions) {
+    return (
+      <details className={styles.menuFold}>
+        <summary>
+          <InkMenuLabel>{INSTALL_LABEL}</InkMenuLabel>
+        </summary>
+        <p className={styles.menuFoldLead}>{IOS_INSTALL_LEAD}</p>
+        <ol className={styles.menuFoldSteps}>
+          {IOS_INSTALL_STEPS.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ol>
+      </details>
+    );
+  }
+
+  return null;
+}
+
+/** The account's own name, when the provider gave one. */
+function displayNameOf(session: Session | null) {
+  const name = session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name;
+  return typeof name === "string" && name.trim().length > 0 ? name.trim() : null;
+}
+
 function getUserInitial(session: Session | null) {
   const name =
     session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email;
@@ -60,14 +150,41 @@ function InkMenuLabel({ children }: { children: string }) {
   );
 }
 
+/**
+ * WHOSE ACCOUNT THIS IS, ON ITS OWN.
+ *
+ * The block used to exist only inside the rows below, which put it halfway down
+ * the phone drawer — under the five public destinations, where it read as a
+ * caption on the apps beneath it rather than as the header of the sheet. On a
+ * phone the first thing a menu should answer is «whose session am I in», so the
+ * drawer hoists this to its top and asks the rows to skip it
+ * (`showIdentity={false}`). The desktop popover keeps it inline: there the menu
+ * hangs off the avatar, which has already answered the question.
+ */
+export function PlatformAccountIdentity() {
+  const session = usePlatformSession();
+  const accountName = displayNameOf(session);
+  const accountEmail = session?.user?.email ?? null;
+  if (!session?.user || (!accountName && !accountEmail)) return null;
+  return (
+    <div className={styles.menuIdentity} data-placement="hoisted" data-cw-rule="inner">
+      {accountName ? <p className={styles.menuIdentityName}>{accountName}</p> : null}
+      {accountEmail ? <p className={styles.menuIdentityMail}>{accountEmail}</p> : null}
+    </div>
+  );
+}
+
 export function PlatformAccountMenu({
   variant = "menu",
   compact = false,
   exclude,
   onNavigate,
+  showIdentity = true,
 }: {
   variant?: "menu" | "inline";
   compact?: boolean;
+  /** False where the surrounding surface has hoisted the identity block itself. */
+  showIdentity?: boolean;
   /**
    * Applications the surrounding surface already lists, so they are not offered
    * twice. The burger sheet names the shelf in its own nav — the account block
@@ -242,7 +359,7 @@ export function PlatformAccountMenu({
   /* SIGNED OUT: unchanged from the link this replaced. There is no account, so
      there is nothing to switch between, and the control is the way in. */
   if (!signedIn) {
-    const label = isAuthEnabled ? "Увійти" : "Профіль";
+    const label = isAuthEnabled ? "Увійти" : "Кабінет";
     const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
       if (!isAuthEnabled) {
         onNavigate?.();
@@ -269,13 +386,28 @@ export function PlatformAccountMenu({
     );
   }
 
-  const email = session?.user?.email ?? null;
   const avatarUrl =
     session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || null;
+  const accountName = displayNameOf(session);
+  const accountEmail = session?.user?.email ?? null;
 
   const rows = (
     <>
-      {email ? <p>{email}</p> : null}
+      {/* WHOSE MENU THIS IS, BEFORE WHAT IT CAN DO. The address alone was cut
+          once as a line that answered nothing — and it did read that way,
+          because an address on its own is a field, not an identity. The name
+          above it is what makes the block an account header: on a shared
+          machine, or with two of these signed in, «which of me is this» is a
+          real question and it has to be answered before «Вийти» is pressed.
+
+          A caption block, not two rows: neither line is a place to go, so
+          neither takes the row's height, weight or mark. */}
+      {showIdentity && (accountName || accountEmail) ? (
+        <div className={styles.menuIdentity}>
+          {accountName ? <p className={styles.menuIdentityName}>{accountName}</p> : null}
+          {accountEmail ? <p className={styles.menuIdentityMail}>{accountEmail}</p> : null}
+        </div>
+      ) : null}
       {/* First, above the account's own applications — the same place the panel
           puts it. Rendered only inside the shelf or the builder: on the public
           site it would point at the family of pages the reader is already in.
@@ -320,6 +452,33 @@ export function PlatformAccountMenu({
           </Link>
         );
       })}
+      {/* THE MENU HAS THREE REGISTERS, AND THE THEME BELONGS TO THE THIRD.
+          Above the rule: who this is, and everywhere they can go. Below it:
+          THIS DEVICE — put the app on its home screen, and choose how it
+          looks. Then the way out.
+
+          The icons had been dropped between "Додати на екран" and "Вийти" with
+          nothing around them, so they read as two destinations someone forgot
+          to name. What was missing was not a label on the control but a place
+          for it: a setting is not a row you travel to, so it takes the shape a
+          setting takes — its name at the left, its state at the right — and it
+          joins the group whose other member is also about this machine rather
+          than about the product.
+
+          `role="none"` on the wrapper because the three buttons are ONE
+          control; a menu whose items are two thirds of a segmented switch is a
+          menu that cannot be arrowed through. */}
+      <div className={styles.profileMenuDivider} role="none" />
+      <InstallEntry
+        onSelect={() => {
+          close();
+          onNavigate?.();
+        }}
+      />
+      <div className={styles.menuSetting} role="none">
+        <span className={styles.menuSettingLabel}>Вигляд</span>
+        <PlatformThemeControl />
+      </div>
       <button type="button" onClick={() => void signOut()}>
         <InkMenuLabel>Вийти</InkMenuLabel>
       </button>
@@ -354,7 +513,7 @@ export function PlatformAccountMenu({
           )}
         </span>
         <HandGraphic className={styles.profileInkRing} name="ink-ring" size={48} />
-        {compact ? null : <span className={styles.profileLabel}>Профіль</span>}
+        {compact ? null : <span className={styles.profileLabel}>Кабінет</span>}
       </button>
       {open && anchor && typeof document !== "undefined"
         ? createPortal(

@@ -26,6 +26,7 @@ export function useCourseAutosave({
   course,
   dirty,
   paused = false,
+  suspended = false,
   persist,
   markSaved,
   getDraftGeneration,
@@ -33,6 +34,17 @@ export function useCourseAutosave({
   course: Course | null;
   dirty: boolean;
   paused?: boolean;
+  /**
+   * Holds BOTH the timer and the durable copy — the state a recovery question
+   * puts the document in.
+   *
+   * `paused` is not enough for that moment. It stops the request, but the
+   * durable write below runs on every dirty course regardless, so an editor
+   * showing the server version while the author decides whether to restore a
+   * recovered draft would overwrite that very draft with what is on screen —
+   * the answer erased by the question.
+   */
+  suspended?: boolean;
   persist: (course: Course) => Promise<AutosaveResult>;
   markSaved: (course: Course) => void;
   getDraftGeneration: () => number | null;
@@ -156,15 +168,15 @@ export function useCourseAutosave({
   }, [preserveLocally]);
 
   useEffect(() => {
-    if (!course || !dirty) return;
+    if (!course || !dirty || suspended) return;
     void preserveLocally(course).write;
-  }, [course, dirty, preserveLocally]);
+  }, [course, dirty, preserveLocally, suspended]);
 
   useEffect(() => {
     if (timer.current) clearTimeout(timer.current);
     timer.current = null;
 
-    if (!course || !dirty || paused) return;
+    if (!course || !dirty || paused || suspended) return;
 
     timer.current = setTimeout(() => {
       timer.current = null;
@@ -175,7 +187,7 @@ export function useCourseAutosave({
       if (timer.current) clearTimeout(timer.current);
       timer.current = null;
     };
-  }, [course, dirty, enqueue, paused]);
+  }, [course, dirty, enqueue, paused, suspended]);
 
   const saveNow = useCallback((): Promise<boolean> => {
     if (timer.current) clearTimeout(timer.current);
@@ -192,8 +204,10 @@ export function useCourseAutosave({
       if (document.visibilityState === "hidden") flush();
     };
 
-    // No beforeunload prompt: hiding, switching apps, reloading or closing the
-    // page asks the same serial snapshot queue to flush and lets the browser go.
+    // No prompt on the ordinary way out: hiding, switching apps, reloading or
+    // closing the page asks the same serial snapshot queue to flush and lets
+    // the browser go. Only a save the server has already refused is worth a
+    // dialogue, and that one is registered below.
     document.addEventListener("visibilitychange", flushWhenHidden);
     window.addEventListener("pagehide", flush);
     return () => {
@@ -201,6 +215,25 @@ export function useCourseAutosave({
       window.removeEventListener("pagehide", flush);
     };
   }, [dirty, saveNow]);
+
+  /**
+   * The one case where letting the browser go loses work.
+   *
+   * The flush above is the normal answer to a closing tab, and it is the right
+   * one: a save that succeeds needs no dialogue. A save that the server has
+   * already REFUSED — a cover without alt text, a course without a title — will
+   * be refused again on the way out, so flushing changes nothing and the author
+   * would leave believing the bar's last word. The prompt is therefore scoped
+   * to exactly that state and appears nowhere else.
+   */
+  useEffect(() => {
+    if (!dirty || state !== "error") return;
+    const warn = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+    };
+    window.addEventListener("beforeunload", warn);
+    return () => window.removeEventListener("beforeunload", warn);
+  }, [dirty, state]);
 
   const waiting = Boolean(
     course && dirty && !paused && state !== "saving" && !(state === "error" && resultSnapshot === course)
@@ -210,6 +243,9 @@ export function useCourseAutosave({
     state: waiting ? "waiting" as const : state,
     message: waiting ? "Зміни збережуться автоматично" : message,
     saving: state === "saving",
+    /** The last attempt came back refused, and the changes on screen are it. */
+    failed: state === "error" && resultSnapshot === course,
+    failureMessage: state === "error" ? message : null,
     saveNow,
   };
 }
