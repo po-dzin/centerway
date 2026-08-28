@@ -399,7 +399,25 @@ export function BuilderCourseList() {
       setPending({ slug, kind: "unpublish", phase: "error", message: unpublishFailureCopy(result) });
       return;
     }
-    await load();
+    /* THE SAME FIX AS `remove` (2026-08-29), for the same reason: the write
+       already confirmed the new status, so waiting on a second full fetch
+       before the pill updates leaves the card lying — «Опубліковано» sits on
+       a course that was just taken off the shelf, for however long that fetch
+       takes. Nothing else about the row changes on an unpublish (blockers and
+       counts are unaffected), so the local flip is the whole truth already;
+       `load()` runs after, unawaited, for the same `canCreate` reason `remove`
+       keeps it around for. */
+    setState((current) =>
+      current.status === "ready"
+        ? {
+            ...current,
+            courses: current.courses.map((entry) =>
+              entry.slug === slug ? { ...entry, status: result.data.status } : entry
+            ),
+          }
+        : current
+    );
+    void load();
   }
 
   function confirmPending() {
