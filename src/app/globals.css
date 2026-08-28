@@ -744,6 +744,26 @@
   }
 }
 
+/* Reserves the scrollbar's width permanently, on every page, whether or not
+   that page currently scrolls.
+
+   Without it, a `position: fixed` element sized in `%` (the platform topbar,
+   `min(100% - 2rem, var(--cw-max-width))`) and an in-flow one sized the exact
+   same way (`.container`, same formula) measure two DIFFERENT basises on a
+   system with a classic reserved-space scrollbar: the fixed element's percent
+   resolves against the initial containing block, which is the full viewport;
+   the in-flow element's resolves against `<body>`'s content box, which the
+   scrollbar has already narrowed. Same formula, same variables, and still a
+   few pixels apart — the topbar reads as wider than the page under it, on
+   Windows and on any desktop with "always show scrollbars" on, invisible on a
+   Mac's overlay one. `scrollbar-gutter: stable` makes the width the scrollbar
+   takes constant and equal for both — present even when there is nothing to
+   scroll — so the two formulas agree everywhere instead of only where the
+   discrepancy happens not to show. */
+html {
+  scrollbar-gutter: stable;
+}
+
 body {
   color: var(--foreground);
   background: var(--background);

@@ -388,11 +388,19 @@ export const platformEntryCards = [
    four hand-written Material-style paths inlined as CSS mask data-URIs — a
    second icon set, in a second hand, on the one block that is meant to read as
    the person behind the platform. */
+/* Six, not four: on the home page's compact card (`support.tsx`,
+   `.factGrid`'s two columns) four facts filled two rows next to a portrait
+   that ran taller — text and photo ended at different heights in the same
+   panel. The last two are shortened from `educationTimeline` below, not
+   invented for the count: 2016 Kerala and the 2017 title are both already on
+   the record at /consult, just condensed to this list's badge length. */
 export const expertFacts = [
   { label: "12 років практики", icon: "clock" as const },
   { label: "Магістр комплементарної медицини та інтегративної психології", icon: "shield-check" as const },
   { label: "Інструктор з йоги та практикуючий йогін", icon: "body" as const },
   { label: "Засновник центру Centerway", icon: "support" as const },
+  { label: "Аюрведична дієтологія — Керала, Індія", icon: "leaf" as const },
+  { label: "Заслужений натуропат Європи", icon: "star" as const },
 ];
 
 /* ── The guides ───────────────────────────────────────
