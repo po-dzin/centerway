@@ -273,13 +273,6 @@ export function normalizeProduct(input: unknown): ProductCode | null {
   return null;
 }
 
-/**
- * Всегда возвращает валидный продукт (дефолт short)
- */
-export function resolveProduct(input: unknown): ProductCode {
-  return normalizeProduct(input) ?? "short";
-}
-
 /** One of the six written in this file — the only codes `PRODUCTS` may be indexed by. */
 export function isCatalogProduct(
   product: ProductCode | string | null | undefined
