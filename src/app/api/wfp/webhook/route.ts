@@ -9,6 +9,7 @@ import {
   type WfpSignatureCheck,
 } from "@/lib/wfp";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
+import { isStaffOrder } from "@/lib/tracking/staffOrders";
 import {
   buildPurchaseCapiEventPayload,
   type PendingPurchaseCapiJobPayload,
@@ -349,9 +350,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ ok: false, error: "db_write_failed", details: errors.join("; ") }, { status: 200 });
     }
 
+    // A QA payment made with `cw_staff=1` is a real order and a real WayForPay
+    // callback; only Meta must not hear about it. The flag lived in the browser,
+    // which this request does not have — `/api/pay/start` left the mark for us.
+    const staffOrder = paid ? await isStaffOrder(sb, orderRef) : false;
+    if (staffOrder) {
+      console.log("[wfp webhook] staff order, no Meta Purchase", { orderRef });
+    }
+
     // Paid webhook work stays on the queue.
     // The request path only persists the payment signal and enqueues follow-up delivery.
-    if (paid) {
+    if (paid && !staffOrder) {
       try {
         const { data: existingPurchaseJob } = await sb
           .from("jobs")
@@ -402,7 +411,11 @@ export async function POST(req: NextRequest) {
         // Non-fatal: don't fail the webhook for CAPI errors
         console.warn("[wfp webhook] Failed to queue CAPI job:", capiErr);
       }
+    }
 
+    // The sale report is not analytics — the operator wants to see a QA payment
+    // land too, so it is deliberately outside the staff guard above.
+    if (paid) {
       try {
         await sendConfirmedSaleTelegramReport(orderRef);
       } catch (telegramErr) {

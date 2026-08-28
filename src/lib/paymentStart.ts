@@ -11,6 +11,7 @@ import {
 import { buildReturnUrl, buildWfpProductName } from "@/lib/pay";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
+import { STAFF_CHECKOUT_EVENT } from "@/lib/tracking/staffOrders";
 
 export type PaymentStartSuccess = {
   ok: true;
@@ -327,6 +328,28 @@ export async function createPaymentInvoiceWithDeps(
     }
   })();
 
+  /* The staff flag lives in the browser, and the WayForPay webhook has no browser.
+     Without a mark on the order itself, a 1 ₴ QA payment came back as a real
+     Purchase to Meta — the exact conversion this flag exists to suppress. The
+     mark is written here and read by the webhook; it is awaited rather than
+     fire-and-forget, because the suppression downstream depends on it existing. */
+  const staffMarkerPromise = input.staff
+    ? (async () => {
+        try {
+          const { error: staffMarkErr } = await sb.from("events").insert({
+            type: STAFF_CHECKOUT_EVENT,
+            order_ref,
+            payload: { product, source: input.source, host: input.host ?? null },
+          });
+          if (staffMarkErr) {
+            console.warn("staff_checkout_mark_failed", staffMarkErr.message, { order_ref });
+          }
+        } catch (staffMarkErr) {
+          console.warn("staff_checkout_mark_failed", staffMarkErr, { order_ref });
+        }
+      })()
+    : Promise.resolve();
+
   if (!input.staff) void (async () => {
     try {
       const { error: checkoutStartedErr } = await sb.from("events").insert({
@@ -359,6 +382,7 @@ export async function createPaymentInvoiceWithDeps(
   const [{ error: orderErr }, resp] = await Promise.all([orderInsertPromise, wfpResponsePromise]);
   // Keep the CAPI job overlapped with the WFP call without dropping it on the floor.
   await capiJobPromise;
+  await staffMarkerPromise;
 
   if (orderErr) {
     return {
