@@ -95,20 +95,50 @@ This is deliberately the first step: it gives the Акаунти list the one th
 Ролі was for. Whether Ролі then still earns a tab is a question the panel can
 answer from use rather than from this document.
 
-## 5. Not done — needs a decision
+## 5. Done, in three steps
 
-Each of these removes something an operator uses daily, so none was taken
-unilaterally.
+All three were taken, in the order below.
+
+**1. Roles retired into the facet.** `ownedCourses` and the role's `updated_at`
+moved onto the account row first — they were the only facts that lived nowhere
+else — then the tab, `listRoles`, `RoleRow` and `GET /access/roles` went. What
+`listRoles` proved is now proved of `listAccounts` with the filter. The old
+email form is no loss: it called `setRole`, which 404s on an account that does
+not exist, so it only ever worked for accounts the per-row select already
+covers.
+
+**2. Учні folded in.** `listPeople` replaces both list functions. It pages in
+memory, which is forced rather than chosen: status is a fold over the event log,
+so it can never be a WHERE clause. `GET /access/accounts` is gone; its facets
+are parameters on the one list endpoint.
+
+**3. Білдер moved to `/admin/catalog`** as a third tab, and its component left
+the access page for `src/components/admin/CourseAuthorshipTab.tsx`. Its data is
+fetched only when the tab is first opened — two reads on arrival for a tab most
+visits never touch is a cost worth avoiding.
+
+The access page has no tab bar now: three views of people became one list with
+facets, and the fourth was a view of courses that belonged on the courses page.
+
+### Open: what the list is called
+
+The tab was labelled "Ролі" while there were two. With the bar gone the label
+went with it, and the page's own title ("Доступи") is what names the list. If a
+heading is wanted over it, "Ролі" is no longer quite right — the list is
+everyone, and roles are one facet of it among four.
+
+## 6. Not done — was needed for the decision
+
+This section is kept as the record of what each step was expected to cost,
+written before any of them were taken. All three have since been done — see
+section 5 — and the costs turned out as described.
 
 1. **Retire Ролі**, once the facet has proved it. What is lost: `ownedCourses`
-   and `updatedAt`, neither shown anywhere else. Add them to the account row
-   first, then drop the tab and `listRoles` with it.
+   and `updatedAt`, neither shown anywhere else.
 2. **Fold Учні into the people list** as an "access" facet. Bigger: Учні carries
-   the status summary (Не почав / У процесі / Застряг / Завершив) and the
-   per-status sub-tabs, which are themselves facets on a facet. Worth doing, not
-   worth doing carelessly.
-3. **Move Білдер to `/admin/catalog`** as a third tab. Mechanical — the tab is
-   already course-shaped and posts to `/api/admin/access/courses` — but it moves
+   the status summary and the per-status sub-tabs, which are themselves facets
+   on a facet.
+3. **Move Білдер to `/admin/catalog`** as a third tab. Mechanical, but it moves
    a route boundary, and the catalogue page has its own canon entry.
 
 ## Sources
