@@ -51,6 +51,23 @@ export function CourseContentsDrawer({
     return () => restoreFocusRef.current?.focus();
   }, []);
 
+  /**
+   * The contents open ON the lesson the reader is in.
+   *
+   * A twenty-one step course is several screens inside this panel, and a map
+   * that opens at step one makes the reader search for themselves before it
+   * can answer anything. The current row is already marked — this only brings
+   * it under the eye. `center` rather than `start` so the steps on either side
+   * come with it: what is next is half the question.
+   */
+  useEffect(() => {
+    const current = panelRef.current?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!current) return;
+    // `auto`, never smooth: this is the panel's opening state, not a movement
+    // the reader asked to watch.
+    current.scrollIntoView({ block: "center", behavior: "auto" });
+  }, []);
+
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Escape") {

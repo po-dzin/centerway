@@ -141,7 +141,7 @@ export const programs = [
     href: getPlatformRoute("way21") ?? "/programs/way21",
     funnelHref: way21FunnelHref,
     tag: "Очищення",
-    duration: "21 урок",
+    duration: "21 день",
     visual: "water",
     artwork: {
       desktop: "/cw/platform/programs/way21-home-desktop-v1.png",

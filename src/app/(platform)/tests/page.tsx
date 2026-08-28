@@ -6,7 +6,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 export const metadata: Metadata = pageMetadata({
   title: "Діагностика і тести",
   description: describe(
-    "Самодіагностика CenterWay: тест доші та інші кроки, щоб зрозуміти свій стан, конституцію і з чого доречно почати відновлення."
+    "Самооцінка стану CenterWay: тест доші та інші кроки, щоб зрозуміти свій стан, конституцію і з чого доречно почати відновлення."
   ),
   path: "/tests",
 });

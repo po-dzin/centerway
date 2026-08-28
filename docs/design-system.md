@@ -169,6 +169,48 @@ The general rule: a class that only ever appears inside `@media` blocks is a
 class with no base. If the merged bundle does not carry its unconditional rule,
 the browser's defaults are the base, and they will not match anything.
 
+### The cabinet is a room that becomes the library (2026-08-27)
+
+The first version of `CabinetHero` split the block in two: the room drawn on the left in the page's material, the threshold photograph on the right as a card whose opening linked to the shelf. It was internally consistent and still wrong — a photograph of a room pinned beside a dashboard reads as an illustration of the idea, not as standing in it.
+
+The photograph is the ground of the **first screen** now — full bleed, edge to edge, `100svh`, running up under the floating bar, with the hero rendered OUTSIDE the page container and only its contents (`.room`, and the shelf's row) coming back to `--cw-page-gutter` / `--cw-max-width`. No radius: a screen has no corners. Inside the container it was a picture in a frame with paper down all four margins, which is a photograph of a room rather than being in one.
+
+**The dissolve into paper is baked into the file, not painted over it.** Three CSS attempts failed the same way, and the third one is worth recording: painting `--cw-mat-surface` in from the bottom is correct in principle, but over a dark plate a viewer sees two layers — a white veil laid on a picture — and the veil follows the layout rather than the image. `scripts/img/grade.mjs --fade-bottom <fraction> --fade-color <hex>` composites the ramp **after** the grade (the grade moves every value it touches, so a colour matched beforehand lands somewhere else) and the frame itself ends in the page's surface colour. The page then places an image and the shelf simply continues the colour the photograph finishes on. `object-position: center bottom` is not a taste call either — it keeps the baked band at the bottom edge under any crop.
+
+The plates are the cabinet's own (`/cw/platform/cabinet/room-v1.webp` + a portrait master for phones), not the home hero's threshold photograph: a shared plate cannot carry a fade to one surface, and a cover crop of a landscape frame on a phone shows a slice of wall and neither the opening nor the shelves in it.
+
+Two more things the frame decides, because it was composed for this screen:
+
+- **The scrim is nearly nothing.** The first pass drew an 82% ink ramp over a photograph that is already a dark room, and the screen read as a grey gradient with a name on it. What is left is a floor under the label and the email, gone before the middle.
+- **The copy stays in the upper part and on the shadowed side.** `clamp(6rem, 15vh, 10rem)` of top padding and a `34rem` column: below its own middle the plate is turning to paper, and cream ink there sits on its own disappearing ground.
+
+**The overlay clearance needed an opt-out, and the page had to state it.** `.shellOverlay > main` gets `--platform-topbar-clearance` unless its first child matches `[class*="heroFeature"]` — the cabinet's plate is a full-bleed hero but not that class, so a band of page ground printed above a photograph meant to run to the top of the screen. `data-cw-hero="bleed"` on `<main>` is the second way to say it: the page states the fact rather than the shell inferring it from a class name.
+
+**The room is on the wall, not on the floor.** `align-content: start` on the plate's own box plus `align-self: start` on the room, and the copy sits under a `clamp(7rem, 17vh, 12rem)` top pad. Left to stretch, the room centred its content in the frame — which put the name and the account facts on the lit floor at the bottom, where the photograph is turning into paper.
+
+**One answer, then instruments.** The shelf first shipped as four equal cards with four buttons, which is four equal answers to a question that has one: the course you were in. That card keeps its cover, its rail and the row's only control; every other course is a `CourseGlance` — name, where you stopped, a rail — with the whole tile as the link. Five of them, and the library carries the rest.
+
+**The library's name sits on the shelf, not in the photograph.** «Бібліотека» + «Усі мої курси →» stood in the room first, and wherever they were placed there they landed on the lit half — cream on cream, propped up by a text shadow. A control that needs propping is in the wrong place. On the paper they are ink on paper, and they name the row they are actually standing over. One brass orbit stays in the frame as the drawn room's signature (the library's vocabulary is ink and brass line — see `docs/design-system/prototypes/library-depth-2026-08-26.html`), at 0.22 opacity: a mark, not a badge.
+
+**The shelf replaced the resume card, the ring overview, and one duplicated control.** The dashboard used to answer "what do I open" three times: a large resume card with «Продовжити» *and* «Усі мої курси» — the second repeating the doorway a few centimetres above it — then a row of progress rings with its own «Усі мої курси» below. It is one row of `CompactCourseCard` now: the course being resumed first, then the rest, capped at four, each one cover + name + where you stopped + rail + **exactly one control**. The cap is not silent — «Бібліотека →» stands in the same block and the stat beside it prints the true count.
+
+Two rules came out of building it, both general:
+
+- **Max one primary per row.** Four courses meant four gold «Продовжити» plates, and the card the page was actually answering with vanished into the row. Only the labelled card takes `primary`; the rest keep the same control at the same width in the quiet role.
+- **A card whose actions must line up is `flex`, not `grid`.** `margin-top: auto` needs free space in the main axis to eat; in a grid the four cards came out the same height with their buttons at four different heights.
+
+### The home page's three button problems, and what each one was (2026-08-27)
+
+Three separate symptoms, one habit: a block laid out for the copy it had, with the controls placed wherever they fit afterwards.
+
+**The diagnostics card asked twice.** «Тест доші» and «Консультація» stood side by side, and the consultation is where the last block of the same page ends — one destination, twice on one screen, with the second button making the first read as one of two equal options. The card asks one thing now; `videoActionSecondary` had no other consumer and is gone with it.
+
+**The video was a different object from the card beside it.** `.videoPanel` *was* the player: `aspect-ratio: 16/9` plus `align-self: start`, so the row held a wide short thing next to a tall card, with the leftover height showing as page ground under the video. The earlier fix — stretching the grid item — was worse, because stretching an iframe makes a near-square player, and the comment in the stylesheet had been defending that ever since. Both are solved by separating the two jobs: the **panel** stretches and matches the card, and a 16:9 **frame** inside it centres the player on the panel's own dark ground. The row's height is whichever is taller, the player at the column's width or the card's copy, and both columns are that height.
+
+**The author block was one person hard-coded into a layout for one person.** Photo, sentence and four fact plates inline in the markup — so the second author (`lms_authors` exists, courses carry an `author_profile_id`, the builder is used by whoever owns a course) would have meant rewriting the block instead of adding a row. It reads `platformGuides` now, and the card is built to look finished alone: `data-layout="single"` gives a lone guide the panorama shape — portrait beside the copy — and any count above one draws columns with the portrait on top, at one size. Same switch, same reason as the products rail's single product. The four fact plates became a list with a marker in the margin, which is what this document already says a list is; `href` sits on the record because the founder's profile is `/consult` (the `/expert` merge) and the next author's will be `/expert/<slug>`.
+
+`SupportForm` — the block these replaced — had no other caller left and was deleted rather than kept as a second, unreachable answer to "who runs this".
+
 ### One offer card, one size (2026-08-27)
 
 The catalogue drew two cards: `compact` (24rem) for mini-courses, the default (29rem) for programmes, from a `size` prop on `PlatformOfferCard`. So /programs read as two catalogues stacked, and a reader weighing a mini-course against a programme was comparing two different objects — the smaller one looked like a smaller claim, which is not what "shorter" means.
@@ -875,16 +917,23 @@ The contract layer (`route_family_contracts.json` → `screen_manifests.json` �
   hand-tuned; at 768px it was 38px against the platform's 16px, so an iPad
   showed two products.
 
-  **The bar is not an exception to the column — it is measured from it.** The
-  mark and the burger are content, so they land on the same vertical line as
-  the text below them. That is what `--cw-bar-pad` (the pill's inner padding,
-  constant) and `--cw-bar-inset` (`gutter − bar-pad`, derived) are for: the
-  floating pill sits exactly one `bar-pad` *wider* than the column, and its
-  contents come back to the column's edge. Above `--cw-max-width` the bar's cap
-  is `max-width + 2 × bar-pad` for the same reason. A bar inset *at* the gutter
-  can never align — its contents are always gutter + padding — which is why the
-  padding had drifted through `1.15rem` / `0.9rem` / `1rem` / `0.6rem` in
-  separate hand-tunes, each one chasing the alignment from the wrong end.
+  **The bar IS the column (revised 2026-08-28).** The first pass optimised for a
+  different thing: it made the pill exactly one `--cw-bar-pad` *wider* than the
+  column (`--cw-bar-inset: gutter − bar-pad`, cap `max-width + 2 × bar-pad`) so
+  that the mark and the burger — which are content — would land on the same
+  vertical line as the text below them. The alignment was real, and so was the
+  cost: on every page the floating pill visibly overhangs the cards under it,
+  which reads as a bar that does not belong to the page.
+
+  Between the two, the outline wins. `--cw-bar-inset` is now the page gutter
+  itself and the cap is `--cw-max-width`, so the pill and the content column
+  share an edge; `--cw-bar-pad` stays as the pill's inner padding, which means
+  the mark sits one pad inside the text line rather than on it. That is the
+  trade, stated: an inset mark inside a bar that matches the page, instead of an
+  aligned mark inside a bar that overhangs it. What must NOT come back is a
+  hand-tuned padding per surface — the drift through `1.15rem` / `0.9rem` /
+  `1rem` / `0.6rem` is what this rule exists to prevent, and both numbers stay
+  tokens.
 
   The three tokens ship to the landings through `NETWORK_SPACE_TOKENS` in the
   generator, listed explicitly for the same reason the button geometry is: so
@@ -1136,6 +1185,83 @@ Every showcase block on the home page is a sample of a fuller page — three pro
 Two pages, one question between them: who runs this, and how do I work with him. Split, each half had to sell the other — a reader who arrived wanting a consultation met a biography, and one who arrived at the biography was sold the consultation a second time. `/consult` survives and `/expert` 308s to it; the credentials (`ExpertProof`) and the route through the work (`ExpertPath`) are now evidence inside the consultation, in `beforeSupport` — after the reader knows what is on offer, before they are asked to commit.
 
 Three things moved with the content and are easy to forget: the `ProfilePage` node (without it the address an answer engine cites for the founder is a redirect), `BRAND.founder.path` (`personLd` builds the Person's `url` from it, so every page's graph would otherwise cite a 308), and `/consult` joining the `platformEscape` / `requestBrand` prefixes. `/expert` **stays** in `platformEscape` — it has to reach the platform for the platform to serve its redirect — and leaves the sitemap, because listing a redirect spends a crawler's fetch on discovering one.
+
+### The reader remembers where you stopped (2026-08-28)
+
+Five changes to the lesson player, in the order they matter to someone actually
+reading a protocol:
+
+**The position is restored, not just measured.** `readingRatio` already existed
+and drew the top rail; nothing read it back. A twenty-two block lesson closed in
+the middle reopened at its title, which makes the reader pay for the
+interruption twice. `src/components/lms/readerSettings.ts` keeps the offset per
+`course/lesson` in `localStorage` — device-shaped, like the text size, while
+progress stays on the server, because a pixel offset means nothing on another
+screen. Two details are the whole implementation: nothing may be **saved**
+before the restore has run (the browser starts every navigation at the top, and
+a scroll handler that believed that would overwrite the mark with a zero), and
+the restore **re-aims every frame for 1.5s** rather than jumping once — a lesson
+grows as its images arrive, and a single `scrollTo` after first paint lands
+against a document that is about to be three times longer. The first gesture
+from the reader ends it. An explicit `#block-…` wins over the mark, and a
+position within a screen of the top or the end is dropped rather than stored.
+
+**«Лишилось ~4 хв», once the reading has started.** The authored duration
+answers "should I start this now" before the lesson and nothing after it. Past
+8% of the body it becomes what is left, from the same number and the scroll
+position, rounded up and never to zero while there is text ahead.
+
+**The contents open on the current lesson.** The drawer marked the current row
+and then opened at row one, so an eleven-step course made the reader find
+themselves before it could answer anything. It scrolls the marked row to
+`center` on open — the steps either side come with it — and `.drawerHead` became
+sticky, because a title and a close button that had already scrolled past would
+leave the reader mid-list with no visible way out.
+
+**← and → walk the course.** They press the pager's own links rather than
+routing themselves, so the keys can never reach a neighbour the page decided not
+to offer: a locked next step, or the pager a reference page does not have.
+Ignored inside fields and while the contents drawer is open.
+
+**One size setting, and the body column is sized in `em` for it.** Four steps,
+remembered per device, read through `useSyncExternalStore` rather than copied
+into state by an effect. `--cw-reader-scale` multiplies the course's own
+`--cw-course-body-size` on `.blocks`, and every rule inside that column moved
+from `rem` to `em` — headings, captions, list markers, table type — so one
+number moves the whole body instead of growing the paragraphs past fixed
+headings. Two nested cases were rescaled to keep their rendered size at scale 1
+(`.quoteAuthor` inside `.quote`, `.table th` inside `.table`). The menu marks
+its current row with the account menu's ink stroke, not a plate: hover and "this
+is the one" are the same mark at two strengths, and a tinted rectangle would
+make the chosen row read as stuck hover.
+
+### Marks are a wash and a dot, not a highlighter (2026-08-28)
+
+The reader can now mark a passage, write a note against it and bookmark a
+lesson (`docs/lms-reader-marks-2026-08-28.md`). Three decisions belong to the
+design system rather than to that document.
+
+**The wash is the accent, twice.** A plain mark is `--cw-platform-accent` at
+18 %, a mark carrying a note the same accent at 30 % with the ink line under the
+words. Not a yellow band: the vocabulary here is ink at two strengths — the same
+rule the account menu and the builder's rows already follow — and a fluorescent
+highlighter on paper stock is the one thing that would announce itself louder
+than the text it marks.
+
+**Marginalia goes in the margin.** A glyph inside the sentence takes width and
+moves the words after it; on a phone it can push a line over. The note dot is
+absolutely positioned against the reading column, 0.4rem, with a 1.5rem
+transparent target around it — which is also why it does not compose the button
+contract: that geometry is for buttons carrying a label, and here the only
+visible thing is the mark. It is still a real `<button>` in the tab order.
+
+**`::highlight()` cannot live in `globals.css`.** It names a document-wide
+registry, so a CSS Module's hashed class could never appear in it — but the
+global sheet is not the answer either: Lightning CSS, which Turbopack parses that
+file with, rejects the selector and fails the whole stylesheet, taking every
+platform and builder route down with it. The two rules are installed as a
+constructed stylesheet from the module that paints the marks. Worth remembering
+before the next exotic selector goes into that file.
 
 ## Aspirational Ledger (not implemented)
 
