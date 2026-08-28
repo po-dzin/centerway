@@ -31,9 +31,17 @@ export type WfpSignatureCheck = {
 };
 
 /**
- * Verify the inbound WayForPay callback signature. Currently used in shadow mode
- * (observation/logging only). Once we confirm real callbacks pass, this becomes the
- * gate that rejects forged webhooks — the primary phantom-Purchase vector.
+ * Verify the inbound WayForPay callback signature. This is the gate: a callback
+ * that does not carry a signature made with our merchant secret never reaches the
+ * database, so a forged POST can no longer flip an order to `paid` (which would
+ * grant entitlement for free and fire a phantom Purchase to Meta).
+ *
+ * Enforcement was turned on 2026-08-28 after replaying the formula against every
+ * stored callback in `payments.raw_payload`: 758 of 758 real WayForPay calls
+ * (2026-02-03 … 2026-08-22) matched, with no missing signatures. `missing_secret`
+ * is treated as a refusal too — without the key we cannot tell a real call from a
+ * forged one, and the same key already gates invoice creation, so its absence
+ * means no payment could have been started in the first place.
  */
 export function verifyWfpCallbackSignature(payload: Record<string, string>): WfpSignatureCheck {
   const secret = process.env.WFP_SECRET_KEY;
