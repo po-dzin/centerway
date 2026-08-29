@@ -236,12 +236,18 @@ function AdminShell({ children }: { children: ReactNode }) {
 
     return (
         <div className="cw-admin-theme flex h-dvh md:h-screen overflow-hidden font-sans transition-colors duration-300">
-            {/* Sidebar */}
+            {/* Sidebar — THE BAR'S MATERIAL TURNED ON ITS SIDE. It painted
+                `cw-surface-2`, the sunk paper, which is the one thing the
+                topbar stopped being: two chrome surfaces meeting at a right
+                angle in two different colours. Same `data-cw-material="chrome"`
+                as the bar above it, and no rule between them — the rail is
+                bounded by its own material, not by a drawn line. */}
             <aside
-                className={`${expanded ? "w-56" : "w-16"} hidden md:flex shrink-0 h-full border-r cw-border cw-surface-2 flex-col min-h-0 transition-all duration-300 ease-in-out overflow-hidden`}
+                data-cw-material="chrome"
+                className={`${expanded ? "w-56" : "w-16"} hidden md:flex shrink-0 h-full flex-col min-h-0 transition-all duration-300 ease-in-out overflow-hidden`}
             >
                 {/* Logo + Toggle */}
-                <div className="h-16 flex items-center justify-between px-3 border-b cw-border shrink-0">
+                <div className="h-[3.25rem] md:h-14 flex items-center justify-between px-3 border-b cw-border shrink-0">
                     {expanded && (
                         <div className="overflow-hidden">
                             <p className="text-sm font-bold cw-text whitespace-nowrap">{t("sidebar_title")}</p>
@@ -302,7 +308,16 @@ function AdminShell({ children }: { children: ReactNode }) {
 
             {/* Main */}
             <main className="flex-1 flex flex-col min-w-0 min-h-0">
-                <header className="relative h-14 md:h-16 shrink-0 border-b cw-border cw-surface-2 flex items-center justify-between sm:justify-end px-3 sm:px-4 md:px-8 sticky top-0 z-20 transition-colors duration-300">
+                {/* THE PLATFORM'S BAR, NOT A SECOND ONE. This was `border-b cw-border
+                    cw-surface-2` — an opaque sunk panel with a hairline — while
+                    every other topbar in the product is chrome glass with a
+                    soft shadow and a curved lower edge. `data-cw-material` is
+                    where that material is named; see the "chrome" note in
+                    globals.css. */}
+                <header
+                    data-cw-material="chrome"
+                    className="h-[3.25rem] md:h-14 shrink-0 flex items-center justify-between sm:justify-end px-3 sm:px-4 md:px-8 sticky top-0 z-20 transition-colors duration-300"
+                >
                     <button
                         type="button"
                         onClick={() => setMobileMenuOpen(true)}
@@ -338,13 +353,23 @@ function AdminShell({ children }: { children: ReactNode }) {
                 </div>
                 {mobileMenuOpen ? (
                     <div className="md:hidden fixed inset-0 z-40">
+                        {/* The product's one shield — see `data-cw-scrim` in
+                            globals.css. It was `bg-black/45`, a raw dim: the
+                            only place in the platform that darkened a page with
+                            ink rather than continuing the bar's material over
+                            it, and the reason this drawer read brown against
+                            the chrome above it. */}
                         <button
                             type="button"
-                            className="absolute inset-0 bg-black/45"
+                            data-cw-scrim="chrome"
+                            className="absolute inset-0"
                             onClick={() => setMobileMenuOpen(false)}
                             aria-label={t("common_close")}
                         />
-                        <aside className="absolute left-0 top-0 h-full w-72 max-w-[85vw] cw-surface-solid border-r cw-border p-3 flex flex-col">
+                        <aside
+                            data-cw-material="chrome"
+                            className="absolute left-0 top-0 h-full w-72 max-w-[85vw] p-3 flex flex-col"
+                        >
                             <div className="flex items-center justify-between pb-3 border-b cw-border">
                                 <div>
                                     <p className="text-sm font-bold cw-text">{t("sidebar_title")}</p>
