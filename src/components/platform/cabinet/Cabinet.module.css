@@ -161,11 +161,21 @@
   margin: 0;
   color: var(--cw-platform-muted);
   line-height: 1.6;
-  /* THREE LINES, FOR THE SAME REASON THE TITLE GETS TWO. A course's own summary
-     is written by its author with no length contract, and one long enough ran
-     the card to double the height of its neighbours — a wall of text where the
-     shelf's rhythm is supposed to be one glance per card. The full summary is
-     what the offer page and the course map are for. */
+}
+
+/* THE CLAMP BELONGS TO THE SUMMARY, NOT TO EVERY `.cardText` (2026-08-29). It
+   was written on `.cardText` itself, which is also what the shelf's error and
+   empty states, the iOS install steps, the author-profile status lines and
+   the notification warning in `CabinetClient.tsx` render with — none of them
+   have anywhere else to send a reader for the rest of the sentence, so
+   clamping them loses real, actionable text with no way back. A course
+   summary is different: the offer page and the course map both hold the
+   whole thing, so THIS text alone can afford to be a preview. Three lines,
+   for the same reason the title above gets two — a course's own summary has
+   no length contract, and one long enough ran the card to double the height
+   of its neighbours. */
+.courseCardSummary {
+  composes: cardText;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -869,18 +879,32 @@
 /* A DRAFT IS A FLAG ON THE PICTURE, NOT A CHIP IN THE ROW. Fixed to the same
    corner on every card regardless of what else is true about it, so the eye
    learns one place to look rather than hunting a chip row whose order shifts
-   with the course's own state. Glass, not the sunk chip ground — it sits ON
-   the cover, and the chip material would have doubled the shelf's card/media
-   distinction inside a single picture. */
+   with the course's own state.
+
+   THE CANONICAL glass-media RECIPE, NOT A HAND-ROLLED TINT (2026-08-29). A
+   first pass wrote its own 55%-tint/6px-blur pair here — exactly the ad hoc
+   glass effect AGENTS.md's preflight forbids, and it also skipped the
+   recipe's own contrast floor and no-blur-support fallback. `.draftBadge` is
+   now only the POSITION — a plain wrapper with no material of its own — and
+   `.draftBadgeChip` inside it carries `data-cw-material="glass-media"` (the
+   `glassMedia` export this same file already hands to every other panel that
+   sits on a photograph), so the badge degrades exactly the way the rest of
+   the product's glass does. Two elements, not one: `[data-cw-material]` sets
+   its own `position: relative`, and fighting that with `position: absolute`
+   on the identical element would have made the badge's actual position
+   depend on CSS cascade order rather than on markup. */
 .draftBadge {
-  composes: chip;
   position: absolute;
   inset-block-start: var(--cw-space-2xs);
   inset-inline-start: var(--cw-space-2xs);
-  background: color-mix(in srgb, var(--cw-platform-bg) 55%, transparent);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  color: var(--cw-platform-text);
+}
+
+.draftBadgeChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--cw-radius-pill);
+  font-size: 0.8rem;
 }
 
 .coverFallback {

@@ -121,7 +121,13 @@ export function CourseCard({
           in the same place. */}
       <div className={styles.coverFrame}>
         <CourseCover course={course} dimmed={course.access === "locked"} />
-        {course.status === "draft" ? <span className={styles.draftBadge}>{copy.courseDraft}</span> : null}
+        {course.status === "draft" ? (
+          <span className={styles.draftBadge}>
+            <span className={styles.draftBadgeChip} {...glassMedia}>
+              {copy.courseDraft}
+            </span>
+          </span>
+        ) : null}
       </div>
 
       <div className={styles.chipRow}>
@@ -137,7 +143,7 @@ export function CourseCard({
       </div>
 
       <h3 className={styles.courseCardTitle}>{course.title}</h3>
-      {course.summary ? <p className={styles.cardText}>{course.summary}</p> : null}
+      {course.summary ? <p className={styles.courseCardSummary}>{course.summary}</p> : null}
 
       {course.access === "enrolled" && total > 0 ? (
         <ProgressRail value={done} total={total} label={course.title} />
