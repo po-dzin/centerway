@@ -3968,6 +3968,20 @@
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-raised, var(--cw-mat-shadow-soft));
   animation: menuIn var(--builder-motion-tool, 140ms) var(--builder-ease-tool, cubic-bezier(0.16, 1, 0.3, 1));
+  /* THE LIST CAN NOW BE TALLER THAN THE SCREEN. The node menu carries eleven
+     48px rows under two captions — about 590px — and a landscape phone or a
+     short laptop has less than that between the trigger and the edge. The
+     placement code only ever clamped `top`, so the overflow went off the bottom
+     and «Видалити блок» became unreachable: the last item in a list is the one
+     this costs, and here it is the destructive one.
+
+     `max-height` is written from the measured room on the roomier side (see
+     BuilderMenu's placement effect) — this is the fallback for the frame before
+     that lands. Scrolling is contained so a menu at the end of its list does not
+     hand the wheel to the document underneath it. */
+  max-height: calc(100svh - 1rem);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 @keyframes menuIn {
