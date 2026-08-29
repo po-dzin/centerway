@@ -121,7 +121,10 @@ export function PlatformOfferCopyStack({
   return (
     <div className={styles.copyStack}>
       {items.map((item) => (
-        <p className={styles.proofNote} key={item.id}>
+        /* `copyNote`, not `proofNote` — see the CSS: the latter carries an icon
+           column these items have nothing to put in, which squeezed the
+           sentence into whatever the longest label left over. */
+        <p className={styles.copyNote} key={item.id}>
           <strong>{item.title}.</strong> {item.text}
         </p>
       ))}

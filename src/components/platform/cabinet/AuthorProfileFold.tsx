@@ -63,6 +63,7 @@ const STRINGS = {
     credentialRemove: "Прибрати",
     photo: "Фото",
     photoUpload: "Завантажити фото",
+    photoReplace: "Замінити фото",
     photoUploading: "Завантаження…",
     photoAlt: "Опис фото (для читачів екрана)",
     listed: "Публічна сторінка",
@@ -87,6 +88,7 @@ const STRINGS = {
     credentialRemove: "Remove",
     photo: "Photo",
     photoUpload: "Upload photo",
+    photoReplace: "Replace photo",
     photoUploading: "Uploading…",
     photoAlt: "Photo description (for screen readers)",
     listed: "Public page",
@@ -181,7 +183,7 @@ export function AuthorProfileFold({
         </span>
       </summary>
       <div className={styles.foldBody}>
-        <form className={styles.card} {...matte} onSubmit={handleSubmit}>
+        <form className={styles.authorForm} {...matte} onSubmit={handleSubmit}>
           <label className={styles.authorField}>
             <span>{t.name}</span>
             <input
@@ -248,41 +250,63 @@ export function AuthorProfileFold({
             ))}
             <button
               type="button"
-              className={styles.actionGhost}
+              className={styles.authorAddRow}
               onClick={() => setDraft((prev) => ({ ...prev, credentials: [...prev.credentials, ""] }))}
             >
               {t.credentialAdd}
             </button>
           </div>
 
+          {/* THE PICTURE, THEN THE WAY TO CHANGE IT, THEN WHAT IT SHOWS.
+              The alt field used to come FIRST, before there was any image to
+              describe — a text box asking «опис фото» above an empty slot. It
+              only makes sense once something is there, so it appears with the
+              photo and not before.
+
+              The native file input is replaced by its own label: `Choose file /
+              No file chosen` is the browser's chrome, in the browser's type, on
+              a form where everything else is the product's. The input is still
+              a real `<input type="file">` — visually hidden, not removed — so
+              the keyboard and the file dialog behave exactly as they do. */}
           <div className={styles.authorField}>
             <span>{t.photo}</span>
+            <div className={styles.authorPhotoRow}>
+              {draft.photo?.src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className={styles.authorPhotoPreview} src={draft.photo.src} alt="" />
+              ) : (
+                <span className={styles.authorPhotoEmpty} aria-hidden="true" />
+              )}
+              <label className={styles.authorFilePick}>
+                <input
+                  className={styles.visuallyHidden}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                  disabled={uploading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void handlePhoto(file);
+                  }}
+                />
+                <span className={styles.authorFilePickFace} data-busy={uploading || undefined}>
+                  {uploading ? t.photoUploading : draft.photo?.src ? t.photoReplace : t.photoUpload}
+                </span>
+              </label>
+            </div>
             {draft.photo?.src ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img className={styles.authorPhotoPreview} src={draft.photo.src} alt="" />
+              <input
+                className={styles.authorInput}
+                placeholder={t.photoAlt}
+                value={draft.photo.alt}
+                onChange={(e) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    photo: prev.photo ? { ...prev.photo, alt: e.target.value } : prev.photo,
+                  }))
+                }
+              />
             ) : null}
-            <input
-              className={styles.authorInput}
-              placeholder={t.photoAlt}
-              value={draft.photo?.alt ?? ""}
-              onChange={(e) =>
-                setDraft((prev) => ({
-                  ...prev,
-                  photo: prev.photo ? { ...prev.photo, alt: e.target.value } : { src: "", alt: e.target.value },
-                }))
-              }
-            />
-            <input
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
-              disabled={uploading}
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file) void handlePhoto(file);
-              }}
-            />
-            {uploading ? <span className={styles.cardText}>{t.photoUploading}</span> : null}
-            {uploadError ? <span className={styles.cardText}>{uploadError}</span> : null}
+            {uploadError ? <span className={styles.authorNotice}>{uploadError}</span> : null}
           </div>
 
           <label className={styles.authorField}>
@@ -295,17 +319,21 @@ export function AuthorProfileFold({
             />
           </label>
 
+          {/* A SETTING, SO IT TAKES A SETTING'S SHAPE — its name at the left,
+              its state at the right, the same way the account menu's «Вигляд»
+              row does. It was a bare checkbox with two lines of text glued to
+              it by a `<br>`, which reads as a paragraph someone put a box in
+              front of. */}
           <label className={styles.authorVisibilityRow}>
+            <span className={styles.authorVisibilityCopy}>
+              <strong>{t.listed}</strong>
+              <span className={styles.authorVisibilityNote}>{draft.listed ? t.listedOn : t.listedOff}</span>
+            </span>
             <input
               type="checkbox"
               checked={draft.listed}
               onChange={(e) => setDraft((prev) => ({ ...prev, listed: e.target.checked }))}
             />
-            <span>
-              <strong>{t.listed}</strong>
-              <br />
-              {draft.listed ? t.listedOn : t.listedOff}
-            </span>
           </label>
 
           <div className={styles.actions}>
@@ -314,8 +342,19 @@ export function AuthorProfileFold({
             </button>
           </div>
 
-          {saveError ? <p className={styles.cardText}>{t.error}</p> : null}
-          {savedOnce && !saveError ? <p className={styles.cardText}>{t.saved}</p> : null}
+          {/* `role="status"` so the outcome is ANNOUNCED. A form whose only
+              feedback is a line of grey text appearing below the fold tells a
+              screen-reader user nothing at all. */}
+          {saveError ? (
+            <p className={styles.authorNotice} role="status">
+              {t.error}
+            </p>
+          ) : null}
+          {savedOnce && !saveError ? (
+            <p className={styles.authorNotice} role="status">
+              {t.saved}
+            </p>
+          ) : null}
         </form>
       </div>
     </details>

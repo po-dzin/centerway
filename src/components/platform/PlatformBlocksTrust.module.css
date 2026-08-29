@@ -256,6 +256,37 @@
   line-height: var(--ds-type-body-line-height);
 }
 
+/* THE SAME PLATE AS `.proofNote`, WITHOUT ITS ICON COLUMN.
+   `PlatformOfferCopyStack` used to borrow `.proofNote` outright — and with it
+   the `grid-template-columns: auto minmax(0, 1fr)` that exists there to seat a
+   GLYPH. These items have no glyph; they open with a bold lead-in («Запит.»),
+   so that `auto` track sized itself to the longest label in the stack
+   («Особистий план.») and the sentence took whatever was left. On a phone that
+   was about ten characters wide and the paragraph came apart two words per
+   line — three steps of the consultation, unreadable, on the page that sells
+   it.
+
+   A paragraph is a paragraph: the lead-in runs INLINE and the text wraps the
+   full width of the plate at every size. */
+.copyNote {
+  margin: 0;
+  padding: 1rem;
+  border-radius: var(--cw-radius-sm);
+  color: color-mix(in srgb, var(--cw-platform-text) 76%, var(--cw-platform-muted) 24%);
+  background: var(--cw-mat-tone-support);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line-height);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+/* The lead-in is the one word in full ink — it is the step's NAME, and the
+   sentence after it is the description. Same weight the cabinet's `<strong>`
+   rows use, so a bold run means one thing across the product. */
+.copyNote strong {
+  color: var(--cw-platform-text);
+  font-weight: 600;
+}
+
 .factGrid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
