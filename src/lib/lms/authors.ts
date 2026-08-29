@@ -19,7 +19,7 @@ import { unstable_cache, revalidateTag } from "next/cache";
 import { adminClient } from "@/lib/auth/adminClient";
 import { validateAuthor, slugify, uniqueSlug, type Author } from "@/lms-core";
 import { listStorefrontCourses, type StorefrontCard } from "@/lib/platform/offers";
-import { PURGE } from "@/lib/lms/liveCatalog";
+import { COURSE_LIST_TAG, PURGE } from "@/lib/lms/liveCatalog";
 
 type Row = Record<string, unknown>;
 
@@ -139,6 +139,30 @@ async function readListedAuthors(): Promise<Author[]> {
   }
 }
 
+/**
+ * The founder's public address is `/consult`, not `/expert/<slug>` — see the
+ * `/expert` merge (2026-08-23): the consultation is what someone arrives
+ * wanting, and the founder's credentials are evidence on that page rather than
+ * a page of their own. Every other author gets the address their profile has.
+ *
+ * BOTH TRANSLITERATIONS, because the product persists both and the link must be
+ * right whichever row is live: the static showcase card in
+ * `src/lib/platform/content.ts` is `evgeniy-koryakin`, while the seeding
+ * migrations under `docs/migration/sql` write `yevhenii-koriakin`. Matching one
+ * of them is how this exception silently stopped firing — the card linked to a
+ * profile page instead of the consultation.
+ *
+ * It lives HERE, beside the data, rather than in a block: `/experts` derived
+ * the same destination independently and got it wrong in its own way, which is
+ * what a rule copied into two call sites does.
+ */
+const FOUNDER_SLUGS: readonly string[] = ["evgeniy-koryakin", "yevhenii-koriakin"];
+
+/** Where an author's card should point. */
+export function authorHref(author: Pick<Author, "slug">): string {
+  return FOUNDER_SLUGS.includes(author.slug) ? "/consult" : `/expert/${author.slug}`;
+}
+
 /** Every author with a public page, for the directory. */
 export async function listListedAuthors(): Promise<Author[]> {
   return unstable_cache(readListedAuthors, ["lms-authors-listed"], {
@@ -164,8 +188,15 @@ async function readCoursesByAuthor(authorId: string): Promise<StorefrontCard[]> 
 
 /** A listed author's courses, for their public profile page. */
 export async function listCoursesByAuthor(authorId: string): Promise<StorefrontCard[]> {
+  /* COURSE_LIST_TAG is here because of what this cache actually HOLDS: the
+     entry is built from `listStorefrontCourses()`, so publishing, unpublishing,
+     renaming or re-describing a course changes it. Those writes purge
+     COURSE_LIST_TAG and the per-course tags, neither of which used to appear
+     here — so an author's page could keep showing an unpublished course, or
+     miss a newly published one, until the fallback expired. A cache has to
+     carry the tags of everything it read, not only of the row it is named for. */
   return unstable_cache(() => readCoursesByAuthor(authorId), ["lms-author-courses", authorId], {
-    tags: [AUTHOR_LIST_TAG, `lms-author-courses:${authorId}`],
+    tags: [AUTHOR_LIST_TAG, COURSE_LIST_TAG, `lms-author-courses:${authorId}`],
     revalidate: REVALIDATE_SECONDS,
   })();
 }

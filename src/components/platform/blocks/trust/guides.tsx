@@ -3,21 +3,33 @@ import Link from "next/link";
 import { Icon } from "@/components/Icon";
 import { PlatformBlock } from "@/components/platform/PlatformBlock";
 import styles from "@/components/platform/PlatformTrustStyles";
-import { listListedAuthors } from "@/lib/lms/authors";
+import { authorHref, listListedAuthors } from "@/lib/lms/authors";
+import { platformGuides } from "@/lib/platform/content";
 import type { Author } from "@/lms-core";
 
 /**
- * The founder's page is `/consult`, not `/expert/evgeniy-koryakin` — see the
- * `/expert` merge (2026-08-23): the consultation is the destination someone
- * actually arrives wanting, and the founder's credentials are evidence on it
- * rather than a page of their own. Every other listed author gets the address
- * their profile actually has. One exception on day one, named rather than
- * derived, so it stops being one the day a second author needs the same rule.
+ * THE STATIC CARD IS A FLOOR, NOT A DEFAULT. `listListedAuthors()` turns every
+ * database and client error into `[]` on purpose, so "Supabase is unreachable"
+ * and "nobody has published a profile" arrive here as the same value. Treating
+ * that value as "no authors" deleted the whole trust block from the home page
+ * on a transient read failure — a page that has said who runs this since it
+ * existed, going silent because a query timed out.
+ *
+ * So an empty read falls back to the showcase's own founder card, which is
+ * complete and already lives in `content.ts`. The platform's editorial line is
+ * "showcase in code, LMS in the database"; this is that line held at the point
+ * where the database is the thing that failed.
  */
-const FOUNDER_SLUG = "evgeniy-koryakin";
-
-function authorHref(author: Author): string {
-  return author.slug === FOUNDER_SLUG ? "/consult" : `/expert/${author.slug}`;
+function fallbackGuides(): Author[] {
+  return platformGuides.map((guide) => ({
+    id: `static:${guide.slug}`,
+    slug: guide.slug,
+    name: guide.name,
+    role: guide.role,
+    bio: guide.note,
+    photo: guide.photo,
+    credentials: guide.facts.map((fact) => fact.label),
+  }));
 }
 
 /**
@@ -38,7 +50,8 @@ function authorHref(author: Author): string {
  * marketplace shape, at one size.
  */
 export async function HubGuides() {
-  const guides = await listListedAuthors();
+  const listed = await listListedAuthors();
+  const guides = listed.length > 0 ? listed : fallbackGuides();
   if (guides.length === 0) return null;
 
   const single = guides.length === 1;

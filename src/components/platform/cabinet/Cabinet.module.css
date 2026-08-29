@@ -599,7 +599,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 0.9rem;
+  font-size: var(--ds-type-body-sm-size);
   color: var(--cw-platform-muted);
   line-height: 1.5;
 }
@@ -964,7 +964,7 @@
   display: flex;
   flex-direction: column;
   gap: var(--cw-space-2xs);
-  font-size: 0.9rem;
+  font-size: var(--ds-type-body-sm-size);
   color: var(--cw-platform-muted);
 }
 
@@ -1004,7 +1004,7 @@
   display: flex;
   align-items: flex-start;
   gap: var(--cw-space-sm);
-  font-size: 0.9rem;
+  font-size: var(--ds-type-body-sm-size);
   color: var(--cw-platform-muted);
 }
 
