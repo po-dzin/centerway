@@ -229,12 +229,24 @@
    the row by a second gutter. Later in this sheet than `.container` and equal
    in specificity, so it wins without `!important` — the phone rule needs one
    only because it lives in a sheet that is emitted earlier. */
+/* ONE TARGET TALL, PLUS ITS OWN EDGE (2026-08-29). The bar was 4rem on the
+   desk and 3.9rem on a phone, and inside it are a 3rem mark and a 3rem burger:
+   eight pixels of nothing above and below the only two things in it. The
+   height is derived now — `--ds-touch-target-min` plus 2px of material each
+   side — so the band is exactly what it contains, and moving the target moves
+   every bar in the product with it.
+
+   NOT 44px, which is where this started. 48 is this system's floor for a
+   pressable target; a 44px bar would hold controls larger than the band around
+   them, with the mark touching both kerbs. The reader's floating cluster IS
+   48 — but there the buttons fill the pill, because the pill is the control.
+   A bar CONTAINS controls and owes them an edge. */
 .headerInner {
   position: relative;
   z-index: 1;
   width: 100%;
   max-width: none;
-  min-height: 4rem;
+  min-height: calc(var(--ds-touch-target-min) + 0.25rem);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -261,6 +273,21 @@
      its own fallback is a token that does not exist. */
   transition: transform 260ms cubic-bezier(0.16, 1, 0.3, 1);
   will-change: transform;
+}
+
+/* THE PROMOTION HAS TO STOP WHILE THE DRAWER IS OPEN (2026-08-29).
+   `will-change: transform` makes this element a containing block for fixed
+   descendants, and the modal scrim under the burger sheet is exactly that — so
+   on the surfaces that opt into auto-hide (the reader, the library, the
+   builder) the scrim was laid out at the BAR's size instead of the viewport's:
+   375×64, a shield covering nothing, with the page behind the open drawer left
+   at full strength. It was invisible while the workspace bar painted an opaque
+   panel; it stopped being invisible the moment the bar became the same glass
+   as the storefront's. Nothing moves while the menu is open anyway — the bar
+   is locked open, see `useChromeReveal({ locked })` — so the hint has nothing
+   to buy here. */
+.header[data-cw-header-autohide="true"][data-menu-open="true"] {
+  will-change: auto;
 }
 
 .header[data-cw-header-autohide="true"][data-cw-header-hidden="true"] {
@@ -707,6 +734,51 @@
   height: 0;
 }
 
+/* THE DRAWER FORM — see the note in PlatformAccountMenu on why there are two.
+   Everything the popover argues for its opaque paper stops applying here: this
+   sheet is not floating over an arbitrary patch of page, it is the bar's band
+   continued to the full width of the viewport with a modal shield under it, so
+   its ground is as bounded as the bar's own. Which means it can be what the
+   bar is made of — the chrome tint, the blur, the grain — instead of a second
+   material laid on top of it. Square where it leaves the bar, curved where it
+   ends, exactly like the burger. */
+.profileMenu[data-form="sheet"] {
+  right: 0;
+  left: 0;
+  width: auto;
+  padding: 0.5rem;
+  border-radius: 0 0 var(--cw-radius-lg) var(--cw-radius-lg);
+  background-color: var(--cw-mat-tint-chrome);
+  backdrop-filter: var(--cw-mat-filter);
+}
+
+/* Geometry only — the material comes from `data-cw-scrim="chrome"` in
+   globals.css, which every drawer in the product shares. */
+.profileMenuScrim {
+  position: fixed;
+  /* THE SHIELD STARTS BELOW THE BAR, and `top` comes from the same measurement
+     the sheet is anchored by. Laid over the whole viewport it covered the bar
+     too — including the avatar that had just been pressed — so the drawer
+     appeared to hang off nothing. A drawer shields the page it opened over,
+     never the chrome it opened from. */
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: calc(var(--ds-z-sticky) + 1);
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  cursor: default;
+  appearance: none;
+  -webkit-appearance: none;
+}
+
+@supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
+  .profileMenu[data-form="sheet"] {
+    background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+  }
+}
+
 .profileMenu p {
   margin: 0;
   padding: 0.45rem 0.55rem 0.6rem;
@@ -752,6 +824,35 @@
   line-height: var(--ds-type-label-line-height);
 }
 
+/* THE ROLE IS A STATE, SO IT IS SET LIKE ONE — the label register the rest of
+   the chrome uses for a state (`.sectionLabel`, the builder's setting titles),
+   not a third size of address. It is the shortest of the three lines and the
+   only one that is not the reader's own words, which is what the letter-spacing
+   is for: it reads as the system speaking about the account rather than as
+   another field of it. */
+.menuIdentityRole {
+  margin-top: 0.15rem;
+  color: var(--cw-platform-muted);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+/* THE POPOVER NAMES THE ACCOUNT TOO (2026-08-29).
+   The base `display: none` above was written for the DESKTOP NAV ROW, where
+   this caption was a flex child fighting the links for width and wrapping the
+   address a letter per line. The popover has no such problem — it is a 17rem
+   column with nothing beside it — but it inherited the hide anyway, so the one
+   menu that carries «Вийти» never said whose session was about to end. */
+.profileMenu .menuIdentity {
+  display: grid;
+}
+
+.profileMenu[data-cw-header-tone="dark"] .menuIdentityRole {
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 64%, transparent);
+}
+
 /* Under a tone flip the muted global ink is a different colour, not a quieter
    one — the same trap `.menuSettingLabel` fell into. */
 .profileMenu[data-cw-header-tone="dark"] .menuIdentityName {
@@ -790,6 +891,10 @@
   font-size: 0.86rem;
 }
 
+.menuIdentity[data-placement="hoisted"] .menuIdentityRole {
+  color: color-mix(in srgb, var(--platform-header-fg) 62%, transparent);
+}
+
 /* In the burger sheet the ground is the header plate, so the ink is the
    header's. */
 .profileWrapMobile .menuIdentity {
@@ -802,6 +907,10 @@
 
 .profileWrapMobile .menuIdentityMail {
   color: color-mix(in srgb, var(--platform-header-fg) 72%, transparent);
+}
+
+.profileWrapMobile .menuIdentityRole {
+  color: color-mix(in srgb, var(--platform-header-fg) 60%, transparent);
 }
 
 /* The one rule in this menu, and it separates the two registers: everywhere

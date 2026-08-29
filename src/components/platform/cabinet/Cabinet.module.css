@@ -941,12 +941,30 @@
 
 /* ── Author profile form ──────────────────────────── */
 
+/* A FORM IS READ DOWN A COLUMN, NOT ACROSS A PAGE. The fold spans the
+   cabinet's full width, so unconstrained inputs came out around 1100px — a
+   name typed into a box wider than the paragraph above it, and a line length
+   nobody can scan. 42rem is the measure the rest of the platform sets prose
+   at. */
+.authorForm {
+  composes: card;
+  max-width: 42rem;
+}
+
 .authorField {
   display: flex;
   flex-direction: column;
   gap: var(--cw-space-2xs);
   font-size: var(--ds-type-body-sm-size);
   color: var(--cw-platform-muted);
+}
+
+/* «Додати рядок» is not the form's action — «Зберегти» is. It adds one row to
+   a list, so it stands at that list's own scale rather than taking the full
+   width a primary control takes. */
+.authorAddRow {
+  composes: secondary from "../PlatformButtons.module.css";
+  align-self: flex-start;
 }
 
 .authorInput,
@@ -981,12 +999,94 @@
   border-radius: var(--cw-radius-md);
 }
 
+/* A SETTING'S SHAPE: name and consequence at the left, the switch at the
+   right — the same lockup the account menu's «Вигляд» row uses. It was a bare
+   checkbox followed by two lines joined with a `<br>`, which reads as a
+   paragraph with a box in front of it rather than as a control. */
 .authorVisibilityRow {
   display: flex;
-  align-items: flex-start;
-  gap: var(--cw-space-sm);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-md);
+  padding: var(--cw-space-sm) 0;
   font-size: var(--ds-type-body-sm-size);
   color: var(--cw-platform-muted);
+}
+
+.authorVisibilityCopy {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.authorVisibilityCopy strong {
+  color: var(--cw-platform-text);
+  font-weight: 600;
+}
+
+.authorVisibilityNote {
+  color: var(--cw-platform-muted);
+  line-height: 1.45;
+}
+
+/* THE PHOTO AND ITS CONTROL SIT SIDE BY SIDE, so the picture is the thing the
+   button is obviously about. */
+.authorPhotoRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-md);
+  flex-wrap: wrap;
+}
+
+/* An empty slot at the portrait's own size, so the row does not jump the first
+   time an image lands in it. */
+.authorPhotoEmpty {
+  width: 6rem;
+  height: 6rem;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+/* THE FILE INPUT IS HIDDEN, NOT REMOVED. `Choose file / No file chosen` is the
+   browser's own chrome in the browser's own type — the one control on this form
+   that was not the product's. The real input keeps doing the work; the label is
+   what the reader sees, and clicking it opens the dialog because that is what a
+   `<label>` wrapping an input does. */
+.authorFilePick {
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.authorFilePickFace {
+  composes: secondary from "../PlatformButtons.module.css";
+}
+
+.authorFilePickFace[data-busy] {
+  opacity: 0.6;
+}
+
+/* The one accessible-hiding recipe: off-screen but still focusable and still
+   read aloud. `display: none` would take the input out of the tab order and
+   the label with it. */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Save/upload outcomes and errors. Quiet, but not the body colour — this is the
+   form answering, not more prose. */
+.authorNotice {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
 }
 
 .notice[data-cw-material] {

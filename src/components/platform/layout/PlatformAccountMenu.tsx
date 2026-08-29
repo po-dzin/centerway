@@ -135,6 +135,25 @@ function displayNameOf(session: Session | null) {
   return typeof name === "string" && name.trim().length > 0 ? name.trim() : null;
 }
 
+/**
+ * The role, named — and only when it is worth naming.
+ *
+ * `user` is deliberately absent: it is what every account is unless someone
+ * said otherwise, so printing «Користувач» under every name would be a line
+ * that says what its absence already says. Same rule `authorFromRow` follows
+ * for `listed`. The four values are the ones `user_roles` allows
+ * (docs/migration/sql/2026-08-21_merge_role_stores.sql).
+ */
+const ROLE_LABELS: Record<string, string> = {
+  admin: "Адміністратор",
+  support: "Підтримка",
+  coach: "Куратор",
+};
+
+function roleLabelOf(role: string | null): string | null {
+  return role ? (ROLE_LABELS[role] ?? null) : null;
+}
+
 function getUserInitial(session: Session | null) {
   const name =
     session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email;
@@ -163,13 +182,16 @@ function InkMenuLabel({ children }: { children: string }) {
  */
 export function PlatformAccountIdentity() {
   const session = usePlatformSession();
+  const identity = usePlatformIdentity(session);
   const accountName = displayNameOf(session);
   const accountEmail = session?.user?.email ?? null;
+  const roleLabel = roleLabelOf(identity.role);
   if (!session?.user || (!accountName && !accountEmail)) return null;
   return (
-    <div className={styles.menuIdentity} data-placement="hoisted" data-cw-rule="inner">
+    <div className={styles.menuIdentity} data-placement="hoisted" data-cw-rule="chrome">
       {accountName ? <p className={styles.menuIdentityName}>{accountName}</p> : null}
       {accountEmail ? <p className={styles.menuIdentityMail}>{accountEmail}</p> : null}
+      {roleLabel ? <p className={styles.menuIdentityRole}>{roleLabel}</p> : null}
     </div>
   );
 }
@@ -206,6 +228,17 @@ export function PlatformAccountMenu({
      30% cream tint with near-black ink on it: a light-tone panel and no dark
      one. It carries the bar's tone across the portal instead. */
   const [tone, setTone] = useState<"light" | "dark">("light");
+  /* TWO FORMS, ONE MENU (2026-08-29). On a wide screen this is a popover: a
+     17rem sheet of paper anchored under the avatar, opaque because it opens
+     over whatever the page happens to have there. On a phone it is a DRAWER —
+     the bar's own band continued down the full width of the viewport, in the
+     bar's material, over a modal shield. That is what the platform's burger
+     already is, and the admin panel is the one surface that reaches this
+     control on a phone at all (every other bar hides the avatar there and
+     hands the account to the burger). Two forms rather than one squeezed
+     popover, because a 17rem card floating a centimetre in from the right edge
+     under a full-width bar is neither. */
+  const [form, setForm] = useState<"popover" | "sheet">("popover");
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const menuRef = useRef<HTMLDivElement | null>(null);
   const triggerRef = useRef<HTMLButtonElement | null>(null);
@@ -253,6 +286,14 @@ export function PlatformAccountMenu({
      `cabinet` is deliberately not in the list: /profile is on the public site,
      so its reader is already on the platform. */
   const inPersonalApp = here === "learn" || here === "builder";
+  /* THE ROW IS WRONG IN EXACTLY ONE PLACE — the public home page itself, where
+     it would offer the page being read. It used to be gated on `inPersonalApp`
+     instead, which is a much bigger claim than the one thing it was avoiding:
+     the CABINET is on `www` and is not a personal app, so /profile — the one
+     account surface most likely to be a dead end — was left with no way out to
+     the storefront but the browser's back button. Every other surface (the
+     cabinet, an offer page, the panel) is somewhere you can sensibly leave. */
+  const onPublicHome = !inPersonalApp && pathname === "/";
 
   const close = useCallback(() => setOpen(false), []);
 
@@ -276,11 +317,25 @@ export function PlatformAccountMenu({
     const bar = trigger.closest("header");
     const rect = (bar ?? trigger).getBoundingClientRect();
     const triggerRect = trigger.getBoundingClientRect();
-    setAnchor({
-      top: `${Math.round(Math.max(rect.bottom, triggerRect.bottom) + 8)}px`,
-      right: `${Math.round(Math.max(8, window.innerWidth - rect.right))}px`,
-      maxHeight: `${Math.max(192, Math.round(window.innerHeight - Math.max(rect.bottom, triggerRect.bottom) - 16))}px`,
-    });
+    /* The platform's own mobile line, not a new one — see
+       PlatformResponsive.module.css, where the bar becomes a phone bar at the
+       same width. */
+    const asSheet = window.innerWidth <= 900;
+    setForm(asSheet ? "sheet" : "popover");
+    const edge = Math.max(rect.bottom, triggerRect.bottom);
+    /* The drawer hangs OFF the bar — no gap, or the band and the sheet read as
+       two plates. The popover keeps its 8px of daylight. */
+    const top = Math.round(edge + (asSheet ? 0 : 8));
+    const maxHeight = `${Math.max(192, Math.round(window.innerHeight - edge - (asSheet ? 8 : 16)))}px`;
+    setAnchor(
+      asSheet
+        ? { top: `${top}px`, maxHeight }
+        : {
+            top: `${top}px`,
+            right: `${Math.round(Math.max(8, window.innerWidth - rect.right))}px`,
+            maxHeight,
+          },
+    );
   }, []);
 
   /* Escape and outside-click, both required: the popover sits over the bar on
@@ -390,6 +445,7 @@ export function PlatformAccountMenu({
     session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || null;
   const accountName = displayNameOf(session);
   const accountEmail = session?.user?.email ?? null;
+  const roleLabel = roleLabelOf(identity.role);
 
   const rows = (
     <>
@@ -406,6 +462,11 @@ export function PlatformAccountMenu({
         <div className={styles.menuIdentity}>
           {accountName ? <p className={styles.menuIdentityName}>{accountName}</p> : null}
           {accountEmail ? <p className={styles.menuIdentityMail}>{accountEmail}</p> : null}
+          {/* The role is the third fact and the one the other two cannot imply:
+              two accounts with the same name and address differ by what they may
+              do, and «Адмінка» appearing in the list below is the only other
+              place that shows. Absent for a plain reader — see `ROLE_LABELS`. */}
+          {roleLabel ? <p className={styles.menuIdentityRole}>{roleLabel}</p> : null}
         </div>
       ) : null}
       {/* First, above the account's own applications — the same place the panel
@@ -415,7 +476,7 @@ export function PlatformAccountMenu({
           A plain anchor, like every other crossing in this menu: `next/link`
           would prefetch a route this origin does not own and still full-load on
           click. */}
-      {inPersonalApp ? (
+      {onPublicHome ? null : (
         <a
           href={platformHref}
           onClick={() => {
@@ -423,9 +484,9 @@ export function PlatformAccountMenu({
             onNavigate?.();
           }}
         >
-          <InkMenuLabel>На платформу</InkMenuLabel>
+          <InkMenuLabel>На головну</InkMenuLabel>
         </a>
-      ) : null}
+      )}
       {apps.map((app) => {
         const href = appHref(app, host);
         const offOrigin = appIsOffOrigin(app, host);
@@ -517,9 +578,34 @@ export function PlatformAccountMenu({
       </button>
       {open && anchor && typeof document !== "undefined"
         ? createPortal(
-            <div className={styles.profileMenu} style={anchor} role="menu" ref={menuRef} data-cw-glass="shell" data-cw-header-tone={tone}>
-              {rows}
-            </div>,
+            <>
+              {/* The drawer form is modal, and says so: the same shield the
+                  burger lays over the page — the bar's tint and blur, not a
+                  black dim. The popover form needs none; it is small, anchored
+                  and dismissed by the outside-click handler above. */}
+              {form === "sheet" ? (
+                <button
+                  type="button"
+                  className={styles.profileMenuScrim}
+                  data-cw-scrim="chrome"
+                  style={{ top: anchor.top }}
+                  tabIndex={-1}
+                  aria-label="Закрити меню акаунта"
+                  onClick={close}
+                />
+              ) : null}
+              <div
+                className={styles.profileMenu}
+                style={anchor}
+                role="menu"
+                ref={menuRef}
+                data-cw-glass="shell"
+                data-cw-header-tone={tone}
+                data-form={form}
+              >
+                {rows}
+              </div>
+            </>,
             document.body,
           )
         : null}
