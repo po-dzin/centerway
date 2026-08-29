@@ -20,6 +20,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import Link from "next/link";
 
+import { Icon } from "@/components/Icon";
 import type { Author } from "@/lms-core";
 import type { ProfileLang } from "@/components/platform/profile/types";
 import type { AuthorProfileInput } from "./useCabinet";
@@ -33,6 +34,7 @@ type Draft = {
   quote: string;
   credentials: string[];
   photo: { src: string; alt: string } | null;
+  background: { src: string } | null;
   listed: boolean;
   slug: string;
 };
@@ -45,6 +47,7 @@ function draftFromAuthor(author: Author | null): Draft {
     quote: author?.quote ?? "",
     credentials: author?.credentials ?? [],
     photo: author?.photo ?? null,
+    background: author?.background ?? null,
     listed: author?.listed ?? false,
     slug: author?.slug ?? "",
   };
@@ -67,6 +70,9 @@ const STRINGS = {
     photoReplace: "Замінити фото",
     photoUploading: "Завантаження…",
     photoAlt: "Опис фото (для читачів екрана)",
+    background: "Фон публічної сторінки",
+    backgroundUpload: "Завантажити фон",
+    backgroundReplace: "Замінити фон",
     listed: "Публічна сторінка",
     listedOn: "Сторінку /expert видно всім",
     listedOff: "Сторінка прихована — видно лише в описі курсу",
@@ -93,6 +99,9 @@ const STRINGS = {
     photoReplace: "Replace photo",
     photoUploading: "Uploading…",
     photoAlt: "Photo description (for screen readers)",
+    background: "Public page background",
+    backgroundUpload: "Upload background",
+    backgroundReplace: "Replace background",
     listed: "Public page",
     listedOn: "The /expert page is visible to everyone",
     listedOff: "Hidden — shown only as a course byline",
@@ -156,6 +165,30 @@ export function AuthorProfileFold({
     }
   }
 
+  async function handleBackground(file: File) {
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/lms/authors/me/background", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: form,
+      });
+      if (!res.ok) {
+        setUploadError(t.error);
+        return;
+      }
+      const body = (await res.json()) as { src: string };
+      setDraft((prev) => ({ ...prev, background: { src: body.src } }));
+    } catch {
+      setUploadError(t.error);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setSavedOnce(false);
@@ -170,6 +203,7 @@ export function AuthorProfileFold({
       quote: draft.quote.trim() || undefined,
       credentials: credentials.length > 0 ? credentials : undefined,
       photo,
+      background: draft.background?.src ? { src: draft.background.src } : undefined,
       listed: draft.listed,
       slug: draft.slug.trim() || undefined,
     });
@@ -184,6 +218,7 @@ export function AuthorProfileFold({
           <h2 className={styles.sectionTitle}>{t.title}</h2>
           <span className={styles.sectionLead}>{t.lead}</span>
         </span>
+        <Icon className={styles.foldChevron} name="chevron-down" size={20} />
       </summary>
       <div className={styles.foldBody}>
         <form className={styles.authorForm} {...matte} onSubmit={handleSubmit}>
@@ -260,6 +295,33 @@ export function AuthorProfileFold({
             </button>
           </div>
 
+          <div className={`${styles.authorField} ${styles.authorBackgroundField}`}>
+            <span>{t.background}</span>
+            <div className={styles.authorPhotoRow}>
+              {draft.background?.src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className={styles.authorBackgroundPreview} src={draft.background.src} alt="" />
+              ) : (
+                <span className={styles.authorBackgroundEmpty} aria-hidden="true" />
+              )}
+              <label className={styles.authorFilePick}>
+                <input
+                  className={styles.visuallyHidden}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                  disabled={uploading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void handleBackground(file);
+                  }}
+                />
+                <span className={styles.authorFilePickFace} data-busy={uploading || undefined}>
+                  {uploading ? t.photoUploading : draft.background?.src ? t.backgroundReplace : t.backgroundUpload}
+                </span>
+              </label>
+            </div>
+          </div>
+
           {/* THE PICTURE, THEN THE WAY TO CHANGE IT, THEN WHAT IT SHOWS.
               The alt field used to come FIRST, before there was any image to
               describe — a text box asking «опис фото» above an empty slot. It
@@ -271,7 +333,7 @@ export function AuthorProfileFold({
               a form where everything else is the product's. The input is still
               a real `<input type="file">` — visually hidden, not removed — so
               the keyboard and the file dialog behave exactly as they do. */}
-          <div className={styles.authorField}>
+          <div className={`${styles.authorField} ${styles.authorPhotoField}`}>
             <span>{t.photo}</span>
             <div className={styles.authorPhotoRow}>
               {draft.photo?.src ? (

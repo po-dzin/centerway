@@ -40,6 +40,14 @@ export const SUPPORT_BOT_URL = "https://telegram.me/centerway_support_bot";
  */
 export const GREETING_PHOTO_URL = platformUrl("/cw/brand/cw-tg-cover.png");
 
+/**
+ * Context cards for the two task-starting branches in the support bot. They
+ * stay next to the greeting asset so every Telegram-hosted image has one
+ * stable public URL and is not read from the serverless filesystem at runtime.
+ */
+export const CABINET_PHOTO_URL = platformUrl("/cw/bot/final/menu-courses-printed-stamp-v5.png");
+export const SUPPORT_PHOTO_URL = platformUrl("/cw/bot/final/menu-support-printed-stamp-v4.png");
+
 export { PLATFORM_ORIGIN };
 
 export const botCopy = {

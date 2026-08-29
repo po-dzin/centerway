@@ -37,6 +37,8 @@ export type Author = {
     /** Mandatory wherever an image is — a11y is a release gate in this repo. */
     alt: string;
   };
+  /** Decorative backdrop for the public author showcase. */
+  background?: { src: string };
   /**
    * Whether strangers may reach the profile page. Absent means no.
    *
@@ -75,6 +77,11 @@ export function validateAuthor(input: unknown, path = "author"): asserts input i
     assert(isRecord(input.photo), `lms_author_invalid_photo:${path}`);
     assert(isNonEmptyString(input.photo.src), `lms_author_photo_missing_src:${path}`);
     assert(isNonEmptyString(input.photo.alt), `lms_author_photo_missing_alt:${path}`);
+  }
+
+  if (input.background !== undefined) {
+    assert(isRecord(input.background), `lms_author_invalid_background:${path}`);
+    assert(isNonEmptyString(input.background.src), `lms_author_background_missing_src:${path}`);
   }
 
   if (input.listed !== undefined) {

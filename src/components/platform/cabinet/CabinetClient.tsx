@@ -24,6 +24,8 @@ import { useRouter } from "next/navigation";
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
+import { usePlatformIdentity } from "@/components/platform/layout/usePlatformIdentity";
+import { platformRoleLabel } from "@/lib/platform/identity";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
 import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
@@ -107,6 +109,7 @@ export function CabinetClient() {
 
   const lang = useProfileLang();
   const { session, loading: sessionLoading, signInWithGoogle, signOut } = useCabinetSession();
+  const identity = usePlatformIdentity(session);
   const { profile, loading: profileLoading, error, clear: clearProfile } = useProfileData(session);
   const { shelf, failed: shelfFailed, reload: reloadShelf } = useLearnerShelf(session);
   const reach = useTelegramReach(session);
@@ -208,6 +211,7 @@ export function CabinetClient() {
         <CabinetHero
           label={copy.profile}
           name={account.fullName ?? copy.fallbackName}
+          role={platformRoleLabel(identity.role)}
           email={account.email ?? copy.fallbackEmail}
           notice={
             reach && !reach.linked && reach.linkUrl
@@ -222,17 +226,6 @@ export function CabinetClient() {
             ) : (
               getUserInitial(session, account.fullName)
             )
-          }
-          avatarRing={
-            dosha ? (
-              <DoshaWheel
-                compact
-                scores={dosha.scores ?? { vata: 0, pitta: 0, kapha: 0 }}
-                labels={copy.doshaLabels}
-                resultLabel={formatDoshaResult(dosha.resultType, lang)}
-                lang={lang}
-              />
-            ) : undefined
           }
           /* THREE FACTS, ONE ROW. The count came back beside the dosha — a
              room with one dash under «Продукти» and nothing else is a room

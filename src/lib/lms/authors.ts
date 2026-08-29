@@ -46,6 +46,7 @@ function authorFromRow(row: Row): Author {
       ? { credentials: row.credentials as string[] }
       : {}),
     ...(row.photo ? { photo: row.photo as Author["photo"] } : {}),
+    ...(row.background ? { background: row.background as Author["background"] } : {}),
     // `false` reads back as ABSENT, the same way `visibility: "hidden"` does on
     // a course: it is the column's own default, and carrying it explicitly would
     // put a field on every author that says what its absence already says.
@@ -256,6 +257,7 @@ export type AuthorProfileInput = {
   quote?: string;
   credentials?: string[];
   photo?: { src: string; alt: string };
+  background?: { src: string };
   listed?: boolean;
   slug?: string;
 };
@@ -304,6 +306,7 @@ export async function upsertAuthorProfile(
     ...(input.quote ? { quote: input.quote } : {}),
     ...(input.credentials ? { credentials: input.credentials } : {}),
     ...(input.photo ? { photo: input.photo } : {}),
+    ...(input.background ? { background: input.background } : {}),
     ...(input.listed ? { listed: true } : {}),
   };
 
@@ -325,6 +328,7 @@ export async function upsertAuthorProfile(
         quote: input.quote ?? null,
         credentials: input.credentials ?? null,
         photo: input.photo ?? null,
+        background: input.background ?? null,
         listed: input.listed ?? false,
       },
       { onConflict: "auth_user_id" }
