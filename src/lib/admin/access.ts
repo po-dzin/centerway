@@ -871,11 +871,18 @@ export type ProvisionAccessInput = {
 async function assertGrantable(db: Db, courseSlug: string, authUserId: string): Promise<void> {
     const { data: course, error: courseError } = await db
         .from("lms_courses")
-        .select("id")
+        .select("id, status")
         .eq("slug", courseSlug)
         .maybeSingle();
     if (courseError) throw new AccessError(courseError.message, 500);
     if (!course) throw new AccessError("course_not_found", 404);
+
+    // A manual sale sells the same product a buyer would get at checkout, and a
+    // buyer can never reach an unpublished course — checkEntitlement only opens
+    // published ones. Nothing enforced that here: an operator could seat a
+    // learner on a draft, and the enrollment row would then be the only thing
+    // blocking the author from ever deleting it (2026-08-28, novyi-kurs).
+    if (course.status !== "published") throw new AccessError("course_not_published", 409);
 
     const { data: existing, error: enrollmentError } = await db
         .from("lms_enrollments")

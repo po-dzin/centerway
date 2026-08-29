@@ -673,7 +673,7 @@ export async function importBuilderCourse(course: Course, authorId: string): Pro
 }
 
 /**
- * Deletes a course — with three refusals that are not negotiable from the UI.
+ * Deletes a course — with two refusals that are not negotiable from the UI.
  *
  * A published course is refused: unpublishing is one press and reversible,
  * deleting is neither, and an author who meant "take it down" must not be able
@@ -685,13 +685,14 @@ export async function importBuilderCourse(course: Course, authorId: string): Pro
  * confirmation dialog's decision to make; a course with learners gets
  * unpublished and archived, not removed.
  *
- * A course with a checked-in snapshot (`data/courses/*.json`) is refused too.
- * `liveCatalog.ts`'s absent-row branch exists to survive a seeding mistake —
- * deleting the row is supposed to mean "this course never happened", but for a
- * snapshot-backed slug it instead means "reactivate the file", the moment the
- * row disappears and the fallback takes over. Retiring one of these for real
- * is a git change (delete the JSON, `lms:pull` has nothing left to protect),
- * not a database delete.
+ * THERE WAS A THIRD, AND IT WAS THE FILE'S FAULT, NOT THE COURSE'S (2026-08-29).
+ * A slug with a checked-in snapshot (`data/courses/*.json`) used to be refused,
+ * because `liveCatalog.ts` served that file whenever the row was absent — so
+ * deleting the row republished the course instead of retiring it. That branch
+ * is gone: the snapshot is a backup that answers when the read FAILS, not an
+ * authority that overrules a delete. With the file no longer able to resurrect
+ * anything, the refusal it justified has nothing left to protect, and the two
+ * rules above are the ones that were ever about the course itself.
  */
 export async function deleteBuilderCourse(slug: string): Promise<void> {
   const db = adminClient();
@@ -699,7 +700,6 @@ export async function deleteBuilderCourse(slug: string): Promise<void> {
   const row = await readCourseRow(slug);
   if (!row) throw new Error(`lms_builder_unknown_course:${slug}`);
   if (row.status === "published") throw new Error(`lms_builder_delete_published:${slug}`);
-  if (getSnapshotCourse(slug)) throw new Error(`lms_builder_delete_has_snapshot:${slug}`);
 
   const courseId = row.id as string;
   const { data: enrollments, error: enrollmentError } = await db

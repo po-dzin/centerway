@@ -18,6 +18,7 @@ import type { Session } from "@supabase/supabase-js";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { fetchMyCourses, type LearnerShelfCourseDto } from "@/components/lms/lmsClient";
 import type { ProfileLang, ProfileResponse } from "@/components/platform/profile/types";
+import type { Author } from "@/lms-core";
 
 const LANG_EVENT = "cw-lang-change";
 
@@ -132,6 +133,26 @@ async function readWithToken(url: string, session: Session): Promise<Response | 
   if (res.status === 401) {
     const { data: refreshed } = await supabaseClient.auth.refreshSession();
     if (refreshed.session?.access_token) res = await read(refreshed.session.access_token);
+  }
+
+  return res;
+}
+
+/** `readWithToken`'s write counterpart — same one-refresh-on-401 retry. */
+async function readWithTokenPost(url: string, session: Session, body: unknown): Promise<Response | null> {
+  const post = (token: string) =>
+    fetch(url, {
+      method: "POST",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+  if (!session.access_token) return null;
+  let res = await post(session.access_token);
+
+  if (res.status === 401) {
+    const { data: refreshed } = await supabaseClient.auth.refreshSession();
+    if (refreshed.session?.access_token) res = await post(refreshed.session.access_token);
   }
 
   return res;
@@ -281,4 +302,88 @@ export function useTelegramReach(session: Session | null) {
   }, [userId, sessionRef]);
 
   return state.userId === userId ? state.reach : null;
+}
+
+export type AuthorProfileInput = {
+  name: string;
+  role?: string;
+  bio?: string;
+  quote?: string;
+  credentials?: string[];
+  photo?: { src: string; alt: string };
+  listed?: boolean;
+  slug?: string;
+};
+
+/**
+ * The cabinet's author-profile fold: eligibility (does this account hold a
+ * byline or a course to write one for), the draft itself, and a way to save
+ * it. `eligible` decides whether `CabinetClient` renders the fold at all — a
+ * learner who has never authored anything sees nothing here, not an empty
+ * editor.
+ */
+export function useAuthorProfile(session: Session | null) {
+  const userId = session?.user?.id ?? null;
+  const [state, setState] = useState<{
+    userId: string | null;
+    eligible: boolean;
+    author: Author | null;
+  }>({ userId: null, eligible: false, author: null });
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const sessionRef = useLatestSession(session);
+
+  useEffect(() => {
+    const current = sessionRef.current;
+    if (!current?.access_token) return;
+
+    let cancelled = false;
+    void (async () => {
+      const res = await readWithToken("/api/platform/users/me/author", current);
+      if (cancelled || !res?.ok) return;
+      const body = (await res.json()) as { eligible: boolean; author: Author | null };
+      setState({ userId: current.user?.id ?? null, eligible: body.eligible, author: body.author });
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, sessionRef]);
+
+  const save = useCallback(
+    async (input: AuthorProfileInput): Promise<boolean> => {
+      const current = sessionRef.current;
+      if (!current?.access_token) return false;
+
+      setSaving(true);
+      setSaveError(null);
+      try {
+        const res = await readWithTokenPost("/api/platform/users/me/author", current, input);
+        if (!res?.ok) {
+          const body = (await res?.json().catch(() => null)) as { error?: string } | null;
+          setSaveError(body?.error ?? "save_failed");
+          return false;
+        }
+        const body = (await res.json()) as { author: Author };
+        setState((prev) => ({ ...prev, userId: current.user?.id ?? null, eligible: true, author: body.author }));
+        return true;
+      } catch {
+        setSaveError("save_failed");
+        return false;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [sessionRef]
+  );
+
+  const matches = state.userId === userId;
+  return {
+    eligible: matches ? state.eligible : false,
+    author: matches ? state.author : null,
+    loading: Boolean(session) && !matches,
+    saving,
+    saveError,
+    save,
+  };
 }

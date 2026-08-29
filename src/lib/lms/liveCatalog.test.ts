@@ -43,9 +43,13 @@ describe("getLiveCourse", () => {
     expect(course?.version).toBe(getSnapshotCourse("reset-day")?.version);
   });
 
-  it("serves the snapshot when the row is simply absent", async () => {
-    // A course in git and not in the database is a seeding mistake, and the
-    // answer to a mistake is not taking a paid course away from its learners.
+  it("answers nothing for an absent row, even when a snapshot of it exists", async () => {
+    // THE INVERSION OF THE OLD RULE (2026-08-29). This used to serve the file,
+    // on the reasoning that a course in git and missing from the database is a
+    // seeding mistake. It is far more often a delete — and the branch could not
+    // tell them apart, so the file overruled the owner and republished a course
+    // they had removed. A backup answers when the source CANNOT; it does not
+    // answer when the source says "no".
     vi.resetModules();
     vi.doMock("@/lib/auth/adminClient", () => ({
       adminClient: () => ({
@@ -55,7 +59,7 @@ describe("getLiveCourse", () => {
       }),
     }));
     const { getLiveCourse } = await import("./liveCatalog");
-    expect((await getLiveCourse("reset-day"))?.slug).toBe("reset-day");
+    expect(await getLiveCourse("reset-day")).toBeNull();
   });
 
   it("answers nothing for a slug neither source has", async () => {

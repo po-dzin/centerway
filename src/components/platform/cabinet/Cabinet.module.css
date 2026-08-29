@@ -92,6 +92,61 @@
   gap: var(--cw-space-md);
 }
 
+/* THE SHELF'S TWO VIEWS. See `LearnShelfClient` for why the reader picks.
+   The switch itself is the builder's, restated rather than imported: two
+   icon-only buttons, muted until pressed. The list mode needs no rules of its
+   own — `CourseRow` renders `.glance`, which the cabinet already draws. */
+.viewSwitch {
+  display: inline-flex;
+  align-self: end;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+}
+
+.viewOption {
+  composes: chromeBare from "../PlatformButtons.module.css";
+  composes: square from "../PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
+}
+
+.viewOption[aria-pressed="true"] {
+  color: var(--cw-platform-text);
+}
+
+.cardGrid[data-view="rows"] {
+  gap: var(--cw-space-2xs);
+}
+
+/* CARDS, SPLIT SIDEWAYS ON A PHONE (2026-08-28). Stacked, the cover alone took
+   160px of a 580px card and nine courses came to seven screens. Beside the copy
+   it is a 5.5rem plate — still the picture the course was chosen by, no longer
+   the reason the shelf cannot be scanned. The cover is the first child and
+   spans every row; everything else stacks in the second column. From 561px
+   there is room for the stacked card again and it comes back. */
+@media (max-width: 560px) {
+  .cardGrid[data-view="cards"] .card,
+  .cardGrid[data-view="cards"] .cardMuted {
+    display: grid;
+    grid-template-columns: 5.5rem minmax(0, 1fr);
+    align-content: start;
+    column-gap: var(--cw-space-md);
+    row-gap: var(--cw-space-2xs);
+    padding: var(--cw-space-md);
+  }
+
+  .cardGrid[data-view="cards"] .card > :first-child,
+  .cardGrid[data-view="cards"] .cardMuted > :first-child {
+    grid-column: 1;
+    grid-row: 1 / -1;
+    align-self: start;
+  }
+
+  .cardGrid[data-view="cards"] .card > :not(:first-child),
+  .cardGrid[data-view="cards"] .cardMuted > :not(:first-child) {
+    grid-column: 2;
+  }
+}
+
 .cardTitle {
   margin: 0;
   font-size: 1.15rem;
@@ -544,7 +599,7 @@
   margin: 0;
   padding: 0;
   list-style: none;
-  font-size: 0.9rem;
+  font-size: var(--ds-type-body-sm-size);
   color: var(--cw-platform-muted);
   line-height: 1.5;
 }
@@ -901,6 +956,56 @@
 .notice {
   composes: card;
   line-height: 1.55;
+}
+
+/* ── Author profile form ──────────────────────────── */
+
+.authorField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  font-size: var(--ds-type-body-sm-size);
+  color: var(--cw-platform-muted);
+}
+
+.authorInput,
+.authorTextarea {
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  border: 1px solid var(--cw-platform-border);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-family: var(--cw-font-ui);
+}
+
+.authorTextarea {
+  resize: vertical;
+}
+
+.authorCredentialRow {
+  display: flex;
+  gap: var(--cw-space-xs);
+  align-items: center;
+}
+
+.authorCredentialRow .authorInput {
+  flex: 1 1 auto;
+}
+
+.authorPhotoPreview {
+  width: 6rem;
+  height: 6rem;
+  object-fit: cover;
+  border-radius: var(--cw-radius-md);
+}
+
+.authorVisibilityRow {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cw-space-sm);
+  font-size: var(--ds-type-body-sm-size);
+  color: var(--cw-platform-muted);
 }
 
 .notice[data-cw-material] {

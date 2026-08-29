@@ -4048,6 +4048,58 @@
   overflow-wrap: anywhere;
 }
 
+/* ── Author tab: the offer-page byline, mirrored ─────
+   Matches `OfferAuthor` (OfferFacets.tsx) in substance — photo, name, role,
+   note, conditional link — not in material: this is the builder's own card,
+   not a pixel copy of the public one. */
+.authorPreviewCard {
+  display: flex;
+  gap: var(--cw-space-sm);
+  align-items: flex-start;
+}
+
+.authorPreviewPhoto {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: var(--cw-radius-md);
+  object-fit: cover;
+  flex: none;
+}
+
+.authorPreviewBody {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+.authorPreviewName {
+  margin: 0;
+  font-weight: 600;
+  color: var(--cw-platform-text);
+}
+
+.authorPreviewRole {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.85rem;
+}
+
+.authorPreviewCue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  color: var(--cw-platform-accent);
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.authorLinkActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-sm);
+}
+
 .courseSettingEdit {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
   composes: square from "../platform/PlatformButtons.module.css";

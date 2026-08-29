@@ -14,25 +14,31 @@
  * demoted from source to SNAPSHOT — the last known good copy, served whenever
  * the live read cannot answer.
  *
- * THE THREE ANSWERS, and the middle one is the whole design:
+ * THE THREE ANSWERS, and the middle one is the one that changed:
  *
  *   · the row EXISTS      → serve it, whatever its status. Draft included: a
  *     draft is how staff and manual-grant holders preview, and `server.ts`
  *     already owns that gate. This is also what makes unpublishing work — the
  *     row stays and turns `draft`, and the gate closes.
- *   · the row is ABSENT   → serve the snapshot. A course present in git and
- *     missing from the database is a seeding mistake, and the answer to a
- *     mistake must not be taking a paid course away from the people in it.
+ *   · the row is ABSENT   → the course does not exist. Answer nothing.
  *   · the read FAILED     → serve the snapshot, and say so in the log. This is
- *     the case the fallback was built for.
+ *     the case, and now the ONLY case, the fallback was built for.
  *
- * The one gap this closed: deleting a course ROW that still has a checked-in
- * snapshot would resurrect the file the moment the row disappeared, since the
- * absent-row branch exists precisely to survive a seeding mistake and cannot
- * tell that apart from an intentional delete. `deleteBuilderCourse` now refuses
- * a snapshot-backed slug outright, on top of refusing anything published or
- * enrolled — retiring one of these for real is a git change (delete the JSON,
- * `lms:pull` has nothing left to protect), not a database delete.
+ * THE ABSENT BRANCH USED TO SERVE THE SNAPSHOT, AND THAT WAS TOO AGGRESSIVE
+ * (2026-08-29). The reasoning was that a course in git and missing from the
+ * database is a seeding mistake, and a mistake must not take a paid course away
+ * from the people in it. True — but "the row is gone" is far more often a
+ * deliberate delete than a seeding accident, and the branch could not tell them
+ * apart. So the file stopped being a backup and became an authority: it
+ * OVERRODE a deletion, silently republishing a course the owner had removed,
+ * and the only defence available was to forbid the deletion outright. Four
+ * slugs were undeletable in the builder for no reason an author could see.
+ *
+ * A backup answers when the source cannot. It does not answer when the source
+ * says "no". Absent now means absent, which is what lets
+ * `deleteBuilderCourse` be about the course rather than about the file
+ * underneath it. What still protects a paid learner is the gate that always
+ * did: a course with enrolments is refused, snapshot or not.
  */
 
 import { unstable_cache } from "next/cache";
@@ -113,11 +119,13 @@ export async function getLiveCourse(slug: string): Promise<Course | null> {
   const read = await cachedCourse(slug);
 
   if (read.kind === "course") return read.course;
-  if (read.kind === "unavailable") {
-    // Loud, because a learner is being served yesterday's copy and the reason
-    // is infrastructure, not content.
-    console.warn(`lms_live_course_unavailable:${slug}:${read.reason} — serving the shipped snapshot`);
-  }
+  // A course the database does not have is a course that does not exist. The
+  // snapshot is not consulted here — see the note at the top of this file.
+  if (read.kind === "absent") return null;
+
+  // Loud, because a learner is being served yesterday's copy and the reason
+  // is infrastructure, not content.
+  console.warn(`lms_live_course_unavailable:${slug}:${read.reason} — serving the shipped snapshot`);
   return getSnapshotCourse(slug);
 }
 
@@ -164,8 +172,13 @@ const cachedAll = unstable_cache(readAll, ["lms-live-courses"], {
 });
 
 /**
- * Every course, live, with any snapshot course the database has never heard of
- * merged in behind it — same rule as the single read, applied to a list.
+ * Every course, live. The snapshot answers only when the read itself failed —
+ * same rule as the single read, applied to a list.
+ *
+ * It used to merge in every snapshot course the database had never heard of,
+ * which is the list-shaped version of the absent-row branch removed above: a
+ * course deleted from the database came back onto the shelf on the next
+ * request, from a file.
  */
 export async function listLiveCourses(): Promise<Course[]> {
   const { courses, complete } = await cachedAll();
@@ -174,7 +187,5 @@ export async function listLiveCourses(): Promise<Course[]> {
     return snapshotCourses();
   }
 
-  const live = new Set(courses.map((course) => course.slug));
-  const missing = snapshotCourses().filter((course) => !live.has(course.slug));
-  return [...courses, ...missing];
+  return courses;
 }

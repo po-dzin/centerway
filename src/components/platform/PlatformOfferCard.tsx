@@ -64,6 +64,15 @@ type PlatformOfferCardProps = {
   /** "planned" renders the tile without a link, as a surface that does not exist yet. */
   status?: "active" | "planned";
   statusLabel?: string;
+  /**
+   * The author's own line above the title, when they wrote one — see
+   * `StorefrontCard.pretitle`. Shares the eyebrow's grid row rather than
+   * claiming a new one, so a card that has none keeps the fixed preview
+   * format exactly as it was.
+   */
+  pretitle?: string;
+  /** The line below the title, in the author's own words — `StorefrontCard.posttitle`. */
+  posttitle?: string;
 };
 
 export function PlatformOfferCard({
@@ -81,6 +90,8 @@ export function PlatformOfferCard({
   categories,
   status = "active",
   statusLabel = "Скоро",
+  pretitle,
+  posttitle,
 }: PlatformOfferCardProps) {
   /* THE CARD IS NOT A HERO. It is roughly 370 CSS pixels wide in the grid, and
      it was drawing the same 1600px plate the full-bleed hero draws — six of them
@@ -131,8 +142,14 @@ export function PlatformOfferCard({
         data-has-meta={meta ? "true" : "false"}
         data-has-points={points && points.length > 0 ? "true" : "false"}
       >
-        <p className={styles.label}>{tag}</p>
-        <h3>{title}</h3>
+        <div className={styles.programTileEyebrow}>
+          <p className={styles.label}>{tag}</p>
+          {pretitle ? <p className={styles.programTilePretitle}>{pretitle}</p> : null}
+        </div>
+        <div className={styles.programTileHeadline}>
+          <h3>{title}</h3>
+          {posttitle ? <p className={styles.programTilePosttitle}>{posttitle}</p> : null}
+        </div>
         {categories && categories.length > 0 ? (
           <ul className={styles.programTileCategories}>
             {categories.map((category) => (

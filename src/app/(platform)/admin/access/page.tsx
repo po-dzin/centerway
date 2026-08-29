@@ -123,6 +123,7 @@ export default function AccessPage() {
         const known: Record<string, string> = {
             account_not_found: t("access_error_account_not_found"),
             course_not_found: t("access_error_course_not_found"),
+            course_not_published: t("access_error_course_not_published"),
             enrollment_not_found: t("access_error_enrollment_not_found"),
             expires_at_invalid: t("access_error_expires_at_invalid"),
             amount_invalid: t("access_error_amount_invalid"),

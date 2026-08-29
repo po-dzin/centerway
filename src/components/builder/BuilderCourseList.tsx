@@ -17,6 +17,7 @@ import {
   listCourses,
   previewCourseImport,
   reorderCourses,
+  unpublishCourse,
   type CourseImportPreview,
   type BuilderCourseSummary,
   type BuilderFailure,
@@ -32,6 +33,19 @@ type State =
   | { status: "ready"; courses: BuilderCourseSummary[]; isAdmin: boolean; canCreate: boolean };
 
 type CourseView = "rows" | "grid";
+
+/** The two release-affecting actions a shelf entry can ask to confirm. */
+type PendingKind = "delete" | "unpublish";
+
+/**
+ * The shelf's one notification slot: a question, or the server's answer to it,
+ * always addressed to exactly one course. `error` only ever follows a
+ * `confirm` on the same slug — see `EntryControls`, which renders both phases
+ * in the identical footprint the confirmation opened.
+ */
+type PendingAction =
+  | { slug: string; kind: PendingKind; phase: "confirm" }
+  | { slug: string; kind: PendingKind; phase: "error"; message: string };
 
 const VIEW_KEY = "cw.builder.courseView";
 /* `storage` only reaches OTHER tabs, so the writing tab announces itself. */
@@ -187,7 +201,18 @@ export function BuilderCourseList() {
   const [note, setNote] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
-  const [confirmingDelete, setConfirmingDelete] = useState<string | null>(null);
+  /**
+   * ONE PENDING ACTION AT A TIME, ONE PLACE IT IS SHOWN.
+   *
+   * `confirm` and `error` are the same box in the same spot on the same card —
+   * see `EntryControls` — because a refusal is the answer to the question that
+   * was just asked there, not a separate event. The alternative this replaces
+   * was a page-level `note` string: it put "курс уже проходили учні" in a line
+   * above the shelf while the card someone had just tried to delete sat three
+   * screens down, so the one sentence that explained the refusal was never
+   * where the eye already was.
+   */
+  const [pending, setPending] = useState<PendingAction | null>(null);
   /* The course that is on its way out. It stays in `state.courses` — and so on
      screen — for as long as this is set, which is what gives the leaving
      something to play on. */
@@ -283,15 +308,25 @@ export function BuilderCourseList() {
     router.push(`/build/${result.data.slug}`);
   }
 
-  async function remove(slug: string) {
+  /** Opens the confirm phase — the only way `pending` ever gains a slug. */
+  function askPending(slug: string, kind: PendingKind) {
+    if (busy) return;
+    setPending({ slug, kind, phase: "confirm" });
+  }
+
+  /** «Ні» on a question, or «Зрозуміло» on its refusal — both just close the slot. */
+  function dismissPending() {
+    setPending(null);
+  }
+
+  async function remove(slug: string, courseStatus: BuilderCourseSummary["status"]) {
     if (busy) return;
     setBusy(true);
-    setNote(null);
     /* The question is answered, so it goes at once — leaving it up while the
        card fades underneath it would be asking twice. The card starts leaving
        now, BEFORE the request, because the answer to «which one» has to be on
        screen at the moment the reader commits, not after the server agrees. */
-    setConfirmingDelete(null);
+    setPending(null);
     setRemoving(slug);
 
     const startedAt = performance.now();
@@ -299,10 +334,17 @@ export function BuilderCourseList() {
 
     if (!result.ok) {
       /* Nothing was destroyed, so nothing may disappear: the flag clears and
-         the card transitions back from wherever it had got to. */
+         the card transitions back from wherever it had got to. The refusal
+         reopens in the same slot the question used — on THIS course, not as a
+         line at the top of a shelf the reader may have scrolled away from. */
       setRemoving(null);
       setBusy(false);
-      setNote(deleteFailureCopy(result.detail));
+      setPending({
+        slug,
+        kind: "delete",
+        phase: "error",
+        message: deleteFailureCopy(courseStatus, result.detail),
+      });
       return;
     }
 
@@ -312,9 +354,83 @@ export function BuilderCourseList() {
     const remaining = REMOVE_MS - (performance.now() - startedAt);
     if (remaining > 0) await new Promise((resolve) => setTimeout(resolve, remaining));
 
-    await load();
+    /* THE GAP CLOSES THE MOMENT THE CARD IS GONE, NOT AFTER A SECOND ROUND
+       TRIP (2026-08-29). This used to `await load()` here — a full refetch —
+       before the course left `state.courses`. The delete had already
+       succeeded and the fade had already finished, so for however long that
+       refetch took, the shelf held an invisible card open in its grid cell:
+       the neighbours had nothing left to close up around, because as far as
+       React knew the course was still there. That is the reflow `useShelfReflow`
+       promises "after the item is gone" — it just was not gone yet.
+
+       Removed here, locally, the moment the network confirms it — which is
+       also the moment `useShelfReflow`'s effect can see it missing and animate
+       the gap shut in the same frame the DOM drops the node.
+
+       `load()` still runs, just after and unawaited: nothing about the OTHER
+       courses changed, but `canCreate` can (`canCreateCourse` gates a
+       non-admin on owning at least one), and that one flag is worth a quiet
+       background reconcile rather than blocking the shelf on it. */
+    setState((current) =>
+      current.status === "ready"
+        ? { ...current, courses: current.courses.filter((entry) => entry.slug !== slug) }
+        : current
+    );
     setRemoving(null);
     setBusy(false);
+    void load();
+  }
+
+  /**
+   * The shelf's own «Зняти з публікації» — the same act the release workspace
+   * already offers, reached without opening the course. Reversible, and it
+   * takes nothing from anyone already enrolled (`src/lib/lms/server.ts` keeps
+   * an active learner's access regardless of `status`); it only stops new
+   * enrolment and catalogue visibility. That is why it asks once and plainly,
+   * not in the boundary tone delete uses.
+   */
+  async function unpublish(slug: string) {
+    if (busy) return;
+    setBusy(true);
+    setPending(null);
+    const result = await unpublishCourse(slug);
+    setBusy(false);
+    if (!result.ok) {
+      setPending({ slug, kind: "unpublish", phase: "error", message: unpublishFailureCopy(result) });
+      return;
+    }
+    /* THE SAME FIX AS `remove` (2026-08-29), for the same reason: the write
+       already confirmed the new status, so waiting on a second full fetch
+       before the pill updates leaves the card lying — «Опубліковано» sits on
+       a course that was just taken off the shelf, for however long that fetch
+       takes. Nothing else about the row changes on an unpublish (blockers and
+       counts are unaffected), so the local flip is the whole truth already;
+       `load()` runs after, unawaited, for the same `canCreate` reason `remove`
+       keeps it around for. */
+    setState((current) =>
+      current.status === "ready"
+        ? {
+            ...current,
+            courses: current.courses.map((entry) =>
+              entry.slug === slug ? { ...entry, status: result.data.status } : entry
+            ),
+          }
+        : current
+    );
+    void load();
+  }
+
+  function confirmPending() {
+    if (!pending || pending.phase !== "confirm") return;
+    if (pending.kind === "delete") {
+      /* The status the shelf is showing, so a refusal can say the one true
+         thing about THIS course rather than the union of every rule. */
+      const status =
+        state.status === "ready"
+          ? state.courses.find((course) => course.slug === pending.slug)?.status ?? "draft"
+          : "draft";
+      void remove(pending.slug, status);
+    } else void unpublish(pending.slug);
   }
 
   async function exportOne(slug: string) {
@@ -480,11 +596,12 @@ export function BuilderCourseList() {
               index={index}
               total={state.courses.length}
               busy={busy}
-              confirming={confirmingDelete === course.slug}
+              pending={pending && pending.slug === course.slug ? pending : null}
               removing={removing === course.slug}
               onMove={move}
-              onAskDelete={setConfirmingDelete}
-              onDelete={remove}
+              onAsk={askPending}
+              onCancel={dismissPending}
+              onConfirm={confirmPending}
               onExport={exportOne}
             />
           ))}
@@ -498,11 +615,12 @@ export function BuilderCourseList() {
               index={index}
               total={state.courses.length}
               busy={busy}
-              confirming={confirmingDelete === course.slug}
+              pending={pending && pending.slug === course.slug ? pending : null}
               removing={removing === course.slug}
               onMove={move}
-              onAskDelete={setConfirmingDelete}
-              onDelete={remove}
+              onAsk={askPending}
+              onCancel={dismissPending}
+              onConfirm={confirmPending}
               onExport={exportOne}
             />
           ))}
@@ -678,10 +796,12 @@ type EntryProps = {
   index: number;
   total: number;
   busy: boolean;
-  confirming: boolean;
+  /** Set only when the pending action's slug is this course's. */
+  pending: PendingAction | null;
   onMove: (index: number, delta: number) => void;
-  onAskDelete: (slug: string | null) => void;
-  onDelete: (slug: string) => void;
+  onAsk: (slug: string, kind: PendingKind) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
   /** True while this course is playing its leaving animation. */
   removing?: boolean;
   onExport: (slug: string) => void;
@@ -786,35 +906,58 @@ function CourseCard(props: EntryProps) {
  * one dialog the design system cannot style, and its wording cannot say WHICH
  * course is about to go.
  */
-function EntryControls({ course, index, total, busy, confirming, onMove, onAskDelete, onDelete, onExport }: EntryProps) {
-  const cancelDeleteRef = useRef<HTMLButtonElement>(null);
+/** What the confirm phase asks, and the button that answers yes — per kind. */
+const PENDING_COPY: Record<PendingKind, { question: string; commitLabel: string; commitDanger?: boolean }> = {
+  delete: { question: "Видалити курс?", commitLabel: "Видалити", commitDanger: true },
+  unpublish: { question: "Зняти курс з публікації?", commitLabel: "Зняти" },
+};
+
+function EntryControls({ course, index, total, busy, pending, onMove, onAsk, onCancel, onConfirm, onExport }: EntryProps) {
+  const focusRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    if (confirming) cancelDeleteRef.current?.focus();
-  }, [confirming]);
+    if (pending) focusRef.current?.focus();
+  }, [pending]);
 
-  if (confirming) {
+  if (pending?.phase === "confirm") {
+    const copy = PENDING_COPY[pending.kind];
     return (
       <div
         className={styles.confirmRow}
         role="group"
-        aria-label={`Підтвердження видалення курсу «${course.title}»`}
+        aria-label={`Підтвердження дії з курсом «${course.title}»`}
         onKeyDown={(event) => {
-          if (event.key === "Escape") onAskDelete(null);
+          if (event.key === "Escape") onCancel();
         }}
       >
-        <span className={styles.confirmText} title={course.title}>Видалити курс?</span>
-        <button
-          ref={cancelDeleteRef}
-          className={styles.quietAction}
-          type="button"
-          onClick={() => onAskDelete(null)}
-          disabled={busy}
-        >
+        <span className={styles.confirmText} title={course.title}>{copy.question}</span>
+        <button ref={focusRef} className={styles.quietAction} type="button" onClick={onCancel} disabled={busy}>
           Ні
         </button>
-        <button className={styles.dangerAction} type="button" onClick={() => onDelete(course.slug)} disabled={busy}>
-          Видалити
+        <button
+          className={copy.commitDanger ? styles.dangerAction : styles.retreatAction}
+          type="button"
+          onClick={onConfirm}
+          disabled={busy}
+        >
+          {copy.commitLabel}
+        </button>
+      </div>
+    );
+  }
+
+  /* THE SERVER'S ANSWER, IN THE QUESTION'S OWN SEAT (2026-08-28).
+     A refusal used to surface as a line at the top of the shelf — the one
+     sentence explaining "учні вже проходять цей курс" sat above a grid the
+     reader had scrolled three screens past. It now reopens in the exact
+     footprint the confirmation used, on the course it is about, with one way
+     out rather than two: there is nothing left to choose between. */
+  if (pending?.phase === "error") {
+    return (
+      <div className={styles.confirmRow} role="alert" aria-label={`Курс «${course.title}»`}>
+        <span className={styles.confirmText}>{pending.message}</span>
+        <button ref={focusRef} className={styles.quietAction} type="button" onClick={onCancel}>
+          Зрозуміло
         </button>
       </div>
     );
@@ -844,13 +987,31 @@ function EntryControls({ course, index, total, busy, confirming, onMove, onAskDe
           onSelect: () => onExport(course.slug),
           disabled: busy,
         },
+        ...(course.status === "published"
+          ? [
+              {
+                label: "Зняти з публікації",
+                hint: "Курс перестане приймати нових учнів; ті, хто вже проходить його, збережуть доступ",
+                onSelect: () => onAsk(course.slug, "unpublish"),
+                disabled: busy,
+                startsGroup: true,
+              },
+            ]
+          : []),
         {
           label: "Видалити",
           icon: "trash",
-          hint: "Опублікований курс і курс з учнями видалити не можна",
-          onSelect: () => onAskDelete(course.slug),
+          /* The hint names the rule that will actually apply to THIS course.
+             A published one has a first step before deleting is even a
+             question; a draft's only remaining gate is whether anyone is
+             enrolled, which the shelf cannot see from here. */
+          hint: course.status === "published"
+            ? "Спершу зніміть курс з публікації — опублікований курс не видаляється"
+            : "Курс із учнями не видаляється: їхню історію не можна стерти",
+          onSelect: () => onAsk(course.slug, "delete"),
           disabled: busy,
           danger: true,
+          startsGroup: course.status !== "published",
         },
       ]}
     />
@@ -860,15 +1021,50 @@ function EntryControls({ course, index, total, busy, confirming, onMove, onAskDe
 /* The server's refusals, in the author's words. Each one names what to do
    instead, because "не вдалося видалити" on its own turns a rule into a bug
    report. */
-function deleteFailureCopy(detail?: string): string {
+function deleteFailureCopy(status: BuilderCourseSummary["status"], detail?: string): string {
   if (!detail) return "Не вдалося видалити курс.";
   if (detail.startsWith("lms_builder_delete_published")) {
     return "Опублікований курс не видаляється. Спершу зніміть його з публікації.";
   }
+  /* THE ADVICE HAS TO BE FOLLOWABLE (2026-08-29), and this one was not.
+     The sentence ended «Зніміть його з публікації» for every course — including
+     a DRAFT, which is already unpublished. An author deleting an empty test
+     course was told to undo a state it was not in, so the refusal read as the
+     builder malfunctioning rather than as a rule.
+
+     Publication is not what this gate is about. Access is: someone holds an
+     enrolment — bought, or granted by hand in the admin panel — and deleting
+     the course would cascade their history away. So the sentence names the
+     access, and the only place it can be withdrawn. */
   if (detail.startsWith("lms_builder_delete_has_learners")) {
-    return "Курс уже проходили учні — видалення стерло б їхню історію. Зніміть його з публікації.";
+    return status === "published"
+      ? "Курс мають учні — видалення стерло б їхню історію. Зніміть його з публікації; щоб видалити назовсім, спершу заберіть доступи в адмінці."
+      : "Курс уже мають учні — видалення стерло б їхню історію. Доступи (зокрема видані вручну) знімаються в адмінці, у розділі доступів.";
   }
+  if (detail.startsWith("lms_builder_unknown_course")) {
+    return "Курсу вже немає в базі. Оновіть сторінку.";
+  }
+  if (detail.startsWith("lms_builder_delete_check_failed")) {
+    return "Не вдалося перевірити, чи можна видалити курс. Спробуйте ще раз.";
+  }
+  /* Anything else with an `lms_` prefix is an internal code, not a sentence.
+     Returning `detail` unchanged is how a raw
+     "lms_builder_delete_failed:violates foreign key constraint" would land on
+     screen as the whole explanation. */
+  if (detail.startsWith("lms_")) return "Не вдалося видалити курс.";
   return detail;
+}
+
+/** Same shape as `deleteFailureCopy`: the server's refusal, in the author's words. */
+function unpublishFailureCopy(result: { failure: BuilderFailure; detail?: string }): string {
+  if (result.failure === "conflict") {
+    return "Цей курс уже змінили в іншій вкладці. Відкрийте його, щоб побачити актуальну версію.";
+  }
+  if (result.failure === "not_found") {
+    return "Курсу вже немає в базі. Оновіть список.";
+  }
+  if (result.detail && !result.detail.startsWith("lms_")) return result.detail;
+  return "Не вдалося зняти курс з публікації.";
 }
 
 /* The blocker count is the card's real payload — it answers "what is stopping

@@ -48,6 +48,8 @@ export async function HubMini() {
             artwork={course.artwork}
             kindBadge={course.kindBadge}
             categories={course.categoryLabels}
+            pretitle={course.pretitle}
+            posttitle={course.posttitle}
             ctaLabel="Деталі курсу"
           />
         ))}
@@ -93,6 +95,8 @@ export async function HubPrograms() {
             artwork={course.artwork}
             kindBadge={course.kindBadge}
             categories={course.categoryLabels}
+            pretitle={course.pretitle}
+            posttitle={course.posttitle}
             ctaLabel="Деталі програми"
           />
         ))}

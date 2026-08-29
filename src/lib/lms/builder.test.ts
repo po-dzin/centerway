@@ -23,7 +23,7 @@ function mockAdminClientReturning(courseRow: Record<string, unknown> | null) {
           }),
         };
       }
-      throw new Error(`unexpected query against ${table} — the snapshot refusal should have short-circuited first`);
+      throw new Error(`unexpected query against ${table} — a status refusal should have short-circuited first`);
     },
   });
 }
@@ -33,7 +33,25 @@ vi.mock("@/lib/auth/adminClient", () => ({
 }));
 
 describe("deleteBuilderCourse", () => {
-  it("refuses a snapshot-backed course before checking enrollments", async () => {
+  it("refuses a published course before touching enrollments", async () => {
+    const { adminClient } = await import("@/lib/auth/adminClient");
+    const { deleteBuilderCourse } = await import("./builder");
+
+    vi.mocked(adminClient).mockImplementation(
+      mockAdminClientReturning({ id: "row-1", status: "published" }) as never,
+    );
+
+    await expect(deleteBuilderCourse("way21")).rejects.toThrow("lms_builder_delete_published:way21");
+  });
+
+  it("no longer refuses a draft just because a snapshot file exists for it", async () => {
+    // THE RULE THAT WENT AWAY (2026-08-29). "way21" ships as
+    // data/courses/way21.json, and that used to be a refusal on its own,
+    // because `liveCatalog` served the file whenever the row was absent — so a
+    // delete republished the course instead of retiring it. The file is a
+    // fallback for a FAILED read now, so it cannot resurrect anything, and the
+    // rule it justified is gone. The delete proceeds to the enrollment check,
+    // which this fixture refuses to answer — reaching it IS the assertion.
     const { adminClient } = await import("@/lib/auth/adminClient");
     const { deleteBuilderCourse } = await import("./builder");
 
@@ -41,9 +59,7 @@ describe("deleteBuilderCourse", () => {
       mockAdminClientReturning({ id: "row-1", status: "draft" }) as never,
     );
 
-    // "way21" ships as data/courses/way21.json — a snapshot exists for it
-    // regardless of what the database row says.
-    await expect(deleteBuilderCourse("way21")).rejects.toThrow("lms_builder_delete_has_snapshot:way21");
+    await expect(deleteBuilderCourse("way21")).rejects.toThrow("unexpected query against lms_enrollments");
   });
 });
 

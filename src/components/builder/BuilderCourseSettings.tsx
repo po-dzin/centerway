@@ -334,11 +334,10 @@ export function BuilderCourseSettings({
           value={course.accessNote}
           onChange={onChange}
         />
-        <FieldInput
-          field={{ path: ["authorNote"], label: "Чому саме ви — про цей курс", kind: "text", multiline: true, hint: "Одне речення. Біографія і фото живуть у профілі автора, тут — тільки те, що змінюється від курсу до курсу." }}
-          value={course.authorNote}
-          onChange={onChange}
-        />
+        {/* `authorNote` moved to its own tab (2026-08-28) — see
+            `BuilderCourseAuthor.tsx`. It sits beside the byline it modifies
+            rather than beside the rest of the storefront copy, now that the
+            byline has a tab of its own to sit in. */}
       </SettingsSection>
 
       <details className={styles.courseSettingsAdvanced}>
