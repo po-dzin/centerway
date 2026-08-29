@@ -1845,6 +1845,26 @@ body.modal-open {
   gap: var(--landing-space-card-media-gap, 12px);
 }
 
+.section-program .program-title {
+  width: 100%;
+  margin: 0;
+  text-align: left;
+  font-size: var(--landing-type-program-title-size, 1.125rem);
+  font-weight: 700;
+  line-height: var(--landing-line-heading, 1.25);
+  color: var(--landing-color-text-strong, var(--landing-color-text));
+}
+
+.section-program .program-subtitle {
+  width: 100%;
+  margin: 0;
+  text-align: left;
+  font-size: var(--landing-type-program-subtitle-size, 0.9375rem);
+  font-weight: 300;
+  line-height: var(--landing-line-body, 1.5);
+  color: var(--landing-color-text-muted, var(--landing-color-text));
+}
+
 .section-program .items ul {
   width: 100%;
   list-style: disc;
