@@ -19,3 +19,8 @@ test-results/
 # (docs/design-system.md, "The imagery pipeline") — the raw renders are not.
 public/cw/img/_staging/
 public/cw/img/_candidates/
+
+# python bytecode
+__pycache__/
+*.pyc
+dist-library-depth.html

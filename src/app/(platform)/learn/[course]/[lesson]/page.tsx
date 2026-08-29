@@ -48,5 +48,7 @@ export default async function LearnLessonPage({
 
   return draftPreview
     ? <ZenPreviewShell returnTo={previewReturnTo}>{view}</ZenPreviewShell>
-    : <PlatformShell headerMode="learn" footer={false}>{view}</PlatformShell>;
+    /* No bar on a lesson — see the `reading` note in PlatformLayout. The
+       column carries its own two controls. */
+    : <PlatformShell headerMode="reading" surface="personal" footer={false}>{view}</PlatformShell>;
 }

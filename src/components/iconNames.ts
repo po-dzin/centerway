@@ -48,6 +48,7 @@ export const CW_ICON_NAMES = [
   "telegram",
   "grip",
   "menu",
+  "lens",
   "view-rows",
   "view-cards",
   "eye",

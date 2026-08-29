@@ -36,14 +36,34 @@
   --room-fill: #faf7ef;
   --room-ink-value: #2f2e2a;
   --room-ink: var(--room-ink-value);
-  --room-ink-soft: color-mix(in srgb, var(--room-ink-value) 70%, var(--room-paper));
-  --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 46%, var(--room-paper));
+  /* INK AT REST IS STILL INK. These sat at 70%/46% of the ink value, which is
+     the weight of a note in a margin, not of the list that IS the page — the
+     column read as a washed-out draft of itself. Attention still has somewhere
+     to go from here: hover reaches the full ink AND draws the stroke under the
+     name (.rowMark), so the step up is a step in two things at once and does
+     not need a pale floor to be legible from. */
+  --room-ink-soft: color-mix(in srgb, var(--room-ink-value) 86%, var(--room-paper));
+  --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 64%, var(--room-paper));
   --room-ink-line: color-mix(in srgb, var(--room-ink-value) 42%, transparent);
   --room-ink-hair: color-mix(in srgb, var(--room-ink-value) 15%, transparent);
   --room-brass: #b97f2d;
   --room-brass-lit: #e5ae65;
   --room-brass-line: color-mix(in srgb, #b97f2d 60%, transparent);
   --room-cast: rgba(44, 41, 34, 0.3);
+  /* WHAT THE SELECT IS WRITTEN IN DEPENDS ON WHAT IT IS WRITTEN ON (2026-08-29,
+     the user's rule). On paper it is INK: brass on cream is a smudge of warm
+     paint on warm paper, and a room whose every mark is gold has no gold left.
+     On graphite it is GOLD: ink on a dark ground is the ground, so the pen has
+     to change metal to be a mark at all. One pair of tokens, so a select in the
+     column and a select on the wall can never be two different decisions. */
+  --room-select-ink: var(--room-ink);
+  --room-select-line: color-mix(in srgb, var(--room-ink-value) 92%, transparent);
+  /* A SELECTED BOOK HAS TO BE FOUND ACROSS THE ROOM. This was `--room-paper-lit`
+     — two points off the face it replaced, which on a 20px spine is no
+     difference at all. The face of the chosen work takes real ink now, its
+     edges are written at full weight, and it steps out of the row (see
+     `.book[data-hot]`). */
+  --room-select-tint: color-mix(in srgb, var(--room-ink-value) 15%, var(--room-paper-lit));
   --room-ink-w: 1;
   --room-wall-shade: 0.55;
 
@@ -87,10 +107,13 @@
   --room-ink-value: var(--cw-platform-text);
   --room-ink-line: color-mix(in srgb, var(--room-ink-value) 62%, transparent);
   --room-ink-hair: color-mix(in srgb, var(--room-ink-value) 22%, transparent);
-  --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 55%, var(--room-paper));
+  --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 72%, var(--room-paper));
   --room-brass: #e5ae65;
   --room-brass-lit: #f4cd96;
   --room-brass-line: color-mix(in srgb, #e5ae65 55%, transparent);
+  --room-select-ink: var(--room-brass-lit);
+  --room-select-line: var(--room-brass-line);
+  --room-select-tint: color-mix(in srgb, var(--room-brass) 34%, var(--room-fill));
   --room-cast: rgba(0, 0, 0, 0.62);
   /* A line thinner than a pixel does not sample cleanly on a dark ground —
      cream-on-dark flickers where dark-on-light merely fades. The pen goes
@@ -110,10 +133,13 @@
     --room-ink-value: var(--cw-platform-text);
     --room-ink-line: color-mix(in srgb, var(--room-ink-value) 62%, transparent);
     --room-ink-hair: color-mix(in srgb, var(--room-ink-value) 22%, transparent);
-    --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 55%, var(--room-paper));
+    --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 72%, var(--room-paper));
     --room-brass: #e5ae65;
     --room-brass-lit: #f4cd96;
     --room-brass-line: color-mix(in srgb, #e5ae65 55%, transparent);
+    --room-select-ink: var(--room-brass-lit);
+    --room-select-line: var(--room-brass-line);
+    --room-select-tint: color-mix(in srgb, var(--room-brass) 34%, var(--room-fill));
     --room-cast: rgba(0, 0, 0, 0.62);
     --room-ink-w: 1.7;
   --room-wall-shade: 0.62;
@@ -274,9 +300,66 @@
   pointer-events: none;
 }
 
+/* THREE LAYERS OF ATTENTION ON A SHELF, and the prototype's own rule for what
+   they may and may not be: "ВИБІР — ЦЕ КОНТУР, А НЕ ЩЕ ОДИН ШАР. Дно виїмки не
+   міняє кольору, губа не золотиться, нічого не світиться і нічого не
+   накладається зверху: полицю просто ОБВОДЯТЬ". So the cut deepens a little in
+   its own shadow, and around it the room draws a frame — with the same pen. */
 .niche:hover .nicheBox,
 .niche[data-hot="true"] .nicheBox {
-  box-shadow: var(--niche-depth);
+  box-shadow: var(--niche-depth), inset 0 26px 40px -14px var(--room-cast);
+}
+
+/* The mark lives in the ROOM, not in the shelf: it is drawn outside the cut,
+   and `.nicheBox` clips its own contents. `.niche` clips nothing, which is why
+   it is the mark's home — the same place it had in the prototype. */
+.nicheMark {
+  position: absolute;
+  inset: -26px;
+  z-index: 3;
+  pointer-events: none;
+  color: var(--room-select-ink);
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+
+.nicheMark svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.niche:hover .nicheMark,
+.niche[data-hot="true"] .nicheMark {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nicheMark {
+    transition: none;
+  }
+}
+
+/* A SHELF THAT HOLDS NOTHING THE QUERY ASKED FOR GOES QUIET — it does not
+   leave. Where a work stands is the one thing this view knows that a list does
+   not, and a wall that empties itself under a search has thrown that away. */
+.niche[data-dim="true"] {
+  opacity: 0.4;
+  filter: none;
+  transition: opacity 220ms ease;
+}
+
+.niche[data-dim="true"] .nicheLabel,
+.niche[data-dim="true"] .nicheMore {
+  opacity: 0;
+}
+
+.noMatch {
+  margin: 0;
+  padding-block: var(--cw-space-lg);
+  color: var(--room-ink-faint);
+  line-height: 1.6;
 }
 
 .nicheLabel {
@@ -373,21 +456,24 @@
   display: none;
 }
 
+/* THE LABEL ON THE BOARD. See `spineCode` for why this is one or two panels and
+   neither the title set in type nor a barcode of it: at this size both came out
+   as speckle. The title is on the row beside the shelf and in the link's own
+   accessible name — this drawing is decorative and says so. */
 .bookSpine {
   position: absolute;
-  inset-block: 10% 14%;
-  inset-inline: 0;
-  display: grid;
-  place-items: center;
-  writing-mode: vertical-rl;
-  font-weight: 600;
-  letter-spacing: 0.04em;
+  inset: 0;
+  display: block;
   color: var(--room-ink-soft);
-  white-space: nowrap;
-  overflow: hidden;
   opacity: 0;
   transition: opacity 380ms ease;
   pointer-events: none;
+}
+
+.bookSpine :global(.code) {
+  fill: color-mix(in srgb, currentColor 40%, transparent);
+  stroke: color-mix(in srgb, currentColor 72%, transparent);
+  stroke-width: 1;
 }
 
 .room[data-lod="name"] .niche[data-hot="true"] .bookSpine {
@@ -398,30 +484,30 @@
   opacity: 0;
 }
 
-/* The one accent this room keeps: a course you can actually open stands out
-   in brass, the way the prototype's --brass marked a "live" book. Locked or
-   unavailable courses stay in plain ink. */
+/* GOLD IS THE SELECT, AND NOTHING ELSE (2026-08-29).
+   A course you can open used to be drawn in brass — and since nearly every
+   book on this shelf is a course you can open, nearly every book was gold. An
+   accent every work wears is not an accent: it became the room's ordinary
+   colour, and there was nothing left to say "this one" with. So access is
+   written the way a real shelf writes it — the book STANDS PROUD of the
+   others, its edges cut a little firmer — and brass is kept for the one work
+   attention is on. */
 .book[data-live="true"] {
-  --face-front: color-mix(in srgb, var(--room-brass) 9%, var(--room-fill));
-  --face-line: var(--room-brass-line);
+  --face-front: var(--room-paper-lit);
+  --face-line: color-mix(in srgb, var(--room-ink-value) 58%, transparent);
   transform: translateZ(0) rotate(var(--tilt, 0deg)) translateY(-6px);
 }
 
 .book[data-live="true"] .bookDraw :global(.plate) {
-  fill: color-mix(in srgb, var(--room-brass) 26%, transparent);
+  fill: color-mix(in srgb, var(--room-ink-value) 14%, transparent);
 }
 
 .book[data-live="true"] .bookDraw :global(.foot) {
-  fill: var(--room-brass);
-}
-
-.book:hover {
-  --face-front: color-mix(in srgb, var(--room-brass) 8%, var(--room-fill));
-  --face-line: var(--room-brass-line);
+  fill: color-mix(in srgb, var(--room-ink-value) 32%, transparent);
 }
 
 .book:focus-visible {
-  outline: 1px solid var(--room-brass);
+  outline: 1px solid var(--room-select-ink);
   outline-offset: 3px;
 }
 
@@ -491,7 +577,7 @@
 
 .row:focus-visible {
   outline: none;
-  box-shadow: var(--ds-button-ring, 0 0 0 2px var(--room-brass));
+  box-shadow: var(--ds-button-ring, 0 0 0 2px var(--room-select-ink));
 }
 
 .rowIndex {
@@ -527,6 +613,51 @@
   text-overflow: ellipsis;
 }
 
+/* THE STROKE UNDER THE NAME, IN TWO STRENGTHS. The weaker one is where
+   attention is pointing — pointer, keyboard, or the shelf on the wall; the
+   full one would be what is currently open, which this view does not yet have.
+   Same object either way, so two states can never merge into one. The weights
+   are the platform's own ink tokens (`--cw-ink-hover-*`), not numbers invented
+   here: hover in this product is a stroke of ink, never a filled highlight. */
+.inkLabel {
+  position: relative;
+  display: inline-block;
+  max-inline-size: 100%;
+}
+
+.rowMark {
+  position: absolute;
+  inset-inline: -0.2rem;
+  inset-block-end: -0.42rem;
+  block-size: var(--cw-ink-stroke-height, 0.85rem);
+  color: var(--room-select-ink);
+  opacity: 0;
+  pointer-events: none;
+  transform: scaleX(0.58);
+  transform-origin: center;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.rowMark svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.row:hover .rowMark,
+.row:focus-visible .rowMark,
+.row[data-hot="true"] .rowMark {
+  opacity: var(--cw-ink-hover-opacity, 0.42);
+  transform: scaleX(var(--cw-ink-hover-scale, 0.74));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rowMark {
+    transition: none;
+  }
+}
+
 .rowState {
   font-family: var(--cw-font-data, ui-monospace, monospace);
   font-size: 0.7rem;
@@ -535,19 +666,43 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* BRASS ON ONE ROW, AS ON ONE BOOK. Gilding the count in every row that owns
-   something gilds nearly all of them, and the accent stops being one. What is
-   being looked at lights; the rest is ink. */
+/* THE SELECT ON ONE ROW, AS ON ONE BOOK. Marking the count in every row that
+   owns something marks nearly all of them, and the accent stops being one. What
+   is being looked at lights; the rest is ink. */
 .row:hover .rowState[data-held="true"],
 .row:focus-visible .rowState[data-held="true"],
 .row[data-hot="true"] .rowState[data-held="true"] {
-  color: var(--room-brass);
+  color: var(--room-select-ink);
 }
 
-/* A spine answers the column, and the column answers a spine. */
-.book[data-hot="true"] {
-  --face-front: color-mix(in srgb, var(--room-brass) 8%, var(--room-fill));
-  --face-line: var(--room-brass-line);
+/* A spine answers the column, and the column answers a spine — and it does it
+   loudly enough to be found without hunting. Three things move together, none
+   of them a glow laid over the drawing: the face takes ink, the edges are
+   written at full weight, and the book steps forward out of its row with the
+   shadow that implies. */
+.book[data-hot="true"],
+.book:hover {
+  --face-front: var(--room-select-tint);
+  --face-line: var(--room-select-line);
+  z-index: 2;
+  filter: drop-shadow(3px 5px 7px var(--room-cast));
+  transform: translateZ(0) rotate(var(--tilt, 0deg)) translateY(-9px);
+}
+
+.book[data-hot="true"] .bookDraw :global(.plate),
+.book:hover .bookDraw :global(.plate) {
+  fill: color-mix(in srgb, var(--room-select-ink) 55%, transparent);
+  stroke: var(--room-select-line);
+}
+
+.book[data-hot="true"] .bookDraw :global(.foot),
+.book:hover .bookDraw :global(.foot) {
+  fill: var(--room-select-ink);
+}
+
+.book[data-hot="true"] .bookSpine,
+.book:hover .bookSpine {
+  color: var(--room-select-ink);
 }
 
 /* On a phone the room is a header and the column is the page: the shelves keep

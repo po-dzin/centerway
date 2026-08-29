@@ -9,7 +9,7 @@ import { useSurfaceHost } from "./layout/SurfaceHost";
 import { isPersonalHost } from "@/lib/platform/surfaceHref";
 
 /**
- * Three modes, and `learn` is the one that is not cosmetic.
+ * Four modes, and two of them are not cosmetic.
  *
  * `default` and `overlay` differ only in whether the bar floats over a dark
  * hero. `learn` is a personal reading surface: its mark leads back to the
@@ -23,6 +23,16 @@ import { isPersonalHost } from "@/lib/platform/surfaceHref";
  * Dropping the float also drops the overlay clearance the learner surfaces
  * were written against; they carry their own top margin (see the margin note
  * at the top of Lms.module.css), which is what that note relied on.
+ *
+ * `reading` MOUNTS NO BAR AT ALL (2026-08-29), and it is the one surface that
+ * should not have one. A bar earns a full-width band by answering «where am I»
+ * for a page with somewhere to go; a lesson is one column of prose with two
+ * answers — out, and the four reading tools — and it was paying a 64px band
+ * plus a crumb row plus a tool row before the title, three rows of chrome over
+ * one column. Those two answers are floating controls now (see `.readerChrome`
+ * in Lms.module.css), so while the eye is in the text there is nothing over it.
+ * The COURSE page keeps the bar: a course map is wayfinding and has a shelf, a
+ * builder and an account to reach.
  */
 export function PlatformShell({
   children,
@@ -31,7 +41,7 @@ export function PlatformShell({
   footer = true,
 }: {
   children: ReactNode;
-  headerMode?: "default" | "overlay" | "learn";
+  headerMode?: "default" | "overlay" | "learn" | "reading";
   footer?: boolean;
   /**
    * Route-owned application identity. Host detection remains the default for
@@ -47,10 +57,11 @@ export function PlatformShell({
   const floats = headerMode === "overlay";
   const onPersonalHost = isPersonalHost(useSurfaceHost());
   const personalSurface = surface === "personal" || onPersonalHost;
+  const bare = headerMode === "reading";
 
   return (
-    <div className={`${styles.shell} ${floats ? styles.shellOverlay : ""}`}>
-      <PlatformHeader
+    <div className={`${styles.shell} ${floats ? styles.shellOverlay : ""}`} data-cw-chrome={bare ? "none" : undefined}>
+      {bare ? null : <PlatformHeader
         initialTone={headerMode === "overlay" ? "dark" : "light"}
         mode={headerMode === "learn" ? "workspace" : headerMode}
         surface={surface}
@@ -68,7 +79,7 @@ export function PlatformShell({
            save state, undo and the preview button — controls in use, which a
            bar that walks off mid-edit would be hiding. */
         autoHide
-      />
+      />}
       {children}
       {/* The storefront's close — phone, four social networks — is the wrong
           ending for every page of the personal host, not just for a lesson:
@@ -76,7 +87,7 @@ export function PlatformShell({
           the origin. The personal footer keeps the shape and the brand and
           drops the sales column, and it follows the HOST as well as the mode,
           so `my` ends one way on every page. */}
-      {footer ? <PlatformFooter variant={headerMode === "learn" || personalSurface ? "personal" : "full"} /> : null}
+      {footer ? <PlatformFooter variant={headerMode === "learn" || bare || personalSurface ? "personal" : "full"} /> : null}
       <PwaRuntime />
     </div>
   );

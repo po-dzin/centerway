@@ -39,6 +39,18 @@ export type CabinetCopy = {
       cabinet already speaks two languages — headings written into the
       component rendered Ukrainian at an English reader. */
   courseCategories: Record<CourseCategory, string>;
+  /* FINDING ONE COURSE AMONG MANY. The shelf and the workshop are one shelf
+     seen from two sides, so they search it with one set of words — and the
+     categories they filter by are `courseCategories` above, not a second list
+     written beside the filter. */
+  shelfSearchLabel: string;
+  shelfSearchPlaceholder: string;
+  /** The accessible name of the category row — a group of controls, not a heading. */
+  shelfFilterLabel: string;
+  /** The category row's resting choice: no narrowing at all. */
+  shelfFilterAll: string;
+  /** An empty result speaks as plainly as a list does. */
+  shelfNoMatch: string;
   learningLoadingTitle: string;
   learningLoadingLead: string;
   learningEmptyTitle: string;
@@ -55,6 +67,7 @@ export type CabinetCopy = {
   dayNumber: (day: number) => string;
   courseFinished: string;
   courseNotStarted: string;
+  /** The draft badge on the cover corner — one word, the corner is small. */
   courseDraft: string;
   courseLocked: string;
   courseExpired: string;
@@ -127,6 +140,11 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       shelfViewRows: "List",
       shelfViewRoom: "Room",
       courseCategories: { movement: "Movement", nutrition: "Nutrition", cleansing: "Cleansing" },
+      shelfSearchLabel: "Search your courses",
+      shelfSearchPlaceholder: "Find a course",
+      shelfFilterLabel: "Filter by subject",
+      shelfFilterAll: "All",
+      shelfNoMatch: "Nothing found. Try another name or subject.",
       learningLoadingTitle: "Loading your courses…",
       learningLoadingLead: "Restoring access, progress and your next lesson.",
       learningEmptyTitle: "No courses in this profile yet",
@@ -140,7 +158,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       dayNumber: (day) => `Day ${day}`,
       courseFinished: "Completed",
       courseNotStarted: "Not started",
-      courseDraft: "Draft — preview access",
+      courseDraft: "Draft",
       courseLocked: "No access yet",
       courseExpired: "Access expired",
       nextStepLabel: "Next step",
@@ -200,6 +218,11 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     shelfViewRows: "Список",
     shelfViewRoom: "Кімната",
     courseCategories: { movement: "Рух", nutrition: "Харчування", cleansing: "Очищення" },
+    shelfSearchLabel: "Пошук по ваших курсах",
+    shelfSearchPlaceholder: "Знайти курс",
+    shelfFilterLabel: "Фільтр за розділом",
+    shelfFilterAll: "Усі",
+    shelfNoMatch: "Нічого не знайшлось. Спробуйте іншу назву або розділ.",
     learningLoadingTitle: "Завантажуємо ваші курси…",
     learningLoadingLead: "Відновлюємо доступ, поступ і ваш наступний урок.",
     learningEmptyTitle: "У кабінеті ще немає курсів",
@@ -213,7 +236,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     dayNumber: (day) => `День ${day}`,
     courseFinished: "Пройдено",
     courseNotStarted: "Ще не розпочато",
-    courseDraft: "Чернетка — доступ на перегляд",
+    courseDraft: "Чернетка",
     courseLocked: "Доступу поки немає",
     courseExpired: "Термін доступу минув",
     nextStepLabel: "Наступний урок",

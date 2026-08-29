@@ -147,12 +147,39 @@
   font-family: var(--cw-font-editorial);
   font-size: 1.3rem;
   font-weight: 500;
+  /* TWO LINES, NEVER MORE. A shelf is scanned, not read — a title running to
+     three or four lines pushed the summary, the meta and the buttons down by a
+     different amount on every card, and the row stopped reading as one shelf.
+     The full title still exists: it is the page a spine opens onto. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .cardText {
   margin: 0;
   color: var(--cw-platform-muted);
   line-height: 1.6;
+}
+
+/* THE CLAMP BELONGS TO THE SUMMARY, NOT TO EVERY `.cardText` (2026-08-29). It
+   was written on `.cardText` itself, which is also what the shelf's error and
+   empty states, the iOS install steps, the author-profile status lines and
+   the notification warning in `CabinetClient.tsx` render with — none of them
+   have anywhere else to send a reader for the rest of the sentence, so
+   clamping them loses real, actionable text with no way back. A course
+   summary is different: the offer page and the course map both hold the
+   whole thing, so THIS text alone can afford to be a preview. Three lines,
+   for the same reason the title above gets two — a course's own summary has
+   no length contract, and one long enough ran the card to double the height
+   of its neighbours. */
+.courseCardSummary {
+  composes: cardText;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* ── Continue card (the cabinet's single most important control) ── */
@@ -831,6 +858,13 @@
 /* The canonical course-media object: the same framed 16:9 crop used by the
    builder and public catalogue. It remains inside the panel at every width so
    purchase does not turn one cover into a different composition. */
+/* THE FRAME THE DRAFT BADGE PINS TO. `.cover`/`.coverFallback` keep their own
+   margin so the frame costs nothing when there is no badge to place — it is a
+   positioning context, not a second box around the picture. */
+.coverFrame {
+  position: relative;
+}
+
 .cover,
 .coverFallback {
   width: 100%;
@@ -840,6 +874,37 @@
   border-radius: var(--cw-radius-md);
   object-fit: cover;
   background: var(--cw-mat-surface-sunk);
+}
+
+/* A DRAFT IS A FLAG ON THE PICTURE, NOT A CHIP IN THE ROW. Fixed to the same
+   corner on every card regardless of what else is true about it, so the eye
+   learns one place to look rather than hunting a chip row whose order shifts
+   with the course's own state.
+
+   THE CANONICAL glass-media RECIPE, NOT A HAND-ROLLED TINT (2026-08-29). A
+   first pass wrote its own 55%-tint/6px-blur pair here — exactly the ad hoc
+   glass effect AGENTS.md's preflight forbids, and it also skipped the
+   recipe's own contrast floor and no-blur-support fallback. `.draftBadge` is
+   now only the POSITION — a plain wrapper with no material of its own — and
+   `.draftBadgeChip` inside it carries `data-cw-material="glass-media"` (the
+   `glassMedia` export this same file already hands to every other panel that
+   sits on a photograph), so the badge degrades exactly the way the rest of
+   the product's glass does. Two elements, not one: `[data-cw-material]` sets
+   its own `position: relative`, and fighting that with `position: absolute`
+   on the identical element would have made the badge's actual position
+   depend on CSS cascade order rather than on markup. */
+.draftBadge {
+  position: absolute;
+  inset-block-start: var(--cw-space-2xs);
+  inset-inline-start: var(--cw-space-2xs);
+}
+
+.draftBadgeChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--cw-radius-pill);
+  font-size: 0.8rem;
 }
 
 .coverFallback {

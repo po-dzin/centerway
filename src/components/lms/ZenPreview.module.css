@@ -6,11 +6,23 @@
   background: var(--cw-platform-bg);
   color: var(--cw-platform-text);
   font-family: var(--cw-font-ui);
+  /* HOW MUCH ROOM THE BOUNDARY TAKES, DECLARED FOR WHAT IS UNDER IT.
+     The lesson's own chrome is `position: fixed` at the top of the viewport,
+     which is right on the learner route where nothing else is up there — and
+     wrong here, where this shell already owns the top row. The reader's back
+     pill landed on «До редагування» and its tools on the draft status: two sets
+     of controls in one strip.
+
+     Named on the shell rather than pushed in as a prop because the chrome is
+     several components down and inherits this by simply being inside the
+     preview. Outside the preview the variable is not defined at all, so the
+     fallback in `.readerChrome` resolves to zero and nothing moves. */
+  --cw-zen-boundary-block: calc(var(--ds-touch-target-min) + var(--cw-space-md));
 }
 
 .boundary {
   width: min(calc(100% - 2rem), 46rem);
-  min-height: calc(var(--ds-touch-target-min) + var(--cw-space-md));
+  min-height: var(--cw-zen-boundary-block);
   margin-inline: auto;
   padding-block: var(--cw-space-xs);
   display: flex;

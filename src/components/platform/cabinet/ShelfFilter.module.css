@@ -1,0 +1,145 @@
+/*
+ * THE SHELF'S FILTER — a line on a rule, and a row of subjects.
+ *
+ * Shared by the learner's library and the author's workshop, which is why it is
+ * its own module rather than a block inside `Cabinet.module.css`: two copies of
+ * these rules would have drifted the moment one side changed a gap.
+ *
+ * No palette of its own. Ink, rule and ring all come from the platform's
+ * delivery tokens — the underline is the same `--cw-rule-fade-x` every divider
+ * in this product is drawn with, and focus is the buttons' own ring rather than
+ * a bare outline.
+ */
+
+.filter {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-sm) var(--cw-space-md);
+  inline-size: 100%;
+}
+
+/* THE FIELD IS A LINE, NOT A PLATE. At rest the underline fades at its ends,
+   the way the list's own dividers do, so the field is one element of the bar
+   rather than the loudest thing in it. Under the pointer and in focus the line
+   gathers into its full length AND changes colour — which is exactly what
+   `border-image` cannot do, so each state takes the shape of line it has
+   something to say with. */
+.find {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  flex: 1 1 14rem;
+  min-inline-size: 0;
+  padding: 0.55rem 0.2rem;
+  border-block-end: 1px solid var(--cw-rule-ink, currentColor);
+  border-image: var(--cw-rule-fade-x);
+  color: var(--cw-platform-muted);
+  transition: border-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
+}
+
+.findInput {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: 0.95rem;
+}
+
+.findInput:focus {
+  outline: none;
+}
+
+.findInput::placeholder {
+  color: var(--cw-platform-muted);
+}
+
+.findInput::-webkit-search-cancel-button {
+  filter: grayscale(1) opacity(0.5);
+}
+
+.find:hover {
+  border-image: none;
+  border-block-end-color: var(--cw-platform-text);
+  color: var(--cw-platform-text);
+}
+
+.find:focus-within {
+  border-image: none;
+  border-block-end-color: var(--cw-platform-text);
+  color: var(--cw-platform-text);
+  box-shadow: var(--ds-button-ring);
+}
+
+.subjects {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+}
+
+/* THE SUBJECT IS A WORD THAT IS EITHER WRITTEN OR NOT. Chips with grounds and
+   radii would have put three little cards in a bar whose only other object is a
+   line; the chosen one is simply in full ink under the stroke this product
+   marks everything it points at with, and the rest are quiet. */
+.subject {
+  composes: chromeBare from "../PlatformButtons.module.css";
+  position: relative;
+  padding-inline: var(--cw-space-2xs);
+  font-size: 0.85rem;
+  color: var(--cw-platform-muted);
+}
+
+.subject::after {
+  content: "";
+  position: absolute;
+  inset-inline: var(--cw-space-2xs);
+  inset-block-end: 0.25rem;
+  block-size: var(--cw-nav-marker-size, 2px);
+  background: var(--cw-nav-marker, currentColor);
+  opacity: 0;
+  transform: scaleX(0.58);
+  transform-origin: center;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.subject:hover,
+.subject:focus-visible {
+  color: var(--cw-platform-text);
+}
+
+.subject:hover::after,
+.subject:focus-visible::after {
+  opacity: var(--cw-ink-hover-opacity, 0.42);
+  transform: scaleX(var(--cw-ink-hover-scale, 0.74));
+}
+
+.subject[aria-pressed="true"] {
+  color: var(--cw-platform-text);
+}
+
+.subject[aria-pressed="true"]::after {
+  opacity: 1;
+  transform: scaleX(1);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .subject::after {
+    transition: none;
+  }
+}
+
+/* An empty result speaks in the list's own voice, not in an error's. */
+.noMatch {
+  margin: 0;
+  padding-block: var(--cw-space-lg);
+  color: var(--cw-platform-muted);
+  line-height: 1.6;
+}
