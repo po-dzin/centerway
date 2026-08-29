@@ -1,0 +1,433 @@
+/*
+ * THE ROOM — the library's third shelf view.
+ *
+ * Ported from the standalone prototype at
+ * docs/design-system/prototypes/library-depth-2026-08-26.html (зб. 59,
+ * 40 commits of hand-tuned geometry on branch claude/library-room-prototype-f17a4a).
+ * That geometry is NOT re-derived here — `LearnRoomView.tsx` runs the same
+ * packing/drawing functions the prototype spent 32 commits getting right,
+ * now fed real courses instead of a mock catalogue. This file carries the
+ * static register: paper, ink, the drawn niche and the drawn spine.
+ *
+ * WHAT THIS STEP DOES NOT CARRY, ON PURPOSE:
+ *   - sound, mouse-parallax rays, the ink "attention" glow — deferred with
+ *     the user's sign-off, backlog for a later pass;
+ *   - the procedural wall-carving canvas (paintCarve/openings/paintScene) —
+ *     replaced by one fixed photographed wall (room-wall-matte.webp), since
+ *     the console that chose between six wall textures was a designer's
+ *     tuning panel, not a product surface;
+ *   - camera zoom into a shelf, and the open-book "spread" reading view —
+ *     next step. A spine click navigates straight to the course for now.
+ *
+ * PAPER IS ITS OWN REGISTER, DELIBERATELY NOT THE PLATFORM'S LIGHT THEME.
+ * The prototype's own note: "no green — green is the platform's tone, not
+ * paper's, and on a drafting it read as a lit screen rather than a sheet."
+ * The dark side is not that exception — its ink/paper values are the
+ * platform's own graphite tokens verbatim (see the local var() references
+ * below), because the prototype's dark palette was authored FROM them.
+ */
+
+.room {
+  --room-paper: #f4f1e8;
+  --room-paper-lit: #fbf9f3;
+  --room-paper-deep: #e8e4d8;
+  --room-wash: #ddd8c9;
+  --room-wash-2: #cdc7b5;
+  --room-fill: #faf7ef;
+  --room-ink-value: #2f2e2a;
+  --room-ink: var(--room-ink-value);
+  --room-ink-soft: color-mix(in srgb, var(--room-ink-value) 70%, var(--room-paper));
+  --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 46%, var(--room-paper));
+  --room-ink-line: color-mix(in srgb, var(--room-ink-value) 42%, transparent);
+  --room-ink-hair: color-mix(in srgb, var(--room-ink-value) 15%, transparent);
+  --room-brass: #b97f2d;
+  --room-brass-lit: #e5ae65;
+  --room-brass-line: color-mix(in srgb, #b97f2d 60%, transparent);
+  --room-cast: rgba(44, 41, 34, 0.3);
+  --room-ink-w: 1;
+  --room-wall-shade: 0.55;
+
+  position: relative;
+  isolation: isolate;
+  min-height: 70svh;
+  border-radius: var(--cw-radius-lg);
+  overflow: hidden;
+  background: var(--room-paper);
+  color: var(--room-ink);
+}
+
+/* THE DARK SIDE IS THE PLATFORM'S OWN GRAPHITE, not a second palette
+   invented for this screen — the prototype's dark ink/paper values already
+   equal --cw-platform-bg/-surface/-surface-muted/-text verbatim (see the
+   comment on the prototype's own --dk-* block). Referencing them here means
+   a future change to the platform's night ground reaches the room for free,
+   instead of drifting the way two hand-copied hex values eventually do. */
+:root[data-cw-theme="dark"] .room {
+  --room-paper: var(--cw-platform-bg);
+  --room-paper-lit: var(--cw-platform-surface);
+  --room-paper-deep: #131312;
+  --room-wash: #0f0f0e;
+  --room-wash-2: #0a0a09;
+  --room-fill: var(--cw-platform-surface-muted);
+  --room-ink-value: var(--cw-platform-text);
+  --room-ink-line: color-mix(in srgb, var(--room-ink-value) 62%, transparent);
+  --room-ink-hair: color-mix(in srgb, var(--room-ink-value) 22%, transparent);
+  --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 55%, var(--room-paper));
+  --room-brass: #e5ae65;
+  --room-brass-lit: #f4cd96;
+  --room-brass-line: color-mix(in srgb, #e5ae65 55%, transparent);
+  --room-cast: rgba(0, 0, 0, 0.62);
+  /* A line thinner than a pixel does not sample cleanly on a dark ground —
+     cream-on-dark flickers where dark-on-light merely fades. The pen goes
+     heavier in the dark rather than brighter. */
+  --room-ink-w: 1.7;
+  --room-wall-shade: 0.62;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-cw-theme="light"]) .room {
+    --room-paper: var(--cw-platform-bg);
+    --room-paper-lit: var(--cw-platform-surface);
+    --room-paper-deep: #131312;
+    --room-wash: #0f0f0e;
+    --room-wash-2: #0a0a09;
+    --room-fill: var(--cw-platform-surface-muted);
+    --room-ink-value: var(--cw-platform-text);
+    --room-ink-line: color-mix(in srgb, var(--room-ink-value) 62%, transparent);
+    --room-ink-hair: color-mix(in srgb, var(--room-ink-value) 22%, transparent);
+    --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 55%, var(--room-paper));
+    --room-brass: #e5ae65;
+    --room-brass-lit: #f4cd96;
+    --room-brass-line: color-mix(in srgb, #e5ae65 55%, transparent);
+    --room-cast: rgba(0, 0, 0, 0.62);
+    --room-ink-w: 1.7;
+  --room-wall-shade: 0.62;
+  }
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  min-height: 26rem;
+  overflow: hidden;
+  background: var(--room-paper);
+}
+
+@media (max-width: 900px) {
+  .stage {
+    aspect-ratio: 3 / 4;
+    min-height: 32rem;
+  }
+}
+
+/* THE WALL IS INK, NOT A PHOTOGRAPH. room-wall-matte.webp is an
+   ink-on-transparent texture (it has an alpha channel and no ground of its
+   own), which is why it cannot simply be pasted as a background: pasted, its
+   grain stays dark in both themes, and on paper that reads as dirt on the
+   sheet rather than as matte clay. The prototype had no such problem because
+   it REPAINTED its wall canvas on every theme change
+   ("перемальовується під чорнило теми"); a static asset cannot repaint
+   itself, so it is used as a MASK and the colour is supplied here.
+
+   AND THE COLOUR IS NOT INK. The mottling in clay is the material's own
+   shadow, not something written on it — the prototype's distinction
+   ("тінь матеріалу має власне джерело — найтемніший токен ґрунту"). Painted
+   in ink it inverts with the theme, and cream ink on graphite turns a matte
+   wall into a starfield; painted in the darkest ground token it stays a
+   shadow in both. So the tint is --room-wash-2 either way, and only how
+   loudly it speaks changes — a little louder at night, where the ground it
+   sits on is closer to it. */
+.wall {
+  position: absolute;
+  inset: 0;
+  background-color: var(--room-wash-2);
+  opacity: var(--room-wall-shade);
+  -webkit-mask-image: url("/cw/platform/learn/room-wall-matte.webp");
+  mask-image: url("/cw/platform/learn/room-wall-matte.webp");
+  -webkit-mask-size: cover;
+  mask-size: cover;
+  -webkit-mask-position: 50% 50%;
+  mask-position: 50% 50%;
+}
+
+.wall::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right, transparent calc(50% - 1px), var(--room-ink-hair) calc(50% - 1px) 50%, transparent 50%),
+    linear-gradient(to bottom, transparent calc(27% - 1px), var(--room-ink-hair) calc(27% - 1px) 27%, transparent 27%);
+}
+
+.stage::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: radial-gradient(
+    120% 120% at 50% 42%,
+    transparent 52%,
+    color-mix(in srgb, var(--room-ink-value) 11%, transparent) 100%
+  );
+}
+
+/* The one wandering warmth left from --rake: a slow, breathing light —
+   not a photographic beam, one wide blurred gradient. */
+.rake {
+  position: absolute;
+  inset: -8%;
+  pointer-events: none;
+  background: linear-gradient(
+    116deg,
+    transparent 0 12%,
+    color-mix(in srgb, var(--room-brass) 10%, transparent) 30%,
+    color-mix(in srgb, var(--room-brass) 4%, transparent) 46%,
+    transparent 62% 100%
+  );
+  filter: blur(24px);
+  animation: room-beam 26s ease-in-out infinite alternate;
+}
+
+@keyframes room-beam {
+  0% {
+    opacity: 0.62;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rake {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
+/* ---------- niche ---------- */
+
+.niche {
+  position: absolute;
+  cursor: pointer;
+}
+
+.nicheCast {
+  position: absolute;
+  left: -26px;
+  right: 14px;
+  top: 12px;
+  bottom: -30px;
+  background: radial-gradient(closest-side at 42% 44%, var(--room-cast) 0%, transparent 100%);
+  filter: blur(14px);
+  opacity: calc(0.3 + var(--depth, 1) * 0.5);
+  pointer-events: none;
+}
+
+.nicheBox {
+  --niche-depth: inset 0 22px 32px -14px var(--room-cast), inset 18px 0 30px -16px var(--room-cast),
+    inset -8px -12px 24px -16px color-mix(in srgb, var(--room-paper-lit) 55%, transparent);
+  position: absolute;
+  inset: 0;
+  border-radius: var(--cw-radius-sm);
+  background: var(--room-wash);
+  box-shadow: var(--niche-depth);
+  overflow: hidden;
+}
+
+.nicheBox::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: var(--room-paper);
+  opacity: calc((1 - var(--depth, 1)) * 0.34);
+}
+
+.nichePersp {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: calc(0.6 + var(--depth, 1) * 0.4);
+}
+
+.nichePersp svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+  color: var(--room-ink);
+}
+
+/* The shelf's own lower lip — books stand behind it, their foot a little
+   covered. The one overlap the room still needs on a horizontal shelf. */
+.nicheBox::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 6px;
+  background: linear-gradient(180deg, var(--room-fill), var(--room-wash));
+  border-top: 1px solid var(--room-ink-line);
+  box-shadow: 0 -4px 8px -3px var(--room-cast);
+  z-index: 2;
+  pointer-events: none;
+}
+
+.niche:hover .nicheBox,
+.niche[data-hot="true"] .nicheBox {
+  box-shadow: var(--niche-depth);
+}
+
+.nicheLabel {
+  position: absolute;
+  inset-block-start: -1.15rem;
+  inset-inline-start: 3px;
+  /* The ellipsis below only bites if there is an edge to hit. Absolutely
+     positioned with no width, the label sizes to its own text: it walked out
+     over the wall and across the neighbouring niche at narrow widths, where
+     the cut shrinks but the type does not. A heading belongs to its shelf. */
+  max-inline-size: calc(100% - 6px);
+  z-index: 2;
+  font-family: var(--cw-font-data, ui-monospace, monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--room-ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nicheMore {
+  position: absolute;
+  inset-block-end: -1.35rem;
+  inset-inline-end: 2px;
+  font-family: var(--cw-font-data, ui-monospace, monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--room-ink-faint);
+}
+
+/* ---------- books ---------- */
+
+.book {
+  --face-front: var(--room-fill);
+  --face-top: color-mix(in srgb, var(--room-paper-lit) 72%, var(--room-fill));
+  --face-side: var(--room-wash-2);
+  --face-line: var(--room-ink-line);
+
+  position: absolute;
+  bottom: 2px;
+  filter: drop-shadow(2px 3px 4px var(--room-cast));
+  border: 0;
+  padding: 0;
+  background: transparent;
+  transform-origin: 50% 100%;
+  transform: translateZ(0) rotate(var(--tilt, 0deg));
+  transition: transform 750ms cubic-bezier(0.16, 0.5, 0.2, 1), filter 600ms ease;
+  cursor: pointer;
+  overflow: visible;
+}
+
+.bookDraw {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.bookDraw :global(.front) {
+  fill: var(--face-front);
+}
+
+.bookDraw :global(.top) {
+  fill: var(--face-top);
+}
+
+.bookDraw :global(.side) {
+  fill: var(--face-side);
+}
+
+.bookDraw :global(.line) {
+  fill: none;
+  stroke: var(--face-line);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.bookDraw :global(.plate) {
+  fill: color-mix(in srgb, var(--room-ink-value) 7%, transparent);
+  stroke: var(--face-line);
+  stroke-width: 1;
+  transition: opacity 380ms ease;
+}
+
+.bookDraw :global(.foot) {
+  fill: none;
+}
+
+.room[data-lod="bare"] .bookDraw :global(.plate) {
+  display: none;
+}
+
+.bookSpine {
+  position: absolute;
+  inset-block: 10% 14%;
+  inset-inline: 0;
+  display: grid;
+  place-items: center;
+  writing-mode: vertical-rl;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--room-ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  opacity: 0;
+  transition: opacity 380ms ease;
+  pointer-events: none;
+}
+
+.room[data-lod="name"] .niche[data-hot="true"] .bookSpine {
+  opacity: 1;
+}
+
+.room[data-lod="name"] .niche[data-hot="true"] .bookDraw :global(.plate) {
+  opacity: 0;
+}
+
+/* The one accent this room keeps: a course you can actually open stands out
+   in brass, the way the prototype's --brass marked a "live" book. Locked or
+   unavailable courses stay in plain ink. */
+.book[data-live="true"] {
+  --face-front: color-mix(in srgb, var(--room-brass) 9%, var(--room-fill));
+  --face-line: var(--room-brass-line);
+  transform: translateZ(0) rotate(var(--tilt, 0deg)) translateY(-6px);
+}
+
+.book[data-live="true"] .bookDraw :global(.plate) {
+  fill: color-mix(in srgb, var(--room-brass) 26%, transparent);
+}
+
+.book[data-live="true"] .bookDraw :global(.foot) {
+  fill: var(--room-brass);
+}
+
+.book:hover {
+  --face-front: color-mix(in srgb, var(--room-brass) 8%, var(--room-fill));
+  --face-line: var(--room-brass-line);
+}
+
+.book:focus-visible {
+  outline: 1px solid var(--room-brass);
+  outline-offset: 3px;
+}
+
+.empty {
+  display: grid;
+  place-items: center;
+  min-height: 26rem;
+  color: var(--cw-platform-muted);
+}
