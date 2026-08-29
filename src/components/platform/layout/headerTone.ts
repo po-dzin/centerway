@@ -300,6 +300,26 @@ export function useHeaderTone(
       attributeFilter: ["data-cw-topbar-tone", "style", "class"],
     });
 
+    /* A THEME CHANGE IS A CHANGE TO WHAT THE BAR FLOATS OVER, and it is the one
+       such change the observer above cannot see: the theme is stamped on
+       <html>, and `document.body` with `subtree` covers body's descendants, not
+       body's parent. So switching light/dark repainted the whole page and moved
+       nothing this effect was watching — the bar kept the tone it had measured
+       under the previous palette, and a graphite topbar and account menu stayed
+       standing on a freshly lit page until the next scroll or resize happened
+       to re-sample. That is what "the dark theme crawled onto the light one"
+       was: not two themes, one stale measurement.
+
+       Watching the attribute rather than subscribing to the theme store is
+       deliberate — it catches every writer by construction, including the OS
+       flipping under a `system` choice, which repaints the document through
+       `applyPlatformTheme` without dispatching the store's event. */
+    const themeObserver = new MutationObserver(requestToneUpdate);
+    themeObserver.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ["data-cw-theme"],
+    });
+
     window.addEventListener("scroll", requestToneUpdate, { passive: true });
     window.addEventListener("resize", requestToneUpdate);
     window.addEventListener("load", requestToneUpdate);
@@ -310,6 +330,7 @@ export function useHeaderTone(
       if (settleTimer) window.clearTimeout(settleTimer);
       if (pendingTimer) window.clearTimeout(pendingTimer);
       mutationObserver.disconnect();
+      themeObserver.disconnect();
       window.removeEventListener("scroll", requestToneUpdate);
       window.removeEventListener("resize", requestToneUpdate);
       window.removeEventListener("load", requestToneUpdate);
