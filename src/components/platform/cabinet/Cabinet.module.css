@@ -1116,6 +1116,22 @@
   background: var(--cw-mat-surface-sunk);
 }
 
+.authorBackgroundPreview,
+.authorBackgroundEmpty {
+  width: min(100%, 16rem);
+  height: 6rem;
+  border-radius: var(--cw-radius-md);
+}
+
+.authorBackgroundPreview {
+  display: block;
+  object-fit: cover;
+}
+
+.authorBackgroundEmpty {
+  background: var(--cw-mat-surface-sunk);
+}
+
 /* THE FILE INPUT IS HIDDEN, NOT REMOVED. `Choose file / No file chosen` is the
    browser's own chrome in the browser's own type — the one control on this form
    that was not the product's. The real input keeps doing the work; the label is

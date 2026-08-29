@@ -94,6 +94,18 @@ describe("upsertAuthorProfile", () => {
     });
     expect(result).toEqual({ ok: false, error: "invalid_profile" });
   });
+
+  it("stores an author-owned public background separately from the portrait", async () => {
+    const { db, module } = await withDatabase({
+      lms_courses: [{ id: "c1", author_id: "user-1", slug: "way21" }],
+    });
+    const result = await module.upsertAuthorProfile("user-1", {
+      name: "Іван",
+      background: { src: "https://example.com/background.webp" },
+    });
+    expect(result).toMatchObject({ ok: true, author: { background: { src: "https://example.com/background.webp" } } });
+    expect(db.tables.lms_authors[0]).toMatchObject({ background: { src: "https://example.com/background.webp" } });
+  });
 });
 
 describe("getAuthorProfileForUser", () => {

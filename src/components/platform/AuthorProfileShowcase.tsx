@@ -10,6 +10,14 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
   return (
     <main>
       <header className={styles.hero}>
+        {author.background ? (
+          <div
+            className={styles.background}
+            aria-hidden="true"
+            style={{ backgroundImage: `url("${author.background.src}")` }}
+          />
+        ) : null}
+        {author.background ? <div className={styles.backgroundVeil} aria-hidden="true" /> : null}
         <div className={styles.identity}>
           {author.photo ? (
             // eslint-disable-next-line @next/next/no-img-element

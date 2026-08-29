@@ -33,6 +33,7 @@ type Draft = {
   quote: string;
   credentials: string[];
   photo: { src: string; alt: string } | null;
+  background: { src: string } | null;
   listed: boolean;
   slug: string;
 };
@@ -45,6 +46,7 @@ function draftFromAuthor(author: Author | null): Draft {
     quote: author?.quote ?? "",
     credentials: author?.credentials ?? [],
     photo: author?.photo ?? null,
+    background: author?.background ?? null,
     listed: author?.listed ?? false,
     slug: author?.slug ?? "",
   };
@@ -67,6 +69,9 @@ const STRINGS = {
     photoReplace: "Замінити фото",
     photoUploading: "Завантаження…",
     photoAlt: "Опис фото (для читачів екрана)",
+    background: "Фон публічної сторінки",
+    backgroundUpload: "Завантажити фон",
+    backgroundReplace: "Замінити фон",
     listed: "Публічна сторінка",
     listedOn: "Сторінку /expert видно всім",
     listedOff: "Сторінка прихована — видно лише в описі курсу",
@@ -93,6 +98,9 @@ const STRINGS = {
     photoReplace: "Replace photo",
     photoUploading: "Uploading…",
     photoAlt: "Photo description (for screen readers)",
+    background: "Public page background",
+    backgroundUpload: "Upload background",
+    backgroundReplace: "Replace background",
     listed: "Public page",
     listedOn: "The /expert page is visible to everyone",
     listedOff: "Hidden — shown only as a course byline",
@@ -156,6 +164,30 @@ export function AuthorProfileFold({
     }
   }
 
+  async function handleBackground(file: File) {
+    setUploading(true);
+    setUploadError(null);
+    try {
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch("/api/lms/authors/me/background", {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}` },
+        body: form,
+      });
+      if (!res.ok) {
+        setUploadError(t.error);
+        return;
+      }
+      const body = (await res.json()) as { src: string };
+      setDraft((prev) => ({ ...prev, background: { src: body.src } }));
+    } catch {
+      setUploadError(t.error);
+    } finally {
+      setUploading(false);
+    }
+  }
+
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
     setSavedOnce(false);
@@ -170,6 +202,7 @@ export function AuthorProfileFold({
       quote: draft.quote.trim() || undefined,
       credentials: credentials.length > 0 ? credentials : undefined,
       photo,
+      background: draft.background?.src ? { src: draft.background.src } : undefined,
       listed: draft.listed,
       slug: draft.slug.trim() || undefined,
     });
@@ -258,6 +291,33 @@ export function AuthorProfileFold({
             >
               {t.credentialAdd}
             </button>
+          </div>
+
+          <div className={styles.authorField}>
+            <span>{t.background}</span>
+            <div className={styles.authorPhotoRow}>
+              {draft.background?.src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className={styles.authorBackgroundPreview} src={draft.background.src} alt="" />
+              ) : (
+                <span className={styles.authorBackgroundEmpty} aria-hidden="true" />
+              )}
+              <label className={styles.authorFilePick}>
+                <input
+                  className={styles.visuallyHidden}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                  disabled={uploading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void handleBackground(file);
+                  }}
+                />
+                <span className={styles.authorFilePickFace} data-busy={uploading || undefined}>
+                  {uploading ? t.photoUploading : draft.background?.src ? t.backgroundReplace : t.backgroundUpload}
+                </span>
+              </label>
+            </div>
           </div>
 
           {/* THE PICTURE, THEN THE WAY TO CHANGE IT, THEN WHAT IT SHOWS.

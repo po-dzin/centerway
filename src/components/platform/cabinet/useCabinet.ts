@@ -311,6 +311,7 @@ export type AuthorProfileInput = {
   quote?: string;
   credentials?: string[];
   photo?: { src: string; alt: string };
+  background?: { src: string };
   listed?: boolean;
   slug?: string;
 };

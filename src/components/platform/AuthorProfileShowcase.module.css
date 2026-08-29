@@ -1,8 +1,40 @@
 /* Public author showcase; structural ownership lives in the shared component. */
 .hero {
+  position: relative;
+  isolation: isolate;
   width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
   margin-inline: auto;
   padding-block: calc(var(--platform-topbar-clearance, 5.8rem) + var(--cw-space-xl)) var(--cw-space-2xl);
+}
+
+.background,
+.backgroundVeil {
+  position: absolute;
+  inset: 0;
+  border-radius: var(--cw-radius-xl);
+  pointer-events: none;
+}
+
+.background {
+  z-index: 0;
+  background-position: center;
+  background-size: cover;
+}
+
+.backgroundVeil {
+  z-index: 1;
+  background: linear-gradient(
+    105deg,
+    color-mix(in srgb, var(--cw-mat-surface) 94%, transparent),
+    color-mix(in srgb, var(--cw-mat-surface) 76%, transparent)
+  );
+}
+
+.identity,
+.body,
+.stats {
+  position: relative;
+  z-index: 2;
 }
 
 .identity {

@@ -38,6 +38,12 @@ function readPhoto(value: unknown): { src: string; alt: string } | undefined {
   return { src, alt };
 }
 
+function readBackground(value: unknown): { src: string } | undefined {
+  if (!value || typeof value !== "object") return undefined;
+  const src = (value as Record<string, unknown>).src;
+  return typeof src === "string" && src ? { src } : undefined;
+}
+
 export async function POST(req: NextRequest) {
   const user = await requireUserFromBearer(req.headers.get("authorization"));
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
@@ -59,6 +65,7 @@ export async function POST(req: NextRequest) {
     ...(typeof body.quote === "string" && body.quote.trim() ? { quote: body.quote.trim() } : {}),
     ...(readStringArray(body.credentials) ? { credentials: readStringArray(body.credentials) } : {}),
     ...(readPhoto(body.photo) ? { photo: readPhoto(body.photo) } : {}),
+    ...(readBackground(body.background) ? { background: readBackground(body.background) } : {}),
     ...(typeof body.listed === "boolean" ? { listed: body.listed } : {}),
     ...(typeof body.slug === "string" && body.slug.trim() ? { slug: body.slug.trim() } : {}),
   };
