@@ -9,7 +9,20 @@
  *     editable and geometric.
  *
  * `d` entries are plain path data. `dots` entries are filled accent circles
- * (the one exception to "stroke only" — a dot is a node, not a shape).
+ * (a dot is a node, not a shape).
+ *
+ * THE SECOND EXCEPTION, AND IT IS CLOSED (blessed 2026-08-29). `filled: true`
+ * bakes a solid glyph, and exactly one icon uses it: `bookmark-marked`. A
+ * bookmark is not a state of a control — it is a thing you PUT ON the page,
+ * and the difference between "there is one here" and "there is not" has to
+ * survive a screenshot, a colour-blind reader and a 16px render, which no
+ * change of stroke weight or colour does. The pair is baked rather than
+ * recoloured because a `<use>` shadow tree cannot be reached past the symbol's
+ * own `fill`.
+ *
+ * This is not a precedent for filling anything else. A control that is ON stays
+ * a stroke glyph and says so with the ink around it; only a MARK LEFT BY THE
+ * READER earns a solid. If a third case appears, argue it here before baking it.
  */
 
 /** Icons live on a 24x24 grid. */
@@ -153,6 +166,20 @@ export const ICONS = {
   star: {
     group: "Proof",
     d: ["M12 3.8l2.6 5.4 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.6 10l5.8-.8z"],
+  },
+  /* A BOOKMARK, NOT A STAR. The reader's control is «закладка» — a note that
+     this page is one to come back to — and a star is the internet's word for
+     «favourite», which is a rating. The two states are two glyphs rather than
+     one glyph and a CSS fill: a `<use>` shadow tree cannot be reached past the
+     symbol's own `fill` attribute, so the set bakes the pair. */
+  bookmark: {
+    group: "Proof",
+    d: ["M6.9 4.3h10.2v15.9l-5.1-3.7-5.1 3.7z"],
+  },
+  "bookmark-marked": {
+    group: "Proof",
+    filled: true,
+    d: ["M6.9 4.3h10.2v15.9l-5.1-3.7-5.1 3.7z"],
   },
   price: {
     group: "Proof",
