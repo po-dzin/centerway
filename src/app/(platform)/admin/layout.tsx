@@ -8,6 +8,7 @@ import type { CwIconName } from "@/components/iconNames";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { I18nProvider, useI18n } from "@/components/I18nProvider";
 import { PlatformAccountMenu } from "@/components/platform/layout/PlatformAccountMenu";
+import { InteractionInkIcon, InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { ToastProvider } from "@/components/ToastProvider";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { ADMIN_ROLE_CACHE_KEY, ADMIN_ROLE_CACHE_TTL_MS, isAdminRole } from "@/lib/platform/adminRole";
@@ -258,14 +259,17 @@ function AdminShell({ children }: { children: ReactNode }) {
                         type="button"
                         onClick={() => setExpanded(v => !v)}
                         title={expanded ? t("common_collapse") : t("common_expand")}
+                        aria-expanded={expanded}
                         className={`${expanded ? "" : "mx-auto"} cw-icon-btn shrink-0`}
                     >
                         {/* Points AT the edge it will move: left to close, right to open. */}
-                        <Icon
-                            name="chevron-right"
-                            size={16}
-                            className={`transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
-                        />
+                        <InteractionInkIcon>
+                            <Icon
+                                name="chevron-right"
+                                size={16}
+                                className={`transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
+                            />
+                        </InteractionInkIcon>
                     </button>
                 </div>
 
@@ -280,6 +284,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                                 href={href}
                                 prefetch={false}
                                 title={t(key)}
+                                aria-current={active && isSelected ? "page" : undefined}
                                 className={`cw-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm group relative
                                     ${active
                                         ? isSelected
@@ -290,9 +295,9 @@ function AdminShell({ children }: { children: ReactNode }) {
                                     ${!expanded ? "justify-center" : ""}
                                 `}
                             >
-                                <span className="shrink-0"><Icon name={icon} size={20} /></span>
+                                <InteractionInkIcon><Icon name={icon} size={20} /></InteractionInkIcon>
                                 {expanded && (
-                                    <span className="truncate whitespace-nowrap text-sm">{t(key)}</span>
+                                    <InteractionInkLabel>{t(key)}</InteractionInkLabel>
                                 )}
                                 {/* Tooltip when collapsed */}
                                 {!expanded && (
@@ -324,8 +329,9 @@ function AdminShell({ children }: { children: ReactNode }) {
                         className="md:hidden cw-icon-btn"
                         title={t("common_expand")}
                         aria-label={t("common_expand")}
+                        aria-expanded={mobileMenuOpen}
                     >
-                        <Icon name="menu" size={18} />
+                        <InteractionInkIcon><Icon name="menu" size={18} /></InteractionInkIcon>
                     </button>
                     <div className="flex items-center gap-2 md:gap-4">
                         <LanguageSwitcher />
@@ -382,7 +388,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                                     title={t("common_close")}
                                     aria-label={t("common_close")}
                                 >
-                                    <Icon name="close" size={16} />
+                                    <InteractionInkIcon><Icon name="close" size={16} /></InteractionInkIcon>
                                 </button>
                             </div>
                             <nav className="mt-3 flex flex-col gap-1 overflow-y-auto">
@@ -394,6 +400,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                                             href={href}
                                             prefetch={false}
                                             title={t(key)}
+                                            aria-current={active && isSelected ? "page" : undefined}
                                             className={`cw-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
                                                 ${active
                                                     ? isSelected
@@ -402,8 +409,8 @@ function AdminShell({ children }: { children: ReactNode }) {
                                                     : "cw-muted opacity-40 cursor-not-allowed pointer-events-none"
                                                 }`}
                                         >
-                                            <span className="shrink-0"><Icon name={icon} size={20} /></span>
-                                            <span className="truncate">{t(key)}</span>
+                                            <InteractionInkIcon><Icon name={icon} size={20} /></InteractionInkIcon>
+                                            <InteractionInkLabel>{t(key)}</InteractionInkLabel>
                                         </Link>
                                     );
                                 })}

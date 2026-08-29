@@ -15,6 +15,7 @@ import { useToast } from "@/components/ToastProvider";
 import { getErrorMessage } from "@/lib/errors";
 import { getAdminLocale } from "@/lib/adminLocale";
 import { ORDER_STATUS_BADGE_CLASS } from "@/lib/adminStatusStyles";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 
 interface Order {
     id: string;
@@ -175,16 +176,18 @@ function ResendAccessButton({ orderRef, labels }: {
             title={copied ? labels.copied : labels.copyLink}
             className="shrink-0 cw-icon-btn opacity-0 group-hover:opacity-100"
         >
-            {copied ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="cw-status-success-text">
-                    <polyline points="20 6 9 17 4 12" />
-                </svg>
-            ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
-                    <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
-                </svg>
-            )}
+            <InteractionInkIcon>
+                {copied ? (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="cw-status-success-text">
+                        <polyline points="20 6 9 17 4 12" />
+                    </svg>
+                ) : (
+                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                        <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+                    </svg>
+                )}
+            </InteractionInkIcon>
         </button>
     );
 }
@@ -625,10 +628,10 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
                                 title={labels.copyAll}
                                 aria-label={labels.copyAll}
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <InteractionInkIcon><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
                                     <rect x="9" y="3" width="12" height="12" rx="2" ry="2" />
-                                </svg>
+                                </svg></InteractionInkIcon>
                             </button>
                             <button
                                 type="button"
@@ -637,11 +640,11 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
                                 title={labels.downloadCsv}
                                 aria-label={labels.downloadCsv}
                             >
-                                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                <InteractionInkIcon><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                     <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                                     <polyline points="7 10 12 15 17 10" />
                                     <line x1="12" y1="15" x2="12" y2="3" />
-                                </svg>
+                                </svg></InteractionInkIcon>
                             </button>
                         </div>
                     ) : null}
@@ -660,7 +663,7 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
                                             title={copiedUrl === offer.landingUrl ? labels.copied : labels.copy}
                                             aria-label={copiedUrl === offer.landingUrl ? labels.copied : labels.copy}
                                         >
-                                            {copiedUrl === offer.landingUrl ? (
+                                            <InteractionInkIcon>{copiedUrl === offer.landingUrl ? (
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="cw-status-success-text">
                                                     <polyline points="20 6 9 17 4 12" />
                                                 </svg>
@@ -669,7 +672,7 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
                                                     <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
                                                     <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
                                                 </svg>
-                                            )}
+                                            )}</InteractionInkIcon>
                                         </button>
                                         <a
                                             href={offer.landingUrl}
@@ -679,10 +682,10 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
                                             title={labels.open}
                                             aria-label={labels.open}
                                         >
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                            <InteractionInkIcon><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                                 <path d="M7 17 17 7" />
                                                 <path d="M7 7h10v10" />
-                                            </svg>
+                                            </svg></InteractionInkIcon>
                                         </a>
                                     </div>
                                 </div>
@@ -1022,9 +1025,9 @@ export default function OrdersPage() {
                                         title={t("orders_manual_reconcile")}
                                         className="shrink-0 cw-icon-btn opacity-0 group-hover:opacity-100"
                                     >
-                                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                                        <InteractionInkIcon><svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                                             <polyline points="20 6 9 17 4 12" />
-                                        </svg>
+                                        </svg></InteractionInkIcon>
                                     </button>
                                 ) : (
                                         <ResendAccessButton orderRef={order.order_ref} labels={copyLabels} />

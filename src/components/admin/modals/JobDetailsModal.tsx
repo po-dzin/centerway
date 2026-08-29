@@ -4,6 +4,7 @@ import { useState } from "react";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { JOB_STATUS_BADGE_CLASS } from "@/lib/adminStatusStyles";
 import { useToast } from "@/components/ToastProvider";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 
 interface Job {
     id: string;
@@ -97,7 +98,9 @@ export function JobDetailsModal({
                             </button>
                         )}
                         <button type="button" onClick={onClose} className="cw-icon-btn" aria-label="Close modal">
-                            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                            <InteractionInkIcon>
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
+                            </InteractionInkIcon>
                         </button>
                     </div>
                 </div>

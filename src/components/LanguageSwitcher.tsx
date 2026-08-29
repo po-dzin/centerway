@@ -1,6 +1,7 @@
 "use client";
 
 import { useI18n } from "@/components/I18nProvider";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 
 export function LanguageSwitcher() {
     const { lang, setLang, t } = useI18n();
@@ -22,7 +23,7 @@ export function LanguageSwitcher() {
             className="cw-icon-btn w-9 h-9 flex items-center justify-center text-[11px] font-bold uppercase leading-none"
             title={t("common_switch_language")}
         >
-            {label}
+            <InteractionInkIcon>{label}</InteractionInkIcon>
         </button>
     );
 }

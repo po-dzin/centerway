@@ -691,6 +691,16 @@ The rule, for every level-1 and level-2 surface:
   its word capitalises it and carries the glyph beside it; a control whose glyph
   says everything drops the word into `aria-label`.
 
+The layer boundary is explicit. Navigation labels, tabs, pagers and icon-only
+chrome use `InteractionInkLabel` / `InteractionInkIcon`; their carrying header,
+rail, sheet or menu may still be glass or ceramic, but that material does not
+repaint itself to express hover/current. Dense data rows and whole clickable
+cards are the exception because the object itself is what moves under the
+pointer: their material tint may change on hover. Form choices are a second,
+separate exception: selected state is semantic input state and may use the
+choice fill, while keyboard focus remains the accessibility ring. This is how
+ink and glass compose by depth instead of competing on the same layer.
+
 One object, two strengths, three places: under a row's name in the builder,
 under a section's name in the library list, and around an opening on the
 library wall.

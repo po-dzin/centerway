@@ -1,6 +1,8 @@
 "use client";
 
 import { useI18n } from "@/components/I18nProvider";
+import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 
 interface AdminPaginationProps {
     page: number;
@@ -41,9 +43,7 @@ export function AdminPagination({ page, totalPages, onPrev, onNext }: AdminPagin
                 className="cw-page-btn"
                 title={t("common_prev")}
             >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="15 18 9 12 15 6" />
-                </svg>
+                <InteractionInkIcon><Icon name="arrow-left" size={20} /></InteractionInkIcon>
             </button>
 
             <div className="cw-page-subtitle">
@@ -57,9 +57,7 @@ export function AdminPagination({ page, totalPages, onPrev, onNext }: AdminPagin
                 className="cw-page-btn"
                 title={t("common_next")}
             >
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                    <polyline points="9 18 15 12 9 6" />
-                </svg>
+                <InteractionInkIcon><Icon name="chevron-right" size={20} /></InteractionInkIcon>
             </button>
         </div>
     );

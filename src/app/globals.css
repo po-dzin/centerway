@@ -1530,6 +1530,7 @@ body {
   }
 
   .cw-icon-btn {
+    position: relative;
     padding: 0.5rem;
     border-radius: var(--cw-radius-sm);
     border: 1px solid transparent;
@@ -1610,53 +1611,122 @@ body {
     align-items: center;
     padding: 0.5rem 1rem;
     margin-bottom: -1px;
-    border: 1px solid transparent;
-    border-bottom: 1px solid transparent;
-    border-top-left-radius: var(--cw-radius-sm);
-    border-top-right-radius: var(--cw-radius-sm);
+    border: 0;
     font-size: 0.875rem;
     line-height: 1.25rem;
     font-weight: 500;
     white-space: nowrap;
     color: var(--cw-muted);
-    transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+    background: transparent;
+    transition: color 0.16s ease;
   }
 
   .cw-tab:hover {
     color: var(--cw-text);
-    background-color: var(--cw-interactive-hover-bg);
-    border-color: var(--cw-interactive-hover-border);
-    border-bottom-color: var(--cw-border);
   }
 
   .cw-tab-active {
     color: var(--cw-text);
-    background-color: var(--cw-interactive-active-bg);
-    border-color: var(--cw-interactive-active-border);
-    border-bottom-color: transparent;
-    box-shadow: var(--cw-interactive-active-shadow);
-    font-weight: 500;
+    font-weight: 600;
   }
 
   .cw-nav-link {
     color: var(--cw-muted);
-    border: 1px solid transparent;
-    transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, transform 0.16s ease;
+    border: 0;
+    background: transparent;
+    transition: color 0.16s ease;
   }
 
   .cw-nav-link:hover {
     color: var(--cw-text);
-    background-color: var(--cw-interactive-hover-bg);
-    border-color: var(--cw-interactive-hover-border);
-    transform: translateY(-1px);
   }
 
   .cw-nav-link-active {
     color: var(--cw-text);
-    background-color: var(--cw-interactive-active-bg);
-    border-color: var(--cw-interactive-active-border);
-    box-shadow: var(--cw-interactive-active-shadow);
     font-weight: 600;
+  }
+
+  /* Interaction state is ink; the carrying surface remains material. The
+     shared marks are intentionally inert until a parent navigation/control
+     enters hover, focus or current state. */
+  .cw-ink-label {
+    position: relative;
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+  }
+
+  .cw-ink-label-text {
+    position: relative;
+    z-index: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .cw-ink-label-mark {
+    position: absolute;
+    z-index: 0;
+    left: -0.2rem;
+    right: -0.2rem;
+    bottom: -0.38rem;
+    width: calc(100% + 0.4rem);
+    height: var(--cw-ink-stroke-height);
+    color: var(--cw-platform-accent);
+    opacity: 0;
+    transform: scaleX(0.72) rotate(-1deg);
+    transform-origin: left center;
+    pointer-events: none;
+    transition: opacity 0.16s ease, transform 0.18s ease;
+  }
+
+  .cw-ink-icon {
+    position: relative;
+    display: inline-grid;
+    flex: 0 0 auto;
+    place-items: center;
+  }
+
+  .cw-ink-icon-glyph {
+    position: relative;
+    z-index: 1;
+    display: inline-grid;
+    place-items: center;
+  }
+
+  .cw-ink-icon-mark {
+    position: absolute;
+    z-index: 0;
+    width: var(--cw-ink-ring-size);
+    height: var(--cw-ink-ring-size);
+    color: var(--cw-platform-accent);
+    opacity: 0;
+    transform: scale(0.82) rotate(-7deg);
+    pointer-events: none;
+    transition: opacity 0.16s ease, transform 0.18s ease;
+  }
+
+  :is(.cw-tab, .cw-nav-link):hover .cw-ink-label-mark,
+  :is(.cw-tab, .cw-nav-link):focus-visible .cw-ink-label-mark {
+    opacity: var(--cw-ink-hover-opacity);
+    transform: scaleX(0.92) rotate(-1deg);
+  }
+
+  :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]) .cw-ink-label-mark {
+    opacity: 1;
+    transform: scaleX(1) rotate(-1deg);
+  }
+
+  :is(.cw-icon-btn, .cw-page-btn, .cw-nav-link):hover .cw-ink-icon-mark,
+  :is(.cw-icon-btn, .cw-page-btn, .cw-nav-link):focus-visible .cw-ink-icon-mark {
+    opacity: var(--cw-ink-hover-opacity);
+    transform: scale(0.94) rotate(-7deg);
+  }
+
+  :is(.cw-nav-link-active, [aria-current="page"], [aria-expanded="true"]) .cw-ink-icon-mark {
+    opacity: 1;
+    transform: scale(1) rotate(-7deg);
   }
 
   .cw-nav-link:focus-visible,
@@ -1675,15 +1745,15 @@ body {
   }
 
   .cw-page-btn {
+    position: relative;
     padding: 0.5rem;
     border-radius: var(--cw-radius-sm);
     color: var(--cw-muted);
-    transition: color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
+    transition: color 0.2s ease, opacity 0.2s ease;
   }
 
   .cw-page-btn:hover {
     color: var(--cw-text);
-    background-color: var(--cw-mat-hover-bg);
   }
 
   .cw-page-btn:disabled {
