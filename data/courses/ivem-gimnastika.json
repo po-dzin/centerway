@@ -2,6 +2,7 @@
    "$content_note" : "Авторський курс перенесено з 9 HTML-експортів: загальний опис, 7 щоденних уроків і нагадування. Назву «Irem» змінено на «ІВЕМ гімнастика» за рішенням власника. Повторювану інструкцію до вправ винесено один раз у довідковий модуль; службовий UI SmartSender не переносився. Додано лише платформні objective/boundary blocks.",
    "$schema_note" : "Validated by src/lms-core/course.ts (validateCourse). Source: SmartSender LMS SingleFile exports, 2026-08-23.",
    "brand" : "centerway",
+   "categories" : [ "movement" ],
    "cover" : {
       "alt" : "Обкладинка курсу «ІВЕМ гімнастика»: килимок, скакалка й утяжелитель для тренування",
       "cropX" : 68,
@@ -15,6 +16,7 @@
       "ivem-gimnastika"
    ],
    "id" : "cc7b01ee-0000-4000-8000-000000000001",
+   "kind" : "course",
    "locale" : "uk",
    "modules" : [
       {

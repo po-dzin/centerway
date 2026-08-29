@@ -48,6 +48,8 @@
     "3 нагадувалки-чек-листи"
   ],
   "durationDays": 7,
+  "kind": "mini",
+  "categories": ["movement"],
   "accessNote": "доступ до матеріалів залишається після курсу",
   "modules": [
     {
