@@ -15,13 +15,22 @@
  * points here. The profile is what it says on the tin — the account.
  */
 
-import { useMemo, useSyncExternalStore } from "react";
+import { useCallback, useMemo, useState, useSyncExternalStore } from "react";
 
+import type { CourseCategory } from "@/lms-core";
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { cabinetGate } from "./CabinetGate";
 import { CourseCard, CourseRow, ShelfEmptyCard, ShelfErrorCard } from "./CourseCard";
 import { LearnRoomView } from "./LearnRoomView";
+import {
+  EMPTY_SHELF_QUERY,
+  ShelfFilter,
+  isShelfQueryEmpty,
+  matchesShelfQuery,
+  type ShelfQuery,
+} from "./ShelfFilter";
+import filterStyles from "./ShelfFilter.module.css";
 import { dateLocaleFor } from "./format";
 import { getCabinetCopy } from "./copy";
 import { useCabinetSession, useLearnerShelf, useProfileLang } from "./useCabinet";
@@ -84,6 +93,24 @@ export function LearnShelfClient() {
     window.dispatchEvent(new Event(SHELF_VIEW_EVENT));
   };
 
+  /* THE QUERY IS NOT REMEMBERED, and the view is — the difference is what each
+     one is about. Which shape the shelf takes is a standing preference about
+     this screen in this hand; a search is a question asked once, and a shelf
+     that opens tomorrow already narrowed to «детокс» is a shelf that has lost
+     courses. */
+  const [query, setQuery] = useState<ShelfQuery>(EMPTY_SHELF_QUERY);
+  const filtering = !isShelfQueryEmpty(query);
+  const match = useCallback(
+    (course: { title: string; categories: readonly CourseCategory[] }) =>
+      matchesShelfQuery(course, query, cab),
+    [query, cab]
+  );
+  /* The flat views take the narrowed list; only the room takes the predicate. */
+  const visible = useMemo(
+    () => (filtering && shelf ? shelf.filter(match) : shelf ?? []),
+    [filtering, shelf, match]
+  );
+
   const href = useSurfaceHref();
   const programsHref = href("/programs");
   const homeHref = href("/");
@@ -133,6 +160,18 @@ export function LearnShelfClient() {
             <>
               {/* Shown only when there is more than one course: a switch between
                   two views of a single entry is a control with nothing to do. */}
+              {/* THE FILTER COMES BEFORE THE SWITCH, because it changes WHAT is
+                  on the shelf and the switch only changes how it is drawn. It
+                  appears on the same condition the switch does: one course
+                  needs neither narrowing nor a choice of shapes. */}
+              {shelf.length > 1 ? (
+                <ShelfFilter
+                  query={query}
+                  onChange={setQuery}
+                  copy={cab}
+                  categories={Array.from(new Set(shelf.flatMap((course) => course.categories)))}
+                />
+              ) : null}
               {shelf.length > 1 ? (
                 <div className={styles.viewSwitch} role="group" aria-label={cab.shelfViewLabel}>
                   <button
@@ -165,10 +204,15 @@ export function LearnShelfClient() {
                 </div>
               ) : null}
               {view === "room" ? (
-                <LearnRoomView courses={shelf} copy={cab} />
+                /* The room takes the PREDICATE, not the narrowed list: its wall
+                   is laid out from every course and only dims what the query
+                   left out. See `LearnRoomView`'s own note on why. */
+                <LearnRoomView courses={shelf} copy={cab} match={filtering ? match : undefined} />
+              ) : visible.length === 0 ? (
+                <p className={filterStyles.noMatch}>{cab.shelfNoMatch}</p>
               ) : (
                 <div className={styles.cardGrid} data-view={view}>
-                  {shelf.map((course) =>
+                  {visible.map((course) =>
                     view === "rows" ? (
                       <CourseRow key={course.slug} course={course} copy={cab} />
                     ) : (

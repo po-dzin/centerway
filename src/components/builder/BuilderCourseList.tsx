@@ -26,6 +26,23 @@ import { MEDIA_SIZES, mediaSources } from "@/lib/lms/media";
 import styles from "./Builder.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
+import { getCabinetCopy } from "@/components/platform/cabinet/copy";
+import {
+  EMPTY_SHELF_QUERY,
+  ShelfFilter,
+  isShelfQueryEmpty,
+  matchesShelfQuery,
+  type ShelfQuery,
+} from "@/components/platform/cabinet/ShelfFilter";
+import filterStyles from "@/components/platform/cabinet/ShelfFilter.module.css";
+
+/* ONE SET OF WORDS FOR THE THREE SUBJECTS. The workshop speaks Ukrainian only,
+   but the subjects a course can be about are not the workshop's to name — they
+   are the product's, and they already have their names in the cabinet's copy
+   contract. A second list written here would have been the same three
+   categories called something slightly different on the author's side of the
+   same shelf. */
+const SHELF_COPY = getCabinetCopy("uk");
 
 type State =
   | { status: "loading" }
@@ -213,6 +230,9 @@ export function BuilderCourseList() {
    * where the eye already was.
    */
   const [pending, setPending] = useState<PendingAction | null>(null);
+  /* Asked once, not remembered: see the same note on the learner's shelf. */
+  const [query, setQuery] = useState<ShelfQuery>(EMPTY_SHELF_QUERY);
+  const filtering = !isShelfQueryEmpty(query);
   /* The course that is on its way out. It stays in `state.courses` — and so on
      screen — for as long as this is set, which is what gives the leaving
      something to play on. */
@@ -477,6 +497,15 @@ export function BuilderCourseList() {
     );
   }
 
+  /* The entries the query leaves standing, each carrying the index it has in the
+     WHOLE shelf — see the note beside the filter for why that index has to be
+     the real one. Not a hook: it is derived from state that is only narrowed to
+     "ready" after the guards above, and it costs one pass over a handful of
+     rows. */
+  const shown = state.courses
+    .map((course, index) => ({ course, index }))
+    .filter(({ course }) => !filtering || matchesShelfQuery(course, query, SHELF_COPY));
+
   return (
     <BuilderShell>
       {/* The platform's page head, the same component the learner's shelf runs.
@@ -579,22 +608,43 @@ export function BuilderCourseList() {
         />
       ) : (
         <>
+          {/* THE SHELF IS FILTERED, NOT REORDERED. Every entry below keeps the
+              `index` it has in the WHOLE list, and the entries the query left
+              out are simply not rendered — because `index` is what
+              «Підняти вище» moves, and an index counted within a filtered view
+              would move a course past neighbours the author cannot see. While a
+              query is running, reordering is off for the same reason: order is
+              a property of the whole shelf, and it cannot honestly be edited
+              through a keyhole. */}
+          {state.courses.length > 1 ? (
+            <ShelfFilter
+              query={query}
+              onChange={setQuery}
+              copy={SHELF_COPY}
+              categories={Array.from(new Set(state.courses.flatMap((course) => course.categories)))}
+            />
+          ) : null}
           {wide ? (
             <div className={styles.listBar}>
               <span className={styles.listCount}>
-                {state.courses.length} {plural(state.courses.length, "курс", "курси", "курсів")}
+                {shown.length === state.courses.length
+                  ? `${state.courses.length} ${plural(state.courses.length, "курс", "курси", "курсів")}`
+                  : `${shown.length} з ${state.courses.length}`}
               </span>
               <ViewSwitch view={stored} onChange={chooseView} />
             </div>
           ) : null}
-          {view === "grid" ? (
+          {shown.length === 0 ? (
+            <p className={filterStyles.noMatch}>{SHELF_COPY.shelfNoMatch}</p>
+          ) : view === "grid" ? (
         <div className={styles.courseGrid} ref={shelf}>
-          {state.courses.map((course, index) => (
+          {shown.map(({ course, index }) => (
             <CourseCard
               key={course.slug}
               course={course}
               index={index}
               total={state.courses.length}
+              reorderable={!filtering}
               busy={busy}
               pending={pending && pending.slug === course.slug ? pending : null}
               removing={removing === course.slug}
@@ -608,12 +658,13 @@ export function BuilderCourseList() {
         </div>
       ) : (
         <ul className={styles.courseRows} ref={shelf}>
-          {state.courses.map((course, index) => (
+          {shown.map(({ course, index }) => (
             <CourseRow
               key={course.slug}
               course={course}
               index={index}
               total={state.courses.length}
+              reorderable={!filtering}
               busy={busy}
               pending={pending && pending.slug === course.slug ? pending : null}
               removing={removing === course.slug}
@@ -793,8 +844,14 @@ function ViewSwitch({ view, onChange }: { view: CourseView; onChange: (next: Cou
 
 type EntryProps = {
   course: BuilderCourseSummary;
+  /** Position in the WHOLE shelf, not in the filtered view — `onMove` reorders
+      the whole shelf, so an index counted within a filter would move a course
+      past neighbours the author cannot see. */
   index: number;
   total: number;
+  /** False while a query is narrowing the shelf: order belongs to the whole
+      list, and it cannot honestly be edited through a keyhole. */
+  reorderable: boolean;
   busy: boolean;
   /** Set only when the pending action's slug is this course's. */
   pending: PendingAction | null;
@@ -918,7 +975,7 @@ const PENDING_COPY: Record<PendingKind, { question: string; commitLabel: string;
   unpublish: { question: "Зняти курс з публікації?", commitLabel: "Зняти" },
 };
 
-function EntryControls({ course, index, total, busy, pending, onMove, onAsk, onCancel, onConfirm, onExport }: EntryProps) {
+function EntryControls({ course, index, total, reorderable, busy, pending, onMove, onAsk, onCancel, onConfirm, onExport }: EntryProps) {
   const focusRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
@@ -976,16 +1033,20 @@ function EntryControls({ course, index, total, busy, pending, onMove, onAsk, onC
         {
           label: "Підняти вище",
           icon: "arrow-up",
-          hint: "Курс піде вище в списку — порядок пише sort_order",
+          hint: reorderable
+            ? "Курс піде вище в списку — порядок пише sort_order"
+            : "Порядок міняється на повному списку — зніміть пошук або фільтр",
           onSelect: () => onMove(index, -1),
-          disabled: busy || index === 0,
+          disabled: busy || !reorderable || index === 0,
         },
         {
           label: "Опустити нижче",
           icon: "arrow-down",
-          hint: "Курс піде нижче в списку — порядок пише sort_order",
+          hint: reorderable
+            ? "Курс піде нижче в списку — порядок пише sort_order"
+            : "Порядок міняється на повному списку — зніміть пошук або фільтр",
           onSelect: () => onMove(index, 1),
-          disabled: busy || index === total - 1,
+          disabled: busy || !reorderable || index === total - 1,
         },
         {
           label: "Експортувати JSON",
