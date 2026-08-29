@@ -19,13 +19,24 @@
  * validate once at module load and fail loudly, rather than defensively at use.
  */
 
+import iremGymnasticsCourse from "../../../data/courses/irem-gymnastics.json";
 import naturalBodyCourse from "../../../data/courses/natural-body.json";
 import resetDayCourse from "../../../data/courses/reset-day.json";
 import shortCourse from "../../../data/courses/short.json";
 import way21Course from "../../../data/courses/way21.json";
 import { validateCourse, type Course } from "@/lms-core";
 
-const rawCourses: unknown[] = [naturalBodyCourse, resetDayCourse, shortCourse, way21Course];
+/* IREM joined the list on 2026-08-29, when it stopped being a hand-written page
+   and became an ordinary published course. A snapshot missing from this array
+   is not a missing file — it is a course the fallback cannot serve and, until
+   it was added, a product whose fulfilment named a course nothing here knew. */
+const rawCourses: unknown[] = [
+  iremGymnasticsCourse,
+  naturalBodyCourse,
+  resetDayCourse,
+  shortCourse,
+  way21Course,
+];
 
 function loadCourses(): Course[] {
   return rawCourses.map((raw, index) => {

@@ -352,10 +352,15 @@ function patchManagedLandingPageContent(html: string, product: StaticLandingProd
   const content = LANDING_CONTENT[product].utility;
 
   if (page === "thanks") {
+    /* THE COURSE, NOT THE BOT (2026-08-29). Short and IREM were the last two
+       products delivered by a Telegram bot, and this page is where their buyers
+       were sent — a button and a timed redirect, both into Telegram. Everything
+       is read on the platform now, so both point at the course in the cabinet,
+       which is also where the receipt email links. */
     return html
       .replace(
-        /(<a class="btn primary" href=")[^"]+(" target="_blank" rel="noopener">Відкрити бот<\/a>)/i,
-        `$1${content.thanks.botUrl}$2`
+        /(<a class="btn primary" href=")[^"]+(" target="_blank" rel="noopener">Відкрити курс<\/a>)/i,
+        `$1${content.thanks.courseUrl}$2`
       )
       .replace(
         /(<a class="btn" href=")[^"]+(">Повернутися на сайт<\/a>)/i,
@@ -363,7 +368,7 @@ function patchManagedLandingPageContent(html: string, product: StaticLandingProd
       )
       .replace(
         /window\.location\.href\s*=\s*"[^"]+";/i,
-        `window.location.href = "${content.thanks.botUrl}";`
+        `window.location.href = "${content.thanks.courseUrl}";`
       );
   }
 

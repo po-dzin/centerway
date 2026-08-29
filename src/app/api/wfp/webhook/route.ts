@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { sendConfirmedSaleTelegramReport } from "@/lib/reporting/analyticsReports";
+import { sendPurchaseEmail } from "@/lib/email/purchaseEmail";
+import { loadPayableOffer } from "@/lib/platform/offers";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { extractPaymentMeta } from "@/lib/paymentMeta";
 import {
+  buildWfpAcceptResponse,
   isWfpApproved,
   verifyWfpCallbackSignature,
   wfpEventTypeFromStatus,
@@ -345,9 +348,20 @@ export async function POST(req: NextRequest) {
     }
 
     if (errors.length) {
-      console.error("wfp_webhook_nonfatal", { orderRef, errors });
-      // Возвращаем 200, чтобы платёжка не ретраила бесконечно.
-      return NextResponse.json({ ok: false, error: "db_write_failed", details: errors.join("; ") }, { status: 200 });
+      // WITHHOLD the acceptance. This is the branch where money moved and our
+      // database did not record it, and it used to answer 200 in the belief
+      // that this stopped the gateway retrying. It never did: WayForPay decides
+      // from the signed `accept` body, not the status (see buildWfpAcceptResponse).
+      //
+      // So the correct behaviour was always available and simply unused — do
+      // not accept, and WayForPay redelivers this callback for up to four days.
+      // The writes below it are all idempotent, so a redelivery that succeeds
+      // completes the order exactly once.
+      console.error("wfp_webhook_write_failed", { orderRef, errors });
+      return NextResponse.json(
+        { ok: false, error: "db_write_failed", details: errors.join("; ") },
+        { status: 500 }
+      );
     }
 
     // A QA payment made with `cw_staff=1` is a real order and a real WayForPay
@@ -413,6 +427,43 @@ export async function POST(req: NextRequest) {
       }
     }
 
+    /* THE BUYER'S RECEIPT. Everything above this line tells US about the sale —
+       Meta, the operator's Telegram. This is the only thing that tells the
+       person who paid, and until 2026-08-29 it did not exist: delivery was the
+       `/pay/thanks` tab and nothing else, so closing it lost the purchase until
+       support found it.
+
+       Outside the staff guard on purpose, unlike the Meta Purchase: a QA
+       payment SHOULD produce a real receipt, because a receipt nobody tested is
+       how the first live one turns out to be broken.
+
+       Deliberately not on the job queue. The queue would make it durable, and
+       it would also make it late — the receipt is worth most in the seconds
+       after paying, while the buyer is still looking at the screen. Send is
+       idempotent (`purchase_email_sent`), never throws, and a failure is logged
+       rather than retried: a receipt that arrives a day later is a support
+       message, not a receipt. */
+    if (paid) {
+      const buyerEmail = normEmail(meta.email ?? null);
+      if (buyerEmail) {
+        const offer = order?.product_code ? await loadPayableOffer(order.product_code) : null;
+        await sendPurchaseEmail({
+          email: buyerEmail,
+          /* `pixelContentName` and not `heading`: the heading is a localized
+             record, and this is the same agreed label the Pixel and the CAPI
+             Purchase already carry — so one product reads as one name in the
+             receipt, in Meta and in the operator's report. */
+          productTitle: offer?.pixelContentName ?? "Ваше замовлення",
+          amount: meta.amount != null && Number.isFinite(Number(meta.amount)) ? Number(meta.amount) : null,
+          currency: meta.currency ?? "UAH",
+          fulfilment: offer?.fulfilment ?? { kind: "cabinet" },
+          orderRef,
+        });
+      } else {
+        console.warn("[wfp webhook] paid order with no buyer email, no receipt sent", { orderRef });
+      }
+    }
+
     // The sale report is not analytics — the operator wants to see a QA payment
     // land too, so it is deliberately outside the staff guard above.
     if (paid) {
@@ -434,7 +485,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true });
+    // The gateway's stop signal. Without this exact signed body it keeps
+    // redelivering for four days — which is what it has been doing all along.
+    const accept = buildWfpAcceptResponse(orderRef);
+    if (!accept) {
+      // Unreachable in practice: the signature gate above already refused the
+      // request when the secret is missing. Kept because "cannot sign" must
+      // never silently become "accepted".
+      console.error("[wfp webhook] cannot sign acceptance, secret missing", { orderRef });
+      return NextResponse.json({ ok: false, error: "missing_secret" }, { status: 500 });
+    }
+    return NextResponse.json(accept);
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: "webhook_failed", details: String(e?.message || e) }, { status: 500 });
   }

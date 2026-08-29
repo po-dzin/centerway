@@ -11,40 +11,42 @@
   "status": "published",
   "version": 1,
   "summary": "21 урок про базові принципи Аюрведи, харчування, добовий ритм і баланс дош — із практичною інструкцією та матеріалами.",
-  "cover": {
-    "src": "/cw/platform/programs/ideal-body-hero-desktop-v2.webp",
-    "mobileSrc": "/cw/platform/programs/ideal-body-card-v1.webp",
-    "alt": "Обкладинка курсу «Природнє тіло з Аюрведою»",
-    "cropX": 70,
-    "cropY": 50,
-    "mobileCropX": 50,
-    "mobileCropY": 16
-  },
   "schedule": {
-    "mode": "sequential",
-    "gate": "soft"
+    "gate": "soft",
+    "mode": "sequential"
   },
   "entitlementProductCodes": [
     "natural-body",
     "ideal-body"
   ],
   "theme": {
+    "scale": "regular",
     "palette": "mineral",
-    "headingFont": "editorial",
-    "scale": "regular"
+    "headingFont": "editorial"
+  },
+  "cover": {
+    "alt": "Обкладинка курсу «Природнє тіло з Аюрведою»",
+    "src": "/cw/platform/programs/ideal-body-hero-desktop-v2.webp",
+    "cropX": 70,
+    "cropY": 50,
+    "mobileSrc": "/cw/platform/programs/ideal-body-card-v1.png",
+    "mobileCropX": 50,
+    "mobileCropY": 16
   },
   "sortOrder": 2,
   "tagline": "21 основний урок, щоб зібрати харчування і ритм під свою конституцію.",
-  "durationDays": 21,
   "kind": "course",
-  "categories": ["nutrition"],
+  "categories": [
+    "nutrition"
+  ],
   "results": [
     "зрозуміти базові принципи Аюрведи та теорію дош",
     "зібрати щоденний ритм харчування, пиття і руху",
     "розрізняти властивості продуктів та їх поєднання",
     "отримати орієнтири для балансу Вата, Пітта і Капха"
   ],
-  "visibility": "unlisted",
+  "visibility": "listed",
+  "durationDays": 21,
   "modules": [
     {
       "id": "8170e82a-2913-5543-8a56-09ca20ce698c",
@@ -62,13 +64,13 @@
           "blocks": [
             {
               "id": "technical-information-objective",
-              "type": "lesson_objective",
-              "text": "Зрозуміти формат підтримки, контакти і технічний порядок проходження програми."
+              "text": "Зрозуміти формат підтримки, контакти і технічний порядок проходження програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "technical-boundary",
-              "type": "boundary_note",
-              "text": "Програма має освітній і практичний wellness-формат та не замінює медичну діагностику чи лікування. Якщо під час проходження погіршується самопочуття, зупиніть практику і зверніться до кваліфікованого фахівця."
+              "text": "Програма має освітній і практичний wellness-формат та не замінює медичну діагностику чи лікування. Якщо під час проходження погіршується самопочуття, зупиніть практику і зверніться до кваліфікованого фахівця.",
+              "type": "boundary_note"
             },
             {
               "id": "technical-information-text-1",
@@ -78,15 +80,15 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Якщо ви проходите Програму \"Природнє тіло з Аюрведою\" по пакету \"Вивчаю сам\",",
-                      "bold": true
+                      "bold": true,
+                      "text": "Якщо ви проходите Програму \"Природнє тіло з Аюрведою\" по пакету \"Вивчаю сам\","
                     },
                     {
                       "text": "ви проходити програму самостійно, але якщо у вас виникнуть проблеми зі здоров'ям під час проходження програми, то напишіть Євгенію у телеграм -"
                     },
                     {
-                      "text": "https://t.me/E_Koriakin",
-                      "href": "https://t.me/E_Koriakin"
+                      "href": "https://t.me/E_Koriakin",
+                      "text": "https://t.me/E_Koriakin"
                     }
                   ]
                 },
@@ -94,15 +96,15 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Якщо ви проходите Програму \"Природнє тіло з Аюрведою\" по пакету \"Стандарт\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Якщо ви проходите Програму \"Природнє тіло з Аюрведою\" по пакету \"Стандарт\""
                     },
                     {
                       "text": ", напишіть Євгенію у телеграм для відправки щоденних звітів по проходженню програми та отримання зворотнього зв'язку по цим звітам -"
                     },
                     {
-                      "text": "https://t.me/E_Koriakin",
-                      "href": "https://t.me/E_Koriakin"
+                      "href": "https://t.me/E_Koriakin",
+                      "text": "https://t.me/E_Koriakin"
                     }
                   ]
                 },
@@ -110,15 +112,15 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Якщо ви проходите Програму \"Природнє тіло з Аюрведою\" по пакету \"Індивідуальний супровід\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Якщо ви проходите Програму \"Природнє тіло з Аюрведою\" по пакету \"Індивідуальний супровід\""
                     },
                     {
                       "text": ", напишіть Євгенію у телеграм для проведення індивідуальних консультацій, відправлення звітів та супроводу по програмі -"
                     },
                     {
-                      "text": "https://t.me/E_Koriakin",
-                      "href": "https://t.me/E_Koriakin"
+                      "href": "https://t.me/E_Koriakin",
+                      "text": "https://t.me/E_Koriakin"
                     }
                   ]
                 },
@@ -126,8 +128,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Технічні непорозуміння по програмі (для всіх пакетів проходження)",
-                      "bold": true
+                      "bold": true,
+                      "text": "Технічні непорозуміння по програмі (для всіх пакетів проходження)"
                     }
                   ]
                 },
@@ -139,17 +141,17 @@
             },
             {
               "id": "technical-author-support",
-              "type": "cta",
-              "label": "Написати Євгенію в Telegram",
               "href": "https://t.me/E_Koriakin",
-              "text": "Питання щодо супроводу, звітів і проходження програми."
+              "text": "Питання щодо супроводу, звітів і проходження програми.",
+              "type": "cta",
+              "label": "Написати Євгенію в Telegram"
             },
             {
               "id": "technical-platform-support",
-              "type": "cta",
-              "label": "Технічна підтримка CenterWay",
               "href": "https://telegram.me/centerway_support_bot",
-              "text": "Якщо не відкривається урок або виникла проблема зі входом у кабінет."
+              "text": "Якщо не відкривається урок або виникла проблема зі входом у кабінет.",
+              "type": "cta",
+              "label": "Технічна підтримка CenterWay"
             }
           ]
         },
@@ -161,13 +163,13 @@
           "blocks": [
             {
               "id": "course-instruction-objective",
-              "type": "lesson_objective",
-              "text": "Перед стартом зібрати режим харчування, пиття, руху, звітності та матеріали програми в один маршрут."
+              "text": "Перед стартом зібрати режим харчування, пиття, руху, звітності та матеріали програми в один маршрут.",
+              "type": "lesson_objective"
             },
             {
               "id": "instruction-boundary",
-              "type": "boundary_note",
-              "text": "Схеми харчування, дихальні вправи й трав'яний настій у цьому уроці не є універсальним призначенням. Враховуйте свій стан, діагнози, ліки та індивідуальні реакції; за сумнівів погодьте зміни з лікарем або іншим кваліфікованим фахівцем."
+              "text": "Схеми харчування, дихальні вправи й трав'яний настій у цьому уроці не є універсальним призначенням. Враховуйте свій стан, діагнози, ліки та індивідуальні реакції; за сумнівів погодьте зміни з лікарем або іншим кваліфікованим фахівцем.",
+              "type": "boundary_note"
             },
             {
               "id": "course-instruction-text-1",
@@ -182,9 +184,9 @@
             {
               "id": "course-instruction-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Інструкція по проходженню програми Природнє тіло з Аюрведою — відео",
               "videoId": "NesQ7kKRr7U",
-              "title": "Інструкція по проходженню програми Природнє тіло з Аюрведою — відео"
+              "provider": "youtube"
             },
             {
               "id": "course-instruction-text-3",
@@ -194,15 +196,15 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Короткий Тест",
-                      "bold": true
+                      "bold": true,
+                      "text": "Короткий Тест"
                     },
                     {
                       "text": "на визначення конституції тіла (доші) 12 питань -"
                     },
                     {
-                      "text": "тут",
-                      "href": "/dosha-test"
+                      "href": "/dosha-test",
+                      "text": "тут"
                     },
                     {
                       "text": "."
@@ -213,9 +215,9 @@
             },
             {
               "id": "course-instruction-image-4",
-              "type": "image",
+              "alt": "Яблука, чайник і намисто на дерев'яній поверхні як образ щоденного ритму",
               "src": "/cw/courses/natural-body/instruction-ayurvedic-rhythm.webp",
-              "alt": "Яблука, чайник і намисто на дерев'яній поверхні як образ щоденного ритму"
+              "type": "image"
             },
             {
               "id": "course-instruction-text-5",
@@ -225,8 +227,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Час прийому їжі",
-                      "bold": true
+                      "bold": true,
+                      "text": "Час прийому їжі"
                     }
                   ]
                 },
@@ -234,8 +236,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Для вата доші",
-                      "bold": true
+                      "bold": true,
+                      "text": "Для вата доші"
                     }
                   ]
                 },
@@ -243,8 +245,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Варіант 1",
-                      "bold": true
+                      "bold": true,
+                      "text": "Варіант 1"
                     }
                   ]
                 },
@@ -256,8 +258,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Варіант 2",
-                      "bold": true
+                      "bold": true,
+                      "text": "Варіант 2"
                     }
                   ]
                 },
@@ -269,8 +271,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Для Пітта доші",
-                      "bold": true
+                      "bold": true,
+                      "text": "Для Пітта доші"
                     }
                   ]
                 },
@@ -282,8 +284,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Для Капха доші",
-                      "bold": true
+                      "bold": true,
+                      "text": "Для Капха доші"
                     }
                   ]
                 },
@@ -301,8 +303,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Список несприятливих продуктів для харчування людини, за винятком ситуацій критичної необхідності або приватного дослідження (у другому випадку будьте готові прийняти виклик від організма)",
-                      "bold": true
+                      "bold": true,
+                      "text": "Список несприятливих продуктів для харчування людини, за винятком ситуацій критичної необхідності або приватного дослідження (у другому випадку будьте готові прийняти виклик від організма)"
                     }
                   ]
                 },
@@ -328,9 +330,9 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Вата Доша",
                       "bold": true,
-                      "href": "https://docs.google.com/document/d/1yGLuQhEYs-4kfLp38CmRA1XWaExeiP70CxUdwOASnxY/edit"
+                      "href": "https://docs.google.com/document/d/1yGLuQhEYs-4kfLp38CmRA1XWaExeiP70CxUdwOASnxY/edit",
+                      "text": "Вата Доша"
                     }
                   ]
                 },
@@ -338,9 +340,9 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Пітта Доша",
                       "bold": true,
-                      "href": "https://docs.google.com/document/d/1fTViU8gLdD0Xtdvo8NI5nen-i_Rjsxis0ny1QDPu_vE/edit"
+                      "href": "https://docs.google.com/document/d/1fTViU8gLdD0Xtdvo8NI5nen-i_Rjsxis0ny1QDPu_vE/edit",
+                      "text": "Пітта Доша"
                     }
                   ]
                 },
@@ -348,9 +350,9 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Капха Доша",
                       "bold": true,
-                      "href": "https://docs.google.com/document/d/1mFM4ig2z5hcyJXyyFtd-bwPJptIZeIRedxQWBKG3aBI/edit"
+                      "href": "https://docs.google.com/document/d/1mFM4ig2z5hcyJXyyFtd-bwPJptIZeIRedxQWBKG3aBI/edit",
+                      "text": "Капха Доша"
                     }
                   ]
                 }
@@ -359,15 +361,15 @@
             {
               "id": "course-instruction-video-7-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Інструкція по проходженню програми Природнє тіло з Аюрведою — відео",
               "videoId": "CD4WhXNjMes",
-              "title": "Інструкція по проходженню програми Природнє тіло з Аюрведою — відео"
+              "provider": "youtube"
             },
             {
               "id": "course-instruction-image-8",
-              "type": "image",
+              "alt": "Приготування різнокольорових овочів у воку",
               "src": "/cw/courses/natural-body/instruction-cooking-vegetables.webp",
-              "alt": "Приготування різнокольорових овочів у воку"
+              "type": "image"
             },
             {
               "id": "course-instruction-text-9",
@@ -377,8 +379,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Способи приготування їжі",
-                      "bold": true
+                      "bold": true,
+                      "text": "Способи приготування їжі"
                     }
                   ]
                 },
@@ -386,8 +388,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Для Вата Доші",
-                      "bold": true
+                      "bold": true,
+                      "text": "Для Вата Доші"
                     }
                   ]
                 },
@@ -409,8 +411,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Для Пітта Доші",
-                      "bold": true
+                      "bold": true,
+                      "text": "Для Пітта Доші"
                     }
                   ]
                 },
@@ -430,8 +432,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Для Капха Доші",
-                      "bold": true
+                      "bold": true,
+                      "text": "Для Капха Доші"
                     }
                   ]
                 },
@@ -453,9 +455,9 @@
             },
             {
               "id": "course-instruction-image-10",
-              "type": "image",
+              "alt": "Чотири приклади порцій, співвіднесених із розміром долонь",
               "src": "/cw/courses/natural-body/instruction-portion-guide.webp",
-              "alt": "Чотири приклади порцій, співвіднесених із розміром долонь"
+              "type": "image"
             },
             {
               "id": "course-instruction-text-11",
@@ -465,8 +467,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Розмір порцій",
-                      "bold": true
+                      "bold": true,
+                      "text": "Розмір порцій"
                     }
                   ]
                 },
@@ -474,8 +476,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Правило 1. Скільки терпить око",
-                      "bold": true
+                      "bold": true,
+                      "text": "Правило 1. Скільки терпить око"
                     }
                   ]
                 },
@@ -487,8 +489,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Правило 2. Правило долоні.",
-                      "bold": true
+                      "bold": true,
+                      "text": "Правило 2. Правило долоні."
                     }
                   ]
                 },
@@ -505,8 +507,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Олії",
-                      "bold": true
+                      "bold": true,
+                      "text": "Олії"
                     }
                   ]
                 },
@@ -522,8 +524,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Правило 3. Може бути підрахунок калорій, якщо є бажання вести математичний облік.",
-                      "bold": true
+                      "bold": true,
+                      "text": "Правило 3. Може бути підрахунок калорій, якщо є бажання вести математичний облік."
                     }
                   ]
                 },
@@ -539,8 +541,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Приклад звітів нижче",
-                      "bold": true
+                      "bold": true,
+                      "text": "Приклад звітів нижче"
                     }
                   ]
                 },
@@ -548,9 +550,9 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Таблиця на листі А4",
                       "bold": true,
-                      "href": "https://docs.google.com/drawings/d/1bsvCEqa1gUKceYU9xHf1lK0QdTgjUUc4tFMKtDu3rUQ/edit?usp=sharing"
+                      "href": "https://docs.google.com/drawings/d/1bsvCEqa1gUKceYU9xHf1lK0QdTgjUUc4tFMKtDu3rUQ/edit?usp=sharing",
+                      "text": "Таблиця на листі А4"
                     }
                   ]
                 },
@@ -562,9 +564,9 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Google таблиця",
                       "bold": true,
-                      "href": "https://docs.google.com/spreadsheets/d/1eRGp3u6_SzouBn2BNLjjoYFy4HyGi3S14pseAbCD8Yw/edit#gid=0"
+                      "href": "https://docs.google.com/spreadsheets/d/1eRGp3u6_SzouBn2BNLjjoYFy4HyGi3S14pseAbCD8Yw/edit#gid=0",
+                      "text": "Google таблиця"
                     }
                   ]
                 },
@@ -572,13 +574,13 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "На груповій програмі використовуємо",
-                      "bold": true
+                      "bold": true,
+                      "text": "На груповій програмі використовуємо"
                     },
                     {
-                      "text": "такий варіант",
                       "bold": true,
-                      "href": "https://docs.google.com/document/d/1asJSbV6Vg-cvFuD06gccYdkAj_y2iuSOaLt46TZDK9U/edit"
+                      "href": "https://docs.google.com/document/d/1asJSbV6Vg-cvFuD06gccYdkAj_y2iuSOaLt46TZDK9U/edit",
+                      "text": "такий варіант"
                     }
                   ]
                 }
@@ -586,9 +588,9 @@
             },
             {
               "id": "course-instruction-image-12",
-              "type": "image",
+              "alt": "Приклад заповненої таблиці харчування, сну і спорту",
               "src": "/cw/courses/natural-body/instruction-report-table.webp",
-              "alt": "Приклад заповненої таблиці харчування, сну і спорту"
+              "type": "image"
             },
             {
               "id": "course-instruction-text-13",
@@ -598,8 +600,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Розпорядок дня і розподіл продуктів у ньому:",
-                      "bold": true
+                      "bold": true,
+                      "text": "Розпорядок дня і розподіл продуктів у ньому:"
                     }
                   ]
                 },
@@ -607,8 +609,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "1. Максимально раннє пробудження",
-                      "bold": true
+                      "bold": true,
+                      "text": "1. Максимально раннє пробудження"
                     }
                   ]
                 },
@@ -616,8 +618,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "2. Повільне пиття теплої води.",
-                      "bold": true
+                      "bold": true,
+                      "text": "2. Повільне пиття теплої води."
                     }
                   ]
                 },
@@ -629,8 +631,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "3. Робимо дихальну гімнастику",
-                      "bold": true
+                      "bold": true,
+                      "text": "3. Робимо дихальну гімнастику"
                     }
                   ]
                 },
@@ -653,16 +655,16 @@
             {
               "id": "course-instruction-video-14-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Інструкція по проходженню програми Природнє тіло з Аюрведою — відео",
               "videoId": "uoXBYxPAOXo",
-              "title": "Інструкція по проходженню програми Природнє тіло з Аюрведою — відео"
+              "provider": "youtube"
             },
             {
               "id": "course-instruction-video-15-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Інструкція по проходженню програми Природнє тіло з Аюрведою — відео",
               "videoId": "iz9k-V93dXE",
-              "title": "Інструкція по проходженню програми Природнє тіло з Аюрведою — відео"
+              "provider": "youtube"
             },
             {
               "id": "course-instruction-text-16",
@@ -672,8 +674,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "4. Далі прийом їжі згідно з режимом, що підходить для вашої конституції.",
-                      "bold": true
+                      "bold": true,
+                      "text": "4. Далі прийом їжі згідно з режимом, що підходить для вашої конституції."
                     }
                   ]
                 },
@@ -681,8 +683,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Для вата доші",
-                      "bold": true
+                      "bold": true,
+                      "text": "Для вата доші"
                     }
                   ]
                 },
@@ -690,8 +692,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Варіант 1",
-                      "bold": true
+                      "bold": true,
+                      "text": "Варіант 1"
                     }
                   ]
                 },
@@ -703,8 +705,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Варіант 2",
-                      "bold": true
+                      "bold": true,
+                      "text": "Варіант 2"
                     }
                   ]
                 },
@@ -720,8 +722,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Для Пітта доші",
-                      "bold": true
+                      "bold": true,
+                      "text": "Для Пітта доші"
                     }
                   ]
                 },
@@ -737,8 +739,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Для Капха доші",
-                      "bold": true
+                      "bold": true,
+                      "text": "Для Капха доші"
                     }
                   ]
                 },
@@ -750,8 +752,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "5. Відхід до сну не пізніше 23:00.",
-                      "bold": true
+                      "bold": true,
+                      "text": "5. Відхід до сну не пізніше 23:00."
                     }
                   ]
                 }
@@ -759,9 +761,9 @@
             },
             {
               "id": "course-instruction-image-17",
-              "type": "image",
+              "alt": "Приклад страви з яйцями, зеленню та овочами",
               "src": "/cw/courses/natural-body/instruction-meal-example.webp",
-              "alt": "Приклад страви з яйцями, зеленню та овочами"
+              "type": "image"
             },
             {
               "id": "course-instruction-text-18",
@@ -771,8 +773,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Продукти для різного часу доби",
-                      "bold": true
+                      "bold": true,
+                      "text": "Продукти для різного часу доби"
                     }
                   ]
                 },
@@ -780,8 +782,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Сніданок:",
-                      "bold": true
+                      "bold": true,
+                      "text": "Сніданок:"
                     },
                     {
                       "text": "Фрукти, сухофрукти, горіхи, насіння, солодкі овочі, рослинні протеїни, спіруліна, хлорелла, фукус, зелень, крупи, яйця, корніплоди"
@@ -792,8 +794,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Обід:",
                       "bold": true,
+                      "text": "Обід:",
                       "italic": true
                     },
                     {
@@ -817,8 +819,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Вечеря",
-                      "bold": true
+                      "bold": true,
+                      "text": "Вечеря"
                     },
                     {
                       "text": ": Ідеальна вечеря - овочевий суп, рагу чи салат. Не їмо крупи увечері. Можна бобові, насіння, гриби."
@@ -844,8 +846,8 @@
                       "text": "Всю"
                     },
                     {
-                      "text": "їжу готуємо на воді і тільки в самому кінці додаємо топлене чи рослинне масло.",
-                      "bold": true
+                      "bold": true,
+                      "text": "їжу готуємо на воді і тільки в самому кінці додаємо топлене чи рослинне масло."
                     }
                   ]
                 }
@@ -859,8 +861,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Питний режим",
-                      "bold": true
+                      "bold": true,
+                      "text": "Питний режим"
                     }
                   ]
                 },
@@ -872,8 +874,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Прийом трав",
-                      "bold": true
+                      "bold": true,
+                      "text": "Прийом трав"
                     }
                   ]
                 },
@@ -885,8 +887,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Список трав",
-                      "bold": true
+                      "bold": true,
+                      "text": "Список трав"
                     }
                   ]
                 },
@@ -921,8 +923,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Чергування продуктів у тижневому циклі",
-                      "bold": true
+                      "bold": true,
+                      "text": "Чергування продуктів у тижневому циклі"
                     }
                   ]
                 },
@@ -946,13 +948,13 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Інструкція",
-                      "bold": true
+                      "bold": true,
+                      "text": "Інструкція"
                     },
                     {
-                      "text": "Розвантажувальний день",
                       "bold": true,
-                      "href": "https://docs.google.com/presentation/d/1rZPyP0JlnThVJ2g3k5RiFSvk_tmjNdKn/edit?usp=sharing&ouid=101357384411492068748&rtpof=true&sd=true"
+                      "href": "https://docs.google.com/presentation/d/1rZPyP0JlnThVJ2g3k5RiFSvk_tmjNdKn/edit?usp=sharing&ouid=101357384411492068748&rtpof=true&sd=true",
+                      "text": "Розвантажувальний день"
                     }
                   ]
                 }
@@ -966,15 +968,15 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Короткий Тест",
-                      "bold": true
+                      "bold": true,
+                      "text": "Короткий Тест"
                     },
                     {
                       "text": "на визначення конституції тіла (доші) 12 питань -"
                     },
                     {
-                      "text": "тут",
-                      "href": "/dosha-test"
+                      "href": "/dosha-test",
+                      "text": "тут"
                     },
                     {
                       "text": "."
@@ -1002,8 +1004,8 @@
           "blocks": [
             {
               "id": "lesson-1-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Встановлюємо цілі і мотивацію» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Встановлюємо цілі і мотивацію» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-1-text-1",
@@ -1013,8 +1015,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №1",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №1"
                     }
                   ]
                 },
@@ -1022,8 +1024,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Встановлюємо цілі і мотивацію\".",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Встановлюємо цілі і мотивацію\"."
                     }
                   ]
                 },
@@ -1035,8 +1037,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Цікава пропозиція для вас!",
-                      "bold": true
+                      "bold": true,
+                      "text": "Цікава пропозиція для вас!"
                     }
                   ]
                 },
@@ -1053,9 +1055,9 @@
             {
               "id": "lesson-1-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №1 — відео",
               "videoId": "IoG9HD8uMm4",
-              "title": "Урок №1 — відео"
+              "provider": "youtube"
             },
             {
               "id": "lesson-1-text-3",
@@ -1065,8 +1067,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Вітаю вас друзі на першому уроці нашого циклу з 21 уроку з аюрведи. У рамках курсу Природнє тіло з Аюрведою.",
-                      "bold": true
+                      "bold": true,
+                      "text": "Вітаю вас друзі на першому уроці нашого циклу з 21 уроку з аюрведи. У рамках курсу Природнє тіло з Аюрведою."
                     }
                   ]
                 },
@@ -1150,8 +1152,8 @@
           "blocks": [
             {
               "id": "lesson-2-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «5 великих першоелементів» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «5 великих першоелементів» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-2-text-1",
@@ -1161,8 +1163,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №2",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №2"
                     }
                   ]
                 },
@@ -1170,8 +1172,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"5 великих першоелементів\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"5 великих першоелементів\""
                     }
                   ]
                 }
@@ -1180,9 +1182,9 @@
             {
               "id": "lesson-2-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №2 — відео",
               "videoId": "z_cp5xApHAw",
-              "title": "Урок №2 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1194,8 +1196,8 @@
           "blocks": [
             {
               "id": "lesson-3-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Теорія дош» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Теорія дош» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-3-text-1",
@@ -1205,8 +1207,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №3",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №3"
                     }
                   ]
                 },
@@ -1214,8 +1216,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Теорія дош\". Вивчаємо з яких першоелементів формуються доші.",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Теорія дош\". Вивчаємо з яких першоелементів формуються доші."
                     }
                   ]
                 }
@@ -1224,9 +1226,9 @@
             {
               "id": "lesson-3-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №3 — відео",
               "videoId": "erE3Pw3SBlU",
-              "title": "Урок №3 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1238,8 +1240,8 @@
           "blocks": [
             {
               "id": "lesson-4-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «13 функцій життя і характеристики Вата доші» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «13 функцій життя і характеристики Вата доші» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-4-text-1",
@@ -1249,8 +1251,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №4",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №4"
                     }
                   ]
                 },
@@ -1258,8 +1260,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Складається з 2 тем: Тема 1: \"13 функцій життя\" Тема 2: \"Характеристики Вата доші\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Складається з 2 тем: Тема 1: \"13 функцій життя\" Тема 2: \"Характеристики Вата доші\""
                     }
                   ]
                 }
@@ -1268,9 +1270,9 @@
             {
               "id": "lesson-4-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №4 — відео",
               "videoId": "Q7UyGeUDHZo",
-              "title": "Урок №4 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1282,8 +1284,8 @@
           "blocks": [
             {
               "id": "lesson-5-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Основні характеристики Пітта доші» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Основні характеристики Пітта доші» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-5-text-1",
@@ -1293,8 +1295,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №5",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №5"
                     }
                   ]
                 },
@@ -1302,8 +1304,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Основні характеристики Пітта доші\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Основні характеристики Пітта доші\""
                     }
                   ]
                 }
@@ -1312,9 +1314,9 @@
             {
               "id": "lesson-5-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №5 — відео",
               "videoId": "ESx54RH6nak",
-              "title": "Урок №5 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1326,8 +1328,8 @@
           "blocks": [
             {
               "id": "lesson-6-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Основні характеристики Капха доші» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Основні характеристики Капха доші» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-6-text-1",
@@ -1337,8 +1339,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №6",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №6"
                     }
                   ]
                 },
@@ -1346,8 +1348,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Основні характеристики Капха доші\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Основні характеристики Капха доші\""
                     }
                   ]
                 }
@@ -1356,9 +1358,9 @@
             {
               "id": "lesson-6-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №6 — відео",
               "videoId": "HVnJW_0wioo",
-              "title": "Урок №6 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1370,8 +1372,8 @@
           "blocks": [
             {
               "id": "lesson-7-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Причини захворювань. 6 стадій захворювання» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Причини захворювань. 6 стадій захворювання» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-7-text-1",
@@ -1381,8 +1383,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №7",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №7"
                     }
                   ]
                 },
@@ -1390,8 +1392,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Причини захворювань. 6 стадій захворювання\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Причини захворювань. 6 стадій захворювання\""
                     }
                   ]
                 }
@@ -1400,9 +1402,9 @@
             {
               "id": "lesson-7-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №7 — відео",
               "videoId": "3RyUIQBTYy8",
-              "title": "Урок №7 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1414,8 +1416,8 @@
           "blocks": [
             {
               "id": "lesson-8-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Теорія токсинів» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Теорія токсинів» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-8-text-1",
@@ -1425,8 +1427,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №8",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №8"
                     }
                   ]
                 },
@@ -1434,8 +1436,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Теорія токсинів\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Теорія токсинів\""
                     }
                   ]
                 }
@@ -1444,9 +1446,9 @@
             {
               "id": "lesson-8-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №8 — відео",
               "videoId": "6nhlgqUrMw4",
-              "title": "Урок №8 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1458,8 +1460,8 @@
           "blocks": [
             {
               "id": "lesson-9-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Теорія смаків» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Теорія смаків» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-9-text-1",
@@ -1469,8 +1471,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №9",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №9"
                     }
                   ]
                 },
@@ -1478,8 +1480,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Теорія вкусів\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Теорія вкусів\""
                     }
                   ]
                 }
@@ -1488,9 +1490,9 @@
             {
               "id": "lesson-9-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №9 — відео",
               "videoId": "f1e6n_u3GXQ",
-              "title": "Урок №9 — відео"
+              "provider": "youtube"
             }
           ]
         }
@@ -1511,8 +1513,8 @@
           "blocks": [
             {
               "id": "lesson-10-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Властивості фруктів» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Властивості фруктів» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-10-text-1",
@@ -1522,8 +1524,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №10",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №10"
                     }
                   ]
                 },
@@ -1531,8 +1533,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: Властивості фруктів",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: Властивості фруктів"
                     },
                     {
                       "text": "🍏"
@@ -1544,9 +1546,9 @@
             {
               "id": "lesson-10-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №10 — відео",
               "videoId": "As7n9M5DU28",
-              "title": "Урок №10 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1558,8 +1560,8 @@
           "blocks": [
             {
               "id": "lesson-11-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Властивості овочів» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Властивості овочів» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-11-text-1",
@@ -1569,8 +1571,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №11",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №11"
                     }
                   ]
                 },
@@ -1578,8 +1580,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: Властивості овочів",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: Властивості овочів"
                     }
                   ]
                 }
@@ -1588,9 +1590,9 @@
             {
               "id": "lesson-11-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №11 — відео",
               "videoId": "RI3cQh09DAY",
-              "title": "Урок №11 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1602,8 +1604,8 @@
           "blocks": [
             {
               "id": "lesson-12-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Злаки, бобові та горіхи» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Злаки, бобові та горіхи» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-12-text-1",
@@ -1613,8 +1615,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №12",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №12"
                     }
                   ]
                 },
@@ -1622,8 +1624,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Злаки. Бобові. Горіхи\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Злаки. Бобові. Горіхи\""
                     },
                     {
                       "text": "🌾"
@@ -1635,9 +1637,9 @@
             {
               "id": "lesson-12-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №12 — відео",
               "videoId": "plZpR1W1MqU",
-              "title": "Урок №12 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1649,8 +1651,8 @@
           "blocks": [
             {
               "id": "lesson-13-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Властивості рослинних олій та молочних продуктів» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Властивості рослинних олій та молочних продуктів» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-13-text-1",
@@ -1660,8 +1662,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №13",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №13"
                     }
                   ]
                 },
@@ -1669,8 +1671,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Властивості Рослинних олій та молочних продуктів\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Властивості Рослинних олій та молочних продуктів\""
                     }
                   ]
                 }
@@ -1679,9 +1681,9 @@
             {
               "id": "lesson-13-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №13 — відео",
               "videoId": "BTM40xb_EUo",
-              "title": "Урок №13 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1693,8 +1695,8 @@
           "blocks": [
             {
               "id": "lesson-14-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Властивості спецій та підсолоджувачів» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Властивості спецій та підсолоджувачів» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-14-text-1",
@@ -1704,8 +1706,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №14",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №14"
                     }
                   ]
                 },
@@ -1713,8 +1715,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Властивості спецій та підсолоджувачів\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Властивості спецій та підсолоджувачів\""
                     }
                   ]
                 }
@@ -1723,9 +1725,9 @@
             {
               "id": "lesson-14-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №14 — відео",
               "videoId": "OoIWfBqFSFM",
-              "title": "Урок №14 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1737,8 +1739,8 @@
           "blocks": [
             {
               "id": "lesson-15-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Поєднання продуктів» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Поєднання продуктів» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-15-text-1",
@@ -1748,8 +1750,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №15",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №15"
                     }
                   ]
                 },
@@ -1757,8 +1759,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Поєднання продуктів\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Поєднання продуктів\""
                     }
                   ]
                 }
@@ -1767,9 +1769,9 @@
             {
               "id": "lesson-15-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №15 — відео",
               "videoId": "m9B5OqiFxaU",
-              "title": "Урок №15 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1781,8 +1783,8 @@
           "blocks": [
             {
               "id": "lesson-16-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Цикли доби» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Цикли доби» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-16-text-1",
@@ -1792,8 +1794,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №16",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №16"
                     }
                   ]
                 },
@@ -1801,8 +1803,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Цикли доби\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Цикли доби\""
                     },
                     {
                       "text": "⏳"
@@ -1814,9 +1816,9 @@
             {
               "id": "lesson-16-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №16 — відео",
               "videoId": "O8EkDRclFN4",
-              "title": "Урок №16 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1828,8 +1830,8 @@
           "blocks": [
             {
               "id": "lesson-17-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Розбір денного циклу харчування» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Розбір денного циклу харчування» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-17-text-1",
@@ -1839,8 +1841,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №17",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №17"
                     }
                   ]
                 },
@@ -1848,8 +1850,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: Розбір денного циклу харчування.",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: Розбір денного циклу харчування."
                     }
                   ]
                 }
@@ -1858,9 +1860,9 @@
             {
               "id": "lesson-17-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №17 — відео",
               "videoId": "dbNrlnc-tKE",
-              "title": "Урок №17 — відео"
+              "provider": "youtube"
             }
           ]
         }
@@ -1881,8 +1883,8 @@
           "blocks": [
             {
               "id": "lesson-18-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Гуни матеріальної природи» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Гуни матеріальної природи» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-18-text-1",
@@ -1892,8 +1894,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №18",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №18"
                     }
                   ]
                 },
@@ -1901,8 +1903,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Гуни матеріальної природи\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Гуни матеріальної природи\""
                     }
                   ]
                 }
@@ -1911,9 +1913,9 @@
             {
               "id": "lesson-18-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №18 — відео",
               "videoId": "bKDdoWB2Fms",
-              "title": "Урок №18 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1925,8 +1927,8 @@
           "blocks": [
             {
               "id": "lesson-19-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Баланс Вата доші» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Баланс Вата доші» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-19-text-1",
@@ -1936,8 +1938,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №19",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №19"
                     }
                   ]
                 },
@@ -1945,8 +1947,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Баланс Вата доші\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Баланс Вата доші\""
                     }
                   ]
                 }
@@ -1955,9 +1957,9 @@
             {
               "id": "lesson-19-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №19 — відео",
               "videoId": "8BzCQsysj5A",
-              "title": "Урок №19 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -1969,8 +1971,8 @@
           "blocks": [
             {
               "id": "lesson-20-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Баланс Пітта доші» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Баланс Пітта доші» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-20-text-1",
@@ -1980,8 +1982,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №20",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №20"
                     }
                   ]
                 },
@@ -1989,8 +1991,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Баланс Пітта доші\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Баланс Пітта доші\""
                     }
                   ]
                 }
@@ -1999,9 +2001,9 @@
             {
               "id": "lesson-20-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №20 — відео",
               "videoId": "8Kye1nZEEDc",
-              "title": "Урок №20 — відео"
+              "provider": "youtube"
             }
           ]
         },
@@ -2013,8 +2015,8 @@
           "blocks": [
             {
               "id": "lesson-21-objective",
-              "type": "lesson_objective",
-              "text": "Розібрати тему «Баланс Капха доші» і співвіднести її з практикою програми."
+              "text": "Розібрати тему «Баланс Капха доші» і співвіднести її з практикою програми.",
+              "type": "lesson_objective"
             },
             {
               "id": "lesson-21-text-1",
@@ -2024,8 +2026,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Урок №21",
-                      "bold": true
+                      "bold": true,
+                      "text": "Урок №21"
                     }
                   ]
                 },
@@ -2033,8 +2035,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "Тема: \"Баланс Капха доші\"",
-                      "bold": true
+                      "bold": true,
+                      "text": "Тема: \"Баланс Капха доші\""
                     }
                   ]
                 }
@@ -2043,9 +2045,9 @@
             {
               "id": "lesson-21-video-2-1",
               "type": "video",
-              "provider": "youtube",
+              "title": "Урок №21 — відео",
               "videoId": "W05NdR8d5iI",
-              "title": "Урок №21 — відео"
+              "provider": "youtube"
             }
           ]
         }
@@ -2067,14 +2069,14 @@
           "blocks": [
             {
               "id": "recipes-objective",
-              "type": "lesson_objective",
-              "text": "Використовувати рецепти як довідковий матеріал і враховувати індивідуальну переносимість продуктів."
+              "text": "Використовувати рецепти як довідковий матеріал і враховувати індивідуальну переносимість продуктів.",
+              "type": "lesson_objective"
             },
             {
               "id": "recipes-image-1",
-              "type": "image",
+              "alt": "Домашні горіхові цукерки в кунжуті на тарілці",
               "src": "/cw/courses/natural-body/recipe-almond-candies.webp",
-              "alt": "Домашні горіхові цукерки в кунжуті на тарілці"
+              "type": "image"
             },
             {
               "id": "recipes-text-2",
@@ -2093,8 +2095,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Мигдальні цукерки",
-                      "bold": true
+                      "bold": true,
+                      "text": "Мигдальні цукерки"
                     }
                   ]
                 },
@@ -2114,8 +2116,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "ЧАС НА ПРИГОТУВАННЯ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "ЧАС НА ПРИГОТУВАННЯ:"
                     },
                     {
                       "text": "10 хв."
@@ -2126,8 +2128,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "ІНГРЕДІЄНТИ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "ІНГРЕДІЄНТИ:"
                     }
                   ]
                 },
@@ -2168,8 +2170,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Горіхово-насіннєві цукерки",
-                      "bold": true
+                      "bold": true,
+                      "text": "Горіхово-насіннєві цукерки"
                     }
                   ]
                 },
@@ -2181,8 +2183,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "ЧАС:",
-                      "bold": true
+                      "bold": true,
+                      "text": "ЧАС:"
                     },
                     {
                       "text": "25 ХВИЛИН"
@@ -2193,8 +2195,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "КІЛЬКІСТЬ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "КІЛЬКІСТЬ:"
                     },
                     {
                       "text": "10 штук"
@@ -2205,8 +2207,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "ІНГРЕДІЄНТИ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "ІНГРЕДІЄНТИ:"
                     }
                   ]
                 },
@@ -2225,8 +2227,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "СПОСІБ ПРИГОТУВАННЯ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "СПОСІБ ПРИГОТУВАННЯ:"
                     }
                   ]
                 },
@@ -2247,9 +2249,9 @@
             },
             {
               "id": "recipes-image-4",
-              "type": "image",
+              "alt": "Горіхово-насіннєві цукерки у паперових формочках",
               "src": "/cw/courses/natural-body/recipe-nut-seed-candies.webp",
-              "alt": "Горіхово-насіннєві цукерки у паперових формочках"
+              "type": "image"
             },
             {
               "id": "recipes-text-5",
@@ -2259,8 +2261,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Арахісові цукерки",
-                      "bold": true
+                      "bold": true,
+                      "text": "Арахісові цукерки"
                     }
                   ]
                 },
@@ -2268,8 +2270,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "ЧАС:",
-                      "bold": true
+                      "bold": true,
+                      "text": "ЧАС:"
                     },
                     {
                       "text": "30 минут"
@@ -2280,8 +2282,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "КІЛЬКІСТЬ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "КІЛЬКІСТЬ:"
                     },
                     {
                       "text": "3 штуки"
@@ -2312,8 +2314,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "ІНГРЕДІЄНТИ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "ІНГРЕДІЄНТИ:"
                     }
                   ]
                 },
@@ -2330,8 +2332,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "СПОСІБ ПРИГОТУВАННЯ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "СПОСІБ ПРИГОТУВАННЯ:"
                     }
                   ]
                 },
@@ -2356,8 +2358,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Гхі шоколад",
-                      "bold": true
+                      "bold": true,
+                      "text": "Гхі шоколад"
                     }
                   ]
                 },
@@ -2365,8 +2367,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "ЧАС ПРИГОТУВАННЯ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "ЧАС ПРИГОТУВАННЯ:"
                     },
                     {
                       "text": "5 хв"
@@ -2377,8 +2379,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "ІНГРЕДІЄНТИ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "ІНГРЕДІЄНТИ:"
                     }
                   ]
                 },
@@ -2394,8 +2396,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "СПОСІБ ПРИГОТУВАННЯ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "СПОСІБ ПРИГОТУВАННЯ:"
                     }
                   ]
                 },
@@ -2430,8 +2432,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Яблучно-грушевий сніданок",
-                      "bold": true
+                      "bold": true,
+                      "text": "Яблучно-грушевий сніданок"
                     }
                   ]
                 },
@@ -2439,8 +2441,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "ЧАС ПРИГОТУВАННЯ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "ЧАС ПРИГОТУВАННЯ:"
                     },
                     {
                       "text": "15 хв"
@@ -2451,8 +2453,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "ІНГРЕДІЄНТИ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "ІНГРЕДІЄНТИ:"
                     }
                   ]
                 },
@@ -2470,8 +2472,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "СПОСІБ ПРИГОТУВАННЯ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "СПОСІБ ПРИГОТУВАННЯ:"
                     }
                   ]
                 },
@@ -2491,9 +2493,9 @@
             },
             {
               "id": "recipes-image-8",
-              "type": "image",
+              "alt": "Запечені груші з прянощами на світлій тарілці",
               "src": "/cw/courses/natural-body/recipe-baked-pears.webp",
-              "alt": "Запечені груші з прянощами на світлій тарілці"
+              "type": "image"
             },
             {
               "id": "recipes-text-9",
@@ -2503,8 +2505,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Яблучний батончик",
-                      "bold": true
+                      "bold": true,
+                      "text": "Яблучний батончик"
                     }
                   ]
                 },
@@ -2512,8 +2514,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "ІНГРЕДІЄНТИ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "ІНГРЕДІЄНТИ:"
                     }
                   ]
                 },
@@ -2532,8 +2534,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "ПРИГОТУВАННЯ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "ПРИГОТУВАННЯ:"
                     }
                   ]
                 },
@@ -2553,8 +2555,8 @@
             },
             {
               "id": "recipes-senna-boundary",
-              "type": "boundary_note",
-              "text": "Рецепт із сеною нижче — не звичайний десерт і не універсально безпечний засіб. Не використовуйте його для самолікування або для дітей без попереднього погодження з лікарем чи фармацевтом."
+              "text": "Рецепт із сеною нижче — не звичайний десерт і не універсально безпечний засіб. Не використовуйте його для самолікування або для дітей без попереднього погодження з лікарем чи фармацевтом.",
+              "type": "boundary_note"
             },
             {
               "id": "recipes-text-10",
@@ -2564,8 +2566,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Цукерка потрійної дії",
-                      "bold": true
+                      "bold": true,
+                      "text": "Цукерка потрійної дії"
                     }
                   ]
                 },
@@ -2581,8 +2583,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "ІНГРЕДІЄНТИ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "ІНГРЕДІЄНТИ:"
                     }
                   ]
                 },
@@ -2600,8 +2602,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "СПОСІБ ПРИГОТУВАННЯ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "СПОСІБ ПРИГОТУВАННЯ:"
                     }
                   ]
                 },
@@ -2627,8 +2629,8 @@
                   "kind": "h3",
                   "text": [
                     {
-                      "text": "Сирі брауні або корисні батончики",
-                      "bold": true
+                      "bold": true,
+                      "text": "Сирі брауні або корисні батончики"
                     }
                   ]
                 },
@@ -2636,8 +2638,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "ІНГРЕДІЄНТИ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "ІНГРЕДІЄНТИ:"
                     }
                   ]
                 },
@@ -2655,8 +2657,8 @@
                   "kind": "p",
                   "text": [
                     {
-                      "text": "СПОСІБ ПРИГОТУВАННЯ:",
-                      "bold": true
+                      "bold": true,
+                      "text": "СПОСІБ ПРИГОТУВАННЯ:"
                     }
                   ]
                 },

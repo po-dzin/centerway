@@ -51,10 +51,10 @@
     <div class="card utility-status-card">
       <p class="utility-status-kicker">Підтвердження оплати</p>
       <h1 class="utility-status-title">✅ Дякуємо! Оплату успішно прийнято</h1>
-      <p class="utility-status-lead">Доступ до курсу вже готується. Якщо бот не відкрився автоматично — натисніть кнопку нижче.</p>
+      <p class="utility-status-lead">Доступ до курсу вже готується. Якщо кабінет не відкрився автоматично — натисніть кнопку нижче. Увійдіть тією ж поштою, на яку оформлювали замовлення.</p>
 
       <div class="btns utility-status-actions">
-        <a class="btn primary" href="https://telegram.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07" target="_blank" rel="noopener">Відкрити бот</a>
+        <a class="btn primary" href="https://my.centerway.net.ua/learn/short" target="_blank" rel="noopener">Відкрити курс</a>
         <a class="btn" href="https://reboot.centerway.net.ua/">Повернутися на сайт</a>
       </div>
 
@@ -69,7 +69,7 @@
   <script>
   (function () {
   const qs = new URLSearchParams(location.search);
-  const redirectTarget = "https://telegram.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07";
+  const redirectTarget = "https://my.centerway.net.ua/learn/short";
   const redirectWaitTimeoutMs = 3500;
   const postPixelBufferMs = 600;
 
@@ -217,7 +217,7 @@
     Promise.resolve(window.CW_purchaseRedirectGate)
       .catch(() => undefined)
       .finally(() => {
-        window.location.href = window.CW_purchaseRedirectTarget || "https://telegram.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07";
+        window.location.href = window.CW_purchaseRedirectTarget || "https://my.centerway.net.ua/learn/short";
       });
   }
 </script>

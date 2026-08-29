@@ -190,7 +190,6 @@ export async function checkEntitlement(
     courseProductCodes: course.entitlementProductCodes,
     courseSlug: course.slug,
     orders: purchases.orders,
-    tokens: purchases.tokens,
     now,
   });
 }
@@ -201,13 +200,18 @@ export async function checkEntitlement(
  * Split out of `checkEntitlement` because the access planner needs the whole
  * history, not the one order that first granted the course: renewal is decided
  * by the NEWEST purchase, and the yes/no answer cannot carry it.
+ *
+ * It no longer reads `access_tokens`. That second query ran on every entitlement
+ * check — every lesson open, every shelf render — to fetch rows whose only
+ * effect was to REVOKE access that had been paid for (see `EntitlementInput` in
+ * lms-core/access.ts). Deleting the rule deleted the round trip with it.
  */
 async function loadPurchases(
   identity: LearnerIdentity
-): Promise<{ orders: PaidOrderRef[]; tokens: Array<{ orderRef: string; used: boolean; expiresAt: string | null }> }> {
+): Promise<{ orders: PaidOrderRef[] }> {
   const db = adminClient();
   const customerIds = await findCustomerIds(identity);
-  if (customerIds.length === 0) return { orders: [], tokens: [] };
+  if (customerIds.length === 0) return { orders: [] };
 
   const ordersResult = await db
     .from("orders")
@@ -221,19 +225,7 @@ async function loadPurchases(
     createdAt: order.created_at ?? new Date(0).toISOString(),
   }));
 
-  const orderRefs = orders.map((order) => order.orderRef).filter(Boolean);
-  const tokensResult =
-    orderRefs.length > 0
-      ? await db.from("access_tokens").select("order_ref, used, expires_at").in("order_ref", orderRefs)
-      : { data: [] };
-
-  const tokens = (tokensResult.data ?? []).map((token) => ({
-    orderRef: token.order_ref,
-    used: Boolean(token.used),
-    expiresAt: token.expires_at ?? null,
-  }));
-
-  return { orders, tokens };
+  return { orders };
 }
 
 /**
@@ -361,7 +353,6 @@ export async function ensureEnrollment(
     courseProductCodes: course.entitlementProductCodes,
     courseSlug: course.slug,
     orders: purchases.orders,
-    tokens: purchases.tokens,
     now,
   });
 
@@ -647,7 +638,6 @@ export async function listLearnerCourses(
         courseProductCodes: course.entitlementProductCodes,
         courseSlug: course.slug,
         orders: purchases.orders,
-        tokens: purchases.tokens,
         now,
       });
 

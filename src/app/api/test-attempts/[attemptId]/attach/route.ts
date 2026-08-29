@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
 import { loadTestAttempt } from "@/lib/doshaTestRepo";
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
+import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -9,6 +10,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ attemptId: string }> }
 ) {
+  const rl = await enforceRateLimit(req, { name: "test_attach", limit: 30, windowSeconds: 60 });
+  if (!rl.allowed) return tooManyRequests(rl.retryAfter);
+
   const { attemptId } = await params;
   const user = await requireUserFromBearer(req.headers.get("authorization"));
   if (!user) {

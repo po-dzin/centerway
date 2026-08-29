@@ -652,7 +652,6 @@ describe("entitlement", () => {
     const result = resolveEntitlement({
       ...base,
       orders: [{ orderRef: "o1", productCode: "Mini-Detox", status: "paid", createdAt: "2026-08-01T10:00:00Z" }],
-      tokens: [],
     });
     expect(result).toMatchObject({ entitled: true, source: "order", orderRef: "o1" });
   });
@@ -661,7 +660,6 @@ describe("entitlement", () => {
     const result = resolveEntitlement({
       ...base,
       orders: [{ orderRef: "o1", productCode: "reset-day", status: "created", createdAt: "2026-08-01T10:00:00Z" }],
-      tokens: [],
     });
     expect(result).toEqual({ entitled: false, reason: "no_paid_order" });
   });
@@ -670,18 +668,31 @@ describe("entitlement", () => {
     const result = resolveEntitlement({
       ...base,
       orders: [{ orderRef: "o1", productCode: "herbs", status: "paid", createdAt: "2026-08-01T10:00:00Z" }],
-      tokens: [],
     });
     expect(result).toEqual({ entitled: false, reason: "no_paid_order" });
   });
 
-  it("treats an expired token as expired access", () => {
+  /**
+   * The inverse of what this file asserted until 2026-08-29, and the assertion
+   * is the point of the change rather than a side effect of it.
+   *
+   * An `access_tokens` row is a hand-off LINK. It used to be read as the access
+   * itself, so a paid order whose link had lapsed granted nothing — which made
+   * the admin's "resend access" button a lockout with a thirty-minute fuse, and
+   * had one paying customer locked out of a course they bought in March.
+   *
+   * `resolveEntitlement` no longer takes tokens at all, so this test can only
+   * state the rule that replaced it: a paid order entitles. When access is
+   * genuinely time-boxed, the deadline is on the ENROLLMENT — see the
+   * "enrollment deadline" describe block below, which is where `reason:
+   * "expired"` now comes from and the only place it should ever come from.
+   */
+  it("keeps granting a paid order no matter what happened to its access link", () => {
     const result = resolveEntitlement({
       ...base,
       orders: [{ orderRef: "o1", productCode: "reset-day", status: "paid", createdAt: "2026-08-01T10:00:00Z" }],
-      tokens: [{ orderRef: "o1", used: true, expiresAt: "2026-08-10T00:00:00Z" }],
     });
-    expect(result).toEqual({ entitled: false, reason: "expired" });
+    expect(result).toMatchObject({ entitled: true, source: "order", orderRef: "o1" });
   });
 
   /**
@@ -698,7 +709,6 @@ describe("entitlement", () => {
       orders: [
         { orderRef: "o1", productCode: "course:my-course", status: "paid", createdAt: "2026-08-01T10:00:00Z" },
       ],
-      tokens: [],
     });
     expect(result).toMatchObject({ entitled: true, source: "order", orderRef: "o1" });
   });
@@ -711,7 +721,6 @@ describe("entitlement", () => {
       orders: [
         { orderRef: "o1", productCode: "course:other-course", status: "paid", createdAt: "2026-08-01T10:00:00Z" },
       ],
-      tokens: [],
     });
     expect(result).toEqual({ entitled: false, reason: "no_paid_order" });
   });
@@ -720,7 +729,6 @@ describe("entitlement", () => {
     const result = resolveEntitlement({
       ...base,
       orders: [],
-      tokens: [],
       manualGrants: [{ courseSlug: "reset-day", grantedAt: "2026-08-05T00:00:00Z" }],
     });
     expect(result).toMatchObject({ entitled: true, source: "manual" });

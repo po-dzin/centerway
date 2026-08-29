@@ -1,9 +1,7 @@
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
 import { PlatformBlock, PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import styles from "@/components/platform/PlatformOfferStyles";
-import { featuredPrograms, miniCourses } from "@/lib/platform/content";
 import { listStorefrontCourses } from "@/lib/platform/offers";
-import { offerEyebrow } from "@/lib/platform/offerPreview";
 
 /**
  * The home page's two shelves.
@@ -14,10 +12,10 @@ import { offerEyebrow } from "@/lib/platform/offerPreview";
  * literals. A course that a stranger can find in the catalogue and cannot find
  * on the front page is not published, it is hidden with extra steps.
  *
- * Same rule as the catalogue (`PlatformProgramsIndexPage`): the split a reader
- * cares about is how much of their life the thing asks for, not which of the
- * two places it was typed into. The authored courses lead each rail because
- * their order is the author's own; the hand-written six follow.
+ * Same rule as the catalogue (`PlatformProgramsIndexPage`), and since
+ * 2026-08-29 there is nothing left to merge: the last hand-written course left
+ * `content.ts` with reboot and irem, so both shelves are the database in the
+ * author's own `sortOrder`.
  *
  * Never throws — `listStorefrontCourses` answers `[]` when the database is
  * unreachable, and the home page keeps its static half.
@@ -53,19 +51,6 @@ export async function HubMini() {
             ctaLabel="Деталі курсу"
           />
         ))}
-        {miniCourses.map((program) => (
-          <PlatformOfferCard
-            key={program.slug}
-            title={program.title}
-            tag={offerEyebrow(program.tag, program.duration)}
-            description={program.description}
-            href={program.href}
-            visual={program.visual}
-            slug={program.slug}
-            artwork={program.artwork}
-            ctaLabel="Деталі курсу"
-          />
-        ))}
       </div>
     </PlatformBlock>
   );
@@ -97,19 +82,6 @@ export async function HubPrograms() {
             categories={course.categoryLabels}
             pretitle={course.pretitle}
             posttitle={course.posttitle}
-            ctaLabel="Деталі програми"
-          />
-        ))}
-        {featuredPrograms.map((program) => (
-          <PlatformOfferCard
-            key={program.slug}
-            title={program.title}
-            tag={offerEyebrow(program.tag, program.duration)}
-            description={program.description}
-            href={program.href}
-            visual={program.visual}
-            slug={program.slug}
-            artwork={program.artwork}
             ctaLabel="Деталі програми"
           />
         ))}

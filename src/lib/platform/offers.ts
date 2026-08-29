@@ -148,7 +148,18 @@ export function isPublicCourse(course: Course, at: CourseVisibility[] = ["listed
 
 /** A listed course, reduced to what a catalogue card needs. */
 export type StorefrontCard = {
+  /** The course's identity — its row, its lessons, its cache tag. */
   slug: string;
+  /**
+   * The address the offer is sold at, which is not always the slug.
+   *
+   * `short` is sold as `/programs/reboot` and `irem-gymnastics` as
+   * `/programs/irem`: both names are years old, indexed, and printed on
+   * funnels. Carried on the card so every list that renders one — the
+   * catalogue, the home rails, the sitemap, llms.txt — links the address a
+   * reader already has instead of the row name.
+   */
+  programSlug: string;
   title: string;
   tag: string;
   description: string;
@@ -247,6 +258,7 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
       const card = course.cover ? coverCard(course.cover.src) : undefined;
       return {
         slug: course.slug,
+        programSlug: course.programSlug,
         title: surface.title,
         /* THE EYEBROW LOSES THE KIND WHEN THE CORNER GAINS IT. Printing
            «Міні-курс» in a chip on the plate and again in the line under it is
@@ -256,7 +268,7 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
         tag: course.kind ? surface.duration : offerEyebrow(surface.tag, surface.duration),
         ...(course.kind ? { kindBadge: surface.tag } : {}),
         description: course.summary ? inlineToPlainText(course.summary) : "",
-        href: `/programs/${course.slug}`,
+        href: `/programs/${course.programSlug}`,
         ...(course.cover
           ? {
               artwork: {
@@ -369,9 +381,14 @@ async function loadCourseOfferFor(slug: string): Promise<PayableOffer | null> {
     listAmount: offer.listAmount ?? offer.amount,
     currency: offer.currency,
     pixelContentName: offer.pixelContentName,
-    // Always the platform: a course built here is delivered here. The bot and
-    // cabinet shapes belong to products that predate the LMS.
-    fulfilment: { kind: "course", courseSlug: slug },
+    // Always the platform: a course built here is delivered here. The cabinet
+    // shape belongs to a product that predates the LMS, and nothing is
+    // delivered by a bot any more.
+    //
+    // Both slugs named rather than one: the buyer reads at /learn/<slug> and is
+    // returned to /programs/<programSlug>, which are different strings for any
+    // course sold under a name older than its row.
+    fulfilment: { kind: "course", courseSlug: slug, programSlug: course.programSlug },
     approvedUrl: PLATFORM_THANKS_URL,
     declinedUrl: PLATFORM_FAILED_URL,
   };

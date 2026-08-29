@@ -5,21 +5,24 @@ import heroStyles from "@/components/platform/PlatformHeroStyles";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { heroFraming } from "@/components/platform/heroFraming";
-import { platformAggregateArtwork, platformMiniCourses, platformPageArtwork, platformProductOffers, platformProgramOffers, type PlatformOfferArtwork } from "@/lib/platform/content";
+import { platformAggregateArtwork, platformPageArtwork, platformProductOffers } from "@/lib/platform/content";
 import { activePlatformTests, plannedPlatformTests, testsHubCopy } from "@/lib/platform/tests";
 import { listStorefrontCourses } from "@/lib/platform/offers";
 import { offerEyebrow } from "@/lib/platform/offerPreview";
 import { getPlatformRoute } from "@/lib/surfaces/catalog";
 
 /**
- * The catalogue, no longer six constants.
+ * The catalogue, no longer six constants — and since 2026-08-29, no constants.
  *
- * Authored courses are MERGED INTO THE TWO RAILS rather than given a third one
- * of their own. A buyer does not care which of them was typed into a TS file
- * and which came out of the builder; a section headed "courses from the
- * builder" would publish an internal fact as if it were a category. The split
- * that does mean something to a reader is how much of their life the thing asks
- * for, which is what the two rails already are.
+ * The two rails used to merge authored courses with the hand-written entries in
+ * `content.ts`, because both kinds existed and a buyer does not care which of
+ * them was typed into a TS file. The last course left that array with reboot
+ * and irem, so the merge has nothing left to merge: every card here is a
+ * published, `listed` course read through `listStorefrontCourses`, ordered by
+ * the author's own `sortOrder`, and addressed by its program slug.
+ *
+ * The split between the rails still means something to a reader — how much of
+ * their life the thing asks for — and it is still a lesson count.
  */
 export async function PlatformProgramsIndexPage() {
   const authored = await listStorefrontCourses();
@@ -102,19 +105,6 @@ export async function PlatformProgramsIndexPage() {
                 ctaLabel="Деталі курсу"
               />
             ))}
-            {platformMiniCourses.map((program) => (
-              <PlatformOfferCard
-                key={program.slug}
-                title={program.title}
-                tag={offerEyebrow(program.tag, program.duration)}
-                description={program.description}
-                href={program.href}
-                visual={program.visual}
-                slug={program.slug}
-                artwork={program.artwork}
-                ctaLabel="Деталі курсу"
-              />
-            ))}
           </div>
         </section>
 
@@ -146,19 +136,6 @@ export async function PlatformProgramsIndexPage() {
                 categories={course.categoryLabels}
                 pretitle={course.pretitle}
                 posttitle={course.posttitle}
-                ctaLabel="Деталі програми"
-              />
-            ))}
-            {platformProgramOffers.map((program) => (
-              <PlatformOfferCard
-                key={program.slug}
-                title={program.title}
-                tag={offerEyebrow(program.tag, program.duration)}
-                description={program.description}
-                href={program.href}
-                visual={program.visual}
-                slug={program.slug}
-                artwork={program.artwork}
                 ctaLabel="Деталі програми"
               />
             ))}
@@ -313,34 +290,19 @@ export function PlatformTestsHubPage() {
 /**
  * The three offers a herb buyer is most likely to be in the middle of.
  *
- * Named by slug, and looked up in BOTH shelves: reset-day left content.ts when
- * its page became a builder route, and this rail silently lost a third of
- * itself — a filter over the six literals cannot find a course that lives in
- * the database. The list is the editorial decision; where each one is stored is
- * not.
+ * Named by COURSE slug — the row name, not the address — because that is what
+ * an editorial list of "these three" is picking out. Where each one is
+ * addressed is `course.href`'s business. This used to look in both shelves,
+ * back when half the catalogue was hand-written; there is only one shelf now.
  */
 const PRODUCT_RELATED_SLUGS = ["reset-day", "way21", "natural-body"];
 
 export async function PlatformProductsIndexPage() {
   const featuredProduct = platformProductOffers[0];
   const authoredBySlug = new Map((await listStorefrontCourses()).map((course) => [course.slug, course]));
-  const staticBySlug = new Map(
-    [...platformMiniCourses, ...platformProgramOffers].map((program) => [
-      program.slug,
-      {
-        slug: program.slug,
-        title: program.title,
-        tag: offerEyebrow(program.tag, program.duration),
-        description: program.description,
-        href: program.href,
-        visual: program.visual,
-        artwork: program.artwork as PlatformOfferArtwork | undefined,
-      },
-    ]),
+  const relatedPrograms = PRODUCT_RELATED_SLUGS.map((slug) => authoredBySlug.get(slug)).filter(
+    (program) => program !== undefined,
   );
-  const relatedPrograms = PRODUCT_RELATED_SLUGS.map(
-    (slug) => authoredBySlug.get(slug) ?? staticBySlug.get(slug),
-  ).filter((program) => program !== undefined);
   const heroStyle = heroFraming(platformAggregateArtwork.products);
 
   if (!featuredProduct) {

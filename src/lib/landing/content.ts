@@ -2,7 +2,11 @@ import type { StaticLandingProduct } from "@/lib/landing/types";
 
 type LandingUtilityContent = {
   thanks: {
-    botUrl: string;
+    /* Where a paid buyer is sent from the funnel's own thanks page. It named a
+       Telegram bot until 2026-08-29 — Short and IREM were delivered there — and
+       it is the course in the cabinet now, the same address the receipt email
+       links to. */
+    courseUrl: string;
     siteUrl: string;
   };
   payFailed: {
@@ -80,7 +84,7 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
     },
     utility: {
       thanks: {
-        botUrl: "https://telegram.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07",
+        courseUrl: "https://my.centerway.net.ua/learn/short",
         siteUrl: "https://reboot.centerway.net.ua/",
       },
       payFailed: {
@@ -118,7 +122,7 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
     },
     utility: {
       thanks: {
-        botUrl: "https://telegram.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4",
+        courseUrl: "https://my.centerway.net.ua/learn/irem-gymnastics",
         siteUrl: "https://irem.centerway.net.ua/",
       },
       payFailed: {

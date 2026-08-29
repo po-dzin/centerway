@@ -68,11 +68,6 @@ export const contact = {
   email: "centertheway@gmail.com",
 };
 
-const way21FunnelHref = getFunnelHostUrl("way21") ?? "/way21";
-const consultFunnelHref = getFunnelHostUrl("consult") ?? "/consult";
-const iremFunnelHref = getFunnelHostUrl("irem") ?? "/irem";
-const rebootFunnelHref = getFunnelHostUrl("reboot") ?? "/reboot";
-
 export type PlatformOfferSurfaceType = "program" | "mini-course" | "product";
 export type PlatformOfferConversionMode = "lead" | "direct-pay" | "hybrid" | "redirect";
 export type PlatformOfferPrimaryActionKind = "enroll" | "buy";
@@ -110,137 +105,6 @@ export type PlatformOfferArtwork = {
 };
 
 export const programs = [
-  {
-    slug: "reboot",
-    surfaceType: "mini-course" as PlatformOfferSurfaceType,
-    conversionMode: "direct-pay" as PlatformOfferConversionMode,
-    primaryActionKind: "buy" as PlatformOfferPrimaryActionKind,
-    // The names people actually meet: the funnel landing has run
-    // "Short-Перезавантаження" as its h1 all along, and the course catalogue
-    // (data/courses/reset-day.json) calls the other one "Розвантажувальний
-    // день". The English placeholders on the platform were the odd ones out.
-    title: "Short-Перезавантаження",
-    fullTitle: "Short-Перезавантаження",
-    href: getPlatformRoute("reboot") ?? "/programs/reboot",
-    funnelHref: rebootFunnelHref,
-    tag: "Міні-курс руху",
-    duration: "короткий вхід",
-    visual: "movement",
-    artwork: {
-      desktop: "/cw/platform/programs/reboot-hero-desktop-v2.webp",
-      card: "/cw/platform/programs/reboot-hero-desktop-v2-960.webp",
-      mobile: "/cw/platform/programs/reboot-card-v1.webp",
-      desktopPosition: "68% 50%",
-      mobilePosition: "center 18%",
-    },
-    description: "Короткий тілесний міні-курс: розігрів, увага, дихання і м'яке повернення енергії.",
-    // Was two sentences about funnels and conversion surfaces — internal
-    // architecture, printed to the buyer, and false the moment this page
-    // started selling. Copy on an offer page answers the reader's question,
-    // not the team's.
-    longDescription:
-      "Компактний вхід у тілесну практику CenterWay: короткі заняття, які реально втримати в буденному дні. Розігрів, увага до дихання, м'яка мобільність — без спортивного перевантаження і без вимоги перебудувати розклад.",
-    results: [
-      "почати з короткого безпечного входу без перевантаження",
-      "зрозуміти базову логіку руху, уваги і дихання",
-      "повернути відчуття енергії через коротку практику",
-      "отримати ясний наступний крок до глибшої програми",
-    ],
-  },
-  {
-    slug: "way21",
-    surfaceType: "program" as PlatformOfferSurfaceType,
-    conversionMode: "lead" as PlatformOfferConversionMode,
-    primaryActionKind: "enroll" as PlatformOfferPrimaryActionKind,
-    title: "Шлях 21",
-    fullTitle: "Детокс Програма «Шлях 21»",
-    href: getPlatformRoute("way21") ?? "/programs/way21",
-    funnelHref: way21FunnelHref,
-    tag: "Очищення",
-    duration: "21 день",
-    visual: "water",
-    artwork: {
-      desktop: "/cw/platform/programs/way21-home-desktop-v1.webp",
-      card: "/cw/platform/programs/way21-home-desktop-v1-960.webp",
-      mobile: "/cw/platform/programs/way21-home-mobile-v1.webp",
-      altPreview: "/cw/platform/programs/way21-home-alt-v1.webp",
-    },
-    description: "21-денна аюрведична програма розвантаження: харчування, трави, режим і щоденні опори без жорсткого тиску.",
-    longDescription:
-      "Програма перекладає принципи аюрведичного очищення у структуровану 21-денну програму: підготовка, м'яке виведення перевантаження, підтримка травлення, трав'яний супровід і повернення до стабільного ритму. Це wellness-освіта і направлена практика, а не медичне лікування.",
-    results: [
-      "зрозуміти особистий ритм розвантаження і харчування",
-      "підтримати травлення без крайніх обмежень",
-      "зібрати простий режим сну, їжі, води і руху",
-      "пройти програму з видимими межами методу і підтримкою",
-      "вийти з програми з планом м'якого продовження",
-    ],
-  },
-  {
-    slug: "natural-body",
-    surfaceType: "program" as PlatformOfferSurfaceType,
-    conversionMode: "lead" as PlatformOfferConversionMode,
-    primaryActionKind: "enroll" as PlatformOfferPrimaryActionKind,
-    title: "Природнє тіло з Аюрведою",
-    fullTitle: "Природнє тіло з Аюрведою",
-    href: "/programs/natural-body",
-    funnelHref: consultFunnelHref,
-    tag: "Харчування",
-    duration: "21 день",
-    visual: "stone",
-    artwork: {
-      desktop: "/cw/platform/programs/ideal-body-hero-desktop-v2.webp",
-      card: "/cw/platform/programs/ideal-body-hero-desktop-v2-960.webp",
-      mobile: "/cw/platform/programs/ideal-body-card-v1.webp",
-      desktopPosition: "70% 50%",
-      mobilePosition: "center 16%",
-    },
-    description: "Навчальна програма з 21 основного уроку про Аюрведу, харчування, добовий ритм і баланс дош.",
-    longDescription:
-      "Програма допомагає зібрати природний і комфортний ритм через харчування, щоденні звички та базові принципи Аюрведи. Двадцять один урок послідовно веде від теорії першоелементів і дош до властивостей продуктів, циклів доби та орієнтирів для балансу.",
-    results: [
-      "побачити зв'язок між конституцією, апетитом і режимом",
-      "зменшити хаос у харчуванні без самокритики",
-      "зібрати раціон, який легше повторювати щодня",
-      "підтримати комфорт травлення і стабільність енергії",
-      "мати план корекції, якщо вага або режим знову пливуть",
-    ],
-  },
-  {
-    slug: "irem",
-    surfaceType: "program" as PlatformOfferSurfaceType,
-    conversionMode: "lead" as PlatformOfferConversionMode,
-    primaryActionKind: "enroll" as PlatformOfferPrimaryActionKind,
-    title: "IREM Гімнастика",
-    fullTitle: "Відновлююча гімнастика IREM",
-    href: getPlatformRoute("irem") ?? "/programs/irem",
-    funnelHref: iremFunnelHref,
-    tag: "Рух",
-    /* SEVEN DAYS, NOT TWELVE WEEKS. The figure here was a span nothing in the
-       course ever ran for: the material is seven daily lessons, Monday to
-       Sunday, under a module the author titled «7 днів практики». A duration on
-       an offer card is a promise about the thing being sold, so it now says
-       what the thing is. */
-    duration: "7 днів практики",
-    visual: "mountain",
-    artwork: {
-      desktop: "/cw/platform/programs/irem-hero-desktop-v2.webp",
-      card: "/cw/platform/programs/irem-hero-desktop-v2-960.webp",
-      mobile: "/cw/platform/programs/irem-card-v1.webp",
-      desktopPosition: "68% 50%",
-      mobilePosition: "center 18%",
-    },
-    description: "Щоденна рухова практика для контакту з тілом, м'якшої мобільності, енергії і зняття побутової напруги.",
-    longDescription:
-      "IREM збирає прості рухові техніки у послідовну практику: розігрів, дихання, мобільність, робота з напруженням і повернення уваги до сигналів тіла. Сім днів ідуть по порядку, від простого до глибшого, щоб тіло встигало за темпом.",
-    results: [
-      "зрозуміти, як вбудувати коротку практику руху в день",
-      "помічати напруження раніше і м'якше з ним працювати",
-      "підтримати відчуття легкості, мобільності і дихання",
-      "рухатися за структурою без спортивного перевантаження",
-      "мати опору для продовження після основного циклу",
-    ],
-  },
   {
     slug: "herbs",
     surfaceType: "product" as PlatformOfferSurfaceType,
@@ -281,25 +145,35 @@ export const programs = [
       "уникнути хаотичного вибору банок без контексту стану і меж методу",
     ],
   },
-  /* RESET DAY IS NOT HERE ANY MORE (2026-08-26).
-     It was the last thing in this array to describe a course that the database
-     already described better, and the two had drifted into contradicting each
-     other in public — this entry claimed «1 день» while the funnel landing
-     selling the same product said «3 дні». It is now a `listed` course served
-     by /programs/[slug], priced by an admin in `lms_course_offers`, and edited
-     by its author in the builder. The catalogue picks it up through
-     `listStorefrontCourses()` like any other authored course.
+  /* NOTHING HERE IS A COURSE ANY MORE (2026-08-29). `herbs` is the last entry
+     and it is a product — a jar, not a syllabus, with no author, no lessons and
+     nothing in `lms_courses` to read it from.
 
-     The five that remain are the ones with no course behind them, or whose
-     delivery is still a Telegram bot. Each is a candidate for the same move,
-     one at a time, and each needs the same three things reset-day needed: an
-     offer row, a visibility, and a decision about what it charges. */
+     The five courses that used to sit above it left one at a time, each for the
+     same reason: the database already said what this array claimed, and better.
+     reset-day went first (2026-08-26) while this file still insisted it was one
+     day and the funnel selling it said three. way21 and natural-body followed —
+     way21's long description, the line that says this is wellness education and
+     not medical treatment, moved onto the course `summary` rather than being
+     dropped, and its 1 UAH test charge became the `course:way21` offer row so
+     the dynamic route had a price to read. reboot and irem came last, and they
+     are the two that prove why the ADDRESS is not the course slug: they are
+     sold at /programs/reboot and /programs/irem while their rows are named
+     `short` and `irem-gymnastics`. Neither has an offer row, because neither is
+     delivered by the platform — both still fulfil through a Telegram bot, and
+     both keep charging the hand-written `PRODUCTS` code through
+     `resolveOfferCommerce`. Moving the page did not move the delivery.
+
+     What is left in this file is layout, navigation, artwork and copy that
+     belongs to no course. A new offer does not come here; it comes out of the
+     builder. */
 ];
 
 export const programPageBySlug = Object.fromEntries(programs.map((program) => [program.slug, program]));
 
-export const platformProgramOffers = programs.filter((program) => program.surfaceType === "program");
-export const platformMiniCourses = programs.filter((program) => program.surfaceType === "mini-course");
+/* The programme and mini-course selectors are gone with the entries they
+   selected: `programs` holds one product and no courses, so both would be a
+   constant `[]` shipped to a rail that reads the database instead. */
 export const platformProductOffers = programs.filter((program) => program.surfaceType === "product");
 
 export const platformAggregateArtwork = {
@@ -342,12 +216,6 @@ export const platformPageArtwork = {
     mobilePosition: "center 18%",
   },
 } satisfies Record<string, PlatformOfferArtwork>;
-
-export const featuredPrograms = platformProgramOffers;
-
-export const miniCourses = [
-  ...platformMiniCourses,
-].filter(Boolean);
 
 export const journeySteps = [
   { id: "center", title: "Центр", text: "Де мій живий ритм і що зараз важливо відновити?" },

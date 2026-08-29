@@ -14,12 +14,18 @@
  * whole day-N rhythm was computed and never delivered.
  *
  * That trade is now made explicitly and in the other direction: `LMS_REMINDER_
- * CADENCE` picks the policy, defaulting to `daily` to match vercel.json. Under
- * `daily` the local-hour test is dropped and everyone is reminded on the run's
- * own hour; the schedule is set so that hour is morning in Kyiv, where nearly
- * all learners are. Set the variable to `hourly` and add an hourly schedule
- * (any plan that permits one, or an external scheduler calling this endpoint
- * with CRON_SECRET) and the designed behaviour returns with no code change.
+ * CADENCE` picks the policy, defaulting to `daily`. Under `daily` the local-hour
+ * test is dropped and everyone is reminded on the run's own hour; the schedule
+ * is set so that hour is morning in Kyiv, where nearly all learners are.
+ *
+ * THE CONSTRAINT ABOVE NO LONGER BINDS (2026-08-29). Scheduling moved off the
+ * Vercel plan and into pg_cron — the "external scheduler calling this endpoint
+ * with CRON_SECRET" that this comment named as the escape hatch is now what
+ * actually fires it (docs/migration/sql/2026-08-29_pg_cron_scheduler.sql), and
+ * it has minute granularity. So `hourly` costs setting `LMS_REMINDER_CADENCE=
+ * hourly` and changing one schedule in `cron.job`. It is left on `daily`
+ * because WHEN to message learners is a product decision, not a scheduling
+ * one — but it is now a decision rather than a limitation.
  *
  * What is NOT given up: the day number. Which day of the course a learner is on
  * is still computed in their own timezone under either policy — only the hour of

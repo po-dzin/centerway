@@ -88,16 +88,30 @@ function checkoutHref(productCode: PayableProductCode, slug: string): string {
  * How a course out of the BUILDER converts.
  *
  * Same rule as the six, read from the other place: an active offer row means a
- * price the owner agreed, and a price the owner agreed means a buy button.
- * No row means the course is not for sale, and the page falls back to the form
- * rather than inventing a figure — which is exactly what `herbs` does.
+ * price the owner agreed, and a price the owner agreed means a buy button. With
+ * no row the answer is whatever `resolveOfferCommerce` gives the same address —
+ * a hand-written checkout where one exists, and otherwise the lead form, which
+ * is exactly the state `herbs` is in.
  *
  * The quoted figure is `listAmount ?? amount`: unlike `PRODUCTS`, a database
  * offer has no test-price split, so a null list price means "quote what is
  * charged", not "quote nothing".
  */
 export function courseOfferCommerce(slug: string, offer: CourseOffer | null): OfferCommerce {
-  if (!offer) return { mode: "lead", leadProductCode: "platform" };
+  /* NO ROW IS NOT THE SAME AS NOT FOR SALE — it means nobody has written the
+     course's price into `lms_course_offers` YET, and two of them are already
+     sold under a hand-written code: `/programs/reboot` charges `short` and
+     `/programs/irem` charges `irem`, both live, both through a Telegram bot
+     that the course-entitlement path does not deliver. When those two pages
+     stopped being hand-written this branch was the whole difference between
+     keeping a working checkout and quietly replacing it with a lead form.
+
+     So the hand-written answer is the fallback rather than a lead code guessed
+     from nothing: the database offer wins where there is one, and where there
+     is not, the offer converts exactly the way it did the day before it moved.
+     `slug` is the PROGRAM slug for that reason — it is the vocabulary both
+     tables below are keyed in. */
+  if (!offer) return resolveOfferCommerce(slug);
 
   return {
     mode: "checkout",

@@ -10,6 +10,10 @@
 
 import { courseOfferCode } from "./offerCode";
 
+/**
+ * "token" is retained for callers that still name it and for stored history; it
+ * is no longer PRODUCED here. See the note on access tokens below.
+ */
 export type EntitlementSource = "order" | "token" | "manual";
 
 export type PaidOrderRef = {
@@ -20,16 +24,34 @@ export type PaidOrderRef = {
   createdAt: string;
 };
 
-export type AccessTokenRef = {
-  orderRef: string;
-  used: boolean;
-  expiresAt: string | null;
-};
-
+/**
+ * ACCESS TOKENS DO NOT DECIDE ENTITLEMENT, and used to (removed 2026-08-29).
+ *
+ * An `access_tokens` row is a Telegram hand-off LINK — a thing you click once,
+ * with a short life. The old rule read a lapsed link as lapsed ACCESS: a paid
+ * order whose token had expired stopped granting the course. That inverted the
+ * operator's only repair tool. `/api/tokens/create` is the admin's "resend
+ * access" button; pressing it minted a 30-minute token, and half an hour later
+ * the paying learner was locked out BY the act of helping them. One live
+ * customer was in exactly that state when this was found — order
+ * `short_20260301_7189884a`, paid 2026-03-01, two expired links, never opened.
+ *
+ * It was also a SECOND answer to "has this access run out?". The first, and the
+ * designed one, is the enrollment deadline — `lms_enrollments.expires_at`, read
+ * by `isEnrollmentExpired` below and by `accessWindow`. That one is per
+ * enrollment, so support can extend one learner without touching an offer, and
+ * it is the only one a cohort or a renewal ever configures. Two sources of
+ * truth for the same question, and the accidental one winning, is how a paid
+ * order came to grant nothing.
+ *
+ * So: a paid order entitles, full stop. A dead token means a dead link, and the
+ * learner is handed a new one — it never means a dead purchase. `reason:
+ * "expired"` is still reachable and still means what it says; it now comes from
+ * the enrollment deadline alone.
+ */
 export type EntitlementInput = {
   courseProductCodes: string[];
   orders: PaidOrderRef[];
-  tokens: AccessTokenRef[];
   /** Explicit grants (admin, gift, cohort import). */
   manualGrants?: Array<{ courseSlug: string; grantedAt: string }>;
   courseSlug: string;
@@ -50,36 +72,31 @@ function normalizeCode(code: string): string {
  * every code that grants them, and matching is case-insensitive.
  */
 /**
- * The paid orders that actually grant THIS course, with dead access links
- * dropped — the same filtering `resolveEntitlement` does, exposed on its own.
+ * The paid orders that actually grant THIS course — the same matching
+ * `resolveEntitlement` does, exposed on its own.
  *
  * Extracted because two callers need it and must never drift: entitlement asks
  * "is there one?", and the access planner asks "which one is the newest?". Two
  * copies of the code-matching rule would have meant a course that grants on a
  * legacy funnel code but refuses to renew on it.
+ *
+ * It no longer takes tokens. It used to drop orders whose access link had
+ * lapsed, which meant the RENEWAL path lost the newest purchase for the same
+ * reason the yes/no path lost the only one.
  */
 export function acceptedPaidOrders(input: {
   courseProductCodes: string[];
   courseSlug: string;
   orders: PaidOrderRef[];
-  tokens: AccessTokenRef[];
   now: Date;
 }): PaidOrderRef[] {
   const accepted = new Set(
     [...input.courseProductCodes, courseOfferCode(input.courseSlug)].map(normalizeCode)
   );
-  const tokenByOrderRef = new Map(input.tokens.map((token) => [token.orderRef, token]));
 
   return input.orders
     .filter((order) => order.status.trim().toLowerCase() === "paid")
     .filter((order) => accepted.has(normalizeCode(order.productCode)))
-    .filter((order) => {
-      // A paid order without a token still counts: tokens are the Telegram
-      // hand-off mechanism, not the entitlement itself. An EXPIRED token,
-      // though, is a hand-off that lapsed.
-      const token = tokenByOrderRef.get(order.orderRef);
-      return !token?.expiresAt || Date.parse(token.expiresAt) >= input.now.getTime();
-    })
     .sort((a, b) => Date.parse(a.createdAt) - Date.parse(b.createdAt));
 }
 
@@ -108,23 +125,10 @@ export function resolveEntitlement(input: EntitlementInput): Entitlement {
 
   if (paidOrders.length === 0) return { entitled: false, reason: "no_paid_order" };
 
-  const tokenByOrderRef = new Map(input.tokens.map((token) => [token.orderRef, token]));
-
-  for (const order of paidOrders) {
-    const token = tokenByOrderRef.get(order.orderRef);
-
-    // A paid order without a token still grants access: tokens are the Telegram
-    // hand-off mechanism, not the entitlement itself.
-    if (!token) {
-      return { entitled: true, source: "order", grantedAt: order.createdAt, orderRef: order.orderRef };
-    }
-
-    if (token.expiresAt && Date.parse(token.expiresAt) < input.now.getTime()) continue;
-
-    return { entitled: true, source: "token", grantedAt: order.createdAt, orderRef: order.orderRef };
-  }
-
-  return { entitled: false, reason: "expired" };
+  // The earliest accepted purchase is the grant. No token is consulted: see the
+  // note on EntitlementInput for why one ever was, and what it cost.
+  const [first] = paidOrders;
+  return { entitled: true, source: "order", grantedAt: first.createdAt, orderRef: first.orderRef };
 }
 
 /**
