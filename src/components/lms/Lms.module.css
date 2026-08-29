@@ -264,6 +264,16 @@
   margin-block: var(--cw-space-xs) var(--cw-space-sm);
 }
 
+/* Above 900px the bar carries the trail (see ReaderTrail.module.css) and this
+   copy goes away entirely — `display: none`, so it leaves the accessibility
+   tree with the screen and a reader is offered one breadcrumb, not two. Below
+   it the bar has no room to spare and this stays the only copy. */
+@media (min-width: 900px) {
+  .lessonTopBar {
+    display: none;
+  }
+}
+
 /* Real controls, not text links: both are thumb-sized and read as buttons.
    Chrome, not content — transparent at rest, the surface arrives on hover and
    focus where it means something. */
@@ -967,11 +977,15 @@
    bar used to be a raised surface whose only child was a filled pill — two
    containers, two shadows and two radii for one checkbox. The control itself
    is now the sticky element. */
+/* IT SITS AT THE END OF THE LESSON, IT DOES NOT FOLLOW YOU DOWN IT.
+   This was `position: sticky` at the foot of the viewport, and the cost was
+   paid on every lesson that opens with a video: the bar floated across the
+   player from the first frame, over the one element of a lesson you cannot
+   read around. Sticky was buying reach for a control that is pressed once, at
+   the end — and the end is exactly where scrolling already takes you. The
+   safe-area inset goes with it; nothing is pinned to the bottom edge any more,
+   so nothing has to clear the home indicator. */
 .completionBar {
-  position: sticky;
-  /* Sits above the home indicator, inside thumb reach. */
-  bottom: max(var(--cw-space-md), env(safe-area-inset-bottom));
-  z-index: var(--ds-z-sticky);
   margin-top: var(--cw-space-xl);
 }
 
@@ -990,9 +1004,10 @@
   border: 0;
   border-radius: var(--cw-radius-btn);
   background: var(--cw-platform-accent);
-  /* It floats over the lesson text now that nothing sits behind it, so it takes
-     the lift the wrapper used to carry. */
-  box-shadow: var(--cw-mat-shadow-raised);
+  /* A raised shadow was what let it read as floating ABOVE the text it crossed.
+     In the flow it is an object on the page like any other, so it takes the
+     resting lift rather than the one that says "this is over something". */
+  box-shadow: var(--cw-mat-shadow-soft);
   color: var(--cw-platform-on-accent);
   cursor: pointer;
   font-weight: 600;

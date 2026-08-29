@@ -29,10 +29,19 @@ export function PlatformShell({
   headerMode = "default",
   surface = "auto",
   footer = true,
+  headerContent,
 }: {
   children: ReactNode;
   headerMode?: "default" | "overlay" | "learn";
   footer?: boolean;
+  /**
+   * Chrome the ROUTE owns, carried in the bar's workspace slot — the reader's
+   * breadcrumb is the first user. It is a prop rather than a context because
+   * the header is this component's sibling-in-render, not its descendant: a
+   * page below the shell cannot provide to a bar above it, and a portal would
+   * mean the trail arrives a frame after the page it describes.
+   */
+  headerContent?: ReactNode;
   /**
    * Route-owned application identity. Host detection remains the default for
    * public pages, but personal routes must also render correctly on localhost
@@ -54,6 +63,7 @@ export function PlatformShell({
         initialTone={headerMode === "overlay" ? "dark" : "light"}
         mode={headerMode === "learn" ? "workspace" : headerMode}
         surface={surface}
+        workspaceContent={headerContent}
         /* EVERY SURFACE THIS SHELL WRAPS, because every one of them is read
            rather than operated. It started on the lesson and it is the same
            argument on the storefront, the catalogue and the dashboard: while
