@@ -81,7 +81,12 @@
      panel edge, a group separator and the foot above a control. Carrying the
      analogy further (a real drafted line, weight varying along its length)
      belongs in the design system at art-direction level, not in one module. */
-  --builder-rule: color-mix(in srgb, var(--cw-platform-text) 13%, transparent);
+  /* THE SAME INK THE FRAME'S OWN EDGES ARE DRAWN IN. This was the 13% mix
+     written out here, and the topbar's contour was the identical mix written
+     out again in PlatformResponsive — one line, two spellings, free to drift.
+     `--cw-mat-stroke-chrome` is that value named once in the design system, so
+     the bar above this workspace and the rails inside it are one system. */
+  --builder-rule: var(--cw-mat-stroke-chrome);
   /* The line that varies along its length, promised in the paragraph above and
      now owed to the design system rather than to this file: globals.css holds
      the shape (`--cw-rule-fade-x` / `-y`), this scope hands it the colour. */

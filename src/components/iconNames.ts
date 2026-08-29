@@ -20,6 +20,8 @@ export const CW_ICON_NAMES = [
   "check",
   "shield-check",
   "star",
+  "bookmark",
+  "bookmark-marked",
   "price",
   "water",
   "leaf",

@@ -146,7 +146,7 @@ function bakeInPage(job) {
         dots.push({ cx: round(dot.cx), cy: round(dot.cy), r: round(dot.r), accent: Boolean(dot.accent) });
       }
     }
-    result[item.name] = { paths, rings, dots };
+    result[item.name] = { paths, rings, dots, filled: Boolean(item.filled) };
   }
   host.remove();
   return result;
@@ -154,8 +154,14 @@ function bakeInPage(job) {
 
 function symbolMarkup(name, baked, viewBox, strokeWidth) {
   const lines = [`  <symbol id="cw-${name}" viewBox="${viewBox}">`];
+  /* `filled` is the ONE exception to "no fills except accent dots", and it
+     exists so a glyph can carry a binary state in its own shape — a bookmark
+     that is set, drawn solid, beside the same outline when it is not. It is a
+     property of the glyph, not of the consumer: CSS cannot reach a `<use>`
+     shadow tree past a presentation attribute, so an outline symbol cannot be
+     filled from the page and the pair has to be baked. */
   const open = [
-    `    <g fill="none" stroke="currentColor" stroke-width="${strokeWidth}"`,
+    `    <g fill="${baked.filled ? "currentColor" : "none"}" stroke="currentColor" stroke-width="${strokeWidth}"`,
     `stroke-linecap="round" stroke-linejoin="round">`,
   ].join(" ");
   lines.push(open);

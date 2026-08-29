@@ -225,7 +225,11 @@ export function PlatformHeader({
     <header
       ref={headerRef}
       className={styles.header}
-      data-cw-glass={mode === "workspace" ? undefined : "shell"}
+      /* One material for every surface: the workspace bar used to opt out of
+         the glass and paint a flat panel instead, which made the internal
+         topbars — builder, library, admin — a different object from the
+         storefront's. */
+      data-cw-glass="shell"
       data-cw-header-tone={headerTone}
       data-cw-header-mode={mode}
       /* Two attributes, not one. The first says this bar is allowed to move —
@@ -240,6 +244,7 @@ export function PlatformHeader({
     >
       <button
         className={styles.menuScrim}
+        data-cw-scrim="chrome"
         type="button"
         tabIndex={-1}
         aria-label="Закрити навігаційне меню"
@@ -265,7 +270,7 @@ export function PlatformHeader({
           className={`${styles.navLayer} ${menuOpen ? styles.navLayerOpen : ""}`}
           id="platform-mobile-menu"
         >
-          <div className={styles.mobileMenuSurface} data-cw-glass={mode === "workspace" ? undefined : "shell"}>
+          <div className={styles.mobileMenuSurface} data-cw-glass="shell">
             {/* WHOSE SESSION THIS IS, FIRST. The block lives inside the account
                 rows on the desktop popover, which on the phone put it halfway
                 down the drawer — below the public destinations, reading as a

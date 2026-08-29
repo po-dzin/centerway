@@ -20,10 +20,9 @@ import {
 import Link from "next/link";
 
 import { courseThemeAttributes, inlineToPlainText } from "@/lms-core";
-import { PlatformTrail } from "@/components/platform/PlatformTrail";
 import { Icon } from "@/components/Icon";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
-import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
+import { useChromeReveal } from "@/components/platform/layout/useChromeReveal";
 import { lessonPagerLayout } from "@/lib/lms/lessonNavigation";
 import { BlockRenderer } from "./LessonBlocks";
 import { CourseContentsDrawer } from "./CourseContentsDrawer";
@@ -84,6 +83,13 @@ export function LessonView({
   const [completed, setCompleted] = useState(false);
   const [pending, setPending] = useState(false);
   const [contentsOpen, setContentsOpen] = useState(false);
+  /* The floating chrome rides the same reveal the topbar used to — see
+     `useChromeReveal` for why direction and not depth. Locked open while the
+     contents drawer is up: the drawer is opened FROM this cluster, and a
+     cluster that walked off under it would leave the dialog hanging off
+     nothing. */
+  const chromeRef = useRef<HTMLDivElement | null>(null);
+  const { hidden: chromeHidden } = useChromeReveal(true, chromeRef, { locked: contentsOpen });
   const [readingRatio, setReadingRatio] = useState(0);
   const bodyRef = useRef<HTMLDivElement>(null);
   const previousLinkRef = useRef<HTMLAnchorElement>(null);
@@ -434,46 +440,39 @@ export function LessonView({
         <div className={styles.readingFill} style={{ width: `${Math.round(readingRatio * 100)}%` }} />
       </div>
 
-      {!draftPreview ? <div className={styles.lessonTopBar}>
-        {/* Three levels where there used to be one «До курсу». The lesson is
-            the last step and is not a link — the crumb a learner can press has
-            to be the one that looks pressable. */}
-        <PlatformTrail
-          steps={[
-            { label: "Мої курси", href: surfaceHref(LEARNING_SHELF_HREF) },
-            { label: data.courseTitle, href: surfaceHref(`/learn/${courseSlug}`) },
-            { label: data.lesson.title },
-          ]}
-        />
-      </div> : null}
+      {/* THE READER'S CHROME, FLOATING (2026-08-29). There is no topbar on this
+          route — see the `reading` note in PlatformLayout. What a lesson needs
+          is two answers, and they are two objects on the bar's own material
+          rather than three full-width rows above the first line: the way out on
+          the left, the reading tools on the right. Both ride the same reveal
+          the bar used to (`useChromeReveal`), so scrolling down leaves the
+          column with nothing over it and one flick up brings them back.
 
-      {/* Position in the course sits next to the duration, so "where am I / how
-          long is this" is answered in one glance. Reference pages get a label
-          instead of a counter — they hold no place in the sequence. */}
-      <div className={styles.lessonMetaRow}>
-        <p className={styles.stepMarker}>
-          {nav.position !== null ? (
-            <span className={styles.stepCount}>
-              {nav.position} / {nav.total}
-            </span>
-          ) : (
-            <span className={styles.referenceTag}>Довідник</span>
-          )}
-          <span>{data.module.title}</span>
-          {/* Total length answers "should I start this now"; once reading has
-              started the only useful number is what is left, and the same
-              authored duration answers that against the scroll position. */}
-          {data.lesson.durationMin ? (
-            <>
-              <span className={styles.stepDivider} aria-hidden="true">·</span>
-              <span>
-                {readingRatio > 0.08 && readingRatio < 0.99
-                  ? `лишилось ~${minutesRemaining(data.lesson.durationMin, readingRatio)} хв`
-                  : `${data.lesson.durationMin} хв`}
-              </span>
-            </>
-          ) : null}
-        </p>
+          It sits inside <main> on purpose: the contents drawer marks the whole
+          column `inert`, and these controls belong to the column it is covering.
+          Nothing on the way down is `position: relative`, so the fixed layer is
+          measured against the viewport as intended. */}
+      <div className={styles.readerChrome} ref={chromeRef} data-hidden={chromeHidden ? "true" : undefined}>
+        {/* The crumb row this replaces named three levels and only one of them
+            was ever pressed. The lesson was the last step and not a link; the
+            shelf is one tap on from the course. What is left is the tap that
+            was doing the work.
+
+            NO LABEL ON IT (2026-08-29). It carried the course title for one
+            revision and that was worse than the row it replaced: a course can
+            be called anything, so on a phone the pill was a truncated fragment
+            ending in an ellipsis — a name you cannot read, in the widest object
+            on the screen, over the first line of the lesson. An arrow pointing
+            back needs no caption; the course's name is one tap away, on the
+            course. The full label lives in `aria-label`, where a screen reader
+            gets it without the layout paying for it. */}
+        <Link
+          className={styles.readerBack}
+          href={surfaceHref(`/learn/${courseSlug}${previewQuery}`)}
+          aria-label={`До курсу: ${data.courseTitle}`}
+        >
+          <Icon name="arrow-left" size={18} />
+        </Link>
 
         <div className={styles.readerTools}>
           {/* A bookmark is about the LESSON, so it sits with the lesson's own
@@ -490,28 +489,65 @@ export function LessonView({
               /* Held until the course's first fetch resolves, same as
                  ReaderMarkLayer below. A press that lands first writes an
                  optimistic bookmark that GET then has no way to know about —
-                 the fetch overwrites the whole list wholesale — so the star
+                 the fetch overwrites the whole list wholesale — so the mark
                  saved to the server comes back unmarked until reload. */
               disabled={!marks.ready}
               onClick={() => void marks.toggleBookmark(lessonSlug)}
             >
-              <Icon name="star" size={18} />
+              {/* Two glyphs, not one glyph and a colour: a set bookmark is
+                  solid, an unset one is the outline. The state is in the shape,
+                  so it survives a screenshot, a colour-blind reader and the
+                  moment the control is not the only thing on screen. */}
+              <Icon name={marks.bookmarked(lessonSlug) ? "bookmark-marked" : "bookmark"} size={18} />
             </button>
           ) : null}
 
           <ReaderTextSize value={scaleId} onChange={chooseScale} />
 
+          {/* The word «Зміст» went with the row. In a cluster of equal targets
+              one labelled control sets the width of everything beside it, and
+              the list glyph says the same thing at a third of the room. */}
           <button
             className={`${styles.iconButton} ${styles.contentsButton}`}
             type="button"
             onClick={() => setContentsOpen(true)}
             aria-haspopup="dialog"
+            aria-label="Зміст курсу"
           >
             <Icon name="menu" size={18} />
-            <span>Зміст</span>
           </button>
         </div>
       </div>
+
+      {/* Position in the course sits next to the duration, so "where am I / how
+          long is this" is answered in one glance. It is a CAPTION now rather
+          than half of a chrome row: it stopped sharing a line with the tools
+          when they floated off, so it reads with the title it belongs to and
+          scrolls away with it. Reference pages get a label instead of a
+          counter — they hold no place in the sequence. */}
+      <p className={styles.stepMarker}>
+        {nav.position !== null ? (
+          <span className={styles.stepCount}>
+            {nav.position} / {nav.total}
+          </span>
+        ) : (
+          <span className={styles.referenceTag}>Довідник</span>
+        )}
+        <span>{data.module.title}</span>
+        {/* Total length answers "should I start this now"; once reading has
+            started the only useful number is what is left, and the same
+            authored duration answers that against the scroll position. */}
+        {data.lesson.durationMin ? (
+          <>
+            <span className={styles.stepDivider} aria-hidden="true">·</span>
+            <span>
+              {readingRatio > 0.08 && readingRatio < 0.99
+                ? `лишилось ~${minutesRemaining(data.lesson.durationMin, readingRatio)} хв`
+                : `${data.lesson.durationMin} хв`}
+            </span>
+          </>
+        ) : null}
+      </p>
 
       <h1 className={styles.title}>{data.lesson.title}</h1>
       {/* One abstract under the title, never two. Every lesson carries both a
@@ -634,9 +670,12 @@ export function LessonView({
 
       {/* Outside `<main>`, because `main` goes inert while the contents drawer
           is open and a control that stays on screen while it cannot be pressed
-          is worse than one that leaves with the page. `clearsCompletion` — the
-          lesson pins its completion toggle to the bottom of the column. */}
-      {!contentsOpen ? <ReaderTopButton clearsCompletion /> : null}
+          is worse than one that leaves with the page.
+
+          No `clearsCompletion` since 2026-08-28: the completion toggle is the
+          last object in the column rather than a bar pinned to the foot of the
+          screen, so there is nothing down there to step over. */}
+      {!contentsOpen ? <ReaderTopButton /> : null}
 
       {contentsOpen ? (
         <CourseContentsDrawer
