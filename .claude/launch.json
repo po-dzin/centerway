@@ -33,7 +33,7 @@
         "http.server",
         "8932",
         "--directory",
-        ".claude/worktrees/library-room-prototype-f17a4a/docs/design-system/prototypes"
+        "docs/design-system/prototypes"
       ],
       "port": 8932,
       "autoPort": false,
