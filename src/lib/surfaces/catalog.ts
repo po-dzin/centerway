@@ -121,6 +121,7 @@ export const PUBLIC_ROOT_SEGMENTS = [
   "detox",
   "dosha-test",
   "expert",
+  "experts",
   "legal",
   "mini-detox",
   "pay",
