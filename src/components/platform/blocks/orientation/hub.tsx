@@ -4,6 +4,7 @@ import { Icon } from "@/components/Icon";
 import styles from "@/components/platform/PlatformHeroStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
+import { HubIntroVideo } from "./IntroVideo";
 
 /* Focus for the threshold plate (1312×816, ratio 1.608), read through the
    shared hero framing contract in PlatformResponsive.module.css. Measured off
@@ -88,22 +89,11 @@ export function HubIntro() {
               ground. Stretching the iframe itself is what used to turn the
               player into a near-square on desktop — that is a property of the
               video, not of the row. */}
-          <div className={styles.videoFrame}>
-            <iframe
-              className={styles.videoEmbed}
-              src="https://www.youtube-nocookie.com/embed/6jmhNMj_Duo?rel=0&modestbranding=1"
-              title="Вступне відео CenterWay"
-              /* The hero's CTA scrolls DOWN to this player, so it is below the
-                 fold by construction — and a YouTube embed is the heaviest
-                 thing on the page by a distance. Lazy, so it is fetched when
-                 the visitor is on their way to it rather than while they are
-                 still reading the first screen. */
-              loading="lazy"
-              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-              referrerPolicy="strict-origin-when-cross-origin"
-              allowFullScreen
-            />
-          </div>
+          {/* The hero's CTA scrolls DOWN to this player, so it is below the
+              fold by construction — and a YouTube embed is the heaviest thing
+              on the page by a distance. It is not rendered until the visitor
+              presses it; see IntroVideo for the second, larger reason. */}
+          <HubIntroVideo />
         </div>
         <aside className={styles.videoAside} id="diagnostics" data-cw-hub-intro="aside">
           <div className={styles.videoDecisionIntro}>
