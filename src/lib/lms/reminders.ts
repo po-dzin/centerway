@@ -169,9 +169,16 @@ export async function runUnstartedReminders(
     const orderRefs = orders.map((order) => order.order_ref as string);
     const authUserIds = [...new Set([...authByCustomer.values()])];
 
-    const [{ data: enrolled }, { data: tokens }, { data: alreadySent }] = await Promise.all([
+    /* `access_tokens` is deliberately NOT read here any more (2026-08-29).
+       This pass nudges people who PAID and never opened the course, and it used
+       to skip anyone whose hand-off link had lapsed — under the reading that a
+       dead link meant dead access. That reading is gone from entitlement (see
+       `EntitlementInput` in lms-core/access.ts), and it was worst here: the
+       learner most in need of a nudge is exactly the one who never clicked the
+       link, which is also the one whose link expires unused. We were silencing
+       the reminder for the only people it was written for. */
+    const [{ data: enrolled }, { data: alreadySent }] = await Promise.all([
       db.from("lms_enrollments").select("auth_user_id").eq("course_id", course.id).in("auth_user_id", authUserIds),
-      db.from("access_tokens").select("order_ref, expires_at").in("order_ref", orderRefs),
       db
         .from("lms_unstarted_reminders")
         .select("order_ref, nudge_number")
@@ -180,11 +187,6 @@ export async function runUnstartedReminders(
     ]);
 
     const startedAlready = new Set((enrolled ?? []).map((row) => row.auth_user_id as string));
-    const expiredOrders = new Set(
-      (tokens ?? [])
-        .filter((token) => token.expires_at && new Date(token.expires_at).getTime() < now.getTime())
-        .map((token) => token.order_ref as string)
-    );
 
     const sentByOrder = new Map<string, number[]>();
     for (const row of alreadySent ?? []) {
@@ -209,10 +211,6 @@ export async function runUnstartedReminders(
       }
       if (handledUsers.has(authUserId)) {
         bump(skipped, "duplicate_order");
-        continue;
-      }
-      if (expiredOrders.has(orderRef)) {
-        bump(skipped, "access_expired");
         continue;
       }
 

@@ -4,6 +4,7 @@ import { requireUserFromBearer } from "@/lib/auth/requireUser";
 import { calculateDoshaResult, DOSHA_TEST_SLUG, isValidScoreInvariant } from "@/lib/doshaTest";
 import { DOSHA_PRIMARY_EXIT } from "@/lib/doshaRouting";
 import type { CapiEventPayload } from "@/lib/tracking/capi";
+import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import {
   createTestAttempt,
   emitDoshaTestEvent,
@@ -92,6 +93,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ testSlug: string }> }
 ) {
+  const rl = await enforceRateLimit(req, { name: "test_complete", limit: 20, windowSeconds: 60 });
+  if (!rl.allowed) return tooManyRequests(rl.retryAfter);
+
   const { testSlug } = await params;
   if (testSlug !== DOSHA_TEST_SLUG) {
     return NextResponse.json({ error: "test_not_found" }, { status: 404 });

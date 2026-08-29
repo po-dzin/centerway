@@ -3,6 +3,7 @@ import { sendConfirmedSaleTelegramReport } from "@/lib/reporting/analyticsReport
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { extractPaymentMeta } from "@/lib/paymentMeta";
 import {
+  buildWfpAcceptResponse,
   isWfpApproved,
   verifyWfpCallbackSignature,
   wfpEventTypeFromStatus,
@@ -345,9 +346,20 @@ export async function POST(req: NextRequest) {
     }
 
     if (errors.length) {
-      console.error("wfp_webhook_nonfatal", { orderRef, errors });
-      // Возвращаем 200, чтобы платёжка не ретраила бесконечно.
-      return NextResponse.json({ ok: false, error: "db_write_failed", details: errors.join("; ") }, { status: 200 });
+      // WITHHOLD the acceptance. This is the branch where money moved and our
+      // database did not record it, and it used to answer 200 in the belief
+      // that this stopped the gateway retrying. It never did: WayForPay decides
+      // from the signed `accept` body, not the status (see buildWfpAcceptResponse).
+      //
+      // So the correct behaviour was always available and simply unused — do
+      // not accept, and WayForPay redelivers this callback for up to four days.
+      // The writes below it are all idempotent, so a redelivery that succeeds
+      // completes the order exactly once.
+      console.error("wfp_webhook_write_failed", { orderRef, errors });
+      return NextResponse.json(
+        { ok: false, error: "db_write_failed", details: errors.join("; ") },
+        { status: 500 }
+      );
     }
 
     // A QA payment made with `cw_staff=1` is a real order and a real WayForPay
@@ -434,7 +446,17 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    return NextResponse.json({ ok: true });
+    // The gateway's stop signal. Without this exact signed body it keeps
+    // redelivering for four days — which is what it has been doing all along.
+    const accept = buildWfpAcceptResponse(orderRef);
+    if (!accept) {
+      // Unreachable in practice: the signature gate above already refused the
+      // request when the secret is missing. Kept because "cannot sign" must
+      // never silently become "accepted".
+      console.error("[wfp webhook] cannot sign acceptance, secret missing", { orderRef });
+      return NextResponse.json({ ok: false, error: "missing_secret" }, { status: 500 });
+    }
+    return NextResponse.json(accept);
   } catch (e: any) {
     return NextResponse.json({ ok: false, error: "webhook_failed", details: String(e?.message || e) }, { status: 500 });
   }

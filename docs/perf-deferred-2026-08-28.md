@@ -1,6 +1,7 @@
 # Deferred after the 2026-08-28 media and performance pass
 
-Status: open. Everything here was found, measured or reasoned about during the
+Status: partly closed — the two migration items were verified applied on
+2026-08-29 and need nothing. Everything here was found, measured or reasoned about during the
 pass recorded in `docs/media-weight-2026-08-28.md`, and deliberately **not**
 done — because it needs a decision that is not a performance decision, or
 because the measurement did not support it.
@@ -9,24 +10,30 @@ Nothing here is blocking. The wins that were unambiguous are shipped.
 
 ## Waiting on a migration being run
 
+**VERIFIED 2026-08-29 AGAINST PRODUCTION: nothing here is waiting any more.**
+Both migrations named below were applied, and this section said otherwise for a
+day — long enough for an audit to report a blocking schema gap that did not
+exist. Checked over the session pooler (see the CLI route in
+`scripts/db-stage-migration.mjs`); `supabase_migrations.schema_migrations` holds
+every stamp through 20260829000000.
+
 **1. Delete the 40 original PNG/JPEG plates under `public/cw/**` (~62 MB).**
-The WebP re-encode kept them, and it had to: `lms_courses.cover` and
-`lms_lessons.blocks` still name the old paths in the database, and
-`lms_course_revisions` is append-only and will name them forever.
+The blocker is gone: `2026-08-28_static_artwork_webp.sql` HAS run. The
+verification `SELECT` it ends with returns no rows — zero `lms_courses.cover`
+and zero `lms_lessons.blocks` still name a `.png`/`.jpg` under `/cw/`.
 
-- Run `docs/migration/sql/2026-08-28_static_artwork_webp.sql` first. It ends
-  with a verification `SELECT` that should return no rows.
-- Then the originals can go — about 62 MB off every deployment.
-- The cost, stated: historical course versions will render a broken image where
-  a picture used to be. If that matters, the 62 MB is the price of an honest
-  history, and this item should be closed as "won't do" rather than left open.
+- The 62 MB can now come off every deployment whenever someone wants it.
+- The cost is unchanged and still a content decision, not a performance one:
+  `lms_course_revisions` is append-only and names the old paths forever, so
+  historical course versions will render a broken image. If that matters, this
+  item closes as "won't do" rather than staying open.
 
-**2. The media ledger and the sweeper are code without a schema.**
-`docs/migration/sql/2026-08-28_lms_media_ledger.sql` has not been run. Until it
-is, `npm run media:sweep` fails with a clear message and every upload works
-exactly as before — the route's ledger insert is the only thing that would
-error, and it is written to fail the request rather than leave stray bytes, so
-**run the migration before the next author uploads an image**.
+**2. The media ledger.** `2026-08-28_lms_media_ledger.sql` HAS run.
+`lms_media_assets`, the `lms_media_usage` view and all three functions
+(`lms_media_asset_key`, `lms_media_inventory`, `lms_referenced_media`) exist,
+and the backfill took: 2 assets / 1.74 MB, which matches what the bucket holds.
+`npm run media:sweep` works and uploads write their ledger row. Nothing about
+the next upload is at risk.
 
 ## Needs a decision that is not about performance
 

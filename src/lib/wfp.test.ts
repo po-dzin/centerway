@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from "vitest";
 import crypto from "crypto";
-import { computeWfpCallbackSignature, verifyWfpCallbackSignature } from "./wfp";
+import { buildWfpAcceptResponse, computeWfpCallbackSignature, verifyWfpCallbackSignature } from "./wfp";
 
 const SECRET = "test-merchant-secret";
 
@@ -123,5 +123,46 @@ describe("verifyWfpCallbackSignature", () => {
       present: false,
       reason: "missing_secret",
     });
+  });
+});
+
+describe("buildWfpAcceptResponse", () => {
+  const OLD = process.env.WFP_SECRET_KEY;
+  afterEach(() => {
+    if (OLD === undefined) delete process.env.WFP_SECRET_KEY;
+    else process.env.WFP_SECRET_KEY = OLD;
+  });
+
+  it("signs orderReference;status;time with HMAC-MD5, per WayForPay's spec", () => {
+    process.env.WFP_SECRET_KEY = "flk3409refn54t54t*FNJRET";
+    const res = buildWfpAcceptResponse("DH783023", 1415379863);
+
+    // Computed independently of the implementation, from the documented rule:
+    // HMAC-MD5 over the three values joined by ";" keyed with the secret.
+    const expected = crypto
+      .createHmac("md5", "flk3409refn54t54t*FNJRET")
+      .update("DH783023;accept;1415379863", "utf8")
+      .digest("hex");
+
+    expect(res).toEqual({
+      orderReference: "DH783023",
+      status: "accept",
+      time: 1415379863,
+      signature: expected,
+    });
+  });
+
+  it("refuses to invent an unsigned acceptance when the secret is absent", () => {
+    delete process.env.WFP_SECRET_KEY;
+    expect(buildWfpAcceptResponse("DH783023", 1415379863)).toBeNull();
+  });
+
+  it("signs the time it was given, so the signature and the field cannot disagree", () => {
+    process.env.WFP_SECRET_KEY = "secret";
+    const a = buildWfpAcceptResponse("ref-1", 1000);
+    const b = buildWfpAcceptResponse("ref-1", 2000);
+    expect(a?.time).toBe(1000);
+    expect(b?.time).toBe(2000);
+    expect(a?.signature).not.toBe(b?.signature);
   });
 });
