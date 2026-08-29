@@ -112,8 +112,17 @@ export function CourseCard({
 
   return (
     <article className={course.access === "locked" ? styles.cardMuted : styles.card} {...matte}>
-      {/* The picture the course was chosen by, kept after it was bought. */}
-      <CourseCover course={course} dimmed={course.access === "locked"} />
+      {/* THE COVER'S OWN CORNER, NOT THE META ROW. A draft is a fact about the
+          COURSE — it holds whether or not it has steps, a day, or any progress
+          to report — and sitting it in `.chipRow` meant the row's shape changed
+          card to card depending on which OTHER chips happened to be present
+          that day. Pinned to the picture, it reads the same way on every card:
+          the one thing every author-visible course can be flagged with, always
+          in the same place. */}
+      <div className={styles.coverFrame}>
+        <CourseCover course={course} dimmed={course.access === "locked"} />
+        {course.status === "draft" ? <span className={styles.draftBadge}>{copy.courseDraft}</span> : null}
+      </div>
 
       <div className={styles.chipRow}>
         {stateChip ? (
@@ -125,7 +134,6 @@ export function CourseCard({
         {course.standing?.currentDay ? (
           <span className={styles.chip}>{copy.dayNumber(course.standing.currentDay)}</span>
         ) : null}
-        {course.status === "draft" ? <span className={styles.chip}>{copy.courseDraft}</span> : null}
       </div>
 
       <h3 className={styles.courseCardTitle}>{course.title}</h3>

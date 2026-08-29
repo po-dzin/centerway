@@ -147,12 +147,29 @@
   font-family: var(--cw-font-editorial);
   font-size: 1.3rem;
   font-weight: 500;
+  /* TWO LINES, NEVER MORE. A shelf is scanned, not read — a title running to
+     three or four lines pushed the summary, the meta and the buttons down by a
+     different amount on every card, and the row stopped reading as one shelf.
+     The full title still exists: it is the page a spine opens onto. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .cardText {
   margin: 0;
   color: var(--cw-platform-muted);
   line-height: 1.6;
+  /* THREE LINES, FOR THE SAME REASON THE TITLE GETS TWO. A course's own summary
+     is written by its author with no length contract, and one long enough ran
+     the card to double the height of its neighbours — a wall of text where the
+     shelf's rhythm is supposed to be one glance per card. The full summary is
+     what the offer page and the course map are for. */
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* ── Continue card (the cabinet's single most important control) ── */
@@ -831,6 +848,13 @@
 /* The canonical course-media object: the same framed 16:9 crop used by the
    builder and public catalogue. It remains inside the panel at every width so
    purchase does not turn one cover into a different composition. */
+/* THE FRAME THE DRAFT BADGE PINS TO. `.cover`/`.coverFallback` keep their own
+   margin so the frame costs nothing when there is no badge to place — it is a
+   positioning context, not a second box around the picture. */
+.coverFrame {
+  position: relative;
+}
+
 .cover,
 .coverFallback {
   width: 100%;
@@ -840,6 +864,23 @@
   border-radius: var(--cw-radius-md);
   object-fit: cover;
   background: var(--cw-mat-surface-sunk);
+}
+
+/* A DRAFT IS A FLAG ON THE PICTURE, NOT A CHIP IN THE ROW. Fixed to the same
+   corner on every card regardless of what else is true about it, so the eye
+   learns one place to look rather than hunting a chip row whose order shifts
+   with the course's own state. Glass, not the sunk chip ground — it sits ON
+   the cover, and the chip material would have doubled the shelf's card/media
+   distinction inside a single picture. */
+.draftBadge {
+  composes: chip;
+  position: absolute;
+  inset-block-start: var(--cw-space-2xs);
+  inset-inline-start: var(--cw-space-2xs);
+  background: color-mix(in srgb, var(--cw-platform-bg) 55%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  color: var(--cw-platform-text);
 }
 
 .coverFallback {
