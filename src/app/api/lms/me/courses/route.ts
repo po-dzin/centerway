@@ -44,6 +44,11 @@ export async function GET(req: NextRequest) {
       currentLessonSlug: entry.currentLessonSlug,
       currentLessonTitle: entry.currentLessonTitle,
       cover: entry.course.cover ?? null,
+      /* What the course is about — see `Course.categories` in lms-core. Zero
+         or more from a closed list; required before a course can go public,
+         so a signed-in reader's shelf never has to handle "no category" as a
+         real state, only as an empty array on the type. */
+      categories: entry.course.categories ?? [],
     })),
   });
 }
