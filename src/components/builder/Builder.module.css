@@ -1695,10 +1695,13 @@
   white-space: normal;
 }
 
+/* The two answers only need to fit side by side in a card, and the contract's
+   own geometry already does that — the earlier `min-width: auto` plus a hand-cut
+   padding was undoing the touch floor to buy width the row never lacked. The
+   floor is restated here because this is a target on top of a card, and nothing
+   else in this rule survives. */
 .courseCard > .confirmRow :is(.quietAction, .dangerAction, .retreatAction) {
-  min-width: auto;
   min-height: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-sm);
 }
 
 /* The module footer's side door — the same icon idiom as the step arrows and
@@ -1946,34 +1949,71 @@
    different languages. It is a scrim now: see the "one surface, one mark" note
    in PlatformButtons.module.css for the rule this obeys, and for why the
    recipe lives here rather than as a composable class there. */
+/* The offsets are measured to the PAINTED plate, not to the hit box. The plate
+   is inset by `--cw-space-xs` inside the 3rem target (see below), so the root
+   pulls back by the same amount and the chip still sits a `--cw-space-md`-ish
+   margin off the cover's corner — the position the eye reads did not move when
+   the paint shrank. */
 .courseCard > .menuRoot {
   position: absolute;
-  inset-block-start: calc(var(--cw-space-md) + var(--cw-space-2xs));
-  inset-inline-end: calc(var(--cw-space-md) + var(--cw-space-2xs));
+  inset-block-start: calc(var(--cw-space-md) - var(--cw-space-2xs));
+  inset-inline-end: calc(var(--cw-space-md) - var(--cw-space-2xs));
   z-index: 2;
 }
 
 /* The scrim, not a plate: the neutral scrim ink — fixed in both themes, so it
    darkens a bright cover and a dark one alike — with no elevation, no blur and
-   no stroke, in a full pill so it reads as ground beneath the glyph rather
-   than as a box drawn around it. The ink ring `BuilderMenu` already renders
-   stays the only thing that moves with state, which is why the hover rule
-   below restates the same background instead of deepening it: a floor is not
-   a state. */
+   no stroke, so it reads as ground beneath the glyph rather than as a box
+   drawn around it. The ink ring `BuilderMenu` already renders stays the only
+   thing that moves with state, which is why the hover rule below restates the
+   same background instead of deepening it: a floor is not a state.
+
+   THE PAINT IS NOT THE TARGET (2026-08-29). It used to be: the scrim filled
+   the whole 3rem control in a full pill, so a photograph carried a dark COIN
+   the size of a primary button, for a control that is a secondary way into
+   four menu items. Two things were wrong at once — the size, and the round.
+   A circle is the one shape this system does not draw for a control; every
+   other icon-only chip is a soft rect, and a pill here read as a foreign
+   object sitting on the cover.
+
+   So the target keeps its 3rem — a finger still gets the floor the contract
+   owns, and shrinking it would have been buying looks with reachability —
+   while the scrim is drawn INSIDE it as a soft rect. The plate is what the
+   eye measures; the extra ring of transparent hit area around it costs the
+   cover nothing, because nothing is painted there. */
 .courseCard > .menuRoot > .menuTrigger {
   padding-inline: 0;
   color: var(--cw-mat-inverse-text);
-  background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
-  border-radius: var(--cw-radius-pill);
+  background-color: transparent;
   box-shadow: none;
   backdrop-filter: none;
+}
+
+/* Behind the glyph, not over it. An absolutely positioned pseudo-element paints
+   above in-flow content, and `z-index` is not the lever to fix that with: this
+   file spends z-index on the builder's six overlay rungs and nothing else. So
+   the glyph is positioned too (`.menuTriggerGlyph`, set in BuilderMenu) and
+   tree order does it — the pseudo-element comes first, the glyph after. */
+.courseCard > .menuRoot > .menuTrigger::before {
+  content: "";
+  position: absolute;
+  inset: var(--cw-space-xs);
+  border-radius: var(--cw-radius-inset);
+  background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
+  pointer-events: none;
+}
+
+/* See above: positioned only so it outranks the scrim pseudo-element. Harmless
+   on every other menu trigger, which draws no plate at all. */
+.menuTriggerGlyph {
+  position: relative;
 }
 
 .courseCard > .menuRoot > .menuTrigger:hover:not(:disabled),
 .courseCard > .menuRoot > .menuTrigger:focus-visible,
 .courseCard > .menuRoot > .menuTrigger[aria-expanded="true"] {
   color: var(--cw-mat-inverse-text);
-  background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
+  background-color: transparent;
   box-shadow: none;
 }
 

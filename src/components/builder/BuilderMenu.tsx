@@ -215,7 +215,11 @@ export function BuilderMenu({
         aria-haspopup="menu"
         onClick={() => (open ? close() : openAtTrigger())}
       >
-        <Icon name="more" size={18} />
+        {/* Positioned so it paints ABOVE the scrim the course card draws in
+            `::before`: an absolutely positioned pseudo-element outranks in-flow
+            content, and the builder's layering rule keeps `z-index` for the
+            six overlay rungs, so tree order is what settles it here. */}
+        <Icon className={styles.menuTriggerGlyph} name="more" size={18} />
         {/* Same as every other icon control in the shell — and the rules for it
             (`.menuTrigger:hover .inkRing`, `[aria-expanded="true"] .inkRing`)
             were already written; only the graphic was missing. */}
