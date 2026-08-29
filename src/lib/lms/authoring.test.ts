@@ -95,13 +95,19 @@ describe("writeCourseStructure", () => {
    * distinction — absence means "cleared" only when the caller says it does.
    */
   describe("a payload that does not carry a storefront", () => {
+    /* A DRAFT, because the subject here is column writing and not publishing.
+       `writeCourseStructure` refuses to store a PUBLISHED course that is not
+       showcase-ready, and the whole point of `partial` below is that it omits
+       the storefront fields — including the tagline that gate requires. Left
+       published, both cases fail on a rule neither of them is about. */
+    const draft = { ...course, status: "draft" as const };
     const stored = {
-      ...course,
+      ...draft,
       tagline: "Двадцять один день",
       audience: ["Для тих, хто починає"],
       accessNote: "Доступ на рік",
     };
-    const partial = { ...course };
+    const partial = { ...draft };
     delete (partial as Record<string, unknown>).tagline;
     delete (partial as Record<string, unknown>).audience;
     delete (partial as Record<string, unknown>).accessNote;

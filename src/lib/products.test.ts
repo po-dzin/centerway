@@ -11,7 +11,7 @@ import {
   normalizeProduct,
   type CatalogProductCode,
 } from "@/lib/products";
-import { getSnapshotCourseByProgram } from "@/lib/lms/catalog";
+import { getSnapshotCourse, getSnapshotCourseByProgram } from "@/lib/lms/catalog";
 import { buildReturnDestination } from "@/lib/payReturn";
 
 const payableCodes = Object.keys(PRODUCTS) as CatalogProductCode[];
@@ -100,12 +100,19 @@ describe("payable product chain", () => {
       const fulfilment = PRODUCTS[code].fulfilment;
       expect(PRODUCTS[code].pixelContentName.length, `${code} pixelContentName`).toBeGreaterThan(0);
 
-      if (fulfilment.kind === "bot") {
-        const url = new URL(fulfilment.url);
-        expect(url.protocol).toBe("https:");
-        expect(url.searchParams.get("start"), `${code} bot link needs a start token`).toBeTruthy();
-      } else if (fulfilment.kind === "course") {
-        expect(getSnapshotCourseByProgram(fulfilment.courseSlug), `${code} names a course nothing serves`).not.toBeNull();
+      // The bot branch this loop used to have is gone with the deliveries it
+      // checked: nothing is handed over in Telegram any more (2026-08-29).
+      if (fulfilment.kind === "course") {
+        // TWO LOOKUPS, because the entry names two things. `courseSlug` is the
+        // row a learner reads at /learn/<slug>; `programSlug` is the public
+        // address the buyer is returned to. They are the same string for three
+        // of the four course products and deliberately different for `short`
+        // (row `short`, sold at /programs/reboot) and `irem`.
+        expect(getSnapshotCourse(fulfilment.courseSlug), `${code} names a course nothing serves`).not.toBeNull();
+        expect(
+          getSnapshotCourseByProgram(fulfilment.programSlug),
+          `${code} returns a buyer to a program page nothing serves`
+        ).not.toBeNull();
       }
     }
   });
@@ -135,7 +142,7 @@ describe("payable product chain", () => {
       const fulfilment = PRODUCTS[code].fulfilment;
       if (fulfilment.kind === "course") {
         expect(paid.pathname, `${code} is a course and must land on its offer page`).toBe(
-          `/programs/${fulfilment.courseSlug}`
+          `/programs/${fulfilment.programSlug}`
         );
       } else {
         expect(paid.pathname, `${code} has no offer page and keeps the confirmation`).toBe("/pay/thanks");

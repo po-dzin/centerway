@@ -34,8 +34,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const known = new Set(staticRoutes.map((entry) => entry.url));
 
   const courseRoutes = courses
-    .map((course) => `${PLATFORM_ORIGIN}/programs/${course.slug}`)
-    // A builder course may share a slug with a hand-written page, and the
+    // The PROGRAM slug, which is the address: the course `short` is served at
+    // /programs/reboot and `irem-gymnastics` at /programs/irem. Naming the row
+    // instead would have published two 404s.
+    .map((course) => `${PLATFORM_ORIGIN}/programs/${course.programSlug}`)
+    // A builder course may share its address with a hand-written page, and the
     // static route wins in the router — so it must not appear twice here.
     .filter((url) => !known.has(url))
     .map((url) => ({

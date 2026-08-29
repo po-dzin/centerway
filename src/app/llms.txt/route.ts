@@ -19,9 +19,8 @@
 
 import { BRAND, brandSummary } from "@/lib/brand/identity";
 import { programs } from "@/lib/platform/content";
-import { formatPrice } from "@/lib/products";
 import { loadCourseOffer, listStorefrontCourses } from "@/lib/platform/offers";
-import { resolveOfferCommerce } from "@/lib/platform/offerCommerce";
+import { courseOfferCommerce, resolveOfferCommerce } from "@/lib/platform/offerCommerce";
 import { PLATFORM_ORIGIN } from "@/lib/surfaces/catalog";
 
 /** Rebuilt at most once an hour: the live half is a database read. */
@@ -52,22 +51,28 @@ export async function GET(): Promise<Response> {
   /*
    * A course DEDUPED BY PATH, not by matching its slug against `programs`.
    *
-   * `programs` is the six hand-written entries, and an offer migrating off it
-   * onto the builder — which is exactly what happened to Reset Day on
-   * 2026-08-26 — used to fall out of the price lookup below silently: the
-   * price line came only from `resolveOfferCommerce`, which only knows the
-   * six. Matching by the rendered PATH instead of by membership in that array
-   * means a migrated offer keeps its price line the moment it starts serving
-   * from the database, with no second edit here.
+   * `programs` is what is left of the hand-written entries — one product — and
+   * every offer that migrated off it onto the builder used to fall out of the
+   * price lookup silently, because that lookup knew only the six. Matching by
+   * the rendered PATH means a migrated offer keeps its price line the moment it
+   * starts serving from the database, with no second edit here.
+   *
+   * THE PRICE IS ASKED THE WAY THE PAGE ASKS IT. Reading only the offer row
+   * would print "узгоджується в розмові" over /programs/reboot and
+   * /programs/irem, which have no row and a live 795 ₴ and 3 950 ₴ checkout —
+   * an assistant would then tell a buyer to write in and ask about a price the
+   * page quotes. `courseOfferCommerce` is the same function the offer page
+   * renders from, so the two cannot disagree.
    */
   const known = new Set(programs.map((program) => `/programs/${program.slug}`));
   const live = await listStorefrontCourses();
   const liveOffers = await Promise.all(
     live
-      .filter((course) => !known.has(`/programs/${course.slug}`))
+      .filter((course) => !known.has(course.href))
       .map(async (course) => {
-        const offer = await loadCourseOffer(course.slug);
-        const price = offer ? `Ціна: ${formatPrice(offer.listAmount ?? offer.amount, offer.currency)}.` : "Ціна узгоджується в розмові.";
+        const commerce = courseOfferCommerce(course.programSlug, await loadCourseOffer(course.slug));
+        const price =
+          commerce.mode === "checkout" ? `Ціна: ${commerce.price}.` : "Ціна узгоджується в розмові.";
         return line(course.href, course.title, `${course.description || course.tag} ${price}`);
       })
   );

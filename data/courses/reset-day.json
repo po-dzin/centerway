@@ -4,7 +4,6 @@
   "id": "b7e6f2a1-0000-4000-8000-000000000001",
   "slug": "reset-day",
   "title": "Розвантажувальний день — практикум з умовного голодування",
-  "posttitle": "практикум з умовного голодування",
   "programSlug": "reset-day",
   "brand": "centerway",
   "locale": "uk",
@@ -12,15 +11,6 @@
   "status": "published",
   "version": 3,
   "summary": "Один розвантажувальний день — це три дні уваги та дисципліни: підготовка, сам день і коректний вихід.",
-  "cover": {
-    "src": "/cw/platform/programs/reset-day-hero-desktop-v2.webp",
-    "mobileSrc": "/cw/platform/programs/reset-day-card-v1.webp",
-    "alt": "Обкладинка практикуму «Розвантажувальний день»",
-    "cropX": 66,
-    "cropY": 50,
-    "mobileCropX": 50,
-    "mobileCropY": 15
-  },
   "schedule": {
     "mode": "open"
   },
@@ -28,14 +18,30 @@
     "reset-day",
     "mini-detox"
   ],
+  "cover": {
+    "alt": "Обкладинка практикуму «Розвантажувальний день»",
+    "src": "/cw/platform/programs/reset-day-hero-desktop-v2.webp",
+    "cropX": 66,
+    "cropY": 50,
+    "mobileSrc": "/cw/platform/programs/reset-day-card-v1.png",
+    "mobileCropX": 50,
+    "mobileCropY": 15
+  },
   "sortOrder": 3,
+  "posttitle": "практикум з умовного голодування",
   "tagline": "Вийти з кола «стрес → їжа → провина» за три дні",
+  "kind": "mini",
+  "categories": [
+    "nutrition",
+    "cleansing"
+  ],
   "results": [
     "Спокій замість тривоги вже наприкінці дня",
     "Легкість у тілі й більше енергії",
     "Повертається смак до їжі, а провина після неї зникає",
     "Відчуття, що керуєте ви, а не їжа"
   ],
+  "visibility": "listed",
   "audience": [
     "Заїдаєте стрес: емоції тягнуть до холодильника, навіть коли ви не голодні",
     "У харчуванні немає ритму — то переїдання, то пропущені прийоми",
@@ -51,11 +57,8 @@
     "6 варіантів адаптації під ваш стан"
   ],
   "durationDays": 3,
-  "kind": "mini",
-  "categories": ["nutrition", "cleansing"],
   "accessNote": "доступ назавжди",
   "authorNote": "Цей 3-денний формат я зібрав як найм'якший перший крок до здорових стосунків із їжею.",
-  "visibility": "listed",
   "modules": [
     {
       "id": "b7e6f2a1-0000-4000-8000-000000000011",

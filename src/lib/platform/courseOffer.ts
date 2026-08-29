@@ -50,7 +50,14 @@ export function toOfferSurface(course: Course): OfferSurface {
   const en = course.locale === "en";
 
   return {
-    slug: course.slug,
+    /* THE ADDRESS, NOT THE IDENTITY. A course is stored under `slug` and SOLD
+       under `programSlug` — «Short-Перезавантаження» is the course `short` and
+       the offer `/programs/reboot`, and the shelf entry a buyer already owns
+       carries the program slug for exactly that join (see OfferAccess). While
+       every dynamic offer happened to have the two strings equal this read as
+       the same thing; it stopped being the same thing the moment the last two
+       hand-written pages moved here. */
+    slug: course.programSlug,
     /* THE NAME, NOT THE NAME PLUS ITS EXPLANATION. A course out of the builder
        has one title field, and an author with two things to say writes them
        both into it: «Розвантажувальний день — практикум з умовного

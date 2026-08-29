@@ -92,20 +92,24 @@ export const PRODUCT_LABELS: Record<BotProductCode, string> = {
 };
 
 /**
- * Where a paid learner is actually sent.
+ * Where a paid learner is actually sent — and since 2026-08-29 there is one
+ * answer for all four.
  *
- * `platform` — the course runs in the LMS; access is the cabinet, and there is
- * nothing to hand over but a link and the reason it might look empty (wrong
- * sign-in address). `bot` — one of the two legacy programs that still live in
- * their own Telegram bot.
+ * The course runs in the LMS; access is the cabinet, and there is nothing to
+ * hand over but a link and the reason it might look empty (signing in with a
+ * different address than the order was placed on). Short and IREM were the two
+ * legacy programs that lived in their own Telegram bots; they moved onto the
+ * platform with everything else, and the `bot` variant of this type went with
+ * them. What the bot still does is support: answering, not delivering.
  */
-type Delivery = { kind: "platform"; courseSlug: string } | { kind: "bot" };
+type Delivery = { kind: "platform"; courseSlug: string };
 
 export type FaqKey = keyof typeof botCopy.faq;
 
 export const PRODUCT_DELIVERY: Record<BotProductCode, Delivery> = {
-  short: { kind: "bot" },
-  irem: { kind: "bot" },
+  short: { kind: "platform", courseSlug: "short" },
+  // The ROW name, which is not the name it is sold under: /programs/irem.
+  irem: { kind: "platform", courseSlug: "irem-gymnastics" },
   way21: { kind: "platform", courseSlug: "way21" },
   "reset-day": { kind: "platform", courseSlug: "reset-day" },
 };
@@ -124,27 +128,6 @@ export function assertProduct(value: string | null | undefined): BotProductCode 
     return "reset-day";
   }
   return null;
-}
-
-// Direct course-bot deep link, when the program has its own bot. way21 and
-// reset-day have no dedicated bot yet (direct links land here once ready via
-// WAY21_ACCESS_LINK / RESET_DAY_ACCESS_LINK) — until then access is delivered
-// by support, so accessLink returns null and the caller shows a graceful note.
-function accessLink(product: BotProductCode): string | null {
-  if (product === "short") {
-    return (
-      process.env.SHORT_ACCESS_LINK ||
-      "https://telegram.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07"
-    );
-  }
-  if (product === "irem") {
-    return (
-      process.env.IREM_ACCESS_LINK ||
-      "https://telegram.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4"
-    );
-  }
-  if (product === "way21") return process.env.WAY21_ACCESS_LINK || null;
-  return process.env.RESET_DAY_ACCESS_LINK || null;
 }
 
 export function normalizeEmail(input: string): string | null {
@@ -477,41 +460,18 @@ async function handleAccessLookup(
 }
 
 /**
- * What "you have access" means depends on where the course runs.
+ * What "you have access" means, now that it means one thing.
  *
- * For a platform course there is no secret link to hand over — the course is
- * simply in the cabinet — so the useful answer is the cabinet plus the one
- * thing that makes it look empty when it is not: signing in with a different
- * address than the order was placed on.
+ * There is no secret link to hand over — the course is simply in the cabinet —
+ * so the useful answer is the cabinet plus the one thing that makes it look
+ * empty when it is not: signing in with a different address than the order was
+ * placed on. This used to branch, because Short and IREM were delivered by
+ * their own bots and the answer for them was a deep link.
  */
 async function sendAccessAnswer(chatId: number, product: BotProductCode): Promise<void> {
-  const title = PRODUCT_LABELS[product];
-  const delivery = PRODUCT_DELIVERY[product];
-
-  if (delivery.kind === "platform") {
-    await sendMessage(chatId, botCopy.accessFoundPlatform(title), {
-      inline_keyboard: [
-        [{ text: "Відкрити кабінет", url: CABINET_URL }],
-        [{ text: "У меню", callback_data: "menu:back" }],
-      ],
-    });
-    return;
-  }
-
-  const link = accessLink(product);
-  if (!link) {
-    await sendMessage(chatId, botCopy.accessFoundNoTarget(title), {
-      inline_keyboard: [
-        [{ text: "Написати підтримці", callback_data: "menu:support" }],
-        [{ text: "У меню", callback_data: "menu:back" }],
-      ],
-    });
-    return;
-  }
-
-  await sendMessage(chatId, botCopy.accessFoundBot(title), {
+  await sendMessage(chatId, botCopy.accessFoundPlatform(PRODUCT_LABELS[product]), {
     inline_keyboard: [
-      [{ text: `Відкрити «${title}»`, url: link }],
+      [{ text: "Відкрити кабінет", url: CABINET_URL }],
       [{ text: "У меню", callback_data: "menu:back" }],
     ],
   });

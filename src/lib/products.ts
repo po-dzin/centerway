@@ -53,7 +53,8 @@ const TEST_PRICE_UAH = 1;
  * real ones:
  *
  *   course  — the platform serves it; the buyer goes to /learn/<slug>
- *   bot     — a Telegram bot delivers it, with its own ?start= token
+ *   bot     — a Telegram bot delivered it. Nothing does any more, since
+ *             2026-08-29: the last two moved onto the platform.
  *   cabinet — no course of its own; the purchase exists in /profile
  *
  * `pixelContentName` is kept verbatim from the strings the landings sent, not
@@ -68,15 +69,19 @@ export const PRODUCTS = {
     },
     description: {
       uk:
-        "Оплата онлайн-курсу \"Short Reboot\" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
+        "Оплата онлайн-курсу \"Short Reboot\" від Centerway. Після успішної оплати курс відкриється у вашому кабінеті на платформі - там уроки, матеріали і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
       en:
-        "Online course payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
+        "Online course payment by Centerway. After successful payment the course opens in your account on the platform, with its lessons, materials and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     amount: 795,
     listAmount: 795,
     currency: "UAH",
     pixelContentName: "Short Reboot",
-    fulfilment: { kind: "bot", url: "https://telegram.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07" },
+    /* THE COURSE, NOT THE BOT (2026-08-29). Both names appear because they are
+       two different questions: the learner opens `/learn/short`, and a buyer
+       coming back from the payment lands on `/programs/reboot`, which is where
+       this offer is sold. */
+    fulfilment: { kind: "course", courseSlug: "short", programSlug: "reboot" },
     approvedUrl: PLATFORM_THANKS_URL,
     declinedUrl: PLATFORM_FAILED_URL,
   },
@@ -87,15 +92,21 @@ export const PRODUCTS = {
     },
     description: {
       uk:
-        "Оплата онлайн-системи \"IREM gymnastics\" від Centerway. Після успішної оплати відкриється сторінка підтвердження та кнопка для входу в Telegram-бот - там буде ваш доступ і подальші інструкції. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
+        "Оплата онлайн-системи \"IREM gymnastics\" від Centerway. Після успішної оплати система відкриється у вашому кабінеті на платформі - там уроки, розбори вправ і подальші кроки. Підтримка: якщо виникли питання - напишіть нам, допоможемо швидко.",
       en:
-        "Online system payment by Centerway. After successful payment, a confirmation page will open with a Telegram bot entry button for your access and next steps. Support: if you have questions, message us and we will help quickly.",
+        "Online system payment by Centerway. After successful payment the system opens in your account on the platform, with its lessons, exercise breakdowns and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     amount: 3950,
     listAmount: 3950,
     currency: "UAH",
     pixelContentName: "IREM",
-    fulfilment: { kind: "bot", url: "https://telegram.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4" },
+    /* THE COURSE, NOT THE BOT (2026-08-29). The row is `irem-gymnastics` and
+       the offer is sold at `/programs/irem` — the only product where the two
+       names differ in both directions. `irem` also had to be added to that
+       course's entitlement codes in the same pass, or every past buyer would
+       have been handed a platform link to a course that did not accept their
+       order. */
+    fulfilment: { kind: "course", courseSlug: "irem-gymnastics", programSlug: "irem" },
     approvedUrl: PLATFORM_THANKS_URL,
     declinedUrl: PLATFORM_FAILED_URL,
   },
@@ -114,7 +125,7 @@ export const PRODUCTS = {
     listAmount: 4100,
     currency: "UAH",
     pixelContentName: "Way21 Detox",
-    fulfilment: { kind: "course", courseSlug: "way21" },
+    fulfilment: { kind: "course", courseSlug: "way21", programSlug: "way21" },
     approvedUrl: PLATFORM_THANKS_URL,
     declinedUrl: PLATFORM_FAILED_URL,
   },
@@ -136,7 +147,7 @@ export const PRODUCTS = {
     listAmount: 9000,
     currency: "UAH",
     pixelContentName: "Way21 Support",
-    fulfilment: { kind: "course", courseSlug: "way21" },
+    fulfilment: { kind: "course", courseSlug: "way21", programSlug: "way21" },
     approvedUrl: PLATFORM_THANKS_URL,
     declinedUrl: PLATFORM_FAILED_URL,
   },
@@ -155,7 +166,7 @@ export const PRODUCTS = {
     listAmount: 795,
     currency: "UAH",
     pixelContentName: "Reset Day",
-    fulfilment: { kind: "course", courseSlug: "reset-day" },
+    fulfilment: { kind: "course", courseSlug: "reset-day", programSlug: "reset-day" },
     approvedUrl: PLATFORM_THANKS_URL,
     declinedUrl: PLATFORM_FAILED_URL,
   },
@@ -293,7 +304,30 @@ export function normalizePayableProduct(input: unknown): PayableProductCode | nu
 }
 
 export type ProductFulfilment =
-  | { kind: "course"; courseSlug: string }
+  /**
+   * The platform serves it.
+   *
+   * TWO SLUGS, because they answer two questions and are not always the same
+   * string. `courseSlug` is the row — it addresses `/learn/<courseSlug>`, where
+   * the buyer reads the thing. `programSlug` is where the offer is SOLD, and it
+   * is what a buyer returning from WayForPay is sent to. They agree for three
+   * of the four course products, is
+   * spelled out for `short` (/programs/reboot) and `irem-gymnastics`
+   * (/programs/irem), whose public names are years older than their rows.
+   */
+  | { kind: "course"; courseSlug: string; programSlug?: string }
+  /**
+   * A Telegram bot delivers it. NOTHING DECLARES THIS ANY MORE (2026-08-29):
+   * Short Reboot and IREM were the last two, and both moved onto the platform —
+   * one place to read a course, one place a receipt can point at.
+   *
+   * Kept rather than deleted, and the distinction is worth being exact about:
+   * fulfilment is read from THIS file, so no live purchase can produce this
+   * shape today — the receipt email and the pay-status page branch on it and
+   * that branch is unreachable. It stays because "delivered somewhere else
+   * entirely" is a real third answer that a future product may need, and the
+   * two surfaces already render it correctly.
+   */
   | { kind: "bot"; url: string }
   | { kind: "cabinet" };
 
@@ -395,13 +429,12 @@ export function productProgramPath(code: string): string | null {
 
   if (isCatalogProduct(code)) {
     const fulfilment = PRODUCTS[code].fulfilment;
-    /* The COURSE slug, which is also the program slug for both products that
-       reach here (way21, reset-day) — each has a hand-written page under that
-       name. A future course product whose program is slugged differently would
-       need the program named on the entry rather than inferred; there is no such
-       product, and inventing the field for one that does not exist would be a
-       second name for the same thing to drift. */
-    if (fulfilment.kind === "course") return `/programs/${fulfilment.courseSlug}`;
+    /* THE PROGRAM SLUG, falling back to the course slug where the two agree.
+       They stopped agreeing on 2026-08-29, when Short Reboot and IREM moved off
+       Telegram delivery: `short` is sold at /programs/reboot and
+       `irem-gymnastics` at /programs/irem, and returning a buyer to the row
+       name would have ended a paid checkout on a 404. */
+    if (fulfilment.kind === "course") return `/programs/${fulfilment.programSlug}`;
   }
 
   return null;

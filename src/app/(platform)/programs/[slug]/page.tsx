@@ -7,17 +7,19 @@
  * developer and a deploy, which is the dependency wave 2 removed from content
  * and left on selling.
  *
- * A HAND-WRITTEN PAGE STILL WINS. A static segment beats a dynamic one in Next,
- * always, so `/programs/irem` is served by its own file and never by a database
- * row that happens to share its slug. Five of the original six still are.
+ * NOTHING HAND-WRITTEN IS LEFT, since 2026-08-29. Reset Day moved here first
+ * (2026-08-26), Way 21 and «Природнє тіло» followed, and the last two — Short
+ * Reboot and IREM — came across with this note. `content.ts` keeps `herbs`,
+ * which is a product and not a course, and the catalogue is otherwise read
+ * from the database end to end.
  *
- * RESET DAY IS NOT, since 2026-08-26 — it was the first to move here in full.
- * Its page came from `content.ts`, its price from a constant, and both said
- * things the course itself said better; one of them, its duration, had drifted
- * into contradicting the landing that sells it. It is now an ordinary listed
- * course: copy from the builder, price from `lms_course_offers`, served by this
- * file. The remaining five each need the same three things before they can
- * follow — an offer row, a visibility, and a decision about what they charge.
+ * THE ADDRESS IS THE PROGRAM SLUG, NOT THE COURSE SLUG. Those two strings were
+ * equal for every course that had moved here so far, which made the difference
+ * invisible; they are not equal for the last two. The course `short` is sold at
+ * `/programs/reboot` and `irem-gymnastics` at `/programs/irem` — names that are
+ * years old, indexed, printed on funnel landings and joined against by the
+ * shelf entry a buyer already owns (see OfferAccess). Serving them at their row
+ * names would have been a rename disguised as a refactor.
  *
  * WHAT DECIDES WHETHER A STRANGER SEES IT. Two fields, and both have to agree:
  * `status` (has the author published the material) and `visibility` (may
@@ -32,15 +34,23 @@ import { ProgramDetailPage } from "@/components/platform/ProgramDetailPage";
 import { OfferPurchaseReturn, readPurchaseReturn } from "@/components/platform/OfferPurchaseReturn";
 import { getCourseAuthor } from "@/lib/lms/authors";
 import { toOfferSurface } from "@/lib/platform/courseOffer";
-import { getLiveCourse } from "@/lib/lms/liveCatalog";
+import { listLiveCourses } from "@/lib/lms/liveCatalog";
 import { courseOfferCommerce } from "@/lib/platform/offerCommerce";
 import { isPublicCourse, loadCourseOffer, loadPayableOffer } from "@/lib/platform/offers";
 import { courseOfferCode, inlineToPlainText, type Course } from "@/lms-core";
 import { describe } from "@/lib/brand/identity";
 import { pageMetadata } from "@/lib/seo/metadata";
 
-async function publicCourse(slug: string): Promise<Course | null> {
-  const course = await getLiveCourse(slug);
+/**
+ * The course sold at this address, when a stranger may see it.
+ *
+ * Matched on `programSlug` and on nothing else — one course, one public
+ * address. Resolving the row name as well would give every renamed course two
+ * live URLs printing the same page, which is the duplicate this route exists to
+ * avoid rather than create.
+ */
+async function publicCourse(address: string): Promise<Course | null> {
+  const course = (await listLiveCourses()).find((one) => one.programSlug === address);
   return course && isPublicCourse(course) ? course : null;
 }
 
@@ -61,7 +71,7 @@ export async function generateMetadata({
     // line rather than to nothing: a course with no description at all would
     // inherit the layout's default, which describes the platform and not this.
     description: description || describe(`${course.title} — курс на платформі CenterWay.`),
-    path: `/programs/${course.slug}`,
+    path: `/programs/${course.programSlug}`,
     ...(course.cover ? { image: course.cover.src, imageAlt: course.cover.alt } : {}),
     // Unlisted means "not in the catalogue and not in search". A page that is
     // reachable by link but indexed anyway would make the setting a lie.
@@ -113,7 +123,7 @@ export default async function CourseOfferPage({
     <ProgramDetailPage
       program={toOfferSurface(course)}
       course={course}
-      commerce={courseOfferCommerce(course.slug, offer)}
+      commerce={courseOfferCommerce(course.programSlug, offer)}
       author={author}
       purchase={
         returned ? <OfferPurchaseReturn purchase={{ ...returned, product: returnedCode }} /> : undefined

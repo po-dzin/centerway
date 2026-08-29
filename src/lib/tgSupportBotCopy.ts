@@ -73,15 +73,10 @@ export const botCopy = {
       "Увійдіть тією ж поштою, що й під час оплати, і курс буде в розділі «Бібліотека».",
     ].join("\n"),
 
-  accessFoundBot: (title: string) =>
-    [`Оплату за «${title}» знайдено. Ось посилання на доступ:`].join("\n"),
-
-  accessFoundNoTarget: (title: string) =>
-    [
-      `Оплату за «${title}» знайдено, але автоматичне посилання на доступ ще не налаштоване.`,
-      "",
-      "Натисніть «Написати підтримці» — відкриємо доступ вручну.",
-    ].join("\n"),
+  /* The two lines a bot delivery needed — "here is your link", and "your link
+     is not configured yet" — are gone with the deliveries themselves
+     (2026-08-29). Every course is in the cabinet now, so there is one answer to
+     "where is my access" and it does not depend on which product was bought. */
 
   accessNotFound: [
     "За цими даними оплату не знайшли.",

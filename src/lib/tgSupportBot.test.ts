@@ -14,13 +14,15 @@ describe("support bot — product routing", () => {
     expect(Object.keys(PRODUCT_DELIVERY).sort()).toEqual(Object.keys(PRODUCT_LABELS).sort());
   });
 
-  it("routes the platform courses to the cabinet and the legacy ones to their bots", () => {
+  it("routes every course to the cabinet", () => {
     // The correction this rewrite exists for: way21 and reset-day run on the
     // platform, and the old copy told their buyers to look inside a product bot.
     expect(PRODUCT_DELIVERY.way21).toEqual({ kind: "platform", courseSlug: "way21" });
     expect(PRODUCT_DELIVERY["reset-day"]).toEqual({ kind: "platform", courseSlug: "reset-day" });
-    expect(PRODUCT_DELIVERY.short.kind).toBe("bot");
-    expect(PRODUCT_DELIVERY.irem.kind).toBe("bot");
+    // Short and IREM left their own bots on 2026-08-29 — the courseSlug is the
+    // ROW, and IREM's row is not the name it is sold under.
+    expect(PRODUCT_DELIVERY.short).toEqual({ kind: "platform", courseSlug: "short" });
+    expect(PRODUCT_DELIVERY.irem).toEqual({ kind: "platform", courseSlug: "irem-gymnastics" });
   });
 
   it("accepts every alias the funnels and thanks pages actually send", () => {
