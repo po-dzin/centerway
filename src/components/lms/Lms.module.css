@@ -7,8 +7,22 @@
   /* Top breathing room is a MARGIN, not padding: the shell sets
      `.shellOverlay > main { padding-top: --platform-topbar-clearance }`, which
      out-specifies this rule. Margin stacks with that clearance instead of being
-     silently overridden by it. */
-  margin: var(--cw-space-xl) auto 0;
+     silently overridden by it.
+
+     IT IS NOW THE CLEARANCE FOR THE FLOATING CHROME (2026-08-29). There is no
+     bar on this route, so nothing above the column reserves room for the two
+     controls that replaced it: the column pays for them itself. The number is
+     derived, not chosen — where the row sits plus how tall it is plus the gap
+     the page keeps under it — so moving the controls moves the text with them.
+
+     `.readerChrome` is `position: fixed` and takes no space; the desk keeps a
+     wider margin for the same reason it always did, because there the column is
+     narrow against a wide window and the air above it is what stops the page
+     starting at the ceiling.
+
+     The gap under the controls is `lg`, not `sm`: at 12px the caption sat in
+     the arrow's shadow and the screen opened tight. */
+  margin: calc(var(--cw-space-sm) + var(--ds-touch-target-min) + var(--cw-space-lg)) auto 0;
   padding-block: 0 var(--cw-space-3xl);
   /* Short states (loading, "курс ще готується") would otherwise let the footer
      ride up under the header. */
@@ -241,13 +255,23 @@
    at the top of every lesson on a phone, above a header stack that was already
    the complaint — and the thing it measures is the body, which starts below.
    The margin is gone and the bar under it brings its own. */
+/* THE PROGRESS LINE IS A LINE, NOT A BAR (2026-08-29).
+   It was `sticky` inside the column with `--cw-mat-surface-sunk` behind it, so
+   what actually rode the top of the viewport was a full-column light pill with
+   a gold tip somewhere in it — a stripe, read as a stray element rather than as
+   progress, and with the topbar gone from this route it is exposed rather than
+   tucked under a band. Full-bleed, two pixels, and NO track: an empty rail
+   drawn across every reading screen is a promise the page keeps making, and the
+   only thing worth drawing is how far you have come. */
 .readingTrack {
-  position: sticky;
+  position: fixed;
   top: 0;
-  z-index: 2;
-  height: 0.2rem;
-  border-radius: var(--cw-radius-pill);
-  background: var(--cw-mat-surface-sunk);
+  right: 0;
+  left: 0;
+  z-index: 3;
+  height: 0.125rem;
+  background: transparent;
+  pointer-events: none;
   overflow: hidden;
 }
 
@@ -264,16 +288,6 @@
   margin-block: var(--cw-space-xs) var(--cw-space-sm);
 }
 
-/* Above 900px the bar carries the trail (see ReaderTrail.module.css) and this
-   copy goes away entirely — `display: none`, so it leaves the accessibility
-   tree with the screen and a reader is offered one breadcrumb, not two. Below
-   it the bar has no room to spare and this stays the only copy. */
-@media (min-width: 900px) {
-  .lessonTopBar {
-    display: none;
-  }
-}
-
 /* Real controls, not text links: both are thumb-sized and read as buttons.
    Chrome, not content — transparent at rest, the surface arrives on hover and
    focus where it means something. */
@@ -285,49 +299,102 @@
   composes: chromeBare from "../platform/PlatformButtons.module.css";
 }
 
-/* The course map belongs after the lesson material: it is a route away from
-   the current reading, not a peer of the lesson title in the top bar. */
-/* TWO ROWS ON A PHONE, ONE FROM 561px (2026-08-28).
+/* ── The reader's floating chrome ─────────────────────────────────────────
+   TWO OBJECTS, NO BAND (2026-08-29). This route mounts no topbar (see the
+   `reading` note in PlatformLayout), and what replaced it is the pair below:
+   the way out on the left, the reading tools on the right, both on the bar's
+   own material so the reader is still made of the same thing as the rest of
+   the product. It used to cost three full-width rows before the first line —
+   a 64px band, a crumb row and a tool row — over a single column of prose.
 
-   The marker and the reader's tools shared a row, so at 375px the marker got
-   whatever was left beside three controls — and it is a wrapping flex list
-   («3 / 11», «Тиждень 1 · ВХІД», «·», «12 хв»). It broke across three lines
-   with the separator ORPHANED at the start of the last one: a middot alone
-   under a chip, which reads as a bullet for a list that is not there.
-
-   Given the full width the marker fits on one line at 375px with room to
-   spare, so the tools take their own line under it, held to the right where
-   they already sat. Nothing is hidden and nothing is scaled down. */
-.lessonMetaRow {
+   The row this lives in is the LAYOUT ONLY. The material is on the two
+   children, so the gap between them is page, not chrome. */
+.readerChrome {
+  position: fixed;
+  top: var(--cw-space-sm);
+  right: 0;
+  left: 0;
+  z-index: 4;
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  flex-wrap: wrap;
   gap: var(--cw-space-sm);
-  margin-bottom: var(--cw-space-2xs);
+  padding-inline: var(--cw-page-gutter);
+  /* The row spans the viewport so its two ends sit on the page's own gutters;
+     between them it must not swallow a tap meant for the text. */
+  pointer-events: none;
+  /* Same reveal the bar had — see useChromeReveal. Transform only: nothing
+     here reflows, and the column's top padding does not move with it. */
+  transition:
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 180ms ease;
 }
 
-.lessonMetaRow .stepMarker {
-  flex: 1 1 100%;
+.readerChrome > * {
+  pointer-events: auto;
 }
 
-.lessonMetaRow .readerTools {
-  margin-left: auto;
+.readerChrome[data-hidden="true"] {
+  transform: translateY(calc(-100% - var(--cw-space-sm) - 0.75rem));
+  opacity: 0;
 }
 
-.lessonMetaRow .stepMarker {
-  margin-bottom: 0;
+@media (prefers-reduced-motion: reduce) {
+  .readerChrome {
+    transition: none;
+  }
+}
+
+/* ONE ARROW. It held the course title for a revision and the title is exactly
+   what it cannot hold: any name longer than a phone's half-width came out as a
+   fragment with an ellipsis, and that fragment was then the widest object on
+   the reading screen. The name is one tap away, written in full on the page
+   this returns to; here it is the `aria-label` and nothing else. */
+.readerBack {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--ds-touch-target-min);
+  height: var(--ds-touch-target-min);
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  color: var(--cw-platform-text);
+  background-color: var(--cw-mat-tint-chrome);
+  backdrop-filter: var(--cw-mat-filter);
+  box-shadow: var(--cw-mat-shadow-chrome);
+  text-decoration: none;
+}
+
+/* The three tools travel as one object, so they read as a set rather than as
+   three loose discs over the text. */
+.readerTools {
+  display: flex;
+  /* STRETCH, NOT CENTER, and it is the tap target that depends on it: the
+     controls inside are sized by their glyph (18px) and take their height from
+     this row. Centred, the pill was 48px tall with an 18px-high button in the
+     middle of it — a control that looks like a target and is not one. */
+  align-items: stretch;
+  gap: 0.1rem;
+  flex: 0 0 auto;
+  min-height: var(--ds-touch-target-min);
+  padding-inline: 0.25rem;
+  border-radius: var(--cw-radius-pill);
+  background-color: var(--cw-mat-tint-chrome);
+  backdrop-filter: var(--cw-mat-filter);
+  box-shadow: var(--cw-mat-shadow-chrome);
+}
+
+/* The cluster IS the surface, so its members stop carrying one of their own —
+   two materials one inside the other is the seam this layer exists to avoid.
+   `chrome` is transparent at rest already; this only removes its hover plate,
+   which inside a pill reads as a second pill. */
+.readerTools .iconButton {
+  background: transparent;
+  box-shadow: none;
 }
 
 .contentsButton {
-  flex: none;
-}
-
-/* The two reader controls travel together, opposite the step marker. */
-.readerTools {
-  display: flex;
-  align-items: center;
-  gap: var(--cw-space-2xs);
   flex: none;
 }
 
@@ -381,7 +448,20 @@
   transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
 }
 
+/* NAMES EVERY ANCESTOR, and that is not tidiness (2026-08-28).
+
+   `.sizeOption` itself composes `base` from the button contract. A two-level
+   chain inside one module loses the grandparent: written as `composes:
+   sizeOption` alone the build emitted `sizeOptionCurrent sizeOption` and
+   dropped `base`, so the row in force lost the contract's padding and min
+   height and sat a few pixels left of and shorter than the other three — the
+   menu read as a list with one item knocked out of line.
+
+   This is the THIRD instance of the same trap in this file; the note beside
+   `.completeToggleDone` says there were two and that both were fixed. There
+   were three. */
 .sizeOptionCurrent {
+  composes: base from "../platform/PlatformButtons.module.css";
   composes: sizeOption;
 }
 
@@ -418,7 +498,11 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 0.5rem;
-  margin: 0 0 var(--cw-space-2xs);
+  /* It is a caption for the title, so it keeps a caption's air: loose enough
+     from the controls above and the heading below to be its own line rather
+     than a label stuck to either. 4px below put it against the H1's cap
+     height. */
+  margin: 0 0 var(--cw-space-md);
   font-size: 0.82rem;
   color: var(--cw-platform-muted);
 }
@@ -973,18 +1057,17 @@
 
 /* ── Completion bar ───────────────────────────────── */
 
-/* Stickiness and reach, nothing else. There is no wrapper card any more: the
-   bar used to be a raised surface whose only child was a filled pill — two
-   containers, two shadows and two radii for one checkbox. The control itself
-   is now the sticky element. */
-/* IT SITS AT THE END OF THE LESSON, IT DOES NOT FOLLOW YOU DOWN IT.
-   This was `position: sticky` at the foot of the viewport, and the cost was
-   paid on every lesson that opens with a video: the bar floated across the
-   player from the first frame, over the one element of a lesson you cannot
-   read around. Sticky was buying reach for a control that is pressed once, at
-   the end — and the end is exactly where scrolling already takes you. The
-   safe-area inset goes with it; nothing is pinned to the bottom edge any more,
-   so nothing has to clear the home indicator. */
+/* IT ENDS THE LESSON, IT DOES NOT RIDE IT (2026-08-28).
+
+   The control used to be sticky, so on a phone a full-width gold bar sat over
+   the bottom 48px of the reading for the whole lesson and covered the line the
+   reader had just got to. The argument for sticky was reach — the toggle is
+   always a thumb away — but a lesson is READ, and you tick it when you have
+   finished reading it, which is exactly where the bar now is: the last object
+   in the column. Nothing is lost but the obstruction.
+
+   No wrapper card: the bar used to be a raised surface whose only child was a
+   filled pill — two containers, two shadows and two radii for one checkbox. */
 .completionBar {
   margin-top: var(--cw-space-xl);
 }
@@ -1004,10 +1087,9 @@
   border: 0;
   border-radius: var(--cw-radius-btn);
   background: var(--cw-platform-accent);
-  /* A raised shadow was what let it read as floating ABOVE the text it crossed.
-     In the flow it is an object on the page like any other, so it takes the
-     resting lift rather than the one that says "this is over something". */
-  box-shadow: var(--cw-mat-shadow-soft);
+  /* It floats over the lesson text now that nothing sits behind it, so it takes
+     the lift the wrapper used to carry. */
+  box-shadow: var(--cw-mat-shadow-raised);
   color: var(--cw-platform-on-accent);
   cursor: pointer;
   font-weight: 600;
@@ -1357,18 +1439,13 @@
    lockup. Kept in px, like every other breakpoint on the platform: these are
    viewport sizes, not type-relative measures. */
 @media (min-width: 561px) {
-  /* Room for both again: the marker and the tools go back on one line. */
-  .lessonMetaRow {
-    flex-wrap: nowrap;
-  }
-
-  .lessonMetaRow .stepMarker {
-    flex: 0 1 auto;
-  }
-
+  /* Same derivation as the phone rule, with the desk's own gap under it. Two
+     `.wrap` rules used to sit here setting `margin-top` and `margin-block-start`
+     to different values three lines apart; the second silently won. */
   .wrap {
-    margin-block-start: var(--cw-space-2xl);
+    margin-block-start: calc(var(--cw-space-sm) + var(--ds-touch-target-min) + var(--cw-space-2xl));
   }
+
 
   /* The drawer becomes a centred dialog once there is room for one. */
   .drawerBackdrop {
@@ -1523,11 +1600,11 @@
   pointer-events: auto;
 }
 
-/* The lesson pins its completion control to the bottom of the reading column,
-   which on a phone is nearly the full width. Stepping over it by the control's
-   own height plus a gap keeps the two from sharing a corner — the completion
-   toggle is the thing this page exists to let you press, and it wins the
-   bottom. */
+/* KEPT, BUT NO LONGER TRIGGERED. The completion toggle stopped being sticky
+   (see `.completionBar`), so nothing is pinned to the bottom of the column for
+   this button to step over and `LessonView` no longer passes the flag. The rule
+   stays because the offset is still the right answer if anything is pinned
+   there again; it costs nothing while no element carries the attribute. */
 .topButton[data-clears="completion"] {
   inset-block-end: calc(
     max(var(--cw-space-md), env(safe-area-inset-bottom)) + var(--ds-touch-target-min) + var(--cw-space-sm)

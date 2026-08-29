@@ -19,15 +19,24 @@
   margin: 0;
   overflow: visible;
   box-sizing: border-box;
-  /* NO RULE UNDER THE BAR. The workspace bar is a solid band of the page's own
-     ground, and a band that already differs from what it sits over does not
-     also need a line saying where it ends — the hairline was a second answer to
-     a question the material had answered, and on the reader it read as a seam
-     across an otherwise plain sheet. The shadow stays off for the same reason:
-     one separation, and this bar's is its own tone. */
+  /* ONE TOPBAR MATERIAL, INSIDE AND OUT (2026-08-29). This bar used to paint a
+     flat `--cw-platform-bg` with a hairline under it and no shadow, so the
+     builder, the library and the admin ran a bar made of something the
+     storefront's bar is not — and the burger sheet under it was a third thing
+     again, an opaque card with square corners hanging off a flat band. The
+     material is now the platform's chrome (`data-cw-glass="shell"` is set for
+     every mode in PlatformHeader): the same tint, the same grain, the same
+     blur, the same soft shadow. It spans the viewport rather than floating,
+     because a workspace bar is the top of the application frame — so CLOSED it
+     is flush: a band edge to edge with a square lower edge, and the shadow is
+     what separates it from the work. The curve belongs to the OPENED sheet,
+     which is where the storefront's bar puts it too — see the open-state band
+     further down. A bar that is already curved while shut leaves two notches
+     of page showing through at its corners, and the copy scrolling under them
+     reads as a rendering fault. */
+  border-block-end: 0;
   border-radius: 0;
-  background: var(--cw-platform-bg);
-  box-shadow: none;
+  background: transparent;
 }
 
 .header[data-cw-header-mode="workspace"] .headerInner {
@@ -35,18 +44,11 @@
   max-width: none !important;
   box-sizing: border-box;
   margin: 0;
-  /* THE PAGE'S OWN GUTTER, not a number chosen for this bar. `--cw-space-2xl`
-     was a fixed 3rem that answered "far enough from the edge" on its own
-     authority and stayed 3rem at every width; `--cw-page-gutter` is the value
-     every other edge on the platform already keeps, and it relaxes on a narrow
-     screen instead of holding a desktop inset. The mark and the avatar are the
-     two ends of this row, so what this padding sets is where the corners are. */
-  padding-inline: var(--cw-page-gutter);
+  padding-inline: var(--cw-space-2xl);
 }
 
 @media (max-width: 1100px) and (min-width: 901px) {
   .headerInner {
-    min-height: 3.85rem;
     padding: 0 var(--cw-bar-pad);
   }
 
@@ -115,7 +117,7 @@
   .shell {
     /* THE CLEARANCE IS A GAP, AND IT WAS ZERO (2026-08-28).
 
-       The bar sits in normal flow here, so it occupies its own 3.9rem from the
+       The bar sits in normal flow here, so it occupies its own height from the
        top of the page and is then nudged down by `--platform-mobile-header-top`.
        A page's top padding therefore has to cover that nudge BEFORE any of it
        becomes daylight: at 0.75rem the two cancelled exactly and the first card
@@ -135,7 +137,7 @@
        inherit down to the bar exactly as before, and `--platform-topbar-block`
        states the answer once: how much vertical room the bar occupies. */
     --platform-mobile-header-top: 0.75rem;
-    --platform-mobile-header-height: 3.9rem;
+    --platform-mobile-header-height: calc(var(--ds-touch-target-min) + 0.25rem);
     --platform-topbar-block: calc(var(--platform-mobile-header-top) + var(--platform-mobile-header-height));
     /* The drawer's motion, named once: the clip, the content's settle and
        anything that joins them later all read these two rather than each
@@ -174,7 +176,7 @@
     top: 0;
     width: 100%;
     margin: 0;
-    border-block-end: 1px solid var(--cw-mat-stroke-inner);
+    border-block-end: 0;
     border-radius: 0;
   }
 
@@ -211,7 +213,13 @@
     width: 100% !important;
     max-width: none !important;
     margin: 0;
-    padding: 0.5rem var(--cw-bar-pad);
+    /* THE PADDING IS THE HEIGHT (2026-08-29). `min-height` loses to a 3rem
+       control plus its own block padding, so 0.5rem here was what actually made
+       the bar 64px — the declared 3.9rem was never reached and changing it
+       alone did nothing. Two pixels: the band is the target plus its edge, and
+       the number matches `--platform-mobile-header-height` so the clearance
+       math downstream stays true. */
+    padding: 0.125rem var(--cw-bar-pad);
     box-sizing: border-box;
   }
 
@@ -257,8 +265,6 @@
     padding: 0;
     border: 0;
     border-radius: 0;
-    background-color: var(--cw-mat-tint-chrome);
-    backdrop-filter: var(--cw-mat-filter);
     cursor: default;
   }
 
@@ -469,19 +475,16 @@
     transform: translateY(0);
   }
 
-  /* Workspace chrome is intentionally matte rather than glass. Its mobile
-     account drawer therefore needs its own opaque DS surface; the storefront
-     version is painted by the expanding glass pseudo-element, which workspace
-     mode deliberately does not render. */
-  .header[data-cw-header-mode="workspace"][data-menu-open="true"] .navLayer {
-    color: var(--cw-platform-text);
-    background: var(--cw-mat-surface);
-    border-block-end: 1px solid var(--cw-mat-stroke-inner);
-  }
-
-  .header[data-cw-header-mode="workspace"] .mobileMenuSurface {
-    --platform-header-fg: var(--cw-platform-text);
-    background: var(--cw-mat-surface);
+  /* Workspace chrome used to be matte rather than glass, so its drawer needed
+     its own opaque DS surface — an object laid on the bar instead of the bar
+     continued. It runs the same expanding glass band as the storefront now, so
+     those two overrides are gone and there is nothing here to keep them out of.
+     The bar spans the viewport, so the band it grows into keeps the bar's
+     silhouette: square at the top edge, curved only where the SHEET ends. The
+     closed bar has no curve at all — see the base rule at the top of this
+     file. */
+  .header[data-cw-header-mode="workspace"][data-menu-open="true"][data-cw-glass="shell"]::before {
+    border-radius: 0 0 var(--platform-header-shell-radius) var(--platform-header-shell-radius);
   }
 
   @media (prefers-reduced-motion: reduce) {
@@ -607,6 +610,20 @@
     border-top: 1px solid transparent;
     border-image: var(--cw-rule-fade-x);
     box-sizing: border-box;
+  }
+
+  /* TWO RULES, ONE GAP (2026-08-29). The identity draws a rule under itself and
+     the account block draws one over itself, and between them sits the public
+     nav — which is EMPTY on every internal surface (`focusedMode` in
+     PlatformHeader returns no items for the workspace and the reader). There
+     the two hairlines came out a few pixels apart with nothing between them:
+     one separator drawn twice. When the list above is empty the account block
+     is already what follows the identity, so it stops drawing its own. */
+  .mobileMenuNav:empty + .mobileProfileSlot {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: 0;
+    border-image: none;
   }
 
   /* The avatar is a 2.1rem disc in a row of plain text labels, which made the
@@ -993,11 +1010,15 @@
   .videoPanel {
     min-height: auto;
     aspect-ratio: 16 / 9;
-    border-radius: var(--cw-card-radius);
+    /* Concentric with the card around it: the outer corner is xl and the inset
+       is a rem, so the inner corner is the next step down, not the same one. */
+    border-radius: var(--cw-radius-md);
   }
 
   .videoAside {
-    border-radius: 0 0 var(--cw-card-radius) var(--cw-card-radius);
+    /* It no longer reaches the card's corners — the card's own padding is
+       between them — so it has none of its own. */
+    border-radius: 0;
   }
 
   .videoSection,
@@ -1027,7 +1048,7 @@
   .videoAside,
   #signals [data-cw-hub-intro="aside"] {
     margin-top: -1px;
-    padding-top: 1.1rem;
+    padding: 1.1rem 0 0;
     gap: 0.95rem;
   }
 
@@ -1156,18 +1177,22 @@
 
   .videoSection,
   #signals [data-cw-hub-intro="layout"] {
-    padding: 0.4rem;
+    /* The card's one inset — see the note at ≤900px. Held at the same rem on
+       the narrowest phone: this is the gap the picture needs to stop looking
+       glued to the card's edge, and it is also the gutter the copy under it
+       runs on. */
+    padding: 0.95rem;
     border-radius: var(--cw-radius-xl);
   }
 
   .videoPanel {
-    border-radius: var(--cw-radius-lg);
+    border-radius: var(--cw-radius-md);
   }
 
   .videoAside,
   #signals [data-cw-hub-intro="aside"] {
-    border-radius: 0 0 var(--cw-radius-lg) var(--cw-radius-lg);
-    padding: 1rem 0.95rem 0.95rem;
+    border-radius: 0;
+    padding: 1rem 0 0;
   }
 
   .videoDecisionRail {

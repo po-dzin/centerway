@@ -9,7 +9,20 @@
  *     editable and geometric.
  *
  * `d` entries are plain path data. `dots` entries are filled accent circles
- * (the one exception to "stroke only" — a dot is a node, not a shape).
+ * (a dot is a node, not a shape).
+ *
+ * THE SECOND EXCEPTION, AND IT IS CLOSED (blessed 2026-08-29). `filled: true`
+ * bakes a solid glyph, and exactly one icon uses it: `bookmark-marked`. A
+ * bookmark is not a state of a control — it is a thing you PUT ON the page,
+ * and the difference between "there is one here" and "there is not" has to
+ * survive a screenshot, a colour-blind reader and a 16px render, which no
+ * change of stroke weight or colour does. The pair is baked rather than
+ * recoloured because a `<use>` shadow tree cannot be reached past the symbol's
+ * own `fill`.
+ *
+ * This is not a precedent for filling anything else. A control that is ON stays
+ * a stroke glyph and says so with the ink around it; only a MARK LEFT BY THE
+ * READER earns a solid. If a third case appears, argue it here before baking it.
  */
 
 /** Icons live on a 24x24 grid. */
@@ -153,6 +166,20 @@ export const ICONS = {
   star: {
     group: "Proof",
     d: ["M12 3.8l2.6 5.4 5.8.8-4.2 4.1 1 5.8-5.2-2.8-5.2 2.8 1-5.8L3.6 10l5.8-.8z"],
+  },
+  /* A BOOKMARK, NOT A STAR. The reader's control is «закладка» — a note that
+     this page is one to come back to — and a star is the internet's word for
+     «favourite», which is a rating. The two states are two glyphs rather than
+     one glyph and a CSS fill: a `<use>` shadow tree cannot be reached past the
+     symbol's own `fill` attribute, so the set bakes the pair. */
+  bookmark: {
+    group: "Proof",
+    d: ["M6.9 4.3h10.2v15.9l-5.1-3.7-5.1 3.7z"],
+  },
+  "bookmark-marked": {
+    group: "Proof",
+    filled: true,
+    d: ["M6.9 4.3h10.2v15.9l-5.1-3.7-5.1 3.7z"],
   },
   price: {
     group: "Proof",
@@ -337,17 +364,6 @@ export const ICONS = {
      that is `menu`, four rows up — and deliberately closed rectangles rather
      than strokes, so the two glyphs share a vocabulary of areas rather than one
      being lines and the other boxes. */
-  /* Lens: the one glyph a search field needs, and the field had been shipping
-     without it — a prototype drew its own, which is how a set of one hand
-     becomes a set of two. Same construction as `clock`: a closed circle in one
-     path so the bake resamples it as a single contour, plus a separate handle
-     stroke on the route arrows' diagonal. The ring is smaller than the clock's
-     face (r 4.6 against 8.4) because a lens reads by its handle, and a ring
-     that fills the box leaves the handle no room to be one. */
-  lens: {
-    group: "Meta",
-    d: ["M10.4 5.8a4.6 4.6 0 1 0 0 9.2 4.6 4.6 0 0 0 0-9.2z", "M13.9 13.9 18.6 18.6"],
-  },
   "view-rows": {
     group: "Meta",
     d: ["M4.5 5.4 H19.5 V8.6 H4.5 Z", "M4.5 10.4 H19.5 V13.6 H4.5 Z", "M4.5 15.4 H19.5 V18.6 H4.5 Z"],
