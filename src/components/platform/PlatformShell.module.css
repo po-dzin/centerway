@@ -229,24 +229,19 @@
    the row by a second gutter. Later in this sheet than `.container` and equal
    in specificity, so it wins without `!important` — the phone rule needs one
    only because it lives in a sheet that is emitted earlier. */
-/* ONE TARGET TALL, PLUS ITS OWN EDGE (2026-08-29). The bar was 4rem on the
-   desk and 3.9rem on a phone, and inside it are a 3rem mark and a 3rem burger:
-   eight pixels of nothing above and below the only two things in it. The
-   height is derived now — `--ds-touch-target-min` plus 2px of material each
-   side — so the band is exactly what it contains, and moving the target moves
-   every bar in the product with it.
-
-   NOT 44px, which is where this started. 48 is this system's floor for a
-   pressable target; a 44px bar would hold controls larger than the band around
-   them, with the mark touching both kerbs. The reader's floating cluster IS
-   48 — but there the buttons fill the pill, because the pill is the control.
-   A bar CONTAINS controls and owes them an edge. */
+/* DESKTOP KEEPS THE ORIGINAL 4REM BAND (2026-08-29). The shared compression
+   briefly made every viewport one target tall, which was useful on a phone but
+   left the wide workspace chrome looking pinched around its breadcrumb and
+   document actions. Desktop restores the established 4rem rhythm here. The
+   compact rule remains intentionally mobile-only in PlatformResponsive, where
+   `--platform-mobile-header-height` still resolves to the 3rem touch target
+   plus its material edge. */
 .headerInner {
   position: relative;
   z-index: 1;
   width: 100%;
   max-width: none;
-  min-height: calc(var(--ds-touch-target-min) + 0.25rem);
+  min-height: 4rem;
   display: flex;
   align-items: center;
   justify-content: space-between;

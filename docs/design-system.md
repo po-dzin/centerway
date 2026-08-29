@@ -1372,6 +1372,15 @@ The absorption kept the axes apart rather than flattening them. Depth's *materia
 
 Note — `--cw-btn-primary-*` was previously listed here as orphan; that was wrong. `.cw-btn-primary` (globals.css) is a rendered class consumed by `RouteAuthGate` and the dosha test. Its fill was retuned 2026-07-06 (gray-accent mix → success/ink mix) because the old dark pairing was ~2.06; it now clears body AA in both themes and is asserted by `guard:contrast`.
 
+### Responsive topbar depth (2026-08-29)
+
+Desktop chrome keeps the established `4rem` band. The compact one-touch-target
+height is a mobile/tablet adaptation below `901px`, where vertical workspace is
+scarcer; it must not collapse the desktop Builder breadcrumb and document-action
+row. Builder's `--builder-topbar-height` remains the downstream clearance source
+for rails and sticky local navigation, resolving to the same compact value below
+`901px` and to `4rem` on desktop.
+
 ### One nav-state contract (2026-08-23)
 
 Three surfaces answered "you are here" three ways: the topbar drew an ink underline, the cabinet's tab strip drew a gold one, and the account popover underlined its current row in gold via `text-decoration`. Two of them were on screen at once, so the reader had to learn that a black rule and a gold rule mean the same thing.

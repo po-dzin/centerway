@@ -18,7 +18,7 @@
    Breakpoints follow the canon — mobile ≤ 560, tablet 561–900, desktop ≥ 901. */
 
 .shell {
-  --builder-topbar-height: calc(4rem + 1px);
+  --builder-topbar-height: calc(var(--ds-touch-target-min) + 0.25rem);
   --builder-side-panel-width: clamp(15.25rem, 22vw, 21.25rem);
   /* Both mode rails, one value — they are the same object on opposite edges of
      the document. Narrowed from 4.75rem: the column carries a 3rem ink ring and
@@ -147,6 +147,7 @@
 
 @media (min-width: 901px) {
   .shell {
+    --builder-topbar-height: 4rem;
     height: 100svh;
     height: 100dvh;
     min-height: 0;
@@ -4867,6 +4868,10 @@
 .titleEditAction {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
   composes: square from "../platform/PlatformButtons.module.css";
+  /* The ring is absolutely centred, so the control itself must own its
+     containing block. Without this anchor it resolves against `.moduleHead`
+     and appears at the far edge of the whole row, detached from the pencil. */
+  position: relative;
   flex: 0 0 auto;
   color: var(--cw-platform-muted);
 }

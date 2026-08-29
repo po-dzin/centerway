@@ -161,7 +161,7 @@ export function BuilderEditableTitle({
           :hover .inkRing` existed and matched nothing, because no ring was
           rendered — so the pencil answered the pointer with the sunk plate
           instead, the one highlight the builder is not supposed to draw. */}
-      <button className={styles.titleEditAction} type="button" aria-label={label} title={label} onClick={open}>
+      <button className={styles.titleEditAction} type="button" aria-label={label} onClick={open}>
         <Icon name="edit" size={16} />
         <HandGraphic className={styles.inkRing} name="ink-ring" size={42} />
       </button>
