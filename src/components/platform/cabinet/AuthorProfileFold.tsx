@@ -20,6 +20,7 @@ import { useEffect, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import Link from "next/link";
 
+import { Icon } from "@/components/Icon";
 import type { Author } from "@/lms-core";
 import type { ProfileLang } from "@/components/platform/profile/types";
 import type { AuthorProfileInput } from "./useCabinet";
@@ -217,6 +218,7 @@ export function AuthorProfileFold({
           <h2 className={styles.sectionTitle}>{t.title}</h2>
           <span className={styles.sectionLead}>{t.lead}</span>
         </span>
+        <Icon className={styles.foldChevron} name="chevron-down" size={20} />
       </summary>
       <div className={styles.foldBody}>
         <form className={styles.authorForm} {...matte} onSubmit={handleSubmit}>
@@ -293,7 +295,7 @@ export function AuthorProfileFold({
             </button>
           </div>
 
-          <div className={styles.authorField}>
+          <div className={`${styles.authorField} ${styles.authorBackgroundField}`}>
             <span>{t.background}</span>
             <div className={styles.authorPhotoRow}>
               {draft.background?.src ? (
@@ -331,7 +333,7 @@ export function AuthorProfileFold({
               a form where everything else is the product's. The input is still
               a real `<input type="file">` — visually hidden, not removed — so
               the keyboard and the file dialog behave exactly as they do. */}
-          <div className={styles.authorField}>
+          <div className={`${styles.authorField} ${styles.authorPhotoField}`}>
             <span>{t.photo}</span>
             <div className={styles.authorPhotoRow}>
               {draft.photo?.src ? (

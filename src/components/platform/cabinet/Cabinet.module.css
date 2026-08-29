@@ -1018,11 +1018,8 @@
 
 /* ── Author profile form ──────────────────────────── */
 
-/* A FORM IS READ DOWN A COLUMN, NOT ACROSS A PAGE. The fold spans the
-   cabinet's full width, so unconstrained inputs came out around 1100px — a
-   name typed into a box wider than the paragraph above it, and a line length
-   nobody can scan. 42rem is the measure the rest of the platform sets prose
-   at. */
+/* The compact form is read down one column. Desktop separates its media from
+   its writing below, while keeping the text measure constrained. */
 .authorForm {
   composes: card;
   max-width: 42rem;
@@ -1212,4 +1209,49 @@
      dead card beside it. That is the "neither one row nor full width" state.
      `flex: 1 1 var(--ds-button-min-width)` on `.actions > *` covers both
      outcomes at every width, so this band needs nothing of its own. */
+}
+
+/* The author editor has two kinds of work: choosing the image people recognise
+   and writing the profile they read. On desktop those tasks deserve their own
+   columns; on compact screens the source order remains the one-column form. */
+@media (min-width: 901px) {
+  .authorForm {
+    max-width: 66rem;
+    grid-template-columns: minmax(13rem, 18rem) minmax(0, 1fr);
+    align-items: start;
+  }
+
+  .authorPhotoField {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .authorBackgroundField {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .authorPhotoField .authorPhotoRow,
+  .authorBackgroundField .authorPhotoRow {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .authorPhotoPreview,
+  .authorPhotoEmpty {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 1;
+  }
+
+  .authorBackgroundPreview,
+  .authorBackgroundEmpty {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 16 / 7;
+  }
+
+  .authorForm > :not(.authorPhotoField):not(.authorBackgroundField) {
+    grid-column: 2;
+  }
 }

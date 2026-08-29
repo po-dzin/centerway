@@ -11,7 +11,7 @@ This iteration joins the author editor, course byline and public author page int
 - The course builder's Author tab links the caller's own `lms_authors` row through `lms_courses.author_profile_id`; per-course `authorNote` remains separate.
 - `/expert/[slug]` is a public trust/showcase route. It renders identity, status, credentials and publicly listed authored courses.
 - The cabinet's “all courses” route is a text doorway, not a card, and is omitted when the account owns zero or one course.
-- A completed dosha result may outline the cabinet avatar, but its text value remains present so colour is not the only carrier of meaning.
+- A completed dosha result is shown in the cabinet’s dedicated progress card and text stat; it does not outline the avatar.
 - An author may upload a decorative background for their own public showcase. The file uses the existing server-side media pipeline and is covered by a semantic overlay; identity and profile content never depend on the image for legibility.
 
 ## Deferred data contract
@@ -27,3 +27,10 @@ This is a route-local implementation refinement of the existing `/profile`, `/ex
 `supabase/migrations/20260829205051_author_profile_background.sql` adds `lms_authors.background jsonb`. It was applied to the configured remote database with `supabase db query --file` on 2026-08-29 and then verified through `information_schema.columns`.
 
 The local `supabase/migrations` ledger does not contain historical remote versions, so `supabase db push --dry-run` correctly stops before applying migrations. Do not repair that history as part of this feature; reconcile it in a dedicated migration-governance cycle.
+# Editor layout follow-up — 2026-08-30
+
+For the `/profile` author editor, desktop now separates media identity from
+profile writing: portrait and optional background sit in a fixed left column,
+while name, role, biography, credentials, public address and visibility remain
+in the right column. Compact layouts preserve the original one-column source
+order. The disclosure uses the same visible chevron as other cabinet folds.
