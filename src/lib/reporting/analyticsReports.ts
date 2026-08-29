@@ -173,6 +173,7 @@ function productLabel(productCode: string | null | undefined): string {
       return "IREM";
     case "consult":
       return "Consult";
+    case "natural-body":
     case "ideal-body":
       return "Природнє тіло з Аюрведою";
     case "herbs":
