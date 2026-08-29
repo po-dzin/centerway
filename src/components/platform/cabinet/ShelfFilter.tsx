@@ -96,8 +96,17 @@ export function ShelfFilter({
       {/* «Усі» IS A CHIP LIKE THE OTHERS. It was tempting to make the cleared
           state simply "no chip pressed", but then the row has no pressed chip
           at rest and the reader cannot tell a control that is off from a
-          control that is broken. */}
-      {offered.length > 1 ? (
+          control that is broken.
+
+          THE ROW STAYS WHILE A FILTER IS ACTIVE, EVEN DOWN TO ONE SUBJECT. An
+          author filtering to «Харчування» and then deleting every course but
+          one under «Рух» used to lose the row entirely — `offered` fell to one
+          entry, the row's own condition hid it, and the stale category kept
+          rejecting every course with no «Усі» left to reach. The row's
+          resting condition still needs two subjects to be worth offering, but
+          an ACTIVE filter is a promise of a way back out, and that promise
+          holds regardless of how the underlying shelf changed under it. */}
+      {offered.length > 1 || query.category !== "all" ? (
         <div className={styles.subjects} role="group" aria-label={copy.shelfFilterLabel}>
           <button
             className={styles.subject}

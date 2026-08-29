@@ -67,6 +67,7 @@ export type CabinetCopy = {
   dayNumber: (day: number) => string;
   courseFinished: string;
   courseNotStarted: string;
+  /** The draft badge on the cover corner — one word, the corner is small. */
   courseDraft: string;
   courseLocked: string;
   courseExpired: string;
@@ -157,7 +158,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       dayNumber: (day) => `Day ${day}`,
       courseFinished: "Completed",
       courseNotStarted: "Not started",
-      courseDraft: "Draft — preview access",
+      courseDraft: "Draft",
       courseLocked: "No access yet",
       courseExpired: "Access expired",
       nextStepLabel: "Next step",
@@ -235,7 +236,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     dayNumber: (day) => `День ${day}`,
     courseFinished: "Пройдено",
     courseNotStarted: "Ще не розпочато",
-    courseDraft: "Чернетка — доступ на перегляд",
+    courseDraft: "Чернетка",
     courseLocked: "Доступу поки немає",
     courseExpired: "Термін доступу минув",
     nextStepLabel: "Наступний урок",
