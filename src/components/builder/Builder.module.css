@@ -4312,6 +4312,13 @@
   color: var(--cw-platform-accent);
   font-size: 0.85rem;
   font-weight: 600;
+  text-decoration: none;
+}
+
+.authorPreviewCue:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+  border-radius: var(--cw-radius-sm);
 }
 
 .authorLinkActions {

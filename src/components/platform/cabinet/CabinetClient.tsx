@@ -223,6 +223,17 @@ export function CabinetClient() {
               getUserInitial(session, account.fullName)
             )
           }
+          avatarRing={
+            dosha ? (
+              <DoshaWheel
+                compact
+                scores={dosha.scores ?? { vata: 0, pitta: 0, kapha: 0 }}
+                labels={copy.doshaLabels}
+                resultLabel={formatDoshaResult(dosha.resultType, lang)}
+                lang={lang}
+              />
+            ) : undefined
+          }
           /* THREE FACTS, ONE ROW. The count came back beside the dosha — a
              room with one dash under «Продукти» and nothing else is a room
              missing a fact, not a room kept clean. What did NOT come back is
@@ -253,7 +264,7 @@ export function CabinetClient() {
               result — the three things this person holds. The dosha used to be
               a card in a section below the photograph, which put a scroll
               between somebody and the test they took. */}
-          <div className={styles.shelfRow} data-shelf={resumeCourse ? "courses" : "single"}>
+          <div className={styles.shelfRow} data-shelf={ownedCourses.length > 1 ? "courses" : "single"}>
             {resumeCourse ? (
               /* The one answer: cover, where you stopped, and the only control
                  in the row. */
@@ -287,14 +298,14 @@ export function CabinetClient() {
                 stand at the end of three more courses; with those gone it is
                 what it always was — one crossing, to the place the whole shelf
                 lives. */}
-            <div className={styles.shelfGlances}>
-              <Link className={styles.glanceMore} href={shelfHref} {...glassMedia}>
+            {ownedCourses.length > 1 ? (
+              <Link className={styles.glanceMore} href={shelfHref}>
                 <span className={styles.glanceMoreText}>{cab.allCourses}</span>
                 <span className={styles.glanceMoreArrow} aria-hidden="true">
                   →
                 </span>
               </Link>
-            </div>
+            ) : null}
 
             {/* The dosha RESULT, not the tests catalogue. What the test is and
                 what else exists is the showcase's business — this tile holds

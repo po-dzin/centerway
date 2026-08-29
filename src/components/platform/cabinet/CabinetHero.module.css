@@ -242,6 +242,8 @@
 }
 
 .avatar {
+  position: relative;
+  z-index: 1;
   width: 3.75rem;
   height: 3.75rem;
   display: grid;
@@ -254,6 +256,19 @@
   font-family: var(--cw-font-data);
   font-size: 1.15rem;
   font-weight: 700;
+}
+
+/* The completed dosha test belongs to the person, not to a third dashboard
+   card. Its existing drawn wheel becomes the avatar's outline; the text stat
+   beside the identity still names the result, so colour is never the only
+   carrier of meaning. */
+.avatarRing {
+  position: absolute;
+  z-index: 0;
+  inset: -0.42rem;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
 }
 
 .avatar img {

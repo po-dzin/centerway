@@ -100,9 +100,14 @@ export function BuilderCourseAuthor({
               {linked?.role ? <p className={styles.authorPreviewRole}>{linked.role}</p> : null}
               {course.authorNote ? <p className={styles.readOnlyNote}>{course.authorNote}</p> : null}
               {linked?.listed ? (
-                <span className={styles.authorPreviewCue}>
+                <Link
+                  className={styles.authorPreviewCue}
+                  href={`/expert/${linked.slug}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
                   Про автора <Icon name="arrow-right" size={16} />
-                </span>
+                </Link>
               ) : null}
             </div>
           </div>
