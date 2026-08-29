@@ -7,6 +7,7 @@
  * the learning shelf and its lesson links.
  */
 
+import type { CourseCategory } from "@/lms-core";
 import type { ProfileLang } from "../profile/types";
 
 export type CabinetCopy = {
@@ -33,12 +34,11 @@ export type CabinetCopy = {
   shelfViewCards: string;
   shelfViewRows: string;
   shelfViewRoom: string;
-  /** The opened book in the room view: the way back to the shelf, and the
-      heading over its right page. Everything else it says — the state, the
-      action — is the shelf's existing vocabulary, so a course does not get
-      described one way on a card and another way in a book. */
-  roomSpreadBack: string;
-  roomSpreadNext: string;
+  /** What a course is about, as the room's shelf headings. They live here and
+      not beside the room because the room is the cabinet speaking, and the
+      cabinet already speaks two languages — headings written into the
+      component rendered Ukrainian at an English reader. */
+  courseCategories: Record<CourseCategory, string>;
   learningLoadingTitle: string;
   learningLoadingLead: string;
   learningEmptyTitle: string;
@@ -126,8 +126,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       shelfViewCards: "Cards",
       shelfViewRows: "List",
       shelfViewRoom: "Room",
-      roomSpreadBack: "Back to the shelf",
-      roomSpreadNext: "Next",
+      courseCategories: { movement: "Movement", nutrition: "Nutrition", cleansing: "Cleansing" },
       learningLoadingTitle: "Loading your courses…",
       learningLoadingLead: "Restoring access, progress and your next lesson.",
       learningEmptyTitle: "No courses in this profile yet",
@@ -200,8 +199,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     shelfViewCards: "Картки",
     shelfViewRows: "Список",
     shelfViewRoom: "Кімната",
-    roomSpreadBack: "До полиці",
-    roomSpreadNext: "Далі",
+    courseCategories: { movement: "Рух", nutrition: "Харчування", cleansing: "Очищення" },
     learningLoadingTitle: "Завантажуємо ваші курси…",
     learningLoadingLead: "Відновлюємо доступ, поступ і ваш наступний урок.",
     learningEmptyTitle: "У кабінеті ще немає курсів",

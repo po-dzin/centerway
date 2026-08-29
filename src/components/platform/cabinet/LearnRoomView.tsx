@@ -28,7 +28,7 @@
  * un-multiplying it back out would be motion with no visible effect.
  */
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useLayoutEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 
 import type { LearnerShelfCourseDto } from "@/components/lms/lmsClient";
@@ -38,11 +38,6 @@ import type { CabinetCopy } from "./copy";
 import styles from "./LearnRoomView.module.css";
 
 const CATEGORY_ORDER: CourseCategory[] = ["movement", "nutrition", "cleansing"];
-const CATEGORY_LABEL: Record<CourseCategory, string> = {
-  movement: "Рух",
-  nutrition: "Харчування",
-  cleansing: "Очищення",
-};
 const ROMAN = ["I", "II", "III", "IV", "V", "VI"];
 
 type RoomBook = {
@@ -85,7 +80,7 @@ function toCases(courses: LearnerShelfCourseDto[], copy: CabinetCopy): RoomCase[
         live: c.access === "enrolled",
         course: c,
       }));
-    return { ci, label: `${ROMAN[ci] ?? String(ci + 1)} · ${CATEGORY_LABEL[key]}`, books };
+    return { ci, label: `${ROMAN[ci] ?? String(ci + 1)} · ${copy.courseCategories[key]}`, books };
   }).filter((c) => c.books.length > 0);
 }
 
@@ -246,6 +241,13 @@ function bookInk(w: number, h: number): string {
 type BookLayout = RoomBook & { x: number; y: number; w: number; h: number; tilt: number };
 type NicheLayout = {
   ci: number;
+  /** Index of this section's first book inside its case. A case with more
+      books than one cut can hold is split across several, so `ci` alone does
+      not name a niche — two sections of the same category carried the same
+      React key, which is how a re-layout can hand a niche the wrong contents.
+      `from` is what makes the pair unique, and it is already the number the
+      label and the "+n" marker are decided by. */
+  from: number;
   label: string | null;
   more: number;
   x: number;
@@ -424,6 +426,7 @@ function layoutRoom(cases: RoomCase[], W: number, H: number, narrow: boolean): N
     const showMore = hiddenCount > 0 && sec.from + sec.count >= data.books.length - hiddenCount;
     niches.push({
       ci: sec.ci,
+      from: sec.from,
       label: sec.from === 0 ? data.label : null,
       more: showMore ? hiddenCount : 0,
       x: Math.round(sec.x),
@@ -468,119 +471,6 @@ function spineInk(w: number, h: number): string {
 }
 
 
-/**
- * THE SPREAD — a book taken off the shelf and opened, which is a course's own
- * page, not a second reader.
- *
- * The prototype's spread WAS a reader: its own comment says the sheets are the
- * lesson's steps ("у рідера це кроки уроку, тут це ті самі кроки"), and the
- * left folio counted "2 / 8" the way the lesson's top bar does. Ported whole,
- * that would have given the product a second way to read a lesson beside
- * `/learn/[course]/[lesson]`, which already has a settled contour of its own.
- * Two readers is not a richer product, it is an unanswered question about
- * which one wins — so what is kept here is the BOOK, and what it holds is the
- * course: what this is, where you are in it, and the one way in.
- *
- * The typography is still the reader's, deliberately. The prototype's CSS
- * wrote down the mapping — folio ← .stepMarker, title ← .title, lead ←
- * .objective, body ← .paragraph at 1.85 — so that opening a book and opening a
- * lesson feel like the same paper. That mapping is the part worth keeping
- * whatever the sheets end up holding.
- *
- * The doorway is `courseAction`, the same function the card and the row use.
- * The room used to push `/learn/<slug>` on any click, which sent a learner
- * with no access to a course they cannot open and ignored the lesson they had
- * actually stopped on. A shelf with three views must not have three opinions
- * about where a course leads.
- */
-function RoomSpread({
-  book,
-  copy,
-  onClose,
-}: {
-  book: RoomBook;
-  copy: CabinetCopy;
-  onClose: () => void;
-}) {
-  const closeRef = useRef<HTMLButtonElement>(null);
-  const course = book.course;
-
-  /* Focus goes in and comes back out. The book is opened from a spine, and a
-     reader who closes it should be standing at that spine again rather than at
-     the top of the document. */
-  useEffect(() => {
-    const opener = document.activeElement as HTMLElement | null;
-    closeRef.current?.focus();
-    return () => opener?.focus?.();
-  }, []);
-
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onClose]);
-
-  const done = course.standing?.completedLessons ?? 0;
-  const total = course.standing?.totalLessons ?? 0;
-  const read = total > 0 ? Math.min(1, done / total) : 0;
-  const action = courseAction(course, copy);
-
-  /* What the right page answers is "and then what": the lesson waiting, or the
-     reason there is none. It is the card's own sentence, not a new one. */
-  const next =
-    course.access === "locked"
-      ? copy.courseLocked
-      : course.standing?.isFinished
-        ? copy.courseFinished
-        : (course.currentLessonTitle ?? copy.courseNotStarted);
-
-  return (
-    <div
-      className={styles.spread}
-      data-open="true"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="cw-room-spread-title"
-      /* The backdrop closes, the book does not: a click that lands on the page
-         is a reader touching paper, not reaching past it. */
-      onClick={onClose}
-    >
-      <div className={styles.bookOpen} onClick={(event) => event.stopPropagation()}>
-        <div className={styles.readingTrack} aria-hidden="true">
-          <div className={styles.readingFill} style={{ width: `${Math.round(read * 100)}%` }} />
-        </div>
-
-        <div className={styles.page}>
-          <span className={styles.pageFolio}>
-            {total > 0 ? `${done} / ${total}` : copy.courseNotStarted}
-          </span>
-          <h2 className={styles.pageTitle} id="cw-room-spread-title">
-            {course.title}
-          </h2>
-          {course.summary ? <p className={styles.pageLead}>{course.summary}</p> : null}
-        </div>
-
-        <div className={styles.page}>
-          <span className={styles.pageFolioQuiet}>{copy.roomSpreadNext}</span>
-          <p className={styles.pageBody}>{next}</p>
-        </div>
-
-        <div className={styles.turnbar}>
-          <button className={styles.spreadBack} type="button" onClick={onClose} ref={closeRef}>
-            {copy.roomSpreadBack}
-          </button>
-          <span className={styles.turnbarGap} />
-          <Link className={styles.spreadOpen} href={action.href}>
-            {action.label}
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function LearnRoomView({
   courses,
   copy,
@@ -588,7 +478,6 @@ export function LearnRoomView({
   courses: LearnerShelfCourseDto[];
   copy: CabinetCopy;
 }) {
-  const [open, setOpen] = useState<RoomBook | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [dark, setDark] = useState(false);
@@ -647,7 +536,7 @@ export function LearnRoomView({
         <div className={styles.rake} aria-hidden="true" />
         {niches.map((n) => (
           <div
-            key={n.ci}
+            key={`${n.ci}:${n.from}`}
             className={styles.niche}
             style={{ left: n.x, top: n.y, width: n.w, height: n.h, ["--depth" as string]: n.depth.toFixed(2) }}
           >
@@ -655,18 +544,17 @@ export function LearnRoomView({
             <div className={styles.nicheBox}>
               <div className={styles.nichePersp} dangerouslySetInnerHTML={{ __html: nicheInk(n.ci, n.w, n.h, dark) }} />
               {n.books.map((b) => (
-                <button
+                <Link
                   key={b.slug}
-                  type="button"
                   className={styles.book}
                   data-live={b.live}
                   style={{ left: b.x, bottom: b.y, width: b.w, height: b.h, ["--tilt" as string]: `${b.tilt.toFixed(1)}deg` }}
                   aria-label={`${b.title} · ${b.state}`}
-                  onClick={() => setOpen(b)}
+                  href={courseAction(b.course, copy).href}
                 >
                   <span className={styles.bookDraw} dangerouslySetInnerHTML={{ __html: spineInk(b.w, b.h) }} />
                   <span className={styles.bookSpine}>{b.title}</span>
-                </button>
+                </Link>
               ))}
             </div>
             {n.label ? <span className={styles.nicheLabel}>{n.label}</span> : null}
@@ -674,7 +562,6 @@ export function LearnRoomView({
           </div>
         ))}
       </div>
-      {open ? <RoomSpread book={open} copy={copy} onClose={() => setOpen(null)} /> : null}
     </div>
   );
 }
