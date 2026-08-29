@@ -165,7 +165,7 @@ export function LearnShelfClient() {
                 </div>
               ) : null}
               {view === "room" ? (
-                <LearnRoomView courses={shelf} />
+                <LearnRoomView courses={shelf} copy={cab} />
               ) : (
                 <div className={styles.cardGrid} data-view={view}>
                   {shelf.map((course) =>

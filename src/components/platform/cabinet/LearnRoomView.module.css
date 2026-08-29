@@ -431,3 +431,199 @@
   min-height: 26rem;
   color: var(--cw-platform-muted);
 }
+
+/* ---------- the spread: a book taken off the shelf and opened ---------- */
+
+/* Fixed, so it is the room's own modal rather than a panel inside the stage —
+   the stage clips, and a book that opens inside its own clipping box is a book
+   that opens into a letterbox. It stays a child of .room so the --room-* ink
+   and paper reach it: this is the same material, held closer. */
+.spread {
+  position: fixed;
+  inset: 0;
+  z-index: 4;
+  display: grid;
+  place-items: center;
+  padding: var(--cw-space-lg);
+  background: color-mix(in srgb, var(--room-paper-deep) 92%, transparent);
+}
+
+.bookOpen {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  inline-size: min(58rem, 88vw);
+  max-block-size: min(34rem, 74vh);
+  background: var(--room-paper-lit);
+  border: 1px solid var(--room-ink-line);
+  border-radius: var(--cw-radius-lg);
+  box-shadow: 0 30px 70px color-mix(in srgb, var(--room-ink-value) 26%, transparent);
+  animation: room-book-open 620ms cubic-bezier(0.22, 0.61, 0.36, 1) both;
+}
+
+/* The gutter. Two pages meeting is the one place a flat rectangle stops
+   reading as paper, so the fold is drawn rather than implied. */
+.bookOpen::before {
+  content: "";
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 50%;
+  inline-size: 46px;
+  margin-inline-start: -23px;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in srgb, var(--room-ink-value) 15%, transparent) 46%,
+    color-mix(in srgb, var(--room-ink-value) 18%, transparent) 54%,
+    transparent
+  );
+}
+
+@keyframes room-book-open {
+  from {
+    transform: rotateX(8deg) scale(0.96);
+    opacity: 0;
+  }
+  to {
+    transform: rotateX(0deg) scale(1);
+    opacity: 1;
+  }
+}
+
+/* THE PAGE IS THE READER'S PAGE, and the numbers below are not new ones: the
+   prototype wrote the mapping down against Lms.module.css — folio ←
+   .stepMarker, title ← .title, lead ← .objective, body ← .paragraph at 1.85 —
+   so that opening a book and opening a lesson are the same paper under
+   different covers. The ruled lines are the sheet itself. */
+.page {
+  position: relative;
+  display: grid;
+  align-content: start;
+  gap: 0.9rem;
+  padding: clamp(1.4rem, 3.4vw, 2.6rem);
+  overflow-y: auto;
+  background-image: linear-gradient(to bottom, var(--room-ink-hair) 1px, transparent 1px);
+  background-size: 100% 30px;
+  background-position: 0 calc(clamp(1.4rem, 3.4vw, 2.6rem) + 20px);
+}
+
+.page + .page {
+  border-inline-start: 1px solid var(--room-ink-hair);
+}
+
+.pageFolio {
+  display: inline-flex;
+  align-items: center;
+  align-self: start;
+  justify-self: start;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--cw-radius-pill);
+  background: color-mix(in srgb, var(--room-brass) 22%, transparent);
+  color: var(--room-ink);
+  font-family: var(--cw-font-data, ui-monospace, monospace);
+  font-size: 0.76rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+/* The right page's heading is not a step count, so it is not a pill either —
+   the prototype's own distinction: one page says where you are in the work,
+   the other says where you are in the book, and they must not look alike. */
+.pageFolioQuiet {
+  justify-self: start;
+  color: var(--room-ink-faint);
+  font-family: var(--cw-font-data, ui-monospace, monospace);
+  font-size: 0.76rem;
+  font-weight: 400;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.pageTitle {
+  margin: 0 0 0.25rem;
+  font-family: var(--cw-font-editorial, Georgia, serif);
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.pageLead {
+  margin: 0;
+  font-size: 1.08rem;
+  line-height: 1.55;
+  color: var(--room-ink-soft);
+}
+
+.pageBody {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.85;
+  color: var(--room-ink-soft);
+  max-inline-size: 34ch;
+}
+
+/* The same instrument the lesson uses: 0.2rem, pill, sunk groove, accent in
+   the fill. It is what makes this a page rather than a picture of one. */
+.readingTrack {
+  position: absolute;
+  inset-inline: clamp(1.4rem, 3.4vw, 2.6rem);
+  inset-block-start: 0.75rem;
+  block-size: 0.2rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-sunk, color-mix(in srgb, var(--room-ink-value) 12%, transparent));
+  overflow: hidden;
+  z-index: 2;
+}
+
+.readingFill {
+  block-size: 100%;
+  background: var(--room-brass);
+}
+
+.turnbar {
+  position: absolute;
+  inset-block-end: -3.2rem;
+  inset-inline: 0;
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+}
+
+.turnbarGap {
+  flex: 1;
+}
+
+.spreadBack {
+  composes: chrome from "../PlatformButtons.module.css";
+  composes: hug from "../PlatformButtons.module.css";
+}
+
+.spreadOpen {
+  composes: primary from "../PlatformButtons.module.css";
+  composes: hug from "../PlatformButtons.module.css";
+}
+
+/* One page on a phone. The right page answers "and then what", which is the
+   shorter question, and stacking the two would put the answer below the fold
+   of a book that is already only 74vh tall. */
+@media (max-width: 640px) {
+  .bookOpen {
+    grid-template-columns: 1fr;
+  }
+
+  .bookOpen::before {
+    display: none;
+  }
+
+  .page + .page {
+    border-inline-start: 0;
+    border-block-start: 1px solid var(--room-ink-hair);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bookOpen {
+    animation: none;
+  }
+}

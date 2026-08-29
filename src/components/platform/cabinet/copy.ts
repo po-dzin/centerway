@@ -33,6 +33,12 @@ export type CabinetCopy = {
   shelfViewCards: string;
   shelfViewRows: string;
   shelfViewRoom: string;
+  /** The opened book in the room view: the way back to the shelf, and the
+      heading over its right page. Everything else it says — the state, the
+      action — is the shelf's existing vocabulary, so a course does not get
+      described one way on a card and another way in a book. */
+  roomSpreadBack: string;
+  roomSpreadNext: string;
   learningLoadingTitle: string;
   learningLoadingLead: string;
   learningEmptyTitle: string;
@@ -120,6 +126,8 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       shelfViewCards: "Cards",
       shelfViewRows: "List",
       shelfViewRoom: "Room",
+      roomSpreadBack: "Back to the shelf",
+      roomSpreadNext: "Next",
       learningLoadingTitle: "Loading your courses…",
       learningLoadingLead: "Restoring access, progress and your next lesson.",
       learningEmptyTitle: "No courses in this profile yet",
@@ -192,6 +200,8 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     shelfViewCards: "Картки",
     shelfViewRows: "Список",
     shelfViewRoom: "Кімната",
+    roomSpreadBack: "До полиці",
+    roomSpreadNext: "Далі",
     learningLoadingTitle: "Завантажуємо ваші курси…",
     learningLoadingLead: "Відновлюємо доступ, поступ і ваш наступний урок.",
     learningEmptyTitle: "У кабінеті ще немає курсів",
