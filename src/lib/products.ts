@@ -97,6 +97,7 @@ export const PRODUCTS = {
         "Online system payment by Centerway. After successful payment the system opens in your account on the platform, with its lessons, exercise breakdowns and next steps. Support: if you have questions, message us and we will help quickly.",
     },
     amount: 3950,
+    listAmount: 3950,
     currency: "UAH",
     pixelContentName: "IREM",
     /* THE COURSE, NOT THE BOT (2026-08-29). The row is `irem-gymnastics` and
