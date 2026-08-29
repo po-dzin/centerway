@@ -1,19 +1,35 @@
-import type { CSSProperties } from "react";
 import Link from "next/link";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
 import heroStyles from "@/components/platform/PlatformHeroStyles";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
-import { platformAggregateArtwork, platformMiniCourses, platformProductOffers, platformProgramOffers } from "@/lib/platform/content";
+import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
+import { heroFraming } from "@/components/platform/heroFraming";
+import { platformAggregateArtwork, platformPageArtwork, platformProductOffers } from "@/lib/platform/content";
+import { activePlatformTests, plannedPlatformTests, testsHubCopy } from "@/lib/platform/tests";
+import { listStorefrontCourses } from "@/lib/platform/offers";
+import { offerEyebrow } from "@/lib/platform/offerPreview";
+import { getPlatformRoute } from "@/lib/surfaces/catalog";
 
-export function PlatformProgramsIndexPage() {
-  const heroStyle = {
-    "--hero-photo-x": "50%",
-    "--hero-photo-y": "18%",
-    "--hero-photo-shift-y": "0%",
-    "--hero-photo-scale": "1.02",
-    "--hero-photo-origin": "center top",
-  } as CSSProperties;
+/**
+ * The catalogue, no longer six constants — and since 2026-08-29, no constants.
+ *
+ * The two rails used to merge authored courses with the hand-written entries in
+ * `content.ts`, because both kinds existed and a buyer does not care which of
+ * them was typed into a TS file. The last course left that array with reboot
+ * and irem, so the merge has nothing left to merge: every card here is a
+ * published, `listed` course read through `listStorefrontCourses`, ordered by
+ * the author's own `sortOrder`, and addressed by its program slug.
+ *
+ * The split between the rails still means something to a reader — how much of
+ * their life the thing asks for — and it is still a lesson count.
+ */
+export async function PlatformProgramsIndexPage() {
+  const authored = await listStorefrontCourses();
+  const authoredMini = authored.filter((course) => course.lessons <= 8);
+  const authoredLong = authored.filter((course) => course.lessons > 8);
+
+  const heroStyle = heroFraming(platformAggregateArtwork.programs);
 
   return (
     <PlatformShell headerMode="overlay">
@@ -34,7 +50,7 @@ export function PlatformProgramsIndexPage() {
             <p className={heroStyles.heroBadge}>
               <span>Маршрути · Ритм · Глибина</span>
             </p>
-            <h1 className={heroStyles.heroFeatureTitle}>Програми CenterWay</h1>
+            <h1 className={heroStyles.heroFeatureTitle}>Програми</h1>
             <p className={heroStyles.heroFeatureLead}>
               Короткі входи, довші програми і різна глибина роботи з тілом, ритмом, харчуванням та увагою.
             </p>
@@ -72,18 +88,21 @@ export function PlatformProgramsIndexPage() {
             </div>
           </div>
           <div className={offerStyles.aggregateRail} data-rail="mini">
-            {platformMiniCourses.map((program) => (
+            {authoredMini.map((course) => (
               <PlatformOfferCard
-                key={program.slug}
-                title={program.title}
-                tag={program.tag}
-                description={program.description}
-                href={program.href}
-                visual={program.visual}
-                slug={program.slug}
-                artwork={program.artwork}
+                key={course.slug}
+                title={course.title}
+                tag={course.tag}
+                description={course.description}
+                href={course.href}
+                visual={course.visual}
+                slug={course.slug}
+                artwork={course.artwork}
+                kindBadge={course.kindBadge}
+                categories={course.categoryLabels}
+                pretitle={course.pretitle}
+                posttitle={course.posttitle}
                 ctaLabel="Деталі курсу"
-                size="compact"
               />
             ))}
           </div>
@@ -99,20 +118,24 @@ export function PlatformProgramsIndexPage() {
           <div className={offerStyles.sectionHeader}>
             <div>
               <p className={offerStyles.label}>Основні програми</p>
-              <h2 className={offerStyles.sectionTitle}>Глибші маршрути відновлення</h2>
+              <h2 className={offerStyles.sectionTitle}>Глибші програми відновлення</h2>
             </div>
           </div>
           <div className={offerStyles.aggregateRail}>
-            {platformProgramOffers.map((program) => (
+            {authoredLong.map((course) => (
               <PlatformOfferCard
-                key={program.slug}
-                title={program.title}
-                tag={program.tag}
-                description={program.description}
-                href={program.href}
-                visual={program.visual}
-                slug={program.slug}
-                artwork={program.artwork}
+                key={course.slug}
+                title={course.title}
+                tag={course.tag}
+                description={course.description}
+                href={course.href}
+                visual={course.visual}
+                slug={course.slug}
+                artwork={course.artwork}
+                kindBadge={course.kindBadge}
+                categories={course.categoryLabels}
+                pretitle={course.pretitle}
+                posttitle={course.posttitle}
                 ctaLabel="Деталі програми"
               />
             ))}
@@ -123,18 +146,164 @@ export function PlatformProgramsIndexPage() {
   );
 }
 
-export function PlatformProductsIndexPage() {
-  const featuredProduct = platformProductOffers[0];
-  const relatedPrograms = [...platformMiniCourses, ...platformProgramOffers].filter((program) =>
-    ["reset-day", "way21", "ideal-body"].includes(program.slug),
+export function PlatformTestsHubPage() {
+  const heroArtwork = platformPageArtwork.dosha;
+  const heroStyle = heroFraming(heroArtwork);
+  const consultHref = getPlatformRoute("consult") ?? "/consult";
+
+  return (
+    <PlatformShell headerMode="overlay">
+      <main data-cw-platform-template="tests-hub">
+        <section
+          className={heroStyles.heroFeature}
+          data-cw-topbar-tone="dark"
+          data-cw-semantic-role="route-index"
+          data-cw-semantic-family="guide-progress"
+          data-cw-token-source="global-app-ds"
+          style={heroStyle}
+        >
+          <div className={heroStyles.heroPhotoLayer}>
+            <PlatformHeroPhoto
+              artwork={heroArtwork}
+              alt="Діагностика CenterWay: три доші — три матеріали"
+              className={heroStyles.expertImage}
+              eager
+            />
+          </div>
+          <div className={heroStyles.heroFeatureContent}>
+            <p className={heroStyles.heroBadge}>
+              <span>{testsHubCopy.badge}</span>
+            </p>
+            <h1 className={heroStyles.heroFeatureTitle}>{testsHubCopy.title}</h1>
+            <p className={heroStyles.heroFeatureLead}>{testsHubCopy.lead}</p>
+            <div className={heroStyles.heroFeatureActions}>
+              <Link className={heroStyles.heroPrimaryButton} href="#tests-available">
+                Перейти до тестів
+              </Link>
+            </div>
+          </div>
+        </section>
+
+        <section className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}>
+          <article className={offerStyles.panel}>
+            <p className={offerStyles.label}>{testsHubCopy.readingLabel}</p>
+            <ul className={offerStyles.timeline}>
+              {testsHubCopy.readingItems.map((item) => (
+                <li key={item}>{item}</li>
+              ))}
+            </ul>
+          </article>
+        </section>
+
+        <section
+          id="tests-available"
+          className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}
+          data-cw-semantic-role="offer-index"
+          data-cw-semantic-family="guide-progress"
+          data-cw-token-source="global-app-ds"
+        >
+          <div className={offerStyles.sectionHeader}>
+            <div>
+              <p className={offerStyles.label}>{testsHubCopy.activeLabel}</p>
+              <h2 className={offerStyles.sectionTitle}>{testsHubCopy.activeTitle}</h2>
+            </div>
+          </div>
+          <div className={offerStyles.aggregateRail} data-layout="single">
+            {activePlatformTests.map((test) => (
+              <PlatformOfferCard
+                key={test.slug}
+                title={test.title}
+                tag={test.tag}
+                meta={test.format}
+                description={test.description}
+                href={test.href}
+                visual={test.visual}
+                slug={test.slug}
+                artwork={test.artwork}
+                ctaLabel="Пройти тест"
+              />
+            ))}
+          </div>
+        </section>
+
+        <section
+          id="tests-planned"
+          className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}
+          data-cw-semantic-role="offer-index"
+          data-cw-semantic-family="guide-progress"
+          data-cw-token-source="global-app-ds"
+        >
+          <div className={offerStyles.sectionHeader}>
+            <div>
+              <p className={offerStyles.label}>{testsHubCopy.plannedLabel}</p>
+              <h2 className={offerStyles.sectionTitle}>{testsHubCopy.plannedTitle}</h2>
+            </div>
+          </div>
+          <div className={offerStyles.aggregateRail} data-rail="mini">
+            {plannedPlatformTests.map((test) => (
+              <PlatformOfferCard
+                key={test.slug}
+                title={test.title}
+                tag={test.tag}
+                meta={test.format}
+                description={test.description}
+                href={test.href}
+                visual={test.visual}
+                slug={test.slug}
+                status="planned"
+                statusLabel={testsHubCopy.soonLabel}
+              />
+            ))}
+          </div>
+          <p className={offerStyles.proofNote}>{testsHubCopy.plannedNote}</p>
+        </section>
+
+        <section
+          id="tests-consult"
+          className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}
+          data-cw-semantic-role="route-bridge"
+          data-cw-semantic-family="guide-support"
+          data-cw-token-source="global-app-ds"
+        >
+          <div className={offerStyles.sectionHeader}>
+            <div>
+              <p className={offerStyles.label}>{testsHubCopy.bridgeLabel}</p>
+              <h2 className={offerStyles.sectionTitle}>{testsHubCopy.bridgeTitle}</h2>
+            </div>
+          </div>
+          <article className={offerStyles.panel}>
+            <div className={offerStyles.panelStack}>
+              <p className={offerStyles.lead}>{testsHubCopy.bridgeLead}</p>
+              <div>
+                <Link className={offerStyles.primaryButton} href={consultHref}>
+                  {testsHubCopy.bridgeCta}
+                </Link>
+              </div>
+            </div>
+          </article>
+        </section>
+      </main>
+    </PlatformShell>
   );
-  const heroStyle = {
-    "--hero-photo-x": "50%",
-    "--hero-photo-y": "16%",
-    "--hero-photo-shift-y": "0%",
-    "--hero-photo-scale": "1.02",
-    "--hero-photo-origin": "center top",
-  } as CSSProperties;
+}
+
+/**
+ * The three offers a herb buyer is most likely to be in the middle of.
+ *
+ * Named by COURSE slug — the row name, not the address — because that is what
+ * an editorial list of "these three" is picking out. Where each one is
+ * addressed is `course.href`'s business. This used to look in both shelves,
+ * back when half the catalogue was hand-written; there is only one shelf now.
+ */
+const PRODUCT_RELATED_SLUGS = ["reset-day", "way21", "natural-body"];
+
+export async function PlatformProductsIndexPage() {
+  const featuredProduct = platformProductOffers[0];
+  const authoredBySlug = new Map((await listStorefrontCourses()).map((course) => [course.slug, course]));
+  const relatedPrograms = PRODUCT_RELATED_SLUGS.map((slug) => authoredBySlug.get(slug)).filter(
+    (program) => program !== undefined,
+  );
+  const heroStyle = heroFraming(platformAggregateArtwork.products);
 
   if (!featuredProduct) {
     return (
@@ -174,10 +343,10 @@ export function PlatformProductsIndexPage() {
             <p className={heroStyles.heroBadge}>
               <span>Підтримка · Придатність · Контекст</span>
             </p>
-            <h1 className={heroStyles.heroFeatureTitle}>Продукти CenterWay</h1>
+            <h1 className={heroStyles.heroFeatureTitle}>Продукти</h1>
             <p className={heroStyles.heroFeatureLead}>
               Окремий шар підтримки: трави й інші продуктові формати, які мають сенс тільки в контексті стану, режиму
-              та вашого поточного маршруту.
+              та того, що ви вже проходите.
             </p>
             <div className={heroStyles.heroFeatureActions}>
               <Link className={heroStyles.heroPrimaryButton} href="#product-focus">
@@ -200,30 +369,28 @@ export function PlatformProductsIndexPage() {
               <h2 className={offerStyles.sectionTitle}>Трав&apos;яна підтримка як окремий продуктовий напрям</h2>
             </div>
           </div>
-          <article className={offerStyles.panel}>
-            <div className={offerStyles.panelIntro}>
-              <p className={offerStyles.label}>Як читати</p>
-              <p className={offerStyles.lead}>
-                Тут важлива не випадкова покупка, а придатність: чи доречна така підтримка саме зараз, і як вона
-                поєднується з режимом, харчуванням та програмою.
-              </p>
-            </div>
-            <div className={offerStyles.programFormatMeta}>
-              <span>Коли доречно: м&apos;яка підтримка травлення, ритму і щоденного самопочуття.</span>
-              <span>Не замінює: діагностику, лікаря або хаотичне самопризначення.</span>
-              <span>Найкращий контекст: разом із програмою, режимом і зрозумілим маршрутом.</span>
-            </div>
-          </article>
-          <div className={offerStyles.aggregateRail} data-layout="single">
-            <PlatformOfferCard
-              title={featuredProduct.title}
-              tag={featuredProduct.tag}
-              description={featuredProduct.description}
-              href={featuredProduct.href}
-              visual={featuredProduct.visual}
-              slug={featuredProduct.slug}
-              artwork={featuredProduct.artwork}
-            />
+          {/* The "Як читати" panel that stood here is gone, and its three lines
+              with it. They described ONE product from outside it, so a second
+              product would have arrived under an argument about the first —
+              exactly the shape a marketplace cannot use. Each card carries its
+              own appropriateness/limits/context now (`points`), which also means
+              they travel to the home block and the detail page unchanged. */}
+          <div
+            className={offerStyles.aggregateRail}
+            data-layout={platformProductOffers.length === 1 ? "single" : undefined}
+          >
+            {platformProductOffers.map((product) => (
+              <PlatformOfferCard
+                key={product.slug}
+                title={product.title}
+                tag={offerEyebrow(product.tag, product.duration)}
+                description={product.description}
+                href={product.href}
+                visual={product.visual}
+                slug={product.slug}
+                artwork={product.artwork}
+              />
+            ))}
           </div>
         </section>
 
@@ -236,7 +403,7 @@ export function PlatformProductsIndexPage() {
         >
           <div className={offerStyles.sectionHeader}>
             <div>
-              <p className={offerStyles.label}>Пов&apos;язані маршрути</p>
+              <p className={offerStyles.label}>Пов&apos;язані програми</p>
               <h2 className={offerStyles.sectionTitle}>Де продукт має найбільше сенсу</h2>
             </div>
           </div>

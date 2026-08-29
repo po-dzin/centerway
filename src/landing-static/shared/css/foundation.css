@@ -15,6 +15,29 @@ body {
   line-height: var(--ds-line-height-body);
 }
 
+/* Android's OS-level "larger text" accessibility setting (common among
+   40-50+ visitors) scales font-size well beyond what these layouts were
+   tuned for. Long Ukrainian compound words ("Перезавантаження",
+   "психофізичної", "саморегуляції"...) then no longer fit the hero column at
+   any width, and since every product here sets `overflow-x: hidden` on
+   html/body to stop accidental horizontal scroll, the overflowing word gets
+   silently clipped at the viewport edge instead of wrapping.
+
+   Set on body (inherited by everything, not just this explicit tag list) and
+   using `anywhere` rather than `break-word`: `break-word` only changes
+   wrapping *after* layout already decided a box's intrinsic width, so a
+   heading/label sitting inside a flex or grid column doesn't shrink at all —
+   the column grows to fit the "unbreakable" word first, THEN wraps inside
+   that oversized column, and the column itself overflows the viewport.
+   `anywhere` also feeds into min-content sizing, so flex/grid columns
+   actually shrink to the space available before wrapping runs. Verified live
+   at 1.85x font-scale on both /reboot and /irem — this plus min-width:0 on
+   the hero's flex column (short.product.css) closed every case found. */
+body {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
 img,
 iframe {
   max-width: 100%;

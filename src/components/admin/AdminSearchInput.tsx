@@ -29,7 +29,7 @@ export function AdminSearchInput({
                 value={value}
                 onChange={(e) => onChange(e.target.value)}
                 placeholder={placeholder}
-                className="cw-input pl-10 pr-10 py-2.5 text-sm"
+                className="cw-input w-full pl-10 pr-10 py-2.5 text-sm"
             />
             {onClear && value && (
                 <button

@@ -1,0 +1,385 @@
+/* The cabinet's hero — one plate, two grounds, and the seam between them.
+
+   THE PHOTOGRAPH IS THE GROUND, not a picture inside a slot. The first version
+   of this block set the room as a drawn panel on the left and the doorway plate
+   as a card on the right; it read as a photograph of a room pinned beside a
+   dashboard. The plate covers the whole block now: identity stands IN the
+   photograph, and the photograph dissolves down into the page's own paper,
+   where the shelf of courses is drawn. That is the product's sentence — your
+   room becomes the library — said once, by the surface itself.
+
+   THE DISSOLVE IS A MASK ON THE PHOTOGRAPH — the block's own surface is what
+   comes through it, so the picture turns into whichever ground the theme is
+   currently painting. It has been a paper gradient drawn over the image and a
+   paper edge baked into the file; both named ONE surface, and the platform has
+   had two since the night palette shipped. The long version is at `.plate`.
+
+   Text on the photograph takes `--cw-mat-inverse-text` rather than
+   `--cw-platform-accent-contrast`: that one INVERTS with the theme (on the
+   public dark palette the accent it contrasts is light), and this ground is a
+   photograph — dark in both themes — so the ink over it must be the one that
+   does not flip.
+
+   Mobile-first: every rule below is the phone layout. Tokens only, no raw hex,
+   and no top inset highlight on any surface here — the material is matte by
+   contract. */
+
+/* FULL BLEED, FULL SCREEN. The plate is the ground of the first screen, not a
+   card on it: it runs edge to edge, up under the floating bar, and down to
+   `100svh`. Only its CONTENTS come back to the page's own column
+   (`--cw-page-gutter`, `--cw-max-width` — the network gutter rule). Inside the
+   page container it was a photograph in a frame with paper down all four
+   margins, which is a picture of a room rather than being in one. No radius,
+   for the same reason: a screen has no corners.
+
+   THE DISSOLVE IS A MASK, NOT A COLOUR IN THE FILE — see `.plate` below. It
+   was baked with `grade.mjs --fade-bottom` while the platform had one theme,
+   and a baked paper edge is a lie on the night palette. */
+/* NO STROKE AND NO SHADOW, though the block declares the matte material.
+   `[data-cw-material]` draws a hairline and a soft shadow on every surface that
+   names it, which is right for a card and wrong for a screen: at 375px it
+   printed a 1px rule down both margins and across the top of the photograph —
+   the picture visibly framed, which is the one thing this block was rebuilt to
+   stop being. The material is still what supplies the ground and the grain; it
+   is only the card's two edges that are dropped. */
+.hero {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto;
+  overflow: hidden;
+  margin-bottom: var(--cw-space-lg);
+  border: 0;
+  box-shadow: none;
+  background: var(--cw-mat-surface);
+  isolation: isolate;
+}
+
+/* The material's grain layer also carries the card's INNER hairline
+   (`inset 0 0 0 1px --cw-mat-stroke-inner` in globals.css), which is the second
+   half of the frame the rule above drops. Doubled selector because the two
+   declarations are the same specificity and the stylesheet order between a
+   global sheet and a module is not something this file should be betting on. */
+.hero.hero::before {
+  box-shadow: none;
+}
+
+/* The plate's own box: the first screen. `min-height`, not `height` — a long
+   name or a third stat line grows the room rather than being clipped by it. */
+/* The plate's own box: the first screen, and everything the cabinet answers
+   with lives inside it. The room is pinned to the top (the wall), the shelf to
+   the bottom (the floor, where the photograph has turned to paper), and the
+   empty middle is the picture. */
+/* A FULL SCREEN, WITH THE CONTENT IN THE MIDDLE OF IT (2026-08-28).
+
+   The plate is `100svh` again — a room you stand in, not a band across the top.
+   What changed is where the content sits inside it. The first version pinned
+   the room to the top row and the shelf to the bottom and left a `1fr` between
+   them, so every screen taller than the content showed a column of empty
+   photograph between a person's name and the thing they came to press. The
+   second version fixed that by shrinking the box, which cured the gap by
+   throwing away the room.
+
+   Both were the same mistake: treating the two blocks as separate anchors. They
+   are ONE block — identity, then what to open — and it is centred in the screen
+   as one. The empty photograph is above and below it now, where a picture's
+   margins belong, instead of running down its middle.
+
+   The top pad is the floating bar's own clearance: centring cannot know about a
+   bar that overlays the page, and an avatar sliding behind a pill is the one
+   thing an overlay header cannot forgive. On a short screen the padding wins
+   and the block simply starts under the bar. */
+.plateWrap {
+  position: relative;
+  display: grid;
+  grid-template-rows: auto auto;
+  align-content: center;
+  row-gap: clamp(var(--cw-space-lg), 5vh, var(--cw-space-2xl));
+  min-height: 100svh;
+  /* THE PAD IS THE BAR PLUS ONE GAP, MEASURED (2026-08-28).
+
+     `--platform-topbar-clearance` is the wrong number for this page: it answers
+     "how much room does a page that starts with TEXT owe the bar", and on a
+     phone the shell drops it to 0.75rem because the bar is normally in flow.
+     Here the plate runs under everything, so what the room owes is the space
+     the bar actually occupies — `--platform-topbar-block`, which the shell now
+     states — plus a gap. The old floor of 4.75rem was three pixels short of the
+     bar's lower edge, so the account name ran under the pill.
+
+     The gap is `--cw-space-lg`, and it is not a taste: it is the same distance
+     the email keeps from the rule beneath it, one screen further down. Two
+     equal gaps around the identity read as one block with air; two different
+     ones read as a block that was pushed. */
+  padding-block: calc(var(--platform-topbar-block, 4.85rem) + var(--cw-space-lg)) var(--cw-space-2xl);
+}
+
+.plateWrap > .room {
+  grid-row: 1;
+}
+
+.plateWrap > .shelf {
+  grid-row: 2;
+}
+
+/* The contents come back to the page's column, so the name, the facts and the
+   cards line up with everything below. The SHELF itself stays full width — it
+   carries the paper the photograph ends on, and paper that stopped at the
+   column would leave the page's ground showing down both margins. */
+.room,
+.shelf > * {
+  width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
+  margin-inline: auto;
+}
+
+/* ── The two grounds ──────────────────────────────── */
+
+/* THE DISSOLVE IS A MASK ON THE IMAGE, NOT A COLOUR BAKED INTO IT (2026-08-28).
+
+   The bake was right while the platform had one theme and wrong the day it had
+   two. `grade.mjs --fade-bottom` ends the frame in the light surface's own
+   cream, so on the night palette the bottom half of the cabinet came out as a
+   cream slab sitting on a graphite page, with a hard edge where the picture
+   stopped. A file cannot know which theme it will be opened in.
+
+   Masking asks nothing of the file: the photograph fades to TRANSPARENT and
+   what comes through is `.hero`'s own `--cw-mat-surface`, which is paper by day
+   and graphite by night. Same seamless dissolve, both themes, one plate.
+
+   This is not the "white veil" the bake replaced. A veil is a colour drawn ON
+   TOP of the picture — visible as its own layer, following the layout. A mask
+   removes the picture instead, so there is nothing over it to see. */
+.plate {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  /* Held on the BOTTOM edge, always: the frame is composed from the floor up,
+     and a crop that trims it would put the shelf on a slice of wall. */
+  object-position: center bottom;
+  /* Six stops, the same easing curve the bake used: the endpoints do the work
+     and the middle of the band does very little, so the eye finds a gradient
+     rather than a lit line travelling across the picture. */
+  mask-image: linear-gradient(
+    to bottom,
+    rgb(0 0 0) 0%,
+    rgb(0 0 0 / 0.93) 42%,
+    rgb(0 0 0 / 0.72) 58%,
+    rgb(0 0 0 / 0.4) 72%,
+    rgb(0 0 0 / 0.11) 86%,
+    transparent 96%
+  );
+}
+
+/* THE PLATE CARRIES ITS OWN DARK, so this layer is nearly nothing.
+
+   The frame is composed for the copy — deep shadowed wall on the left, the lit
+   opening on the right — and the first version painted an 82% ink ramp over it
+   anyway, which is what a scrim written for a bright landscape photograph does
+   to a room that was already dark: it swallowed the picture, and the screen
+   read as a grey gradient with a name on it.
+
+   What is left is a floor under the text, not a tint over the image: enough to
+   hold the label and the email at any crop, gone before the middle. */
+.wash {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    linear-gradient(
+      170deg,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent) 0%,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 20%, transparent) 30%,
+      transparent 52%
+    );
+}
+
+.seamMark {
+  position: absolute;
+  z-index: 2;
+  right: 8%;
+  top: 30%;
+  width: 9rem;
+  height: 9rem;
+  color: var(--cw-sem-warmth-strong);
+  opacity: 0.22;
+  pointer-events: none;
+}
+
+/* ── The room ─────────────────────────────────────── */
+
+.room {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  align-self: start;
+  align-content: start;
+  gap: var(--cw-space-lg);
+  /* NO TOP PAD OF ITS OWN. It used to push itself down into the picture's upper
+     third — a second answer to "where does this sit vertically", competing with
+     the box that now centres it. Clearance for the floating bar is the plate's
+     padding, one level up. */
+  color: var(--cw-mat-inverse-text);
+}
+
+/* The same field label as the rest of the cabinet, repeated here rather than
+   imported: this module is the hero's, and reaching into the page's module for
+   one rule is how two files end up owning one look. */
+.sectionLabel {
+  margin: 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: color-mix(in srgb, var(--cw-mat-inverse-text) 68%, transparent);
+}
+
+.identityMain {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-md);
+}
+
+.avatar {
+  width: 3.75rem;
+  height: 3.75rem;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: var(--cw-radius-pill);
+  border: 1px solid color-mix(in srgb, var(--cw-mat-inverse-text) 30%, transparent);
+  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 55%, transparent);
+  color: var(--cw-mat-inverse-text);
+  font-family: var(--cw-font-data);
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.identityText {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.identityName {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(1.6rem, 6vw, 2.4rem);
+  font-weight: 500;
+  line-height: 1.1;
+  overflow-wrap: anywhere;
+}
+
+/* The one deliberate line in the room. Brass, the DS's warmth, set under the
+   name at the width of the text rather than the panel — a rule under a name,
+   not a divider across a card. */
+.identityName::after {
+  display: block;
+  width: 2.5rem;
+  height: 2px;
+  margin-top: 0.55rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-sem-warmth-strong);
+  content: "";
+}
+
+.identityEmail {
+  margin: 0;
+  color: color-mix(in srgb, var(--cw-mat-inverse-text) 76%, transparent);
+  font-size: 0.92rem;
+  overflow-wrap: anywhere;
+}
+
+/* Three facts about the account, as a meta row rather than three tiles. A tile
+   holds a VALUE — a dosha name, a count, an em dash — never a sentence, and the
+   row reserves two lines so a compound result cannot shift what is under it. */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--cw-space-sm);
+  margin: 0;
+  padding-top: var(--cw-space-md);
+  /* THE DS RULE, NOT A LOCAL HAIRLINE (2026-08-28). Every separator in the
+     system is the same object: a drafted line that fades out at both ends
+     (`--cw-rule-fade-x` in globals.css). This one ran edge to edge, which draws
+     a cell edge rather than a rule — and next to the drawer's dividers, which
+     do fade, it read as a second kind of line. The ink is re-pointed rather
+     than the shape restated: this rule sits on a photograph, so it takes the
+     inverse text, and `--cw-rule-fade-x` reads whatever `--cw-rule-ink` says. */
+  border-top: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+}
+
+.stat {
+  display: grid;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.stat dd {
+  margin: 0;
+  min-height: 2.5em;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: normal;
+}
+
+/* ── The shelf ────────────────────────────────────── */
+
+/* Standing on the paper end of the plate, INSIDE the first screen: what a
+   returning learner came to do is «продовжити», and it was under the fold while
+   the shelf lived below the plate. No surface of its own — the photograph has
+   already become the page's paper by this height, and each card declares the
+   material itself. */
+.shelf {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  align-content: start;
+  gap: var(--cw-space-md);
+  /* OFF THE FLOOR. The row used to end a hair above the bottom edge of the
+     screen, which reads as content that ran out of room rather than as an
+     object standing in one. The pad below it is the same air the room keeps
+     above the name. */
+  padding: 0;
+}
+
+
+/* ── Wider ────────────────────────────────────────── */
+
+@media (min-width: 900px) {
+  /* EVERYTHING STAYS ON THE SHADOWED SIDE. The room's copy is cream ink, and
+     the frame is composed with its dark wall on the left and the lit opening on
+     the right — so the column keeps to the left half and the photograph's own
+     subject stays uncovered. The way through used to sit bottom-right, over the
+     brightest part of the picture, where cream on cream needed a shadow to
+     survive; a control that has to be propped up is in the wrong place. */
+  /* `--platform-topbar-block` is a phone variable — from here up the bar is the
+     desktop one and `--platform-topbar-clearance` is already the room it owes.
+     Restated rather than inherited so the phone's measured pad above cannot
+     silently become the desktop's. */
+  .plateWrap {
+    padding-block-start: max(var(--platform-topbar-clearance, 5.8rem), 4.75rem);
+  }
+
+  .identityMain,
+  .stats {
+    width: min(100%, 34rem);
+  }
+
+  .seamMark {
+    right: 10%;
+    top: 26%;
+    width: 13rem;
+    height: 13rem;
+  }
+}

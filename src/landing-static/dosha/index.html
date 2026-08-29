@@ -1,10 +1,13 @@
 <!DOCTYPE html>
-<html lang="uk" data-cw-landing="dosha" data-cw-page="dosha">
+<html lang="uk" data-cw-landing="dosha" data-cw-page="dosha" data-cw-hero="photo">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <base href="/dosha/">
-<link rel="shortcut icon" href="/way21/img/cw-logo.png" type="image/png">
+<meta name="theme-color" content="#faefe0">
+<link rel="icon" href="/shared/img/cw-icon-tab.svg" type="image/svg+xml">
+<link rel="icon" href="/shared/img/cw-icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="/shared/img/cw-apple-touch.png">
 <title>Тест доші — дізнайтесь свою конституцію за 3 хвилини | CenterWay</title>
 <meta name="description" content="Безкоштовний тест із 12 запитань визначає вашу аюрведичну конституцію — Вата, Пітта чи Капха — і підказує, з чого почати: м'яке розвантаження, повна програма очищення чи персональна консультація.">
 <meta name="robots" content="noindex,nofollow">
@@ -12,30 +15,34 @@
 <meta property="og:title" content="Тест доші — дізнайтесь свою конституцію за 3 хвилини">
 <meta property="og:description" content="12 запитань, результат одразу. Зрозумійте свій тип обміну — і перестаньте вгадувати з дієтами.">
 <link rel="canonical" href="https://dosha.centerway.net.ua/">
+<link rel="stylesheet" href="/shared/css/platform-fonts.css">
+<link rel="stylesheet" href="/shared/css/cw-tokens.generated.css">
 <link rel="stylesheet" href="/shared/css/network-tokens.css">
 <link rel="stylesheet" href="/shared/css/landing.css">
-<link rel="stylesheet" href="/shared/css/network-nav.css">
+<link rel="stylesheet" href="/shared/css/network-nav.css?v=20260817-1">
 </head>
 <body>
 
 <a id="top"></a>
 
-<!-- ============ NETWORK NAV ============ -->
-<header class="cwn" data-cw-network-nav>
+<!-- ============ PAGE NAV (burger < 760px, topbar 760px+) ============ -->
+<header class="cwn cwn--anchored" data-cw-network-nav>
   <div class="cwn__in">
     <a class="cwn__brand" href="#top">
-      <img src="/shared/img/cw-logo-ink.png" alt="" aria-hidden="true">
+      <img src="/shared/img/cw-mark-ink.svg" alt="" aria-hidden="true">
       <span>CenterWay</span>
     </a>
-    <button class="cwn__toggle" type="button" aria-expanded="false" aria-controls="cwn-menu" aria-label="Меню мережі CenterWay">
-      <span></span><span></span><span></span>
+    <button class="cwn__toggle" type="button" aria-expanded="false" aria-controls="cwn-menu" aria-label="Меню сторінки">
+      <svg class="cwn__toggle-ico" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-menu"/></svg>
+      <svg class="cwn__toggle-ico cwn__toggle-ico--close" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg>
     </button>
-    <nav class="cwn__menu" id="cwn-menu" aria-label="Мережа CenterWay">
-      <a href="https://way21.centerway.net.ua/">Шлях 21</a>
-      <a href="https://resetday.centerway.net.ua/">Розвантажувальний день</a>
-      <a href="https://dosha.centerway.net.ua/" aria-current="page">Тест доші</a>
-      <a href="https://herbs.centerway.net.ua/">Фітозбори</a>
-      <a href="https://consult.centerway.net.ua/">Консультація</a>
+    <nav class="cwn__menu" id="cwn-menu" aria-label="Навігація сторінкою">
+      <a href="#why">Навіщо</a>
+      <a href="#doshas">Три доші</a>
+      <a href="#how">Як працює</a>
+      <a href="#next">Що далі</a>
+      <a href="#reviews">Відгуки</a>
+      <a href="#faq">Питання</a>
     </nav>
   </div>
 </header>
@@ -44,16 +51,23 @@
 <section class="hero">
   <div class="wrap">
     <div class="hero-grid">
-      <span class="hero-badge"><span class="dot"></span>Безкоштовний тест · 12 запитань · ~3 хвилини</span>
+      <span class="hero-badge"><span class="dot"></span>Аюрведична самодіагностика</span>
       <div class="hero-copy">
-        <h1>Одна й та сама дієта комусь дає енергію, а вам — <em>важкість</em>. Чому?</h1>
-        <p class="hero-sub">Бо конституції різні. В аюрведі їх описують три доші — Вата, Пітта й Капха: три різні типи обміну, травлення й реакції на стрес. Те, що зцілює один тип, виснажує інший. Тест допоможе зрозуміти ваш — і підкаже, з чого почати саме вам.</p>
+        <h1>Та сама їжа — комусь енергія, вам <em>важкість</em>. Чому?</h1>
+        <p class="hero-sub">Бо конституції різні: Вата, Пітта, Капха — три типи обміну й реакції на стрес. Тест покаже вашу.</p>
       </div>
 
       <div class="hero-visual">
         <div class="hv-stage">
           <span class="hv-glow"></span>
-          <img class="hv-photo" src="/shared/img/consult-hero-evgeniy.jpeg" width="1040" height="1280" loading="eager" fetchpriority="high" decoding="async" alt="Євгеній Корякін — автор методики CenterWay">
+          <picture>
+            <!-- Below 881px the hero goes full-bleed portrait (data-cw-hero="photo"),
+                 where a 16:10 plate crops to a band and loses two of the three
+                 centres. The portrait master holds all three plus an empty lower
+                 third for the copy. -->
+            <source media="(max-width: 880px)" srcset="/shared/img/dosha-tridosha-portrait-2026-08.webp" width="768" height="1376">
+            <img class="hv-photo" src="/shared/img/dosha-tridosha-2026-08.webp" width="1312" height="816" loading="eager" fetchpriority="high" decoding="async" alt="Три доші: суха, гаряча і волога природа — три матеріали в одному кадрі">
+          </picture>
           <div class="hv-stat s1"><div class="lab">Формат</div><div class="val">12 питань</div></div>
           <div class="hv-stat s2"><div class="lab">Результат</div><div class="val">одразу</div></div>
         </div>
@@ -62,13 +76,13 @@
       <div class="hero-actions">
         <div class="hero-chips">
           <span>Безкоштовно</span>
-          <span>12 коротких запитань</span>
+          <span>12 запитань · 3 хв</span>
           <span>Результат одразу</span>
         </div>
         <a href="/dosha-test?entry=dosha-funnel" class="btn btn-primary" data-cta-hero>Пройти тест безкоштовно <span class="arr">→</span></a>
         <a href="https://consult.centerway.net.ua/" class="btn btn-ghost">Хочу живий розбір, а не тест</a>
         <div class="hero-trust">
-          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="ico ico-chrome" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-check"/></svg>
           Без реєстрації карти й зобов'язань. Тест не ставить діагнозів
         </div>
       </div>
@@ -77,7 +91,7 @@
 </section>
 
 <!-- ============ WHY ============ -->
-<section class="sec">
+<section id="why" class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Навіщо це знати</span>
@@ -86,13 +100,15 @@
     <div class="prob-grid">
       <div class="prob-card reveal"><div class="n">01</div><h4>Немає дієти «для всіх»</h4><p>Сира їжа охолоджує — для Капхи це ліки, для Вати — стрес. Гострі спеції розпалюють травлення Капхи, але «перегрівають» Пітту. Без розуміння свого типу будь-яка схема — лотерея.</p></div>
       <div class="prob-card reveal"><div class="n">02</div><h4>Симптоми говорять різними мовами</h4><p>Та сама «втома» у Вати — від перезбудження нервової системи, у Капхи — від застою та важкості. Причини протилежні, тож і кроки потрібні протилежні.</p></div>
-      <div class="prob-card reveal"><div class="n">03</div><h4>3 хвилини замість місяців проб</h4><p>Тест не замінює діагностику, але прибирає найдорожчу помилку — старт не з того боку. Ви одразу бачите, який маршрут відповідає вашому стану.</p></div>
+      <div class="prob-card reveal"><div class="n">03</div><h4>3 хвилини замість місяців проб</h4><p>Тест не замінює діагностику, але прибирає найдорожчу помилку — старт не з того боку. Ви одразу бачите, що відповідає вашому стану.</p></div>
     </div>
   </div>
 </section>
 
+<div class="seam" aria-hidden="true"><svg class="ico" width="42" height="42" focusable="false"><use href="/shared/img/cw-icons.svg#cw-connector"/></svg></div>
+
 <!-- ============ THREE DOSHAS ============ -->
-<section class="sec sec-alt">
+<section id="doshas" class="sec sec-alt">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Трохи глибше · що таке доші</span>
@@ -100,16 +116,19 @@
     </div>
     <div class="triad">
       <div class="phase p1 reveal">
+        <div class="ph-ico"><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-vata"/></svg></div>
         <div class="ph-n">Вата · рух</div>
         <h3>Повітря і простір</h3>
         <p>Керує нервовою системою, диханням і всім, що рухається в тілі. У балансі — легкість, творчість, швидкість. У дисбалансі — тривожність, безсоння, сухість, нестабільне травлення і «стрибки» енергії.</p>
       </div>
       <div class="phase p2 reveal">
+        <div class="ph-ico"><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-pitta"/></svg></div>
         <div class="ph-n">Пітта · трансформація</div>
         <h3>Вогонь і вода</h3>
         <p>Керує травленням, метаболізмом і температурою тіла. У балансі — сильне травлення, ясний розум, цілеспрямованість. У дисбалансі — печія, запалення, дратівливість і перегрів на всіх рівнях.</p>
       </div>
       <div class="phase p3 reveal">
+        <div class="ph-ico"><svg class="ico" width="26" height="26" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-kapha"/></svg></div>
         <div class="ph-n">Капха · структура</div>
         <h3>Земля і вода</h3>
         <p>Керує тканинами, імунітетом і стабільністю. У балансі — витривалість, спокій, міцне здоров'я. У дисбалансі — важкість, набряки, зайва вага, млявість і «залипання» у звичках.</p>
@@ -122,8 +141,10 @@
   </div>
 </section>
 
+<div class="seam" aria-hidden="true"><svg class="ico" width="42" height="42" focusable="false"><use href="/shared/img/cw-icons.svg#cw-connector"/></svg></div>
+
 <!-- ============ HOW IT WORKS ============ -->
-<section class="sec">
+<section id="how" class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Як це працює</span>
@@ -131,19 +152,22 @@
     </div>
     <div class="triad">
       <div class="phase p1 reveal">
+        <div class="rail-node" style="--i:.5"></div>
         <div class="ph-n">Крок 01</div>
         <h3>Відповідаєте на 12 запитань</h3>
         <p>Про тіло, травлення, сон, енергію та реакції на стрес. Без «правильних» відповідей — тільки як є насправді.</p>
       </div>
       <div class="phase p2 reveal">
+        <div class="rail-node" style="--i:.5"></div>
         <div class="ph-n">Крок 02</div>
         <h3>Отримуєте профіль доші</h3>
         <p>Ваш переважний тип або пара типів — з поясненням, що це означає для харчування, режиму й енергії.</p>
       </div>
       <div class="phase p3 reveal">
+        <div class="rail-node" style="--i:.5"></div>
         <div class="ph-n">Крок 03</div>
         <h3>Бачите свій наступний крок</h3>
-        <p>Рекомендація маршруту під ваш результат: м'який старт, глибока програма чи персональний розбір.</p>
+        <p>Рекомендація під ваш результат: м'який старт, глибока програма чи персональний розбір.</p>
       </div>
     </div>
     <div class="triad-flow reveal"><b>Запитання</b><span class="ar">→</span><b>Профіль</b><span class="ar">→</span><b>Маршрут</b></div>
@@ -151,7 +175,7 @@
 </section>
 
 <!-- ============ AFTER RESULT ============ -->
-<section class="sec sec-alt">
+<section id="next" class="sec sec-alt">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Після результату</span>
@@ -178,23 +202,49 @@
 </section>
 
 <!-- ============ FAQ ============ -->
-<section class="sec">
+<!-- ============ PROOF ============ -->
+<section id="reviews" class="sec">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Відгуки</span>
+      <h2 class="sec-title">Що кажуть про підхід</h2>
+    </div>
+    <div class="proof-grid">
+      <div class="review reveal">
+        <div class="stars">★★★★★</div>
+        <p>«Дякую Євгену за чудову лекцію. Як на мене, про аюрведу можна слухати вічно — хочеться ще лекцію, більше і глибше.»</p>
+        <div class="who"><span class="av">О</span><div><b>Олена</b><small>лекція про аюрведу</small></div></div>
+      </div>
+      <div class="review reveal">
+        <div class="stars">★★★★★</div>
+        <p>«Аюрведа бачить людину як індивідуальність — і тест доші став для мене першим кроком зрозуміти, чому універсальні дієти не працювали.»</p>
+        <div class="who"><span class="av">У</span><div><b>Учасниця спільноти</b><small>після тесту доші</small></div></div>
+      </div>
+      <figure class="shot-card reveal" style="width:auto;max-width:264px;justify-self:start">
+        <img src="/shared/img/feedback/screenshot_20230517_083737_telegram.webp" width="720" height="1227" loading="lazy" decoding="async" alt="Подяки за лекцію про аюрведу в Telegram-спільноті">
+        <figcaption>telegram · натисніть, щоб збільшити</figcaption>
+      </figure>
+    </div>
+  </div>
+</section>
+
+<section id="faq" class="sec sec-alt">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Питання й відповіді</span>
       <h2 class="sec-title">Перед тим як почати</h2>
     </div>
     <div class="acc faq">
-      <details class="acc-item reveal" open><summary><span class="num">01</span>Це безкоштовно? У чому каверза?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal" open><summary><span class="num">01</span>Це безкоштовно? У чому каверза?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Так, тест повністю безкоштовний, без прихованих умов. Нам вигідно, щоб ви обрали правильний перший крок: людина, яка почала з відповідного їй формату, отримує результат — і повертається.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">02</span>Скільки часу займає?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">02</span>Скільки часу займає?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Близько 3 хвилин: 12 коротких запитань про тіло, сон, травлення та реакції на стрес. Результат з'являється одразу.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">03</span>Це медичний діагноз?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
-        <div class="acc-body"><ul><li>Ні. Це структуроване самоспостереження на основі аюрведичної типології. Тест не діагностує захворювань і не замінює лікаря — він допомагає обрати доречний оздоровчий маршрут.</li></ul></div>
+      <details class="acc-item reveal"><summary><span class="num">03</span>Це медичний діагноз?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
+        <div class="acc-body"><ul><li>Ні. Це структуроване самоспостереження на основі аюрведичної типології. Тест не діагностує захворювань і не замінює лікаря — він допомагає обрати доречний оздоровчий крок.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">04</span>Що я отримаю в результаті?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">04</span>Що я отримаю в результаті?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Ваш переважний тип конституції (або пару типів) з поясненням, що це означає на практиці, — і конкретну рекомендацію наступного кроку під ваш стан.</li></ul></div>
       </details>
     </div>
@@ -205,12 +255,12 @@
 </section>
 
 <!-- ============ FOOTER ============ -->
-<footer class="footer">
+<footer class="footer" data-cw-nav-dark>
   <div class="wrap">
     <div class="footer-top">
       <div class="footer-col">
         <a href="#top" class="brand">
-          <img src="/shared/img/cw-logo-ink.png" alt="" class="brand-mark" width="38" height="38" loading="lazy" decoding="async" aria-hidden="true">
+          <img src="/shared/img/cw-mark-gold.svg" alt="" class="brand-mark" width="36" height="36" loading="lazy" decoding="async" aria-hidden="true">
           CenterWay
         </a>
         <p>Безкоштовний тест конституції: зрозумійте свій тип обміну — і почніть із кроку, який підходить саме вам.</p>
@@ -218,6 +268,7 @@
       <div class="footer-col">
         <h5>Контакти</h5>
         <a href="tel:+380636024450">+38 (063) 602 44 50</a>
+        <a href="https://telegram.me/centerway_support_bot" target="_blank" rel="noopener">Підтримка в Telegram</a>
         <a href="mailto:centertheway@gmail.com">centertheway@gmail.com</a>
       </div>
       <div class="footer-col">
@@ -267,6 +318,7 @@ document.querySelectorAll('.acc').forEach(group=>{
   });
 });
 </script>
-<script src="/shared/js/network-nav.js" defer></script>
+<script src="/shared/js/network-nav.js?v=20260817-1" defer></script>
+<script src="/shared/js/proof.js" defer></script>
 </body>
 </html>

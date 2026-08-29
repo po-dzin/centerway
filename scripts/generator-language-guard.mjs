@@ -2,10 +2,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const FILES = [
-  "src/components/landing/revork/FunnelSections.tsx",
-  "src/components/generator/DepthLabToggle.tsx",
   "src/components/dosha-test/DoshaTestClient.tsx",
-  "src/components/lesson/PilotLessonRecipes.tsx",
   "data/generator/funnel_content.json",
   "data/generator/screen_manifests.json",
   "data/generator/block_manifests.json",

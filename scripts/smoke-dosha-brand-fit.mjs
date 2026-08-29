@@ -9,6 +9,21 @@ const componentPath = "src/components/dosha-test/DoshaTestClient.tsx";
 const contractPath = "docs/legacy/product/dosha_test_ui_contract_v1.md";
 const specPath = "docs/legacy/product/center_way_dosha_test_spec_agent_ready.md";
 
+// Contract §4 (semantic tokens) and §2 (focus states, reduced motion) describe the
+// whole test surface, not one file. Since the tests-hub rebuild, the diagnostic
+// recipes live in the platform CSS modules the client consumes, so the static
+// checks measure the client plus those modules.
+const surfaceStylePaths = [
+  "src/components/platform/PlatformComponents.module.css",
+  "src/components/platform/PlatformBlocksTrust.module.css",
+  "src/components/platform/PlatformBlocksOrientation.module.css",
+  "src/components/platform/PlatformShell.module.css",
+];
+
+function countMatches(source, pattern) {
+  return (source.match(pattern) || []).length;
+}
+
 const score = {
   total: 0,
   max: 100,
@@ -27,26 +42,30 @@ async function checkStaticContract() {
     readFile(specPath, "utf8"),
   ]);
 
+  const surfaceStyles = await Promise.all(surfaceStylePaths.map((file) => readFile(file, "utf8")));
+  const surface = [component, ...surfaceStyles].join("\n");
+
   let points = 0;
   const details = [];
 
-  const cwTokenHits = (component.match(/var\(--cw-/g) || []).length;
+  const cwTokenHits = countMatches(surface, /var\(--cw-/g);
   if (cwTokenHits >= 25) {
     points += 10;
-    details.push(`cw tokens: ${cwTokenHits} (>=25)`);
+    details.push(`cw tokens on surface: ${cwTokenHits} (>=25)`);
   } else {
-    details.push(`cw tokens: ${cwTokenHits} (<25)`);
+    details.push(`cw tokens on surface: ${cwTokenHits} (<25)`);
   }
 
-  const motionReduceHits = (component.match(/motion-reduce:/g) || []).length;
+  const motionReduceHits =
+    countMatches(surface, /motion-reduce:/g) + countMatches(surface, /prefers-reduced-motion/g);
   if (motionReduceHits >= 3) {
     points += 5;
-    details.push(`motion-reduce hits: ${motionReduceHits}`);
+    details.push(`reduced-motion hits: ${motionReduceHits}`);
   } else {
-    details.push(`motion-reduce hits low: ${motionReduceHits}`);
+    details.push(`reduced-motion hits low: ${motionReduceHits}`);
   }
 
-  const focusVisibleHits = (component.match(/focus-visible:/g) || []).length;
+  const focusVisibleHits = countMatches(surface, /focus-visible/g);
   if (focusVisibleHits >= 3) {
     points += 5;
     details.push(`focus-visible hits: ${focusVisibleHits}`);
@@ -76,7 +95,8 @@ async function checkStaticContract() {
     "Ваш профіль",
     "Що це означає у практиці",
     "Наступний крок",
-    "wellness-орієнтир",
+    // UA-only wording: the mixed-language "wellness-орієнтир" is banned by generator:language.
+    "оздоровчий орієнтир",
   ];
   const copyHits = requiredCopyMarkers.filter((phrase) => component.includes(phrase)).length;
   const copyPoints = Math.round((copyHits / requiredCopyMarkers.length) * 20);
@@ -163,7 +183,7 @@ async function checkRuntimeSemantics() {
       });
     }
 
-    const response = await page.goto(`${baseUrl}/dosha-test`, {
+    const response = await page.goto(`${baseUrl}/tests/dosha`, {
       waitUntil: "domcontentloaded",
       timeout: timeoutMs,
     });
@@ -230,7 +250,7 @@ async function checkRuntimeSemantics() {
     }
 
     await page.getByRole("button", { name: "Почати тест" }).click({ timeout: timeoutMs });
-    const deferredAuthHeading = page.getByRole("heading", { name: /Увійдіть після натискання старту/i }).first();
+    const deferredAuthHeading = page.getByRole("heading", { name: /Увійдіть у профіль/i }).first();
     const questionHeading = page.getByText(/Питання\s+\d+\s+з\s+12/i).first();
     await Promise.race([
       deferredAuthHeading.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),

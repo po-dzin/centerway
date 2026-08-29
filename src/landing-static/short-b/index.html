@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="uk" data-cw-landing="short-b" data-cw-runtime="static" data-cw-page="reboot-b">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<base href="/short-b/">
+<meta name="theme-color" content="#faefe0">
+<link rel="icon" href="/shared/img/cw-icon-tab.svg" type="image/svg+xml">
+<link rel="icon" href="/shared/img/cw-icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="/shared/img/cw-apple-touch.png">
+<title>Short-Перезавантаження</title>
+<meta name="description" content="3 комплекси вправ. Швидко відновлюють тіло та розум. Всього 15 хвилин на день.">
+<meta name="robots" content="noindex">
+<meta property="og:title" content="Short-Перезавантаження">
+<meta property="og:description" content="3 комплекси вправ. Швидко відновлюють тіло та розум. Всього 15 хвилин на день.">
+<meta property="og:image" content="https://reboot.centerway.net.ua/shared/img/cw-og-cover.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="preload" href="fonts/Formular.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/Formular-Black.woff2" as="font" type="font/woff2" crossorigin>
+
+<!-- Shared DS layers first, product theme last — same order as the managed /irem path. -->
+<link rel="stylesheet" href="/shared/css/tokens.css">
+<link rel="stylesheet" href="/shared/css/foundation.css">
+<link rel="stylesheet" href="/shared/css/pages.css">
+<link rel="stylesheet" href="/shared/css/landing.bridge.css">
+<link rel="stylesheet" href="css/short-b.theme.css">
+
+<!-- Meta Pixel: same product as variant A so both arms land in one funnel. -->
+<script src="/shared/js/landing-pixel.js" data-cw-product="short"></script>
+<noscript>
+  <img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=885125430564169&ev=PageView&noscript=1"/>
+</noscript>
+</head>
+<body>
+
+<!-- ============ BURGER NAV ============ -->
+<header class="cw-nav" id="top" data-cw-nav>
+  <a class="cw-nav__brand" href="#top" aria-label="CenterWay — на початок">
+    <img class="cw-nav__mark" src="/shared/img/cw-mark-ink.svg" alt="" aria-hidden="true" decoding="async">
+    <span class="cw-nav__wordmark">CenterWay</span>
+  </a>
+  <nav class="cw-nav__desktop" aria-label="Навігація сторінкою">
+    <a href="#program">Про курс</a>
+    <a href="#format">Що входить</a>
+    <a href="#reviews">Відгуки</a>
+    <a href="#expert">Про автора</a>
+    <a href="#offer">Ціна</a>
+    <a href="#faq">Питання</a>
+  </nav>
+  <button class="cw-nav__burger" type="button" data-cw-nav-toggle aria-label="Меню" aria-expanded="false" aria-controls="cwNavPanel">
+    <svg class="cw-nav__burger-ico" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-menu"/></svg><svg class="cw-nav__burger-ico cw-nav__burger-ico--close" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg>
+  </button>
+</header>
+<div class="cw-nav__drawer" data-cw-nav-drawer>
+  <div class="cw-nav__backdrop" data-cw-nav-close aria-hidden="true"></div>
+  <nav class="cw-nav__panel" id="cwNavPanel" aria-label="Меню" data-cw-nav-panel>
+    <button class="cw-nav__close" type="button" data-cw-nav-close aria-label="Закрити меню"><svg class="cw-nav__close-ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg></button>
+    <ul class="cw-nav__list">
+      <li><a href="#program">Про курс</a></li>
+      <li><a href="#format">Що входить</a></li>
+      <li><a href="#reviews">Відгуки</a></li>
+      <li><a href="#expert">Про автора</a></li>
+      <li><a href="#offer">Ціна</a></li>
+      <li><a href="#faq">Питання</a></li>
+    </ul>
+    <div class="cw-nav__cta">
+      <a href="#offer" class="btn btn-primary">Почати відновлення →</a>
+    </div>
+  </nav>
+</div>
+
+<!-- ============ HERO ============ -->
+<section class="hero hero-video">
+  <div class="hero-bg" aria-hidden="true" data-cw-video-bg>
+    <video class="hero-bg__video" muted loop playsinline preload="none" poster="/short/img/hero-bg-poster.jpg">
+      <!-- data-src on purpose — see short/index.html and landing-runtime.js. -->
+      <source data-src="/short/img/hero-bg.mp4" type="video/mp4">
+    </video>
+    <div class="hero-bg__scrim"></div>
+  </div>
+  <div class="wrap hero-video__inner">
+    <!-- Copy is 1:1 with the variant A hero (short/index.html) — only the
+         typographic treatment comes from the new landing shell. -->
+    <span class="hero-badge"><span class="dot"></span>АВТОРСЬКИЙ КУРС</span>
+    <h1>Short-<em>Перезавантаження</em></h1>
+    <p class="hero-sub">3 комплекси вправ.<br>Швидко відновлюють тіло та розум.<br>Всього 15 хвилин на день.</p>
+    <p class="hero-preprice">Почніть вже сьогодні 👇</p>
+    <div class="hero-price"><b>795 грн</b></div>
+    <p class="hero-pricenote">500+ людей вже придбали курс</p>
+    <a href="#offer" class="btn btn-primary" data-cta-hero>Почати відновлення <span class="arr">→</span></a>
+    <p class="hero-ctanote">Підходить і новачкам, і практикуючим</p>
+  </div>
+</section>
+
+<!-- ============ STRIP ============ -->
+<div class="strip" aria-hidden="true">
+  <div class="strip-track">
+    <span>Рухливість</span><span>Дихання</span><span>Сон</span><span>Енергія</span><span>Фокус</span><span>Зняття напруги</span><span>Тонус</span>
+    <span>Рухливість</span><span>Дихання</span><span>Сон</span><span>Енергія</span><span>Фокус</span><span>Зняття напруги</span><span>Тонус</span>
+  </div>
+</div>
+
+<!-- ============ WHAT YOU GET + INTRO VIDEO ============ -->
+<section class="sec">
+  <div class="wrap">
+    <div class="intro-grid">
+      <div class="reveal">
+        <span class="kicker">Що ви отримаєте</span>
+        <h2 class="sec-title">Інтегруйте цей метод у своє життя</h2>
+        <ul class="intro-list">
+          <li>Зниження стресу та покращення сну</li>
+          <li>Збільшення рівня енергії</li>
+          <li>Зміцнення здоров'я</li>
+        </ul>
+        <blockquote class="author-quote">"Цей метод розроблений та практикується моїм вчителем протягом 44 років"</blockquote>
+      </div>
+      <div class="intro-video reveal">
+        <iframe src="https://www.youtube.com/embed/csSZPaVSy6U" title="Short-Перезавантаження — знайомство з курсом" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROBLEM ============ -->
+<section class="sec sec-alt">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Кому це потрібно</span>
+      <h2 class="sec-title">Вам підходить це, якщо ви впізнаєте себе тут</h2>
+      <p class="lead">Малорухливий день, постійна напруга й брак часу б'ють по тілу непомітно — доки не стає боляче або порожньо.</p>
+    </div>
+    <div class="prob-grid">
+      <div class="prob-card reveal">
+        <div class="prob-ico"><img src="/short/img/neck-pain.png" alt="" width="30" height="30" loading="lazy" decoding="async"></div>
+        <div class="n">01</div><h4>Біль у тілі</h4><p>Спина, шия чи суглоби нагадують про себе щодня.</p>
+      </div>
+      <div class="prob-card reveal">
+        <div class="prob-ico"><img src="/short/img/headache.png" alt="" width="30" height="30" loading="lazy" decoding="async"></div>
+        <div class="n">02</div><h4>Стрес і тривожність</h4><p>Голова не вимикається, тіло тримає напругу.</p>
+      </div>
+      <div class="prob-card reveal">
+        <div class="prob-ico"><img src="/short/img/tiredness.png" alt="" width="30" height="30" loading="lazy" decoding="async"></div>
+        <div class="n">03</div><h4>Втома й поганий сон</h4><p>Прокидаєтесь розбитими, до вечора — нуль ресурсу.</p>
+      </div>
+      <div class="prob-card reveal">
+        <div class="prob-ico"><img src="/short/img/clock.png" alt="" width="30" height="30" loading="lazy" decoding="async"></div>
+        <div class="n">04</div><h4>Немає часу на зал</h4><p>Дорога, абонемент, розклад — і все зривається.</p>
+      </div>
+      <div class="prob-card reveal">
+        <div class="prob-ico"><img src="/short/img/depression.png" alt="" width="30" height="30" loading="lazy" decoding="async"></div>
+        <div class="n">05</div><h4>Перепади настрою</h4><p>Енергія стрибає, мотивація зникає без причини.</p>
+      </div>
+    </div>
+    <p class="prob-punch reveal">Тілу не потрібні години в залі — йому потрібен регулярний, короткий і правильний ресет.</p>
+  </div>
+</section>
+
+<!-- ============ MICRO CTA 1 ============ -->
+<section class="sec microcta">
+  <div class="wrap">
+    <div class="microcta-card reveal">
+      <h3 class="microcta-title">Впізнали себе хоч в одному пункті?</h3>
+      <p class="microcta-text">Почніть зміни вже сьогодні — перший комплекс займе у вас 15 хвилин.</p>
+      <div class="microcta-price"><b>795 грн</b><small>доступ назавжди</small></div>
+      <a href="#offer" class="btn btn-primary" data-cta-suppress-sticky>Почати відновлення <span class="arr">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SHIFT ============ -->
+<section class="sec" id="about">
+  <div class="wrap">
+    <div class="shift reveal">
+      <span class="kicker">Зрушення</span>
+      <h2>Що, якби відновлення займало <em>15 хвилин</em>, а не пів дня?</h2>
+      <p>Компактний мікс руху, дихання та ментального розвантаження: 3 комплекси, які можна виконати вдома, у робочу перерву чи перед сном — і повторювати щодня без надриву.</p>
+      <div class="shift-vs">
+        <div class="vs-col old">
+          <h5>Як зазвичай</h5>
+          <ul>
+            <li>Зал, дорога, абонемент</li>
+            <li>Складні програми на 1,5 години</li>
+            <li>Ривок на два тижні — і кінець</li>
+            <li>«Почну з понеділка»</li>
+          </ul>
+        </div>
+        <div class="vs-mid" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none"><path d="M12 4v15M6 13l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="vs-col new">
+          <h5>Як із Short</h5>
+          <ul>
+            <li>15 хвилин удома, без обладнання</li>
+            <li>3 готові комплекси на будь-який стан</li>
+            <li>Ритм, який реально втримати</li>
+            <li>Перезавантаження в будь-який момент</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MECHANISM / TRIAD ============ -->
+<section class="sec sec-alt" id="structure">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Як це працює · Механізм</span>
+      <h2 class="sec-title">Три важелі, які запускають відновлення</h2>
+      <p class="lead">Рух → дихання → увага. Кожен комплекс проходить усі три, тому 15 хвилин дають ефект, якого не дає окрема розминка чи окрема медитація.</p>
+    </div>
+    <div class="triad">
+      <div class="phase p1 reveal">
+        <div class="ph-n">Важіль 01</div>
+        <div class="ph-ico"><img src="/short/img/gym-160.webp" width="160" height="160" loading="lazy" decoding="async" alt="Рухливість та розблокування тіла"></div>
+        <h3>Активація тіла</h3>
+        <p>Мобілізація великих суглобів — шия, плечі, спина: менше скутості, більше легкості й амплітуди.</p>
+        <dl class="dl">
+          <dt>Що робимо</dt><dd>М'яка суглобова робота по всьому тілу</dd>
+          <dt>Після</dt><dd>Рухливість повертається у ключових зонах</dd>
+        </dl>
+      </div>
+      <div class="phase p2 reveal">
+        <div class="ph-n">Важіль 02</div>
+        <div class="ph-ico"><img src="/short/img/exercise-160.webp" width="160" height="160" loading="lazy" decoding="async" alt="Дихання для перезавантаження"></div>
+        <h3>Глибоке дихання</h3>
+        <p>Вирівнює ритм і заспокоює нервову систему — допомагає швидко «видихнути» напругу.</p>
+        <dl class="dl">
+          <dt>Що робимо</dt><dd>Ранковий і вечірній дихальні міні-комплекси</dd>
+          <dt>Після</dt><dd>Сигнал «безпечно» — тіло випускає напругу</dd>
+        </dl>
+      </div>
+      <div class="phase p3 reveal">
+        <div class="ph-n">Важіль 03</div>
+        <div class="ph-ico"><img src="/short/img/mental-health-160.webp" width="160" height="160" loading="lazy" decoding="async" alt="Фокус і тонус"></div>
+        <h3>Фокус + тонус</h3>
+        <p>Робота з увагою та м'яка активація: ясність, зібраність і бадьорість без «насилля» над собою.</p>
+        <dl class="dl">
+          <dt>Що робимо</dt><dd>Нейро-вправи на перемикання уваги</dd>
+          <dt>Після</dt><dd>Мозок і тіло працюють в одному ритмі</dd>
+        </dl>
+      </div>
+    </div>
+    <div class="triad-flow"><b>Рух</b><span class="ar">→</span><b>Дихання</b><span class="ar">→</span><b>Увага</b><span class="ar">→</span><b>Перезавантаження</b></div>
+    <div class="week-note reveal">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M4 12a8 8 0 1 1 2.3 5.6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 8v4h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <p>Повторюйте у будь-який момент, коли треба швидко перезавантажитися — курс лишається з вами назавжди.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROGRAM ============ -->
+<section class="sec" id="program">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Програма курсу</span>
+      <h2 class="sec-title">3 комплекси та бонусний розбір техніки</h2>
+    </div>
+    <div class="prog-grid">
+      <article class="prog-card reveal">
+        <div class="prog-media"><img src="/short/img/short-lesson1.webp" width="1186" height="672" loading="lazy" decoding="async" alt="Комплекс «Перезавантаження»"></div>
+        <div class="prog-body">
+          <div class="prog-n">Комплекс 01</div>
+          <h3>«Перезавантаження»</h3>
+          <p class="prog-sub">Базовий комплекс для зняття напруги та запуску відновлення організму.</p>
+          <ul>
+            <li>Перезавантажує нервову систему</li>
+            <li>Знімає напругу в тілі</li>
+            <li>Тонізує організм</li>
+            <li>Допомагає відновитися після сидячої роботи</li>
+            <li>Компенсує наслідки малорухливого способу життя</li>
+          </ul>
+        </div>
+      </article>
+      <article class="prog-card reveal">
+        <div class="prog-media"><img src="/short/img/short-breath-700.webp" width="700" height="383" loading="lazy" decoding="async" alt="Ранковий дихальний комплекс"></div>
+        <div class="prog-body">
+          <div class="prog-n">Комплекс 02</div>
+          <h3>Ранковий дихальний</h3>
+          <p class="prog-sub">Для легкого пробудження та заряду енергії на весь день.</p>
+          <ul>
+            <li>Активізує кровообіг</li>
+            <li>Покращує роботу діафрагми</li>
+            <li>Сприяє глибшому диханню</li>
+            <li>Покращує травлення</li>
+            <li>Наповнює енергією зранку</li>
+          </ul>
+        </div>
+      </article>
+      <article class="prog-card reveal">
+        <div class="prog-media"><img src="/short/img/Evening breath_4sec.png" width="544" height="306" loading="lazy" decoding="async" alt="Вечірній дихальний комплекс"></div>
+        <div class="prog-body">
+          <div class="prog-n">Комплекс 03</div>
+          <h3>Вечірній дихальний</h3>
+          <p class="prog-sub">Допомагає розслабитися після дня та підготувати тіло до якісного сну.</p>
+          <ul>
+            <li>Заспокоює нервову систему</li>
+            <li>Зменшує тривожність</li>
+            <li>Допомагає швидше заснути й покращує якість сну</li>
+            <li>Сприяє глибокому відновленню організму</li>
+            <li>Знімає напругу з попереку, спини, шиї</li>
+          </ul>
+        </div>
+      </article>
+      <article class="prog-card reveal">
+        <div class="prog-media"><img src="/short/img/short-bonus-700.webp" width="700" height="396" loading="lazy" decoding="async" alt="Бонус: детальний розбір техніки виконання"></div>
+        <div class="prog-body">
+          <div class="prog-n">Бонус</div>
+          <h3>Детальний розбір техніки</h3>
+          <p class="prog-sub">У комплекті ви також отримуєте:</p>
+          <ul>
+            <li>3 детальні відеоуроки з правильної техніки виконання</li>
+            <li>Текстові інструкції та шпаргалки до кожної вправи</li>
+            <li>Варіанти полегшення та підсилення вправ</li>
+          </ul>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ MICRO CTA 2 ============ -->
+<section class="sec microcta">
+  <div class="wrap">
+    <div class="microcta-card reveal">
+      <h3 class="microcta-title">Найпростіший крок до результату</h3>
+      <p class="microcta-text">Один платіж — і всі три комплекси з бонусним розбором лишаються з вами назавжди.</p>
+      <div class="microcta-price"><b>795 грн</b><small>доступ назавжди</small></div>
+      <a href="#offer" class="btn btn-primary" data-cta-suppress-sticky>Почати відновлення <span class="arr">→</span></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ INCLUDED ============ -->
+<section class="sec sec-alt" id="format">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Що входить</span>
+      <h2 class="sec-title">Після покупки ви отримаєте</h2>
+    </div>
+    <div class="inc-grid">
+      <div class="inc-card reveal">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="m10 9 5 3-5 3V9Z" fill="currentColor"/></svg></div>
+        <h4>3 основні комплекси</h4><p>«Перезавантаження» + два дихальні міні-комплекси: ранок і вечір.</p>
+      </div>
+      <div class="inc-card reveal">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 3v18M3 12h18" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="2"/></svg></div>
+        <h4>Бонусний модуль</h4><p>3 докладні відеоуроки з детальним розбором техніки виконання.</p>
+      </div>
+      <div class="inc-card reveal">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 4h14v16H5z" stroke="currentColor" stroke-width="2"/><path d="M8 9h8M8 13h8M8 17h5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h4>Конспекти та шпаргалки</h4><p>Текстові інструкції до кожної вправи — щоб виконувати точно.</p>
+      </div>
+      <div class="inc-card reveal">
+        <div class="ic"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="7" y="2" width="10" height="20" rx="2" stroke="currentColor" stroke-width="2"/><path d="M11 18h2" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
+        <h4>Доступ назавжди</h4><p>З будь-якого пристрою: телефон, планшет, ПК — без обмежень у часі.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PROOF ============ -->
+<section class="sec" id="reviews">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Нам довіряють</span>
+      <h2 class="sec-title">Понад 500 учасників уже займаються за програмою</h2>
+    </div>
+    <div class="shots">
+      <div class="shot reveal"><img src="/short/img/feedback9-640.webp" width="640" height="609" loading="lazy" decoding="async" alt="Відгук учасниці курсу"></div>
+      <div class="shot reveal"><img src="/short/img/feedback10-640.webp" width="640" height="563" loading="lazy" decoding="async" alt="Відгук учасника курсу"></div>
+      <div class="shot reveal"><img src="/short/img/feedback-short-fb-640.webp" width="512" height="640" loading="lazy" decoding="async" alt="Відгук з Facebook"></div>
+      <div class="shot reveal"><img src="/short/img/feedback-short-tg-720.webp" width="720" height="516" loading="lazy" decoding="async" alt="Відгук з Telegram"></div>
+    </div>
+    <div class="proof-video reveal">
+      <iframe src="https://www.youtube-nocookie.com/embed/2cxLE4GUuRw" title="Відеовідгук про курс Short-Перезавантаження" loading="lazy" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+    </div>
+  </div>
+</section>
+
+<!-- ============ AUTHOR ============ -->
+<section class="sec sec-alt" id="expert">
+  <div class="wrap">
+    <div class="author reveal">
+      <div class="author-photo"><img src="/short/img/expert-photo.webp" width="360" height="480" loading="lazy" decoding="async" alt="Євгеній Корякін — куратор курсу"></div>
+      <div>
+        <span class="kicker">Куратор курсу</span>
+        <h2 class="a-name">Євгеній Корякін</h2>
+        <div class="role">Засновник центру CenterWay</div>
+        <p class="lead">👋 Давайте знайомитись: я — Євгеній Корякін, дослідник і практик аюрведи, йоги та інших систем вивчення руху.</p>
+        <ul class="reg">
+          <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Магістр комплементарної медицини, 15+ років професійного досвіду</li>
+          <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Автор методик з дієтології та детоксикації, розробник оздоровчих програм</li>
+          <li><svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Йога- та аюрведа-терапевт, переможець змагань «Битва титанів»</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ OFFER ============ -->
+<section class="sec" id="offer">
+  <div class="wrap">
+    <div class="offer reveal">
+      <a class="guard refund-policy-link" href="/reboot/index2.html#refund-policy">Гарантія 14 днів</a>
+      <h2>Приєднуйтесь <em>сьогодні</em></h2>
+      <p><a class="refund-policy-link" href="/reboot/index2.html#refund-policy">Ми впевнені: за умови регулярного та правильного виконання вправ уже за 14 днів ви отримаєте помітні результати — або ми повернемо вам кошти.</a></p>
+      <div class="offer-price"><b>795 грн</b><small>доступ назавжди</small></div>
+      <button type="button" class="btn btn-primary openModal" data-cta-final>Оплатити зараз <span class="arr">→</span></button>
+      <div class="offer-pay"><span class="pill">Visa</span><span class="pill">Mastercard</span><span>Безпечна оплата WayForPay</span></div>
+      <p class="offer-note">Доступ до курсу відкривається одразу після оплати.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="sec sec-alt" id="faq">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Питання й відповіді</span>
+      <h2 class="sec-title">Що ще варто знати</h2>
+    </div>
+    <div class="acc faq">
+      <details class="acc-item reveal" open><summary><span class="num">01</span>Хто може виконувати ці вправи?<span class="chev"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+        <div class="acc-body"><ul><li>Ці комплекси підходять абсолютно всім: чоловікам, жінкам, малим, дорослим і навіть людям шанобливого віку.</li></ul></div>
+      </details>
+      <details class="acc-item reveal"><summary><span class="num">02</span>Чи можу я використати Short як ранкову гімнастику?<span class="chev"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+        <div class="acc-body"><ul><li>Так. Це універсальні комплекси: їх можна виконувати як перезавантаження протягом дня, так і у якості ранкової гімнастики.</li></ul></div>
+      </details>
+      <details class="acc-item reveal"><summary><span class="num">03</span>Я у непоганій формі. Чи можна посилити вправи?<span class="chev"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+        <div class="acc-body"><ul><li>Так — амплітудою, напругою та кількістю підходів. Про посилення й полегшення докладно розказано в уроках до кожної вправи.</li></ul></div>
+      </details>
+      <details class="acc-item reveal"><summary><span class="num">04</span>Я ніколи нічого не робив(ла). Підійде?<span class="chev"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+        <div class="acc-body"><ul><li>Безумовно. На кожному уроці ви легко підберете початкове навантаження під свій фізичний стан і далі так само легко його регулюватимете.</li></ul></div>
+      </details>
+      <details class="acc-item reveal"><summary><span class="num">05</span>Це справді швидко знімає напругу?<span class="chev"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+        <div class="acc-body"><ul><li>Саме так: міні-комплекс створений, щоб швидко зняти напругу, зарядити тіло та перемкнути вектор уваги — у будь-який момент дня.</li></ul></div>
+      </details>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-top">
+      <div class="footer-col">
+        <a href="#top" class="brand">
+          <img src="/shared/img/cw-mark-gold.svg" alt="" class="brand-mark" aria-hidden="true">
+          CenterWay
+        </a>
+        <p>Short-Перезавантаження — 3 комплекси вправ, які повертають тілу рухливість, а голові — ясність. 15 хвилин на день.</p>
+      </div>
+      <div class="footer-col">
+        <h5>Контакти</h5>
+        <a href="tel:+380636024450">+38 (063) 602 44 50</a>
+        <a href="https://telegram.me/centerway_support_bot" target="_blank" rel="noopener">Підтримка в Telegram</a>
+        <a href="/reboot/index2.html">Політика конфіденційності</a>
+      </div>
+      <div class="footer-col">
+        <h5>Соцмережі</h5>
+        <div class="footer-social">
+          <a href="https://www.youtube.com/channel/UC0VPHLWTIXD3Rad5XkcyliA" aria-label="YouTube"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.5-5c-.3-1-1-1.7-2-2C18.8 4.5 12 4.5 12 4.5s-6.8 0-8.5.5c-1 .3-1.7 1-2 2C1 8.5 1 12 1 12s0 3.5.5 5c.3 1 1 1.7 2 2 1.7.5 8.5.5 8.5.5s6.8 0 8.5-.5c1-.3 1.7-1 2-2 .5-1.5.5-5 .5-5ZM10 15V9l5 3-5 3Z"/></svg></a>
+          <a href="https://telegram.me/E_Koriakin" aria-label="Telegram"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.5 4.5 2.5 11.8c-.9.4-.9 1.6 0 1.9l4.8 1.5 1.8 5.6c.2.7 1 .9 1.5.4l2.7-2.5 4.7 3.5c.6.4 1.4.1 1.6-.6l3.2-15c.2-.9-.7-1.7-1.5-1.6ZM9.5 14.3l8.6-5.3-7 6.2-.2 3.3-1.4-4.2Z"/></svg></a>
+          <a href="https://www.instagram.com/evgeniy_koryakin/" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/></svg></a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>© 2026 CenterWay · Усі права захищені</span>
+      <img src="/short/img/visa-mc.webp" alt="Visa / Mastercard" class="pay-mark">
+    </div>
+  </div>
+</footer>
+
+<!-- ============ STICKY CTA ============ -->
+<div class="sticky-cta" id="stickyCta">
+  <div class="sticky-in">
+    <a href="#offer" class="btn btn-primary">Почати відновлення →</a>
+  </div>
+</div>
+
+<!-- checkout + attribution + pixel wiring: identical to variant A (/reboot) -->
+<script src="js/common.js" async></script>
+<!-- reveal / sticky-CTA / anchor / accordion behaviour -->
+<script src="js/enhance.js"></script>
+<!-- shared burger-nav runtime -->
+<script src="/shared/js/landing-runtime.js" defer></script>
+
+<script>
+/** Attribution capture v1 (UTM + cr + lv + fbclid) — same as variant A */
+(function(){
+  const qs = new URLSearchParams(location.search);
+  const keys = ['utm_source','utm_medium','utm_campaign','utm_content','lv','cr','fbclid'];
+  const attrib = {};
+  keys.forEach(k => { const v = qs.get(k); if (v) attrib[k] = v; });
+  if (Object.keys(attrib).length) {
+    try { localStorage.setItem('cw_attrib', JSON.stringify(attrib)); } catch(e) {}
+  }
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,1187 @@
+/* User cabinet — sectioned dashboard over profile + LMS data.
+
+   Mobile-first: every rule is the phone layout, wider viewports only add.
+
+   One surface language, and it is the canonical one. Every panel here declares
+   `data-cw-material="matte"` in the markup and inherits stroke + grain + shadow
+   from the recipe in globals.css (see docs/design-system.md "Material layer").
+   Nothing in this file hand-rolls a surface: an earlier pass had the profile
+   carrying its own private card set — bordered stat tiles at one radius over a
+   photo hero, borderless cards at another radius below it — and the page read
+   as two design systems stitched together. Rules here set layout and radius
+   only; the material is not ours to redefine.
+
+   Radius has exactly three jobs: `lg` = panel, `md` = something nested inside a
+   panel, `btn`/`pill` = a control. Serif (`--cw-font-editorial`) has exactly
+   one: titles. Values are UI weight 600, never editorial — that split was the
+   other half of the seam. Tokens only, no raw hex. */
+
+.shell {
+  width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
+  margin: 0 auto;
+  padding-block: var(--cw-space-lg) var(--cw-space-3xl);
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-ui);
+}
+
+/* ── Identity ─────────────────────────────────────── */
+
+/* Moved out, not deleted: identity, the three facts and the resume card are one
+   block now — `CabinetHero` and `CabinetHero.module.css` — because the hero
+   puts a photographed doorway beside them and the layout that does that is not
+   this file's. What remains here is everything BELOW the room.
+
+   The settings entry (`.identityAccountEntry`) went with the same pass, and it
+   had already stopped being rendered before it. */
+
+/* ── Section scaffolding ──────────────────────────── */
+
+/* `minmax(0, 1fr)`, never the implicit `auto`, and this is not boilerplate.
+   An auto track sizes to its widest child's MIN-CONTENT, and the ring row's
+   min-content is the sum of its three fixed 6.5rem columns — so on a 375px
+   phone the track came out 394px and every panel in the section hung 50px past
+   the viewport with the page scrolling sideways behind it. The ring row is a
+   scroll container and is perfectly happy to be narrower than its contents;
+   it just has to be told that the track is not negotiable. */
+.section {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-md);
+}
+
+/* The page's single label idiom. The hero used to run a second one (mono, in
+   the data face) two inches above this one; there is now only this. */
+.sectionLabel {
+  margin: 0;
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
+}
+
+.sectionTitle {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(1.5rem, 5vw, 2rem);
+  font-weight: 500;
+  line-height: 1.15;
+}
+
+.sectionLead {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  line-height: 1.6;
+}
+
+/* A column, not a grid, and the difference is the button row: `margin-top:
+   auto` on the actions needs a flex parent to push against. Cards in one grid
+   row stretch to the tallest, so without it three cards whose text runs to
+   different lengths put their buttons at three different heights — the row read
+   as three cards nudged out of line rather than as a shelf. */
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-lg);
+  border-radius: var(--cw-radius-xl);
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-md);
+}
+
+/* THE SHELF'S TWO VIEWS. See `LearnShelfClient` for why the reader picks.
+   The switch itself is the builder's, restated rather than imported: two
+   icon-only buttons, muted until pressed. The list mode needs no rules of its
+   own — `CourseRow` renders `.glance`, which the cabinet already draws. */
+.viewSwitch {
+  display: inline-flex;
+  align-self: end;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+}
+
+.viewOption {
+  composes: chromeBare from "../PlatformButtons.module.css";
+  composes: square from "../PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
+}
+
+.viewOption[aria-pressed="true"] {
+  color: var(--cw-platform-text);
+}
+
+.cardGrid[data-view="rows"] {
+  gap: var(--cw-space-2xs);
+}
+
+/* THE CARD STAYS STACKED, AND THE MEASUREMENT IS WHY (2026-08-28). A sideways
+   split was tried here: cover 5.5rem on the left, everything else in a second
+   column. It cost the shelf 5% — 5827px to 5513px over twelve courses, a
+   comparable card 579px to 537px — because the copy column drops to 239px and
+   the title, the summary, the meta and two buttons all wrap more, giving back
+   almost exactly what the cover's 160px of height had saved. It also broke the
+   chip row into a line per chip.
+   Density is the LIST's job (`data-view="rows"`), and it does it properly: the
+   same twelve courses come to 1095px. The card's job is the picture the course
+   was chosen by, at the width that shows it. Two views, two jobs. */
+
+.cardTitle {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* A COURSE'S NAME IS THE NAME OF A WORK, so it is set in the editorial face —
+   the same one the builder's course cards use, at the same size and weight.
+   Only this title: `.cardTitle` also heads «Контакти», «Нагадування» and the
+   dosha panel, and those are the interface speaking, not works. The shelf and
+   the workshop are one shelf seen from two sides; a course called one thing in
+   a serif on one of them and in the UI grotesque on the other is the pair
+   disagreeing about what a course IS. */
+.courseCardTitle {
+  composes: cardTitle;
+  font-family: var(--cw-font-editorial);
+  font-size: 1.3rem;
+  font-weight: 500;
+  /* TWO LINES, NEVER MORE. A shelf is scanned, not read — a title running to
+     three or four lines pushed the summary, the meta and the buttons down by a
+     different amount on every card, and the row stopped reading as one shelf.
+     The full title still exists: it is the page a spine opens onto. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.cardText {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  line-height: 1.6;
+}
+
+/* THE CLAMP BELONGS TO THE SUMMARY, NOT TO EVERY `.cardText` (2026-08-29). It
+   was written on `.cardText` itself, which is also what the shelf's error and
+   empty states, the iOS install steps, the author-profile status lines and
+   the notification warning in `CabinetClient.tsx` render with — none of them
+   have anywhere else to send a reader for the rest of the sentence, so
+   clamping them loses real, actionable text with no way back. A course
+   summary is different: the offer page and the course map both hold the
+   whole thing, so THIS text alone can afford to be a preview. Three lines,
+   for the same reason the title above gets two — a course's own summary has
+   no length contract, and one long enough ran the card to double the height
+   of its neighbours. */
+.courseCardSummary {
+  composes: cardText;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+/* ── Continue card (the cabinet's single most important control) ── */
+
+/* Tone shifts, material does not. Class + attribute outranks the recipe's bare
+   attribute selector deterministically, rather than relying on sheet order. */
+/* ── The dashboard's shelf ────────────────────────────
+
+   One column per course, at one size, whatever the count — the cards sit on the
+   paper end of the hero plate and are read as a row of the same object. Narrow
+   on purpose: `15rem` is the width at which a 16:9 cover still reads and four
+   fit a 1160px page. `auto-fit` rather than a fixed four because the number is
+   data.
+
+   A card here ends in exactly ONE control (see `CompactCourseCard`): the second
+   one used to be «Усі мої курси», which is the doorway printed a few
+   centimetres below itself. */
+/* ONE ANSWER, THEN THE INSTRUMENTS. The row used to be four equal cards with
+   four buttons, which is four equal answers to a question that has one: the
+   course you were in. That card keeps its cover and its control; the rest are
+   glances — name, where you stopped, a rail — and the whole tile is the link.
+
+   The grid says the same thing: the card takes a fixed column, the glances fill
+   what is left and wrap among themselves. */
+.shelfRow {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-md);
+}
+
+/* ONE COLUMN, ENDING IN THE WAY ONWARD. The glances briefly wrapped into as
+   many columns as fit, which turned the middle of the row into a table — a
+   dashboard answering "what do I own" at the length of the library. One column
+   of four, then «Усі мої курси →» as its last row: the list is a list, and the
+   doorway is where it runs out.
+
+   THE ROWS DO NOT STRETCH. They did, to make the column exactly as tall as the
+   card beside it — and five rows sharing a card's height turned four courses
+   nobody is currently reading into four objects the size of the answer. A
+   THREE, AND THEY FILL THE CARD. Four rows plus the doorway left the column
+   ragged against the card beside it and put a course nobody has opened at the
+   bottom of the answer; three rows and the doorway divide the card's height
+   evenly, so the column is one object with the card rather than a list that
+   ran out. The library holds the rest — the count in the room says how many. */
+.shelfGlances {
+  display: grid;
+  grid-auto-rows: minmax(0, 1fr);
+  align-content: stretch;
+  gap: var(--cw-space-2xs);
+}
+
+/* A tile, not a card: no cover, no button, no shadow at rest. It is a line of
+   instrument that happens to be pressable, so the whole thing is the target. */
+/* A LINE, NOT A PANEL. Ring on the left, two lines of type on the right, and
+   the whole tile is the target. The first pass gave each glance a card's
+   padding and a full-width rail, which made three of them a second stack of
+   cards beside the one card that matters. */
+.glance {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-xs);
+  padding: 0.3rem var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  color: inherit;
+  text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+/* Reserved even when there is no ring to draw — a course with no lessons yet
+   still lines its name up with the two above it. */
+.glanceRing {
+  width: 2.75rem;
+  height: 2.75rem;
+}
+
+/* The last row of the column: same tile, no ring, no state — the list ends in
+   a doorway rather than in a link floating over the composition. */
+.glanceMore {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-xs);
+  min-height: 2.75rem;
+  padding: var(--cw-space-2xs) var(--cw-space-sm) var(--cw-space-2xs) calc(2.75rem + var(--cw-space-xs) + var(--cw-space-sm));
+  border-radius: var(--cw-radius-md);
+  color: inherit;
+  font-size: 0.92rem;
+  font-weight: 600;
+  text-decoration: none;
+  transition: transform 180ms ease, box-shadow 180ms ease;
+}
+
+.glanceMore:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.glanceMore:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+/* 2px, once — the gesture says "this goes somewhere", anything larger says
+   "this is animated". Same step as every other arrow in the platform. */
+.glanceMoreArrow {
+  color: var(--cw-sem-warmth-strong);
+  transition: transform 200ms ease;
+}
+
+.glanceMore:hover .glanceMoreArrow,
+.glanceMore:focus-visible .glanceMoreArrow {
+  transform: translateX(2px);
+}
+
+.glanceText {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.glance:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.glance:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.glanceTitle {
+  overflow: hidden;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.3;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The count in the DATA face, like every other number the platform prints in a
+   meter's company (see the mirror's ring list). It is what makes four glances,
+   a rail and a dosha wheel read as one instrument panel rather than as four
+   paragraphs. */
+.glanceNote {
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: 0.72rem;
+  letter-spacing: 0.04em;
+  line-height: 1.35;
+}
+
+@media (min-width: 900px) {
+  /* AN ISLAND, NOT A BAND. Spread across the full content column the row read
+     as a strip pinned to the bottom of the screen rather than as one object
+     standing in the room. Capped and centred, it sits under the middle of the
+     photograph — which is also where the eye already is, having come down from
+     the name on the wall.
+
+     THREE EQUAL COLUMNS, MEASURED BY THE CARD — in both directions.
+
+     Height: they stretch to the tallest part, which is the course card, the one
+     whose height is set by real content (cover, name, where you stopped, the
+     control). The other two fill it rather than setting their own.
+
+     Width: the column is `15rem`, the card's own width, and the row is only as
+     wide as three of them. `1fr` columns in a `54rem` box made every part 18rem
+     — the row grew the card to fill the page instead of the page holding three
+     cards. A dashboard row is a group of objects standing in a room, and a
+     group has a size; it does not spread to whatever it is given.
+
+     LEFT, ON THE CONTENT'S OWN EDGE. Centred, the group floated free of the
+     name and the three facts standing above it — two blocks of one composition
+     on two different verticals. `justify-content: start` puts its left edge on
+     the same line as the avatar. */
+  .shelfRow {
+    width: 100%;
+    grid-template-columns: repeat(3, minmax(0, 15rem));
+    justify-content: start;
+    align-items: stretch;
+  }
+
+  /* Nothing to resume, so nothing to keep narrow: the state card takes the
+     room the glances would have. */
+  /* Nothing to resume: what stands in the first column is a state — loading,
+     failed, or "no courses yet" — and a state is a sentence, not a card of
+     fixed width. It gets the room the glances would have had; the dosha keeps
+     its own column at the card's width. */
+  .shelfRow[data-shelf="single"] {
+    grid-template-columns: minmax(0, 21rem) minmax(0, 15rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glanceMore,
+  .glanceMoreArrow {
+    transition: none;
+  }
+
+  .glanceMore:hover {
+    transform: none;
+  }
+
+  .glanceMore:hover .glanceMoreArrow,
+  .glanceMore:focus-visible .glanceMoreArrow {
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glance {
+    transition: none;
+  }
+
+  .glance:hover {
+    transform: none;
+  }
+}
+
+/* FLEX, not grid, and the reason is the button. `margin-top: auto` on the
+   action is what lines four buttons up under four different copy lengths; in a
+   grid the auto margin has no free space in its track to eat, so the cards came
+   out the same height with their buttons at four different heights. */
+.shelfCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  padding: var(--cw-space-md);
+  border-radius: var(--cw-radius-lg);
+}
+
+.shelfCardTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.shelfCardNote {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  overflow: hidden;
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.45;
+}
+
+.shelfCardMeta {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.85rem;
+}
+
+/* The action pins to the card's own bottom, so four cards with three different
+   copy lengths still line their buttons up. */
+.shelfCardAction {
+  composes: row from "../PlatformButtons.module.css";
+  margin-top: auto;
+  padding-top: var(--cw-space-2xs);
+}
+
+/* THE DOT, ON THE AVATAR — not a line under the row any more. Reachability is
+   a fact about THIS ACCOUNT, so it rides the identity that names the account
+   rather than standing a full screen's height away as its own object. See
+   CabinetHero.tsx for why these classes live here instead of that module. */
+.avatarNoticeWrap {
+  position: relative;
+  display: inline-flex;
+}
+
+.avatarNotice {
+  position: absolute;
+  inset-block-end: -0.05rem;
+  inset-inline-end: -0.05rem;
+  display: grid;
+  place-items: center;
+}
+
+/* The visible mark is 0.7rem — a status dot, not a control. What it has to be
+   is easy to REST on, which is a larger area than the dot: the catch is grown
+   with an invisible pseudo-element rather than by inflating the dot itself,
+   which would stop reading as a dot at all. */
+.avatarNotice::before {
+  content: "";
+  position: absolute;
+  inset: -0.5rem;
+}
+
+.avatarNoticeDot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-sem-boundary);
+  /* Cut from the same dark the avatar sits in, not the page paper: the mark
+     has to read against the photograph, and only one of the two grounds under
+     it is that colour on every theme. */
+  border: 0.15rem solid var(--cw-mat-scrim-ink);
+}
+
+/* WHAT THE DOT SAYS, SAID BEFORE ANYTHING IS PRESSED. The dot is the mark and
+   nothing else; this is the notice it stands for, and the link out of it lives
+   in here rather than on the mark. It opens from the dot's centre RIGHTWARD
+   (`inset-inline-start: 50%`) because the avatar sits at the left edge of the
+   identity row and a panel centred on the dot would hang off it.
+
+   Hidden with opacity and `pointer-events`, not `visibility` or unmounting:
+   the link inside has to stay tabbable, so that reaching it with a keyboard is
+   what reveals the panel — `:focus-within` on the same container that answers
+   `:hover`. One rule serves the pointer and the keyboard, and no open flag is
+   threaded through the component to do it. */
+.avatarNoticePop {
+  position: absolute;
+  inset-block-start: calc(100% + 0.55rem);
+  inset-inline-start: 50%;
+  z-index: 3;
+  display: grid;
+  gap: var(--cw-space-2xs);
+  width: max-content;
+  max-width: 20rem;
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-raised);
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(-0.25rem);
+  transition:
+    opacity 160ms ease,
+    transform 160ms ease;
+}
+
+.avatarNotice:hover .avatarNoticePop,
+.avatarNotice:focus-within .avatarNoticePop {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .avatarNoticePop {
+    transition: none;
+    transform: none;
+  }
+}
+
+.avatarNoticeText {
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.avatarNoticeLink {
+  justify-self: start;
+  color: var(--cw-sem-warmth);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+.avatarNoticeLink:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+  border-radius: var(--cw-radius-sm);
+}
+
+/* THE DOSHA, AT THE SIZE OF A GLANCE. It was a full card in a section under the
+   photograph, which put a scroll between a person and their own result. Here it
+   is the row's third part: the wheel, the type, one way back into the test. */
+.shelfAside {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border-radius: var(--cw-radius-lg);
+}
+
+/* Smaller than the card version — the tile is a fifth of the row's width, and
+   the wheel is read as a shape here, not measured. */
+.shelfAside .wheelRing {
+  width: clamp(5rem, 16vw, 6.5rem);
+}
+
+/* The tile is as tall as the course card now, so the wheel takes the middle of
+   it rather than sitting under the label with a field of tint below. The
+   control keeps its own foot (`.shelfCardAction`, `margin-top: auto`). */
+.shelfAside .wheel {
+  margin-block: auto;
+}
+
+
+
+
+
+
+/* ── Chips, meters, meta ──────────────────────────── */
+
+.chipRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-2xs);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  font-size: 0.8rem;
+  color: var(--cw-platform-muted);
+}
+
+.chipDone {
+  composes: chip;
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-on-accent);
+  font-weight: 600;
+}
+
+.metaList {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ds-type-body-sm-size);
+  color: var(--cw-platform-muted);
+  line-height: 1.5;
+}
+
+.metaList strong {
+  color: var(--cw-platform-text);
+  font-weight: 600;
+}
+
+/* ── Actions ──────────────────────────────────────── */
+
+/* Full width, stacked. `flex-wrap` sized each button to its own label, so
+   "Продовжити" and "Карта курсу" came out two different widths and neither
+   reached the card edge — two stubs floating in a card rather than the card's
+   own footer. They go side by side at 561px, where the card is at least 22rem
+   and there is room for both. */
+/* THE BUTTON ROW, and it has one rule per axis.
+   Vertically: pinned to the bottom of its card, so a row of cards lines its
+   actions up instead of hanging each one under its own paragraph.
+   Horizontally: full width on a phone, where a thumb wants the whole card
+   edge; content width from 561 up, floored at the contract's min so a two-word
+   label is still a button. It used to be `grid-auto-columns: 1fr` there, which
+   handed each button half a wide card and then capped it at 22rem — two 352px
+   slabs with a canyon between them, on a card whose text ran 60 characters. */
+.actions {
+  composes: row from "../PlatformButtons.module.css";
+  margin-top: auto;
+  padding-top: var(--cw-space-2xs);
+}
+
+/* The group rule now lives in the contract (`row`), because "one line when they
+   fit, a full-width line each when they do not" is not a cabinet question — the
+   builder and the offer tiles were solving it too, differently. What stays here
+   is only what is local: the card pins its actions to its own bottom. */
+
+.actionPrimary {
+  composes: primary from "../PlatformButtons.module.css";
+}
+
+.actionGhost {
+  composes: secondary from "../PlatformButtons.module.css";
+}
+
+/* ── The dosha wheel ──────────────────────────────────
+
+   One ring divided into three arcs, in place of three horizontal meters. The
+   meters cost a card's width to say what the result line already said in words;
+   the wheel says the SHAPE, and the numbers arrive on hover or focus. */
+/* THE WHEEL IS CENTRED IN ITS TILE. Only the numbers under it are a list, and
+   a list is read down a left edge — the ring is a picture, and a picture pushed
+   against one wall of a panel reads as a mistake rather than as alignment. */
+.wheel {
+  display: grid;
+  justify-items: center;
+  gap: 0.35rem;
+  padding-block: var(--cw-space-2xs);
+}
+
+.wheelRing {
+  width: clamp(7rem, 22vw, 9rem);
+  height: auto;
+}
+
+.wheelTrack {
+  stroke: color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+}
+
+.wheelArc {
+  transition: opacity 180ms ease;
+}
+
+.wheelArc[data-dosha="vata"] {
+  stroke: var(--cw-sem-dosha-vata);
+}
+
+.wheelArc[data-dosha="pitta"] {
+  stroke: var(--cw-sem-dosha-pitta);
+}
+
+.wheelArc[data-dosha="kapha"] {
+  stroke: var(--cw-sem-dosha-kapha);
+}
+
+.wheelType {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: 1.2rem;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* PRINTED, NOT HOVERED. The three numbers were revealed on hover, on the
+   argument that the wheel says the shape and the numbers are for whoever asks.
+   On a tile of its own, with room under the wheel, that argument buys nothing
+   and costs a pointer: a touch screen has no hover, and a result you have to
+   discover is a result the dashboard did not give you. */
+.wheelLegend {
+  display: grid;
+  gap: 0.15rem;
+  width: 100%;
+  margin: 0;
+}
+
+.wheelLegendRow {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.5rem;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.wheelLegendRow dt {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.wheelLegendRow dd {
+  margin: 0;
+  color: var(--cw-platform-text);
+  font-weight: 600;
+}
+
+.wheelDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--cw-radius-pill);
+}
+
+.wheelLegendRow[data-dosha="vata"] .wheelDot {
+  background: var(--cw-sem-dosha-vata);
+}
+
+.wheelLegendRow[data-dosha="pitta"] .wheelDot {
+  background: var(--cw-sem-dosha-pitta);
+}
+
+.wheelLegendRow[data-dosha="kapha"] .wheelDot {
+  background: var(--cw-sem-dosha-kapha);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wheelArc {
+    transition: none;
+  }
+}
+
+/* Top-level blocks used to touch: the shell is not a grid and nothing set a
+   gap, so "Продукти" started where the card above it ended. With the last two
+   now folding, the seam between them is also the hit area's edge, and it has to
+   be visible. */
+.section + .section,
+.section + .fold,
+.fold + .fold,
+.fold + .section {
+  margin-top: var(--cw-space-xl);
+}
+
+/* ── Folded sections ──────────────────────────────── */
+
+/* See CabinetFold.tsx: shut on a phone, open from 561 up. */
+.fold {
+  display: grid;
+  gap: var(--cw-space-md);
+}
+
+.foldHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  /* Both, and neither is redundant: `list-style` kills the marker in Firefox,
+     the pseudo-element in WebKit. */
+  list-style: none;
+  padding-block: var(--cw-space-2xs);
+  cursor: pointer;
+}
+
+.foldHead::-webkit-details-marker {
+  display: none;
+}
+
+.foldHead:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+  border-radius: var(--cw-radius-md);
+}
+
+.foldText {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+/* Sized to the touch minimum and centred on the label line rather than on the
+   whole header, so it stays beside the title when a lead wraps under it. */
+.foldChevron {
+  flex: none;
+  width: var(--ds-touch-target-min);
+  height: var(--ds-touch-target-min);
+  padding: 0.6rem;
+  color: var(--cw-platform-muted);
+  transition: transform 200ms ease;
+}
+
+.fold[open] .foldChevron {
+  transform: rotate(180deg);
+}
+
+.foldBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .foldChevron {
+    transition: none;
+  }
+}
+
+/* ── Course overview (rings) ──────────────────────── */
+
+/* A panel like any other — the rings are the only new thing here, and they are
+   drawn by ProgressRing, not by this file. */
+
+/* Scrolls sideways on a phone instead of wrapping into a second row: three
+   courses on one line is the whole reason the ring exists, and a wrap turns the
+   compact summary back into a stack. `auto-fill` off a fixed track so a lone
+   pair does not stretch to half the panel each. */
+
+
+
+
+/* Two lines, then an ellipsis. A ring is a glyph 4rem wide and the label under
+   it is a caption for it, not the course's name in full — «Розвантажувальний
+   день — практикум з умовного голодування» ran to six lines and made one column
+   three times the height of its neighbours. The full title is on the card the
+   ring links to. */
+
+/* Baselines line up across the row even when one label takes one line and the
+   next takes two. */
+
+
+/* ── Course cover ─────────────────────────────────── */
+
+/* The canonical course-media object: the same framed 16:9 crop used by the
+   builder and public catalogue. It remains inside the panel at every width so
+   purchase does not turn one cover into a different composition. */
+/* THE FRAME THE DRAFT BADGE PINS TO. `.cover`/`.coverFallback` keep their own
+   margin so the frame costs nothing when there is no badge to place — it is a
+   positioning context, not a second box around the picture. */
+.coverFrame {
+  position: relative;
+}
+
+.cover,
+.coverFallback {
+  width: 100%;
+  max-width: 100%;
+  margin: 0 0 var(--cw-space-2xs);
+  aspect-ratio: 16 / 9;
+  border-radius: var(--cw-radius-md);
+  object-fit: cover;
+  background: var(--cw-mat-surface-sunk);
+}
+
+/* A DRAFT IS A FLAG ON THE PICTURE, NOT A CHIP IN THE ROW. Fixed to the same
+   corner on every card regardless of what else is true about it, so the eye
+   learns one place to look rather than hunting a chip row whose order shifts
+   with the course's own state.
+
+   THE CANONICAL glass-media RECIPE, NOT A HAND-ROLLED TINT (2026-08-29). A
+   first pass wrote its own 55%-tint/6px-blur pair here — exactly the ad hoc
+   glass effect AGENTS.md's preflight forbids, and it also skipped the
+   recipe's own contrast floor and no-blur-support fallback. `.draftBadge` is
+   now only the POSITION — a plain wrapper with no material of its own — and
+   `.draftBadgeChip` inside it carries `data-cw-material="glass-media"` (the
+   `glassMedia` export this same file already hands to every other panel that
+   sits on a photograph), so the badge degrades exactly the way the rest of
+   the product's glass does. Two elements, not one: `[data-cw-material]` sets
+   its own `position: relative`, and fighting that with `position: absolute`
+   on the identical element would have made the badge's actual position
+   depend on CSS cascade order rather than on markup. */
+.draftBadge {
+  position: absolute;
+  inset-block-start: var(--cw-space-2xs);
+  inset-inline-start: var(--cw-space-2xs);
+}
+
+.draftBadgeChip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.3rem 0.7rem;
+  border-radius: var(--cw-radius-pill);
+  font-size: 0.8rem;
+}
+
+.coverFallback {
+  display: grid;
+  place-items: center;
+  background: linear-gradient(
+    140deg,
+    color-mix(in srgb, var(--cw-sem-guide-primary) 20%, var(--cw-mat-surface-sunk)),
+    var(--cw-mat-surface-sunk)
+  );
+  /* The strongest mark ON the ground, which is not the same role as the
+     strongest FILL. In the light gamma both are `guide-strong` and the
+     difference never had to be stated; on graphite a plate wants to go darker
+     and a mark wants to go lighter, and one value cannot do both. */
+  color: var(--cw-platform-ink-strong);
+  font-family: var(--cw-font-editorial);
+  font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+/* A course whose access has lapsed keeps its cover — recognising it is exactly
+   how the reader knows which one lapsed — but stops competing with the ones
+   they can open. */
+.cover[data-dimmed],
+.coverFallback[data-dimmed] {
+  opacity: 0.5;
+}
+
+/* ── Install, as one line ─────────────────────────── */
+
+/* Not a card. See PwaInstallCard.tsx: the offer lives in the footer now, and
+   what is left here is a fact about this account's device, sitting in the
+   account section at the weight of a row. */
+.installRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  min-height: var(--ds-touch-target-min);
+  list-style: none;
+}
+
+.installRow::-webkit-details-marker {
+  display: none;
+}
+
+.installRowText {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.95rem;
+}
+
+/* The iOS branch has no control to press, so the row becomes a disclosure and
+   the two taps live under it rather than in a panel nobody asked to open. */
+.installFold {
+  display: grid;
+  gap: var(--cw-space-xs);
+}
+
+.installFold > summary {
+  cursor: pointer;
+}
+
+.installFold > summary:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+  border-radius: var(--cw-radius-md);
+}
+
+/* One control in a row of its own is not a card footer: the flex `auto` margin
+   that pins actions to a card's bottom would push this one across the line. */
+.installRow .actionGhost {
+  flex: 0 1 auto;
+  margin-top: 0;
+  padding-top: 0;
+  min-width: var(--ds-button-min-width);
+}
+
+/* ── Locked / muted states ────────────────────────── */
+
+.cardMuted {
+  composes: card;
+}
+
+.cardMuted[data-cw-material] {
+  background-color: var(--cw-mat-surface-sunk);
+  box-shadow: none;
+}
+
+/* A panel like any other, tinted by the boundary tone — not a differently
+   shaped callout. Same material, same radius, same padding; only the hue says
+   "read this before you rely on a reminder arriving". */
+.notice {
+  composes: card;
+  line-height: 1.55;
+}
+
+/* ── Author profile form ──────────────────────────── */
+
+/* A FORM IS READ DOWN A COLUMN, NOT ACROSS A PAGE. The fold spans the
+   cabinet's full width, so unconstrained inputs came out around 1100px — a
+   name typed into a box wider than the paragraph above it, and a line length
+   nobody can scan. 42rem is the measure the rest of the platform sets prose
+   at. */
+.authorForm {
+  composes: card;
+  max-width: 42rem;
+}
+
+.authorField {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-2xs);
+  font-size: var(--ds-type-body-sm-size);
+  color: var(--cw-platform-muted);
+}
+
+/* «Додати рядок» is not the form's action — «Зберегти» is. It adds one row to
+   a list, so it stands at that list's own scale rather than taking the full
+   width a primary control takes. */
+.authorAddRow {
+  composes: secondary from "../PlatformButtons.module.css";
+  align-self: flex-start;
+}
+
+.authorInput,
+.authorTextarea {
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  border: 1px solid var(--cw-platform-border);
+  background: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-family: var(--cw-font-ui);
+}
+
+.authorTextarea {
+  resize: vertical;
+}
+
+.authorCredentialRow {
+  display: flex;
+  gap: var(--cw-space-xs);
+  align-items: center;
+}
+
+.authorCredentialRow .authorInput {
+  flex: 1 1 auto;
+}
+
+.authorPhotoPreview {
+  width: 6rem;
+  height: 6rem;
+  object-fit: cover;
+  border-radius: var(--cw-radius-md);
+}
+
+/* A SETTING'S SHAPE: name and consequence at the left, the switch at the
+   right — the same lockup the account menu's «Вигляд» row uses. It was a bare
+   checkbox followed by two lines joined with a `<br>`, which reads as a
+   paragraph with a box in front of it rather than as a control. */
+.authorVisibilityRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-md);
+  padding: var(--cw-space-sm) 0;
+  font-size: var(--ds-type-body-sm-size);
+  color: var(--cw-platform-muted);
+}
+
+.authorVisibilityCopy {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+.authorVisibilityCopy strong {
+  color: var(--cw-platform-text);
+  font-weight: 600;
+}
+
+.authorVisibilityNote {
+  color: var(--cw-platform-muted);
+  line-height: 1.45;
+}
+
+/* THE PHOTO AND ITS CONTROL SIT SIDE BY SIDE, so the picture is the thing the
+   button is obviously about. */
+.authorPhotoRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-md);
+  flex-wrap: wrap;
+}
+
+/* An empty slot at the portrait's own size, so the row does not jump the first
+   time an image lands in it. */
+.authorPhotoEmpty {
+  width: 6rem;
+  height: 6rem;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+/* THE FILE INPUT IS HIDDEN, NOT REMOVED. `Choose file / No file chosen` is the
+   browser's own chrome in the browser's own type — the one control on this form
+   that was not the product's. The real input keeps doing the work; the label is
+   what the reader sees, and clicking it opens the dialog because that is what a
+   `<label>` wrapping an input does. */
+.authorFilePick {
+  display: inline-flex;
+  cursor: pointer;
+}
+
+.authorFilePickFace {
+  composes: secondary from "../PlatformButtons.module.css";
+}
+
+.authorFilePickFace[data-busy] {
+  opacity: 0.6;
+}
+
+/* The one accessible-hiding recipe: off-screen but still focusable and still
+   read aloud. `display: none` would take the input out of the tab order and
+   the label with it. */
+.visuallyHidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Save/upload outcomes and errors. Quiet, but not the body colour — this is the
+   form answering, not more prose. */
+.authorNotice {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}
+
+.notice[data-cw-material] {
+  background-color: var(--cw-mat-tone-boundary);
+}
+
+/* ── Wider viewports: additive only ───────────────── */
+
+/* 561px is the platform's tablet boundary (docs/design-system.md: mobile ≤ 560,
+   tablet 561–900, desktop ≥ 901). It used to be 48rem here — a third system,
+   in neither the shell's nor the canon's set, which left a 768–900px band where
+   the content had already gone wide while the header was still in its mobile
+   lockup. Kept in px, like every other breakpoint on the platform: these are
+   viewport sizes, not type-relative measures. */
+@media (min-width: 561px) {
+  .shell {
+    padding-block-start: var(--cw-space-xl);
+  }
+
+  /* auto-fit, not a fixed pair: a lone course card reading as a half-width tile
+     with dead space beside it looks like a layout bug, not a shelf. */
+  .cardGrid {
+    grid-template-columns: repeat(auto-fit, minmax(22rem, 1fr));
+  }
+
+  /* NO OVERRIDE HERE ANY MORE — the base rule already answers this band. This
+     one set `flex-grow: 0`, which meant a pair that did NOT fit stayed at the
+     contract minimum instead of filling the line it wrapped onto: at a 326px
+     card, two 168px buttons need 348px, so they wrapped and each left 158px of
+     dead card beside it. That is the "neither one row nor full width" state.
+     `flex: 1 1 var(--ds-button-min-width)` on `.actions > *` covers both
+     outcomes at every width, so this band needs nothing of its own. */
+}

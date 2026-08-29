@@ -25,12 +25,12 @@ function offerView(programSlug?: PlatformRouteBlockProps["programSlug"]) {
           "рішення про участь, оплата і наступний крок живуть у межах цієї сторінки",
         ]
       : [
-          "платформений маршрут без переходу на окремий лендинг",
+          "покупка просто на платформі, без переходу на окремий лендинг",
           "підтвердження формату, оплата і наступний крок живуть у межах цієї сторінки",
         ],
     productCode:
-      program?.slug === "ideal-body"
-        ? "ideal-body"
+      program?.slug === "natural-body"
+        ? "natural-body"
         : program?.slug === "irem"
           ? "irem"
           : program?.surfaceType === "mini-course"
@@ -69,7 +69,7 @@ export function OfferInfo({ programSlug }: Pick<PlatformRouteBlockProps, "progra
         <article className={styles.panel}>
           <p className={styles.label}>Що змінюємо</p>
           <h2 className={styles.title}>{detailsTitle}</h2>
-          <ul className={`${styles.timeline} ${styles.programResultList}`}>
+          <ul className={styles.timeline}>
             {program.results.slice(0, 5).map((result) => (
               <li key={result}>{result}</li>
             ))}
@@ -79,11 +79,11 @@ export function OfferInfo({ programSlug }: Pick<PlatformRouteBlockProps, "progra
           <p className={styles.label}>Формат</p>
           <h2 className={styles.title}>{program.duration}</h2>
           <p className={styles.lead}>{program.description}</p>
-          <div className={styles.programFormatMeta}>
+          <ul className={`${styles.timeline} ${styles.programMetaList}`}>
             {formatMeta.map((item) => (
-              <span key={item}>{item}</span>
+              <li key={item}>{item}</li>
             ))}
-          </div>
+          </ul>
         </article>
       </div>
     </section>

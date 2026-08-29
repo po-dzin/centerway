@@ -1,0 +1,74 @@
+<!-- @dsCard group="<SECTION>" viewport="1080x900" name="<CARD NAME>" subtitle="<WHAT VARIES ACROSS THE SPECIMENS>" -->
+<!--
+  Blank specimen card for a Claude Design project's Design System pane.
+  Copy per specimen. Rules that keep a card honest:
+    - every value comes from a token; the token name is printed under the specimen
+    - the rule is one sentence, not a paragraph
+    - the card renders in both themes without editing
+  Replace every <SLOT>. Delete this comment.
+-->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title><CARD NAME></title>
+<link rel="stylesheet" href="../styles.css" />
+<style>
+  :root { color-scheme: light dark; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 32px 28px 48px;
+    font: 400 14px/1.6 var(--<TOKEN-FONT-UI>, system-ui, sans-serif);
+    background: var(--<TOKEN-BG-APP>);
+    color: var(--<TOKEN-TEXT-PRIMARY>);
+  }
+  h1 { font: 600 22px/1.3 var(--<TOKEN-FONT-UI>, system-ui, sans-serif); margin: 0 0 6px; letter-spacing: -.01em; }
+  p.lede { margin: 0 0 28px; max-width: 74ch; color: var(--<TOKEN-TEXT-SECONDARY>); }
+  h2 {
+    font: 600 13px/1.4 var(--<TOKEN-FONT-UI>, system-ui, sans-serif);
+    margin: 32px 0 12px; letter-spacing: .08em; text-transform: uppercase;
+    color: var(--<TOKEN-TEXT-MUTED>);
+  }
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(<MIN-CELL>px, 1fr)); gap: 12px; }
+  .cell {
+    display: flex; flex-direction: column; gap: 10px;
+    padding: 16px; border-radius: var(--<TOKEN-RADIUS-CARD>);
+    background: var(--<TOKEN-BG-SURFACE>);
+    border: 1px solid var(--<TOKEN-BORDER-SUBTLE>);
+  }
+  .specimen { display: grid; place-items: center; min-height: <SPECIMEN-HEIGHT>px; }
+  .name { font-size: 12px; color: var(--<TOKEN-TEXT-SECONDARY>); }
+  .token { font: 400 11px/1.4 var(--<TOKEN-FONT-MONO>, ui-monospace, monospace); color: var(--<TOKEN-TEXT-MUTED>); }
+  .rule {
+    margin-top: 28px; padding: 14px 16px;
+    border-left: 2px solid var(--<TOKEN-ACCENT>);
+    background: var(--<TOKEN-BG-SURFACE>);
+    max-width: 74ch;
+  }
+</style>
+</head>
+<body>
+
+<h1><CARD NAME></h1>
+<p class="lede"><ONE LINE: what this card is a specimen of, and what varies across it.></p>
+
+<h2><GROUP LABEL></h2>
+<div class="grid">
+
+  <div class="cell">
+    <div class="specimen"><!-- <THE SPECIMEN ITSELF> --></div>
+    <div class="name"><SPECIMEN NAME></div>
+    <div class="token">--<TOKEN-NAME></div>
+  </div>
+
+  <!-- repeat .cell per specimen -->
+
+</div>
+
+<div class="rule"><THE RULE, IN ONE SENTENCE. What must always be true about this
+part of the system — written so it can be violated, and so a reviewer can tell
+when it has been.></div>
+
+</body>
+</html>

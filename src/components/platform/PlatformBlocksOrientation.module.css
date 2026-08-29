@@ -60,52 +60,172 @@
   box-shadow: none;
   isolation: isolate;
   scroll-margin-top: 5.25rem;
-  --hero-photo-x: 74%;
-  --hero-photo-y: 44%;
-  --hero-photo-shift-y: -2%;
-  --hero-photo-scale: 1.15;
+  /* Defaults of the shared hero framing contract. Every photo hero authors the
+     same six variables and nothing else; the contract block right below this
+     rule resolves them per viewport (plate swap at 560px, vertical-crop relief
+     by aspect ratio). */
+  --hero-photo-x: var(--hero-photo-x-desktop, 50%);
+  --hero-photo-y: var(--hero-photo-y-desktop, 50%);
+  --hero-photo-shift-y: 0%;
+  --hero-photo-scale: 1;
   --hero-photo-origin: center center;
 }
 
+/* ── The hero framing contract ───────────────────────────────────────────────
+   One set of rules for every photo hero on the platform. It replaced three
+   parallel sets of width breakpoints that each re-decided framing for one
+   family of heroes and disagreed with each other.
+
+   It lives here, beside `.heroFeature` itself, and not in PlatformResponsive:
+   the two files are merged per surface by mergeStyleModules, and this file's
+   rules are emitted last, so a contract written over there would lose every
+   tie to the defaults above it — silently, and only for the properties that
+   happen to be tied.
+
+   A hero authors focus, never framing:
+
+     --hero-photo-x-desktop / -y-desktop   focus on the landscape plate
+     --hero-photo-x-mobile  / -y-mobile    focus on the portrait master
+     --hero-photo-y-wide                   vertical focus past 16:9  (optional)
+     --hero-photo-y-ultrawide              vertical focus past 21:9  (optional)
+     --hero-photo-zoom-mobile              zoom on the portrait master (optional)
+     --hero-photo-origin-mobile            origin for that zoom       (optional)
+
+   Two lines decide which of them applies, and they are different kinds of line:
+
+   1. WIDTH, at 560px — the line where PlatformHeroPhoto swaps the plate file.
+      A different photograph deserves a different focus, so the mobile pair is
+      keyed to the same 560px and nothing else is.
+
+   2. ASPECT RATIO — because `cover` picks the axis it crops from the shape of
+      the viewport, never from its width. 1440×900 and 1440×810 are one width
+      breakpoint and opposite crops. A viewport taller than the plate loses its
+      sides (only x matters); a wider one loses top and bottom (only y matters),
+      and the wider it gets the more a mid-range y eats *both* edges — hence the
+      two optional relief steps, for the heroes whose composition needs them.
+
+   Above `cover` there is no zoom: the plate is already the frame an author
+   chose, and scaling past it only throws away the edges they kept. The one
+   exception is a portrait master read on a phone, where a hero may opt into a
+   zoom explicitly. */
+@media (min-width: 561px) {
+  .heroFeature {
+    --hero-photo-x: var(--hero-photo-x-desktop, 50%);
+    --hero-photo-y: var(--hero-photo-y-desktop, 50%);
+    --hero-photo-shift-y: 0%;
+    --hero-photo-scale: 1;
+    --hero-photo-origin: center center;
+  }
+}
+
+/* Past 16:9 the vertical overflow is large enough that the desktop focus starts
+   cutting the far edge of the scene. Heroes that care declare where the loss
+   should fall; the rest keep their authored focus. */
+@media (min-width: 561px) and (min-aspect-ratio: 16 / 9) {
+  .heroFeature {
+    --hero-photo-y: var(--hero-photo-y-wide, var(--hero-photo-y-desktop, 50%));
+  }
+}
+
+/* Ultra-wide. Nothing frames a 16:10 plate well at 21:9 — the overflow is a
+   third of it — so this step exists to say which third a hero would rather
+   lose. */
+@media (min-width: 561px) and (min-aspect-ratio: 21 / 9) {
+  .heroFeature {
+    --hero-photo-y: var(--hero-photo-y-ultrawide, var(--hero-photo-y-wide, var(--hero-photo-y-desktop, 50%)));
+  }
+}
+
+/* Below the plate swap: the portrait master, framed by its own focus. */
+@media (max-width: 560px) {
+  .heroFeature {
+    --hero-photo-x: var(--hero-photo-x-mobile, var(--hero-photo-x-desktop, 50%));
+    --hero-photo-y: var(--hero-photo-y-mobile, var(--hero-photo-y-desktop, 50%));
+    --hero-photo-shift-y: 0%;
+    --hero-photo-scale: var(--hero-photo-zoom-mobile, 1);
+    --hero-photo-origin: var(--hero-photo-origin-mobile, center center);
+  }
+}
+
+/* Top scrim only — enough for the topbar (which runs its dark tone here, i.e.
+   light labels) to clear a bright sky or roof. The text column is handled by
+   the directional scrim on .heroPhotoLayer::after, not here: two overlapping
+   full-width washes were what used to grey the whole photo out. */
 .heroFeature::before {
   position: absolute;
   inset: 0;
   z-index: 1;
   content: "";
   pointer-events: none;
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 16%, transparent), transparent 34%),
-    linear-gradient(90deg, color-mix(in srgb, var(--cw-platform-accent-strong) 14%, transparent), transparent 58%);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent), transparent 24%);
 }
 
+/* The ground BEHIND the photograph — what shows in the letterbox before the
+   image decodes and wherever it does not cover. `--cw-mat-scrim-ink` and not
+   `--cw-platform-text`: the ink is the same neutral #171817 in both themes,
+   which is what the note further down already argues for on its own terms (a
+   green-black does not darken a photograph, it repaints it) — and it is what
+   keeps this a dark backdrop once the platform text is cream. */
 .heroPhotoLayer {
   position: absolute;
   inset: 0;
   z-index: 0;
   overflow: hidden;
-  background: var(--cw-platform-text);
+  background: var(--cw-mat-scrim-ink);
 }
 
+/* Heroes that carry a portrait master wrap the photo in <picture>. The wrapper
+   must not sit between the layer and the image, or the image's 100% height
+   resolves against an inline box instead of the layer. */
+.heroPhotoLayer picture {
+  display: contents;
+}
+
+/* No CSS filter here on purpose. The files in /shared/img are already graded
+   (the "CenterWay v1" pass — desaturate, warm recomb, lifted black); running a
+   second saturate/sepia/brightness pass over an already-graded photo is what
+   made the old hero look muddy rather than warm. Grade in the file, tint in
+   the scrim. */
 .heroPhotoLayer .expertImage {
   object-position: var(--hero-photo-x) var(--hero-photo-y);
   transform: translateY(var(--hero-photo-shift-y)) scale(var(--hero-photo-scale));
   transform-origin: var(--hero-photo-origin);
-  filter: saturate(0.82) contrast(1.08) brightness(0.9) sepia(0.08) hue-rotate(-6deg);
 }
 
+/* Partial tint: one scrim shaped to where the text actually is (the left
+   column on desktop), transparent across the rest so the photograph reads as a
+   photograph. The second layer is a whisper of brand hue — enough to seat the
+   image in the palette, far below the level where it becomes a colour cast.
+
+   The darkening ink is neutral, and that is the point (2026-08-20). It used to
+   be --cw-platform-text, which is #18261d — a green-black. At the 74-84% this
+   ramp reaches, a green-black does not darken a photograph, it repaints it:
+   turning the scrim off showed the hero image is actually warm, brown wood and
+   warm light, and every bit of the green cast was coming from here. The ramp
+   keeps its opacities (the text contrast they buy is asserted in
+   guard-contrast.mjs) and only loses its hue; the brand tint below drops from
+   9% to 5%, which is enough to seat the image without doing the same job
+   twice. */
 .heroPhotoLayer::after {
   position: absolute;
   inset: 0;
   z-index: 2;
   content: "";
+  --hero-scrim-ink: var(--cw-mat-scrim-ink);
   background:
-    linear-gradient(90deg, color-mix(in srgb, var(--cw-platform-text) 90%, transparent) 0%, color-mix(in srgb, var(--cw-platform-text) 68%, transparent) 38%, color-mix(in srgb, var(--cw-platform-text) 20%, transparent) 76%),
-    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 28%, transparent), color-mix(in srgb, var(--cw-platform-accent-strong) 28%, transparent)),
-    linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-guide-strong) 12%, transparent), color-mix(in srgb, var(--cw-sem-warmth) 7%, transparent));
+    linear-gradient(96deg,
+      color-mix(in srgb, var(--hero-scrim-ink) 84%, transparent) 0%,
+      color-mix(in srgb, var(--hero-scrim-ink) 74%, transparent) 34%,
+      color-mix(in srgb, var(--hero-scrim-ink) 48%, transparent) 54%,
+      transparent 74%),
+    linear-gradient(150deg,
+      color-mix(in srgb, var(--cw-sem-guide-strong) 5%, transparent),
+      transparent 55%,
+      color-mix(in srgb, var(--cw-sem-warmth) 6%, transparent));
 }
 
 .heroFeatureContent {
-  width: min(100% - 2rem, var(--cw-max-width));
+  width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
   max-width: var(--cw-max-width);
   min-width: 0;
   position: relative;
@@ -114,6 +234,32 @@
   gap: 1rem;
   margin-inline: auto;
   padding: clamp(5.75rem, 10vw, 8rem) 0 clamp(6.4rem, 10vw, 8.5rem);
+  color: var(--cw-platform-accent-contrast);
+}
+
+/* ── The hero's utility line ──────────────────────────
+
+   Where you are, and — for the person who wrote this — the way into the
+   Майстерня. Both used to sit in a row BELOW the hero: a reader had to scroll
+   past the whole offer to find out where the page lived, and the author's edit
+   control appeared under the thing they were editing. They belong at the top of
+   the page, which on this template is inside the photograph. */
+.heroUtilityRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+  margin-bottom: var(--cw-space-2xs);
+}
+
+.heroUtilityLink {
+  composes: text from "./PlatformButtons.module.css";
+  gap: 0.4rem;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
+}
+
+.heroUtilityLink:hover:not(:disabled) {
   color: var(--cw-platform-accent-contrast);
 }
 
@@ -126,11 +272,29 @@
   padding: 0.48rem 0.74rem;
   border: 0;
   border-radius: var(--cw-radius-pill);
-  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 92%, transparent);
-  background: var(--cw-surface-glass-bg);
-  box-shadow: var(--cw-surface-glass-shadow);
-  backdrop-filter: var(--cw-surface-glass-filter);
-  -webkit-backdrop-filter: var(--cw-surface-glass-filter);
+  /* The topbar's material, night side — the same tint token at the same chrome
+     floor (55%), the same blur, the same grain. The badge is not tone-managed:
+     headerTone samples what the bar floats over and swaps --cw-mat-surface for
+     the whole bar, and the badge, sitting on the same photograph a few hundred
+     pixels lower, was outside that local context and resolved the day surface.
+     Two elements of one material, one lightening its backdrop by ~115 and the
+     other darkening it by ~50 — which is why the badge read as a white plate
+     next to see-through chrome.
+
+     The light recipe was not arbitrary: an earlier dark badge measured ~2.0
+     against a 4.5 requirement, because the guard has to assume any photo pixel
+     under it. What makes the night side safe here is that the badge always sits
+     inside .heroPhotoLayer::after, and that scrim is a construction guarantee,
+     not a hope — 64% of near-black at its weakest point under the copy on
+     mobile, 78%+ in the copy column on desktop. Held to the mobile figure over
+     a pure-white photo pixel, light text on this tint clears body AA with room
+     (~8.8:1); the pair is asserted in guard-contrast.mjs. Move the badge out of
+     a scrimmed hero and that assertion stops being true. */
+  color: var(--cw-platform-accent-contrast);
+  background-color: color-mix(in srgb, var(--cw-mat-surface-night) var(--cw-mat-tint-chrome-floor), transparent);
+  background-image: var(--cw-mat-grain-image);
+  backdrop-filter: var(--cw-mat-filter);
+  box-shadow: var(--cw-mat-shadow-raised);
   font-family: var(--cw-font-data);
   font-size: var(--ds-type-label-size);
   font-weight: 700;
@@ -145,10 +309,19 @@
   z-index: 1;
 }
 
+/* The scrim is deliberately partial, so the tail of a long title can reach past
+   it onto open photo. A tight, low-alpha shadow buys that separation without
+   darkening the image the way extending the scrim would — it reads as edge
+   definition, not as an effect. */
 .heroFeatureTitle {
   max-width: min(9.8ch, 100%);
   margin: 0;
-  color: var(--cw-platform-accent-contrast);
+  /* The page's own paper tone, not the near-white on-dark contrast token —
+     against this hero's darker photo, stark white read as too clinical. Using
+     the same warm cream every section below the hero sits on ties the title to
+     the page it opens, instead of floating on top of it. */
+  color: var(--cw-sem-calm-bg);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent), 0 10px 30px color-mix(in srgb, var(--cw-mat-scrim-ink) 28%, transparent);
   font-family: var(--cw-font-ui);
   font-size: var(--ds-type-hero-size);
   font-weight: 900;
@@ -157,10 +330,54 @@
   text-transform: uppercase;
 }
 
+/* The detail hero's own title. It used to have no base rule inside the modules
+   PlatformHeroStyles merges — the only .detailHeroTitle declarations lived in
+   PlatformBlocksOffer.module.css, which that bundle never loads, so the element
+   picked up nothing but the per-breakpoint font-size overrides on top of the
+   browser's h1 defaults: line-height 1.5 and no measure. A five-word program
+   name came out five lines tall at 86px and pushed the hero past the fold.
+   Sentence case and the UI face on purpose — these titles are full sentences,
+   not the home hero's two-word plate, so no uppercase and no 900 weight. */
+.detailHeroTitle {
+  max-width: min(15ch, 100%);
+  margin: 0;
+  color: var(--cw-platform-accent-contrast);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent), 0 10px 30px color-mix(in srgb, var(--cw-mat-scrim-ink) 28%, transparent);
+  font-family: var(--cw-font-ui);
+  font-size: var(--ds-type-hero-size);
+  font-weight: 800;
+  line-height: var(--ds-type-hero-line-height);
+  letter-spacing: -0.01em;
+  text-wrap: balance;
+}
+
+/* The subtitle, and why it is set in the editorial face.
+
+   It sits between an 800-weight UI title and a 560-weight UI lead, and a third
+   UI line at a fourth size would have read as a caption for the h1 rather than
+   as a claim of its own. The editorial face is the register the platform
+   already uses for a said thing rather than a labelled one, and it separates
+   this line from both neighbours without another weight step.
+
+   Measure is deliberately tighter than the lead's: this is a phrase, not a
+   sentence, and a phrase that runs the width of a paragraph stops looking like
+   a subtitle. */
+.detailHeroSubtitle {
+  max-width: min(24rem, 100%);
+  margin: 0;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 90%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
+  font-family: var(--cw-font-editorial);
+  font-size: var(--ds-type-hero-subtitle-size);
+  font-weight: 500;
+  line-height: var(--ds-type-hero-subtitle-line-height);
+}
+
 .heroFeatureLead {
   max-width: min(29rem, 100%);
   margin: 0;
-  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 82%, transparent);
+  color: color-mix(in srgb, var(--cw-sem-calm-bg) 82%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
   font-size: var(--ds-type-lead-size);
   font-weight: 560;
   line-height: var(--ds-type-lead-line-height);
@@ -175,50 +392,157 @@
   line-height: var(--ds-type-body-sm-line-height);
 }
 
-.heroFeatureActions {
+/* ── The hero's answer layer ──────────────────────────────────────────────
+   Duration, medium, access term, price, and — once the reader turns out to own
+   the thing — their standing in it. All of it in the hero on purpose: these are
+   the facts someone scrolls looking for, and a page that makes them scroll has
+   already asked a question it could have answered.
+
+   Every plate here is the badge's material, not a new one: the same night tint
+   at the same chrome floor, the same blur and grain. The contrast argument in
+   .heroBadge above carries verbatim — these sit inside the same scrim, and the
+   moment one is moved out of a scrimmed hero that argument stops holding. */
+
+.heroMetaList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0.1rem 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+/* Quieter than .heroBadge deliberately: the badge names the category and is the
+   only uppercase thing in the column. These are facts, and six shouting pills
+   would flatten the one line that is meant to lead. */
+.heroMetaItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.34rem;
+  padding: 0.34rem 0.62rem;
+  border-radius: var(--cw-radius-pill);
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 88%, transparent);
+  background-color: color-mix(in srgb, var(--cw-mat-surface-night) var(--cw-mat-tint-chrome-floor), transparent);
+  background-image: var(--cw-mat-grain-image);
+  backdrop-filter: var(--cw-mat-filter);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 620;
+  line-height: 1.2;
+}
+
+.heroMetaGlyph {
+  flex: none;
+  opacity: 0.72;
+}
+
+.heroPriceRow {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.3rem 0 0;
+  color: var(--cw-platform-accent-contrast);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
+}
+
+.heroPriceValue {
+  margin: 0;
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-title-size);
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.heroPriceNote {
+  margin: 0;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 70%, transparent);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 540;
+}
+
+/* ── Owned ───────────────────────────────────────────────────────────────
+   What replaces the price once the reader has paid. Not a green light: the DS
+   has no traffic-signal vocabulary, and status here is said with the same ink
+   the rest of the platform uses — a mark, a word, and the actual number of
+   lessons left. */
+
+.heroStatusRow {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin: 0.3rem 0 0;
+}
+
+.heroStatusBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--cw-radius-pill);
+  color: var(--cw-platform-accent-contrast);
+  background-color: color-mix(in srgb, var(--cw-mat-surface-night) var(--cw-mat-tint-chrome-floor), transparent);
+  background-image: var(--cw-mat-grain-image);
+  backdrop-filter: var(--cw-mat-filter);
+  box-shadow: var(--cw-mat-shadow-raised);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.heroStatusNote {
+  margin: 0;
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 78%, transparent);
+  text-shadow: 0 1px 2px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 560;
+}
+
+/* A rule, not a capsule: the platform draws progress as a line being filled,
+   and a second progress idiom in the hero would be one more than a reader
+   should have to learn. */
+.heroProgressTrack {
   width: min(100%, 19.5rem);
+  height: 0.28rem;
+  margin-top: 0.55rem;
+  border-radius: var(--cw-radius-pill);
+  overflow: hidden;
+  background-color: color-mix(in srgb, var(--cw-platform-accent-contrast) 24%, transparent);
+}
+
+.heroProgressFill {
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--cw-platform-accent-contrast);
+}
+
+.heroFeatureActions {
+  /* Same cap the button contract itself uses (--ds-button-max-width), not a
+     second hand-picked number — three hero templates each had their own
+     hardcoded width here (19.5rem/22rem/20rem) and only one accidentally
+     matched the token. One source, so the button is one physical size. */
+  width: min(100%, var(--ds-button-max-width));
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.7rem;
   margin-top: 0.2rem;
 }
 
-.heroPrimaryButton,
-.heroSecondaryButton {
-  width: 100%;
-  min-height: var(--ds-button-min-height);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: var(--ds-radius-button-soft);
-  padding: 0 var(--ds-button-padding-inline);
-  text-decoration: none;
-  font-weight: 800;
-}
-
+/* Both hero buttons are the contract; the hero only adds full-bleed width,
+   which is a layout call, not a button one. The gold ramp used to be copied
+   here verbatim from PlatformShell and is now defined once. */
 .heroPrimaryButton {
-  border: 0;
-  color: var(--cw-platform-accent-contrast);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--cw-platform-accent) 78%, var(--cw-platform-accent-strong) 22%), var(--cw-platform-accent-strong));
-  box-shadow: 0 16px 30px color-mix(in srgb, var(--cw-platform-accent) 20%, transparent);
-  transition: transform 180ms ease, box-shadow 180ms ease;
-}
-
-.heroPrimaryButton:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 20px 32px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent);
+  composes: primary from "./PlatformButtons.module.css";
+  composes: fill from "./PlatformButtons.module.css";
 }
 
 .heroSecondaryButton {
-  position: relative;
-  overflow: hidden;
-  isolation: isolate;
-  border: 0;
-  color: var(--cw-platform-accent-contrast);
-  background: var(--cw-surface-glass-bg);
-  box-shadow: var(--cw-depth-shadow-soft);
-  backdrop-filter: var(--cw-surface-glass-filter);
-  -webkit-backdrop-filter: var(--cw-surface-glass-filter);
+  composes: onMedia from "./PlatformButtons.module.css";
+  composes: fill from "./PlatformButtons.module.css";
 }
 
 .videoSection {
@@ -241,17 +565,36 @@
   width: 100%;
   border: 0;
   border-radius: var(--cw-card-radius);
-  background: var(--cw-depth-card-bg);
-  box-shadow: var(--cw-depth-shadow-soft);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
+/* THE PANEL MATCHES THE CARD; THE PLAYER KEEPS ITS RATIO. The panel used to be
+   the player: `aspect-ratio: 16/9` with `align-self: start`, so the two grid
+   items were two different objects — a wide short one beside a tall card, with
+   the row's spare height showing as page ground under the video. Stretching the
+   iframe instead was the earlier fix and was worse: a near-square player.
+
+   Now the panel stretches and the 16:9 frame inside it centres on the panel's
+   own dark ground. The row's height is whichever is taller — the player at the
+   column's width, or the card's copy — and both columns are that height. */
 .videoPanel {
   position: relative;
   overflow: hidden;
-  aspect-ratio: 16 / 9;
-  background: var(--cw-platform-text);
+  display: grid;
+  align-content: center;
   align-self: stretch;
+  /* The letterbox around the 16:9 frame — the same neutral scrim ink as the
+     hero's photo layer, for the same reason: it must stay dark when the
+     platform's own text turns cream. */
+  background: var(--cw-mat-scrim-ink);
   scroll-margin-top: 5.25rem;
+}
+
+.videoFrame {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
 }
 
 .videoPanel::after {
@@ -274,7 +617,7 @@
   justify-content: space-between;
   gap: 1rem;
   padding: clamp(0.85rem, 2vw, 1.05rem);
-  background: var(--cw-depth-card-bg);
+  background: var(--cw-mat-surface);
 }
 
 .videoActionGrid {
@@ -284,37 +627,11 @@
   width: 100%;
 }
 
-.videoActionButton {
-  width: 100%;
-  min-height: var(--ds-button-min-height);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 1.15rem;
-  border: 0;
-  border-radius: var(--ds-radius-button-soft);
-  text-decoration: none;
-  font-family: var(--cw-font-ui);
-  font-size: 1rem;
-  font-weight: 800;
-  line-height: 1;
-  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
-}
-
-.videoActionButton[data-kind="primary"] {
-  color: var(--cw-platform-accent-contrast);
-  background: linear-gradient(135deg, color-mix(in srgb, var(--cw-platform-accent) 78%, var(--cw-platform-accent-strong) 22%), var(--cw-platform-accent-strong));
-  box-shadow: 0 16px 30px color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
-}
-
-.videoActionButton[data-kind="secondary"] {
-  color: var(--cw-platform-text);
-  background: color-mix(in srgb, var(--cw-platform-surface) 92%, var(--cw-platform-bg) 8%);
-  box-shadow: var(--cw-depth-shadow-soft);
-}
-
-.videoActionButton:hover {
-  transform: translateY(-1px);
+/* The video rail's action. A third verbatim copy of the gold ramp lived here
+   until the contract took it. */
+.videoActionPrimary {
+  composes: primary from "./PlatformButtons.module.css";
+  composes: fill from "./PlatformButtons.module.css";
 }
 
 .videoDecisionRail {
@@ -328,13 +645,25 @@
   gap: 0.35rem;
 }
 
+/* The diagnostics block's own way out, matching the showcase blocks' — see
+   `.blockAction`. This panel offers the dosha test and a consultation, which are
+   two of the tests catalogue's entries, not the catalogue. */
+.videoDecisionMore {
+  composes: blockAction from "./PlatformBlocksBase.module.css";
+  justify-content: flex-start;
+}
+
+.videoDecisionMoreArrow {
+  composes: blockActionArrow from "./PlatformBlocksBase.module.css";
+}
+
 @media (max-width: 900px) {
   .videoSection {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
     padding: 0.55rem;
-    border-radius: clamp(1.05rem, 4vw, var(--cw-radius-lg));
+    border-radius: var(--cw-radius-lg);
   }
 
   .videoSection > * {
@@ -347,11 +676,11 @@
   .videoPanel {
     align-self: start;
     aspect-ratio: 16 / 9;
-    border-radius: clamp(1rem, 4vw, var(--cw-radius-lg)) clamp(1rem, 4vw, var(--cw-radius-lg)) 0 0;
+    border-radius: var(--cw-radius-lg);
   }
 
   .videoAside {
-    border-radius: 0 0 clamp(1rem, 4vw, var(--cw-radius-lg)) clamp(1rem, 4vw, var(--cw-radius-lg));
+    border-radius: 0 0 var(--cw-radius-lg) var(--cw-radius-lg);
     gap: 0.95rem;
     padding: 1rem 0.95rem 0.95rem;
   }
@@ -404,4 +733,17 @@
 
 .mediaCaption strong {
   font-size: 1.25rem;
+}
+
+/* Reduced motion: the hero CTAs lift and cross-fade on hover; under
+   prefers-reduced-motion the state change stays, the movement does not. */
+@media (prefers-reduced-motion: reduce) {
+  .heroPrimaryButton,
+  .heroSecondaryButton {
+    transition: none;
+  }
+
+  .heroPrimaryButton:hover {
+    transform: none;
+  }
 }

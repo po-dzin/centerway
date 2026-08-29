@@ -108,10 +108,17 @@ function formatNotification(body: SpWebhookBody): string {
       ? str(body.message)
       : str(body.message?.text) ?? str(body.last_message) ?? null;
 
-  // Header reflects the primary captured type, falling back to generic.
-  const header = captured.length === 1
-    ? `${captured[0].icon} SP: ${captured[0].label}`
-    : "📩 SP Чатбот";
+  // Header reflects the primary captured type. A free-text message with no
+  // named variable is a plain user write-in → treat it as a support request
+  // ("звернення") so it reads correctly in the обращення thread.
+  let header: string;
+  if (captured.length === 1) {
+    header = `${captured[0].icon} SP: ${captured[0].label}`;
+  } else if (captured.length === 0 && messageText) {
+    header = "🆘 SP: Звернення";
+  } else {
+    header = "📩 SP Чатбот";
+  }
 
   const lines: string[] = [header];
 

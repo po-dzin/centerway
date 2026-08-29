@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
 import { emitDoshaTestEvent, loadTestAttempt } from "@/lib/doshaTestRepo";
+import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 
 export const runtime = "nodejs";
 
@@ -48,6 +49,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ attemptId: string }> }
 ) {
+  const rl = await enforceRateLimit(req, { name: "test_event", limit: 120, windowSeconds: 60 });
+  if (!rl.allowed) return tooManyRequests(rl.retryAfter);
+
   const { attemptId } = await params;
   const body = (await req.json().catch(() => ({}))) as EventBody;
   const eventName = asString(body.eventName);

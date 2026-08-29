@@ -98,5 +98,80 @@
     "kind": "mutate",
     "method": "POST",
     "path": "/api/admin/purchases/backfill"
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/access/courses"
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/access/courses",
+    "body": {
+      "courseId": "smoke-course"
+    }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/access/learners"
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/access/learners",
+    "body": {
+      "email": "smoke@example.com",
+      "course": "smoke-course"
+    }
+  },
+  {
+    "kind": "mutate",
+    "method": "DELETE",
+    "path": "/api/admin/access/learners?enrollmentId=smoke-enrollment",
+    "routePath": "/api/admin/access/learners"
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/access/roles"
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/access/roles",
+    "body": {
+      "email": "smoke@example.com",
+      "role": "support"
+    }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/access/accounts"
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/access/learners",
+    "body": {
+      "enrollmentId": "smoke-enrollment",
+      "action": "revoke"
+    }
+  },
+  {
+    "kind": "read",
+    "method": "GET",
+    "path": "/api/admin/catalog"
+  },
+  {
+    "kind": "mutate",
+    "method": "PATCH",
+    "path": "/api/admin/catalog",
+    "body": {
+      "courseId": "smoke-course",
+      "action": "withdraw_offer"
+    }
   }
 ]

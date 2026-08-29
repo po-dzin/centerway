@@ -5,12 +5,14 @@ import {
   PlatformOfferResultList,
   PlatformOfferSurfaceTemplate,
 } from "@/components/platform/PlatformOfferSurfaceTemplate";
+import { ConsultBoundary, ConsultFaq } from "@/components/platform/ConsultPageSections";
+import { consultationExpectations, consultationSteps } from "@/components/platform/consultPageContract";
 import { HubMini, HubPrograms } from "@/components/platform/blocks/offer/hub";
 import { HubHero, HubIntro } from "@/components/platform/blocks/orientation/hub";
-import { ExpertHero, ExpertPath, ExpertProof } from "@/components/platform/blocks/trust/expert";
+import { ExpertPath, ExpertProof } from "@/components/platform/blocks/trust/expert";
+import { HubGuides } from "@/components/platform/blocks/trust/guides";
 import { HubProof, HubSupport } from "@/components/platform/blocks/trust/hub";
-import { SupportForm } from "@/components/platform/blocks/trust/support";
-import { bodySignals, consultationCopy, journeySteps, platformPageArtwork } from "@/lib/platform/content";
+import { bodySignals, consultationCopy, platformPageArtwork } from "@/lib/platform/content";
 
 export function PlatformHomePage() {
   return (
@@ -22,28 +24,30 @@ export function PlatformHomePage() {
         <HubPrograms />
         <HubProof />
         <HubSupport />
-        <SupportForm route="platform-home" />
+        <HubGuides />
       </main>
     </PlatformShell>
   );
 }
 
-export function PlatformExpertPage() {
-  return (
-    <PlatformShell headerMode="overlay">
-      <main data-cw-platform-template="expert">
-        <ExpertHero />
-        <ExpertProof />
-        <ExpertPath />
-        <SupportForm route="expert" />
-      </main>
-    </PlatformShell>
-  );
-}
-
+/**
+ * Consultation, with the author inside it.
+ *
+ * These were two pages and one question. `/expert` answered "who is running
+ * this", `/consult` answered "how do I work with him", and the only way to get
+ * from the first to the second was a link — so a reader who arrived wanting a
+ * consultation met a biography, and a reader who arrived at the biography had
+ * to be sold the consultation a second time. They are now one surface: the page
+ * IS the consultation, and the credentials and the path are the evidence for it
+ * rather than a separate destination. `/expert` redirects here.
+ *
+ * The author blocks keep their own components — `ExpertProof` is the fact grid
+ * and `ExpertPath` the route through the work — so nothing about them had to be
+ * rewritten to move. They land in `beforeSupport`, between "what happens" and
+ * the request form: after the reader knows what is on offer, before they are
+ * asked to commit to it.
+ */
 export function PlatformConsultPage() {
-  const consultJourney = journeySteps.filter((step) => ["signals", "diagnostics", "programs"].includes(step.id));
-
   return (
     <PlatformOfferSurfaceTemplate
       templateKind="consult"
@@ -64,9 +68,9 @@ export function PlatformConsultPage() {
         body: <PlatformOfferResultList items={bodySignals} />,
       }}
       detailRight={{
-        label: "Що відбувається далі",
-        title: "Живий маршрут на 2-4 тижні",
-        body: <PlatformOfferCopyStack items={consultJourney.map((step) => ({ id: step.id, title: step.title, text: step.text }))} />,
+        label: "Як це відбувається",
+        title: "Три кроки від запиту до особистого плану",
+        body: <PlatformOfferCopyStack items={[...consultationSteps]} />,
       }}
       supportSectionId="consult-request"
       supportLeft={{
@@ -74,7 +78,16 @@ export function PlatformConsultPage() {
         title: "До 90 хвилин онлайн і зрозумілий наступний крок",
         lead:
           "На консультації ми збираємо стан, ритм, харчування, поточний рівень перевантаження і визначаємо, що зараз доречно: окрема практика, короткий вхід, детокс, програма або природна підтримка.",
+        body: <PlatformOfferResultList items={[...consultationExpectations]} />,
       }}
+      beforeSupport={
+        <>
+          <ExpertProof />
+          <ExpertPath />
+          <ConsultBoundary />
+          <ConsultFaq />
+        </>
+      }
       form={{
         label: "Запит",
         title: "Заповніть форму",

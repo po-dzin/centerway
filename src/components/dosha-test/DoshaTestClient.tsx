@@ -1,16 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import type { CSSProperties } from "react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { PlatformAuthModal } from "@/components/platform/PlatformAuthModal";
-import styles from "@/components/platform/PlatformHeroStyles";
+import { Icon } from "@/components/Icon";
+import styles from "@/components/platform/PlatformDiagnosticStyles";
 import type { DoshaResultType } from "@/lib/doshaTest";
 import type { GeneratorAnalyticsContext } from "@/lib/generator/renderContext";
 import { CW_THEME_QUERY_KEYS } from "@/lib/generator/theme";
 import { DOSHA_PRIMARY_EXIT, DOSHA_SECONDARY_EXIT } from "@/lib/doshaRouting";
+import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
+import { heroFraming } from "@/components/platform/heroFraming";
 import { platformPageArtwork } from "@/lib/platform/content";
+import { TESTS_HUB_ROUTE } from "@/lib/platform/tests";
 import { supabaseClient } from "@/lib/supabaseClient";
 
 type TestOption = {
@@ -139,19 +142,20 @@ const RESULT_COPY: Record<
   },
 };
 
-function resolveHeroPosition(position?: string) {
-  if (!position) {
-    return {
-      x: "50%",
-      y: "20%",
-    };
-  }
-  const [x, y] = position.trim().split(/\s+/);
-  return {
-    x: x === "center" ? "50%" : x,
-    y: y ?? "20%",
-  };
-}
+/* One line each. They used to run two to three lines apiece, which put the
+   start button below the fold on a phone — the steps were reassurance, and
+   reassurance that costs the CTA its place stops reassuring anyone. */
+const HOW_IT_WORKS_STEPS = [
+  "12 коротких питань про ритм, енергію, травлення, сон і напругу.",
+  "Профіль доші як робоча гіпотеза про ваш поточний стан.",
+  "Наступний крок: консультація, програма або самостійний старт.",
+];
+
+const BOUNDARY_NOTE =
+  "Це оздоровчий орієнтир, а не медичний діагноз. Результат не є медичним діагнозом і не замінює лікаря: якщо симптоми стійкі або гострі, спочатку варто пройти обстеження.";
+
+const DOSHA_DISCLOSURE =
+  "У підході CenterWay доші описують природні патерни енергії, ритму й відновлення. Тест допомагає обрати доречні практики і матеріали в платформі.";
 
 function getCurrentQuestion(questions: TestQuestion[], currentQuestionIndex: number): TestQuestion | null {
   const idx = Math.max(1, currentQuestionIndex) - 1;
@@ -173,7 +177,6 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
   const [resultViewedSent, setResultViewedSent] = useState(false);
   const [session, setSession] = useState<Session | null>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
-  const [isDoshaInfoOpen, setIsDoshaInfoOpen] = useState(false);
   const isAuthEnabled = useMemo(
     () => Boolean(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY),
     []
@@ -524,30 +527,55 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
     await runStartFlow();
   }, [isAuthEnabled, runStartFlow, session, syncPlatformUser]);
 
-  const submitAnswer = useCallback((questionId: string, optionId: string) => {
+  /* Choosing and moving on are two acts, and they used to be one: tapping an
+     option wrote the answer, advanced the question and locked the choice, so a
+     misplaced thumb cost you an answer you could never revisit ("перша версія:
+     попередню відповідь змінити не можна"). Selection is now local state and
+     nothing else; the step moves when the reader says so, in either direction.
+     Nothing reaches the server until the last answer — `completeTest` posts the
+     whole set — so going back costs no request and no consistency problem. */
+  const selectAnswer = useCallback((questionId: string, optionId: string) => {
     if (isBusy) return;
-    if (answers[questionId]) return;
 
     const nextAnswers = { ...answers, [questionId]: optionId };
-    const answeredCount = Object.keys(nextAnswers).length;
-    const nextIndex = Math.min(answeredCount + 1, totalQuestions);
-
     setAnswers(nextAnswers);
-    setCurrentQuestionIndex(nextIndex);
     setError(null);
     saveDraft({
       answers: nextAnswers,
-      currentQuestionIndex: nextIndex,
+      currentQuestionIndex,
       sessionId: getOrCreateSessionId(),
       updatedAt: new Date().toISOString(),
     });
+  }, [answers, currentQuestionIndex, getOrCreateSessionId, isBusy, saveDraft]);
 
-    if (answeredCount >= totalQuestions) {
-      void completeTest(nextAnswers);
+  const goToStep = useCallback((nextIndex: number) => {
+    const bounded = Math.min(Math.max(nextIndex, 1), totalQuestions);
+    setCurrentQuestionIndex(bounded);
+    setError(null);
+    saveDraft({
+      answers,
+      currentQuestionIndex: bounded,
+      sessionId: getOrCreateSessionId(),
+      updatedAt: new Date().toISOString(),
+    });
+  }, [answers, getOrCreateSessionId, saveDraft, totalQuestions]);
+
+  const answeredCount = Object.keys(answers).length;
+  const isLastQuestion = currentQuestionIndex >= totalQuestions;
+  const currentAnswered = currentQuestion ? Boolean(answers[currentQuestion.id]) : false;
+
+  const goForward = useCallback(() => {
+    if (!currentQuestion || !answers[currentQuestion.id]) return;
+    if (isLastQuestion) {
+      void completeTest(answers);
+      return;
     }
-  }, [answers, completeTest, getOrCreateSessionId, isBusy, saveDraft, totalQuestions]);
+    goToStep(currentQuestionIndex + 1);
+  }, [answers, completeTest, currentQuestion, currentQuestionIndex, goToStep, isLastQuestion]);
 
-  const progress = Math.min(100, Math.round((Math.max(0, currentQuestionIndex - 1) / totalQuestions) * 100));
+  /* Progress is what is answered, not what is on screen: stepping back through
+     finished questions must not walk the bar backwards. */
+  const progress = Math.min(100, Math.round((answeredCount / totalQuestions) * 100));
   const resultCopy = resultType ? RESULT_COPY[resultType] : null;
   const testFontFamily = "var(--cw-font-ui), 'Manrope', 'Segoe UI', sans-serif";
   const topbarBadge = phase === "intro"
@@ -558,331 +586,311 @@ export default function DoshaTestClient({ uiVariant = DEFAULT_UI_VARIANT, genera
           ? "Формуємо результат"
           : "Результат готовий";
   const doshaHeroArtwork = platformPageArtwork.dosha;
-  const desktopFocus = resolveHeroPosition(doshaHeroArtwork.desktopPosition);
-  const mobileFocus = resolveHeroPosition(doshaHeroArtwork.mobilePosition ?? doshaHeroArtwork.desktopPosition);
-  const heroStyle = {
-    "--hero-photo-x": desktopFocus.x,
-    "--hero-photo-y": desktopFocus.y,
-    "--hero-photo-x-desktop": desktopFocus.x,
-    "--hero-photo-y-desktop": desktopFocus.y,
-    "--hero-photo-x-mobile": mobileFocus.x,
-    "--hero-photo-y-mobile": mobileFocus.y,
-    "--hero-photo-shift-y": "0%",
-    "--hero-photo-scale": "1.02",
-    "--hero-photo-origin": "center center",
-  } as CSSProperties;
+  const heroStyle = heroFraming(doshaHeroArtwork);
 
   return (
     <>
       {phase === "intro" ? (
         <section
-      className={styles.heroFeature}
-      data-cw-topbar-tone="dark"
-      data-cw-detail-template="dosha"
-      data-cw-semantic-role="diagnostic-entry"
-      data-cw-semantic-family="guide-progress"
-      data-cw-token-source="global-app-ds"
-      data-dosha-test="true"
-      data-dosha-phase="intro"
-      style={heroStyle}
-    >
-      <div className={styles.heroPhotoLayer}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img className={styles.expertImage} src={doshaHeroArtwork.desktop} alt="Доша-тест CenterWay" />
-      </div>
-      <div
-        className={`${styles.heroFeatureContent} ${styles.diagnosticHeroContent}`}
-        style={{
-          fontFamily: testFontFamily,
-          userSelect: "none",
-          WebkitUserSelect: "none",
-        }}
-      >
-        <article className={`${styles.panel} ${styles.diagnosticHeroCard}`}>
-          <div className={styles.panelStack}>
-            <div className={styles.panelIntro}>
-              <p className={styles.heroBadge}>
-                <span>{topbarBadge}</span>
-              </p>
-              <p className={styles.label}>CenterWay • Діагностика стану</p>
-              <h1 className={styles.title}>Тест доші</h1>
-              <p className={styles.lead}>
-                Швидка самодіагностика ритму, енергії, травлення і напруги, щоб побачити свій поточний стан і зрозуміти
-                перший доречний маршрут у платформі.
-              </p>
-            </div>
-
-            <div className={styles.card} data-tone="proof">
-              <p className={styles.label}>Що ви отримаєте</p>
-              <ol className={styles.diagnosticNumberList}>
-                <li>Короткий профіль доші як робочу гіпотезу для читання свого стану.</li>
-                <li>Практичний вектор на найближчі 7 днів без зайвої абстракції.</li>
-                <li>Зрозумілий наступний крок: консультація, програма або самостійний старт.</li>
-              </ol>
-            </div>
-
-            {error ? (
-              <p
-                className={styles.proofNote}
-                style={{
-                  color: "var(--cw-danger)",
-                  background: "color-mix(in srgb, var(--cw-danger) 8%, var(--cw-platform-surface) 92%)",
-                }}
-              >
-                {error}
-              </p>
-            ) : null}
-
-            <div className={styles.diagnosticActions}>
-              <button
-                type="button"
-                onClick={() => {
-                  void requestStartTest();
-                }}
-                disabled={isBusy}
-                className={styles.heroPrimaryButton}
-              >
-                {isBusy ? "Запускаємо..." : "Почати тест"}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => setIsDoshaInfoOpen((prev) => !prev)}
-                className={styles.heroSecondaryButton}
-                aria-expanded={isDoshaInfoOpen}
-                aria-controls="what-is-dosha"
-              >
-                <span>{isDoshaInfoOpen ? "Сховати опис доші" : "Що таке доші?"}</span>
-              </button>
-            </div>
-
-            {isDoshaInfoOpen ? (
-              <div className={styles.card} data-tone="support" id="what-is-dosha">
-                <p>У підході CenterWay доші описують природні патерни енергії, ритму й відновлення. Тест допомагає обрати релевантний маршрут практик і контенту в платформі.</p>
-              </div>
-            ) : null}
+          className={styles.heroFeature}
+          data-cw-topbar-tone="dark"
+          data-cw-detail-template="dosha"
+          data-cw-semantic-role="diagnostic-entry"
+          data-cw-semantic-family="guide-progress"
+          data-cw-token-source="global-app-ds"
+          data-dosha-test="true"
+          data-dosha-phase="intro"
+          style={heroStyle}
+        >
+          <div className={styles.heroPhotoLayer}>
+            <PlatformHeroPhoto
+              artwork={doshaHeroArtwork}
+              alt="Доша-тест CenterWay: три доші — три матеріали"
+              className={styles.expertImage}
+              eager
+            />
           </div>
-        </article>
-      </div>
+          <div
+            className={`${styles.heroFeatureContent} ${styles.diagnosticHeroContent}`}
+            style={{
+              fontFamily: testFontFamily,
+              userSelect: "none",
+              WebkitUserSelect: "none",
+            }}
+          >
+            {/* Order is the whole point of this card. It used to read badge →
+                eyebrow → title → four-line lead → a card of long steps → a card
+                of legal boundaries, and only then the button — a page about
+                starting something where starting was the last thing offered.
+                Now: what it costs, what it is, start. Everything a person may
+                want *before* deciding sits in one disclosure under the button,
+                and the boundary note lives inside it rather than as its own
+                panel — it was already repeated there. */}
+            <article className={`${styles.panel} ${styles.diagnosticHeroCard}`}>
+              <div className={styles.panelStack}>
+                <div className={styles.panelIntro}>
+                  <p className={styles.heroBadge}>
+                    <span>{topbarBadge}</span>
+                  </p>
+                  <h1 className={styles.title}>Тест доші</h1>
+                  <p className={styles.lead}>
+                    Швидка самооцінка ритму, енергії, травлення і напруги — щоб побачити поточний стан і
+                    зрозуміти, з чого почати.
+                  </p>
+                </div>
+
+                <div className={styles.card} data-tone="proof">
+                  <p className={styles.label}>Як це працює</p>
+                  <ol className={styles.diagnosticNumberList}>
+                    {HOW_IT_WORKS_STEPS.map((step) => (
+                      <li key={step}>{step}</li>
+                    ))}
+                  </ol>
+                </div>
+
+                {error ? <p className={styles.diagnosticErrorNote}>{error}</p> : null}
+
+                <div className={styles.diagnosticActions}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void requestStartTest();
+                    }}
+                    disabled={isBusy}
+                    className={styles.heroPrimaryButton}
+                  >
+                    {isBusy ? "Запускаємо..." : "Почати тест"}
+                  </button>
+                </div>
+
+                {/* The DS collapsible (`details` + the surface summary with its
+                    +/− marker), not a text button: a disclosure and a link to
+                    another page were rendering as the same underlined line, so
+                    nothing said which one leaves the page. */}
+                <details className={styles.collapsibleBlock}>
+                  <summary className={styles.collapsibleSummary}>
+                    <span>Що таке доша і межі методу</span>
+                    <Icon name="chevron-down" size={18} className={styles.collapsibleMarker} />
+                  </summary>
+                  <div className={styles.card} data-tone="support">
+                    <p>{DOSHA_DISCLOSURE}</p>
+                    <p>{BOUNDARY_NOTE}</p>
+                  </div>
+                </details>
+
+                <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE}>
+                  <Icon name="arrow-left" size={16} className={styles.diagnosticBackIcon} />
+                  <span>Усі тести</span>
+                </Link>
+              </div>
+            </article>
+          </div>
         </section>
       ) : (
         <section
-      className={`${styles.container} ${styles.section}`}
-      data-cw-semantic-role="diagnostic-flow"
-      data-cw-semantic-family="method-progress"
-      data-cw-token-source="global-app-ds"
-      data-dosha-test="true"
-      data-dosha-phase={phase}
-      style={{
-        fontFamily: testFontFamily,
-        userSelect: "none",
-        WebkitUserSelect: "none",
-      }}
-    >
-      <div className={styles.diagnosticStage}>
-        <article className={`${styles.panel} ${styles.diagnosticPanel}`}>
-          {phase === "question" && currentQuestion ? (
-            <div className="space-y-6">
-              <div className="flex items-start justify-between gap-3">
-                <span
-                  className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
-                  style={{
-                    borderColor: "var(--cw-border)",
-                    background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
-                    color: "var(--cw-text)",
-                  }}
-                >
-                  {topbarBadge}
-                </span>
-              </div>
+          className={`${styles.container} ${styles.section}`}
+          data-cw-semantic-role="diagnostic-flow"
+          data-cw-semantic-family="method-progress"
+          data-cw-token-source="global-app-ds"
+          data-dosha-test="true"
+          data-dosha-phase={phase}
+          style={{
+            fontFamily: testFontFamily,
+            userSelect: "none",
+            WebkitUserSelect: "none",
+          }}
+        >
+          <div className={styles.diagnosticStage}>
+            <article className={`${styles.panel} ${styles.diagnosticPanel}`}>
+              {phase === "question" && currentQuestion ? (
+                <div className={styles.diagnosticFlowStack}>
+                  <div className={styles.diagnosticFlowHead}>
+                    {/* A title, not a control. It was a glass pill with a touch
+                        target's height — the same shape the answer options and
+                        the buttons use — so it read as something you could
+                        press, and nothing happened when you did. */}
+                    <p className={styles.label}>Тест доші</p>
+                    <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE}>
+                      <Icon name="arrow-left" size={16} className={styles.diagnosticBackIcon} />
+                      <span>Усі тести</span>
+                    </Link>
+                  </div>
 
-              <div className="space-y-2">
-                <div className="flex items-center justify-between text-xs font-semibold uppercase tracking-[0.08em]" style={{ color: "var(--cw-muted)" }}>
-                  <span>Питання {currentQuestion.orderIndex} з {totalQuestions}</span>
-                  <span>Прогрес {progress}%</span>
-                </div>
-                <div className={styles.diagnosticProgressTrack}>
-                  <div
-                    className={styles.diagnosticProgressBar}
-                    style={{
-                      width: `${progress}%`,
-                    }}
-                  />
-                </div>
-              </div>
+                  <div className={styles.diagnosticProgressRow}>
+                    <div className={styles.diagnosticProgressMeta}>
+                      <span>Питання {currentQuestion.orderIndex} з {totalQuestions}</span>
+                      <span>Прогрес {progress}%</span>
+                    </div>
+                    <div className={styles.diagnosticProgressTrack}>
+                      <div
+                        className={styles.diagnosticProgressBar}
+                        style={{
+                          width: `${progress}%`,
+                        }}
+                      />
+                    </div>
+                  </div>
 
-              <div className="space-y-2">
-                <h2 className={styles.title}>{currentQuestion.text}</h2>
-                <p className={styles.lead}>Оберіть варіант, який найточніше описує ваш поточний стан.</p>
-              </div>
+                  <div className={styles.diagnosticQuestionIntro}>
+                    <h2 className={styles.title}>{currentQuestion.text}</h2>
+                    <p className={styles.lead}>Оберіть варіант, який найточніше описує ваш поточний стан.</p>
+                  </div>
 
-              <div className="space-y-3">
-                {currentQuestion.options.map((option) => {
-                  const selected = answers[currentQuestion.id] === option.id;
+                  <div className={styles.diagnosticOptionList}>
+                    {currentQuestion.options.map((option) => {
+                      const selected = answers[currentQuestion.id] === option.id;
 
-                  return (
+                      return (
+                        <button
+                          key={option.id}
+                          type="button"
+                          data-dosha-option={option.code}
+                          aria-pressed={selected}
+                          disabled={isBusy}
+                          onClick={() => {
+                            selectAnswer(currentQuestion.id, option.id);
+                          }}
+                          className={`cw-choice-btn ${styles.diagnosticOption}`}
+                        >
+                          {option.text}
+                        </button>
+                      );
+                    })}
+                  </div>
+
+                  {error ? <p className={styles.diagnosticErrorNote}>{error}</p> : null}
+
+                  <div className={styles.diagnosticStepActions}>
                     <button
-                      key={option.id}
                       type="button"
-                      aria-pressed={selected}
-                      disabled={isBusy || Boolean(answers[currentQuestion.id])}
-                      onClick={() => {
-                        void submitAnswer(currentQuestion.id, option.id);
-                      }}
-                      className="cw-choice-btn w-full min-h-11 px-4 py-2.5 text-left text-[0.95rem] font-semibold leading-snug motion-reduce:transition-none"
-                      style={{
-                        color: "var(--cw-text)",
-                        opacity: isBusy ? 0.86 : 1,
-                        outlineColor: "transparent",
-                      }}
+                      onClick={() => (currentQuestionIndex > 1 ? goToStep(currentQuestionIndex - 1) : setPhase("intro"))}
+                      className={styles.secondaryButton}
+                      disabled={isBusy}
                     >
-                      {option.text}
+                      <span>{currentQuestionIndex > 1 ? "Назад" : "До опису"}</span>
                     </button>
-                  );
-                })}
-              </div>
-
-              {error ? (
-                <p
-                  className={styles.proofNote}
-                  style={{
-                    color: "var(--cw-danger)",
-                    background: "color-mix(in srgb, var(--cw-danger) 8%, var(--cw-platform-surface) 92%)",
-                  }}
-                >
-                  {error}
-                </p>
+                    <button
+                      type="button"
+                      onClick={goForward}
+                      className={styles.heroPrimaryButton}
+                      /* Off until there is something to move on from — the
+                         button is the answer to "what now", and lighting up is
+                         how it says the question is done. */
+                      disabled={isBusy || !currentAnswered}
+                    >
+                      {isLastQuestion ? "Завершити тест" : "Далі"}
+                    </button>
+                  </div>
+                </div>
               ) : null}
 
-              <div className="flex items-center justify-between gap-3 text-xs" style={{ color: "var(--cw-muted)" }}>
-                <button
-                  type="button"
-                  onClick={() => setPhase("intro")}
-                  className="cw-btn-outline inline-flex min-h-11 select-none items-center justify-center px-3 text-xs font-semibold motion-reduce:transition-none"
-                  style={{
-                    color: "var(--cw-text)",
-                  }}
-                >
-                  На головну
-                </button>
-                <span>Режим v1: попередню відповідь змінити не можна.</span>
-              </div>
-            </div>
-          ) : null}
+              {phase === "loading" ? (
+                <div className={styles.diagnosticFlowStack}>
+                  <div className={styles.diagnosticFlowHead}>
+                    <span className={styles.diagnosticStepChip}>{topbarBadge}</span>
+                  </div>
 
-          {phase === "loading" ? (
-            <div className="space-y-4 py-10 text-center">
-              <div className="flex justify-start">
-                <span
-                  className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
-                  style={{
-                    borderColor: "var(--cw-border)",
-                    background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
-                    color: "var(--cw-text)",
-                  }}
-                >
-                  {topbarBadge}
-                </span>
-              </div>
-
-              <div
-                className="mx-auto h-12 w-12 rounded-full border-4 animate-spin motion-reduce:animate-none"
-                style={{ borderColor: "var(--cw-border)", borderTopColor: "var(--cw-status-success)" }}
-              />
-              <h2 className={styles.title}>Аналізуємо ваш профіль...</h2>
-              <p className={styles.lead}>Формуємо практичний вектор і наступний маршрут у платформі.</p>
-            </div>
-          ) : null}
-
-          {phase === "result" && resultType && resultCopy ? (
-            <div className="space-y-6">
-              <div className="flex justify-start">
-                <span
-                  className="inline-flex min-h-11 items-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.08em]"
-                  style={{
-                    borderColor: "var(--cw-border)",
-                    background: "color-mix(in srgb, var(--cw-surface-solid) 88%, #ffffff 12%)",
-                    color: "var(--cw-text)",
-                  }}
-                >
-                  {topbarBadge}
-                </span>
-              </div>
-
-              <div className={styles.card} data-tone="support">
-                <p className={styles.label}>Ваш профіль</p>
-                <h2>{resultCopy.title}</h2>
-                <p>{resultCopy.summary}</p>
-                <p>{resultCopy.recommendation}</p>
-              </div>
-
-              <div className={styles.card} data-tone="proof">
-                <h2>Що це означає у практиці</h2>
-                <p>{resultCopy.weekVector}</p>
-                <p>Рахунок: Вата {scores.vata} • Пітта {scores.pitta} • Капха {scores.kapha}</p>
-              </div>
-
-              <div className="space-y-3">
-                <p className={styles.label}>Наступний крок</p>
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <Link
-                    href={DOSHA_PRIMARY_EXIT.href}
-                    onClick={() => {
-                      void emitAttemptEvent("dosha_followup_clicked", {
-                        target: DOSHA_PRIMARY_EXIT.target,
-                        ctaTarget: DOSHA_PRIMARY_EXIT.ctaTarget,
-                        screen: "result",
-                        step: totalQuestions,
-                        uiVariant,
-                        resultType,
-                        scores,
-                        completedAt,
-                        nextStep: DOSHA_PRIMARY_EXIT.nextStep,
-                      });
-                    }}
-                    className="cw-btn-primary inline-flex w-full min-h-11 items-center justify-center px-4 py-3 text-sm font-semibold motion-reduce:transition-none"
-                  >
-                    Отримати персональні рекомендації
-                  </Link>
-                  <Link
-                    href={DOSHA_SECONDARY_EXIT.href}
-                    onClick={() => {
-                      void emitAttemptEvent("dosha_followup_clicked", {
-                        target: DOSHA_SECONDARY_EXIT.target,
-                        ctaTarget: DOSHA_SECONDARY_EXIT.ctaTarget,
-                        screen: "result",
-                        step: totalQuestions,
-                        uiVariant,
-                        resultType,
-                        scores,
-                        completedAt,
-                        nextStep: DOSHA_SECONDARY_EXIT.nextStep,
-                      });
-                    }}
-                    className="cw-btn-outline inline-flex w-full min-h-11 items-center justify-center px-4 py-3 text-sm font-semibold motion-reduce:transition-none"
-                    style={{ color: "var(--cw-text)" }}
-                  >
-                    Переглянути програму
-                  </Link>
+                  <div className={styles.diagnosticLoadingStack}>
+                    <div className={styles.diagnosticSpinner} aria-hidden="true" />
+                    <h2 className={styles.title}>Аналізуємо ваш профіль...</h2>
+                    <p className={styles.lead}>Формуємо практичний вектор і наступний крок у платформі.</p>
+                  </div>
                 </div>
+              ) : null}
 
-                <button
-                  type="button"
-                  onClick={() => {
-                    saveAttemptId(null);
-                    setAttemptId(null);
-                    setPhase("intro");
-                    setResultViewedSent(false);
-                  }}
-                  className={styles.heroSecondaryButton}
-                >
-                  <span>Пройти тест ще раз</span>
-                </button>
-              </div>
-            </div>
-          ) : null}
-        </article>
-      </div>
+              {phase === "result" && resultType && resultCopy ? (
+                <div className={styles.diagnosticFlowStack}>
+                  <div className={styles.diagnosticFlowHead}>
+                    <span className={styles.diagnosticStepChip}>{topbarBadge}</span>
+                  </div>
+
+                  <div className={styles.card} data-tone="support">
+                    <p className={styles.label}>Ваш профіль</p>
+                    <h2>{resultCopy.title}</h2>
+                    <p>{resultCopy.summary}</p>
+                    <p>{resultCopy.recommendation}</p>
+                  </div>
+
+                  <div className={styles.card} data-tone="proof">
+                    <h2>Що це означає у практиці</h2>
+                    <p>{resultCopy.weekVector}</p>
+                    <p className={styles.diagnosticScoreRow}>
+                      Рахунок: Вата {scores.vata} • Пітта {scores.pitta} • Капха {scores.kapha}
+                    </p>
+                  </div>
+
+                  <div className={styles.card} data-tone="policy">
+                    <p className={styles.label}>Межі методу</p>
+                    <p>{BOUNDARY_NOTE}</p>
+                  </div>
+
+                  <div className={styles.panelIntro}>
+                    <p className={styles.label}>Наступний крок</p>
+                  </div>
+
+                  <div className={styles.diagnosticResultActions}>
+                    <Link
+                      href={DOSHA_PRIMARY_EXIT.href}
+                      onClick={() => {
+                        void emitAttemptEvent("dosha_followup_clicked", {
+                          target: DOSHA_PRIMARY_EXIT.target,
+                          ctaTarget: DOSHA_PRIMARY_EXIT.ctaTarget,
+                          screen: "result",
+                          step: totalQuestions,
+                          uiVariant,
+                          resultType,
+                          scores,
+                          completedAt,
+                          nextStep: DOSHA_PRIMARY_EXIT.nextStep,
+                        });
+                      }}
+                      className={styles.primaryButton}
+                    >
+                      Отримати персональні рекомендації
+                    </Link>
+                    <Link
+                      href={DOSHA_SECONDARY_EXIT.href}
+                      onClick={() => {
+                        void emitAttemptEvent("dosha_followup_clicked", {
+                          target: DOSHA_SECONDARY_EXIT.target,
+                          ctaTarget: DOSHA_SECONDARY_EXIT.ctaTarget,
+                          screen: "result",
+                          step: totalQuestions,
+                          uiVariant,
+                          resultType,
+                          scores,
+                          completedAt,
+                          nextStep: DOSHA_SECONDARY_EXIT.nextStep,
+                        });
+                      }}
+                      className={styles.secondaryButton}
+                    >
+                      Переглянути програму
+                    </Link>
+                  </div>
+
+                  <div className={styles.diagnosticFlowFoot}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        saveAttemptId(null);
+                        setAttemptId(null);
+                        setPhase("intro");
+                        setResultViewedSent(false);
+                      }}
+                      className={styles.diagnosticTextButton}
+                    >
+                      Пройти тест ще раз
+                    </button>
+                    <Link className={styles.diagnosticBackLink} href={TESTS_HUB_ROUTE}>
+                      <Icon name="arrow-left" size={16} className={styles.diagnosticBackIcon} />
+                      <span>Усі тести</span>
+                    </Link>
+                  </div>
+                </div>
+              ) : null}
+            </article>
+          </div>
         </section>
       )}
 

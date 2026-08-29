@@ -159,19 +159,190 @@
   scroll-margin-top: 5.25rem;
 }
 
+/* The platform's one plain list. Every item used to be its own soft-rect plate
+   with a shadow, so a five-line list inside a panel rendered as five cards
+   stacked in a card — six surfaces to say five short sentences, and the plates
+   read as pressable when nothing in them is. A list is text, so it is set as
+   text: the marker hangs in the margin (the lesson player's rule, see
+   docs/design-system.md), the sentences start on the panel's own left edge, and
+   the panel is the only surface in the block. */
 .timeline {
   display: grid;
-  gap: 0.75rem;
+  /* 0.7rem, not 0.4: these items wrap to two lines often enough that a tighter
+     gap would leave less air between items than inside one. */
+  gap: 0.7rem;
   margin: 0;
   padding: 0;
   list-style: none;
+  color: var(--cw-platform-muted);
+  line-height: var(--ds-type-body-line-height);
 }
 
+/* THE MARKER SITS INSIDE THE TEXT COLUMN, not out in the panel's padding. It
+   used to hang at -0.85rem on the theory that the sentences should start on the
+   paragraph edge — but a panel's padding is not a margin the list owns, and the
+   dots landed left of every other thing in the block: the eyebrow, the heading
+   and the disclosure row all start at the padding edge, and only the list broke
+   it. Worse, the theory needed the padding to be >= 1.15rem and several panels
+   run tighter, so on those the dots cleared the card entirely. Same fix, same
+   numbers as the lesson player's `.list` (Lms.module.css): the item is indented
+   and the marker sits in that indent. */
 .timeline li {
-  padding: 0.9rem;
+  position: relative;
+  padding: 0;
+  padding-inline-start: 1.15rem;
   border: 0;
-  border-radius: var(--cw-radius-sm);
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+.timeline li::before {
+  content: "";
+  position: absolute;
+  left: 0.28rem;
+  /* Optical, not geometric: lands the dot on the x-height of the first line. */
+  top: 0.62em;
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cw-platform-accent) 68%, transparent);
+}
+
+/* ── Block frame (PlatformBlock) ──────────────────── */
+
+/* Head and body, one gap between them, no surface of its own. */
+.blockFlow {
+  display: grid;
+  gap: var(--cw-space-lg);
+}
+
+.blockHead {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: var(--cw-space-md);
+  scroll-margin-top: 5.25rem;
+}
+
+.blockHeadText {
+  display: grid;
+  gap: 0.4rem;
+  /* A measure, not the full width: a title that runs the whole viewport on a
+     desktop reads as a banner rather than a heading. */
+  width: min(100%, 58rem);
+}
+
+.blockHeadCentered {
+  justify-content: center;
+  text-align: center;
+}
+
+.blockHeadCentered .blockHeadText {
+  justify-items: center;
+  justify-self: center;
+}
+
+.blockTitle {
+  margin: 0;
+  font-family: var(--cw-font-editorial);
+  font-size: clamp(1.65rem, 4.2vw, 2.4rem);
+  font-weight: 500;
+  line-height: 1.12;
+}
+
+.blockLead {
+  margin: 0;
   color: var(--cw-platform-muted);
-  background: var(--cw-platform-surface);
-  box-shadow: var(--cw-depth-shadow-soft);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line-height);
+}
+
+.blockHeadActions {
+  flex: none;
+}
+
+/* THE BLOCK'S OWN WAY OUT. Every showcase block on the home page is a sample of
+   a fuller page — three programmes of five, two mini-courses of however many —
+   and until now the only route to the rest was the topbar, which is a different
+   act of navigation entirely: leaving what you are reading versus following it
+   further. The block now names its own aggregate.
+
+   The `text` role, not a plate: this sits beside a heading, and a filled control
+   there would outweigh the title it belongs to. The arrow is part of the label
+   rather than an icon slot, because the label is the target — a 12px glyph is
+   not one. */
+.blockAction {
+  composes: text from "./PlatformButtons.module.css";
+  gap: 0.4rem;
+}
+
+.blockActionArrow {
+  transition: transform 160ms ease;
+}
+
+.blockAction:hover .blockActionArrow {
+  transform: translateX(0.18rem);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .blockAction:hover .blockActionArrow {
+    transform: none;
+  }
+}
+
+@media (max-width: 560px) {
+  /* The action drops under the head rather than squeezing the title into a
+     column two words wide. */
+  .blockHead {
+    flex-direction: column;
+    align-items: stretch;
+    gap: var(--cw-space-sm);
+  }
+}
+
+/* An optional brand mark behind a block's body — the same symbol gradients the
+   route visuals use, at a weight that registers as texture rather than as an
+   image. This is the "something alive" answer for blocks that are otherwise a
+   column of text plates: it belongs to the block, not to each card, so three
+   notes do not become three decorated objects. */
+.blockGraphic {
+  position: relative;
+  isolation: isolate;
+  /* `clip`, not `hidden`: the mark is deliberately bled past the block's right
+     edge, and without this it widened the document — which on a phone gave the
+     whole page a horizontal scroll and made the sticky topbar behave as if the
+     viewport had moved. `hidden` would fix the width too, but it also makes the
+     element a scroll container, and that is what breaks `position: sticky`
+     inside it. `clip` cuts without scrolling. */
+  overflow: clip;
+}
+
+.blockGraphic::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  /* Anchored to the head, where there is open ground. Behind the body it only
+     shows through the gaps between cards, which reads as a stray artefact
+     rather than as texture. */
+  top: -2rem;
+  right: -1.5rem;
+  width: min(15rem, 48%);
+  aspect-ratio: 1;
+  pointer-events: none;
+  /* Texture, not an illustration. At half opacity the mark competed with the
+     heading it sits behind; this is the level where it reads as paper. */
+  opacity: 0.16;
+  background: var(--cw-sem-texture-arcs);
+}
+
+.blockGraphicPath::before {
+  background: var(--cw-sem-texture-rings);
+}
+
+@media (max-width: 560px) {
+  .blockGraphic::before {
+    width: min(10rem, 46%);
+    opacity: 0.12;
+  }
 }

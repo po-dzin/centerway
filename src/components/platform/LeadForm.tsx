@@ -107,15 +107,57 @@ export function LeadForm({
     <form className={styles.form} onSubmit={onSubmit}>
       <div className={styles.field}>
         <label htmlFor="lead-name">Ваше ім&apos;я</label>
-        <input id="lead-name" name="name" autoComplete="name" required />
+        {/* THE KEYBOARD IS PART OF THE FIELD (2026-08-28).
+            Four attributes, and each answers one thing the phone would
+            otherwise guess: `type` picks the keyboard AND the autofill bucket,
+            `autoCapitalize` decides whether the first letter arrives shifted,
+            `enterKeyHint` labels the return key, and `autoComplete` is what
+            makes the browser's saved contact offerable at all. A name is the
+            one field here that WANTS capitals. */}
+        <input
+          id="lead-name"
+          name="name"
+          type="text"
+          autoComplete="name"
+          autoCapitalize="words"
+          enterKeyHint="next"
+          required
+        />
       </div>
       <div className={styles.field}>
         <label htmlFor="lead-phone">Номер телефону</label>
-        <input id="lead-phone" name="phone" autoComplete="tel" inputMode="tel" required />
+        {/* `type` AND `inputMode`, which are not the same instruction. iOS
+            reads `inputMode` for the keypad; `type="tel"` is what puts the
+            field in the browser's phone autofill bucket, and without it a saved
+            number is never offered. Neither one validates, which is correct —
+            this form takes numbers in every shape a person writes them. */}
+        <input
+          id="lead-phone"
+          name="phone"
+          type="tel"
+          autoComplete="tel"
+          inputMode="tel"
+          enterKeyHint="next"
+          required
+        />
       </div>
       <div className={styles.field}>
         <label htmlFor="lead-email">Email</label>
-        <input id="lead-email" name="email" autoComplete="email" inputMode="email" />
+        {/* An address is never capitalised and never a word the dictionary
+            knows, so all three assistants are turned off by hand: iOS shifts
+            the first letter of a field by default and autocorrect has rewritten
+            more than one domain into a real word on the way to the server. */}
+        <input
+          id="lead-email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          autoCapitalize="none"
+          autoCorrect="off"
+          spellCheck={false}
+          enterKeyHint="next"
+        />
       </div>
       <div className={styles.field}>
         <label htmlFor="lead-interest">Що цікавить</label>
@@ -123,14 +165,16 @@ export function LeadForm({
           <option value="consultation">Особиста консультація</option>
           <option value="way21">Шлях 21</option>
           <option value="reset-day">Reset Day</option>
-          <option value="ideal-body">Ідеальне тіло з Аюрведою</option>
+          <option value="natural-body">Природнє тіло з Аюрведою</option>
           <option value="irem">Відновлююча гімнастика</option>
           <option value="herbs">Трав&apos;яна підтримка</option>
         </select>
       </div>
       <div className={styles.field}>
         <label htmlFor="lead-message">Коментар</label>
-        <textarea id="lead-message" name="message" />
+        {/* No `enterKeyHint` on the comment: return means a new line here, and
+            labelling it «send» would promise a submit the key does not do. */}
+        <textarea id="lead-message" name="message" autoCapitalize="sentences" />
       </div>
       <button className={styles.primaryButton} type="submit" disabled={state === "submitting" || state === "success"}>
         {submitLabel}

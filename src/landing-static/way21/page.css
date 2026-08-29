@@ -23,11 +23,11 @@
   --text-soft:var(--cw-net-text-soft,#6a7770);
   --gold:var(--cw-net-gold,#dba54f);
   /* dark surfaces + on-dark palette (way21 skin) */
-  --irem-dark-1:#173027; --irem-dark-2:#274a3c;
+  --irem-dark-1:#182a20; --irem-dark-2:#2c4635;
   --irem-grad-dark:linear-gradient(165deg,var(--irem-dark-1),var(--irem-dark-2));
-  --irem-gold-bright:#e0b25c; --irem-gold-soft:#e6b863; --irem-gold-tint:#f3ead4;
-  --irem-on-dark-soft:#cfe0d3; --irem-on-dark-muted:#b3c8b9; --irem-on-dark-faint:#7e9587; --irem-on-dark-label:#a7c1ad;
-  --irem-indigo-soft:#6f9a86;
+  --irem-gold-bright:#e5ae65; --irem-gold-soft:#edc693; --irem-gold-tint:#f3e4d0;
+  --irem-on-dark-soft:#d7e0d2; --irem-on-dark-muted:#bcc7b4; --irem-on-dark-faint:#8b9884; --irem-on-dark-label:#aec0a9;
+  --irem-indigo-soft:#7d9a7a;
   /* shared utility/legal aliases */
   --landing-color-primary:var(--ink);
   --landing-color-primary-strong:#132821;
@@ -43,8 +43,87 @@
   --landing-shadow-card-unified:0 18px 52px rgba(23,48,39,.14);
   --landing-shadow-cta:0 14px 30px rgba(23,48,39,.18);
   --landing-radius-card-unified:1.55rem;
-  --landing-radius-cta-control:1rem;
+  /* the button corner is the contract's; see docs/design-system.md "Buttons" */
+  --landing-radius-cta-control:var(--r-btn,1rem);
   --landing-type-caption-size:.76rem;
   --landing-type-body-size:1rem;
   --landing-type-button-size:1rem;
+}
+
+/* Author photo shown plain — no fade/gradient overlay. (The hero-photo gradient
+   is kept: it's a legibility scrim under the headline that overlaps the photo
+   on mobile — margin-top:-62% in landing.css — not decorative.) */
+[data-cw-landing="way21"] .author-photo img{-webkit-mask-image:none;mask-image:none}
+
+/* Phyto protocol: phase cards keep only the short reference; the full herb
+   composition lives in the #phyto collapsible below the triad. */
+[data-cw-landing="way21"] .phase .dl-link{
+  display:inline-block;white-space:nowrap;color:var(--indigo);
+  border-bottom:1px dashed currentColor;text-decoration:none;font-size:.88em;
+}
+[data-cw-landing="way21"] .phase .dl-link:hover{color:var(--ink)}
+[data-cw-landing="way21"] .ai-card--phyto{scroll-margin-top:7rem}
+/* The phyto card has NO photo ground any more. It used to carry a duotone of
+   the herb flat-lay, graded down to 0.051 relative luminance so the text over it
+   would still clear AA — i.e. the picture had to be destroyed to stay legible,
+   which is the whole argument against putting imagery behind body copy. The
+   photography now sits ABOVE the copy in the phase cards (.ph-shot), where it
+   can carry the full CenterWay v1 grade. Same rule as the dot/path/orbit layer:
+   imagery never enters a text column. */
+
+/* Phase photo band — full-bleed against the card padding. The card already
+   clips (overflow:hidden + radius), and the 4px phase stripe (.phase::after)
+   paints over the image, so the accent colour survives. */
+[data-cw-landing="way21"] .phase .ph-shot{
+  margin:-2rem -1.7rem 1.4rem;background:var(--chip-soft);
+}
+[data-cw-landing="way21"] .phase .ph-shot img{
+  width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;display:block;
+}
+
+/* Herb names are longer than the mono labels this row was built for. The cap
+   exists to stop one long name blowing out the row's `auto` column — but 15ch
+   was under the longest label actually in the card (20 chars: «Фенхель, укріп,
+   тмин», «Овес і насіння льону»), so half the rows broke to three lines, and a
+   two-word label set over three lines reads as damage rather than as a column.
+   21ch clears the longest name in two, and costs the text column ~35px of a
+   1016px row. */
+[data-cw-landing="way21"] .ai-card--phyto .ai-lab{white-space:normal}
+@media(min-width:601px){
+  [data-cw-landing="way21"] .ai-card--phyto .ai-lab{max-width:21ch}
+}
+[data-cw-landing="way21"] .ai-cta{margin-top:1rem}
+/* Shared default is rgba(255,255,255,.45) = 3.36:1 on the panel — under AA even
+   before the photo ground. Scoped bump to .62 (4.91:1); other brands unchanged. */
+[data-cw-landing="way21"] .ai-disclaim{color:color-mix(in srgb, #fff 62%, transparent)}
+[data-cw-landing="way21"] .ai-cta .btn{display:inline-flex}
+
+/* ============ CARRIER PASS (2026-08-17) ============
+   way21 is the reference organism for "one carrier per block". What changed
+   here is subtraction plus one substitution — see
+   docs/archive/working-notes/ds-carrier-map-2026-08-17.md. */
+
+
+/* The boundary note carries the one glyph its sentence is about. */
+[data-cw-landing="way21"] .med-note .ico{margin-top:.1em;color:var(--cta-strong)}
+
+
+/* The rail is only a rail if the nodes line up. Day names wrap to two lines in
+   four of seven cards, which put the node at four different heights; a
+   two-line floor on the name holds the row flat. */
+@media(min-width:981px){[data-cw-landing="way21"] .day .d-name{min-height:2.63rem}}
+
+/* #method carries evidence, and its evidence is that the method was worked out
+   by hand rather than read off a paper. The band sits between the argument and
+   the deep-dive disclosure — after the claim, before the proof of it. Third and
+   last photo block on the page (hero, phases, method): the base budget. */
+[data-cw-landing="way21"] .sci-shot{
+  margin:2.4rem 0 0;border-radius:var(--r-lg);overflow:hidden;background:var(--chip-soft);
+  box-shadow:var(--shadow-soft);
+}
+[data-cw-landing="way21"] .sci-shot img{
+  width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;display:block;
+}
+@media(max-width:760px){
+  [data-cw-landing="way21"] .sci-shot img{aspect-ratio:4/3}
 }

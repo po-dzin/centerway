@@ -1,58 +1,91 @@
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
+import { PlatformBlock, PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import styles from "@/components/platform/PlatformOfferStyles";
-import { featuredPrograms, miniCourses } from "@/lib/platform/content";
+import { listStorefrontCourses } from "@/lib/platform/offers";
 
-export function HubMini() {
+/**
+ * The home page's two shelves.
+ *
+ * WHY THESE READ THE DATABASE NOW. Reset Day left content.ts when its page
+ * became a `/programs/[slug]` route served from the builder — and it left the
+ * home page with it, because these blocks knew only the six TypeScript
+ * literals. A course that a stranger can find in the catalogue and cannot find
+ * on the front page is not published, it is hidden with extra steps.
+ *
+ * Same rule as the catalogue (`PlatformProgramsIndexPage`), and since
+ * 2026-08-29 there is nothing left to merge: the last hand-written course left
+ * `content.ts` with reboot and irem, so both shelves are the database in the
+ * author's own `sortOrder`.
+ *
+ * Never throws — `listStorefrontCourses` answers `[]` when the database is
+ * unreachable, and the home page keeps its static half.
+ */
+const MINI_LESSON_CEILING = 8;
+
+export async function HubMini() {
+  const authored = (await listStorefrontCourses()).filter((course) => course.lessons <= MINI_LESSON_CEILING);
+
   return (
-    <section className={`${styles.container} ${styles.section} ${styles.sectionFlow}`} id="mini-courses">
-      <div className={styles.sectionHeader}>
-        <div>
-          <h2 className={styles.sectionTitle}>М&apos;який вхід без довгого зобов&apos;язання</h2>
-        </div>
-      </div>
+    <PlatformBlock
+      id="mini-courses"
+      label="Міні-курси"
+      title="М&apos;який вхід без довгого зобов&apos;язання"
+      lead="Кілька днів практики, щоб спробувати підхід без довгого зобов'язання."
+      headActions={<PlatformBlockLink href="/programs" label="Усі програми і курси" />}
+    >
       <div className={styles.programShowcase} data-layout="mini">
-        {miniCourses.map((program) => (
+        {authored.map((course) => (
           <PlatformOfferCard
-            key={program.slug}
-            title={program.title}
-            tag={program.tag}
-            description={program.description}
-            href={program.href}
-            visual={program.visual}
-            slug={program.slug}
-            artwork={program.artwork}
+            key={course.slug}
+            title={course.title}
+            tag={course.tag}
+            description={course.description}
+            href={course.href}
+            visual={course.visual}
+            slug={course.slug}
+            artwork={course.artwork}
+            kindBadge={course.kindBadge}
+            categories={course.categoryLabels}
+            pretitle={course.pretitle}
+            posttitle={course.posttitle}
             ctaLabel="Деталі курсу"
-            size="compact"
           />
         ))}
       </div>
-    </section>
+    </PlatformBlock>
   );
 }
 
-export function HubPrograms() {
+export async function HubPrograms() {
+  const authored = (await listStorefrontCourses()).filter((course) => course.lessons > MINI_LESSON_CEILING);
+
   return (
-    <section className={`${styles.container} ${styles.section} ${styles.sectionFlow}`} id="programs">
-      <div className={styles.sectionHeader}>
-        <div>
-          <h2 className={styles.sectionTitle}>Глибші програми для тіла, харчування і ритму</h2>
-        </div>
-      </div>
+    <PlatformBlock
+      id="programs"
+      label="Програми"
+      title="Глибші програми для тіла, харчування і ритму"
+      lead="Яка програма підходить моєму поточному стану?"
+      headActions={<PlatformBlockLink href="/programs" label="Усі програми" />}
+    >
       <div className={styles.programShowcase}>
-        {featuredPrograms.map((program) => (
+        {authored.map((course) => (
           <PlatformOfferCard
-            key={program.slug}
-            title={program.title}
-            tag={program.tag}
-            description={program.description}
-            href={program.href}
-            visual={program.visual}
-            slug={program.slug}
-            artwork={program.artwork}
+            key={course.slug}
+            title={course.title}
+            tag={course.tag}
+            description={course.description}
+            href={course.href}
+            visual={course.visual}
+            slug={course.slug}
+            artwork={course.artwork}
+            kindBadge={course.kindBadge}
+            categories={course.categoryLabels}
+            pretitle={course.pretitle}
+            posttitle={course.posttitle}
             ctaLabel="Деталі програми"
           />
         ))}
       </div>
-    </section>
+    </PlatformBlock>
   );
 }

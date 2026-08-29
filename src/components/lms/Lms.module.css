@@ -1,0 +1,1628 @@
+/* LMS learner surfaces — course map and lesson player.
+   Mobile-first: every rule below is the phone layout; wider viewports only add.
+   Tokens only — no local palettes, per AGENTS.md canon preflight. */
+
+.wrap {
+  width: min(100% - 2 * var(--cw-page-gutter), 46rem);
+  /* Top breathing room is a MARGIN, not padding: the shell sets
+     `.shellOverlay > main { padding-top: --platform-topbar-clearance }`, which
+     out-specifies this rule. Margin stacks with that clearance instead of being
+     silently overridden by it.
+
+     IT IS NOW THE CLEARANCE FOR THE FLOATING CHROME (2026-08-29). There is no
+     bar on this route, so nothing above the column reserves room for the two
+     controls that replaced it: the column pays for them itself. The number is
+     derived, not chosen — where the row sits plus how tall it is plus the gap
+     the page keeps under it — so moving the controls moves the text with them.
+
+     `.readerChrome` is `position: fixed` and takes no space; the desk keeps a
+     wider margin for the same reason it always did, because there the column is
+     narrow against a wide window and the air above it is what stops the page
+     starting at the ceiling.
+
+     The gap under the controls is `lg`, not `sm`: at 12px the caption sat in
+     the arrow's shadow and the screen opened tight. */
+  margin: calc(var(--cw-space-sm) + var(--ds-touch-target-min) + var(--cw-space-lg)) auto 0;
+  padding-block: 0 var(--cw-space-3xl);
+  /* Short states (loading, "курс ще готується") would otherwise let the footer
+     ride up under the header. */
+  min-height: 60svh;
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-ui);
+}
+
+/* ── State / feedback ─────────────────────────────── */
+
+.notice {
+  border: 0;
+  border-radius: var(--cw-card-radius);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+  padding: var(--cw-space-lg);
+  display: grid;
+  gap: var(--cw-space-sm);
+}
+
+.noticeTitle {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.noticeText {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  line-height: 1.55;
+}
+
+/* ── Course header ────────────────────────────────── */
+
+.eyebrow {
+  margin: 0 0 var(--cw-space-2xs);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
+}
+
+/* The page title takes the course's heading voice. The fallback IS the
+   platform default, so a course that chose nothing is byte-identical to what
+   shipped before the axis existed. */
+.title {
+  margin: 0 0 var(--cw-space-sm);
+  font-family: var(--cw-course-heading-family, var(--cw-font-editorial));
+  font-size: calc(clamp(1.7rem, 6vw, 2.4rem) * var(--cw-course-heading-scale, 1));
+  line-height: 1.15;
+  font-weight: var(--cw-course-heading-weight, 500);
+}
+
+.lead {
+  margin: 0 0 var(--cw-space-lg);
+  color: var(--cw-platform-muted);
+  line-height: 1.6;
+}
+
+.standing {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+  margin-bottom: var(--cw-space-lg);
+}
+
+.chip {
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  padding: 0.4rem 0.8rem;
+  font-size: 0.82rem;
+  color: var(--cw-platform-muted);
+  background: var(--cw-mat-surface-sunk);
+}
+
+/* Geometry lives in ProgressRail.module.css; the page only owns the gap under it. */
+.courseProgress {
+  margin-bottom: var(--cw-space-xl);
+}
+
+/* ── Restart (a finished, repeatable protocol) ────── */
+
+.restartRow {
+  display: grid;
+  gap: var(--cw-space-xs);
+  margin-bottom: var(--cw-space-xl);
+  padding: var(--cw-space-md);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.restartHint {
+  margin: 0;
+  font-size: 0.88rem;
+  color: var(--cw-platform-muted);
+  line-height: 1.5;
+}
+
+.restartButton {
+  composes: secondary from "../platform/PlatformButtons.module.css";
+  justify-self: start;
+}
+
+/* ── Way out of a course ──────────────────────────── */
+
+/* ── Outline ──────────────────────────────────────── */
+
+.outline {
+  display: grid;
+  gap: var(--cw-space-sm);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.outlineItem {
+  border: 0;
+  border-radius: var(--cw-card-radius);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.outlineItem:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--cw-mat-shadow-raised);
+}
+
+/* The lesson the schedule has arrived at wears the accent on its edge — the one
+   row worth returning to, without a second button competing for the eye. */
+.outlineItem[data-current] {
+  box-shadow: inset 3px 0 0 0 var(--cw-platform-accent), var(--cw-mat-shadow-soft);
+}
+
+.outlineLink {
+  /* Whole row is the tap target; ≥48px tall on the smallest phone. */
+  display: grid;
+  grid-template-columns: 2.5rem minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-md);
+  text-decoration: none;
+  color: inherit;
+  border-radius: inherit;
+}
+
+.outlineLink:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 40%, transparent);
+}
+
+.outlineLocked {
+  composes: outlineLink;
+  cursor: not-allowed;
+  opacity: 0.62;
+}
+
+.outlineBody {
+  min-width: 0;
+}
+
+/* Chevron: chrome, not a carrier — it says "row opens", nothing more. A word
+   like "відкрити" in this slot only repeats what the whole row already is. */
+.outlineGlyph {
+  color: var(--cw-platform-muted);
+  flex: none;
+}
+
+.dayBadge {
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: var(--cw-radius-sm);
+  border: 0;
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font-family: var(--cw-font-data);
+  font-size: 0.9rem;
+}
+
+.dayBadgeDone {
+  composes: dayBadge;
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-on-accent);
+}
+
+.outlineTitle {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.35;
+}
+
+.outlineMeta {
+  margin: 0.15rem 0 0;
+  font-size: 0.82rem;
+  color: var(--cw-platform-muted);
+}
+
+/* Handbook, listed after the protocol and visually set apart from it. */
+.referenceSection {
+  margin-top: var(--cw-space-2xl);
+  padding-top: var(--cw-space-lg);
+  border-top: 1px solid var(--cw-platform-border);
+  border-image: var(--cw-rule-fade-x);
+}
+
+.referenceHeading {
+  margin: 0 0 var(--cw-space-2xs);
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.referenceLead {
+  margin: 0 0 var(--cw-space-md);
+  font-size: 0.88rem;
+  color: var(--cw-platform-muted);
+}
+
+/* ── Lesson player ────────────────────────────────── */
+
+/* ── Lesson top bar ───────────────────────────────── */
+
+/* Reading position for the current lesson. Sits under the app header so it
+   stays visible while the body scrolls.
+
+   It owns no row. A 3px hairline with a 1rem margin under it was costing 19px
+   at the top of every lesson on a phone, above a header stack that was already
+   the complaint — and the thing it measures is the body, which starts below.
+   The margin is gone and the bar under it brings its own. */
+/* THE PROGRESS LINE IS A LINE, NOT A BAR (2026-08-29).
+   It was `sticky` inside the column with `--cw-mat-surface-sunk` behind it, so
+   what actually rode the top of the viewport was a full-column light pill with
+   a gold tip somewhere in it — a stripe, read as a stray element rather than as
+   progress, and with the topbar gone from this route it is exposed rather than
+   tucked under a band. Full-bleed, two pixels, and NO track: an empty rail
+   drawn across every reading screen is a promise the page keeps making, and the
+   only thing worth drawing is how far you have come. */
+.readingTrack {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  z-index: 3;
+  height: 0.125rem;
+  background: transparent;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.readingFill {
+  height: 100%;
+  background: var(--cw-platform-accent);
+  transition: width 90ms linear;
+}
+
+.lessonTopBar {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  margin-block: var(--cw-space-xs) var(--cw-space-sm);
+}
+
+/* Real controls, not text links: both are thumb-sized and read as buttons.
+   Chrome, not content — transparent at rest, the surface arrives on hover and
+   focus where it means something. */
+.iconButton {
+  composes: chrome from "../platform/PlatformButtons.module.css";
+}
+
+.iconButtonBare {
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+}
+
+/* ── The reader's floating chrome ─────────────────────────────────────────
+   TWO OBJECTS, NO BAND (2026-08-29). This route mounts no topbar (see the
+   `reading` note in PlatformLayout), and what replaced it is the pair below:
+   the way out on the left, the reading tools on the right, both on the bar's
+   own material so the reader is still made of the same thing as the rest of
+   the product. It used to cost three full-width rows before the first line —
+   a 64px band, a crumb row and a tool row — over a single column of prose.
+
+   The row this lives in is the LAYOUT ONLY. The material is on the two
+   children, so the gap between them is page, not chrome. */
+.readerChrome {
+  position: fixed;
+  /* Clears the author preview's own boundary row when there is one.
+     `--cw-zen-boundary-block` is declared by ZenPreviewShell and by nothing
+     else, so on the learner route this resolves to `0px + space-sm` — the
+     value it has always had — and inside the preview the cluster starts below
+     «До редагування» instead of on top of it. */
+  top: calc(var(--cw-zen-boundary-block, 0px) + var(--cw-space-sm));
+  right: 0;
+  left: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  padding-inline: var(--cw-page-gutter);
+  /* The row spans the viewport so its two ends sit on the page's own gutters;
+     between them it must not swallow a tap meant for the text. */
+  pointer-events: none;
+  /* Same reveal the bar had — see useChromeReveal. Transform only: nothing
+     here reflows, and the column's top padding does not move with it. */
+  transition:
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 180ms ease;
+}
+
+.readerChrome > * {
+  pointer-events: auto;
+}
+
+.readerChrome[data-hidden="true"] {
+  /* Far enough to clear its own top offset as well as its height, or in the
+     preview the cluster parks half-visible under the boundary rule. */
+  transform: translateY(
+    calc(-100% - var(--cw-zen-boundary-block, 0px) - var(--cw-space-sm) - 0.75rem)
+  );
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .readerChrome {
+    transition: none;
+  }
+}
+
+/* ONE ARROW. It held the course title for a revision and the title is exactly
+   what it cannot hold: any name longer than a phone's half-width came out as a
+   fragment with an ellipsis, and that fragment was then the widest object on
+   the reading screen. The name is one tap away, written in full on the page
+   this returns to; here it is the `aria-label` and nothing else. */
+.readerBack {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--ds-touch-target-min);
+  height: var(--ds-touch-target-min);
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  color: var(--cw-platform-text);
+  background-color: var(--cw-mat-tint-chrome);
+  backdrop-filter: var(--cw-mat-filter);
+  box-shadow: var(--cw-mat-shadow-chrome);
+  text-decoration: none;
+}
+
+/* The three tools travel as one object, so they read as a set rather than as
+   three loose discs over the text. */
+.readerTools {
+  display: flex;
+  /* STRETCH, NOT CENTER, and it is the tap target that depends on it: the
+     controls inside are sized by their glyph (18px) and take their height from
+     this row. Centred, the pill was 48px tall with an 18px-high button in the
+     middle of it — a control that looks like a target and is not one. */
+  align-items: stretch;
+  gap: 0.1rem;
+  flex: 0 0 auto;
+  min-height: var(--ds-touch-target-min);
+  padding-inline: 0.25rem;
+  border-radius: var(--cw-radius-pill);
+  background-color: var(--cw-mat-tint-chrome);
+  backdrop-filter: var(--cw-mat-filter);
+  box-shadow: var(--cw-mat-shadow-chrome);
+}
+
+/* The cluster IS the surface, so its members stop carrying one of their own —
+   two materials one inside the other is the seam this layer exists to avoid.
+   `chrome` is transparent at rest already; this only removes its hover plate,
+   which inside a pill reads as a second pill. */
+.readerTools .iconButton {
+  background: transparent;
+  box-shadow: none;
+}
+
+.contentsButton {
+  flex: none;
+}
+
+.sizeControl {
+  position: relative;
+  flex: none;
+}
+
+.sizeMenu {
+  position: absolute;
+  top: calc(100% + var(--cw-space-2xs));
+  right: 0;
+  z-index: 3;
+  display: grid;
+  min-width: 12.5rem;
+  padding: var(--cw-space-2xs);
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--cw-platform-text) 14%, transparent);
+}
+
+/* A row of the size menu: the contract's geometry, laid out as a grid so the
+   sample «Аа» and its name line up down the column whatever size the sample is
+   drawn at.
+
+   NO PLATE, on either state. Hover and "this is the one" are the same ink
+   stroke at two strengths — the platform's account menu already speaks this way
+   and a tinted rectangle here would make the chosen row read as stuck hover the
+   moment the pointer rests on it. */
+.sizeOption {
+  composes: base from "../platform/PlatformButtons.module.css";
+  display: grid;
+  grid-template-columns: 2.5rem 1fr;
+  align-items: center;
+  justify-items: start;
+  width: 100%;
+  color: var(--cw-platform-text);
+  background: transparent;
+  box-shadow: none;
+  text-align: start;
+}
+
+.sizeOption:hover:not(:disabled) {
+  background: transparent;
+}
+
+.sizeOption:hover .sizeInkMark,
+.sizeOption:focus-visible .sizeInkMark {
+  opacity: var(--cw-nav-marker-hover-opacity);
+  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
+}
+
+/* NAMES EVERY ANCESTOR, and that is not tidiness (2026-08-28).
+
+   `.sizeOption` itself composes `base` from the button contract. A two-level
+   chain inside one module loses the grandparent: written as `composes:
+   sizeOption` alone the build emitted `sizeOptionCurrent sizeOption` and
+   dropped `base`, so the row in force lost the contract's padding and min
+   height and sat a few pixels left of and shorter than the other three — the
+   menu read as a list with one item knocked out of line.
+
+   This is the THIRD instance of the same trap in this file; the note beside
+   `.completeToggleDone` says there were two and that both were fixed. There
+   were three. */
+.sizeOptionCurrent {
+  composes: base from "../platform/PlatformButtons.module.css";
+  composes: sizeOption;
+}
+
+.sizeOptionCurrent .sizeInkMark {
+  opacity: 1;
+  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
+}
+
+.sizeInkLabel {
+  composes: menuInkLabel from "../platform/PlatformShell.module.css";
+}
+
+.sizeInkMark {
+  composes: menuInkMark from "../platform/PlatformShell.module.css";
+}
+
+.sizeLabel {
+  font-size: 0.85rem;
+  white-space: nowrap;
+}
+
+.backButton {
+  composes: chrome from "../platform/PlatformButtons.module.css";
+}
+
+.topBarSpacer {
+  flex: 1;
+}
+
+/* ── Step marker ──────────────────────────────────── */
+
+.stepMarker {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  /* It is a caption for the title, so it keeps a caption's air: loose enough
+     from the controls above and the heading below to be its own line rather
+     than a label stuck to either. 4px below put it against the H1's cap
+     height. */
+  margin: 0 0 var(--cw-space-md);
+  font-size: 0.82rem;
+  color: var(--cw-platform-muted);
+}
+
+.stepCount {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-on-accent);
+  font-family: var(--cw-font-data);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+.stepDivider {
+  opacity: 0.5;
+}
+
+/* Reference pages carry a label instead of a step counter, so a recipe list
+   never looks like part of the protocol sequence. */
+.referenceTag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.55rem;
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  font-size: 0.76rem;
+  font-weight: 600;
+}
+
+/* ── Contents drawer ──────────────────────────────── */
+
+.drawerBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ds-z-modal, 60);
+  background: var(--cw-overlay);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.drawer {
+  width: min(100%, 34rem);
+  max-height: 82svh;
+  overflow-y: auto;
+  padding: var(--cw-space-md) var(--cw-space-md) max(var(--cw-space-lg), env(safe-area-inset-bottom));
+  border-radius: var(--cw-radius-xl) var(--cw-radius-xl) 0 0;
+  background: var(--cw-mat-surface);
+  box-shadow: 0 -12px 40px color-mix(in srgb, var(--cw-platform-text) 18%, transparent);
+}
+
+.drawerHandle {
+  width: 2.5rem;
+  height: 0.25rem;
+  margin: 0 auto var(--cw-space-sm);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-border);
+}
+
+/* Sticky, because the panel now opens scrolled to the current lesson: a title
+   and a close button that had already scrolled past would leave the reader in
+   the middle of a list with no visible way out. */
+.drawerHead {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding-block: var(--cw-space-2xs);
+  background: var(--cw-mat-surface);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  margin-bottom: var(--cw-space-sm);
+}
+
+.drawerTitle {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.drawerModule {
+  margin: var(--cw-space-md) 0 var(--cw-space-2xs);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
+}
+
+.drawerItem {
+  display: grid;
+  grid-template-columns: 1.75rem 1fr;
+  gap: var(--cw-space-sm);
+  align-items: center;
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-xs) var(--cw-space-2xs);
+  border-radius: var(--cw-radius-sm);
+  color: inherit;
+  text-decoration: none;
+  line-height: 1.4;
+}
+
+.drawerItemCurrent {
+  composes: drawerItem;
+  background: var(--cw-mat-surface-sunk);
+  font-weight: 600;
+}
+
+.drawerItemLocked {
+  composes: drawerItem;
+  opacity: 0.5;
+}
+
+.drawerMark {
+  display: grid;
+  place-items: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: var(--cw-radius-pill);
+  border: 1px solid var(--cw-platform-border);
+  font-family: var(--cw-font-data);
+  font-size: 0.78rem;
+}
+
+.drawerMarkDone {
+  composes: drawerMark;
+  border-color: transparent;
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-on-accent);
+}
+
+.drawerMeta {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--cw-platform-muted);
+}
+
+/* ── Prev / next pager ────────────────────────────── */
+
+.pager {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--cw-space-xs);
+  margin-top: var(--cw-space-lg);
+}
+
+.pager[data-layout="single"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.pagerLink {
+  /* One row, not two: arrow and title on a single baseline. The cell used to
+     stack a direction word over the title; the arrow says the direction and the
+     side says it again, so the row is all that is left. */
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-md);
+  border: 0;
+  border-radius: var(--cw-card-radius);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+  color: var(--cw-platform-text);
+  text-decoration: none;
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+
+.pagerLink:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--cw-mat-shadow-raised);
+}
+
+.pagerLink:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 40%, transparent), var(--cw-mat-shadow-soft);
+}
+
+.pagerLinkNext {
+  composes: pagerLink;
+  justify-content: flex-end;
+  text-align: right;
+}
+
+/* The arrow is orientation, not content — it sits back so the title carries the
+   cell. It holds its size when a long title wraps. */
+.pagerArrow {
+  flex: none;
+  opacity: 0.5;
+}
+
+/* Once the lesson is done, forward momentum moves HERE rather than adding a
+   second button to the sticky bar. One accent on screen at a time.
+
+   `composes` names BOTH links in the chain, and the rule styling a descendant
+   of this class comes AFTER it, not before. With the descendant rule written
+   first and `composes: pagerLinkNext` alone, the build emitted
+   `pagerLinkNextAccent pagerLinkNext` and dropped `pagerLink` — so the accent
+   cell had no display, no padding and no radius, and on a phone the arrow
+   wrapped under a two-line title with the gold fill running to the column's
+   edge. */
+.pagerLinkNextAccent {
+  composes: pagerLink pagerLinkNext;
+  background: var(--cw-platform-accent);
+  color: var(--cw-platform-on-accent);
+}
+
+.pagerLinkNextAccent .pagerArrow {
+  opacity: 0.7;
+}
+
+/* Left over from the pager, now only the drawer's "Пройдено N з M" line. */
+.pagerLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.76rem;
+  color: var(--cw-platform-muted);
+}
+
+/* ONE LINE. A lesson title is a sentence, and a pager that grows to three lines
+   is a paragraph with an arrow on it — the cell stops reading as a control and
+   the two cells stop matching each other's height. Clipped with an ellipsis;
+   the full title is on the link's `title`, one hover away, and on `aria-label`
+   for anyone not hovering. Same rule the breadcrumb follows.
+
+   `min-width: 0` is what lets it clip at all: without it the title is sized by
+   its longest word, the flex row cannot shrink, and the arrow is pushed out of
+   the cell. A flex item's `min-width: auto` is a floor at min-content. */
+.pagerTitle {
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* The lesson body — the one place a course's `scale` choice lands.
+   The three custom properties are declared by the theme scope on `<main>`
+   (globals.css) and fall back to the platform's own values, so a course that
+   chose nothing renders exactly as it did before the axis existed. Type and the
+   space around it move TOGETHER: a "spacious" setting that only grew the letters
+   would come out merely bigger, not roomier. */
+.blocks {
+  /* The mark layer is absolutely positioned against this column, so the column
+     is what its coordinates mean. */
+  position: relative;
+  display: grid;
+  gap: var(--cw-course-block-gap, var(--cw-space-lg));
+  /* The reader's own size choice multiplies the course's, and everything
+     inside this column is sized in `em` so one number moves the whole body —
+     headings, captions, list markers and all. */
+  font-size: calc(var(--cw-course-body-size, 1rem) * var(--cw-reader-scale, 1));
+}
+
+/* The lesson's one abstract, and it sits in the text column like everything
+   else. It used to be a gold-barred pull-quote directly under the summary —
+   two openings saying the same thing, one of them shouting. The summary is
+   gone (see LessonView) and the bar with it: nothing on this page needs an
+   accent to be found, it is the first thing after the title. */
+.objective {
+  margin: 0 0 var(--cw-space-sm);
+  font-size: 1.08em;
+  line-height: 1.55;
+  color: var(--cw-platform-muted);
+}
+
+/* 1.85, not the 1.65 it was. Measured against the register this reads in —
+   ryokan, tea and craft surfaces set running text between 1.6 and 2.2 (KINTO
+   1.9, hana-mura 2.2) while we sat at the bottom of that range. See
+   docs/design-system/references/eastern-zen-survey-2026-08-26.md. Only the
+   leading moves: the letter-spacing those pages carry exists for square kana
+   and takes Cyrillic apart. */
+.paragraph {
+  margin: 0;
+  line-height: 1.85;
+}
+
+.heading {
+  margin: var(--cw-space-sm) 0 0;
+  font-family: var(--cw-course-heading-family, inherit);
+  font-size: calc(1.15em * var(--cw-course-heading-scale, 1));
+  font-weight: var(--cw-course-heading-weight, 600);
+}
+
+/* THE MARKER SITS ON THE COLUMN'S EDGE, and the text is indented past it.
+
+   It used to hang the other way — text flush with the paragraphs and the dot
+   out in the card's padding. That is a real typographic tradition and it is
+   wrong here: on a narrow card the protruding dots make the left edge ragged,
+   and the page reads as if the list belongs to a different column from the
+   sentence above it. One edge for everything; the indent inside the list is the
+   list's own business.
+
+   `list-style: none` with an absolute marker rather than `::marker`, because
+   `display: grid` blockifies the items and drops the native marker entirely. */
+.list,
+.listOrdered {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  /* Wider than the 0.4rem it was. These items are "term — definition" and most
+     of them wrap to two or three lines; at 0.4rem the space between two items
+     was smaller than the space between two lines of the same item, so the list
+     read as one paragraph with bold words scattered through it. The gap has to
+     stay ahead of the leading, so it moved with it: at 1.85 the space inside an
+     item is 0.85em, and 1rem clears it. */
+  gap: 1rem;
+  line-height: 1.85;
+}
+
+.list > li {
+  position: relative;
+  padding-inline-start: 1.15rem;
+}
+
+.listOrdered > li {
+  position: relative;
+  padding-inline-start: 1.6rem;
+}
+
+.list > li::before {
+  content: "";
+  position: absolute;
+  left: 0.28rem;
+  /* Optical, not geometric: 0.62em lands the dot on the x-height of the first
+     line rather than its box, which is where the eye expects it. */
+  top: 0.62em;
+  width: 0.3rem;
+  height: 0.3rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--cw-platform-accent) 68%, transparent);
+}
+
+.listOrdered {
+  counter-reset: cw-item;
+}
+
+.listOrdered > li {
+  counter-increment: cw-item;
+}
+
+.listOrdered > li::before {
+  content: counter(cw-item) ".";
+  position: absolute;
+  left: 0;
+  width: 1.25rem;
+  text-align: left;
+  font-family: var(--cw-font-data);
+  font-size: 0.82em;
+  /* Matches the item's first line box, so the number sits on the first line's
+     baseline rather than above it: 1.85rem / 0.82rem. It tracks `.list`'s
+     line-height and has to be recomputed whenever that moves. */
+  line-height: 2.256;
+  color: var(--cw-platform-muted);
+}
+
+.step {
+  display: grid;
+  grid-template-columns: 2rem 1fr;
+  gap: var(--cw-space-sm);
+  align-items: start;
+}
+
+.stepNumber {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  font-family: var(--cw-font-data);
+  font-size: 0.85em;
+}
+
+.stepTiming {
+  display: block;
+  font-size: 0.78em;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--cw-platform-muted);
+  margin-bottom: 0.15rem;
+}
+
+.stepTitle {
+  margin: 0;
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.stepText {
+  margin: 0.3rem 0 0;
+  line-height: 1.6;
+  color: var(--cw-platform-muted);
+}
+
+/* No outline. A card mid-paragraph already separates itself with its surface
+   and its padding; the 1px rule on top of that is what made running text hitting
+   a card read as a jump rather than a change of register. */
+.practice {
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  padding: var(--cw-space-md);
+}
+
+.practiceHead {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.boundary {
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  padding: var(--cw-space-md);
+  line-height: 1.6;
+  font-size: 0.94em;
+}
+
+.checklist {
+  display: grid;
+  gap: var(--cw-space-xs);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  padding: var(--cw-space-md);
+}
+
+.checklistTitle {
+  margin: 0 0 var(--cw-space-2xs);
+  font-size: 1em;
+  font-weight: 600;
+}
+
+.checkItem {
+  /* Full-row tap target — thumbs, not cursors. */
+  display: grid;
+  grid-template-columns: 1.5rem 1fr;
+  gap: var(--cw-space-sm);
+  align-items: start;
+  min-height: var(--ds-touch-target-min);
+  padding: 0.5rem 0;
+  cursor: pointer;
+  line-height: 1.5;
+}
+
+.checkBox {
+  width: 1.5rem;
+  height: 1.5rem;
+  margin: 0;
+  accent-color: var(--cw-platform-accent);
+}
+
+.checkItemDone {
+  composes: checkItem;
+  color: var(--cw-platform-muted);
+}
+
+.media {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  border: 0;
+  border-radius: var(--cw-radius-md);
+  overflow: hidden;
+  background: var(--cw-mat-surface-sunk);
+}
+
+.image {
+  width: 100%;
+  height: auto;
+  border-radius: var(--cw-radius-md);
+  display: block;
+}
+
+.caption {
+  margin: var(--cw-space-2xs) 0 0;
+  font-size: 0.84em;
+  color: var(--cw-platform-muted);
+}
+
+.quote {
+  margin: 0;
+  padding-left: var(--cw-space-md);
+  border-left: 2px solid var(--cw-platform-border);
+  font-family: var(--cw-font-editorial);
+  font-size: 1.15em;
+  line-height: 1.5;
+}
+
+.quoteAuthor {
+  display: block;
+  margin-top: var(--cw-space-2xs);
+  font-family: var(--cw-font-ui);
+  font-size: 0.74em;
+  color: var(--cw-platform-muted);
+}
+
+.codeBlock {
+  overflow-x: auto;
+  margin: 0;
+  padding: var(--cw-space-sm);
+  border: 1px solid var(--cw-mat-stroke-inner);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font: 0.88rem/1.6 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  white-space: pre;
+}
+
+.faqItem {
+  border-bottom: 1px solid var(--cw-platform-border);
+  border-image: var(--cw-rule-fade-x);
+  padding: var(--cw-space-sm) 0;
+}
+
+.faqItem:last-child {
+  border-bottom: 0;
+}
+
+.faqQuestion {
+  min-height: var(--ds-touch-target-min);
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+  cursor: pointer;
+  list-style: none;
+}
+
+.faqAnswer {
+  margin: var(--cw-space-2xs) 0 0;
+  color: var(--cw-platform-muted);
+  line-height: 1.6;
+}
+
+.ctaBlock {
+  display: grid;
+  gap: var(--cw-space-xs);
+}
+
+.ctaLink {
+  composes: secondary from "../platform/PlatformButtons.module.css";
+}
+
+/* ── Completion bar ───────────────────────────────── */
+
+/* IT ENDS THE LESSON, IT DOES NOT RIDE IT (2026-08-28).
+
+   The control used to be sticky, so on a phone a full-width gold bar sat over
+   the bottom 48px of the reading for the whole lesson and covered the line the
+   reader had just got to. The argument for sticky was reach — the toggle is
+   always a thumb away — but a lesson is READ, and you tick it when you have
+   finished reading it, which is exactly where the bar now is: the last object
+   in the column. Nothing is lost but the obstruction.
+
+   No wrapper card: the bar used to be a raised surface whose only child was a
+   filled pill — two containers, two shadows and two radii for one checkbox. */
+.completionBar {
+  margin-top: var(--cw-space-xl);
+}
+
+/* The completion control is a CHECKBOX, not a button: marking a lesson done is
+   a state you own and can undo, not a one-way action. It is also the ONLY
+   control in this bar — going forward lives in the pager, with the next
+   lesson's real title, so a sticky strip never hides the thing it sits over. */
+.completeToggle {
+  composes: completionBar;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--cw-space-sm);
+  align-items: center;
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-sm) var(--cw-space-md);
+  border: 0;
+  border-radius: var(--cw-radius-btn);
+  background: var(--cw-platform-accent);
+  /* It floats over the lesson text now that nothing sits behind it, so it takes
+     the lift the wrapper used to carry. */
+  box-shadow: var(--cw-mat-shadow-raised);
+  color: var(--cw-platform-on-accent);
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+/* Done: the accent is spent, so the control steps back to a quiet surface and
+   the check alone carries the state. */
+/* `composes` names BOTH ancestors, and it has to: a two-level chain inside one
+   module loses the grandparent. Written as `composes: completeToggle` alone,
+   the build emitted `completeToggleDone completeToggle` and dropped
+   `completionBar` — so the moment the lesson was ticked the bar stopped being
+   sticky and lost its 32px top margin, and the whole page below it jumped. The
+   forward pager had the identical bug; those are the only two chains in the
+   codebase, and both now name every ancestor. */
+.completeToggleDone {
+  composes: completionBar completeToggle;
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+}
+
+/* Nothing to mark yet — the checklist above is the actual next action. */
+.completeToggle[data-blocked] {
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-muted);
+  cursor: not-allowed;
+}
+
+/* The native box is replaced by a compact mark: a 1.5rem control inside a
+   full-width label read as a giant checkbox and swallowed the row. */
+/* Visually hidden, NOT hidden: the input stays in the accessibility tree and
+   keeps keyboard focus — `opacity: 0` / `display: none` would take the control
+   away from anyone not using a mouse. */
+.completeInput {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  clip-path: inset(50%);
+}
+
+.completeMark {
+  display: grid;
+  place-items: center;
+  width: 1.35rem;
+  height: 1.35rem;
+  border-radius: 0.45rem;
+  /* Unticked: an empty box. The glyph is transparent rather than absent so the
+     mark never resizes when it fills in. */
+  background: transparent;
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cw-platform-on-accent) 65%, transparent);
+  color: transparent;
+}
+
+.completeToggleDone .completeMark {
+  background: var(--cw-platform-accent);
+  box-shadow: none;
+  color: var(--cw-platform-on-accent);
+}
+
+.completeToggle[data-blocked] .completeMark {
+  box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
+}
+
+.completeInput:focus-visible + .completeMark {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: 2px;
+}
+
+.completeHint {
+  margin: 0;
+  padding-inline: var(--cw-space-2xs);
+  font-size: 0.84rem;
+  color: var(--cw-platform-muted);
+}
+
+
+/* ── Reader's marks ───────────────────────────────── */
+
+/* THE LAYER IS OVER THE TEXT AND CATCHES NOTHING. Only the controls inside it
+   take the pointer; the paragraphs underneath must stay selectable, which is
+   the whole gesture this feature is built on. */
+.markLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.markLayer > * {
+  pointer-events: auto;
+}
+
+.markDots {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+/* Marginalia sits in the margin. Below the tablet boundary the column has no
+   margin to sit in, so the dot moves to the column's own edge rather than off
+   the screen. */
+/* A dot, and a target big enough to press. The mark itself is 0.4rem — the
+   size marginalia should be — and the button around it is a transparent square
+   at a thumb's size, which is why this control does not compose the button
+   contract: the contract's geometry is for buttons that carry a label, and here
+   the only visible thing is the mark. */
+.markDot {
+  position: absolute;
+  left: -1.15rem;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  margin-top: 0.1em;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.markDot::before {
+  content: "";
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-accent);
+  transition: transform 160ms ease;
+}
+
+.markDot:hover::before,
+.markDot:focus-visible::before {
+  transform: scale(1.4);
+}
+
+.markDot:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-inset);
+  border-radius: var(--cw-radius-pill);
+}
+
+/* The toolbar the selection raises. Centred on the selection and above it —
+   under it is where the phone's own selection menu lands. */
+.markToolbar {
+  position: absolute;
+  z-index: 4;
+  display: flex;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-2xs);
+  transform: translate(-50%, calc(-100% - 0.5rem));
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: 0 12px 32px color-mix(in srgb, var(--cw-platform-text) 16%, transparent);
+  white-space: nowrap;
+}
+
+.markAction {
+  composes: chrome from "../platform/PlatformButtons.module.css";
+  gap: var(--cw-space-2xs);
+}
+
+.markNotice {
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1.6rem;
+  margin: 0;
+  font-size: 0.78rem;
+  color: var(--cw-platform-muted);
+}
+
+/* The note editor. A sheet on a phone, a centred panel above it — the same
+   pair the contents drawer already is, so the reader meets one kind of panel. */
+.noteEditorBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: var(--ds-z-modal, 60);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  background: var(--cw-overlay);
+}
+
+.noteEditor {
+  width: min(100%, 32rem);
+  padding: var(--cw-space-md) var(--cw-space-md) max(var(--cw-space-lg), env(safe-area-inset-bottom));
+  border-radius: var(--cw-radius-xl) var(--cw-radius-xl) 0 0;
+  background: var(--cw-mat-surface);
+  box-shadow: 0 -12px 40px color-mix(in srgb, var(--cw-platform-text) 18%, transparent);
+}
+
+/* The passage, so the reader can see WHICH place they are writing about
+   without the sheet covering it. Two lines at most: it is a reminder of the
+   quote, not the quote. */
+.noteQuote {
+  margin: 0 0 var(--cw-space-sm);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--cw-platform-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.noteInput {
+  width: 100%;
+  padding: var(--cw-space-sm);
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-size: 0.95rem;
+  line-height: 1.6;
+  resize: vertical;
+}
+
+.noteInput:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-tight);
+}
+
+.noteActions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  margin-top: var(--cw-space-sm);
+}
+
+.noteDelete {
+  composes: text from "../platform/PlatformButtons.module.css";
+  color: var(--cw-sem-boundary);
+}
+
+.noteSave {
+  composes: secondary from "../platform/PlatformButtons.module.css";
+  composes: hug from "../platform/PlatformButtons.module.css";
+}
+
+/* A lesson that is bookmarked says so at full ink; one that is not offers the
+   outline. Same control, two states, no second button. */
+.bookmarkButton {
+  flex: none;
+}
+
+.bookmarkButton[data-marked] {
+  color: var(--cw-platform-accent);
+}
+
+
+/* ── The reader's notes on the course map ─────────── */
+
+.notesSection {
+  composes: referenceSection;
+}
+
+.notesGroup {
+  margin-top: var(--cw-space-md);
+}
+
+.notesLesson {
+  display: inline-block;
+  margin-bottom: var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+  font-size: 0.8rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.notesLesson:hover {
+  color: var(--cw-platform-text);
+}
+
+.notesList {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.notesItem {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: start;
+  gap: var(--cw-space-2xs);
+}
+
+.notesLink {
+  display: grid;
+  grid-template-columns: 1.25rem 1fr;
+  gap: var(--cw-space-xs);
+  align-items: start;
+  /* Block only: a note row is a list item sized by its text, and the inline
+     padding the button contract owns would indent it out of the column. */
+  padding-block: var(--cw-space-2xs);
+  color: inherit;
+  text-decoration: none;
+}
+
+.notesGlyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 0.15rem;
+  color: var(--cw-platform-accent);
+}
+
+.notesBody {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+}
+
+/* The passage, quoted. Two lines: enough to recognise it, never enough to be
+   a second copy of the lesson on the map. */
+.notesQuote {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--cw-platform-muted);
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+/* The reader's own words carry the row — they are the thing being looked for,
+   the quote is only where it was found. */
+.notesNote {
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+/* ── Wider viewports: additive only ───────────────── */
+
+/* 561px is the platform's tablet boundary (docs/design-system.md: mobile ≤ 560,
+   tablet 561–900, desktop ≥ 901). It used to be 48rem here — a third system,
+   in neither the shell's nor the canon's set, which left a 768–900px band where
+   the content had already gone wide while the header was still in its mobile
+   lockup. Kept in px, like every other breakpoint on the platform: these are
+   viewport sizes, not type-relative measures. */
+@media (min-width: 561px) {
+  /* Same derivation as the phone rule, with the desk's own gap under it. Two
+     `.wrap` rules used to sit here setting `margin-top` and `margin-block-start`
+     to different values three lines apart; the second silently won. */
+  .wrap {
+    margin-block-start: calc(var(--cw-space-sm) + var(--ds-touch-target-min) + var(--cw-space-2xl));
+  }
+
+
+  /* The drawer becomes a centred dialog once there is room for one. */
+  .drawerBackdrop {
+    align-items: center;
+  }
+
+  .drawer {
+    border-radius: var(--cw-radius-xl);
+    max-height: 78svh;
+  }
+
+  /* Room for marginalia arrives with the tablet column. */
+  .markDot {
+    left: -1.9rem;
+  }
+
+  /* The note sheet becomes a centred panel, like the contents drawer. */
+  .noteEditorBackdrop {
+    align-items: center;
+  }
+
+  .noteEditor {
+    border-radius: var(--cw-radius-xl);
+  }
+}
+
+/* ── Table block ──────────────────────────────────── */
+
+/* Added 2026-08-21 with the builder's second wave. A table is the one shape a
+   list cannot carry — a dose per day, a food per stage — and authors kept
+   reaching for one. */
+.tableBlock {
+  margin: 0;
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.tableTitle {
+  color: var(--cw-platform-muted);
+  font-size: 0.85em;
+  font-weight: 600;
+}
+
+/* The scroller, not the page. A table wider than the reading column has to
+   scroll inside its own box: unbounded it widens the document, and on a phone
+   that gives every screen a horizontal scroll and unsettles the fixed topbar. */
+.tableScroll {
+  overflow-x: auto;
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.tableScroll:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+
+.table th,
+.table td {
+  padding: 0.55rem 0.75rem;
+  border-bottom: 1px solid var(--cw-mat-stroke-inner);
+  text-align: start;
+  vertical-align: top;
+  line-height: 1.45;
+}
+
+.table th {
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: 0.79em;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.table tr:last-child td {
+  border-bottom: 0;
+}
+
+/* The video's frame plus the one authored value that renders beside it. A bare
+   iframe carried no room for the duration, which is why `video.durationMin`
+   sat in the contract with no consumer until 2026-08-21. */
+.mediaFigure {
+  margin: 0;
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+/* ── The way back to the top ──────────────────────────
+
+   Chrome, and it behaves like the rest of this reader's chrome: absent while
+   the page is being read downward, present on the scroll-up that also brings
+   the topbar back. See `ReaderTopButton.tsx` for why it rides that gesture
+   rather than a depth threshold of its own.
+
+   FIXED TO THE VIEWPORT, not to the column. The reading column is capped at
+   46rem and centred, so on a desk it has gutters this can sit in without ever
+   touching a line of text; on a phone there are no gutters, which is what the
+   completion offset below is for. */
+.topButton {
+  /* The icon-button idiom the rest of the platform uses — `chromeBare` for the
+     glyph-sized box, `square` for the touch minimum it rounds, `round` because
+     this one floats free of any bar and a squircle adrift on a page reads as a
+     plate rather than a control. */
+  composes: chromeBare from "../platform/PlatformButtons.module.css";
+  composes: square from "../platform/PlatformButtons.module.css";
+  composes: round from "../platform/PlatformButtons.module.css";
+  position: fixed;
+  inset-block-end: max(var(--cw-space-md), env(safe-area-inset-bottom));
+  inset-inline-end: max(var(--cw-space-md), env(safe-area-inset-right));
+  z-index: var(--ds-z-sticky);
+  /* It stands ON the reading, so it brings a ground — the chrome material the
+     topbar and the workshop's card menu already use, not a new one. A glyph
+     with nothing under it is unreadable the moment a line of text passes
+     behind it. */
+  color: var(--cw-platform-text);
+  /* OPAQUE, for the same reason the offer page's thumb bar is (2026-08-28). The
+     chrome tint is 30% of the surface, which is a ground only when there is a
+     PHOTOGRAPH behind it — the topbar's case. Here the thing behind it is the
+     reading page in that same colour, so 30% of it over 100% of it came out as
+     a glyph and a faint ring with a line of body copy running through both. A
+     control standing on the reading brings the reading's own paper with it. */
+  /* `--cw-mat-stroke-control`, not `--cw-mat-stroke`: the page under this button
+     is the reading surface and the button's own ground is the same paper, so an
+     opaque circle on it is still invisible — only the soft shadow separated
+     them. The control stroke is the one outline in the material the contrast
+     gate holds at 3:1 on both surfaces in both themes, and it exists for
+     exactly this: a secondary control that otherwise does not read as one. */
+  border: 1px solid var(--cw-mat-stroke-control);
+  background-color: var(--cw-mat-surface);
+  background-image: var(--cw-mat-grain-image);
+  box-shadow: var(--cw-mat-shadow-raised);
+  /* Not `display: none`: the control fades and lifts into place, and an element
+     that is not laid out cannot transition. Pointer events go with the opacity
+     so an invisible button is never in the way of the text under it. */
+  opacity: 0;
+  transform: translateY(0.5rem);
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+
+.topButton[data-shown="true"] {
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+/* KEPT, BUT NO LONGER TRIGGERED. The completion toggle stopped being sticky
+   (see `.completionBar`), so nothing is pinned to the bottom of the column for
+   this button to step over and `LessonView` no longer passes the flag. The rule
+   stays because the offset is still the right answer if anything is pinned
+   there again; it costs nothing while no element carries the attribute. */
+.topButton[data-clears="completion"] {
+  inset-block-end: calc(
+    max(var(--cw-space-md), env(safe-area-inset-bottom)) + var(--ds-touch-target-min) + var(--cw-space-sm)
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .topButton {
+    transition: none;
+    transform: none;
+  }
+}

@@ -4,10 +4,112 @@
     {
       "name": "dev",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 8000,
       "autoPort": false,
-      "url": "http://localhost:8000/consult-alt/"
+      "url": "http://localhost:8000/"
+    },
+    {
+      "name": "dev-8030",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "8030"
+      ],
+      "port": 8030,
+      "autoPort": false,
+      "url": "http://localhost:8030/"
+    },
+    {
+      "name": "proto",
+      "runtimeExecutable": "python3",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "8932",
+        "--directory",
+        "docs/design-system/prototypes"
+      ],
+      "port": 8932,
+      "autoPort": false,
+      "url": "http://localhost:8932"
+    },
+    {
+      "name": "dev-hero-worktree",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd .claude/worktrees/centerway-ds-audit-hero-500fad && npx next dev -p 8041"
+      ],
+      "port": 8041,
+      "autoPort": false,
+      "url": "http://localhost:8041/"
+    },
+    {
+      "name": "dev-8041",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "8041"
+      ],
+      "port": 8041,
+      "autoPort": false,
+      "url": "http://localhost:8041/"
+    },
+    {
+      "name": "dev-8060",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "8060"
+      ],
+      "port": 8060,
+      "autoPort": false,
+      "url": "http://localhost:8060/"
+    },
+    {
+      "name": "prod-8061",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "start",
+        "-p",
+        "8061"
+      ],
+      "port": 8061,
+      "autoPort": false,
+      "url": "http://localhost:8061/"
+    },
+    {
+      "name": "hero-worktree",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd .claude/worktrees/dark-theme-cabinet-hero && npx next dev -p 8070"
+      ],
+      "port": 8070,
+      "autoPort": false,
+      "url": "http://localhost:8070/"
+    },
+    {
+      "name": "dev-dark-worktree-8070",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd .claude/worktrees/dark-theme-cabinet-hero && npx next dev -p 8070"
+      ],
+      "port": 8070,
+      "autoPort": false,
+      "url": "http://localhost:8070/"
     }
   ]
 }

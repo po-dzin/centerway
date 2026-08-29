@@ -1,3 +1,11 @@
+/* SCRIMS AND SHADOWS TAKE `--cw-mat-scrim-ink`, NEVER `--cw-platform-text`
+   (2026-08-28). Every ink in this file darkens something — the floor under
+   cream type on a photograph, the shadow under a tile's CTA — and the text
+   token INVERTS with the theme: on the night palette it resolves to #e4e4e1,
+   so the 86% "scrim" under every card title came out as a white veil over the
+   picture and the cream copy on it had nothing to sit on. `--cw-mat-scrim-ink`
+   is the one ink that is the same colour in both themes, which is the whole
+   reason it exists; the photo heroes already use it for exactly this. */
 /* Offer, catalog, and program-detail block recipes.
    Extracted from PlatformBlocks.module.css during semantic family split. */
 
@@ -56,6 +64,100 @@
     min-width: 100%;
   }
 
+  /* Programs scroll instead of stacking or splitting. Two-up on a 375px phone
+     gave each card ~163px: the title broke mid-word, the copy clamped to a
+     fragment and "Деталі курсу" wrapped onto two lines inside the button. One
+     per row would be honest but turns six offers into six screens of scrolling.
+     A snap rail at 78% keeps the card readable and lets the cut edge of the
+     next one say, without a control, that there is more. */
+  .programShowcase,
+  .programShowcase[data-layout="mini"] {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 78%;
+    grid-template-columns: none;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x mandatory;
+    /* The rail bleeds to both edges of the screen while its items stay on the
+       container's own margin — hence the negative margin and the matching
+       padding, and scroll-padding so a snapped card lands on that margin. */
+    margin-inline: calc(var(--cw-space-md) * -1);
+    padding-inline: var(--cw-space-md);
+    scroll-padding-inline: var(--cw-space-md);
+    scrollbar-width: none;
+  }
+
+  .programShowcase::-webkit-scrollbar {
+    display: none;
+  }
+
+  .programShowcase > * {
+    scroll-snap-align: start;
+  }
+
+  /* One height for every card on every rail. Cards used to size to their copy —
+     384px for mini-courses, 464px two blocks down — so scrolling the home page
+     felt like passing three different catalogues. Fixed, not min-height: the
+     point is that they match, and the copy is clamped to fit rather than the
+     card growing to hold it. */
+  .programShowcase > .programTile,
+  .aggregateRail > .programTile {
+    height: var(--ds-offer-card-height-rail);
+    min-height: 0;
+  }
+
+}
+
+/* ── The tablet band ──────────────────────────────────
+
+   A rail is a phone answer: it trades a control for a cut edge because there
+   is only room for one card. From 561px there is room for two, and the rail
+   became the wrong shape — an 834px iPad showed a single 626px card with the
+   next one clipped, where 905px showed the same offers two-up at 428px. The
+   cliff was the layout, not the width.
+
+   Card height, clamps and gaps stay the rail's: the cards are matched objects
+   here for the same reason they are on a phone. Only the carrier changes.
+
+   This block sits in the same file as the base grid and the phone rail, and
+   after both, so the cascade is decided by source order inside one stylesheet.
+   These rules used to live in PlatformResponsive.module.css, where the winner
+   depended on the order a given route bundled the two files in — /programs and
+   the home page resolved the same rail differently. */
+@media (min-width: 561px) and (max-width: 900px) {
+  .programShowcase,
+  .programShowcase[data-layout="mini"],
+  .aggregateRail,
+  .aggregateRail[data-layout="single"] {
+    display: grid;
+    grid-auto-flow: row;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-auto-columns: auto;
+    gap: 1rem;
+    overflow: visible;
+    /* Undo the phone rail's edge bleed — a grid has no cut edge to show. */
+    margin: 0;
+    padding: 0;
+    scroll-padding-inline: 0;
+    scroll-snap-type: none;
+  }
+
+  /* One product is one card, not a card and an empty cell beside it. */
+  .aggregateRail[data-layout="single"] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* The phone rails size their items as flex tracks; a grid cell sizes itself. */
+  .programShowcase > *,
+  .aggregateRail > *,
+  .aggregateRail[data-layout="single"] > * {
+    flex: initial;
+    width: auto;
+    min-width: 0;
+    flex-basis: auto;
+    scroll-snap-align: none;
+  }
 }
 
 .programTile {
@@ -63,10 +165,18 @@
   --program-tile-copy: color-mix(in srgb, var(--cw-platform-accent-contrast) 82%, transparent);
   --program-tile-button-bg: color-mix(in srgb, var(--cw-platform-accent) 76%, var(--cw-platform-accent-strong) 24%);
   --program-tile-button-border: color-mix(in srgb, var(--cw-platform-accent) 56%, transparent);
-  --program-tile-shadow: var(--cw-depth-shadow-soft);
+  --program-tile-shadow: var(--cw-mat-shadow-soft);
   --program-photo-active-image: var(--program-photo-image);
   --program-photo-position: center center;
-  min-height: var(--ds-offer-card-min-height-desktop);
+  /* ONE CARD SIZE, EVERY RAIL. Mini-courses used to draw a `compact` tile —
+     24rem against the programme's 29rem — so /programs read as two catalogues
+     stacked, and a reader comparing a mini-course to a programme was comparing
+     two different objects. The phone rail had already settled this ("one height
+     for every card on every rail", above); the desktop kept the split. Height,
+     not min-height, for the same reason it is fixed there: the card's three
+     text rows are clamped to 1/1/3 lines, so a card that grows is a card that
+     stopped matching its row. */
+  height: var(--ds-offer-card-height-desktop);
   position: relative;
   display: flex;
   align-items: flex-end;
@@ -77,8 +187,50 @@
   box-shadow: var(--program-tile-shadow);
 }
 
-.programTile[data-size="compact"] {
-  min-height: var(--ds-offer-card-compact-min-height-desktop);
+/* THE KIND, ON THE PLATE. Top-left because that is where a reader's eye lands
+   first in a left-to-right grid, and because the bottom of every tile is
+   already spoken for by the body block.
+
+   It draws its own ground rather than sitting on the photo bare: a cover is an
+   arbitrary photograph, and white text over "whatever the author uploaded" is
+   the one contrast failure a design system cannot check for. The ground is the
+   card's own accent at high opacity, so the chip belongs to the card rather
+   than looking like a sticker on the picture. */
+.programTileKind {
+  position: absolute;
+  inset-block-start: var(--cw-space-sm);
+  inset-inline-start: var(--cw-space-sm);
+  z-index: 1;
+  margin: 0;
+  padding: 0.3rem 0.6rem;
+  border-radius: var(--cw-radius-sm);
+  background: color-mix(in srgb, var(--cw-platform-accent-strong) 88%, transparent);
+  color: var(--cw-platform-accent-contrast);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  backdrop-filter: var(--cw-mat-filter);
+}
+
+/* The sections, under the name. A row, wrapping, because a course with three of
+   them must not push the description out of the tile's fixed height — the two
+   text rows below are clamped and this one has to behave like them. */
+.programTileCategories {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.72rem;
+  color: var(--program-tile-copy);
+}
+
+.programTileCategories li {
+  padding: 0.15rem 0.45rem;
+  border: 1px solid color-mix(in srgb, var(--cw-platform-accent-contrast) 30%, transparent);
+  border-radius: var(--cw-radius-sm);
 }
 
 .offerHeroVisualCard {
@@ -90,7 +242,7 @@
   border-radius: var(--cw-card-radius);
   color: var(--cw-platform-accent-contrast);
   background: var(--cw-platform-accent-strong);
-  box-shadow: var(--cw-depth-shadow-soft);
+  box-shadow: var(--cw-mat-shadow-soft);
 }
 
 .offerHeroVisualCard .programPhoto {
@@ -100,8 +252,8 @@
 
 .offerHeroVisualCard[data-has-art="true"] .programPhoto {
   background:
-    linear-gradient(180deg, transparent 0 22%, color-mix(in srgb, var(--cw-platform-text) 84%, transparent) 100%),
-    linear-gradient(135deg, color-mix(in srgb, var(--cw-platform-text) 12%, transparent), color-mix(in srgb, var(--cw-platform-text) 30%, transparent)),
+    linear-gradient(180deg, transparent 0 22%, color-mix(in srgb, var(--cw-mat-scrim-ink) 84%, transparent) 100%),
+    linear-gradient(135deg, color-mix(in srgb, var(--cw-mat-scrim-ink) 12%, transparent), color-mix(in srgb, var(--cw-mat-scrim-ink) 30%, transparent)),
     var(--program-photo-image) var(--program-photo-position, center 20%) / cover no-repeat;
 }
 
@@ -121,7 +273,7 @@
   inset: 0;
   content: "";
   background:
-    linear-gradient(180deg, transparent 0 30%, color-mix(in srgb, var(--cw-platform-text) 80%, transparent) 100%);
+    linear-gradient(180deg, transparent 0 30%, color-mix(in srgb, var(--cw-mat-scrim-ink) 80%, transparent) 100%);
   opacity: 1;
   pointer-events: none;
 }
@@ -204,7 +356,7 @@
   background:
     radial-gradient(circle at 18% 16%, color-mix(in srgb, var(--cw-platform-accent) 10%, transparent) 0 0.16rem, transparent 0.18rem),
     radial-gradient(circle at 78% 72%, color-mix(in srgb, var(--cw-platform-accent) 10%, transparent) 0 0.14rem, transparent 0.16rem),
-    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 10%, transparent), color-mix(in srgb, var(--cw-platform-text) 72%, transparent)),
+    linear-gradient(180deg, color-mix(in srgb, var(--cw-mat-scrim-ink) 10%, transparent), color-mix(in srgb, var(--cw-mat-scrim-ink) 72%, transparent)),
     linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-method-ink) 94%, black 6%), color-mix(in srgb, var(--cw-sem-guide-strong) 88%, black 12%));
 }
 
@@ -235,14 +387,14 @@
   inset: 0;
   content: "";
   background:
-    linear-gradient(180deg, transparent 0 38%, color-mix(in srgb, var(--cw-platform-text) 78%, transparent) 100%);
+    linear-gradient(180deg, transparent 0 38%, color-mix(in srgb, var(--cw-mat-scrim-ink) 78%, transparent) 100%);
   opacity: 1;
   pointer-events: none;
 }
 
 .programTile[data-visual="movement"] .programPhoto {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 6%, transparent), color-mix(in srgb, var(--cw-platform-text) 70%, transparent)),
+    linear-gradient(180deg, color-mix(in srgb, var(--cw-mat-scrim-ink) 6%, transparent), color-mix(in srgb, var(--cw-mat-scrim-ink) 70%, transparent)),
     linear-gradient(
       135deg,
       var(--cw-platform-visual-movement-start) 0%,
@@ -259,13 +411,13 @@
 
 .programTile[data-visual="movement"] .programPhoto::after {
   background:
-    linear-gradient(180deg, transparent 0 42%, color-mix(in srgb, var(--cw-platform-text) 76%, transparent) 100%),
+    linear-gradient(180deg, transparent 0 42%, color-mix(in srgb, var(--cw-mat-scrim-ink) 76%, transparent) 100%),
     linear-gradient(82deg, transparent 0 78%, color-mix(in srgb, var(--cw-platform-accent-contrast) 22%, transparent) 78.4% 78.8%, transparent 79.2%);
 }
 
 .programTile[data-visual="water"] .programPhoto {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 8%, transparent), color-mix(in srgb, var(--cw-platform-text) 68%, transparent)),
+    linear-gradient(180deg, color-mix(in srgb, var(--cw-mat-scrim-ink) 8%, transparent), color-mix(in srgb, var(--cw-mat-scrim-ink) 68%, transparent)),
     linear-gradient(
       135deg,
       var(--cw-platform-visual-water-start) 0%,
@@ -283,14 +435,19 @@
 
 .programTile[data-visual="water"] .programPhoto::after {
   background:
-    linear-gradient(180deg, transparent 0 38%, color-mix(in srgb, var(--cw-platform-text) 76%, transparent) 100%),
+    linear-gradient(180deg, transparent 0 38%, color-mix(in srgb, var(--cw-mat-scrim-ink) 76%, transparent) 100%),
     radial-gradient(circle at 26% 28%, color-mix(in srgb, var(--cw-platform-accent-contrast) 9%, transparent) 0 0.16rem, transparent 0.18rem),
     radial-gradient(circle at 62% 22%, color-mix(in srgb, var(--cw-platform-accent-contrast) 7%, transparent) 0 0.12rem, transparent 0.14rem);
 }
 
 .programTile[data-program="way21"][data-has-art="true"] .programPhoto::after {
   background:
-    linear-gradient(180deg, transparent 0 32%, color-mix(in srgb, var(--cw-platform-text) 78%, transparent) 100%);
+    linear-gradient(
+      180deg,
+      transparent 0 34%,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 46%, transparent) 62%,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 86%, transparent) 100%
+    );
   opacity: 1;
 }
 
@@ -380,7 +537,7 @@
 
 .programTile[data-visual="mountain"] .programPhoto {
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--cw-platform-text) 10%, transparent), color-mix(in srgb, var(--cw-platform-text) 72%, transparent)),
+    linear-gradient(180deg, color-mix(in srgb, var(--cw-mat-scrim-ink) 10%, transparent), color-mix(in srgb, var(--cw-mat-scrim-ink) 72%, transparent)),
     linear-gradient(
       135deg,
       var(--cw-platform-visual-mountain-start) 0%,
@@ -398,7 +555,7 @@
 
 .programTile[data-visual="mountain"] .programPhoto::after {
   background:
-    linear-gradient(180deg, transparent 0 42%, color-mix(in srgb, var(--cw-platform-text) 76%, transparent) 100%),
+    linear-gradient(180deg, transparent 0 42%, color-mix(in srgb, var(--cw-mat-scrim-ink) 76%, transparent) 100%),
     linear-gradient(152deg, transparent 0 54%, color-mix(in srgb, var(--cw-platform-accent-contrast) 18%, transparent) 54.5% 55%, transparent 55.5%);
 }
 
@@ -408,8 +565,8 @@
 
 .offerHeroVisualCard[data-has-art="true"] .programPhoto {
   background:
-    linear-gradient(180deg, transparent 0 24%, color-mix(in srgb, var(--cw-platform-text) 82%, transparent) 100%),
-    linear-gradient(135deg, color-mix(in srgb, var(--cw-platform-text) 12%, transparent), color-mix(in srgb, var(--cw-platform-text) 34%, transparent)),
+    linear-gradient(180deg, transparent 0 24%, color-mix(in srgb, var(--cw-mat-scrim-ink) 82%, transparent) 100%),
+    linear-gradient(135deg, color-mix(in srgb, var(--cw-mat-scrim-ink) 12%, transparent), color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent)),
     var(--program-photo-image) var(--program-photo-position) / cover no-repeat;
 }
 
@@ -427,9 +584,23 @@
   opacity: 0;
 }
 
+/* THE SCRIM THAT ACTUALLY RUNS on a photographed tile — `:not()` carries the
+   specificity of its argument, so this rule beats the plain `[data-has-art]`
+   pair further down whatever the file order is.
+
+   THE RAMP HAS A MIDDLE NOW (2026-08-28). Ink from 26% straight to 86% at the
+   bottom edge leaves under half of it where the body copy actually sits, and on
+   the rails' food photography that is cream type on lit plaster. The stop at
+   62% is the floor the copy stands on; the top third of the frame is untouched,
+   so the picture is still a picture. */
 .programTile[data-has-art="true"]:not([data-program="way21"]) .programPhoto::after {
   background:
-    linear-gradient(180deg, transparent 0 26%, color-mix(in srgb, var(--cw-platform-text) 86%, transparent) 100%);
+    linear-gradient(
+      180deg,
+      transparent 0 34%,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 46%, transparent) 62%,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 86%, transparent) 100%
+    );
   opacity: 1;
 }
 
@@ -437,22 +608,47 @@
 .programTile[data-has-art="true"] .programTileBody h3,
 .programTile[data-has-art="true"] .programTileBody p,
 .programTile[data-has-art="true"] .programLink {
-  text-shadow: 0 1px 1px color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+  text-shadow: 0 1px 1px color-mix(in srgb, var(--cw-mat-scrim-ink) 34%, transparent);
 }
 
+/* Restored 2026-08-21: these went missing together with the button-contract
+   rewrite of .programLink, and their loss is what emptied the offer cards —
+   the photo layer is absolutely positioned, so without `position: relative;
+   z-index: 1` here the body renders *under* it. The title, the copy and the
+   CTA were all in the DOM, in cream, behind a photograph. */
 .programTile[data-has-art="true"] .programTileBody .label {
   color: var(--program-label-fg);
 }
 
+/* With real art the generated texture comes off and the scrim gets stronger:
+   cream type over a photograph needs a floor to sit on. */
 .programTile[data-has-art="true"] .programPhoto::before,
 .offerHeroVisualCard[data-has-art="true"] .programPhoto::before {
   background: none;
   opacity: 0;
 }
 
-.programTile[data-has-art="true"] .programPhoto::after,
+/* THIS IS THE SCRIM THAT ACTUALLY RUNS on a tile with a photograph, and it was
+   the weakest of the three written for one (2026-08-28). The rule above it —
+   `[data-has-art]:not([data-program="way21"])`, ink to 86% from 26% — is the
+   one the note was written about, and it never applied: this pair is later in
+   the file at the same specificity, so `transparent 0 50%` won and the body
+   copy sat at roughly a third of the intended floor. On the food photography in
+   the rails that is cream type on lit plaster.
+   The ramp starts where the label does and is at full strength under the CTA;
+   the top half of the frame is untouched, so the picture is still a picture. */
+/* The hero card only. `.programTile` used to be on this selector too and never
+   won it — the `:not([data-program="way21"])` rule above outranks it — so the
+   file carried two scrims for one element, and the note arguing for the stronger
+   one sat on the rule that never ran. One element, one rule. */
 .offerHeroVisualCard[data-has-art="true"] .programPhoto::after {
-  background: linear-gradient(180deg, transparent 0 50%, color-mix(in srgb, var(--cw-platform-text) 72%, transparent) 100%);
+  background:
+    linear-gradient(
+      180deg,
+      transparent 0 34%,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 46%, transparent) 62%,
+      color-mix(in srgb, var(--cw-mat-scrim-ink) 86%, transparent) 100%
+    );
   opacity: 1;
 }
 
@@ -470,67 +666,253 @@
   margin: 0;
 }
 
+/* One grid cell each, not one row each. `pretitle`/`posttitle` are the
+   author's own optional lines around the eyebrow and the name; wrapping them
+   with the badge/title they sit beside keeps the card's fixed row count
+   (`.label`, `h3`, description, footer) true whether or not an author wrote
+   them — see the preview-format note below. */
+.programTileEyebrow,
+.programTileHeadline {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+/* ── The preview format ───────────────────────────────
+
+   A card is a PREVIEW of an offer, not a small copy of its page, and its three
+   text rows have fixed heights so that a row of cards reads as one object:
+
+     .label  — one line, the offer page's badge (kind · duration);
+     h3      — one line, the name;
+     p       — three lines, why it exists.
+
+   What forced this: a course out of the builder carries whatever its author
+   typed, and Reset Day arrived with «Розвантажувальний день — практикум з
+   умовного голодування» over a two-line uppercase tagline. Four rows of title
+   in a 24rem tile, and the two cards beside it were pushed out of alignment by
+   a string. The string rules live in src/lib/platform/offerPreview.ts; these
+   are the ceilings that hold when an author writes past them anyway.
+
+   The title steps down from the display size to its own: a name that has to
+   survive on one line inside a card is not the same type job as a heading with
+   the width of a section. */
 .programTileBody h3 {
+  display: -webkit-box;
+  overflow: hidden;
   color: var(--program-tile-fg);
-  font-size: var(--ds-type-display-size);
-  line-height: var(--ds-type-display-line-height);
+  font-size: var(--ds-offer-card-title-size);
+  line-height: var(--ds-offer-card-title-line-height);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
 }
 
-.programTileBody p:not(.label) {
-  color: var(--program-tile-copy);
-  line-height: var(--ds-type-body-line-height);
-}
-
-.programTile[data-size="compact"] .programTileBody p:not(.label) {
+.programTileBody .label {
   display: -webkit-box;
   overflow: hidden;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
+  -webkit-line-clamp: 1;
 }
 
+.programTileBody p:not(.label) {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--program-tile-copy);
+  line-height: var(--ds-type-body-line-height);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+/* Geometry, type and focus come from the contract; only the fill is local,
+   because a program tile paints its own theme (--program-tile-*). Composing
+   `base` rather than `primary` is the point — a themed control still owes the
+   system its size, weight and corner.
+
+   FULL CARD WIDTH, CAPPED AT THE DEFAULT CARD'S. `fit-content` sized the CTA to
+   its own label, so «Деталі курсу» and «Деталі програми» came out two different
+   widths in one row and neither reached the card's edge — three cards with three
+   different stubs floating in their footers. The card is the measure now.
+
+   The cap is what keeps a one-up and a two-up row honest. Those layouts hand the
+   tile a much wider cell, and a CTA that filled it would be a different control
+   from the one the three-up row draws — same page, same card, same job, three
+   sizes. `--ds-button-max-width` (22rem) sits just above the default tile's
+   inner width (`--ds-offer-card-width-desktop` 24rem less 2×1.25rem padding =
+   21.5rem), so at the default size the button spans the card exactly and in a
+   wider cell it stops at the size it already had. `.base` owns that cap; nothing
+   is restated here. */
 .programLink {
+  composes: base from "./PlatformButtons.module.css";
+  composes: fill from "./PlatformButtons.module.css";
+  border: 1px solid var(--program-tile-button-border);
+  color: var(--program-tile-fg);
+  background: var(--program-tile-button-bg);
+  box-shadow: 0 12px 24px color-mix(in srgb, var(--cw-mat-scrim-ink) 18%, transparent);
+}
+
+/* Whole-card route to the detail page.
+
+   Why a sibling overlay and not the usual `::after` on the CTA: that pattern
+   needs no positioned ancestor between the link and the card, and
+   .programTileBody must keep `position: relative` — that is what lifts the copy
+   above the absolutely-positioned photo (see the 2026-08-21 note above). So the
+   overlay is its own element, anchored straight to the tile.
+
+   Cost, stated plainly: a sheet over the card means the copy inside it can no
+   longer be selected by dragging. That is the accepted trade for card-wide
+   click, and it is why nothing else in the card is interactive. */
+.programTileOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+}
+
+/* Drawn inside the tile: `.programTile` clips overflow, so an outward ring
+   would be cut off. Never `outline: none` without a replacement — same rule the
+   button base follows. */
+.programTileOverlay:focus-visible {
+  outline: 2px solid var(--cw-platform-accent);
+  outline-offset: -4px;
+}
+
+/* The CTA is no longer the element the pointer or the keyboard lands on — the
+   overlay sits on top of it — so both states are driven by the card. Same
+   declarations as before, new trigger.
+
+   `:has()` rather than a sibling combinator: the card is what reacts, and
+   reading it off the tile keeps hover and focus in one place instead of one
+   rule that walks up and another that walks across. */
+.programTile:hover .programLink,
+.programTile:has(.programTileOverlay:focus-visible) .programLink {
+  transform: translateY(var(--ds-button-lift));
+  background: color-mix(in srgb, var(--program-tile-button-bg) 88%, var(--cw-platform-surface) 12%);
+  box-shadow: 0 16px 28px color-mix(in srgb, var(--cw-mat-scrim-ink) 22%, transparent);
+}
+
+/* Tests hub: a tile can carry a format line and can describe a surface that does
+   not exist yet. A planned tile keeps the tile rhythm but never offers an action. */
+.programTileBody[data-has-meta="true"] {
+  grid-template-rows: auto auto auto 1fr auto;
+}
+
+/* The context list, inside the card it describes. The description row gives up
+   the slack instead of the list, so cards with and without points still line
+   their CTAs up along the bottom of the row. */
+.programTileBody[data-has-points="true"] {
+  grid-template-rows: auto auto 1fr auto auto;
+}
+
+.programTileBody[data-has-meta="true"][data-has-points="true"] {
+  grid-template-rows: auto auto auto 1fr auto auto;
+}
+
+/* Marker inside the text column, the platform's one list rule — see
+   `.timeline` in PlatformBlocksBase.module.css. On a tile that matters twice
+   over: the card has 1.25rem of padding and a hanging marker would sit on the
+   photograph. */
+.programTilePoints {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
+}
+
+.programTilePoints li {
+  position: relative;
+  padding-inline-start: 0.95rem;
+  color: color-mix(in srgb, var(--program-tile-fg) 88%, transparent);
+}
+
+.programTilePoints li::before {
+  content: "";
+  position: absolute;
+  left: 0.1rem;
+  top: 0.6em;
+  width: 0.26rem;
+  height: 0.26rem;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--program-tile-fg) 62%, transparent);
+}
+
+.programTileMeta {
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.programTileMeta.programTileMeta {
+  color: color-mix(in srgb, var(--program-tile-fg) 84%, transparent);
+}
+
+/* Doubled class, same reason as `.programTileMeta.programTileMeta` above:
+   both sit on a `<p>` and would otherwise lose the cascade to the earlier,
+   more specific `.programTileBody p:not(.label)` (3-line, `--program-tile-copy`). */
+.programTilePretitle.programTilePretitle,
+.programTilePosttitle.programTilePosttitle {
+  display: -webkit-box;
+  overflow: hidden;
+  color: color-mix(in srgb, var(--program-tile-fg) 84%, transparent);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  line-height: var(--ds-type-body-sm-line-height);
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.programTileStatus {
   width: fit-content;
   min-height: var(--ds-button-min-height);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: 0 1rem;
-  border: 1px solid var(--program-tile-button-border);
-  border-radius: var(--ds-radius-button-soft);
+  border: 1px dashed color-mix(in srgb, var(--program-tile-fg) 44%, transparent);
+  border-radius: var(--cw-radius-btn);
   color: var(--program-tile-fg);
-  background: var(--program-tile-button-bg);
-  box-shadow: 0 12px 24px color-mix(in srgb, var(--cw-platform-text) 18%, transparent);
-  font-weight: 800;
-  text-decoration: none;
-  transition: transform 160ms ease, background 160ms ease, box-shadow 160ms ease;
+  background: transparent;
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
-.programLink:hover {
-  transform: translateY(-1px);
-  background: color-mix(in srgb, var(--program-tile-button-bg) 88%, var(--cw-platform-surface) 12%);
-  box-shadow: 0 16px 28px color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
+.programTile[data-status="planned"] {
+  --program-tile-shadow: var(--cw-mat-shadow-soft);
+}
+
+.programTile[data-status="planned"] .programPhoto {
+  filter: saturate(0.72);
 }
 
 .programOfferDetailsGrid {
   align-items: start;
 }
 
-.programResultList li {
-  min-height: 0;
-}
-
-.programFormatMeta {
-  display: grid;
-  gap: 0.75rem;
+/* Format facts are a list of sentences, so they are a .timeline like every
+   other list on the platform — the plated <span> stack this replaced was the
+   same five-cards-in-a-card shape, mirrored in the second column. Only the top
+   step is local: this list follows a paragraph rather than a heading. */
+.programMetaList {
   margin-top: 1rem;
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-sm-line-height);
 }
 
-.programFormatMeta span {
-  display: block;
-  padding: 0.95rem 1rem;
-  border-radius: var(--cw-card-radius);
-  color: var(--cw-platform-muted);
-  background: var(--cw-depth-card-bg);
-  box-shadow: var(--cw-depth-shadow-soft);
-  line-height: var(--ds-type-body-sm-line-height);
+/* Reduced motion: offer/test tiles keep the hover surface change, lose the lift. */
+@media (prefers-reduced-motion: reduce) {
+  .programLink {
+    transition: none;
+  }
+
+  .programLink:hover {
+    transform: none;
+  }
 }

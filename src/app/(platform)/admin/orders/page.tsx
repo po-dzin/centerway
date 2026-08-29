@@ -140,9 +140,13 @@ function ResendAccessButton({ orderRef, labels }: {
         if (loading) return;
         setLoading(true);
         try {
+            const { data: { session } } = await supabaseClient.auth.getSession();
             const res = await fetch("/api/tokens/create", {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
+                headers: {
+                    "Content-Type": "application/json",
+                    ...(session ? { Authorization: `Bearer ${session.access_token}` } : {}),
+                },
                 body: JSON.stringify({ order_ref: orderRef }),
             });
             const data = await res.json();
@@ -697,7 +701,7 @@ function PersonalOfferPanel({ labels }: { labels: PersonalOfferLabels }) {
 
 export default function OrdersPage() {
     const { lang, t } = useI18n();
-    const isRu = lang === "ru";
+    const isUk = lang === "uk";
     const locale = getAdminLocale(lang);
     const statusLabel: Record<string, string> = {
         paid: t("orders_status_paid"),
@@ -871,7 +875,7 @@ export default function OrdersPage() {
 
     const getOrdersCountLabel = (value: number) => {
         if (value === 0) return t("orders_count_zero");
-        if (!isRu) return `${value} ${t("orders_count_en")}`;
+        if (!isUk) return `${value} ${t("orders_count_en")}`;
         const mod10 = value % 10;
         const mod100 = value % 100;
         if (mod10 === 1 && mod100 !== 11) return `${value} ${t("orders_count_one")}`;

@@ -7,7 +7,7 @@
   /* Розвантажувальний день palette — light sage green + honey gold (lighter/emotional) */
   --ink:var(--cw-net-ink,#284a3b);            /* soft mineral green ink */
   --ink-soft:var(--cw-net-ink-soft,#3a5e4d);
-  --indigo:var(--cw-net-route,#588a72);         /* light sage route */
+  --indigo:var(--cw-net-route,#55806a);         /* lighter warm route */
   --indigo-bright:var(--cw-net-route-bright,#6fa085);
   --indigo-tint:var(--cw-net-route-soft,#eef5f0);
   --chip:var(--cw-net-chip,#e7f1ea);
@@ -15,7 +15,7 @@
   --cta:var(--cw-net-gold,#dba54f);            /* platform gold accent (--cw-sem-warmth) */
   --cta-strong:var(--cw-net-gold-strong,#c2902f);
   --on-cta:var(--cw-net-on-gold,#22382e);        /* deep sage ink on gold (AA) */
-  --cream:var(--cw-net-canvas,#f9f7ef);          /* brighter warm canvas, more air */
+  --cream:var(--cw-net-canvas,#fdf6ec);          /* brighter warm canvas, more air */
   --surface:var(--cw-net-surface,#ffffff);
   --surface-cool:var(--cw-net-surface-cool,#f3f7f1);
   --line:var(--cw-net-line,#e0eadf);
@@ -25,7 +25,7 @@
   --text-soft:var(--cw-net-text-soft,#74807a);
   --gold:var(--cw-net-gold,#dba54f);
   /* dark surfaces + on-dark palette */
-  --irem-dark-1:#23463a; --irem-dark-2:#356152;
+  --irem-dark-1:#24392c; --irem-dark-2:#3a5c48;
   --irem-grad-dark:linear-gradient(165deg,var(--irem-dark-1),var(--irem-dark-2));
   --irem-gold-bright:#e8bd6a; --irem-gold-soft:#edc371; --irem-gold-tint:#f6eedb;
   --irem-on-dark-soft:#d6e6da; --irem-on-dark-muted:#bcd0c1; --irem-on-dark-faint:#86a08e; --irem-on-dark-label:#b0c8b6;
@@ -45,11 +45,30 @@
   --landing-shadow-card-unified:0 18px 52px rgba(40,74,59,.1);
   --landing-shadow-cta:0 12px 28px rgba(40,74,59,.14);
   --landing-radius-card-unified:1.65rem;
-  --landing-radius-cta-control:1.05rem;
+  /* the button corner is the contract's; see docs/design-system.md "Buttons" */
+  --landing-radius-cta-control:var(--r-btn,1rem);
   --landing-type-caption-size:.76rem;
   --landing-type-body-size:1rem;
   --landing-type-button-size:1rem;
 }
+
+/* Photos shown plain — no fade/gradient overlay on the author photo. */
+[data-cw-landing="reset-day"] .author-photo img{-webkit-mask-image:none;mask-image:none}
+
+/* Reset Day offer answers one decision; align its content with the surrounding
+   reading column instead of centering a separate visual island. */
+[data-cw-landing="reset-day"] .offer{text-align:left}
+/* Switching the block to the left rail also changes what its measure has to do.
+   Centred, the shared 20ch reads as a balanced 45%-wide statement; left-aligned
+   it becomes a column stranded in the left half of an 1080px card — the same
+   thing 24ch was doing to .prob-punch. The measure moves with the alignment. */
+[data-cw-landing="reset-day"] .offer h2,
+[data-cw-landing="reset-day"] .offer p{margin-inline:0}
+[data-cw-landing="reset-day"] .offer h2{max-width:26ch}
+[data-cw-landing="reset-day"] .offer-price,
+[data-cw-landing="reset-day"] .offer-pay{text-align:center}
+[data-cw-landing="reset-day"] .offer-price__amount{display:flex;align-items:baseline;justify-content:center;gap:.55rem}
+[data-cw-landing="reset-day"] .offer-price__amount s{font-family:var(--f-display);font-size:clamp(1.35rem,5vw,1.7rem);font-weight:400;color:var(--irem-on-dark-muted)}
 
 /* ============ HERO EXPERIMENT — portrait stripe ============ */
 .hero--photo-stripe .hero-grid{
@@ -211,29 +230,25 @@
 }
 
 @media(min-width:768px){
+  /* Grid instead of flex: the photo is much taller than the text (min-height
+     640px vs its natural content height), so the text+CTA column is centered
+     against it as one balanced group via align-content — rather than pinned
+     to the top with a large dead gap before the price/CTA (the old flex-row
+     layout let hero-actions start only after the photo's full height). */
   .hero--photo-stripe .hero-grid{
     --reset-hero-col-gap:clamp(28px,4.2vw,52px);
-    display:flex;
-    flex-direction:column;
-    gap:1.2rem;
-    min-height:0;
-    align-items:stretch;
-  }
-  .hero--photo-stripe .hero-top{
     display:grid;
     grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-    gap:var(--reset-hero-col-gap);
-    align-items:stretch;
-    width:100%;
+    grid-template-rows:auto auto;
+    column-gap:var(--reset-hero-col-gap);
+    row-gap:1.2rem;
+    align-content:center;
+    min-height:0;
   }
-  .hero--photo-stripe .hero-visual,
-  .hero--photo-stripe .hero-main,
-  .hero--photo-stripe .hero-actions,
-  .hero--photo-stripe .hero-badge,
-  .hero--photo-stripe .hero-copy{
-    grid-area:auto;
-  }
+  .hero--photo-stripe .hero-top{display:contents}
   .hero--photo-stripe .hero-visual{
+    grid-column:1;
+    grid-row:1 / 3;
     order:0;
     position:relative;
     right:auto;
@@ -246,17 +261,21 @@
     pointer-events:none;
   }
   .hero--photo-stripe .hero-main{
+    grid-column:2;
+    grid-row:1;
     order:0;
     justify-content:flex-start;
-    align-self:start;
+    align-self:end;
     min-height:0;
-    padding-top:clamp(20px,2vw,34px);
+    padding-top:0;
   }
   .hero--photo-stripe .hero-badge{margin-bottom:.8rem}
   .hero--photo-stripe .hero-copy{margin-bottom:0;padding-right:0}
   .hero--photo-stripe .hero-actions{
-    width:calc((100% - var(--reset-hero-col-gap)) / 2);
-    margin-left:auto;
+    grid-column:2;
+    grid-row:2;
+    width:100%;
+    margin-left:0;
     margin-top:0;
     padding-inline:0;
     align-self:start;
@@ -287,11 +306,10 @@
 @media(min-width:768px) and (max-width:1199px){
   .hero--photo-stripe .hero-grid{
     --reset-hero-col-gap:clamp(24px,3.5vw,40px);
-    gap:1rem;
+    row-gap:1rem;
   }
   .hero--photo-stripe h1{font-size:clamp(1.92rem,3.5vw,2.65rem);line-height:1.08}
   .hero--photo-stripe .hero-sub{max-width:30ch;line-height:1.48}
-  .hero--photo-stripe .hero-main{padding-top:16px}
   .hero--photo-stripe .hv-stage{min-height:560px}
 }
 
@@ -310,3 +328,86 @@
   }
 }
 
+/* ============ PHOTO HERO (mobile) — stripe experiment retired ============
+   The portrait-stripe hero above (photo left, 52% text column right) was this
+   landing's own experiment. With data-cw-hero="photo" the network recipe in
+   shared/css/landing.css owns the mobile hero instead: full-bleed photograph,
+   copy anchored to the bottom on its scrim. These rules only dissolve the
+   stripe's geometry so the shared recipe is unobstructed — no new layout of
+   their own. Desktop (>=881px) still runs the stripe's two-column grid. */
+@media(max-width:880px){
+  [data-cw-hero="photo"] .hero--photo-stripe .wrap{
+    max-width:var(--maxw);
+    padding-inline:clamp(14px,4vw,40px);
+  }
+  [data-cw-hero="photo"] .hero--photo-stripe .hero-grid{
+    position:static;
+    overflow:visible;
+    min-height:0;
+    gap:0;
+  }
+  /* display:contents dissolves the stripe's photo/text split: .hero-visual and
+     .hero-main become direct children of the grid, which is what the shared
+     recipe expects. */
+  [data-cw-hero="photo"] .hero--photo-stripe .hero-top{display:contents}
+  [data-cw-hero="photo"] .hero--photo-stripe .hero-main{
+    position:static;
+    z-index:auto;
+    width:auto;
+    min-height:0;
+    margin-left:0;
+    padding:0;
+  }
+  [data-cw-hero="photo"] .hero--photo-stripe .hero-badge{
+    margin-bottom:.85rem;
+    background:var(--cw-net-mat-tint-media);
+    border-color:var(--cw-net-mat-stroke);
+    backdrop-filter:var(--cw-net-mat-filter);
+    -webkit-backdrop-filter:var(--cw-net-mat-filter);
+  }
+  [data-cw-hero="photo"] .hero--photo-stripe .hv-stage{
+    min-height:0;
+    height:100%;
+    aspect-ratio:auto;
+    border-radius:0;
+    box-shadow:none;
+  }
+  /* This master is a tight head-and-shoulders portrait (1040x1280). Covering
+     the full 100svh box would crop 43% of its width and blow the face up to
+     nearly twice life size, so the photo layer is given a height close to the
+     master's own aspect instead; the hero's scrim colour owns the rest of the
+     screen, which the copy band covers anyway. */
+  [data-cw-hero="photo"] .hero--photo-stripe{--cw-hero-photo-height:66svh}
+  [data-cw-hero="photo"] .hero--photo-stripe .hv-photo{
+    --cw-hero-photo-y:center;
+    inset:0;
+    width:100%;
+    border-radius:0;
+  }
+  [data-cw-hero="photo"] .hero--photo-stripe h1{
+    max-width:none;
+    font-size:clamp(1.85rem,7.4vw,2.5rem);
+    line-height:1.06;
+  }
+  [data-cw-hero="photo"] .hero--photo-stripe .hero-actions{
+    margin-top:1rem;
+    padding-inline:0;
+    padding-bottom:0;
+  }
+}
+
+/* #day-look is the only object photograph on the page — the middle otherwise
+   runs three screens of cards on beige, and the reader never sees the thing
+   itself. Master is a portrait frame (the glass sits low in it), so the band
+   crops from the lower two thirds rather than the centre. Third photo block
+   after the hero portrait and the author portrait: the base budget. */
+[data-cw-landing="reset-day"] .day-shot{
+  margin:2.4rem 0 0;border-radius:var(--r-lg);overflow:hidden;background:var(--chip-soft);
+  box-shadow:var(--shadow-soft);
+}
+[data-cw-landing="reset-day"] .day-shot img{
+  width:100%;height:auto;aspect-ratio:3/2;object-fit:cover;object-position:50% 68%;display:block;
+}
+@media(max-width:760px){
+  [data-cw-landing="reset-day"] .day-shot img{aspect-ratio:4/3}
+}

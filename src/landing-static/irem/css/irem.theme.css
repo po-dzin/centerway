@@ -89,7 +89,7 @@ body::after{
   opacity:.035;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
-.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:clamp(20px,5vw,40px);position:relative;z-index:1}
+.wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:clamp(20px,5vw,40px);padding-block:0;position:relative;z-index:1}
 section{position:relative;z-index:1}
 h1,h2,h3{font-family:var(--f-display);font-weight:700;line-height:1.08;letter-spacing:-.025em;color:var(--ink)}
 a{color:inherit;text-decoration:none}
@@ -191,6 +191,12 @@ a.btn.btn-ghost:visited{
 .hero-sub{font-size:clamp(.95rem,2.8vw,1.1rem);color:var(--text-muted);line-height:1.5;margin-bottom:1.25rem}
 
 .hero-chips{display:flex;flex-wrap:wrap;gap:.45rem}
+/* The longest chip ("Без спеціальної підготовки") is alone on its own wrapped
+   row at extreme OS text-scaling, so flex-wrap can't shrink it against a
+   sibling — it's simply wider than the column while nowrap. Letting just the
+   chip text wrap (not the badge, which tested fine) avoids a few px of
+   overflow at that scale without changing normal-size rendering. */
+.hero-chips span{white-space:normal;max-width:100%}
 .hero-price{display:flex;align-items:baseline;gap:.5em}
 .hero-price b{font-family:var(--f-display);font-size:2.1rem;font-weight:700;color:var(--ink);line-height:1}
 .hero-price small{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.06em;color:var(--text-soft);text-transform:uppercase}
@@ -198,6 +204,9 @@ a.btn.btn-ghost:visited{
 
 .hero-trust{display:flex;align-items:flex-start;gap:.5em;font-size:.84rem;color:var(--text-soft);line-height:1.44}
 .hero-trust svg{flex:0 0 auto;color:var(--indigo);margin-top:2px}
+.refund-policy-link{text-decoration:underline;text-decoration-thickness:1px;text-underline-offset:2px}
+.refund-policy-link:hover{text-decoration-thickness:2px}
+.refund-policy-link:focus-visible{outline:2px solid currentColor;outline-offset:2px}
 
 .hv-stage{position:relative;width:100%;max-width:none;aspect-ratio:3/4;background:transparent}
 .hv-fade{position:absolute;left:0;right:0;top:0;bottom:-12px;pointer-events:none;z-index:2;background:linear-gradient(to bottom,rgba(255,253,247,0) 32%,#fffdf7 46%)}
@@ -506,6 +515,18 @@ a.btn.btn-ghost:visited{
 .btn-tg{background:var(--indigo);color:#fff;box-shadow:0 4px 16px rgba(90,96,153,.28)}
 .btn-tg:hover{background:var(--indigo-bright);transform:translateY(-2px);box-shadow:0 10px 28px rgba(90,96,153,.38)}
 
+.microcta{padding-block:clamp(40px,6vw,72px)}
+.microcta-card{background:var(--irem-grad-dark);border-radius:var(--r-lg);padding:clamp(1.8rem,4vw,2.6rem) clamp(1.6rem,4vw,2.4rem);text-align:center;max-width:640px;margin-inline:auto;position:relative;overflow:hidden;box-shadow:var(--shadow-med)}
+.microcta-card::before{content:"";position:absolute;inset:0;background:radial-gradient(ellipse at 70% 0%,rgba(232,162,90,.16) 0%,transparent 60%);pointer-events:none}
+.microcta-card>*{position:relative;z-index:1}
+.microcta-title{font-family:var(--f-display);font-size:clamp(1.3rem,2.6vw,1.65rem);font-weight:700;color:#fff;margin-bottom:.65rem;line-height:1.22}
+.microcta-text{font-size:.96rem;color:var(--irem-on-dark-soft);line-height:1.62;max-width:44ch;margin-inline:auto}
+.microcta-price{margin-top:1.5rem;display:flex;align-items:baseline;justify-content:center;gap:.45em}
+.microcta-price b{font-family:var(--f-display);font-size:1.55rem;font-weight:700;color:#fff;line-height:1}
+.microcta-price small{font-family:var(--f-mono);font-size:.68rem;letter-spacing:.07em;text-transform:uppercase;color:rgba(255,255,255,.55)}
+.microcta-card .btn{margin-top:1.1rem;width:100%;max-width:280px}
+@media(min-width:540px){.microcta-card .btn{width:auto}}
+
 .short-block{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:clamp(2rem,4vw,2.8rem);display:flex;flex-direction:column;align-items:flex-start;gap:1.6rem}
 @media(min-width:700px){.short-block{flex-direction:row;align-items:center;gap:2.4rem}}
 .short-text{flex:1}
@@ -685,7 +706,7 @@ body:not(.utility-page) .offer h2{
 .lead-modal[hidden]{display:none}
 .lead-modal__backdrop{position:absolute;inset:0;background:rgba(27,29,46,.55);backdrop-filter:blur(3px)}
 .lead-modal__dialog{position:relative;width:100%;max-width:30rem;background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);box-shadow:var(--shadow-med);padding:clamp(1.4rem,4vw,2rem);max-height:90vh;overflow:auto}
-.lead-modal__x{position:absolute;top:.7rem;right:.9rem;width:2rem;height:2rem;border:0;background:transparent;font-size:1.5rem;line-height:1;color:var(--text-soft);cursor:pointer;border-radius:50%}
+.lead-modal__x{position:absolute;top:.7rem;right:.9rem;display:grid;place-items:center;width:2rem;height:2rem;padding:0;border:0;background:transparent;line-height:1;color:var(--text-soft);cursor:pointer;border-radius:50%}
 .lead-modal__x:hover{background:var(--surface-cool);color:var(--ink)}
 .lead-modal__program{font-family:var(--f-ui);font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--cta-strong);margin:0 0 .3rem}
 .lead-modal__title{font-family:var(--f-display);font-size:1.4rem;color:var(--ink);margin:0 0 .4rem}

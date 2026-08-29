@@ -51,18 +51,25 @@ p,
   margin-top: 1rem;
 }
 
+/* Utility pages (thanks / pay-failed / public-offer) run their own thin stack
+   and never load the generated token file, so the contract's axes arrive as
+   fallbacks here — but they are the contract's numbers, not a third opinion.
+   This had its own 0.75rem corner and 0.75rem/1rem padding. */
 a.btn,
 a.btn:visited,
 .cw-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 0.75rem 1rem;
-  border-radius: 0.75rem;
+  gap: var(--ds-button-gap, 0.5rem);
+  min-height: var(--ds-button-min-height, var(--ds-touch-target-min, 3rem));
+  padding-inline: var(--ds-button-padding-inline, 1.15rem);
+  border-radius: var(--ds-button-radius, 1rem);
+  font-size: var(--ds-button-font-size, 1rem);
+  font-weight: var(--ds-button-font-weight, 700);
   text-decoration: none;
   border: 1px solid var(--ds-color-text, #111111);
   color: var(--ds-color-text, #111111);
-  min-height: var(--ds-touch-target-min, 44px);
   line-height: 1.2;
 }
 
@@ -132,8 +139,32 @@ code,
   line-height: 1.6;
 }
 
+.refund-policy-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.16em;
+}
+
+.refund-policy-link:hover {
+  text-decoration-thickness: 2px;
+}
+
+.refund-policy-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+
 body.utility-page {
+  /* CENTRED IN WHAT YOU CAN SEE (2026-08-28).
+     This box does not just paint a ground, it centres the panel inside itself —
+     so its height has to be the height of the visible window. On iOS `100vh` is
+     the window with the browser bars RETRACTED, which is taller than the screen
+     while they are showing: the panel settled below centre and the page carried
+     a scroll it had no content for. `dvh` is that same number measured live,
+     with the `vh` line kept under it for anything that cannot read it. */
   min-height: 100vh;
+  min-height: 100dvh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -199,13 +230,8 @@ body.utility-page {
 .utility-status-actions a.btn,
 .utility-status-actions a.btn:visited {
   min-width: min(100%, 15rem);
-  min-height: var(--ds-touch-target-min, 2.75rem);
-  padding: 0.95rem 1.5rem;
   border-width: 1px;
   border-style: solid;
-  border-radius: var(--landing-radius-cta-control, var(--ds-radius-sm, 0.75rem));
-  font-size: var(--landing-type-button-size, 1rem);
-  font-weight: 700;
   transition:
     transform 180ms ease,
     background-color 180ms ease,

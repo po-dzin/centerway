@@ -2,7 +2,11 @@ import type { StaticLandingProduct } from "@/lib/landing/types";
 
 type LandingUtilityContent = {
   thanks: {
-    botUrl: string;
+    /* Where a paid buyer is sent from the funnel's own thanks page. It named a
+       Telegram bot until 2026-08-29 — Short and IREM were delivered there — and
+       it is the course in the cabinet now, the same address the receipt email
+       links to. */
+    courseUrl: string;
     siteUrl: string;
   };
   payFailed: {
@@ -62,13 +66,13 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
         "Зміцнення здоров'я",
       ],
       note: "Цей метод розроблений та практикується моїм вчителем протягом 44 років",
-      ctaPrimaryLabel: "Хочу на курс",
-      ctaStickyLabel: "Хочу на курс",
+      ctaPrimaryLabel: "Почати відновлення",
+      ctaStickyLabel: "Почати відновлення",
       priceCurrent: "795 грн",
       priceOld: null,
       cta: {
-        primary: "Хочу на курс",
-        sticky: "Хочу на курс",
+        primary: "Почати відновлення",
+        sticky: "Почати відновлення",
         note: "Підходить і новачкам, і практикуючим",
       },
       price: {
@@ -80,7 +84,7 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
     },
     utility: {
       thanks: {
-        botUrl: "https://t.me/ShortRebotBot?start=6a1b2e01f73e6df7570fff07",
+        courseUrl: "https://my.centerway.net.ua/learn/short",
         siteUrl: "https://reboot.centerway.net.ua/",
       },
       payFailed: {
@@ -118,7 +122,7 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
     },
     utility: {
       thanks: {
-        botUrl: "https://t.me/IREM_gymnastic_Bot?start=ZGw6MjA1MTY4",
+        courseUrl: "https://my.centerway.net.ua/learn/irem-gymnastics",
         siteUrl: "https://irem.centerway.net.ua/",
       },
       payFailed: {

@@ -110,5 +110,8 @@
   --ds-breakpoint-desktop-min: 64rem;
 
   --ds-container-max: 75rem;
-  --ds-touch-target-min: 2.75rem;
+  /* 3rem, matching the platform — canonical since e0c7dbc. This read 2.75rem,
+     so every control resolving it here ran a 4px smaller target than the same
+     control on the platform. */
+  --ds-touch-target-min: 3rem;
 }

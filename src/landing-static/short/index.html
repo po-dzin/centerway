@@ -3,19 +3,28 @@
     <title>Short-Перезавантаження</title>
     <meta name="description" content="3 комплекси вправ. Швидко відновлюють тіло та розум. Всього 15 хвилин на день.">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <base href="/short/">
-    <link rel="shortcut icon" href="img/logo.webp" type="image/webp">
+    <meta name="theme-color" content="#faefe0">
+    <link rel="icon" href="../shared/img/cw-icon-tab.svg" type="image/svg+xml">
+    <link rel="icon" href="../shared/img/cw-icon-192.png" sizes="192x192" type="image/png">
+    <link rel="apple-touch-icon" href="../shared/img/cw-apple-touch.png">
     <meta property="og:title" content="Short-Перезавантаження">
     <meta property="og:description" content="3 комплекси вправ. Швидко відновлюють тіло та розум. Всього 15 хвилин на день.">
     <meta property="og:image" content="https://reboot.centerway.net.ua/img/Centerway_logo.jpg">
     <meta property="og:image:alt" content="Short-Перезавантаження">
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:image" content="https://reboot.centerway.net.ua/img/Centerway_logo.jpg">
+    <meta name="twitter:image" content="https://reboot.centerway.net.ua/shared/img/cw-og-cover.png">
 
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300..800;1,300..800&display=swap" rel="stylesheet">
+    <!-- Google Fonts removed 2026-08-28. Two preconnects and a render-blocking
+         third-party stylesheet were being requested for "Open Sans", which this
+         page has not rendered since the design tokens landed: the family reads
+         `var(--landing-font-family-base, var(--ds-font-family-base, "Open Sans",
+         sans-serif))`, both tokens are defined, and a browser check confirmed
+         every element on the page resolves to Formular. The Next shell rebuilds
+         this document's head and was already dropping these three lines, so the
+         live page never paid for them — but the file is the source of truth and
+         should not describe a dependency that does not exist. -->
 
     <link rel="stylesheet" href="js/themes/simple.css" defer="">
     <link rel="stylesheet" href="css/fonts.css">
@@ -57,7 +66,53 @@
     
 </head>
 <body>
-    <section class="s1 section-hero" data-section="hero" data-flow-index="1">
+    <header class="cw-nav" id="top" data-cw-nav>
+        <a class="cw-nav__brand" href="#top" aria-label="CenterWay — на початок">
+            <img class="cw-nav__mark" src="../shared/img/cw-mark-ink.svg" alt="" aria-hidden="true" decoding="async">
+            <span class="cw-nav__wordmark">CenterWay</span>
+        </a>
+        <nav class="cw-nav__desktop" aria-label="Навігація сторінкою">
+            <a href="#program">Про курс</a>
+            <a href="#format">Що входить</a>
+            <a href="#reviews">Відгуки</a>
+            <a href="#expert">Про автора</a>
+            <a href="#offer">Ціна</a>
+            <a href="#faq">Питання</a>
+        </nav>
+        <button class="cw-nav__burger" type="button" data-cw-nav-toggle aria-label="Меню" aria-expanded="false" aria-controls="cwNavPanel">
+            <svg class="cw-nav__burger-ico" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-menu"/></svg><svg class="cw-nav__burger-ico cw-nav__burger-ico--close" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg>
+        </button>
+    </header>
+    <div class="cw-nav__drawer" data-cw-nav-drawer>
+        <div class="cw-nav__backdrop" data-cw-nav-close aria-hidden="true"></div>
+        <nav class="cw-nav__panel" id="cwNavPanel" aria-label="Меню" data-cw-nav-panel>
+            <button class="cw-nav__close" type="button" data-cw-nav-close aria-label="Закрити меню"><svg class="cw-nav__close-ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg></button>
+            <ul class="cw-nav__list">
+                <li><a href="#program">Про курс</a></li>
+                <li><a href="#format">Що входить</a></li>
+                <li><a href="#reviews">Відгуки</a></li>
+                <li><a href="#expert">Про автора</a></li>
+                <li><a href="#offer">Ціна</a></li>
+                <li><a href="#faq">Питання</a></li>
+            </ul>
+            <div class="cw-nav__cta">
+                <button class="openModal" type="button" data-scroll-to="offer">Почати відновлення</button>
+            </div>
+        </nav>
+    </div>
+
+    <section class="s1 section-hero has-video-bg" data-section="hero" data-flow-index="1">
+        <div class="hero-bg" aria-hidden="true" data-cw-video-bg>
+            <video class="hero-bg__video" muted loop playsinline preload="none" poster="img/hero-bg-poster.jpg">
+                <!-- `data-src`, not `src`: with a real source in the markup the
+                     browser starts buffering the clip regardless of
+                     `preload="none"`, and it was measured arriving at 314 ms,
+                     ahead of the page it sits behind. The runtime attaches the
+                     source when it has decided to play — see landing-runtime.js. -->
+                <source data-src="img/hero-bg.mp4" type="video/mp4">
+            </video>
+            <div class="hero-bg__scrim"></div>
+        </div>
         <div class="container">
             <div class="content hero-text">
                 <span class="badge">АВТОРСЬКИЙ КУРС</span>
@@ -98,18 +153,58 @@
                             <span class="price-note">500+ людей вже придбали курс і почали відновлення</span>
                         </div>
                     </div>
-                    <button class="openModal" data-cta-primary data-scroll-to="offer">Хочу на курс</button>
+                    <button class="openModal" data-cta-primary data-scroll-to="offer">Почати відновлення <span class="cta-arrow" aria-hidden="true">→</span></button>
                     <p class="cta-note">Підходить і новачкам, і практикуючим</p>
                 </div>
             </div>
-
-            <iframe class="img desk hero-image" src="https://www.youtube.com/embed/csSZPaVSy6U" title="Short intro video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
-            <iframe class="img mob" src="https://www.youtube.com/embed/csSZPaVSy6U" title="Short intro video mobile" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
         </div>
     </section>
-    
+
+    <!-- Hero's dense half: everything that used to sit inside the hero text
+         block. Split out so the hero itself can be a real video hero (short
+         copy over the footage) instead of a full-height text panel covering it.
+         The YouTube intro moved here too — left in the hero it would have sat
+         on top of the background video, two competing players in one screen. -->
+    <section class="s1b section-hero-details" data-section="hero-details">
+        <div class="container">
+            <div class="section-hero-details__copy">
+            <div class="benefits-block">
+                <h2>Що ви отримаєте</h2>
+                <p>Інтегруйте цей метод у своє життя:</p>
+
+                <ul class="benefits__list">
+                    <li class="benefits__item">
+                    <span class="benefits__icon">✓</span>
+                    Зниження стресу та покращення сну
+                    </li>
+
+                    <li class="benefits__item">
+                    <span class="benefits__icon">✓</span>
+                    Збільшення рівня енергії
+                    </li>
+
+                    <li class="benefits__item">
+                    <span class="benefits__icon">✓</span>
+                    Зміцнення здоров'я
+                    </li>
+                </ul>
+            </div>
+            <p class="hero-proof__quote hero-proof__quote-after-list">Цей метод розроблений та практикується моїм вчителем протягом 44 років</p>
+            </div>
+
+            <!-- TWO IFRAMES, ONE VIDEO: the same embed twice, one shown on
+                 desktop and one on mobile, so a visitor was loading a whole
+                 second YouTube player they never see. `loading="lazy"` fixes
+                 that as a side effect — a lazy iframe that is display:none is
+                 not fetched at all — as well as taking the visible one out of
+                 the initial load. -->
+            <iframe class="img desk hero-image" src="https://www.youtube.com/embed/csSZPaVSy6U" title="Short intro video" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>
+            <iframe class="img mob" src="https://www.youtube.com/embed/csSZPaVSy6U" title="Short intro video mobile" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>
+        </div>
+    </section>
+
     <div id="menu" class="default" data-sticky-menu>
-        <button class="openModal" data-scroll-to="offer">Хочу на курс</button>
+        <button class="openModal" data-scroll-to="offer">Почати відновлення</button>
 
     </div>
 
@@ -152,6 +247,14 @@
                 <p>Перепади настрою</p>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <section class="section-microcta" data-section="microcta-problem">
+        <div class="container">
+            <p class="microcta-text">Впізнали себе хоч в одному пункті? Почніть зміни вже сьогодні</p>
+            <div class="price"><span>795 грн</span></div>
+            <button class="openModal" type="button" data-scroll-to="offer" data-cta-suppress-sticky>Почати відновлення</button>
         </div>
     </section>
 
@@ -200,7 +303,7 @@
         </div>
     </section>    
 
-<section class="s4 section-program" data-section="program" data-flow-index="4">
+<section class="s4 section-program" id="program" data-section="program" data-flow-index="4">
     <div class="container">
         <h2>Програма курсу</h2>
         <div class="section-program-grid">
@@ -263,7 +366,15 @@
     </div>
 </section>
 
-    <section class="s5 section-format" data-section="format" data-flow-index="5">
+    <section class="section-microcta" data-section="microcta-program">
+        <div class="container">
+            <p class="microcta-text">Найпростіший крок до результату</p>
+            <div class="price"><span>795 грн</span></div>
+            <button class="openModal" type="button" data-scroll-to="offer" data-cta-suppress-sticky>Почати відновлення</button>
+        </div>
+    </section>
+
+    <section class="s5 section-format" id="format" data-section="format" data-flow-index="5">
         <div class="container">
             <div class="s9items">
                 <div class="itemsli">
@@ -278,7 +389,7 @@
             </div>
         </div>
     </section>
-    <section class="s6 section-proof" data-section="proof" data-flow-index="6">
+    <section class="s6 section-proof" id="reviews" data-section="proof" data-flow-index="6">
         <div class="container">
             <h2>Нам довіряють</h2>
             <p>Понад 500 учасників вже придбали курс та займаються за цією програмою.</p>
@@ -293,14 +404,15 @@
                 <button class="carousel-btn next" type="button" aria-label="Наступний відгук">›</button>
             </div>
             <div class="reviews-video">
-               <iframe id="iframe" src="https://www.youtube-nocookie.com/embed/2cxLE4GUuRw" title="Відгук" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen></iframe>
+               <iframe id="iframe" src="https://www.youtube-nocookie.com/embed/2cxLE4GUuRw" title="Відгук" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen loading="lazy"></iframe>
             </div>
         </div>
     </section>
-    <section class="s7 section-expert" data-section="expert" data-flow-index="7">
+
+    <section class="s7 section-expert" id="expert" data-section="expert" data-flow-index="7">
         <div class="container">
             <div class="section-expert-grid">
-                <img data-src="img/expert-photo.jpg" class="lazyload section-expert-image" alt="Євгеній Корякін" width="360" height="480" decoding="async">
+                <img data-src="img/expert-photo.webp" class="lazyload section-expert-image" alt="Євгеній Корякін" width="360" height="480" decoding="async">
                 <div class="section-expert-text section-expert-text-content">
                     <h2>Куратор курсу</h2>
                     <p>👋 Давайте знайомитись: я — Євгеній Корякін, дослідник і практик аюрведи, йоги та інших систем вивчення руху</p>
@@ -322,16 +434,16 @@
                 </svg>
             </div>
             <h2>Приєднуйтесь сьогодні</h2>
-            <p class="offer-text">Ми впевнені, що за умови регулярного та правильного виконання тренувань, вже за 14 днів ви отримаєте помітні результати, або ми повернемо вам кошти.</p>
+            <p class="offer-text"><a class="refund-policy-link" href="index2.html#refund-policy">Ми впевнені, що за умови регулярного та правильного виконання тренувань, вже за 14 днів ви отримаєте помітні результати, або ми повернемо вам кошти.</a></p>
             <div class="offer-cta">
                 <p>Не зволікайте та приєднуйтесь вже зараз 👇</p>
                 <div class="price"><span>795 грн</span></div>
-                <button class="openModal" data-cta-final>Хочу на курс</button>
+                <button class="openModal" data-cta-final>Оплатити зараз</button>
             </div>
         </div>
     </section>
     
-    <section class="s9 section-faq" data-section="faq" data-flow-index="9">
+    <section class="s9 section-faq" id="faq" data-section="faq" data-flow-index="9">
         <div class="container">
            <h2>Відповіді на запитання</h2>
     <div class="accordion" id="acc">
@@ -393,10 +505,10 @@
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section" id="footer-left">
-                    <img src="img/logofooter.png" alt="Логотип CenterWay" class="footer-logo" width="74" height="85" decoding="async">
+                    <img src="../shared/img/cw-mark-ink.svg" alt="Логотип CenterWay" class="footer-logo" width="74" height="74" decoding="async">
 
                     <div class="footer-logo-payments">
-                        <img data-src="img/visa-mc.png" alt="Visa/Mastercard" class="lazyload">
+                        <img data-src="img/visa-mc.webp" alt="Visa/Mastercard" class="lazyload">
                    </div>
                 </div>
                 
@@ -407,9 +519,10 @@
             </div>
             <div class="footer-section"  id="footer-right">
                 <p>+38 (063) 602 44 50</p>
+                <p><a href="https://telegram.me/centerway_support_bot" target="_blank" rel="noopener">Підтримка в Telegram</a></p>
                 <div class="item">
                   <a href="https://www.youtube.com/channel/UC0VPHLWTIXD3Rad5XkcyliA" aria-label="YouTube CenterWay"><img data-src="img/youtube2.png" class="lazyload" alt="" width="32" height="32"></a>
-                        <a href="https://t.me/E_Koriakin" aria-label="Telegram Євгенія Корякіна">
+                        <a href="https://telegram.me/E_Koriakin" aria-label="Telegram Євгенія Корякіна">
                         <img data-src="img/telegram.png" class="lazyload" alt="" width="32" height="32"></a>
                         <a href="https://www.instagram.com/evgeniy_koryakin/" aria-label="Instagram Євгенія Корякіна">
                         <img data-src="img/instagram.png" class="lazyload" alt="" width="32" height="32"></a>

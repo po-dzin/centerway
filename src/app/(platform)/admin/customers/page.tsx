@@ -45,7 +45,7 @@ function Avatar({ name, url }: { name?: string | null; url?: string | null }) {
 
 export default function CustomersPage() {
     const { lang, t } = useI18n();
-    const isRu = lang === "ru";
+    const isUk = lang === "uk";
     const locale = getAdminLocale(lang);
     const [q, setQ] = useState("");
     const [debouncedQ, setDebouncedQ] = useState("");
@@ -115,7 +115,7 @@ export default function CustomersPage() {
 
     const getResultsLabel = (value: number) => {
         if (value === 0) return t("customers_results_none");
-        if (!isRu) return `${value} ${value === 1 ? t("customers_results_record_one") : t("customers_results_record_many")}`;
+        if (!isUk) return `${value} ${value === 1 ? t("customers_results_record_one") : t("customers_results_record_many")}`;
         const mod10 = value % 10;
         const mod100 = value % 100;
         if (mod10 === 1 && mod100 !== 11) return `${value} ${t("customers_results_record_one")}`;
@@ -124,7 +124,7 @@ export default function CustomersPage() {
     };
     const querySuffix = (() => {
         if (!debouncedQ) return "";
-        if (isRu) return ` ${t("customers_results_query_prefix")}«${debouncedQ}»`;
+        if (isUk) return ` ${t("customers_results_query_prefix")}«${debouncedQ}»`;
         return ` ${t("customers_results_query_prefix")}"${debouncedQ}"`;
     })();
 

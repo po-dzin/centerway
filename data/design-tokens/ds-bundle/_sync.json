@@ -1,0 +1,14 @@
+{
+  "formatVersion": 1,
+  "generator": "scripts/ds-export.mjs",
+  "sourceCommit": "8543c63c",
+  "tokensSource": "10b1a000d1056e98",
+  "files": {
+    "styles.css": "873415fcf83739ea",
+    "tokens/colors.css": "e668080d4270495f",
+    "tokens/delivery.css": "902c6dfefaec1384",
+    "tokens/geometry.css": "4e64df3d903960c3",
+    "tokens/material.css": "d361d597c644d600",
+    "tokens/primitives.css": "a28f9bb51ef6e6e7"
+  }
+}

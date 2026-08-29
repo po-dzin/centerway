@@ -1,0 +1,974 @@
+/*
+ * THE ROOM — the library's third shelf view.
+ *
+ * Ported from the standalone prototype at
+ * docs/design-system/prototypes/library-depth-2026-08-26.html (зб. 59,
+ * 40 commits of hand-tuned geometry on branch claude/library-room-prototype-f17a4a).
+ * That geometry is NOT re-derived here — `LearnRoomView.tsx` runs the same
+ * packing/drawing functions the prototype spent 32 commits getting right,
+ * now fed real courses instead of a mock catalogue. This file carries the
+ * static register: paper, ink, the drawn niche and the drawn spine.
+ *
+ * WHAT THIS STEP DOES NOT CARRY, ON PURPOSE:
+ *   - sound, mouse-parallax rays, the ink "attention" glow — deferred with
+ *     the user's sign-off, backlog for a later pass;
+ *   - the procedural wall-carving canvas (paintCarve/openings/paintScene) —
+ *     replaced by one fixed photographed wall (room-wall-matte.webp), since
+ *     the console that chose between six wall textures was a designer's
+ *     tuning panel, not a product surface;
+ *   - the open-book "spread" reading view — next step. The camera now walks
+ *     up to a shelf; a spine click still navigates straight to the course.
+ *
+ * PAPER IS ITS OWN REGISTER, DELIBERATELY NOT THE PLATFORM'S LIGHT THEME.
+ * The prototype's own note: "no green — green is the platform's tone, not
+ * paper's, and on a drafting it read as a lit screen rather than a sheet."
+ * The dark side is not that exception — its ink/paper values are the
+ * platform's own graphite tokens verbatim (see the local var() references
+ * below), because the prototype's dark palette was authored FROM them.
+ */
+
+.room {
+  --room-paper: #f4f1e8;
+  --room-paper-lit: #fbf9f3;
+  --room-paper-deep: #e8e4d8;
+  --room-wash: #ddd8c9;
+  --room-wash-2: #cdc7b5;
+  --room-fill: #faf7ef;
+  --room-ink-value: #2f2e2a;
+  --room-ink: var(--room-ink-value);
+  /* INK AT REST IS STILL INK. These sat at 70%/46% of the ink value, which is
+     the weight of a note in a margin, not of the list that IS the page — the
+     column read as a washed-out draft of itself. Attention still has somewhere
+     to go from here: hover reaches the full ink AND draws the stroke under the
+     name (.rowMark), so the step up is a step in two things at once and does
+     not need a pale floor to be legible from. */
+  --room-ink-soft: color-mix(in srgb, var(--room-ink-value) 86%, var(--room-paper));
+  --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 64%, var(--room-paper));
+  --room-ink-line: color-mix(in srgb, var(--room-ink-value) 42%, transparent);
+  --room-ink-hair: color-mix(in srgb, var(--room-ink-value) 15%, transparent);
+  --room-brass: #b97f2d;
+  --room-brass-lit: #e5ae65;
+  --room-brass-line: color-mix(in srgb, #b97f2d 60%, transparent);
+  --room-cast: rgba(44, 41, 34, 0.3);
+  /* WHAT THE SELECT IS WRITTEN IN DEPENDS ON WHAT IT IS WRITTEN ON (2026-08-29,
+     the user's rule). On paper it is INK: brass on cream is a smudge of warm
+     paint on warm paper, and a room whose every mark is gold has no gold left.
+     On graphite it is GOLD: ink on a dark ground is the ground, so the pen has
+     to change metal to be a mark at all. One pair of tokens, so a select in the
+     column and a select on the wall can never be two different decisions. */
+  --room-select-ink: var(--room-ink);
+  --room-select-line: color-mix(in srgb, var(--room-ink-value) 92%, transparent);
+  /* A SELECTED BOOK HAS TO BE FOUND ACROSS THE ROOM. This was `--room-paper-lit`
+     — two points off the face it replaced, which on a 20px spine is no
+     difference at all. The face of the chosen work takes real ink now, its
+     edges are written at full weight, and it steps out of the row (see
+     `.book[data-hot]`). */
+  --room-select-tint: color-mix(in srgb, var(--room-ink-value) 15%, var(--room-paper-lit));
+  --room-ink-w: 1;
+  --room-wall-shade: 0.55;
+  /* HOW LONG A STEP TAKES. One number, shared by the camera and by everything
+     that has to leave the frame with it — see CAMERA_MS in
+     `LearnRoomView.tsx`, which is the same number on the other side of the
+     wall (it is what arms and disarms `will-change`). */
+  --room-walk: 1200ms;
+
+  position: relative;
+  isolation: isolate;
+  min-height: 70svh;
+  overflow: hidden;
+  /* NO GROUND OF ITS OWN. The room used to paint --room-paper, which in the
+     light theme is a different cream from the page's, so the whole thing read
+     as a pale rectangle pasted onto the cabinet — a panel with a hard edge
+     where there should have been a wall receding into the page. The wall is
+     the only thing painted now, and it dissolves at its edges (see .wall), so
+     what ends the room is the texture running out rather than a border. */
+  background: transparent;
+  color: var(--room-ink);
+  /* Where the wall gives out. It starts thinning early and is gone before the
+     box ends, so no edge of the room ever coincides with an edge of its own
+     rectangle — which is the whole point: a texture that stops at a straight
+     line reads as a pasted panel no matter how good the texture is. */
+  --room-edge-fade: radial-gradient(
+    96% 92% at 50% 50%,
+    #000 0 26%,
+    color-mix(in srgb, #000 42%, transparent) 62%,
+    transparent 96%
+  );
+}
+
+/* THE DARK SIDE IS THE PLATFORM'S OWN GRAPHITE, not a second palette
+   invented for this screen — the prototype's dark ink/paper values already
+   equal --cw-platform-bg/-surface/-surface-muted/-text verbatim (see the
+   comment on the prototype's own --dk-* block). Referencing them here means
+   a future change to the platform's night ground reaches the room for free,
+   instead of drifting the way two hand-copied hex values eventually do. */
+:root[data-cw-theme="dark"] .room {
+  --room-paper: var(--cw-platform-bg);
+  --room-paper-lit: var(--cw-platform-surface);
+  --room-paper-deep: #131312;
+  --room-wash: #0f0f0e;
+  --room-wash-2: #0a0a09;
+  --room-fill: var(--cw-platform-surface-muted);
+  --room-ink-value: var(--cw-platform-text);
+  --room-ink-line: color-mix(in srgb, var(--room-ink-value) 62%, transparent);
+  --room-ink-hair: color-mix(in srgb, var(--room-ink-value) 22%, transparent);
+  --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 72%, var(--room-paper));
+  --room-brass: #e5ae65;
+  --room-brass-lit: #f4cd96;
+  --room-brass-line: color-mix(in srgb, #e5ae65 55%, transparent);
+  --room-select-ink: var(--room-brass-lit);
+  --room-select-line: var(--room-brass-line);
+  --room-select-tint: color-mix(in srgb, var(--room-brass) 34%, var(--room-fill));
+  --room-cast: rgba(0, 0, 0, 0.62);
+  /* A line thinner than a pixel does not sample cleanly on a dark ground —
+     cream-on-dark flickers where dark-on-light merely fades. The pen goes
+     heavier in the dark rather than brighter. */
+  --room-ink-w: 1.7;
+  --room-wall-shade: 0.62;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-cw-theme="light"]) .room {
+    --room-paper: var(--cw-platform-bg);
+    --room-paper-lit: var(--cw-platform-surface);
+    --room-paper-deep: #131312;
+    --room-wash: #0f0f0e;
+    --room-wash-2: #0a0a09;
+    --room-fill: var(--cw-platform-surface-muted);
+    --room-ink-value: var(--cw-platform-text);
+    --room-ink-line: color-mix(in srgb, var(--room-ink-value) 62%, transparent);
+    --room-ink-hair: color-mix(in srgb, var(--room-ink-value) 22%, transparent);
+    --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 72%, var(--room-paper));
+    --room-brass: #e5ae65;
+    --room-brass-lit: #f4cd96;
+    --room-brass-line: color-mix(in srgb, #e5ae65 55%, transparent);
+    --room-select-ink: var(--room-brass-lit);
+    --room-select-line: var(--room-brass-line);
+    --room-select-tint: color-mix(in srgb, var(--room-brass) 34%, var(--room-fill));
+    --room-cast: rgba(0, 0, 0, 0.62);
+    --room-ink-w: 1.7;
+  --room-wall-shade: 0.62;
+  }
+}
+
+.stage {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 16 / 10;
+  min-height: 26rem;
+  overflow: visible;
+  background: transparent;
+}
+
+@media (max-width: 900px) {
+  .stage {
+    aspect-ratio: 3 / 4;
+    min-height: 32rem;
+  }
+}
+
+/* ---------- the camera ----------
+   ONE ELEMENT MOVES, AND IT CARRIES THE ROOM. Wall, light, cuts and books all
+   ride inside it, so walking up to a shelf is a single composited transform
+   and not a hundred boxes being laid out again. The stage around it does not
+   move: it is what the room is measured from.
+
+   The origin is the stage's own centre, which is also what `frameCase`
+   solves against — if these two ever disagree the camera frames one shelf and
+   shows another, so they are one decision written in two places and this
+   comment is the join. */
+.camera {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  transform: translate3d(var(--px, 0px), var(--py, 0px), 0) scale(var(--cs, 1));
+}
+
+/* WILL-CHANGE LASTS EXACTLY AS LONG AS THE WALK. A layer promoted for good
+   costs its own pixels for good, and this room stands still almost all of the
+   time. The easing is the prototype's: slow to leave, long to settle — the
+   weight of a step, not the snap of a control. */
+.camera[data-walking="true"] {
+  transition: transform var(--room-walk, 1200ms) cubic-bezier(0.16, 0.5, 0.2, 1);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .camera[data-walking="true"] {
+    transition: none;
+    will-change: auto;
+  }
+}
+
+/* WHAT IS OUTSIDE THE FRAME STAYS OUTSIDE IT. In the hall nothing is clipped
+   on purpose — a niche's drawn mark and its heading live OUTSIDE the cut, and
+   clipping the stage would cut them off. Walked up to a shelf, both of those
+   are gone (see below) and the scene is three times its own size, so the only
+   thing the stage's open edge can still deliver is a slab of a neighbouring
+   shelf sliding over the column of text. */
+.room[data-case="true"] .stage {
+  overflow: hidden;
+}
+
+/* THE WALL IS INK, NOT A PHOTOGRAPH. room-wall-matte.webp is an
+   ink-on-transparent texture (it has an alpha channel and no ground of its
+   own), which is why it cannot simply be pasted as a background: pasted, its
+   grain stays dark in both themes, and on paper that reads as dirt on the
+   sheet rather than as matte clay. The prototype had no such problem because
+   it REPAINTED its wall canvas on every theme change
+   ("перемальовується під чорнило теми"); a static asset cannot repaint
+   itself, so it is used as a MASK and the colour is supplied here.
+
+   AND THE COLOUR IS NOT INK. The mottling in clay is the material's own
+   shadow, not something written on it — the prototype's distinction
+   ("тінь матеріалу має власне джерело — найтемніший токен ґрунту"). Painted
+   in ink it inverts with the theme, and cream ink on graphite turns a matte
+   wall into a starfield; painted in the darkest ground token it stays a
+   shadow in both. So the tint is --room-wash-2 either way, and only how
+   loudly it speaks changes — a little louder at night, where the ground it
+   sits on is closer to it. */
+.wall {
+  position: absolute;
+  inset: 0;
+  background-color: var(--room-wash-2);
+  opacity: var(--room-wall-shade);
+  /* Two masks, multiplied: the texture, and the shape that lets it go. The
+     second is what stops the wall being a rectangle — it thins the ink towards
+     every edge until the page's own ground is all that is left, so the room
+     ends the way a lit wall ends rather than the way a card does. */
+  -webkit-mask-image: url("/cw/platform/learn/room-wall-matte.webp"), var(--room-edge-fade);
+  mask-image: url("/cw/platform/learn/room-wall-matte.webp"), var(--room-edge-fade);
+  -webkit-mask-composite: source-in;
+  mask-composite: intersect;
+  -webkit-mask-size: cover, 100% 100%;
+  mask-size: cover, 100% 100%;
+  -webkit-mask-position: 50% 50%, 50% 50%;
+  mask-position: 50% 50%, 50% 50%;
+  -webkit-mask-repeat: no-repeat, no-repeat;
+  mask-repeat: no-repeat, no-repeat;
+}
+
+.wall::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  -webkit-mask-image: var(--room-edge-fade);
+  mask-image: var(--room-edge-fade);
+  background:
+    linear-gradient(to right, transparent calc(50% - 1px), var(--room-ink-hair) calc(50% - 1px) 50%, transparent 50%),
+    linear-gradient(to bottom, transparent calc(27% - 1px), var(--room-ink-hair) calc(27% - 1px) 27%, transparent 27%);
+}
+
+/* The stage's vignette is gone: it darkened exactly the edges we now let
+   go. Depth comes from the fade itself. */
+
+@keyframes room-beam {
+  0% {
+    opacity: 0.62;
+  }
+  100% {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rake {
+    animation: none;
+    opacity: 0.8;
+  }
+}
+
+/* ---------- niche ---------- */
+
+.niche {
+  position: absolute;
+  cursor: pointer;
+  /* This also has to live on the destination state. If the transition existed
+     only on `[data-away]`, a shelf faded OUT but popped back IN when the
+     attribute was removed on the walk home or between categories. */
+  transition: opacity var(--room-walk, 1200ms) cubic-bezier(0.16, 0.5, 0.2, 1);
+}
+
+.nicheCast {
+  position: absolute;
+  left: -26px;
+  right: 14px;
+  top: 12px;
+  bottom: -30px;
+  background: radial-gradient(closest-side at 42% 44%, var(--room-cast) 0%, transparent 100%);
+  filter: blur(14px);
+  opacity: calc(0.3 + var(--depth, 1) * 0.5);
+  pointer-events: none;
+}
+
+.nicheBox {
+  --niche-depth: inset 0 22px 32px -14px var(--room-cast), inset 18px 0 30px -16px var(--room-cast),
+    inset -8px -12px 24px -16px color-mix(in srgb, var(--room-paper-lit) 55%, transparent);
+  position: absolute;
+  inset: 0;
+  border-radius: var(--cw-radius-sm);
+  background: var(--room-wash);
+  box-shadow: var(--niche-depth);
+  overflow: hidden;
+}
+
+.nicheBox::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+  background: var(--room-paper);
+  opacity: calc((1 - var(--depth, 1)) * 0.34);
+}
+
+.nichePersp {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: calc(0.6 + var(--depth, 1) * 0.4);
+}
+
+.nichePersp svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+  color: var(--room-ink);
+}
+
+/* The shelf's own lower lip — books stand behind it, their foot a little
+   covered. The one overlap the room still needs on a horizontal shelf. */
+.nicheBox::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: 0;
+  height: 6px;
+  background: linear-gradient(180deg, var(--room-fill), var(--room-wash));
+  border-top: 1px solid var(--room-ink-line);
+  box-shadow: 0 -4px 8px -3px var(--room-cast);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* THREE LAYERS OF ATTENTION ON A SHELF, and the prototype's own rule for what
+   they may and may not be: "ВИБІР — ЦЕ КОНТУР, А НЕ ЩЕ ОДИН ШАР. Дно виїмки не
+   міняє кольору, губа не золотиться, нічого не світиться і нічого не
+   накладається зверху: полицю просто ОБВОДЯТЬ". So the cut deepens a little in
+   its own shadow, and around it the room draws a frame — with the same pen. */
+.niche:hover .nicheBox,
+.niche[data-hot="true"] .nicheBox {
+  box-shadow: var(--niche-depth), inset 0 26px 40px -14px var(--room-cast);
+}
+
+/* The mark lives in the ROOM, not in the shelf: it is drawn outside the cut,
+   and `.nicheBox` clips its own contents. `.niche` clips nothing, which is why
+   it is the mark's home — the same place it had in the prototype. */
+.nicheMark {
+  position: absolute;
+  inset: -26px;
+  z-index: 3;
+  pointer-events: none;
+  color: var(--room-select-ink);
+  opacity: 0;
+  transition: opacity 700ms ease;
+}
+
+.nicheMark svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.niche:hover .nicheMark,
+.niche[data-hot="true"] .nicheMark {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .nicheMark {
+    transition: none;
+  }
+}
+
+/* THE CUT AS A CONTROL. It sits UNDER the books and takes the whole shelf, so
+   the gaps between spines — which is most of a shelf — are the way in. The box
+   above it draws and clips and is not a target; only the spines inside it are,
+   and they answer a different question (this work, rather than these works). */
+.nicheEnter {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.nicheEnter:focus-visible {
+  outline: 1px solid var(--room-select-ink);
+  outline-offset: 4px;
+}
+
+.nicheBox {
+  pointer-events: none;
+}
+
+.book {
+  pointer-events: auto;
+}
+
+/* A shelf you are already standing at is not a door. */
+.niche[data-open="true"] {
+  cursor: default;
+}
+
+/* THE OTHER SHELVES ARE NOT DIMMED, THEY ARE LEFT. `data-dim` is a query
+   narrowing the wall and it keeps every cut on it, because where a work stands
+   is what this view knows. Standing at one shelf is not that: the rest of the
+   room is behind the reader, and at three times the scale a neighbour at 40%
+   is not background, it is a slab crossing the page. It leaves on the same
+   curve the camera moves on, so the two read as one movement. */
+.room[data-case="true"] .niche[data-away="true"] {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--room-walk, 1200ms) cubic-bezier(0.16, 0.5, 0.2, 1);
+}
+
+/* THE MARK AND THE HEADING BELONG TO THE HALL. Both are written at a size
+   chosen for a wall seen whole; the camera multiplies them along with
+   everything else, and a pen line drawn at one pixel becomes a brush stroke at
+   four. Inside a shelf they have also already done their work — what you are
+   standing at is said by the frame itself, and by its name in the corner. */
+.room[data-case="true"] .stage .niche .nicheMark,
+.room[data-case="true"] .stage .niche .nicheLabel,
+.room[data-case="true"] .stage .niche .nicheMore {
+  opacity: 0;
+}
+
+/* A SHELF THAT HOLDS NOTHING THE QUERY ASKED FOR GOES QUIET — it does not
+   leave. Where a work stands is the one thing this view knows that a list does
+   not, and a wall that empties itself under a search has thrown that away. */
+.niche[data-dim="true"] {
+  opacity: 0.4;
+  filter: none;
+  transition: opacity 220ms ease;
+}
+
+.niche[data-dim="true"] .nicheLabel,
+.niche[data-dim="true"] .nicheMore {
+  opacity: 0;
+}
+
+.noMatch {
+  margin: 0;
+  padding-block: var(--cw-space-lg);
+  color: var(--room-ink-faint);
+  line-height: 1.6;
+}
+
+.nicheLabel {
+  position: absolute;
+  inset-block-start: -1.15rem;
+  inset-inline-start: 3px;
+  /* The ellipsis below only bites if there is an edge to hit. Absolutely
+     positioned with no width, the label sizes to its own text: it walked out
+     over the wall and across the neighbouring niche at narrow widths, where
+     the cut shrinks but the type does not. A heading belongs to its shelf. */
+  max-inline-size: calc(100% - 6px);
+  z-index: 2;
+  font-family: var(--cw-font-data, ui-monospace, monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--room-ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.nicheMore {
+  position: absolute;
+  inset-block-end: -1.35rem;
+  inset-inline-end: 2px;
+  font-family: var(--cw-font-data, ui-monospace, monospace);
+  font-size: 0.6rem;
+  letter-spacing: 0.08em;
+  color: var(--room-ink-faint);
+}
+
+/* ---------- books ---------- */
+
+.book {
+  --face-front: var(--room-fill);
+  --face-top: color-mix(in srgb, var(--room-paper-lit) 72%, var(--room-fill));
+  --face-side: var(--room-wash-2);
+  --face-line: var(--room-ink-line);
+
+  position: absolute;
+  bottom: 2px;
+  filter: drop-shadow(2px 3px 4px var(--room-cast));
+  border: 0;
+  padding: 0;
+  background: transparent;
+  transform-origin: 50% 100%;
+  transform: translateZ(0) rotate(var(--tilt, 0deg));
+  transition: transform 750ms cubic-bezier(0.16, 0.5, 0.2, 1), filter 600ms ease;
+  cursor: pointer;
+  overflow: visible;
+  text-decoration: none;
+}
+
+.bookDraw {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.bookDraw :global(.front) {
+  fill: var(--face-front);
+}
+
+.bookDraw :global(.top) {
+  fill: var(--face-top);
+}
+
+.bookDraw :global(.side) {
+  fill: var(--face-side);
+}
+
+.bookDraw :global(.line) {
+  fill: none;
+  stroke: var(--face-line);
+  stroke-width: 1;
+  stroke-linejoin: round;
+  stroke-linecap: round;
+}
+
+.bookDraw :global(.plate) {
+  fill: color-mix(in srgb, var(--room-ink-value) 7%, transparent);
+  stroke: var(--face-line);
+  stroke-width: 1;
+  transition: opacity 380ms ease;
+}
+
+.bookDraw :global(.foot) {
+  fill: none;
+}
+
+.room[data-lod="bare"] .bookDraw :global(.plate) {
+  display: none;
+}
+
+/* THE LABEL ON THE BOARD. See `spineCode` for why this is one or two panels and
+   neither the title set in type nor a barcode of it: at this size both came out
+   as speckle. The title is on the row beside the shelf and in the link's own
+   accessible name — this drawing is decorative and says so. */
+.bookSpine {
+  position: absolute;
+  inset: 0;
+  display: block;
+  color: var(--room-ink-soft);
+  opacity: 0;
+  transition: opacity 380ms ease;
+  pointer-events: none;
+}
+
+.bookSpine :global(.code) {
+  fill: color-mix(in srgb, currentColor 40%, transparent);
+  stroke: color-mix(in srgb, currentColor 72%, transparent);
+  stroke-width: 1;
+}
+
+.room[data-lod="name"] .niche[data-hot="true"] .bookSpine {
+  opacity: 1;
+}
+
+.room[data-lod="name"] .niche[data-hot="true"] .bookDraw :global(.plate) {
+  opacity: 0;
+}
+
+/* AT THE SHELF, EVERY BOARD IS LEGIBLE — not only the one under the pointer.
+   In the hall the label appears on the shelf being looked AT, because a wall
+   of a hundred lit boards is a wall of noise. Standing at one shelf that
+   argument is spent: these are the works in front of the reader, and reading
+   them is what walking up was for. */
+.room[data-case="true"] .niche[data-open="true"] .bookSpine {
+  opacity: 1;
+}
+
+/* THE NAME WRITTEN DOWN THE BOARD. The prototype's own recipe, and the sizing
+   is set from the spine in `LearnRoomView.tsx` rather than here — a rem knows
+   nothing about how wide a board is. It fades in on its own rather than by
+   transition: it is not there at all until the camera has made it readable,
+   and an element that has just been born has nothing to transition from. */
+.bookTitle {
+  position: absolute;
+  inset-block: 10% 14%;
+  inset-inline: 0;
+  display: grid;
+  place-items: center;
+  writing-mode: vertical-rl;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: var(--room-ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  pointer-events: none;
+  animation: room-name-in 380ms ease both;
+}
+
+@keyframes room-name-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bookTitle {
+    animation: none;
+  }
+}
+
+/* A board carries one thing at a time: where the name is written, the blank
+   plate under it goes. */
+.book:has(.bookTitle) .bookDraw :global(.plate) {
+  opacity: 0;
+}
+
+/* GOLD IS THE SELECT, AND NOTHING ELSE (2026-08-29).
+   A course you can open used to be drawn in brass — and since nearly every
+   book on this shelf is a course you can open, nearly every book was gold. An
+   accent every work wears is not an accent: it became the room's ordinary
+   colour, and there was nothing left to say "this one" with. So access is
+   written the way a real shelf writes it — the book STANDS PROUD of the
+   others, its edges cut a little firmer — and brass is kept for the one work
+   attention is on. */
+.book[data-live="true"] {
+  --face-front: var(--room-paper-lit);
+  --face-line: color-mix(in srgb, var(--room-ink-value) 58%, transparent);
+  transform: translateZ(0) rotate(var(--tilt, 0deg)) translateY(-6px);
+}
+
+.book[data-live="true"] .bookDraw :global(.plate) {
+  fill: color-mix(in srgb, var(--room-ink-value) 14%, transparent);
+}
+
+.book[data-live="true"] .bookDraw :global(.foot) {
+  fill: color-mix(in srgb, var(--room-ink-value) 32%, transparent);
+}
+
+.book:focus-visible {
+  outline: 1px solid var(--room-select-ink);
+  outline-offset: 3px;
+}
+
+/* ---------- standing at a shelf: the frame's own furniture ----------
+   OUTSIDE THE CAMERA, DELIBERATELY. These two are the only things on the stage
+   that do not belong to the room: they are what the reader is holding, not
+   what they are looking at, so they keep the size they were written at while
+   the wall comes closer. Put inside `.camera` they would arrive as a poster.
+   Top of the wall's own half on a desk — the column of text has the other half
+   — and top of the frame on a phone, where the wall has the width to itself. */
+.frame {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  z-index: 4;
+  display: flex;
+  align-items: baseline;
+  gap: var(--cw-space-sm);
+  font-family: var(--cw-font-data, ui-monospace, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* A LINE, NOT A PILL. The room has no filled grounds in it anywhere — the way
+   back is written in the same ink as everything else, and it gathers its rule
+   under the pointer the way the search line and the list rows do. */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  border: 0;
+  padding: 0.35rem 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--room-ink-faint);
+  cursor: pointer;
+  border-block-end: 1px solid transparent;
+  transition: color 220ms ease, border-color 220ms ease;
+}
+
+.back:hover,
+.back:focus-visible {
+  color: var(--room-select-ink);
+  border-block-end-color: var(--room-select-line);
+}
+
+.back:focus-visible {
+  outline: 1px solid var(--room-select-ink);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .back {
+    transition: none;
+  }
+}
+
+.frameName {
+  color: var(--room-ink-faint);
+}
+
+.empty {
+  display: grid;
+  place-items: center;
+  min-height: 26rem;
+  color: var(--cw-platform-muted);
+}
+
+/* ---------- the column: the shelf as text ---------- */
+
+/* Centred in its OWN half, not pushed against the edge — the prototype's own
+   arithmetic, kept: the niches centre in the right half and the column in the
+   left, so what lies between them is a real emptiness rather than whatever was
+   left over. */
+.sheet {
+  position: absolute;
+  inset-block: 0;
+  inset-inline-start: 0;
+  inline-size: 50%;
+  display: grid;
+  align-content: center;
+  padding-inline: clamp(1rem, 6%, 4rem);
+  padding-block: var(--cw-space-lg);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.shelfList {
+  display: grid;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  inline-size: 100%;
+}
+
+.row {
+  display: grid;
+  grid-template-columns: 2.4rem minmax(0, 1fr) auto;
+  align-items: baseline;
+  gap: var(--cw-space-md);
+  inline-size: 100%;
+  padding: var(--cw-space-sm) 0.2rem;
+  border-block-end: 1px solid var(--room-ink-line);
+  /* The line does not reach the ends — the platform's own rule, and the one
+     that keeps a list from reading as a table. */
+  border-image: var(--cw-rule-fade-x);
+  color: var(--room-ink-soft);
+  text-decoration: none;
+  /* Attention here has the shape of a drawing, not of a card: a strip and a
+     rule, no radius, nothing lifting off the sheet. */
+  border-radius: 0;
+  transition: padding-inline-start 220ms ease, color 180ms ease;
+}
+
+.shelfList > li:last-child .row {
+  border-block-end: 0;
+}
+
+.row:hover,
+.row:focus-visible,
+.row[data-hot="true"] {
+  color: var(--room-ink);
+  padding-inline-start: 0.7rem;
+}
+
+.row:focus-visible {
+  outline: none;
+  box-shadow: var(--ds-button-ring, 0 0 0 2px var(--room-select-ink));
+}
+
+.rowIndex {
+  font-family: var(--cw-font-data, ui-monospace, monospace);
+  font-size: 0.7rem;
+  color: var(--room-ink-faint);
+  font-variant-numeric: tabular-nums;
+}
+
+.rowMain {
+  min-inline-size: 0;
+}
+
+/* The course's name is a shelf heading, not a page heading — UI 600, the way
+   the card writes it. The editorial face stays for h1. */
+.rowTitle {
+  display: block;
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+/* Exactly one line. A second breaks the column's rhythm, and the eye stops
+   being led down it. */
+.rowNote {
+  display: block;
+  margin-block-start: 0.2rem;
+  font-size: 0.85rem;
+  line-height: 1.6;
+  color: var(--room-ink-faint);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* THE STROKE UNDER THE NAME, IN TWO STRENGTHS. The weaker one is where
+   attention is pointing — pointer, keyboard, or the shelf on the wall; the
+   full one would be what is currently open, which this view does not yet have.
+   Same object either way, so two states can never merge into one. The weights
+   are the platform's own ink tokens (`--cw-ink-hover-*`), not numbers invented
+   here: hover in this product is a stroke of ink, never a filled highlight. */
+.inkLabel {
+  position: relative;
+  display: inline-block;
+  max-inline-size: 100%;
+}
+
+.rowMark {
+  position: absolute;
+  inset-inline: -0.2rem;
+  inset-block-end: -0.42rem;
+  block-size: var(--cw-ink-stroke-height, 0.85rem);
+  color: var(--room-select-ink);
+  opacity: 0;
+  pointer-events: none;
+  transform: scaleX(0.58);
+  transform-origin: center;
+  transition: opacity 160ms ease, transform 160ms ease;
+}
+
+.rowMark svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+  overflow: visible;
+}
+
+.row:hover .rowMark,
+.row:focus-visible .rowMark,
+.row[data-hot="true"] .rowMark {
+  opacity: var(--cw-ink-hover-opacity, 0.42);
+  transform: scaleX(var(--cw-ink-hover-scale, 0.74));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rowMark {
+    transition: none;
+  }
+}
+
+.rowState {
+  font-family: var(--cw-font-data, ui-monospace, monospace);
+  font-size: 0.7rem;
+  color: var(--room-ink-faint);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* THE SELECT ON ONE ROW, AS ON ONE BOOK. Marking the count in every row that
+   owns something marks nearly all of them, and the accent stops being one. What
+   is being looked at lights; the rest is ink. */
+.row:hover .rowState[data-held="true"],
+.row:focus-visible .rowState[data-held="true"],
+.row[data-hot="true"] .rowState[data-held="true"] {
+  color: var(--room-select-ink);
+}
+
+/* A spine answers the column, and the column answers a spine — and it does it
+   loudly enough to be found without hunting. Three things move together, none
+   of them a glow laid over the drawing: the face takes ink, the edges are
+   written at full weight, and the book steps forward out of its row with the
+   shadow that implies. */
+.book[data-hot="true"],
+.book:hover {
+  --face-front: var(--room-select-tint);
+  --face-line: var(--room-select-line);
+  z-index: 2;
+  filter: drop-shadow(3px 5px 7px var(--room-cast));
+  transform: translateZ(0) rotate(var(--tilt, 0deg)) translateY(-9px);
+}
+
+.book[data-hot="true"] .bookDraw :global(.plate),
+.book:hover .bookDraw :global(.plate) {
+  fill: color-mix(in srgb, var(--room-select-ink) 55%, transparent);
+  stroke: var(--room-select-line);
+}
+
+.book[data-hot="true"] .bookDraw :global(.foot),
+.book:hover .bookDraw :global(.foot) {
+  fill: var(--room-select-ink);
+}
+
+.book[data-hot="true"] .bookSpine,
+.book:hover .bookSpine {
+  color: var(--room-select-ink);
+}
+
+/* On a phone the room is a header and the column is the page: the shelves keep
+   the top band they are packed into, and the text takes everything under it. */
+/* ON A PHONE THE ROOM IS A HEADER AND THE LIST IS THE PAGE. Holding the
+   column inside the stage there gave it its own little scrollport — a list
+   scrolling inside a box on a page that was itself scrolling, with empty screen
+   underneath. So the column leaves the overlay and simply flows under the
+   shelves, at the length it actually is. */
+@media (max-width: 640px) {
+  .room {
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .stage {
+    aspect-ratio: auto;
+    /* Tall enough for the cuts to read, short enough that the list is on
+       screen without scrolling for it. The band the niches pack into is the
+       top third of this, so the rest is wall — and wall below the shelves is
+       the room, but a screenful of it is just a wait. */
+    block-size: 36svh;
+    min-height: 0;
+  }
+
+  .frame {
+    inset-inline: 0 auto;
+  }
+
+  .sheet {
+    position: static;
+    inline-size: auto;
+    padding-inline: 0;
+    overflow: visible;
+    align-content: start;
+  }
+
+  .row {
+    grid-template-columns: 2rem minmax(0, 1fr) auto;
+    gap: var(--cw-space-sm);
+  }
+
+  .rowTitle {
+    font-size: 1.05rem;
+  }
+
+  .rowState {
+    font-size: 0.65rem;
+  }
+}

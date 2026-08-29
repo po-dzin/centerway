@@ -1,7 +1,9 @@
 export type UtilityPage = "thanks" | "pay-failed" | "public-offer";
 export type ManagedLandingPage = UtilityPage | "index2";
 
-export const LANDING_STATIC_BRANDS = new Set(["short", "reboot", "irem", "way21", "reset-day", "dosha", "consult", "herbs", "shared"]);
+// "short-b" is the A/B variant of the Short landing (/reboot-b): it owns css/js/fonts
+// under src/landing-static/short-b and reuses /short/img for imagery.
+export const LANDING_STATIC_BRANDS = new Set(["short", "short-b", "reboot", "irem", "way21", "reset-day", "dosha", "consult", "herbs", "shared"]);
 
 export const UTILITY_FILE_BY_PAGE: Record<UtilityPage, string> = {
   thanks: "thanks.html",

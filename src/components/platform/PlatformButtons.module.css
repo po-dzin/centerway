@@ -1,0 +1,356 @@
+/* The one button contract.
+
+   Every pressable control on a learner-facing surface composes from this file.
+   It exists because the same button was written five times — platform shell,
+   hero, cabinet, LMS, landing — and the five copies drifted on every axis that
+   was not a token: label weight came out 600/700/800, the gold gradient was
+   duplicated verbatim in two files and flattened in two others, and inline
+   padding took four different values. Radius was the only axis that held, and
+   only because it was a token from the start. That is the lesson encoded here:
+   an axis with no token is an axis that will diverge.
+
+   Geometry and type therefore come from `--ds-button-*` (delivery layer, see
+   docs/design-system.md "Buttons"), colour from the platform/material layers.
+   Nothing below hardcodes a size, a weight or a corner.
+
+   Six roles, and there is no seventh. If a new control does not fit one, the
+   contract changes here and in the doc — not by adding a private recipe in a
+   component stylesheet. `guard:buttons` fails the build on that.
+
+     primary    the one action that advances money or progress. Max one per view.
+     secondary  every other plated action, on any ground.
+     chrome     nav/utility on its own row — back, pager, drawer close, menu.
+     onMedia    a control sitting over hero photography.
+     text       an underlined text control — no plate, still a real target.
+
+   WHY FIVE AND NOT SIX (2026-08-27). `secondary` and `quiet` used to be two
+   roles separated by the ground they stood on: secondary was a plate the colour
+   of `--cw-platform-surface`, correct only where the canvas is a different
+   colour, and quiet was the stroked version for inside a card. That is not a
+   property of the ACTION — it is a property of where the caller happened to put
+   it, which means the choice had to be re-made correctly at every call site and
+   could not be checked by anything. It was not: «Консультація» in the video
+   rail and «Більше про автора» in the author panel both took `secondary` inside
+   a card, so both rendered a surface-coloured plate on a surface-coloured card
+   — a label with no button under it, at roughly 1.08 contrast.
+
+   One role now, and it carries the stroke that made `quiet` legible. A stroked
+   plate reads on the cream canvas and on a white card, so the role answers what
+   the control IS and never asks what is behind it. */
+
+.base {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--ds-button-gap);
+  min-height: var(--ds-button-min-height);
+  /* A button never grows past a hand's reach. Card and hero actions are set to
+     `width: 100%` on purpose — that is how a stub stops floating in its own
+     footer — but "100% of the card" stopped meaning "a button" once the card
+     itself got wide: in a maximised window the cabinet's "Вийти" came out a
+     1.5m-long gold band, and the LMS course CTA the same. The cap is the
+     contract's job, not each caller's, so it lives here and is owned by
+     guard:buttons. Uncapped below ~352px, which is every phone — the mobile
+     full-width button is unchanged. */
+  max-width: var(--ds-button-max-width);
+  padding-inline: var(--ds-button-padding-inline);
+  border: 0;
+  border-radius: var(--ds-button-radius);
+  font: inherit;
+  font-size: var(--ds-button-font-size);
+  font-weight: var(--ds-button-font-weight);
+  line-height: 1.1;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    transform 180ms ease,
+    box-shadow 180ms ease,
+    background 180ms ease,
+    border-color 180ms ease,
+    color 180ms ease;
+}
+
+/* One focus treatment for all five roles: the accent ring plus whatever
+   elevation the role already carries. Never `outline: none` without it. */
+.base:focus-visible {
+  outline: none;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 28%, transparent),
+    var(--cw-mat-shadow-soft);
+}
+
+.base:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── fit: how a button sizes itself in its container ──
+
+   THE SECOND AXIS, AND THE ONE THAT KEPT DRIFTING. The six roles above answer
+   what a button IS. They never answered how wide it should be, so every caller
+   answered that itself — and the answers were `width: fit-content`,
+   `width: 100%`, `flex: 1 1 100%`, `flex: 0 1 auto` + `min-width`, and nothing
+   at all, spread across five stylesheets. Three separate bugs came out of that
+   in one session: offer-card CTAs sized to their own labels so three cards in a
+   row showed three different stubs; cabinet card actions stacked at the
+   contract minimum and left a third of the card empty beside each; the
+   builder's icon-only options kept the inline padding meant for a label and
+   rendered as wide empty plates.
+
+   None of those is a role question. They are all the same question — "what does
+   this control do with the space it is given" — and it now has four documented
+   answers instead of one per caller. Compose exactly one alongside a role.
+
+     hug     content width. Toolbars and inline controls, where the label is
+             the object and the container is a row of other things.
+     fill    spans the container, still capped by --ds-button-max-width. Card
+             actions, hero CTAs, anything whose container IS the measure.
+     wide    a floor, not a span: two standalone buttons side by side come out
+             the same size instead of two different ones.
+     square  icon-only. A 1:1 box at the touch minimum with the label padding
+             removed — that padding is sized for text beside a glyph and reads
+             as a wide empty button without one. */
+
+.hug {
+  width: fit-content;
+}
+
+/* The cap stays `base`'s. That is what makes `fill` safe in a container of any
+   width: a lone action in a maximised window stops at 22rem instead of becoming
+   a 1.5m band, and a card at the default offer width (24rem less its padding =
+   21.5rem) is spanned exactly. */
+.fill {
+  width: 100%;
+}
+
+.wide {
+  min-width: var(--ds-button-min-width);
+}
+
+/* ── bar: a control that spans a panel edge ───────────
+
+   A collapse foot at the bottom of a side panel is a button, but it is not a
+   plate sitting inside content: it spans the panel, and the rule above it is
+   the border between the control and the thing it closes. It exists as a role
+   because the builder has TWO of them, one per side of the document, and two
+   controls that answer the same question on opposite sides of one document
+   have to be the same object rather than two hand-matched recipes. */
+.bar {
+  width: 100%;
+  min-width: 0;
+  max-width: none;
+  min-height: var(--ds-touch-target-min);
+  padding-inline: 0;
+  border-radius: 0;
+  aspect-ratio: auto;
+}
+
+/* ── round: a control that is a mark, not a plate ─────
+
+   The contract's radius is for a plate with a label in it. A control that is
+   pure geometry — the ring in a gap of a document, a step arrow — reads as a
+   circle or as nothing: at the contract's 1rem on a 3rem box it comes out a
+   squircle, which is neither the plate it is not nor the mark it is trying to
+   be. Use with `square`, which owns the box it rounds. */
+.round {
+  border-radius: 50%;
+}
+
+.square {
+  width: var(--ds-touch-target-min);
+  min-width: var(--ds-touch-target-min);
+  max-width: none;
+  padding-inline: 0;
+  aspect-ratio: 1;
+}
+
+/* ── row: a group of buttons ──────────────────────────
+
+   One line when they fit, one full-width line each when they do not — and the
+   threshold is the contract's own `--ds-button-min-width`, never a breakpoint
+   someone measured against one card. A media query cannot answer this: the same
+   card is 326px in a three-up grid and 560px in a one-up, at one viewport width.
+   Flexbox answers it exactly, so the rule is four lines and belongs to every
+   caller rather than being rewritten per surface. */
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+}
+
+.row > * {
+  flex: 1 1 var(--ds-button-min-width);
+}
+
+/* ── primary ──────────────────────────────────────── */
+
+/* The gold ramp lives here and only here. It runs accent → accent-pressed and
+   never into --cw-platform-accent-strong, which is the dark green: that older
+   ramp muddied into olive and read as a different yellow beside the flat gold.
+   Both stops are asserted by guard:contrast. */
+.primary {
+  composes: base;
+  color: var(--cw-platform-on-accent);
+  /* Vertical, not diagonal: a 135deg ramp reads as one corner lit and the
+     opposite corner dark on a button this wide and short (mobile full-bleed
+     runs ~7:1), which looks lopsided rather than a sheen. Top-to-bottom stays
+     left-right symmetric at any aspect ratio.
+
+     The grain layer is the same noise `.onMedia` and every glass surface use
+     — a flat gradient alone reads as a rendered plastic chip; this is what
+     "matte" costs on a filled plate instead of a translucent one. */
+  background-image: var(--cw-mat-grain-image), linear-gradient(180deg, var(--cw-platform-accent), var(--cw-platform-accent-pressed));
+  /* Two shadows, two jobs: the first lifts the plate off the page (elevation),
+     the second is a tight zero-offset bloom — the actual glow — since a pure
+     drop shadow reads as a shadow, not as the gold lighting the air around it. */
+  box-shadow:
+    0 16px 30px color-mix(in srgb, var(--cw-platform-accent) 20%, transparent),
+    0 0 22px color-mix(in srgb, var(--cw-platform-accent) 38%, transparent);
+}
+
+.primary:hover:not(:disabled) {
+  transform: translateY(var(--ds-button-lift));
+  background-image: var(--cw-mat-grain-image), linear-gradient(
+    180deg,
+    var(--cw-platform-accent-pressed),
+    color-mix(in srgb, var(--cw-platform-accent-pressed) 86%, var(--cw-platform-on-accent))
+  );
+  box-shadow:
+    0 20px 32px color-mix(in srgb, var(--cw-platform-accent) 24%, transparent),
+    0 0 28px color-mix(in srgb, var(--cw-platform-accent) 46%, transparent);
+}
+
+.primary:active:not(:disabled) {
+  transform: translateY(calc(var(--ds-button-lift) * -1));
+  box-shadow: 0 10px 20px color-mix(in srgb, var(--cw-platform-accent) 18%, transparent);
+}
+
+/* ── secondary ────────────────────────────────────── */
+
+/* The stroke is the material's control boundary, the one stroke token held to
+   WCAG 1.4.11's 3:1 in both themes (see docs "The control stroke"). It is what
+   makes the plate a control rather than a tint: sunk-on-surface measured 1.08
+   without it, 3.37 with. No resting elevation — a stroked plate that also
+   floats reads as two ways of saying the same thing. */
+.secondary {
+  composes: base;
+  border: 1px solid var(--cw-mat-stroke-control);
+  color: var(--cw-platform-text);
+  background-color: var(--cw-mat-surface-sunk);
+  background-image: var(--cw-mat-grain-image);
+}
+
+.secondary:hover:not(:disabled) {
+  transform: translateY(var(--ds-button-lift));
+  background-color: color-mix(in srgb, var(--cw-mat-surface-sunk) 68%, var(--cw-mat-surface) 32%);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.secondary:active:not(:disabled) {
+  transform: translateY(calc(var(--ds-button-lift) * -1));
+}
+
+/* ── chrome ───────────────────────────────────────── */
+
+/* Transparent at rest. These sit on their own row with nothing to separate
+   from; filled pills there read as objects competing with the content. The
+   surface arrives on hover and focus, where it means something. */
+.chrome {
+  composes: base;
+  min-width: var(--ds-touch-target-min);
+  font-size: 0.9rem;
+  color: var(--cw-platform-text);
+  background: transparent;
+  box-shadow: none;
+}
+
+.chrome:hover:not(:disabled) {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Icon-only: the inline padding is sized for a label beside the glyph, and
+   without one it reads as a wide empty button.
+
+   `base` is named EXPLICITLY beside `chrome`, and it has to be. The transitive
+   chain — chromeBare → chrome → base — drops `base` under this bundler, so
+   every icon-only control in the app rendered without the contract's geometry:
+   measured 48x20 on the builder's header arrows and 48x18 on its row menus,
+   against a 48px touch minimum, with `display` falling back to block. One-level
+   composition (`chrome base`) is what actually arrives, so it is what we write. */
+.chromeBare {
+  composes: base;
+  composes: chrome;
+  padding-inline: 0;
+}
+
+/* Icon-only chrome is guided by the baked ink ring supplied by its consumer.
+   A pale material plate competes with that gesture and reads as a default
+   browser highlight on the paper surface. */
+.chromeBare:hover:not(:disabled) {
+  background: transparent;
+  box-shadow: none;
+}
+
+/* ── onMedia ──────────────────────────────────────── */
+
+/* A control over photography darkens, it does not lighten: a pale tint there
+   produced a washed pill carrying cream text. This is the night glass — the
+   same surface `.heroBadge` takes, on the same scrimmed hero. Left on the day
+   surface it was the one light plate on the page and read as a disabled
+   control beside the gold CTA. */
+.onMedia {
+  composes: base;
+  position: relative;
+  overflow: hidden;
+  isolation: isolate;
+  color: var(--cw-platform-accent-contrast);
+  background-color: color-mix(in srgb, var(--cw-mat-surface-night) var(--cw-mat-tint-chrome-floor), transparent);
+  background-image: var(--cw-mat-grain-image);
+  box-shadow: var(--cw-mat-shadow-raised);
+  backdrop-filter: var(--cw-mat-filter);
+}
+
+/* ── text ────────────────────────────────────────── */
+
+/* A control that presents as a sentence, not an object: no plate, no
+   elevation, underline instead. It still owes the system a full touch target
+   and the one focus ring — that is why it is a role here rather than a bare
+   <button> someone styled as a link. Its type is deliberately the small body
+   size: it annotates something, and a 1rem 700 label would outweigh the thing
+   it annotates. */
+.text {
+  composes: base;
+  min-width: 0;
+  /* A sentence, not a plate — capping it would wrap the label mid-phrase. */
+  max-width: none;
+  padding-inline: 0;
+  color: var(--cw-platform-muted);
+  background: transparent;
+  box-shadow: none;
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 600;
+  text-decoration: underline;
+  text-underline-offset: 0.24em;
+}
+
+.text:hover:not(:disabled) {
+  color: var(--cw-platform-text);
+}
+
+/* ── Reduced motion ───────────────────────────────── */
+
+/* Buttons keep their colour and elevation states and lose only the lift: the
+   state still reads, the movement does not. One rule for all five roles. */
+@media (prefers-reduced-motion: reduce) {
+  .base {
+    transition: none;
+  }
+
+  .base:hover,
+  .base:active {
+    transform: none;
+  }
+}

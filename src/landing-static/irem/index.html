@@ -2,9 +2,12 @@
 <html lang="uk" data-cw-landing="irem" data-cw-page="irem">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <base href="/irem/">
-<link rel="shortcut icon" href="img/cw-logo.png" type="image/png">
+<meta name="theme-color" content="#faefe0">
+<link rel="icon" href="/shared/img/cw-icon-tab.svg" type="image/svg+xml">
+<link rel="icon" href="/shared/img/cw-icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="/shared/img/cw-apple-touch.png">
 <title>ІВЕМ-гімнастика — одна практика замість п'яти</title>
 <meta name="description" content="Інтегральна відновлювальна енергомодулююча гімнастика: одна щоденна 60-хвилинна практика, синхронізована з вашими біоритмами. Рух, дихання й увага в одній системі.">
 <link rel="canonical" href="https://irem.centerway.net.ua/">
@@ -17,6 +20,44 @@
 <!-- End Meta Pixel Code -->
 </head>
 <body>
+
+<!-- ============ BURGER NAV (shared mechanism, irem structure) ============ -->
+<header class="cw-nav" id="top" data-cw-nav>
+  <a class="cw-nav__brand" href="#top" aria-label="CenterWay — на початок">
+    <img class="cw-nav__mark" src="/shared/img/cw-mark-ink.svg" alt="" aria-hidden="true" decoding="async">
+    <span class="cw-nav__wordmark">CenterWay</span>
+  </a>
+  <nav class="cw-nav__desktop" aria-label="Навігація сторінкою">
+    <a href="#about">Про практику</a>
+    <a href="#structure">Структура</a>
+    <a href="#protocol">30 днів</a>
+    <a href="#author">Про куратора</a>
+    <a href="#results">Результати</a>
+    <a href="#offer">Формати</a>
+    <a href="#faq">Питання</a>
+  </nav>
+  <button class="cw-nav__burger" type="button" data-cw-nav-toggle aria-label="Меню" aria-expanded="false" aria-controls="cwNavPanel">
+    <svg class="cw-nav__burger-ico" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-menu"/></svg><svg class="cw-nav__burger-ico cw-nav__burger-ico--close" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg>
+  </button>
+</header>
+<div class="cw-nav__drawer" data-cw-nav-drawer>
+  <div class="cw-nav__backdrop" data-cw-nav-close aria-hidden="true"></div>
+  <nav class="cw-nav__panel" id="cwNavPanel" aria-label="Меню" data-cw-nav-panel>
+    <button class="cw-nav__close" type="button" data-cw-nav-close aria-label="Закрити меню"><svg class="cw-nav__close-ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg></button>
+    <ul class="cw-nav__list">
+      <li><a href="#about">Про практику</a></li>
+      <li><a href="#structure">Структура</a></li>
+      <li><a href="#protocol">Протокол 30 днів</a></li>
+      <li><a href="#author">Про куратора</a></li>
+      <li><a href="#results">Результати</a></li>
+      <li><a href="#offer">Формати</a></li>
+      <li><a href="#faq">Питання</a></li>
+    </ul>
+    <div class="cw-nav__cta">
+      <a href="#offer" class="btn btn-primary">Почати практику →</a>
+    </div>
+  </nav>
+</div>
 
 <!-- ============ HERO ============ -->
 <section class="hero">
@@ -62,7 +103,7 @@
         <a href="#offer" class="btn btn-primary" data-cta-hero>Почати практику <span class="arr">→</span></a>
         <div class="hero-trust">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          Гарантія результату 14 днів або повернення коштів
+          <a class="refund-policy-link" href="index2.html#refund-policy">Гарантія результату 14 днів або повернення коштів</a>
         </div>
       </div>
     </div>
@@ -96,7 +137,7 @@
 </section>
 
 <!-- ============ SHIFT ============ -->
-<section class="sec sec-alt">
+<section class="sec sec-alt" id="about">
   <div class="wrap">
     <div class="shift reveal">
       <span class="kicker">Зрушення</span>
@@ -127,8 +168,20 @@
   </div>
 </section>
 
+<!-- ============ MICRO CTA: MONDAY ============ -->
+<section class="sec microcta">
+  <div class="wrap">
+    <div class="microcta-card reveal">
+      <h3 class="microcta-title">Досить починати «з понеділка»</h3>
+      <p class="microcta-text">Кожен пропущений тиждень — це ще один цикл виснаження замість відновлення. Почніть новий цикл вже сьогодні.</p>
+      <div class="microcta-price"><b>3950 грн</b><small>повний доступ</small></div>
+      <a href="#offer" class="btn btn-primary" data-cta-suppress-sticky>Почати практику <span class="arr">→</span></a>
+    </div>
+  </div>
+</section>
+
 <!-- ============ MECHANISM / TRIAD ============ -->
-<section class="sec">
+<section class="sec" id="structure">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Як це працює · Механізм</span>
@@ -300,7 +353,7 @@
 </section>
 
 <!-- ============ PROTOCOL ============ -->
-<section class="sec sec-alt">
+<section class="sec sec-alt" id="protocol">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Ваш шлях</span>
@@ -363,6 +416,18 @@
   </div>
 </section>
 
+<!-- ============ MICRO CTA: QUALIFICATION ============ -->
+<section class="sec microcta">
+  <div class="wrap">
+    <div class="microcta-card reveal">
+      <h3 class="microcta-title">Впізнали себе в цьому списку?</h3>
+      <p class="microcta-text">Значить, ІВЕМ — саме ваш формат. Приєднуйтесь і почніть перший цикл вже цього тижня.</p>
+      <div class="microcta-price"><b>3950 грн</b><small>повний доступ</small></div>
+      <a href="#offer" class="btn btn-primary" data-cta-suppress-sticky>Почати практику <span class="arr">→</span></a>
+    </div>
+  </div>
+</section>
+
 <!-- ============ INCLUDED ============ -->
 <section class="sec">
   <div class="wrap">
@@ -392,7 +457,7 @@
 </section>
 
 <!-- ============ AUTHOR ============ -->
-<section class="sec sec-alt">
+<section class="sec sec-alt" id="author">
   <div class="wrap">
     <div class="author reveal">
       <div class="author-photo"><img src="img/curator-photo.webp" width="800" height="1200" loading="lazy" decoding="async" alt="Євгеній Корякін — засновник центру CenterWay"></div>
@@ -413,7 +478,7 @@
 </section>
 
 <!-- ============ PROOF ============ -->
-<section class="sec">
+<section class="sec" id="results">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Відгуки</span>
@@ -464,7 +529,7 @@
           <li>Доступ з будь-якого пристрою</li>
         </ul>
         <a href="/irem" class="btn btn-primary fc-cta openModal" data-cta-final>Почати практику <span class="arr">→</span></a>
-        <div class="fc-guarantee"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Гарантія 14 днів</div>
+        <div class="fc-guarantee"><svg width="13" height="13" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg><a class="refund-policy-link" href="index2.html#refund-policy">Гарантія 14 днів</a></div>
       </div>
 
       <!-- Individual -->
@@ -514,7 +579,7 @@
 </section>
 
 <!-- ============ FAQ ============ -->
-<section class="sec">
+<section class="sec" id="faq">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Питання й відповіді</span>
@@ -534,7 +599,7 @@
         <div class="acc-body"><ul><li>Безумовно. Займаючись із відеоуроком дня, ви легко підберете початкове навантаження під свій стан — і форма стабільно покращуватиметься.</li></ul></div>
       </details>
       <details class="acc-item reveal"><summary><span class="num">05</span>А якщо не спрацює?<span class="chev"><svg viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
-        <div class="acc-body"><ul><li>Діє гарантія 14 днів: за умови регулярного й правильного виконання ви отримаєте помітний результат — або ми повернемо кошти.</li></ul></div>
+        <div class="acc-body"><ul><li><a class="refund-policy-link" href="index2.html#refund-policy">Діє гарантія 14 днів: за умови регулярного й правильного виконання ви отримаєте помітний результат — або ми повернемо кошти.</a></li></ul></div>
       </details>
     </div>
   </div>
@@ -546,7 +611,7 @@
     <div class="footer-top">
       <div class="footer-col">
         <a href="#top" class="brand">
-          <img src="img/cw-logo.png" alt="" class="brand-mark" aria-hidden="true">
+          <img src="/shared/img/cw-mark-gold.svg" alt="" class="brand-mark" aria-hidden="true">
           CenterWay
         </a>
         <p>Інтегральна відновлювальна енергомодулююча гімнастика. Рух, дихання й увага — в одній системі.</p>
@@ -554,13 +619,14 @@
       <div class="footer-col">
         <h5>Контакти</h5>
         <a href="tel:+380636024450">+38 (063) 602 44 50</a>
+        <a href="https://telegram.me/centerway_support_bot" target="_blank" rel="noopener">Підтримка в Telegram</a>
         <a href="/irem/index2.html">Політика конфіденційності</a>
       </div>
       <div class="footer-col">
         <h5>Соцмережі</h5>
         <div class="footer-social">
           <a href="https://www.youtube.com/channel/UC0VPHLWTIXD3Rad5XkcyliA" aria-label="YouTube"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.5-5c-.3-1-1-1.7-2-2C18.8 4.5 12 4.5 12 4.5s-6.8 0-8.5.5c-1 .3-1.7 1-2 2C1 8.5 1 12 1 12s0 3.5.5 5c.3 1 1 1.7 2 2 1.7.5 8.5.5 8.5.5s6.8 0 8.5-.5c1-.3 1.7-1 2-2 .5-1.5.5-5 .5-5ZM10 15V9l5 3-5 3Z"/></svg></a>
-          <a href="https://t.me/E_Koriakin" aria-label="Telegram"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.5 4.5 2.5 11.8c-.9.4-.9 1.6 0 1.9l4.8 1.5 1.8 5.6c.2.7 1 .9 1.5.4l2.7-2.5 4.7 3.5c.6.4 1.4.1 1.6-.6l3.2-15c.2-.9-.7-1.7-1.5-1.6ZM9.5 14.3l8.6-5.3-7 6.2-.2 3.3-1.4-4.2Z"/></svg></a>
+          <a href="https://telegram.me/E_Koriakin" aria-label="Telegram"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.5 4.5 2.5 11.8c-.9.4-.9 1.6 0 1.9l4.8 1.5 1.8 5.6c.2.7 1 .9 1.5.4l2.7-2.5 4.7 3.5c.6.4 1.4.1 1.6-.6l3.2-15c.2-.9-.7-1.7-1.5-1.6ZM9.5 14.3l8.6-5.3-7 6.2-.2 3.3-1.4-4.2Z"/></svg></a>
           <a href="https://www.instagram.com/evgeniy_koryakin/" aria-label="Instagram"><svg width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/></svg></a>
           <a href="https://www.facebook.com/centerway" aria-label="Facebook"><svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
         </div>
@@ -584,15 +650,15 @@
 <div class="lead-modal" data-lead-modal hidden>
   <div class="lead-modal__backdrop" data-lead-close></div>
   <div class="lead-modal__dialog" role="dialog" aria-modal="true" aria-labelledby="leadModalTitle">
-    <button type="button" class="lead-modal__x" data-lead-close aria-label="Закрити">×</button>
+    <button type="button" class="lead-modal__x" data-lead-close aria-label="Закрити"><svg class="lead-modal__x-ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg></button>
     <p class="lead-modal__program">ІВЕМ — індивідуальна програма</p>
     <h3 id="leadModalTitle" class="lead-modal__title">Залиште заявку на супровід</h3>
     <p class="lead-modal__sub">Ми зв'яжемось з вами, щоб узгодити старт персонального ведення з автором системи.</p>
     <form data-lead-form data-lead-product="irem-individual" novalidate>
-      <input class="lead-modal__input" name="name" type="text" autocomplete="name" placeholder="Ім'я" required>
-      <input class="lead-modal__input" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="Телефон">
-      <input class="lead-modal__input" name="email" type="email" autocomplete="email" placeholder="Email">
-      <textarea class="lead-modal__input" name="message" rows="3" placeholder="Коментар (необов'язково)"></textarea>
+      <input class="lead-modal__input" name="name" type="text" autocomplete="name" placeholder="Ім'я" required autocapitalize="words" enterkeyhint="next">
+      <input class="lead-modal__input" name="phone" type="tel" autocomplete="tel" inputmode="tel" placeholder="Телефон" enterkeyhint="next">
+      <input class="lead-modal__input" name="email" type="email" autocomplete="email" placeholder="Email" inputmode="email" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next">
+      <textarea class="lead-modal__input" name="message" rows="3" placeholder="Коментар (необов'язково)" autocapitalize="sentences"></textarea>
       <button type="submit" class="btn btn-primary lead-modal__submit">Надіслати заявку <span class="arr">→</span></button>
       <p class="lead-modal__status" data-lead-status hidden></p>
     </form>

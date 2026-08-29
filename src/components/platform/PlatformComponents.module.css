@@ -19,8 +19,8 @@
   gap: clamp(1rem, 2.8vw, 1.5rem);
   padding: clamp(1.2rem, 3vw, 1.8rem);
   border: 0;
-  background: var(--cw-depth-card-bg);
-  box-shadow: var(--cw-depth-shadow-medium);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-raised);
 }
 
 .diagnosticStage {
@@ -91,13 +91,13 @@
 
 .authModalClose:hover {
   color: var(--cw-platform-text);
-  background: var(--cw-surface-shell-hover-bg);
+  background: var(--cw-mat-tint-hover);
 }
 
 .authModalClose:focus-visible {
   outline: none;
   color: var(--cw-platform-text);
-  background: var(--cw-surface-shell-hover-bg);
+  background: var(--cw-mat-tint-hover);
   box-shadow: var(--platform-utility-control-focus);
 }
 
@@ -108,33 +108,32 @@
 }
 
 .diagnosticTextButton {
-  width: fit-content;
-  min-height: var(--ds-touch-target-min);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0 0.15rem;
-  border: 0;
-  color: var(--cw-platform-muted);
-  background: transparent;
-  font-size: var(--ds-type-body-sm-size);
-  font-weight: 600;
-  text-decoration: underline;
-  text-underline-offset: 0.24em;
-  cursor: pointer;
+  composes: text from "./PlatformButtons.module.css";
+  composes: hug from "./PlatformButtons.module.css";
 }
+
 
 .diagnosticProgressTrack {
   height: 0.5rem;
   overflow: hidden;
   border-radius: 999px;
-  background: color-mix(in srgb, var(--cw-platform-border) 72%, var(--cw-platform-surface) 28%);
+  background: var(--cw-mat-meter-track);
 }
 
+/* Brand greens, not status colours. The original ramp was
+   success → pending-mixed-with-success, which measured 2.75 and 2.65 against
+   this track — below the 3:1 a bar you have to read needs, and the reason the
+   same recipe rendered as a grey hairline in the cabinet. guide-primary →
+   guide-strong keeps the gradient and clears it at 4.92 / 11.26. */
 .diagnosticProgressBar {
   height: 100%;
   border-radius: 999px;
-  background: linear-gradient(90deg, var(--cw-status-success) 0%, color-mix(in srgb, var(--cw-status-pending) 75%, var(--cw-status-success) 25%) 100%);
+  /* One meter fill for the system, and it changes with the theme. The green
+     ramp clears its track at 4.92 / 11.26 on cream and disappears on graphite —
+     a deep green on a near-black ground is not a low-contrast bar, it is no bar
+     at all. `--cw-platform-meter` carries the ramp each ground can show: the
+     green on light, the gold on dark. */
+  background: var(--cw-platform-meter);
   transition: width 0.3s ease;
 }
 
@@ -153,6 +152,255 @@
 .diagnosticHeroCard .card[data-tone="proof"] p,
 .diagnosticHeroCard .card[data-tone="proof"] li {
   color: color-mix(in srgb, var(--cw-platform-text) 70%, var(--cw-platform-muted) 30%);
+}
+
+/* Diagnostic flow (question -> loading -> result) shares the platform section
+   rhythm: one stage panel, one chip, one progress row, one action grid. */
+.diagnosticFlowStack {
+  display: grid;
+  gap: clamp(1.2rem, 2.8vw, 1.5rem);
+}
+
+.diagnosticFlowHead {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+/* Chips are glass, cards are matte — this one was on the matte proof tone and
+   read as a flat sticker next to the hero badge's glass. */
+.diagnosticStepChip {
+  min-height: var(--ds-touch-target-min);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 1rem;
+  border: 0;
+  border-radius: 999px;
+  color: var(--cw-platform-text);
+  background-color: var(--cw-mat-tint);
+  background-image: var(--cw-mat-grain-image);
+  backdrop-filter: var(--cw-mat-filter);
+  box-shadow: var(--cw-mat-shadow-soft);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+  line-height: var(--ds-type-label-line-height);
+  text-transform: uppercase;
+}
+
+.diagnosticProgressRow {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.diagnosticProgressMeta {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: var(--ds-type-label-size);
+  font-weight: 700;
+  line-height: var(--ds-type-label-line-height);
+  /* Deliberately not uppercased: in the data font an uppercase "З" is
+     indistinguishable from "3", so "Питання 1 з 12" would read as "1 3 12". */
+}
+
+.diagnosticQuestionIntro {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.diagnosticOptionList {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.diagnosticOption {
+  width: 100%;
+  min-height: var(--ds-touch-target-min);
+  padding: 0.75rem 1rem;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-size);
+  font-weight: 600;
+  line-height: var(--ds-type-body-line-height);
+  text-align: left;
+}
+
+/* Leaving the test is a way back, not another link in the row. The arrow says
+   where it goes before the words do — the same reason a back control anywhere
+   else carries one. */
+.diagnosticBackLink {
+  composes: text from "./PlatformButtons.module.css";
+  gap: 0.4rem;
+  text-decoration: none;
+}
+
+
+.diagnosticBackLink:hover {
+  color: var(--cw-platform-text);
+}
+
+.diagnosticBackLink span {
+  text-decoration: underline;
+  text-underline-offset: 0.22em;
+}
+
+.diagnosticBackIcon {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+}
+
+/* Step controls: back on the left, forward on the right, forward twice the
+   weight. On a phone they share the row rather than stacking — the pair is one
+   decision, and splitting it over two lines reads as two. */
+.diagnosticStepActions {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.diagnosticStepActions button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.diagnosticFlowFoot {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+}
+
+.diagnosticLoadingStack {
+  display: grid;
+  justify-items: start;
+  gap: 1rem;
+  padding: 1.5rem 0;
+}
+
+/* ── Shared platform loading state ──────────────────
+   One content layer inside the route's existing shell. The animated mark is
+   the DS spinner replacement; fixed internal geometry reserves the final row
+   and prevents session/data phases from producing different page layouts. */
+.platformLoadingState {
+  width: min(100%, 42rem);
+  min-height: clamp(8rem, 18svh, 10.5rem);
+  margin-inline: auto;
+  padding: var(--cw-space-md) var(--cw-space-lg);
+  display: grid;
+  align-content: center;
+  border-radius: var(--cw-radius-xl);
+  color: var(--cw-platform-text);
+}
+
+.platformLoadingLabel {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.platformLoadingSignal {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-sm);
+  min-width: 0;
+  color: var(--cw-platform-muted);
+}
+
+.platformLoadingCopy {
+  display: grid;
+  gap: calc(var(--cw-space-2xs) / 2);
+  min-width: 0;
+}
+
+.platformLoadingLabel {
+  margin-block-end: var(--cw-space-2xs);
+}
+
+.platformLoadingTitle,
+.platformLoadingDetail {
+  margin: 0;
+  line-height: 1.5;
+}
+
+.platformLoadingTitle {
+  color: var(--cw-platform-text);
+  font-weight: 600;
+}
+
+.platformLoadingDetail {
+  color: var(--cw-platform-muted);
+  font-size: 0.92rem;
+}
+
+.diagnosticSpinner {
+  width: 3rem;
+  height: 3rem;
+  border: 4px solid var(--cw-platform-border);
+  border-top-color: var(--cw-status-success);
+  border-radius: 999px;
+  animation: diagnosticSpin 900ms linear infinite;
+}
+
+@keyframes diagnosticSpin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .diagnosticSpinner {
+    animation: none;
+  }
+
+  .diagnosticProgressBar {
+    transition: none;
+  }
+}
+
+.diagnosticResultActions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.diagnosticResultActions > * {
+  width: 100%;
+}
+
+.diagnosticScoreRow {
+  font-family: var(--cw-font-data);
+  font-weight: 700;
+}
+
+.diagnosticErrorNote {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: var(--cw-radius-sm);
+  color: var(--cw-danger);
+  background: color-mix(in srgb, var(--cw-danger) 8%, var(--cw-platform-surface) 92%);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: var(--ds-type-body-line-height);
+}
+
+@media (max-width: 640px) {
+  .diagnosticResultActions {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .diagnosticNumberList {
@@ -193,6 +441,15 @@
 .field input,
 .field select,
 .field textarea {
+  /* WHERE THE BROWSER PARKS A FOCUSED FIELD (2026-08-28).
+     Tapping a field, or moving to the next one with the keyboard's own «next»,
+     makes the browser scroll it into view — and its idea of «in view» is the
+     top of the viewport, where this product keeps a floating topbar. Without a
+     margin the label and the first line of the field land underneath it.
+     `--platform-topbar-block` is the shell's own statement of how much room the
+     bar takes; the fallback is that same sum for the surfaces that do not
+     declare it. */
+  scroll-margin-block: calc(var(--platform-topbar-block, 4.65rem) + var(--cw-space-md)) var(--cw-space-lg);
   width: 100%;
   min-height: var(--ds-touch-target-min);
   font-size: var(--ds-type-body-size);
@@ -231,7 +488,7 @@
     linear-gradient(
       180deg,
       transparent 0%,
-      color-mix(in srgb, var(--cw-platform-bg) 96%, var(--cw-sem-calm-surface-muted) 4%) 18%,
+      color-mix(in srgb, var(--cw-platform-bg) 96%, var(--cw-platform-surface-muted) 4%) 18%,
       color-mix(in srgb, var(--cw-platform-bg) 98%, white 2%) 56%,
       color-mix(in srgb, var(--cw-platform-bg) 97%, white 3%) 100%
     );
@@ -265,6 +522,13 @@
   gap: 0.7rem;
 }
 
+/* Personal and storefront endings carry different links, not different
+   geometry. Both use the same container and the same three-track composition;
+   the shared responsive rules collapse both at the same breakpoints. */
+.footerGridPersonal {
+  composes: footerGrid;
+}
+
 .footerLead,
 .footerLinks {
   display: grid;
@@ -273,6 +537,7 @@
 .footerLead,
 .footerLinks a:first-child,
 .footerLinks a,
+.footerLinks button,
 .footerSocials a:first-child {
   color: var(--cw-platform-muted);
   font-family: var(--cw-font-body);
@@ -287,16 +552,28 @@
   align-content: start;
 }
 
-.footer a {
+/* The install entry is a BUTTON — it opens the browser's own prompt, there is
+   no href to give it — and in a column of links it has to be one of them, not a
+   control that arrived from somewhere else. Everything below is written for
+   both, so the two are indistinguishable until pressed. */
+.footer a,
+.footer button {
   width: fit-content;
   display: inline-flex;
   align-items: center;
   gap: 0.65rem;
+  padding: 0;
+  border: 0;
+  background: none;
   color: var(--cw-platform-muted);
+  font: inherit;
+  text-align: left;
   text-decoration: none;
+  cursor: pointer;
 }
 
-.footer a:hover {
+.footer a:hover,
+.footer button:hover {
   color: var(--cw-platform-text);
 }
 
@@ -419,126 +696,6 @@
   flex: 0 0 auto;
 }
 
-.profileHeroIdentityCard {
-  padding: clamp(1.05rem, 2.8vw, 1.4rem);
-  border-radius: var(--cw-card-radius);
-  background: var(--cw-surface-glass-bg);
-  box-shadow: var(--cw-surface-glass-shadow);
-  backdrop-filter: var(--cw-surface-glass-filter);
-  -webkit-backdrop-filter: var(--cw-surface-glass-filter);
-}
-
-.profileHeroIdentity {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: start;
-  gap: clamp(1rem, 2.4vw, 1.35rem);
-}
-
-.profileHeroKicker {
-  margin: 0 0 0.15rem;
-  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 72%, transparent);
-  font-family: var(--cw-font-data);
-  font-size: var(--ds-type-label-size);
-  font-weight: 700;
-  line-height: var(--ds-type-label-line-height);
-  letter-spacing: 0.03em;
-  text-transform: uppercase;
-}
-
-.profileHeroAvatar {
-  width: clamp(4.4rem, 12vw, 5.4rem);
-  height: clamp(4.4rem, 12vw, 5.4rem);
-  display: grid;
-  place-items: center;
-  overflow: hidden;
-  border-radius: 999px;
-  color: var(--cw-platform-text);
-  background:
-    radial-gradient(circle at 36% 24%, color-mix(in srgb, var(--cw-sem-warmth) 44%, transparent), transparent 46%),
-    color-mix(in srgb, var(--cw-platform-accent-contrast) 86%, transparent);
-  box-shadow: var(--cw-depth-shadow-strong);
-  font-family: var(--cw-font-data);
-  font-size: 1.15rem;
-  font-weight: 800;
-}
-
-.profileHeroAvatar img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
-}
-
-.profileStatGrid {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 1rem;
-}
-
-.profileStatCard {
-  min-height: 5.4rem;
-  padding: 1rem 1.1rem;
-  border-radius: var(--cw-radius-sm);
-  color: var(--cw-platform-text);
-  background: var(--cw-depth-card-bg);
-  box-shadow: var(--cw-depth-shadow-soft);
-  border: 1px solid color-mix(in srgb, var(--cw-platform-border) 74%, transparent);
-}
-
-.profileStatCard .label {
-  color: var(--cw-platform-muted);
-}
-
-.profileStatCard[data-tone="guide"] {
-  background: color-mix(in srgb, var(--cw-depth-support-bg) 84%, var(--cw-platform-surface) 16%);
-}
-
-.profileStatCard[data-tone="support"] {
-  background: var(--cw-depth-card-bg);
-}
-
-.profileStatCard[data-tone="proof"] {
-  background: var(--cw-depth-proof-bg);
-}
-
-.profileHeroActions {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 0.75rem;
-}
-
-.profileHeroActions > * {
-  flex: 0 0 auto;
-}
-
-.profileSummaryList {
-  display: grid;
-  gap: 0.75rem;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.profileSummaryList li {
-  padding: 0.95rem 1rem;
-  border-radius: var(--cw-radius-sm);
-  color: var(--cw-platform-muted);
-  background: var(--cw-platform-surface);
-  box-shadow: var(--cw-depth-shadow-soft);
-}
-
-.profileSummaryList strong {
-  display: block;
-  margin-top: 0.18rem;
-  color: var(--cw-platform-text);
-  font-family: var(--cw-font-editorial);
-  font-size: clamp(1.25rem, 2vw, 1.55rem);
-  font-weight: 700;
-  line-height: 1.08;
-}
-
 .profileGridPair {
   align-items: start;
 }
@@ -547,51 +704,68 @@
   min-width: 0;
 }
 
-.profileMain .profileSummaryList li {
-  min-height: 0;
+/* ── Shared page head ───────────────────────────────
+   The top of every list page — see `PlatformPageHead.tsx` for what the three
+   parts are for. The metrics live here rather than in each surface's own module
+   because that is exactly what drifted: two shelves, two title sizes, one with
+   a caption and one without.
+
+   The title is EDITORIAL and the label and lead are UI. That contrast is the
+   whole hierarchy: the serif line is the page's name, everything around it is
+   the interface speaking. */
+.pageHeadBlock {
+  display: grid;
+  gap: var(--cw-space-xs);
+  margin-block-end: var(--cw-space-lg);
 }
 
-.profileStatCard strong {
-  display: block;
-  margin-top: 0.22rem;
-  color: var(--cw-platform-text);
+/* Title and tools on one line, and the tools wrap UNDER the naming block rather
+   than squeezing it: a two-word Ukrainian title next to two controls is the
+   case that decides this, and a title compressed to one word per line to keep a
+   button company is the wrong trade. */
+.pageHeadLine {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: var(--cw-space-sm);
+}
+
+.pageHeadNaming {
+  display: grid;
+  gap: 0.15rem;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* The platform's single caption idiom — the same numbers the loading state and
+   the cabinet's section labels carry. */
+.pageHeadLabel {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pageHeadTitle {
+  margin: 0;
   font-family: var(--cw-font-editorial);
-  font-size: clamp(1.2rem, 2vw, 1.65rem);
-  font-weight: 700;
-  line-height: 1.02;
-  overflow-wrap: anywhere;
+  font-size: clamp(1.6rem, 5vw, 2.1rem);
+  font-weight: 500;
+  line-height: 1.15;
 }
 
-.profileScoreList {
-  display: grid;
-  gap: 0.85rem;
+.pageHeadLead {
+  margin: 0;
+  max-width: 44rem;
+  color: var(--cw-platform-muted);
+  line-height: 1.6;
 }
 
-.profileScoreRow {
-  display: grid;
-  gap: 0.4rem;
-}
-
-.profileScoreMeta {
+.pageHeadTools {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  color: var(--cw-platform-text);
-  font-weight: 700;
-}
-
-.profileScoreTrack {
-  width: 100%;
-  height: 0.7rem;
-  overflow: hidden;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--cw-platform-border) 72%, var(--cw-platform-surface) 28%);
-}
-
-.profileScoreFill {
-  height: 100%;
-  display: block;
-  border-radius: inherit;
-  background: linear-gradient(90deg, var(--cw-sem-guide-strong), var(--cw-platform-accent));
+  gap: var(--cw-space-xs);
+  flex: 0 0 auto;
 }

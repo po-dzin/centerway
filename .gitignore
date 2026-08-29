@@ -1,5 +1,7 @@
 node_modules
 .next/
+# The dev server's own output — see the distDir note in next.config.ts.
+.next-dev/
 .env*
 !.env.example
 .DS_Store
@@ -12,3 +14,13 @@ artifacts/
 output/
 outputs/
 test-results/
+.design/
+# Image-generator scratch. Promoting a frame out of these is a deliberate step
+# (docs/design-system.md, "The imagery pipeline") — the raw renders are not.
+public/cw/img/_staging/
+public/cw/img/_candidates/
+
+# python bytecode
+__pycache__/
+*.pyc
+dist-library-depth.html

@@ -13,7 +13,7 @@ Two layers exist and they are complementary, not competing:
 **Platform core — the Next.js app.** Already further along than "landing backend":
 
 - catalog pages for **six** programs (`reboot`, `way21`, `ideal-body`, `irem`, `herbs`, `reset-day`) in `src/lib/platform/content.ts`;
-- dosha test engine with API, attempts, reminders (`/dosha-test`, `api/tests`, `api/cron/dosha-reminders`);
+- dosha test engine with API, attempts, reminders (tests hub `/tests` + surface `/tests/dosha`, `api/tests`, `api/cron/dosha-reminders`);
 - user identity: Supabase auth, `api/platform/users/me` + `sync`, a 500-line profile client (dosha, purchases, accesses);
 - orders/analytics/admin APIs, Telegram integration (`api/tg`);
 - a canonical 8-layer design-token system (ReOS `Дизайн-токены.md`, runtime `data/design-tokens/cw.tokens.json`, guards `tokens:build` / `guard:ds-contract` / `ds:qa`).
@@ -45,7 +45,7 @@ Principles that follow:
 1. **Every node feeds identity.** A test result, a lead, a purchase — each should create/enrich a platform profile. Today only purchases and the dosha test do; landing leads live in a table nobody logs into.
 2. **The network stays thin, the platform gets deep.** Landings sell one decision each (invariant: one primary CTA); the platform owns everything after the decision.
 3. **`dosha` is the strategic asset.** It is the only free, shareable, segmenting entry — the top of the funnel and the personalization key for everything downstream (protocol per constitution is the product's core claim).
-4. **Scaling the network = adding nodes, not pages.** `ideal-body` is the obvious 6th node: it already has a platform page and a lead code, but no funnel host. Same recipe as way21 (host → static landing → checkout/lead).
+4. **Scaling the network = adding nodes, not pages.** `ideal-body` (`Природнє тіло з Аюрведою`) is the obvious 6th node: it has a platform page, lead code and LMS course, but no funnel host. Same recipe as way21 (host → static landing → checkout/lead).
 
 ## 3. Phased plan to market
 
@@ -54,7 +54,7 @@ Principles that follow:
 Close the gaps that block paid traffic; nothing new gets built. **Phases 2–3 do not start until Phase 0/1 numbers exist** — the whole ladder strategy rests on an ascension rate (test → 795 → 4100) that is currently unobservable.
 
 - Wire Meta Pixel + Clarity on `way21`/`reset-day` (TODO placeholders in both heads); confirm `CW_trackLead` fires on the three lead forms.
-- Replace placeholder pay wiring (`TODO(placeholder)` in `products.ts` approved/declined URLs) and the personal `t.me/E_Koriakin` contact with the support bot (blocked on the bot handle — open question from the previous session).
+- Replace placeholder pay wiring (`TODO(placeholder)` in `products.ts` approved/declined URLs) and the personal `telegram.me/E_Koriakin` contact with the support bot (blocked on the bot handle — open question from the previous session).
 - Remove `noindex` on `way21`/`reset-day` when subdomains go live; add `robots` policy for the three cw-pages deliberately.
 - Baseline analytics per node: sessions → primary-CTA clicks → checkout/lead. Without this, no later phase can be judged.
 - **Trust/proof upgrade (buyer-council input):** named, dated, specific testimonials (symptom → change), author credentials verifiable at a glance, one free "sample day" of the way21 protocol as a downloadable/preview, and an explicit ladder bridge — the 795 reset-day price credits toward way21 ("апгрейд-залік") so the taster reads as a first installment, not a second purchase.
@@ -87,7 +87,7 @@ Deliver `reset-day` first (3 days, small content), then `way21` (21 days, 3 phas
 
 ### Phase 3 — Full product grid + recurring layer (12–20 weeks)
 
-- `ideal-body` funnel node (6th landing, same static recipe) + LMS course.
+- `ideal-body` funnel node (6th landing, same static recipe). LMS course completed 2026-08-23.
 - Alumni membership: herbs replenishment + seasonal group cleanses (way21 has "сезонні очищення" webinars already) + community — the recurring-revenue layer on top of one-off courses.
 - Consult productized: paid tiers (single / package), calendar booking instead of manual scheduling.
 - EN locale for the platform shell (products.ts already carries en strings).

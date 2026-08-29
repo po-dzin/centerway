@@ -118,7 +118,7 @@ function ContactRow({ label, value, badge }: { label: string; value: string; bad
 
 export default function CustomerProfilePage() {
     const { lang, t } = useI18n();
-    const isRu = lang === "ru";
+    const isUk = lang === "uk";
     const locale = getAdminLocale(lang);
     const { id } = useParams<{ id: string }>();
     const router = useRouter();
@@ -164,7 +164,7 @@ export default function CustomerProfilePage() {
     const displayName = customer.display_name ?? customer.email ?? customer.phone ?? t("customers_no_name");
     const ordersCountLabel = (() => {
         const value = orders.length;
-        if (!isRu) return `${value} ${t("orders_count_en")}`;
+        if (!isUk) return `${value} ${t("orders_count_en")}`;
         const mod10 = value % 10;
         const mod100 = value % 100;
         if (mod10 === 1 && mod100 !== 11) return `${value} ${t("orders_count_one")}`;
@@ -182,7 +182,7 @@ export default function CustomerProfilePage() {
     const hasContacts = customer.email || customer.phone || customer.tg_id || customer.google_id || customer.auth_user_id;
 
     return (
-        <div className="space-y-6 animate-in fade-in duration-500 max-w-4xl">
+        <div className="space-y-6 animate-in fade-in duration-500">
             {/* Breadcrumb */}
             <nav className="flex items-center gap-2 text-xs cw-muted">
                 <Link href="/admin/customers" className="cw-link-hover">

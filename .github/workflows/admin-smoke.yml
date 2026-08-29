@@ -19,9 +19,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Version comes from .nvmrc so CI and local dev cannot drift apart.
+      # They already did: node 20 ships npm 10, local dev runs npm 11, and the
+      # two disagree on how nested optional deps are hoisted — so a lock
+      # regenerated locally was rejected here by npm ci. Node 24 is LTS and
+      # ships npm 11, which puts both sides on the same resolver.
       - uses: actions/setup-node@v4
         with:
-          node-version: "20"
+          node-version-file: ".nvmrc"
           cache: "npm"
 
       - name: Install
@@ -29,6 +34,12 @@ jobs:
 
       - name: Lint
         run: npm run -s lint
+
+      - name: Unit tests
+        run: npm run -s test:unit
+
+      - name: LMS contract
+        run: npm run -s lms:validate
 
       - name: Build
         run: npm run -s build

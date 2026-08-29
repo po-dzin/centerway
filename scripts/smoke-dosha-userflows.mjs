@@ -31,7 +31,7 @@ async function assertVisible(page, text, label) {
 }
 
 async function clickFirstEnabledOption(page) {
-  const option = page.locator("button.w-full:enabled").first();
+  const option = page.locator("button[data-dosha-option]:enabled").first();
   const count = await option.count();
   if (count < 1) {
     return false;
@@ -126,21 +126,21 @@ async function main() {
   });
 
   try {
-    const response = await page.goto(`${baseUrl}/dosha-test`, {
+    const response = await page.goto(`${baseUrl}/tests/dosha`, {
       waitUntil: "domcontentloaded",
       timeout: timeoutMs,
     });
 
     if (!response) {
-      fail("/dosha-test: no response");
+      fail("/tests/dosha: no response");
       return;
     }
 
     if (response.status() >= 500) {
-      fail(`/dosha-test: status ${response.status()}`);
+      fail(`/tests/dosha: status ${response.status()}`);
       return;
     }
-    pass(`/dosha-test: status ${response.status()}`);
+    pass(`/tests/dosha: status ${response.status()}`);
 
     const introPromiseText = page.getByText("12 питань", { exact: false }).first();
     await introPromiseText.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined);
@@ -163,7 +163,7 @@ async function main() {
 
     await page.getByRole("button", { name: "Почати тест" }).click({ timeout: timeoutMs });
     const questionStep = page.getByText(/Питання\s+\d+\s+з\s+12/i).first();
-    const authPromptHeading = page.getByRole("heading", { name: /Увійдіть після натискання старту/i }).first();
+    const authPromptHeading = page.getByRole("heading", { name: /Увійдіть у профіль/i }).first();
     await Promise.race([
       questionStep.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),
       authPromptHeading.waitFor({ state: "visible", timeout: timeoutMs }).catch(() => undefined),

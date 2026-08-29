@@ -1,0 +1,104 @@
+/* Dashed progress rail. See ProgressRail.tsx for why this is dashes and not a
+   filled bar. Platform-tier tokens only. */
+
+/* The rail plus the figure standing on it. The padding is the walker's room:
+   he is absolutely positioned so that moving him along the rail cannot move
+   anything else, and his feet land on the dash line rather than beside it. */
+.wrap {
+  position: relative;
+  padding-top: 1.15rem;
+  /* The walker's room is a 20px-wide column of mostly nothing, and in a stacked
+     card it was reading as a paragraph break: the gap above the dashes came out
+     roughly three times the gap below them. Half the padding is taken back out
+     of the flow, so the rail sits in the card's rhythm and the figure borrows
+     the air over it rather than adding its own. */
+  margin-top: -0.55rem;
+}
+
+/* `--cw-walk` is `done / total`, set inline: 0 puts him at the left edge before
+   the first lesson, 1 at the right edge past the last, and everything between
+   lands on a seam. He straddles the edge on purpose — a figure tucked fully
+   inside the first dash would read as standing ON lesson one when nothing has
+   been done yet. */
+.walker {
+  position: absolute;
+  left: calc(var(--cw-walk, 0) * 100%);
+  bottom: 0.235rem;
+  transform: translateX(-50%);
+  color: var(--cw-platform-text);
+  pointer-events: none;
+  transition: left 260ms ease;
+}
+
+.walkerGlyph {
+  display: block;
+  width: 1.28rem;
+  height: 1.4rem;
+}
+
+.rail {
+  display: flex;
+  align-items: center;
+  gap: 0.24rem;
+  /* Taller than the dashes so the tilt has somewhere to go without clipping. */
+  height: 0.75rem;
+}
+
+.dash {
+  flex: 1 1 0;
+  min-width: 0.3rem;
+  height: 0.19rem;
+  border-radius: var(--cw-radius-pill);
+  /* THE TRACK IS QUIET INK, NOT A HAIRLINE COLOUR (2026-08-28).
+     `--cw-platform-border` is 14% of the method ink on the page ground — the
+     right weight for a 1px rule and far too little for a 3px dash that has to
+     say "eleven lessons, nine of them ahead". On paper the undone half of the
+     rail was all but invisible, so the card showed two gold marks floating with
+     nothing to be part of. The page's own ink at a quarter strength reads as a
+     track in both gammas without becoming a second mark: it follows the theme,
+     which a scrim must never do and a track on the page's own surface always
+     must. */
+  background: color-mix(in srgb, var(--cw-platform-text) 26%, transparent);
+  transform: rotate(var(--cw-dash-tilt, 0deg)) scaleX(var(--cw-dash-len, 1));
+  transition: background-color 260ms ease;
+}
+
+.dashDone {
+  composes: dash;
+  background: var(--cw-platform-accent);
+}
+
+/* The over-32 fallback: a continuous dash pattern, no per-dash hand. */
+.long {
+  display: block;
+  position: relative;
+  height: 0.19rem;
+  margin-block: 0.28rem;
+  border-radius: var(--cw-radius-pill);
+  background: repeating-linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--cw-platform-text) 26%, transparent) 0 0.4rem,
+    transparent 0.4rem 0.64rem
+  );
+}
+
+.longFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: var(--cw-radius-pill);
+  background: repeating-linear-gradient(
+    90deg,
+    var(--cw-platform-accent) 0 0.4rem,
+    transparent 0.4rem 0.64rem
+  );
+  transition: width 260ms ease;
+}
+
+/* The rail is the whole point at rest; it does not need to animate into place. */
+@media (prefers-reduced-motion: reduce) {
+  .dash,
+  .longFill,
+  .walker {
+    transition: none;
+  }
+}

@@ -3,6 +3,7 @@
 import { useEffect, useId } from "react";
 import { createPortal } from "react-dom";
 import styles from "@/components/platform/PlatformSurfaceStyles";
+import { Icon } from "@/components/Icon";
 
 type PlatformAuthModalProps = {
   open: boolean;
@@ -53,13 +54,15 @@ export function PlatformAuthModal({
           onClick={onClose}
           aria-label="Закрити вікно входу"
         >
-          <span aria-hidden="true">×</span>
+          {/* The set's glyph, not the multiplication sign: × renders in whatever
+              weight the system font gives it and never matched the icons around it. */}
+          <Icon name="close" size={18} />
         </button>
         <div className={styles.panelIntro}>
           <p className={styles.label}>Вхід</p>
-          <h2 className={styles.authModalTitle} id={titleId}>Увійдіть у профіль</h2>
+          <h2 className={styles.authModalTitle} id={titleId}>Увійдіть у кабінет</h2>
           <p className={styles.lead}>
-            Щоб зберігати персональні результати, прогрес і доступи у профілі CenterWay, потрібна авторизація.
+            Щоб зберігати персональні результати, прогрес і доступи у кабінеті CenterWay, потрібна авторизація.
           </p>
         </div>
         <div className={styles.authModalActions}>

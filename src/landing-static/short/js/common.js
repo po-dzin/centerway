@@ -420,8 +420,9 @@ function initAccordion() {
 
 function initStickyMenu() {
   var menu = document.querySelector("[data-sticky-menu]");
-  var topCta = document.querySelector("[data-cta-primary]");
-  var bottomCta = document.querySelector("[data-cta-final]");
+  var suppressingCtas = document.querySelectorAll(
+    "[data-cta-primary], [data-cta-final], [data-cta-suppress-sticky]"
+  );
   if (!menu) return;
 
   function isSignificantlyVisible(element, threshold) {
@@ -433,9 +434,12 @@ function initStickyMenu() {
 
   function shouldShowMenu() {
     var stickyThreshold = 24;
-    var topCtaGone = !isSignificantlyVisible(topCta, stickyThreshold);
-    var finalCtaVisible = isSignificantlyVisible(bottomCta, stickyThreshold);
-    return topCtaGone && !finalCtaVisible;
+    for (var i = 0; i < suppressingCtas.length; i += 1) {
+      if (isSignificantlyVisible(suppressingCtas[i], stickyThreshold)) {
+        return false;
+      }
+    }
+    return true;
   }
 
   function updateMenu() {

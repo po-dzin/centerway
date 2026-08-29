@@ -10,11 +10,12 @@ export function getOfferMeta(productCode: string | null | undefined): {
   switch (code) {
     case "short":
     case "reboot":
-      return { code: "short", title: "Short Reboot", kind: "mini-course" };
+      return { code: "short", title: "Short-Перезавантаження", kind: "mini-course" };
     case "irem":
       return { code: "irem", title: "IREM Гімнастика", kind: "program" };
+    case "natural-body":
     case "ideal-body":
-      return { code: "ideal-body", title: "Ідеальне тіло з Аюрведою", kind: "program" };
+      return { code: "natural-body", title: "Природнє тіло з Аюрведою", kind: "program" };
     case "consult":
       return { code: "consult", title: "Консультація", kind: "lead" };
     case "herbs":
@@ -26,11 +27,11 @@ export function getOfferMeta(productCode: string | null | undefined): {
       return { code: "way21", title: "Шлях 21", kind: "program" };
     case "mini-detox":
     case "reset-day":
-      return { code: "reset-day", title: "Reset Day", kind: "mini-course" };
+      return { code: "reset-day", title: "Розвантажувальний день", kind: "mini-course" };
     default:
       return {
         code: code || "unknown",
-        title: productCode?.trim() || "Невідомий маршрут",
+        title: productCode?.trim() || "Невідомий продукт",
         kind: "unknown",
       };
   }

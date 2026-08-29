@@ -1,0 +1,4284 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Бібліотека в глибині</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;1,400&family=Manrope:wght@300;500;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+
+<style>
+  /* ============================================================
+     ЧЕРНИЛЬНЕ КРЕСЛЕННЯ НА ПАПЕРІ ПЛАТФОРМИ
+
+     Гама більше не своя. Прототип малювався на нейтральному теплому
+     папері з майже чорним чорнилом, і в цьому був сенс: зелень читалась
+     як підсвічений екран, а не як аркуш. Але кімната — це не окремий
+     етюд, це /learn; поруч із нею стоять кабінет і білдер, і два теплі
+     папери різного відтінку поруч читаються не як задум, а як
+     неточність. Тому кожна змінна нижче — це токен ДС, і мапа поруч із
+     нею:
+
+       --paper      --cw-platform-bg            #faefe0
+       --paper-lit  --cw-platform-surface        #fff8ef
+       --paper-deep --cw-platform-surface-muted  #f3e4d0
+       --ink-value  --cw-platform-text           #18261d
+       --ink-soft   --cw-sem-muted-ink           #48544c
+       --brass      --cw-sem-warmth-strong       #c8913f
+       --brass-lit  --cw-platform-accent (warmth)#e5ae65
+       --redline    --cw-sem-boundary            #b76045
+       темна        [data-cw-theme="dark"]       #191918 / #232322 / #e4e4e1
+       --r-object   --cw-radius-inset            6px
+       --r-tool     --cw-radius-md               16px
+       шрифти       --cw-font-ui / -editorial / -data
+
+     ЧОТИРИ ПРАВКИ ПРОТИ ПОПЕРЕДНЬОЇ ЗБІРКИ, І ВСІ ЧОТИРИ — ЗВІРКА З
+     ФАЙЛОМ, А НЕ СМАК.
+
+     1. Чорнило тексту — не --cw-sem-method-ink. Той токен у ДС має
+        інше ім'я в тій самій точці: --cw-sem-guide-strong, тобто
+        сильний акцент, а не корпус. Текст платформи стоїть окремо і
+        темніший: --cw-platform-text #18261d. Приглушений теж має своє
+        значення (--cw-sem-muted-ink #48544c), а не частку, вигадану
+        поруч.
+
+     2. Темний ґрунт — публічна темна гама платформи,
+        [data-cw-theme="dark"]. Вона змінилась 28.08 і кімната змінилась
+        разом із нею: гама була зеленим нічним мінералом, а стала теплим
+        графітом — за тим самим правилом бренд-аркуша, яким аргументована
+        сіра адмінка, «ніколи не зелень на темному ґрунті». Тепер адмінка
+        і публічна сторона стоять на одному ґрунті (#191918 / #232322),
+        тобто в продукту одна ніч, а не дві майже однакові. Зелена ніч
+        лишилась у пульті як історія, підписана датою.
+
+     3. Кільце фокуса — на --cw-platform-accent (це warmth #e5ae65), а
+        не на warmth-strong, і разом із м'якою тінню матеріалу: саме
+        так його пише PlatformButtons.module.css одним правилом на всі
+        ролі.
+
+     4. Матеріал панелей рахується від --cw-mat-surface (поверхня +6%
+        тепла), а не від паперу: інакше скло кімнати холодніше за скло
+        кабінету на ту саму шістку відсотків.
+
+     Те, чого в токенах немає — --wash (дно виїмки), --cast (падаюча
+     тінь), --hatch (штриховка), — виведене з них, а не вигадане поруч:
+     дно це папір, що зайшов у тінь, тінь це тінь матеріального шару.
+     ============================================================ */
+  :root {
+    /* СВІТЛА — папір і чорнило. */
+    --paper:        #faefe0;   /* --cw-sem-calm-bg */
+    --paper-lit:    #fff8ef;   /* --cw-sem-calm-surface */
+    --paper-deep:   #f3e4d0;   /* --cw-sem-calm-surface-muted */
+
+    --wash:         #ecdbc2;   /* дно виїмки — папір, зайшлий у тінь */
+    --wash-2:       #ddc7a8;
+    --fill:         #fff8ef;   /* --cw-sem-calm-surface */
+
+    --ink-value:    #18261d;   /* --cw-platform-text */
+    --ink:          var(--ink-value);
+    /* Приглушене чорнило платформи — --cw-sem-muted-ink #48544c. Тут
+       воно лишається сумішшю, а не хексом: у темряві та сама формула
+       має дати світлішу пару, а хекс дав би ту саму темну. 78% від
+       чорнила по паперу лягає на #4a5248 — це #48544c у межах кроку
+       кольору. */
+    --ink-soft:     color-mix(in srgb, var(--ink-value) 78%, var(--paper));
+    /* Мікропідпис — це теж текст. На 46% він давав 2.6 до паперу і
+       не проходив жодного гейта ДС; тепер 4.65 у світлій і 5.0 у
+       темній (у темряві кремове по темному додає само собою, тому там
+       частка МЕНША, а не більша). */
+    --ink-faint:    color-mix(in srgb, var(--ink-value) 68%, var(--paper));
+    --ink-line:     color-mix(in srgb, var(--ink-value) 42%, transparent);
+    --ink-hair:     color-mix(in srgb, var(--ink-value) 15%, transparent);
+    --hatch:        color-mix(in srgb, var(--ink-value) 24%, transparent);
+
+    --brass:        #c8913f;   /* --cw-sem-warmth-strong */
+    --brass-lit:    #e5ae65;   /* --cw-sem-warmth */
+    --brass-line:   color-mix(in srgb, #c8913f 60%, transparent);
+    --redline:      #b76045;   /* --cw-sem-boundary */
+    /* Падаюча тінь предметів — те, що робить сцену матеріальною. */
+    --cast:         rgba(24, 20, 14, 0.28);   /* тінь матеріального шару ДС */
+
+    /* УВАГА ЗА ТЕМОЮ. На папері увага — чорнильна: контур перечеркнутий
+       ще раз + короткі штрихи-позначки довкола. Сяйва на папері не
+       буває. У темряві навпаки: чорнилом нічого не позначиш — там глоу.
+       Стани нижче читають ці три перемикачі, а теми їх перевизначають. */
+    /* УВАГА — ЗАВЖДИ ШТРИХ, І В ТЕМРЯВІ ТЕЖ. Досі темна тема
+       позначала увагу сяйвом: книга і виїмка світились ізсередини, як
+       екран. Це суперечило власному правилу системи — «чорнило, а не
+       хайлайти» — і саме воно робило полицю схожою на вітрину
+       магазину. У темряві штрих просто пишеться золотом замість
+       чорнила: він однаково видимий і однаково лишається штрихом. */
+    --mark-show: 1;
+    --mark-ink:  var(--ink);
+    --ray-main:  var(--ink-line);
+    --ray-hi:    var(--ink);
+    --ray-halo:  none;
+
+    /* МАТЕРІАЛЬНИЙ ШАР ДС (--cw-mat-*), під тими самими іменами.
+       Рядок лишається рядком, не карткою: полиця в кімнаті це список,
+       і саме він тримає ритм колонки. Але СТАНИ рядка більше не свої:
+       під вказівником він стає тим самим теплим матеріалом, з якого
+       зроблені панелі платформи, і сідає під натиском у втоплений тон.
+
+       Верхнього блікy тут немає і не буде: у CenterWay скло матове, і
+       inset-підсвітка згори — записана заборона, а не забутий штрих. */
+    /* ОДНА МОВА ВИБОРУ — ТА, ЩО ВЖЕ СТОЇТЬ У БІЛДЕРІ.
+       Builder.module.css каже це прямо, і каже давно: ховер і вибір —
+       ОДИН штрих у двох силах, слабший під вказівником, повний на
+       поточному рядку. І там же записано, чому не плитка: плитка
+       ховера і плитка вибору — це один об'єкт, отже щойно вказівник
+       спиниться на вибраному рядку, два стани стають нерозрізненні;
+       а прямокутник довкола рядка — це контур, і список назв від нього
+       перетворюється на список кнопок.
+       Тому смуга матеріалу з попередньої збірки тут не лишається: вона
+       була тією самою плиткою, тільки прямокутною. Значення — ті самі
+       --cw-ink-* із globals.css. */
+    --ink-hover-opacity: 0.42;    /* --cw-ink-hover-opacity */
+    --ink-hover-scale:   0.74;    /* --cw-ink-hover-scale */
+    --ink-stroke-height: 0.85rem; /* --cw-ink-stroke-height */
+    --ink-ring-size:     3rem;    /* --cw-ink-ring-size */
+    --nav-marker:        var(--ink);   /* --cw-nav-marker */
+    --nav-marker-size:   2px;          /* --cw-nav-marker-size */
+
+    /* --cw-mat-surface: поверхня плюс 6% тепла. Скло платформи не
+       чисто паперове — і кімната має бути тим самим склом. */
+    --mat-surface:     color-mix(in srgb, var(--paper-lit) 94%, var(--brass-lit) 6%);
+    --mat-tint:        color-mix(in srgb, var(--mat-surface) 76%, transparent);
+    --mat-tint-hover:  color-mix(in srgb, var(--mat-surface) 84%, transparent);
+    --mat-tint-chrome: color-mix(in srgb, var(--mat-surface) 30%, transparent);
+    --mat-sunk:        color-mix(in srgb, var(--paper-deep) 62%, var(--mat-surface) 38%);
+    --mat-shadow-soft: 0 1px 2px rgba(35, 29, 20, 0.05), 0 10px 28px rgba(35, 29, 20, 0.07);
+    --mat-shadow-chrome: 0 1px 2px rgba(35, 29, 20, 0.06), 0 14px 34px rgba(35, 29, 20, 0.10);
+
+    /* КОНТРАКТ КНОПОК ДС, дослівно (--ds-button-* із globals.css).
+       Шість ролей, сьомої немає. Тут живуть дві:
+         chrome — навігація і службове на власному рядку: «назад до
+                  зали», гортання розвороту, закриття;
+         quiet  — третинна дія на втопленому ґрунті: пульт.
+       Пульт при цьому НЕ learner-facing — це вимірювальний інструмент,
+       і контракт прямо каже про поверхні для того, хто вчиться. Тому
+       він бере від контракту типографіку, радіус і фокус, але не бере
+       мінімальну висоту в 3rem: двадцять чипів по 48 пікселів — це вже
+       не пульт, це друга сторінка. */
+    --ds-touch-target-min: 3rem;
+    --ds-button-radius: 16px;      /* --cw-radius-btn → --cw-radius-md */
+    --ds-button-font-weight: 700;
+    --ds-button-font-size: 1rem;
+    --ds-button-gap: 0.5rem;
+    --ds-button-padding-inline: 1.15rem;
+    --ds-button-max-width: 22rem;
+    --ds-button-min-width: 10.5rem;
+    --ds-button-lift: -1px;
+    /* Одне фокусне кільце на всі ролі, дослівно з PlatformButtons:
+       акцент платформи (це warmth, не warmth-strong) плюс та сама
+       м'яка тінь матеріалу, яку роль уже несе. */
+    --ds-button-ring: 0 0 0 2px color-mix(in srgb, var(--brass-lit) 28%, transparent),
+      var(--mat-shadow-soft);
+    --ds-button-motion: transform 180ms ease, box-shadow 180ms ease,
+      background 180ms ease, border-color 180ms ease, color 180ms ease;
+
+    /* РАДІУС ЗА РОЛЛЮ, А НЕ ЗА РОЗМІРОМ. */
+    /* ЛІНІЯ ЗГАСАЄ НА КІНЦЯХ, І ЦЕ ОДНЕ ЗНАЧЕННЯ НА ВСЮ КІМНАТУ.
+       Лінія в повну ширину з різко обрубаними кінцями — це рамка
+       таблиці: вона малює КОМІРКУ, і список назв від неї стає сіткою.
+       Розділювач має робити менше — сказати, де кінчається один рядок
+       і починається наступний, — тому він живе в тілі рядка і тане, не
+       доходячи до полів. Береться як border-image, а не як окремий
+       псевдоелемент: розділювач лишається межею елемента, отже нічого
+       не зміщується і нічого не треба чистити в станах.
+       Вісім відсотків на кожен кінець — це приблизно ширина поля
+       номера ліворуч, тобто лінія згасає рівно там, де в рядка й так
+       нічого немає. */
+    --rule-fade: linear-gradient(90deg,
+      transparent 0,
+      var(--ink-line) 8%,
+      var(--ink-line) 92%,
+      transparent 100%) 1;
+
+    --r-rule:   0;
+    --r-object: 6px;    /* --cw-radius-inset */
+    --r-tool:   16px;   /* --cw-radius-md */
+
+    --measure: min(38rem, 38vw);
+    --mono: "IBM Plex Mono", ui-monospace, monospace;      /* --cw-font-data */
+    --ui: "Manrope", "Segoe UI", sans-serif;              /* --cw-font-ui */
+    --editorial: "Cormorant Garamond", "Times New Roman", serif;  /* --cw-font-editorial */
+
+    --module: 64px;
+
+    /* ТЕМНИЙ ҐРУНТ ЗА ЗАМОВЧУВАННЯМ — графіт адмінки. Стоїть тут, а
+       не тільки в JS: сторінка мусить відкритись у правильній темряві
+       ще до першого рядка скрипта, інакше на кожному завантаженні
+       блимне чужий ґрунт. JS лише перекриває ці шість значень. */
+    --dk-paper:      #191918;   /* --cw-platform-bg (dark) */
+    --dk-paper-lit:  #232322;   /* --cw-platform-surface (dark) */
+    --dk-paper-deep: #131312;   /* нижче ґрунту — виведене, як і --wash */
+    --dk-wash:       #0f0f0e;
+    --dk-wash-2:     #0a0a09;
+    --dk-fill:       #2e2e2c;   /* --cw-platform-surface-muted (dark) */
+    --dk-ink:        #e4e4e1;   /* --cw-platform-text (dark) */
+
+    /* Завіса фону. У залі туш живе праворуч-унизу, ліворуч-угорі —
+       папір під заголовком. Кут узятий від самої сітки: 8vw поля плюс
+       колонка 46vw дають межу близько 54%. */
+    --scene-veil: linear-gradient(104deg,
+      transparent 0 30%,
+      rgba(0, 0, 0, 0.40) 52%,
+      #000 76%);
+  }
+
+
+
+  /* ТЕМНА — НЕ ОДНА, А ҐРУНТ НА ВИБІР, І ЗА ЗАМОВЧУВАННЯМ ТОЙ, ЩО
+     ВЖЕ НАПИСАНИЙ У ФАЙЛІ. У ДС дві темні гами, і вони не
+     взаємозамінні: base.dark — графіт адмінки, і саме про нього
+     сказано «neutral grey»; [data-cw-theme="dark"] — публічна нічна
+     гама платформи, #131e17 / #1a2a20 / #f5ece0, з акцентом на
+     warmth. Кімната стоїть на /learn, отже друга. Графіт лишається
+     першим сусідом у пульті — але як адмінка, а не як дефолт.
+
+     Значення живуть в одному місці — у наборі --dk-*, який кладе JS
+     (GROUNDS). Селектори нижче лише вмикають їх: медіа для системної
+     теми, клас для ручної. Контраст кожного ґрунту порахований і
+     стоїть у пульті поруч із назвою. */
+  @media (prefers-color-scheme: dark) {
+    :root:not(.mode-light):not([data-theme="light"]) {
+      --paper:      var(--dk-paper);
+      --paper-lit:  var(--dk-paper-lit);
+      --paper-deep: var(--dk-paper-deep);
+      --wash:       var(--dk-wash);
+      --wash-2:     var(--dk-wash-2);
+      --fill:       var(--dk-fill);
+      --ink-value:  var(--dk-ink);
+      --ink-line:   color-mix(in srgb, var(--ink-value) 62%, transparent);
+      --ink-hair:   color-mix(in srgb, var(--ink-value) 22%, transparent);
+      --ink-faint:  color-mix(in srgb, var(--ink-value) 55%, var(--paper));
+      --nav-marker: var(--brass-lit);
+      --mat-sunk:        color-mix(in srgb, var(--paper-deep) 62%, var(--mat-surface) 38%);
+      --mat-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+      --mat-shadow-chrome: 0 1px 2px rgba(0, 0, 0, 0.18), 0 14px 34px rgba(0, 0, 0, 0.22);
+      --hatch:      color-mix(in srgb, var(--ink-value) 30%, transparent);
+      --brass:      #e5ae65;
+      --brass-lit:  #f4cd96;
+      --brass-line: color-mix(in srgb, #e5ae65 55%, transparent);
+      --redline:    #d29076;
+      --cast:       rgba(0, 0, 0, 0.62);
+      --mark-show:  1;
+      --mark-ink:   var(--brass-lit);
+      --ray-main:  var(--brass-line);
+      --ray-hi:    var(--brass-lit);
+      --ray-halo:  drop-shadow(0 0 5px var(--brass-line));
+    }
+  }
+  /* Ручний вибір живе у класі .mode-*, не в data-theme: data-theme
+     штампує хост артефакту, і кнопка, що писала в той самий атрибут,
+     мовчки програвала хосту. Додатково setTheme кладе фон і колір
+     інлайном на body — інлайн не переб'є жоден стиль хоста. */
+  :root.mode-dark,
+  :root[data-theme="dark"]:not(.mode-light) {
+    --paper:      var(--dk-paper);
+    --paper-lit:  var(--dk-paper-lit);
+    --paper-deep: var(--dk-paper-deep);
+    --wash:       var(--dk-wash);
+    --wash-2:     var(--dk-wash-2);
+    --fill:       var(--dk-fill);
+    --ink-value:  var(--dk-ink);
+    --ink-line:   color-mix(in srgb, var(--ink-value) 62%, transparent);
+    --ink-hair:   color-mix(in srgb, var(--ink-value) 22%, transparent);
+    --ink-faint:  color-mix(in srgb, var(--ink-value) 55%, var(--paper));
+    --nav-marker: var(--brass-lit);
+    --mat-sunk:        color-mix(in srgb, var(--paper-deep) 62%, var(--mat-surface) 38%);
+    --mat-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+    --mat-shadow-chrome: 0 1px 2px rgba(0, 0, 0, 0.18), 0 14px 34px rgba(0, 0, 0, 0.22);
+    --hatch:      color-mix(in srgb, var(--ink-value) 30%, transparent);
+    --brass:      #e5ae65;
+    --brass-lit:  #f4cd96;
+    --brass-line: color-mix(in srgb, #e5ae65 55%, transparent);
+    --redline:    #d29076;
+    --cast:       rgba(0, 0, 0, 0.62);
+    --mark-show:  1;
+    --mark-ink:   var(--brass-lit);
+    --ray-main:  var(--brass-line);
+    --ray-hi:    var(--brass-lit);
+    --ray-halo:  drop-shadow(0 0 5px var(--brass-line));
+  }
+
+  * { box-sizing: border-box; }
+
+  /* ЗМІНА ТЕМИ — НЕ СТАН, ОТЖЕ НЕ АНІМУЄТЬСЯ.
+     Переходи існують для станів: наведення, натиск, вибір. Зміна теми
+     перефарбовує ВСЮ поверхню, і кожен елемент із `transition: color`
+     починав свій власний 180-мілісекундний перехід від старого
+     чорнила до нового. Поки ці переходи не доїхали — а у фоновій
+     вкладці або під довгим завданням у головному потоці вони не
+     доїжджають узагалі — текст і гліфи лишались пофарбованими СТАРОЮ
+     темою: темне чорнило на темному ґрунті. Тому на час підміни
+     переходи глушаться, і нова тема стає одним кадром. */
+  :root[data-swap] * ,
+  :root[data-swap] *::before,
+  :root[data-swap] *::after { transition: none !important; }
+
+  body {
+    margin: 0;
+    min-height: 100svh;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: var(--ui);
+    font-weight: 300;
+    -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
+  }
+
+  /* Мітка збірки: щоб відрізняти свіжу публікацію від кешу. */
+  .build {
+    position: fixed;
+    z-index: 6;
+    top: 19px;
+    left: 40px;
+    font-family: var(--mono);
+    font-size: 0.58rem;
+    letter-spacing: 0.1em;
+    color: var(--ink-faint);
+  }
+
+  /* ---------- кімната ---------- */
+
+  .stage {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+    perspective: 1600px;
+    perspective-origin: 68% 50%;
+    background: var(--paper);
+  }
+
+  .room {
+    position: absolute;
+    inset: -14%;
+    transform-style: preserve-3d;
+    /* КІМНАТА СТОЇТЬ. Раніше вона мала нахил спокою і бігала за
+       курсором — і кожен зсув на чверть пікселя пересемплював усі
+       волосяні лінії стіни. Глибину тепер тримає не рух глядача, а
+       сама геометрія: категорії лежать на різних гранях і різній
+       відстані. Рухається лише камера — і лише коли заходиш у полицю.
+
+       Наближення робить scale, а не сама лише глибина: щоб дотягнути
+       полицю до кадру самим translateZ, її треба підвести майже до
+       площини перспективи, і сцена там уже не наближається, а
+       розлітається. */
+    transform:
+      translate3d(var(--px, 0px), var(--py, 0px), var(--cz, 0px))
+      scale(var(--cs, 1));
+  }
+  /* will-change тримається лише на час руху: постійне промотування
+     кімнати в окремий шар коштує пам'яті рівно стільки, скільки в ній
+     пікселів, а стоїть вона 99% часу. */
+  .room.is-eased {
+    transition: transform 2300ms cubic-bezier(0.16, 0.5, 0.2, 1);
+    will-change: transform;
+  }
+
+  .grain {
+    position: absolute; inset: 0;
+    transform: translateZ(150px);
+    pointer-events: none;
+    opacity: 0.58;
+    mix-blend-mode: multiply;
+  }
+  :root.mode-dark .grain,
+  :root[data-theme="dark"]:not(.mode-light) .grain { mix-blend-mode: screen; opacity: 0.07; }
+  @media (prefers-color-scheme: dark) {
+    :root:not(.mode-light):not([data-theme="light"]) .grain { mix-blend-mode: screen; opacity: 0.07; }
+  }
+
+  /* ---------- стіна, ніші, книги ----------
+     Регістр — 界畫: середньовічний азійський архітектурний малюнок по
+     лінійці. Глибина будується лінією, штриховкою і плоскою заливкою,
+     а не фотографічним світлом. Сучасне в ньому — точність волосини
+     та латунна арматура. */
+
+  /* Стіна стоїть ЗА найдальшою гранню (-360) з запасом, і тому взята
+     ширше: що далі площина, то менший її шматок потрапляє в кадр. */
+  .wall {
+    position: absolute;
+    inset: -16%;
+    transform: translateZ(-430px);
+    /* Туш на стіні малює canvas (paintWallInk): тайл із блукаючих
+       плям і волокон, seeded, перемальовується під чорнило теми.
+       CSS-градієнти давали рівні еліпси — туш так не лягає. */
+    background-color: var(--paper);
+    background-repeat: repeat;
+  }
+  /* Тушевий пейзаж: три гряди розмитих пагорбів за нішами. У світлій
+     темі — далекі гори по нижній половині стіни; у темній ті самі
+     форми, писані кремом, читаються туманом, що піднімається. Малює
+     paintScene, seeded. */
+  /* СЕРЕДОВИЩЕ — МАЛЮНОК, А НЕ ГЕНЕРАТИВ, І ТІЛЬКИ ФРОНТАЛЬНИЙ.
+     Мальовані кімнати (стіна в скелі з готовими нішами, камера,
+     печера) стояли тут із власною перспективою — і саме тому не
+     сходились із комірками: ніш у них рівно стільки, скільки їх
+     намалювала модель, на її ж глибинах і під її ж кутом, а комірок
+     має бути стільки, скільки розділів. Синхронізувати ці два числа
+     неможливо, і всі спроби давали або порожні намальовані отвори
+     поруч із зайнятими, або комірку, покладену впоперек чужої
+     перспективи. Лишились тільки стіни, зняті в лоб: у них нема чого
+     синхронізувати, бо отвори в них ріже розкладка.
+     Модель дає матеріал (scripts/design/gen-artwork.mjs), prep-env.py
+     знімає щільність туші в альфу, колір дає тема — та сама скеля у
+     світлій темі чорнильна, у темній кремова. */
+  /* СТІНА З ВИРІЗАНИМИ ОТВОРАМИ — ОДИН КАНВАС.
+     Комірка, покладена поверх фактури, лишається покладеною: матеріал
+     проходить у неї за спиною, край отвору — рівна лінія в піксель, і
+     жодна внутрішня тінь цього не рятує. Виріз має бути вирізом:
+     матеріал у ньому ЗАКІНЧУЄТЬСЯ. Тому стіна і отвори малюються
+     разом — спершу фактура, потім із неї вибивається отвір
+     (destination-out) щербатим контуром, і аж у вибите кладеться
+     нутро: задня стінка, чотири укоси і губа.
+     Світло в кімнаті одне, згори-праворуч. Отже лівий укіс і дно
+     освітлені, верхній і правий — у тіні, а на задню стінку падає
+     тінь від верхньої губи. Це не стилізація, це те, як виглядає
+     коробчастий виріз при одному джерелі. */
+  .carve {
+    position: absolute;
+    /* Система координат канваса мусить збігатися з координатами
+       комірок — інакше отвір і його ж нутро розходяться. Комірки
+       живуть у координатах .room, отже і полотно теж: нуль у нулі,
+       розмір у розмір. */
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    -webkit-mask-image: var(--scene-veil);
+    mask-image: var(--scene-veil);
+    -webkit-mask-size: 100% 100%;
+    mask-size: 100% 100%;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+  }
+  :root:not([data-env="on"]) .carve { display: none; }
+
+  /* Коли стіну малює канвас, комірці не лишається нічого, крім
+     корінців: дно, укоси і губа вже намальовані в матеріалі. */
+  :root[data-env="on"] .niche__box {
+    background: transparent;
+    box-shadow: none;
+  }
+  :root[data-env="on"] .niche__persp,
+  :root[data-env="on"] .niche__cast,
+  :root[data-env="on"] .niche__box::after { display: none; }
+
+  .scene {
+    position: absolute;
+    inset: -16%;
+    transform: translateZ(-422px);
+    pointer-events: none;
+    mix-blend-mode: multiply;
+    opacity: 0.9;
+  }
+  :root.mode-dark .scene,
+  :root[data-theme="dark"]:not(.mode-light) .scene { mix-blend-mode: screen; opacity: 0.32; }
+  @media (prefers-color-scheme: dark) {
+    :root:not(.mode-light):not([data-theme="light"]) .scene { mix-blend-mode: screen; opacity: 0.32; }
+  }
+
+  /* Мальований фон — растр замість канваса. Файл несе тільки альфу
+     (щільність туші), колір дає тема через mask-image: та сама пляма
+     у світлій темі чорнильна, у темній — кремова. Порожній
+     --scene-tex вимикає шар і лишає канвасний пейзаж. */
+  .sceneTex {
+    position: absolute;
+    inset: -16%;
+    transform: translateZ(-424px);
+    pointer-events: none;
+    background: var(--ink-value);
+    opacity: 0;
+    /* ДВА МАСКУВАЛЬНІ ШАРИ, ПЕРЕТИН.
+       Перший — сам малюнок. Другий — «завіса»: діагональний градієнт,
+       що гасить туш рівно там, де лежить текстова колонка. Пейзаж і
+       набір перестають бути двома картинками одна на одній: порожнеча
+       малюнка і поле колонки — це одна й та сама порожнеча. Завіса
+       їде за макетом (у ніші колонка йде вниз — завіса теж). */
+    -webkit-mask-image: var(--scene-tex, none), var(--scene-veil);
+    mask-image: var(--scene-tex, none), var(--scene-veil);
+    -webkit-mask-composite: source-in;
+    mask-composite: intersect;
+    -webkit-mask-size: cover, 100% 100%;
+    mask-size: cover, 100% 100%;
+    -webkit-mask-position: var(--scene-anchor, 50% 88%), 0 0;
+    mask-position: var(--scene-anchor, 50% 88%), 0 0;
+    -webkit-mask-repeat: no-repeat, no-repeat;
+    mask-repeat: no-repeat, no-repeat;
+    transition: opacity 900ms ease;
+  }
+  :root[data-scene-tex="on"] .sceneTex { opacity: 0.62; }
+  :root[data-scene-tex="on"] .scene { opacity: 0; }
+  :root.mode-dark[data-scene-tex="on"] .sceneTex,
+  :root[data-theme="dark"]:not(.mode-light)[data-scene-tex="on"] .sceneTex { opacity: 0.22; }
+  @media (prefers-color-scheme: dark) {
+    :root:not(.mode-light):not([data-theme="light"])[data-scene-tex="on"] .sceneTex { opacity: 0.22; }
+  }
+
+  /* Віньєтка туші по краях кадру — глибина простору, а не рамка. */
+  .stage::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: radial-gradient(120% 120% at 50% 42%,
+      transparent 52%,
+      color-mix(in srgb, var(--ink-value) 11%, transparent) 100%);
+  }
+  /* Шви плит — ruled lines, а не тіні. */
+  .wall::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      linear-gradient(to right, transparent calc(50% - 1px), var(--ink-hair) calc(50% - 1px) 50%, transparent 50%),
+      linear-gradient(to bottom, transparent calc(27% - 1px), var(--ink-hair) calc(27% - 1px) 27%, transparent 27%);
+  }
+
+  /* Світло — одна бліда заливка, не фотографічний промінь. */
+  /* Промінь — не різана діагональ тіні, а тепле розсіяне світло:
+     широкий градієнт, розмитий блюром, повільно дихає амплітудою
+     і позицією. */
+  .rake {
+    position: absolute; inset: -8%;
+    transform: translateZ(90px);
+    pointer-events: none;
+    background: linear-gradient(116deg,
+      transparent 0 12%,
+      color-mix(in srgb, var(--brass) 10%, transparent) 30%,
+      color-mix(in srgb, var(--brass) 4%, transparent) 46%,
+      transparent 62% 100%);
+    filter: blur(24px);
+    /* Дихає лише прозорість. Рухати розмиту площину на пів-кадру —
+       це перемальовувати блюр щокадру; на стіні в сотню виїмок це
+       найдорожчий піксель у сцені. */
+    animation: beam 26s ease-in-out infinite alternate;
+  }
+  @keyframes beam {
+    0%   { opacity: 0.62; }
+    100% { opacity: 1; }
+  }
+
+  /* ---------- латунна арматура ---------- */
+
+  /* Фокус — не хрест на всю стіну, а лучі, що ЗІЙШЛИСЯ на виїмці:
+     один горизонтальний, короткий, із затухаючими краями. Приходить
+     від колонки тексту до активної виїмки. */
+  /* Промені — не градієнт у CSS, а два штрихи, писані тим самим пером,
+     що й уся стіна: рівна лінія завтовшки в піксель була єдиним
+     ідеальним об'єктом у кресленні від руки. Вони лежать на ДРУГОМУ
+     плані — на самій стіні, позаду виїмок: позначка на стіні, а не
+     указка перед нею. */
+  /* ДРУГИЙ ШАР ХОДИТЬ РАЗОМ ІЗ ПЕРШИМ.
+     Штрихи мали власний рух: дві секунди їхали через стіну до нової
+     категорії і при цьому ще й дихали прозорістю по дев'ять секунд,
+     кожен у свою фазу. Виходило, що на екрані два різні жести — один
+     показує вибір, другий живе сам по собі, і саме він і тягнув на
+     себе око.
+     Тепер це один жест: штрихи стають на місце разом із контуром і
+     проявляються тією ж прозорістю за той самий час, що й він
+     (700 мс). Ані переїзду, ані дихання. */
+  .ray {
+    position: absolute;
+    pointer-events: none;
+    color: var(--ray-hi);
+    filter: var(--ray-halo);
+    opacity: 0;
+    transition: opacity 700ms ease;
+  }
+  .ray[data-on="true"] { opacity: 1; }
+  .ray svg { width: 100%; height: 100%; display: block; overflow: visible; }
+
+  /* ---------- ніша ---------- */
+
+  /* .niche — ЛИШЕ рамка позиції, нічого не обрізає. Матеріал отвору і
+     обрізання книг живуть у .niche__box.
+
+     Так було не завжди: `overflow: hidden` стояв на самій ніші, і все,
+     що виходило за її межі — чорнильні позначки уваги і підпис
+     категорії — зрізалось до нуля. Позначки малювались і були
+     невидимі. */
+  /* --depth: 1 — грань попереду, майже під рукою; 0 — найдальша.
+     Далина малюється не тільки розміром: перо слабшає, тінь коротшає,
+     на отвір лягає повітря. Це та сама повітряна перспектива, що в
+     тушевому пейзажі за нішами, — просто застосована до предмета. */
+  .niche {
+    position: absolute;
+    cursor: pointer;
+    transition: opacity 900ms ease;
+  }
+  .niche__box::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    pointer-events: none;
+    background: var(--paper);
+    opacity: calc((1 - var(--depth, 1)) * 0.34);
+  }
+  /* Повітряна перспектива була відповіддю на глибину, якої не було
+     видно інакше. У вирізаній стіні глибину несе сам виріз — укоси і
+     темрява дна, — і та сама димка поверх нього читалась брудом на
+     кожній комірці ще до будь-якого вибору. */
+  :root[data-env="on"] .niche__box::before { display: none; }
+
+  /* Тінь усього блока на стіні — світло згори-справа, тінь сповзає
+     вниз-вліво, м'яка і довга, як у предмета, що висить на стіні. */
+  .niche__cast {
+    position: absolute;
+    left: -26px;
+    right: 14px;
+    top: 12px;
+    bottom: -30px;
+    background: radial-gradient(closest-side at 42% 44%, var(--cast) 0%, transparent 100%);
+    filter: blur(14px);
+    opacity: calc(0.3 + var(--depth, 1) * 0.5);
+    pointer-events: none;
+  }
+
+  .niche__box {
+    position: absolute;
+    inset: 0;
+    border-radius: var(--r-object);
+    background: var(--wash);
+    /* Реальна глибина отвору живе ПІД чорнильним малюнком: м'яка
+       внутрішня тінь зверху і зліва, підсвічене дно. Малюнок каже
+       «так це накреслено», тінь каже «так це вирізано». */
+    --niche-depth:
+      inset 0 22px 32px -14px var(--cast),
+      inset 18px 0 30px -16px var(--cast),
+      inset -8px -12px 24px -16px color-mix(in srgb, var(--paper-lit) 55%, transparent);
+    box-shadow: var(--niche-depth);
+    transition: box-shadow 1200ms ease, background 1200ms ease;
+    overflow: hidden;
+  }
+  /* Мальована глибина: задня стінка, лінії сходження, штриховані
+     внутрішні грані — одноточкова перспектива пером, як у 界畫. */
+  .niche__persp {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+  }
+  .niche__persp svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  /* Чорнильний штрих — залита форма зі змінною товщиною: тонкий вхід
+     пера, тіло, тонкий вихід. Малюється полігонами (nicheSvg), не
+     stroke'ом — у stroke товщина мертва, а штрих живе товщиною. */
+  .niche__persp svg { color: var(--ink); }
+  .niche__persp { opacity: calc(0.6 + var(--depth, 1) * 0.4); }
+
+  /* Нижня губа ніші — книги стоять за нею, їх низ трохи прикритий:
+     єдине перекриття, яке лишилось потрібним у горизонтальній полиці. */
+  .niche__box::after {
+    content: "";
+    position: absolute;
+    inset-inline: 0;
+    bottom: 0;
+    height: 6px;
+    background: linear-gradient(180deg, var(--fill), var(--wash));
+    border-top: 1px solid var(--ink-line);
+    box-shadow: 0 -4px 8px -3px var(--cast);
+    z-index: 2;
+    pointer-events: none;
+  }
+  .niche[data-dim="true"] { opacity: 0.4; filter: none; }
+  /* У наїзді підписані лише ті полиці, у які зайшли: масштаб кімнати
+     тягне за собою і текст, і чужий ярлик через півкадру читається
+     плакатом, а не підписом. */
+  .niche[data-dim="true"] .niche__label,
+  .niche[data-dim="true"] .niche__more { opacity: 0; }
+
+  /* Три рівні уваги, у порядку заглиблення:
+     1. ховер категорії (рядок або сама ніша) — світловий КОНТУР блока;
+     2. вибрана ніша — легкий селект заливкою;
+     3. усередині — ховер конкретної праці підсвічує саму працю. */
+  /* ВИБІР — ЦЕ КОНТУР, А НЕ ЩЕ ОДИН ШАР.
+     Дно виїмки не міняє кольору, губа не золотиться, нічого не
+     світиться і нічого не накладається зверху: полицю просто
+     ОБВОДЯТЬ — рамкою, писаною тим самим пером, що й уся кімната
+     (.niche__mark). Це перший шар уваги і єдиний, що торкається
+     самого предмета.
+     Другий шар — дві рухомі лінії (.ray), і більше нічого: вони
+     приходять до вибраної категорії від колонки тексту й показують,
+     ЯКА саме з обведених полиць зараз читається. */
+  .niche:hover .niche__box,
+  .niche[data-hot="true"] .niche__box,
+  .niche[data-sel="true"] .niche__box {
+    box-shadow: var(--niche-depth);
+  }
+
+  /* Чорнильні позначки уваги: перечеркнутий контур + короткі штрихи
+     довкола. Живуть ПОЗА коробкою отвору, тому й винесені в .niche,
+     яка нічого не обрізає. На папері видимі, у темряві вимкнені
+     перемикачем --mark-show. */
+  .niche__mark {
+    position: absolute;
+    inset: -26px;
+    pointer-events: none;
+    color: var(--mark-ink);
+    opacity: 0;
+    transition: opacity 700ms ease;
+    z-index: 3;
+  }
+  .niche__mark svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .niche:hover .niche__mark,
+  .niche[data-hot="true"] .niche__mark,
+  .niche[data-sel="true"] .niche__mark { opacity: var(--mark-show); }
+
+  /* ПОЗНАЧКА ЖИВЕ В ЗАЛІ, А НЕ В ПОЛИЦІ. У наїзді камера збільшує
+     сцену вчетверо разом із позначкою — і штрих, писаний пером у
+     піксель, стає малярським мазком у чотири, а короткий супровідний
+     розчерк — рамою на пів-кадру. Всередині категорії її роль уже
+     виконано: вибрано те, у що зайшли, і це видно самим кадром. */
+  body.in-case .niche__mark,
+  body.in-case .ray,
+  body.in-case .niche__label { opacity: 0 !important; }
+
+  /* Дошка між ярусами. З'являється лише тоді, коли ярусів більше
+     одного: у виїмці на три корінці малювати нема чого. */
+  .niche__board {
+    position: absolute;
+    left: 6px; right: 6px;
+    height: 1px;
+    background: var(--ink-line);
+    box-shadow: 0 1px 0 color-mix(in srgb, var(--ink-value) 8%, transparent);
+    pointer-events: none;
+  }
+
+  /* Скільки праць не влізло на полицю. Не помилка розкладки, а
+     чесна цифра: решта чекає всередині ніші. */
+  .niche__more {
+    position: absolute;
+    inset-block-end: -1.35rem;
+    inset-inline-end: 2px;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    color: var(--ink-faint);
+  }
+
+  .room[data-far="true"] .niche__label,
+  .room[data-far="true"] .niche__more { opacity: 0.5; font-size: 0.52rem; }
+
+  /* Ярлик категорії стоїть НАД отвором — підпис до полиці, а не напис
+     на її задній стінці. Проміжок між рядами тримає під нього місце
+     (LABEL_H у buildRoom). */
+  .niche__label {
+    position: absolute;
+    inset-block-start: -1.15rem;
+    inset-inline-start: 3px;
+    z-index: 2;
+    font-family: var(--mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Полиця — креслярська лінія по лінійці. */
+  /* ---------- книги ---------- */
+
+  /* КОРІНЕЦЬ НЕ ЗАОКРУГЛЮЄТЬСЯ ЗГОРИ. Радіус тут стояв від загального
+     правила «предмет має радіус», але книжка обрізана під ніж: верх
+     корінця — пряма грань, і саме нею він і читається книжкою, а не
+     плиткою. */
+  /* КОРІНЕЦЬ — ОДНЕ КРЕСЛЕННЯ, А НЕ ТРИ ЕЛЕМЕНТИ.
+     Три грані складались із трьох дівів із власними рамками, і на
+     стиках виходило те, що й мусило: лице своєю рамкою і фоном лізло
+     на контур кришки, у кришки не було нижнього ребра (бо воно ж і є
+     верхнє ребро лиця), а на нахиленій книжці все це розходилось ще й
+     на півпікселя. Тепер це один SVG: три грані одним пером, спільне
+     ребро — одна лінія, а не дві накладені. */
+  .book {
+    position: absolute;
+    bottom: 2px;
+    --face-front: var(--fill);
+    --face-top:   color-mix(in srgb, var(--paper-lit) 72%, var(--fill));
+    --face-side:  var(--wash-2);
+    --face-line:  var(--ink-line);
+    /* КОНТУР — ЦЕ ЛІНІЯ, А НЕ ТІНЬ: коротка щільна тінь каже, що
+       предмет стоїть, і не додає до контуру пікселів темряви з одного
+       боку. drop-shadow, а не box-shadow: тінь має йти по КРЕСЛЕННЮ, а
+       не по прямокутнику кнопки. */
+    filter: drop-shadow(2px 3px 4px var(--cast));
+    border: 0;
+    padding: 0;
+    background: transparent;
+    transform-origin: 50% 100%;
+    transform: translateZ(18px) rotate(var(--tilt, 0deg));
+    transition: transform 750ms cubic-bezier(0.16, 0.5, 0.2, 1), filter 600ms ease;
+    cursor: pointer;
+    overflow: visible;
+  }
+  .book__draw {
+    position: absolute;
+    inset: 0;
+    overflow: visible;
+    pointer-events: none;
+  }
+  .book__draw .front { fill: var(--face-front); }
+  .book__draw .top   { fill: var(--face-top); }
+  .book__draw .side  { fill: var(--face-side); }
+  .book__draw .line  { fill: none; stroke: var(--face-line); stroke-width: 1;
+                       stroke-linejoin: round; stroke-linecap: round; }
+  .book__draw .plate { fill: color-mix(in srgb, var(--ink-value) 7%, transparent);
+                       stroke: var(--face-line); stroke-width: 1; }
+  .book__draw .foot  { fill: none; }
+
+  /* ЩО ВИДНО НА КОРІНЦІ — ПИТАННЯ ЙОГО РОЗМІРУ НА ЕКРАНІ, А НЕ РЕЖИМУ.
+     Корінець у два пікселі не носить ані назви, ані таблички; той
+     самий корінець, наближений камерою вчетверо, носить і те, і те.
+     Тому рівень деталізації рахується з ФАКТИЧНОЇ ширини корінця в
+     кадрі (applyLod), а не з того, у залі ми чи в полиці. */
+  .room[data-lod="bare"] .book__draw .plate,
+  .room[data-lod="bare"] .book__draw .band { display: none; }
+
+  /* Табличка і напис — той самий шар на корінці, тому вони не
+     з'являються один за одним, а перетікають: поки один гасне, другий
+     набирає. Затримки немає навмисно — вона й робила з переходу два
+     окремі кадри. */
+  .book__draw .plate { transition: opacity 380ms ease; }
+  .book__spine {
+    position: absolute;
+    inset-block: 10% 14%;
+    inset-inline: 0;
+    display: grid;
+    place-items: center;
+    writing-mode: vertical-rl;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    opacity: 0;
+    transition: opacity 380ms ease;
+    pointer-events: none;
+  }
+  /* Коли назва не влізла — на корінці стоїть слід письма тим самим
+     пером і того ж розміру, що й сама назва. */
+  .book__spine[data-mark] { color: var(--ink-soft); writing-mode: horizontal-tb; }
+  .book__spine[data-mark] svg { display: block; overflow: visible; }
+  /* Назва — лише на полиці, до якої підійшли, і лише коли корінець на
+     екрані справді достатньої ширини. */
+  .room[data-lod="name"] .niche[data-sel="true"] .book__spine { opacity: 1; }
+  .room[data-lod="name"] .niche[data-sel="true"] .book__draw .plate { opacity: 0; }
+
+  .book[data-live="true"] {
+    --face-front: color-mix(in srgb, var(--brass) 9%, var(--fill));
+    --face-line: var(--brass-line);
+    transform: translateZ(46px) rotate(var(--tilt, 0deg)) translateY(-9px);
+  }
+  .book[data-live="true"] .book__draw .plate {
+    fill: color-mix(in srgb, var(--brass) 26%, transparent);
+  }
+  .book[data-live="true"] .book__draw .foot { fill: var(--brass); }
+  .book:hover {
+    --face-front: color-mix(in srgb, var(--brass) 8%, var(--fill));
+    --face-line: var(--brass-line);
+  }
+  .book:focus-visible { outline: 1px solid var(--brass); outline-offset: 3px; }
+
+  .stack { position: absolute; bottom: 2px; transform: translateZ(14px); }
+  .stack__slab {
+    height: 6px;
+    border-radius: 1px;
+    background: var(--fill);
+    border: 1px solid var(--ink-line);
+    border-bottom: 0;
+  }
+  .stack__slab:last-child { border-bottom: 1px solid var(--ink-line); }
+
+  /* ---------- текст ---------- */
+
+  .sheet {
+    position: relative;
+    z-index: 1;
+    min-height: 100svh;
+    display: grid;
+    align-content: center;
+    justify-items: start;
+    gap: 1.5rem;                 /* --cw-space-lg */
+    width: var(--measure);
+    /* Колонка стоїть по центру СВОЄЇ половини, а не притиснута до
+       краю: 10vw поля плюс 38vw набору дають центр близько 29vw —
+       середина лівої половини. Виїмки так само центруються у правій
+       (offset у buildRoom). Між двома половинами лишається справжня
+       порожнеча, а не випадковий залишок. */
+    margin-inline: 10vw;
+    padding-block: 12vh 8rem;
+  }
+
+  /* ТИПОГРАФІКА — ТА, ЩО ВЖЕ СТОЇТЬ У /learn.
+     Прототип писав своїми числами, і поруч із живою полицею це
+     читалось іншим продуктом. Нижче — ті самі значення, що в
+     Cabinet.module.css, з назвами класів звідти:
+
+       .eyebrow    ← .sectionLabel  0.76rem / 0.08em / uppercase / UI
+       h1          ← .sectionTitle  editorial 500, clamp(1.5–2rem), 1.15
+       .standfirst ← .sectionLead   1.6
+       .row__title ← .cardTitle     1.15rem / 600 / 1.3, UI
+       .row__note  ← .cardText      1.6
+
+     Мітка сторінки більше не моноширинна: моно в ДС — шрифт ДАНИХ
+     (--cw-font-data), і ним лишились рівно числа поступу й індекси. */
+  .eyebrow {
+    margin: 0;
+    font-size: 0.76rem;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+
+  h1 {
+    margin: 0;
+    font-family: var(--editorial);
+    font-weight: 500;
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    line-height: 1.15;
+    text-wrap: balance;
+    max-width: 20ch;
+  }
+
+  .standfirst {
+    margin: 0;
+    max-width: 42ch;
+    font-size: 1rem;
+    line-height: 1.6;
+    color: var(--ink-soft);
+  }
+
+  /* ПОШУК — РЯДОК НА ЛІНІЙЦІ, А НЕ ПЛАШКА. Те саме правило, що й для
+     станів списку: у залі форму дає лінія, а не заокруглений ґрунт.
+     Фокус — кільце контракту кнопок, як і всюди. */
+  .find {
+    display: flex;
+    align-items: center;
+    gap: 0.55rem;
+    width: 100%;
+    padding: 0.55rem 0.2rem;
+    /* Підкреслення поля згасає на кінцях У СПОКОЇ і збирається в повну
+       лінію, щойно поле беруть у роботу. Це не прикраса черговості: у
+       спокої поле — один із елементів колонки, і довга різко обрубана
+       лінія робить його найгучнішим; під вказівником і у фокусі лінія
+       мусить показати, доки поле тягнеться, і тоді ж вона міняє колір,
+       чого border-image не дозволяє. Отже кожен стан бере ту форму
+       лінії, яку в цьому стані має що сказати. */
+    border-block-end: 1px solid var(--ink-line);
+    border-image: var(--rule-fade);
+    color: var(--ink-faint);
+    transition: border-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
+  }
+  .find input {
+    flex: 1 1 auto;
+    min-width: 0;
+    appearance: none; -webkit-appearance: none;
+    margin: 0; padding: 0; border: 0; border-radius: 0;
+    background: transparent;
+    color: var(--ink);
+    font: inherit;
+    font-size: 0.95rem;
+  }
+  .find input:focus { outline: none; }
+  .find input::placeholder { color: var(--ink-faint); }
+  .find input::-webkit-search-cancel-button { filter: grayscale(1) opacity(0.5); }
+  .find:hover { border-image: none; border-block-end-color: var(--ink-soft); color: var(--ink-soft); }
+  .find:focus-within {
+    border-image: none;
+    border-block-end-color: var(--ink);
+    color: var(--ink-soft);
+    box-shadow: var(--ds-button-ring);
+  }
+  /* ПОШУК ЖИВЕ В ЗАЛІ. Усередині полиці шукати нема чого: там усе, що
+     є, і так на екрані, а поле поруч зі списком із двох рядків читалось
+     би як пропозиція шукати те, чого тут немає. */
+  body.in-case .find { display: none; }
+
+  /* НІ ПЕРШОЇ ЛІНІЇ, НІ ОСТАННЬОЇ. Список був узятий у рамку зверху і
+     знизу, і разом із розділювачами це давало п'ять ліній на три
+     рядки. Перша і остання не розділяють нічого: список і так
+     починається там, де починається його перший рядок, а кінчається
+     там, де кінчається останній — це видно з відступів. Лишаються
+     тільки ті лінії, що стоять МІЖ рядками, і кожна з них згасає на
+     кінцях. */
+  .shelfList {
+    display: grid;
+    width: 100%;
+  }
+
+  .row {
+    appearance: none; -webkit-appearance: none;
+    display: grid;
+    grid-template-columns: 2.8rem 1fr auto;
+    align-items: baseline;
+    gap: 1rem;                   /* --cw-space-md */
+    width: 100%;
+    padding: 0.75rem 0.2rem;     /* --cw-space-sm */
+    border: 0;
+    border-block-end: 1px solid var(--ink-line);
+    border-image: var(--rule-fade);
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+    /* Кут і тінь — це підпис КАРТКИ, і саме вони перетворювали список
+       на стос заокруглених плиток. Матеріальний шар відповідає на
+       питання, з чого зроблена поверхня, а не на питання, якої форми
+       набуває увага. У залі увага має форму креслення: смуга і лінія,
+       без радіуса і без відриву від аркуша. */
+    border-radius: 0;
+    transition: padding-inline-start 220ms ease, background 180ms ease,
+                border-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
+  }
+  /* Остання лінія знята саме тут, а не в розмітці: рядок сам не знає,
+     чи він останній, а :last-child знає. */
+  .shelfList > *:last-child { border-block-end: 0; }
+
+  /* Стан рядка не залежить від того, звідки прийшла увага: миша на
+     рядку, миша на ніші, клавіатура — один вигляд. Інакше половина
+     сцени підсвічується, а половина ні.
+
+     УВАГА БЕРЕ ТОН МАТЕРІАЛУ І ФОРМУ КРЕСЛЕННЯ. Ґрунт під рядком —
+     той самий теплий матеріал, що в панелях платформи, але він лягає
+     СМУГОЮ: без кута, без падаючої тіні, без відриву від аркуша.
+     Замість них працюють дві лінії — та, що вже тримає список знизу,
+     і чорнильна риска при лівому полі, у яку і впирається зсув. Це та
+     сама пара «одна риска у двох силах», якою позначається все інше
+     в кімнаті. */
+  .row:hover, .row:focus-visible, .row[data-hot="true"] { color: var(--ink); }
+  /* Натиск — єдине, де лишився матеріал: під пальцем поверхня сідає у
+     втоплений тон. Це не позначка стану, це відгук на дотик, і живе
+     він рівно стільки, скільки триває сам натиск. */
+  .row:active { background: var(--mat-sunk); }
+
+  /* ГЛІФ, А НЕ ЛІТЕРА. «←» і «×» рендеряться тією вагою, яку дасть
+     системний шрифт, і ніколи не збігаються з набором. У ДС кожна така
+     літера вже стала спрайтовим гліфом; тут ті самі символи з
+     public/cw/icons/cw-icons.svg, вкладені в сторінку — прототип
+     мусить лишатись одним файлом. Розмір 18 — той самий, що в панелі
+     уроку. */
+  .glyph {
+    width: 18px; height: 18px;
+    flex: 0 0 auto;
+    color: currentColor;
+  }
+  .glyph use { color: inherit; }
+
+  /* ШТРИХ ПІД НАЗВОЮ, У ДВОХ СИЛАХ. Слабший — там, куди показують
+     (вказівник, клавіатура або ніша на стіні); повний — на тому, що
+     зараз відкрите. Той самий об'єкт, тому два стани не можуть злитись
+     в один. */
+  .inkLabel { position: relative; display: inline-block; max-width: 100%; }
+  .row__mark {
+    position: absolute;
+    inset-inline: -0.2rem;
+    inset-block-end: -0.42rem;
+    height: var(--ink-stroke-height);
+    color: var(--nav-marker);
+    opacity: 0;
+    pointer-events: none;
+    transform: scaleX(0.58);
+    transform-origin: center;
+    transition: opacity 160ms ease, transform 160ms ease;
+  }
+  .row__mark svg { width: 100%; height: 100%; display: block; overflow: visible; }
+  .row:hover .row__mark,
+  .row:focus-visible .row__mark,
+  .row[data-hot="true"] .row__mark {
+    opacity: var(--ink-hover-opacity);
+    transform: scaleX(var(--ink-hover-scale));
+  }
+  .row[data-current="true"] .row__mark { opacity: 1; transform: scaleX(1); }
+
+  /* Та сама мова — і на керуванні. Кнопка з назвою («Назад до зали»,
+     «Аркуш») позначається тим самим штрихом, що й рядок списку: інакше
+     в кімнаті було б два різні способи сказати «сюди показують». Кнопка
+     без назви — сам гліф, і йому вистачає власного кольору. */
+  .back:hover .row__mark,
+  .back:focus-visible .row__mark,
+  .turnbar .chip:hover .row__mark,
+  .turnbar .chip:focus-visible .row__mark {
+    opacity: var(--ink-hover-opacity);
+    transform: scaleX(var(--ink-hover-scale));
+  }
+  .back .inkLabel, .turnbar .inkLabel { line-height: 1.1; }
+  /* Той самий фокус, що в кнопок: кільце акценту, не голий outline. */
+  .row:focus-visible { outline: none; box-shadow: var(--ds-button-ring); }
+  .row__index { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  /* Назва курсу — це заголовок картки полиці, а не заголовок сторінки.
+     У ДС редакційним пишеться друге, а не перше; тому тут UI 600, як у
+     .cardTitle. Редакційний лишається на h1 і на розвороті книги. */
+  .row__title { font-size: 1.15rem; font-weight: 600; line-height: 1.3; }
+  /* Деталі — рівно один рядок. Другий рядок ламає ритм списку: рядки
+     перестають бути однаковими, і око більше не веде по колонці. */
+  .row__note {
+    display: block;
+    margin-block-start: 0.2rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: var(--ink-soft);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .row > span:nth-child(2) { min-width: 0; }
+  .row__state { font-family: var(--mono); font-size: 0.7rem; color: var(--ink-faint); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  /* ЗОЛОТО НА ОДНОМУ РЯДКУ, ЯК І НА ОДНІЙ КНИЗІ. Досі золотими були
+     числа в КОЖНОМУ рядку, де щось придбано, — тобто майже всюди, і
+     акцент переставав бути акцентом рівно так само, як колись шість
+     однакових вогників на полиці. Світиться те, на що дивляться: рядок
+     під увагою або той, чия книга розгорнута. Решта — чорнило. */
+  .row:hover .row__state[data-held="true"],
+  .row:focus-visible .row__state[data-held="true"],
+  .row[data-hot="true"] .row__state[data-held="true"],
+  .row[data-current="true"] .row__state[data-held="true"] { color: var(--brass); }
+
+  /* Роль chrome, у варіанті chromeBare: керування навігацією на
+     власному рядку, без плашки і без бічних полів. Слово лишається —
+     стрілка каже «назад», але тільки слово каже, назад КУДИ; ДС
+     знімає підпис лише там, де його повторює гліф. */
+  .back {
+    appearance: none; -webkit-appearance: none;
+    display: inline-flex; align-items: center;
+    gap: var(--ds-button-gap);
+    min-height: var(--ds-touch-target-min);
+    min-width: var(--ds-touch-target-min);
+    padding-inline: 0;
+    border: 0;
+    border-radius: var(--ds-button-radius);
+    background: transparent;
+    color: var(--ink-soft);
+    font: inherit;
+    font-size: 0.9rem;
+    font-weight: var(--ds-button-font-weight);
+    line-height: 1.1;
+    cursor: pointer;
+    transition: var(--ds-button-motion);
+  }
+  .back:hover { color: var(--ink); }
+  /* Один фокус на всі ролі: кільце акценту, ніколи не голий outline. */
+  .back:focus-visible { outline: none; box-shadow: var(--ds-button-ring); }
+  /* [hidden] мусить перемагати display, інакше кнопка «назад» стоїть у залі. */
+  .back[hidden] { display: none; }
+  .back:hover { color: var(--ink); }
+  .back:focus-visible { outline: 1px solid var(--brass); outline-offset: 3px; }
+
+  /* ---------- розворот ---------- */
+
+  .spread {
+    position: fixed;
+    inset: 0;
+    z-index: 4;
+    display: grid;
+    place-items: center;
+    background: color-mix(in srgb, var(--paper-deep) 92%, transparent);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 520ms ease;
+  }
+  .spread[data-open="true"] { opacity: 1; pointer-events: auto; }
+
+  .book-open {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    width: min(58rem, 88vw);
+    height: min(34rem, 74vh);
+    background: var(--paper-lit);
+    border: 1px solid var(--ink-line);
+    border-radius: var(--r-tool);
+    box-shadow: 0 30px 70px color-mix(in srgb, var(--ink-value) 26%, transparent);
+    transform: rotateX(8deg) scale(0.96);
+    opacity: 0;
+    transition: transform 620ms cubic-bezier(0.22, 0.61, 0.36, 1), opacity 460ms ease;
+  }
+  .spread[data-open="true"] .book-open { transform: rotateX(0deg) scale(1); opacity: 1; }
+
+  .book-open::before {
+    content: "";
+    position: absolute;
+    inset-block: 0; left: 50%;
+    width: 46px; margin-left: -23px;
+    background: linear-gradient(90deg,
+      transparent, color-mix(in srgb, var(--ink-value) 15%, transparent) 46%,
+      color-mix(in srgb, var(--ink-value) 18%, transparent) 54%, transparent);
+    pointer-events: none;
+  }
+
+  .page {
+    position: relative;
+    padding: clamp(1.4rem, 3.4vw, 2.6rem);
+    display: grid;
+    align-content: start;
+    gap: 0.9rem;
+    overflow: hidden;
+    background-image: linear-gradient(to bottom, var(--ink-hair) 1px, transparent 1px);
+    background-size: 100% 30px;
+    background-position: 0 calc(clamp(1.4rem, 3.4vw, 2.6rem) + 20px);
+  }
+  .page + .page { border-inline-start: 1px solid var(--ink-hair); }
+
+  /* СТОРІНКА КНИГИ — ЦЕ СТОРІНКА РІДЕРА, А НЕ ЩЕ ОДНА ВЕРСТКА.
+     Перехід із полиці в читання і є те місце, де прототип або
+     склеюється з застосунком, або лишається окремим етюдом. Тому
+     значення тут — із Lms.module.css, з іменами класів звідти:
+
+       .page__folio ← .stepMarker / .stepCount  0.82 і 0.76rem, дані
+       .page__title ← .title      editorial 500, clamp(1.7–2.4), 1.15
+       .page__lead  ← .objective  1.08rem / 1.55 / приглушений
+       .page p      ← .paragraph  1.85 — і це не випадкове число:
+                     у ДС записано, чому саме такий інтерлеаж
+                     (рьокан, чай, ремесло тримають 1.6–2.2). */
+  /* Праве фоліо — не лічильник кроків, отже й не пігулка: просто
+     число сторінки, набране даними. */
+  #folioR {
+    background: transparent;
+    padding: 0;
+    color: var(--ink-faint);
+    font-weight: 400;
+    letter-spacing: 0.14em;
+  }
+  .page__folio {
+    display: inline-flex;
+    align-items: center;
+    align-self: start;
+    justify-self: start;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;                       /* --cw-radius-pill */
+    background: color-mix(in srgb, var(--brass) 22%, transparent);
+    color: var(--ink);
+    font-family: var(--mono);                   /* --cw-font-data */
+    font-size: 0.76rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+  }
+  .page__title {
+    margin: 0 0 0.25rem;
+    font-family: var(--editorial);
+    font-size: clamp(1.5rem, 5vw, 2rem);
+    font-weight: 500;
+    line-height: 1.15;
+  }
+  .page__lead {
+    margin: 0;
+    font-size: 1.08rem;
+    line-height: 1.55;
+    color: var(--ink-soft);
+  }
+  .page p {
+    margin: 0;
+    font-size: 1rem;                            /* --cw-course-body-size */
+    line-height: 1.85;                          /* .paragraph */
+    color: var(--ink-soft);
+    max-width: 34ch;
+  }
+
+  /* Смужка прочитаного — той самий прилад, що в уроці: 0.2rem, pill,
+     втоплений жолоб, акцент у заповненні. Вона й робить розворот
+     сторінкою рідера, а не картинкою книги. */
+  .readingTrack {
+    position: absolute;
+    inset-inline: clamp(1.4rem, 3.4vw, 2.6rem);
+    inset-block-start: 0.75rem;
+    height: 0.2rem;
+    border-radius: 999px;
+    background: var(--mat-sunk);
+    overflow: hidden;
+    z-index: 2;
+  }
+  .readingFill {
+    height: 100%;
+    width: 0;
+    background: var(--brass);
+    transition: width 90ms linear;
+  }
+
+  .turnbar {
+    position: absolute;
+    inset-block-end: -3.2rem;
+    inset-inline: 0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;                    /* --cw-space-xs */
+  }
+  .turnbar__gap { flex: 1; }        /* .topBarSpacer */
+  #prevPage, #nextPage { padding-inline: 0; }
+
+  /* ---------- пульт ---------- */
+
+  .console {
+    position: fixed;
+    z-index: 5;
+    inset-block-start: 1.2rem;
+    inset-inline-end: 1.2rem;
+    width: 17.5rem;
+    max-height: calc(100svh - 2.4rem);
+    transition: width 240ms ease;
+    overflow-y: auto;
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.9rem;
+    background: color-mix(in srgb, var(--clay) 22%, var(--paper));
+    border: 1px solid var(--ink-line);
+    border-radius: var(--r-tool);
+    box-shadow: 0 12px 30px color-mix(in srgb, var(--ink-value) 12%, transparent);
+    font-family: var(--mono);
+    font-size: 0.68rem;
+    letter-spacing: 0.04em;
+  }
+  .console[data-collapsed="true"] { width: auto; }
+  .console[data-collapsed="true"] > *:not(.console__head) { display: none; }
+
+  .console__head {
+    display: flex; align-items: center; justify-content: space-between; gap: 0.5rem;
+    color: var(--ink-faint);
+    text-transform: uppercase; letter-spacing: 0.14em;
+  }
+  .console__toggle {
+    appearance: none; -webkit-appearance: none;
+    min-width: 30px; min-height: 30px;
+    border: 1px solid var(--ink-line); background: transparent;
+    border-radius: calc(var(--r-tool) - 4px);
+    color: var(--ink-soft); font: inherit; cursor: pointer;
+  }
+  .console__toggle:focus-visible { outline: 1px solid var(--brass); outline-offset: 2px; }
+
+  .console__group { display: grid; gap: 0.45rem; }
+  .console__legend {
+    color: var(--ink-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    border-block-end: 1px solid var(--ink-hair);
+    padding-block-end: 0.3rem;
+  }
+
+  .chips { display: flex; flex-wrap: wrap; gap: 0.3rem; }
+  /* Пульт: роль quiet, з поправкою на те, що це інструмент, а не
+     поверхня для того, хто вчиться (див. контракт вище). Від ДС —
+     вага, радіус, рух і фокус; своя лише висота. */
+  .chip {
+    appearance: none; -webkit-appearance: none;
+    display: inline-flex; align-items: center; justify-content: center;
+    gap: var(--ds-button-gap);
+    padding: 0.3rem 0.6rem;
+    min-height: 30px;
+    border: 1px solid var(--ink-line);
+    border-radius: calc(var(--ds-button-radius) - 5px);
+    background: transparent;
+    color: var(--ink-soft);
+    font: inherit;
+    font-weight: var(--ds-button-font-weight);
+    line-height: 1.1;
+    cursor: pointer;
+    transition: var(--ds-button-motion);
+  }
+  .chip:hover { color: var(--ink); border-color: var(--brass-line); }
+  .chip:focus-visible { outline: none; box-shadow: var(--ds-button-ring); }
+  .chip[aria-pressed="true"] { color: var(--brass); border-color: var(--brass); }
+
+  /* Гортання розвороту і закриття — це вже не інструмент, а те, чим
+     користується читач: роль chrome, повний цільовий розмір. */
+  .turnbar .chip {
+    min-height: var(--ds-touch-target-min);
+    min-width: var(--ds-touch-target-min);
+    padding-inline: var(--ds-button-padding-inline);
+    max-width: var(--ds-button-max-width);
+    border: 0;
+    border-radius: var(--ds-button-radius);
+    font-size: 0.9rem;
+  }
+  .turnbar .chip:hover { color: var(--ink); background: transparent; }
+  #closeSpread { padding-inline: 0; min-width: var(--ds-touch-target-min); }
+
+  .fader { display: grid; grid-template-columns: 5.6rem 1fr 2.2rem; align-items: center; gap: 0.45rem; }
+  .fader label { color: var(--ink-soft); }
+  .fader output { text-align: end; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+  .fader input[type="range"] {
+    appearance: none; -webkit-appearance: none;
+    width: 100%; height: 22px; background: transparent; cursor: pointer;
+  }
+  .fader input[type="range"]::-webkit-slider-runnable-track { height: 1px; background: var(--ink-line); }
+  .fader input[type="range"]::-moz-range-track { height: 1px; background: var(--ink-line); }
+  .fader input[type="range"]::-webkit-slider-thumb {
+    appearance: none; -webkit-appearance: none;
+    width: 9px; height: 16px; margin-top: -8px;
+    background: var(--brass); border: 0; border-radius: 3px;
+  }
+  .fader input[type="range"]::-moz-range-thumb {
+    width: 9px; height: 16px; background: var(--brass); border: 0; border-radius: 3px;
+  }
+  .fader input[type="range"]:focus-visible { outline: 1px solid var(--brass); outline-offset: 3px; }
+
+  .inks { display: grid; gap: 0.28rem; }
+  .inkRow {
+    appearance: none; -webkit-appearance: none;
+    display: grid; grid-template-columns: 14px 1fr auto auto;
+    align-items: center; gap: 0.45rem;
+    min-height: 30px; padding: 0.15rem 0.2rem;
+    border: 1px solid transparent; background: transparent;
+    color: var(--ink-soft); font: inherit; cursor: pointer; text-align: start;
+  }
+  .inkRow { border-radius: calc(var(--r-tool) - 5px); }
+  .inkRow:hover { border-color: var(--ink-line); }
+  .inkRow:focus-visible { outline: 1px solid var(--brass); outline-offset: 2px; }
+  .inkRow[aria-pressed="true"] { border-color: var(--brass); color: var(--ink); }
+  .inkRow__swatch { width: 14px; height: 14px; border-radius: 3px; border: 1px solid var(--ink-line); }
+  .inkRow__src { color: var(--ink-faint); font-size: 0.6rem; }
+  .inkRow__ratio { font-variant-numeric: tabular-nums; color: var(--ink-faint); }
+  .inkRow__ratio[data-pass="false"] { color: var(--redline); }
+  .inkNote { margin: 0; color: var(--ink-faint); font-size: 0.6rem; line-height: 1.7; }
+  .inks[data-locked="true"] .inkRow { cursor: default; opacity: 0.72; }
+
+  @media (max-width: 1100px) {
+    .console { inset-inline-end: 0.8rem; width: 15rem; }
+  }
+  @media (max-width: 900px) {
+    :root { --measure: 100%; }
+    /* На вузькому колонка займає всю ширину, тож бічної завіси не
+       буває: туш іде згори і знизу, папір лишається поясом посередині,
+       де лежить текст. Ніші стають у цей самий пояс — над текстом і
+       під ним (SPOTS у buildRoom). */
+    /* НА ВУЗЬКОМУ СТІНА НЕ ЗАКІНЧУЄТЬСЯ КРАЄМ, А СХОДИТЬ НАНІВЕЦЬ.
+       Аркуш із власним фоном давав рівно те, що й видно було: вирізаний
+       прямокутник із клаптями фактури по краях. Обирати між скляною
+       карткою і текстом просто по глині не довелось — сходинка глибини
+       вже вибрала: картка з радіусом і тінню це рівень 0, а зала і
+       робота пишуться по матеріалу. Отже тексту не потрібна підкладка,
+       потрібно, щоб під ним не було чого читати: завіса гасить кімнату
+       по всій нижній частині кадру, і текст лягає на той самий папір,
+       що й ґрунт стіни. Краю немає, бо немає двох поверхонь. */
+    :root {
+      --scene-veil: linear-gradient(180deg,
+        #000 0 28%,
+        rgba(0, 0, 0, 0.5) 38%,
+        transparent 50%);
+    }
+    /* ПАПІР ІДЕ ВІД КРАЮ ДО КРАЮ. Колонка мала бічні поля через
+       margin, отже і її ґрунт закінчувався там же — а за ним з обох
+       боків лишалась смужка кімнати. Саме ці дві вертикальні лінії й
+       читались як накладена панель. Тепер поля тримає padding: набір
+       стоїть там само, а папір під ним іде на всю ширину кадру, і
+       перекривати кімнату частково більше нічим. */
+    .sheet {
+      margin-inline: 0;
+      width: 100%;
+      padding-inline: 6vw;
+      align-content: start;
+      gap: 0.9rem;
+      padding-block: 49vh 6vh;
+    }
+    .row { padding-block: 0.55rem; }
+    .row__note { margin-block-start: 0.1rem; line-height: 1.6; }
+    .standfirst { line-height: 1.7; }
+    /* У ніші те саме місце: полиця вгорі, текст під нею. */
+    body.in-case .sheet {
+      align-content: start;
+      padding-block: 49vh 6vh;
+      --measure: 100%;
+    }
+    /* Виїмки більше не стоять під текстом, тож і гасити сцену нема
+       за що: приглушений зал читався як вимкнене світло. */
+    .stage { opacity: 1; }
+    /* Сцена в кімнаті fixed, а текст скролиться поверх неї — отже під
+       текстом усе одно потрібен папір, інакше рядки лягають на полиці
+       при першому ж русі сторінки. Але це той САМИЙ папір і без краю:
+       довгий перехід на чотирнадцять відсотків висоти, жодної лінії,
+       жодного кута. Аркуш не накладається на кімнату — кімната в нього
+       переходить. */
+    .sheet {
+      background: linear-gradient(180deg,
+        transparent 0 36vh,
+        color-mix(in srgb, var(--paper) 55%, transparent) 44vh,
+        var(--paper) 52vh 100%);
+    }
+    .console { inset-inline: 0.8rem; width: auto; inset-block-start: auto; inset-block-end: 0.8rem; }
+    .book-open { grid-template-columns: 1fr; }
+    .page + .page { display: none; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .room, .room.is-eased, .book, .row, .book-open, .spread { transition: none; }
+    .rake, .ray { animation: none; }
+  }
+</style>
+
+<span class="build" aria-hidden="true">зб. 59 · 28.08</span>
+
+
+<svg class="sprite" aria-hidden="true" width="0" height="0" style="position:absolute"><symbol id="cw-arrow-left" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M19.93 11.75C19.81 11.75 19.46 11.75 19.23 11.75C19 11.75 18.76 11.75 18.53 11.75C18.3 11.75 18.07 11.75 17.84 11.76C17.61 11.76 17.38 11.76 17.15 11.76C16.93 11.76 16.7 11.76 16.47 11.76C16.24 11.77 16.01 11.77 15.78 11.77C15.56 11.77 15.33 11.78 15.1 11.78C14.87 11.78 14.65 11.79 14.42 11.79C14.19 11.79 13.96 11.8 13.74 11.8C13.51 11.81 13.28 11.81 13.06 11.82C12.83 11.83 12.6 11.83 12.37 11.84C12.14 11.85 11.92 11.86 11.69 11.87C11.46 11.87 11.23 11.88 11 11.89C10.77 11.9 10.54 11.91 10.32 11.93C10.09 11.94 9.86 11.95 9.63 11.96C9.4 11.98 9.17 12 8.95 12.02C8.72 12.04 8.5 12.06 8.27 12.08C8.05 12.11 7.83 12.13 7.6 12.16C7.38 12.18 7.16 12.21 6.94 12.24C6.72 12.26 6.38 12.31 6.27 12.32"/> <path d="M11.23 6.08C11.15 6.17 10.92 6.42 10.77 6.59C10.62 6.76 10.46 6.92 10.31 7.1C10.16 7.27 10 7.44 9.85 7.61C9.7 7.78 9.54 7.96 9.39 8.14C9.24 8.31 9.08 8.49 8.93 8.67C8.78 8.86 8.62 9.04 8.47 9.23C8.32 9.41 8.16 9.6 8.01 9.79C7.85 9.98 7.7 10.17 7.54 10.36C7.39 10.55 7.23 10.74 7.08 10.94C6.92 11.13 6.76 11.32 6.61 11.51C6.45 11.7 6.21 11.91 6.13 12.09C6.05 12.27 6.05 12.43 6.12 12.6C6.19 12.76 6.41 12.9 6.56 13.05C6.71 13.2 6.85 13.36 7 13.52C7.14 13.67 7.29 13.83 7.44 13.99C7.58 14.15 7.73 14.31 7.87 14.48C8.02 14.64 8.17 14.81 8.31 14.97C8.46 15.14 8.61 15.31 8.75 15.47C8.9 15.64 9.05 15.81 9.2 15.98C9.34 16.15 9.49 16.32 9.64 16.49C9.79 16.66 9.94 16.82 10.1 16.99C10.25 17.16 10.4 17.33 10.55 17.5C10.7 17.66 10.93 17.91 11.01 18"/> </g></symbol><symbol id="cw-arrow-right" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M4.38 12.56C4.49 12.55 4.82 12.51 5.04 12.48C5.26 12.45 5.49 12.42 5.71 12.39C5.93 12.37 6.15 12.34 6.37 12.31C6.59 12.28 6.81 12.25 7.03 12.23C7.25 12.2 7.48 12.17 7.7 12.15C7.92 12.12 8.14 12.1 8.37 12.07C8.59 12.05 8.82 12.03 9.04 12.01C9.27 11.99 9.5 11.97 9.73 11.96C9.95 11.94 10.18 11.93 10.41 11.92C10.64 11.91 10.87 11.9 11.1 11.89C11.33 11.88 11.56 11.87 11.79 11.86C12.01 11.85 12.24 11.85 12.47 11.84C12.7 11.83 12.93 11.82 13.15 11.82C13.38 11.81 13.61 11.81 13.83 11.8C14.06 11.8 14.29 11.79 14.52 11.79C14.74 11.78 14.97 11.78 15.2 11.78C15.43 11.77 15.65 11.77 15.88 11.77C16.11 11.77 16.34 11.76 16.57 11.76C16.79 11.76 17.02 11.76 17.25 11.76C17.48 11.76 17.83 11.76 17.94 11.76"/> <path d="M12.8 6.02C12.88 6.1 13.13 6.33 13.29 6.49C13.46 6.65 13.62 6.8 13.79 6.96C13.95 7.12 14.11 7.28 14.28 7.44C14.44 7.6 14.6 7.76 14.76 7.92C14.92 8.09 15.08 8.25 15.24 8.42C15.41 8.58 15.57 8.75 15.72 8.91C15.88 9.08 16.04 9.25 16.2 9.42C16.36 9.59 16.52 9.76 16.68 9.93C16.83 10.1 16.99 10.27 17.15 10.45C17.31 10.62 17.47 10.79 17.62 10.97C17.78 11.14 18.02 11.32 18.1 11.49C18.18 11.67 18.17 11.84 18.09 12.02C18.01 12.19 17.77 12.37 17.61 12.55C17.44 12.73 17.28 12.9 17.12 13.08C16.95 13.26 16.79 13.44 16.63 13.62C16.46 13.8 16.3 13.97 16.13 14.15C15.97 14.33 15.8 14.51 15.64 14.69C15.47 14.87 15.3 15.05 15.14 15.23C14.97 15.41 14.8 15.59 14.63 15.77C14.47 15.95 14.3 16.13 14.13 16.31C13.96 16.5 13.79 16.68 13.62 16.86C13.45 17.04 13.28 17.22 13.12 17.39C12.95 17.57 12.69 17.84 12.61 17.93"/> </g></symbol><symbol id="cw-lens" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M10.41 5.54C10.18 5.55 9.96 5.58 9.73 5.62C9.51 5.67 9.3 5.74 9.09 5.82C8.88 5.9 8.67 6 8.48 6.12C8.29 6.24 8.1 6.37 7.92 6.52C7.75 6.66 7.58 6.83 7.43 7C7.28 7.18 7.13 7.37 7.01 7.57C6.88 7.76 6.76 7.98 6.66 8.19C6.56 8.41 6.47 8.64 6.39 8.87C6.32 9.1 6.26 9.34 6.22 9.58C6.17 9.82 6.14 10.07 6.13 10.31C6.11 10.55 6.11 10.79 6.12 11.03C6.14 11.27 6.17 11.5 6.21 11.73C6.25 11.96 6.31 12.18 6.38 12.39C6.45 12.61 6.54 12.81 6.64 13.01C6.74 13.21 6.86 13.4 6.98 13.57C7.11 13.75 7.25 13.91 7.4 14.07C7.55 14.22 7.72 14.36 7.89 14.49C8.06 14.61 8.25 14.72 8.44 14.82C8.63 14.91 8.84 14.99 9.04 15.06C9.25 15.12 9.47 15.16 9.69 15.19C9.91 15.21 10.13 15.22 10.36 15.21C10.58 15.2 10.81 15.17 11.04 15.12C11.26 15.08 11.49 15.01 11.71 14.93C11.93 14.85 12.14 14.75 12.35 14.63C12.56 14.51 12.76 14.38 12.96 14.23C13.15 14.09 13.33 13.92 13.51 13.75C13.68 13.57 13.84 13.38 13.98 13.18C14.13 12.98 14.27 12.77 14.38 12.55C14.5 12.34 14.61 12.11 14.69 11.87C14.78 11.64 14.85 11.4 14.9 11.16C14.96 10.92 14.99 10.67 15.01 10.43C15.03 10.18 15.03 9.93 15.02 9.69C15 9.45 14.96 9.21 14.91 8.98C14.86 8.75 14.79 8.52 14.71 8.3C14.62 8.09 14.52 7.88 14.4 7.68C14.29 7.48 14.15 7.29 14.01 7.11C13.86 6.94 13.7 6.77 13.53 6.62C13.36 6.47 13.18 6.33 12.99 6.21C12.8 6.09 12.6 5.98 12.39 5.89C12.19 5.8 11.97 5.73 11.75 5.67C11.54 5.61 11.31 5.57 11.09 5.55C10.86 5.53 10.63 5.52 10.41 5.54Z"/> <path d="M13.86 13.88C13.94 13.96 14.16 14.21 14.31 14.38C14.46 14.55 14.61 14.72 14.76 14.89C14.91 15.05 15.06 15.22 15.21 15.39C15.36 15.56 15.51 15.72 15.66 15.89C15.81 16.06 15.96 16.22 16.12 16.39C16.27 16.55 16.42 16.72 16.58 16.89C16.73 17.05 16.89 17.21 17.04 17.38C17.2 17.54 17.35 17.71 17.51 17.87C17.67 18.03 17.82 18.19 17.98 18.36C18.14 18.52 18.37 18.76 18.45 18.84"/> </g></symbol><symbol id="cw-close" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"> <path d="M6.18 6.1C6.26 6.17 6.49 6.39 6.65 6.54C6.81 6.68 6.97 6.82 7.13 6.97C7.29 7.11 7.45 7.26 7.61 7.4C7.77 7.54 7.93 7.69 8.09 7.83C8.25 7.98 8.41 8.12 8.56 8.27C8.72 8.41 8.88 8.56 9.04 8.71C9.2 8.86 9.36 9.01 9.52 9.16C9.68 9.32 9.84 9.47 9.99 9.63C10.15 9.79 10.31 9.95 10.47 10.11C10.63 10.27 10.78 10.44 10.94 10.6C11.09 10.77 11.24 10.93 11.4 11.1C11.55 11.26 11.7 11.43 11.85 11.6C12 11.77 12.16 11.94 12.31 12.1C12.46 12.27 12.61 12.44 12.76 12.61C12.91 12.79 13.06 12.96 13.21 13.13C13.36 13.3 13.51 13.47 13.66 13.64C13.81 13.81 13.96 13.99 14.11 14.16C14.26 14.33 14.41 14.5 14.57 14.67C14.72 14.84 14.87 15.01 15.02 15.19C15.18 15.36 15.33 15.53 15.49 15.7C15.64 15.87 15.8 16.04 15.95 16.21C16.11 16.38 16.26 16.55 16.42 16.72C16.58 16.89 16.74 17.05 16.89 17.22C17.05 17.39 17.21 17.56 17.37 17.72C17.53 17.89 17.77 18.14 17.85 18.22"/> <path d="M17.88 5.54C17.8 5.62 17.57 5.86 17.42 6.02C17.27 6.18 17.12 6.34 16.96 6.5C16.81 6.66 16.66 6.82 16.51 6.98C16.35 7.14 16.2 7.31 16.05 7.47C15.9 7.63 15.74 7.8 15.59 7.96C15.44 8.13 15.29 8.3 15.13 8.46C14.98 8.63 14.83 8.8 14.67 8.97C14.52 9.14 14.37 9.31 14.21 9.48C14.06 9.65 13.9 9.82 13.75 10C13.59 10.17 13.43 10.34 13.28 10.52C13.12 10.69 12.96 10.87 12.8 11.05C12.64 11.23 12.48 11.4 12.32 11.58C12.16 11.76 12 11.94 11.84 12.12C11.67 12.3 11.51 12.48 11.35 12.66C11.18 12.85 11.02 13.03 10.85 13.21C10.69 13.39 10.52 13.58 10.36 13.76C10.19 13.94 10.02 14.13 9.86 14.31C9.69 14.5 9.52 14.68 9.36 14.87C9.19 15.05 9.03 15.23 8.87 15.42C8.7 15.6 8.54 15.78 8.38 15.96C8.21 16.15 8.05 16.32 7.89 16.5C7.73 16.68 7.57 16.86 7.41 17.03C7.24 17.2 7.09 17.38 6.93 17.55C6.77 17.72 6.61 17.89 6.45 18.05C6.29 18.22 6.06 18.46 5.98 18.54"/> </g></symbol></svg>
+<div class="stage" aria-hidden="true">
+  <div class="room is-eased" id="room">
+    <div class="wall"></div>
+    <canvas class="carve" id="carve"></canvas>
+    <canvas class="scene" id="sceneInk"></canvas>
+    <div class="sceneTex" id="sceneTex"></div>
+    <div class="ray" id="rayA"></div>
+    <div class="ray ray--b" id="rayB"></div>
+    <div class="rake"></div>
+    <canvas class="grain" id="grain"></canvas>
+  </div>
+</div>
+
+<main class="sheet">
+  <p class="eyebrow" id="eyebrow">Прототип середовища · 26.08.2026</p>
+  <h1 id="title">Місце усвідомленої присутності. Тут тихо</h1>
+  <p class="standfirst" id="standfirst">
+    Категорії врізані в різні грані кімнати: чим більше в розділі
+    праць, тим ближче і більша його полиця. Підійди до ніші, торкнись
+    корінця — книга розгорнеться.
+  </p>
+  <button class="back" id="back" type="button" hidden>
+    <svg class="glyph" aria-hidden="true"><use href="#cw-arrow-left"></use></svg>
+    <span class="inkLabel"><span>Назад до зали</span>
+      <span class="row__mark" data-mark></span></span>
+  </button>
+  <!-- Лупа тепер із печеного набору: гліф `lens` доданий у
+       scripts/lib/icon-glyphs.mjs і випечений разом з рештою
+       (npm run icons:build), а сюди вкладений так само, як стрілки й
+       хрестик — прототип мусить лишатись одним файлом. -->
+  <label class="find" id="findBox">
+    <svg class="glyph" aria-hidden="true"><use href="#cw-lens"></use></svg>
+    <input id="find" type="search" autocomplete="off"
+           placeholder="Знайти працю або розділ" aria-label="Пошук по бібліотеці">
+  </label>
+  <nav class="shelfList" id="shelfList" aria-label="Бібліотека"></nav>
+</main>
+
+<div class="spread" id="spread" data-open="false" role="dialog" aria-modal="true" aria-labelledby="spreadTitle" hidden>
+  <div class="book-open">
+    <div class="readingTrack" aria-hidden="true"><div class="readingFill" id="readFill"></div></div>
+    <div class="page">
+      <span class="page__folio" id="folioL">—</span>
+      <h2 class="page__title" id="spreadTitle">—</h2>
+      <p class="page__lead" id="spreadLead">—</p>
+    </div>
+    <div class="page">
+      <span class="page__folio" id="folioR">—</span>
+      <p id="spreadBody">—</p>
+    </div>
+    <div class="turnbar">
+      <!-- Та сама розстановка, що у верхній панелі уроку: вихід
+           ліворуч і названий («назад КУДИ»), гортання праворуч. -->
+      <button class="chip" id="closeSpread" type="button">
+        <svg class="glyph" aria-hidden="true"><use href="#cw-arrow-left"></use></svg>
+        <span class="inkLabel"><span>До полиці</span><span class="row__mark" data-mark></span></span>
+      </button>
+      <span class="turnbar__gap"></span>
+      <button class="chip" id="prevPage" type="button" aria-label="Попередній аркуш">
+        <svg class="glyph" aria-hidden="true"><use href="#cw-arrow-left"></use></svg>
+      </button>
+      <button class="chip" id="nextPage" type="button" aria-label="Наступний аркуш">
+        <svg class="glyph" aria-hidden="true"><use href="#cw-arrow-right"></use></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<aside class="console" id="console" data-collapsed="true" aria-label="Пульт середовища">
+  <div class="console__head">
+    <span>Пульт</span>
+    <button class="console__toggle" id="consoleToggle" type="button" aria-expanded="false" aria-controls="console">+</button>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Тема</span>
+    <div class="chips" id="themes">
+      <button class="chip" data-theme-set="light" type="button" aria-pressed="false">світла</button>
+      <button class="chip" data-theme-set="dark" type="button" aria-pressed="false">темна</button>
+      <button class="chip" data-theme-set="system" type="button" aria-pressed="true">системна</button>
+    </div>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Темний ґрунт · аналогія</span>
+    <div class="chips" id="grounds"></div>
+    <p class="inkNote" id="groundNote">Видно лише в темній темі. Контраст чорнила до ґрунту — поруч із назвою.</p>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Звук · пресет</span>
+    <div class="chips" id="presets"></div>
+  </div>
+
+  <div class="console__group" id="mixer">
+    <span class="console__legend">Мікшер</span>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Чорнило · контраст до світлого паперу</span>
+    <div class="inks" id="inks"></div>
+    <p class="inkNote" id="inkNote" hidden>У темній темі чорнило кремове; ці шість значень порівнюються для світлої.</p>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Стіна · фактура</span>
+    <div class="chips" id="envs">
+      <button class="chip" data-env="wall-matte" type="button" aria-pressed="true">матова глина</button>
+      <button class="chip" data-env="wall-rock" type="button" aria-pressed="false">камінь</button>
+      <button class="chip" data-env="wall-clay" type="button" aria-pressed="false">глина</button>
+      <button class="chip" data-env="wall-plaster" type="button" aria-pressed="false">тиньк</button>
+      <button class="chip" data-env="" type="button" aria-pressed="false">без малюнка</button>
+    </div>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Пейзаж</span>
+    <div class="chips" id="scenes">
+      <button class="chip" data-scene="" type="button" aria-pressed="true">канвас</button>
+      <button class="chip" data-scene="assets/art-ranges.webp" type="button" aria-pressed="false">гряди</button>
+      <button class="chip" data-scene="assets/art-rock.webp" type="button" aria-pressed="false">скеля</button>
+      <button class="chip" data-scene="assets/art-water.webp" type="button" aria-pressed="false">вода</button>
+      <button class="chip" data-scene="assets/art-ma.webp" type="button" aria-pressed="false">ма</button>
+    </div>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Навантаження · праць у каталозі</span>
+    <div class="chips" id="loads">
+      <button class="chip" data-load="0" type="button" aria-pressed="true">як є</button>
+      <button class="chip" data-load="30" type="button" aria-pressed="false">30</button>
+      <button class="chip" data-load="100" type="button" aria-pressed="false">100</button>
+      <button class="chip" data-load="300" type="button" aria-pressed="false">300</button>
+    </div>
+  </div>
+
+  <div class="console__group">
+    <span class="console__legend">Глибина · категорії на гранях</span>
+    <div class="chips">
+      <button class="chip" id="relief" type="button" aria-pressed="true">рельєф</button>
+    </div>
+  </div>
+</aside>
+
+<script>
+(function () {
+  "use strict";
+
+  /* ДЖЕРЕЛО ДАНИХ: статичний зліпок реального каталогу
+     src/lib/products.ts — шість продуктів, і рівно шість праць на
+     стіні. slug = ключ PRODUCTS; живе підтягування з /learn — крок
+     інтеграції, не прототипу. */
+  var BASE_CASES = [
+    {
+      label: "I · Протоколи",
+      books: [
+        { slug: "way21", title: "Way21 Detox", note: "21 день · протокол очищення", state: "11 / 21", held: true,
+          lead: "Протокол на двадцять один день: підготовка, вихід, супровід.",
+          body: "Кожен день має один крок і одну межу. Аркуш ліворуч — те, що робимо; аркуш праворуч — те, чого не робимо. Межа тут не менш важлива за крок." },
+        { slug: "way21-support", title: "Way21 Support", note: "супровід після протоколу", state: "у полиці", held: true,
+          lead: "Те, що йде після протоколу і тримає результат.",
+          body: "Супровід не повторює протокол. Він відповідає на одне питання: як не відкотитися, коли структура двадцяти одного дня закінчилась." }
+      ]
+    },
+    {
+      label: "II · Практики",
+      books: [
+        { slug: "reset-day", title: "Reset Day", note: "один день · перезапуск", state: "пройдено", held: true,
+          lead: "Один день, зібраний так, щоб його можна було пройти без підготовки.",
+          body: "Найкоротша форма в бібліотеці. Її сенс не в обсязі, а в тому, що вона поміщається в буденну суботу." },
+        { slug: "irem", title: "IREM", note: "жіноча програма · повний курс", state: "3 / 18", held: true,
+          lead: "Вісімнадцять частин, побудованих навколо циклу, а не навколо календаря.",
+          body: "Порядок частин має значення: кожна спирається на попередню. Тому полиця показує, де ви зупинились, а не скільки залишилось." }
+      ]
+    },
+    {
+      label: "III · Матеріали",
+      books: [
+        { slug: "short", title: "Short Reboot", note: "коротка форма · вхід", state: "пройдено", held: true,
+          lead: "Вхідна форма — те, з чого більшість починає.",
+          body: "Короткий курс тримає ту саму структуру, що й довгі: крок, межа, результат. Різниця тільки в масштабі." },
+        { slug: "herbs", title: "Herbal Blend", note: "трав'яний збір · не курс", state: "доставка", held: false,
+          lead: "Не курс. Фізичний предмет, який приїжджає поштою.",
+          body: "Він стоїть на цій полиці тому, що ви його маєте, а не тому, що його читають. Бібліотека показує все, що ваше." }
+      ]
+    }
+  ];
+
+  /* НАВАНТАЖЕННЯ. Каталог у прототипі маленький, а стіна має тримати
+     і сотню праць. Множник задає ЗАГАЛЬНУ кількість праць і розкидає
+     її по категоріях — бо сто курсів у трьох категоріях не буває:
+     разом із каталогом росте і кількість розділів, і вони самі різні,
+     від двох праць до пари десятків. */
+  var CASES = BASE_CASES;
+  var ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
+    "XI", "XII", "XIII", "XIV", "XV", "XVI"];
+  var TOPICS = ["Протоколи", "Практики", "Матеріали", "Дихання", "Рух",
+    "Сон", "Харчування", "Трави", "Спокій", "Розмови", "Записи", "Цикли",
+    "Вода", "Тиша", "Ранок", "Вечір"];
+
+  function setLoad(total) {
+    if (!total) { CASES = BASE_CASES; return; }
+    var groups = Math.max(3, Math.min(ROMAN.length, Math.round(total / 10)));
+    var wts = [], sum = 0, i;
+    for (i = 0; i < groups; i++) {
+      /* Розкид навмисно широкий: розділ на дві праці і розділ на два
+         десятки — це нормальна бібліотека, а не помилка даних. */
+      wts.push(0.25 + Math.pow(seeded(i * 13 + 5), 1.8) * 2.4);
+      sum += wts[i];
+    }
+    CASES = [];
+    for (i = 0; i < groups; i++) {
+      var n = Math.max(2, Math.round(total * wts[i] / sum));
+      var src = BASE_CASES[i % BASE_CASES.length];
+      var books = [], j, b;
+      for (j = 0; j < n; j++) {
+        b = src.books[j % src.books.length];
+        books.push({
+          slug: b.slug, title: b.title + " " + (j + 1), note: b.note,
+          state: b.state, held: b.held && (i + j) % 3 !== 1,
+          lead: b.lead, body: b.body
+        });
+      }
+      CASES.push({ label: ROMAN[i] + " · " + TOPICS[i], books: books });
+    }
+  }
+
+
+  /* Seeded — кімната мусить збиратись однаково щоразу.
+     Те саме правило, що в bake іконок і в ProgressRail. */
+  function seeded(i) {
+    var x = Math.sin(i * 127.1 + 311.7) * 43758.5453;
+    return x - Math.floor(x);
+  }
+
+  var room = document.getElementById("room");
+  var shelfList = document.getElementById("shelfList");
+  var backBtn = document.getElementById("back");
+  var titleEl = document.getElementById("title");
+  var standEl = document.getElementById("standfirst");
+  var eyebrowEl = document.getElementById("eyebrow");
+
+  var view = "hall";
+  var openCase = -1;
+  var caseEls = [];
+
+  var rayA = document.getElementById("rayA");
+  var rayB = document.getElementById("rayB");
+
+  /* Мальована перспектива ніші: кожна точка ледь збита seeded-рукою,
+     тому три ніші накреслені трьома різними рухами, але однаково в
+     кожному сеансі. viewBox 0..100, розтягується під нішу. */
+  /* ЧОРНИЛЬНИЙ ШТРИХ. Не пунктир: кожна лінія — залита форма зі
+     змінною товщиною. Перо входить тонко, тіло набирає вагу з
+     сідед-нерівністю, вихід сходить нанівець; легкий прогин — рука,
+     не злам. Координати ПІКСЕЛЬНІ (viewBox = розмір ніші), інакше
+     товщина штриха деформується розтягуванням. */
+  /* Лінія тонша за піксель у темній темі не малюється — вона
+     семплюється: рушив паралакс на чверть пікселя, і кожен волосок
+     перескочив між двома рядами пікселів. На папері цього не видно,
+     бо темне по світлому лише блідне; кремове по темному в цей момент
+     блимає. Тому в темряві перо важче, а не яскравіше. */
+  function inkW() { return darkNow() ? 1.7 : 1; }
+
+  function nicheSvg(ci, W, H) {
+    function jr(n) { return seeded(ci * 53 + n); }
+    var IW = inkW();
+
+    function stroke(x1, y1, x2, y2, wMax, op, n) {
+      wMax *= IW;
+      var dx = x2 - x1, dy = y2 - y1;
+      var len = Math.sqrt(dx * dx + dy * dy) || 1;
+      var nx = -dy / len, ny = dx / len;
+      var bow = (jr(n + 900) * 2 - 1) * Math.min(1.6, len * 0.012);
+      var N = 7, top = [], bot = [], i, t, cx, cy, w;
+      for (i = 0; i <= N; i++) {
+        t = i / N;
+        cx = x1 + dx * t + nx * bow * Math.sin(Math.PI * t);
+        cy = y1 + dy * t + ny * bow * Math.sin(Math.PI * t);
+        /* профіль пера: тонко-тіло-тонко, з дрібним тремтінням ваги */
+        w = wMax * (0.3 + 0.7 * Math.sin(Math.PI * t)) * (0.75 + jr(n * 7 + i) * 0.5);
+        if (i === 0 || i === N) w = wMax * 0.1;
+        top.push((cx + nx * w / 2).toFixed(1) + "," + (cy + ny * w / 2).toFixed(1));
+        bot.push((cx - nx * w / 2).toFixed(1) + "," + (cy - ny * w / 2).toFixed(1));
+      }
+      return '<polygon points="' + top.join(" ") + " " + bot.reverse().join(" ") +
+        '" fill="currentColor" opacity="' + op.toFixed(2) + '"/>';
+    }
+
+    /* Лінія = один-два проходи пера: основний на всю довжину і, коли
+       рука «повернулась», частковий другий — перекриття, як у туші. */
+    function line(x1, y1, x2, y2, wMax, op, n) {
+      var out = stroke(x1, y1, x2, y2, wMax, op, n);
+      if (jr(n + 300) > 0.45) {
+        var t0 = jr(n + 310) * 0.35;
+        var t1 = t0 + 0.35 + jr(n + 320) * 0.3;
+        out += stroke(
+          x1 + (x2 - x1) * t0, y1 + (y2 - y1) * t0,
+          x1 + (x2 - x1) * t1, y1 + (y2 - y1) * t1,
+          wMax * 0.8, op * 0.5, n + 17);
+      }
+      return out;
+    }
+
+    var bx = W * 0.14, by = H * 0.18, bX = W * 0.87, bY = H * 0.86;
+    var out = "";
+    var i, t;
+    /* штрихи внутрішніх граней (верх і лівий бік) — розріджені, легкі */
+    for (i = 1; i <= 4; i++) {
+      t = i / 5;
+      out += stroke(1 + (bx - 1) * t, 1 + (by - 1) * t, W - 1 + (bX - W + 1) * t, 1 + (by - 1) * t, 0.9, 0.16, 60 + i);
+      out += stroke(1 + (bx - 1) * t, 1 + (by - 1) * t, 1 + (bx - 1) * t, H - 1 + (bY - H + 1) * t, 0.9, 0.14, 70 + i);
+    }
+    /* лінії сходження */
+    out += stroke(1, 1, bx, by, 1, 0.22, 40);
+    out += stroke(W - 1, 1, bX, by, 1, 0.22, 41);
+    out += stroke(1, H - 1, bx, bY, 1, 0.2, 42);
+    out += stroke(W - 1, H - 1, bX, bY, 1, 0.2, 43);
+    /* задня стінка */
+    out += line(bx, by, bX, by, 1.5, 0.5, 50);
+    out += line(bX, by, bX, bY, 1.5, 0.5, 51);
+    out += line(bX, bY, bx, bY, 1.5, 0.5, 52);
+    out += line(bx, bY, bx, by, 1.5, 0.5, 53);
+    /* полиця тут більше не малюється: дошка — реальний DOM-об'єкт
+       (.plank) поверх книг, інакше перекриття було б намальованим */
+    /* зовнішній контур — штрихи перебігають кути, як у ручного креслення */
+    out += line(-4 - jr(1) * 3, 1, W + 4 + jr(2) * 3, 1, 1.9, 0.62, 54);
+    out += line(W - 1, -4 - jr(3) * 3, W - 1, H + 4 + jr(4) * 3, 1.9, 0.62, 55);
+    out += line(W + 4 + jr(5) * 3, H - 1, -4 - jr(6) * 3, H - 1, 1.9, 0.62, 56);
+    out += line(1, H + 4 + jr(7) * 3, 1, -4 - jr(8) * 3, 1.9, 0.62, 57);
+    return '<svg viewBox="0 0 ' + W + " " + H + '" aria-hidden="true" style="overflow:visible">' + out + "</svg>";
+  }
+
+  /* УВАГА НА ПАПЕРІ — рамка одним рухом пензля. Не приціл із кутиків:
+     один упевнений обхід периметра нерівним штрихом — товщина пливе
+     повільною хвилею, рука ледь зміщується від лінійки, і рух
+     розірваний двома-трьома короткими підйомами пензля. Полігон-стрічка
+     зі змінною шириною, все seeded. */
+  function attentionSvg(ci, W, H) {
+    var M = 26;
+    var IW = inkW();
+    function jr(n) { return seeded(ci * 71 + n); }
+    var d = 8;
+    var x0 = M - d, y0 = M - d, x1 = M + W + d, y1 = M + H + d;
+    var Pm = 2 * ((x1 - x0) + (y1 - y0));
+
+    function pointAt(p) {
+      p = ((p % Pm) + Pm) % Pm;
+      if (p < x1 - x0) return [x0 + p, y0];
+      p -= x1 - x0;
+      if (p < y1 - y0) return [x1, y0 + p];
+      p -= y1 - y0;
+      if (p < x1 - x0) return [x1 - p, y1];
+      p -= x1 - x0;
+      return [x0, y1 - p];
+    }
+
+    /* 2–3 підйоми пензля, коротші за плече рамки, не в кутах */
+    var gapCount = 2 + (jr(2) > 0.55 ? 1 : 0);
+    var gaps = [], gi, gp;
+    for (gi = 0; gi < gapCount; gi++) {
+      gp = Pm * ((gi + 0.3 + jr(10 + gi) * 0.4) / gapCount);
+      gaps.push([gp, gp + 9 + jr(20 + gi) * 10]);
+    }
+    function inGap(p) {
+      p = ((p % Pm) + Pm) % Pm;
+      for (var k = 0; k < gaps.length; k++) {
+        if (p >= gaps[k][0] && p <= gaps[k][1]) return true;
+      }
+      return false;
+    }
+
+    /* обхід периметра: точки що ~8px, перпендикулярний дриф руки */
+    var startP = jr(1) * Pm;
+    var runs = [], cur = null;
+    var stepLen = 8, i, N = Math.ceil(Pm / stepLen);
+    for (i = 0; i <= N; i++) {
+      var p = startP + i * stepLen;
+      if (inGap(p)) {
+        if (cur && cur.length > 2) runs.push(cur);
+        cur = null;
+        continue;
+      }
+      var pt = pointAt(p);
+      var drift = (jr(i * 3 + 44) - 0.5) * 2.4;
+      /* товщина — повільна хвиля впевненого руху */
+      var wgt = (1.7 + 1.4 * Math.abs(Math.sin(i * 0.09 + jr(3) * 6)) +
+        (jr(i + 7) - 0.5) * 0.6) * IW;
+      if (!cur) cur = [];
+      cur.push([pt[0] + drift * 0.6, pt[1] + drift * 0.6, wgt]);
+    }
+    if (cur && cur.length > 2) runs.push(cur);
+
+    /* кожен безперервний прогін — одна стрічка зі звуженими кінцями */
+    var out = "";
+    runs.forEach(function (run) {
+      var top = [], bot = [], L = run.length, q, prev, next, dx, dy, len, nx, ny, w, t;
+      for (i = 0; i < L; i++) {
+        q = run[i];
+        prev = run[Math.max(0, i - 1)];
+        next = run[Math.min(L - 1, i + 1)];
+        dx = next[0] - prev[0]; dy = next[1] - prev[1];
+        len = Math.sqrt(dx * dx + dy * dy) || 1;
+        nx = -dy / len; ny = dx / len;
+        t = Math.min(i / 2.2, (L - 1 - i) / 2.2, 1);
+        w = q[2] * (0.15 + 0.85 * t);
+        top.push((q[0] + nx * w / 2).toFixed(1) + "," + (q[1] + ny * w / 2).toFixed(1));
+        bot.push((q[0] - nx * w / 2).toFixed(1) + "," + (q[1] - ny * w / 2).toFixed(1));
+      }
+      out += '<polygon points="' + top.join(" ") + " " + bot.reverse().join(" ") +
+        '" fill="currentColor" opacity="0.78"/>';
+    });
+    return '<svg viewBox="0 0 ' + (W + M * 2) + " " + (H + M * 2) + '" aria-hidden="true" style="overflow:visible">' + out + "</svg>";
+  }
+
+  /* ГРАНІ, А НЕ ОДНА ПЛОЩИНА.
+     Стіна на сотню праць, накреслена однією площиною, читається
+     таблицею: усі отвори однакові, на однаковій відстані, під одним
+     кутом. У справжній кімнаті так не буває — полиці врізані в різні
+     стіни, у різні простінки, і саме тому око їх розрізняє ще до
+     того, як прочитає підпис.
+
+     Тому кожна КАТЕГОРІЯ — окрема грань:
+       · своя відстань (--depth 0 — найдальша, 1 — майже під рукою);
+       · свій розмір виїмки і корінця, від відстані;
+       · свій поворот, узятий не зі смаку, а з місця: грань ліворуч
+         від точки сходу повертається до глядача лівим краєм, праворуч
+         — правим. Разом вони складають пологу апсиду, а не паркан.
+     Велика категорія стоїть ближче і більша — це не прикраса, а те
+     саме правило, що в списку: вагоме — попереду.
+
+     Проєкція рахується, а не підганяється. Розкладка пакується в
+     ЕКРАННИХ пікселях (там і тільки там видно, що з чим стикається), а
+     потім кожна грань переводиться на свою глибину зворотним ходом
+     перспективи: local = O + (screen − O) / k, k = P / (P − z). Без
+     цього дальня категорія поїхала б до точки сходу і залізла на
+     сусідню. */
+  var flatWall = false;
+
+  /* ФАКТУРИ СТІНИ. Тільки фронтальні: розміри — самого артворка,
+     решту рахує envFit. Пише їх prep-env.py, руками сюди нічого не
+     вписується. */
+  var ENVS = {
+  "wall-matte": {
+    "tex": "assets/env-wall-matte.webp",
+    "body": "env-wall-matte-body.webp",
+    "w": 1280,
+    "h": 1266,
+    "pos": [0.5, 0.5],
+    "posNarrow": [0.5, 0.5]
+  },
+  "wall-rock": {
+    "tex": "assets/env-wall-rock.webp",
+    "body": "env-wall-rock-body.webp",
+    "w": 1280,
+    "h": 491,
+    "pos": [0.5, 0.5],
+    "posNarrow": [0.5, 0.5]
+  },
+  "wall-plaster": {
+    "tex": "assets/env-wall-plaster.webp",
+    "body": "env-wall-plaster-body.webp",
+    "w": 1280,
+    "h": 661,
+    "pos": [0.5, 0.5],
+    "posNarrow": [0.5, 0.5]
+  },
+  "wall-clay": {
+    "tex": "assets/env-wall-clay.webp",
+    "body": "env-wall-clay-body.webp",
+    "w": 1280,
+    "h": 525,
+    "pos": [0.5, 0.5],
+    "posNarrow": [0.5, 0.5]
+  },
+};
+  var envNow = "";
+  /* Смуга, у яку лягли полиці. Креслення кімнати бере її ж: хід має
+     обіймати полиці, а не жити поруч із ними своїм життям. */
+  var roomBand = null;
+
+  /* Кеш накресленої виїмки: одна категорія — одна рука, отже дві
+     секції однакового розміру не треба креслити двічі. На стіні в
+     триста праць це різниця між сотнею SVG і десятком. */
+  var nicheCache = {};
+
+  /* Фактура кладеться на весь кадр, як матеріал: суміщати з
+     розкладкою в ній нема чого, бо отвори в неї ріже сама розкладка.
+     Саме через це фронтальна стіна і лишилась єдиною: у мальованій
+     кімнаті отвори намальовані, і скільки їх — вирішує модель, а не
+     каталог. */
+  function envFit() {
+    var meta = ENVS[envNow];
+    if (!meta) return null;
+    var RW = room.clientWidth, RH = room.clientHeight;
+    if (!RW || !RH) return null;
+    var k = Math.max(RW / meta.w, RH / meta.h);
+    return { iw: meta.w * k, ih: meta.h * k,
+             ox: (RW - meta.w * k) / 2, oy: (RH - meta.h * k) / 2, meta: meta };
+  }
+
+  function buildRoom() {
+    caseEls.forEach(function (el) { el.remove(); });
+    caseEls = [];
+    nicheCache = {};
+
+
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    var ox = w * 0.14, oy = h * 0.14;          /* .room має inset -14% */
+    var narrow = w <= 900;
+    /* Проміжок між рядами тримає ярлик категорії: він стоїть над
+       отвором і без цього місця сідає на нішу горішнього ряду. */
+    var LABEL_H = 17;
+    /* Перепад висот усередині одного рівня — маленький навмисно. */
+    var LEVEL = 14;
+    var GAP_X = narrow ? 12 : 22, GAP_Y = (narrow ? 14 : 22) + LABEL_H;
+
+    /* СМУГА СТІНИ — прямокутник, у який кладеться скільки завгодно
+       виїмок. Широкий екран віддає стіні праву половину (текст живе в
+       лівій), вузький — верхню смугу, а текст іде під нею. */
+    /* Низ смуги віддано ходу вниз: полиці не стоять на тому місці,
+       де в скелі спуск на другий рівень. Це не відступ заради повітря,
+       це місце під конкретний предмет. */
+    var band = narrow
+      ? { x: w * 0.045, y: h * 0.05, w: w * 0.91, h: h * 0.40 }
+      : { x: w * 0.50, y: h * 0.075, w: w * 0.46, h: h * 0.84 };
+    band.h *= narrow ? 0.90 : 0.88;
+    roomBand = band;
+
+    /* Точка сходу — та сама, що в CSS (.stage perspective-origin), і
+       та сама перспектива. Дві копії одного числа розійшлись би на
+       першій же правці, тому вони поруч і названі. */
+    var PERSP = 1600, VPX = w * 0.68, VPY = h * 0.5;
+    /* ФРОНТАЛЬНО. Поворот граней прибрано разом із мальованою
+       перспективою: фактура знята в лоб, і будь-який кут комірки
+       сперечається з нею замість того, щоб додавати глибину. Що
+       лишилось — мілкий перепад врізання: категорія може бути
+       вибрана глибше або мілкіше, і це видно тінню в отворі, а не
+       розворотом стіни. */
+    /* Комірки лежать у площині самої стіни: виріз малюється на тому
+       ж канвасі, і будь-який зсув по z розвів би отвір із його ж
+       нутром. Глибина живе не в координаті, а в самому вирізі —
+       ширині укосів і темряві задньої стінки. */
+    var Z_FAR = 0, Z_NEAR = 0;
+    var MAXPHI = 0;
+    function kOf(z) { return PERSP / (PERSP - (HALL_Z + z)); }
+
+    var maxN = 1;
+    CASES.forEach(function (c) { maxN = Math.max(maxN, c.books.length); });
+    /* Вага категорії веде, рука доводить: без сідед-домішки три
+       однакові за розміром розділи стали б трьома однаковими гранями,
+       а це знову таблиця. */
+    var raw = CASES.map(function (c, ci) {
+      return (c.books.length / maxN) * 0.6 + seeded(ci * 29 + 7) * 0.4;
+    });
+    /* І РОЗТЯГУЄМО НА ВСЮ ГЛИБИНУ. Абсолютна шкала на каталозі з трьох
+       однакових розділів дала б три однакові відстані — глибина
+       існувала б у формулі й не існувала б в очах. Найлегша категорія
+       завжди найдальша, найважча завжди найближча, а скільки між ними
+       метрів — питання того, наскільки вони різні. */
+    var rMin = Math.min.apply(null, raw), rMax = Math.max.apply(null, raw);
+    var span = rMax - rMin;
+    var facet = raw.map(function (v) {
+      var t = flatWall ? 0.55 : (span < 0.02 ? 0.5 : (v - rMin) / span);
+      var z = Z_FAR + (Z_NEAR - Z_FAR) * t;
+      return { t: t, z: z, k: kOf(z), size: 0.84 + t * 0.34 };
+    });
+
+    /* СЕКЦІЯ, А НЕ КАТЕГОРІЯ.
+       Категорія на сотню праць — це не одна виїмка на десять ярусів, а
+       десяток виїмок по десятку корінців. Стіна масштабується саме
+       так: множиться кількість отворів, а не поверхів усередині
+       одного. Отвір лишається тим, що бачить око, — полицею, до якої
+       можна підійти.
+       Сходинки: що більше праць, то тонший корінець і дрібніша
+       секція. Береться перша, на якій стіна вкладається у смугу. */
+    var LADDER = [
+      { bw: 26, per: 9 }, { bw: 23, per: 9 }, { bw: 20, per: 8 },
+      { bw: 17, per: 8 }, { bw: 15, per: 7 }, { bw: 12, per: 7 },
+      { bw: 10, per: 6 }, { bw: 8, per: 6 }
+    ];
+
+    function sectionsFor(step) {
+      var groups = [], list = [];
+      CASES.forEach(function (data, ci) {
+        /* Розмір корінця — від грані: ближча категорія і крупніша. */
+        var bw = Math.max(5, step.bw * facet[ci].size);
+        var gap = Math.max(3, Math.round(bw * 0.34));
+        var pad = Math.max(5, Math.round(bw * 0.34));
+        /* Книга — не квадрат: корінець удвічі тонший за попередній і в
+           чотири-п'ять разів вищий за свою ширину. */
+        var unit = Math.max(46, Math.min(170, Math.round(bw * 4.7)));
+        var n = data.books.length, i = 0, k = 0, take, secs = [];
+        while (i < n) {
+          /* Секції РІЗНОГО розміру: на дві книги і на десять. */
+          take = Math.round(step.per * (0.34 + seeded(ci * 17 + k) * 1.2));
+          take = Math.max(2, Math.min(take, n - i));
+          if (n - i - take === 1) take += 1;
+          secs.push({
+            ci: ci, from: i, count: take, bw: bw, gap: gap, pad: pad,
+            w: take * (bw + gap) - gap + pad * 2, h: unit
+          });
+          i += take; k += 1;
+        }
+        /* КАТЕГОРІЯ ЖИВЕ НА ОДНОМУ РІВНІ. Розрізана на два ряди, вона
+           перестає бути однією полицею: позначка селекту мусить тоді
+           обійти прямокутник у пів-стіни. Тому група вкладається в
+           ширину смуги, а що не влізло — рахується числом. */
+        var SGAP = Math.max(6, Math.round(bw * 0.5));
+        function width(l) {
+          return l.reduce(function (a, it) { return a + it.w; }, 0) +
+            SGAP * Math.max(0, l.length - 1);
+        }
+        var cut = 0;
+        while (secs.length > 1 && width(secs) > band.w) cut += secs.pop().count;
+        groups.push({
+          ci: ci, secs: secs, w: width(secs), h: unit,
+          hidden: cut, sgap: SGAP, bw: bw
+        });
+        list = list.concat(secs);
+      });
+      return { groups: groups, list: list, bw: step.bw };
+    }
+
+    /* Пакування рядами — по КАТЕГОРІЯХ, не по секціях. Висота ряду —
+       найвища грань у ньому: сусіди тепер різного зросту. */
+    function pack(secs) {
+      var lines = [], line = [], lineW = 0, total = 0;
+      function flush() {
+        if (!line.length) return;
+        var hMax = 0;
+        line.forEach(function (g) { hMax = Math.max(hMax, g.h); });
+        if (lineW > band.w) {
+          /* СТИСКАЄТЬСЯ ВМІСТ, А НЕ ПОВІТРЯ. Раніше коефіцієнт ішов на
+             всю ширину ряду разом із проміжками, але самі проміжки
+             лишались повними — і ряд вилазив зі смуги рівно на суму
+             тих проміжків. На вузькому екрані з десятком розділів це
+             давало полиці, зрізані обома краями кадру. */
+          var air = GAP_X * (line.length - 1);
+          line.forEach(function (g) { air += g.sgap * Math.max(0, g.secs.length - 1); });
+          var k = Math.max(0.2, (band.w - air) / Math.max(1, lineW - air));
+          line.forEach(function (g) {
+            g.secs.forEach(function (it) { it.w = Math.max(24, Math.floor(it.w * k)); });
+            g.w = g.secs.reduce(function (a, it) { return a + it.w; }, 0) +
+              g.sgap * Math.max(0, g.secs.length - 1);
+          });
+          lineW = line.reduce(function (a, g) { return a + g.w; }, 0) + GAP_X * (line.length - 1);
+        }
+        lines.push({ groups: line, w: lineW, h: hMax });
+        total += hMax + LEVEL + GAP_Y;
+        line = []; lineW = 0;
+      }
+      secs.groups.forEach(function (g) {
+        if (line.length && lineW + GAP_X + g.w > band.w) flush();
+        lineW += (line.length ? GAP_X : 0) + g.w;
+        line.push(g);
+      });
+      flush();
+      return { lines: lines, height: Math.max(0, total - GAP_Y) };
+    }
+
+    var secs, packed, si;
+    for (si = 0; si < LADDER.length; si++) {
+      secs = sectionsFor(LADDER[si]);
+      packed = pack(secs);
+      if (packed.height <= band.h) break;
+    }
+
+    /* Коли й на найдрібнішій сходинці стіна не вкладається — а це вже
+       сотні праць — з кінця знімаються цілі секції, і категорія каже
+       числом, скільки праць стоїть углиб. */
+    var guard = 0;
+    while (packed.height > band.h && guard++ < 200) {
+      var fat = -1, i;
+      for (i = secs.groups.length - 1; i >= 0; i--) {
+        if (secs.groups[i].secs.length > 1) { fat = i; break; }
+      }
+      if (fat < 0) break;
+      var g = secs.groups[fat];
+      g.hidden += g.secs.pop().count;
+      g.w = g.secs.reduce(function (a, it) { return a + it.w; }, 0) +
+        g.sgap * Math.max(0, g.secs.length - 1);
+      secs.list = [];
+      secs.groups.forEach(function (gr) { secs.list = secs.list.concat(gr.secs); });
+      packed = pack(secs);
+    }
+
+    /* Розкладка в ЕКРАННИХ координатах. Ряди зсунуті один відносно
+       одного; всередині ряду важча грань сідає нижче — рівно
+       настільки, щоб ряд не читався лінійкою. */
+    var byCase = {};
+    secs.groups.forEach(function (gr) { byCase[gr.ci] = gr; });
+    var cursorY = band.y + Math.max(0, (band.h - packed.height) / 2);
+    packed.lines.forEach(function (ln, li) {
+      var slide = (seeded(li * 13 + 3) - 0.5) * Math.min(46, band.w * 0.06);
+      var x = Math.max(band.x,
+        Math.min(band.x + (band.w - ln.w) / 2 + slide, band.x + band.w - ln.w));
+      ln.groups.forEach(function (gr) {
+        var gy = cursorY + (ln.h - gr.h) * 0.62 +
+          Math.round(seeded(gr.ci * 7 + 11) * LEVEL);
+        gr.x0 = x;
+        gr.secs.forEach(function (it) {
+          it.x = x;
+          it.y = gy;
+          x += it.w + gr.sgap;
+        });
+        x -= gr.sgap;
+        gr.x1 = x;
+        x += GAP_X;
+      });
+      cursorY += ln.h + LEVEL + GAP_Y;
+    });
+
+    var hidden = {};
+    secs.groups.forEach(function (gr) { if (gr.hidden) hidden[gr.ci] = gr.hidden; });
+
+    /* Один фрагмент на всю стіну: сто вставок у живий DOM — це сто
+       перерахунків розкладки, і на трьохстах працях це видно. */
+    var frag = document.createDocumentFragment();
+    var dense = secs.bw < 16, far = secs.bw < 11;
+
+    secs.list.forEach(function (sec) {
+      var data = CASES[sec.ci];
+      var f = facet[sec.ci], gr = byCase[sec.ci];
+      var gx = (gr.x0 + gr.x1) / 2;
+      /* Поворот від місця, не від смаку: що далі грань від точки
+         сходу, то сильніше вона повернена до глядача. */
+      /* Нормуємо на пів-смуги, а не на пів-екрана: інакше на широкому
+         кадрі, де стіна займає праву половину, крайня грань
+         поверталась на градус — тобто ні на скільки. */
+      var phi = flatWall ? 0 : Math.max(-MAXPHI, Math.min(MAXPHI,
+        (VPX - gx) / (band.w * 0.5) * MAXPHI));
+
+      /* Екран → грань. */
+      var lx = VPX + (sec.x - VPX) / f.k;
+      var ly = VPY + (sec.y - VPY) / f.k;
+      var axis = VPX + (gx - VPX) / f.k;
+      var cw = Math.max(28, Math.round(sec.w / f.k));
+      var ch = Math.max(34, Math.round(sec.h / f.k));
+      var padL = Math.max(4, Math.round(sec.pad / f.k));
+      var gapL = Math.max(2, Math.round(sec.gap / f.k));
+
+      var el = document.createElement("div");
+      el.className = "niche";
+      el.dataset.case = String(sec.ci);
+      el.style.width = cw + "px";
+      el.style.height = ch + "px";
+      el.style.left = Math.round(ox + lx) + "px";
+      el.style.top = Math.round(oy + ly) + "px";
+      el.style.transformOrigin = (axis - lx).toFixed(1) + "px 50%";
+      el.style.transform = "translateZ(" + Math.round(f.z) + "px) rotateY(" +
+        phi.toFixed(2) + "deg)";
+      el.style.setProperty("--depth", f.t.toFixed(2));
+      /* ТОВЩИНА КАМЕНЮ — одне число на дві речі: по ньому канвас
+         малює укоси, і на ньому ж стоять корінці. Порахувати його
+         двічі означало б, що книжка стоїть не на тому дні, яке
+         намальоване. */
+      var cut = Math.max(3, Math.min(22,
+        Math.min(cw, ch) * (0.10 + f.t * 0.10)));
+      el.style.setProperty("--cut", cut.toFixed(1) + "px");
+      el.dataset.cut = cut.toFixed(1);
+      /* Грань пишеться на елемент, бо ту саму площину має зайняти й
+         позначка уваги: штрих, накреслений на іншій стіні, поруч із
+         виїмкою не ляже. */
+      el.dataset.z = String(Math.round(f.z));
+      el.dataset.phi = phi.toFixed(2);
+      el.dataset.axis = String(Math.round(ox + axis));
+
+      var cast = document.createElement("div");
+      cast.className = "niche__cast";
+      el.appendChild(cast);
+
+      var box = document.createElement("div");
+      box.className = "niche__box";
+      el.appendChild(box);
+
+      var persp = document.createElement("div");
+      persp.className = "niche__persp";
+      persp.innerHTML = nicheInk(sec.ci, cw, ch);
+      box.appendChild(persp);
+
+      /* Підпис — лише на першій секції категорії: тричі повторена
+         назва на сусідніх отворах читається як три різні полиці. */
+      /* ЯРЛИК НЕ ШИРШИЙ ЗА СВОЮ КАТЕГОРІЮ. Підпис у nowrap мовчки
+         виїжджав на сусідні полиці й за край кадру — на стіні в сотню
+         розділів це і був той «текст, що налазить». Тепер він живе
+         рівно в ширині своєї групи, а якщо не вміщається жодним
+         чином — його немає: назва нікуди не зникає, вона в списку
+         ліворуч і в aria-label. */
+      if (!sec.from) {
+        var label = document.createElement("span");
+        label.className = "niche__label";
+        label.textContent = data.label;
+        label.style.maxWidth = Math.round((gr.x1 - gr.x0) / f.k) + "px";
+        el.appendChild(label);
+      }
+      if (hidden[sec.ci] && sec.from + sec.count >= data.books.length - hidden[sec.ci]) {
+        var more = document.createElement("span");
+        more.className = "niche__more";
+        more.textContent = "+" + hidden[sec.ci];
+        el.appendChild(more);
+      }
+
+      /* ПРАЦЬ — рівно стільки, скільки курсів: декоративних корінців-
+         статистів немає, і секція завширшки рівно під свій ряд. */
+      /* Корінці стоять НА ДНІ вирізу, а не на його зовнішньому краю:
+         поле під них береться від товщини каменю, а не від довільного
+         відступу. */
+      var inner = Math.max(6, cw - cut * 2);
+      var bwFit = Math.max(4, Math.min(Math.round(sec.bw / f.k),
+        Math.floor((inner + gapL) / sec.count) - gapL));
+      data.books.slice(sec.from, sec.from + sec.count).forEach(function (book, j) {
+        var bi = sec.from + j;
+        var lean = bwFit > 16 ? Math.round(seeded(bi * 3 + sec.ci) * 4) : 0;
+        var bh = Math.round((ch - cut * 2) * (0.74 + seeded(bi + sec.ci * 7) * 0.16));
+
+        var spine = document.createElement("button");
+        spine.className = "book";
+        spine.type = "button";
+        spine.dataset.case = String(sec.ci);
+        spine.dataset.book = String(bi);
+        spine.dataset.held = String(book.held);
+        spine.setAttribute("aria-label", book.title);
+        /* НА ТОНКОМУ КОРІНЦІ НЕМА ЧОГО БУДУВАТИ. Підпис, бічна грань і
+           кришка на восьми пікселях не читаються — і саме вони на
+           трьохстах працях коштують дорожче за все інше разом. Коли
+           стіна віддалилась, корінець лишається корінцем, а не
+           складається з чотирьох вузлів. */
+        var draw = document.createElement("span");
+        draw.className = "book__draw";
+        draw.innerHTML = bookInk(bwFit, bh);
+        spine.appendChild(draw);
+
+        spine.style.width = bwFit + "px";
+        spine.style.height = bh + "px";
+        spine.style.left = Math.round(cut + j * (bwFit + gapL) + lean) + "px";
+        spine.style.bottom = Math.round(cut * 0.82) + "px";
+        /* Нахил — не випадковість, а наслідок: хилиться остання книжка
+           в ряду, і тільки якщо їй є куди хилитись (ряд не повний).
+           Раніше нахилявся кожен п'ятий корінець десь усередині ряду,
+           впираючись у сусіда, — і саме ці книжки читались накресленими
+           іншим пером. */
+        var last = j === sec.count - 1;
+        var room4 = cw - cut * 2 - sec.count * (bwFit + gapL) > bwFit * 0.6;
+        if (last && room4 && bwFit > 12) {
+          spine.style.setProperty("--tilt", (4 + seeded(bi) * 3).toFixed(1) + "deg");
+        }
+        box.appendChild(spine);
+      });
+
+      frag.appendChild(el);
+      caseEls.push(el);
+    });
+
+    room.appendChild(frag);
+
+    /* ЩО ВУЖЧИЙ КОРІНЕЦЬ, ТО МЕНШЕ НА НЬОМУ ПИСАТИ. Назва на корінці
+       12 пікселів — не назва, а шум по всій стіні. Спершу гаснуть
+       підписи праць (лишаються ярлики категорій), далі гасне і сам
+       ярлик: на такому віддаленні стіна читається кількістю отворів,
+       а не текстом. Імена нікуди не діваються — вони в aria-label, у
+       списку ліворуч і всередині ніші. */
+    room.dataset.dense = dense ? "true" : "false";
+    room.dataset.far = far ? "true" : "false";
+
+    markArmature(openCase < 0 ? -1 : openCase);
+    paintCarve();
+    applyLod();
+  }
+
+  /* РІВЕНЬ ДЕТАЛІЗАЦІЇ — З ФАКТИЧНОГО РОЗМІРУ В КАДРІ.
+     Питання «писати назву чи ні» не має відповіді ні в режимі, ні в
+     кількості праць: у полиці з двома книжками і в полиці з двадцятьма
+     камера наближає по-різному, а на телефоні той самий наїзд дає
+     вдвічі менший корінець, ніж на столі. Тому рахується те єдине, що
+     справді вирішує, — СКІЛЬКИ ПІКСЕЛІВ займає корінець на екрані
+     зараз, разом із наїздом і перспективою (getBoundingClientRect їх
+     уже враховує).
+
+       ≥ 22px і ≥ 80px заввишки  — назва: є де писати вертикально;
+       ≥ 9px                     — сліпа табличка і пов'язки: форма
+                                   читається, набір ні;
+       менше                     — саме тіло, лінія і тінь.
+
+     Це та сама відмова, що вже діє на стіні (ярлики категорій гаснуть,
+     коли не вміщаються) і на вирізі (укоси зникають, коли їх не
+     видно): не показувати того, чого на цьому розмірі не видно. */
+  /* РІВЕНЬ ЧИТАЄТЬСЯ ВСЮ ДОРОГУ, А НЕ НА ПРИБУТТІ.
+     Досі він перепитувався один раз, коли камера вже стала, — і саме
+     тому перемикання клацало: два різні корінці мінялись місцями за
+     один кадр на нерухомій сцені, де це найпомітніше. Тепер розмір
+     перевіряється весь час, поки триває наїзд, тож поріг переходиться
+     всередині руху — там, де його і не мало б бути видно. */
+  var lodTimer = null;
+  function trackLod(ms) {
+    window.clearInterval(lodTimer);
+    var until = Date.now() + (ms || 2500);
+    lodTimer = window.setInterval(function () {
+      applyLod();
+      if (Date.now() > until) { window.clearInterval(lodTimer); lodTimer = null; }
+    }, 110);
+  }
+
+  function applyLod() {
+    var b = room.querySelector(".book[data-book]");
+    if (!b) { room.dataset.lod = "bare"; return; }
+    var r = b.getBoundingClientRect();
+    var lod = r.width >= 22 && r.height >= 80 ? "name"
+      : r.width >= 9 ? "plate" : "bare";
+    if (room.dataset.lod !== lod) room.dataset.lod = lod;
+  }
+
+  /* СЛІД ПИСЬМА. Не лінія: лінія на корінці читається лінією, а не
+     написом, якого не видно. Пишеться те, що й пишуть, коли назви не
+     розібрати з відстані, — кілька слів різної довжини, з розривами
+     між ними, з коливанням пера впоперек рядка. Довжина всього сліду
+     дорівнює тій, яку зайняла б сама назва, а вага пера взята від
+     кегля, яким її було б написано: слід має бути того ж розміру, що
+     й напис, інакше він не замінює його, а стоїть замість нього. */
+  function scribbleInk(len, w, fs, seed) {
+    function jr(n) { return seeded(seed * 29 + n); }
+    var pen = Math.max(0.55, fs * 0.17);
+    var mid = w / 2, amp = Math.min(w * 0.36, fs * 0.44);
+    var out = "", t = len * 0.02, k, i, u, x, wl, N, pts;
+    var words = Math.max(2, Math.round(len / (fs * 3.4)));
+    for (k = 0; k < words && t < len * 0.98; k++) {
+      wl = fs * 1.3 * (1.1 + jr(k) * 2.3);
+      wl = Math.min(wl, len * 0.98 - t);
+      if (wl < fs * 0.7) break;
+      N = Math.max(3, Math.round(wl / (fs * 0.4)));
+      pts = [];
+      for (i = 0; i <= N; i++) {
+        u = i / N;
+        x = mid + Math.sin(u * Math.PI * 2 * (1.5 + jr(k * 7 + 2)) + jr(k * 11) * 6) *
+          amp * (0.5 + jr(k * 13 + i) * 0.55);
+        pts.push(x.toFixed(1) + "," + (t + wl * u).toFixed(1));
+      }
+      out += '<path d="M' + pts.join(" L") + '"/>';
+      /* Пробіл між словами — теж від кегля, інакше слід або злипається
+         в лінію, або розсипається на риски. */
+      t += wl + fs * 0.75 * (0.6 + jr(k * 17));
+    }
+    return '<svg viewBox="0 0 ' + w.toFixed(1) + " " + len.toFixed(1) +
+      '" width="' + w.toFixed(1) + '" height="' + len.toFixed(1) +
+      '" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="' +
+      pen.toFixed(2) + '" stroke-linecap="round" stroke-linejoin="round">' +
+      out + "</g></svg>";
+  }
+
+  /* КРЕСЛЕННЯ КОРІНЦЯ. Три грані одним пером, спільні ребра — одна
+     лінія. Глибина береться від ширини (тонка книжка не має шести
+     пікселів боку), підйом — від глибини, і саме через це кришка
+     завжди сходиться з боком: обидва рахуються з одного числа.
+     Кеш за розміром: у ряду з двадцяти корінців розмір один. */
+  var bookCache = {};
+  function bookInk(w, h) {
+    var key = w + "x" + h;
+    if (bookCache[key]) return bookCache[key];
+    var d = Math.max(1.5, Math.min(6, w * 0.42));
+    var r = d * 0.84;
+    var W = w + d, H = h + r;
+    function p(pts) { return pts.map(function (q) { return q[0].toFixed(1) + "," + q[1].toFixed(1); }).join(" "); }
+    var front = [[0, r], [w, r], [w, r + h], [0, r + h]];
+    var top   = [[0, r], [w, r], [W, 0], [d, 0]];
+    var side  = [[w, r], [W, 0], [W, h], [w, r + h]];
+    var band1 = r + Math.max(4, h * 0.09), band2 = band1 + Math.max(3, h * 0.035);
+    var pw = w * 0.54, px = (w - pw) / 2, py = r + h * 0.27, ph = h * 0.22;
+    var out =
+      '<svg viewBox="0 0 ' + W.toFixed(1) + " " + H.toFixed(1) + '" ' +
+      'style="position:absolute;left:0;top:' + (-r).toFixed(1) + 'px;width:' +
+      W.toFixed(1) + 'px;height:' + H.toFixed(1) + 'px;overflow:visible" aria-hidden="true">' +
+      '<polygon class="side" points="' + p(side) + '"/>' +
+      '<polygon class="top" points="' + p(top) + '"/>' +
+      '<polygon class="front" points="' + p(front) + '"/>' +
+      /* Пов'язки і табличка — частина того самого креслення, тому вони
+         не можуть зсунутись відносно граней. */
+      '<g class="band">' +
+      '<path class="line" d="M1,' + band1.toFixed(1) + ' H' + (w - 1).toFixed(1) + '"/>' +
+      '<path class="line" d="M1,' + band2.toFixed(1) + ' H' + (w - 1).toFixed(1) + '"/>' +
+      "</g>" +
+      '<rect class="plate" x="' + px.toFixed(1) + '" y="' + py.toFixed(1) +
+      '" width="' + pw.toFixed(1) + '" height="' + ph.toFixed(1) + '" rx="1"/>' +
+      '<rect class="foot" x="0" y="' + (r + h - 3).toFixed(1) + '" width="' + w.toFixed(1) + '" height="3"/>' +
+      /* Контур — один замкнений обхід усіх трьох граней плюс два
+         спільні ребра. Саме тому ніде немає ані подвоєної лінії, ані
+         пропущеної. */
+      '<path class="line" d="M0,' + r.toFixed(1) + ' L' + d.toFixed(1) + ',0 L' +
+        W.toFixed(1) + ',0 L' + W.toFixed(1) + "," + h.toFixed(1) + ' L' +
+        w.toFixed(1) + "," + (r + h).toFixed(1) + ' L0,' + (r + h).toFixed(1) + ' Z"/>' +
+      '<path class="line" d="M0,' + r.toFixed(1) + ' H' + w.toFixed(1) +
+        ' L' + W.toFixed(1) + ',0"/>' +
+      '<path class="line" d="M' + w.toFixed(1) + "," + r.toFixed(1) +
+        ' V' + (r + h).toFixed(1) + '"/>' +
+      "</svg>";
+    bookCache[key] = out;
+    return out;
+  }
+
+  /* Виїмка креслиться на замовлення і лишається в кеші: ключ — рука
+     категорії, розмір і вага пера. */
+  function nicheInk(ci, w, h) {
+    var key = ci + "|" + w + "|" + h + "|" + (darkNow() ? "d" : "l");
+    if (!nicheCache[key]) nicheCache[key] = nicheSvg(ci, w, h);
+    return nicheCache[key];
+  }
+
+  /* ПОЗНАЧКА УВАГИ КРЕСЛИТЬСЯ ТОДІ, КОЛИ НА НЕЇ ДИВЛЯТЬСЯ. Раніше
+     кожна виїмка несла свій SVG із першої мілісекунди — на стіні в
+     сотню отворів це сотня малюнків, з яких видно нуль. */
+  function ensureMark(el) {
+    if (el.dataset.marked) return;
+    el.dataset.marked = "1";
+    var mark = document.createElement("div");
+    mark.className = "niche__mark";
+    mark.style.opacity = "0";
+    mark.innerHTML = attentionSvg(Number(el.dataset.case), el.offsetWidth, el.offsetHeight);
+    el.appendChild(mark);
+    requestAnimationFrame(function () { mark.style.removeProperty("opacity"); });
+  }
+
+  /* ОДИН СЛУХАЧ НА КІМНАТУ, А НЕ ЧОТИРИ НА КОЖЕН КОРІНЕЦЬ. На
+     трьохстах працях старий спосіб вішав понад тисячу обробників, і
+     кожна перебудова стіни (тема, розмір вікна, навантаження) знімала
+     й ставила їх наново. */
+  room.addEventListener("click", function (e) {
+    var b = e.target.closest ? e.target.closest(".book[data-book]") : null;
+    if (b) {
+      if (tapConsumed()) return;
+      openSpread(Number(b.dataset.case), Number(b.dataset.book));
+      return;
+    }
+    var n = e.target.closest ? e.target.closest(".niche") : null;
+    if (!n || tapConsumed()) return;
+    enterCase(Number(n.dataset.case));
+  });
+
+  /* ДОТИК НЕ МАЄ ХОВЕРА: перший тап ставить увагу, другий заходить. */
+  room.addEventListener("pointerdown", function (e) {
+    if (e.pointerType !== "touch" || !e.target.closest) return;
+    var b = e.target.closest(".book[data-book]");
+    var t = b || e.target.closest(".niche");
+    if (!t || tapArmed === t) return;
+    tapArmed = t;
+    tapSwallow = true;
+    if (b) focusBook(Number(b.dataset.case), Number(b.dataset.book));
+    else if (view === "hall") focusCase(Number(t.dataset.case));
+  });
+
+  /* Ніша — така сама поверхня уваги, як рядок списку. Фокусу з
+     клавіатури тут немає навмисно: сцена — aria-hidden, її
+     клавіатурний двійник це список. */
+  room.addEventListener("mouseover", function (e) {
+    if (!e.target.closest) return;
+    var b = e.target.closest(".book[data-book]");
+    if (b) {
+      if (view === "case") focusBook(Number(b.dataset.case), Number(b.dataset.book));
+      return;
+    }
+    var n = e.target.closest(".niche");
+    if (n && view === "hall") focusCase(Number(n.dataset.case));
+  });
+  room.addEventListener("mouseleave", function () { restCase(); });
+
+  /* Штрих пера завдовжки в лінію: тонкий на початку, важчий у тілі,
+     з ледь помітним прогином і одним-двома підйомами пензля. Той
+     самий профіль, що й у ліній ніші. */
+  function rayInk(len, vertical, seed) {
+    var T = 18, mid = T / 2, IW = inkW();
+    function jr(n) { return seeded(seed * 37 + n); }
+    var bow = (jr(1) * 2 - 1) * Math.min(3.4, len * 0.016);
+    /* Один підйом пензля, і то не завжди: два розриви перетворювали
+       штрих на пунктир, а це має лишитись однією лінією, просто
+       написаною рукою. */
+    var lifts = [];
+    if (jr(4) > 0.45) {
+      var g0 = 0.3 + jr(2) * 0.3;
+      lifts.push([g0, g0 + 0.02 + jr(3) * 0.03]);
+    }
+    function inLift(t) {
+      for (var i = 0; i < lifts.length; i++) {
+        if (t > lifts[i][0] && t < lifts[i][1]) return true;
+      }
+      return false;
+    }
+    var N = 48, out = "", run = [], i, t, along, across, wdt;
+    function flush() {
+      if (run.length < 2) { run = []; return; }
+      var s1 = [], s2 = [], k, a, c, hw;
+      for (k = 0; k < run.length; k++) {
+        a = run[k][0]; c = run[k][1]; hw = run[k][2] / 2;
+        s1.push(vertical ? (c - hw).toFixed(1) + "," + a.toFixed(1)
+                         : a.toFixed(1) + "," + (c - hw).toFixed(1));
+        s2.push(vertical ? (c + hw).toFixed(1) + "," + a.toFixed(1)
+                         : a.toFixed(1) + "," + (c + hw).toFixed(1));
+      }
+      out += '<polygon points="' + s1.join(" ") + " " + s2.reverse().join(" ") +
+        '" fill="currentColor"/>';
+      run = [];
+    }
+    for (i = 0; i <= N; i++) {
+      t = i / N;
+      if (inLift(t)) { flush(); continue; }
+      along = len * t;
+      across = mid + bow * Math.sin(Math.PI * t) + (jr(i + 40) - 0.5) * 0.7;
+      /* натиск наростає до середини і сходить нанівець на кінцях */
+      wdt = (0.3 + 1.5 * Math.sin(Math.PI * t)) * (0.72 + jr(i + 90) * 0.5) * IW;
+      if (i === 0 || i === N) wdt = 0.22;
+      run.push([along, across, wdt]);
+    }
+    flush();
+    return '<svg viewBox="0 0 ' +
+      (vertical ? T + " " + Math.round(len) : Math.round(len) + " " + T) +
+      '" preserveAspectRatio="none" aria-hidden="true">' + out + "</svg>";
+  }
+
+  /* ДВІ ЛІНІЇ ПО КРАЮ КАТЕГОРІЇ. Вони йдуть уздовж крайніх комірок —
+     згори і знизу, якщо над стіною і під нею є місце; ліворуч і
+     праворуч, якщо місце збоку. Орієнтацію обирає не смак, а вільний
+     проміжок: штрихи лежать на стіні позаду отворів, і той, що
+     забігає за сусідній отвір, просто зникає разом із селектом. */
+  function markArmature(ci) {
+    var mine = ci < 0 ? [] : sectionsOf(ci);
+    /* Немає вибраної категорії — немає і другого шару. Раніше в залі
+       арматура за замовчуванням стояла на першій-ліпшій полиці, і
+       штрих на стіні означав рівно нічого. */
+    if (!mine.length) {
+      rayA.removeAttribute("data-on");
+      rayB.removeAttribute("data-on");
+      return;
+    }
+    /* Позначка лягає на ТУ САМУ грань, що й категорія: штрих, писаний
+       на іншій стіні, поруч із виїмкою не ляже — він поїде і за
+       глибиною, і за кутом. */
+    var face = mine[0].dataset;
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity;
+    mine.forEach(function (n) {
+      var l = parseFloat(n.style.left), t = parseFloat(n.style.top);
+      x0 = Math.min(x0, l); y0 = Math.min(y0, t);
+      x1 = Math.max(x1, l + n.offsetWidth); y1 = Math.max(y1, t + n.offsetHeight);
+    });
+
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var up = y0, dn = vh * 1.28 - y1, lf = x0, rt = vw * 1.28 - x1;
+    caseEls.forEach(function (n) {
+      if (Number(n.dataset.case) === ci) return;
+      var l = parseFloat(n.style.left), t = parseFloat(n.style.top);
+      var r = l + n.offsetWidth, bm = t + n.offsetHeight;
+      var overX = r > x0 - 6 && l < x1 + 6;
+      var overY = bm > y0 - 6 && t < y1 + 6;
+      if (overX && bm <= y0) up = Math.min(up, y0 - bm);
+      if (overX && t >= y1) dn = Math.min(dn, t - y1);
+      if (overY && r <= x0) lf = Math.min(lf, x0 - r);
+      if (overY && l >= x1) rt = Math.min(rt, x1 - r > 0 ? l - x1 : 0);
+    });
+
+    var NEED = 16;
+    var horiz = Math.min(up, dn) >= NEED;
+    if (!horiz && Math.min(lf, rt) < NEED) horiz = Math.min(up, dn) >= Math.min(lf, rt);
+
+    /* ПАРА штрихів, різної, але близької довжини — і кожен трохи
+       коротший за саму категорію: позначка від руки не міряє предмет
+       по краю, вона його супроводжує. */
+    var la = 0.78 + seeded(ci + 41) * 0.2;
+    var lb = 0.78 + seeded(ci + 53) * 0.2;
+    /* Стеля довжини: у широкої категорії позначка по всьому краю — це
+       вже не позначка, а підкреслення на пів-стіни. */
+    var CAP = 210;
+    if (horiz) {
+      var wA = Math.max(40, Math.min(CAP, (x1 - x0) * la));
+      var wB = Math.max(40, Math.min(CAP, (x1 - x0) * lb));
+      setRay(rayA, x0 + ((x1 - x0) - wA) * seeded(ci + 61),
+        y0 - Math.min(14, up * 0.6) - 9, wA, 18, false, ci + 3, face);
+      setRay(rayB, x0 + ((x1 - x0) - wB) * seeded(ci + 67),
+        y1 + Math.min(14, dn * 0.6) - 9, wB, 18, false, ci + 9, face);
+    } else {
+      var hA = Math.max(34, Math.min(CAP, (y1 - y0) * la));
+      var hB = Math.max(34, Math.min(CAP, (y1 - y0) * lb));
+      setRay(rayA, x0 - Math.min(14, lf * 0.6) - 9,
+        y0 + ((y1 - y0) - hA) * seeded(ci + 61), 18, hA, true, ci + 3, face);
+      setRay(rayB, x1 + Math.min(14, rt * 0.6) - 9,
+        y0 + ((y1 - y0) - hB) * seeded(ci + 67), 18, hB, true, ci + 9, face);
+    }
+  }
+
+  function setRay(el, x, y, w, h, vertical, seed, face) {
+    el.dataset.on = "true";
+    el.style.left = Math.round(x) + "px";
+    el.style.top = Math.round(y) + "px";
+    el.style.width = Math.round(w) + "px";
+    el.style.height = Math.round(h) + "px";
+    /* Штрих лежить на самій стіні, позаду виїмок: позначка на стіні, а
+       не указка перед нею. Глибина береться на два кроки далі за
+       грань — рівно настільки, щоб не сперечатись із її ребром. */
+    el.style.transformOrigin = (Number(face.axis) - Math.round(x)).toFixed(1) + "px 50%";
+    el.style.transform = "translateZ(" + (Number(face.z) - 6) + "px) rotateY(" +
+      face.phi + "deg)";
+    el.innerHTML = rayInk(vertical ? h : w, vertical, seed);
+  }
+
+  /* ПОШУК ВЕДЕ І СПИСОК, І СТІНУ. Знайти працю в списку і не побачити,
+     де вона стоїть, — це половина відповіді: полиця для того й
+     намальована, щоб на неї можна було подивитись. Тому запит гасить
+     і рядки, і виїмки, а самої розкладки не чіпає: стіна не
+     перебудовується під запит, вона пригасає. */
+  var query = "";
+
+  function matches(hay) {
+    return !query || hay.toLowerCase().indexOf(query) >= 0;
+  }
+
+  function caseHay(c) {
+    return c.label + " " + c.books.map(function (b) { return b.title + " " + b.note; }).join(" ");
+  }
+
+  function applyQuery() {
+    caseEls.forEach(function (el) {
+      var c = CASES[Number(el.dataset.case)];
+      el.dataset.dim = String(view === "hall" ? !matches(caseHay(c))
+        : Number(el.dataset.case) !== openCase);
+    });
+  }
+
+  function renderList() {
+    shelfList.innerHTML = "";
+    var items = view === "hall"
+      ? CASES.map(function (c, i) {
+          var held = c.books.filter(function (b) { return b.held; }).length;
+          /* Перелік праць у рядку — підказка, а не зміст: за десятком
+             назв рядок перестає бути рядком. Далі рахунок. */
+          var names = c.books.slice(0, 3).map(function (b) { return b.title; }).join(" · ");
+          if (c.books.length > 3) names += " · ще " + (c.books.length - 3);
+          return {
+            title: c.label.replace(/^[IV]+ · /, ""),
+            note: names,
+            state: held + " / " + c.books.length,
+            held: held > 0,
+            act: function () { enterCase(i); },
+            /* У залі рядок гріє БЛОК, не книгу: книги — наступний рівень. */
+            live: function () { focusCase(i); }
+          };
+        })
+      : CASES[openCase].books.map(function (b, bi) {
+          return {
+            title: b.title, note: b.note, state: b.state, held: b.held,
+            act: function () { openSpread(openCase, bi); },
+            live: function () { focusBook(openCase, bi); }
+          };
+        });
+
+    items.forEach(function (item, i) {
+      if (!matches(item.title + " " + item.note)) return;
+      var row = document.createElement("button");
+      row.type = "button";
+      row.className = "row";
+      row.innerHTML =
+        '<span class="row__index">' + String(i + 1).padStart(2, "0") + "</span>" +
+        '<span><span class="inkLabel"><span class="row__title"></span>' +
+        '<span class="row__mark">' + rayInk(120, false, i * 5 + 3) + "</span></span>" +
+        '<span class="row__note"></span></span>' +
+        '<span class="row__state" data-held="' + item.held + '"></span>';
+      row.querySelector(".row__title").textContent = item.title;
+      row.querySelector(".row__note").textContent = item.note;
+      row.querySelector(".row__state").textContent = item.state;
+      row.dataset.k = String(i);
+      row.addEventListener("click", function () {
+        if (tapConsumed()) return;
+        item.act();
+      });
+      if (item.live) armByTouch(row, item.live);
+      if (item.live) {
+        row.addEventListener("mouseenter", item.live);
+        row.addEventListener("focus", item.live);
+        row.addEventListener("mouseleave", restCase);
+        row.addEventListener("blur", restCase);
+      }
+      shelfList.appendChild(row);
+    });
+    /* Порожній результат мовчить не менш виразно, ніж список. */
+    if (!shelfList.children.length) {
+      var none = document.createElement("p");
+      none.className = "standfirst";
+      none.textContent = "Нічого не знайшлось. Спробуйте іншу назву.";
+      shelfList.appendChild(none);
+    }
+  }
+
+  document.getElementById("find").addEventListener("input", function () {
+    query = this.value.trim().toLowerCase();
+    renderList();
+    applyQuery();
+  });
+
+  /* Категорія тепер живе в кількох секціях стіни, тож стан ставиться
+     на всі її отвори одразу: гріється полиця, а не один її шматок. */
+  function sectionsOf(ci) {
+    return caseEls.filter(function (el) { return Number(el.dataset.case) === ci; });
+  }
+
+  function hotNiche(ci) {
+    caseEls.forEach(function (el) {
+      if (Number(el.dataset.case) === ci) { ensureMark(el); el.dataset.hot = "true"; }
+      else el.removeAttribute("data-hot");
+    });
+  }
+
+  /* Дзеркало hotNiche: та сама увага, але в списку. */
+  /* Рядок шукається за своїм ключем, а не за позицією: під запитом
+     половини рядків у списку немає, і третя ніша на стіні — це вже не
+     третій рядок. */
+  function hotRow(i) {
+    Array.prototype.forEach.call(shelfList.children, function (r) {
+      if (Number(r.dataset.k) === i) r.dataset.hot = "true";
+      else r.removeAttribute("data-hot");
+    });
+  }
+
+  /* Повна сила штриха — рівно на тому рядку, що зараз відкритий: у залі
+     жоден, у полиці — той, чия книга розгорнута. */
+  function currentRow(i) {
+    Array.prototype.forEach.call(shelfList.children, function (r) {
+      if (Number(r.dataset.k) === i) r.dataset.current = "true";
+      else r.removeAttribute("data-current");
+    });
+  }
+
+  /* Увага на категорії, звідки б вона не прийшла: ніша, рядок,
+     клавіатура. Один виклик — щоб три поверхні не розійшлися. */
+  function focusCase(ci) {
+    hotNiche(ci);
+    hotRow(ci);
+    markArmature(ci);
+  }
+
+  /* Увага на конкретній праці — те саме на рівень глибше. */
+  function focusBook(ci, bi) {
+    highlight(ci, bi);
+    hotRow(bi);
+  }
+
+  /* ДОТИК НЕ МАЄ ХОВЕРА. На миші увага і дія розділені в часі: спершу
+     наводиш, потім клацаєш. Пальцем це один рух, і без розведення
+     перший же дотик провалювався всередину — стан вибору побачити було
+     ніде. Тому перший тап ставить увагу, другий заходить; на миші
+     нічого не змінюється. */
+  var tapArmed = null;
+  var tapSwallow = false;
+
+  function armByTouch(el, focus) {
+    el.addEventListener("pointerdown", function (e) {
+      if (e.pointerType !== "touch") return;
+      if (tapArmed === el) return;
+      tapArmed = el;
+      tapSwallow = true;
+      focus();
+    });
+  }
+
+  /* Клік, який лише поставив увагу пальцем, не має ще й спрацювати. */
+  function tapConsumed() {
+    if (!tapSwallow) return false;
+    tapSwallow = false;
+    return true;
+  }
+
+  /* Курсор пішов зі сцени — повертаємось до того, що вибрано, а не в
+     нікуди: інакше кожен відхід миші гасить і арматуру. */
+  function restCase() {
+    hotNiche(-1);
+    hotRow(-1);
+    if (view === "case") { highlight(openCase, -1); markArmature(openCase); }
+    else markArmature(-1);
+  }
+
+  /* Єдине місце, де вмикається золото, і воно вмикається рівно на одній
+     книзі. Позначка «придбано» більше не світиться сама по собі: шість
+     однакових вогників не показують нічого. */
+  function highlight(ci, bi) {
+    room.querySelectorAll(".book[data-book]").forEach(function (b) {
+      var live = Number(b.dataset.case) === ci && Number(b.dataset.book) === bi;
+      if (live) b.dataset.live = "true"; else b.removeAttribute("data-live");
+    });
+  }
+
+  /* ПАРАЛАКСУ НЕМАЄ. Він давав глибину лише поки рухаєш мишею — і
+     платив за це тим, що вся стіна пересемплювалась щокадру: волосяні
+     лінії блимали, розмита смуга світла перемальовувалась, а на сотні
+     виїмок кожен кадр коштував як перебудова. Глибину тепер тримає
+     геометрія: категорії лежать на різних гранях, на різній відстані,
+     під різним кутом — і вона на місці, коли ніхто не ворушиться.
+     Рухається тільки камера, і тільки коли заходиш у полицю.
+
+     Загальний план стоїть далі від стіни: стіна має читатися стіною,
+     а не полицею перед носом. */
+  var HALL_Z = -170;
+  var baseX = 0, baseY = 0, baseZ = HALL_Z, baseS = 1;
+  var easeTimer = null;
+
+  function apply() {
+    room.style.setProperty("--px", baseX.toFixed(1) + "px");
+    room.style.setProperty("--py", baseY.toFixed(1) + "px");
+    room.style.setProperty("--cz", baseZ + "px");
+    room.style.setProperty("--cs", baseS.toFixed(3));
+  }
+
+  function camera(x, y, z, sc) {
+    baseX = x; baseY = y; baseZ = z;
+    baseS = sc === undefined ? 1 : sc;
+    room.classList.add("is-eased");
+    apply();
+    window.clearTimeout(easeTimer);
+    /* Клас знімається після руху: will-change живе рівно стільки,
+       скільки триває сам рух. */
+    easeTimer = window.setTimeout(function () {
+      room.classList.remove("is-eased");
+      /* Камера доїхала — перекреслюємо стіну під новий масштаб і
+         перепитуємо рівень деталізації: корінець щойно став іншого
+         розміру в кадрі, отже змінилось і те, що на ньому видно. Під
+         час самого руху це робити нема сенсу: масштаб міняється
+         щокадру, а полотно малюється мілісекунди. */
+      paintCarve();
+      applyLod();
+    }, 2350);
+    trackLod(2450);
+  }
+
+  /* М'ЯКЕ ОПУСКАННЯ ТЕКСТУ. На телефоні аркуш можна підняти майже на
+     весь екран; коли після цього вибрати категорію, список стає
+     коротшим, документ — нижчим, і браузер ОБРІЗАЄ прокрутку до нової
+     висоти. Саме це і читалось як ривок: текст не опускався, його
+     зрізало.
+     Тому висота колонки на час переходу притримується (min-height у
+     старий зріст), а сторінка сама плавно їде до нуля; коли доїхала —
+     підпора знімається. Рух виходить один і той самий, звідки б у
+     нього не зайшли. */
+  var scrollTween = null;
+  var spineDrop = null;
+  function softScroll() {
+    if (window.innerWidth > 900 || !window.scrollY) return;
+    var sheet = document.querySelector(".sheet");
+    /* Підпора на час руху: без неї браузер обріже прокрутку до нової,
+       коротшої висоти документа ще до першого кадру. */
+    sheet.style.minHeight = sheet.offsetHeight + "px";
+    var from = window.scrollY, t0 = 0;
+    /* Рух рахується самотужки, а не через behavior:"smooth": воно то
+       є, то ні (налаштування руху, вбудовані вікна), і тоді сторінка
+       або смикається, або стоїть. Тут же і тривалість та сама, що в
+       решти переходів кімнати. */
+    if (scrollTween) window.clearInterval(scrollTween);
+    /* Таймер, а не requestAnimationFrame: rAF не тікає у фоновій
+       вкладці, і сторінка, відкрита не на передньому плані, лишалась
+       би підпертою назавжди. Таймер у найгіршому разі приїде рвучко,
+       але приїде. */
+    t0 = Date.now();
+    scrollTween = window.setInterval(function () {
+      var k = Math.min(1, (Date.now() - t0) / 620);
+      var e = 1 - Math.pow(1 - k, 3);
+      window.scrollTo(0, Math.round(from * (1 - e)));
+      if (k >= 1) {
+        window.clearInterval(scrollTween);
+        scrollTween = null;
+        sheet.style.removeProperty("min-height");
+      }
+    }, 16);
+  }
+
+  function enterCase(ci) {
+    tapArmed = null;
+    softScroll();
+    query = "";
+    document.getElementById("find").value = "";
+    view = "case";
+    openCase = ci;
+    document.body.classList.add("in-case");
+    caseEls.forEach(function (el) {
+      var mine = Number(el.dataset.case) === ci;
+      el.dataset.dim = String(!mine);
+      if (mine) { ensureMark(el); el.dataset.sel = "true"; }
+      else el.removeAttribute("data-sel");
+      el.removeAttribute("data-hot");
+    });
+    markArmature(ci);
+    /* Підписи витискаються один раз, на вході: у залі їх немає, отже й
+       у DOM їх немає — сто отворів не носять сотні прихованих рядків. */
+    sectionsOf(ci).forEach(function (el) {
+      el.querySelectorAll(".book[data-book]").forEach(function (b) {
+        if (b.querySelector(".book__spine")) return;
+        var bw = b.offsetWidth, bh = b.offsetHeight;
+        var title = CASES[ci].books[Number(b.dataset.book)].title;
+        /* РОЗМІР ПІДПИСУ — ВІД КОРІНЦЯ, А НЕ ВІД REM. Кегль у rem не
+           знає ні про ширину корінця, ні про наїзд: камера множила
+           його вчетверо разом зі сценою, і літери виходили ширші за
+           сам корінець. Тепер він рахується з ширини корінця, і на
+           будь-якому наїзді напис лишається написом НА корінці. */
+        var fs = Math.max(2.6, Math.min(9, bw * 0.52));
+        /* А ЯКЩО НАЗВА НЕ ВЛІЗАЄ — НЕ РІЖЕМО ЇЇ, А НАМІЧАЄМО.
+           «Way21 D…» на корінці не каже нічого, чого не сказала б
+           риска, зате бреше, що тут можна прочитати. Тому замість
+           обрізаної назви йде рядок письма: одна нерозбірлива лінія
+           тим самим пером. Це та сама відмова, що на стіні й у вирізі,
+           тільки на крок ближче: показати, що напис є, не вдаючи, що
+           його видно. */
+        var want = title.length * fs * 0.58;
+        var sp = document.createElement("span");
+        sp.className = "book__spine";
+        if (want <= bh * 0.76) {
+          sp.style.fontSize = fs.toFixed(1) + "px";
+          sp.textContent = title;
+        } else {
+          sp.dataset.mark = "true";
+          sp.innerHTML = scribbleInk(Math.min(want, bh * 0.76), Math.max(3, bw * 0.62),
+            fs, Number(b.dataset.book) * 7 + ci);
+        }
+        b.appendChild(sp);
+      });
+    });
+
+    frameCase(ci);
+
+    eyebrowEl.textContent = "Шафа " + CASES[ci].label;
+    titleEl.textContent = CASES[ci].label.replace(/^[IV]+ · /, "");
+    standEl.textContent = "На полицях те, що ви маєте. Оберіть корінець — книга розгорнеться.";
+    backBtn.hidden = false;
+    renderList();
+    play("step");
+  }
+
+  /* НАЇЗД РАХУЄТЬСЯ, А НЕ ПІДГАНЯЄТЬСЯ. Раніше камера їхала за
+     формулою, а через 2.4 с доводилась другим рухом — звідси і ривок
+     «частинами», і не та зона в кадрі: у формулі не було перспективи.
+     Тепер вимірюємо стан ДО руху (де категорія на екрані і з яким
+     масштабом), рахуємо потрібний масштаб і зсув аналітично і робимо
+     один рух.
+
+     Перспектива масштабує все відносно своєї точки сходу O:
+       C1 = O + (C0 - O) * k1/k0 + d * k1,
+     де k = P / (P - z). Звідси і зсув, і z. */
+  function frameCase(ci) {
+    var mine = sectionsOf(ci);
+    if (!mine.length) return;
+    var x0 = Infinity, y0 = Infinity, x1 = -Infinity, y1 = -Infinity, k0 = 1;
+    mine.forEach(function (n) {
+      var r = n.getBoundingClientRect();
+      x0 = Math.min(x0, r.left); y0 = Math.min(y0, r.top);
+      x1 = Math.max(x1, r.right); y1 = Math.max(y1, r.bottom);
+      k0 = r.width / (n.offsetWidth || 1);
+    });
+
+    var vw = window.innerWidth, vh = window.innerHeight;
+    var narrow = vw <= 900;
+    var wantX = narrow ? vw * 0.5 : vw * 0.71;
+    var wantY = narrow ? vh * 0.23 : vh * 0.46;
+    var maxW = narrow ? vw * 0.86 : vw * 0.46;
+    var maxH = narrow ? vh * 0.38 : vh * 0.74;
+
+    var bw = Math.max(1, x1 - x0), bh = Math.max(1, y1 - y0);
+    var f = Math.max(1.15, Math.min(4.2, Math.min(maxW / bw, maxH / bh) * 0.82));
+    var s1 = Math.max(0.5, Math.min(5, baseS * f));
+    f = s1 / baseS;
+
+    /* Масштаб тягне все до точки, яка від нього не залежить, — до
+       центру самої кімнати на екрані. Тому зсув рахується від неї, а
+       не від центру кадру: інакше камера наближає одну зону, а
+       показує іншу. */
+    var rr = room.getBoundingClientRect();
+    var qx = rr.left + rr.width / 2, qy = rr.top + rr.height / 2;
+    var kp = k0 / (baseS || 1);            /* перспектива без масштабу */
+    var dx = (wantX - qx - ((x0 + x1) / 2 - qx) * f) / kp;
+    var dy = (wantY - qy - ((y0 + y1) / 2 - qy) * f) / kp;
+    camera(baseX + dx, baseY + dy, baseZ, s1);
+  }
+
+  function toHall() {
+    tapArmed = null;
+    softScroll();
+    query = "";
+    document.getElementById("find").value = "";
+    view = "hall";
+    openCase = -1;
+    document.body.classList.remove("in-case");
+    /* Підпис не знімається в ту саму мить, коли натиснули «назад»:
+       камера ще на полиці, і корінець на екрані ще великий. Спершу він
+       гасне разом із наїздом (це робить сам --lod), і лише потім
+       іде з розмітки. */
+    window.clearTimeout(spineDrop);
+    spineDrop = window.setTimeout(function () {
+      room.querySelectorAll(".book__spine").forEach(function (n) { n.remove(); });
+    }, 1500);
+    caseEls.forEach(function (el) {
+      el.dataset.dim = "false";
+      el.removeAttribute("data-sel");
+      el.removeAttribute("data-hot");
+    });
+    markArmature(-1);
+    camera(0, 0, HALL_Z, 1);
+    eyebrowEl.textContent = "Прототип середовища · 26.08.2026";
+    titleEl.textContent = "Місце усвідомленої присутності. Тут тихо";
+    standEl.textContent = "Категорії врізані в різні грані кімнати: чим більше в розділі праць, тим ближче і більша його полиця. Підійди до ніші, торкнись корінця — книга розгорнеться.";
+    backBtn.hidden = true;
+    highlight(-1, -1);
+    renderList();
+    play("step");
+  }
+  backBtn.addEventListener("click", toHall);
+
+  /* ---------- розворот ---------- */
+  var spread = document.getElementById("spread");
+  var spreadState = { ci: 0, bi: 0, folio: 1 };
+
+  /* Скільки аркушів має книга — питання не розвороту, а самої праці:
+     у рідера це кроки уроку, тут це ті самі кроки, просто розкладені
+     по аркушах. Число потрібне обом — і лічильнику, і смужці. */
+  var SPREADS = 8;
+
+  function paintSpread() {
+    var b = CASES[spreadState.ci].books[spreadState.bi];
+    document.getElementById("spreadTitle").textContent = b.title;
+    document.getElementById("spreadLead").textContent = b.lead;
+    document.getElementById("spreadBody").textContent = b.body;
+    /* Ліворуч — крок, як у верхній панелі уроку («2 / 8»), праворуч —
+       фоліо. Одна сторінка каже, ДЕ ти в праці, друга — де ти в книзі:
+       два різні питання, і саме тому вони не одним написом. */
+    document.getElementById("folioL").textContent = spreadState.folio + " / " + SPREADS;
+    document.getElementById("folioR").textContent = String(spreadState.folio * 2).padStart(3, "0");
+    var fill = document.getElementById("readFill");
+    if (fill) fill.style.width = Math.round(spreadState.folio / SPREADS * 100) + "%";
+  }
+
+  function openSpread(ci, bi) {
+    if (view === "case") currentRow(bi);
+    spreadState.ci = ci; spreadState.bi = bi; spreadState.folio = 1;
+    paintSpread();
+    spread.hidden = false;
+    /* Форсований reflow, а не requestAnimationFrame: у фоновій вкладці rAF
+       душиться, і розворот застигає на півдорозі з opacity 0.5. */
+    void spread.offsetHeight;
+    spread.dataset.open = "true";
+    play("open");
+    document.getElementById("closeSpread").focus();
+  }
+
+  function closeSpread() {
+    currentRow(-1);
+    spread.dataset.open = "false";
+    play("close");
+    window.setTimeout(function () { spread.hidden = true; }, 520);
+  }
+
+  document.getElementById("closeSpread").addEventListener("click", closeSpread);
+  document.getElementById("nextPage").addEventListener("click", function () {
+    spreadState.folio++; paintSpread(); play("turn");
+  });
+  document.getElementById("prevPage").addEventListener("click", function () {
+    spreadState.folio = Math.max(1, spreadState.folio - 1); paintSpread(); play("turn");
+  });
+  window.addEventListener("keydown", function (e) {
+    if (spread.dataset.open !== "true") return;
+    if (e.key === "Escape") closeSpread();
+    if (e.key === "ArrowRight") { spreadState.folio++; paintSpread(); play("turn"); }
+    if (e.key === "ArrowLeft") { spreadState.folio = Math.max(1, spreadState.folio - 1); paintSpread(); play("turn"); }
+  });
+
+
+  /* ---------- стіна з вирізами ---------- */
+
+  var carveEl = document.getElementById("carve");
+  var imgCache = {};
+
+  /* Один запис у кеші — скільки завгодно очікувачів. Раніше повторний
+     запит на вже РОЗПОЧАТЕ, але ще не завантажене зображення тихо
+     виходив ні з чим: колбек не викликався ніколи, і стіна лишалась
+     без матеріалу або без отворів. */
+  function img(src, done) {
+    var im = imgCache[src];
+    if (!im) {
+      im = imgCache[src] = new Image();
+      im.src = src;
+    }
+    if (im.complete && im.naturalWidth) { done(im); return; }
+    im.addEventListener("load", function () { done(im); }, { once: true });
+  }
+
+  /* Щербатий контур отвору. Прямокутник із рівними кутами читається
+     наліпкою; камінь ріжеться уступами, і кожен край має свій дрібний
+     скол. Seeded — стіна щоразу та сама. */
+  function chipPath(g, x, y, w, h, seed, bite) {
+    var per = 2 * (w + h), step = Math.max(7, Math.min(16, per / 26));
+    var pts = [], t, i, n, px, py, d;
+    n = Math.max(12, Math.round(per / step));
+    for (i = 0; i < n; i++) {
+      t = (i / n) * per;
+      if (t < w) { px = x + t; py = y; d = 1; }
+      else if (t < w + h) { px = x + w; py = y + (t - w); d = 2; }
+      else if (t < w + h + w) { px = x + w - (t - w - h); py = y + h; d = 3; }
+      else { px = x; py = y + h - (t - w - h - w); d = 4; }
+      var j = (seeded(seed * 31 + i) - 0.5) * bite;
+      if (d === 1) py += j; else if (d === 3) py -= j;
+      else if (d === 2) px += j; else px -= j;
+      pts.push([px, py]);
+    }
+    g.beginPath();
+    pts.forEach(function (q, k) { if (k) g.lineTo(q[0], q[1]); else g.moveTo(q[0], q[1]); });
+    g.closePath();
+  }
+
+  /* ХТО ПРИЙШОВ ОСТАННІМ, ТОЙ І МАЛЮЄ.
+     Малювання стіни чекає на зображення, а перебудов між тим може бути
+     кілька — тема, розмір вікна, навантаження, наїзд. Стара, повільніша
+     фарба поверталась із завантаження вже після нової і клала СВОЇ
+     отвори поверх чужої стіни: комірки стояли не там, де книги. Тому в
+     кожного малювання є номер, і колбек, який виявився не останнім,
+     мовчки виходить. */
+  var carveToken = 0;
+
+  function paintCarve() {
+    if (!carveEl) return;
+    var mine = ++carveToken;
+    var meta = ENVS[envNow];
+    var W = Math.round(carveEl.clientWidth), H = Math.round(carveEl.clientHeight);
+    if (!W || !H) return;
+    /* ЩІЛЬНІСТЬ ПОЛОТНА ЙДЕ ЗА НАЇЗДОМ. Камера збільшує кімнату
+       масштабом, а масштаб розтягує вже намальований растр — тому в
+       полиці контури розпливались. Тепер полотно малюється під той
+       масштаб, у якому воно зараз стоїть.
+       Стеля — не в множнику, а в кількості пікселів: полотно завбільшки
+       з кімнату (132% кадру) на великому екрані і без того велике, а
+       пам'ять і час малювання ростуть його площею. Вісім мільйонів
+       пікселів — межа, за якою наїзд коштує більше, ніж дає. */
+    var BUDGET = 8e6;
+    var want = (window.devicePixelRatio || 1) * Math.max(1, baseS);
+    var dpr = Math.max(1, Math.min(want, Math.sqrt(BUDGET / (W * H))));
+    if (carveEl.width !== Math.round(W * dpr)) {
+      carveEl.width = Math.round(W * dpr);
+      carveEl.height = Math.round(H * dpr);
+    }
+    var g = carveEl.getContext("2d");
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, W, H);
+    if (!meta) return;
+
+    var f = envFit();
+    if (!f) return;
+    var dark = darkNow();
+    var tones = stoneTones(dark);
+    var lc = tones.lit, sd = tones.shade, pc = rgbOf("--paper");
+    var ic = rgbOf("--ink-value");
+
+    function tex(src, col, alpha, cb) {
+      img(src, function (im) {
+        if (mine !== carveToken) return;
+        var t = document.createElement("canvas");
+        t.width = Math.max(1, Math.round(f.iw));
+        t.height = Math.max(1, Math.round(f.ih));
+        var tg = t.getContext("2d");
+        tg.drawImage(im, 0, 0, t.width, t.height);
+        tg.globalCompositeOperation = "source-in";
+        tg.fillStyle = rgba(col, 1);
+        tg.fillRect(0, 0, t.width, t.height);
+        g.globalAlpha = alpha;
+        g.drawImage(t, f.ox, f.oy);
+        g.globalAlpha = 1;
+        cb && cb();
+      });
+    }
+
+    /* Матеріал. У світлій темі одна щільність туші і є стіна: папір під
+       нею вже світлий, отже виїмка читається тим, що в ній туші більше.
+
+       У ТЕМНІЙ ТАК НЕ ВИЙДЕ, І ЦЕ НЕ НАЛАШТУВАННЯ АЛЬФИ. Ґрунт там сам
+       майже чорний, тож «темніше за ґрунт» — це нікуди. Виїмка в темряві
+       читається навпаки: стіна ловить світло і стоїть ПЛАНОМ ВИЩЕ за
+       кімнату, а різ у ній лишається чорним. Тіло каменю тому кладеться
+       НЕПРОЗОРО — це окрема площина, а не підфарбований ґрунт; фактура
+       поверх нього йде тихіше, бо їй більше не треба самій вдавати
+       стіну. Досі тіло стояло на 0.62, а фактура тінню на 0.9 — тобто
+       другий прохід зафарбовував назад те, що робив перший, і стіна
+       поверталась до ґрунту разом з усіма отворами. Саме це й було
+       «виїмки знову відпали». */
+    function material(after) {
+      if (dark) {
+        tex("assets/" + meta.body, lc, 1, function () {
+          tex(meta.tex, sd, 0.42, after);
+        });
+      } else {
+        tex(meta.tex, ic, 0.9, after);
+      }
+    }
+
+    material(function () {
+      if (mine !== carveToken) return;
+      openings(g, dark, lc, sd, pc);
+    });
+  }
+
+  /* Отвори вибиваються з готового матеріалу і одразу отримують нутро. */
+  function openings(g, dark, lc, sd, pc) {
+    /* СПІЛЬНА ГРАНЬ — ОДНА ЛІНІЯ.
+       Категорія на десяток праць розрізана на кілька секцій, і кожна
+       досі вибивалась окремо. Там, де вони сходились, виходило два
+       краї впритул: дві губи, дві тіні, подвійна товщина каменю — шов,
+       якого в одній полиці не буває. Тепер сусідні секції ОДНІЄЇ
+       категорії, що стоять на одному рівні, вибиваються одним
+       отвором, а між ними лишається те, що й лишається в справжній
+       полиці: одна перемичка. */
+    var runs = [], cur = null;
+    var list = caseEls.map(function (el, k) {
+      return {
+        el: el, k: k, ci: Number(el.dataset.case),
+        x: parseFloat(el.style.left), y: parseFloat(el.style.top),
+        w: el.offsetWidth, h: el.offsetHeight,
+        t: Number(el.dataset.cut) || 6,
+        depth: parseFloat(el.style.getPropertyValue("--depth")) || 0.7
+      };
+    }).filter(function (q) { return q.w && q.h; });
+    list.sort(function (a, b) { return a.ci - b.ci || a.y - b.y || a.x - b.x; });
+    list.forEach(function (q) {
+      var join = cur && cur.ci === q.ci &&
+        Math.abs(cur.y - q.y) <= 2 && Math.abs(cur.h - q.h) <= 2 &&
+        q.x - (cur.x + cur.w) <= Math.max(10, cur.t * 1.6) &&
+        q.x >= cur.x;
+      if (join) {
+        cur.cuts.push(q.x - (q.x - (cur.x + cur.w)) / 2);   /* середина шва */
+        cur.w = q.x + q.w - cur.x;
+        cur.t = Math.min(cur.t, q.t);
+        cur.parts.push(q);
+      } else {
+        cur = { ci: q.ci, x: q.x, y: q.y, w: q.w, h: q.h, t: q.t,
+                depth: q.depth, cuts: [], parts: [q], k: q.k };
+        runs.push(cur);
+      }
+    });
+
+    runs.forEach(function (r) {
+      var x = r.x, y = r.y, w = r.w, h = r.h;
+      var seed = r.ci * 13 + r.k;
+      var bite = Math.max(1.2, Math.min(4.5, Math.min(w, h) * 0.05));
+
+      /* 1. МАТЕРІАЛ ЗАКІНЧУЄТЬСЯ. */
+      g.save();
+      g.globalCompositeOperation = "destination-out";
+      chipPath(g, x, y, w, h, seed, bite);
+      g.fill();
+      g.restore();
+
+      /* 2. Задня стінка: темніша згори, бо на неї падає тінь верхньої
+         губи, і тим темніша, чим глибше врізано. */
+      chipPath(g, x, y, w, h, seed, bite);
+      g.save();
+      g.clip();
+      /* Дно різу. У темряві воно кладеться майже непрозоро: грань
+         каменю над ним тепер суцільна, і напівпрозоре дно показувало б
+         крізь себе ту саму грань — тобто отвір, повний стіни. */
+      var floorA = dark ? 0.34 : 0;
+      var back = g.createLinearGradient(0, y, 0, y + h);
+      back.addColorStop(0, rgba(sd, floorA + 0.66 + r.depth * 0.22));
+      back.addColorStop(0.55, rgba(sd, floorA + 0.42 + r.depth * 0.2));
+      back.addColorStop(1, rgba(sd, floorA + 0.3 + r.depth * 0.16));
+      g.fillStyle = back;
+      g.fillRect(x, y, w, h);
+
+      /* 3. УКОСИ — товщина стіни. Світло згори-праворуч: лівий укіс і
+         дно ловлять його, верхній і правий лишаються в тіні. Малюються
+         трапеціями від краю отвору до внутрішнього прямокутника — це і
+         є перспектива коробки, тільки чесна, без точки сходу.
+         УКІС ЖИВЕ, ПОКИ ЙОГО ВИДНО: на стіні в сотню-триста праць
+         отвір має сорок пікселів по короткій стороні, і чотири
+         трапеції в ньому — не глибина, а брудна облямівка. Поріг тут
+         не власний, це той самий стан far, у якому стіна вже
+         відмовилась від назв на корінцях. Лишається губа, і вона
+         гучніша: тепер увесь виріз тримає вона. */
+      var t = r.t;
+      var thin = t < 4.5 || room.dataset.far === "true";
+      var ix = x + t, iy = y + t, iw = w - t * 2, ih = h - t * 2;
+      function face(pts, col, a) {
+        g.fillStyle = rgba(col, a);
+        g.beginPath();
+        pts.forEach(function (q, i) { if (i) g.lineTo(q[0], q[1]); else g.moveTo(q[0], q[1]); });
+        g.closePath();
+        g.fill();
+      }
+      if (!thin) {
+        face([[x, y], [x + w, y], [ix + iw, iy], [ix, iy]], sd, 0.5);
+        face([[x + w, y], [x + w, y + h], [ix + iw, iy + ih], [ix + iw, iy]], sd, 0.3);
+        /* У темряві виріз читається не тінню, а СВІТЛОМ на укосі: тінь
+           там нічим не відрізняється від ґрунту, бо ґрунт і сам
+           темний. Тому освітлені грані в темній темі гучніші. */
+        face([[x, y], [ix, iy], [ix, iy + ih], [x, y + h]], lc, 0.3);
+        face([[x, y + h], [ix, iy + ih], [ix + iw, iy + ih], [x + w, y + h]],
+             lc, dark ? 0.4 : 0.42);
+      }
+
+      /* 4. ПЕРЕМИЧКА між секціями однієї категорії — одна, і вона з
+         каменю: світло з правого боку, тінь з лівого. */
+      r.cuts.forEach(function (cx, n) {
+        var pw = Math.max(1.4, Math.min(6, t * 0.6));
+        var g1 = g.createLinearGradient(cx - pw, 0, cx + pw, 0);
+        g1.addColorStop(0, rgba(sd, 0.42));
+        g1.addColorStop(0.5, rgba(lc, dark ? 0.34 : 0.5));
+        g1.addColorStop(1, rgba(sd, 0.42));
+        g.fillStyle = g1;
+        var jitter = (seeded(seed * 17 + n) - 0.5) * 1.4;
+        g.fillRect(cx - pw / 2 + jitter, y + (thin ? 1 : t * 0.5),
+                   pw, h - (thin ? 2 : t));
+      });
+      g.restore();
+
+      /* 5. ГУБА. Передній край різу: знизу і праворуч він ловить
+         світло, згори і ліворуч — темніє. Одна лінія в піксель тут не
+         годиться: край сколотий, отже і лінія йде тим самим щербатим
+         контуром. */
+      g.save();
+      g.lineJoin = "round";
+      chipPath(g, x - 0.5, y - 0.5, w + 1, h + 1, seed, bite);
+      g.strokeStyle = rgba(sd, 0.32);
+      g.lineWidth = 1.2;
+      g.stroke();
+      chipPath(g, x, y + 1.4, w, h, seed + 7, bite * 0.7);
+      g.strokeStyle = rgba(lc, thin ? (dark ? 0.62 : 0.74) : (dark ? 0.42 : 0.5));
+      g.lineWidth = thin ? 1.4 : 1;
+      g.stroke();
+      g.restore();
+    });
+  }
+
+  /* ---------- туш на стіні ---------- */
+  var wallEl = document.querySelector(".wall");
+
+  /* Тайл туші: плями блукаючим пером (random walk дрібними м'якими
+     колами) + волокна паперу. Все seeded — стіна однакова в кожному
+     сеансі. Плями, що торкаються краю, домальовуються з обгортанням,
+     тому шов тайла невидимий. Викликається з setTheme: колір туші
+     належить темі. */
+  /* Та сама альфа читається в темряві вдвічі гучніше: світле по
+     темному лізе вперед, темне по світлому втирається в папір. Тому
+     всі фактури (стіна, зерно, пейзаж) у темній темі йдуть тихіше —
+     інакше стіна не матова, а рябить. */
+  function darkNow() {
+    var hex = getComputedStyle(document.documentElement)
+      .getPropertyValue("--paper").trim();
+    var n = parseInt(hex.slice(1), 16);
+    if (isNaN(n)) return false;
+    return (((n >> 16) & 255) * 0.299 + ((n >> 8) & 255) * 0.587 + (n & 255) * 0.114) < 128;
+  }
+
+  /* Кольори матеріалу одним місцем: канвас не читає CSS-змінні сам. */
+  function rgbOf(name) {
+    var hex = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    var n = parseInt(hex.slice(1), 16);
+    if (isNaN(n)) return [0, 0, 0];
+    return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  }
+  function rgba(c, a) {
+    return "rgba(" + c[0] + "," + c[1] + "," + c[2] + "," + Math.max(0, a).toFixed(3) + ")";
+  }
+
+  /* ТЕМНЕ — ЦЕ НЕ ЧОРНИЛО. У світлій темі чорнило справді найтемніше,
+     і ним можна писати і лінію, і тінь. У темній чорнило кремове: тією
+     самою фарбою пора в камені ставала блиском, а хід углиб —
+     світляним отвором. Тінь матеріалу має власне джерело — найтемніший
+     токен ґрунту. */
+  function mixRgb(a, b, t) {
+    return [Math.round(a[0] + (b[0] - a[0]) * t),
+            Math.round(a[1] + (b[1] - a[1]) * t),
+            Math.round(a[2] + (b[2] - a[2]) * t)];
+  }
+
+  /* ТОНИ МАТЕРІАЛУ РАХУЮТЬСЯ ВІД ҐРУНТУ, А НЕ БЕРУТЬСЯ ГОТОВИМИ.
+     У світлій темі папір, світлий папір і чорнило рознесені широко, і
+     токенів вистачало. У графіті вони стоять майже впритул: #232322,
+     #191918, #0b0b0b — тридцять п'ять, двадцять п'ять і одинадцять із
+     двохсот п'ятдесяти шести. Стіна, писана ними, намальована — і не
+     видна: темне по темному, і саме тому полиць у темряві не було.
+     Тому в темряві тіло каменю відводиться від ґрунту в бік чорнила
+     (а воно там кремове), а тінь — у бік чорного, на фіксовану частку.
+     Як би не стискався ґрунт, різниця лишається тією самою. */
+  function stoneTones(dark) {
+    if (!dark) return { lit: rgbOf("--paper-lit"), shade: rgbOf("--ink-value") };
+    var base = rgbOf("--paper");
+    return {
+      /* Грань каменю в темряві — це ПЛОЩИНА, а не відтінок ґрунту, бо
+         вона тепер кладеться непрозоро (див. material). На 0.22 вона
+         стояла ще як підфарбовування; 0.30 виводить її на тон, у якому
+         чорний різ усередині має що перебивати: на графіті #191918 це
+         близько #4c4c4a проти чорного дна. */
+      lit: mixRgb(base, rgbOf("--ink-value"), 0.3),
+      shade: mixRgb(base, [0, 0, 0], 0.62)
+    };
+  }
+
+  function shadeOf(dark) { return stoneTones(dark).shade; }
+
+  /* ФАКТУРА, А НЕ ШУМ.
+     Досі стіна була майже чистим папером із кількома блідими
+     розмивами — і кімната через це читалась кресленням на аркуші, а не
+     матеріалом, у який щось врізано. Глина і камінь мають три речі
+     одночасно: плямистість (маса лягла нерівно), зерно (дрібні пори)
+     і тріщини з відколами. Тайл несе всі три, тому виїмка стоїть у
+     ТІЛІ, а не на тлі.
+     Той самий тайл іде і на облямівку кожної виїмки — інакше рамка
+     отвору була б з іншого матеріалу, ніж стіна, і жодна тінь цього
+     не сховає. */
+  function paintWallInk() {
+    if (!wallEl) return;
+    var lc = stoneTones(darkNow()).lit, dc = rgbOf("--paper-deep");
+    var dark = darkNow();
+    var ic = shadeOf(dark);
+    var quiet = dark ? 0.8 : 1;
+    var size = 460;
+    var c = document.createElement("canvas");
+    c.width = c.height = size;
+    var g = c.getContext("2d");
+    var canBlur = typeof g.filter === "string";
+
+    /* Плями кладуться з обгортанням через край — інакше видно шов. */
+    function soft(col, x, y, rr, a) {
+      var ox, oy;
+      for (ox = -1; ox <= 1; ox++) {
+        for (oy = -1; oy <= 1; oy++) {
+          if (ox !== 0 && x > rr && x < size - rr) continue;
+          if (oy !== 0 && y > rr && y < size - rr) continue;
+          var px = x + ox * size, py = y + oy * size;
+          var grd = g.createRadialGradient(px, py, 0, px, py, rr);
+          grd.addColorStop(0, rgba(col, a));
+          grd.addColorStop(1, rgba(col, 0));
+          g.fillStyle = grd;
+          g.beginPath();
+          g.arc(px, py, rr, 0, Math.PI * 2);
+          g.fill();
+        }
+      }
+    }
+
+    /* 1. МАСА. Великі м'які плями двох знаків: темніші — там, де глина
+       лягла густіше, світліші — де вигоріла. Саме різниця між ними, а
+       не сама пляма, читається матеріалом. */
+    if (canBlur) g.filter = "blur(14px)";
+    var i, x, y, r, k;
+    for (i = 0; i < 26; i++) {
+      x = seeded(i * 13 + 1) * size;
+      y = seeded(i * 13 + 2) * size;
+      r = 70 + seeded(i * 13 + 3) * 130;
+      soft(ic, x, y, r, (0.020 + seeded(i * 13 + 4) * 0.030) * quiet);
+    }
+    for (i = 0; i < 22; i++) {
+      x = seeded(i * 17 + 40) * size;
+      y = seeded(i * 17 + 41) * size;
+      r = 60 + seeded(i * 17 + 42) * 120;
+      soft(lc, x, y, r, (0.10 + seeded(i * 17 + 43) * 0.16) * (dark ? 0.5 : 1));
+    }
+    /* 2. ЗЕРНО. Дрібні пори, дві щільності: кучні й розсіяні. */
+    if (canBlur) g.filter = "blur(1.1px)";
+    for (i = 0; i < 260; i++) {
+      x = seeded(i * 7 + 200) * size;
+      y = seeded(i * 7 + 201) * size;
+      r = 1 + seeded(i * 7 + 202) * 2.6;
+      soft(ic, x, y, r, (0.05 + seeded(i * 7 + 203) * 0.10) * quiet);
+    }
+    /* 3. ТРІЩИНИ І ВІДКОЛИ. Тріщина йде не прямо: вона повертає на
+       кожній неоднорідності, тому це блукання з нахилом, а не відрізок.
+       Відкол — коротка світла риска поруч із темною: край, що відпав. */
+    if (canBlur) g.filter = "none";
+    g.lineCap = "round";
+    for (i = 0; i < 22; i++) {
+      var cx = 40 + seeded(i * 23 + 300) * (size - 80);
+      var cy = 40 + seeded(i * 23 + 301) * (size - 80);
+      var ang = seeded(i * 23 + 302) * Math.PI * 2;
+      var steps = 6 + Math.floor(seeded(i * 23 + 303) * 9);
+      g.strokeStyle = rgba(ic, (0.06 + seeded(i * 23 + 304) * 0.09) * quiet);
+      g.lineWidth = 0.6 + seeded(i * 23 + 305) * 0.7;
+      g.beginPath();
+      g.moveTo(cx, cy);
+      for (k = 0; k < steps; k++) {
+        ang += (seeded(i * 31 + k) - 0.5) * 1.1;
+        cx += Math.cos(ang) * (4 + seeded(i * 37 + k) * 9);
+        cy += Math.sin(ang) * (4 + seeded(i * 41 + k) * 9);
+        g.lineTo(cx, cy);
+      }
+      g.stroke();
+      if (seeded(i * 23 + 306) > 0.45) {
+        g.strokeStyle = rgba(lc, (0.16 + seeded(i * 23 + 307) * 0.2) * (dark ? 0.4 : 1));
+        g.lineWidth = 0.9;
+        g.beginPath();
+        g.moveTo(cx + 1.2, cy + 1.2);
+        g.lineTo(cx + 1.2 + Math.cos(ang) * 6, cy + 1.2 + Math.sin(ang) * 6);
+        g.stroke();
+      }
+    }
+
+    var url = "url(" + c.toDataURL() + ")";
+    wallEl.style.backgroundImage = url;
+    /* Той самий камінь — облямівці виїмок. */
+    document.documentElement.style.setProperty("--stone-tile", url);
+  }
+
+  /* ---------- тушевий пейзаж ---------- */
+  var sceneEl = document.getElementById("sceneInk");
+
+  /* Три гряди пагорбів, кожна — синусова суміш трьох частот, залита
+     тушшю під блюром. Ближня гряда нижча і щільніша, дальні вищі й
+     легші — глибина будується прозорістю, як у розмиві. У темній темі
+     ті самі форми, писані кремом, читаються туманом. */
+  function paintScene() {
+    if (!sceneEl) return;
+    var w = sceneEl.offsetWidth, h = sceneEl.offsetHeight;
+    if (!w || !h) return;
+    sceneEl.width = w;
+    sceneEl.height = h;
+    var g = sceneEl.getContext("2d");
+    var hex = getComputedStyle(document.documentElement).getPropertyValue("--ink-value").trim();
+    var n = parseInt(hex.slice(1), 16);
+    if (isNaN(n)) return;
+    var ir = (n >> 16) & 255, ig = (n >> 8) & 255, ib = n & 255;
+    var canBlur = typeof g.filter === "string";
+
+    var layers = [
+      { y: 0.82, amp: 0.030, a: 0.060, blur: 8 },
+      { y: 0.73, amp: 0.046, a: 0.040, blur: 13 },
+      { y: 0.64, amp: 0.062, a: 0.026, blur: 18 }
+    ];
+    layers.forEach(function (L, li) {
+      var f1 = 0.004 + seeded(li + 31) * 0.002;
+      var f2 = 0.012 + seeded(li + 7) * 0.006;
+      var ph = seeded(li + 3) * 6.28;
+      if (canBlur) g.filter = "blur(" + L.blur + "px)";
+      g.fillStyle = "rgba(" + ir + "," + ig + "," + ib + "," + L.a + ")";
+      g.beginPath();
+      g.moveTo(-60, h + 60);
+      for (var x = -60; x <= w + 60; x += 14) {
+        g.lineTo(x, h * L.y +
+          Math.sin(x * f1 + ph) * h * L.amp +
+          Math.sin(x * f2 + ph * 2.7) * h * L.amp * 0.45 +
+          Math.sin(x * f2 * 2.8 + ph * 1.3) * h * L.amp * 0.18);
+      }
+      g.lineTo(w + 60, h + 60);
+      g.closePath();
+      g.fill();
+    });
+    if (canBlur) g.filter = "none";
+  }
+
+  /* ---------- зерно ---------- */
+  var canvas = document.getElementById("grain");
+  var ctx = canvas.getContext("2d");
+  var tile = null;
+
+  function buildTile() {
+    var size = 200;
+    var t = document.createElement("canvas");
+    t.width = t.height = size;
+    var tc = t.getContext("2d");
+    var img = tc.createImageData(size, size);
+    var d = img.data;
+    for (var p = 0, n = 0; p < d.length; p += 4, n++) {
+      var v = seeded(n * 0.37) * 255;
+      d[p] = d[p + 1] = d[p + 2] = v;
+      d[p + 3] = 15;
+    }
+    tc.putImageData(img, 0, 0);
+    return t;
+  }
+
+  function paintGrain() {
+    var w = canvas.width = canvas.offsetWidth;
+    var h = canvas.height = canvas.offsetHeight;
+    if (!w || !h) return;
+    if (!tile) tile = buildTile();
+    ctx.fillStyle = ctx.createPattern(tile, "repeat");
+    ctx.fillRect(0, 0, w, h);
+  }
+
+  /* ---------------------------------------------------------------
+     ЗВУК. Чотири канали, кожен зі своїм фейдером, усе синтезоване.
+     Твердого низу немає за конструкцією: на майстрі стоїть highpass
+     на 130 Гц, тож фундаментальні 40–80 Гц, які й давали «тверду
+     підлогу», просто не існують у тракті.
+     --------------------------------------------------------------- */
+  var CHANNELS = [
+    { id: "room", name: "кімната" },
+    { id: "paper", name: "папір" },
+    { id: "nature", name: "природа" },
+    { id: "pad", name: "ембієнт" }
+  ];
+
+  var PRESETS = [
+    { name: "тиша",     v: { room: 0,    paper: 0,    nature: 0,    pad: 0    } },
+    { name: "читальня", v: { room: 0.34, paper: 0.42, nature: 0,    pad: 0.10 } },
+    { name: "сад",      v: { room: 0.22, paper: 0.10, nature: 0.50, pad: 0.08 } },
+    { name: "ніч",      v: { room: 0.26, paper: 0,    nature: 0.12, pad: 0.44 } }
+  ];
+
+  var A = null;
+
+  function buildAudio() {
+    var Ctx = window.AudioContext || window.webkitAudioContext;
+    if (!Ctx) return null;
+    var ac = new Ctx();
+
+    var master = ac.createGain();
+    master.gain.value = 0.9;
+
+    var hp = ac.createBiquadFilter();
+    hp.type = "highpass";
+    hp.frequency.value = 130;
+    hp.Q.value = 0.5;
+
+    var soften = ac.createBiquadFilter();
+    soften.type = "lowpass";
+    soften.frequency.value = 5200;
+    soften.Q.value = 0.4;
+
+    master.connect(hp).connect(soften).connect(ac.destination);
+
+    var bus = {};
+    CHANNELS.forEach(function (c) {
+      var g = ac.createGain();
+      g.gain.value = 0;
+      g.connect(master);
+      bus[c.id] = g;
+    });
+
+    var len = Math.floor(ac.sampleRate * 3);
+    var buf = ac.createBuffer(1, len, ac.sampleRate);
+    var ch0 = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) ch0[i] = seeded(i * 0.0131) * 2 - 1;
+
+    function noiseSource() {
+      var s = ac.createBufferSource();
+      s.buffer = buf; s.loop = true; s.start();
+      return s;
+    }
+
+    /* кімната — повітря, вузька смуга, повільне дихання */
+    (function () {
+      var bp = ac.createBiquadFilter();
+      bp.type = "bandpass"; bp.frequency.value = 480; bp.Q.value = 0.6;
+      var g = ac.createGain(); g.gain.value = 0.16;
+      noiseSource().connect(bp).connect(g).connect(bus.room);
+      var lfo = ac.createOscillator(); lfo.frequency.value = 0.045;
+      var lg = ac.createGain(); lg.gain.value = 0.05;
+      lfo.connect(lg).connect(g.gain); lfo.start();
+    })();
+
+    /* природа — вітер у листі: смуга гуляє, і саме це читається листям,
+       а не шиплячим шумом */
+    (function () {
+      var bp = ac.createBiquadFilter();
+      bp.type = "bandpass"; bp.frequency.value = 900; bp.Q.value = 0.9;
+      var g = ac.createGain(); g.gain.value = 0.14;
+      noiseSource().connect(bp).connect(g).connect(bus.nature);
+      var lfo = ac.createOscillator(); lfo.type = "sine"; lfo.frequency.value = 0.08;
+      var lg = ac.createGain(); lg.gain.value = 420;
+      lfo.connect(lg).connect(bp.frequency); lfo.start();
+      var lfo2 = ac.createOscillator(); lfo2.frequency.value = 0.19;
+      var lg2 = ac.createGain(); lg2.gain.value = 0.06;
+      lfo2.connect(lg2).connect(g.gain); lfo2.start();
+    })();
+
+    /* ембієнт — пад на квінтах, без основного тону */
+    (function () {
+      var lp = ac.createBiquadFilter();
+      lp.type = "lowpass"; lp.frequency.value = 1400; lp.Q.value = 0.3;
+      lp.connect(bus.pad);
+      [220, 330, 440, 660].forEach(function (hz, i) {
+        var o = ac.createOscillator();
+        o.type = "sine";
+        o.frequency.value = hz;
+        o.detune.value = (seeded(i + 5) - 0.5) * 9;
+        var g = ac.createGain();
+        g.gain.value = [0.11, 0.08, 0.05, 0.03][i];
+        o.connect(g).connect(lp);
+        o.start();
+        var lfo = ac.createOscillator();
+        lfo.frequency.value = 0.021 + seeded(i + 31) * 0.04;
+        var lg = ac.createGain(); lg.gain.value = 0.045;
+        lfo.connect(lg).connect(g.gain); lfo.start();
+      });
+    })();
+
+    return { ac: ac, bus: bus, buf: buf, master: master };
+  }
+
+  function ensureAudio() {
+    if (!A) A = buildAudio();
+    if (A && A.ac.state === "suspended") A.ac.resume();
+    return A;
+  }
+
+  function setChannel(id, value) {
+    if (!A) return;
+    var t = A.ac.currentTime;
+    var g = A.bus[id].gain;
+    g.cancelScheduledValues(t);
+    g.setValueAtTime(g.value, t);
+    g.linearRampToValueAtTime(value, t + 0.5);
+  }
+
+  /* папір — шурхіт як зерно коротких сплесків, не як тон */
+  var paperTimer = null;
+  function paperTick() {
+    if (!A) { paperTimer = null; return; }
+    if (A.bus.paper.gain.value > 0.001) rustle(0.35 + seeded(A.ac.currentTime) * 0.4);
+    paperTimer = window.setTimeout(paperTick, 1400 + seeded(A.ac.currentTime * 7) * 2600);
+  }
+
+  function rustle(amount) {
+    if (!A) return;
+    var ac = A.ac, t = ac.currentTime;
+    var s = ac.createBufferSource();
+    s.buffer = A.buf;
+    s.playbackRate.value = 0.9 + seeded(t) * 0.4;
+    var bp = ac.createBiquadFilter();
+    bp.type = "bandpass";
+    bp.frequency.setValueAtTime(2600, t);
+    bp.frequency.exponentialRampToValueAtTime(700, t + 0.22);
+    bp.Q.value = 0.8;
+    var g = ac.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.exponentialRampToValueAtTime(0.22 * amount, t + 0.02);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + 0.26);
+    s.connect(bp).connect(g).connect(A.bus.paper);
+    s.start(t, seeded(t * 3) * 2);
+    s.stop(t + 0.3);
+  }
+
+  /* Події — тільки папір і повітря, жодного дзвіночка. */
+  function play(kind) {
+    if (!A) return;
+    if (kind === "turn") { rustle(1); return; }
+    if (kind === "open") { rustle(0.8); window.setTimeout(function () { rustle(0.55); }, 130); return; }
+    if (kind === "close") { rustle(0.5); return; }
+    if (kind === "step") {
+      var ac = A.ac, t = ac.currentTime;
+      var s = ac.createBufferSource();
+      s.buffer = A.buf;
+      var lp = ac.createBiquadFilter();
+      lp.type = "lowpass"; lp.frequency.value = 420;
+      var g = ac.createGain();
+      g.gain.setValueAtTime(0.0001, t);
+      g.gain.exponentialRampToValueAtTime(0.10, t + 0.03);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.42);
+      s.connect(lp).connect(g).connect(A.bus.room);
+      s.start(t, seeded(t) * 2);
+      s.stop(t + 0.45);
+    }
+  }
+
+  var mixer = document.getElementById("mixer");
+  var faders = {};
+  CHANNELS.forEach(function (c) {
+    var wrap = document.createElement("div");
+    wrap.className = "fader";
+    var id = "f-" + c.id;
+    wrap.innerHTML =
+      '<label for="' + id + '"></label>' +
+      '<input id="' + id + '" type="range" min="0" max="100" value="0">' +
+      "<output>0</output>";
+    wrap.querySelector("label").textContent = c.name;
+    var input = wrap.querySelector("input");
+    var out = wrap.querySelector("output");
+    input.addEventListener("input", function () {
+      var v = Number(input.value) / 100;
+      out.textContent = input.value;
+      ensureAudio();
+      setChannel(c.id, v);
+      if (c.id === "paper" && v > 0 && paperTimer === null) paperTick();
+    });
+    faders[c.id] = { input: input, out: out };
+    mixer.appendChild(wrap);
+  });
+
+  var presetsBox = document.getElementById("presets");
+  PRESETS.forEach(function (p, i) {
+    var b = document.createElement("button");
+    b.className = "chip";
+    b.type = "button";
+    b.textContent = p.name;
+    b.setAttribute("aria-pressed", String(i === 0));
+    b.addEventListener("click", function () {
+      ensureAudio();
+      Array.prototype.forEach.call(presetsBox.children, function (c) { c.setAttribute("aria-pressed", "false"); });
+      b.setAttribute("aria-pressed", "true");
+      CHANNELS.forEach(function (c) {
+        var v = p.v[c.id];
+        faders[c.id].input.value = String(Math.round(v * 100));
+        faders[c.id].out.textContent = String(Math.round(v * 100));
+        setChannel(c.id, v);
+      });
+      if (p.v.paper > 0 && paperTimer === null) paperTick();
+    });
+    presetsBox.appendChild(b);
+  });
+
+
+  /* ---------------------------------------------------------------
+     ТЕМНІ ҐРУНТИ
+
+     Питання «яка в нас темна тема» не має однієї відповіді доти, доки
+     варіанти не стоять поруч у самій кімнаті. Тут їх п'ять, і всі
+     п'ять — це наші ж аналогії, а не смаки:
+
+       графіт   нейтрально-теплий сірий адмінки (base.dark у токенах:
+                #141414 / #1f1f1d / #e4e4e1). Ґрунт за замовчуванням —
+                бо це єдина темна поверхня, яка в нас уже РОБОЧА, і
+                кімната поруч із нею не має виглядати іншим продуктом.
+       мінерал  мокрий камінь: холодний сланець із ледь чутним синьо-
+                зеленим у тіні. Найближче до пака «мінерал», але без
+                його зелені в самому ґрунті.
+       глина    випалена глина: те саме значення, зсунуте в теплий
+                сіро-коричневий. Найтепліший ґрунт, який ще лишається
+                нейтральним.
+       дерево   горіх: уже не нейтраль, а матеріал. Найдалі від
+                адмінки і найближче до «бібліотеки» як меблів.
+       органіка глибока зелень платформи. Стоїть тут для повноти
+                порівняння і має проти себе власне правило ДС від
+                2026-08-20: «ніколи не зелень на темному ґрунті».
+
+     Золото одне на всіх — --cw-sem-warmth. Воно і є та константа, яка
+     тримає п'ять ґрунтів одним продуктом. */
+  /* Перший рядок — не варіант. Це [data-cw-theme="dark"] із
+     globals.css: ґрунт, поверхня, приглушена поверхня і текст узяті
+     звідти дослівно, а три тони НИЖЧЕ ґрунту (deep/wash/wash2)
+     виведені так само, як --wash у світлій — це дно виїмки, якого в
+     токенах немає і не мусить бути. Решта рядків — сусіди для
+     порівняння — і серед них ІСТОРИЧНА зелена ніч: до 28.08 саме вона
+     й була публічною темною гамою, а замінив її цей графіт за правилом
+     бренд-аркуша «ніколи не зелень на темному ґрунті» — тим самим, яким
+     сіра адмінка й аргументована. Окремого чипа «графіт (адмінка)» тут
+     більше немає: адмінка і публічна сторона тепер стоять на одному
+     ґрунті, і перший рядок — обидві. */
+  var GROUNDS = [
+    { id: "platform", name: "платформа", paper: "#191918", lit: "#232322", deep: "#131312", wash: "#0f0f0e", wash2: "#0a0a09", fill: "#2e2e2c", ink: "#e4e4e1" },
+    { id: "mineral-night", name: "зелена ніч (до 28.08)", paper: "#131e17", lit: "#1a2a20", deep: "#0f1712", wash: "#0c130e", wash2: "#080d0a", fill: "#24382b", ink: "#f5ece0" },
+    { id: "mineral",  name: "мінерал",  paper: "#1c2124", lit: "#262c2f", deep: "#151a1c", wash: "#12171a", wash2: "#0d1114", fill: "#313a3d", ink: "#e6e9e8" },
+    { id: "clay",     name: "глина",    paper: "#221d1a", lit: "#2d2723", deep: "#191512", wash: "#161210", wash2: "#100d0b", fill: "#3a312b", ink: "#ece4da" },
+    { id: "wood",     name: "дерево",   paper: "#1f1813", lit: "#2a211a", deep: "#17110d", wash: "#140f0b", wash2: "#0e0a07", fill: "#3b2e22", ink: "#f0e5d5" }
+  ];
+
+  var groundsBox = document.getElementById("grounds");
+  var groundNow = "platform";
+
+  function setGround(id) {
+    freezeMotion();
+    var g = null, i;
+    for (i = 0; i < GROUNDS.length; i++) if (GROUNDS[i].id === id) g = GROUNDS[i];
+    if (!g) g = GROUNDS[0];
+    groundNow = g.id;
+    var st = document.documentElement.style;
+    st.setProperty("--dk-paper", g.paper);
+    st.setProperty("--dk-paper-lit", g.lit);
+    st.setProperty("--dk-paper-deep", g.deep);
+    st.setProperty("--dk-wash", g.wash);
+    st.setProperty("--dk-wash-2", g.wash2);
+    st.setProperty("--dk-fill", g.fill);
+    st.setProperty("--dk-ink", g.ink);
+    Array.prototype.forEach.call(groundsBox.children, function (c) {
+      c.setAttribute("aria-pressed", String(c.dataset.ground === g.id));
+    });
+    try { window.localStorage.setItem("cw-proto-ground-2", g.id); } catch (e) { /* приватне вікно */ }
+    /* Ґрунт не міняє ані геометрії, ані ваги пера — тільки колір. Отже
+       стіну не перебудовуємо: перефарбовуємо канваси і кладемо інлайн
+       на body ту саму страховку, що й у setTheme. */
+    var cs = getComputedStyle(document.documentElement);
+    document.body.style.background = cs.getPropertyValue("--paper").trim();
+    document.body.style.color = cs.getPropertyValue("--ink-value").trim();
+    paintWallInk();
+    paintScene();
+    paintGrain();
+    paintCarve();
+  }
+
+  GROUNDS.forEach(function (g) {
+    var b = document.createElement("button");
+    b.className = "chip";
+    b.type = "button";
+    b.dataset.ground = g.id;
+    b.setAttribute("aria-pressed", "false");
+    b.textContent = g.name + " · " + ratio(g.ink, g.paper).toFixed(1);
+    b.addEventListener("click", function () { setGround(g.id); });
+    groundsBox.appendChild(b);
+  });
+
+  /* ---------------------------------------------------------------
+     Порівняння чорнил — те саме питання, що в ресерчі: наше чорнило
+     темніше за весь заміряний регістр. Тут воно поруч, із контрастом,
+     порахованим на місці.
+     --------------------------------------------------------------- */
+  /* Перший рядок — те, що стоїть у кімнаті зараз. Другий раніше був
+     підписаний --cw-platform-text і ніс #0d1b17 — такого значення в
+     globals.css немає й не було; текст платформи це #18261d, а
+     #203126 має в тій самій точці інше ім'я (guide-strong), тобто це
+     акцент, а не корпус. Тому підписи помінялись місцями разом зі
+     значеннями. */
+  var INKS = [
+    { hex: "#18261d", src: "наше · --cw-platform-text" },
+    { hex: "#203126", src: "ДС · --cw-sem-guide-strong" },
+    { hex: "#31403e", src: "мінерал · method-ink" },
+    { hex: "#3e332a", src: "прототип · тепле" },
+    { hex: "#4e4e4e", src: "一保堂 Ippodo" },
+    { hex: "#555555", src: "KINTO" },
+    { hex: "#313131", src: "Aman" }
+  ];
+
+  function lum(hex) {
+    var n = parseInt(hex.slice(1), 16);
+    return [16, 8, 0].map(function (sh) {
+      var c = ((n >> sh) & 255) / 255;
+      return c <= 0.03928 ? c / 12.92 : Math.pow((c + 0.055) / 1.055, 2.4);
+    }).reduce(function (a, v, i) { return a + v * [0.2126, 0.7152, 0.0722][i]; }, 0);
+  }
+
+  function ratio(a, b) {
+    var l1 = lum(a), l2 = lum(b);
+    var hi = Math.max(l1, l2), lo = Math.min(l1, l2);
+    return (hi + 0.05) / (lo + 0.05);
+  }
+
+  var inksBox = document.getElementById("inks");
+
+  /* Ці шість — кандидати у чорнило СВІТЛОЇ теми, тому контраст рахується
+     до світлого паперу, а не до того, що зараз під ними. У темній темі
+     чорнило кремове, і підміна його цими значеннями поклала б майже
+     чорний текст на майже чорний аркуш. */
+  var LIGHT_PAPER = "#faefe0";   /* --cw-sem-calm-bg */
+
+  function isDark() {
+    var cl = document.documentElement.classList;
+    if (cl.contains("mode-dark")) return true;
+    if (cl.contains("mode-light")) return false;
+    var stamped = document.documentElement.getAttribute("data-theme");
+    if (stamped === "dark") return true;
+    if (stamped === "light") return false;
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+
+  function paintInks() {
+    var locked = isDark();
+    inksBox.dataset.locked = String(locked);
+    document.getElementById("inkNote").hidden = !locked;
+    inksBox.innerHTML = "";
+
+    INKS.forEach(function (ink) {
+      var r = ratio(ink.hex, LIGHT_PAPER);
+      var b = document.createElement("button");
+      b.className = "inkRow";
+      b.type = "button";
+      b.setAttribute("aria-pressed", String(ink.hex === "#18261d"));
+      b.innerHTML =
+        '<span class="inkRow__swatch"></span>' +
+        "<span></span>" +
+        '<span class="inkRow__src"></span>' +
+        '<span class="inkRow__ratio" data-pass="' + (r >= 4.5) + '"></span>';
+      b.querySelector(".inkRow__swatch").style.background = ink.hex;
+      b.children[1].textContent = ink.hex;
+      b.querySelector(".inkRow__src").textContent = ink.src;
+      b.querySelector(".inkRow__ratio").textContent = r.toFixed(1);
+      if (locked) {
+        b.disabled = true;
+      } else {
+        b.addEventListener("click", function () {
+          document.documentElement.style.setProperty("--ink-value", ink.hex);
+          Array.prototype.forEach.call(inksBox.querySelectorAll(".inkRow"), function (c) {
+            c.setAttribute("aria-pressed", "false");
+          });
+          b.setAttribute("aria-pressed", "true");
+        });
+      }
+      inksBox.appendChild(b);
+    });
+  }
+
+  /* Тема перемикається в самій сторінці. Досі вона бралася тільки з
+     системи, тож світлу вбудовану пару не можна було ані побачити, ані
+     порівняти з темною, не лізучи в налаштування ОС. */
+  var themesBox = document.getElementById("themes");
+  /* Підміна палітри: глушимо переходи, міняємо, за кадр вмикаємо
+     назад. setTimeout, а не requestAnimationFrame: у фоновій вкладці
+     rAF не тікає, і сторінка лишилась би без переходів назавжди. */
+  var swapTimer = null;
+  function freezeMotion() {
+    document.documentElement.setAttribute("data-swap", "");
+    window.clearTimeout(swapTimer);
+    swapTimer = window.setTimeout(function () {
+      document.documentElement.removeAttribute("data-swap");
+    }, 90);
+  }
+
+  function setTheme(mode) {
+    freezeMotion();
+    var rootEl = document.documentElement;
+    rootEl.classList.remove("mode-dark", "mode-light");
+    if (mode !== "system") rootEl.classList.add("mode-" + mode);
+    /* Інлайн-страховка: після застосування класу знімаємо фактичні
+       токени і кладемо їх прямо на body. Якщо будь-який стиль хоста
+       перебиває каскад — інлайн він перебити не може. */
+    var cs = getComputedStyle(rootEl);
+    document.body.style.background = cs.getPropertyValue("--paper").trim();
+    document.body.style.color = cs.getPropertyValue("--ink-value").trim();
+    Array.prototype.forEach.call(themesBox.children, function (c) {
+      c.setAttribute("aria-pressed", String(c.dataset.themeSet === mode));
+    });
+    try { window.localStorage.setItem("cw-proto-theme", mode); } catch (e) { /* приватне вікно */ }
+    paintInks();
+    paintGrain();
+    paintWallInk();
+    paintScene();
+    paintCarve();
+    /* Вага пера — частина геометрії, а не кольору: у темряві лінія
+       товща. Отже, зі зміною теми стіну треба перекреслити, а не
+       перефарбувати. Стан (де ми і що вибрано) відновлюємо самі —
+       без наїзду камери і без звуку. */
+    if (caseEls.length) {
+      buildRoom();
+      if (view === "case") {
+        caseEls.forEach(function (el) {
+          var mine = Number(el.dataset.case) === openCase;
+          el.dataset.dim = String(!mine);
+          if (mine) { ensureMark(el); el.dataset.sel = "true"; }
+        });
+        markArmature(openCase);
+      } else {
+        markArmature(-1);
+      }
+    }
+  }
+  Array.prototype.forEach.call(themesBox.children, function (c) {
+    c.addEventListener("click", function () { setTheme(c.dataset.themeSet); });
+  });
+
+  /* Пейзаж: канвасний розмив або один із мальованих растрів. Вибір
+     тримається в localStorage — інакше кожне перезавантаження скидало
+     б порівняння варіантів. */
+  /* Середовище тримається в localStorage, як і решта порівнянь: інакше
+     кожне перезавантаження скидало б вибір кімнати. */
+  var envsBox = document.getElementById("envs");
+  function setEnv(key) {
+    var meta = ENVS[key];
+    var rootEl = document.documentElement;
+    envNow = meta ? key : "";
+    if (meta) {
+      rootEl.style.setProperty("--env-tex", 'url("' + meta.tex + '")');
+      rootEl.style.setProperty("--env-body", 'url("assets/' + meta.body + '")');
+      rootEl.setAttribute("data-env", "on");
+      var f = envFit();
+      if (f) {
+        rootEl.style.setProperty("--env-size",
+          Math.round(f.iw) + "px " + Math.round(f.ih) + "px");
+        rootEl.style.setProperty("--env-pos",
+          Math.round(f.ox) + "px " + Math.round(f.oy) + "px");
+      }
+    } else {
+      rootEl.style.removeProperty("--env-tex");
+      rootEl.style.removeProperty("--env-body");
+      rootEl.removeAttribute("data-env");
+    }
+    Array.prototype.forEach.call(envsBox.children, function (c) {
+      c.setAttribute("aria-pressed", String(c.dataset.env === envNow));
+    });
+    try { window.localStorage.setItem("cw-proto-env", envNow); } catch (e) { /* приватне вікно */ }
+  }
+  Array.prototype.forEach.call(envsBox.children, function (c) {
+    c.addEventListener("click", function () {
+      setEnv(c.dataset.env);
+      toHall();
+      boot();
+    });
+  });
+
+  var scenesBox = document.getElementById("scenes");
+  function setScene(src) {
+    var rootEl = document.documentElement;
+    if (src) {
+      rootEl.style.setProperty("--scene-tex", 'url("' + src + '")');
+      rootEl.setAttribute("data-scene-tex", "on");
+    } else {
+      rootEl.style.removeProperty("--scene-tex");
+      rootEl.removeAttribute("data-scene-tex");
+    }
+    Array.prototype.forEach.call(scenesBox.children, function (c) {
+      c.setAttribute("aria-pressed", String(c.dataset.scene === src));
+    });
+    try { window.localStorage.setItem("cw-proto-scene", src); } catch (e) { /* приватне вікно */ }
+  }
+  Array.prototype.forEach.call(scenesBox.children, function (c) {
+    c.addEventListener("click", function () { setScene(c.dataset.scene); });
+  });
+
+  var loadsBox = document.getElementById("loads");
+  Array.prototype.forEach.call(loadsBox.children, function (c) {
+    c.addEventListener("click", function () {
+      Array.prototype.forEach.call(loadsBox.children, function (o) {
+        o.setAttribute("aria-pressed", String(o === c));
+      });
+      setLoad(Number(c.dataset.load));
+      toHall();
+      boot();
+    });
+  });
+
+  /* Рельєф вимикається, щоб побачити ціну рішення: та сама стіна,
+     складена в одну площину. Це не режим для людей — це вимірювальний
+     інструмент, як і решта пульта. */
+  document.getElementById("relief").addEventListener("click", function () {
+    flatWall = !flatWall;
+    this.setAttribute("aria-pressed", String(!flatWall));
+    toHall();
+    boot();
+  });
+
+  var consoleEl = document.getElementById("console");
+  var consoleToggle = document.getElementById("consoleToggle");
+  consoleToggle.addEventListener("click", function () {
+    var collapsed = consoleEl.dataset.collapsed === "true";
+    consoleEl.dataset.collapsed = String(!collapsed);
+    consoleToggle.setAttribute("aria-expanded", String(collapsed));
+    consoleToggle.textContent = collapsed ? "–" : "+";
+  });
+
+  /* Штрихи на керуванні пишуться тим самим пером, що й у списку. */
+  function inkControls() {
+    document.querySelectorAll(".row__mark[data-mark]").forEach(function (m, i) {
+      if (!m.firstChild) m.innerHTML = rayInk(120, false, i * 11 + 5);
+    });
+  }
+
+  function boot() {
+    inkControls();
+    /* Позиція малюнка залежить від ширини кадру, тому вона
+       перевстановлюється на кожній перебудові, а не лише при виборі. */
+    if (envNow) setEnv(envNow);
+    var savedScene = "";
+    try { savedScene = window.localStorage.getItem("cw-proto-scene") || ""; } catch (e) { savedScene = ""; }
+    setScene(savedScene);
+    buildRoom();
+    if (openCase >= 0) highlight(openCase, 0);
+    paintGrain();
+    paintInks();
+    renderList();
+    if (view === "case") enterCase(openCase); else camera(0, 0, HALL_Z);
+  }
+
+  /* setTheme викликається ЗАВЖДИ, навіть для «системної»: інлайн-фарби
+     на body — єдине, чого не переб'є жоден стиль хоста артефакта. */
+  var savedEnv = "wall-matte";
+  try { savedEnv = window.localStorage.getItem("cw-proto-env"); } catch (e) { savedEnv = "wall-matte"; }
+  setEnv(savedEnv === null ? "wall-matte" : savedEnv);
+  var savedGround = "graphite";
+  try { savedGround = window.localStorage.getItem("cw-proto-ground-2") || "platform"; } catch (e) { /* приватне вікно */ }
+  setGround(savedGround);
+  var savedTheme = "system";
+  try { savedTheme = window.localStorage.getItem("cw-proto-theme") || "system"; } catch (e) { /* приватне вікно */ }
+  setTheme(savedTheme);
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", function () {
+    if (!document.documentElement.classList.contains("mode-dark") &&
+        !document.documentElement.classList.contains("mode-light")) setTheme("system");
+  });
+
+  /* ПЕРЕБУДОВА КОШТУЄ — отже, вона з відкладенням і тільки тоді, коли
+     кадр справді змінився. На телефоні смужка адреси з'їжджає і
+     повертається постійно, і кожен такий рух перебудовував стіну
+     цілком. Вертикальний дрейф до 90 пікселів — це не новий кадр. */
+  var lastW = window.innerWidth, lastH = window.innerHeight, resizeTimer = null;
+  window.addEventListener("resize", function () {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(function () {
+      var w = window.innerWidth, h = window.innerHeight;
+      if (w === lastW && Math.abs(h - lastH) < 90) return;
+      lastW = w; lastH = h;
+      boot();
+    }, 180);
+  }, { passive: true });
+  window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", paintInks);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(paintGrain);
+  boot();
+})();
+</script>

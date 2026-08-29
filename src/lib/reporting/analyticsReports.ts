@@ -1,5 +1,6 @@
 import { adminClient } from "@/lib/auth/adminClient";
 import { sendTelegramMessageWithToken } from "@/lib/tg";
+import { isMetaTestModeEnabled } from "@/lib/tracking/mode";
 
 const REPORTS_TIME_ZONE = process.env.ANALYTICS_REPORTS_TIMEZONE || "Europe/Kyiv";
 const REPORTS_CHAT_ID = process.env.ANALYTICS_REPORTS_CHAT_ID;
@@ -84,13 +85,13 @@ function formatDateLabel(isoDate: string): string {
 function reportKindLabel(kind: ReportKind): string {
   switch (kind) {
     case "daily":
-      return "Ежедневный отчёт";
+      return "Щоденний звіт";
     case "weekly":
-      return "Еженедельный отчёт";
+      return "Щотижневий звіт";
     case "monthly":
-      return "Ежемесячный отчёт";
+      return "Щомісячний звіт";
     default:
-      return "Отчёт";
+      return "Звіт";
   }
 }
 
@@ -172,14 +173,15 @@ function productLabel(productCode: string | null | undefined): string {
       return "IREM";
     case "consult":
       return "Consult";
+    case "natural-body":
     case "ideal-body":
-      return "Ideal Body";
+      return "Природнє тіло з Аюрведою";
     case "herbs":
       return "Herbs";
     case "platform":
       return "Платформа";
     default:
-      return "Неизвестный продукт";
+      return "Невідомий продукт";
   }
 }
 
@@ -208,19 +210,19 @@ function buildAttentionLines(input: {
   const lines: string[] = [];
 
   if (input.spend > 0 && input.totalOrders === 0) {
-    lines.push("Есть расход, но созданных заказов за период нет.");
+    lines.push("Є витрати, але створених замовлень за період немає.");
   }
 
   if (input.viewContent > 0 && input.totalOrders === 0) {
-    lines.push("Есть просмотры страницы, но они не переходят в создание заказа.");
+    lines.push("Є перегляди сторінки, але вони не переходять у створення замовлення.");
   }
 
   if (input.totalOrders > 0 && input.totalPaidOrders === 0) {
-    lines.push("Заказы создаются, но подтверждённых оплат пока нет.");
+    lines.push("Замовлення створюються, але підтверджених оплат поки немає.");
   }
 
   if (input.totalPaidOrders > 0 && input.totalOrders > input.totalPaidOrders) {
-    lines.push("Часть созданных заказов не дошла до подтверждённой оплаты.");
+    lines.push("Частина створених замовлень не дійшла до підтвердженої оплати.");
   }
 
   return lines;
@@ -238,35 +240,35 @@ function buildConclusionLine(input: {
 }): string {
   if (input.totalPaidOrders > 0) {
     if (input.roas >= 1) {
-      return `Создано ${formatNumber(input.totalOrders)} заказов, подтверждено ${formatNumber(input.totalPaidOrders)} оплат на ${formatCurrency(input.totalRevenue)}; ROAS ${formatNumber(input.roas)}.`;
+      return `Створено ${formatNumber(input.totalOrders)} замовлень, підтверджено ${formatNumber(input.totalPaidOrders)} оплат на ${formatCurrency(input.totalRevenue)}; ROAS ${formatNumber(input.roas)}.`;
     }
     if (input.totalOrders > input.totalPaidOrders) {
-      return `Создано ${formatNumber(input.totalOrders)} заказов, подтверждено ${formatNumber(input.totalPaidOrders)} оплат на ${formatCurrency(input.totalRevenue)}.`;
+      return `Створено ${formatNumber(input.totalOrders)} замовлень, підтверджено ${formatNumber(input.totalPaidOrders)} оплат на ${formatCurrency(input.totalRevenue)}.`;
     }
-    return `Есть подтверждённые оплаты на ${formatCurrency(input.totalRevenue)}, но ROAS пока ${formatNumber(input.roas)}.`;
+    return `Є підтверджені оплати на ${formatCurrency(input.totalRevenue)}, але ROAS поки ${formatNumber(input.roas)}.`;
   }
 
   if (input.viewContent > 0 && input.totalOrders > 0) {
-    return `Из ${formatNumber(input.viewContent)} просмотров страницы создано ${formatNumber(input.totalOrders)} заказов, но подтверждённых оплат пока нет.`;
+    return `З ${formatNumber(input.viewContent)} переглядів сторінки створено ${formatNumber(input.totalOrders)} замовлень, але підтверджених оплат поки немає.`;
   }
 
   if (input.spend > 0 && input.clicks > 0 && input.viewContent === 0) {
-    return `Есть ${formatNumber(input.clicks)} кликов, но переход в просмотр страницы почти не сформирован.`;
+    return `Є ${formatNumber(input.clicks)} кліків, але перехід у перегляд сторінки майже не сформований.`;
   }
 
   if (input.spend > 0 && input.viewContent > 0 && input.totalOrders === 0) {
-    return `Из ${formatNumber(input.viewContent)} просмотров страницы заказы пока не созданы.`;
+    return `З ${formatNumber(input.viewContent)} переглядів сторінки замовлення поки не створені.`;
   }
 
   if (input.spend > 0 && input.topCampaign && input.topCampaign.clicks > 0) {
-    return `Расход ${formatCurrency(input.spend)}, подтверждённых оплат нет; лучший источник по кликам — ${input.topCampaign.campaign}.`;
+    return `Витрати ${formatCurrency(input.spend)}, підтверджених оплат немає; найкраще джерело за кліками — ${input.topCampaign.campaign}.`;
   }
 
   if (input.spend > 0) {
-    return `Расход составил ${formatCurrency(input.spend)}, но подтверждённых оплат за период нет.`;
+    return `Витрати склали ${formatCurrency(input.spend)}, але підтверджених оплат за період немає.`;
   }
 
-  return "За период нет значимого рекламного и платёжного сигнала.";
+  return "За період немає значущого рекламного і платіжного сигналу.";
 }
 
 function startOfMonth(isoDate: string): string {
@@ -423,7 +425,7 @@ function topCampaignLines(campaigns: CampaignSummary[]): string[] {
     const roas = safeDivide(campaign.revenue, campaign.spend);
     return [
       `${index + 1}. ${escapeTelegramText(campaign.campaign)}`,
-      `расход ${formatCurrency(campaign.spend)}, клики ${formatNumber(campaign.clicks)}, покупки ${formatNumber(campaign.purchases)}, выручка ${formatCurrency(campaign.revenue)}, ROAS ${formatNumber(roas)}`,
+      `витрати ${formatCurrency(campaign.spend)}, кліки ${formatNumber(campaign.clicks)}, покупки ${formatNumber(campaign.purchases)}, виторг ${formatCurrency(campaign.revenue)}, ROAS ${formatNumber(roas)}`,
     ].join(" — ");
   });
 }
@@ -607,6 +609,9 @@ export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise
   sent: boolean;
   reason?: string;
 }> {
+  if (isMetaTestModeEnabled()) {
+    return { sent: false, reason: "test_mode_disabled" };
+  }
   if (!REPORTS_CHAT_ID) {
     return { sent: false, reason: "missing_reports_chat_id" };
   }
@@ -651,16 +656,16 @@ export async function sendConfirmedSaleTelegramReport(orderRef: string): Promise
         dateStyle: "short",
         timeStyle: "short",
       }).format(new Date(order.created_at))
-    : "неизвестно";
+    : "невідомо";
 
   const text = [
-    "Подтверждена продажа",
+    "Підтверджено продаж",
     `Продукт: ${productLabel(order.product_code)}`,
-    `Сумма: ${formatCurrency(asFiniteNumber(order.amount), typeof order.currency === "string" && order.currency ? order.currency : "UAH")}`,
-    `Заказ: ${order.order_ref}`,
-    `Кампания: ${escapeTelegramText(campaign)}`,
-    `Клиент: ${customerEmail || customerPhone || "контакт не найден"}`,
-    `Время: ${confirmedAt}`,
+    `Сума: ${formatCurrency(asFiniteNumber(order.amount), typeof order.currency === "string" && order.currency ? order.currency : "UAH")}`,
+    `Замовлення: ${order.order_ref}`,
+    `Кампанія: ${escapeTelegramText(campaign)}`,
+    `Клієнт: ${customerEmail || customerPhone || "контакт не знайдено"}`,
+    `Час: ${confirmedAt}`,
   ].join("\n");
 
   await sendTelegramMessageWithToken(REPORTS_BOT_TOKEN, REPORTS_CHAT_ID, text, {
@@ -894,45 +899,45 @@ async function buildPeriodicReport(window: ReportWindow): Promise<string> {
   const lines = [
     boldHeading(`${reportKindLabel(window.kind)}: ${reportPeriodLabel(window)}`),
     "",
-    boldHeading("Саммари"),
-    bulletLine("Оплаты", `${formatNumber(totalPaidOrders)} из ${formatNumber(totalOrders)}`),
-    bulletLine("Выручка", formatCurrency(totalRevenue, currency)),
+    boldHeading("Підсумок"),
+    bulletLine("Оплати", `${formatNumber(totalPaidOrders)} з ${formatNumber(totalOrders)}`),
+    bulletLine("Виторг", formatCurrency(totalRevenue, currency)),
     bulletLine(
       "Воронка",
-      `просмотр страницы ${formatNumber(metaTotals.viewContent)} → создано заказов ${formatNumber(totalOrders)} → покупка ${formatNumber(totalPaidOrders)}`
+      `перегляд сторінки ${formatNumber(metaTotals.viewContent)} → створено замовлень ${formatNumber(totalOrders)} → покупка ${formatNumber(totalPaidOrders)}`
     ),
-    bulletLine("Конверсия просмотр → оплата", toPercent(totalPaidOrders, metaTotals.viewContent)),
+    bulletLine("Конверсія перегляд → оплата", toPercent(totalPaidOrders, metaTotals.viewContent)),
     "",
     boldHeading("Реклама"),
-    bulletLine("Расход", formatCurrency(metaTotals.spend, currency)),
-    bulletLine("Охват", formatNumber(metaTotals.reach)),
-    bulletLine("Клики", formatNumber(metaTotals.clicks)),
+    bulletLine("Витрати", formatCurrency(metaTotals.spend, currency)),
+    bulletLine("Охоплення", formatNumber(metaTotals.reach)),
+    bulletLine("Кліки", formatNumber(metaTotals.clicks)),
     bulletLine("CTR", toPercent(metaTotals.clicks, metaTotals.impressions)),
-    bulletLine("Цена клика", formatCurrency(safeDivide(metaTotals.spend, metaTotals.clicks), currency)),
-    bulletLine("Цена оплаты", formatCurrency(safeDivide(metaTotals.spend, totalPaidOrders), currency)),
+    bulletLine("Ціна кліка", formatCurrency(safeDivide(metaTotals.spend, metaTotals.clicks), currency)),
+    bulletLine("Ціна оплати", formatCurrency(safeDivide(metaTotals.spend, totalPaidOrders), currency)),
     bulletLine("ROAS", formatNumber(roas)),
   ];
 
   if (window.kind === "daily") {
-    lines.push("", boldHeading("Вывод"), `• ${escapeTelegramText(conclusionLine)}`);
+    lines.push("", boldHeading("Висновок"), `• ${escapeTelegramText(conclusionLine)}`);
     return lines.join("\n");
   }
 
   if (topProducts.length > 1) {
-    lines.push("", boldHeading("Продукты"), ...topProducts.map((line) => `• ${escapeTelegramText(line)}`));
+    lines.push("", boldHeading("Продукти"), ...topProducts.map((line) => `• ${escapeTelegramText(line)}`));
   }
 
   lines.push(
     "",
-    boldHeading("Топ кампаний"),
-    ...(topCampaigns.length > 0 ? topCampaignLines(topCampaigns).map((line) => `• ${escapeTelegramText(line)}`) : ["• Нет данных по кампаниям"])
+    boldHeading("Топ кампаній"),
+    ...(topCampaigns.length > 0 ? topCampaignLines(topCampaigns).map((line) => `• ${escapeTelegramText(line)}`) : ["• Немає даних по кампаніях"])
   );
 
   if (attentionLines.length > 0) {
-    lines.push("", boldHeading("Внимание"), ...attentionLines.map((line) => `• ${escapeTelegramText(line)}`));
+    lines.push("", boldHeading("Увага"), ...attentionLines.map((line) => `• ${escapeTelegramText(line)}`));
   }
 
-  lines.push("", boldHeading("Вывод"), `• ${escapeTelegramText(conclusionLine)}`);
+  lines.push("", boldHeading("Висновок"), `• ${escapeTelegramText(conclusionLine)}`);
 
   return lines.join("\n");
 }
@@ -942,6 +947,9 @@ export async function dispatchDueTelegramPeriodicReports(now = new Date()): Prom
   sent: Array<{ kind: ReportKind; label: string }>;
   skipped: Array<{ kind: ReportKind; reason: string }>;
 }> {
+  if (isMetaTestModeEnabled()) {
+    return { checked: 0, sent: [], skipped: [{ kind: "daily", reason: "test_mode_disabled" }] };
+  }
   if (!REPORTS_CHAT_ID) {
     return {
       checked: 0,

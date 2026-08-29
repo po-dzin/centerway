@@ -1,12 +1,13 @@
 <!DOCTYPE html>
-<html lang="uk" data-cw-landing="reset-day" data-cw-page="reset-day">
+<html lang="uk" data-cw-landing="reset-day" data-cw-page="reset-day" data-cw-hero="photo">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <base href="/reset-day/">
-<link rel="preload" href="fonts/Formular.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="preload" href="fonts/Formular-Black.woff2" as="font" type="font/woff2" crossorigin>
-<link rel="shortcut icon" href="img/cw-logo.png" type="image/png">
+<meta name="theme-color" content="#fdf6ec">
+<link rel="icon" href="/shared/img/cw-icon-tab.svg" type="image/svg+xml">
+<link rel="icon" href="/shared/img/cw-icon-192.png" sizes="192x192" type="image/png">
+<link rel="apple-touch-icon" href="/shared/img/cw-apple-touch.png">
 <title>Розвантажувальний день — 3-денний міні-курс CenterWay</title>
 <meta name="description" content="Розвантажувальний день — 3-денний міні-курс: полегшений вечір, 1 основний день м'якого умовного голодування та м'який вихід. Щоб вийти з кола «стрес → їжа → провина», відчути легкість і повернути радість до їжі.">
 <!-- Pre-launch funnel: noindex until the reset-day subdomain goes live (placeholder pay wiring). -->
@@ -14,12 +15,14 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Розвантажувальний день — 3-денний міні-курс CenterWay">
 <meta property="og:description" content="3 дні уваги до себе: полегшений вечір, основний розвантажувальний день і м'який вихід.">
-<meta property="og:image" content="https://centerway.net.ua/reset-day/img/hero-resetday-2026-06-27.jpeg">
+<meta property="og:image" content="https://centerway.net.ua/reset-day/img/hero-resetday-2026-08.jpg">
 <link rel="canonical" href="https://centerway.net.ua/reset-day">
+<link rel="stylesheet" href="/shared/css/platform-fonts.css">
+<link rel="stylesheet" href="/shared/css/cw-tokens.generated.css">
 <link rel="stylesheet" href="/shared/css/network-tokens.css">
 <link rel="stylesheet" href="/shared/css/landing.css">
 <link rel="stylesheet" href="page.css">
-<link rel="stylesheet" href="/shared/css/network-nav.css">
+<link rel="stylesheet" href="/shared/css/network-nav.css?v=20260817-1">
 <!-- TODO(placeholder): wire Meta Pixel + Clarity before ad traffic. -->
 </head>
 <body>
@@ -27,21 +30,24 @@
 <a id="top"></a>
 
 <!-- ============ NETWORK NAV (burger < 760px, topbar 760px+) ============ -->
-<header class="cwn" data-cw-network-nav>
+<header class="cwn cwn--anchored" data-cw-network-nav>
   <div class="cwn__in">
     <a class="cwn__brand" href="#top">
-      <img src="/shared/img/cw-logo-ink.png" alt="" aria-hidden="true">
+      <img src="/shared/img/cw-mark-ink.svg" alt="" aria-hidden="true">
       <span>CenterWay</span>
     </a>
     <button class="cwn__toggle" type="button" aria-expanded="false" aria-controls="cwn-menu" aria-label="Меню мережі CenterWay">
-      <span></span><span></span><span></span>
+      <svg class="cwn__toggle-ico" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-menu"/></svg>
+      <svg class="cwn__toggle-ico cwn__toggle-ico--close" width="32" height="32" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-close"/></svg>
     </button>
-    <nav class="cwn__menu" id="cwn-menu" aria-label="Мережа CenterWay">
-      <a href="https://way21.centerway.net.ua/">Шлях 21</a>
-      <a href="https://resetday.centerway.net.ua/" aria-current="page">Розвантажувальний день</a>
-      <a href="https://dosha.centerway.net.ua/">Тест доші</a>
-      <a href="https://herbs.centerway.net.ua/">Фітозбори</a>
-      <a href="https://consult.centerway.net.ua/">Консультація</a>
+    <nav class="cwn__menu" id="cwn-menu" aria-label="Навігація сторінкою">
+      <a href="#route">Маршрут</a>
+      <a href="#includes">Що входить</a>
+      <a href="#result">Результат</a>
+      <a href="#author">Автор</a>
+      <a href="#offer">Формат</a>
+      <a href="#faq">Питання</a>
+      <a class="cwn__sibling" href="#way21">Шлях 21</a>
     </nav>
   </div>
 </header>
@@ -54,7 +60,7 @@
         <div class="hero-visual">
           <div class="hv-stage">
             <span class="hv-glow"></span>
-            <img class="hv-photo hv-photo--stripe-focus" src="img/hero-resetday-2026-06-27.jpeg" width="1040" height="1280" loading="eager" fetchpriority="high" decoding="async" alt="Євгеній Корякін — м'який вхід у розвантажувальний день CenterWay">
+            <img class="hv-photo hv-photo--stripe-focus" src="img/hero-resetday-2026-08.webp" width="1040" height="1280" loading="eager" fetchpriority="high" decoding="async" alt="Євгеній Корякін — м'який вхід у розвантажувальний день CenterWay">
             <div class="hv-stat s1"><div class="lab">Формат</div><div class="val">3 дні</div></div>
             <div class="hv-stat s2"><div class="lab">Доступ</div><div class="val">назавжди</div></div>
           </div>
@@ -63,7 +69,7 @@
           <span class="hero-badge"><span class="dot"></span>Міні-курс · 3 дні</span>
           <div class="hero-copy">
             <h1>3 дні уваги до себе, щоб вийти з кола <em>стрес → їжа → провина</em></h1>
-            <p class="hero-sub">Розвантажувальний день — це 3-денний маршрут: полегшений вечір, один основний розвантажувальний день і м'який вихід. Ти видихаєш, прибираєш харчовий шум і повертаєш собі легкість без зривів та жорстких заборон.</p>
+            <p class="hero-sub">Полегшений вечір, один розвантажувальний день і м'який вихід — без зривів і жорстких заборон.</p>
           </div>
         </div>
       </div>
@@ -71,7 +77,6 @@
       <div class="hero-actions">
         <div class="hero-chips">
           <span>Без голоду й стресу</span>
-          <span>3 дні уваги до себе</span>
           <span>6 варіантів адаптації</span>
           <span>Підходить новачкам</span>
         </div>
@@ -82,7 +87,7 @@
         </div>
         <a href="#offer" class="btn btn-primary" data-cta-hero>Почати розвантаження <span class="arr">→</span></a>
         <div class="hero-trust">
-          <svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><path d="M20 6 9 17l-5-5" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <svg class="ico ico-chrome" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-check"/></svg>
           М'який метод — підходить навіть новачкам
         </div>
       </div>
@@ -116,12 +121,14 @@
   </div>
 </section>
 
+<div class="seam" aria-hidden="true"><svg class="ico" width="42" height="42" focusable="false"><use href="/shared/img/cw-icons.svg#cw-connector"/></svg></div>
+
 <!-- ============ SHIFT / SOLUTION ============ -->
 <section class="sec sec-alt">
   <div class="wrap">
-    <div class="shift reveal">
+    <div class="shift reveal" data-cw-nav-dark>
       <span class="kicker">Рішення</span>
-      <h2>3 дні, в центрі яких один <em>розвантажувальний день</em></h2>
+      <h2>Повернути собі <em>легкість</em></h2>
       <p>Розвантажувальний день — це не голодування на силі волі. Це 3-денна м'яка стратегія: полегшений вхід напередодні, основний день умовного голодування та м'який вихід, щоб тіло відпочило від їжі, а ти повернув собі контроль — спокійно й без насильства.</p>
       <div class="shift-vs">
         <div class="vs-col old">
@@ -133,7 +140,7 @@
             <li>Стрес замість відпочинку</li>
           </ul>
         </div>
-        <div class="vs-mid" aria-hidden="true"><svg aria-hidden="true" viewBox="0 0 24 24" fill="none"><path d="M12 4v15M6 13l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <div class="vs-mid" aria-hidden="true"><svg class="ico" width="22" height="22" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></div>
         <div class="vs-col new">
           <h5>Розвантажувальний день з нами</h5>
           <ul>
@@ -148,18 +155,20 @@
   </div>
 </section>
 
+<div class="seam" aria-hidden="true"><svg class="ico" width="42" height="42" focusable="false"><use href="/shared/img/cw-icons.svg#cw-connector"/></svg></div>
+
 <!-- ============ 3 STEPS ============ -->
-<section class="sec">
+<section id="route" class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Маршрут міні-курсу · 3 дні</span>
-      <h2 class="sec-title">Простий маршрут на три дні</h2>
+      <h2 class="sec-title">Простий план на три дні</h2>
       <p class="lead">Тобі не треба нічого вигадувати. Є зрозумілий план на 3 дні: полегшений вечір, основний розвантажувальний день і м'який вихід. Ти просто йдеш за ним і спостерігаєш, як змінюється стан.</p>
     </div>
     <div class="triad">
       <div class="phase p1 reveal">
+        <div class="rail-node" style="--i:.5"></div>
         <div class="ph-n">День 01</div>
-        <div class="ph-ico"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none"><rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" stroke-width="2"/><path d="M9 4V3a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v1" stroke="currentColor" stroke-width="2"/><path d="m9 13 2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
         <h3>Полегшений вечір</h3>
         <p>Напередодні м'яко зменшуєш навантаження на травлення, налаштовуєшся і входиш у процес без різкого стресу для тіла.</p>
         <dl class="dl">
@@ -168,8 +177,8 @@
         </dl>
       </div>
       <div class="phase p2 reveal">
+        <div class="rail-node" style="--i:.5"></div>
         <div class="ph-n">День 02</div>
-        <div class="ph-ico"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M5 9h11v5a4 4 0 0 1-4 4H9a4 4 0 0 1-4-4V9Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M16 10h2a2 2 0 0 1 0 4h-2" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M8 3c-.6.8-.6 1.6 0 2.4M11.5 3c-.6.8-.6 1.6 0 2.4" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg></div>
         <h3>День розвантаження</h3>
         <p>Проходиш основний день за однією з 6 адаптацій: дихання, тепле пиття й спостереження за собою без жорсткого тиску.</p>
         <dl class="dl">
@@ -178,8 +187,8 @@
         </dl>
       </div>
       <div class="phase p3 reveal">
+        <div class="rail-node" style="--i:.5"></div>
         <div class="ph-n">День 03</div>
-        <div class="ph-ico"><svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none"><path d="M12 21v-8" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M12 13C12 9 9.5 7 5.5 7 5.5 11 8 13 12 13Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M12 11c0-3.5 2.3-5.5 6.5-5.5C18.5 9 16 11 12 11Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg></div>
         <h3>М'який вихід</h3>
         <p>Плавно повертаєшся до їжі — вже з іншим, спокійнішим ставленням до неї.</p>
         <dl class="dl">
@@ -193,31 +202,45 @@
 </section>
 
 <!-- ============ INCLUDED ============ -->
-<section class="sec sec-alt">
+<div class="seam" aria-hidden="true"><svg class="ico" width="42" height="42" focusable="false"><use href="/shared/img/cw-icons.svg#cw-connector"/></svg></div>
+
+<!-- ============ WHAT THE DAY LOOKS LIKE ============ -->
+<section class="sec sec-alt" id="day-look">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <span class="kicker">Як це виглядає</span>
+      <h2 class="sec-title">Не порожній холодильник, а тепле пиття за схемою</h2>
+      <p class="lead">Основний день — це не «терпіти до вечора». Це трав’яний настій, тепла вода й пауза, у яку тіло встигає розібратися з тим, що вже з’їдено.</p>
+    </div>
+    <figure class="day-shot reveal"><img src="/shared/img/resetday-tea-2026-08.webp" width="1400" height="2100" loading="lazy" decoding="async" alt="Трав’яний настій із термоса переливають у гранчасту склянку на дерев’яному столі"></figure>
+  </div>
+</section>
+
+<section id="includes" class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Що входить</span>
-      <h2 class="sec-title">Усе, щоб пройти 3 дні легко й упевнено</h2>
+      <h2 class="sec-title">Усе для м'якого проходження</h2>
     </div>
-    <div class="inc-grid">
+    <div class="inc-grid inc-grid--5">
       <div class="inc-card reveal">
-        <div class="ic"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 6h11M9 12h11M9 18h11" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><circle cx="4.5" cy="6" r="1.5" fill="currentColor"/><circle cx="4.5" cy="12" r="1.5" fill="currentColor"/><circle cx="4.5" cy="18" r="1.5" fill="currentColor"/></svg></div>
+        <div class="ic"><svg class="ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-guide"/></svg></div>
         <h4>Стратегія 3 днів</h4><p>Покроковий план усього міні-курсу: що, коли й навіщо робити в кожен із 3 днів.</p>
       </div>
       <div class="inc-card reveal">
-        <div class="ic"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M9 11l2 2 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><rect x="4" y="4" width="16" height="16" rx="2" stroke="currentColor" stroke-width="2"/></svg></div>
+        <div class="ic"><svg class="ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-day"/></svg></div>
         <h4>Чек-лист голодування</h4><p>Щоб пройти день спокійно, за планом і без зривів.</p>
       </div>
       <div class="inc-card reveal">
-        <div class="ic"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M4 12c4 0 4-5 8-5s4 5 8 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M4 17c4 0 4-3 8-3s4 3 8 3" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".5"/></svg></div>
+        <div class="ic"><svg class="ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-breath"/></svg></div>
         <h4>Дихальна гімнастика</h4><p>Коротка практика, яка знімає напругу й тягу заїдати стрес.</p>
       </div>
       <div class="inc-card reveal">
-        <div class="ic"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M5 11h14l-1 8a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2l-1-8Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/><path d="M9 11V7a3 3 0 0 1 6 0v4" stroke="currentColor" stroke-width="2"/></svg></div>
+        <div class="ic"><svg class="ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-bowl"/></svg></div>
         <h4>Рецепти-солодощі</h4><p>Смаколики без скачків інсуліну — щоб було смачно й корисно.</p>
       </div>
       <div class="inc-card reveal">
-        <div class="ic"><svg aria-hidden="true" width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="3" y="5" width="18" height="14" rx="2" stroke="currentColor" stroke-width="2"/><path d="m10 9 5 3-5 3V9Z" fill="currentColor"/></svg></div>
+        <div class="ic"><svg class="ico" width="24" height="24" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-play"/></svg></div>
         <h4>Відео-інструкції</h4><p>Усе наочно, крок за кроком — нічого не загубиш.</p>
       </div>
     </div>
@@ -225,7 +248,7 @@
 </section>
 
 <!-- ============ RESULTS ============ -->
-<section class="sec">
+<section id="result" class="sec sec-alt">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Що ти відчуєш</span>
@@ -233,38 +256,38 @@
       <p class="lead">Три дні не змінюють усе життя. Але цього достатньо, щоб розірвати автоматизм і повернути тобі відчуття, що ти керуєш — а не їжа керує тобою.</p>
     </div>
     <div class="acc">
-      <details class="acc-item reveal" open><summary><span class="num">01</span>Спокій замість тривоги<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal" open><summary><span class="num">01</span>Спокій замість тривоги<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Психоемоційна стабільність уже наприкінці дня</li><li>Вихід із циклу «стрес — емоції — їжа»</li><li>Погляд на свої реакції збоку, без самозвинувачень</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">02</span>Легкість у тілі<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">02</span>Легкість у тілі<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Перше очищення й відчуття легкості</li><li>Менше важкості, більше енергії</li><li>М'який поштовх скинути зайве</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">03</span>Нові стосунки з їжею<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">03</span>Нові стосунки з їжею<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Повертається радість і смак до їжі</li><li>Зникає провина після їжі</li><li>З'являється відчуття контролю</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">04</span>Якщо робити регулярно<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">04</span>Якщо робити регулярно<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Усі ефекти підсилюються регулярністю</li><li>Якісні харчові звички й стабільна вага</li><li>Рівний настрій і налагоджений сон</li></ul></div>
       </details>
     </div>
-    <p class="med-note reveal">☝️ Це м'який оздоровчий формат, а не медичне лікування. Прислухайся до себе; за хронічних станів чи прийому ліків спершу порадься з лікарем.</p>
+    <p class="med-note reveal"><svg class="ico" width="20" height="20" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-boundary"/></svg>Це м'який оздоровчий формат, а не медичне лікування. Прислухайся до себе; за хронічних станів чи прийому ліків спершу порадься з лікарем.</p>
   </div>
 </section>
 
 <!-- ============ AUTHOR ============ -->
-<section class="sec sec-alt">
+<section id="author" class="sec">
   <div class="wrap">
     <div class="author reveal">
-      <div class="author-photo"><img src="img/curator-photo.webp" width="800" height="1200" loading="lazy" decoding="async" alt="Євгеній Корякін — засновник центру CenterWay"></div>
+      <div class="author-photo"><img src="/shared/img/author-evgeniy-2026-08.webp" width="1040" height="1280" loading="lazy" decoding="async" alt="Євгеній Корякін — засновник центру CenterWay"></div>
       <div>
         <span class="kicker">Автор методу</span>
         <h2 class="a-name">Євгеній Корякін</h2>
         <div class="role">Засновник центру CenterWay</div>
-        <p class="lead">👋 Я — Євгеній Корякін, дослідник і практик аюрведи та сучасної дієтології. Цей 3-денний формат я зібрав як найм'якший перший крок до здорових стосунків із їжею.</p>
+        <p class="lead">Я — Євгеній Корякін, дослідник і практик аюрведи та сучасної дієтології. Цей 3-денний формат я зібрав як найм'якший перший крок до здорових стосунків із їжею.</p>
         <blockquote class="author-quote">"Мета розвантажувального дня — не «протерпіти», а навчитися спостерігати за собою. Саме тоді їжа перестає керувати тобою."</blockquote>
         <ul class="reg">
-          <li><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Магістр комплементарної медицини, 15+ років досвіду</li>
-          <li><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Автор методик з дієтології та детоксикації</li>
-          <li><svg aria-hidden="true" width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>Йога- та аюрведа-терапевт, переможець «Битви титанів»</li>
+          <li>Магістр комплементарної медицини, 15+ років досвіду</li>
+          <li>Автор методик з дієтології та детоксикації</li>
+          <li>Йога- та аюрведа-терапевт, переможець «Битви титанів»</li>
         </ul>
       </div>
     </div>
@@ -272,67 +295,96 @@
 </section>
 
 <!-- ============ PROOF ============ -->
-<section class="sec">
+<section class="sec sec-alt">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Відгуки</span>
-      <h2 class="sec-title">Три дні — і щось зрушується</h2>
+      <h2 class="sec-title">Малий крок — відчутні зміни</h2>
     </div>
-    <div class="proof-grid">
+    <div class="testimonial-carousel reveal" data-testimonial-carousel>
+      <p class="lead lead-sm testimonial-carousel__intro">Швидка легкість, менше харчового шуму, відсутність голоду, більше спокою й відчуття контролю над їжею вже після першого короткого циклу.</p>
+      <div class="testimonial-carousel__stage">
+        <button class="testimonial-carousel__nav testimonial-carousel__nav--prev" type="button" data-carousel-prev aria-label="Попередній відгук"><svg class="ico ico-flip" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
+        <div class="testimonial-carousel__track" data-carousel-track>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/no-hunger-20221119.webp" alt="Відгук: очікування голоду, який не настав." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/food-freedom-20220209.webp" alt="Відгук: менше напруги навколо їжі та добре самопочуття." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/repeat-program-20240719.webp" alt="Відгук: програму хочеться повторити." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/energy-20260118.webp" alt="Відгук: швидкий приплив енергії та гарний настрій після ранкової практики." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/screenshot_20221119-094959_telegram.webp" alt="Щоденник учасниці: чекала на відчуття голоду, а його не було." loading="lazy" decoding="async"></figure>
+          <figure class="testimonial-slide" data-carousel-item><img src="/shared/img/feedback/screenshot_20220713-154637_chrome.webp" alt="Відгук: після однієї практики — приплив енергії та відчуття полегшення." loading="lazy" decoding="async"></figure>
+        </div>
+        <button class="testimonial-carousel__nav testimonial-carousel__nav--next" type="button" data-carousel-next aria-label="Наступний відгук"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
+      </div>
+      <div class="testimonial-carousel__dots" data-carousel-dots aria-label="Пагінація відгуків"></div>
+    </div>
+    <div class="proof-grid" hidden>
       <div class="review reveal">
         <div class="stars">★★★★★</div>
-        <p>«Уперше за довгий час я не заїдала стрес. Один день — а відчуття, ніби видихнула вперше за рік.»</p>
-        <div class="who"><span class="av">МК</span><div><b>Марія К.</b><small>розвантажувальний день</small></div></div>
+        <p>«Воно наче дає швидкий прилив енергії і відчувається, що виділяються гормони задоволення.»</p>
+        <div class="who"><span class="av">У</span><div><b>Учасниця</b><small>про ранкову практику дня</small></div></div>
       </div>
       <div class="review reveal">
         <div class="stars">★★★★★</div>
-        <p>«Думала, буде голод і мука. А було легко й навіть смачно. І голова до вечора прояснилась.»</p>
-        <div class="who"><span class="av">НД</span><div><b>Наталя Д.</b><small>розвантажувальний день</small></div></div>
+        <p>«Все добре. Плавно вийшла. М'ясо так і не повернула — не хочеться. В іншому — все добре. Дякую.»</p>
+        <div class="who"><span class="av">Є</span><div><b>Євгенія</b><small>м'який вихід із розвантаження</small></div></div>
       </div>
       <div class="review reveal">
         <div class="stars">★★★★★</div>
-        <p>«Це маленький крок, але він зрушив усе. Почав нарешті чути своє тіло, а не звичку.»</p>
-        <div class="who"><span class="av">ОТ</span><div><b>Олег Т.</b><small>розвантажувальний день</small></div></div>
+        <p>«Сьогодні нарешті фінішую. Все за кроками, почуваю себе добре. Відчуття легкості, сплю добре, гарного дня всім!»</p>
+        <div class="who"><span class="av">У</span><div><b>Учасниця</b><small>фініш протоколу · мовою оригіналу</small></div></div>
       </div>
     </div>
+    <div class="car reveal" data-car hidden>
+      <button type="button" class="car-nav prev" aria-label="Попередні відгуки"><svg class="ico ico-flip" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
+      <div class="car-track">
+        <figure class="shot-card"><img src="/shared/img/feedback/screenshot_20220713-153956_telegram.webp" width="720" height="1227" loading="lazy" decoding="async" alt="Відгук у Telegram про ранкову практику"><figcaption>telegram</figcaption></figure>
+        <figure class="shot-card"><img src="/shared/img/feedback/screenshot_20220819-094739_telegram.webp" width="720" height="1126" loading="lazy" decoding="async" alt="Щоденник самопочуття учасниці в Telegram"><figcaption>telegram</figcaption></figure>
+        <figure class="shot-card"><img src="/shared/img/feedback/screenshot_20230320_132643_telegram.webp" width="720" height="1227" loading="lazy" decoding="async" alt="Фініш протоколу — повідомлення в Telegram"><figcaption>telegram</figcaption></figure>
+      </div>
+      <button type="button" class="car-nav next" aria-label="Наступні відгуки"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
+    </div>
+    <p class="proof-note reveal">Скріншоти реальних повідомлень учасників — мовою оригіналу. Гортайте, щоб подивитися далі.</p>
   </div>
 </section>
 
 <!-- ============ OFFER ============ -->
-<section class="sec sec-alt" id="offer">
+<section class="sec" id="offer">
   <div class="wrap">
-    <div class="offer reveal">
-      <span class="guard">Гарантія м'якого старту</span>
+    <div class="offer reveal" data-cw-nav-dark>
+      <a class="guard refund-policy-link" href="index2.html#refund-policy">Гарантія м'якого старту</a>
       <h2>Подаруй собі <em>3 дні</em> турботи про себе</h2>
-      <p>За ціною однієї вечері в кафе ти отримуєш 3-денний маршрут, який можна повторювати все життя — щоразу, коли треба перезавантажитись.</p>
-      <div class="offer-price"><b><s style="opacity:.5;font-weight:400;font-size:.58em">1200 грн</s> 795 грн</b><small>повний доступ · назавжди</small></div>
+      <p>За ціною однієї вечері в кафе ти отримуєш 3-денний план, який можна повторювати все життя — щоразу, коли треба перезавантажитись.</p>
+      <div class="offer-price">
+        <div class="offer-price__amount"><s>1200 грн</s><b>795 грн</b></div>
+        <small>повний доступ · назавжди</small>
+      </div>
       <a href="#offer" class="btn btn-primary openModal" data-cta-final>Почати розвантаження →</a>
-      <div class="offer-pay"><svg aria-hidden="true" width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4Z" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>Гарантія результату</div>
+      <div class="offer-pay"><svg class="ico" width="14" height="14" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-shield-check"/></svg><a class="refund-policy-link" href="index2.html#refund-policy">Гарантія результату</a></div>
     </div>
   </div>
 </section>
 
 <!-- ============ FAQ ============ -->
-<section class="sec">
+<section id="faq" class="sec sec-alt">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Питання й відповіді</span>
       <h2 class="sec-title">Що варто знати перед стартом</h2>
     </div>
     <div class="acc faq">
-      <details class="acc-item reveal" open><summary><span class="num">01</span>Це справжнє голодування? Буде важко?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal" open><summary><span class="num">01</span>Це справжнє голодування? Буде важко?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Ні. Це умовне голодування за м'якою стратегією — з теплим питтям, диханням і підтримкою. Більшість проходить день легко й спокійно.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">02</span>Я зірвусь, я себе знаю.<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">02</span>Я зірвусь, я себе знаю.<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Саме тому є чітка стратегія й чек-лист. Ти не борешся силою волі — ти йдеш за планом. А мета дня не «протерпіти», а поспостерігати за собою.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">03</span>Скільки це триває?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
-        <div class="acc-body"><ul><li>Це 3-денний маршрут: полегшений вечір, один основний розвантажувальний день і м'який вихід. Доступ лишається назавжди — повторюй тоді, коли відчуваєш потребу.</li></ul></div>
+      <details class="acc-item reveal"><summary><span class="num">03</span>Скільки це триває?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
+        <div class="acc-body"><ul><li>Це 3 дні: полегшений вечір, один основний розвантажувальний день і м'який вихід. Доступ лишається назавжди — повторюй тоді, коли відчуваєш потребу.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">04</span>Кому не підходить?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">04</span>Кому не підходить?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Це м'який формат для дорослих. За вагітності, хронічних станів чи прийому ліків спершу порадься з лікарем.</li></ul></div>
       </details>
-      <details class="acc-item reveal"><summary><span class="num">05</span>Що далі після цього 3-денного циклу?<span class="chev"><svg aria-hidden="true" viewBox="0 0 24 24" width="18" height="18" fill="none"><path d="m6 9 6 6 6-6" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg></span></summary>
+      <details class="acc-item reveal"><summary><span class="num">05</span>Що далі після цього 3-денного циклу?<span class="chev"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-down"/></svg></span></summary>
         <div class="acc-body"><ul><li>Якщо відчуєш, що готовий до глибшого — наступний крок це <a href="https://way21.centerway.net.ua" style="font-weight:700;color:inherit;text-decoration:underline">Шлях 21</a>, повна 21-денна програма очищення. Але почати найкраще саме з цього легкого кроку.</li></ul></div>
       </details>
     </div>
@@ -340,7 +392,7 @@
 </section>
 
 <!-- ============ WAY21 NEXT STEP (network bridge — after FAQ, before footer) ============ -->
-<section class="sec sec-alt">
+<section id="way21" class="sec">
   <div class="wrap">
     <div class="sec-head reveal">
       <span class="kicker">Що далі</span>
@@ -350,7 +402,6 @@
       <div class="short-text">
         <h3>Шлях 21 — повна програма очищення</h3>
         <p>Розвантажувальний день — це перший подих. Шлях 21 — це 21-денний інтегративний протокол під твою конституцію: фітозбори, процедури, харчування й супровід. Те саме відчуття легкості — але глибше й назавжди.</p>
-        <p class="notice">Сумніваєшся, чи тобі туди? Пройди безкоштовний <a href="https://dosha.centerway.net.ua" style="color:inherit;text-decoration:underline">тест доші (3 хвилини)</a> — він підкаже, який крок доречний саме для твого типу.</p>
       </div>
       <div class="short-cta">
         <div class="short-price-row">
@@ -364,12 +415,12 @@
 </section>
 
 <!-- ============ FOOTER ============ -->
-<footer class="footer">
+<footer class="footer" data-cw-nav-dark>
   <div class="wrap">
     <div class="footer-top">
       <div class="footer-col">
         <a href="#top" class="brand">
-          <img src="img/cw-logo.png" alt="" class="brand-mark" width="38" height="38" loading="lazy" decoding="async" aria-hidden="true">
+          <img src="/shared/img/cw-mark-gold.svg" alt="" class="brand-mark" width="36" height="36" loading="lazy" decoding="async" aria-hidden="true">
           CenterWay
         </a>
         <p>Розвантажувальний день — 3-денний міні-курс, щоб вийти з кола стрес–їжа–провина й повернути собі легкість.</p>
@@ -377,13 +428,14 @@
       <div class="footer-col">
         <h5>Контакти</h5>
         <a href="tel:+380636024450">+38 (063) 602 44 50</a>
+        <a href="https://telegram.me/centerway_support_bot" target="_blank" rel="noopener">Підтримка в Telegram</a>
         <a href="index2.html">Політика конфіденційності</a>
       </div>
       <div class="footer-col">
         <h5>Соцмережі</h5>
         <div class="footer-social">
           <a href="https://www.youtube.com/channel/UC0VPHLWTIXD3Rad5XkcyliA" aria-label="YouTube"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M23 12s0-3.5-.5-5c-.3-1-1-1.7-2-2C18.8 4.5 12 4.5 12 4.5s-6.8 0-8.5.5c-1 .3-1.7 1-2 2C1 8.5 1 12 1 12s0 3.5.5 5c.3 1 1 1.7 2 2 1.7.5 8.5.5 8.5.5s6.8 0 8.5-.5c1-.3 1.7-1 2-2 .5-1.5.5-5 .5-5ZM10 15V9l5 3-5 3Z"/></svg></a>
-          <a href="https://t.me/E_Koriakin" aria-label="Telegram"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.5 4.5 2.5 11.8c-.9.4-.9 1.6 0 1.9l4.8 1.5 1.8 5.6c.2.7 1 .9 1.5.4l2.7-2.5 4.7 3.5c.6.4 1.4.1 1.6-.6l3.2-15c.2-.9-.7-1.7-1.5-1.6ZM9.5 14.3l8.6-5.3-7 6.2-.2 3.3-1.4-4.2Z"/></svg></a>
+          <a href="https://telegram.me/E_Koriakin" aria-label="Telegram"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M21.5 4.5 2.5 11.8c-.9.4-.9 1.6 0 1.9l4.8 1.5 1.8 5.6c.2.7 1 .9 1.5.4l2.7-2.5 4.7 3.5c.6.4 1.4.1 1.6-.6l3.2-15c.2-.9-.7-1.7-1.5-1.6ZM9.5 14.3l8.6-5.3-7 6.2-.2 3.3-1.4-4.2Z"/></svg></a>
           <a href="https://www.instagram.com/evgeniy_koryakin/" aria-label="Instagram"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="4" stroke="currentColor" stroke-width="2"/><circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/></svg></a>
           <a href="https://www.facebook.com/centerway" aria-label="Facebook"><svg aria-hidden="true" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z"/></svg></a>
         </div>
@@ -443,6 +495,8 @@ document.querySelectorAll('.acc').forEach(group=>{
 </script>
 <!-- checkout + attribution wiring (same flow as /irem): .openModal -> /api/pay/start?product=reset-day -->
 <script src="js/common.js" async></script>
-<script src="/shared/js/network-nav.js" defer></script>
+<script src="/shared/js/testimonial-carousel.js?v=20260714-1" defer></script>
+<script src="/shared/js/network-nav.js?v=20260817-1" defer></script>
+<script src="/shared/js/proof.js" defer></script>
 </body>
 </html>

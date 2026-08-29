@@ -24,7 +24,7 @@ const THEME_LABELS: Record<string, string> = {
 const PREVIEW_ROLES: Array<{ key: `--${string}`; label: string }> = [
   { key: "--cw-bg", label: "Фон" },
   { key: "--cw-text", label: "Текст" },
-  { key: "--cw-accent", label: "Акцент маршруту" },
+  { key: "--cw-accent", label: "Акцент програми" },
   { key: "--cw-status-success", label: "Успіх" },
   { key: "--cw-status-pending", label: "Очікування" },
   { key: "--cw-role-trust-proof-surface", label: "Доказ" },

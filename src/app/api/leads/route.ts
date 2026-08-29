@@ -4,8 +4,47 @@ import { persistLeadBestEffort, type LeadRecord } from "@/lib/checkoutFlow";
 import { normalizeProduct, type ProductCode } from "@/lib/products";
 import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { sendTelegramMessage } from "@/lib/tg";
+import { isMetaTestModeEnabled } from "@/lib/tracking/mode";
 
 export const runtime = "nodejs";
+
+// Best-effort mirror of a premium lead into the support Telegram group so the
+// team sees form submissions live (not only in the admin panel). Never throws:
+// a Telegram failure must not affect the form response. Routes to LEADS_THREAD_ID
+// when set, otherwise falls back to the shared support thread.
+async function notifyLeadToGroup(lead: LeadRecord): Promise<void> {
+  const chatId = process.env.SUPPORT_CHAT_ID;
+  if (!chatId) return;
+
+  const payload = lead.payload ?? {};
+  const line = (label: string, value: unknown): string | null => {
+    const v = typeof value === "string" ? value.trim() : value;
+    return v ? `${label}: ${v}` : null;
+  };
+  const text = [
+    "📝 Нова заявка (лендинг)",
+    line("Програма", lead.product_code),
+    line("Ім'я", lead.name),
+    line("Тел", lead.phone),
+    line("Email", lead.email),
+    line("Джерело", lead.source),
+    line("Сторінка", payload.page_url),
+    line("UTM", [payload.utm_source, payload.utm_campaign].filter(Boolean).join(" / ")),
+    payload.message ? `\n${String(payload.message).slice(0, 800)}` : null,
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  const threadRaw = process.env.LEADS_THREAD_ID || process.env.SUPPORT_THREAD_ID;
+  const messageThreadId = threadRaw && /^\d+$/.test(threadRaw) ? Number(threadRaw) : null;
+
+  try {
+    await sendTelegramMessage(chatId, text, { messageThreadId });
+  } catch {
+    /* fire-and-forget: never block the lead response on Telegram */
+  }
+}
 
 type LeadRequestBody = {
   name?: unknown;
@@ -147,6 +186,10 @@ export async function POST(req: NextRequest) {
         user_agent: req.headers.get("user-agent"),
       },
     });
+  }
+
+  if (!isMetaTestModeEnabled()) {
+    await notifyLeadToGroup(lead);
   }
 
   return cors(NextResponse.json({ ok: true, mode, order_ref: lead.order_ref }));

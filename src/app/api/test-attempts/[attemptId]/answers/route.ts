@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { adminClient } from "@/lib/auth/adminClient";
 import { calculateDoshaResult, isValidScoreInvariant, DOSHA_TEST_SLUG } from "@/lib/doshaTest";
 import { DOSHA_PRIMARY_EXIT } from "@/lib/doshaRouting";
+import { enforceRateLimit, tooManyRequests } from "@/lib/rateLimit";
 import {
   emitDoshaTestEvent,
   ensureDoshaTestSeed,
@@ -30,6 +31,9 @@ export async function POST(
   req: NextRequest,
   { params }: { params: Promise<{ attemptId: string }> }
 ) {
+  const rl = await enforceRateLimit(req, { name: "test_answer", limit: 120, windowSeconds: 60 });
+  if (!rl.allowed) return tooManyRequests(rl.retryAfter);
+
   const { attemptId } = await params;
   const body = (await req.json().catch(() => ({}))) as SubmitAnswerBody;
   const questionId = asString(body.questionId);

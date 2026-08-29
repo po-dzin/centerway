@@ -7,68 +7,59 @@
 @layer base {
   :root {
     /* CW_BASE_LIGHT_START */
-    --background: #f2f2f0;
-    --foreground: #2d2d2b;
-    --cw-bg: #f2f2f0;
-    --cw-surface: rgba(255, 255, 255, 0.72);
-    --cw-surface-2: rgba(238, 238, 236, 0.72);
-    --cw-surface-muted: rgba(236, 232, 225, 0.9);
-    --cw-surface-solid: #f6f6f4;
-    --cw-border: #d1d1cd;
-    --cw-text: #2d2d2b;
-    --cw-muted: #777773;
-    --cw-accent: #8a8a86;
-    --cw-accent-soft: rgba(236, 236, 233, 0.72);
-    --cw-accent-contrast: #ffffff;
-    --cw-interactive-hover-bg: rgba(228, 228, 224, 0.92);
-    --cw-interactive-hover-border: #c2c2bd;
-    --cw-interactive-active-bg: #e8e8e4;
-    --cw-interactive-active-border: #b7b7b1;
-    --cw-interactive-active-shadow: 0 0 0 1px rgba(183, 183, 177, 0.35);
-    --cw-focus-ring: color-mix(in srgb, var(--cw-accent-strong) 34%, transparent);
+    --background: var(--cw-platform-bg);
+    --foreground: var(--cw-platform-text);
+    --cw-bg: var(--cw-platform-bg);
+    --cw-surface: var(--cw-mat-tint);
+    --cw-surface-2: var(--cw-mat-surface-sunk);
+    --cw-surface-muted: var(--cw-platform-surface-muted);
+    --cw-surface-solid: var(--cw-mat-surface);
+    --cw-border: var(--cw-platform-border);
+    --cw-text: var(--cw-platform-text);
+    --cw-muted: var(--cw-platform-muted);
+    --cw-accent: var(--cw-platform-accent);
+    --cw-accent-soft: var(--cw-mat-tone-support);
+    --cw-accent-contrast: var(--cw-platform-accent-contrast);
+    --cw-interactive-hover-bg: var(--cw-mat-hover-bg);
+    --cw-interactive-hover-border: var(--cw-mat-hover-stroke);
+    --cw-interactive-active-bg: var(--cw-mat-active-bg);
+    --cw-interactive-active-border: var(--cw-mat-active-stroke);
+    --cw-interactive-active-shadow: var(--cw-mat-active-shadow);
+    --cw-focus-ring: color-mix(in srgb, var(--cw-platform-accent) 34%, transparent);
     --ds-radius-button-soft: 1rem;
-    --cw-radius-btn: var(--ds-radius-button-soft);
-    --cw-brand-hover-border: color-mix(in srgb, var(--cw-accent) 72%, var(--cw-border) 28%);
-    --cw-btn-primary-bg: color-mix(in srgb, var(--cw-status-success) 55%, var(--cw-text) 45%);
-    --cw-btn-primary-bg-hover: color-mix(in srgb, var(--cw-status-success) 60%, var(--cw-text) 40%);
-    --cw-btn-primary-bg-active: color-mix(in srgb, var(--cw-status-success) 50%, var(--cw-text) 50%);
-    --cw-btn-primary-text: var(--cw-accent-contrast);
-    --cw-btn-primary-text-hover: var(--cw-accent-contrast);
-    --cw-btn-primary-text-active: var(--cw-accent-contrast);
-    --cw-btn-primary-border-hover: color-mix(in srgb, var(--cw-accent) 74%, var(--cw-border) 26%);
-    --cw-btn-primary-border-active: color-mix(in srgb, var(--cw-accent) 66%, var(--cw-border) 34%);
-    --cw-btn-primary-focus-ring: color-mix(in srgb, var(--cw-accent) 36%, transparent);
+    --cw-radius-btn: var(--cw-radius-md);
+    --cw-brand-hover-border: color-mix(in srgb, var(--cw-platform-accent) 72%, var(--cw-platform-border) 28%);
+    --cw-btn-primary-bg: var(--cw-platform-accent);
+    --cw-btn-primary-bg-hover: var(--cw-platform-accent-pressed);
+    --cw-btn-primary-bg-active: var(--cw-platform-accent-pressed);
+    --cw-btn-primary-text: var(--cw-platform-on-accent);
+    --cw-btn-primary-text-hover: var(--cw-platform-on-accent);
+    --cw-btn-primary-text-active: var(--cw-platform-on-accent);
+    --cw-btn-primary-border-hover: color-mix(in srgb, var(--cw-platform-accent-pressed) 70%, var(--cw-platform-border) 30%);
+    --cw-btn-primary-border-active: color-mix(in srgb, var(--cw-platform-accent-pressed) 78%, var(--cw-platform-border) 22%);
+    --cw-btn-primary-focus-ring: color-mix(in srgb, var(--cw-platform-accent) 36%, transparent);
     --cw-btn-outline-bg: transparent;
-    --cw-btn-outline-bg-hover: var(--cw-surface-solid);
-    --cw-btn-outline-bg-active: var(--cw-surface-solid);
+    --cw-btn-outline-bg-hover: var(--cw-mat-hover-bg);
+    --cw-btn-outline-bg-active: var(--cw-mat-active-bg);
     --cw-btn-ghost-bg: transparent;
-    --cw-btn-ghost-bg-hover: color-mix(in srgb, var(--cw-text) 8%, transparent);
-    --cw-btn-ghost-bg-active: color-mix(in srgb, var(--cw-text) 12%, transparent);
-    --cw-choice-bg: #ffffff;
-    --cw-choice-bg-hover: color-mix(in srgb, var(--cw-text) 7%, #ffffff 93%);
-    --cw-choice-bg-selected: color-mix(in srgb, var(--cw-accent-soft) 84%, #ffffff 16%);
-    --cw-danger: #d9475e;
-    --cw-status-success: #2f9f63;
-    --cw-status-success-soft: rgba(47, 159, 99, 0.12);
-    --cw-status-running: #5f88d9;
-    --cw-status-running-soft: rgba(95, 136, 217, 0.12);
-    --cw-status-pending: #b08a24;
-    --cw-status-pending-soft: rgba(176, 138, 36, 0.12);
-    --cw-status-failed: #cf4e62;
-    --cw-status-failed-soft: rgba(207, 78, 98, 0.12);
-    --cw-shadow: 0 10px 22px rgba(16, 16, 16, 0.08);
-    --cw-overlay: rgba(20, 20, 20, 0.36);
-    --cw-glass-blur: 12px;
+    --cw-btn-ghost-bg-hover: var(--cw-mat-hover-bg);
+    --cw-btn-ghost-bg-active: var(--cw-mat-active-bg);
+    --cw-choice-bg: var(--cw-platform-surface);
+    --cw-choice-bg-hover: color-mix(in srgb, var(--cw-platform-text) 6%, var(--cw-platform-surface) 94%);
+    --cw-choice-bg-selected: var(--cw-platform-surface-muted);
+    --cw-shadow: var(--cw-mat-shadow-soft);
+    --cw-overlay: var(--cw-mat-scrim);
+    --cw-glass-blur: var(--cw-mat-blur);
     --cw-glass-backdrop-filter: blur(var(--cw-glass-blur));
-    --cw-glass-stroke: rgba(255, 255, 255, 0.2);
+    --cw-glass-stroke: var(--cw-mat-stroke);
     --cw-glass-glow: transparent;
     --cw-border-width: 1px;
     --cw-font-ui: "Manrope", "Segoe UI", sans-serif;
     --cw-font-editorial: "Cormorant Garamond", "Times New Roman", serif;
     --cw-font-data: "IBM Plex Mono", ui-monospace, monospace;
-    --cw-text-tertiary: color-mix(in srgb, var(--cw-muted) 82%, #ffffff 18%);
-    --cw-border-strong: color-mix(in srgb, var(--cw-border) 68%, var(--cw-text) 32%);
-    --cw-accent-strong: color-mix(in srgb, var(--cw-accent) 78%, #3a2a22 22%);
+    --cw-text-tertiary: color-mix(in srgb, var(--cw-platform-muted) 76%, var(--cw-platform-surface) 24%);
+    --cw-border-strong: color-mix(in srgb, var(--cw-platform-border) 58%, var(--cw-platform-text) 42%);
+    --cw-accent-strong: var(--cw-platform-accent-pressed);
     --cw-space-2xs: 0.25rem;
     --cw-space-xs: 0.5rem;
     --cw-space-sm: 0.75rem;
@@ -79,16 +70,22 @@
     --cw-space-3xl: 4.5rem;
     --cw-space-section-y: clamp(3.6rem, 7.5vw, 6rem);
     --cw-radius-sm: 12px;
-    --cw-radius-md: 18px;
-    --cw-radius-lg: 28px;
+    --cw-radius-md: 16px;
+    --cw-radius-lg: 20px;
+    --cw-radius-xl: 28px;
+    --cw-radius-inset: 6px;
     --cw-radius-pill: 999px;
-    --cw-shadow-soft: 0 10px 22px rgba(16, 16, 16, 0.08);
-    --cw-shadow-strong: 0 12px 28px rgba(16, 16, 16, 0.18);
+    --cw-shadow-soft: var(--cw-mat-shadow-soft);
+    --cw-shadow-strong: var(--cw-mat-shadow-raised);
     --cw-card-padding: clamp(1.1rem, 1.8vw, 1.45rem);
-    --cw-card-radius: 20px;
-    --cw-card-border: 1px solid var(--cw-border);
-    --cw-card-shadow: var(--cw-shadow-soft);
+    --cw-card-radius: var(--cw-radius-lg);
+    --cw-card-border: 1px solid var(--cw-mat-stroke);
+    --cw-card-shadow: var(--cw-mat-shadow-soft);
     --cw-max-width: 1160px;
+    --cw-page-gutter: clamp(20px, 5vw, 40px);
+    --cw-bar-pad: 0.8rem;
+    --cw-bar-inset: var(--cw-page-gutter);
+    --cw-container-inset: max(var(--cw-page-gutter), calc((100% - var(--cw-max-width)) / 2));
     --cw-platform-visual-movement-start: #17332d;
     --cw-platform-visual-movement-mid: #25473f;
     --cw-platform-visual-movement-end: #102621;
@@ -108,71 +105,120 @@
     /* CW_BASE_LIGHT_END */
 
     /* CW_RUNTIME_TOKENS_START */
-    --cw-sem-calm-bg: #f6f2ea;
-    --cw-sem-calm-surface: #fbfaf6;
-    --cw-sem-calm-surface-muted: #e9e2d6;
-    --cw-sem-method-ink: #31403e;
-    --cw-sem-guide-primary: #4f7e76;
-    --cw-sem-guide-strong: #1e3d34;
-    --cw-sem-embodied: #6e8668;
-    --cw-sem-progress: #c1906b;
-    --cw-sem-warmth: #dba54f;
+    --cw-sem-calm-bg: #faefe0;
+    --cw-sem-calm-surface: #fff8ef;
+    --cw-sem-calm-surface-muted: #f3e4d0;
+    --cw-sem-method-ink: #203126;
+    --cw-sem-guide-primary: #456b58;
+    --cw-sem-guide-strong: #203126;
+    --cw-sem-embodied: #7a9b78;
+    --cw-sem-progress: #edc693;
+    --cw-sem-warmth: #e5ae65;
+    --cw-sem-warmth-strong: #c8913f;
+    --cw-sem-on-warmth: #203126;
     --cw-sem-boundary: #b76045;
-    --cw-sem-trust: #35535f;
-    --cw-brand-asset-logo-symbol: url("/cw/brand/cw-symbol-gold.svg");
-    --cw-brand-asset-logo-symbol-header: url("/cw/brand/cw-symbol-centered-v9.png");
-    --cw-brand-asset-lockup-header: url("/cw/brand/cw-lockup-exact.png");
+    --cw-sem-trust: #4a6577;
+    --cw-sem-dosha-vata: var(--cw-sem-trust);
+    --cw-sem-dosha-pitta: var(--cw-sem-warmth-strong);
+    --cw-sem-dosha-kapha: var(--cw-sem-embodied);
+    --cw-sem-muted-ink: #48544c;
+    --cw-sem-state-success: var(--cw-sem-guide-primary);
+    --cw-sem-state-running: var(--cw-sem-trust);
+    --cw-sem-state-pending: var(--cw-sem-warmth-strong);
+    --cw-sem-state-failed: var(--cw-sem-boundary);
+    --cw-brand-asset-logo-symbol: url("/cw/brand/cw-mark.svg");
+    --cw-brand-asset-logo-symbol-compact: url("/cw/brand/cw-mark-compact.svg");
+    --cw-brand-asset-logo-symbol-header: url("/cw/brand/cw-mark.svg");
+    --cw-brand-asset-logo-symbol-ink: url("/cw/brand/cw-mark-ink.svg");
+    --cw-brand-asset-logo-symbol-gold: url("/cw/brand/cw-mark-gold.svg");
     --cw-brand-asset-wordmark-dark: url("/cw/brand/cw-wordmark-dark.svg");
     --cw-brand-asset-wordmark-light: url("/cw/brand/cw-wordmark-light.svg");
     --cw-brand-size-symbol-header: 2rem;
     --cw-brand-size-wordmark-header-width: 8.1rem;
-    --cw-brand-size-wordmark-header-height: 1.66rem;
+    --cw-brand-size-wordmark-header-height: 1.93rem;
+    --cw-ink-stroke-height: 0.85rem;
+    --cw-ink-ring-size: 3rem;
+    --cw-ink-hover-opacity: 0.42;
+    --cw-ink-hover-scale: 0.74;
     --cw-brand-size-symbol-footer: 2rem;
     --cw-brand-size-wordmark-footer-width: 8.6rem;
-    --cw-brand-size-wordmark-footer-height: 1.45rem;
-    --cw-sem-symbol-center: var(--cw-brand-asset-logo-symbol);
+    --cw-brand-size-wordmark-footer-height: 2.05rem;
+    --cw-sem-symbol-center: var(--cw-brand-asset-logo-symbol-ink);
+    --cw-sem-texture-arcs: repeating-radial-gradient(circle at 78% 22%, color-mix(in srgb, var(--cw-sem-guide-primary) 42%, transparent) 0 1px, transparent 1px 14px);
+    --cw-sem-texture-rings: repeating-radial-gradient(circle at 50% 50%, color-mix(in srgb, var(--cw-sem-guide-primary) 34%, transparent) 0 1px, transparent 1px 22px);
     --cw-sem-symbol-path: linear-gradient(110deg, transparent 8%, color-mix(in srgb, var(--cw-sem-warmth) 78%, transparent) 9% 11%, transparent 12% 44%, color-mix(in srgb, var(--cw-sem-warmth) 62%, transparent) 45% 47%, transparent 48%);
     --cw-sem-symbol-body: radial-gradient(circle at 32% 34%, color-mix(in srgb, var(--cw-sem-embodied) 22%, transparent), transparent 44%), radial-gradient(circle at 70% 68%, color-mix(in srgb, var(--cw-sem-embodied) 16%, transparent), transparent 48%);
     --cw-sem-symbol-cleansing: linear-gradient(180deg, color-mix(in srgb, var(--cw-sem-calm-surface) 62%, transparent), color-mix(in srgb, var(--cw-sem-calm-bg) 88%, transparent));
     --cw-sem-symbol-integration: linear-gradient(135deg, color-mix(in srgb, var(--cw-sem-warmth) 16%, transparent), color-mix(in srgb, var(--cw-sem-calm-surface-muted) 92%, transparent));
-    --cw-surface-glass-bg: var(--cw-component-glass-bg);
-    --cw-surface-glass-bg-hover: var(--cw-component-glass-bg-hover);
-    --cw-surface-glass-border: var(--cw-component-glass-border);
-    --cw-surface-glass-filter: var(--cw-component-glass-filter);
-    --cw-surface-glass-shadow: var(--cw-component-glass-shadow);
-    --cw-surface-shell-band-bg: var(--cw-surface-glass-bg);
-    --cw-surface-shell-control-bg: var(--cw-surface-glass-bg);
-    --cw-surface-shell-hover-bg: var(--cw-surface-glass-bg-hover);
-    --cw-surface-shell-popover-bg: color-mix(in srgb, var(--cw-surface-glass-bg) 86%, var(--cw-platform-surface) 14%);
-    --cw-shell-frost-bg: var(--cw-component-glass-bg);
-    --cw-shell-frost-filter: var(--cw-component-glass-filter);
-    --cw-depth-card-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 92%, var(--cw-sem-calm-surface-muted) 8%);
-    --cw-depth-support-bg: color-mix(in srgb, var(--cw-sem-calm-surface) 88%, var(--cw-sem-calm-surface-muted) 12%);
-    --cw-depth-proof-bg: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-sem-calm-surface) 38%);
-    --cw-depth-boundary-bg: color-mix(in srgb, var(--cw-sem-boundary) 10%, var(--cw-sem-calm-surface) 90%);
-    --cw-depth-icon-slot-bg: color-mix(in srgb, var(--cw-sem-warmth) 9%, var(--cw-sem-calm-surface) 91%);
-    --cw-depth-rail-color: var(--cw-sem-progress);
-    --cw-depth-shadow-soft: 0 14px 35px rgba(35, 29, 20, 0.08);
-    --cw-depth-shadow-medium: 0 18px 42px rgba(35, 29, 20, 0.12);
-    --cw-depth-shadow-strong: 0 24px 48px rgba(24, 20, 14, 0.16);
     --cw-platform-bg: var(--cw-sem-calm-bg);
     --cw-platform-surface: var(--cw-sem-calm-surface);
     --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
-    --cw-platform-text: #0d1b17;
-    --cw-platform-muted: color-mix(in srgb, var(--cw-platform-text) 64%, var(--cw-platform-bg) 36%);
-    --cw-platform-border: color-mix(in srgb, var(--cw-sem-progress) 38%, var(--cw-platform-bg) 62%);
+    --cw-platform-text: #18261d;
+    --cw-platform-muted: var(--cw-sem-muted-ink);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-method-ink) 14%, var(--cw-platform-bg) 86%);
     --cw-platform-accent: var(--cw-sem-warmth);
     --cw-platform-accent-strong: var(--cw-sem-guide-strong);
-    --cw-platform-accent-contrast: #fff8eb;
-    --cw-component-glass-bg: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
-    --cw-component-glass-bg-hover: color-mix(in srgb, var(--cw-platform-text) 42%, transparent);
-    --cw-component-glass-border: transparent;
-    --cw-component-glass-blur: 84px;
-    --cw-component-glass-filter: blur(var(--cw-component-glass-blur)) saturate(1.36) brightness(0.92);
-    --cw-component-glass-shadow: 0 12px 28px color-mix(in srgb, var(--cw-platform-text) 20%, transparent);
-    --cw-component-glass-frost-image: url("/shared/img/consult-hero-evgeniy.jpeg");
-    --cw-component-glass-frost-position: 38% center;
-    --cw-branch-grid-discipline: 1;
+    --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
+    --cw-platform-on-accent: var(--cw-sem-on-warmth);
+    --cw-platform-accent-contrast: #fff8ef;
+    --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
+    --cw-status-success: var(--cw-sem-state-success);
+    --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
+    --cw-status-running: var(--cw-sem-state-running);
+    --cw-status-running-soft: color-mix(in srgb, var(--cw-sem-state-running) 12%, transparent);
+    --cw-status-pending: color-mix(in srgb, var(--cw-sem-state-pending) 58%, var(--cw-sem-method-ink) 42%);
+    --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-state-pending) 14%, transparent);
+    --cw-status-failed: color-mix(in srgb, var(--cw-sem-state-failed) 76%, var(--cw-sem-method-ink) 24%);
+    --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-state-failed) 12%, transparent);
+    --cw-danger: var(--cw-sem-state-failed);
+    --cw-mat-surface: color-mix(in srgb, var(--cw-sem-calm-surface) 94%, var(--cw-sem-warmth) 6%);
+    --cw-mat-surface-night: color-mix(in srgb, #1a2a20 94%, var(--cw-sem-warmth) 6%);
+    --cw-mat-surface-sunk: color-mix(in srgb, var(--cw-sem-calm-surface-muted) 62%, var(--cw-mat-surface) 38%);
+    --cw-mat-tint: color-mix(in srgb, var(--cw-mat-surface) 76%, transparent);
+    --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
+    --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 82%, transparent);
+    --cw-mat-tint-chrome: color-mix(in srgb, var(--cw-mat-surface) 30%, transparent);
+    --cw-mat-tint-floor: 76%;
+    --cw-mat-tint-media-floor: 82%;
+    --cw-mat-tint-chrome-floor: 30%;
+    --cw-mat-blur: 20px;
+    --cw-mat-saturate: 1.08;
+    --cw-mat-filter: blur(var(--cw-mat-blur)) saturate(var(--cw-mat-saturate));
+    --cw-mat-blur-media: 34px;
+    --cw-mat-saturate-media: 1.24;
+    --cw-mat-filter-media: blur(var(--cw-mat-blur-media)) saturate(var(--cw-mat-saturate-media));
+    --cw-mat-stroke: color-mix(in srgb, #ffffff 55%, transparent);
+    --cw-mat-stroke-inner: color-mix(in srgb, #16211a 8%, transparent);
+    --cw-mat-stroke-control: color-mix(in srgb, #16211a 52%, transparent);
+    --cw-mat-scrim-ink: #171817;
+    --cw-mat-hover-bg: color-mix(in srgb, var(--cw-platform-text) 6%, transparent);
+    --cw-mat-hover-stroke: color-mix(in srgb, var(--cw-platform-text) 14%, var(--cw-platform-border));
+    --cw-mat-active-bg: color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+    --cw-mat-active-stroke: color-mix(in srgb, var(--cw-platform-text) 22%, var(--cw-platform-border));
+    --cw-mat-active-shadow: 0 0 0 1px color-mix(in srgb, var(--cw-platform-text) 12%, transparent);
+    --cw-mat-scrim: color-mix(in srgb, var(--cw-mat-scrim-ink) 38%, transparent);
+    --cw-mat-scroll-thumb: color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
+    --cw-mat-scroll-thumb-hover: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+    --cw-mat-scroll-track: transparent;
+    --cw-mat-meter-track: color-mix(in srgb, var(--cw-platform-border) 72%, var(--cw-platform-surface) 28%);
+    --cw-mat-shadow-soft: 0 1px 2px rgba(35, 29, 20, 0.05), 0 10px 28px rgba(35, 29, 20, 0.07);
+    --cw-mat-shadow-raised: 0 2px 6px rgba(35, 29, 20, 0.07), 0 24px 56px rgba(35, 29, 20, 0.12);
+    --cw-mat-stroke-chrome: color-mix(in srgb, var(--cw-platform-text) 13%, transparent);
+    --cw-mat-shadow-chrome: 0 0 0 1px var(--cw-mat-stroke-chrome), 0 18px 40px rgba(35, 29, 20, 0.10);
+    --cw-mat-shadow-deep: 0 3px 8px rgba(24, 20, 14, 0.09), 0 32px 64px rgba(24, 20, 14, 0.16);
+    --cw-mat-tone-support: color-mix(in srgb, var(--cw-mat-surface) 88%, var(--cw-sem-calm-surface-muted) 12%);
+    --cw-mat-tone-proof: color-mix(in srgb, var(--cw-mat-surface) 62%, var(--cw-sem-calm-surface-muted) 38%);
+    --cw-mat-tone-boundary: color-mix(in srgb, var(--cw-mat-surface) 90%, var(--cw-sem-boundary) 10%);
+    --cw-mat-tone-icon: color-mix(in srgb, var(--cw-mat-surface) 91%, var(--cw-sem-warmth) 9%);
+    --cw-mat-grain-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    --cw-mat-inverse-bg: linear-gradient(165deg, #182a20, #2c4635);
+    --cw-mat-inverse-glass: color-mix(in srgb, #ffffff 8%, transparent);
+    --cw-mat-inverse-control: color-mix(in srgb, #16211a 34%, transparent);
+    --cw-mat-inverse-control-hover: color-mix(in srgb, #16211a 44%, transparent);
+    --cw-mat-inverse-stroke: color-mix(in srgb, #ffffff 18%, transparent);
+    --cw-mat-inverse-text: #faefe0;
+    --cw-mat-inverse-text-muted: color-mix(in srgb, #faefe0 78%, transparent);
     /* CW_RUNTIME_TOKENS_END */
 
     /* DS_ALIAS_LIGHT_START */
@@ -202,35 +248,40 @@
     --ds-space-5: 1.5rem;
     --ds-space-6: 2rem;
     --ds-space-7: 3rem;
-    --ds-radius-sm: 0.75rem;
-    --ds-radius-md: 1rem;
-    --ds-radius-lg: 1.25rem;
-    --ds-radius-pill: 62.4375rem;
     --ds-shadow-sm: var(--cw-shadow-soft);
     --ds-shadow-md: var(--cw-shadow-strong);
     --ds-z-base: 1;
     --ds-z-sticky: 999;
-    --ds-breakpoint-mobile-max: 37.5rem;
-    --ds-breakpoint-tablet-min: 37.5625rem;
-    --ds-breakpoint-tablet-max: 63.9375rem;
-    --ds-breakpoint-desktop-min: 64rem;
+    --ds-z-modal: 1200;
+    --ds-breakpoint-mobile-max: 35rem;
+    --ds-breakpoint-tablet-min: 35.0625rem;
+    --ds-breakpoint-tablet-max: 56.25rem;
+    --ds-breakpoint-desktop-min: 56.3125rem;
     --ds-container-max: var(--cw-max-width);
     --ds-touch-target-min: 3rem;
-    --ds-button-min-height: 3rem;
+    --ds-button-min-height: var(--ds-touch-target-min);
     --ds-button-padding-inline: 1.15rem;
     --ds-button-min-width: 10.5rem;
-    --ds-offer-card-min-height-desktop: 29rem;
+    --ds-button-max-width: 22rem;
+    --ds-button-radius: var(--cw-radius-btn);
+    --ds-button-font-weight: 700;
+    --ds-button-font-size: 1rem;
+    --ds-button-gap: 0.5rem;
+    --ds-button-lift: -1px;
+    --ds-offer-card-height-desktop: 29rem;
     --ds-offer-card-min-height-tablet: 26rem;
     --ds-offer-card-min-height-mobile: 22rem;
-    --ds-offer-card-compact-min-height-desktop: 24rem;
-    --ds-offer-card-compact-min-height-tablet: 22rem;
-    --ds-offer-card-compact-min-height-mobile: 20rem;
+    --ds-offer-card-height-rail: 26rem;
     --ds-offer-card-width-desktop: 24rem;
     --ds-offer-card-width-tablet: 21rem;
     --ds-offer-card-width-mobile: min(82vw, 19rem);
     --ds-offer-card-rail-width: var(--ds-offer-card-width-mobile);
+    --ds-offer-card-title-size: clamp(1.15rem, 1.9vw, 1.45rem);
+    --ds-offer-card-title-line-height: 1.2;
     --ds-focus-ring-width: 3px;
     --ds-focus-ring-offset: 3px;
+    --ds-focus-ring-offset-tight: 1px;
+    --ds-focus-ring-offset-inset: -2px;
     --ds-focus-ring-color: var(--cw-focus-ring);
     --ds-type-label-size: 0.75rem;
     --ds-type-label-line-height: 1rem;
@@ -246,112 +297,444 @@
     --ds-type-hero-line-height: 0.96;
     --ds-type-display-size: clamp(1.5rem, 3vw, 2.2rem);
     --ds-type-display-line-height: 1.08;
+    --ds-type-hero-subtitle-size: clamp(1.2rem, 1.7vw, 1.6rem);
+    --ds-type-hero-subtitle-line-height: 1.25;
     /* DS_ALIAS_LIGHT_END */
 
   }
 
-  .dark {
-    /* CW_BASE_DARK_START */
-    --background: #141414;
-    --foreground: #e4e4e1;
-    --cw-bg: #141414;
-    --cw-surface: rgba(32, 32, 32, 0.72);
-    --cw-surface-2: rgba(40, 40, 40, 0.72);
-    --cw-surface-muted: rgba(36, 36, 35, 0.9);
-    --cw-surface-solid: #1f1f1d;
-    --cw-border: #4a4a46;
-    --cw-text: #e4e4e1;
-    --cw-muted: #a9a9a3;
-    --cw-accent: #a9a9a3;
-    --cw-accent-soft: rgba(43, 43, 40, 0.72);
-    --cw-accent-contrast: #f2f2ef;
-    --cw-interactive-hover-bg: rgba(56, 56, 52, 0.92);
-    --cw-interactive-hover-border: #5a5a55;
-    --cw-interactive-active-bg: #3c3c38;
-    --cw-interactive-active-border: #6a6a64;
-    --cw-interactive-active-shadow: 0 0 0 1px rgba(106, 106, 100, 0.38);
-    --cw-focus-ring: color-mix(in srgb, var(--cw-accent-contrast) 40%, transparent);
-    --ds-radius-button-soft: 1rem;
-    --cw-radius-btn: var(--ds-radius-button-soft);
-    --cw-brand-hover-border: color-mix(in srgb, var(--cw-accent) 74%, var(--cw-border) 26%);
-    --cw-btn-primary-bg: color-mix(in srgb, var(--cw-status-success) 44%, var(--cw-bg) 56%);
-    --cw-btn-primary-bg-hover: color-mix(in srgb, var(--cw-status-success) 49%, var(--cw-bg) 51%);
-    --cw-btn-primary-bg-active: color-mix(in srgb, var(--cw-status-success) 39%, var(--cw-bg) 61%);
-    --cw-btn-primary-text: var(--cw-accent-contrast);
-    --cw-btn-primary-text-hover: var(--cw-accent-contrast);
-    --cw-btn-primary-text-active: var(--cw-accent-contrast);
-    --cw-btn-primary-border-hover: color-mix(in srgb, var(--cw-accent) 74%, var(--cw-border) 26%);
-    --cw-btn-primary-border-active: color-mix(in srgb, var(--cw-accent) 66%, var(--cw-border) 34%);
-    --cw-btn-primary-focus-ring: color-mix(in srgb, var(--cw-accent) 42%, transparent);
-    --cw-btn-outline-bg: transparent;
-    --cw-btn-outline-bg-hover: var(--cw-surface-solid);
-    --cw-btn-outline-bg-active: var(--cw-surface-solid);
-    --cw-btn-ghost-bg: transparent;
-    --cw-btn-ghost-bg-hover: color-mix(in srgb, var(--cw-text) 12%, transparent);
-    --cw-btn-ghost-bg-active: color-mix(in srgb, var(--cw-text) 18%, transparent);
-    --cw-choice-bg: color-mix(in srgb, var(--cw-surface-solid) 78%, #ffffff 22%);
-    --cw-choice-bg-hover: color-mix(in srgb, var(--cw-text) 14%, var(--cw-choice-bg) 86%);
-    --cw-choice-bg-selected: color-mix(in srgb, var(--cw-accent-soft) 74%, var(--cw-choice-bg) 26%);
-    --cw-danger: #ff7f93;
-    --cw-status-success: #68c58f;
-    --cw-status-success-soft: rgba(104, 197, 143, 0.16);
-    --cw-status-running: #8aacff;
-    --cw-status-running-soft: rgba(138, 172, 255, 0.16);
-    --cw-status-pending: #d0ac4d;
-    --cw-status-pending-soft: rgba(208, 172, 77, 0.16);
-    --cw-status-failed: #ff8ea1;
-    --cw-status-failed-soft: rgba(255, 142, 161, 0.16);
-    --cw-shadow: 0 12px 28px rgba(0, 0, 0, 0.34);
-    --cw-overlay: rgba(8, 8, 8, 0.58);
-    --cw-glass-blur: 12px;
-    --cw-glass-backdrop-filter: blur(var(--cw-glass-blur));
-    --cw-glass-stroke: rgba(255, 255, 255, 0.08);
-    --cw-glass-glow: transparent;
-    --cw-border-width: 1px;
-    --cw-font-ui: "Manrope", "Segoe UI", sans-serif;
-    --cw-font-editorial: "Cormorant Garamond", "Times New Roman", serif;
-    --cw-font-data: "IBM Plex Mono", ui-monospace, monospace;
-    --cw-text-tertiary: color-mix(in srgb, var(--cw-muted) 82%, #141414 18%);
-    --cw-border-strong: color-mix(in srgb, var(--cw-border) 70%, var(--cw-text) 30%);
-    --cw-accent-strong: color-mix(in srgb, var(--cw-accent) 72%, #f4f1e9 28%);
-    --cw-space-2xs: 0.25rem;
-    --cw-space-xs: 0.5rem;
-    --cw-space-sm: 0.75rem;
-    --cw-space-md: 1rem;
-    --cw-space-lg: 1.5rem;
-    --cw-space-xl: 2rem;
-    --cw-space-2xl: 3rem;
-    --cw-space-3xl: 4.5rem;
-    --cw-space-section-y: clamp(3.6rem, 7.5vw, 6rem);
-    --cw-radius-sm: 12px;
-    --cw-radius-md: 18px;
-    --cw-radius-lg: 28px;
-    --cw-radius-pill: 999px;
-    --cw-shadow-soft: var(--cw-shadow);
-    --cw-shadow-strong: 0 18px 36px rgba(0, 0, 0, 0.4);
-    --cw-card-padding: clamp(1.1rem, 1.8vw, 1.45rem);
-    --cw-card-radius: 20px;
-    --cw-card-border: 1px solid var(--cw-border);
-    --cw-card-shadow: var(--cw-shadow-soft);
-    --cw-max-width: 1160px;
-    /* CW_BASE_DARK_END */
 
-    /* DS_ALIAS_DARK_START */
-    --ds-color-bg-canvas: var(--cw-bg);
-    --ds-color-bg-soft: var(--cw-surface-2);
-    --ds-color-surface: var(--cw-surface-solid);
-    --ds-color-text: var(--cw-text);
-    --ds-color-text-muted: var(--cw-muted);
-    --ds-color-primary: var(--cw-accent);
-    --ds-color-primary-strong: var(--cw-accent-strong);
-    --ds-color-accent: var(--cw-accent);
-    --ds-color-accent-strong: var(--cw-accent-strong);
-    --ds-color-border-soft: var(--cw-border);
-    --ds-shadow-sm: var(--cw-shadow-soft);
-    --ds-shadow-md: var(--cw-shadow-strong);
-    /* DS_ALIAS_DARK_END */
+  /* Dark scopes — one theme, and one local context.
 
+     `[data-cw-theme="dark"]` is THE dark theme, for every surface the product
+     has: public pages, the learner's shelf, the builder and the admin. It is
+     stamped onto <html> by `src/lib/platform/theme.ts` before first paint, from
+     the reader's stored choice or, absent one, from `prefers-color-scheme`.
+
+     THERE IS NO LONGER A SECOND ONE (2026-08-28). `.dark` was the admin's own
+     theme class, written by ThemeSwitcher into a different storage key, and the
+     two disagreed in ways that all showed: the admin had no boot script (a
+     graphite flash on every load), no `color-scheme` (a dark page scrolling
+     past its own end into white), and no light theme that actually worked —
+     `/admin` lives in the `(platform)` route group, so the public boot script
+     stamped the document too, and taking `.dark` off left a light shell
+     standing on a graphite body. The class also survived a client-side
+     navigation out of /admin, which is why no public surface was ever allowed
+     to key off it.
+
+     So the admin joins the product's theme instead of keeping its own: one
+     switch, one storage key, three choices, one selector. The legacy `--cw-*`
+     chrome family is an alias layer over the platform and material tokens now
+     (see `base.light` in cw.tokens.json), so it flips with them and needs no
+     dark half of its own — which is why the `.dark` block that used to stand
+     here is gone rather than renamed.
+
+     THE STAMP IS ALWAYS WRITTEN, and no `prefers-color-scheme` rule shadows
+     it. One switch, one selector: with the media query as a second source the
+     pack scoping below would need to answer to both, and the two would drift
+     the first time one of them moved. Without JavaScript the page stays light,
+     which is what it was before this shipped.
+
+     WHAT HAD TO BE TRUE FIRST, and now is: every entry in CW_COURSE_PACKS used
+     to be a COMPLETE LIGHT PALETTE, so a course preview nested inside this
+     scope won for its own subtree and dropped the light gamma back on top of
+     the dark one. The packs are a LIGHT-SIDE AXIS in the generator now — their
+     platform tokens, grounds and inks are emitted under
+     `:root:not([data-cw-theme="dark"])`, and inside the dark scope a pack
+     contributes its HUE roles and nothing else.
+
+     THE GROUND IS GRAPHITE, NOT THE GREEN NIGHT it was authored as. The brand
+     sheet's rule is "never green on a dark ground". One warm graphite serves
+     the whole product; the warmth comes from the brass accent and the grain,
+     not from the ground.
+
+     `[data-cw-header-tone="dark"]` is the second selector here and not a theme
+     at all — it is a local context. The topbar measures what it floats over
+     and, when that is a dark hero, switches its own material to the night side
+     while the page around it stays light. One material, scoped; not a second
+     recipe. */
+  [data-cw-theme="dark"],
+  [data-cw-header-tone="dark"] {
+    /* CW_MATERIAL_DARK_START */
+    --cw-mat-surface: var(--cw-mat-surface-night);
+    --cw-mat-surface-night: color-mix(in srgb, #232322 94%, var(--cw-sem-warmth) 6%);
+    --cw-mat-surface-sunk: color-mix(in srgb, #191918 62%, var(--cw-mat-surface) 38%);
+    --cw-mat-tint: color-mix(in srgb, var(--cw-mat-surface) 76%, transparent);
+    --cw-mat-tint-hover: color-mix(in srgb, var(--cw-mat-surface) 84%, transparent);
+    --cw-mat-tint-media: color-mix(in srgb, var(--cw-mat-surface) 82%, transparent);
+    --cw-mat-tint-chrome: color-mix(in srgb, var(--cw-mat-surface) 30%, transparent);
+    --cw-mat-tint-floor: 76%;
+    --cw-mat-tint-media-floor: 82%;
+    --cw-mat-tint-chrome-floor: 30%;
+    --cw-mat-blur: 20px;
+    --cw-mat-saturate: 1.08;
+    --cw-mat-filter: blur(var(--cw-mat-blur)) saturate(var(--cw-mat-saturate));
+    --cw-mat-blur-media: 34px;
+    --cw-mat-saturate-media: 1.24;
+    --cw-mat-filter-media: blur(var(--cw-mat-blur-media)) saturate(var(--cw-mat-saturate-media));
+    --cw-mat-stroke: color-mix(in srgb, #ffffff 14%, transparent);
+    --cw-mat-stroke-inner: color-mix(in srgb, #ffffff 4%, transparent);
+    --cw-mat-stroke-control: color-mix(in srgb, #faefe0 42%, transparent);
+    --cw-mat-scrim-ink: #171817;
+    --cw-mat-hover-bg: color-mix(in srgb, var(--cw-platform-text) 6%, transparent);
+    --cw-mat-hover-stroke: color-mix(in srgb, var(--cw-platform-text) 14%, var(--cw-platform-border));
+    --cw-mat-active-bg: color-mix(in srgb, var(--cw-platform-text) 10%, transparent);
+    --cw-mat-active-stroke: color-mix(in srgb, var(--cw-platform-text) 22%, var(--cw-platform-border));
+    --cw-mat-active-shadow: 0 0 0 1px color-mix(in srgb, var(--cw-platform-text) 12%, transparent);
+    --cw-mat-scrim: color-mix(in srgb, var(--cw-mat-scrim-ink) 62%, transparent);
+    --cw-mat-scroll-thumb: color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
+    --cw-mat-scroll-thumb-hover: color-mix(in srgb, var(--cw-platform-text) 34%, transparent);
+    --cw-mat-scroll-track: transparent;
+    --cw-mat-meter-track: color-mix(in srgb, var(--cw-platform-border) 72%, var(--cw-platform-surface) 28%);
+    --cw-mat-shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+    --cw-mat-shadow-raised: 0 2px 6px rgba(0, 0, 0, 0.35), 0 28px 60px rgba(0, 0, 0, 0.5);
+    --cw-mat-stroke-chrome: color-mix(in srgb, var(--cw-platform-text) 16%, transparent);
+    --cw-mat-shadow-chrome: 0 0 0 1px var(--cw-mat-stroke-chrome), 0 18px 40px rgba(0, 0, 0, 0.24);
+    --cw-mat-shadow-deep: 0 3px 8px rgba(0, 0, 0, 0.4), 0 32px 68px rgba(0, 0, 0, 0.55);
+    --cw-mat-tone-support: color-mix(in srgb, var(--cw-mat-surface) 95%, #faefe0 5%);
+    --cw-mat-tone-proof: color-mix(in srgb, var(--cw-mat-surface) 90%, #faefe0 10%);
+    --cw-mat-tone-boundary: color-mix(in srgb, var(--cw-mat-surface) 84%, var(--cw-sem-boundary) 16%);
+    --cw-mat-tone-icon: color-mix(in srgb, var(--cw-mat-surface) 86%, var(--cw-sem-warmth) 14%);
+    --cw-mat-grain-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.16 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
+    --cw-mat-inverse-bg: linear-gradient(165deg, #182a20, #2c4635);
+    --cw-mat-inverse-glass: color-mix(in srgb, #ffffff 8%, transparent);
+    --cw-mat-inverse-control: color-mix(in srgb, #16211a 34%, transparent);
+    --cw-mat-inverse-control-hover: color-mix(in srgb, #16211a 44%, transparent);
+    --cw-mat-inverse-stroke: color-mix(in srgb, #ffffff 22%, transparent);
+    --cw-mat-inverse-text: #faefe0;
+    --cw-mat-inverse-text-muted: color-mix(in srgb, #faefe0 78%, transparent);
+    /* CW_MATERIAL_DARK_END */
   }
+
+  /* The dark palette. One theme for the whole product — see above. */
+  [data-cw-theme="dark"] {
+    /* CW_PLATFORM_DARK_START */
+    --cw-platform-bg: #191918;
+    --cw-platform-surface: #232322;
+    --cw-platform-surface-muted: #2e2e2c;
+    --cw-platform-text: #e4e4e1;
+    --cw-platform-muted: color-mix(in srgb, var(--cw-platform-text) 68%, var(--cw-platform-bg) 32%);
+    --cw-platform-border: color-mix(in srgb, var(--cw-platform-text) 16%, var(--cw-platform-bg) 84%);
+    --cw-platform-accent: var(--cw-sem-warmth);
+    --cw-platform-accent-strong: #0f0f0e;
+    --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
+    --cw-platform-on-accent: #191918;
+    --cw-platform-accent-contrast: #fff8ef;
+    --cw-platform-ink-strong: var(--cw-platform-text);
+    --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-warmth) 0%, var(--cw-sem-warmth-strong) 100%);
+    --cw-status-success: color-mix(in srgb, var(--cw-sem-state-success) 42%, #faefe0 58%);
+    --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 22%, transparent);
+    --cw-status-running: color-mix(in srgb, var(--cw-sem-state-running) 40%, #faefe0 60%);
+    --cw-status-running-soft: color-mix(in srgb, var(--cw-sem-state-running) 22%, transparent);
+    --cw-status-pending: color-mix(in srgb, var(--cw-sem-state-pending) 74%, #faefe0 26%);
+    --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-state-pending) 20%, transparent);
+    --cw-status-failed: color-mix(in srgb, var(--cw-sem-state-failed) 48%, #faefe0 52%);
+    --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-state-failed) 22%, transparent);
+    --cw-danger: color-mix(in srgb, var(--cw-sem-state-failed) 48%, #faefe0 52%);
+    /* CW_PLATFORM_DARK_END */
+  }
+
+  /* ── The one nav-state contract ─────────────────────
+
+     THREE SURFACES USED TO ANSWER "you are here" DIFFERENTLY. The topbar drew
+     an ink underline, the cabinet's tab strip drew a gold one, and the account
+     popover underlined its current row in gold via `text-decoration`. Three
+     marks for one state, two of them in the same viewport at the same time —
+     the reader had to learn that a black rule and a gold rule mean the same
+     thing, which is a thing no reader should have to learn.
+
+     ONE MARK, TONED. Ink on a light ground, gold on a dark one. Not a taste
+     call in either direction: on cream, gold is a mid-luminance colour that
+     measures ~1.05 against the sheet and simply is not visible as a rule; on
+     the night material the ink IS the cream text, so an ink underline under a
+     cream label is the label drawn twice. Each tone takes the mark its ground
+     can actually carry.
+
+     The mark is the SECOND signal in every case, never the only one — the
+     active label also runs at full foreground and a heavier weight. That is
+     what keeps the gold mark inside 1.4.11: it is redundant decoration, not the
+     sole carrier of state, which matters because gold on the dark chrome tint
+     measures 2.34 against the 3.0 a load-bearing indicator would owe.
+
+     HOVER IS THE SAME MARK, HALF-DRAWN — a fill was the other candidate and it
+     loses on the rule the design doc already writes down for the tab strip:
+     these rows sit straight on the page ground, and filling one turns a quiet
+     strip into a row of objects. So: rest is muted with no plate, hover grows
+     the mark to three-quarters at 42% and brings the label to full foreground,
+     active runs the mark to full. Consumers read the three numbers below rather
+     than restating them — that is what stopped them drifting the first time. */
+  :root,
+  [data-cw-header-tone="light"] {
+    --cw-nav-marker: var(--cw-platform-text);
+    --cw-nav-marker-size: 2px;
+    --cw-nav-marker-hover-opacity: var(--cw-ink-hover-opacity);
+    --cw-nav-marker-hover-scale: var(--cw-ink-hover-scale);
+  }
+
+  [data-cw-theme="dark"],
+  [data-cw-header-tone="dark"] {
+    --cw-nav-marker: var(--cw-platform-accent);
+  }
+
+  /* Mineral pack — the earlier warm-mineral gamma, kept for individual programs
+     and author landings. It re-points the same `--cw-sem-*` role names, so a
+     scope opts in with class="cw-pack-mineral" and nothing else changes.
+
+     Light-side only, for the reason written at the dark scopes above: this
+     block pins `--cw-platform-text` to a near-black ink, and a pack is not
+     allowed to do that on the night ground. The attribute form
+     (`[data-cw-pack="mineral"]`) carries the dark half. */
+  :root:not([data-cw-theme="dark"]) .cw-pack-mineral {
+    /* CW_PACK_MINERAL_START */
+    --cw-sem-calm-bg: #f6f2ea;
+    --cw-sem-calm-surface: #fbfaf6;
+    --cw-sem-calm-surface-muted: #e9e2d6;
+    --cw-sem-method-ink: #31403e;
+    --cw-sem-guide-primary: #4f7e76;
+    --cw-sem-guide-strong: #1e3d34;
+    --cw-sem-embodied: #6e8668;
+    --cw-sem-progress: #c1906b;
+    --cw-sem-warmth: #dba54f;
+    --cw-sem-warmth-strong: #c2902f;
+    --cw-sem-on-warmth: #0d1b17;
+    --cw-sem-boundary: #b76045;
+    --cw-sem-trust: #35535f;
+    --cw-sem-muted-ink: #616863;
+    --cw-platform-text: #0d1b17;
+    --cw-platform-accent-contrast: #fff8eb;
+    /* CW_PACK_MINERAL_END */
+  }
+
+  /* Course gammas, as an ATTRIBUTE scope.
+     A course carries its palette as data — `data-cw-pack="way21"` — because the
+     value comes out of a database row, not out of a class someone typed. Same
+     mechanism as the mineral pack above and the same rule: only values move,
+     never names, so no component changes when a course changes its gamma.
+     Generated from `layers.packs` in cw.tokens.json; mineral appears here too,
+     which is why it now answers to both forms. */
+  /* CW_COURSE_PACKS_START */
+  [data-cw-pack="mineral"] {
+    --cw-pack-sample-ink: #4f7e76;
+    --cw-pack-sample-ground: #f6f2ea;
+  }
+
+  :root:not([data-cw-theme="dark"]) [data-cw-pack="mineral"] {
+    --cw-platform-bg: var(--cw-sem-calm-bg);
+    --cw-platform-surface: var(--cw-sem-calm-surface);
+    --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
+    --cw-platform-text: #18261d;
+    --cw-platform-muted: var(--cw-sem-muted-ink);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-method-ink) 14%, var(--cw-platform-bg) 86%);
+    --cw-platform-accent: var(--cw-sem-warmth);
+    --cw-platform-accent-strong: var(--cw-sem-guide-strong);
+    --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
+    --cw-platform-on-accent: var(--cw-sem-on-warmth);
+    --cw-platform-accent-contrast: #fff8ef;
+    --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
+    --cw-status-success: var(--cw-sem-state-success);
+    --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
+    --cw-status-running: var(--cw-sem-state-running);
+    --cw-status-running-soft: color-mix(in srgb, var(--cw-sem-state-running) 12%, transparent);
+    --cw-status-pending: color-mix(in srgb, var(--cw-sem-state-pending) 58%, var(--cw-sem-method-ink) 42%);
+    --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-state-pending) 14%, transparent);
+    --cw-status-failed: color-mix(in srgb, var(--cw-sem-state-failed) 76%, var(--cw-sem-method-ink) 24%);
+    --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-state-failed) 12%, transparent);
+    --cw-danger: var(--cw-sem-state-failed);
+    --cw-sem-calm-bg: #f6f2ea;
+    --cw-sem-calm-surface: #fbfaf6;
+    --cw-sem-calm-surface-muted: #e9e2d6;
+    --cw-sem-method-ink: #31403e;
+    --cw-sem-guide-primary: #4f7e76;
+    --cw-sem-guide-strong: #1e3d34;
+    --cw-sem-embodied: #6e8668;
+    --cw-sem-progress: #c1906b;
+    --cw-sem-warmth: #dba54f;
+    --cw-sem-warmth-strong: #c2902f;
+    --cw-sem-on-warmth: #0d1b17;
+    --cw-sem-boundary: #b76045;
+    --cw-sem-trust: #35535f;
+    --cw-sem-muted-ink: #616863;
+    --cw-platform-text: #0d1b17;
+    --cw-platform-accent-contrast: #fff8eb;
+  }
+
+  [data-cw-theme="dark"] [data-cw-pack="mineral"] {
+    --cw-sem-guide-primary: #4f7e76;
+    --cw-sem-embodied: #6e8668;
+    --cw-sem-progress: #c1906b;
+    --cw-sem-warmth: #dba54f;
+    --cw-sem-warmth-strong: #c2902f;
+    --cw-sem-boundary: #b76045;
+    --cw-sem-trust: #35535f;
+  }
+
+  [data-cw-pack="way21"] {
+    --cw-pack-sample-ink: #3f6350;
+    --cw-pack-sample-ground: #faefe0;
+  }
+
+  :root:not([data-cw-theme="dark"]) [data-cw-pack="way21"] {
+    --cw-platform-bg: var(--cw-sem-calm-bg);
+    --cw-platform-surface: var(--cw-sem-calm-surface);
+    --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
+    --cw-platform-text: #18261d;
+    --cw-platform-muted: var(--cw-sem-muted-ink);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-method-ink) 14%, var(--cw-platform-bg) 86%);
+    --cw-platform-accent: var(--cw-sem-warmth);
+    --cw-platform-accent-strong: var(--cw-sem-guide-strong);
+    --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
+    --cw-platform-on-accent: var(--cw-sem-on-warmth);
+    --cw-platform-accent-contrast: #fff8ef;
+    --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
+    --cw-status-success: var(--cw-sem-state-success);
+    --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
+    --cw-status-running: var(--cw-sem-state-running);
+    --cw-status-running-soft: color-mix(in srgb, var(--cw-sem-state-running) 12%, transparent);
+    --cw-status-pending: color-mix(in srgb, var(--cw-sem-state-pending) 58%, var(--cw-sem-method-ink) 42%);
+    --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-state-pending) 14%, transparent);
+    --cw-status-failed: color-mix(in srgb, var(--cw-sem-state-failed) 76%, var(--cw-sem-method-ink) 24%);
+    --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-state-failed) 12%, transparent);
+    --cw-danger: var(--cw-sem-state-failed);
+    --cw-sem-calm-surface-muted: #f5f1e7;
+    --cw-sem-method-ink: #1f2e24;
+    --cw-sem-guide-primary: #3f6350;
+    --cw-sem-guide-strong: #203126;
+    --cw-sem-embodied: #456b58;
+  }
+
+  [data-cw-theme="dark"] [data-cw-pack="way21"] {
+    --cw-sem-guide-primary: #3f6350;
+    --cw-sem-embodied: #456b58;
+  }
+
+  [data-cw-pack="reset-day"] {
+    --cw-pack-sample-ink: #517a65;
+    --cw-pack-sample-ground: #fdf6ec;
+  }
+
+  :root:not([data-cw-theme="dark"]) [data-cw-pack="reset-day"] {
+    --cw-platform-bg: var(--cw-sem-calm-bg);
+    --cw-platform-surface: var(--cw-sem-calm-surface);
+    --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
+    --cw-platform-text: #18261d;
+    --cw-platform-muted: var(--cw-sem-muted-ink);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-method-ink) 14%, var(--cw-platform-bg) 86%);
+    --cw-platform-accent: var(--cw-sem-warmth);
+    --cw-platform-accent-strong: var(--cw-sem-guide-strong);
+    --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
+    --cw-platform-on-accent: var(--cw-sem-on-warmth);
+    --cw-platform-accent-contrast: #fff8ef;
+    --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
+    --cw-status-success: var(--cw-sem-state-success);
+    --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
+    --cw-status-running: var(--cw-sem-state-running);
+    --cw-status-running-soft: color-mix(in srgb, var(--cw-sem-state-running) 12%, transparent);
+    --cw-status-pending: color-mix(in srgb, var(--cw-sem-state-pending) 58%, var(--cw-sem-method-ink) 42%);
+    --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-state-pending) 14%, transparent);
+    --cw-status-failed: color-mix(in srgb, var(--cw-sem-state-failed) 76%, var(--cw-sem-method-ink) 24%);
+    --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-state-failed) 12%, transparent);
+    --cw-danger: var(--cw-sem-state-failed);
+    --cw-sem-calm-bg: #fdf6ec;
+    --cw-sem-calm-surface-muted: #f7f2e8;
+    --cw-sem-method-ink: #26372c;
+    --cw-sem-guide-primary: #517a65;
+    --cw-sem-guide-strong: #2c4636;
+    --cw-sem-embodied: #6b957c;
+  }
+
+  [data-cw-theme="dark"] [data-cw-pack="reset-day"] {
+    --cw-sem-guide-primary: #517a65;
+    --cw-sem-embodied: #6b957c;
+  }
+
+  [data-cw-pack="herbs"] {
+    --cw-pack-sample-ink: #537c4c;
+    --cw-pack-sample-ground: #faefe0;
+  }
+
+  :root:not([data-cw-theme="dark"]) [data-cw-pack="herbs"] {
+    --cw-platform-bg: var(--cw-sem-calm-bg);
+    --cw-platform-surface: var(--cw-sem-calm-surface);
+    --cw-platform-surface-muted: var(--cw-sem-calm-surface-muted);
+    --cw-platform-text: #18261d;
+    --cw-platform-muted: var(--cw-sem-muted-ink);
+    --cw-platform-border: color-mix(in srgb, var(--cw-sem-method-ink) 14%, var(--cw-platform-bg) 86%);
+    --cw-platform-accent: var(--cw-sem-warmth);
+    --cw-platform-accent-strong: var(--cw-sem-guide-strong);
+    --cw-platform-accent-pressed: var(--cw-sem-warmth-strong);
+    --cw-platform-on-accent: var(--cw-sem-on-warmth);
+    --cw-platform-accent-contrast: #fff8ef;
+    --cw-platform-ink-strong: var(--cw-sem-guide-strong);
+    --cw-platform-meter: linear-gradient(90deg, var(--cw-sem-guide-primary) 0%, var(--cw-sem-guide-strong) 100%);
+    --cw-status-success: var(--cw-sem-state-success);
+    --cw-status-success-soft: color-mix(in srgb, var(--cw-sem-state-success) 12%, transparent);
+    --cw-status-running: var(--cw-sem-state-running);
+    --cw-status-running-soft: color-mix(in srgb, var(--cw-sem-state-running) 12%, transparent);
+    --cw-status-pending: color-mix(in srgb, var(--cw-sem-state-pending) 58%, var(--cw-sem-method-ink) 42%);
+    --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-state-pending) 14%, transparent);
+    --cw-status-failed: color-mix(in srgb, var(--cw-sem-state-failed) 76%, var(--cw-sem-method-ink) 24%);
+    --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-state-failed) 12%, transparent);
+    --cw-danger: var(--cw-sem-state-failed);
+    --cw-sem-calm-surface-muted: #f7f2e7;
+    --cw-sem-method-ink: #283b2b;
+    --cw-sem-guide-primary: #537c4c;
+    --cw-sem-guide-strong: #2b4526;
+    --cw-sem-embodied: #628c5a;
+  }
+
+  [data-cw-theme="dark"] [data-cw-pack="herbs"] {
+    --cw-sem-guide-primary: #537c4c;
+    --cw-sem-embodied: #628c5a;
+  }
+    /* CW_COURSE_PACKS_END */
+
+  /* The other two axes a course may choose (src/lms-core/theme.ts).
+
+     Neither one is a value the author supplies. `headingFont` swaps between the
+     two families the platform already loads — a third would be a font, and a
+     font is a loading budget rather than a preference. `scale` moves the
+     reading size and the rhythm between blocks together, because moving type
+     without moving the space around it is how a "spacious" setting comes out
+     merely bigger. */
+  [data-cw-course-font="ui"] {
+    --cw-course-heading-family: var(--cw-font-ui);
+    --cw-course-heading-weight: 650;
+  }
+
+  [data-cw-course-scale="compact"] {
+    --cw-course-body-size: 0.95rem;
+    --cw-course-heading-scale: 0.92;
+    --cw-course-block-gap: var(--cw-space-sm);
+  }
+
+  [data-cw-course-scale="generous"] {
+    --cw-course-body-size: 1.08rem;
+    --cw-course-heading-scale: 1.12;
+    --cw-course-block-gap: var(--cw-space-xl);
+  }
+}
+
+/* Reserves the scrollbar's width permanently, on every page, whether or not
+   that page currently scrolls.
+
+   Without it, a `position: fixed` element sized in `%` (the platform topbar,
+   `min(100% - 2rem, var(--cw-max-width))`) and an in-flow one sized the exact
+   same way (`.container`, same formula) measure two DIFFERENT basises on a
+   system with a classic reserved-space scrollbar: the fixed element's percent
+   resolves against the initial containing block, which is the full viewport;
+   the in-flow element's resolves against `<body>`'s content box, which the
+   scrollbar has already narrowed. Same formula, same variables, and still a
+   few pixels apart — the topbar reads as wider than the page under it, on
+   Windows and on any desktop with "always show scrollbars" on, invisible on a
+   Mac's overlay one. `scrollbar-gutter: stable` makes the width the scrollbar
+   takes constant and equal for both — present even when there is nothing to
+   scroll — so the two formulas agree everywhere instead of only where the
+   discrepancy happens not to show. */
+html {
+  scrollbar-gutter: stable;
 }
 
 body {
@@ -362,87 +745,274 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-[data-cw-glass] {
-  position: relative;
-  isolation: isolate;
-  backdrop-filter: blur(var(--cw-component-glass-blur)) saturate(1.28) brightness(0.96);
-  -webkit-backdrop-filter: blur(var(--cw-component-glass-blur)) saturate(1.28) brightness(0.96);
+/* The body is the sheet BEHIND the shell, and on a public page that is the
+   platform's ground, not the app chrome's. `--background` is an alias of
+   `--cw-platform-bg` now, so it follows the theme on its own; this rule stays
+   because the body also has to carry the ink, and because the strip a reader
+   hits when they overscroll past the end is painted from it. */
+[data-cw-theme="dark"] body {
+  color: var(--cw-platform-text);
+  background: var(--cw-platform-bg);
 }
 
-[data-cw-glass]::before {
+/* ── The rule ─────────────────────────────────────────────────────────────────
+   A DRAWN LINE, NOT A TABLE EDGE. A hairline that runs the full width and stops
+   dead at both ends is the edge of a CELL: it says "this box ends here", and a
+   column of titles under a stack of them stops reading as a list and starts
+   reading as a grid. A separator owes less than that — only where one row ends
+   and the next begins — so it lives inside the row's own measure and fades out
+   before the margin.
+
+   This was already written down as owed: `Builder.module.css` says a real
+   drafted line, weight varying along its length, "belongs in the design system
+   at art-direction level, not in one module". Here it is, at that level.
+
+   TWO PARTS, AND THE SPLIT IS THE POINT. `--cw-rule-ink` is the colour, and a
+   consumer re-points it on its own scope (the builder points it at
+   `--builder-rule`). `--cw-rule-fade-x` / `-y` are the shape, and they read
+   that colour, so one gradient serves every surface without any of them
+   restating the geometry.
+
+   Taken as `border-image` rather than a pseudo-element on purpose: the rule
+   stays a BORDER, so it costs no element, shifts no layout, and there is
+   nothing extra for a hover or a selected state to clean up. The price is that
+   `border-image` outranks `border-color`, so a rule that CHANGES colour with
+   state drops the fade in that state and takes the full line — which is the
+   right reading anyway: a field's underline should show how far the field runs
+   exactly when the field is in use.
+
+   Eight percent at each end is about one gutter: the line stops where the row
+   has nothing in it. Do not use these on a box that has borders on more than
+   one side — `border-image` paints all four, and a bordered card is an edge,
+   not a rule. */
+:root {
+  --cw-rule-ink: var(--cw-platform-border);
+  --cw-rule-fade-x: linear-gradient(90deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
+  --cw-rule-fade-y: linear-gradient(180deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
+}
+
+/* WHICH INK, DECLARED AS A SCOPE (2026-08-28).
+   `--cw-rule-ink` defaults to the page's border, which is right for a rule
+   drawn on the page and wrong everywhere else: on a photograph it disappears,
+   and on the topbar's sheet — whose tone flips independently of the theme — it
+   is simply the wrong colour. Consumers used to re-point the ink in their own
+   module, which the platform canon forbids for good reason (a token defined in
+   fifteen files is fifteen tokens). So the variants live here, named, and a
+   component states which surface its rule is drawn on:
+
+     data-cw-rule="inverse"   over a photograph — cream ink that does not flip
+     data-cw-rule="chrome"    on the topbar sheet — follows the bar's own tone
+     data-cw-rule="inner"     inside a card — the material's inner hairline
+
+   The SHAPE is never restated. One gradient, three inks. */
+[data-cw-rule="inverse"] {
+  --cw-rule-ink: color-mix(in srgb, var(--cw-mat-inverse-text) 22%, transparent);
+}
+
+[data-cw-rule="chrome"] {
+  --cw-rule-ink: color-mix(in srgb, var(--platform-header-fg, var(--cw-platform-text)) 13%, transparent);
+}
+
+[data-cw-rule="inner"] {
+  --cw-rule-ink: var(--cw-mat-stroke-inner);
+}
+
+/* ── Material (M0 matte / M1 glass) ───────────────────────────────────────────
+   The tactile surface layer. Values come from cw.tokens.json → layers.material
+   (light in :root, dark in the theme scope); this recipe is the hand-maintained shape of
+   the material, not its palette. Nothing renders it until a component opts in
+   with data-cw-material, so adding it changes no existing surface.
+
+     data-cw-material="matte"       M0 — opaque warm ground. Reading surfaces,
+                                    forms, dense text. No blur, no cost.
+     data-cw-material="glass"       M1 over the page canvas. Topbar, cards,
+                                    chips. Carries body and muted text.
+     data-cw-material="glass-media" M1 over a photo. Higher tint floor; muted
+                                    text here must be large/semibold
+                                    (see scripts/guard-contrast.mjs).
+     data-cw-material="chrome"      the TOPBAR's own depth. Thinner than
+                                    "glass" and shadowed as chrome, so an
+                                    internal surface with its own bar (the
+                                    admin panel) is made of the same thing as
+                                    the platform's — see the note on it below.
+     data-cw-material="inverse"     the dark mineral panel (offer blocks) —
+                                    same material, night side.
+
+   Rules that keep it honest: one glass depth only (no nesting glass in glass),
+   and every glass degrades to its own opaque tint when the browser can't blur
+   or the reader asked for less transparency. */
+[data-cw-material] {
+  position: relative;
+  isolation: isolate;
+  border: 1px solid var(--cw-mat-stroke);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+[data-cw-material="matte"] {
+  background-color: var(--cw-mat-surface);
+}
+
+[data-cw-material="glass"] {
+  backdrop-filter: var(--cw-mat-filter);
+  background-color: var(--cw-mat-tint);
+}
+
+/* GLASS OVER A PHOTOGRAPH IS NOT GLASS OVER PAPER, and the difference is not
+   only the tint floor (2026-08-28). A panel on the cabinet's room read as an
+   opaque slab beside the topbar's own glass, and the reason it did is worth
+   stating: the tint has to stay high here — muted text over a photograph is
+   asserted against a WHITE worst case in `guard-contrast.mjs`, and the plate's
+   own baked paper edge makes that worst case real rather than theoretical, so
+   82% is the floor and there is no honest way past it. What CAN carry the
+   material is the filter under it. A deeper blur and more saturation let the
+   room's colour and structure move through the panel at the same opacity, which
+   is what the eye reads as glass; a heavier drop shadow does the opposite,
+   darkening the picture around the panel until it reads as a cut-out, so this
+   surface takes the soft shadow the rest of the material takes. */
+[data-cw-material="glass-media"] {
+  backdrop-filter: var(--cw-mat-filter-media);
+  background-color: var(--cw-mat-tint-media);
+}
+
+/* ONE TOPBAR, WHOEVER RENDERS IT (2026-08-29). The platform's bar is a floating
+   pill of chrome-tinted glass; the admin panel had its own bar written in
+   utility classes — an opaque sunk surface with a hairline under it — and the
+   two read as two products the moment a visitor crossed between them. This is
+   the platform bar's material, named so a surface that cannot mount
+   PlatformHeader can still be made of it.
+
+   It spans its column rather than floating, so it is flush: square on all four
+   corners, exactly like the workspace bar. A curve belongs to a sheet that
+   OPENS out of the bar, never to the shut bar itself — a bar already curved
+   while shut shows two notches of page at its lower corners.
+
+   NO SEPARATE BORDER: chrome is bounded by its own shadow, and a line under a
+   bar that already casts one is the bar drawn twice. But the shadow has to
+   contain that line, and for a while it did not — `--cw-mat-shadow-chrome` was
+   reduced to a single 18/40px lift, which is a halo and not a contour, so the
+   builder's flush bar ended in nothing at all and the storefront's pill lost
+   its edge. The token now carries both parts explicitly: `0 0 0 1px
+   var(--cw-mat-stroke-chrome)` is the contour and the blur is the lift.
+
+   A RING, NOT AN UNDERLINE, so one declaration serves both silhouettes: it
+   follows the radius of the floating storefront pill on all four sides, and on
+   a flush full-width bar the vertical edges fall outside the viewport, leaving
+   exactly the bottom line. That is why neither shape needs a `border` of its
+   own — and why the workspace bar's old hairline, written once as
+   `color-mix(text 13%)` at desktop and once as `--cw-mat-stroke-inner` at
+   mobile, could be dropped rather than reconciled: two spellings of one line
+   became one token. `--cw-mat-stroke-chrome` is that token, and the builder's
+   rails read it too (`--builder-rule`), so the frame's edges and the panel
+   edges inside it are one system. */
+[data-cw-material="chrome"] {
+  border: 0;
+  border-radius: 0;
+  backdrop-filter: var(--cw-mat-filter);
+  background-color: var(--cw-mat-tint-chrome);
+  box-shadow: var(--cw-mat-shadow-chrome);
+}
+
+[data-cw-material="chrome"]::before {
+  box-shadow: none;
+}
+
+/* THE SHIELD UNDER A DRAWER (2026-08-29). Every modal sheet in this product
+   hangs off a bar, and what it lays over the page is the BAR'S material
+   continued — never a black dim; the platform darkens nothing with raw ink,
+   and a dim reads differently in the two themes while a tint does not. Three
+   consumers so far: the burger drawer, the account drawer, and the admin
+   panel's navigation drawer. One recipe, so they cannot drift.
+
+   Geometry stays with the consumer — each of them positions its own shield. */
+[data-cw-scrim="chrome"] {
+  background-color: var(--cw-mat-tint-chrome);
+  backdrop-filter: var(--cw-mat-filter);
+}
+
+@supports not ((backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px))) {
+  [data-cw-scrim="chrome"] {
+    background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  [data-cw-scrim="chrome"] {
+    backdrop-filter: none;
+    background-color: color-mix(in srgb, var(--cw-mat-surface) 94%, transparent);
+  }
+}
+
+[data-cw-material="glass"]:where(a, button):hover,
+[data-cw-material="glass"]:where(a, button):focus-visible {
+  background-color: var(--cw-mat-tint-hover);
+}
+
+[data-cw-material="inverse"] {
+  background: var(--cw-mat-inverse-bg);
+  border-color: var(--cw-mat-inverse-stroke);
+  box-shadow: var(--cw-mat-shadow-raised);
+  color: var(--cw-mat-inverse-text);
+}
+
+/* Grain — what reads as "matte" rather than "plastic". Sits above the surface
+   and below the content, never intercepts pointer events. */
+[data-cw-material]::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   border-radius: inherit;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--cw-platform-text) 12%, transparent) 0%,
-      color-mix(in srgb, var(--cw-platform-text) 6%, transparent) 42%,
-      transparent 100%
-    ),
-    radial-gradient(
-      circle at 18% 0%,
-      color-mix(in srgb, var(--cw-platform-accent) 10%, transparent) 0%,
-      transparent 58%
-    );
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--cw-platform-accent-contrast) 10%, transparent);
+  background-image: var(--cw-mat-grain-image);
+  box-shadow: inset 0 0 0 1px var(--cw-mat-stroke-inner);
 }
 
-[data-cw-glass]::after {
-  content: none;
-}
-
-[data-cw-glass="menu"]::after {
-  content: "";
-  position: absolute;
-  inset: -16px;
+[data-cw-material] > * {
+  position: relative;
   z-index: 1;
-  pointer-events: none;
-  border-radius: inherit;
-  opacity: 0.2;
-  background-image: var(--cw-component-glass-frost-image);
-  background-size: cover;
-  background-position: var(--cw-component-glass-frost-position);
-  filter: blur(26px) saturate(1.08);
-  transform: scale(1.06);
 }
 
-[data-cw-glass="menu"]::before {
-  content: none;
+/* Degrade to the opaque tint wherever the blur can't be paid for or isn't
+   wanted. The tint floors are chosen so text contrast holds either way. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  [data-cw-material="glass"],
+  [data-cw-material="glass-media"],
+  [data-cw-material="chrome"] {
+    background-color: var(--cw-mat-surface);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  [data-cw-material="glass"],
+  [data-cw-material="glass-media"],
+  [data-cw-material="chrome"] {
+    backdrop-filter: none;
+    background-color: var(--cw-mat-surface);
+  }
+}
+
+/* ── Legacy shell glass ───────────────────────────────────────────────────────
+   Superseded by [data-cw-material]. What remains is the sheen and the stacking
+   contract for the two surfaces still carrying data-cw-glass="shell" (header,
+   mobile menu); both now paint their band from the material tokens.
+
+   Removed 2026-08-15 as verified-dead code: the [data-cw-glass="menu"] rules
+   (no markup ever set that value) and the frost-image layer — a blurred copy of
+   a photo pinned behind the header. It was a workaround for backdrop-filter not
+   rendering, and its ::after was already cancelled on every consumer, so it had
+   stopped drawing anything long ago. The real cause is fixed in
+   PlatformShell.module.css; see the note on .header. */
+[data-cw-glass] {
+  position: relative;
 }
 
 [data-cw-glass="shell"]::before {
-  content: none;
-}
-
-[data-cw-glass="shell"]::after {
   content: "";
   position: absolute;
-  inset: -12px;
+  inset: 0;
   z-index: 0;
   pointer-events: none;
   border-radius: inherit;
-  opacity: 0.14;
-  background-image: var(--cw-component-glass-frost-image);
-  background-size: cover;
-  background-position: center;
-  filter: blur(24px) saturate(1.06);
-  transform: scale(1.02);
-}
-
-@media (max-width: 900px) {
-  [data-cw-glass="shell"]::after {
-    opacity: 0.18;
-  }
-}
-
-@media (min-width: 901px) {
-  [data-cw-glass="menu"]::after {
-    content: none;
-  }
 }
 
 [data-cw-glass] > * {
@@ -454,6 +1024,19 @@ body {
   .cw-admin-theme {
     color: var(--cw-text);
     background-color: var(--cw-bg);
+  }
+
+  /* The admin content column, on the same guide as every other surface.
+     `--cw-max-width` is what the learner shelf and the builder document axis
+     already measure against, so a table in /admin/orders and a course card in
+     /learn stand on one axis instead of the panel sprawling to the edge of a
+     wide display. Set once in the admin layout: a per-page width was how the
+     tabs drifted apart (analytics 80rem, one customer 56rem, the rest edge to
+     edge), and one class is what keeps them from drifting again. */
+  .cw-admin-content {
+    width: 100%;
+    max-width: var(--cw-max-width);
+    margin-inline: auto;
   }
 
   .cw-app-bg {
@@ -607,8 +1190,15 @@ body {
     box-shadow: var(--cw-shadow);
   }
 
+  /* Field skin only — never a width.
+     It used to set `width: 100%`, which silently ate every width the call site
+     asked for: a `sm:w-40` select and a `flex-1` input are the same single-class
+     specificity, and this rule is emitted last, so it won. The result was a
+     panel of fields stretched edge to edge no matter what the markup said.
+     Width belongs to the layout; this class is the border, the ground and the
+     focus ring. Inputs inside a flex column or a grid cell still fill their
+     track on their own; a standalone one asks for `w-full`. */
   .cw-input {
-    width: 100%;
     border: 1px solid var(--cw-border);
     border-radius: 0.75rem;
     background-color: var(--cw-surface);
@@ -627,6 +1217,50 @@ body {
     outline: none;
     box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
     border-color: var(--cw-interactive-active-border);
+  }
+
+  /* A SELECT'S MARK IS A CHEVRON DRAWN IN INK, NOT A FILLED TRIANGLE
+     (2026-08-28).
+
+     Two things were wrong and only one of them was the shape. The platform's
+     native arrow is painted against the border edge and ignores padding, so on
+     a wide select it drifted far from the value it points at — `appearance:
+     none` is what makes the padding real, and that part was already here. What
+     was still borrowed is what got drawn instead: a solid ▼, which is the one
+     mark in the product that is a filled shape. Everything else this system
+     draws is a monoline stroke, `chevron-down` included.
+
+     So the mark is a chevron now: two stripes in adjacent squares, `\` then
+     `/`, meeting at the vertex below them. The gradient ANGLE points along the
+     gradient line and the band runs perpendicular to it, which is why the
+     left half is `45deg` and not `135deg` — get that backwards and the mark
+     points up, which is what a menu that is already open would say. Gradients rather than an SVG data URI for the
+     reason the old comment already gave and which still binds — a data URI
+     cannot read a CSS variable, so a baked-in arrow colour would stay dark at
+     night. This way the mark is `--cw-muted`, which is ink in both gammas.
+
+     Pair with `pl-3` (not `px-3`): the right padding is this rule's, and it is
+     reserving room for the mark. */
+  .cw-select {
+    appearance: none;
+    -webkit-appearance: none;
+    padding-right: 2rem;
+    background-image:
+      linear-gradient(45deg, transparent 42%, var(--cw-muted) 42% 58%, transparent 58%),
+      linear-gradient(135deg, transparent 42%, var(--cw-muted) 42% 58%, transparent 58%);
+    background-position: calc(100% - 1.06rem) center, calc(100% - 0.76rem) center;
+    background-size: 0.3rem 0.3rem;
+    background-repeat: no-repeat;
+    transition: background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease;
+  }
+
+  /* The field answers the way every other row in the system answers: one ink
+     wash, no second colour. `background-color` needs the specificity bump
+     because the admin scope sets it with `!important` on every field. */
+  .cw-admin-theme .cw-select:hover,
+  .cw-admin-theme .cw-input:hover {
+    background-color: var(--cw-mat-hover-bg) !important;
+    border-color: var(--cw-mat-hover-stroke) !important;
   }
 
   .cw-btn {
@@ -886,9 +1520,9 @@ body {
     --cw-status-pending-soft: color-mix(in srgb, var(--cw-sem-progress) 14%, transparent);
     --cw-status-failed: var(--cw-sem-boundary);
     --cw-status-failed-soft: color-mix(in srgb, var(--cw-sem-boundary) 12%, transparent);
-    --cw-shadow: var(--cw-depth-shadow-soft);
-    --cw-shadow-soft: var(--cw-depth-shadow-soft);
-    --cw-shadow-strong: var(--cw-depth-shadow-medium);
+    --cw-shadow: var(--cw-mat-shadow-soft);
+    --cw-shadow-soft: var(--cw-mat-shadow-soft);
+    --cw-shadow-strong: var(--cw-mat-shadow-raised);
   }
 
   [data-dosha-test="true"][data-dosha-phase="intro"] {
@@ -897,7 +1531,7 @@ body {
 
   .cw-icon-btn {
     padding: 0.5rem;
-    border-radius: 0.75rem;
+    border-radius: var(--cw-radius-sm);
     border: 1px solid transparent;
     color: var(--cw-muted);
     transition: color 0.16s ease, background-color 0.16s ease, border-color 0.16s ease, box-shadow 0.16s ease, opacity 0.2s ease;
@@ -905,8 +1539,11 @@ body {
 
   .cw-icon-btn:hover {
     color: var(--cw-text);
-    background-color: var(--cw-interactive-hover-bg);
-    border-color: var(--cw-interactive-hover-border);
+    /* Icon-only controls should not acquire a pale material tile on hover.
+       Platform controls with an ink-ring supply that quieter affordance
+       locally; legacy utility controls retain just the colour change. */
+    background-color: transparent;
+    border-color: transparent;
   }
 
   .cw-icon-btn:focus-visible {
@@ -916,13 +1553,13 @@ body {
 
   .cw-list-item {
     border: 1px solid var(--cw-border);
-    border-radius: 0.75rem;
+    border-radius: var(--cw-radius-sm);
     background-color: var(--cw-surface);
     transition: background-color 0.2s ease;
   }
 
   .cw-list-item:hover {
-    background-color: var(--cw-accent-soft);
+    background-color: var(--cw-mat-hover-bg);
   }
 
   .cw-row-hover {
@@ -930,7 +1567,7 @@ body {
   }
 
   .cw-row-hover:hover {
-    background-color: var(--cw-accent-soft);
+    background-color: var(--cw-mat-hover-bg);
   }
 
   .cw-link-hover {
@@ -951,7 +1588,7 @@ body {
     overflow-y: hidden;
     min-height: var(--ds-touch-target-min);
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--cw-text) 20%, transparent) transparent;
+    scrollbar-color: var(--cw-mat-scroll-thumb) var(--cw-mat-scroll-track);
   }
 
   .cw-tabbar::-webkit-scrollbar {
@@ -963,8 +1600,8 @@ body {
   }
 
   .cw-tabbar::-webkit-scrollbar-thumb {
-    background-color: color-mix(in srgb, var(--cw-text) 24%, transparent);
-    border-radius: 999px;
+    background-color: var(--cw-mat-scroll-thumb);
+    border-radius: var(--cw-radius-pill);
   }
 
   .cw-tab {
@@ -975,8 +1612,8 @@ body {
     margin-bottom: -1px;
     border: 1px solid transparent;
     border-bottom: 1px solid transparent;
-    border-top-left-radius: 0.5rem;
-    border-top-right-radius: 0.5rem;
+    border-top-left-radius: var(--cw-radius-sm);
+    border-top-right-radius: var(--cw-radius-sm);
     font-size: 0.875rem;
     line-height: 1.25rem;
     font-weight: 500;
@@ -1039,14 +1676,14 @@ body {
 
   .cw-page-btn {
     padding: 0.5rem;
-    border-radius: 0.75rem;
+    border-radius: var(--cw-radius-sm);
     color: var(--cw-muted);
     transition: color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
   }
 
   .cw-page-btn:hover {
     color: var(--cw-text);
-    background-color: var(--cw-accent-soft);
+    background-color: var(--cw-mat-hover-bg);
   }
 
   .cw-page-btn:disabled {
@@ -1059,14 +1696,14 @@ body {
   }
 
   .cw-skeleton-row {
-    border-radius: 0.75rem;
+    border-radius: var(--cw-radius-sm);
     background-color: var(--cw-surface-2);
     animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
   }
 
   .cw-empty-state {
     border: 1px dashed var(--cw-border);
-    border-radius: 1rem;
+    border-radius: var(--cw-radius-md);
     color: var(--cw-muted);
   }
 
@@ -1084,9 +1721,21 @@ body {
     background-color: color-mix(in srgb, var(--cw-muted) 68%, transparent);
   }
 
+  /* THE ONE SCROLLBAR RECIPE (2026-08-28). It came out of the admin, where a
+     dense table has to be scrollable and cannot afford a native bar sitting on
+     the panel, and it is DS-owned now because the same question comes up
+     wherever a surface clamps: the account popover suppresses its gutter
+     entirely (`.profileMenu`), the tab strip runs a 4px one, this is the
+     full-size one for a scroll viewport.
+
+     Two rules keep it honest. The thumb is INK, not a colour of its own — a
+     translucent wash of the page's own text, so it darkens the surface it lies
+     on instead of introducing a grey nobody chose; and the track is nothing.
+     The night half needs no override any more: `--cw-mat-scroll-*` are written
+     against `--cw-platform-text`, which flips with the theme. */
   .custom-scrollbar {
     scrollbar-width: thin;
-    scrollbar-color: color-mix(in srgb, var(--cw-text) 28%, transparent) transparent;
+    scrollbar-color: var(--cw-mat-scroll-thumb) var(--cw-mat-scroll-track);
   }
 
   .custom-scrollbar::-webkit-scrollbar {
@@ -1095,27 +1744,21 @@ body {
   }
 
   .custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
+    background: var(--cw-mat-scroll-track);
   }
 
   .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: color-mix(in srgb, var(--cw-text) 28%, transparent);
+    background-color: var(--cw-mat-scroll-thumb);
+    /* The inset is what makes a 10px bar read as a 6px hairline: the thumb is
+       clipped to its padding box, so the border is transparent margin rather
+       than a second colour. */
     border: 2px solid transparent;
     background-clip: padding-box;
-    border-radius: 999px;
+    border-radius: var(--cw-radius-pill);
   }
 
-  .dark .custom-scrollbar {
-    scrollbar-color: color-mix(in srgb, #ffffff 58%, transparent) color-mix(in srgb, var(--cw-surface-2) 70%, transparent);
-  }
-
-  .dark .custom-scrollbar::-webkit-scrollbar-track {
-    background: color-mix(in srgb, var(--cw-surface-2) 70%, transparent);
-    border-radius: 999px;
-  }
-
-  .dark .custom-scrollbar::-webkit-scrollbar-thumb {
-    background-color: color-mix(in srgb, #ffffff 64%, var(--cw-border) 36%);
+  .custom-scrollbar:hover::-webkit-scrollbar-thumb {
+    background-color: var(--cw-mat-scroll-thumb-hover);
   }
 }
 

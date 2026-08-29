@@ -1,20 +1,3 @@
 {
-  "crons": [
-    {
-      "path": "/api/cron/process-jobs",
-      "schedule": "0 3 * * *"
-    },
-    {
-      "path": "/api/cron/refresh-analytics",
-      "schedule": "30 3 * * *"
-    },
-    {
-      "path": "/api/cron/sync-meta",
-      "schedule": "0 2 * * *"
-    },
-    {
-      "path": "/api/cron/analytics-reports",
-      "schedule": "15 4 * * *"
-    }
-  ]
+  "crons": []
 }

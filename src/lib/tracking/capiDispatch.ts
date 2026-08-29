@@ -60,3 +60,28 @@ export function dispatchCapiEventInline(
     // already persisted, so the cron worker remains responsible for delivery.
   }
 }
+
+/**
+ * Test-mode variant: sends straight to Meta with no `jobs` row and no DB fallback.
+ * Used only while CW_META_TEST_MODE is on, for event types that don't need a durable
+ * retry path (ViewContent). A failed send here is simply lost, not retried.
+ */
+export function dispatchCapiEventDirect(payload: CapiEventPayload): void {
+  const task = async () => {
+    try {
+      await sendCapiEvent(payload);
+    } catch (err) {
+      console.warn("[capi direct] send failed (test mode, no retry):", {
+        event_name: payload.event_name,
+        event_id: payload.event_id,
+        error: getErrorMessage(err),
+      });
+    }
+  };
+
+  try {
+    after(task);
+  } catch {
+    // Called outside a request scope; nothing durable was written, so the event is dropped.
+  }
+}

@@ -13,7 +13,10 @@ function isPlatformRootRoute(pathname: string): boolean {
     pathname === "/programs" ||
     pathname === "/products" ||
     pathname === "/expert" ||
-    pathname === "/dosha-test"
+    pathname === "/consult" ||
+    pathname === "/dosha-test" ||
+    pathname === "/tests" ||
+    pathname.startsWith("/tests/")
   );
 }
 
@@ -34,6 +37,9 @@ function brandFromReferer(rawReferer: string | null, requestHost: string, reques
     if (pathname === "/reboot" || pathname.startsWith("/reboot/")) return "reboot";
     if (pathname === "/programs/reboot" || pathname.startsWith("/programs/reboot/")) return "reboot";
     if (pathname === "/programs/irem" || pathname.startsWith("/programs/irem/")) return "irem";
+    if (pathname === "/programs/reset-day" || pathname.startsWith("/programs/reset-day/")) return "reset-day";
+    // Legacy name of the same product; the routes stay mapped because the URLs
+    // are old enough to be indexed and linked from outside.
     if (pathname === "/programs/mini-detox" || pathname.startsWith("/programs/mini-detox/")) return "reset-day";
     if (pathname === "/mini-detox" || pathname.startsWith("/mini-detox/")) return "reset-day";
     if (pathname === "/programs/way21" || pathname.startsWith("/programs/way21/")) return "way21";
@@ -43,6 +49,7 @@ function brandFromReferer(rawReferer: string | null, requestHost: string, reques
     if (pathname === "/detox" || pathname.startsWith("/detox/")) return "way21";
     if (pathname === "/dosha" || pathname.startsWith("/dosha/")) return "dosha";
     if (pathname === "/dosha-test" || pathname.startsWith("/dosha-test/")) return "dosha";
+    if (pathname === "/tests/dosha" || pathname.startsWith("/tests/dosha/")) return "dosha";
     if (pathname === "/herbs" || pathname.startsWith("/herbs/")) return "herbs";
   } catch {
     return null;
@@ -68,6 +75,8 @@ export function resolveRequestBrandFromPath(pathname: string): HostBrand | null 
   if (clean === "/reboot" || clean.startsWith("/reboot/")) return "reboot";
   if (clean === "/programs/irem" || clean.startsWith("/programs/irem/")) return "irem";
   if (clean === "/irem" || clean.startsWith("/irem/")) return "irem";
+  if (clean === "/programs/reset-day" || clean.startsWith("/programs/reset-day/")) return "reset-day";
+  // Legacy name of the same product — see the note in the URL-based resolver.
   if (clean === "/programs/mini-detox" || clean.startsWith("/programs/mini-detox/")) return "reset-day";
   if (clean === "/mini-detox" || clean.startsWith("/mini-detox/")) return "reset-day";
   if (clean === "/programs/way21" || clean.startsWith("/programs/way21/")) return "way21";
@@ -76,6 +85,7 @@ export function resolveRequestBrandFromPath(pathname: string): HostBrand | null 
   if (clean === "/detox" || clean.startsWith("/detox/")) return "way21";
   if (clean === "/dosha" || clean.startsWith("/dosha/")) return "dosha";
   if (clean === "/dosha-test" || clean.startsWith("/dosha-test/")) return "dosha";
+  if (clean === "/tests/dosha" || clean.startsWith("/tests/dosha/")) return "dosha";
   if (clean === "/consult" || clean.startsWith("/consult/")) return "consult";
   if (clean === "/herbs" || clean.startsWith("/herbs/")) return "herbs";
   return getProductKeyByAlias(clean.replace(/^\//, ""));
