@@ -2069,12 +2069,83 @@
   outline-offset: var(--ds-focus-ring-offset);
 }
 
+/* The cover and the badge worn on it. Positioned so the badge has a corner to
+   sit in; `grid` rather than `block` so the frame takes the cover's height
+   exactly and the card's gap still measures from the picture's bottom edge. */
+.courseCoverFrame {
+  position: relative;
+  display: grid;
+}
+
 .courseCover {
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
+}
+
+/* THE BADGE SPEAKS THE MENU'S LANGUAGE, because they share a cover: the same
+   neutral scrim ink, the same inverse text, the same soft rect — see the long
+   note beside `.courseCard > .menuRoot > .menuTrigger`. Two chips on one
+   photograph drawn in two different materials would read as two unrelated
+   systems arguing over the same picture.
+
+   IT IS DEEPER THAN THE MENU'S, and that is not a drift from the recipe — it
+   is what the recipe costs when the thing on top is words. The menu carries
+   one large glyph, which survives 42% scrim on any cover an author uploads.
+   This carries 0.72rem uppercase with letterspacing, and 42% does not: over a
+   bright cover — a pale studio photograph, which is most of them — the plate
+   composites to roughly 0.62 and leaves the text at about 2.4:1. The floor
+   here is set by the lightest cover that can be uploaded, i.e. white, and 76%
+   is where that worst case clears 4.5:1 (draft ≈7.2:1). A scrim only ever gets
+   as dark as its alpha lets it; there was no way to buy this with the tint.
+
+   Top-LEFT, because the menu already owns the top-right. The 0.25rem inset is
+   measured to put the badge on the menu plate's optical line: the menu root
+   pulls back `--cw-space-2xs` from the card's `--cw-space-md` padding and then
+   insets its plate by `--cw-space-xs`, landing 0.25rem inside the cover's
+   corner. The badge starts from the cover's own edge, so it needs that 0.25rem
+   directly.
+
+   NOT dimmed with the draft cover below it: a status is the one thing on a
+   draft card that must stay at full strength — it is the sentence the dimming
+   is asking the reader to hear. It is a sibling of the picture rather than a
+   child for exactly that reason. */
+.coverPill {
+  position: absolute;
+  inset-block-start: var(--cw-space-2xs);
+  inset-inline-start: var(--cw-space-2xs);
+  display: inline-flex;
+  align-items: center;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-inset);
+  background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 76%, transparent);
+  color: var(--cw-mat-inverse-text);
+  font-family: var(--cw-font-data);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Published is still the only state that gets colour, and for the same reason
+   the flat pill gives it: a draft is the ordinary state of a course being
+   written. But the accent is a TINT IN the scrim, not a wash over it — the
+   plate has to stay dark enough to carry inverse text on a white cover, and an
+   accent-majority plate composites to a mid tan that reads at under 2:1 there.
+   So the ink is mixed first and the alpha is applied to the result: one plate,
+   one material, warmed. 22% is the most accent this takes while the worst case
+   still clears 4.5:1, and it is enough to tell the two states apart at a
+   glance — which is all the colour was ever asked to do. */
+.coverPillPublished {
+  composes: coverPill;
+  background-color: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--cw-platform-accent) 22%, var(--cw-mat-scrim-ink) 78%) 76%,
+    transparent
+  );
 }
 
 /* A course with no cover still has a palette. Two initials on its own gamma
@@ -2094,6 +2165,29 @@
   font-family: var(--cw-font-editorial);
   font-size: 2rem;
   font-weight: 500;
+}
+
+/* A DRAFT IS UNFINISHED, NOT BROKEN. The shelf holds both states side by side
+   and, until now, drew them identically — the only difference was a chip you
+   had to read. Which of these is live was therefore a question you answered
+   word by word across the whole row.
+
+   So the draft steps back, and only just: the picture at 0.82 and the title
+   carried a little way toward the muted ink. Not an outline, which would have
+   said "selected"; not a heavy dim, which is the vocabulary this system spends
+   on locked and revoked — a course you are in the middle of writing is the
+   most ordinary thing in the builder, and greying it out would read as a fault
+   report on your own work in progress. The published card is not brightened to
+   compensate; it is simply left alone, so the whole shelf still sits at the
+   card material's own strength and the drafts recede from it.
+
+   Nothing here touches the badge: see the note on `.coverPill`. */
+.courseCard[data-course-status="draft"] :is(.courseCover, .courseCoverFallback) {
+  opacity: 0.82;
+}
+
+.courseCard[data-course-status="draft"] .courseTitle {
+  color: color-mix(in srgb, var(--cw-platform-muted) 45%, currentcolor);
 }
 
 .courseCardBody {

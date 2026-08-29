@@ -375,6 +375,44 @@ const glassPairs = [
     glass: { plain: "#2c4635" },
     min: AA_BODY, context: "way21 card fine print (scoped bump from the shared .45 default)",
   },
+  // --- builder course card, the status badge worn on the cover --------------
+  // `.coverPill` / `.coverPillPublished` in Builder.module.css. The badge sits
+  // on an author-supplied photograph, so the backdrop asserted here is a white
+  // pixel — the lightest thing a cover can put under it, and the only case that
+  // constrains the scrim. Anything darker in the image only helps.
+  //
+  // This is the pair that keeps the 76% honest. The badge started at the menu
+  // trigger's 42% — right for one large glyph, and about 2.4:1 under 0.72rem
+  // uppercase — and the published variant started as an accent-majority plate,
+  // which composited to a mid tan at under 2:1. Thin the scrim or let the accent
+  // take the majority back, and this is what catches it. Both themes, because
+  // the accent is the one token in the recipe that differs between them.
+  {
+    theme: "light", fg: "--cw-mat-inverse-text",
+    glass: { tint: "--cw-mat-scrim-ink", alpha: 0.76, over: "#ffffff" },
+    min: AA_BODY, context: "builder card draft badge on its scrim over a white cover pixel",
+  },
+  {
+    theme: "light", fg: "--cw-mat-inverse-text",
+    glass: {
+      tint: "color-mix(in srgb, var(--cw-platform-accent) 22%, var(--cw-mat-scrim-ink) 78%)",
+      alpha: 0.76, over: "#ffffff",
+    },
+    min: AA_BODY, context: "builder card published badge on its accent-tinted scrim over a white cover pixel",
+  },
+  {
+    theme: "dark", fg: "--cw-mat-inverse-text",
+    glass: { tint: "--cw-mat-scrim-ink", alpha: 0.76, over: "#ffffff" },
+    min: AA_BODY, context: "builder card draft badge on its scrim over a white cover pixel",
+  },
+  {
+    theme: "dark", fg: "--cw-mat-inverse-text",
+    glass: {
+      tint: "color-mix(in srgb, var(--cw-platform-accent) 22%, var(--cw-mat-scrim-ink) 78%)",
+      alpha: 0.76, over: "#ffffff",
+    },
+    min: AA_BODY, context: "builder card published badge on its accent-tinted scrim over a white cover pixel",
+  },
   // --- network photo hero (data-cw-hero="photo") ----------------------------
   // The copy band sits on .wrap::before — the brand dark at 92%, over the
   // photograph. A photo can contain a pure white pixel, so that is the backdrop
