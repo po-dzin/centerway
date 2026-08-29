@@ -51,6 +51,13 @@ export type CabinetCopy = {
   shelfFilterAll: string;
   /** An empty result speaks as plainly as a list does. */
   shelfNoMatch: string;
+  /* WALKING UP TO A SHELF. The room's one control that is not a course: the
+     niche itself, which takes the camera up to that category. Its name has to
+     say WHICH shelf, because on the wall there are three of them and the
+     drawing is not readable by a screen reader. */
+  roomEnter: (label: string) => string;
+  /** And the way back out of it, to the whole room again. */
+  roomBack: string;
   learningLoadingTitle: string;
   learningLoadingLead: string;
   learningEmptyTitle: string;
@@ -145,6 +152,8 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       shelfFilterLabel: "Filter by subject",
       shelfFilterAll: "All",
       shelfNoMatch: "Nothing found. Try another name or subject.",
+      roomEnter: (label) => `Step up to shelf ${label}`,
+      roomBack: "Step back",
       learningLoadingTitle: "Loading your courses…",
       learningLoadingLead: "Restoring access, progress and your next lesson.",
       learningEmptyTitle: "No courses in this profile yet",
@@ -223,6 +232,8 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     shelfFilterLabel: "Фільтр за розділом",
     shelfFilterAll: "Усі",
     shelfNoMatch: "Нічого не знайшлось. Спробуйте іншу назву або розділ.",
+    roomEnter: (label) => `Підійти до полиці ${label}`,
+    roomBack: "Відійти",
     learningLoadingTitle: "Завантажуємо ваші курси…",
     learningLoadingLead: "Відновлюємо доступ, поступ і ваш наступний урок.",
     learningEmptyTitle: "У кабінеті ще немає курсів",
