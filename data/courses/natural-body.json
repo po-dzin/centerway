@@ -4,7 +4,7 @@
   "id": "fb5d1cf1-05b4-552a-9794-cf14a20e85f6",
   "slug": "natural-body",
   "title": "Природнє тіло з Аюрведою",
-  "programSlug": "ideal-body",
+  "programSlug": "natural-body",
   "brand": "centerway",
   "locale": "uk",
   "translationGroupId": "natural-body",
@@ -25,6 +25,7 @@
     "gate": "soft"
   },
   "entitlementProductCodes": [
+    "natural-body",
     "ideal-body"
   ],
   "theme": {

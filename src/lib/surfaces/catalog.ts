@@ -373,7 +373,7 @@ export function getMainDomainSitemapRoutes(): string[] {
     "/programs/reset-day",
     "/programs/way21",
     "/products/herbs",
-    "/programs/ideal-body",
+    "/programs/natural-body",
     "/programs/irem",
     "/consult",
     "/tests",

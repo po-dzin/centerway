@@ -13,8 +13,9 @@ export function getOfferMeta(productCode: string | null | undefined): {
       return { code: "short", title: "Short-Перезавантаження", kind: "mini-course" };
     case "irem":
       return { code: "irem", title: "IREM Гімнастика", kind: "program" };
+    case "natural-body":
     case "ideal-body":
-      return { code: "ideal-body", title: "Природнє тіло з Аюрведою", kind: "program" };
+      return { code: "natural-body", title: "Природнє тіло з Аюрведою", kind: "program" };
     case "consult":
       return { code: "consult", title: "Консультація", kind: "lead" };
     case "herbs":

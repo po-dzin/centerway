@@ -188,7 +188,7 @@ export const PRODUCTS = {
 // Codes that only ever produce a lead, never an order. "herbs" left this list
 // when it got its own checkout; consult stayed, because the consultation is
 // agreed in conversation and its landing posts to /api/leads.
-export const LEAD_PRODUCT_CODES = ["consult", "ideal-body", "platform", "irem-individual"] as const;
+export const LEAD_PRODUCT_CODES = ["consult", "natural-body", "platform", "irem-individual"] as const;
 
 /**
  * The six products written in this file, and only those.
@@ -252,7 +252,10 @@ export function normalizeProduct(input: unknown): ProductCode | null {
     if (s === "way21" || s === "shlyah21" || s === "detox21") return "way21";
     if (s === "reset-day" || s === "reset_day" || s === "reset" || s === "rozvantazhennya") return "reset-day";
     if (s === "consult" || s === "consultation") return "consult";
-    if (s === "ideal-body" || s === "ideal_body" || s === "idealne-tilo") return "ideal-body";
+    // `ideal-body` is the name this product was sold under until 2026-08-29;
+    // it stays on the left of the arrow for exactly the reason the others do.
+    if (s === "natural-body" || s === "ideal-body" || s === "ideal_body" || s === "idealne-tilo")
+      return "natural-body";
     if (s === "herbs") return "herbs";
     if (s === "platform" || s === "centerway") return "platform";
     return null;

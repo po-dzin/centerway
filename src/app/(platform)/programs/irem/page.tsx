@@ -7,7 +7,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 export const metadata: Metadata = pageMetadata({
   title: "IREM Гімнастика: відновлююча рухова система",
   description: describe(
-    "12-тижнева рухова практика IREM: мобільність, робота з м'язовими затискачами, контакт із тілом і рівна енергія протягом дня."
+    "Щоденна рухова практика IREM: мобільність, робота з м'язовими затискачами, контакт із тілом і рівна енергія протягом дня."
   ),
   path: "/programs/irem",
 });

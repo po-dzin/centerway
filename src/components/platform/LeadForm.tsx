@@ -165,7 +165,7 @@ export function LeadForm({
           <option value="consultation">Особиста консультація</option>
           <option value="way21">Шлях 21</option>
           <option value="reset-day">Reset Day</option>
-          <option value="ideal-body">Природнє тіло з Аюрведою</option>
+          <option value="natural-body">Природнє тіло з Аюрведою</option>
           <option value="irem">Відновлююча гімнастика</option>
           <option value="herbs">Трав&apos;яна підтримка</option>
         </select>

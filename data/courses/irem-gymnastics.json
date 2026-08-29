@@ -13,9 +13,11 @@
       "src" : "/cw/platform/programs/irem-hero-desktop-v2.webp"
    },
    "entitlementProductCodes" : [
+      "irem-gymnastics",
       "ivem-gimnastika"
    ],
    "id" : "cc7b01ee-0000-4000-8000-000000000001",
+   "durationDays" : 7,
    "kind" : "course",
    "locale" : "uk",
    "modules" : [
@@ -4863,13 +4865,13 @@
          "title" : "7 днів практики"
       }
    ],
-   "programSlug" : "ivem-gimnastika",
+   "programSlug" : "irem-gymnastics",
    "schedule" : {
       "gate" : "soft",
       "mode" : "daily",
       "start" : "purchase"
    },
-   "slug" : "ivem-gimnastika",
+   "slug" : "irem-gymnastics",
    "sortOrder" : 4,
    "status" : "draft",
    "summary" : "Інтегральна відновлювальна енергомоделююча гімнастика: 7 щоденних уроків, опис вправ і нагадування про послідовність.",
@@ -4879,7 +4881,7 @@
       "scale" : "regular"
    },
    "title" : "ІВЕМ гімнастика",
-   "translationGroupId" : "ivem-gimnastika",
+   "translationGroupId" : "irem-gymnastics",
    "version" : 1,
    "visibility" : "hidden"
 }
