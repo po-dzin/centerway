@@ -478,6 +478,12 @@ export function LearnRoomView({
   courses: LearnerShelfCourseDto[];
   copy: CabinetCopy;
 }) {
+  /* Which course is being looked at, wherever the looking came from. The
+     prototype's rule: "стан рядка не залежить від того, звідки прийшла увага"
+     — a row and its spine light together whether the pointer is on the text
+     or on the shelf, because otherwise half the scene answers and half does
+     not. */
+  const [hot, setHot] = useState<string | null>(null);
   const stageRef = useRef<HTMLDivElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
   const [dark, setDark] = useState(false);
@@ -548,9 +554,14 @@ export function LearnRoomView({
                   key={b.slug}
                   className={styles.book}
                   data-live={b.live}
+                  data-hot={hot === b.slug}
                   style={{ left: b.x, bottom: b.y, width: b.w, height: b.h, ["--tilt" as string]: `${b.tilt.toFixed(1)}deg` }}
                   aria-label={`${b.title} · ${b.state}`}
                   href={courseAction(b.course, copy).href}
+                  onMouseEnter={() => setHot(b.slug)}
+                  onMouseLeave={() => setHot(null)}
+                  onFocus={() => setHot(b.slug)}
+                  onBlur={() => setHot(null)}
                 >
                   <span className={styles.bookDraw} dangerouslySetInnerHTML={{ __html: spineInk(b.w, b.h) }} />
                   <span className={styles.bookSpine}>{b.title}</span>
@@ -562,6 +573,53 @@ export function LearnRoomView({
           </div>
         ))}
       </div>
+
+      {/* THE ROOM IS THE ENVIRONMENT; THIS IS THE CONTENT.
+          In the prototype the shelves live in a fixed, `aria-hidden` stage and
+          the thing a reader actually reads is a text column beside them — which
+          is why its niches are packed into the right half and the left half is
+          not empty space but the column's. Porting the stage without the column
+          left a room that looked broken and, worse, could only be used by
+          pointing at 20px spines: the titles were in the drawing, not in the
+          document. The column is the shelf as text — the same courses, the same
+          doorways, in a list that can be read, scrolled and tabbed through. */}
+      <nav className={styles.sheet} aria-label={copy.learningLabel}>
+        <ol className={styles.shelfList}>
+          {courses.map((course, i) => {
+            const done = course.standing?.completedLessons ?? 0;
+            const total = course.standing?.totalLessons ?? 0;
+            const live = course.access === "enrolled";
+            return (
+              <li key={course.slug}>
+                <Link
+                  className={styles.row}
+                  href={courseAction(course, copy).href}
+                  data-hot={hot === course.slug}
+                  onMouseEnter={() => setHot(course.slug)}
+                  onMouseLeave={() => setHot(null)}
+                  onFocus={() => setHot(course.slug)}
+                  onBlur={() => setHot(null)}
+                >
+                  <span className={styles.rowIndex}>{String(i + 1).padStart(2, "0")}</span>
+                  <span className={styles.rowMain}>
+                    <span className={styles.rowTitle}>{course.title}</span>
+                    <span className={styles.rowNote}>
+                      {course.categories.map((c) => copy.courseCategories[c]).join(" · ")}
+                    </span>
+                  </span>
+                  <span className={styles.rowState} data-held={live}>
+                    {total > 0
+                      ? `${done} / ${total}`
+                      : course.access === "locked"
+                        ? copy.courseLocked
+                        : copy.courseNotStarted}
+                  </span>
+                </Link>
+              </li>
+            );
+          })}
+        </ol>
+      </nav>
     </div>
   );
 }
