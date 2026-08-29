@@ -4,7 +4,7 @@
   var EVENTS_ENDPOINT = API_BASE + "/api/events";
   var PRODUCT = "irem";
   var OFFER_ID = "irem_main_4100";
-  var PRICE_VALUE = 4100;
+  var PRICE_VALUE = 3950;
   var CURRENCY = "UAH";
   var CONTENT_NAME = "IREM";
   var CLARITY_PROJECT_ID = "vy9u7jygno";

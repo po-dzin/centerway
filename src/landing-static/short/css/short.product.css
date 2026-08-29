@@ -1619,7 +1619,7 @@ body.modal-open {
 
 .section-program .section-program-grid {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: var(--landing-space-program-grid-gap, 24px);
   align-items: stretch;
 }
@@ -1648,18 +1648,32 @@ body.modal-open {
   gap: var(--landing-space-card-media-gap, 12px);
 }
 
+.section-program .program-title {
+  width: 100%;
+  margin: 0;
+  text-align: left;
+  font-size: var(--landing-type-program-title-size, 1.125rem);
+  font-weight: 700;
+  line-height: var(--landing-line-heading, 1.25);
+  color: var(--landing-color-text-strong, var(--landing-color-text));
+}
+
+.section-program .program-subtitle {
+  width: 100%;
+  margin: 0;
+  text-align: left;
+  font-size: var(--landing-type-program-subtitle-size, 0.9375rem);
+  font-weight: 300;
+  line-height: var(--landing-line-body, 1.5);
+  color: var(--landing-color-text-muted, var(--landing-color-text));
+}
+
 .section-program .items ul {
   width: 100%;
   list-style: disc;
   padding-left: var(--landing-space-program-list-padding-left, 15px);
   font-size: var(--landing-type-program-list-size, 15px);
   font-weight: 300;
-}
-
-.section-program .items .card3 {
-  align-items: flex-start;
-  text-align: left;
-  width: 100%;
 }
 
 .section-program .items ul li::marker {
@@ -1672,18 +1686,6 @@ body.modal-open {
   width: 100%;
   max-width: 100%;
   height: auto;
-}
-
-.section-program .lesson {
-  border-radius: var(--landing-radius-pill, 999px);
-  display: block;
-  width: 100%;
-  box-sizing: border-box;
-  background: var(--landing-color-surface-accent-soft);
-  padding: var(--landing-space-rhythm-4) var(--landing-space-rhythm-20);
-  text-align: center;
-  color: var(--landing-color-text);
-  font-weight: 700;
 }
 
 .itemsli {
