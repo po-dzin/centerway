@@ -1479,11 +1479,21 @@ function RichTextEditor({
     );
   };
 
+  /* What the second half of every node menu acts on, said in the block's own
+     name rather than as the bare word «блок»: the author has one prose block
+     open and several paragraphs inside it, and «БЛОК «ТЕКСТ»» names the object
+     the document itself shows them. */
+  const BLOCK_SECTION = `Блок «${BLOCK_TYPE_LABELS[block.type]}»`;
+
   return (
     <div className={styles.nodeList}>
       {block.content.map((node, index) => {
         const row: DragRef = { list: "node", group: 0, index };
         const isList = node.kind === "ul" || node.kind === "ol";
+        /* «Цей абзац», «Цей список» — the kind the author is pointing at, not
+           the generic «елемент». Every one of the four kinds is masculine, so
+           «Цей» agrees with all of them. */
+        const nodeSection = `Цей ${NODE_LABELS[node.kind].toLocaleLowerCase("uk")}`;
 
         return (
           <div className={`${styles.nodeCard} ${styles.dragRow}`} key={index} {...drag.rowProps(row)}>
@@ -1500,6 +1510,15 @@ function RichTextEditor({
                   author what they were already looking at. The menu still says
                   the kind, in the one place where it is a question. */}
               <BuilderGrip drag={drag} row={row} label={NODE_LABELS[node.kind]} />
+              {/* TWO SUBJECTS, NAMED — see `MenuItem.section`.
+
+                  This list acts on two different things: the paragraph under
+                  the pointer, and the prose block that holds every paragraph in
+                  it. They used to run together under one hairline, which left
+                  «Видалити» and «Видалити блок» to tell themselves apart by a
+                  single word — a distinction between losing a sentence and
+                  losing the block. Each run now sits under a caption that says
+                  what it acts on, so the subject is read before the verb. */}
               <BuilderMenu
                 label={`Дії з ${NODE_LABELS[node.kind].toLowerCase()}`}
                 items={[
@@ -1511,16 +1530,19 @@ function RichTextEditor({
                   ...(Object.keys(NODE_LABELS) as RichTextNode["kind"][]).map((kind) => ({
                     label: NODE_LABELS[kind],
                     icon: NODE_ICONS[kind],
+                    section: nodeSection,
                     disabled: kind === node.kind,
                     onSelect: () => runCommand(index, kind),
                   })),
-                  { label: "Підняти вище", icon: "arrow-up" as const, startsGroup: true, disabled: index === 0, onSelect: () => setContent(moveItem(block.content, index, index - 1)) },
-                  { label: "Опустити нижче", icon: "arrow-down" as const, disabled: index === block.content.length - 1, onSelect: () => setContent(moveItem(block.content, index, index + 1)) },
-                  { label: "Видалити", icon: "trash" as const, danger: true, disabled: block.content.length === 1, onSelect: () => setContent(block.content.filter((_, position) => position !== index)) },
-                  ...(blockActions ?? []).map((action, position) => ({
-                    ...action,
-                    startsGroup: position === 0,
-                  })),
+                  /* Still `startsGroup`: same subject as the four above it, so
+                     the break between «what this is» and «what to do with it»
+                     stays a rule rather than a second caption. */
+                  { label: "Підняти вище", icon: "arrow-up" as const, section: nodeSection, startsGroup: true, disabled: index === 0, onSelect: () => setContent(moveItem(block.content, index, index - 1)) },
+                  { label: "Опустити нижче", icon: "arrow-down" as const, section: nodeSection, disabled: index === block.content.length - 1, onSelect: () => setContent(moveItem(block.content, index, index + 1)) },
+                  { label: "Видалити", icon: "trash" as const, section: nodeSection, danger: true, disabled: block.content.length === 1, onSelect: () => setContent(block.content.filter((_, position) => position !== index)) },
+                  /* The caption opens the group, so these no longer ask for a
+                     rule of their own — two edges under one heading. */
+                  ...(blockActions ?? []).map((action) => ({ ...action, section: BLOCK_SECTION })),
                 ]}
               />
             </div>

@@ -29,7 +29,7 @@
  * safe across the browsers an author might open this in.
  */
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { Fragment, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 
 import { HandGraphic, Icon } from "@/components/Icon";
@@ -51,13 +51,56 @@ export type MenuItem = {
   /**
    * Opens a new group — a divider above this item.
    *
-   * One list, two subjects: the rich-text node menu says what THIS paragraph
-   * is and does, then what the whole prose block does. Without the rule between
-   * them «Видалити» and «Видалити блок» are two adjacent lines that differ by
-   * one word, which is the reading an author gets wrong once and remembers.
+   * A rule separates items with the SAME subject: «what this paragraph is»
+   * from «what to do with this paragraph». For a change of subject a rule is
+   * not enough — see `section`.
    */
   startsGroup?: boolean;
+  /**
+   * WHAT THIS ITEM ACTS ON, named out loud.
+   *
+   * One list, two subjects: the rich-text node menu says what THIS paragraph
+   * is and does, and then what the whole prose block does. A hairline between
+   * them was the entire distinction, so «Видалити» and «Видалити блок» read as
+   * two adjacent lines differing by one word — and an author who gets that
+   * wrong once loses a block instead of a sentence.
+   *
+   * Items carrying the same section string are gathered into a `role="group"`
+   * under a caption that names the subject. The caption IS the separator, so a
+   * section-leading item does not also draw `startsGroup`'s rule.
+   *
+   * Optional, and absent everywhere a menu has one subject — the lesson row,
+   * the module head, the course card, a non-prose block's own rail. A heading
+   * over a list of four things that obviously belong together is furniture.
+   */
+  section?: string;
 };
+
+type Entry = { item: MenuItem; index: number; opensSection: boolean };
+
+/**
+ * Consecutive runs of items that share a `section`.
+ *
+ * Consecutive, not gathered: the order the caller wrote is the order the author
+ * reads, and re-sorting a menu so that two same-named items sit together would
+ * move actions out from under the finger that has learned where they are. A
+ * caller that interleaves sections gets interleaved captions, which is the
+ * honest picture of what it asked for.
+ */
+function groupItems(items: MenuItem[]): { section?: string; entries: Entry[] }[] {
+  const groups: { section?: string; entries: Entry[] }[] = [];
+  items.forEach((item, index) => {
+    const current = groups[groups.length - 1];
+    const opens = !current || current.section !== item.section;
+    if (opens) groups.push({ section: item.section, entries: [] });
+    groups[groups.length - 1].entries.push({
+      item,
+      index,
+      opensSection: opens && item.section !== undefined,
+    });
+  });
+  return groups;
+}
 
 /** Where the list was asked to appear, in viewport coordinates. */
 type Origin = { x: number; y: number; below: number; above: number; align: "start" | "end" };
@@ -203,6 +246,36 @@ export function BuilderMenu({
     };
   }, [open, close]);
 
+  /* Written once and used by both branches below: a grouped section and an
+     ungrouped run draw exactly the same row, and two copies of it is how the
+     two drift apart. `index` is the position in the FLAT list, so `danger` and
+     `startsGroup` still read their true neighbour across a section boundary. */
+  const renderItem = ({ item, index, opensSection }: Entry) => (
+    <button
+      key={item.label}
+      className={item.danger ? styles.menuItemDanger : styles.menuItem}
+      type="button"
+      role="menuitem"
+      disabled={item.disabled}
+      title={item.hint ?? item.label}
+      data-first-danger={item.danger && !items[index - 1]?.danger ? "" : undefined}
+      /* Not under a caption: the caption is already the rule, and drawing both
+         gives the section a double edge. */
+      data-group-start={item.startsGroup && index > 0 && !opensSection ? "" : undefined}
+      onClick={() => {
+        close();
+        item.onSelect();
+      }}
+    >
+      {item.icon ? (
+        <Icon className={styles.menuItemIcon} name={item.icon} size={16} />
+      ) : (
+        <span className={styles.menuItemIcon} aria-hidden="true" />
+      )}
+      <span className={styles.menuItemLabel}>{item.label}</span>
+    </button>
+  );
+
   return (
     <div className={styles.menuRoot} ref={root}>
       <button
@@ -243,29 +316,29 @@ export function BuilderMenu({
                   : { top: 0, left: 0, visibility: "hidden" }
               }
             >
-              {items.map((item, index) => (
-                <button
-                  key={item.label}
-                  className={item.danger ? styles.menuItemDanger : styles.menuItem}
-                  type="button"
-                  role="menuitem"
-                  disabled={item.disabled}
-                  title={item.hint ?? item.label}
-                  data-first-danger={item.danger && !items[index - 1]?.danger ? "" : undefined}
-                  data-group-start={item.startsGroup && index > 0 ? "" : undefined}
-                  onClick={() => {
-                    close();
-                    item.onSelect();
-                  }}
-                >
-                  {item.icon ? (
-                    <Icon className={styles.menuItemIcon} name={item.icon} size={16} />
-                  ) : (
-                    <span className={styles.menuItemIcon} aria-hidden="true" />
-                  )}
-                  <span className={styles.menuItemLabel}>{item.label}</span>
-                </button>
-              ))}
+              {groupItems(items).map((group, groupIndex) =>
+                group.section === undefined ? (
+                  /* One subject: no heading, no wrapper — the plain list every
+                     other call site has always rendered. */
+                  <Fragment key={`group-${groupIndex}`}>{group.entries.map(renderItem)}</Fragment>
+                ) : (
+                  /* `role="group"` is a legal child of `role="menu"`, and its
+                     `aria-label` is what a screen reader announces on entering
+                     the group — so the caption itself is `aria-hidden`, or the
+                     subject would be read twice before the first item. */
+                  <div
+                    key={`group-${groupIndex}`}
+                    className={styles.menuSection}
+                    role="group"
+                    aria-label={group.section}
+                  >
+                    <span className={styles.menuSectionLabel} aria-hidden="true">
+                      {group.section}
+                    </span>
+                    {group.entries.map(renderItem)}
+                  </div>
+                ),
+              )}
             </div>,
             document.body,
           )
