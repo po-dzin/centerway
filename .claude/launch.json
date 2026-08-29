@@ -110,6 +110,43 @@
       "port": 8070,
       "autoPort": false,
       "url": "http://localhost:8070/"
+    },
+    {
+      "name": "room-view-8091",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "8091"
+      ],
+      "port": 8091,
+      "autoPort": false,
+      "url": "http://localhost:8091/"
+    },
+    {
+      "name": "dev-8110",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": [
+        "next",
+        "dev",
+        "-p",
+        "8110"
+      ],
+      "port": 8110,
+      "autoPort": false,
+      "url": "http://localhost:8110/"
+    },
+    {
+      "name": "reader-8123",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd .claude/worktrees/reader-top && npx next dev -p 8123"
+      ],
+      "port": 8123,
+      "autoPort": false,
+      "url": "http://localhost:8123/"
     }
   ]
 }

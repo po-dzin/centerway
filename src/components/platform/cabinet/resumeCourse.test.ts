@@ -26,6 +26,7 @@ function course(
     currentLessonSlug: "lesson-2",
     currentLessonTitle: "Lesson 2",
     cover: null,
+    categories: [],
     ...overrides,
   };
 }
