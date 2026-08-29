@@ -2806,8 +2806,30 @@
   }
 }
 
+/* THE GAP IS AT LEAST AS TALL AS THE CONTROL THAT LIVES IN IT.
+
+   The ring is `--ds-touch-target-min` — 48px, the contract's minimum — and the
+   gap was `--cw-course-block-gap`: 12px on the compact course scale, 16px by
+   default, 32px on generous. Centring it (see `.blockInsertAction`) put the
+   ring's middle on the rule correctly and left it overhanging the gap by 16px
+   ABOVE and BELOW at the default scale, so the circle lay over the last line of
+   the block before it and the first line of the block after it. That is the
+   «+ slips under the neighbouring block» the author sees, and it is the same
+   overhang at the head of the document, where the first gap has the lesson
+   title above it rather than a block.
+
+   Taking it out of flow could not fix that: an out-of-flow 48px control still
+   PAINTS 48px, whatever its 16px parent measures. Only the gap can, so the gap
+   is floored at the control's own size. Below that floor the block rhythm is
+   the course scale's; above it the scale still wins, which is why this is a
+   `max()` and not a constant.
+
+   `--cw-course-block-gap` itself is deliberately NOT raised: it is the
+   learner's reading rhythm, shared with the course renderer, and loosening
+   every lesson on the shelf to make room for an authoring control would be the
+   tool changing the work. The floor is scoped to the builder's own gap. */
 .blockInsert {
-  min-height: var(--cw-course-block-gap, var(--cw-space-md));
+  min-height: max(var(--ds-touch-target-min), var(--cw-course-block-gap, var(--cw-space-md)));
   display: grid;
   place-items: center;
   position: relative;
@@ -3128,21 +3150,27 @@
   animation: builderDocEnter var(--builder-motion-ink) var(--builder-ease-page) both;
 }
 
-/* THE RIGHT GUTTER, NOT THE LEFT MARGIN.
+/* THE LEADING GUTTER — the side the author's eye starts every line on.
 
-   It used to hang off the block's leading edge (`inset-inline-end: 100%`),
-   which put the grip in the same strip of margin as the pointer's natural path
-   to the words — a drag that started a hair too far right grabbed the block
-   instead of placing the caret. The right gutter is reserved for exactly this
-   (`--builder-doc-gutter`, both sides, see `.page[data-mode="document"]`) and
-   was sitting empty; `.nodeCard`'s own handle mirrors this same construction
-   below, so a block's controls and the controls of the node inside it now
-   read as one family instead of two different mechanisms on two different
-   sides. */
+   The handles have been on both sides of this document. They hung off the
+   leading edge first, went to the trailing gutter to get out of «the pointer's
+   natural path to the words», and are back on the leading side now because
+   that objection was about a construction this no longer is: the rail sat in
+   the block's own MARGIN then, sharing a strip with the text, so a drag that
+   started a hair too far in grabbed the block instead of placing the caret.
+   `--builder-doc-gutter` is a reserved 3rem OUTSIDE the measure, on both sides
+   (see `.page[data-mode="document"]`) — nothing in it is on the way to a word.
+
+   Leading, rather than trailing, because that is where a document's handles
+   are: the reader arrives at the left edge of every line, so the control that
+   says «this paragraph, this block» is found without hunting for it, and the
+   trailing gutter stops being a second place to look. `.nodeCard`'s own handle
+   mirrors this construction one level down, so a block's controls and the
+   controls of the node inside it read as one family. */
 .blockRail {
   position: absolute;
   inset-block-start: 0;
-  inset-inline-start: 100%;
+  inset-inline-end: 100%;
   z-index: 1;
   display: flex;
   flex-direction: column;
@@ -3164,14 +3192,16 @@
 }
 
 /* No gutter to hang in below the desktop measure: the rail comes inside, at
-   the block's own leading edge, above the content rather than beside it. */
+   the block's own leading edge, above the content rather than beside it — the
+   same side it takes in the gutter on a wide screen, so the handle does not
+   change edges when the layout does. */
 @media (max-width: 900px) {
 
   .blockRail {
     position: static;
     inset: auto;
     flex-direction: row;
-    justify-content: flex-end;
+    justify-content: flex-start;
   }
 }
 
@@ -3229,7 +3259,7 @@
 .nodeHead {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: var(--cw-space-2xs);
   min-height: 1.25rem;
   opacity: 0;
@@ -3243,7 +3273,7 @@
 }
 
 /* The desktop form — `.blockRail`'s own construction, one level deeper. Lands
-   in the same right gutter, aligned to THIS node's top rather than the
+   in the same leading gutter, aligned to THIS node's top rather than the
    block's, because `.nodeCard` is now the positioned ancestor instead of
    `.blockCard`. Nothing here decides visibility; the reveal rule above already
    covers both shapes. */
@@ -3251,7 +3281,7 @@
   .nodeHead {
     position: absolute;
     inset-block-start: 0;
-    inset-inline-start: 100%;
+    inset-inline-end: 100%;
     z-index: 1;
     flex-direction: column;
     justify-content: center;
@@ -4026,6 +4056,43 @@
   padding-block-start: var(--cw-space-2xs);
 }
 
+/* A NAMED SUBJECT, WHERE A RULE COULD NOT CARRY IT.
+
+   `[data-group-start]` separates items that act on the SAME thing — «what this
+   paragraph is» from «what to do with this paragraph». The prose node's menu
+   changes subject halfway down: the first seven rows are about one paragraph,
+   the last four about the whole block that holds it. A hairline says «a break»
+   and nothing more, so «Видалити» and «Видалити блок» sat four rows apart as
+   two lines differing by one word, and the author had to infer from the wording
+   which one took a sentence and which took the block.
+
+   The caption is `.slashGroupTitle`'s recipe on purpose, not a second one: the
+   slash palette is the same object — a popover list of commands under named
+   groups — and the two are read within seconds of each other. */
+.menuSection {
+  display: grid;
+}
+
+/* The caption is the break; a section after a section does not need a second
+   one drawn under it, but the rule is what keeps two captions from reading as
+   one continuous list at a glance. Same recipe as `[data-group-start]`. */
+.menuSection + .menuSection {
+  margin-block-start: var(--cw-space-2xs);
+  --cw-rule-ink: var(--builder-rule);
+  border-block-start: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+  padding-block-start: var(--cw-space-2xs);
+}
+
+.menuSectionLabel {
+  padding: var(--cw-space-2xs) var(--cw-space-sm);
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-data);
+  font-size: 0.7rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 /* ── Settings sheet ───────────────────────────────── */
 
 /* Native <dialog>: the focus trap, Escape and page inertness come with it.
@@ -4391,7 +4458,15 @@
     height: 100%;
     max-height: 100%;
     border-radius: 0;
-    border-inline-start: 1px solid var(--builder-rule);
+    /* The drawer's own edge, drawn like every other separator in the file:
+       fading at both ends (`--cw-rule-fade-y`) rather than running hard from
+       the topbar to the floor. It was the last straight hairline left in the
+       builder — a full-height line with two cut ends beside a document whose
+       every other rule dissolves. `.blockFields` uses the same construction
+       for the same reason one level down. */
+    --cw-rule-ink: var(--builder-rule);
+    border-inline-start: 1px solid transparent;
+    border-image: var(--cw-rule-fade-y);
     background: var(--cw-platform-bg);
     box-shadow: none;
     animation-name: sheetSlideIn;
