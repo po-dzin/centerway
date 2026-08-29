@@ -338,14 +338,15 @@
      photograph — which is also where the eye already is, having come down from
      the name on the wall.
 
-     THREE EQUAL COLUMNS, MEASURED BY THE CARD — in both directions.
+     TWO ADJACENT COLUMNS, MEASURED BY THE CARD.
 
      Height: they stretch to the tallest part, which is the course card, the one
      whose height is set by real content (cover, name, where you stopped, the
-     control). The other two fill it rather than setting their own.
+     control). The dosha card aligns beside it; the library link is a small
+     second row under the course rather than a card-shaped third column.
 
      Width: the column is `15rem`, the card's own width, and the row is only as
-     wide as three of them. `1fr` columns in a `54rem` box made every part 18rem
+     wide as two of them. `1fr` columns in a `54rem` box made every part 18rem
      — the row grew the card to fill the page instead of the page holding three
      cards. A dashboard row is a group of objects standing in a room, and a
      group has a size; it does not spread to whatever it is given.
@@ -356,9 +357,21 @@
      the same line as the avatar. */
   .shelfRow {
     width: 100%;
-    grid-template-columns: repeat(3, minmax(0, 15rem));
+    grid-template-columns: repeat(2, minmax(0, 15rem));
     justify-content: start;
     align-items: stretch;
+  }
+
+  /* The library link sits under the active course rather than consuming a
+     card-sized middle column. The dosha card stays adjacent to the course. */
+  .shelfRow:not([data-shelf="single"]) .glanceMore {
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .shelfRow:not([data-shelf="single"]) .shelfAside {
+    grid-column: 2;
+    grid-row: 1 / span 2;
   }
 
   /* Nothing to resume, so nothing to keep narrow: the state card takes the
@@ -668,11 +681,6 @@
 .wheelRing {
   width: clamp(7rem, 22vw, 9rem);
   height: auto;
-}
-
-.wheelRingCompact {
-  width: 4.6rem;
-  height: 4.6rem;
 }
 
 .wheelTrack {

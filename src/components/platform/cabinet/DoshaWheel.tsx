@@ -56,15 +56,12 @@ export function DoshaWheel({
   labels,
   resultLabel,
   lang,
-  compact = false,
 }: {
   scores: DoshaScores;
   labels: Record<DoshaKey, string>;
   /** The type, printed in the middle — «Вата-Пітта». */
   resultLabel: string;
   lang: ProfileLang;
-  /** Ring only, for the identity avatar. The full result remains textual nearby. */
-  compact?: boolean;
 }) {
   const titleId = useId();
   const total = ORDER.reduce((sum, key) => sum + Math.max(0, scores[key] ?? 0), 0);
@@ -90,7 +87,7 @@ export function DoshaWheel({
 
   const ring = (
       <svg
-        className={compact ? `${styles.wheelRing} ${styles.wheelRingCompact}` : styles.wheelRing}
+        className={styles.wheelRing}
         viewBox={`0 0 ${BOX} ${BOX}`}
         role="img"
         aria-labelledby={titleId}
@@ -129,8 +126,6 @@ export function DoshaWheel({
         ))}
       </svg>
   );
-
-  if (compact) return ring;
 
   return (
     <div className={styles.wheel}>

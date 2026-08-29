@@ -819,21 +819,6 @@
   line-height: var(--ds-type-label-line-height);
 }
 
-/* THE ROLE IS A STATE, SO IT IS SET LIKE ONE — the label register the rest of
-   the chrome uses for a state (`.sectionLabel`, the builder's setting titles),
-   not a third size of address. It is the shortest of the three lines and the
-   only one that is not the reader's own words, which is what the letter-spacing
-   is for: it reads as the system speaking about the account rather than as
-   another field of it. */
-.menuIdentityRole {
-  margin-top: 0.15rem;
-  color: var(--cw-platform-muted);
-  font-size: 0.72rem;
-  font-weight: 600;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
-}
-
 /* THE POPOVER NAMES THE ACCOUNT TOO (2026-08-29).
    The base `display: none` above was written for the DESKTOP NAV ROW, where
    this caption was a flex child fighting the links for width and wrapping the
@@ -842,10 +827,6 @@
    menu that carries «Вийти» never said whose session was about to end. */
 .profileMenu .menuIdentity {
   display: grid;
-}
-
-.profileMenu[data-cw-header-tone="dark"] .menuIdentityRole {
-  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 64%, transparent);
 }
 
 /* Under a tone flip the muted global ink is a different colour, not a quieter
@@ -886,10 +867,6 @@
   font-size: 0.86rem;
 }
 
-.menuIdentity[data-placement="hoisted"] .menuIdentityRole {
-  color: color-mix(in srgb, var(--platform-header-fg) 62%, transparent);
-}
-
 /* In the burger sheet the ground is the header plate, so the ink is the
    header's. */
 .profileWrapMobile .menuIdentity {
@@ -902,10 +879,6 @@
 
 .profileWrapMobile .menuIdentityMail {
   color: color-mix(in srgb, var(--platform-header-fg) 72%, transparent);
-}
-
-.profileWrapMobile .menuIdentityRole {
-  color: color-mix(in srgb, var(--platform-header-fg) 60%, transparent);
 }
 
 /* The one rule in this menu, and it separates the two registers: everywhere

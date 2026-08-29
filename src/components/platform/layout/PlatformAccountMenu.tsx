@@ -135,25 +135,6 @@ function displayNameOf(session: Session | null) {
   return typeof name === "string" && name.trim().length > 0 ? name.trim() : null;
 }
 
-/**
- * The role, named — and only when it is worth naming.
- *
- * `user` is deliberately absent: it is what every account is unless someone
- * said otherwise, so printing «Користувач» under every name would be a line
- * that says what its absence already says. Same rule `authorFromRow` follows
- * for `listed`. The four values are the ones `user_roles` allows
- * (docs/migration/sql/2026-08-21_merge_role_stores.sql).
- */
-const ROLE_LABELS: Record<string, string> = {
-  admin: "Адміністратор",
-  support: "Підтримка",
-  coach: "Куратор",
-};
-
-function roleLabelOf(role: string | null): string | null {
-  return role ? (ROLE_LABELS[role] ?? null) : null;
-}
-
 function getUserInitial(session: Session | null) {
   const name =
     session?.user?.user_metadata?.full_name || session?.user?.user_metadata?.name || session?.user?.email;
@@ -182,16 +163,13 @@ function InkMenuLabel({ children }: { children: string }) {
  */
 export function PlatformAccountIdentity() {
   const session = usePlatformSession();
-  const identity = usePlatformIdentity(session);
   const accountName = displayNameOf(session);
   const accountEmail = session?.user?.email ?? null;
-  const roleLabel = roleLabelOf(identity.role);
   if (!session?.user || (!accountName && !accountEmail)) return null;
   return (
     <div className={styles.menuIdentity} data-placement="hoisted" data-cw-rule="chrome">
       {accountName ? <p className={styles.menuIdentityName}>{accountName}</p> : null}
       {accountEmail ? <p className={styles.menuIdentityMail}>{accountEmail}</p> : null}
-      {roleLabel ? <p className={styles.menuIdentityRole}>{roleLabel}</p> : null}
     </div>
   );
 }
@@ -445,7 +423,6 @@ export function PlatformAccountMenu({
     session?.user?.user_metadata?.avatar_url || session?.user?.user_metadata?.picture || null;
   const accountName = displayNameOf(session);
   const accountEmail = session?.user?.email ?? null;
-  const roleLabel = roleLabelOf(identity.role);
 
   const rows = (
     <>
@@ -462,11 +439,6 @@ export function PlatformAccountMenu({
         <div className={styles.menuIdentity}>
           {accountName ? <p className={styles.menuIdentityName}>{accountName}</p> : null}
           {accountEmail ? <p className={styles.menuIdentityMail}>{accountEmail}</p> : null}
-          {/* The role is the third fact and the one the other two cannot imply:
-              two accounts with the same name and address differ by what they may
-              do, and «Адмінка» appearing in the list below is the only other
-              place that shows. Absent for a plain reader — see `ROLE_LABELS`. */}
-          {roleLabel ? <p className={styles.menuIdentityRole}>{roleLabel}</p> : null}
         </div>
       ) : null}
       {/* First, above the account's own applications — the same place the panel

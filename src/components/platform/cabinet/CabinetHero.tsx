@@ -88,20 +88,20 @@ export type CabinetHeroNotice = {
 export function CabinetHero({
   label,
   name,
+  role,
   email,
   avatar,
-  avatarRing,
   notice,
   stats,
   children,
 }: {
   label: string;
   name: string;
+  /** A meaningful platform role, shown as part of the profile identity. */
+  role?: string | null;
   email: string;
   /** The account picture, or the initial standing in for one. */
   avatar: ReactNode;
-  /** Optional diagnostic outline; the adjacent stat carries its textual meaning. */
-  avatarRing?: ReactNode;
   /** A fact worth a glance, not a sentence — see the reach dot below. */
   notice?: CabinetHeroNotice;
   stats: CabinetHeroStat[];
@@ -155,11 +155,6 @@ export function CabinetHero({
                 second. Hover and focus-within do the revealing between them; no
                 open flag is threaded through this component for it. */}
             <span className={cabinetStyles.avatarNoticeWrap}>
-              {avatarRing ? (
-                <span className={styles.avatarRing} aria-hidden="true">
-                  {avatarRing}
-                </span>
-              ) : null}
               <span className={styles.avatar} aria-hidden="true">
                 {avatar}
               </span>
@@ -183,6 +178,7 @@ export function CabinetHero({
             <div className={styles.identityText}>
               <p className={styles.sectionLabel}>{label}</p>
               <h1 className={styles.identityName}>{name}</h1>
+              {role ? <p className={styles.identityRole}>{role}</p> : null}
               <p className={styles.identityEmail}>{email}</p>
             </div>
           </div>
