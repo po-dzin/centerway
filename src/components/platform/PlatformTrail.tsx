@@ -17,13 +17,22 @@ import styles from "./PlatformTrail.module.css";
  * bans. Its one hand-rolled crumb can adopt this the day admin moves onto the
  * design system, and not before.
  *
- * WHY IT SITS IN THE PAGE AND NOT IN THE HEADER. The header answers "which
- * application is this" and it should not change shape per route; the trail
- * answers "where in this course am I" and changes on every one. Keeping them
- * apart is also what made the builder's bar stop being overloaded — it had the
- * brand, the trail and the step arrows on one row, and the wordmark had to be
- * hidden below 561px to make room. A row that has to drop a word to fit is a
- * row carrying someone else's job.
+ * WHERE IT SITS, AND WHY THAT DEPENDS ON THE BAR. The default is the page: the
+ * header answers "which application is this" and should not change shape per
+ * route, while the trail answers "where in this course am I" and changes on
+ * every one. That separation is what stopped the BUILDER's bar being
+ * overloaded — it had the brand, the trail and the step arrows on one row, and
+ * the wordmark had to be hidden below 561px to make room. A row that has to
+ * drop a word to fit is a row carrying someone else's job.
+ *
+ * THE READER IS THE EXCEPTION, above 900px only (2026-08-29). Its bar carries a
+ * mark and an avatar and nothing else, so the argument above does not describe
+ * it: there is no row to overload, and the breadcrumb was spending a line of
+ * the reading column under some 1600px of empty bar. Below 900px the bar has no
+ * room to spare and the trail stays in the page, which is where the crowding
+ * argument actually bites. See `src/components/lms/ReaderTrail.tsx` — and note
+ * that this is a claim about ONE bar's contents, not a general licence: a
+ * surface whose bar already carries controls keeps its trail in the page.
  *
  * A step may be a LINK, a BUTTON, or neither. The button form exists because
  * the builder cannot always navigate on click: an editor with unsaved work has

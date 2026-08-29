@@ -1,0 +1,21 @@
+/* The bar's copy of the reader trail.
+
+   It is hidden, not merely narrowed, below 900px: the page keeps its own copy
+   at those widths, and two breadcrumbs describing one position is worse than
+   either. `display: none` is deliberate over `visibility` or opacity — it is
+   what takes the hidden copy out of the accessibility tree, so exactly one
+   breadcrumb is ever announced. */
+.readerTrail {
+  display: none;
+  min-width: 0;
+}
+
+@media (min-width: 900px) {
+  .readerTrail {
+    display: block;
+    /* The slot is `flex: 1 1 auto` between the mark and the avatar, so the
+       trail is centred in what is left rather than pinned to either. */
+    margin-inline: auto;
+    max-width: min(100%, 44rem);
+  }
+}

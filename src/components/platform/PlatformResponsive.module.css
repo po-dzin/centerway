@@ -19,7 +19,12 @@
   margin: 0;
   overflow: visible;
   box-sizing: border-box;
-  border-block-end: 1px solid color-mix(in srgb, var(--cw-platform-text) 13%, transparent);
+  /* NO RULE UNDER THE BAR. The workspace bar is a solid band of the page's own
+     ground, and a band that already differs from what it sits over does not
+     also need a line saying where it ends — the hairline was a second answer to
+     a question the material had answered, and on the reader it read as a seam
+     across an otherwise plain sheet. The shadow stays off for the same reason:
+     one separation, and this bar's is its own tone. */
   border-radius: 0;
   background: var(--cw-platform-bg);
   box-shadow: none;
@@ -30,7 +35,13 @@
   max-width: none !important;
   box-sizing: border-box;
   margin: 0;
-  padding-inline: var(--cw-space-2xl);
+  /* THE PAGE'S OWN GUTTER, not a number chosen for this bar. `--cw-space-2xl`
+     was a fixed 3rem that answered "far enough from the edge" on its own
+     authority and stayed 3rem at every width; `--cw-page-gutter` is the value
+     every other edge on the platform already keeps, and it relaxes on a narrow
+     screen instead of holding a desktop inset. The mark and the avatar are the
+     two ends of this row, so what this padding sets is where the corners are. */
+  padding-inline: var(--cw-page-gutter);
 }
 
 @media (max-width: 1100px) and (min-width: 901px) {
