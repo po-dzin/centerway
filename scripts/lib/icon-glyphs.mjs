@@ -364,6 +364,17 @@ export const ICONS = {
      that is `menu`, four rows up — and deliberately closed rectangles rather
      than strokes, so the two glyphs share a vocabulary of areas rather than one
      being lines and the other boxes. */
+  /* Lens: the one glyph a search field needs, and the field had been shipping
+     without it — a prototype drew its own, which is how a set of one hand
+     becomes a set of two. Same construction as `clock`: a closed circle in one
+     path so the bake resamples it as a single contour, plus a separate handle
+     stroke on the route arrows' diagonal. The ring is smaller than the clock's
+     face (r 4.6 against 8.4) because a lens reads by its handle, and a ring
+     that fills the box leaves the handle no room to be one. */
+  lens: {
+    group: "Meta",
+    d: ["M10.4 5.8a4.6 4.6 0 1 0 0 9.2 4.6 4.6 0 0 0 0-9.2z", "M13.9 13.9 18.6 18.6"],
+  },
   "view-rows": {
     group: "Meta",
     d: ["M4.5 5.4 H19.5 V8.6 H4.5 Z", "M4.5 10.4 H19.5 V13.6 H4.5 Z", "M4.5 15.4 H19.5 V18.6 H4.5 Z"],

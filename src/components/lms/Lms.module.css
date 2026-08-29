@@ -311,7 +311,12 @@
    children, so the gap between them is page, not chrome. */
 .readerChrome {
   position: fixed;
-  top: var(--cw-space-sm);
+  /* Clears the author preview's own boundary row when there is one.
+     `--cw-zen-boundary-block` is declared by ZenPreviewShell and by nothing
+     else, so on the learner route this resolves to `0px + space-sm` — the
+     value it has always had — and inside the preview the cluster starts below
+     «До редагування» instead of on top of it. */
+  top: calc(var(--cw-zen-boundary-block, 0px) + var(--cw-space-sm));
   right: 0;
   left: 0;
   z-index: 4;
@@ -335,7 +340,11 @@
 }
 
 .readerChrome[data-hidden="true"] {
-  transform: translateY(calc(-100% - var(--cw-space-sm) - 0.75rem));
+  /* Far enough to clear its own top offset as well as its height, or in the
+     preview the cluster parks half-visible under the boundary rule. */
+  transform: translateY(
+    calc(-100% - var(--cw-zen-boundary-block, 0px) - var(--cw-space-sm) - 0.75rem)
+  );
   opacity: 0;
 }
 
