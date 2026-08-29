@@ -36,6 +36,19 @@ export type SendEmailInput = {
   text: string;
   from?: string;
   replyTo?: string;
+  /**
+   * Makes the SEND itself at-most-once, at the provider.
+   *
+   * A caller that checks "did I already send this?" and then sends has a window
+   * between the two in which a second caller can check and send as well. No
+   * amount of care on our side closes it without a lock; Resend closes it by
+   * refusing to deliver twice for the same key.
+   *
+   * Max 256 characters, and the key EXPIRES AFTER 24 HOURS — so this is the
+   * answer to concurrency, which is measured in seconds, and not to a repeat
+   * days later. The caller still needs its own record for that.
+   */
+  idempotencyKey?: string;
 };
 
 export type SendEmailResult =
@@ -52,6 +65,7 @@ export async function sendEmail(input: SendEmailInput): Promise<SendEmailResult>
       headers: {
         Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        ...(input.idempotencyKey ? { "Idempotency-Key": input.idempotencyKey.slice(0, 256) } : {}),
       },
       body: JSON.stringify({
         from: input.from ?? PURCHASE_FROM,

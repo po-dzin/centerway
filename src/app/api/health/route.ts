@@ -35,13 +35,20 @@ async function readQueueDepth(sb: ReturnType<typeof supabaseAdmin>): Promise<Que
 export async function GET(req: Request) {
   const ts = Date.now();
 
-  // The cheapest read that proves a round trip: one indexed row, no payload.
-  // `head: true` means the count comes back and the rows do not.
+  /* One row, and NO COUNT. The first version of this asked for
+     `{ count: "exact", head: true }`, which reads like a cheap probe and is
+     not: `limit(1)` bounds the rows returned, not the count, so Postgres still
+     walked the whole of `jobs` to total it. `jobs` is append-only — 15k rows
+     and growing — and this endpoint is public and meant to be polled, so the
+     cost of a liveness check grew with the job history forever.
+
+     Exact counts still happen below, where they are the actual question being
+     asked and only an authenticated caller can ask it. */
   let dbUp = false;
   let sb: ReturnType<typeof supabaseAdmin> | null = null;
   try {
     sb = supabaseAdmin();
-    const { error } = await sb.from("jobs").select("id", { count: "exact", head: true }).limit(1);
+    const { error } = await sb.from("jobs").select("id").limit(1);
     dbUp = !error;
   } catch {
     dbUp = false;

@@ -124,10 +124,21 @@ export function buildPurchaseEmail(input: PurchaseEmailInput): PurchaseEmailCont
  * Has this order's receipt already gone out?
  *
  * NOT optional bookkeeping. WayForPay redelivers a service callback for up to
- * four days until it gets a signed acceptance, and even with that acceptance in
- * place a retry can arrive before the first response is processed. Without this
- * gate a single sale mails the buyer once an hour for a day. Same mechanism the
- * Telegram sale report uses, and for the same reason.
+ * four days until it gets a signed acceptance. Without this gate a single sale
+ * mails the buyer repeatedly for days. Same mechanism the Telegram sale report
+ * uses, and for the same reason.
+ *
+ * WHAT IT DOES NOT DO, stated plainly: this is a read followed by a write, so
+ * two callbacks that overlap can both find no row and both send. A check-then-
+ * act cannot be made at-most-once by being more careful — it needs a lock, a
+ * uniqueness barrier, or a provider that refuses the second call.
+ *
+ * We use the third: `sendPurchaseEmail` passes Resend an `Idempotency-Key` of
+ * `purchase-receipt-<orderRef>`, so a concurrent duplicate is refused delivery
+ * at the provider even when both callers get past this check. The two halves
+ * cover different timescales and neither is redundant — the key expires after
+ * 24 hours and answers concurrency (seconds apart), this row never expires and
+ * answers the redelivery tail (days apart).
  */
 async function purchaseEmailSent(orderRef: string): Promise<boolean> {
   const db = adminClient();
@@ -168,6 +179,10 @@ export async function sendPurchaseEmail(
       subject: content.subject,
       html: content.html,
       text: content.text,
+      /* Derived from the order, not from the attempt: two concurrent callbacks
+         for one sale must produce the SAME key, or the provider has nothing to
+         deduplicate on. */
+      idempotencyKey: `purchase-receipt-${input.orderRef}`,
     });
 
     if (!result.sent) {
