@@ -4,7 +4,14 @@ import path from "node:path";
 import { describe, expect, it } from "vitest";
 
 import { PRODUCT_DELIVERY, PRODUCT_LABELS, assertProduct, normalizeEmail, normalizePhoneDigits } from "./tgSupportBot";
-import { botCopy, botProfile, CABINET_URL, GREETING_PHOTO_URL } from "./tgSupportBotCopy";
+import {
+  botCopy,
+  botProfile,
+  CABINET_PHOTO_URL,
+  CABINET_URL,
+  GREETING_PHOTO_URL,
+  SUPPORT_PHOTO_URL,
+} from "./tgSupportBotCopy";
 
 describe("support bot — product routing", () => {
   it("has a delivery target and a label for every product it offers", () => {
@@ -98,6 +105,19 @@ describe("support bot — copy", () => {
     // gets. Copy grown past it would fail the send, not truncate.
     expect(botCopy.greeting.length).toBeLessThanOrEqual(1024);
     expect(GREETING_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
+  });
+
+  it("ships the context cards used by the two image-led menu branches", () => {
+    const assets = [
+      "public/cw/bot/final/menu-courses-printed-stamp-v5.png",
+      "public/cw/bot/final/menu-support-printed-stamp-v4.png",
+    ];
+
+    for (const asset of assets) {
+      expect(existsSync(path.join(process.cwd(), asset)), asset).toBe(true);
+    }
+    expect(CABINET_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
+    expect(SUPPORT_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
   });
 
   it("registers a command for every menu branch a command claims to open", () => {

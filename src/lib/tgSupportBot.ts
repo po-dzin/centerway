@@ -20,7 +20,13 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { ProductCode } from "@/lib/products";
 import { callTelegramBotApi, sendTelegramMessage } from "@/lib/tg";
 import { verifyTelegramLinkToken } from "@/lib/platform/telegramLink";
-import { botCopy, CABINET_URL, GREETING_PHOTO_URL } from "@/lib/tgSupportBotCopy";
+import {
+  botCopy,
+  CABINET_PHOTO_URL,
+  CABINET_URL,
+  GREETING_PHOTO_URL,
+  SUPPORT_PHOTO_URL,
+} from "@/lib/tgSupportBotCopy";
 
 type Supabase = ReturnType<typeof supabaseAdmin>;
 type BotProductCode = Extract<ProductCode, "short" | "irem" | "way21" | "reset-day">;
@@ -180,15 +186,17 @@ function productKeyboard(): InlineKeyboardMarkup {
   return { inline_keyboard: rows };
 }
 
-/* Ordered by how often it is the reason someone opened the bot. "Мої курси"
-   first, because for a paying learner the answer is almost always "it is in the
-   cabinet" — and that answer costs one tap instead of a payment lookup. */
+/* Ordered by how often it is the reason someone opened the bot. The two short
+   orientation branches share a row, keeping the first screen compact on a
+   phone; the longer problem/support actions retain their full readable width. */
 function mainMenuKeyboard(): InlineKeyboardMarkup {
   return {
     inline_keyboard: [
-      [{ text: "Мої курси", callback_data: "menu:cabinet" }],
+      [
+        { text: "Мої курси", callback_data: "menu:cabinet" },
+        { text: "Часті питання", callback_data: "menu:faq" },
+      ],
       [{ text: "Не бачу доступ", callback_data: "menu:access" }],
-      [{ text: "Часті питання", callback_data: "menu:faq" }],
       [{ text: "Написати підтримці", callback_data: "menu:support" }],
     ],
   };
@@ -240,26 +248,34 @@ async function sendMessage(
 /**
  * The greeting, as a captioned brand card.
  *
- * ONE image, and only here. Telegram gives a photo the full width of the
- * column, so a picture on every answer would turn a support thread into a
- * feed — and the answers are the part someone came for. The first screen is
- * the exception: it is the only message whose job is "you are in the right
- * place", which is the one thing a picture says faster than a sentence.
+ * Telegram gives a photo the full width of the column, so imagery is reserved
+ * for orientation: the greeting and the two top-level task branches. Follow-up
+ * answers remain text-first, keeping a support thread readable.
  *
  * Falls back to plain text if the photo does not go through. The card is
  * decoration; the greeting is the function, and a Telegram hiccup fetching an
  * image must not be what makes /start answer nothing at all.
  */
-async function sendGreeting(chatId: number): Promise<void> {
+async function sendCaptionedPhoto(
+  chatId: number,
+  photo: string,
+  caption: string,
+  replyMarkup?: InlineKeyboardMarkup
+): Promise<void> {
   try {
     await callTelegramBotApi("sendPhoto", {
       chat_id: chatId,
-      photo: GREETING_PHOTO_URL,
-      caption: botCopy.greeting,
+      photo,
+      caption,
+      ...(replyMarkup ? { reply_markup: replyMarkup } : {}),
     });
   } catch {
-    await sendMessage(chatId, botCopy.greeting);
+    await sendMessage(chatId, caption, replyMarkup);
   }
+}
+
+async function sendGreeting(chatId: number): Promise<void> {
+  await sendCaptionedPhoto(chatId, GREETING_PHOTO_URL, botCopy.greeting);
 }
 
 async function answerCallbackQuery(callbackQueryId: string): Promise<void> {
@@ -392,7 +408,7 @@ async function handleMenuAction(
 
   if (action === "cabinet") {
     await saveSession(db, user, { state: "idle", contact: null });
-    await sendMessage(chatId, botCopy.cabinet, backKeyboard());
+    await sendCaptionedPhoto(chatId, CABINET_PHOTO_URL, botCopy.cabinet, backKeyboard());
     return;
   }
 
@@ -420,7 +436,7 @@ async function handleMenuAction(
       contact: null,
       selected_product: null,
     });
-    await sendMessage(chatId, botCopy.supportAskContact);
+    await sendCaptionedPhoto(chatId, SUPPORT_PHOTO_URL, botCopy.supportAskContact);
     return;
   }
 
