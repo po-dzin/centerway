@@ -1,4 +1,9 @@
 -- CenterWay: the catalogue card stops being guessed.
+-- APPLIED 2026-08-29 to production, in one transaction, over the session
+-- pooler. Verified after: the five columns exist, both CHECK constraints are
+-- in place, `duration` is gone, and the two rows that carried prose came
+-- across whole — reset-day 3, short 7. Nothing was left behind: every
+-- non-null `duration` in the table was a leading integer.
 -- Run in Supabase SQL editor (public schema).
 -- Contract: src/lms-core/course.ts (card fields), src/lms-core/readiness.ts
 -- Notes:    docs/builder-showcase-split-2026-08-28.md

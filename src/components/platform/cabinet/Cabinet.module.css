@@ -117,35 +117,16 @@
   gap: var(--cw-space-2xs);
 }
 
-/* CARDS, SPLIT SIDEWAYS ON A PHONE (2026-08-28). Stacked, the cover alone took
-   160px of a 580px card and nine courses came to seven screens. Beside the copy
-   it is a 5.5rem plate — still the picture the course was chosen by, no longer
-   the reason the shelf cannot be scanned. The cover is the first child and
-   spans every row; everything else stacks in the second column. From 561px
-   there is room for the stacked card again and it comes back. */
-@media (max-width: 560px) {
-  .cardGrid[data-view="cards"] .card,
-  .cardGrid[data-view="cards"] .cardMuted {
-    display: grid;
-    grid-template-columns: 5.5rem minmax(0, 1fr);
-    align-content: start;
-    column-gap: var(--cw-space-md);
-    row-gap: var(--cw-space-2xs);
-    padding: var(--cw-space-md);
-  }
-
-  .cardGrid[data-view="cards"] .card > :first-child,
-  .cardGrid[data-view="cards"] .cardMuted > :first-child {
-    grid-column: 1;
-    grid-row: 1 / -1;
-    align-self: start;
-  }
-
-  .cardGrid[data-view="cards"] .card > :not(:first-child),
-  .cardGrid[data-view="cards"] .cardMuted > :not(:first-child) {
-    grid-column: 2;
-  }
-}
+/* THE CARD STAYS STACKED, AND THE MEASUREMENT IS WHY (2026-08-28). A sideways
+   split was tried here: cover 5.5rem on the left, everything else in a second
+   column. It cost the shelf 5% — 5827px to 5513px over twelve courses, a
+   comparable card 579px to 537px — because the copy column drops to 239px and
+   the title, the summary, the meta and two buttons all wrap more, giving back
+   almost exactly what the cover's 160px of height had saved. It also broke the
+   chip row into a line per chip.
+   Density is the LIST's job (`data-view="rows"`), and it does it properly: the
+   same twelve courses come to 1095px. The card's job is the picture the course
+   was chosen by, at the width that shows it. Two views, two jobs. */
 
 .cardTitle {
   margin: 0;

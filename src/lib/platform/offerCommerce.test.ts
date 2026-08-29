@@ -26,7 +26,7 @@ describe("resolveOfferCommerce", () => {
   it("falls back to a form when no price has been agreed", () => {
     // herbs has a WayForPay route but no figure anyone decided to charge.
     expect(resolveOfferCommerce("herbs")).toEqual({ mode: "lead", leadProductCode: "herbs" });
-    expect(resolveOfferCommerce("ideal-body")).toEqual({ mode: "lead", leadProductCode: "ideal-body" });
+    expect(resolveOfferCommerce("natural-body")).toEqual({ mode: "lead", leadProductCode: "natural-body" });
   });
 
   it("never leaves a catalogue offer without a way to convert", () => {

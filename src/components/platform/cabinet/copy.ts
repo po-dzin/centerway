@@ -7,6 +7,7 @@
  * the learning shelf and its lesson links.
  */
 
+import type { CourseCategory } from "@/lms-core";
 import type { ProfileLang } from "../profile/types";
 
 export type CabinetCopy = {
@@ -28,6 +29,16 @@ export type CabinetCopy = {
   coursesLabel: string;
   /** One sentence under the shelf's title: whose these are, and what a card does. */
   learningLead: string;
+  /** The shelf's card/list switch — a control, so all three are labels for it. */
+  shelfViewLabel: string;
+  shelfViewCards: string;
+  shelfViewRows: string;
+  shelfViewRoom: string;
+  /** What a course is about, as the room's shelf headings. They live here and
+      not beside the room because the room is the cabinet speaking, and the
+      cabinet already speaks two languages — headings written into the
+      component rendered Ukrainian at an English reader. */
+  courseCategories: Record<CourseCategory, string>;
   learningLoadingTitle: string;
   learningLoadingLead: string;
   learningEmptyTitle: string;
@@ -111,6 +122,11 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       learningLabel: "Library",
       coursesLabel: "Courses",
       learningLead: "Courses you have access to. Open one and it resumes at the lesson you stopped on.",
+      shelfViewLabel: "Shelf view",
+      shelfViewCards: "Cards",
+      shelfViewRows: "List",
+      shelfViewRoom: "Room",
+      courseCategories: { movement: "Movement", nutrition: "Nutrition", cleansing: "Cleansing" },
       learningLoadingTitle: "Loading your courses…",
       learningLoadingLead: "Restoring access, progress and your next lesson.",
       learningEmptyTitle: "No courses in this profile yet",
@@ -179,6 +195,11 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     learningLabel: "Бібліотека",
     coursesLabel: "Курси",
     learningLead: "Курси, до яких у вас є доступ. Відкриваються з того уроку, на якому ви зупинились.",
+    shelfViewLabel: "Вигляд полиці",
+    shelfViewCards: "Картки",
+    shelfViewRows: "Список",
+    shelfViewRoom: "Кімната",
+    courseCategories: { movement: "Рух", nutrition: "Харчування", cleansing: "Очищення" },
     learningLoadingTitle: "Завантажуємо ваші курси…",
     learningLoadingLead: "Відновлюємо доступ, поступ і ваш наступний урок.",
     learningEmptyTitle: "У кабінеті ще немає курсів",

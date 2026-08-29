@@ -319,7 +319,7 @@ export function PlatformTestsHubPage() {
  * the database. The list is the editorial decision; where each one is stored is
  * not.
  */
-const PRODUCT_RELATED_SLUGS = ["reset-day", "way21", "ideal-body"];
+const PRODUCT_RELATED_SLUGS = ["reset-day", "way21", "natural-body"];
 
 export async function PlatformProductsIndexPage() {
   const featuredProduct = platformProductOffers[0];

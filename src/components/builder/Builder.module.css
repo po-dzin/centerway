@@ -1695,10 +1695,13 @@
   white-space: normal;
 }
 
+/* The two answers only need to fit side by side in a card, and the contract's
+   own geometry already does that — the earlier `min-width: auto` plus a hand-cut
+   padding was undoing the touch floor to buy width the row never lacked. The
+   floor is restated here because this is a target on top of a card, and nothing
+   else in this rule survives. */
 .courseCard > .confirmRow :is(.quietAction, .dangerAction, .retreatAction) {
-  min-width: auto;
   min-height: var(--ds-touch-target-min);
-  padding-inline: var(--cw-space-sm);
 }
 
 /* The module footer's side door — the same icon idiom as the step arrows and
@@ -1946,34 +1949,71 @@
    different languages. It is a scrim now: see the "one surface, one mark" note
    in PlatformButtons.module.css for the rule this obeys, and for why the
    recipe lives here rather than as a composable class there. */
+/* The offsets are measured to the PAINTED plate, not to the hit box. The plate
+   is inset by `--cw-space-xs` inside the 3rem target (see below), so the root
+   pulls back by the same amount and the chip still sits a `--cw-space-md`-ish
+   margin off the cover's corner — the position the eye reads did not move when
+   the paint shrank. */
 .courseCard > .menuRoot {
   position: absolute;
-  inset-block-start: calc(var(--cw-space-md) + var(--cw-space-2xs));
-  inset-inline-end: calc(var(--cw-space-md) + var(--cw-space-2xs));
+  inset-block-start: calc(var(--cw-space-md) - var(--cw-space-2xs));
+  inset-inline-end: calc(var(--cw-space-md) - var(--cw-space-2xs));
   z-index: 2;
 }
 
 /* The scrim, not a plate: the neutral scrim ink — fixed in both themes, so it
    darkens a bright cover and a dark one alike — with no elevation, no blur and
-   no stroke, in a full pill so it reads as ground beneath the glyph rather
-   than as a box drawn around it. The ink ring `BuilderMenu` already renders
-   stays the only thing that moves with state, which is why the hover rule
-   below restates the same background instead of deepening it: a floor is not
-   a state. */
+   no stroke, so it reads as ground beneath the glyph rather than as a box
+   drawn around it. The ink ring `BuilderMenu` already renders stays the only
+   thing that moves with state, which is why the hover rule below restates the
+   same background instead of deepening it: a floor is not a state.
+
+   THE PAINT IS NOT THE TARGET (2026-08-29). It used to be: the scrim filled
+   the whole 3rem control in a full pill, so a photograph carried a dark COIN
+   the size of a primary button, for a control that is a secondary way into
+   four menu items. Two things were wrong at once — the size, and the round.
+   A circle is the one shape this system does not draw for a control; every
+   other icon-only chip is a soft rect, and a pill here read as a foreign
+   object sitting on the cover.
+
+   So the target keeps its 3rem — a finger still gets the floor the contract
+   owns, and shrinking it would have been buying looks with reachability —
+   while the scrim is drawn INSIDE it as a soft rect. The plate is what the
+   eye measures; the extra ring of transparent hit area around it costs the
+   cover nothing, because nothing is painted there. */
 .courseCard > .menuRoot > .menuTrigger {
   padding-inline: 0;
   color: var(--cw-mat-inverse-text);
-  background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
-  border-radius: var(--cw-radius-pill);
+  background-color: transparent;
   box-shadow: none;
   backdrop-filter: none;
+}
+
+/* Behind the glyph, not over it. An absolutely positioned pseudo-element paints
+   above in-flow content, and `z-index` is not the lever to fix that with: this
+   file spends z-index on the builder's six overlay rungs and nothing else. So
+   the glyph is positioned too (`.menuTriggerGlyph`, set in BuilderMenu) and
+   tree order does it — the pseudo-element comes first, the glyph after. */
+.courseCard > .menuRoot > .menuTrigger::before {
+  content: "";
+  position: absolute;
+  inset: var(--cw-space-xs);
+  border-radius: var(--cw-radius-inset);
+  background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
+  pointer-events: none;
+}
+
+/* See above: positioned only so it outranks the scrim pseudo-element. Harmless
+   on every other menu trigger, which draws no plate at all. */
+.menuTriggerGlyph {
+  position: relative;
 }
 
 .courseCard > .menuRoot > .menuTrigger:hover:not(:disabled),
 .courseCard > .menuRoot > .menuTrigger:focus-visible,
 .courseCard > .menuRoot > .menuTrigger[aria-expanded="true"] {
   color: var(--cw-mat-inverse-text);
-  background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
+  background-color: transparent;
   box-shadow: none;
 }
 
@@ -2029,12 +2069,83 @@
   outline-offset: var(--ds-focus-ring-offset);
 }
 
+/* The cover and the badge worn on it. Positioned so the badge has a corner to
+   sit in; `grid` rather than `block` so the frame takes the cover's height
+   exactly and the card's gap still measures from the picture's bottom edge. */
+.courseCoverFrame {
+  position: relative;
+  display: grid;
+}
+
 .courseCover {
   width: 100%;
   aspect-ratio: 16 / 9;
   object-fit: cover;
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
+}
+
+/* THE BADGE SPEAKS THE MENU'S LANGUAGE, because they share a cover: the same
+   neutral scrim ink, the same inverse text, the same soft rect — see the long
+   note beside `.courseCard > .menuRoot > .menuTrigger`. Two chips on one
+   photograph drawn in two different materials would read as two unrelated
+   systems arguing over the same picture.
+
+   IT IS DEEPER THAN THE MENU'S, and that is not a drift from the recipe — it
+   is what the recipe costs when the thing on top is words. The menu carries
+   one large glyph, which survives 42% scrim on any cover an author uploads.
+   This carries 0.72rem uppercase with letterspacing, and 42% does not: over a
+   bright cover — a pale studio photograph, which is most of them — the plate
+   composites to roughly 0.62 and leaves the text at about 2.4:1. The floor
+   here is set by the lightest cover that can be uploaded, i.e. white, and 76%
+   is where that worst case clears 4.5:1 (draft ≈7.2:1). A scrim only ever gets
+   as dark as its alpha lets it; there was no way to buy this with the tint.
+
+   Top-LEFT, because the menu already owns the top-right. The 0.25rem inset is
+   measured to put the badge on the menu plate's optical line: the menu root
+   pulls back `--cw-space-2xs` from the card's `--cw-space-md` padding and then
+   insets its plate by `--cw-space-xs`, landing 0.25rem inside the cover's
+   corner. The badge starts from the cover's own edge, so it needs that 0.25rem
+   directly.
+
+   NOT dimmed with the draft cover below it: a status is the one thing on a
+   draft card that must stay at full strength — it is the sentence the dimming
+   is asking the reader to hear. It is a sibling of the picture rather than a
+   child for exactly that reason. */
+.coverPill {
+  position: absolute;
+  inset-block-start: var(--cw-space-2xs);
+  inset-inline-start: var(--cw-space-2xs);
+  display: inline-flex;
+  align-items: center;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-inset);
+  background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 76%, transparent);
+  color: var(--cw-mat-inverse-text);
+  font-family: var(--cw-font-data);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+/* Published is still the only state that gets colour, and for the same reason
+   the flat pill gives it: a draft is the ordinary state of a course being
+   written. But the accent is a TINT IN the scrim, not a wash over it — the
+   plate has to stay dark enough to carry inverse text on a white cover, and an
+   accent-majority plate composites to a mid tan that reads at under 2:1 there.
+   So the ink is mixed first and the alpha is applied to the result: one plate,
+   one material, warmed. 22% is the most accent this takes while the worst case
+   still clears 4.5:1, and it is enough to tell the two states apart at a
+   glance — which is all the colour was ever asked to do. */
+.coverPillPublished {
+  composes: coverPill;
+  background-color: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--cw-platform-accent) 22%, var(--cw-mat-scrim-ink) 78%) 76%,
+    transparent
+  );
 }
 
 /* A course with no cover still has a palette. Two initials on its own gamma
@@ -2054,6 +2165,29 @@
   font-family: var(--cw-font-editorial);
   font-size: 2rem;
   font-weight: 500;
+}
+
+/* A DRAFT IS UNFINISHED, NOT BROKEN. The shelf holds both states side by side
+   and, until now, drew them identically — the only difference was a chip you
+   had to read. Which of these is live was therefore a question you answered
+   word by word across the whole row.
+
+   So the draft steps back, and only just: the picture at 0.82 and the title
+   carried a little way toward the muted ink. Not an outline, which would have
+   said "selected"; not a heavy dim, which is the vocabulary this system spends
+   on locked and revoked — a course you are in the middle of writing is the
+   most ordinary thing in the builder, and greying it out would read as a fault
+   report on your own work in progress. The published card is not brightened to
+   compensate; it is simply left alone, so the whole shelf still sits at the
+   card material's own strength and the drafts recede from it.
+
+   Nothing here touches the badge: see the note on `.coverPill`. */
+.courseCard[data-course-status="draft"] :is(.courseCover, .courseCoverFallback) {
+  opacity: 0.82;
+}
+
+.courseCard[data-course-status="draft"] .courseTitle {
+  color: color-mix(in srgb, var(--cw-platform-muted) 45%, currentcolor);
 }
 
 .courseCardBody {

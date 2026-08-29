@@ -4,6 +4,7 @@
   "id": "c4a91d3e-0000-4000-8000-000000000001",
   "slug": "way21",
   "title": "Шлях 21 — інтегративна детокс-програма",
+  "posttitle": "інтегративна детокс-програма",
   "programSlug": "way21",
   "brand": "centerway",
   "locale": "uk",
@@ -26,6 +27,9 @@
     "detox21",
     "shlyah21"
   ],
+  "durationDays": 21,
+  "kind": "course",
+  "categories": ["cleansing", "nutrition"],
   "modules": [
     {
       "id": "c4a91d3e-0000-4000-8000-000000000011",

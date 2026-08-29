@@ -29,8 +29,8 @@ function offerView(programSlug?: PlatformRouteBlockProps["programSlug"]) {
           "підтвердження формату, оплата і наступний крок живуть у межах цієї сторінки",
         ],
     productCode:
-      program?.slug === "ideal-body"
-        ? "ideal-body"
+      program?.slug === "natural-body"
+        ? "natural-body"
         : program?.slug === "irem"
           ? "irem"
           : program?.surfaceType === "mini-course"

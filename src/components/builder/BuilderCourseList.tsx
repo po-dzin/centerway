@@ -848,40 +848,46 @@ function CourseCard(props: EntryProps) {
       className={styles.courseCard}
       data-flip-key={course.slug}
       data-removing={props.removing || undefined}
+      data-course-status={course.status}
       {...courseThemeAttributes(course.theme ?? undefined)}
     >
       <Link className={styles.courseCardFace} href={`/build/${course.slug}`}>
-        {course.cover ? (
-          // Plain <img>: the cover is an author-supplied path that may point
-          // anywhere, and next/image would need every one of those hosts
-          // configured before it would render at all.
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            className={styles.courseCover}
-            {...mediaSources(course.cover.src)}
-            sizes={MEDIA_SIZES.card}
-            alt={course.cover.alt}
-            loading="lazy"
-            decoding="async"
-            style={{ objectPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%` }}
-          />
-        ) : (
-          // Not a grey box: a course with no cover still has a palette, and the
-          // initials on it are enough to tell two cards apart at a glance.
-          <span className={styles.courseCoverFallback} aria-hidden="true">
-            {initialsOf(course.title)}
-          </span>
-        )}
-        <span className={styles.courseCardBody}>
-          <span className={styles.courseTitleRow}>
-            {/* No mark inside the title: the card's own contour carries it —
-                see the note beside `.courseCard::after`. An underline measures
-                a label; the thing under the pointer here is the whole card. */}
-            <span className={styles.courseTitle}>{course.title}</span>
-            <span className={course.status === "published" ? styles.pillPublished : styles.pill}>
-              {course.status === "published" ? "Опубліковано" : "Чернетка"}
+        {/* THE STATUS BELONGS TO THE OBJECT, so it is worn on the object. Beside
+            the title it was a second label competing with the name for the same
+            line, and on a wrapped title it fell to a line of its own and read as
+            metadata — the one thing it is not. On the cover it is answered
+            before the title is even read: what this is, and whether it is out. */}
+        <span className={styles.courseCoverFrame}>
+          {course.cover ? (
+            // Plain <img>: the cover is an author-supplied path that may point
+            // anywhere, and next/image would need every one of those hosts
+            // configured before it would render at all.
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              className={styles.courseCover}
+              {...mediaSources(course.cover.src)}
+              sizes={MEDIA_SIZES.card}
+              alt={course.cover.alt}
+              loading="lazy"
+              decoding="async"
+              style={{ objectPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%` }}
+            />
+          ) : (
+            // Not a grey box: a course with no cover still has a palette, and the
+            // initials on it are enough to tell two cards apart at a glance.
+            <span className={styles.courseCoverFallback} aria-hidden="true">
+              {initialsOf(course.title)}
             </span>
+          )}
+          <span className={course.status === "published" ? styles.coverPillPublished : styles.coverPill}>
+            {course.status === "published" ? "Опубліковано" : "Чернетка"}
           </span>
+        </span>
+        <span className={styles.courseCardBody}>
+          {/* No mark inside the title: the card's own contour carries it — see
+              the note beside `.courseCard::after`. An underline measures a
+              label; the thing under the pointer here is the whole card. */}
+          <span className={styles.courseTitle}>{course.title}</span>
           <span className={styles.courseMeta}>
             {course.moduleCount} {plural(course.moduleCount, "модуль", "модулі", "модулів")} ·{" "}
             {course.lessonCount} {plural(course.lessonCount, "урок", "уроки", "уроків")}

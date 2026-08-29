@@ -158,9 +158,22 @@ async function readListedAuthors(): Promise<Author[]> {
  */
 const FOUNDER_SLUGS: readonly string[] = ["evgeniy-koryakin", "yevhenii-koriakin"];
 
+/**
+ * Whether this slug is the founder's, under either transliteration.
+ *
+ * The PAGE needs this as well as the link: publishing his profile so the home
+ * page can print it would otherwise also mint `/expert/<slug>`, which is the
+ * second page about him that the 2026-08-23 merge existed to remove. The route
+ * redirects on this predicate, so the link and the page cannot disagree about
+ * who the exception is.
+ */
+export function isFounderAuthorSlug(slug: string): boolean {
+  return FOUNDER_SLUGS.includes(slug);
+}
+
 /** Where an author's card should point. */
 export function authorHref(author: Pick<Author, "slug">): string {
-  return FOUNDER_SLUGS.includes(author.slug) ? "/consult" : `/expert/${author.slug}`;
+  return isFounderAuthorSlug(author.slug) ? "/consult" : `/expert/${author.slug}`;
 }
 
 /** Every author with a public page, for the directory. */

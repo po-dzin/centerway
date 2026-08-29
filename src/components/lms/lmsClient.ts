@@ -15,6 +15,7 @@ import type {
   AnnotationAnchor,
   AnnotationKind,
   Course,
+  CourseCategory,
   CourseTheme,
   InternalReferenceTarget,
   LessonAvailability,
@@ -93,6 +94,8 @@ export type LearnerShelfCourseDto = {
    * rather than reserving a grey rectangle.
    */
   cover: Course["cover"] | null;
+  /** What the course is about — see `Course.categories` in lms-core. */
+  categories: CourseCategory[];
 };
 
 export type LearnerShelfDto = { courses: LearnerShelfCourseDto[] };

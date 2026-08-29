@@ -177,13 +177,13 @@ export const programs = [
     ],
   },
   {
-    slug: "ideal-body",
+    slug: "natural-body",
     surfaceType: "program" as PlatformOfferSurfaceType,
     conversionMode: "lead" as PlatformOfferConversionMode,
     primaryActionKind: "enroll" as PlatformOfferPrimaryActionKind,
     title: "Природнє тіло з Аюрведою",
     fullTitle: "Природнє тіло з Аюрведою",
-    href: "/programs/ideal-body",
+    href: "/programs/natural-body",
     funnelHref: consultFunnelHref,
     tag: "Харчування",
     duration: "21 день",
@@ -216,7 +216,12 @@ export const programs = [
     href: getPlatformRoute("irem") ?? "/programs/irem",
     funnelHref: iremFunnelHref,
     tag: "Рух",
-    duration: "12 тижнів",
+    /* SEVEN DAYS, NOT TWELVE WEEKS. The figure here was a span nothing in the
+       course ever ran for: the material is seven daily lessons, Monday to
+       Sunday, under a module the author titled «7 днів практики». A duration on
+       an offer card is a promise about the thing being sold, so it now says
+       what the thing is. */
+    duration: "7 днів практики",
     visual: "mountain",
     artwork: {
       desktop: "/cw/platform/programs/irem-hero-desktop-v2.webp",
@@ -225,9 +230,9 @@ export const programs = [
       desktopPosition: "68% 50%",
       mobilePosition: "center 18%",
     },
-    description: "12-тижнева рухова практика для контакту з тілом, м'якшої мобільності, енергії і зняття побутової напруги.",
+    description: "Щоденна рухова практика для контакту з тілом, м'якшої мобільності, енергії і зняття побутової напруги.",
     longDescription:
-      "IREM збирає прості рухові техніки у послідовну практику: розігрів, дихання, мобільність, робота з напруженням і повернення уваги до сигналів тіла. Дванадцять тижнів ідуть по порядку, від простого до глибшого, щоб тіло встигало за темпом.",
+      "IREM збирає прості рухові техніки у послідовну практику: розігрів, дихання, мобільність, робота з напруженням і повернення уваги до сигналів тіла. Сім днів ідуть по порядку, від простого до глибшого, щоб тіло встигало за темпом.",
     results: [
       "зрозуміти, як вбудувати коротку практику руху в день",
       "помічати напруження раніше і м'якше з ним працювати",
