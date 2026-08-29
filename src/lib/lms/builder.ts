@@ -39,6 +39,7 @@ import {
   uniqueSlug,
   validateCourse,
   type Course,
+  type CourseCategory,
   type CourseTheme,
   type IdSource,
   type PortableCoursePreview,
@@ -58,6 +59,11 @@ export type BuilderCourseSummary = {
   cover: Course["cover"] | null;
   theme: CourseTheme | null;
   sortOrder: number | null;
+  /** What the course is ABOUT — the same three subjects the learner's shelf
+      groups by, so the workshop can be narrowed by them too. Empty on a draft
+      that has not chosen yet; `categories` only becomes required on the way to
+      publication (see `readiness.ts`). */
+  categories: CourseCategory[];
 };
 
 type CourseRow = Record<string, unknown>;
@@ -167,7 +173,9 @@ export async function loadBuilderCourse(
 
 export async function listBuilderCourses(filter: { authorId?: string }): Promise<BuilderCourseSummary[]> {
   const db = adminClient();
-  let query = db.from("lms_courses").select("id, slug, title, status, author_id, updated_at, cover, theme, sort_order");
+  let query = db
+    .from("lms_courses")
+    .select("id, slug, title, status, author_id, updated_at, cover, theme, sort_order, categories");
   if (filter.authorId) query = query.eq("author_id", filter.authorId);
 
   const { data, error } = await query;
@@ -225,6 +233,11 @@ export async function listBuilderCourses(filter: { authorId?: string }): Promise
         cover: (row.cover as Course["cover"] | null) ?? null,
         theme: (row.theme as CourseTheme | null) ?? null,
         sortOrder: row.sort_order === null || row.sort_order === undefined ? null : Number(row.sort_order),
+        /* The workshop's shelf is filtered by subject the way the learner's is,
+           so the summary has to carry the same fact the learner's DTO does. A
+           draft may not have chosen yet — an empty list, never null, so every
+           reader can ask `.includes()` without asking `?.` first. */
+        categories: Array.isArray(row.categories) ? (row.categories as CourseCategory[]) : [],
       };
     })
   );

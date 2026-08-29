@@ -10,7 +10,7 @@
  */
 
 import { supabaseClient } from "@/lib/supabaseClient";
-import type { Author, Course, CourseTheme, Lesson, ReadinessBlocker } from "@/lms-core";
+import type { Author, Course, CourseCategory, CourseTheme, Lesson, ReadinessBlocker } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 import type { CourseRevisionSummary } from "@/lib/lms/revisions";
 
@@ -30,6 +30,10 @@ export type BuilderCourseSummary = {
   cover: Course["cover"] | null;
   theme: CourseTheme | null;
   sortOrder: number | null;
+  /** What the course is ABOUT — the same three the learner's shelf groups by.
+      Empty on a draft that has not chosen yet: `categories` only becomes
+      required on the way to publication (see readiness.ts). */
+  categories: CourseCategory[];
 };
 
 export type BuilderCourseDto = {

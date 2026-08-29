@@ -236,6 +236,184 @@ function bookInk(w: number, h: number): string {
   );
 }
 
+/** THE ATTENTION MARK — the shelf, gone round once with the same pen.
+    The prototype's own note is the whole specification: "ВИБІР — ЦЕ КОНТУР,
+    А НЕ ЩЕ ОДИН ШАР. Дно виїмки не міняє кольору, губа не золотиться,
+    нічого не світиться і нічого не накладається зверху: полицю просто
+    ОБВОДЯТЬ — рамкою, писаною тим самим пером, що й уся кімната." Not a
+    sight from the corners: one confident lap of the perimeter, the weight
+    drifting on a slow wave, the hand wandering a little off the ruler, and
+    the movement broken by two or three short lifts of the brush. Ported
+    verbatim from the prototype's `attentionSvg`. */
+function attentionSvg(ci: number, W: number, H: number, inkW: number): string {
+  const M = 26;
+  const jr = (n: number) => seeded(ci * 71 + n);
+  const d = 8;
+  const x0 = M - d;
+  const y0 = M - d;
+  const x1 = M + W + d;
+  const y1 = M + H + d;
+  const Pm = 2 * (x1 - x0 + (y1 - y0));
+
+  function pointAt(p: number): [number, number] {
+    p = ((p % Pm) + Pm) % Pm;
+    if (p < x1 - x0) return [x0 + p, y0];
+    p -= x1 - x0;
+    if (p < y1 - y0) return [x1, y0 + p];
+    p -= y1 - y0;
+    if (p < x1 - x0) return [x1 - p, y1];
+    p -= x1 - x0;
+    return [x0, y1 - p];
+  }
+
+  /* 2–3 lifts of the brush, each shorter than an arm of the frame, and never
+     in a corner. */
+  const gapCount = 2 + (jr(2) > 0.55 ? 1 : 0);
+  const gaps: [number, number][] = [];
+  for (let gi = 0; gi < gapCount; gi++) {
+    const gp = Pm * ((gi + 0.3 + jr(10 + gi) * 0.4) / gapCount);
+    gaps.push([gp, gp + 9 + jr(20 + gi) * 10]);
+  }
+  const inGap = (p: number) => {
+    const q = ((p % Pm) + Pm) % Pm;
+    return gaps.some(([a, b]) => q >= a && q <= b);
+  };
+
+  const stepLen = 8;
+  const N = Math.ceil(Pm / stepLen);
+  const startP = jr(1) * Pm;
+  const runs: [number, number, number][][] = [];
+  let cur: [number, number, number][] | null = null;
+  for (let i = 0; i <= N; i++) {
+    const p = startP + i * stepLen;
+    if (inGap(p)) {
+      if (cur && cur.length > 2) runs.push(cur);
+      cur = null;
+      continue;
+    }
+    const pt = pointAt(p);
+    const drift = (jr(i * 3 + 44) - 0.5) * 1.6;
+    /* The weight is the slow wave of a confident movement — but a FINE one.
+       The prototype wrote this frame at 1.7–3.1px because there it was seen
+       through a camera that could pull back from the wall; here the room is
+       always at reading distance, and at that distance the same numbers were a
+       marker line round a pen drawing. Halved, and the hand steadied (the drift
+       came down with it), the frame reads as the same pen that drew the niche
+       instead of as something laid on top of it. */
+    const wgt = (0.85 + 0.7 * Math.abs(Math.sin(i * 0.09 + jr(3) * 6)) + (jr(i + 7) - 0.5) * 0.3) * inkW;
+    if (!cur) cur = [];
+    cur.push([pt[0] + drift * 0.6, pt[1] + drift * 0.6, wgt]);
+  }
+  if (cur && cur.length > 2) runs.push(cur);
+
+  let out = "";
+  for (const run of runs) {
+    const top: string[] = [];
+    const bot: string[] = [];
+    const L = run.length;
+    for (let i = 0; i < L; i++) {
+      const q = run[i];
+      const prev = run[Math.max(0, i - 1)];
+      const next = run[Math.min(L - 1, i + 1)];
+      const dx = next[0] - prev[0];
+      const dy = next[1] - prev[1];
+      const len = Math.sqrt(dx * dx + dy * dy) || 1;
+      const nx = -dy / len;
+      const ny = dx / len;
+      const t = Math.min(i / 2.2, (L - 1 - i) / 2.2, 1);
+      const w = q[2] * (0.15 + 0.85 * t);
+      top.push(`${(q[0] + (nx * w) / 2).toFixed(1)},${(q[1] + (ny * w) / 2).toFixed(1)}`);
+      bot.push(`${(q[0] - (nx * w) / 2).toFixed(1)},${(q[1] - (ny * w) / 2).toFixed(1)}`);
+    }
+    out += `<polygon points="${top.join(" ")} ${bot.reverse().join(" ")}" fill="currentColor" opacity="0.78"/>`;
+  }
+  return `<svg viewBox="0 0 ${W + M * 2} ${H + M * 2}" aria-hidden="true" style="overflow:visible">${out}</svg>`;
+}
+
+/** ONE PEN-STROKE THE LENGTH OF A LINE — thin at the start, heavier through
+    the body, with a barely-visible bow and one lift of the brush. The same
+    profile as the niche's own lines, and the same stroke the platform draws
+    under everything it points at (see the `feedback-ink-not-highlights`
+    rule: attention here is ink, never a filled highlight). Ported verbatim
+    from the prototype's `rayInk`. */
+function rayInk(len: number, vertical: boolean, seed: number, inkW: number): string {
+  const T = 18;
+  const mid = T / 2;
+  const jr = (n: number) => seeded(seed * 37 + n);
+  const bow = (jr(1) * 2 - 1) * Math.min(3.4, len * 0.016);
+  /* One lift, and not always: two breaks turned the stroke into a dashed
+     line, and this has to stay ONE line — just one written by a hand. */
+  const lifts: [number, number][] = [];
+  if (jr(4) > 0.45) {
+    const g0 = 0.3 + jr(2) * 0.3;
+    lifts.push([g0, g0 + 0.02 + jr(3) * 0.03]);
+  }
+  const inLift = (t: number) => lifts.some(([a, b]) => t > a && t < b);
+
+  const N = 48;
+  let out = "";
+  let run: [number, number, number][] = [];
+  function flush() {
+    if (run.length < 2) {
+      run = [];
+      return;
+    }
+    const s1: string[] = [];
+    const s2: string[] = [];
+    for (const [a, c, w] of run) {
+      const hw = w / 2;
+      s1.push(vertical ? `${(c - hw).toFixed(1)},${a.toFixed(1)}` : `${a.toFixed(1)},${(c - hw).toFixed(1)}`);
+      s2.push(vertical ? `${(c + hw).toFixed(1)},${a.toFixed(1)}` : `${a.toFixed(1)},${(c + hw).toFixed(1)}`);
+    }
+    out += `<polygon points="${s1.join(" ")} ${s2.reverse().join(" ")}" fill="currentColor"/>`;
+    run = [];
+  }
+  for (let i = 0; i <= N; i++) {
+    const t = i / N;
+    if (inLift(t)) {
+      flush();
+      continue;
+    }
+    const along = len * t;
+    const across = mid + bow * Math.sin(Math.PI * t) + (jr(i + 40) - 0.5) * 0.7;
+    /* The pressure builds towards the middle and comes to nothing at the ends. */
+    let wdt = (0.3 + 1.5 * Math.sin(Math.PI * t)) * (0.72 + jr(i + 90) * 0.5) * inkW;
+    if (i === 0 || i === N) wdt = 0.22;
+    run.push([along, across, wdt]);
+  }
+  flush();
+  return (
+    `<svg viewBox="0 0 ${vertical ? `${T} ${Math.round(len)}` : `${Math.round(len)} ${T}`}"` +
+    ` preserveAspectRatio="none" aria-hidden="true">${out}</svg>`
+  );
+}
+
+/** THE NAME ON A SPINE IS NOT READ — IT IS RECOGNISED.
+    Two things were tried here and both failed the same way. The title set as
+    real type came out at half a legible letter on a 26px board and shimmered.
+    A barcode of the title's own length shimmered too, and for the same reason:
+    twenty small marks at a pitch the screen cannot resolve is speckle whatever
+    the marks mean.
+    So the spine wears what a spine actually wears — a label. One panel, and a
+    second smaller one under it when the name is long enough to have run onto a
+    second. Same width as the plate the book carries at rest, so the select
+    changes what is written on the board and not the board itself. The title is
+    on the row beside the shelf and in the link's own accessible name, which is
+    where a title can be read. */
+function spineCode(title: string, w: number, h: number): string {
+  const pw = w * 0.54;
+  const px = (w - pw) / 2;
+  const long = title.trim().length > 15;
+  const top = h * 0.22;
+  const main = h * (long ? 0.28 : 0.24);
+  let out = `<rect class="code" x="${px.toFixed(1)}" y="${top.toFixed(1)}" width="${pw.toFixed(1)}" height="${main.toFixed(1)}" rx="1"/>`;
+  if (long) {
+    const y = top + main + h * 0.07;
+    out += `<rect class="code" x="${px.toFixed(1)}" y="${y.toFixed(1)}" width="${pw.toFixed(1)}" height="${(h * 0.12).toFixed(1)}" rx="1"/>`;
+  }
+  return `<svg viewBox="0 0 ${w.toFixed(1)} ${h.toFixed(1)}" style="position:absolute;inset:0;width:100%;height:100%" aria-hidden="true">${out}</svg>`;
+}
+
 /* ---------- layout: the prototype's own weighted bin-packing ---------- */
 
 type BookLayout = RoomBook & { x: number; y: number; w: number; h: number; tilt: number };
@@ -259,7 +437,17 @@ type NicheLayout = {
   books: BookLayout[];
 };
 
+/* THE LADDER OF BOOK SIZES, LARGEST FIRST — the packer walks down it and stops
+   at the first rung whose block of shelves fits the band.
+   TWO RUNGS ADDED ABOVE THE PROTOTYPE'S (2026-08-29). Its top rung was 26px
+   spines, which is right for a wall of a hundred works; a personal shelf of a
+   dozen took that rung immediately and left two thirds of the band bare — the
+   ladder can only ever step DOWN, so the first rung is also the biggest the
+   room will ever draw. Starting higher lets a small library fill its wall,
+   and changes nothing for a large one: those never reach these rungs. */
 const LADDER = [
+  { bw: 36, per: 9 },
+  { bw: 31, per: 9 },
   { bw: 26, per: 9 },
   { bw: 23, per: 9 },
   { bw: 20, per: 8 },
@@ -330,6 +518,20 @@ function layoutRoom(cases: RoomCase[], W: number, H: number, narrow: boolean): N
     return { groups, list, bw: step.bw };
   }
 
+  /* HOW MANY SHELVES MAY SHARE A COURSE OF THE WALL (2026-08-29).
+     The packer's only rule used to be "until it stops fitting", and the band is
+     wide enough that three categories always fitted — so the room came out as
+     one strip of cuts across the middle with the whole upper half of the wall
+     empty. That is a frieze, not a room: a wall is read in two directions, and
+     a single row throws one of them away.
+     `ceil(sqrt(n))` is the shape that keeps the block of shelves closest to the
+     band's own proportion (which is near square: the right half of a 16:10
+     stage). Three categories become two and one; four become two and two; nine
+     become three rows of three. And because a taller block makes `packed.height`
+     larger, the size ladder below steps down on its own until the block fills
+     the band — the wall gets fuller, not just taller. */
+  const perLine = Math.max(1, Math.ceil(Math.sqrt(cases.length)));
+
   function pack(secs: { groups: Group[] }) {
     const lines: { groups: Group[]; w: number; h: number }[] = [];
     let line: Group[] = [];
@@ -355,7 +557,7 @@ function layoutRoom(cases: RoomCase[], W: number, H: number, narrow: boolean): N
       lineW = 0;
     }
     secs.groups.forEach((g) => {
-      if (line.length && lineW + GAP_X + g.w > band.w) flush();
+      if (line.length && (line.length >= perLine || lineW + GAP_X + g.w > band.w)) flush();
       lineW += (line.length ? GAP_X : 0) + g.w;
       line.push(g);
     });
@@ -470,13 +672,52 @@ function spineInk(w: number, h: number): string {
   return hit;
 }
 
+function markInk(ci: number, w: number, h: number, dark: boolean): string {
+  const key = `mark|${ci}|${w}|${h}|${dark ? "d" : "l"}`;
+  let hit = inkCache.get(key);
+  if (!hit) {
+    hit = attentionSvg(ci, w, h, dark ? 1.7 : 1);
+    inkCache.set(key, hit);
+  }
+  return hit;
+}
+
+function codeInk(title: string, w: number, h: number): string {
+  const key = `code|${title}|${w}x${h}`;
+  let hit = inkCache.get(key);
+  if (!hit) {
+    hit = spineCode(title, w, h);
+    inkCache.set(key, hit);
+  }
+  return hit;
+}
+
+function rowInk(seed: number, dark: boolean): string {
+  const key = `row|${seed}|${dark ? "d" : "l"}`;
+  let hit = inkCache.get(key);
+  if (!hit) {
+    hit = rayInk(120, false, seed, dark ? 1.7 : 1);
+    inkCache.set(key, hit);
+  }
+  return hit;
+}
+
 
 export function LearnRoomView({
   courses,
   copy,
+  match,
 }: {
   courses: LearnerShelfCourseDto[];
   copy: CabinetCopy;
+  /* THE QUERY DIMS; IT DOES NOT REPACK. A predicate rather than an already
+     filtered list, and that is the whole point — the wall is laid out from
+     every course the shelf holds, and the query only decides which cuts go
+     quiet. The prototype's own rule: "стіна не перебудовується під запит, вона
+     пригасає". A wall that repacks itself on every keystroke has answered a
+     different question from the one that was typed, and the reader loses the
+     one thing the room is for: seeing WHERE a work stands. */
+  match?: (course: LearnerShelfCourseDto) => boolean;
 }) {
   /* Which course is being looked at, wherever the looking came from. The
      prototype's rule: "стан рядка не залежить від того, звідки прийшла увага"
@@ -489,6 +730,8 @@ export function LearnRoomView({
   const [dark, setDark] = useState(false);
 
   const cases = useMemo(() => toCases(courses, copy), [courses, copy]);
+  const shown = useMemo(() => (match ? courses.filter(match) : courses), [courses, match]);
+  const lit = useMemo(() => new Set(shown.map((c) => c.slug)), [shown]);
 
   useLayoutEffect(() => {
     const el = stageRef.current;
@@ -536,17 +779,54 @@ export function LearnRoomView({
   }
 
   return (
-    <div className={styles.room} data-lod={lod}>
-      <div className={styles.stage} ref={stageRef}>
+    <div
+      className={styles.room}
+      data-lod={lod}
+      /* The keyboard's own release, and the same rule: focus moving from one
+         spine to the next never passes through nothing. `onBlur` is React's
+         `focusout`, so it bubbles here and can ask where the focus WENT. */
+      onBlur={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setHot(null);
+      }}
+    >
+      <div
+        className={styles.stage}
+        ref={stageRef}
+        /* ATTENTION IS RELEASED BY LEAVING THE ROOM, NOT BY LEAVING A BOOK.
+           Each spine used to clear `hot` on its own mouseleave, so sliding
+           along a shelf ran leave→enter on every neighbour and the whole
+           niche's titles blinked off for the frame in between — a row of
+           names strobing under the pointer. The niche keeps its attention
+           until the pointer is out of the scene entirely. */
+        onMouseLeave={() => setHot(null)}
+      >
         <div className={styles.wall} />
         <div className={styles.rake} aria-hidden="true" />
         {niches.map((n) => (
           <div
             key={`${n.ci}:${n.from}`}
             className={styles.niche}
+            /* ATTENTION IS ONE STATE, WHEREVER IT CAME FROM. A niche is hot
+               when the course being looked at stands in it — pointed at on the
+               wall, or pointed at in the column beside it. Same `hot` as the
+               row and the spine, so the three never disagree about which work
+               is being read. */
+            data-hot={n.books.some((b) => b.slug === hot)}
+            data-dim={!n.books.some((b) => lit.has(b.slug))}
             style={{ left: n.x, top: n.y, width: n.w, height: n.h, ["--depth" as string]: n.depth.toFixed(2) }}
           >
             <div className={styles.nicheCast} aria-hidden="true" />
+            {/* THE MARK LIVES OUTSIDE THE CUT — it is drawn AROUND the shelf,
+                and `.nicheBox` clips. Drawn eagerly rather than on first look
+                (the prototype's `ensureMark`): that laziness paid for a wall of
+                a hundred openings, and this room has one cut per section of one
+                of three categories. Drawing it up front is what lets the fade
+                actually be a fade. */}
+            <div
+              className={styles.nicheMark}
+              aria-hidden="true"
+              dangerouslySetInnerHTML={{ __html: markInk(n.ci, n.w, n.h, dark) }}
+            />
             <div className={styles.nicheBox}>
               <div className={styles.nichePersp} dangerouslySetInnerHTML={{ __html: nicheInk(n.ci, n.w, n.h, dark) }} />
               {n.books.map((b) => (
@@ -559,12 +839,14 @@ export function LearnRoomView({
                   aria-label={`${b.title} · ${b.state}`}
                   href={courseAction(b.course, copy).href}
                   onMouseEnter={() => setHot(b.slug)}
-                  onMouseLeave={() => setHot(null)}
                   onFocus={() => setHot(b.slug)}
-                  onBlur={() => setHot(null)}
                 >
                   <span className={styles.bookDraw} dangerouslySetInnerHTML={{ __html: spineInk(b.w, b.h) }} />
-                  <span className={styles.bookSpine}>{b.title}</span>
+                  <span
+                    className={styles.bookSpine}
+                    aria-hidden="true"
+                    dangerouslySetInnerHTML={{ __html: codeInk(b.title, b.w, b.h) }}
+                  />
                 </Link>
               ))}
             </div>
@@ -583,9 +865,13 @@ export function LearnRoomView({
           pointing at 20px spines: the titles were in the drawing, not in the
           document. The column is the shelf as text — the same courses, the same
           doorways, in a list that can be read, scrolled and tabbed through. */}
-      <nav className={styles.sheet} aria-label={copy.learningLabel}>
+      <nav
+        className={styles.sheet}
+        aria-label={copy.learningLabel}
+        onMouseLeave={() => setHot(null)}
+      >
         <ol className={styles.shelfList}>
-          {courses.map((course, i) => {
+          {shown.map((course, i) => {
             const done = course.standing?.completedLessons ?? 0;
             const total = course.standing?.totalLessons ?? 0;
             const live = course.access === "enrolled";
@@ -596,13 +882,23 @@ export function LearnRoomView({
                   href={courseAction(course, copy).href}
                   data-hot={hot === course.slug}
                   onMouseEnter={() => setHot(course.slug)}
-                  onMouseLeave={() => setHot(null)}
                   onFocus={() => setHot(course.slug)}
-                  onBlur={() => setHot(null)}
                 >
                   <span className={styles.rowIndex}>{String(i + 1).padStart(2, "0")}</span>
                   <span className={styles.rowMain}>
-                    <span className={styles.rowTitle}>{course.title}</span>
+                    {/* THE STROKE UNDER THE NAME, IN TWO STRENGTHS. The weaker
+                        one is where attention is pointing (pointer, keyboard,
+                        or the shelf on the wall). It is the same pen the room
+                        is drawn with, and it is the product's one way of saying
+                        "here" — never a filled highlight. */}
+                    <span className={styles.inkLabel}>
+                      <span className={styles.rowTitle}>{course.title}</span>
+                      <span
+                        className={styles.rowMark}
+                        aria-hidden="true"
+                        dangerouslySetInnerHTML={{ __html: rowInk(i * 5 + 3, dark) }}
+                      />
+                    </span>
                     <span className={styles.rowNote}>
                       {course.categories.map((c) => copy.courseCategories[c]).join(" · ")}
                     </span>
@@ -619,6 +915,9 @@ export function LearnRoomView({
             );
           })}
         </ol>
+        {/* An empty result is as much of an answer as a list, and it says so in
+            the list's own place rather than replacing the room. */}
+        {shown.length === 0 ? <p className={styles.noMatch}>{copy.shelfNoMatch}</p> : null}
       </nav>
     </div>
   );
