@@ -45,6 +45,19 @@ describe("platform interaction layers", () => {
     expect(pagination).toContain("InteractionInkIcon");
   });
 
+  it("shares the workspace header with the Builder while keeping admin navigation route-local", () => {
+    const header = read("src/components/platform/layout/PlatformHeader.tsx");
+    const layout = read("src/app/(platform)/admin/layout.tsx");
+
+    expect(header).toContain("workspaceMobileContent");
+    expect(layout).toContain('<PlatformHeader');
+    expect(layout).toContain('surface="personal"');
+    expect(layout).toContain('mode="workspace"');
+    expect(layout).toContain("workspaceMobileContent={(closeMenu)");
+    expect(layout).toContain('name={expanded ? "arrow-up" : "arrow-down"}');
+    expect(layout).not.toContain("LanguageSwitcher");
+  });
+
   it("gives every legacy icon-only utility a drawn ring", () => {
     const tsxFiles = fs
       .readdirSync(path.join(root, "src"), { recursive: true })

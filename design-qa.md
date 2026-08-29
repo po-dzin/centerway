@@ -29,6 +29,55 @@ final result: passed
 
 ---
 
+## 2026-08-30 — shared Control Panel workspace frame
+
+**Evidence**
+
+- Source visual truth: `/var/folders/sq/4w_d403s78l84cn2wzfq2djh0000gn/T/codex-clipboard-7e4731fb-7d4c-4a36-b6c3-80b7d3c7c702.png`.
+- Browser-rendered implementation: `/tmp/centerway-admin-frame-2026-08-30.png` on `http://localhost:8001/admin/jobs`.
+- Both source and implementation are `1920 × 1110` pixels at a `1920 × 1110` CSS viewport and 1× density.
+- Focused scope: the global topbar and left navigation rail. The authenticated jobs data is not part of this change.
+
+**Findings**
+
+- [P2] The source and implementation could not be placed into one browser
+  comparison input. The in-app browser rejected the local `data:` comparison
+  page under its URL policy. The two captures were opened separately, but that
+  is not sufficient evidence for a passing visual-QA iteration.
+  - Impact: layout/frame observations cannot be certified as a full visual
+    comparison by this QA contract.
+  - Fix: rerun the comparison in a browser context that permits a local
+    side-by-side capture of the supplied source image and rendered route.
+
+**Observed implementation state**
+
+- The full-width shared `PlatformHeader` carries the linked CenterWay mark and
+  wordmark; the previous `Control Panel` title block is gone.
+- The rail begins below the topbar, so there is no horizontal seam across the
+  top row. Its compact control shows a down arrow at rest and an up arrow when
+  expanded.
+- At `390 × 844`, the shared header opens the Control Panel's route-local
+  navigation inside the standard mobile drawer; there is no duplicate mobile
+  header.
+
+**Required fidelity surfaces**
+
+- Typography: the visible wordmark and admin labels use existing shared
+  components and type tokens; no local type recipe was introduced.
+- Spacing/layout: the bar spans the viewport, with the rail starting below it;
+  mobile replaces the rail with the common drawer.
+- Colors/tokens: existing `PlatformHeader`, `cw-*` and material tokens only.
+- Image/assets: existing CenterWay logo, avatar and shared icons only.
+- Copy/content: the local route retains existing Ukrainian labels.
+
+**Implementation checklist**
+
+1. Re-run side-by-side screenshot comparison in a permitted browser context.
+
+final result: blocked
+
+---
+
 ## 2026-08-24 — lesson editor three-column workspace
 
 **Evidence**

@@ -5,10 +5,9 @@ import { ReactNode, useState, useEffect, useCallback, useRef } from "react";
 import { usePathname, useRouter } from "next/navigation";
 import { Icon } from "@/components/Icon";
 import type { CwIconName } from "@/components/iconNames";
-import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { I18nProvider, useI18n } from "@/components/I18nProvider";
-import { PlatformAccountMenu } from "@/components/platform/layout/PlatformAccountMenu";
 import { InteractionInkIcon, InteractionInkLabel } from "@/components/platform/InteractionInk";
+import { PlatformHeader } from "@/components/platform/layout/PlatformHeader";
 import { ToastProvider } from "@/components/ToastProvider";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { ADMIN_ROLE_CACHE_KEY, ADMIN_ROLE_CACHE_TTL_MS, isAdminRole } from "@/lib/platform/adminRole";
@@ -42,7 +41,6 @@ function AdminShell({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const [expanded, setExpanded] = useState(false);
-    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [session, setSession] = useState<Session | null>(null);
     const [role, setRole] = useState<string | null>(null);
     const [authInitialized, setAuthInitialized] = useState(false);
@@ -172,10 +170,6 @@ function AdminShell({ children }: { children: ReactNode }) {
     }, [authInitialized, roleInitialized, pathname, session, role, router]);
 
     useEffect(() => {
-        setMobileMenuOpen(false);
-    }, [pathname]);
-
-    useEffect(() => {
         if (!session?.access_token) return;
         if (!pathname?.startsWith("/admin")) return;
 
@@ -236,45 +230,51 @@ function AdminShell({ children }: { children: ReactNode }) {
     const isSelectedNav = (href: string) => (href === "/admin" ? pathname === "/admin" : pathname?.startsWith(href));
 
     return (
-        <div className="cw-admin-theme flex h-dvh md:h-screen overflow-hidden font-sans transition-colors duration-300">
-            {/* Sidebar — THE BAR'S MATERIAL TURNED ON ITS SIDE. It painted
-                `cw-surface-2`, the sunk paper, which is the one thing the
-                topbar stopped being: two chrome surfaces meeting at a right
-                angle in two different colours. Same `data-cw-material="chrome"`
-                as the bar above it, and no rule between them — the rail is
-                bounded by its own material, not by a drawn line. */}
+        <div className="cw-admin-theme flex h-dvh md:h-screen flex-col overflow-hidden font-sans transition-colors duration-300">
+            {/* One workspace topbar owns the whole frame: brand, wordmark and
+                account behave exactly as they do in the library and Builder.
+                The admin rail begins BELOW it, so there is no false seam where
+                two top layers used to meet. */}
+            <PlatformHeader
+                surface="personal"
+                mode="workspace"
+                workspaceMobileContent={(closeMenu) => (
+                    <nav className="flex flex-col gap-1 p-3 overflow-y-auto" aria-label={t("sidebar_title")}>
+                        {navItems.map(({ key, href, icon, active }) => {
+                            const isSelected = isSelectedNav(href);
+                            return (
+                                <Link
+                                    key={key}
+                                    href={href}
+                                    prefetch={false}
+                                    onClick={closeMenu}
+                                    aria-current={active && isSelected ? "page" : undefined}
+                                    className={`cw-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+                                        ${active
+                                            ? isSelected
+                                                ? "cw-nav-link-active"
+                                                : ""
+                                            : "cw-muted opacity-40 cursor-not-allowed pointer-events-none"
+                                        }`}
+                                >
+                                    <InteractionInkIcon><Icon name={icon} size={20} /></InteractionInkIcon>
+                                    <InteractionInkLabel>{t(key)}</InteractionInkLabel>
+                                </Link>
+                            );
+                        })}
+                    </nav>
+                )}
+            />
+
+            <div className="flex flex-1 min-h-0">
+            {/* Sidebar — the same chrome material, now a rail below the shared
+                bar rather than a competing top panel. */}
             <aside
                 data-cw-material="chrome"
                 className={`${expanded ? "w-56" : "w-16"} hidden md:flex shrink-0 h-full flex-col min-h-0 transition-all duration-300 ease-in-out overflow-hidden`}
             >
-                {/* Logo + Toggle */}
-                <div className="h-[3.25rem] md:h-14 flex items-center justify-between px-3 border-b cw-border shrink-0">
-                    {expanded && (
-                        <div className="overflow-hidden">
-                            <p className="text-sm font-bold cw-text whitespace-nowrap">{t("sidebar_title")}</p>
-                            <p className="text-[9px] cw-muted uppercase font-semibold tracking-widest whitespace-nowrap">{t("sidebar_subtitle")}</p>
-                        </div>
-                    )}
-                    <button
-                        type="button"
-                        onClick={() => setExpanded(v => !v)}
-                        title={expanded ? t("common_collapse") : t("common_expand")}
-                        aria-expanded={expanded}
-                        className={`${expanded ? "" : "mx-auto"} cw-icon-btn shrink-0`}
-                    >
-                        {/* Points AT the edge it will move: left to close, right to open. */}
-                        <InteractionInkIcon>
-                            <Icon
-                                name="chevron-right"
-                                size={16}
-                                className={`transition-transform duration-300 ${expanded ? "rotate-180" : ""}`}
-                            />
-                        </InteractionInkIcon>
-                    </button>
-                </div>
-
                 {/* Nav */}
-                <nav className="flex flex-col gap-0.5 p-2 mt-1 flex-1 min-h-0 overflow-y-auto">
+                <nav className="flex flex-col gap-0.5 p-2 pt-3 flex-1 min-h-0 overflow-y-auto" aria-label={t("sidebar_title")}>
                     {navItems.map(({ key, href, icon, active }) => {
                         const isSelected = isSelectedNav(href);
 
@@ -309,47 +309,21 @@ function AdminShell({ children }: { children: ReactNode }) {
                         );
                     })}
                 </nav>
+                <div className="p-2 border-t cw-border shrink-0">
+                    <button
+                        type="button"
+                        onClick={() => setExpanded(v => !v)}
+                        title={expanded ? t("common_collapse") : t("common_expand")}
+                        aria-expanded={expanded}
+                        className="cw-icon-btn w-full flex justify-center"
+                    >
+                        <InteractionInkIcon><Icon name={expanded ? "arrow-up" : "arrow-down"} size={18} /></InteractionInkIcon>
+                    </button>
+                </div>
             </aside>
 
             {/* Main */}
             <main className="flex-1 flex flex-col min-w-0 min-h-0">
-                {/* THE PLATFORM'S BAR, NOT A SECOND ONE. This was `border-b cw-border
-                    cw-surface-2` — an opaque sunk panel with a hairline — while
-                    every other topbar in the product is chrome glass with a
-                    soft shadow and a curved lower edge. `data-cw-material` is
-                    where that material is named; see the "chrome" note in
-                    globals.css. */}
-                <header
-                    data-cw-material="chrome"
-                    className="h-[3.25rem] md:h-14 shrink-0 flex items-center justify-between sm:justify-end px-3 sm:px-4 md:px-8 sticky top-0 z-20 transition-colors duration-300"
-                >
-                    <button
-                        type="button"
-                        onClick={() => setMobileMenuOpen(true)}
-                        className="md:hidden cw-icon-btn"
-                        title={t("common_expand")}
-                        aria-label={t("common_expand")}
-                        aria-expanded={mobileMenuOpen}
-                    >
-                        <InteractionInkIcon><Icon name="menu" size={18} /></InteractionInkIcon>
-                    </button>
-                    <div className="flex items-center gap-2 md:gap-4">
-                        <LanguageSwitcher />
-                        {/* THE SAME CONTROL AS EVERY OTHER SHELL (2026-08-29). Used
-                            to be a bespoke Tailwind dropdown whose one row was
-                            `signOut()`, then grew a second, ad hoc hover
-                            (`hover:bg-[var(--cw-surface-2)]`) that matched nothing
-                            else in the panel. `apps.ts` already made the two menus
-                            agree on WHERE an account may go; this makes them the
-                            same control, so they cannot drift on how a row answers
-                            a pointer again. `exclude` drops the admin row — a menu
-                            opened from inside `/admin` pointing back at `/admin` is
-                            a way to the room already standing in it. Theme lives
-                            inside this menu now (`PlatformThemeControl`), which is
-                            why the bar's own `ThemeSwitcher` button is gone. */}
-                        <PlatformAccountMenu compact exclude={["admin"]} />
-                    </div>
-                </header>
                 <div data-admin-scroll className="custom-scrollbar flex-1 px-3 py-3 sm:px-4 sm:py-4 md:p-8 overflow-y-auto overflow-x-hidden w-full min-h-0 pb-4 md:pb-8">
                     {/* One content column for every tab, on the platform's own
                         guide — see `.cw-admin-content`. The scroll viewport stays
@@ -357,68 +331,8 @@ function AdminShell({ children }: { children: ReactNode }) {
                         `[data-admin-scroll]`. */}
                     <div className="cw-admin-content">{children}</div>
                 </div>
-                {mobileMenuOpen ? (
-                    <div className="md:hidden fixed inset-0 z-40">
-                        {/* The product's one shield — see `data-cw-scrim` in
-                            globals.css. It was `bg-black/45`, a raw dim: the
-                            only place in the platform that darkened a page with
-                            ink rather than continuing the bar's material over
-                            it, and the reason this drawer read brown against
-                            the chrome above it. */}
-                        <button
-                            type="button"
-                            data-cw-scrim="chrome"
-                            className="absolute inset-0"
-                            onClick={() => setMobileMenuOpen(false)}
-                            aria-label={t("common_close")}
-                        />
-                        <aside
-                            data-cw-material="chrome"
-                            className="absolute left-0 top-0 h-full w-72 max-w-[85vw] p-3 flex flex-col"
-                        >
-                            <div className="flex items-center justify-between pb-3 border-b cw-border">
-                                <div>
-                                    <p className="text-sm font-bold cw-text">{t("sidebar_title")}</p>
-                                    <p className="text-[9px] cw-muted uppercase font-semibold tracking-widest">{t("sidebar_subtitle")}</p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="cw-icon-btn"
-                                    title={t("common_close")}
-                                    aria-label={t("common_close")}
-                                >
-                                    <InteractionInkIcon><Icon name="close" size={16} /></InteractionInkIcon>
-                                </button>
-                            </div>
-                            <nav className="mt-3 flex flex-col gap-1 overflow-y-auto">
-                                {navItems.map(({ key, href, icon, active }) => {
-                                    const isSelected = isSelectedNav(href);
-                                    return (
-                                        <Link
-                                            key={key}
-                                            href={href}
-                                            prefetch={false}
-                                            title={t(key)}
-                                            aria-current={active && isSelected ? "page" : undefined}
-                                            className={`cw-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
-                                                ${active
-                                                    ? isSelected
-                                                        ? "cw-nav-link-active"
-                                                        : ""
-                                                    : "cw-muted opacity-40 cursor-not-allowed pointer-events-none"
-                                                }`}
-                                        >
-                                            <InteractionInkIcon><Icon name={icon} size={20} /></InteractionInkIcon>
-                                            <InteractionInkLabel>{t(key)}</InteractionInkLabel>
-                                        </Link>
-                                    );
-                                })}
-                            </nav>
-                        </aside>
-                    </div>
-                ) : null}
             </main>
+            </div>
         </div>
     );
 }

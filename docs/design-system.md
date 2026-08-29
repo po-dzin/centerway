@@ -1391,6 +1391,16 @@ row. Builder's `--builder-topbar-height` remains the downstream clearance source
 for rails and sticky local navigation, resolving to the same compact value below
 `901px` and to `4rem` on desktop.
 
+### One internal workspace frame (2026-08-30)
+
+Builder, the library and Control Panel share `PlatformHeader` in `workspace`
+mode. The wordmark is therefore the one homeward route and the account/drawer
+mechanics have one owner; a left rail begins beneath that bar rather than
+manufacturing a competing top panel or a seam across the first row. A workspace
+may supply only its narrow route navigation through `workspaceMobileContent`.
+It must not replace the brand or account surface, because those are global
+chrome rather than a local route map.
+
 ### One nav-state contract (2026-08-23)
 
 Three surfaces answered "you are here" three ways: the topbar drew an ink underline, the cabinet's tab strip drew a gold one, and the account popover underlined its current row in gold via `text-decoration`. Two of them were on screen at once, so the reader had to learn that a black rule and a gold rule mean the same thing.
