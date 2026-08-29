@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
 
+import { adminClient } from "@/lib/auth/adminClient";
 import { FakeSupabase } from "@/lib/admin/fakeSupabase";
+import { resolveCourseAccess } from "./courseAccess";
 
 /**
  * The access decision, tested where an agent tool will call it — not through a
@@ -27,10 +29,15 @@ function database() {
   });
 }
 
+/**
+ * Imported statically, not through `await import` inside the helper: `vi.mock`
+ * is hoisted, so the mock is in place either way — and the dynamic form paid
+ * the whole module graph's load cost inside the FIRST test, which turned into a
+ * 5s timeout whenever the machine was busy. A flake in an authorization test is
+ * worse than a slow one: it trains you to re-run it.
+ */
 async function accessTo(user: { id: string; email?: string | null } | null, slug: string) {
-  const { adminClient } = await import("@/lib/auth/adminClient");
   vi.mocked(adminClient).mockImplementation(() => database() as never);
-  const { resolveCourseAccess } = await import("./courseAccess");
   return resolveCourseAccess(user, slug);
 }
 

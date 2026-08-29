@@ -1,5 +1,7 @@
 "use client";
 
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
+
 interface TabItem {
     key: string;
     label: string;
@@ -21,8 +23,9 @@ export function AdminTabs({ items, activeKey, onChange, className = "" }: AdminT
                     type="button"
                     onClick={() => onChange(tab.key)}
                     className={`cw-tab ${activeKey === tab.key ? "cw-tab-active" : ""}`}
+                    aria-pressed={activeKey === tab.key}
                 >
-                    {tab.label}
+                    <InteractionInkLabel>{tab.label}</InteractionInkLabel>
                 </button>
             ))}
         </div>

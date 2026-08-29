@@ -22,6 +22,9 @@ const read = (rel: string) => fs.readFileSync(path.join(root, rel), "utf8");
 
 const BUILDER_CSS = "src/components/builder/Builder.module.css";
 const css = read(BUILDER_CSS);
+const platformShellCss = read("src/components/platform/PlatformShell.module.css");
+const platformResponsiveCss = read("src/components/platform/PlatformResponsive.module.css");
+const editableTitleSource = read("src/components/builder/BuilderEditableTitle.tsx");
 
 /** Declarations, with comments stripped so prose is never read as code. */
 const code = css.replace(/\/\*[\s\S]*?\*\//g, "");
@@ -211,12 +214,35 @@ describe("the course tabs sit below the header, not under it", () => {
    * at the same coordinate and the header's higher z-index won: the three
    * mode tabs sat directly behind roughly 4rem of chrome instead of below it.
    * `--builder-topbar-height` is that header's own measured box, already
-   * declared on `.shell` (this strip's ancestor) for exactly this number —
-   * verified live to equal the header's real rendered height (65px at
-   * 700px width) before this test was written.
+   * declared on `.shell` (this strip's ancestor) for exactly this number. It
+   * follows the compact header below 901px and returns to 4rem on desktop.
    */
   it("pins the strip to --builder-topbar-height, not to the viewport edge", () => {
     const rule = /\.courseMobileNav\s*\{([\s\S]*?)\n\}/.exec(code)?.[1] ?? "";
     expect(rule).toContain("inset-block-start: var(--builder-topbar-height)");
+  });
+});
+
+describe("responsive workspace chrome", () => {
+  it("keeps the original desktop depth while compacting below the desktop breakpoint", () => {
+    const desktopInner = /\.headerInner\s*\{([\s\S]*?)\n\}/.exec(platformShellCss)?.[1] ?? "";
+    const compactInner = /\.headerInner,\s*\n\s*\.headerInner\.container\s*\{([\s\S]*?)\n\s*\}/.exec(platformResponsiveCss)?.[1] ?? "";
+    const builderShell = /\.shell\s*\{([\s\S]*?)\n\}/.exec(code)?.[1] ?? "";
+    const builderDesktop = /@media \(min-width: 901px\)\s*\{\s*\.shell\s*\{([\s\S]*?)\n\s*\}/.exec(code)?.[1] ?? "";
+
+    expect(desktopInner).toContain("min-height: 4rem");
+    expect(compactInner).toContain("min-height: var(--platform-mobile-header-height)");
+    expect(builderShell).toContain("--builder-topbar-height: calc(var(--ds-touch-target-min) + 0.25rem)");
+    expect(builderDesktop).toContain("--builder-topbar-height: 4rem");
+  });
+});
+
+describe("editable title affordance", () => {
+  it("anchors its ink ring to the pencil and does not show a native tooltip", () => {
+    const rule = /\.titleEditAction\s*\{([\s\S]*?)\n\}/.exec(code)?.[1] ?? "";
+
+    expect(rule).toContain("position: relative");
+    expect(editableTitleSource).toContain("aria-label={label}");
+    expect(editableTitleSource).not.toContain("title={label}");
   });
 });

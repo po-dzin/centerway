@@ -90,6 +90,7 @@ export function CabinetHero({
   name,
   email,
   avatar,
+  avatarRing,
   notice,
   stats,
   children,
@@ -99,6 +100,8 @@ export function CabinetHero({
   email: string;
   /** The account picture, or the initial standing in for one. */
   avatar: ReactNode;
+  /** Optional diagnostic outline; the adjacent stat carries its textual meaning. */
+  avatarRing?: ReactNode;
   /** A fact worth a glance, not a sentence — see the reach dot below. */
   notice?: CabinetHeroNotice;
   stats: CabinetHeroStat[];
@@ -152,6 +155,11 @@ export function CabinetHero({
                 second. Hover and focus-within do the revealing between them; no
                 open flag is threaded through this component for it. */}
             <span className={cabinetStyles.avatarNoticeWrap}>
+              {avatarRing ? (
+                <span className={styles.avatarRing} aria-hidden="true">
+                  {avatarRing}
+                </span>
+              ) : null}
               <span className={styles.avatar} aria-hidden="true">
                 {avatar}
               </span>

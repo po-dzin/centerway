@@ -609,6 +609,79 @@
   border: 0;
 }
 
+/* THE IDLE STATE, DRAWN BY US — see IntroVideo.tsx for why the iframe's own
+   cover could not stay. The still fills the same 16:9 frame the player will
+   take, so pressing it swaps one picture for another and nothing on the card
+   moves. `object-fit: cover` is belt and braces: YouTube's maxres still is
+   16:9 already. */
+.videoPoster {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: inherit;
+  background: var(--cw-mat-scrim-ink);
+  appearance: none;
+  -webkit-appearance: none;
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.videoPosterImage {
+  position: absolute;
+  inset: 0;
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* A control over a photograph, so it takes the inverse material rather than the
+   page's — the same set the hero's controls use. Deliberately NOT the gold: the
+   card already asks one thing in gold («Тест доші»), and a second gold object
+   above it makes the two read as a pair of equal offers. */
+.videoPlayMark {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: var(--cw-radius-pill);
+  border: 1px solid var(--cw-mat-inverse-stroke);
+  color: var(--cw-mat-inverse-text);
+  background-color: var(--cw-mat-inverse-control);
+  backdrop-filter: var(--cw-mat-filter);
+  transition: background-color 160ms ease, transform 160ms ease;
+}
+
+.videoPoster:hover .videoPlayMark,
+.videoPoster:focus-visible .videoPlayMark {
+  background-color: var(--cw-mat-inverse-control-hover);
+  transform: scale(1.04);
+}
+
+.videoPoster:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: calc(-1 * var(--ds-focus-ring-width));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .videoPlayMark {
+    transition: none;
+  }
+
+  .videoPoster:hover .videoPlayMark,
+  .videoPoster:focus-visible .videoPlayMark {
+    transform: none;
+  }
+}
+
 .videoAside {
   position: relative;
   z-index: 1;
@@ -658,12 +731,19 @@
 }
 
 @media (max-width: 900px) {
+  /* ONE INSET FOR THE WHOLE CARD (2026-08-29). The two columns become one card
+     here, and the card's padding used to be half a rem — barely a hairline of
+     ground beside the picture, while the copy under it sat a further 0.95rem
+     in. The video read as bled to the edge and the text as indented, which is
+     two different cards. The card now keeps a single inset and the aside stops
+     paying its own inline padding, so the player and the first letter of every
+     line stand on the same left edge. */
   .videoSection {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
     gap: 0;
-    padding: 0.55rem;
-    border-radius: var(--cw-radius-lg);
+    padding: 1rem;
+    border-radius: var(--cw-radius-xl);
   }
 
   .videoSection > * {
@@ -682,7 +762,7 @@
   .videoAside {
     border-radius: 0 0 var(--cw-radius-lg) var(--cw-radius-lg);
     gap: 0.95rem;
-    padding: 1rem 0.95rem 0.95rem;
+    padding: 1rem 0 0;
   }
 
   .videoDecisionRail {

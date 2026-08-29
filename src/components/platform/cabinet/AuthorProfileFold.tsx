@@ -18,6 +18,7 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
+import Link from "next/link";
 
 import type { Author } from "@/lms-core";
 import type { ProfileLang } from "@/components/platform/profile/types";
@@ -73,6 +74,7 @@ const STRINGS = {
     save: "Зберегти",
     saving: "Зберігаємо…",
     saved: "Збережено",
+    viewPublic: "Переглянути публічну сторінку",
     error: "Не вдалося зберегти. Перевірте поля і спробуйте ще раз.",
   },
   en: {
@@ -98,6 +100,7 @@ const STRINGS = {
     save: "Save",
     saving: "Saving…",
     saved: "Saved",
+    viewPublic: "View public page",
     error: "Could not save. Check the fields and try again.",
   },
 } as const;
@@ -340,6 +343,11 @@ export function AuthorProfileFold({
             <button className={styles.actionPrimary} type="submit" disabled={saving || uploading}>
               {saving ? t.saving : t.save}
             </button>
+            {author?.listed && author.slug ? (
+              <Link className={styles.actionGhost} href={`/expert/${author.slug}`} target="_blank" rel="noopener noreferrer">
+                {t.viewPublic} ↗
+              </Link>
+            ) : null}
           </div>
 
           {/* `role="status"` so the outcome is ANNOUNCED. A form whose only

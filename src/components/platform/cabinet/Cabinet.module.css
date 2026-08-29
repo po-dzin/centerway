@@ -259,23 +259,22 @@
 /* The last row of the column: same tile, no ring, no state — the list ends in
    a doorway rather than in a link floating over the composition. */
 .glanceMore {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  justify-content: space-between;
+  align-self: center;
+  justify-self: start;
   gap: var(--cw-space-xs);
-  min-height: 2.75rem;
-  padding: var(--cw-space-2xs) var(--cw-space-sm) var(--cw-space-2xs) calc(2.75rem + var(--cw-space-xs) + var(--cw-space-sm));
-  border-radius: var(--cw-radius-md);
-  color: inherit;
+  min-height: var(--ds-touch-target-min);
+  padding: 0;
+  color: var(--cw-platform-text);
   font-size: 0.92rem;
   font-weight: 600;
   text-decoration: none;
-  transition: transform 180ms ease, box-shadow 180ms ease;
+  transition: color 180ms ease;
 }
 
 .glanceMore:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--cw-mat-shadow-soft);
+  color: var(--cw-sem-warmth-strong);
 }
 
 .glanceMore:focus-visible {
@@ -380,7 +379,7 @@
   }
 
   .glanceMore:hover {
-    transform: none;
+    color: var(--cw-sem-warmth-strong);
   }
 
   .glanceMore:hover .glanceMoreArrow,
@@ -669,6 +668,11 @@
 .wheelRing {
   width: clamp(7rem, 22vw, 9rem);
   height: auto;
+}
+
+.wheelRingCompact {
+  width: 4.6rem;
+  height: 4.6rem;
 }
 
 .wheelTrack {

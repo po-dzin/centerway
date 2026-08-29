@@ -76,7 +76,7 @@ export function CourseNotes({
                   )}
                 >
                   <span className={styles.notesGlyph} aria-hidden="true">
-                    <Icon name={item.kind === "bookmark" ? "star" : "quote"} size={14} />
+                    <Icon name={item.kind === "bookmark" ? "bookmark-marked" : "quote"} size={14} />
                   </span>
                   <span className={styles.notesBody}>
                     {item.kind === "bookmark" ? (

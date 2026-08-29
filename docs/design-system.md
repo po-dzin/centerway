@@ -691,6 +691,16 @@ The rule, for every level-1 and level-2 surface:
   its word capitalises it and carries the glyph beside it; a control whose glyph
   says everything drops the word into `aria-label`.
 
+The layer boundary is explicit. Navigation labels, tabs, pagers and icon-only
+chrome use `InteractionInkLabel` / `InteractionInkIcon`; their carrying header,
+rail, sheet or menu may still be glass or ceramic, but that material does not
+repaint itself to express hover/current. Dense data rows and whole clickable
+cards are the exception because the object itself is what moves under the
+pointer: their material tint may change on hover. Form choices are a second,
+separate exception: selected state is semantic input state and may use the
+choice fill, while keyboard focus remains the accessibility ring. This is how
+ink and glass compose by depth instead of competing on the same layer.
+
 One object, two strengths, three places: under a row's name in the builder,
 under a section's name in the library list, and around an opening on the
 library wall.
@@ -1371,6 +1381,15 @@ The absorption kept the axes apart rather than flattening them. Depth's *materia
 **A control that sits on dark media inside a light page darkens, it does not lighten.** Hero chips and ghost buttons take `--cw-mat-inverse-control`. Reaching for a light tint there produced a pale pill carrying cream text — caught in review, and the reason this token exists rather than being improvised per component.
 
 Note — `--cw-btn-primary-*` was previously listed here as orphan; that was wrong. `.cw-btn-primary` (globals.css) is a rendered class consumed by `RouteAuthGate` and the dosha test. Its fill was retuned 2026-07-06 (gray-accent mix → success/ink mix) because the old dark pairing was ~2.06; it now clears body AA in both themes and is asserted by `guard:contrast`.
+
+### Responsive topbar depth (2026-08-29)
+
+Desktop chrome keeps the established `4rem` band. The compact one-touch-target
+height is a mobile/tablet adaptation below `901px`, where vertical workspace is
+scarcer; it must not collapse the desktop Builder breadcrumb and document-action
+row. Builder's `--builder-topbar-height` remains the downstream clearance source
+for rails and sticky local navigation, resolving to the same compact value below
+`901px` and to `4rem` on desktop.
 
 ### One nav-state contract (2026-08-23)
 
