@@ -786,6 +786,15 @@ body {
    one side — `border-image` paints all four, and a bordered card is an edge,
    not a rule. */
 :root {
+  /* Shared desktop workspace geometry. Builder is the source layout: a wide
+     panel keeps its reading context, a compact rail leaves the icons intact,
+     and one named easing carries the panel and its labels together. */
+  --cw-workspace-side-panel-width: clamp(15.25rem, 22vw, 21.25rem);
+  --cw-workspace-mode-rail-width: 4.25rem;
+  --cw-workspace-panel-pad-inline: var(--cw-space-lg);
+  --cw-workspace-panel-pad-block: var(--cw-space-lg);
+  --cw-workspace-panel-motion: 180ms;
+  --cw-workspace-panel-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --cw-rule-ink: var(--cw-platform-border);
   --cw-rule-fade-x: linear-gradient(90deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;
   --cw-rule-fade-y: linear-gradient(180deg, transparent 0, var(--cw-rule-ink) 8%, var(--cw-rule-ink) 92%, transparent 100%) 1;

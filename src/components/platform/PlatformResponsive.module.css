@@ -111,6 +111,7 @@
     box-shadow: none;
     backdrop-filter: none;
   }
+
 }
 
 @media (max-width: 900px) {
@@ -1920,5 +1921,3 @@
     padding: clamp(6.5rem, 9vw, 8.5rem) 0 clamp(4rem, 6vw, 5.5rem);
   }
 }
-
-

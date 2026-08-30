@@ -46,16 +46,21 @@ describe("platform interaction layers", () => {
   });
 
   it("shares the workspace header with the Builder while keeping admin navigation route-local", () => {
-    const header = read("src/components/platform/layout/PlatformHeader.tsx");
     const layout = read("src/app/(platform)/admin/layout.tsx");
+    const rail = read("src/app/(platform)/admin/AdminLayout.module.css");
+    const workspaceTokens = read("src/app/globals.css");
 
-    expect(header).toContain("workspaceMobileContent");
     expect(layout).toContain('<PlatformHeader');
     expect(layout).toContain('surface="personal"');
     expect(layout).toContain('mode="workspace"');
-    expect(layout).toContain("workspaceMobileContent={(closeMenu)");
+    expect(layout).not.toContain("workspaceMobileContent");
     expect(layout).toContain('name={expanded ? "arrow-up" : "arrow-down"}');
     expect(layout).not.toContain("LanguageSwitcher");
+    expect(rail).toContain("var(--cw-workspace-side-panel-width)");
+    expect(rail).toContain("var(--cw-rule-fade-y)");
+    expect(rail).toContain("var(--cw-rule-fade-x)");
+    expect(rail).toContain("var(--cw-workspace-panel-motion)");
+    expect(workspaceTokens).toContain("--cw-workspace-side-panel-width");
   });
 
   it("gives every legacy icon-only utility a drawn ring", () => {

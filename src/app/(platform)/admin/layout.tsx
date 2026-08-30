@@ -11,6 +11,7 @@ import { PlatformHeader } from "@/components/platform/layout/PlatformHeader";
 import { ToastProvider } from "@/components/ToastProvider";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { ADMIN_ROLE_CACHE_KEY, ADMIN_ROLE_CACHE_TTL_MS, isAdminRole } from "@/lib/platform/adminRole";
+import styles from "./AdminLayout.module.css";
 import { AuthChangeEvent, Session } from "@supabase/supabase-js";
 
 /* THE PRODUCT'S OWN HAND (2026-08-28). These were a borrowed outline set —
@@ -238,32 +239,6 @@ function AdminShell({ children }: { children: ReactNode }) {
             <PlatformHeader
                 surface="personal"
                 mode="workspace"
-                workspaceMobileContent={(closeMenu) => (
-                    <nav className="flex flex-col gap-1 p-3 overflow-y-auto" aria-label={t("sidebar_title")}>
-                        {navItems.map(({ key, href, icon, active }) => {
-                            const isSelected = isSelectedNav(href);
-                            return (
-                                <Link
-                                    key={key}
-                                    href={href}
-                                    prefetch={false}
-                                    onClick={closeMenu}
-                                    aria-current={active && isSelected ? "page" : undefined}
-                                    className={`cw-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
-                                        ${active
-                                            ? isSelected
-                                                ? "cw-nav-link-active"
-                                                : ""
-                                            : "cw-muted opacity-40 cursor-not-allowed pointer-events-none"
-                                        }`}
-                                >
-                                    <InteractionInkIcon><Icon name={icon} size={20} /></InteractionInkIcon>
-                                    <InteractionInkLabel>{t(key)}</InteractionInkLabel>
-                                </Link>
-                            );
-                        })}
-                    </nav>
-                )}
             />
 
             <div className="flex flex-1 min-h-0">
@@ -271,10 +246,10 @@ function AdminShell({ children }: { children: ReactNode }) {
                 bar rather than a competing top panel. */}
             <aside
                 data-cw-material="chrome"
-                className={`${expanded ? "w-56" : "w-16"} hidden md:flex shrink-0 h-full flex-col min-h-0 transition-all duration-300 ease-in-out overflow-hidden`}
+                className={`${styles.rail} ${expanded ? "" : styles.railCompact} hidden md:grid shrink-0 h-full`}
             >
                 {/* Nav */}
-                <nav className="flex flex-col gap-0.5 p-2 pt-3 flex-1 min-h-0 overflow-y-auto" aria-label={t("sidebar_title")}>
+                <nav className={`${styles.railNav} flex flex-col gap-0.5`} aria-label={t("sidebar_title")}>
                     {navItems.map(({ key, href, icon, active }) => {
                         const isSelected = isSelectedNav(href);
 
@@ -285,20 +260,19 @@ function AdminShell({ children }: { children: ReactNode }) {
                                 prefetch={false}
                                 title={t(key)}
                                 aria-current={active && isSelected ? "page" : undefined}
-                                className={`cw-nav-link flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm group relative
+                                className={`cw-nav-link ${styles.railLink} px-3 py-2.5 rounded-lg text-sm group relative
                                     ${active
                                         ? isSelected
                                             ? "cw-nav-link-active"
                                             : ""
                                         : "cw-muted opacity-40 cursor-not-allowed pointer-events-none"
                                     }
-                                    ${!expanded ? "justify-center" : ""}
                                 `}
                             >
                                 <InteractionInkIcon><Icon name={icon} size={20} /></InteractionInkIcon>
-                                {expanded && (
+                                <span className={styles.railLabel}>
                                     <InteractionInkLabel>{t(key)}</InteractionInkLabel>
-                                )}
+                                </span>
                                 {/* Tooltip when collapsed */}
                                 {!expanded && (
                                     <span className="pointer-events-none absolute left-full ml-3 z-50 whitespace-nowrap rounded-md cw-surface border cw-border cw-text text-xs font-medium px-2 py-1 opacity-0 group-hover:opacity-100 transition-opacity duration-150 cw-shadow">
@@ -309,13 +283,13 @@ function AdminShell({ children }: { children: ReactNode }) {
                         );
                     })}
                 </nav>
-                <div className="p-2 border-t cw-border shrink-0">
+                <div className={styles.railFoot}>
                     <button
                         type="button"
                         onClick={() => setExpanded(v => !v)}
                         title={expanded ? t("common_collapse") : t("common_expand")}
                         aria-expanded={expanded}
-                        className="cw-icon-btn w-full flex justify-center"
+                        className={`cw-icon-btn ${styles.railToggle} flex justify-center`}
                     >
                         <InteractionInkIcon><Icon name={expanded ? "arrow-up" : "arrow-down"} size={18} /></InteractionInkIcon>
                     </button>
