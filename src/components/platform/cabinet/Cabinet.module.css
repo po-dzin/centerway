@@ -363,7 +363,8 @@
   }
 
   /* The library link sits under the active course rather than consuming a
-     card-sized middle column. The dosha card stays adjacent to the course. */
+     card-sized middle column. The dosha card shares the course card's first
+     row, so it remains the same size rather than inheriting the link row. */
   .shelfRow:not([data-shelf="single"]) .glanceMore {
     grid-column: 1;
     grid-row: 2;
@@ -371,7 +372,7 @@
 
   .shelfRow:not([data-shelf="single"]) .shelfAside {
     grid-column: 2;
-    grid-row: 1 / span 2;
+    grid-row: 1;
   }
 
   /* Nothing to resume, so nothing to keep narrow: the state card takes the
@@ -559,14 +560,15 @@
   border-radius: var(--cw-radius-sm);
 }
 
-/* THE DOSHA, AT THE SIZE OF A GLANCE. It was a full card in a section under the
-   photograph, which put a scroll between a person and their own result. Here it
-   is the row's third part: the wheel, the type, one way back into the test. */
+/* THE DOSHA, AT THE SIZE OF THE COURSE CARD. It was a full card in a section
+   under the photograph, which put a scroll between a person and their own
+   result. Here it shares the course card's grid track: the wheel, the type,
+   one way back into the test. */
 .shelfAside {
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
-  padding: var(--cw-space-sm) var(--cw-space-md);
+  gap: 0.55rem;
+  padding: var(--cw-space-md);
   border-radius: var(--cw-radius-lg);
 }
 

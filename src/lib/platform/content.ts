@@ -41,7 +41,7 @@ export const platformNav: NavItem[] = [
 export const builderNavItem: NavItem = { label: "Майстерня", href: "/build", match: "prefix" };
 
 export const personalNav: NavItem[] = [
-  { label: "Мої курси", href: LEARNING_SHELF_HREF, match: "exact" },
+  { label: "Бібліотека", href: LEARNING_SHELF_HREF, match: "exact" },
   builderNavItem,
 ];
 

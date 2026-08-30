@@ -23,6 +23,7 @@ import { useRouter } from "next/navigation";
 
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
+import { Icon } from "@/components/Icon";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 import { usePlatformIdentity } from "@/components/platform/layout/usePlatformIdentity";
 import { platformRoleLabel } from "@/lib/platform/identity";
@@ -294,9 +295,7 @@ export function CabinetClient() {
             {ownedCourses.length > 1 ? (
               <Link className={styles.glanceMore} href={shelfHref}>
                 <span className={styles.glanceMoreText}>{cab.allCourses}</span>
-                <span className={styles.glanceMoreArrow} aria-hidden="true">
-                  →
-                </span>
+                <Icon className={styles.glanceMoreArrow} name="arrow-right" size={20} />
               </Link>
             ) : null}
 
