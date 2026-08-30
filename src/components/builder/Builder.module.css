@@ -19,14 +19,14 @@
 
 .shell {
   --builder-topbar-height: calc(var(--ds-touch-target-min) + 0.25rem);
-  --builder-side-panel-width: clamp(15.25rem, 22vw, 21.25rem);
+  --builder-side-panel-width: var(--cw-workspace-side-panel-width);
   /* Both mode rails, one value — they are the same object on opposite edges of
      the document. Narrowed from 4.75rem: the column carries a 3rem ink ring and
      nothing else, so the rest was padding pretending to be a panel. */
-  --builder-mode-rail-width: 4.25rem;
+  --builder-mode-rail-width: var(--cw-workspace-mode-rail-width);
   /* Shared by both side panels, so «symmetric» is a value rather than a habit:
      the same padding, the same foot height and the same easing on each side. */
-  --builder-panel-pad-inline: var(--cw-space-lg);
+  --builder-panel-pad-inline: var(--cw-workspace-panel-pad-inline);
   /* THE GAP BETWEEN THE READING AND ITS OWN SCROLLBAR.
 
      A pane that scrolls clips at its padding box, and with no inline padding
@@ -48,7 +48,7 @@
      a number repeated in two rules is how a list falls out of its own rhythm
      the next time one of them changes. */
   --builder-structure-grip-column: calc(1.5rem + var(--cw-space-xs));
-  --builder-panel-pad-block: var(--cw-space-lg);
+  --builder-panel-pad-block: var(--cw-workspace-panel-pad-block);
   /* MOTION IS NAMED BY THE JOB, NOT BY THE NUMBER.
 
      Five durations and three curves were in this file, and the split did not
@@ -68,9 +68,9 @@
   --builder-motion-reveal: 120ms;
   --builder-motion-ink: 160ms;
   --builder-motion-tool: 140ms;
-  --builder-motion-panel: 180ms;
+  --builder-motion-panel: var(--cw-workspace-panel-motion);
   --builder-motion-page: 240ms;
-  --builder-ease-tool: cubic-bezier(0.16, 1, 0.3, 1);
+  --builder-ease-tool: var(--cw-workspace-panel-ease);
   --builder-ease-page: cubic-bezier(0.22, 0.61, 0.36, 1);
   /* Room beside the manuscript for a block's own handles. */
   --builder-doc-gutter: 3rem;

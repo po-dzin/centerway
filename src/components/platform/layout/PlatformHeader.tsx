@@ -26,7 +26,6 @@ export function PlatformHeader({
   mode = "default",
   surface = "auto",
   workspaceContent,
-  workspaceMobileContent,
   autoHide = false,
 }: {
   initialTone?: "light" | "dark";
@@ -34,13 +33,6 @@ export function PlatformHeader({
   surface?: "auto" | "personal";
   /** Route context and document actions inside an internal editor topbar. */
   workspaceContent?: ReactNode;
-  /**
-   * A workspace owns its narrow navigation, while the header continues to own
-   * the brand, account and drawer mechanics. This keeps the Builder, library
-   * and Control Panel on one chrome surface without making their route maps
-   * pretend to be interchangeable.
-   */
-  workspaceMobileContent?: (closeMenu: () => void) => ReactNode;
   /**
    * Let the bar step aside while the page scrolls down, and bring it back on
    * the first scroll up. Every surface that is READ opts in — see
@@ -279,7 +271,6 @@ export function PlatformHeader({
           id="platform-mobile-menu"
         >
           <div className={styles.mobileMenuSurface} data-cw-glass="shell">
-            {mode === "workspace" && workspaceMobileContent ? workspaceMobileContent(closeMenu) : null}
             <>
             {/* WHOSE SESSION THIS IS, FIRST. The block lives inside the account
                 rows on the desktop popover, which on the phone put it halfway

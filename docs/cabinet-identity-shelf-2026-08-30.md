@@ -13,6 +13,7 @@
 
 - The dosha result is shown in its dedicated progress card and the textual hero fact; it does not frame the avatar.
 - A meaningful staff role (`Адміністратор`, `Підтримка`, `Куратор`) is profile context beside the person’s name. It is omitted from the account menu, whose task is navigation and session actions.
-- With one or more courses, `Усі мої курси` remains a plain link to `/learn`, directly below the resume course. On desktop the dosha card occupies the adjacent column instead of leaving a card-sized empty middle slot.
+- The personal topbar calls `/learn` `Бібліотека`; it names the destination rather than the subset a person owns.
+- With one or more courses, `Усі мої курси` remains a plain link to `/learn`, directly below the resume course, with the baked handwritten arrow used for platform forward movement. On desktop the dosha card occupies the adjacent course-card track only, rather than stretching through the library-link row or leaving a card-sized middle slot.
 
 This is a route-local composition adjustment, not a new cross-platform token or route-family rule; no RAverse update is required.

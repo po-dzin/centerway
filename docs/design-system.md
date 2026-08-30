@@ -1396,10 +1396,16 @@ for rails and sticky local navigation, resolving to the same compact value below
 Builder, the library and Control Panel share `PlatformHeader` in `workspace`
 mode. The wordmark is therefore the one homeward route and the account/drawer
 mechanics have one owner; a left rail begins beneath that bar rather than
-manufacturing a competing top panel or a seam across the first row. A workspace
-may supply only its narrow route navigation through `workspaceMobileContent`.
-It must not replace the brand or account surface, because those are global
-chrome rather than a local route map.
+manufacturing a competing top panel or a seam across the first row. The mobile
+burger remains the shared account menu, never a second route map that reopens
+the desktop rail.
+
+`--cw-workspace-side-panel-width`, `--cw-workspace-mode-rail-width`, panel
+padding and panel motion are shared geometry, first established by Builder and
+now used by the Control Panel. A compact rail keeps its icons and bottom arrow;
+its labels fade and translate with the width transition instead of being
+conditionally removed. Rail edges and the footer rule use the system's
+`--cw-rule-fade-y` / `--cw-rule-fade-x` contours.
 
 ### One nav-state contract (2026-08-23)
 

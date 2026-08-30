@@ -29,6 +29,49 @@ final result: passed
 
 ---
 
+## 2026-08-30 — Control Panel rail correction
+
+**Evidence**
+
+- Source bug capture: `/var/folders/sq/4w_d403s78l84cn2wzfq2djh0000gn/T/codex-clipboard-eba7f5f8-7813-4d03-a1f5-28a60b4d92c1.png`.
+- Corrected implementation: `/tmp/centerway-admin-rail-corrected-2026-08-30.png` on `/admin/jobs`.
+- Normalized side-by-side comparison: `/tmp/centerway-admin-rail-comparison-2026-08-30.png`.
+- Both captures: `1108 × 1107` CSS pixels at 1× density. Source has loaded jobs; implementation is signed out, so data content is intentionally not compared.
+
+**Comparison history**
+
+- P1: the Control Panel route rail was passed into the shared mobile burger,
+  so a global account drawer became a duplicate of the left navigation. Fixed
+  by returning the burger to Builder/library behaviour: it now owns only the
+  shared account actions.
+- P2: the admin rail used its own narrow width, hard borders, conditional label
+  removal and a bottom action unlike Builder. Fixed by promoting Builder's
+  shared workspace dimensions/motion to global tokens, using faded rule
+  contours, and keeping labels mounted while they fade and translate with the
+  rail width.
+
+**Required fidelity surfaces**
+
+- Typography: shared wordmark, rail labels and existing admin typography only.
+- Spacing/layout: no central menu remains; compact rail is Builder's `4.25rem`
+  mode width and expanded rail uses the same clamped panel width.
+- Colors/tokens: no new palette, shadow, radius or glass recipe; existing
+  material, ink and rule tokens are consumed.
+- Image/assets: existing CenterWay mark and baked icon/ink assets only.
+- Copy/content: no product copy changed.
+
+**Interactions tested**
+
+- Desktop compact/expanded rail toggle, including midpoint close capture.
+- `390 × 844` mobile burger with shared account action and no rail route list.
+- Browser console: no errors.
+
+No actionable P0/P1/P2 findings remain.
+
+final result: passed
+
+---
+
 ## 2026-08-30 — shared Control Panel workspace frame
 
 **Evidence**
