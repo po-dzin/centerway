@@ -42,6 +42,7 @@ export function BuilderRecordField({
         ref={box}
         onBlur={(event) => {
           if (box.current?.contains(event.relatedTarget as Node | null)) return;
+          if ((event.relatedTarget as Element | null)?.closest?.("[data-builder-format-toolbar]")) return;
           setEditing(false);
         }}
       >

@@ -19,6 +19,7 @@
  */
 
 import type { LessonBlock, RichTextNode } from "./blocks";
+import { addressedBlocks } from "./blocks";
 import { flattenLessons, type Course } from "./course";
 import { inlineToPlainText, type InlineText } from "./inline";
 import { buildInternalReferenceTargets, parseInternalReference } from "./references";
@@ -60,6 +61,8 @@ function richTextOf(nodes: RichTextNode[]): string {
 
 function inlineValues(block: LessonBlock): InlineText[] {
   switch (block.type) {
+    case "group":
+      return block.children.flatMap(inlineValues);
     case "lesson_objective":
     case "boundary_note":
     case "quote":
@@ -144,8 +147,9 @@ export function courseReadiness(course: Course): CourseReadiness {
       add("lms_ready_placeholder", lessonPath, lesson.title);
     }
 
-    lesson.blocks.forEach((block, index) => {
-      const path = `${lessonPath}.blocks[${index}]`;
+    addressedBlocks(lesson.blocks).forEach(({ block, path: blockPath }) => {
+      if (block.type === "group") return;
+      const path = `${lessonPath}.${blockPath}`;
       const text = blockText(block);
 
       if (hasMarker(text)) add("lms_ready_placeholder", path, text.trim().slice(0, 160));

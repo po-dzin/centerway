@@ -120,7 +120,6 @@ const MIN_HEIGHT = 168;
 export function BuilderMenu({
   label,
   items,
-  contextArea = true,
 }: {
   label: string;
   items: MenuItem[];
@@ -170,31 +169,6 @@ export function BuilderMenu({
       align: alignStart ? "start" : "end",
     });
   }, []);
-
-  const openAtPoint = useCallback((x: number, y: number) => {
-    setOrigin({
-      x,
-      y,
-      below: window.innerHeight - y,
-      above: y,
-      align: "start",
-    });
-  }, []);
-
-  /* Right-click on the row. Bound to the parent element rather than to a ref
-     the caller passes, so adding this cost the call sites nothing. */
-  useEffect(() => {
-    if (!contextArea) return;
-    const row = root.current?.parentElement;
-    if (!row) return;
-
-    const onContextMenu = (event: MouseEvent) => {
-      event.preventDefault();
-      openAtPoint(event.clientX, event.clientY);
-    };
-    row.addEventListener("contextmenu", onContextMenu);
-    return () => row.removeEventListener("contextmenu", onContextMenu);
-  }, [contextArea, openAtPoint]);
 
   /* Measured AFTER the list exists and BEFORE paint: the height decides whether
      it opens downward or flips, and a frame with the wrong answer is a menu

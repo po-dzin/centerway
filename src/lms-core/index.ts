@@ -27,6 +27,8 @@ export * from "./access";
 export * from "./offerCode";
 export * from "./theme";
 export * from "./drafts";
+export * from "./composition";
+export * from "./blockTransforms";
 export * from "./templates";
 export * from "./portable";
 export * from "./references";

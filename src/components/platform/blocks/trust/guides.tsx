@@ -1,6 +1,5 @@
 import Link from "next/link";
 
-import { Icon } from "@/components/Icon";
 import { PlatformBlock } from "@/components/platform/PlatformBlock";
 import styles from "@/components/platform/PlatformTrustStyles";
 import { authorHref, listListedAuthors } from "@/lib/lms/authors";
@@ -43,11 +42,8 @@ function fallbackGuides(): Author[] {
  *
  * It renders `listListedAuthors()` now, not a hand-written constant — the
  * profile an author fills in from their own cabinet is what shows up here.
- * `data-layout="single"` is the same switch the products block uses for one
- * product: a lone card takes the panorama shape (portrait beside the copy)
- * instead of standing as one column with three empty cells beside it. Two or
- * more, and every card becomes a column with the portrait on top — the
- * marketplace shape, at one size.
+ * Every count uses the standard card measure; full biographies and credentials
+ * belong to the linked profile, not to a growing portrait on the hub.
  */
 export async function HubGuides() {
   const listed = await listListedAuthors();
@@ -77,31 +73,19 @@ export async function HubGuides() {
 function GuideCard({ guide }: { guide: Author }) {
   return (
     <article className={styles.guideCard}>
-      {guide.photo ? (
         <div className={styles.guideMedia}>
           {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className={styles.guidePortrait} src={guide.photo.src} alt={guide.photo.alt} loading="lazy" decoding="async" />
+          {guide.photo ? <img className={styles.guidePortrait} src={guide.photo.src} alt={guide.photo.alt} loading="lazy" decoding="async" /> : null}
         </div>
-      ) : null}
       <div className={styles.guideBody}>
         <div className={styles.guideIdentity}>
           <h3 className={styles.guideName}>{guide.name}</h3>
           {guide.role ? <p className={styles.guideRole}>{guide.role}</p> : null}
         </div>
-        {guide.bio ? <p className={styles.guideNote}>{guide.bio}</p> : null}
+        <p className={styles.guideNote}>{guide.bio ?? guide.credentials?.join(" · ")}</p>
         {/* A list is text (see docs/design-system.md). These were four plates in
             a 2×2 grid inside a card — six surfaces to say four short facts, and
             the plates read as pressable when none of them are. */}
-        {guide.credentials && guide.credentials.length > 0 ? (
-          <ul className={styles.guideFacts}>
-            {guide.credentials.map((line) => (
-              <li key={line}>
-                <Icon className={styles.guideFactIcon} name="star" size={20} />
-                <span>{line}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
         <Link className={styles.guideLink} href={authorHref(guide)}>
           Більше про автора
         </Link>

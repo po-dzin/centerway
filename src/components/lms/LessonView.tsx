@@ -25,6 +25,7 @@ import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState
 import { ReaderChrome } from "./ReaderChrome";
 import { lessonPagerLayout } from "@/lib/lms/lessonNavigation";
 import { BlockRenderer } from "./LessonBlocks";
+import { flattenBlocks } from "@/lms-core";
 import { CourseContentsDrawer } from "./CourseContentsDrawer";
 import { LmsNotice } from "./LmsNotice";
 import { ReaderTopButton } from "./ReaderTopButton";
@@ -401,7 +402,7 @@ export function LessonView({
   }
 
   const data = state.data;
-  const hasObjective = data.lesson.blocks.some((block) => block.type === "lesson_objective");
+  const hasObjective = flattenBlocks(data.lesson.blocks).some((block) => block.type === "lesson_objective");
   const { nav } = data;
   const pager = lessonPagerLayout({
     isReference: data.isReference,

@@ -29,6 +29,7 @@ export type PortableCoursePreview = {
 
 function freshBlock(block: LessonBlock, ids: IdSource): LessonBlock {
   const copied = { ...block, id: ids() } as LessonBlock;
+  if (copied.type === "group") return { ...copied, children: copied.children.map((child) => freshBlock(child, ids)) };
 
   if (copied.type === "checklist") {
     return {

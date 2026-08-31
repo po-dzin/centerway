@@ -14,7 +14,7 @@ import {
   type InlineText,
   validateInlineText,
 } from "./inline";
-import { validateLessonBlock, type LessonBlock } from "./blocks";
+import { addressedBlocks, validateLessonBlock, type LessonBlock } from "./blocks";
 import { validateCourseTheme, type CourseTheme } from "./theme";
 
 /**
@@ -521,6 +521,16 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
       assert(Array.isArray(lesson.blocks) && lesson.blocks.length > 0, `lms_lesson_empty_blocks:${lessonPath}`);
       lesson.blocks.forEach((block, blockIndex) => {
         validateLessonBlock(block, `${lessonPath}.blocks[${blockIndex}]`);
+      });
+      const blockIds = new Set<string>();
+      const checklistIds = new Set<string>();
+      addressedBlocks(lesson.blocks as LessonBlock[]).forEach(({ block, path: blockPath }) => {
+        assert(!blockIds.has(block.id), `lms_block_duplicate_id:${lessonPath}.${blockPath}`);
+        blockIds.add(block.id);
+        if (block.type === "checklist") block.items.forEach((item) => {
+          assert(!checklistIds.has(item.id), `lms_block_checklist_duplicate_item_id:${lessonPath}.${blockPath}`);
+          checklistIds.add(item.id);
+        });
       });
     });
   });

@@ -1671,3 +1671,8 @@
     transform: none;
   }
 }
+.compositeBlock {
+  display: grid;
+  gap: var(--cw-space-md);
+  min-width: 0;
+}

@@ -18,6 +18,7 @@ import mammoth from "mammoth";
 
 import {
   assert,
+  flattenBlocks,
   inlineToPlainText,
   isNonEmptyString,
   isRecord,
@@ -326,7 +327,7 @@ export function lessonToMarkdown(lesson: Lesson): string {
   if (lesson.summary) out.push("", `<!-- centerway:summary ${JSON.stringify(inlineToPlainText(lesson.summary))} -->`);
   if (lesson.durationMin) out.push(`<!-- centerway:duration-min ${lesson.durationMin} -->`);
 
-  for (const block of lesson.blocks) {
+  for (const block of flattenBlocks(lesson.blocks)) {
     out.push("");
     switch (block.type) {
       case "lesson_objective": out.push("## Мета уроку", "", markdownInline(block.text)); break;
@@ -388,7 +389,7 @@ function lessonDocxParagraphs(lesson: Lesson): Paragraph[] {
   if (lesson.summary) paragraphs.push(new Paragraph({ children: textRuns(lesson.summary), style: "Subtitle" }));
 
   const heading = (text: string) => paragraphs.push(new Paragraph({ text, heading: HeadingLevel.HEADING_2 }));
-  for (const block of lesson.blocks) {
+  for (const block of flattenBlocks(lesson.blocks)) {
     switch (block.type) {
       case "lesson_objective": heading("Мета уроку"); paragraphs.push(new Paragraph({ children: textRuns(block.text) })); break;
       case "rich_text":

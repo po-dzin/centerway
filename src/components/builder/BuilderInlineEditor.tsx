@@ -13,14 +13,8 @@
  * the field on focus — which pushed the block down the page the moment the
  * caret entered it, and pushed it back on the way out. A control that moves the
  * thing it acts on is worse than no control. It now hangs over the selection in
- * a fixed layer, so nothing in the document moves, and the right mouse button
- * opens the same panel: formatting is what a context menu on prose is FOR.
- *
- * THE DIALECT STAYS, per field, behind «як текст». Not nostalgia: contenteditable
- * is genuinely unreliable on mobile Safari (selection handles, autocorrect
- * fighting the model, the keyboard covering the surface), and the builder is
- * explicitly meant to be usable on a phone. The escape hatch is the same tested
- * code path the CLI and the author's agent use.
+ * a fixed layer, so nothing in the document moves. Right-click remains owned
+ * by the browser. Formatting uses this single surface, with no markup twin.
  *
  * UNCONTROLLED ON PURPOSE. React must never write into this node while the
  * caret is in it — rewriting `innerHTML` under a live selection throws the
@@ -42,7 +36,6 @@ import { createPortal } from "react-dom";
 import { Icon } from "@/components/Icon";
 import { BuilderMenu } from "./BuilderMenu";
 import { inlineToHtml, nodesToInline, type MarkupNode } from "@/lib/lms/inlineDom";
-import { inlineToMarkup, markupToInline } from "@/lib/lms/inlineMarkup";
 import { PLACEHOLDER_MARKER, inlineToPlainText, type InlineText } from "@/lms-core";
 import styles from "./Builder.module.css";
 
@@ -169,7 +162,7 @@ export function BuilderInlineEditor({
   /** Internal course entities offered by the separate `@` command. */
   references?: InternalReferenceOption[];
   onChange: (next: InlineText | undefined) => void;
-  onCommand?: (id: string) => void;
+  onCommand?: (id: string, clearSlash?: boolean) => void;
   /** Enter. The span model has no line break, so this is always a structural move. */
   onEnter?: () => void;
   /** Backspace with nothing left to delete — "join me to what came before". */
@@ -178,7 +171,6 @@ export function BuilderInlineEditor({
   const ref = useRef<HTMLDivElement>(null);
   const Box = (phrasing ? "span" : "div") as "div";
   const [focused, setFocused] = useState(false);
-  const [asText, setAsText] = useState(false);
   const [linkDraft, setLinkDraft] = useState<string | null>(null);
   /** Whether the surface currently holds anything — what decides the placeholder. */
   const [hasText, setHasText] = useState(false);
@@ -188,8 +180,8 @@ export function BuilderInlineEditor({
    * for the panel to sit above it.
    */
   const [bar, setBar] = useState<{ x: number; y: number; flip: boolean } | null>(null);
-  /** Opened by the right button, and then it stays until dismissed. */
-  const [pinned, setPinned] = useState(false);
+  const initialized = useRef(false);
+  const toolbar = useRef<HTMLDivElement>(null);
   const savedRange = useRef<Range | null>(null);
 
   /**
@@ -280,16 +272,24 @@ export function BuilderInlineEditor({
     setAnchor(null);
   }, []);
 
+  useLayoutEffect(() => {
+    const element = toolbar.current;
+    if (!element || !bar) return;
+    const halfWidth = element.getBoundingClientRect().width / 2;
+    const left = Math.min(Math.max(bar.x, halfWidth + 8), window.innerWidth - halfWidth - 8);
+    element.style.left = `${left}px`;
+  }, [bar, linkDraft]);
+
   /** Clears the "/query" the author typed and hands the choice to the owner. */
   const runCommand = useCallback(
     (id: string) => {
       const element = ref.current;
       if (element) element.innerHTML = "";
+      setHasText(false);
       closeMenu();
-      onChange(undefined);
-      onCommand?.(id);
+      onCommand?.(id, true);
     },
-    [closeMenu, onChange, onCommand]
+    [closeMenu, onCommand]
   );
 
   // Measured rather than declared, and fixed rather than absolute — the same
@@ -323,7 +323,6 @@ export function BuilderInlineEditor({
   useEffect(() => {
     if (!focused) return;
     const onSelectionChange = () => {
-      if (pinned) return;
       const selection = window.getSelection();
       const element = ref.current;
       if (!selection || selection.isCollapsed || !element || selection.rangeCount === 0) {
@@ -338,7 +337,19 @@ export function BuilderInlineEditor({
     };
     document.addEventListener("selectionchange", onSelectionChange);
     return () => document.removeEventListener("selectionchange", onSelectionChange);
-  }, [focused, pinned, placeBar]);
+  }, [focused, placeBar]);
+
+  // Populate before autofocus. Otherwise the focused-node guard leaves newly
+  // mounted record fields empty and the next keystroke overwrites saved text.
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element || (initialized.current && document.activeElement === element)) return;
+    const incoming = inlineToPlainText(value ?? "").includes(PLACEHOLDER_MARKER) ? undefined : value;
+    const html = inlineToHtml(incoming ?? "");
+    if (element.innerHTML !== html) element.innerHTML = html;
+    initialized.current = true;
+    setHasText((element.textContent ?? "") !== "");
+  }, [value]);
 
   // A field the author has just created by pressing Enter. Focus lands at the
   // end so typing continues where they were, not before what is already there.
@@ -358,14 +369,6 @@ export function BuilderInlineEditor({
   // The value flows IN only when the caret is elsewhere. Writing innerHTML
   // under a live selection is what makes naive contenteditable components jump
   // the caret to the start on every keystroke.
-  useEffect(() => {
-    const element = ref.current;
-    if (!element || document.activeElement === element) return;
-    const incoming = inlineToPlainText(value ?? "").includes(PLACEHOLDER_MARKER) ? undefined : value;
-    const html = inlineToHtml(incoming ?? "");
-    if (element.innerHTML !== html) element.innerHTML = html;
-    setHasText((element.textContent ?? "") !== "");
-  }, [value, asText]);
 
   const emitFromElement = useCallback((element: HTMLElement) => {
     const next = nodesToInline(readNodes(element));
@@ -447,42 +450,8 @@ export function BuilderInlineEditor({
 
   const plain = inlineToPlainText(value ?? "");
   const hasMarker = plain.includes(PLACEHOLDER_MARKER);
-  const editableValue = hasMarker ? undefined : value;
-
-  if (asText) {
-    return (
-      <Box className={styles.inlineField}>
-        <Box className={styles.inlineBar}>
-          <span className={styles.inlineHint}>
-            <code>**жирне**</code> · <code>*курсив*</code> · <code>[текст](посилання)</code>
-          </span>
-          <button className={styles.inlineToggle} type="button" onClick={() => setAsText(false)}>
-            Кнопками
-          </button>
-        </Box>
-        <textarea
-          className={`${styles.textarea} ${hasMarker ? styles.inputTodo : ""}`}
-          aria-label={label}
-          rows={multiline ? 3 : 2}
-          value={inlineToMarkup(editableValue ?? "")}
-          placeholder={placeholder}
-          onChange={(event) => {
-            const next = markupToInline(event.target.value);
-            onChange(next === "" ? undefined : next);
-          }}
-          onKeyDown={(event) => {
-            if (event.key === "Enter" && !event.shiftKey) {
-              event.preventDefault();
-              event.currentTarget.blur();
-            }
-          }}
-        />
-      </Box>
-    );
-  }
 
   const closeBar = () => {
-    setPinned(false);
     setBar(null);
     setLinkDraft(null);
   };
@@ -501,22 +470,14 @@ export function BuilderInlineEditor({
         aria-label={label}
         data-multiline={multiline || undefined}
         onFocus={() => setFocused(true)}
-        onBlur={() => {
+        onBlur={(event) => {
+          if (toolbar.current?.contains(event.relatedTarget as Node | null)) return;
           setFocused(false);
           closeMenu();
           // The panel's own buttons keep the caret (they preventDefault on
           // mousedown), so a blur that reaches here means the author went
           // somewhere else and the panel has nothing left to act on.
           closeBar();
-        }}
-        onContextMenu={(event) => {
-          // The right button on prose should offer formatting. It is the one
-          // gesture that already means "what can I do with this", and the
-          // browser's own menu over a contenteditable offers spell-check and
-          // little else that applies here.
-          event.preventDefault();
-          setPinned(true);
-          placeBar({ x: event.clientX, y: event.clientY });
         }}
         onInput={emit}
         onKeyDown={(event) => {
@@ -604,6 +565,8 @@ export function BuilderInlineEditor({
       {bar && typeof document !== "undefined"
         ? createPortal(
             <div
+              ref={toolbar}
+              data-builder-format-toolbar
               className={styles.formatBar}
               data-flip={bar.flip || undefined}
               style={{ left: bar.x, top: bar.y }}
@@ -693,6 +656,9 @@ export function BuilderInlineEditor({
                         <button className={styles.formatIconAction} type="button" title="Нумерований список" aria-label="Нумерований список" onClick={() => { onCommand("ol"); closeBar(); }}>
                           <Icon name="list-ordered" size={18} />
                         </button>
+                        <button className={styles.formatIconAction} type="button" title="Чек-лист" aria-label="Чек-лист" onClick={() => { onCommand("block:checklist"); closeBar(); }}>
+                          <Icon name="check" size={18} />
+                        </button>
                         <span className={styles.formatDivider} aria-hidden="true" />
                         <button className={styles.formatIconAction} type="button" title="Цитата" aria-label="Цитата" onClick={() => { onCommand("block:quote"); closeBar(); }}>
                           <Icon name="quote" size={18} />
@@ -702,45 +668,23 @@ export function BuilderInlineEditor({
                         </button>
                       </>
                     ) : null}
-                    <span className={styles.formatDivider} aria-hidden="true" />
-                    <button
-                      className={styles.formatIconAction}
-                      type="button"
-                      title="Правити як розмітку"
-                      aria-label="Правити як розмітку"
-                      onClick={() => {
-                        closeBar();
-                        setAsText(true);
-                      }}
-                    >
-                      <Icon name="edit" size={18} />
-                    </button>
                   </span>
-                  <span className={styles.formatNarrowOnly}>
+                  {onCommand && commands?.some((command) => command.id === "ul") ? <span className={styles.formatNarrowOnly}>
                     <span className={styles.formatDivider} aria-hidden="true" />
                     <BuilderMenu
                       label="Ще форматування"
                       contextArea={false}
                       items={[
-                        ...(onCommand && commands?.some((command) => command.id === "ul")
-                          ? [
+                        ...[
                               { label: "Список", icon: "list" as const, onSelect: () => { onCommand("ul"); closeBar(); } },
                               { label: "Нумерований список", icon: "list-ordered" as const, onSelect: () => { onCommand("ol"); closeBar(); } },
+                              { label: "Чек-лист", icon: "check" as const, onSelect: () => { onCommand("block:checklist"); closeBar(); } },
                               { label: "Цитата", icon: "quote" as const, onSelect: () => { onCommand("block:quote"); closeBar(); } },
                               { label: "Код", icon: "code" as const, onSelect: () => { onCommand("block:code"); closeBar(); } },
-                            ]
-                          : []),
-                        {
-                          label: "Правити як розмітку",
-                          icon: "edit" as const,
-                          onSelect: () => {
-                            closeBar();
-                            setAsText(true);
-                          },
-                        },
+                            ],
                       ]}
                     />
-                  </span>
+                  </span> : null}
                 </>
               )}
             </div>,

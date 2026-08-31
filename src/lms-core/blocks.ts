@@ -20,6 +20,7 @@ import {
 } from "./inline";
 
 export type LessonBlockType =
+  | "group"
   | "lesson_objective"
   | "rich_text"
   | "protocol_step"
@@ -193,6 +194,7 @@ export type CtaBlock = BlockBase & {
 };
 
 export type LessonBlock =
+  | { id: string; type: "group"; children: LessonBlock[] }
   | LessonObjectiveBlock
   | RichTextBlock
   | ProtocolStepBlock
@@ -208,6 +210,7 @@ export type LessonBlock =
   | CtaBlock;
 
 export const LESSON_BLOCK_TYPES: readonly LessonBlockType[] = [
+  "group",
   "lesson_objective",
   "rich_text",
   "protocol_step",
@@ -246,7 +249,8 @@ function validateRichTextNode(node: unknown, path: string): asserts node is Rich
  * Error codes follow the repo's generator convention (`code:path`) so seed,
  * API and builder all fail with the same machine-readable reason.
  */
-export function validateLessonBlock(block: unknown, path: string): asserts block is LessonBlock {
+export function validateLessonBlock(block: unknown, path: string, depth = 0): asserts block is LessonBlock {
+  assert(depth <= 4, `lms_block_nesting_limit:${path}`);
   assert(isRecord(block), `lms_block_invalid_shape:${path}`);
   assert(isNonEmptyString(block.id), `lms_block_missing_id:${path}`);
 
@@ -257,6 +261,10 @@ export function validateLessonBlock(block: unknown, path: string): asserts block
   );
 
   switch (type as LessonBlockType) {
+    case "group":
+      assert(Array.isArray(block.children) && block.children.length > 0, `lms_block_empty_group:${path}`);
+      block.children.forEach((child, index) => validateLessonBlock(child, `${path}.children[${index}]`, depth + 1));
+      return;
     case "lesson_objective":
     case "boundary_note":
     case "quote":
@@ -361,7 +369,7 @@ export function validateLessonBlock(block: unknown, path: string): asserts block
 /** Every checklist item id in a lesson, used to fold checklist progress. */
 export function collectChecklistItemIds(blocks: LessonBlock[]): string[] {
   const ids: string[] = [];
-  for (const block of blocks) {
+  for (const block of flattenBlocks(blocks)) {
     if (block.type === "checklist") {
       for (const item of block.items) ids.push(item.id);
     }
@@ -372,10 +380,22 @@ export function collectChecklistItemIds(blocks: LessonBlock[]): string[] {
 /** Checklist items that gate lesson completion. */
 export function collectRequiredChecklistItemIds(blocks: LessonBlock[]): string[] {
   const ids: string[] = [];
-  for (const block of blocks) {
+  for (const block of flattenBlocks(blocks)) {
     if (block.type === "checklist" && block.requiredForCompletion) {
       for (const item of block.items) ids.push(item.id);
     }
   }
   return ids;
+}
+
+/** Depth-first reading order, with stable identities retained inside groups. */
+export function flattenBlocks(blocks: LessonBlock[]): Exclude<LessonBlock, { type: "group" }>[] {
+  return blocks.flatMap((block) => block.type === "group" ? flattenBlocks(block.children) : [block]);
+}
+
+export function addressedBlocks(blocks: LessonBlock[], prefix = "blocks"): { block: LessonBlock; path: string }[] {
+  return blocks.flatMap((block, index) => {
+    const path = `${prefix}[${index}]`;
+    return [{ block, path }, ...(block.type === "group" ? addressedBlocks(block.children, `${path}.children`) : [])];
+  });
 }

@@ -58,7 +58,7 @@ export function BuilderEditableTitle({
   onChange: (value: string) => void;
 }) {
   const field = useRef<HTMLTextAreaElement>(null);
-  const input = useRef<HTMLInputElement>(null);
+  const input = useRef<HTMLTextAreaElement>(null);
   const [editing, setEditing] = useState(false);
   const [before, setBefore] = useState(value);
   const [draft, setDraft] = useState(value);
@@ -85,6 +85,13 @@ export function BuilderEditableTitle({
     input.current?.setSelectionRange(end, end);
   }, [editing]);
 
+  useLayoutEffect(() => {
+    const element = input.current;
+    if (!element) return;
+    element.style.height = "auto";
+    element.style.height = `${element.scrollHeight}px`;
+  }, [editing, draft]);
+
   if (!asRecord) {
     return (
       <textarea
@@ -108,10 +115,10 @@ export function BuilderEditableTitle({
 
   if (editing) {
     return (
-      <input
+      <textarea
         ref={input}
-        className={compact ? styles.moduleTitleInput : `${styles.pageTitle} ${styles.titleInput} ${styles.titleEditing}`}
-        type="text"
+        className={`${styles.textarea} ${styles.recordTitleInput}`}
+        rows={1}
         value={draft}
         maxLength={maxLength}
         placeholder={placeholder}
