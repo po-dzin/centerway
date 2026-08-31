@@ -92,27 +92,6 @@
   gap: var(--cw-space-md);
 }
 
-/* THE SHELF'S TWO VIEWS. See `LearnShelfClient` for why the reader picks.
-   The switch itself is the builder's, restated rather than imported: two
-   icon-only buttons, muted until pressed. The list mode needs no rules of its
-   own — `CourseRow` renders `.glance`, which the cabinet already draws. */
-.viewSwitch {
-  display: inline-flex;
-  align-self: end;
-  align-items: center;
-  gap: var(--cw-space-2xs);
-}
-
-.viewOption {
-  composes: chromeBare from "../PlatformButtons.module.css";
-  composes: square from "../PlatformButtons.module.css";
-  color: var(--cw-platform-muted);
-}
-
-.viewOption[aria-pressed="true"] {
-  color: var(--cw-platform-text);
-}
-
 .cardGrid[data-view="rows"] {
   gap: var(--cw-space-2xs);
 }
@@ -783,7 +762,7 @@
 
 /* ── Folded sections ──────────────────────────────── */
 
-/* See CabinetFold.tsx: shut on a phone, open from 561 up. */
+/* Secondary cabinet material stays shut until the reader opens it. */
 .fold {
   display: grid;
   gap: var(--cw-space-md);
@@ -914,10 +893,7 @@
 }
 
 .draftBadgeChip {
-  display: inline-flex;
-  align-items: center;
-  padding: 0.3rem 0.7rem;
-  border-radius: var(--cw-radius-pill);
+  composes: mediaBadge from "../PlatformSurfaces.module.css";
   font-size: 0.8rem;
 }
 
@@ -1020,11 +996,14 @@
 
 /* ── Author profile form ──────────────────────────── */
 
-/* The compact form is read down one column. Desktop separates its media from
-   its writing below, while keeping the text measure constrained. */
+/* The compact form is read down one column. Desktop holds compact media at the
+   left and the complete editable profile at the right, within one full-width
+   material card. */
 .authorForm {
   composes: card;
-  max-width: 42rem;
+  display: grid;
+  width: 100%;
+  max-width: none;
 }
 
 .authorField {
@@ -1035,16 +1014,18 @@
   color: var(--cw-platform-muted);
 }
 
-/* «Додати рядок» is not the form's action — «Зберегти» is. It adds one row to
-   a list, so it stands at that list's own scale rather than taking the full
-   width a primary control takes. */
+/* `+` changes the list; it is not the form's save action. selection_family:
+   contour — each icon invokes a command, so it keeps the DS control boundary. */
 .authorAddRow {
   composes: secondary from "../PlatformButtons.module.css";
+  composes: square from "../PlatformButtons.module.css";
   align-self: flex-start;
 }
 
 .authorInput,
 .authorTextarea {
+  box-sizing: border-box;
+  width: 100%;
   padding: var(--cw-space-xs) var(--cw-space-sm);
   border-radius: var(--cw-radius-md);
   border: 1px solid var(--cw-platform-border);
@@ -1059,18 +1040,26 @@
 }
 
 .authorCredentialRow {
-  display: flex;
-  gap: var(--cw-space-xs);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--ds-touch-target-min);
   align-items: center;
+  gap: var(--cw-space-2xs);
 }
 
 .authorCredentialRow .authorInput {
-  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* selection_family: contour — removal is an irreversible local command, not
+   a quiet navigation choice. */
+.authorIconAction {
+  composes: secondary from "../PlatformButtons.module.css";
+  composes: square from "../PlatformButtons.module.css";
 }
 
 .authorPhotoPreview {
-  width: 6rem;
-  height: 6rem;
+  width: 13rem;
+  height: 13rem;
   object-fit: cover;
   border-radius: var(--cw-radius-md);
 }
@@ -1080,13 +1069,44 @@
    checkbox followed by two lines joined with a `<br>`, which reads as a
    paragraph with a box in front of it rather than as a control. */
 .authorVisibilityRow {
-  display: flex;
+  display: grid;
+  grid-template-columns: 1.1rem minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
-  gap: var(--cw-space-md);
+  justify-content: start;
+  gap: var(--cw-space-xs);
   padding: var(--cw-space-sm) 0;
   font-size: var(--ds-type-body-sm-size);
   color: var(--cw-platform-muted);
+}
+
+/* The same checkbox grammar as the shelf filter. selection_family: contour:
+   the box carries the selected state; the label is ordinary readable setting
+   copy, so it does not receive a separate ink stroke. */
+.authorVisibilityInput {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.authorVisibilityMark {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.1rem;
+  block-size: 1.1rem;
+  border: 1px solid var(--cw-mat-stroke-control);
+  border-radius: var(--cw-radius-inset);
+  color: transparent;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
+}
+
+.authorVisibilityInput:checked + .authorVisibilityMark {
+  border-color: var(--cw-nav-marker);
+  background: var(--cw-nav-marker);
+  color: var(--cw-platform-on-accent);
+}
+
+.authorVisibilityRow:has(.authorVisibilityInput:focus-visible) .authorVisibilityMark {
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
 }
 
 .authorVisibilityCopy {
@@ -1105,27 +1125,49 @@
   line-height: 1.45;
 }
 
-/* THE PHOTO AND ITS CONTROL SIT SIDE BY SIDE, so the picture is the thing the
-   button is obviously about. */
-.authorPhotoRow {
+/* One media object, then its compact edit controls. selection_family: contour
+   for edit/remove: both are direct commands on this particular object. */
+.authorMediaFrame {
+  position: relative;
+  width: fit-content;
+  max-width: 100%;
+}
+
+.authorMediaActions {
+  position: absolute;
+  inset: var(--cw-space-2xs) var(--cw-space-2xs) auto auto;
   display: flex;
-  align-items: center;
-  gap: var(--cw-space-md);
-  flex-wrap: wrap;
+  gap: var(--cw-space-2xs);
+}
+
+.authorMediaAction {
+  composes: onMedia from "../PlatformButtons.module.css";
+  composes: square from "../PlatformButtons.module.css";
+  cursor: pointer;
+}
+
+/* The native file input remains keyboard-reachable but is visually hidden.
+   Reflect its focus on the visible edit control; selection_family: contour. */
+.authorMediaAction:has(.visuallyHidden:focus-visible) {
+  outline: none;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 28%, transparent),
+    var(--cw-mat-shadow-soft);
 }
 
 /* An empty slot at the portrait's own size, so the row does not jump the first
    time an image lands in it. */
 .authorPhotoEmpty {
-  width: 6rem;
-  height: 6rem;
+  width: 13rem;
+  height: 13rem;
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
 }
 
 .authorBackgroundPreview,
 .authorBackgroundEmpty {
-  width: min(100%, 16rem);
+  width: 100%;
+  max-width: 17rem;
   height: 6rem;
   border-radius: var(--cw-radius-md);
 }
@@ -1144,19 +1186,6 @@
    that was not the product's. The real input keeps doing the work; the label is
    what the reader sees, and clicking it opens the dialog because that is what a
    `<label>` wrapping an input does. */
-.authorFilePick {
-  display: inline-flex;
-  cursor: pointer;
-}
-
-.authorFilePickFace {
-  composes: secondary from "../PlatformButtons.module.css";
-}
-
-.authorFilePickFace[data-busy] {
-  opacity: 0.6;
-}
-
 /* The one accessible-hiding recipe: off-screen but still focusable and still
    read aloud. `display: none` would take the input out of the tab order and
    the label with it. */
@@ -1218,8 +1247,9 @@
    columns; on compact screens the source order remains the one-column form. */
 @media (min-width: 901px) {
   .authorForm {
-    max-width: 66rem;
-    grid-template-columns: minmax(13rem, 18rem) minmax(0, 1fr);
+    grid-template-columns: minmax(18rem, 2fr) minmax(0, 3fr);
+    column-gap: var(--cw-space-xl);
+    row-gap: var(--cw-space-md);
     align-items: start;
   }
 
@@ -1233,27 +1263,38 @@
     grid-row: 2;
   }
 
-  .authorPhotoField .authorPhotoRow,
-  .authorBackgroundField .authorPhotoRow {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr);
-  }
-
   .authorPhotoPreview,
   .authorPhotoEmpty {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 1;
+    width: 13rem;
+    height: 13rem;
+    aspect-ratio: auto;
   }
 
   .authorBackgroundPreview,
   .authorBackgroundEmpty {
     width: 100%;
-    height: auto;
-    aspect-ratio: 16 / 7;
+    max-width: 17rem;
+    height: 6rem;
+    aspect-ratio: auto;
   }
 
-  .authorForm > :not(.authorPhotoField):not(.authorBackgroundField) {
+  .authorNameField { grid-column: 2; grid-row: 1; }
+  .authorRoleField { grid-column: 2; grid-row: 2; }
+  .authorBioField { grid-column: 2; grid-row: 3; }
+  .authorQuoteField { grid-column: 2; grid-row: 4; }
+  .authorCredentialsField { grid-column: 2; grid-row: 5; }
+  .authorSlugField { grid-column: 2; grid-row: 6; }
+  .authorVisibilityRow { grid-column: 2; grid-row: 7; }
+  .authorFormActions { grid-column: 2; grid-row: 8; }
+  .authorFormNotice { grid-column: 2; }
+
+  .authorForm > :not(.authorPhotoField):not(.authorBackgroundField):not(.authorNameField):not(.authorRoleField):not(.authorBioField):not(.authorQuoteField):not(.authorCredentialsField):not(.authorSlugField):not(.authorVisibilityRow):not(.authorFormActions):not(.authorFormNotice) {
     grid-column: 2;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .authorVisibilityMark {
+    transition: none;
   }
 }

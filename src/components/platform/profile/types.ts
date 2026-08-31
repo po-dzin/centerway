@@ -105,6 +105,7 @@ export type ProfileCopy = {
   programAccessNoToken: string;
   noProgramsLead: string;
   productsTitle: string;
+  productsLead: string;
   productLabel: string;
   price: string;
   productNoAccess: string;

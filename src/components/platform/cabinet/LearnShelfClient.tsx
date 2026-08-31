@@ -37,7 +37,7 @@ import { useCabinetSession, useLearnerShelf, useProfileLang } from "./useCabinet
 import styles from "./Cabinet.module.css";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { PlatformPageHead } from "@/components/platform/PlatformPageHead";
-import { Icon } from "@/components/Icon";
+import { ShelfPresentation, ShelfResultBar } from "./ShelfPresentation";
 
 
 /**
@@ -115,32 +115,34 @@ export function LearnShelfClient() {
   const programsHref = href("/programs");
   const homeHref = href("/");
 
+  /* Loading states answer only «the current content is loading». They must not
+     preview the page's eventual title: Builder already uses this exact shared
+     loading state, and a library heading above it made one route look like a
+     page while the other still looked like a transition. */
+  const shelfLoading = (
+    <main className={surfaceStyles.profileMain} data-cw-platform-template="loading">
+      <div className={styles.shell}>
+        <PlatformLoadingState
+          label={cab.learningLabel}
+          title={cab.learningLoadingTitle}
+          detail={cab.learningLoadingLead}
+        />
+      </div>
+    </main>
+  );
+
   const gate = cabinetGate({
     lang,
     loading,
     session,
     homeHref,
     onSignIn: () => void signInWithGoogle(),
-    loadingCopy: {
-      label: cab.learningLabel,
-      title: cab.learningLoadingTitle,
-      lead: cab.learningLoadingLead,
-    },
+    loadingFallback: shelfLoading,
   });
   if (gate) return gate;
 
   if (!failed && shelf === null) {
-    return (
-      <main className={surfaceStyles.profileMain} data-cw-platform-template="loading">
-        <div className={styles.shell}>
-          <PlatformLoadingState
-            label={cab.learningLabel}
-            title={cab.learningLoadingTitle}
-            detail={cab.learningLoadingLead}
-          />
-        </div>
-      </main>
-    );
+    return shelfLoading;
   }
 
   return (
@@ -172,53 +174,46 @@ export function LearnShelfClient() {
                   categories={Array.from(new Set(shelf.flatMap((course) => course.categories)))}
                 />
               ) : null}
-              {shelf.length > 1 ? (
-                <div className={styles.viewSwitch} role="group" aria-label={cab.shelfViewLabel}>
-                  <button
-                    className={styles.viewOption}
-                    type="button"
-                    aria-label={cab.shelfViewCards}
-                    aria-pressed={view === "cards"}
-                    onClick={() => chooseView("cards")}
-                  >
-                    <Icon name="view-cards" size={18} />
-                  </button>
-                  <button
-                    className={styles.viewOption}
-                    type="button"
-                    aria-label={cab.shelfViewRows}
-                    aria-pressed={view === "rows"}
-                    onClick={() => chooseView("rows")}
-                  >
-                    <Icon name="view-rows" size={18} />
-                  </button>
-                  <button
-                    className={styles.viewOption}
-                    type="button"
-                    aria-label={cab.shelfViewRoom}
-                    aria-pressed={view === "room"}
-                    onClick={() => chooseView("room")}
-                  >
-                    <Icon name="stone" size={18} />
-                  </button>
-                </div>
-              ) : null}
+              {/* The count is orientation, not a condition for choosing a
+                  representation. A one-item shelf still says what it holds;
+                  only the view switch disappears when it would have nothing
+                  meaningful to change. */}
+              <ShelfResultBar
+                label={cab.materialsLabel}
+                filtering={filtering}
+                count={filtering ? `${visible.length} з ${shelf.length}` : cab.materialsCount(shelf.length)}
+              >
+                {shelf.length > 1 ? (
+                  <ShelfPresentation
+                    label={cab.shelfViewLabel}
+                    value={view}
+                    onChange={chooseView}
+                    options={[
+                      { value: "cards", label: cab.shelfViewCards, icon: "view-cards" },
+                      { value: "rows", label: cab.shelfViewRows, icon: "view-rows" },
+                      { value: "room", label: cab.shelfViewRoom, icon: "stone" },
+                    ]}
+                  />
+                ) : (
+                  <span aria-hidden="true" />
+                )}
+              </ShelfResultBar>
               {view === "room" ? (
                 /* The room takes the PREDICATE, not the narrowed list: its wall
                    is laid out from every course and only dims what the query
                    left out. See `LearnRoomView`'s own note on why. */
-                /* And the CATEGORY, because the room's camera and the subject
-                   chips above it are one choice: walking up to a shelf presses
-                   that chip, and «All» is the way back to the middle of the
-                   room. Owned here rather than in the room for the same reason
-                   the query is — the chips are the control, the wall is one of
-                   the things that answers it. */
+                /* A room can look at one shelf at a time. A single checked
+                   subject supplies that focus; several checks are an AND/OR
+                   query, so the camera returns to the overview rather than
+                   pretending it can face two shelves at once. */
                 <LearnRoomView
                   courses={shelf}
                   copy={cab}
                   match={filtering ? match : undefined}
-                  category={query.category}
-                  onCategory={(next) => setQuery((prev) => ({ ...prev, category: next }))}
+                  category={query.categories.length === 1 ? query.categories[0] : "all"}
+                  onCategory={(next) =>
+                    setQuery((prev) => ({ ...prev, categories: next === "all" ? [] : [next] }))
+                  }
                 />
               ) : visible.length === 0 ? (
                 <p className={filterStyles.noMatch}>{cab.shelfNoMatch}</p>

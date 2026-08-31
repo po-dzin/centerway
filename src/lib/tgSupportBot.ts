@@ -22,8 +22,10 @@ import { callTelegramBotApi, sendTelegramMessage } from "@/lib/tg";
 import { verifyTelegramLinkToken } from "@/lib/platform/telegramLink";
 import {
   botCopy,
+  ACCESS_PHOTO_URL,
   CABINET_PHOTO_URL,
   CABINET_URL,
+  FAQ_PHOTO_URL,
   GREETING_PHOTO_URL,
   SUPPORT_PHOTO_URL,
 } from "@/lib/tgSupportBotCopy";
@@ -378,7 +380,11 @@ async function findPaidOrder(
   return Boolean(data?.[0]?.id);
 }
 
-async function sendProductPicker(chatId: number): Promise<void> {
+async function sendProductPicker(chatId: number, withContextCard: boolean = false): Promise<void> {
+  if (withContextCard) {
+    await sendCaptionedPhoto(chatId, ACCESS_PHOTO_URL, botCopy.accessPickProduct, productKeyboard());
+    return;
+  }
   await sendMessage(chatId, botCopy.accessPickProduct, productKeyboard());
 }
 
@@ -414,13 +420,13 @@ async function handleMenuAction(
 
   if (action === "access") {
     await saveSession(db, user, { state: "choosing_product_access", contact: null });
-    await sendProductPicker(chatId);
+    await sendProductPicker(chatId, true);
     return;
   }
 
   if (action === "faq") {
     await saveSession(db, user, { state: "idle" });
-    await sendMessage(chatId, botCopy.faqPrompt, faqKeyboard());
+    await sendCaptionedPhoto(chatId, FAQ_PHOTO_URL, botCopy.faqPrompt, faqKeyboard());
     return;
   }
 

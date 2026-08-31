@@ -5,9 +5,8 @@
  *
  * Split out of the course page because the two are different jobs done at
  * different times: structure is edited constantly while writing, settings once
- * at the start and then almost never. Folded shut by default for the same
- * reason — an author opening a course to fix a paragraph should not have to
- * scroll past the entitlement codes to reach the lesson list.
+ * at the start and then almost never. Cover settings retain compact folds;
+ * the dedicated Page tab is always an editable form, not another disclosure.
  */
 
 import { useState, type ReactNode } from "react";
@@ -174,7 +173,7 @@ function StringListField({
   );
 }
 
-type SettingsSectionId = "cover" | "titles" | "badge" | "rhythm" | "appearance" | "storefront";
+type SettingsSectionId = "cover" | "titles" | "badge" | "rhythm" | "appearance";
 
 /**
  * Which tab a settings block belongs to.
@@ -264,33 +263,15 @@ export function BuilderCourseSettings({
 
   if (scope === "page") {
     return (
-      <div className={styles.settingsForm}>
+      <div className={styles.coursePageForm}>
       {/* THE AUTHOR'S HALF OF THE STOREFRONT. What the course claims about
           itself is content, and content is the author's. The PRICE is not here
           and will not be: it is a commitment the business makes to a buyer, and
           it lives in `lms_course_offers`, which the builder's routes have no
           grant on. That is a different table rather than a hidden field
           precisely so the boundary is structural. */}
-      <SettingsSection
-        id="storefront"
-        title="Сторінка програми"
-        editing={editing === "storefront"}
-        onEdit={setEditing}
-        summary={
-          <>
-            <strong>{VISIBILITY_LABELS[visibility]}</strong>
-            {/* Counts rather than contents: the fold has to say whether the offer
-                page has anything to print without reprinting it. */}
-            <span>
-              {[
-                `${course.results?.length ?? 0} результатів`,
-                `${course.audience?.length ?? 0} для кого`,
-                `${course.format?.length ?? 0} у складі`,
-              ].join(" · ")}
-            </span>
-          </>
-        }
-      >
+      <section className={styles.courseSettingEditor} aria-labelledby="course-setting-storefront">
+        <h3 className={styles.courseSettingTitle} id="course-setting-storefront">Сторінка програми</h3>
         <p className={styles.readOnlyNote}>
           Видимість: <strong>{VISIBILITY_LABELS[visibility]}</strong>. {VISIBILITY_HINTS[visibility]} Автор готує матеріал і сторінку; видимість змінює адміністратор.
         </p>
@@ -338,7 +319,7 @@ export function BuilderCourseSettings({
             `BuilderCourseAuthor.tsx`. It sits beside the byline it modifies
             rather than beside the rest of the storefront copy, now that the
             byline has a tab of its own to sit in. */}
-      </SettingsSection>
+      </section>
 
       <details className={styles.courseSettingsAdvanced}>
         {/* THE GLYPH IS FROM THE SPRITE, like every other icon in this shell.

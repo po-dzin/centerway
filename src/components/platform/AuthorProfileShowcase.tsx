@@ -9,15 +9,14 @@ import styles from "./AuthorProfileShowcase.module.css";
 export function AuthorProfileShowcase({ author, courses }: { author: Author; courses: StorefrontCard[] }) {
   return (
     <main>
-      <header className={styles.hero}>
-        {author.background ? (
-          <div
-            className={styles.background}
-            aria-hidden="true"
-            style={{ backgroundImage: `url("${author.background.src}")` }}
-          />
-        ) : null}
-        {author.background ? <div className={styles.backgroundVeil} aria-hidden="true" /> : null}
+      {author.background ? (
+        <div
+          className={styles.banner}
+          aria-hidden="true"
+          style={{ backgroundImage: `url("${author.background.src}")` }}
+        />
+      ) : null}
+      <header className={author.background ? `${styles.hero} ${styles.heroWithBanner}` : styles.hero}>
         <div className={styles.identity}>
           {author.photo ? (
             // eslint-disable-next-line @next/next/no-img-element

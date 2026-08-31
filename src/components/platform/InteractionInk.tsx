@@ -10,9 +10,19 @@ import { HandGraphic } from "@/components/Icon";
  * CSS underline or glow) lets admin, Builder and the learner shell speak the
  * same visual language without turning every label into another glass plate.
  */
-export function InteractionInkLabel({ children }: { children: ReactNode }) {
+export function InteractionInkLabel({
+  children,
+  variant = "navigation",
+  active = false,
+}: {
+  children: ReactNode;
+  /** `menu` is the established thick stroke used by the account menu. */
+  variant?: "navigation" | "menu";
+  /** For selected text inside a compound control such as a checkbox list. */
+  active?: boolean;
+}) {
   return (
-    <span className="cw-ink-label">
+    <span className="cw-ink-label" data-cw-ink-variant={variant} data-cw-ink-active={active || undefined}>
       <span className="cw-ink-label-text">{children}</span>
       <HandGraphic className="cw-ink-label-mark" name="ink-stroke" size={36} />
     </span>

@@ -35,6 +35,8 @@ export const CW_ICON_NAMES = [
   "guide",
   "plus",
   "import",
+  "export",
+  "unpublish",
   "question",
   "boundary",
   "user",

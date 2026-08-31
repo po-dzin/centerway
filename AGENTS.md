@@ -20,6 +20,31 @@ Also read the local implementation references listed in `docs/platform_agent_pre
 
 Before editing, state the semantic role, user question, token source, content source, and route boundary for every new or substantially changed page/block/component. If any of these are unclear, resolve the semantic contract before coding.
 
+For every changed interactive control, also declare its `selection_family` as
+`contour`, `ink`, or `hybrid` according to `docs/design-system.md` →
+“Selection grammar: contour, ink, hybrid”. This is mandatory in the preflight
+and review notes. Reuse `InteractionInkLabel` / `InteractionInkIcon` for any
+ink state; never draw, transform, resize or animate an ink stroke locally. The
+account-menu `InteractionInkLabel variant="menu"` is the canonical selected
+text gesture, including selected labels inside compound controls.
+
+UI controls must not expose native text selection. Use the global no-selection
+contract for controls and preserve selectable reading/editable content; never
+apply `user-select: none` to an entire page or learning document.
+
+Before changing surface boundaries, also read `docs/design-system.md` →
+"Boundary hierarchy across the three layers". Declare the boundary role:
+none (collection/status/loading), structural (panel/chrome), quiet (labelled
+command/search/overlay), or essential (checkbox/radio). Never use the strong
+checkbox stroke as a universal decorative outline. Media-menu paint follows
+the optical hover-circle token; its touch target must not shrink with it.
+
+Transient action results use the shared `ToastProvider` / `useToast` contract
+in `docs/design-system.md` → "Transient notifications: one application viewport".
+Do not insert success/error banners into shelf/editor layout or mount nested
+providers. Platform, library, Builder and admin share this mechanism; funnels
+are outside its scope. Field validation and critical recovery remain contextual.
+
 Do not define new local palettes, shadows, radii, type scales, or glass effects inside component CSS modules as an ad hoc decision. Use the canon and app/global DS tokens first.
 
 When delegating to a sub-agent, include this exact instruction:

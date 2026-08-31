@@ -7,6 +7,7 @@ import { usePathname } from "next/navigation";
 import type { Session } from "@supabase/supabase-js";
 
 import { HandGraphic } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { supabaseClient } from "@/lib/supabaseClient";
 import styles from "@/components/platform/PlatformShellStyles";
 import {
@@ -141,13 +142,8 @@ function getUserInitial(session: Session | null) {
   return typeof name === "string" && name.length > 0 ? name.charAt(0).toUpperCase() : "?";
 }
 
-function InkMenuLabel({ children }: { children: string }) {
-  return (
-    <span className={styles.menuInkLabel}>
-      {children}
-      <HandGraphic className={styles.menuInkMark} name="ink-stroke" size={36} />
-    </span>
-  );
+function InkMenuLabel({ children, active = false }: { children: string; active?: boolean }) {
+  return <InteractionInkLabel variant="menu" active={active}>{children}</InteractionInkLabel>;
 }
 
 /**
@@ -477,11 +473,11 @@ export function PlatformAccountMenu({
            the builder lives on its own host today. */
         return offOrigin ? (
           <a key={app.key} href={href} {...shared}>
-            <InkMenuLabel>{app.label}</InkMenuLabel>
+            <InkMenuLabel active={current}>{app.label}</InkMenuLabel>
           </a>
         ) : (
           <Link key={app.key} href={href} {...shared}>
-            <InkMenuLabel>{app.label}</InkMenuLabel>
+            <InkMenuLabel active={current}>{app.label}</InkMenuLabel>
           </Link>
         );
       })}

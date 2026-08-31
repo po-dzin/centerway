@@ -48,6 +48,7 @@ export function cabinetGate({
   homeHref,
   onSignIn,
   loadingCopy,
+  loadingFallback,
 }: {
   lang: ProfileLang;
   loading: boolean;
@@ -56,6 +57,9 @@ export function cabinetGate({
   homeHref: string;
   onSignIn: () => void;
   loadingCopy?: { label?: string; title: string; lead?: string };
+  /** Route-owned loading geometry. The gate resolves session state, but the
+      route owns the space its final content will occupy. */
+  loadingFallback?: ReactNode;
 }) {
   const copy = getProfileCopy(lang, { activePrograms: 0, completedPrograms: 0, productPurchases: 0 });
 
@@ -64,6 +68,7 @@ export function cabinetGate({
   }
 
   if (loading) {
+    if (loadingFallback) return loadingFallback;
     return (
       <main className={surfaceStyles.profileMain} data-cw-platform-template="loading">
         <div className={surfaceStyles.container}>

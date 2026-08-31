@@ -8,7 +8,6 @@ import type { CwIconName } from "@/components/iconNames";
 import { I18nProvider, useI18n } from "@/components/I18nProvider";
 import { InteractionInkIcon, InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { PlatformHeader } from "@/components/platform/layout/PlatformHeader";
-import { ToastProvider } from "@/components/ToastProvider";
 import { supabaseClient } from "@/lib/supabaseClient";
 import { ADMIN_ROLE_CACHE_KEY, ADMIN_ROLE_CACHE_TTL_MS, isAdminRole } from "@/lib/platform/adminRole";
 import styles from "./AdminLayout.module.css";
@@ -314,9 +313,7 @@ function AdminShell({ children }: { children: ReactNode }) {
 export default function AdminLayout({ children }: { children: ReactNode }) {
     return (
         <I18nProvider>
-            <ToastProvider>
-                <AdminShell>{children}</AdminShell>
-            </ToastProvider>
+            <AdminShell>{children}</AdminShell>
         </I18nProvider>
     );
 }

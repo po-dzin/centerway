@@ -1,14 +1,12 @@
 /*
- * THE SHELF'S FILTER — a line on a rule, and a row of subjects.
+ * THE SHELF'S FILTER — a bounded search and a multiple-choice subject menu.
  *
  * Shared by the learner's library and the author's workshop, which is why it is
  * its own module rather than a block inside `Cabinet.module.css`: two copies of
  * these rules would have drifted the moment one side changed a gap.
  *
- * No palette of its own. Ink, rule and ring all come from the platform's
- * delivery tokens — the underline is the same `--cw-rule-fade-x` every divider
- * in this product is drawn with, and focus is the buttons' own ring rather than
- * a bare outline.
+ * No palette of its own. Ink, gold gesture and boundary all come from the
+ * platform's delivery tokens.
  */
 
 .filter {
@@ -19,23 +17,22 @@
   inline-size: 100%;
 }
 
-/* THE FIELD IS A LINE, NOT A PLATE. At rest the underline fades at its ends,
-   the way the list's own dividers do, so the field is one element of the bar
-   rather than the loudest thing in it. Under the pointer and in focus the line
-   gathers into its full length AND changes colour — which is exactly what
-   `border-image` cannot do, so each state takes the shape of line it has
-   something to say with. */
+/* Lens and input live inside one modestly rounded ink boundary. Hover and
+   focus use the same gold edge; a cursor over the lens cannot suggest that it
+   is a different selection from the text field. */
 .find {
   display: flex;
   align-items: center;
   gap: 0.55rem;
   flex: 1 1 14rem;
   min-inline-size: 0;
-  padding: 0.55rem 0.2rem;
-  border-block-end: 1px solid var(--cw-rule-ink, currentColor);
-  border-image: var(--cw-rule-fade-x);
+  min-block-size: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-sm);
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-muted);
-  transition: border-color 180ms ease, box-shadow 180ms ease, color 180ms ease;
+  transition: border-color 180ms ease, box-shadow 180ms ease, color 180ms ease, background 180ms ease;
 }
 
 .findInput {
@@ -66,72 +63,168 @@
 }
 
 .find:hover {
-  border-image: none;
-  border-block-end-color: var(--cw-platform-text);
+  border-color: var(--cw-nav-marker);
+  background: var(--cw-mat-surface);
   color: var(--cw-platform-text);
 }
 
 .find:focus-within {
-  border-image: none;
-  border-block-end-color: var(--cw-platform-text);
+  border-color: var(--cw-nav-marker);
+  background: var(--cw-mat-surface);
   color: var(--cw-platform-text);
-  box-shadow: var(--ds-button-ring);
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
 }
 
-.subjects {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: var(--cw-space-2xs);
-}
-
-/* THE SUBJECT IS A WORD THAT IS EITHER WRITTEN OR NOT. Chips with grounds and
-   radii would have put three little cards in a bar whose only other object is a
-   line; the chosen one is simply in full ink under the stroke this product
-   marks everything it points at with, and the rest are quiet. */
-.subject {
-  composes: chromeBare from "../PlatformButtons.module.css";
+.filterMenu {
   position: relative;
-  padding-inline: var(--cw-space-2xs);
-  font-size: 0.85rem;
+  flex: 0 0 auto;
+}
+
+.filterToggle {
+  /* Icon + word are one command, so they share one contour. An ink ring belongs
+     only to a standalone icon-only target; drawing it around the list glyph
+     here split one button into two competing controls. */
+  composes: secondary from "../PlatformButtons.module.css";
+  composes: hug from "../PlatformButtons.module.css";
   color: var(--cw-platform-muted);
 }
 
-.subject::after {
-  content: "";
+.filterToggle:hover:not(:disabled),
+.filterToggle:active:not(:disabled),
+.filterToggle:focus-visible,
+.filterToggle[aria-expanded="true"] {
+  transform: none;
+  border-color: var(--cw-nav-marker);
+  background-color: var(--cw-mat-surface);
+  color: var(--cw-platform-text);
+}
+
+.filterCount {
+  display: inline-grid;
+  flex: 0 0 1.15rem;
+  place-items: center;
+  box-sizing: border-box;
+  inline-size: 1.15rem;
+  min-inline-size: 1.15rem;
+  block-size: 1.15rem;
+  padding: 0;
+  border-radius: 50%;
+  background: var(--cw-nav-marker);
+  color: var(--cw-platform-on-accent);
+  font-family: var(--cw-font-data);
+  font-size: 0.7rem;
+  line-height: 1;
+}
+
+/* The counter owns a slot even before the first category is selected. Adding
+   it conditionally made the filter button change width under the pointer,
+   moving the popover's anchored edge and making a choice feel like a relayout. */
+.filterCount[data-empty] {
+  visibility: hidden;
+}
+
+.filterPopover {
   position: absolute;
-  inset-inline: var(--cw-space-2xs);
-  inset-block-end: 0.25rem;
-  block-size: var(--cw-nav-marker-size, 2px);
-  background: var(--cw-nav-marker, currentColor);
+  z-index: calc(var(--ds-z-sticky) + 1);
+  inset-block-start: calc(100% + var(--cw-space-2xs));
+  inset-inline-end: 0;
+  inline-size: min(18rem, calc(100vw - 2 * var(--cw-page-gutter)));
+  padding: var(--cw-space-sm);
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-medium);
+}
+
+.filterPopoverHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+  font-size: 0.78rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.filterClear {
+  composes: chromeBare from "../PlatformButtons.module.css";
+  min-height: auto;
+  padding: 0.1rem var(--cw-space-2xs);
+  color: var(--cw-platform-text);
+  font-size: 0.78rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+.filterOptions {
+  display: grid;
+  gap: 0.1rem;
+  margin-block-start: var(--cw-space-2xs);
+  padding-block-start: var(--cw-space-2xs);
+  border-block-start: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+}
+
+.filterOption {
+  display: grid;
+  grid-template-columns: 1.25rem minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-block-size: var(--ds-touch-target-min);
+  padding-inline: var(--ds-button-padding-inline);
+  border-radius: var(--ds-button-radius);
+  color: var(--cw-platform-text);
+  cursor: pointer;
+}
+
+/* Grid cells stretch by default; the ink label must measure its words, not the
+   remaining width of the row, or «Рух» receives a line as long as the popover. */
+.filterOption :global(.cw-ink-label) {
+  justify-self: start;
+}
+
+.filterOption:hover,
+.filterOption:has(input:focus-visible) {
+  background: var(--cw-mat-surface-sunk);
+}
+
+.filterOption input {
+  position: absolute;
   opacity: 0;
-  transform: scaleX(0.58);
-  transform-origin: center;
-  transition: opacity 160ms ease, transform 160ms ease;
+  pointer-events: none;
 }
 
-.subject:hover,
-.subject:focus-visible {
-  color: var(--cw-platform-text);
+.filterCheckbox {
+  display: inline-grid;
+  place-items: center;
+  inline-size: 1.1rem;
+  block-size: 1.1rem;
+  border: 1px solid var(--cw-mat-stroke-control);
+  border-radius: var(--cw-radius-inset);
+  color: transparent;
+  transition: border-color 160ms ease, background 160ms ease, color 160ms ease;
 }
 
-.subject:hover::after,
-.subject:focus-visible::after {
-  opacity: var(--cw-ink-hover-opacity, 0.42);
-  transform: scaleX(var(--cw-ink-hover-scale, 0.74));
+.filterOption input:checked + .filterCheckbox {
+  border-color: var(--cw-nav-marker);
+  background: var(--cw-nav-marker);
+  color: var(--cw-platform-on-accent);
 }
 
-.subject[aria-pressed="true"] {
-  color: var(--cw-platform-text);
+.filterOption:has(input:focus-visible) .filterCheckbox {
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
 }
 
-.subject[aria-pressed="true"]::after {
-  opacity: 1;
-  transform: scaleX(1);
-}
+/* The selected label asks InteractionInkLabel for the account menu's named
+   menu gesture. This module owns the checkbox layout only; it never redraws
+   or re-scales the shared ink stroke. */
 
 @media (prefers-reduced-motion: reduce) {
-  .subject::after {
+  .find,
+  .filterToggle,
+  .filterCheckbox {
     transition: none;
   }
 }

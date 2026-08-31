@@ -1,62 +1,13 @@
-/* Author-only boundary around the real learner renderer. The preview owns no
-   content recipe: everything below this row is rendered by the LMS modules. */
-
+/* Preview uses the reader's chrome and content recipes, never a second bar. */
 .shell {
   min-height: 100svh;
+  display: flow-root;
   background: var(--cw-platform-bg);
   color: var(--cw-platform-text);
   font-family: var(--cw-font-ui);
-  /* HOW MUCH ROOM THE BOUNDARY TAKES, DECLARED FOR WHAT IS UNDER IT.
-     The lesson's own chrome is `position: fixed` at the top of the viewport,
-     which is right on the learner route where nothing else is up there — and
-     wrong here, where this shell already owns the top row. The reader's back
-     pill landed on «До редагування» and its tools on the draft status: two sets
-     of controls in one strip.
-
-     Named on the shell rather than pushed in as a prop because the chrome is
-     several components down and inherits this by simply being inside the
-     preview. Outside the preview the variable is not defined at all, so the
-     fallback in `.readerChrome` resolves to zero and nothing moves. */
-  --cw-zen-boundary-block: calc(var(--ds-touch-target-min) + var(--cw-space-md));
 }
 
-.boundary {
-  width: min(calc(100% - 2rem), 46rem);
-  min-height: var(--cw-zen-boundary-block);
-  margin-inline: auto;
-  padding-block: var(--cw-space-xs);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--cw-space-xs);
-  border-block-end: 1px solid var(--cw-platform-border);
-  border-image: var(--cw-rule-fade-x);
-}
-
-.back {
-  composes: chromeBare from "../platform/PlatformButtons.module.css";
-  min-width: 0;
-  gap: var(--cw-space-2xs);
-  color: var(--cw-platform-text);
-  white-space: nowrap;
-}
-
-.status {
-  min-width: 0;
-  color: var(--cw-platform-muted);
-  font-family: var(--cw-font-data);
-  font-size: 0.76rem;
-  line-height: 1.35;
-  text-align: end;
-  white-space: nowrap;
-}
-
-@media (max-width: 360px) {
-  .boundary {
-    width: min(calc(100% - 1rem), 46rem);
-  }
-
-  .status {
-    font-size: 0.7rem;
-  }
+/* A course preview has no platform topbar; reserve the shared floating row. */
+.shell[data-reader="course"] {
+  padding-block-start: calc(max(var(--cw-space-sm), env(safe-area-inset-top)) + var(--ds-touch-target-min));
 }

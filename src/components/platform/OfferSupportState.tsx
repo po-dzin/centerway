@@ -65,7 +65,7 @@ export function OfferSupport({ sales, title }: { sales: ReactNode; title: string
             the likeliest person to start another, and the cabinet is where the
             rest of theirs is. */}
         <Link className={commerceStyles.shelfAction} href={surfaceHref("/learn")}>
-          Усі мої курси
+          Усі мої матеріали
         </Link>
       </div>
     </article>

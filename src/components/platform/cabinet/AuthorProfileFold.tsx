@@ -21,6 +21,7 @@ import type { Session } from "@supabase/supabase-js";
 import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
+import { useToast } from "@/components/ToastProvider";
 import type { Author } from "@/lms-core";
 import type { ProfileLang } from "@/components/platform/profile/types";
 import type { AuthorProfileInput } from "./useCabinet";
@@ -63,16 +64,18 @@ const STRINGS = {
     bio: "Біографія",
     quote: "Цитата від першої особи",
     credentials: "Досягнення",
-    credentialAdd: "Додати рядок",
-    credentialRemove: "Прибрати",
+    credentialAdd: "Додати досягнення",
+    credentialRemove: "Прибрати досягнення",
     photo: "Фото",
     photoUpload: "Завантажити фото",
     photoReplace: "Замінити фото",
+    photoRemove: "Прибрати фото",
     photoUploading: "Завантаження…",
     photoAlt: "Опис фото (для читачів екрана)",
     background: "Фон публічної сторінки",
     backgroundUpload: "Завантажити фон",
     backgroundReplace: "Замінити фон",
+    backgroundRemove: "Прибрати фон",
     listed: "Публічна сторінка",
     listedOn: "Сторінку /expert видно всім",
     listedOff: "Сторінка прихована — видно лише в описі курсу",
@@ -80,7 +83,7 @@ const STRINGS = {
     save: "Зберегти",
     saving: "Зберігаємо…",
     saved: "Збережено",
-    viewPublic: "Переглянути публічну сторінку",
+    viewPublic: "Відкрити",
     error: "Не вдалося зберегти. Перевірте поля і спробуйте ще раз.",
   },
   en: {
@@ -92,16 +95,18 @@ const STRINGS = {
     bio: "Bio",
     quote: "A quote, in your own voice",
     credentials: "Credentials",
-    credentialAdd: "Add a line",
-    credentialRemove: "Remove",
+    credentialAdd: "Add credential",
+    credentialRemove: "Remove credential",
     photo: "Photo",
     photoUpload: "Upload photo",
     photoReplace: "Replace photo",
+    photoRemove: "Remove photo",
     photoUploading: "Uploading…",
     photoAlt: "Photo description (for screen readers)",
     background: "Public page background",
     backgroundUpload: "Upload background",
     backgroundReplace: "Replace background",
+    backgroundRemove: "Remove background",
     listed: "Public page",
     listedOn: "The /expert page is visible to everyone",
     listedOff: "Hidden — shown only as a course byline",
@@ -109,7 +114,7 @@ const STRINGS = {
     save: "Save",
     saving: "Saving…",
     saved: "Saved",
-    viewPublic: "View public page",
+    viewPublic: "Preview",
     error: "Could not save. Check the fields and try again.",
   },
 } as const;
@@ -118,20 +123,18 @@ export function AuthorProfileFold({
   session,
   author,
   saving,
-  saveError,
   save,
   lang,
 }: {
   session: Session;
   author: Author | null;
   saving: boolean;
-  saveError: string | null;
   save: (input: AuthorProfileInput) => Promise<boolean>;
   lang: ProfileLang;
 }) {
   const t = STRINGS[lang];
   const [draft, setDraft] = useState<Draft>(() => draftFromAuthor(author));
-  const [savedOnce, setSavedOnce] = useState(false);
+  const toast = useToast();
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
 
@@ -191,7 +194,6 @@ export function AuthorProfileFold({
 
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
-    setSavedOnce(false);
 
     const credentials = draft.credentials.map((line) => line.trim()).filter(Boolean);
     const photo = draft.photo?.src && draft.photo.alt.trim() ? { src: draft.photo.src, alt: draft.photo.alt.trim() } : undefined;
@@ -207,11 +209,12 @@ export function AuthorProfileFold({
       listed: draft.listed,
       slug: draft.slug.trim() || undefined,
     });
-    if (ok) setSavedOnce(true);
+    if (ok) toast.success(t.saved);
+    else toast.error(t.error);
   }
 
   return (
-    <details className={styles.fold} open>
+    <details className={styles.fold}>
       <summary className={styles.foldHead}>
         <span className={styles.foldText}>
           <span className={styles.sectionLabel}>{t.label}</span>
@@ -222,7 +225,7 @@ export function AuthorProfileFold({
       </summary>
       <div className={styles.foldBody}>
         <form className={styles.authorForm} {...matte} onSubmit={handleSubmit}>
-          <label className={styles.authorField}>
+          <label className={`${styles.authorField} ${styles.authorNameField}`}>
             <span>{t.name}</span>
             <input
               className={styles.authorInput}
@@ -232,7 +235,7 @@ export function AuthorProfileFold({
             />
           </label>
 
-          <label className={styles.authorField}>
+          <label className={`${styles.authorField} ${styles.authorRoleField}`}>
             <span>{t.role}</span>
             <input
               className={styles.authorInput}
@@ -241,7 +244,7 @@ export function AuthorProfileFold({
             />
           </label>
 
-          <label className={styles.authorField}>
+          <label className={`${styles.authorField} ${styles.authorBioField}`}>
             <span>{t.bio}</span>
             <textarea
               className={styles.authorTextarea}
@@ -251,7 +254,7 @@ export function AuthorProfileFold({
             />
           </label>
 
-          <label className={styles.authorField}>
+          <label className={`${styles.authorField} ${styles.authorQuoteField}`}>
             <span>{t.quote}</span>
             <textarea
               className={styles.authorTextarea}
@@ -261,7 +264,7 @@ export function AuthorProfileFold({
             />
           </label>
 
-          <div className={styles.authorField}>
+          <div className={`${styles.authorField} ${styles.authorCredentialsField}`}>
             <span>{t.credentials}</span>
             {draft.credentials.map((line, index) => (
               <div className={styles.authorCredentialRow} key={index}>
@@ -277,49 +280,26 @@ export function AuthorProfileFold({
                 />
                 <button
                   type="button"
-                  className={styles.actionGhost}
+                  className={styles.authorIconAction}
+                  aria-label={t.credentialRemove}
+                  title={t.credentialRemove}
                   onClick={() =>
                     setDraft((prev) => ({ ...prev, credentials: prev.credentials.filter((_, i) => i !== index) }))
                   }
                 >
-                  {t.credentialRemove}
+                  <Icon name="close" size={18} />
                 </button>
               </div>
             ))}
             <button
               type="button"
               className={styles.authorAddRow}
+              aria-label={t.credentialAdd}
+              title={t.credentialAdd}
               onClick={() => setDraft((prev) => ({ ...prev, credentials: [...prev.credentials, ""] }))}
             >
-              {t.credentialAdd}
+              <Icon name="plus" size={20} />
             </button>
-          </div>
-
-          <div className={`${styles.authorField} ${styles.authorBackgroundField}`}>
-            <span>{t.background}</span>
-            <div className={styles.authorPhotoRow}>
-              {draft.background?.src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className={styles.authorBackgroundPreview} src={draft.background.src} alt="" />
-              ) : (
-                <span className={styles.authorBackgroundEmpty} aria-hidden="true" />
-              )}
-              <label className={styles.authorFilePick}>
-                <input
-                  className={styles.visuallyHidden}
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
-                  disabled={uploading}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) void handleBackground(file);
-                  }}
-                />
-                <span className={styles.authorFilePickFace} data-busy={uploading || undefined}>
-                  {uploading ? t.photoUploading : draft.background?.src ? t.backgroundReplace : t.backgroundUpload}
-                </span>
-              </label>
-            </div>
           </div>
 
           {/* THE PICTURE, THEN THE WAY TO CHANGE IT, THEN WHAT IT SHOWS.
@@ -335,17 +315,19 @@ export function AuthorProfileFold({
               the keyboard and the file dialog behave exactly as they do. */}
           <div className={`${styles.authorField} ${styles.authorPhotoField}`}>
             <span>{t.photo}</span>
-            <div className={styles.authorPhotoRow}>
+            <div className={styles.authorMediaFrame}>
               {draft.photo?.src ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img className={styles.authorPhotoPreview} src={draft.photo.src} alt="" />
               ) : (
                 <span className={styles.authorPhotoEmpty} aria-hidden="true" />
               )}
-              <label className={styles.authorFilePick}>
+              <div className={styles.authorMediaActions}>
+              <label className={styles.authorMediaAction} aria-label={draft.photo?.src ? t.photoReplace : t.photoUpload} title={draft.photo?.src ? t.photoReplace : t.photoUpload}>
                 <input
                   className={styles.visuallyHidden}
                   type="file"
+                  aria-label={draft.photo?.src ? t.photoReplace : t.photoUpload}
                   accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
                   disabled={uploading}
                   onChange={(e) => {
@@ -353,10 +335,14 @@ export function AuthorProfileFold({
                     if (file) void handlePhoto(file);
                   }}
                 />
-                <span className={styles.authorFilePickFace} data-busy={uploading || undefined}>
-                  {uploading ? t.photoUploading : draft.photo?.src ? t.photoReplace : t.photoUpload}
-                </span>
+                <Icon name="edit" size={18} />
               </label>
+              {draft.photo ? (
+                <button type="button" className={styles.authorMediaAction} aria-label={t.photoRemove} title={t.photoRemove} onClick={() => setDraft((prev) => ({ ...prev, photo: null }))}>
+                  <Icon name="close" size={18} />
+                </button>
+              ) : null}
+              </div>
             </div>
             {draft.photo?.src ? (
               <input
@@ -374,7 +360,40 @@ export function AuthorProfileFold({
             {uploadError ? <span className={styles.authorNotice}>{uploadError}</span> : null}
           </div>
 
-          <label className={styles.authorField}>
+          <div className={`${styles.authorField} ${styles.authorBackgroundField}`}>
+            <span>{t.background}</span>
+            <div className={styles.authorMediaFrame}>
+              {draft.background?.src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img className={styles.authorBackgroundPreview} src={draft.background.src} alt="" />
+              ) : (
+                <span className={styles.authorBackgroundEmpty} aria-hidden="true" />
+              )}
+              <div className={styles.authorMediaActions}>
+              <label className={styles.authorMediaAction} aria-label={draft.background?.src ? t.backgroundReplace : t.backgroundUpload} title={draft.background?.src ? t.backgroundReplace : t.backgroundUpload}>
+                <input
+                  className={styles.visuallyHidden}
+                  type="file"
+                  aria-label={draft.background?.src ? t.backgroundReplace : t.backgroundUpload}
+                  accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                  disabled={uploading}
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) void handleBackground(file);
+                  }}
+                />
+                <Icon name="edit" size={18} />
+              </label>
+              {draft.background ? (
+                <button type="button" className={styles.authorMediaAction} aria-label={t.backgroundRemove} title={t.backgroundRemove} onClick={() => setDraft((prev) => ({ ...prev, background: null }))}>
+                  <Icon name="close" size={18} />
+                </button>
+              ) : null}
+              </div>
+            </div>
+          </div>
+
+          <label className={`${styles.authorField} ${styles.authorSlugField}`}>
             <span>{t.slug}</span>
             <input
               className={styles.authorInput}
@@ -384,47 +403,36 @@ export function AuthorProfileFold({
             />
           </label>
 
-          {/* A SETTING, SO IT TAKES A SETTING'S SHAPE — its name at the left,
-              its state at the right, the same way the account menu's «Вигляд»
-              row does. It was a bare checkbox with two lines of text glued to
-              it by a `<br>`, which reads as a paragraph someone put a box in
-              front of. */}
+          {/* A system checkbox sits before the setting it controls. The copy is
+              one readable unit, not a paragraph with a detached box. */}
           <label className={styles.authorVisibilityRow}>
-            <span className={styles.authorVisibilityCopy}>
-              <strong>{t.listed}</strong>
-              <span className={styles.authorVisibilityNote}>{draft.listed ? t.listedOn : t.listedOff}</span>
-            </span>
             <input
+              className={styles.authorVisibilityInput}
               type="checkbox"
               checked={draft.listed}
               onChange={(e) => setDraft((prev) => ({ ...prev, listed: e.target.checked }))}
             />
+            <span className={styles.authorVisibilityMark} aria-hidden="true">
+              <Icon name="check" size={14} />
+            </span>
+            <span className={styles.authorVisibilityCopy}>
+              <strong>{t.listed}</strong>
+              <span className={styles.authorVisibilityNote}>{draft.listed ? t.listedOn : t.listedOff}</span>
+            </span>
           </label>
 
-          <div className={styles.actions}>
+          <div className={`${styles.actions} ${styles.authorFormActions}`}>
             <button className={styles.actionPrimary} type="submit" disabled={saving || uploading}>
               {saving ? t.saving : t.save}
             </button>
             {author?.listed && author.slug ? (
               <Link className={styles.actionGhost} href={`/expert/${author.slug}`} target="_blank" rel="noopener noreferrer">
-                {t.viewPublic} ↗
+                <span>{t.viewPublic}</span>
+                <Icon name="arrow-right" size={18} />
               </Link>
             ) : null}
           </div>
 
-          {/* `role="status"` so the outcome is ANNOUNCED. A form whose only
-              feedback is a line of grey text appearing below the fold tells a
-              screen-reader user nothing at all. */}
-          {saveError ? (
-            <p className={styles.authorNotice} role="status">
-              {t.error}
-            </p>
-          ) : null}
-          {savedOnce && !saveError ? (
-            <p className={styles.authorNotice} role="status">
-              {t.saved}
-            </p>
-          ) : null}
         </form>
       </div>
     </details>

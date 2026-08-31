@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { CourseView } from "@/components/lms/CourseView";
+import { CourseTopbarTrail } from "@/components/lms/CourseTrail";
 import { ZenPreviewShell } from "@/components/lms/ZenPreviewShell";
 import { getLiveCourse } from "@/lib/lms/liveCatalog";
 import { describe } from "@/lib/brand/identity";
@@ -33,11 +34,24 @@ export default async function LearnCoursePage({
   // Existence is public information; entitlement is decided by the API.
   // Draft preview existence is private and is therefore resolved only by the
   // Bearer-authenticated API in the client below.
-  if (!draftPreview && !(await getLiveCourse(course))) notFound();
+  const liveCourse = draftPreview ? null : await getLiveCourse(course);
+  if (!draftPreview && !liveCourse) notFound();
 
   const view = <CourseView courseSlug={course} draftPreview={draftPreview} previewReturnTo={previewReturnTo} />;
+  if (draftPreview) return <ZenPreviewShell returnTo={previewReturnTo}>{view}</ZenPreviewShell>;
 
-  return draftPreview
-    ? <ZenPreviewShell returnTo={previewReturnTo}>{view}</ZenPreviewShell>
-    : <PlatformShell headerMode="learn" footer={false}>{view}</PlatformShell>;
+  // Narrowed separately so the workspace header gets the same live course
+  // title as the page without weakening the route's existence guard.
+  if (!liveCourse) notFound();
+
+  return (
+    <PlatformShell
+      headerMode="learn"
+      surface="personal"
+      footer={false}
+      workspaceContent={<CourseTopbarTrail courseTitle={liveCourse.title} />}
+    >
+      {view}
+    </PlatformShell>
+  );
 }

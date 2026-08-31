@@ -334,10 +334,9 @@ export function CabinetClient() {
 
       <div className={styles.shell}>
 
-        {/* Folded shut on a phone. A receipt is reference, not the answer the
-            dashboard exists to give, and one column of them was a ribbon
-            between the reader and the end of their own account. */}
-        <CabinetFold label={copy.products} title={copy.productsTitle}>
+        {/* A receipt is reference, not the answer the dashboard exists to give.
+            It remains folded until the reader asks for it at every viewport. */}
+        <CabinetFold label={copy.products} title={copy.productsTitle} lead={copy.productsLead}>
           {purchases.length > 0 ? (
             <div className={styles.cardGrid}>
               {purchases.map((purchase) => (
@@ -395,7 +394,6 @@ export function CabinetClient() {
             session={session}
             author={authorProfile.author}
             saving={authorProfile.saving}
-            saveError={authorProfile.saveError}
             save={authorProfile.save}
             lang={lang}
           />

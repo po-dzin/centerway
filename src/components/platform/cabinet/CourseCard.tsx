@@ -19,10 +19,9 @@ import { fmtShortDate } from "./format";
 import type { CabinetCopy } from "./copy";
 import styles from "./Cabinet.module.css";
 
-/* Every panel on this page is the same canonical surface. Spread rather than
-   written out per element so a panel cannot be added without one: the recipe
-   in globals.css owns stroke, grain and shadow, and the cabinet's own CSS is
-   layout only. See docs/design-system.md "Material layer". */
+/* Material owns grain and elevation. Boundary is a separate role: structural
+   cabinet panels keep the default edge; shelf objects opt out explicitly.
+   See docs/design-system.md "Boundary hierarchy across the three layers". */
 export const matte = { "data-cw-material": "matte" } as const;
 
 /* The cabinet's first screen stands ON a photograph, and an opaque panel there
@@ -111,7 +110,7 @@ export function CourseCard({
   const showsWindow = course.access !== "locked" && course.expiresAt !== null;
 
   return (
-    <article className={course.access === "locked" ? styles.cardMuted : styles.card} {...matte}>
+    <article className={course.access === "locked" ? styles.cardMuted : styles.card} {...matte} data-cw-edge="none">
       {/* THE COVER'S OWN CORNER, NOT THE META ROW. A draft is a fact about the
           COURSE — it holds whether or not it has steps, a day, or any progress
           to report — and sitting it in `.chipRow` meant the row's shape changed
@@ -123,7 +122,7 @@ export function CourseCard({
         <CourseCover course={course} dimmed={course.access === "locked"} />
         {course.status === "draft" ? (
           <span className={styles.draftBadge}>
-            <span className={styles.draftBadgeChip} {...glassMedia}>
+            <span className={styles.draftBadgeChip}>
               {copy.courseDraft}
             </span>
           </span>
@@ -290,7 +289,7 @@ export function CourseRow({ course, copy }: { course: LearnerShelfCourseDto; cop
   const running = course.access === "enrolled" && total > 0 && !course.standing?.isFinished;
 
   return (
-    <Link className={styles.glance} href={href(action.href)} {...matte}>
+    <Link className={styles.glance} href={href(action.href)} {...matte} data-cw-edge="none">
       {running ? (
         <ProgressRing className={styles.glanceRing} value={done} total={total} label={course.title} size={48} />
       ) : (

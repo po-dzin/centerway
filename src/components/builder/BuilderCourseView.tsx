@@ -1,5 +1,7 @@
 "use client";
 
+import { useToast } from "@/components/ToastProvider";
+
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 
@@ -24,6 +26,8 @@ import { OFFER_CARD_TITLE_MAX, OFFER_TITLE_MAX, offerCardOverflow } from "@/lib/
 import { BuilderFailureNotice, BuilderShell } from "./BuilderShell";
 import { BuilderMenu } from "./BuilderMenu";
 import { BuilderCourseSettings } from "./BuilderCourseSettings";
+import { ShelfPresentation } from "@/components/platform/cabinet/ShelfPresentation";
+import { COURSE_WORKSPACE_HASH, DEFAULT_COURSE_WORKSPACE_MODE, courseWorkspaceModeFromHash, type WorkspaceMode } from "./courseWorkspace";
 import { BuilderCourseAuthor } from "./BuilderCourseAuthor";
 import { BuilderStructureStart, isPristineStructure } from "./BuilderStructureStart";
 import { BuilderBlockers } from "./BuilderBlockers";
@@ -96,7 +100,6 @@ type StructureView = "rows" | "cards";
  * cannot exist without printing correctly earned a screen of its own, not a
  * row at the end of someone else's form.
  */
-type WorkspaceMode = "course" | "content" | "offer" | "author" | "release";
 const STRUCTURE_VIEW_KEY = "cw.builder.structureView";
 const STRUCTURE_VIEW_EVENT = "cw:builder-structure-view";
 const trailTitle = (value: string, fallback: string) =>
@@ -142,8 +145,8 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const history = useCourseHistory();
   const { course, dirty } = history;
   const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
-  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>("content");
+  const toast = useToast();
+  const [workspaceMode, setWorkspaceMode] = useState<WorkspaceMode>(DEFAULT_COURSE_WORKSPACE_MODE);
   const [railCollapsed, setRailCollapsed] = useState(false);
   const [slugEditing, setSlugEditing] = useState(false);
   const [slugDraft, setSlugDraft] = useState("");
@@ -165,34 +168,19 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   const structureView: StructureView = structureWide ? storedStructureView : "rows";
 
   const selectWorkspaceMode = (mode: WorkspaceMode) => {
-    const hash: Record<WorkspaceMode, string> = {
-      course: "#course-overview",
-      content: "#course-structure",
-      offer: "#course-offer",
-      author: "#course-author",
-      release: "#course-release",
-    };
     setWorkspaceMode(mode);
-    window.history.replaceState(null, "", hash[mode]);
+    window.history.replaceState(null, "", COURSE_WORKSPACE_HASH[mode]);
     window.scrollTo({ top: 0, behavior: "auto" });
   };
 
   useEffect(() => {
     const syncModeFromHash = () => {
-      const next: Record<string, WorkspaceMode> = {
-        "#course-overview": "course",
-        "#course-structure": "content",
-        "#course-offer": "offer",
-        "#course-author": "author",
-        "#course-release": "release",
-      };
-      const mode = next[window.location.hash] ?? "content";
-      setWorkspaceMode(mode);
+      setWorkspaceMode(courseWorkspaceModeFromHash(window.location.hash));
     };
     syncModeFromHash();
     window.addEventListener("hashchange", syncModeFromHash);
     return () => window.removeEventListener("hashchange", syncModeFromHash);
-  }, []);
+  }, [slug]);
 
   const load = useCallback(async () => {
     const result = await loadCourse(slug);
@@ -241,7 +229,6 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     (path: (string | number)[], value: unknown) => {
       // Coalesced by the path: retitling a module is one undo, not one per letter.
       history.edit(path.join("."), (current) => normalize(writePath(current, path, value)));
-      setNote(null);
     },
     [history]
   );
@@ -261,7 +248,6 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       // No coalescing key — see the lesson editor: each add, delete and move is
       // its own act and gets its own step back.
       history.edit(null, (current) => ({ ...current, modules: renumber(next(current)) }));
-      setNote(null);
     },
     [history]
   );
@@ -339,19 +325,18 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       });
       return { ...current, schedule: preset.schedule, modules: preset.modules };
     });
-    setNote("Структуру застосовано. Перевірте модулі й збережіть курс.");
+    toast.success("Структуру застосовано. Перевірте модулі й збережіть курс.");
     /* `ids` is module scope, not state — listing it would claim this callback
        re-forms when it changes, and it cannot. */
-  }, [history]);
+  }, [history, toast]);
 
   async function importLessons(moduleIndex: number, files: File[]) {
     if (!files.length || working) return;
     setBusy(true);
-    setNote(null);
     const result = await importLessonFiles(slug, files);
     setBusy(false);
     if (!result.ok) {
-      setNote(lessonDocumentFailureCopy(result.detail, "Не вдалося прочитати файли уроків."));
+      toast.error(lessonDocumentFailureCopy(result.detail, "Не вдалося прочитати файли уроків."));
       return;
     }
 
@@ -387,7 +372,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     });
 
     const count = result.data.lessons.length;
-    setNote(
+    toast.success(
       `${count} ${plural(count, "урок додано", "уроки додано", "уроків додано")}. Перевірте структуру й збережіть курс.`,
     );
   }
@@ -395,11 +380,10 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   async function exportLesson(lesson: Lesson, format: LessonDocumentFormat) {
     if (working) return;
     setBusy(true);
-    setNote(null);
     const result = await exportLessonFile(slug, lesson, format);
     setBusy(false);
     if (!result.ok) {
-      setNote(lessonDocumentFailureCopy(result.detail, "Не вдалося експортувати урок."));
+      toast.error(lessonDocumentFailureCopy(result.detail, "Не вдалося експортувати урок."));
       return;
     }
 
@@ -409,11 +393,10 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     link.download = result.data.filename;
     link.click();
     URL.revokeObjectURL(url);
-    setNote(`Експортовано ${result.data.filename}`);
+    toast.success(`Експортовано ${result.data.filename}`);
   }
 
   const persistCourse = useCallback(async (snapshot: Course) => {
-    setNote(null);
     if (draftGeneration.current === null) {
       return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
     }
@@ -512,48 +495,45 @@ export function BuilderCourseView({ slug }: { slug: string }) {
   async function setStatus(next: "draft" | "published") {
     if (state.status !== "ready" || working) return;
     setBusy(true);
-    setNote(null);
 
     // The STORED course, not the edited one: publishing an unsaved draft would
     // make the button a second, silent save with a different gate.
     if (draftGeneration.current === null) {
       setBusy(false);
-      setNote("Курс ще завантажується. Спробуйте за мить.");
+      toast.warning("Курс ще завантажується. Спробуйте за мить.");
       return;
     }
     const result = await saveCourse(slug, { ...state.data.course, status: next }, draftGeneration.current);
     setBusy(false);
 
     if (!result.ok) {
-      setNote(result.failure === "conflict"
+      toast.error(result.failure === "conflict"
         ? "Цей курс уже змінили в іншій вкладці. Перезавантажте сторінку."
         : result.detail ?? "Не вдалося зберегти. Спробуйте ще раз.");
       return;
     }
     draftGeneration.current = result.data.draftGeneration;
 
-    setNote(next === "published" ? "Опубліковано в базі." : "Переведено в чернетку.");
+    toast.success(next === "published" ? "Опубліковано в базі." : "Переведено в чернетку.");
     await load();
   }
 
   async function submitReview() {
     if (working || dirty) return;
     setBusy(true);
-    setNote(null);
     const result = await submitCourseForReview(slug);
     setBusy(false);
     if (!result.ok) {
-      setNote(result.detail ?? "Не вдалося надіслати курс на перевірку.");
+      toast.error(result.detail ?? "Не вдалося надіслати курс на перевірку.");
       return;
     }
-    setNote("Курс надіслано адміністратору на перевірку.");
+    toast.success("Курс надіслано адміністратору на перевірку.");
     await load();
   }
 
   async function renameSlug() {
     if (state.status !== "ready" || working || dirty || !state.data.slugEditable) return;
     setBusy(true);
-    setNote(null);
     const result = await renameCourseSlug(slug, slugDraft);
     setBusy(false);
     if (!result.ok) {
@@ -562,11 +542,11 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         lms_builder_slug_conflict: "Ця адреса вже зайнята. Спробуйте іншу.",
         lms_builder_slug_locked: "Адресу вже закріплено: курс випущено, показано у вітрині або в ньому є учні.",
       };
-      setNote((result.detail && copy[result.detail]) || "Не вдалося змінити адресу курсу.");
+      toast.error((result.detail && copy[result.detail]) || "Не вдалося змінити адресу курсу.");
       return;
     }
     setSlugEditing(false);
-    setNote("Адресу курсу змінено.");
+    toast.success("Адресу курсу змінено.");
     router.replace(`/build/${result.data.slug}`);
   }
 
@@ -579,14 +559,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
     if (state.status !== "ready" || !draftDecision) return;
     history.recover(state.data.course, draftDecision.draft.course);
     setDraftDecision(null);
-    setNote("Локальну копію відновлено. Вона збережеться як поточна версія.");
+    toast.success("Локальну копію відновлено. Вона збережеться як поточна версія.");
   };
 
   const discardDraft = () => {
     if (!draftDecision) return;
     void clearDurableCourseDraft(draftDecision.draft.courseId).catch(() => undefined);
     setDraftDecision(null);
-    setNote("Залишено актуальну серверну версію.");
+    toast.success("Залишено актуальну серверну версію.");
   };
 
   const trail = [{ label: "Курси", href: "/build" }];
@@ -834,7 +814,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
           course, are edited once on the cover tab, and a second copy here would
           be a second place to change them from. */}
       <section className={styles.courseWorkspacePanel} id="course-offer" hidden={workspaceMode !== "offer"} aria-labelledby="course-offer-title">
-        <div className={styles.courseSettingsPanel}>
+        <div className={styles.coursePageSettingsPanel}>
           <h2 className={styles.visuallyHidden} id="course-offer-title">Сторінка програми</h2>
           <BuilderCourseSettings
             course={course}
@@ -877,16 +857,15 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             </p>
           </div>
           {structureWide ? (
-            <div className={styles.viewSwitch} role="group" aria-label="Вигляд структури">
-              <button className={styles.viewOption} type="button" aria-label="Ряди" aria-pressed={structureView === "rows"} onClick={() => chooseStructureView("rows")}>
-                <Icon name="view-rows" size={18} />
-                <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
-              </button>
-              <button className={styles.viewOption} type="button" aria-label="Картки" aria-pressed={structureView === "cards"} onClick={() => chooseStructureView("cards")}>
-                <Icon name="view-cards" size={18} />
-                <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
-              </button>
-            </div>
+            <ShelfPresentation<StructureView>
+              label="Вигляд структури"
+              value={structureView}
+              options={[
+                { value: "rows", label: "Ряди", icon: "view-rows" },
+                { value: "cards", label: "Картки", icon: "view-cards" },
+              ]}
+              onChange={chooseStructureView}
+            />
           ) : null}
         </header>
 
@@ -914,7 +893,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
               lessonDrag={lessonDrag}
               onChange={editCourse}
               onModules={editModules}
-              onNote={setNote}
+              onNote={toast.warning}
               onOpenLesson={openLesson}
               busy={working}
               onImportLessons={(files) => importLessons(moduleIndex, files)}
@@ -956,7 +935,6 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             <span className={styles.panelStatus}>{reviewStatusLabel(state.data)}</span>
           </div>
         </header>
-        {note ? <p className={styles.noticeLine} aria-live="polite">{note}</p> : null}
         <BuilderBlockers course={course} blockers={readiness.blockers} onNavigate={navigate} />
         <section className={styles.releaseSection}>
           <h3 className={styles.panelTitle}>Дія публікації</h3>
@@ -1003,7 +981,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
         <span className={styles.saveState} role="status" aria-live="polite">
           {pendingHref
             ? "Зберігаємо зміни перед переходом…"
-            : note ?? autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
+            : autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
         </span>
         {/* The label never changes. It names what the button DOES, and the line
             beside it already says what is happening — a button that relabels
@@ -1118,7 +1096,7 @@ function ModuleEditor({
   lessonDrag: RowDrag;
   onChange: (path: (string | number)[], value: unknown) => void;
   onModules: (next: (course: Course) => CourseModule[]) => void;
-  onNote: (note: string | null) => void;
+  onNote: (note: string) => void;
   /** Answers whether the row may follow its own href, or is being held back. */
   onOpenLesson: (href: string) => "allow" | "held";
   busy: boolean;

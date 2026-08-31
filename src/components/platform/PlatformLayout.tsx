@@ -39,10 +39,13 @@ export function PlatformShell({
   headerMode = "default",
   surface = "auto",
   footer = true,
+  workspaceContent,
 }: {
   children: ReactNode;
   headerMode?: "default" | "overlay" | "learn" | "reading";
   footer?: boolean;
+  /** Route-local wayfinding for the shared internal workspace bar. */
+  workspaceContent?: ReactNode;
   /**
    * Route-owned application identity. Host detection remains the default for
    * public pages, but personal routes must also render correctly on localhost
@@ -65,6 +68,7 @@ export function PlatformShell({
         initialTone={headerMode === "overlay" ? "dark" : "light"}
         mode={headerMode === "learn" ? "workspace" : headerMode}
         surface={surface}
+        workspaceContent={workspaceContent}
         /* EVERY SURFACE THIS SHELL WRAPS, because every one of them is read
            rather than operated. It started on the lesson and it is the same
            argument on the storefront, the catalogue and the dashboard: while

@@ -373,14 +373,14 @@ focus states — had no consumer anywhere in `src/` and is gone.
 | role | where | fill | stroke | elevation |
 |---|---|---|---|---|
 | `primary` | the one action that advances money or progress — **max one per view** | gold ramp `accent → accent-pressed` | — | gold-tinted, lifts on hover |
-| `secondary` | every other plated action, on any ground | `--cw-mat-surface-sunk` | `--cw-mat-stroke-control` | none at rest, `soft` on hover |
+| `secondary` | every other labelled plated action, on any ground | `--cw-mat-surface-sunk` | `--cw-mat-stroke-quiet` | none at rest, `soft` on hover |
 | `chrome` | nav/utility on its own row — back, pager, drawer close | transparent at rest | — | arrives on hover/focus |
 | `onMedia` | a control over hero photography | night glass at the chrome floor | `--cw-mat-stroke` | `raised` |
 | `text` | an underlined text control — no plate, still a full touch target | transparent | — | none |
 
 **`quiet` was folded into `secondary`, and the reason is the bug it kept producing.** They were one role split by the ground the control happened to stand on: `secondary` was a `--cw-platform-surface` plate, correct only where the canvas is a different colour, and `quiet` was the stroked version for inside a card. That is not a property of the action — it is a property of where a caller put it, which means the choice had to be re-made correctly at every call site, and nothing could check it. It was not made correctly: «Консультація» in the home page's video rail and «Більше про автора» in the author panel both took `secondary` **inside a card**, so both painted a surface-coloured plate on a surface-coloured card — a label with no button under it, at roughly **1.08**.
 
-Adding a lint for "is this selector inside a card" is not possible from a stylesheet, and asking every author to answer it is what already failed. So the role stopped asking: `secondary` now carries the stroke that made `quiet` legible (`--cw-mat-stroke-control`, the one stroke token held to WCAG 1.4.11's 3:1 in both themes — see "The control stroke") and sits on the sunk fill, which reads on the cream canvas and on a white card alike. Resting elevation went with the split: a stroked plate that also floats is two ways of saying the same thing.
+The role does not depend on where a caller puts it: `secondary` sits on the sunk fill with one quiet boundary. Since 2026-08-30 this supplementary edge uses `--cw-mat-stroke-quiet`; the stronger `--cw-mat-stroke-control` remains for boundaries required to recognise an input/state (notably unchecked checkbox boxes). The quiet token is not a sixth button role and is not claimed to meet 3:1. Command text and keyboard focus keep their contrast requirements. Resting elevation stays absent.
 
 A role now answers **what the control is**, never **what is behind it**. That is the test for a sixth role if one is ever proposed.
 
@@ -426,7 +426,7 @@ What that closed:
 | `.btn` label | 1.02rem, overridden to 1.05rem in `.offer` and 1rem in `.fc-cta` | one size, no overrides |
 | `.btn` lift | −2px | `var(--btn-lift)` (−1px) |
 | `.btn-primary` | flat `--cta`, hover shadow hardcoded `rgba(219,165,79,.36)` | the gold ramp, shadow mixed off the skin's own gold |
-| `.btn-ghost` | 1.5px `--line-strong`, hover swapping border + text + background to the route green | the contract's `secondary`: sunk fill + `--cw-mat-stroke-control` |
+| `.btn-ghost` | 1.5px `--line-strong`, hover swapping border + text + background to the route green | the contract's `secondary`: sunk fill + `--cw-mat-stroke-quiet` |
 | `.cw-btn` (generator runtime) | `3.35rem` tall, **`border-radius: 999px`** — a pill — gradient at 180° | contract axes, soft rect, 135° |
 | utility pages (`pages.css`) | own 0.75rem corner, own padding | contract axes as fallbacks |
 | touch target | `2.75rem` in `tokens.css`, `44px` in two bridge fallbacks | 3rem everywhere — the canonical value |
@@ -813,7 +813,15 @@ Every bar the platform draws — the dosha scores in the cabinet, the diagnostic
 
 The original diagnostic ramp was `status-success → status-pending` and measured **2.75 / 2.65** against the same track: under the bar, and the reason the identical recipe read as a grey hairline once it was reused. Status colours are for status; a meter is not one.
 
-### The control stroke (2026-08-20)
+### The control stroke (2026-08-20; roles clarified 2026-08-30)
+
+The earlier all-secondary-controls rule below records why the strong stroke
+exists; it no longer assigns that strength to every labelled button. Use
+`--cw-mat-stroke-control` when the boundary is necessary to recognise a state
+or input (checkbox/radio). Use `--cw-mat-stroke-quiet` for the supplementary
+whole boundary of a clearly labelled command/search field or floating panel.
+Do not weaken the strong token to make the page quieter. Quiet boundaries are
+not asserted to meet 3:1; text, essential indicators and focus remain separate.
 
 The material is all soft edges, and a control that is only a soft fill on a soft surface is not a control. The cabinet's secondary buttons were `--cw-mat-surface-sunk` on a card: measured **1.08** against the card behind them. The label was perfectly readable; the button was not there.
 
@@ -1421,6 +1429,67 @@ Three surfaces answered "you are here" three ways: the topbar drew an ink underl
 
 **Two baked gestures, one interaction language.** Text navigation uses `ink-stroke`: two slightly non-parallel paths with two restrained ink droplets. Icon-only controls use `ink-ring`: an open, irregular loop plus one tiny drop. Both are graphics baked into `cw-icons.svg`, not CSS drawings, inline SVGs or runtime filters. `--cw-ink-stroke-height`, `--cw-ink-ring-size`, `--cw-ink-hover-opacity` and `--cw-ink-hover-scale` keep the gesture consistent in the topbar, account/mobile menu and Builder. The graphic never carries state alone: active/current also changes foreground and weight and remains exposed through `aria-current`, `aria-expanded` or `aria-pressed`.
 
+### Selection grammar: contour, ink, hybrid (2026-08-30)
+
+Every interaction must declare one `selection_family` before code review. The
+family is a semantic choice, not a cosmetic preference:
+
+| family | use for | selected / hover signal | examples |
+| --- | --- | --- | --- |
+| `contour` | a control that accepts input, invokes a command or contains a floating control surface | material boundary, foreground and focus ring | search field, icon+text button, CTA, checkbox box, popover |
+| `ink` | a quiet choice or change of representation on an otherwise unmaterialised surface | foreground/weight plus the shared baked mark | route navigation, tabs, current view mode |
+| `hybrid` | a conventional input whose selected *label* also benefits from route-like orientation | contour on the input itself; ink only under the selected label | multi-select category filter options |
+
+**One control gets one geometry, chosen by its job, not by the presence of an icon.**
+An icon next to a visible label is not an icon-only control. A labelled command
+(such as the filter disclosure) is `contour`: one whole ink/gold edge and focus
+ring, no separate ring/underline on its children. A navigation/choice row may
+instead be `ink`: the shared stroke sits under the label only; its accompanying
+icon does not get a second selection ring. A standalone icon-only choice is `ink` and receives
+the shared ring; a standalone text choice is `ink` and receives the shared
+stroke. The filter disclosure is therefore one contour button; its popover and
+checkbox boxes retain their own contours. Do not turn an ink choice into a
+card/plate.
+The only allowed combination is `hybrid`, where the checkbox/radio remains the
+primary semantic signal and the ink is bounded to the label's text width —
+never the whole row.
+
+**One shared mark, no local copies.** `InteractionInkLabel` and
+`InteractionInkIcon` are the only platform entry points for baked ink. The
+account menu’s thick text gesture is `InteractionInkLabel variant="menu"`; it
+is also the canonical mark for selected labels in compound controls. Local CSS
+may position a control or reserve a label’s inline width, but it may not
+redraw, resize, re-scale, alter opacity or otherwise imitate the ink graphic.
+Use `active` / semantic `aria-*` state to resolve it. The quiet navigation
+stroke remains the default `navigation` variant.
+
+**Controls are not copy.** Interactive labels, navigation, tabs, menu rows,
+checkbox/radio rows and button text use the global no-selection contract.
+Native blue text selection inside a control is not a user state and must not be
+used as feedback. Reading content, editable fields and explicitly editable
+copy remain selectable; do not solve this by disabling selection on a page or
+on an entire content surface.
+
+### Control choice precedes control copy (2026-08-30)
+
+Before adding or changing a control, first ask whether the action needs a
+visible text label at all. Inspect the existing DS role and the nearest product
+pattern before introducing a new label, geometry or local recipe:
+
+- direct edit / remove / add actions on a clearly adjacent object use the
+  existing icon-only command pattern, with an accessible `aria-label` and
+  `title`; their `selection_family` is `contour`;
+- navigation and representation changes use the existing ink primitives only
+  when their semantics match `ink`;
+- a text label is retained when its action is ambiguous without words, creates
+  a new object, or is the view's primary outcome;
+- checkboxes use the existing system checkbox pattern and its placement, rather
+  than inventing a local toggle or a text button.
+
+This is a reuse-first rule: existing components and interaction grammar are the
+default. A new control treatment is justified only after the DS and comparable
+surface patterns have been checked and found insufficient.
+
 ### Lists keep their markers inside the text column (2026-08-23)
 
 `.timeline` (the platform's one plain list) hung its bullet at `left: -0.85rem`, on the theory that the sentences should start on the paragraph edge. But a panel's padding is not a margin the list owns: the dots landed left of the eyebrow, the heading and the disclosure row, and only the list broke the block's left edge. The theory also required the panel's padding to be ≥ 1.15rem, and several panels run tighter — on those the dots cleared the card entirely.
@@ -1538,6 +1607,107 @@ file with, rejects the selector and fails the whole stylesheet, taking every
 platform and builder route down with it. The two rules are installed as a
 constructed stylesheet from the module that paints the marks. Worth remembering
 before the next exotic selector goes into that file.
+
+## Boundary hierarchy across the three layers
+
+Platform, library and Builder share **roles**, not an identical number of
+rectangles. Material, boundary, elevation and selection are separate axes.
+
+| Object / user question | Resting boundary | State / source |
+|---|---|---|
+| Public offer card: is this the right program? | No new frame; photo, scrim, material and elevation | Existing offer recipe; no workspace chrome imposed |
+| Library / workshop collection: which material? | None; warm material and soft shadow | Library `data-cw-edge="none"`; workshop existing borderless card. Any interactive state is independent of the resting edge |
+| Cabinet structural panel: what belongs together? | Existing moderate material edge | Keep panel structure; do not apply the borderless collection role to every panel |
+| Topbar / workspace shell: where am I? | Existing moderate chrome/faded boundary | Shared shell tokens; no extra nested ring |
+| Loading: is my content coming? | None, including the inset ring | `PlatformLoadingState`, material + `data-cw-edge="none"`; no geometry or timing change |
+| Status on a cover: what state is this in? | Borderless capsule | `PlatformSurfaces.mediaBadge`; scrim floor, inverse text; no control ring/shadow |
+| Labelled command / search: what can I do? | Quiet whole contour | `--cw-mat-stroke-quiet`; gold on filter/search hover, focus or open. Do not circle the accompanying glyph |
+| Floating choice menu: what can I select? | One quiet enclosing edge | Shared material + elevation; internal separators use `--cw-rule-fade-x`, not strong lines |
+| Checkbox / radio: is this selected? | Essential strong boundary | `--cw-mat-stroke-control`; selected category label adds the canonical account-menu ink stroke |
+| Navigation / view choice | No plate | `InteractionInkLabel` / `InteractionInkIcon`; ink follows the text or the standalone icon |
+
+The card overflow target stays at least `--ds-touch-target-min`. Its **paint**
+is `--cw-ink-hover-paint-size`: ring size × hover scale × optical ratio (0.82,
+the baked ring's approximately 29.6-unit footprint in a 36-unit viewBox).
+At a 16px root that means ~29px paint inside a 48px target. Do not size the
+scrim to the selected ring or the transparent SVG viewport. Do not change the
+ink asset or its animation to fit the plate.
+
+Before changing a surface, declare its boundary role and `selection_family`.
+Prefer the shared recipe over local border overrides. A status capsule is not
+a button; a supplementary edge is not a substitute for accessible text,
+essential indicators or keyboard focus. Regression contracts live in
+`surfaceBoundaries.test.ts` and `interactionLayering.test.ts`.
+
+Implementation/evidence: `docs/platform-surface-boundaries-2026-08-30.md`.
+
+### Reader / preview parity (2026-08-31)
+
+`ReaderChrome` owns the floating row for learner lessons and author previews,
+including loading and failure states. Preview supplies one fully clickable
+`До редагування` return through `ZenPreviewContext`; it must not add a second
+header, duplicate draft status or push the reader's controls down. Both chrome
+islands align to the 46rem reading measure in preview and learner-library
+reading, not to the viewport corners. Course preview uses the same row without
+lesson tools. Original Builder return context and the prohibition on
+learner-progress writes remain unchanged.
+
+Reader contents and note-editor panels consume `--cw-mat-shadow-deep`; small
+menus/annotation tools consume `--cw-mat-shadow-raised`. Never derive elevation
+from `--cw-platform-text`: that becomes a white glow in dark mode. Existing gold
+primary-button glow remains a separate command recipe, not an overlay shadow.
+
+Sidebar append commands use `base secondary hug` (`selection_family=contour`):
+theme-aware text and one quiet whole-control boundary, not `accent-strong` ink,
+which is not a readable foreground in the dark palette. No child ink marks.
+
+Evidence and limitations: `docs/reader-preview-polish-2026-08-31.md`.
+
+### Builder course workspace entry and representation (2026-08-31)
+
+A bare `/build/[course]` opens `Обкладинка`; explicit workspace hashes remain
+authoritative deep links. The structure representation switch consumes the
+shared `ShelfPresentation` ink control, including its 48px square geometry and
+`InteractionInkIcon`; Builder does not position an additional ink ring locally.
+
+`Сторінка` is a dedicated workspace, so its primary storefront fields are
+always mounted and editable. It has no settings pencil and no leading panel
+divider. The technical `Додатково` disclosure remains subordinate and may stay
+collapsed. This does not change persistence, validation, route boundaries or
+the catalogue visibility authority.
+
+## Transient notifications: one application viewport
+
+`ToastProvider` is mounted once in each application root: `(platform)` covers
+the public platform, library/cabinet and admin; `(builder)` covers authoring.
+Admin must not mount a nested provider. Funnel layouts remain outside this
+contract. Consumers call `useToast().success/error/info/warning` in the action
+handler, not by inserting a paragraph into a shelf or editor layout.
+
+All types share the same fixed top-right, safe-area-aware viewport, material,
+measure and close action. Only the semantic status colour changes. Messages
+wrap inside the viewport on mobile and do not take grid/flex space. The stack
+uses the DS modal layer + 1, not an unrelated hard-coded z-index. Persistent
+root placement keeps it outside transformed/scrolled page containers.
+
+Default lifetime is 5 seconds for all types. Hover, keyboard focus and hidden
+document pause the remaining time independently. Manual dismissal and unmount
+cancel timers. Repeated identical messages renew one entry. Explicit duration
+0 is persistent. Errors use `role="alert"`; other results use `role="status"`.
+No autofocus. Type labels are available to assistive technology; message text
+must explain the outcome, never rely on colour alone. Close uses the existing
+baked icon and ink-only hover, not an inline SVG or new button recipe.
+
+This is **transient action feedback**, not a replacement for field validation,
+load/access gates, destructive confirmations or autosave-conflict recovery.
+Those remain in their semantic context with their recovery controls.
+
+Missing course-menu glyphs `export` and `unpublish` belong to the existing
+Authoring family in `scripts/lib/icon-glyphs.mjs`. They use the same 24-grid,
+1.5 stroke and `hand2` bake as existing glyphs. Generated sprite mirrors and
+typed names are rebuilt together; no call-site paths or runtime SVG filters.
+
+Evidence and scope: `docs/notifications-and-menu-icons-2026-08-30.md`.
 
 ## Aspirational Ledger (not implemented)
 

@@ -5,6 +5,7 @@ import { PixelProvider } from "@/lib/tracking/PixelProvider";
 import { Suspense } from "react";
 import { headers } from "next/headers";
 import { SurfaceHostProvider } from "@/components/platform/layout/SurfaceHost";
+import { ToastProvider } from "@/components/ToastProvider";
 import "../globals.css";
 import { PLATFORM_GROUND } from "@/lib/platform/chrome";
 import { THEME_BOOT_SCRIPT } from "@/lib/platform/theme";
@@ -94,7 +95,7 @@ export default async function RootLayout({
             nodes and ~1 KB, and it is what makes a Course or a Product on any
             other page resolve to a provider instead of a bare name. */}
         <JsonLd data={graph(organizationLd(), websiteLd(), personLd())} />
-        <SurfaceHostProvider host={host}>{children}</SurfaceHostProvider>
+        <SurfaceHostProvider host={host}><ToastProvider>{children}</ToastProvider></SurfaceHostProvider>
         <Analytics />
       </body>
     </html>

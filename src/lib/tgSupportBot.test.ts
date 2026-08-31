@@ -6,9 +6,11 @@ import { describe, expect, it } from "vitest";
 import { PRODUCT_DELIVERY, PRODUCT_LABELS, assertProduct, normalizeEmail, normalizePhoneDigits } from "./tgSupportBot";
 import {
   botCopy,
+  ACCESS_PHOTO_URL,
   botProfile,
   CABINET_PHOTO_URL,
   CABINET_URL,
+  FAQ_PHOTO_URL,
   GREETING_PHOTO_URL,
   SUPPORT_PHOTO_URL,
 } from "./tgSupportBotCopy";
@@ -111,6 +113,8 @@ describe("support bot — copy", () => {
     const assets = [
       "public/cw/bot/final/menu-courses-printed-stamp-v5.png",
       "public/cw/bot/final/menu-support-printed-stamp-v4.png",
+      "public/cw/bot/final/menu-faq-printed-stamp-v1.png",
+      "public/cw/bot/final/menu-access-printed-stamp-v1.png",
     ];
 
     for (const asset of assets) {
@@ -118,6 +122,8 @@ describe("support bot — copy", () => {
     }
     expect(CABINET_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
     expect(SUPPORT_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
+    expect(FAQ_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
+    expect(ACCESS_PHOTO_URL).toMatch(/^https:\/\/.+\.png$/);
   });
 
   it("registers a command for every menu branch a command claims to open", () => {

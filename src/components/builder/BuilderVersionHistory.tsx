@@ -1,5 +1,7 @@
 "use client";
 
+import { useToast } from "@/components/ToastProvider";
+
 import { useCallback, useEffect, useState } from "react";
 
 import type { Course } from "@/lms-core";
@@ -31,18 +33,17 @@ export function BuilderVersionHistory({
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
   const [openingId, setOpeningId] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
+  const toast = useToast();
 
   const refresh = useCallback(async () => {
     const result = await listCourseRevisions(slug);
     setLoading(false);
     if (!result.ok) {
-      setMessage("Не вдалося завантажити історію версій.");
+      toast.error("Не вдалося завантажити історію версій.");
       return;
     }
     setRevisions(result.data.revisions);
-    setMessage(null);
-  }, [slug]);
+  }, [slug, toast]);
 
   useEffect(() => {
     if (!open) return;
@@ -52,16 +53,15 @@ export function BuilderVersionHistory({
       if (cancelled) return;
       setLoading(false);
       if (!result.ok) {
-        setMessage("Не вдалося завантажити історію версій.");
+        toast.error("Не вдалося завантажити історію версій.");
         return;
       }
       setRevisions(result.data.revisions);
-      setMessage(null);
     })();
     return () => {
       cancelled = true;
     };
-  }, [open, slug]);
+  }, [open, slug, toast]);
 
   const createCheckpoint = async () => {
     if (creating || checkpointDisabled) return;
@@ -69,12 +69,12 @@ export function BuilderVersionHistory({
     const result = await createCourseRevision(slug, label.trim());
     setCreating(false);
     if (!result.ok) {
-      setMessage("Не вдалося створити версію. Спробуйте ще раз.");
+      toast.error("Не вдалося створити версію. Спробуйте ще раз.");
       return;
     }
     setLabel("");
     await refresh();
-    setMessage(`Версію №${result.data.revision.revisionNumber} збережено.`);
+    toast.success(`Версію №${result.data.revision.revisionNumber} збережено.`);
   };
 
   const openRevision = async (revisionId: string) => {
@@ -83,11 +83,10 @@ export function BuilderVersionHistory({
     const result = await loadCourseRevision(slug, revisionId);
     setOpeningId(null);
     if (!result.ok) {
-      setMessage("Не вдалося відкрити цю версію.");
+      toast.error("Не вдалося відкрити цю версію.");
       return;
     }
     setSelected(result.data.revision);
-    setMessage(null);
   };
 
   const shape = selected ? courseShape(selected.content) : null;
@@ -122,7 +121,6 @@ export function BuilderVersionHistory({
           </button>
         </section>
 
-        {message ? <p className={styles.noticeLine} role="status" aria-live="polite">{message}</p> : null}
 
         {selected && shape ? (
           <section className={styles.versionDetail} aria-labelledby="version-detail-title">

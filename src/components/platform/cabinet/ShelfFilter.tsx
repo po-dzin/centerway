@@ -20,19 +20,28 @@
 
 import { COURSE_CATEGORIES, type CourseCategory } from "@/lms-core";
 
+import { useEffect, useRef, useState } from "react";
+
 import { Icon } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import type { CabinetCopy } from "./copy";
 import styles from "./ShelfFilter.module.css";
 
-/** `"all"` is a real choice, not an absent one — see the note on the chip row. */
+/**
+ * A shelf camera can stand before a concrete section or before the unfiltered
+ * overview. This is intentionally broader than the query below: `all` is a
+ * navigation destination, never a selected checkbox.
+ */
 export type ShelfCategory = CourseCategory | "all";
 
-export type ShelfQuery = { text: string; category: ShelfCategory };
+/** Several subjects can describe the same material; an empty set means no
+    category narrowing. */
+export type ShelfQuery = { text: string; categories: readonly CourseCategory[] };
 
-export const EMPTY_SHELF_QUERY: ShelfQuery = { text: "", category: "all" };
+export const EMPTY_SHELF_QUERY: ShelfQuery = { text: "", categories: [] };
 
 export function isShelfQueryEmpty(query: ShelfQuery): boolean {
-  return query.text.trim() === "" && query.category === "all";
+  return query.text.trim() === "" && query.categories.length === 0;
 }
 
 /**
@@ -49,7 +58,9 @@ export function matchesShelfQuery(
   query: ShelfQuery,
   copy: CabinetCopy,
 ): boolean {
-  if (query.category !== "all" && !entry.categories.includes(query.category)) return false;
+  if (query.categories.length > 0 && !query.categories.some((category) => entry.categories.includes(category))) {
+    return false;
+  }
   const text = query.text.trim().toLowerCase();
   if (!text) return true;
   const hay = [entry.title, ...entry.categories.map((c) => copy.courseCategories[c])]
@@ -72,14 +83,39 @@ export function ShelfFilter({
   categories: readonly CourseCategory[];
 }) {
   const offered = COURSE_CATEGORIES.filter((one) => categories.includes(one));
+  const [open, setOpen] = useState(false);
+  const root = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+
+    const onPointerDown = (event: PointerEvent) => {
+      if (!root.current?.contains(event.target as Node)) setOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    document.addEventListener("pointerdown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  const toggleCategory = (category: CourseCategory) => {
+    const selected = query.categories.includes(category);
+    onChange({
+      ...query,
+      categories: selected ? query.categories.filter((item) => item !== category) : [...query.categories, category],
+    });
+  };
 
   return (
     <div className={styles.filter}>
-      {/* A LINE ON A RULE, NOT A PILL. The same rule the list itself is drawn
-          with: at rest the underline fades at its ends the way every divider in
-          this product does, and under the pointer or in focus it gathers into a
-          full line and takes the ink up with it. A rounded ground here would
-          have made the loudest object on the page the one that holds nothing. */}
+      {/* Search is one bounded control: its lens and input share the same
+          boundary, so focus never appears to select only the text while hover
+          selects the whole field. */}
       <label className={styles.find}>
         <Icon name="lens" size={18} />
         <input
@@ -93,40 +129,62 @@ export function ShelfFilter({
         />
       </label>
 
-      {/* «Усі» IS A CHIP LIKE THE OTHERS. It was tempting to make the cleared
-          state simply "no chip pressed", but then the row has no pressed chip
-          at rest and the reader cannot tell a control that is off from a
-          control that is broken.
-
-          THE ROW STAYS WHILE A FILTER IS ACTIVE, EVEN DOWN TO ONE SUBJECT. An
-          author filtering to «Харчування» and then deleting every course but
-          one under «Рух» used to lose the row entirely — `offered` fell to one
-          entry, the row's own condition hid it, and the stale category kept
-          rejecting every course with no «Усі» left to reach. The row's
-          resting condition still needs two subjects to be worth offering, but
-          an ACTIVE filter is a promise of a way back out, and that promise
-          holds regardless of how the underlying shelf changed under it. */}
-      {offered.length > 1 || query.category !== "all" ? (
-        <div className={styles.subjects} role="group" aria-label={copy.shelfFilterLabel}>
+      {/* The shelf can now hold several types of material. One popover with
+          checkboxes says «combine subjects» honestly; a row of mutually
+          exclusive tabs did not. */}
+      {offered.length > 1 || query.categories.length > 0 ? (
+        <div className={styles.filterMenu} ref={root}>
           <button
-            className={styles.subject}
+            className={styles.filterToggle}
             type="button"
-            aria-pressed={query.category === "all"}
-            onClick={() => onChange({ ...query, category: "all" })}
+            aria-label={
+              query.categories.length > 0
+                ? `${copy.shelfFilterAction}: ${query.categories.length}`
+                : copy.shelfFilterAction
+            }
+            aria-expanded={open}
+            aria-haspopup="dialog"
+            onClick={() => setOpen((current) => !current)}
           >
-            {copy.shelfFilterAll}
-          </button>
-          {offered.map((one) => (
-            <button
-              key={one}
-              className={styles.subject}
-              type="button"
-              aria-pressed={query.category === one}
-              onClick={() => onChange({ ...query, category: query.category === one ? "all" : one })}
+            <Icon name="list" size={18} aria-hidden="true" />
+            <span>{copy.shelfFilterAction}</span>
+            <span
+              className={styles.filterCount}
+              data-empty={query.categories.length === 0 || undefined}
+              aria-hidden="true"
             >
-              {copy.courseCategories[one]}
-            </button>
-          ))}
+              {query.categories.length || "0"}
+            </span>
+          </button>
+          {open ? (
+            <div className={styles.filterPopover} role="group" aria-label={copy.shelfFilterLabel}>
+              <div className={styles.filterPopoverHead}>
+                <span>{copy.shelfFilterLabel}</span>
+                {query.categories.length > 0 ? (
+                  <button className={styles.filterClear} type="button" onClick={() => onChange({ ...query, categories: [] })}>
+                    {copy.shelfFilterAll}
+                  </button>
+                ) : null}
+              </div>
+              <div className={styles.filterOptions}>
+                {offered.map((one) => (
+                  <label key={one} className={styles.filterOption}>
+                    <input
+                      type="checkbox"
+                      checked={query.categories.includes(one)}
+                      onChange={() => toggleCategory(one)}
+                    />
+                    <span className={styles.filterCheckbox} aria-hidden="true">
+                      <Icon name="check" size={14} />
+                    </span>
+                    <InteractionInkLabel variant="menu" active={query.categories.includes(one)}>
+                      {copy.courseCategories[one]}
+                    </InteractionInkLabel>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ) : null}
         </div>
       ) : null}
     </div>

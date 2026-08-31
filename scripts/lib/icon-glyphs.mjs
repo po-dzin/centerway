@@ -263,6 +263,20 @@ export const ICONS = {
     group: "Authoring",
     d: ["M12 3.8v10.4", "M7.8 10 12 14.2l4.2-4.2", "M5 17v2.8h14V17"],
   },
+  // A document leaving the workspace, distinct from importing into a tray.
+  export: {
+    group: "Authoring",
+    d: ["M10 4H5.5v16h13v-6", "M12 4h7.5v7.5", "M19.5 4 10 13.5"],
+  },
+  // Remove public visibility, not delete content: the preview eye, interrupted.
+  unpublish: {
+    group: "Authoring",
+    d: [
+      "M8.2 6.8C12.6 4.6 17 6.8 20.4 12c-.8 1.2-1.7 2.3-2.7 3.2",
+      "M15.7 17.2C11.4 19.4 7 17.2 3.6 12c.8-1.2 1.7-2.3 2.7-3.2",
+      "M4 4l16 16",
+    ],
+  },
 
   // ── Interface / meta ───────────────────────────────────────────────────
   question: {

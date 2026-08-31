@@ -229,14 +229,12 @@
 
 /* ── secondary ────────────────────────────────────── */
 
-/* The stroke is the material's control boundary, the one stroke token held to
-   WCAG 1.4.11's 3:1 in both themes (see docs "The control stroke"). It is what
-   makes the plate a control rather than a tint: sunk-on-surface measured 1.08
-   without it, 3.37 with. No resting elevation — a stroked plate that also
-   floats reads as two ways of saying the same thing. */
+/* Labelled commands get a quiet, whole-control edge, not the strong stroke
+   required to recognise an unchecked checkbox. Text and keyboard focus remain
+   independently legible. No resting elevation or nested ink mark. */
 .secondary {
   composes: base;
-  border: 1px solid var(--cw-mat-stroke-control);
+  border: 1px solid var(--cw-mat-stroke-quiet);
   color: var(--cw-platform-text);
   background-color: var(--cw-mat-surface-sunk);
   background-image: var(--cw-mat-grain-image);

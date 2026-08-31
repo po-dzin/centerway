@@ -140,6 +140,8 @@
     --cw-ink-ring-size: 3rem;
     --cw-ink-hover-opacity: 0.42;
     --cw-ink-hover-scale: 0.74;
+    --cw-ink-ring-optical-ratio: 0.82;
+    --cw-ink-hover-paint-size: calc(var(--cw-ink-ring-size) * var(--cw-ink-hover-scale) * var(--cw-ink-ring-optical-ratio));
     --cw-brand-size-symbol-footer: 2rem;
     --cw-brand-size-wordmark-footer-width: 8.6rem;
     --cw-brand-size-wordmark-footer-height: 2.05rem;
@@ -191,6 +193,7 @@
     --cw-mat-stroke: color-mix(in srgb, #ffffff 55%, transparent);
     --cw-mat-stroke-inner: color-mix(in srgb, #16211a 8%, transparent);
     --cw-mat-stroke-control: color-mix(in srgb, #16211a 52%, transparent);
+    --cw-mat-stroke-quiet: color-mix(in srgb, #16211a 26%, transparent);
     --cw-mat-scrim-ink: #171817;
     --cw-mat-hover-bg: color-mix(in srgb, var(--cw-platform-text) 6%, transparent);
     --cw-mat-hover-stroke: color-mix(in srgb, var(--cw-platform-text) 14%, var(--cw-platform-border));
@@ -375,6 +378,7 @@
     --cw-mat-stroke: color-mix(in srgb, #ffffff 14%, transparent);
     --cw-mat-stroke-inner: color-mix(in srgb, #ffffff 4%, transparent);
     --cw-mat-stroke-control: color-mix(in srgb, #faefe0 42%, transparent);
+    --cw-mat-stroke-quiet: color-mix(in srgb, #faefe0 22%, transparent);
     --cw-mat-scrim-ink: #171817;
     --cw-mat-hover-bg: color-mix(in srgb, var(--cw-platform-text) 6%, transparent);
     --cw-mat-hover-stroke: color-mix(in srgb, var(--cw-platform-text) 14%, var(--cw-platform-border));
@@ -979,6 +983,17 @@ body {
 [data-cw-material] > * {
   position: relative;
   z-index: 1;
+}
+
+/* Edge is a separate semantic axis from material. Collection objects and
+   loading states keep their grain/elevation without nested decorative rings.
+   Structural panels retain the default edge; chrome retains its own recipe. */
+[data-cw-material][data-cw-edge="none"] {
+  border-color: transparent;
+}
+
+[data-cw-material][data-cw-edge="none"]::before {
+  box-shadow: none;
 }
 
 /* Degrade to the opaque tint wherever the blur can't be paid for or isn't
@@ -1690,6 +1705,21 @@ body {
     transition: opacity 0.16s ease, transform 0.18s ease;
   }
 
+  /* The account menu is the reference text-selection gesture. It is a baked
+     hand graphic at the same width as the label, but optically thicker than
+     the quiet navigation mark. Consumers opt into this named variant through
+     InteractionInkLabel — never by redrawing or re-transforming a stroke in a
+     local CSS module. */
+  .cw-ink-label[data-cw-ink-variant="menu"] {
+    width: fit-content;
+  }
+
+  .cw-ink-label[data-cw-ink-variant="menu"] .cw-ink-label-mark {
+    inset-block-end: -0.52rem;
+    transform: scaleX(0.38) scaleY(3.4) rotate(-0.4deg);
+    transform-origin: left center;
+  }
+
   .cw-ink-icon {
     position: relative;
     display: inline-grid;
@@ -1727,13 +1757,18 @@ body {
     transform: scaleX(1) rotate(-1deg);
   }
 
-  :is(.cw-icon-btn, .cw-page-btn, .cw-nav-link):hover .cw-ink-icon-mark,
-  :is(.cw-icon-btn, .cw-page-btn, .cw-nav-link):focus-visible .cw-ink-icon-mark {
+  .cw-ink-label[data-cw-ink-active="true"] .cw-ink-label-mark {
+    opacity: 1;
+    transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
+  }
+
+  :is(.cw-icon-btn, .cw-page-btn, .cw-nav-link, [data-cw-ink-control]):hover .cw-ink-icon-mark,
+  :is(.cw-icon-btn, .cw-page-btn, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-icon-mark {
     opacity: var(--cw-ink-hover-opacity);
     transform: scale(0.94) rotate(-7deg);
   }
 
-  :is(.cw-nav-link-active, [aria-current="page"], [aria-expanded="true"]) .cw-ink-icon-mark {
+  :is(.cw-nav-link-active, [aria-current="page"], [aria-expanded="true"], [aria-pressed="true"]) .cw-ink-icon-mark {
     opacity: 1;
     transform: scale(1) rotate(-7deg);
   }
@@ -1742,6 +1777,35 @@ body {
   .cw-tab:focus-visible {
     outline: none;
     box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+  }
+
+  /* Controls are acted on, not copied. Native selection inside a UI label
+     reads as a broken pressed state (especially across checkbox rows and
+     icon/text buttons), so the delivery layer suppresses it once for every
+     interactive semantic. Reading content remains selectable; editable fields
+     explicitly opt back in below. */
+  :where(
+    button,
+    [role="button"],
+    [role="tab"],
+    [role="menuitem"],
+    [role="menuitemcheckbox"],
+    [role="option"],
+    [role="checkbox"],
+    label,
+    summary,
+    .cw-tab,
+    .cw-nav-link,
+    .cw-icon-btn,
+    .cw-page-btn
+  ) {
+    -webkit-user-select: none;
+    user-select: none;
+  }
+
+  :where(input:not([type="checkbox"]):not([type="radio"]), textarea, [contenteditable="true"]) {
+    -webkit-user-select: text;
+    user-select: text;
   }
 
   .cw-pagination {
