@@ -22,13 +22,47 @@
 
      The gap under the controls is `lg`, not `sm`: at 12px the caption sat in
      the arrow's shadow and the screen opened tight. */
-  margin: calc(var(--cw-space-sm) + var(--ds-touch-target-min) + var(--cw-space-lg)) auto 0;
+  margin: calc(max(var(--cw-space-sm), env(safe-area-inset-top)) + var(--ds-touch-target-min) + var(--cw-space-lg)) auto 0;
   padding-block: 0 var(--cw-space-3xl);
   /* Short states (loading, "курс ще готується") would otherwise let the footer
      ride up under the header. */
   min-height: 60svh;
   color: var(--cw-platform-text);
   font-family: var(--cw-font-ui);
+}
+
+/* Course maps have a workspace topbar in normal flow. The fixed reader chrome
+   above is a lesson-only concern, so inheriting its clearance created a large
+   blank band before the course title. */
+.courseWrap {
+  margin-top: var(--cw-space-xl);
+}
+
+.courseTrailFallback {
+  margin-block-end: var(--cw-space-lg);
+}
+
+.courseTopbarTrail {
+  display: none;
+  min-width: 0;
+}
+
+@media (min-width: 901px) {
+  .courseTrailFallback {
+    display: none;
+  }
+
+  .courseTopbarTrail {
+    display: block;
+    /* The shared workspace slot starts directly after the wordmark. Builder
+       trails already use that left edge; centring only the learner trail made
+       the same path look like another header system. */
+    width: min(100%, 44rem);
+  }
+
+  .courseTopbarTrail :global(nav) {
+    margin-block-end: 0;
+  }
 }
 
 /* ── State / feedback ─────────────────────────────── */
@@ -311,22 +345,20 @@
    children, so the gap between them is page, not chrome. */
 .readerChrome {
   position: fixed;
-  /* Clears the author preview's own boundary row when there is one.
-     `--cw-zen-boundary-block` is declared by ZenPreviewShell and by nothing
-     else, so on the learner route this resolves to `0px + space-sm` — the
-     value it has always had — and inside the preview the cluster starts below
-     «До редагування» instead of on top of it. */
-  top: calc(var(--cw-zen-boundary-block, 0px) + var(--cw-space-sm));
-  right: 0;
-  left: 0;
+  top: max(var(--cw-space-sm), env(safe-area-inset-top));
+  inset-inline-start: max(var(--cw-page-gutter), env(safe-area-inset-left));
+  inset-inline-end: max(var(--cw-page-gutter), env(safe-area-inset-right));
   z-index: 4;
+  inline-size: auto;
+  max-inline-size: 46rem;
+  margin-inline: auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--cw-space-sm);
-  padding-inline: var(--cw-page-gutter);
-  /* The row spans the viewport so its two ends sit on the page's own gutters;
-     between them it must not swallow a tap meant for the text. */
+  /* Same measure as `.wrap`: the controls belong to the reading column,
+     rather than to distant viewport corners. The row itself remains empty hit
+     space, so only the two islands receive pointer events. */
   pointer-events: none;
   /* Same reveal the bar had — see useChromeReveal. Transform only: nothing
      here reflows, and the column's top padding does not move with it. */
@@ -340,11 +372,7 @@
 }
 
 .readerChrome[data-hidden="true"] {
-  /* Far enough to clear its own top offset as well as its height, or in the
-     preview the cluster parks half-visible under the boundary rule. */
-  transform: translateY(
-    calc(-100% - var(--cw-zen-boundary-block, 0px) - var(--cw-space-sm) - 0.75rem)
-  );
+  transform: translateY(calc(-100% - max(var(--cw-space-sm), env(safe-area-inset-top))));
   opacity: 0;
 }
 
@@ -394,6 +422,23 @@
   box-shadow: var(--cw-mat-shadow-chrome);
 }
 
+.readerPreviewBack {
+  composes: base chrome hug from "../platform/PlatformButtons.module.css";
+  flex: none;
+  padding-inline: var(--cw-space-sm);
+  color: var(--cw-platform-text);
+  background-color: var(--cw-mat-tint-chrome);
+  backdrop-filter: var(--cw-mat-filter);
+  box-shadow: var(--cw-mat-shadow-chrome);
+  white-space: nowrap;
+}
+
+.readerPreviewBack:hover:not(:disabled),
+.readerPreviewBack:focus-visible {
+  background-color: var(--cw-mat-tint-chrome);
+  box-shadow: var(--cw-mat-shadow-chrome);
+}
+
 /* The cluster IS the surface, so its members stop carrying one of their own —
    two materials one inside the other is the seam this layer exists to avoid.
    `chrome` is transparent at rest already; this only removes its hover plate,
@@ -423,7 +468,7 @@
   border: 1px solid var(--cw-platform-border);
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
-  box-shadow: 0 12px 32px color-mix(in srgb, var(--cw-platform-text) 14%, transparent);
+  box-shadow: var(--cw-mat-shadow-raised);
 }
 
 /* A row of the size menu: the contract's geometry, laid out as a grid so the
@@ -564,7 +609,7 @@
   padding: var(--cw-space-md) var(--cw-space-md) max(var(--cw-space-lg), env(safe-area-inset-bottom));
   border-radius: var(--cw-radius-xl) var(--cw-radius-xl) 0 0;
   background: var(--cw-mat-surface);
-  box-shadow: 0 -12px 40px color-mix(in srgb, var(--cw-platform-text) 18%, transparent);
+  box-shadow: var(--cw-mat-shadow-deep);
 }
 
 .drawerHandle {
@@ -1256,7 +1301,7 @@
   border: 1px solid var(--cw-platform-border);
   border-radius: var(--cw-radius-lg);
   background: var(--cw-mat-surface);
-  box-shadow: 0 12px 32px color-mix(in srgb, var(--cw-platform-text) 16%, transparent);
+  box-shadow: var(--cw-mat-shadow-raised);
   white-space: nowrap;
 }
 
@@ -1291,7 +1336,7 @@
   padding: var(--cw-space-md) var(--cw-space-md) max(var(--cw-space-lg), env(safe-area-inset-bottom));
   border-radius: var(--cw-radius-xl) var(--cw-radius-xl) 0 0;
   background: var(--cw-mat-surface);
-  box-shadow: 0 -12px 40px color-mix(in srgb, var(--cw-platform-text) 18%, transparent);
+  box-shadow: var(--cw-mat-shadow-deep);
 }
 
 /* The passage, so the reader can see WHICH place they are writing about
@@ -1452,7 +1497,7 @@
      `.wrap` rules used to sit here setting `margin-top` and `margin-block-start`
      to different values three lines apart; the second silently won. */
   .wrap {
-    margin-block-start: calc(var(--cw-space-sm) + var(--ds-touch-target-min) + var(--cw-space-2xl));
+    margin-block-start: calc(max(var(--cw-space-sm), env(safe-area-inset-top)) + var(--ds-touch-target-min) + var(--cw-space-2xl));
   }
 
 

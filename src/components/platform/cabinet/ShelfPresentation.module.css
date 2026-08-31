@@ -1,0 +1,45 @@
+/* Shared post-filter band for the learner library and author workshop. */
+.resultBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  min-block-size: var(--ds-touch-target-min);
+  padding-block: var(--cw-space-2xs);
+  border-block: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+}
+
+.resultCount {
+  display: inline-flex;
+  align-items: baseline;
+  gap: var(--cw-space-xs);
+  color: var(--cw-platform-text);
+  font-size: 0.85rem;
+}
+
+.resultLabel {
+  color: var(--cw-platform-muted);
+  font-size: 0.76rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.resultBar[data-filtering] .resultCount {
+  color: var(--cw-nav-marker);
+}
+
+.viewSwitch {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+}
+
+.viewOption {
+  composes: base chromeBare square from "../PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
+}
+
+.viewOption[aria-pressed="true"] {
+  color: var(--cw-platform-text);
+}

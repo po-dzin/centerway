@@ -29,6 +29,71 @@ final result: passed
 
 ---
 
+# Design QA — library hierarchy and material filters
+
+## Evidence
+
+- Source reference: `/var/folders/sq/4w_d403s78l84cn2wzfq2djh0000gn/T/codex-clipboard-08d5eb7d-3006-4e1c-a8cb-ceffe27122b4.png`.
+- Intended route: `http://localhost:8001/learn`.
+- Intended state: learner library with more than one material, the filter menu
+  open, and multiple categories selected.
+
+## Implemented contract
+
+- `Мої курси` is now `Мої матеріали` throughout the library entry, its
+  breadcrumb and personal footer; the workshop remains a course catalogue.
+- Search is one modestly rounded control that contains the lens and input. Its
+  hover and focus use the same ink-and-gold boundary and ring state.
+- Subjects now live in one separate disclosure with accessible checkboxes.
+  Multiple selected categories are additive, and a clear action returns to all
+  materials. View selection stays after filtering because it only changes the
+  result's presentation.
+
+## Verification
+
+- `npm run lint` — passed.
+- `vitest run src/components/platform/cabinet/ShelfFilter.test.ts` — 3 passed:
+  empty, multi-category `OR`, and combined text/category narrowing.
+- `npm run build` — passed.
+- Browser-rendered comparison is blocked: the selected in-app browser received
+  `net::ERR_CONNECTION_REFUSED` for the intended local route, so no current
+  implementation capture or source/implementation side-by-side comparison is
+  available.
+
+## Remaining gate
+
+- Start the local preview and capture `/learn` at the reference desktop width;
+  verify the open filter, multi-select state and mobile wrap before marking this
+  visual pass complete.
+
+## Workshop follow-up — 2026-08-30
+
+- Source reference: `/var/folders/sq/4w_d403s78l84cn2wzfq2djh0000gn/T/codex-clipboard-0430dde6-c243-419f-8cab-1170ef8b6120.png`.
+- Implemented hierarchy: named `Імпортувати` / `Новий курс` actions in the
+  page head; search and filters below; then the ruled result line containing
+  the course count and row/card switch.
+- Code validation after this change: `npm run lint`, the shelf filter contract
+  test (3 passed), and `npm run build` all passed.
+- Visual implementation capture remains unavailable for the same local-preview
+  connection blocker above. The next capture must check both wide desktop and
+  the wrapped mobile page head before changing this result.
+
+## Library loading stability follow-up — 2026-08-30
+
+- Source reference: `/var/folders/sq/4w_d403s78l84cn2wzfq2djh0000gn/T/codex-clipboard-3c2e5e60-0a6c-40dc-900b-2ae501ca06fb.png`.
+- Cause corrected: session restoration used `CabinetGate`'s bare container,
+  while the following shelf-fetch state used the library shell. The two states
+  had different top geometry before the page head appeared.
+- Fix: both stages now render the same route-owned fallback: the library page
+  head plus the library shell and loading state. No asynchronous stage may
+  choose a different vertical starting position.
+- `npm run lint` and `npm run build` passed after the change. A browser capture
+  remains necessary to close the visual gate.
+
+final result: blocked
+
+---
+
 ## 2026-08-30 — Control Panel rail correction
 
 **Evidence**

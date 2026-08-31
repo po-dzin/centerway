@@ -42,7 +42,7 @@ export function ReaderTrail({
     <div className={styles.readerTrail}>
       <PlatformTrail
         steps={[
-          { label: "Мої курси", href: surfaceHref(LEARNING_SHELF_HREF) },
+          { label: "Мої матеріали", href: surfaceHref(LEARNING_SHELF_HREF) },
           { label: courseTitle, href: surfaceHref(`/learn/${courseSlug}`) },
           { label: lessonTitle },
         ]}

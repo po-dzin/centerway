@@ -76,7 +76,7 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
               stack where the storefront footer beside it has three tracks, so
               the two footers disagreed about their own shape. */}
           <div className={`${styles.footerLinks} ${styles.footerLegal}`}>
-            <Link href={shelfHref}>Мої курси</Link>
+            <Link href={shelfHref}>Мої матеріали</Link>
             <Link href={profileHref}>Кабінет</Link>
           </div>
           <div className={`${styles.footerLinks} ${styles.footerSocials}`}>

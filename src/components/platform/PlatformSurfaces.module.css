@@ -1,0 +1,12 @@
+/* Non-interactive status on photography. One capsule, no control contour,
+   inset ring or panel shadow. Same scrim floor in the library and workshop. */
+.mediaBadge {
+  display: inline-flex;
+  align-items: center;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 76%, transparent);
+  color: var(--cw-mat-inverse-text);
+  white-space: nowrap;
+}

@@ -487,8 +487,7 @@
   width: fit-content;
 }
 
-.navInkMark,
-.menuInkMark {
+.navInkMark {
   position: absolute;
   inset-inline: -0.2rem;
   inset-block-end: -0.62rem;
@@ -1015,13 +1014,6 @@
   outline: none;
 }
 
-.menuFold summary:hover .menuInkMark,
-.menuFold summary:focus-visible .menuInkMark,
-.menuFold[open] summary .menuInkMark {
-  opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
-}
-
 .menuFoldLead,
 .menuFoldSteps {
   margin: 0;
@@ -1061,19 +1053,6 @@
   padding-inline: 1.85rem 0.9rem;
 }
 
-.menuInkLabel {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  width: fit-content;
-}
-
-.menuInkMark {
-  color: var(--cw-nav-marker);
-  inset-block-end: -0.52rem;
-  transform-origin: left center;
-}
-
 @media (hover: hover) {
   .profileMenu a:hover,
   .profileMenu button:hover {
@@ -1102,20 +1081,6 @@
    paints the hover mark, and the current row is the only thing lit. Focus is
    deliberately NOT inside the query — a keyboard has no pointer either, and
    its ring must survive on every device. */
-@media (hover: hover) {
-  .profileMenu a:hover .menuInkMark,
-  .profileMenu button:hover .menuInkMark {
-    opacity: var(--cw-nav-marker-hover-opacity);
-    transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
-  }
-}
-
-.profileMenu a:focus-visible .menuInkMark,
-.profileMenu button:focus-visible .menuInkMark {
-  opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
-}
-
 /* "You are here": the mark run to full, plus the weight. Both, because weight
    alone is not a mark — five rows in one type family with one of them a notch
    bolder is a difference you have to hunt for — and because a mark alone is
@@ -1125,11 +1090,6 @@
 .profileMenu a[data-current] {
   color: var(--cw-platform-text);
   font-weight: 850;
-}
-
-.profileMenu a[data-current] .menuInkMark {
-  opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
 }
 
 /* THE NIGHT SIDE OF THE SAME PLATE. The bar is tone-managed — it samples what
@@ -1239,27 +1199,6 @@
 
 .profileWrapMobile .menuSettingLabel {
   color: var(--platform-header-fg);
-}
-
-/* The burger sheet is the surface this actually bit on — see the note above
-   `.profileMenu`'s copy of this rule. */
-@media (hover: hover) {
-  .profileWrapMobile a:hover .menuInkMark,
-  .profileWrapMobile button:hover .menuInkMark {
-    opacity: var(--cw-nav-marker-hover-opacity);
-    transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
-  }
-}
-
-.profileWrapMobile a:focus-visible .menuInkMark,
-.profileWrapMobile button:focus-visible .menuInkMark {
-  opacity: var(--cw-nav-marker-hover-opacity);
-  transform: scaleX(var(--cw-nav-marker-hover-scale)) scaleY(3.4) rotate(-0.4deg);
-}
-
-.profileWrapMobile a[data-current] .menuInkMark {
-  opacity: 1;
-  transform: scaleX(1) scaleY(3.4) rotate(-0.4deg);
 }
 
 .mobileProfileSlot {

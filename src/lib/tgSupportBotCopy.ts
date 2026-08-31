@@ -47,6 +47,8 @@ export const GREETING_PHOTO_URL = platformUrl("/cw/brand/cw-tg-cover.png");
  */
 export const CABINET_PHOTO_URL = platformUrl("/cw/bot/final/menu-courses-printed-stamp-v5.png");
 export const SUPPORT_PHOTO_URL = platformUrl("/cw/bot/final/menu-support-printed-stamp-v4.png");
+export const FAQ_PHOTO_URL = platformUrl("/cw/bot/final/menu-faq-printed-stamp-v1.png");
+export const ACCESS_PHOTO_URL = platformUrl("/cw/bot/final/menu-access-printed-stamp-v1.png");
 
 export { PLATFORM_ORIGIN };
 

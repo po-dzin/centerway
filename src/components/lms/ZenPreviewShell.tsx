@@ -3,7 +3,8 @@
 import type { ReactNode } from "react";
 import { useRouter } from "next/navigation";
 
-import { Icon } from "@/components/Icon";
+import { ReaderChrome } from "./ReaderChrome";
+import { ZenPreviewContext } from "./ZenPreviewContext";
 import styles from "./ZenPreview.module.css";
 
 const RETURN_STATE_KEY = "cw-builder-zen-preview-return";
@@ -48,7 +49,7 @@ function readReturnState(): PreviewReturnState | null {
   }
 }
 
-export function ZenPreviewShell({ returnTo, children }: { returnTo: string; children: ReactNode }) {
+export function ZenPreviewShell({ returnTo, children, reader = false }: { returnTo: string; children: ReactNode; reader?: boolean }) {
   const router = useRouter();
 
   const returnToBuilder = () => {
@@ -70,18 +71,13 @@ export function ZenPreviewShell({ returnTo, children }: { returnTo: string; chil
     router.push(returnTo);
   };
 
+  const navigation = { returnToBuilder };
   return (
-    <div className={styles.shell} data-cw-preview="zen">
-      <header className={styles.boundary}>
-        <button className={styles.back} type="button" onClick={returnToBuilder}>
-          <Icon name="arrow-left" size={18} />
-          <span>До редагування</span>
-        </button>
-        <span className={styles.status} role="status">
-          Чернетка <span aria-hidden="true">·</span> збережено
-        </span>
-      </header>
-      {children}
-    </div>
+    <ZenPreviewContext.Provider value={navigation}>
+      <div className={styles.shell} data-cw-preview="zen" data-reader={reader ? "lesson" : "course"}>
+        {!reader ? <ReaderChrome preview={navigation} /> : null}
+        {children}
+      </div>
+    </ZenPreviewContext.Provider>
   );
 }

@@ -12,8 +12,6 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 
 import { courseThemeAttributes, inlineToPlainText } from "@/lms-core";
-import { PlatformTrail } from "@/components/platform/PlatformTrail";
-import { LEARNING_SHELF_HREF } from "@/lib/platform/content";
 import { Icon } from "@/components/Icon";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { ProgressRail } from "@/components/platform/ProgressRail";
@@ -29,6 +27,7 @@ import { CourseNotes } from "./CourseNotes";
 import { useAnnotations } from "./useAnnotations";
 import { LmsNotice } from "./LmsNotice";
 import { ReaderTopButton } from "./ReaderTopButton";
+import { CourseBodyTrail } from "./CourseTrail";
 import styles from "./Lms.module.css";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 
@@ -140,7 +139,7 @@ export function CourseView({
 
   if (state.status === "loading") {
     return (
-      <main className={styles.wrap} data-cw-platform-template="learn-course">
+      <main className={`${styles.wrap} ${styles.courseWrap}`} data-cw-platform-template="learn-course">
         <PlatformLoadingState label="Бібліотека" title="Завантажуємо курс…" detail="Відновлюємо ваш поступ і наступний урок." />
       </main>
     );
@@ -148,7 +147,7 @@ export function CourseView({
 
   if (state.status === "error") {
     return (
-      <main className={styles.wrap} data-cw-platform-template="learn-course">
+      <main className={`${styles.wrap} ${styles.courseWrap}`} data-cw-platform-template="learn-course">
         <LmsNotice failure={state.error} onRetry={load} />
       </main>
     );
@@ -163,20 +162,16 @@ export function CourseView({
 
   return (
     <main
-      className={styles.wrap}
+      className={`${styles.wrap} ${styles.courseWrap}`}
       data-cw-platform-template="learn-course"
       // The course's own gamma, scoped to the course. It re-points the semantic
       // role names on this subtree only, so the platform around it is untouched
       // and no component here knows a palette changed (src/lms-core/theme.ts).
       {...courseThemeAttributes(state.data.course.theme ?? undefined)}
     >
-      {/* The same crumb the builder draws, from the same component. A learner
-          and an author are looking at one hierarchy from two sides; it should
-          not be two different controls. Replaced a single «Мої курси» back
-          link — which knew one level and said nothing about where you are. */}
-      {!draftPreview ? (
-        <PlatformTrail steps={[{ label: "Мої курси", href: href(LEARNING_SHELF_HREF) }, { label: course.title }]} />
-      ) : null}
+      {/* The desktop path lives in the workspace header. The compact mobile
+          bar keeps this short back path in the document instead. */}
+      {!draftPreview ? <CourseBodyTrail href={href} courseTitle={course.title} /> : null}
       <p className={styles.eyebrow}>Мій курс</p>
       <h1 className={styles.title}>{course.title}</h1>
       {course.summary ? <p className={styles.lead}>{inlineToPlainText(course.summary)}</p> : null}

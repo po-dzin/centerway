@@ -1,88 +1,92 @@
 "use client";
 
-import { createContext, ReactNode, useCallback, useContext, useMemo, useRef, useState } from "react";
+import { createContext, type ReactNode, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import { Icon } from "@/components/Icon";
 import { InteractionInkIcon } from "@/components/platform/InteractionInk";
+import { createToastTimer, type ToastTimer } from "./toastTimer";
+import styles from "./ToastProvider.module.css";
 
-type ToastVariant = "success" | "error" | "info";
-
-interface ToastItem {
-    id: number;
-    message: string;
-    variant: ToastVariant;
-    durationMs: number;
-}
-
+export type ToastVariant = "success" | "error" | "info" | "warning";
+type ToastItem = { id: number; message: string; variant: ToastVariant; durationMs: number };
 interface ToastContextValue {
-    showToast: (message: string, variant?: ToastVariant, durationMs?: number) => void;
-    success: (message: string, durationMs?: number) => void;
-    error: (message: string, durationMs?: number) => void;
-    info: (message: string, durationMs?: number) => void;
+  showToast: (message: string, variant?: ToastVariant, durationMs?: number) => void;
+  success: (message: string, durationMs?: number) => void;
+  error: (message: string, durationMs?: number) => void;
+  info: (message: string, durationMs?: number) => void;
+  warning: (message: string, durationMs?: number) => void;
 }
-
 const ToastContext = createContext<ToastContextValue | null>(null);
-
-const TOAST_VARIANT_CLASSES: Record<ToastVariant, { dot: string; tone: string }> = {
-    success: { dot: "cw-status-success-dot", tone: "cw-status-success-text" },
-    error: { dot: "cw-status-failed-dot", tone: "cw-status-failed-text" },
-    info: { dot: "cw-status-running-dot", tone: "cw-status-running-text" },
+const TYPE_LABELS: Record<ToastVariant, string> = {
+  success: "Успішно", error: "Помилка", info: "Інформація", warning: "Увага",
 };
 
+function Toast({ item, dismiss }: { item: ToastItem; dismiss: (id: number) => void }) {
+  const timer = useRef<ToastTimer | null>(null);
+  useEffect(() => {
+    const clock = createToastTimer(() => dismiss(item.id), item.durationMs);
+    timer.current = clock;
+    const visibility = () => document.hidden ? clock.pause("hidden") : clock.resume("hidden");
+    visibility();
+    document.addEventListener("visibilitychange", visibility);
+    return () => {
+      document.removeEventListener("visibilitychange", visibility);
+      clock.dispose();
+      timer.current = null;
+    };
+  }, [item.id, item.durationMs, dismiss]);
+
+  return (
+    <div
+      className={styles.toast}
+      data-variant={item.variant}
+      onPointerEnter={() => timer.current?.pause("pointer")}
+      onPointerLeave={() => timer.current?.resume("pointer")}
+      onFocusCapture={() => timer.current?.pause("focus")}
+      onBlurCapture={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget)) timer.current?.resume("focus");
+      }}
+    >
+      <span className={styles.dot} aria-hidden="true" />
+      <p className={styles.message} role={item.variant === "error" ? "alert" : "status"} aria-atomic="true">
+        <span className={styles.srOnly}>{TYPE_LABELS[item.variant]}: </span>{item.message}
+      </p>
+      <button type="button" className={styles.close} onClick={() => dismiss(item.id)} aria-label="Закрити сповіщення">
+        <InteractionInkIcon><Icon name="close" size={18} /></InteractionInkIcon>
+      </button>
+    </div>
+  );
+}
+
+/** One viewport per route-group root; notifications never enter page layout. */
 export function ToastProvider({ children }: { children: ReactNode }) {
-    const [toasts, setToasts] = useState<ToastItem[]>([]);
-    const nextIdRef = useRef(1);
-
-    const removeToast = useCallback((id: number) => {
-        setToasts((prev) => prev.filter((toast) => toast.id !== id));
-    }, []);
-
-    const showToast = useCallback((message: string, variant: ToastVariant = "info", durationMs = 3200) => {
-        const id = nextIdRef.current++;
-        setToasts((prev) => [...prev, { id, message, variant, durationMs }]);
-        window.setTimeout(() => removeToast(id), durationMs);
-    }, [removeToast]);
-
-    const value = useMemo<ToastContextValue>(() => ({
-        showToast,
-        success: (message: string, durationMs?: number) => showToast(message, "success", durationMs),
-        error: (message: string, durationMs?: number) => showToast(message, "error", durationMs),
-        info: (message: string, durationMs?: number) => showToast(message, "info", durationMs),
-    }), [showToast]);
-
-    return (
-        <ToastContext.Provider value={value}>
-            {children}
-            <div className="fixed top-4 right-4 z-[110] space-y-2 pointer-events-none">
-                {toasts.map((toast) => {
-                    const tone = TOAST_VARIANT_CLASSES[toast.variant];
-                    return (
-                        <div
-                            key={toast.id}
-                            className="pointer-events-auto min-w-[260px] max-w-[420px] cw-surface-solid border cw-border rounded-xl cw-shadow px-3 py-2.5 flex items-start gap-2"
-                        >
-                            <span className={`mt-1 h-2 w-2 rounded-full shrink-0 ${tone.dot}`} />
-                            <p className={`text-sm leading-snug ${tone.tone}`}>{toast.message}</p>
-                            <button
-                                onClick={() => removeToast(toast.id)}
-                                className="ml-auto cw-icon-btn p-1 rounded-md"
-                                aria-label="Close"
-                                title="Close"
-                            >
-                                <InteractionInkIcon>
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                                </InteractionInkIcon>
-                            </button>
-                        </div>
-                    );
-                })}
-            </div>
-        </ToastContext.Provider>
-    );
+  const [toasts, setToasts] = useState<ToastItem[]>([]);
+  const nextId = useRef(1);
+  const dismiss = useCallback((id: number) => setToasts((items) => items.filter((item) => item.id !== id)), []);
+  const showToast = useCallback((message: string, variant: ToastVariant = "info", durationMs = 5000) => {
+    if (!message.trim()) return;
+    const item = { id: nextId.current++, message, variant, durationMs };
+    // Repeated results renew their own timer rather than flooding the viewport.
+    setToasts((items) => [...items.filter((one) => one.message !== message || one.variant !== variant), item]);
+  }, []);
+  const value = useMemo<ToastContextValue>(() => ({
+    showToast,
+    success: (message, duration) => showToast(message, "success", duration),
+    error: (message, duration) => showToast(message, "error", duration),
+    info: (message, duration) => showToast(message, "info", duration),
+    warning: (message, duration) => showToast(message, "warning", duration),
+  }), [showToast]);
+  return (
+    <ToastContext.Provider value={value}>
+      {children}
+      <div className={styles.viewport} aria-label="Сповіщення">
+        {toasts.map((item) => <Toast key={item.id} item={item} dismiss={dismiss} />)}
+      </div>
+    </ToastContext.Provider>
+  );
 }
 
 export function useToast() {
-    const context = useContext(ToastContext);
-    if (!context) {
-        throw new Error("useToast must be used within ToastProvider");
-    }
-    return context;
+  const context = useContext(ToastContext);
+  if (!context) throw new Error("useToast must be used within ToastProvider");
+  return context;
 }

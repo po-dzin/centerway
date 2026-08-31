@@ -1060,30 +1060,17 @@
   position: relative;
 }
 
-/* The page head's two controls, in the same shape as the step arrows and the
-   view switch under them — one icon idiom on this page, not three.
-
-   THE PRIMARY KEEPS ITS GOLD. Both act on the list, but they are not the same
-   offer: importing is a side door for a file you already have, creating a
-   course is what this page is for. Made bare like its neighbour, the one action
-   an author comes here to take would be a grey glyph in a corner. Squared, so
-   the gold is a token rather than a banner. */
-.headIconAction {
+/* Import is a secondary utility; creation remains the page's sole labelled
+   primary action. Both use the shared button and ink primitives. */
+.headImportAction {
   composes: chromeBare from "../platform/PlatformButtons.module.css";
   composes: square from "../platform/PlatformButtons.module.css";
   position: relative;
 }
 
-.headPrimaryIconAction {
+.headPrimaryAction {
   composes: primary from "../platform/PlatformButtons.module.css";
-  composes: square from "../platform/PlatformButtons.module.css";
-  min-width: var(--ds-touch-target-min);
-}
-
-.headIconAction:hover .iconInkRing,
-.headIconAction:focus-visible .iconInkRing {
-  opacity: var(--cw-ink-hover-opacity);
-  transform: translate(-50%, -50%) scale(var(--cw-ink-hover-scale)) rotate(-4deg);
+  composes: hug from "../platform/PlatformButtons.module.css";
 }
 
 /* ── The ink ring, once ────────────────────────────
@@ -1132,8 +1119,6 @@
 .toolTab:focus-visible .inkRing,
 .toolClose:hover .inkRing,
 .toolClose:focus-visible .inkRing,
-.viewOption:hover .inkRing,
-.viewOption:focus-visible .inkRing,
 .menuTrigger:hover .inkRing,
 .menuTrigger:focus-visible .inkRing,
 .slugEditAction:hover .inkRing,
@@ -1145,7 +1130,6 @@
 }
 
 .toolTab[aria-pressed="true"] .inkRing,
-.viewOption[aria-pressed="true"] .inkRing,
 .menuTrigger[aria-expanded="true"] .inkRing {
   opacity: 0.9;
   transform: translate(-50%, -50%) scale(1) rotate(-4deg);
@@ -1344,17 +1328,9 @@
 
 .contentsAdd,
 .contentsAddModule {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--cw-space-xs);
-  min-height: var(--ds-touch-target-min);
-  padding: 0 var(--cw-space-sm);
-  border: 0;
-  background: transparent;
-  color: var(--cw-platform-accent-strong, var(--cw-platform-accent));
-  font: inherit;
+  composes: base secondary hug from "../platform/PlatformButtons.module.css";
+  margin-block: var(--cw-space-xs);
   text-align: start;
-  cursor: pointer;
   justify-self: start;
 }
 
@@ -1423,21 +1399,10 @@
    the course view and the lesson editor print a title and a sentence too, and
    those are sections inside a document rather than the top of a list.  */
 
-/* The list's own bar: how many, and how to look at them. It belongs to the
-   content, not to the app chrome — a view toggle in the header competed with
-   the brand for the same row and lost the wordmark to make space. */
-.listBar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--cw-space-sm);
-}
-
-.listCount {
-  color: var(--cw-platform-muted);
-  font-size: 0.85rem;
-}
-
+/* Result state has its own quiet line after search and narrowing: the count
+   answers «what is on this shelf now», the view switch answers «how do I see
+   it». They are deliberately below creation/import, which answer «change the
+   collection», so the five controls no longer look interchangeable. */
 .pageTitle {
   margin: 0;
   font-family: var(--cw-font-editorial);
@@ -1737,41 +1702,6 @@
   line-height: 1;
 }
 
-/* ── View switch ──────────────────────────────────── */
-
-/* Two icon targets and one ink mark — no track, no plate.
-
-   This control carried TWO recipes arguing with each other, both with a
-   comment defending itself: a segmented switch on a sunk track with the
-   pressed option raised on its own surface, and — 2,700 lines lower in this
-   same file, unconditionally — the ink version that overrode the track, the
-   plate and the shadow. The later one won by position, which is not a
-   decision. Ink wins on the platform's own rule: hover and select are one ink
-   stroke in two strengths, never a highlight and never a second plate. So the
-   track is gone rather than overridden.
-
-   `chromeBare`, not `chrome`: the option paints nothing at rest and the ring
-   IS the mark. `square` because the content is a 20px glyph — chrome's inline
-   padding is sized for a label beside one and draws a wide empty box without
-   it. The touch minimum still applies: a two-state icon switch is something a
-   thumb has to hit. */
-.viewSwitch {
-  display: inline-flex;
-  align-items: center;
-  gap: var(--cw-space-sm);
-}
-
-.viewOption {
-  composes: chromeBare from "../platform/PlatformButtons.module.css";
-  composes: square from "../platform/PlatformButtons.module.css";
-  position: relative;
-  color: var(--cw-platform-muted);
-}
-
-.viewOption[aria-pressed="true"] {
-  color: var(--cw-platform-text);
-}
-
 .srOnly {
   position: absolute;
   width: 1px;
@@ -1955,11 +1885,7 @@
    different languages. It is a scrim now: see the "one surface, one mark" note
    in PlatformButtons.module.css for the rule this obeys, and for why the
    recipe lives here rather than as a composable class there. */
-/* The offsets are measured to the PAINTED plate, not to the hit box. The plate
-   is inset by `--cw-space-xs` inside the 3rem target (see below), so the root
-   pulls back by the same amount and the chip still sits a `--cw-space-md`-ish
-   margin off the cover's corner — the position the eye reads did not move when
-   the paint shrank. */
+/* The target stays 3rem; the paint follows the smaller optical hover circle. */
 .courseCard > .menuRoot {
   position: absolute;
   inset-block-start: calc(var(--cw-space-md) - var(--cw-space-2xs));
@@ -1977,16 +1903,15 @@
    THE PAINT IS NOT THE TARGET (2026-08-29). It used to be: the scrim filled
    the whole 3rem control in a full pill, so a photograph carried a dark COIN
    the size of a primary button, for a control that is a secondary way into
-   four menu items. Two things were wrong at once — the size, and the round.
-   A circle is the one shape this system does not draw for a control; every
-   other icon-only chip is a soft rect, and a pill here read as a foreign
-   object sitting on the cover.
+   four menu items. The problem was not a circle itself, but a soft rect nested
+   under a separate circular hover mark: two geometries competing on the same
+   small control.
 
    So the target keeps its 3rem — a finger still gets the floor the contract
-   owns, and shrinking it would have been buying looks with reachability —
-   while the scrim is drawn INSIDE it as a soft rect. The plate is what the
-   eye measures; the extra ring of transparent hit area around it costs the
-   cover nothing, because nothing is painted there. */
+   owns, and shrinking it would have been buying looks with reachability. The
+   scrim now uses the hover ring's optical diameter, not its SVG viewport or
+   selected size. The sprite occupies about 82% of its 36-unit viewBox.
+   The shared ink drawing and its hover/selected animation stay unchanged. */
 .courseCard > .menuRoot > .menuTrigger {
   padding-inline: 0;
   color: var(--cw-mat-inverse-text);
@@ -2003,8 +1928,11 @@
 .courseCard > .menuRoot > .menuTrigger::before {
   content: "";
   position: absolute;
-  inset: var(--cw-space-xs);
-  border-radius: var(--cw-radius-inset);
+  inset: 50% auto auto 50%;
+  inline-size: var(--cw-ink-hover-paint-size);
+  block-size: var(--cw-ink-hover-paint-size);
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
   background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
   pointer-events: none;
 }
@@ -2119,21 +2047,15 @@
    is asking the reader to hear. It is a sibling of the picture rather than a
    child for exactly that reason. */
 .coverPill {
+  composes: mediaBadge from "../platform/PlatformSurfaces.module.css";
   position: absolute;
   inset-block-start: var(--cw-space-2xs);
   inset-inline-start: var(--cw-space-2xs);
-  display: inline-flex;
-  align-items: center;
-  padding: var(--cw-space-2xs) var(--cw-space-xs);
-  border-radius: var(--cw-radius-inset);
-  background-color: color-mix(in srgb, var(--cw-mat-scrim-ink) 76%, transparent);
-  color: var(--cw-mat-inverse-text);
   font-family: var(--cw-font-data);
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  white-space: nowrap;
 }
 
 /* Published is still the only state that gets colour, and for the same reason
@@ -2146,6 +2068,7 @@
    still clears 4.5:1, and it is enough to tell the two states apart at a
    glance — which is all the colour was ever asked to do. */
 .coverPillPublished {
+  composes: mediaBadge from "../platform/PlatformSurfaces.module.css";
   composes: coverPill;
   background-color: color-mix(
     in srgb,
@@ -4214,6 +4137,12 @@
   border-image: var(--cw-rule-fade-x);
 }
 
+/* Page is a dedicated workspace, not a folded setting below a course header. */
+.coursePageForm {
+  display: grid;
+  gap: var(--cw-space-lg);
+}
+
 .courseSettingSection {
   display: grid;
   gap: var(--cw-space-sm);
@@ -5468,6 +5397,11 @@
   padding-block-start: var(--cw-space-lg);
   border-block-start: 1px solid var(--builder-rule);
   border-image: var(--cw-rule-fade-x);
+}
+
+.coursePageSettingsPanel {
+  display: grid;
+  gap: var(--cw-space-md);
 }
 
 .releaseWorkspace {

@@ -23,6 +23,7 @@ export function PlatformLoadingState({
     <section
       className={styles.platformLoadingState}
       data-cw-material="matte"
+      data-cw-edge="none"
       role="status"
       aria-live="polite"
       aria-busy="true"

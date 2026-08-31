@@ -22,7 +22,7 @@ import Link from "next/link";
 import { courseThemeAttributes, inlineToPlainText } from "@/lms-core";
 import { Icon } from "@/components/Icon";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
-import { useChromeReveal } from "@/components/platform/layout/useChromeReveal";
+import { ReaderChrome } from "./ReaderChrome";
 import { lessonPagerLayout } from "@/lib/lms/lessonNavigation";
 import { BlockRenderer } from "./LessonBlocks";
 import { CourseContentsDrawer } from "./CourseContentsDrawer";
@@ -83,13 +83,6 @@ export function LessonView({
   const [completed, setCompleted] = useState(false);
   const [pending, setPending] = useState(false);
   const [contentsOpen, setContentsOpen] = useState(false);
-  /* The floating chrome rides the same reveal the topbar used to — see
-     `useChromeReveal` for why direction and not depth. Locked open while the
-     contents drawer is up: the drawer is opened FROM this cluster, and a
-     cluster that walked off under it would leave the dialog hanging off
-     nothing. */
-  const chromeRef = useRef<HTMLDivElement | null>(null);
-  const { hidden: chromeHidden } = useChromeReveal(true, chromeRef, { locked: contentsOpen });
   const [readingRatio, setReadingRatio] = useState(0);
   const bodyRef = useRef<HTMLDivElement>(null);
   const previousLinkRef = useRef<HTMLAnchorElement>(null);
@@ -392,6 +385,7 @@ export function LessonView({
   if (state.status === "loading") {
     return (
       <main className={styles.wrap} data-cw-platform-template="learn-lesson">
+        <ReaderChrome backHref={surfaceHref(`/learn/${courseSlug}${previewQuery}`)} />
         <PlatformLoadingState label="Бібліотека" title="Завантажуємо урок…" detail="Відновлюємо матеріали і ваш стан проходження." />
       </main>
     );
@@ -400,12 +394,7 @@ export function LessonView({
   if (state.status === "error") {
     return (
       <main className={styles.wrap} data-cw-platform-template="learn-lesson">
-        <div className={styles.lessonTopBar}>
-          <Link className={styles.backButton} href={surfaceHref(`/learn/${courseSlug}${previewQuery}`)}>
-            <Icon name="arrow-left" size={18} />
-            <span>До курсу</span>
-          </Link>
-        </div>
+        <ReaderChrome backHref={surfaceHref(`/learn/${courseSlug}${previewQuery}`)} />
         <LmsNotice failure={state.error} onRetry={load} />
       </main>
     );
@@ -452,29 +441,11 @@ export function LessonView({
           column `inert`, and these controls belong to the column it is covering.
           Nothing on the way down is `position: relative`, so the fixed layer is
           measured against the viewport as intended. */}
-      <div className={styles.readerChrome} ref={chromeRef} data-hidden={chromeHidden ? "true" : undefined}>
-        {/* The crumb row this replaces named three levels and only one of them
-            was ever pressed. The lesson was the last step and not a link; the
-            shelf is one tap on from the course. What is left is the tap that
-            was doing the work.
-
-            NO LABEL ON IT (2026-08-29). It carried the course title for one
-            revision and that was worse than the row it replaced: a course can
-            be called anything, so on a phone the pill was a truncated fragment
-            ending in an ellipsis — a name you cannot read, in the widest object
-            on the screen, over the first line of the lesson. An arrow pointing
-            back needs no caption; the course's name is one tap away, on the
-            course. The full label lives in `aria-label`, where a screen reader
-            gets it without the layout paying for it. */}
-        <Link
-          className={styles.readerBack}
-          href={surfaceHref(`/learn/${courseSlug}${previewQuery}`)}
-          aria-label={`До курсу: ${data.courseTitle}`}
-        >
-          <Icon name="arrow-left" size={18} />
-        </Link>
-
-        <div className={styles.readerTools}>
+      <ReaderChrome
+        backHref={surfaceHref(`/learn/${courseSlug}${previewQuery}`)}
+        backLabel={`До курсу: ${data.courseTitle}`}
+        locked={contentsOpen}
+        tools={<>
           {/* A bookmark is about the LESSON, so it sits with the lesson's own
               controls rather than in the text. It is not progress and never
               becomes progress: «пройдено» is a claim about doing the work,
@@ -516,8 +487,8 @@ export function LessonView({
           >
             <Icon name="menu" size={18} />
           </button>
-        </div>
-      </div>
+        </>}
+      />
 
       {/* Position in the course sits next to the duration, so "where am I / how
           long is this" is answered in one glance. It is a CAPTION now rather

@@ -16,7 +16,7 @@ import styles from "./PlatformShellStyles";
  * out which application they were standing in.
  *
  * THE LABEL IS THE APPLICATION, not a repeat of the title. «Бібліотека» over
- * «Мої курси», «Майстерня» over «Курси» — the pair reads as address then
+ * «Мої матеріали», «Майстерня» over «Матеріали» — the pair reads as address then
  * subject. Where the title alone is the whole answer the label may be omitted;
  * where it is present it is the same caption idiom the loading state and the
  * cabinet's sections already use.

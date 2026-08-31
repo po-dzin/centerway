@@ -1,5 +1,7 @@
 "use client";
 
+import { useToast } from "@/components/ToastProvider";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, useSyncExternalStore } from "react";
@@ -8,7 +10,8 @@ import { courseThemeAttributes, moveItem } from "@/lms-core";
 import { BuilderFailureNotice, BuilderNotice, BuilderShell } from "./BuilderShell";
 import { BuilderMenu } from "./BuilderMenu";
 import { BuilderSheet } from "./BuilderSheet";
-import { HandGraphic, Icon } from "@/components/Icon";
+import { Icon } from "@/components/Icon";
+import { InteractionInkIcon } from "@/components/platform/InteractionInk";
 import {
   commitCourseImport,
   createCourse,
@@ -35,6 +38,7 @@ import {
   type ShelfQuery,
 } from "@/components/platform/cabinet/ShelfFilter";
 import filterStyles from "@/components/platform/cabinet/ShelfFilter.module.css";
+import { ShelfPresentation, ShelfResultBar } from "@/components/platform/cabinet/ShelfPresentation";
 
 /* ONE SET OF WORDS FOR THE THREE SUBJECTS. The workshop speaks Ukrainian only,
    but the subjects a course can be about are not the workshop's to name — they
@@ -215,7 +219,7 @@ export function BuilderCourseList() {
   const wide = useSyncExternalStore(subscribeToWidth, () => window.matchMedia(WIDE).matches, () => false);
   const view: CourseView = wide ? stored : "rows";
   const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
+  const toast = useToast();
   const [creating, setCreating] = useState(false);
   const [importing, setImporting] = useState(false);
   /**
@@ -304,11 +308,10 @@ export function BuilderCourseList() {
 
     setState({ ...state, courses: next });
     setBusy(true);
-    setNote(null);
     const result = await reorderCourses(next.map((course) => course.slug));
     setBusy(false);
     if (!result.ok) {
-      setNote(result.detail ?? "Не вдалося зберегти порядок.");
+      toast.error(result.detail ?? "Не вдалося зберегти порядок.");
       await load();
     }
   }
@@ -317,12 +320,11 @@ export function BuilderCourseList() {
     if (busy) return;
     setBusy(true);
     setCreating(true);
-    setNote(null);
     const result = await createCourse();
     setBusy(false);
     if (!result.ok) {
       setCreating(false);
-      setNote(result.detail ?? "Не вдалося створити курс.");
+      toast.error(result.detail ?? "Не вдалося створити курс.");
       return;
     }
     router.push(`/build/${result.data.slug}`);
@@ -456,11 +458,10 @@ export function BuilderCourseList() {
   async function exportOne(slug: string) {
     if (busy) return;
     setBusy(true);
-    setNote(null);
     const result = await exportCourseFile(slug);
     setBusy(false);
     if (!result.ok) {
-      setNote(result.detail ?? "Не вдалося експортувати курс.");
+      toast.error(result.detail ?? "Не вдалося експортувати курс.");
       return;
     }
 
@@ -470,7 +471,7 @@ export function BuilderCourseList() {
     link.download = result.data.filename;
     link.click();
     URL.revokeObjectURL(url);
-    setNote(`Експортовано ${result.data.filename}`);
+    toast.success(`Експортовано ${result.data.filename}`);
   }
 
   if (state.status === "loading") {
@@ -515,51 +516,44 @@ export function BuilderCourseList() {
           this one had no application label at all, a title a size larger, and
           two wide text buttons where the shelf had nothing.
 
-          THE ACTIONS ARE ICONS NOW. They act on the LIST, and the list already
-          carries a bar of icon controls a few lines below (the view switch), so
-          two full-width words above it made the head read as the loudest thing
-          on a page whose subject is the courses. Both keep a tooltip and an
-          accessible name — an icon-only control that says nothing is a rebus. */}
-      {/* NO LEAD HERE, and the shelf keeps its own. Four statements about one
-          list were stacked at the top of this page — the application
-          («Майстерня»), the page («Курси»), the sentence («доступні вам для
-          редагування») and the count («9 курсів») — and the third is the one
-          that adds nothing: «available to you for editing» is what Майстерня
-          MEANS. The learner's shelf keeps its lead because there the sentence
-          carries a fact the title cannot («відкриваються з того уроку, на якому
-          ви зупинились»). */}
+          Creation remains the sole labelled primary action. Import is a
+          secondary utility and therefore uses the shared icon-only control. */}
       <PlatformPageHead
         label="Майстерня"
-        title="Курси"
+        title="Матеріали"
+        lead="Створюйте, редагуйте та публікуйте навчальні матеріали."
         actions={
           state.canCreate ? (
             <>
               {!importing ? (
                 <button
-                  className={styles.headIconAction}
+                  className={styles.headImportAction}
                   type="button"
-                  title="Імпортувати JSON"
+                  data-cw-ink-control
+                  aria-label="Імпортувати курс"
+                  title="Імпортувати курс"
                   onClick={() => {
                     setCreating(false);
                     setImporting(true);
                   }}
                 >
-                  <Icon name="import" size={20} label="Імпортувати JSON" />
-                  <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
+                  <InteractionInkIcon>
+                    <Icon name="import" size={18} aria-hidden="true" />
+                  </InteractionInkIcon>
                 </button>
               ) : null}
               {!creating ? (
                 <button
-                  className={styles.headPrimaryIconAction}
+                  className={styles.headPrimaryAction}
                   type="button"
-                  title={busy ? "Створюємо…" : "Новий курс"}
                   onClick={() => {
                     setImporting(false);
                     void create();
                   }}
                   disabled={busy}
                 >
-                  <Icon name="plus" size={20} label={busy ? "Створюємо…" : "Новий курс"} />
+                  <Icon name="plus" size={18} aria-hidden="true" />
+                  {busy ? "Створюємо…" : "Новий курс"}
                 </button>
               ) : null}
             </>
@@ -588,14 +582,13 @@ export function BuilderCourseList() {
             onCancel={() => setImporting(false)}
             onImported={async (slug) => {
               setImporting(false);
-              setNote(`Курс імпортовано як чернетку: ${slug}`);
+              toast.success(`Курс імпортовано як чернетку: ${slug}`);
               await load();
             }}
           />
         ) : null}
       </BuilderSheet>
 
-      {note ? <p className={styles.noticeLine}>{note}</p> : null}
 
       {state.courses.length === 0 ? (
         <BuilderNotice
@@ -625,14 +618,17 @@ export function BuilderCourseList() {
             />
           ) : null}
           {wide ? (
-            <div className={styles.listBar}>
-              <span className={styles.listCount}>
-                {shown.length === state.courses.length
-                  ? `${state.courses.length} ${plural(state.courses.length, "курс", "курси", "курсів")}`
-                  : `${shown.length} з ${state.courses.length}`}
-              </span>
+            <ShelfResultBar
+              label="Матеріали"
+              filtering={filtering}
+              count={
+                shown.length === state.courses.length
+                  ? SHELF_COPY.materialsCount(state.courses.length)
+                  : `${shown.length} з ${state.courses.length}`
+              }
+            >
               <ViewSwitch view={stored} onChange={chooseView} />
-            </div>
+            </ShelfResultBar>
           ) : null}
           {shown.length === 0 ? (
             <p className={filterStyles.noMatch}>{SHELF_COPY.shelfNoMatch}</p>
@@ -807,38 +803,15 @@ function ImportPanel({ onCancel, onImported }: { onCancel: () => void; onImporte
 
 function ViewSwitch({ view, onChange }: { view: CourseView; onChange: (next: CourseView) => void }) {
   return (
-    <div className={styles.viewSwitch} role="group" aria-label="Вигляд списку">
-      {/* Glyphs now, and they exist: `view-rows` / `view-cards` were added to
-          the baked set for exactly this control (scripts/lib/icon-glyphs.mjs).
-          Words were a stand-in for the set not having them — the earlier note
-          here was right that `menu` and the dot/orbit layer both meant something
-          else, and the answer to a missing glyph is to draw it, not to set a
-          toolbar in prose.
-
-          The label survives as the accessible name and as the tooltip: a
-          two-state icon switch is unreadable to a screen reader without one, and
-          the pointer user gets the same word on hover. */}
-      <button
-        className={styles.viewOption}
-        type="button"
-        aria-pressed={view === "rows"}
-        title="Рядки"
-        onClick={() => onChange("rows")}
-      >
-        <Icon name="view-rows" size={20} label="Рядки" />
-        <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
-      </button>
-      <button
-        className={styles.viewOption}
-        type="button"
-        aria-pressed={view === "grid"}
-        title="Картки"
-        onClick={() => onChange("grid")}
-      >
-        <Icon name="view-cards" size={20} label="Картки" />
-        <HandGraphic className={styles.iconInkRing} name="ink-ring" size={42} />
-      </button>
-    </div>
+    <ShelfPresentation
+      label="Вигляд списку"
+      value={view}
+      onChange={onChange}
+      options={[
+        { value: "rows", label: "Рядки", icon: "view-rows" },
+        { value: "grid", label: "Картки", icon: "view-cards" },
+      ]}
+    />
   );
 }
 
@@ -1050,6 +1023,7 @@ function EntryControls({ course, index, total, reorderable, busy, pending, onMov
         },
         {
           label: "Експортувати JSON",
+          icon: "export",
           hint: "Завантажити переносимий знімок поточної версії курсу",
           onSelect: () => onExport(course.slug),
           disabled: busy,
@@ -1058,6 +1032,7 @@ function EntryControls({ course, index, total, reorderable, busy, pending, onMov
           ? [
               {
                 label: "Зняти з публікації",
+                icon: "unpublish" as const,
                 hint: "Курс перестане приймати нових учнів; ті, хто вже проходить його, збережуть доступ",
                 onSelect: () => onAsk(course.slug, "unpublish"),
                 disabled: busy,

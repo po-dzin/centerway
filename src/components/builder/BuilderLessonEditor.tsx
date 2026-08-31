@@ -1,5 +1,7 @@
 "use client";
 
+import { useToast } from "@/components/ToastProvider";
+
 import { Fragment, useCallback, useEffect, useRef, useState, type DragEvent } from "react";
 
 import { HandGraphic, Icon } from "@/components/Icon";
@@ -96,7 +98,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const history = useCourseHistory();
   const { course, dirty } = history;
   const [busy, setBusy] = useState(false);
-  const [note, setNote] = useState<string | null>(null);
+  const toast = useToast();
   const [contentsOpen, setContentsOpen] = useState(false);
   const [structureCollapsed, setStructureCollapsed] = useState(false);
   /**
@@ -202,7 +204,6 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       // Coalesced by the path being written: a burst of typing in one field is
       // one undo, and moving to the next field starts a new one.
       history.edit(full.join("."), (current) => writePath(current, full, value));
-      setNote(null);
     },
     [history, located]
   );
@@ -224,7 +225,6 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       history.edit(null, (current) =>
         writePath(current, path, renumberSteps(next(readPath(current, path) as LessonBlock[])))
       );
-      setNote(null);
     },
     [history, located]
   );
@@ -295,7 +295,6 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   };
 
   const persistCourse = useCallback(async (snapshot: Course) => {
-    setNote(null);
     if (draftGeneration.current === null) {
       return { ok: false as const, message: "Курс ще завантажується. Спробуйте за мить." };
     }
@@ -348,11 +347,10 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     async (file: File) => {
       if (!located || working) return;
       setBusy(true);
-      setNote(null);
       const result = await importLessonFiles(slug, [file]);
       setBusy(false);
       if (!result.ok || !result.data.lessons[0]) {
-        setNote(lessonDocumentFailureCopy(result.ok ? undefined : result.detail, "Не вдалося імпортувати документ в урок."));
+        toast.error(lessonDocumentFailureCopy(result.ok ? undefined : result.detail, "Не вдалося імпортувати документ в урок."));
         return;
       }
 
@@ -368,9 +366,9 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
           blocks: imported.blocks,
         });
       });
-      setNote(`Імпортовано «${file.name}». Перевірте урок і збережіть зміни.`);
+      toast.success(`Імпортовано «${file.name}». Перевірте урок і збережіть зміни.`);
     },
-    [history, located, slug, working]
+    [history, located, slug, working, toast]
   );
 
   /** Flushes the current snapshot and continues without asking a question. */
@@ -385,7 +383,6 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
   const editModules = useCallback(
     (next: (course: Course) => CourseModule[]) => {
       history.edit(null, (current) => ({ ...current, modules: renumber(next(current)) }));
-      setNote(null);
     },
     [history]
   );
@@ -493,14 +490,14 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
     if (!draftDecision || !serverCourse.current) return;
     history.recover(serverCourse.current, draftDecision.draft.course);
     setDraftDecision(null);
-    setNote("Локальну копію відновлено. Вона збережеться як поточна версія.");
+    toast.success("Локальну копію відновлено. Вона збережеться як поточна версія.");
   };
 
   const discardDraft = () => {
     if (!draftDecision) return;
     void clearDurableCourseDraft(draftDecision.draft.courseId).catch(() => undefined);
     setDraftDecision(null);
-    setNote("Залишено актуальну серверну версію.");
+    toast.success("Залишено актуальну серверну версію.");
   };
 
   const trail = [
@@ -640,7 +637,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
           onNavigate={go}
           onAddLesson={addLessonToModule}
           onAddModule={addCourseModule}
-          editing={{ onModules: editModules, onNote: setNote, onLeaveCurrent: setLeaveFor }}
+          editing={{ onModules: editModules, onNote: toast.warning, onLeaveCurrent: setLeaveFor }}
         />
       }
       asideOpen={contentsOpen}
@@ -826,7 +823,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
           <>
             <BuilderHistory history={history} disabled={working} />
             <span className={styles.saveState} role="status" aria-live="polite">
-              {note ?? autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
+              {autosave.message ?? (dirty ? "Зміни збережуться автоматично" : "Усі зміни збережено")}
             </span>
             <button className={styles.commitAction} type="button" onClick={() => void save()} disabled={working || !dirty}>
               {autosave.saving ? "Зберігаємо…" : "Зберегти"}

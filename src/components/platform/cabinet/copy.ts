@@ -23,6 +23,9 @@ export type CabinetCopy = {
 
   learningTitle: string;
   learningLabel: string;
+  /** The common collection noun in the library and workshop result band. */
+  materialsLabel: string;
+  materialsCount: (count: number) => string;
   /** The stat over the count in the room. Not «Бібліотека» — that is the
       library ROUTE, and the count standing beside «Доша» is about what this
       account holds, not about where to go and read it. */
@@ -45,6 +48,8 @@ export type CabinetCopy = {
      written beside the filter. */
   shelfSearchLabel: string;
   shelfSearchPlaceholder: string;
+  /** The compact entry into the multiple-subject menu. */
+  shelfFilterAction: string;
   /** The accessible name of the category row — a group of controls, not a heading. */
   shelfFilterLabel: string;
   /** The category row's resting choice: no narrowing at all. */
@@ -129,25 +134,28 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       startAction: "Start the course",
       openCourseMap: "Contents",
       reviewAction: "Open again",
-      allCourses: "All my courses",
+      allCourses: "All my materials",
 
-      learningTitle: "My courses",
+      learningTitle: "My materials",
       learningLabel: "Library",
+      materialsLabel: "Materials",
+      materialsCount: (count) => `${count} ${count === 1 ? "material" : "materials"}`,
       coursesLabel: "Courses",
-      learningLead: "Courses you have access to. Open one and it resumes at the lesson you stopped on.",
+      learningLead: "Courses and other materials you have access to. Courses resume at the lesson you stopped on.",
       shelfViewLabel: "Shelf view",
       shelfViewCards: "Cards",
       shelfViewRows: "List",
       shelfViewRoom: "Room",
       courseCategories: { movement: "Movement", nutrition: "Nutrition", cleansing: "Cleansing" },
-      shelfSearchLabel: "Search your courses",
-      shelfSearchPlaceholder: "Find a course",
+      shelfSearchLabel: "Search your materials",
+      shelfSearchPlaceholder: "Find material",
+      shelfFilterAction: "Filters",
       shelfFilterLabel: "Filter by subject",
       shelfFilterAll: "All",
       shelfNoMatch: "Nothing found. Try another name or subject.",
-      learningLoadingTitle: "Loading your courses…",
+      learningLoadingTitle: "Loading your materials…",
       learningLoadingLead: "Restoring access, progress and your next lesson.",
-      learningEmptyTitle: "No courses in this profile yet",
+      learningEmptyTitle: "No materials in this profile yet",
       learningEmptyLead: "Once a program is purchased, it opens here — with lessons, progress and the next step.",
       browsePrograms: "Browse programs",
       browseProducts: "See products",
@@ -207,25 +215,28 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     startAction: "Почати курс",
     openCourseMap: "Зміст",
     reviewAction: "Відкрити знову",
-    allCourses: "Усі мої курси",
+    allCourses: "Усі мої матеріали",
 
-    learningTitle: "Мої курси",
+    learningTitle: "Мої матеріали",
     learningLabel: "Бібліотека",
+    materialsLabel: "Матеріали",
+    materialsCount: (count) => `${count} ${ukPlural(count, "матеріал", "матеріали", "матеріалів")}`,
     coursesLabel: "Курси",
-    learningLead: "Курси, до яких у вас є доступ. Відкриваються з того уроку, на якому ви зупинились.",
+    learningLead: "Курси й інші матеріали, до яких у вас є доступ. Курси відкриваються з того уроку, на якому ви зупинились.",
     shelfViewLabel: "Вигляд полиці",
     shelfViewCards: "Картки",
     shelfViewRows: "Список",
     shelfViewRoom: "Кімната",
     courseCategories: { movement: "Рух", nutrition: "Харчування", cleansing: "Очищення" },
-    shelfSearchLabel: "Пошук по ваших курсах",
-    shelfSearchPlaceholder: "Знайти курс",
+    shelfSearchLabel: "Пошук по ваших матеріалах",
+    shelfSearchPlaceholder: "Знайти матеріал",
+    shelfFilterAction: "Фільтри",
     shelfFilterLabel: "Фільтр за розділом",
     shelfFilterAll: "Усі",
     shelfNoMatch: "Нічого не знайшлось. Спробуйте іншу назву або розділ.",
-    learningLoadingTitle: "Завантажуємо ваші курси…",
+    learningLoadingTitle: "Завантажуємо ваші матеріали…",
     learningLoadingLead: "Відновлюємо доступ, поступ і ваш наступний урок.",
-    learningEmptyTitle: "У кабінеті ще немає курсів",
+    learningEmptyTitle: "У кабінеті ще немає матеріалів",
     learningEmptyLead: "Після придбання програма відкривається тут — з уроками, поступом і наступним уроком.",
     browsePrograms: "Подивитися програми",
     browseProducts: "Подивитися продукти",
