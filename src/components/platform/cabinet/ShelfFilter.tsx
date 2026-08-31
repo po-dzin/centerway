@@ -27,11 +27,16 @@ import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import type { CabinetCopy } from "./copy";
 import styles from "./ShelfFilter.module.css";
 
+/**
+ * A shelf camera can stand before a concrete section or before the unfiltered
+ * overview. This is intentionally broader than the query below: `all` is a
+ * navigation destination, never a selected checkbox.
+ */
+export type ShelfCategory = CourseCategory | "all";
+
 /** Several subjects can describe the same material; an empty set means no
     category narrowing. */
-export type ShelfCategory = CourseCategory;
-
-export type ShelfQuery = { text: string; categories: readonly ShelfCategory[] };
+export type ShelfQuery = { text: string; categories: readonly CourseCategory[] };
 
 export const EMPTY_SHELF_QUERY: ShelfQuery = { text: "", categories: [] };
 
