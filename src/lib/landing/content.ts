@@ -59,7 +59,7 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
       title: "Short-Перезавантаження",
       subtitle:
         "3 комплекси вправ. Швидко відновлюють тіло та розум. Всього 15 хвилин на день.",
-      lead: "Інтегруйте цей метод у своє життя:",
+      lead: "Інтегруйте цей метод в своє життя і ви отримаєте:",
       chips: [
         "Зниження стресу та покращення сну",
         "Збільшення рівня енергії",
@@ -79,7 +79,7 @@ export const LANDING_CONTENT: Record<StaticLandingProduct, LandingProductContent
         preface: "Почніть вже сьогодні 👇",
         old: null,
         current: "795 грн",
-        notes: ["500+ людей вже придбали курс"],
+        notes: ["500+ людей вже придбали курс і почали відновлення"],
       },
     },
     utility: {

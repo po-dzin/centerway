@@ -202,7 +202,19 @@ export function LearnShelfClient() {
                 /* The room takes the PREDICATE, not the narrowed list: its wall
                    is laid out from every course and only dims what the query
                    left out. See `LearnRoomView`'s own note on why. */
-                <LearnRoomView courses={shelf} copy={cab} match={filtering ? match : undefined} />
+                /* And the CATEGORY, because the room's camera and the subject
+                   chips above it are one choice: walking up to a shelf presses
+                   that chip, and «All» is the way back to the middle of the
+                   room. Owned here rather than in the room for the same reason
+                   the query is — the chips are the control, the wall is one of
+                   the things that answers it. */
+                <LearnRoomView
+                  courses={shelf}
+                  copy={cab}
+                  match={filtering ? match : undefined}
+                  category={query.category}
+                  onCategory={(next) => setQuery((prev) => ({ ...prev, category: next }))}
+                />
               ) : visible.length === 0 ? (
                 <p className={filterStyles.noMatch}>{cab.shelfNoMatch}</p>
               ) : (

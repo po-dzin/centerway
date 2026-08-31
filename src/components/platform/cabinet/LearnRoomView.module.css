@@ -16,8 +16,8 @@
  *     replaced by one fixed photographed wall (room-wall-matte.webp), since
  *     the console that chose between six wall textures was a designer's
  *     tuning panel, not a product surface;
- *   - camera zoom into a shelf, and the open-book "spread" reading view —
- *     next step. A spine click navigates straight to the course for now.
+ *   - the open-book "spread" reading view — next step. The camera now walks
+ *     up to a shelf; a spine click still navigates straight to the course.
  *
  * PAPER IS ITS OWN REGISTER, DELIBERATELY NOT THE PLATFORM'S LIGHT THEME.
  * The prototype's own note: "no green — green is the platform's tone, not
@@ -66,6 +66,11 @@
   --room-select-tint: color-mix(in srgb, var(--room-ink-value) 15%, var(--room-paper-lit));
   --room-ink-w: 1;
   --room-wall-shade: 0.55;
+  /* HOW LONG A STEP TAKES. One number, shared by the camera and by everything
+     that has to leave the frame with it — see CAMERA_MS in
+     `LearnRoomView.tsx`, which is the same number on the other side of the
+     wall (it is what arms and disarms `will-change`). */
+  --room-walk: 1200ms;
 
   position: relative;
   isolation: isolate;
@@ -162,6 +167,49 @@
   }
 }
 
+/* ---------- the camera ----------
+   ONE ELEMENT MOVES, AND IT CARRIES THE ROOM. Wall, light, cuts and books all
+   ride inside it, so walking up to a shelf is a single composited transform
+   and not a hundred boxes being laid out again. The stage around it does not
+   move: it is what the room is measured from.
+
+   The origin is the stage's own centre, which is also what `frameCase`
+   solves against — if these two ever disagree the camera frames one shelf and
+   shows another, so they are one decision written in two places and this
+   comment is the join. */
+.camera {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+  transform: translate3d(var(--px, 0px), var(--py, 0px), 0) scale(var(--cs, 1));
+}
+
+/* WILL-CHANGE LASTS EXACTLY AS LONG AS THE WALK. A layer promoted for good
+   costs its own pixels for good, and this room stands still almost all of the
+   time. The easing is the prototype's: slow to leave, long to settle — the
+   weight of a step, not the snap of a control. */
+.camera[data-walking="true"] {
+  transition: transform var(--room-walk, 1200ms) cubic-bezier(0.16, 0.5, 0.2, 1);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .camera[data-walking="true"] {
+    transition: none;
+    will-change: auto;
+  }
+}
+
+/* WHAT IS OUTSIDE THE FRAME STAYS OUTSIDE IT. In the hall nothing is clipped
+   on purpose — a niche's drawn mark and its heading live OUTSIDE the cut, and
+   clipping the stage would cut them off. Walked up to a shelf, both of those
+   are gone (see below) and the scene is three times its own size, so the only
+   thing the stage's open edge can still deliver is a slab of a neighbouring
+   shelf sliding over the column of text. */
+.room[data-case="true"] .stage {
+  overflow: hidden;
+}
+
 /* THE WALL IS INK, NOT A PHOTOGRAPH. room-wall-matte.webp is an
    ink-on-transparent texture (it has an alpha channel and no ground of its
    own), which is why it cannot simply be pasted as a background: pasted, its
@@ -235,6 +283,10 @@
 .niche {
   position: absolute;
   cursor: pointer;
+  /* This also has to live on the destination state. If the transition existed
+     only on `[data-away]`, a shelf faded OUT but popped back IN when the
+     attribute was removed on the walk home or between categories. */
+  transition: opacity var(--room-walk, 1200ms) cubic-bezier(0.16, 0.5, 0.2, 1);
 }
 
 .nicheCast {
@@ -339,6 +391,60 @@
   .nicheMark {
     transition: none;
   }
+}
+
+/* THE CUT AS A CONTROL. It sits UNDER the books and takes the whole shelf, so
+   the gaps between spines — which is most of a shelf — are the way in. The box
+   above it draws and clips and is not a target; only the spines inside it are,
+   and they answer a different question (this work, rather than these works). */
+.nicheEnter {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+}
+
+.nicheEnter:focus-visible {
+  outline: 1px solid var(--room-select-ink);
+  outline-offset: 4px;
+}
+
+.nicheBox {
+  pointer-events: none;
+}
+
+.book {
+  pointer-events: auto;
+}
+
+/* A shelf you are already standing at is not a door. */
+.niche[data-open="true"] {
+  cursor: default;
+}
+
+/* THE OTHER SHELVES ARE NOT DIMMED, THEY ARE LEFT. `data-dim` is a query
+   narrowing the wall and it keeps every cut on it, because where a work stands
+   is what this view knows. Standing at one shelf is not that: the rest of the
+   room is behind the reader, and at three times the scale a neighbour at 40%
+   is not background, it is a slab crossing the page. It leaves on the same
+   curve the camera moves on, so the two read as one movement. */
+.room[data-case="true"] .niche[data-away="true"] {
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--room-walk, 1200ms) cubic-bezier(0.16, 0.5, 0.2, 1);
+}
+
+/* THE MARK AND THE HEADING BELONG TO THE HALL. Both are written at a size
+   chosen for a wall seen whole; the camera multiplies them along with
+   everything else, and a pen line drawn at one pixel becomes a brush stroke at
+   four. Inside a shelf they have also already done their work — what you are
+   standing at is said by the frame itself, and by its name in the corner. */
+.room[data-case="true"] .stage .niche .nicheMark,
+.room[data-case="true"] .stage .niche .nicheLabel,
+.room[data-case="true"] .stage .niche .nicheMore {
+  opacity: 0;
 }
 
 /* A SHELF THAT HOLDS NOTHING THE QUERY ASKED FOR GOES QUIET — it does not
@@ -484,6 +590,58 @@
   opacity: 0;
 }
 
+/* AT THE SHELF, EVERY BOARD IS LEGIBLE — not only the one under the pointer.
+   In the hall the label appears on the shelf being looked AT, because a wall
+   of a hundred lit boards is a wall of noise. Standing at one shelf that
+   argument is spent: these are the works in front of the reader, and reading
+   them is what walking up was for. */
+.room[data-case="true"] .niche[data-open="true"] .bookSpine {
+  opacity: 1;
+}
+
+/* THE NAME WRITTEN DOWN THE BOARD. The prototype's own recipe, and the sizing
+   is set from the spine in `LearnRoomView.tsx` rather than here — a rem knows
+   nothing about how wide a board is. It fades in on its own rather than by
+   transition: it is not there at all until the camera has made it readable,
+   and an element that has just been born has nothing to transition from. */
+.bookTitle {
+  position: absolute;
+  inset-block: 10% 14%;
+  inset-inline: 0;
+  display: grid;
+  place-items: center;
+  writing-mode: vertical-rl;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  color: var(--room-ink-soft);
+  white-space: nowrap;
+  overflow: hidden;
+  pointer-events: none;
+  animation: room-name-in 380ms ease both;
+}
+
+@keyframes room-name-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bookTitle {
+    animation: none;
+  }
+}
+
+/* A board carries one thing at a time: where the name is written, the blank
+   plate under it goes. */
+.book:has(.bookTitle) .bookDraw :global(.plate) {
+  opacity: 0;
+}
+
 /* GOLD IS THE SELECT, AND NOTHING ELSE (2026-08-29).
    A course you can open used to be drawn in brass — and since nearly every
    book on this shelf is a course you can open, nearly every book was gold. An
@@ -509,6 +667,67 @@
 .book:focus-visible {
   outline: 1px solid var(--room-select-ink);
   outline-offset: 3px;
+}
+
+/* ---------- standing at a shelf: the frame's own furniture ----------
+   OUTSIDE THE CAMERA, DELIBERATELY. These two are the only things on the stage
+   that do not belong to the room: they are what the reader is holding, not
+   what they are looking at, so they keep the size they were written at while
+   the wall comes closer. Put inside `.camera` they would arrive as a poster.
+   Top of the wall's own half on a desk — the column of text has the other half
+   — and top of the frame on a phone, where the wall has the width to itself. */
+.frame {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline-end: 0;
+  z-index: 4;
+  display: flex;
+  align-items: baseline;
+  gap: var(--cw-space-sm);
+  font-family: var(--cw-font-data, ui-monospace, monospace);
+  font-size: 0.62rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+}
+
+/* A LINE, NOT A PILL. The room has no filled grounds in it anywhere — the way
+   back is written in the same ink as everything else, and it gathers its rule
+   under the pointer the way the search line and the list rows do. */
+.back {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+  border: 0;
+  padding: 0.35rem 0;
+  background: transparent;
+  font: inherit;
+  letter-spacing: inherit;
+  text-transform: inherit;
+  color: var(--room-ink-faint);
+  cursor: pointer;
+  border-block-end: 1px solid transparent;
+  transition: color 220ms ease, border-color 220ms ease;
+}
+
+.back:hover,
+.back:focus-visible {
+  color: var(--room-select-ink);
+  border-block-end-color: var(--room-select-line);
+}
+
+.back:focus-visible {
+  outline: 1px solid var(--room-select-ink);
+  outline-offset: 3px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .back {
+    transition: none;
+  }
+}
+
+.frameName {
+  color: var(--room-ink-faint);
 }
 
 .empty {
@@ -726,6 +945,10 @@
        the room, but a screenful of it is just a wait. */
     block-size: 36svh;
     min-height: 0;
+  }
+
+  .frame {
+    inset-inline: 0 auto;
   }
 
   .sheet {

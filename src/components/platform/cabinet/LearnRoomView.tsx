@@ -14,18 +14,27 @@
  *
  * WHAT THIS STEP DOES NOT CARRY (see the CSS module's own header for why):
  * sound, mouse-parallax, the ink "attention" glow, the procedural wall
- * canvas, camera zoom-into-a-shelf, and the open-book reading "spread".
- * A book click navigates straight to the course for now.
+ * canvas, and the open-book reading "spread". A book click navigates straight
+ * to the course.
+ *
+ * THE CAMERA IS HERE (2026-08-29), and it is what makes this a room rather
+ * than a picture of one: a library is read by walking up to a shelf. See
+ * `frameCase` below for the move itself, and `LearnShelfClient` for what
+ * drives it — the subject chips above the room and the wall are ONE choice,
+ * not two, so pressing a subject and stepping up to that shelf are the same
+ * act seen from two sides.
  *
  * DEPTH IS ALREADY FLAT IN THE SOURCE. The prototype's own `buildRoom` sets
  * `Z_FAR = 0, Z_NEAR = 0, MAXPHI = 0` — rotation and z-translation per niche
  * already multiply out to nothing in зб. 59; what is left of "depth" is
  * niche SIZE (a heavier category sits in a bigger cut) and the shadow inside
- * the cut, not a 3D tilt. That is why this port has no camera, no
- * `translateZ`/`rotateY` per niche, and no screen→facet perspective divide:
- * with z pinned at 0 that divide is a constant scalar for every niche, not a
- * perspective at all, so multiplying every coordinate by it and then
- * un-multiplying it back out would be motion with no visible effect.
+ * the cut, not a 3D tilt. So this port has no `translateZ`/`rotateY` per
+ * niche and no screen→facet perspective divide: with z pinned at 0 that
+ * divide is a constant scalar for every niche, not a perspective at all. The
+ * camera is flat for the same reason — a translate and a scale, not a dolly.
+ * The prototype's own `frameCase` arithmetic collapses to exactly that once
+ * its perspective factor `k = P / (P - z)` is evaluated at the z it actually
+ * uses, which is zero: k becomes 1 and the two divisions cancel.
  */
 
 import { useLayoutEffect, useMemo, useRef, useState } from "react";
@@ -35,6 +44,7 @@ import type { LearnerShelfCourseDto } from "@/components/lms/lmsClient";
 import type { CourseCategory } from "@/lms-core";
 import { courseAction } from "./CourseCard";
 import type { CabinetCopy } from "./copy";
+import type { ShelfCategory } from "./ShelfFilter";
 import styles from "./LearnRoomView.module.css";
 
 const CATEGORY_ORDER: CourseCategory[] = ["movement", "nutrition", "cleansing"];
@@ -644,6 +654,80 @@ function layoutRoom(cases: RoomCase[], W: number, H: number, narrow: boolean): N
   return niches;
 }
 
+/* ---------- the camera ---------- */
+
+/** How long the walk takes.
+    The prototype moved in 2300ms, and it was right to: nothing else in that
+    page moved at all, so the camera WAS the interaction and it could take the
+    time a step across a room takes. Here the same act also narrows the column
+    of text beside the wall, and a list that has already answered while the
+    wall is still travelling reads as two events. Shortened until the two land
+    close enough to be one, and no shorter — under a second the move stops
+    being a walk and becomes a cut. */
+const CAMERA_MS = 1200;
+
+type Camera = { x: number; y: number; s: number };
+
+const HALL: Camera = { x: 0, y: 0, s: 1 };
+
+/**
+ * WHERE THE CAMERA STANDS TO READ ONE SHELF.
+ *
+ * The prototype's own note is the method, and it still holds: "наїзд
+ * рахується, а не підганяється" — measure, solve, make ONE move. It had to
+ * measure the live DOM because its camera also carried z and its niches were
+ * on real facets; here the layout is already known in stage coordinates
+ * before a single node is painted, so the same solve is arithmetic on numbers
+ * this module produced itself. No `getBoundingClientRect`, and therefore no
+ * reading of a layout that the transition is in the middle of changing.
+ *
+ * Scale pulls everything towards the transform origin, which is the stage's
+ * own centre O. A point p lands at `O + (p - O) * s + t`, so framing the
+ * case's bounding box at the point the room wants it means
+ * `t = want - O - (centre - O) * s`. The clamps and the 0.82 breathing factor
+ * are the prototype's, kept: they are what stops a two-spine shelf from
+ * filling the wall like a poster.
+ */
+function frameCase(niches: NicheLayout[], open: number, W: number, H: number, narrow: boolean): Camera {
+  if (open < 0 || W <= 0 || H <= 0) return HALL;
+  const mine = niches.filter((n) => n.ci === open);
+  if (mine.length === 0) return HALL;
+
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (const n of mine) {
+    x0 = Math.min(x0, n.x);
+    y0 = Math.min(y0, n.y);
+    x1 = Math.max(x1, n.x + n.w);
+    y1 = Math.max(y1, n.y + n.h);
+  }
+
+  /* WHERE THE FRAMED SHELF IS PUT. On a desk the room's right half is the
+     wall's and the left half is the column's, so the shelf is brought to the
+     middle of its own half and not to the middle of the screen — walking up
+     to a shelf must not walk over the text. On a phone the wall has the
+     whole width and the column is below it, so the shelf goes to the middle
+     of the frame. */
+  const wantX = narrow ? W * 0.5 : W * 0.71;
+  const wantY = narrow ? H * 0.5 : H * 0.46;
+  const maxW = narrow ? W * 0.86 : W * 0.46;
+  const maxH = narrow ? H * 0.8 : H * 0.74;
+
+  const bw = Math.max(1, x1 - x0);
+  const bh = Math.max(1, y1 - y0);
+  const s = Math.max(1.15, Math.min(4.2, Math.min(maxW / bw, maxH / bh) * 0.82));
+
+  const ox = W / 2;
+  const oy = H / 2;
+  return {
+    x: wantX - ox - ((x0 + x1) / 2 - ox) * s,
+    y: wantY - oy - ((y0 + y1) / 2 - oy) * s,
+    s,
+  };
+}
+
 /* Both generators are pure functions of their arguments — same key, same
    drawn ink, everywhere in the app. A module-level cache is therefore the
    correct home for it, not a per-instance ref: reading or writing a ref
@@ -707,6 +791,8 @@ export function LearnRoomView({
   courses,
   copy,
   match,
+  category = "all",
+  onCategory,
 }: {
   courses: LearnerShelfCourseDto[];
   copy: CabinetCopy;
@@ -718,6 +804,16 @@ export function LearnRoomView({
      different question from the one that was typed, and the reader loses the
      one thing the room is for: seeing WHERE a work stands. */
   match?: (course: LearnerShelfCourseDto) => boolean;
+  /* WHICH SHELF THE READER IS STANDING AT — the same value the subject chips
+     above the room are pressed into, and deliberately not a second piece of
+     state owned in here. Two would have been two answers to one question: a
+     chip saying «Nutrition» while the camera stands in front of «Movement» is
+     a room that disagrees with its own controls. So walking up to a shelf IS
+     choosing that subject, and «All» IS the way back to the middle of the
+     room. `undefined` `onCategory` leaves the wall a picture: nothing on it
+     can be walked up to, because there is nowhere for the choice to go. */
+  category?: ShelfCategory;
+  onCategory?: (next: ShelfCategory) => void;
 }) {
   /* Which course is being looked at, wherever the looking came from. The
      prototype's rule: "стан рядка не залежить від того, звідки прийшла увага"
@@ -757,16 +853,110 @@ export function LearnRoomView({
   const narrow = size.w > 0 && size.w <= 640;
   const niches = useMemo(() => layoutRoom(cases, size.w, size.h, narrow), [cases, size.w, size.h, narrow]);
 
-  /* No camera in this pass, so there is no in-flight zoom for the LOD reading
-     to poll every 110ms the way the prototype's `trackLod` did — the layout
-     that lands in one render is the layout that stays, so LOD is derived
-     from it directly rather than chased in an effect. */
-  const firstBook = niches[0]?.books[0];
-  const lod: "name" | "plate" | "bare" = !firstBook
+  /* THE OPEN SHELF IS THE CHOSEN SUBJECT, resolved against what the wall
+     actually holds. `ci` is an index into CATEGORY_ORDER and not into `cases`
+     — `toCases` numbers before it drops the empty ones — so a subject with no
+     courses on this shelf resolves to a case that is not on the wall, and the
+     camera stays in the hall rather than framing an empty coordinate. */
+  const open = useMemo(() => {
+    if (category === "all") return -1;
+    const ci = CATEGORY_ORDER.indexOf(category);
+    return cases.some((one) => one.ci === ci) ? ci : -1;
+  }, [category, cases]);
+  const openCase = open < 0 ? null : cases.find((one) => one.ci === open) ?? null;
+
+  const camera = useMemo(() => frameCase(niches, open, size.w, size.h, narrow), [niches, open, size.w, size.h, narrow]);
+
+  /* THE WALK IS WRITTEN ONTO THE ELEMENT, NOT RENDERED INTO IT — both halves
+     of it, and in this order.
+
+     WILL-CHANGE LIVES EXACTLY AS LONG AS THE MOVEMENT DOES: the prototype's
+     rule, and one this product has already been bitten by once (see the
+     topbar's own note). A layer promoted for good costs its own pixels for
+     good, and this room stands still almost all of the time.
+
+     IT IS ARMED BY A CHANGE OF SHELF, NOT BY A CHANGE OF CAMERA. The camera
+     also moves when the stage is resized, and a window being dragged is not a
+     walk across a room — it should land where it lands, every frame, with
+     nothing easing after it. That is the whole reason the two effects below
+     are two: one watches the shelf and one watches the numbers.
+
+     And they are effects writing to the DOM rather than state driving a
+     render, because state here would be a render caused by a render (see the
+     `react-hooks/set-state-in-effect` rule) to say something no other part of
+     this component needs to know. Declaration order is the guarantee that
+     matters: the transition is on the element before the transform it is
+     meant to ease. */
+  const cameraRef = useRef<HTMLDivElement>(null);
+  const stood = useRef(false);
+  const backRef = useRef<HTMLButtonElement>(null);
+  const nicheEnterRefs = useRef(new Map<number, HTMLButtonElement>());
+  const focusBackAfterOpen = useRef(false);
+  const returnFocusCi = useRef<number | null>(null);
+
+  useLayoutEffect(() => {
+    const el = cameraRef.current;
+    if (!el) return;
+    if (!stood.current) {
+      /* The first paint is wherever the reader already was: arriving at a
+         shelf chosen before the room was drawn is not a walk across it. */
+      stood.current = true;
+      return;
+    }
+    el.dataset.walking = "true";
+    const timer = window.setTimeout(() => {
+      el.dataset.walking = "false";
+    }, CAMERA_MS + 120);
+    return () => window.clearTimeout(timer);
+  }, [open]);
+
+  useLayoutEffect(() => {
+    const el = cameraRef.current;
+    if (!el) return;
+    el.style.setProperty("--px", `${camera.x.toFixed(1)}px`);
+    el.style.setProperty("--py", `${camera.y.toFixed(1)}px`);
+    el.style.setProperty("--cs", camera.s.toFixed(3));
+  }, [camera]);
+
+  /* FOCUS WALKS WITH THE READER. Activating a niche removes that niche's
+     entry button, so leaving focus to the browser would drop it on `<body>`
+     and make the documented Escape path unreachable. Only room-originated
+     moves participate: choosing a subject chip above the room keeps focus on
+     that chip, and choosing «Усі» there does the same. */
+  useLayoutEffect(() => {
+    if (open >= 0 && focusBackAfterOpen.current) {
+      focusBackAfterOpen.current = false;
+      backRef.current?.focus({ preventScroll: true });
+      return;
+    }
+    if (open < 0 && returnFocusCi.current !== null) {
+      const ci = returnFocusCi.current;
+      returnFocusCi.current = null;
+      nicheEnterRefs.current.get(ci)?.focus({ preventScroll: true });
+    }
+  }, [open]);
+
+  const leaveCase = () => {
+    if (open < 0 || !onCategory) return;
+    returnFocusCi.current = open;
+    onCategory("all");
+  };
+
+  /* LOD IS READ THROUGH THE CAMERA. The prototype polled it every 110ms
+     because its zoom was a live DOM measurement mid-flight; here the scale is
+     a number this render already knows, so the reading is one multiplication:
+     what matters is how wide a spine is ON SCREEN, and the camera is the only
+     thing between the layout and the screen. The gauge is a spine of the shelf
+     being looked at — in the hall any of them will do, since none is nearer
+     than another. */
+  const gauge = (open < 0 ? niches[0] : niches.find((n) => n.ci === open))?.books[0];
+  const gaugeW = (gauge?.w ?? 0) * camera.s;
+  const gaugeH = (gauge?.h ?? 0) * camera.s;
+  const lod: "name" | "plate" | "bare" = !gauge
     ? "name"
-    : firstBook.w >= 22 && firstBook.h >= 80
+    : gaugeW >= 22 && gaugeH >= 80
       ? "name"
-      : firstBook.w >= 9
+      : gaugeW >= 9
         ? "plate"
         : "bare";
 
@@ -782,11 +972,21 @@ export function LearnRoomView({
     <div
       className={styles.room}
       data-lod={lod}
+      data-case={open >= 0}
       /* The keyboard's own release, and the same rule: focus moving from one
          spine to the next never passes through nothing. `onBlur` is React's
          `focusout`, so it bubbles here and can ask where the focus WENT. */
       onBlur={(event) => {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setHot(null);
+      }}
+      /* THE WAY OUT OF A SHELF IS ALSO A KEY. Escape is what every other
+         entered thing in this product answers to, and a reader who walked in
+         with the keyboard should not have to tab to the way back. */
+      onKeyDown={(event) => {
+        if (event.key === "Escape" && open >= 0 && onCategory) {
+          event.stopPropagation();
+          leaveCase();
+        }
       }}
     >
       <div
@@ -800,6 +1000,14 @@ export function LearnRoomView({
            until the pointer is out of the scene entirely. */
         onMouseLeave={() => setHot(null)}
       >
+        {/* THE CAMERA IS THE ONLY THING THAT MOVES. Everything that belongs to
+            the room — wall, light, cuts, books — rides inside this one
+            element, so approaching a shelf is a single composited transform
+            rather than a hundred elements being re-laid-out. The stage stays
+            put around it: it is what the size is measured from, and measuring
+            through a transform mid-flight is how a layout starts chasing its
+            own animation. */}
+        <div className={styles.camera} ref={cameraRef}>
         <div className={styles.wall} />
         <div className={styles.rake} aria-hidden="true" />
         {niches.map((n) => (
@@ -813,9 +1021,41 @@ export function LearnRoomView({
                is being read. */
             data-hot={n.books.some((b) => b.slug === hot)}
             data-dim={!n.books.some((b) => lit.has(b.slug))}
+            /* THE SHELF BEING READ, AND THE SHELVES THAT ARE NOT. `data-away`
+               is not a stronger `data-dim`: a query DIMS, because where a work
+               stands is the one thing this view knows and a wall that empties
+               itself under a search has thrown that away — but a reader who
+               has walked up to one shelf is not looking at the others at all,
+               and at three times the scale the others are not shelves in the
+               background, they are slabs sliding across the text column. */
+            data-open={open === n.ci}
+            data-away={open >= 0 && open !== n.ci}
             style={{ left: n.x, top: n.y, width: n.w, height: n.h, ["--depth" as string]: n.depth.toFixed(2) }}
           >
             <div className={styles.nicheCast} aria-hidden="true" />
+            {/* WALKING UP TO THE SHELF — the cut itself, as a control.
+                A button UNDER the books rather than around them: a link inside
+                a button is not markup a browser has an answer for, and the two
+                are genuinely different acts anyway. The spines answer «open
+                this work»; the shelf they stand on answers «bring me closer to
+                these». Its name says which shelf, because the drawing does not
+                say anything to a reader who cannot see it. */}
+            {onCategory && open !== n.ci ? (
+              <button
+                className={styles.nicheEnter}
+                type="button"
+                ref={(node) => {
+                  if (node) nicheEnterRefs.current.set(n.ci, node);
+                  else nicheEnterRefs.current.delete(n.ci);
+                }}
+                aria-label={copy.roomEnter(cases.find((one) => one.ci === n.ci)?.label ?? "")}
+                onClick={() => {
+                  focusBackAfterOpen.current = true;
+                  onCategory(CATEGORY_ORDER[n.ci]);
+                }}
+                onMouseEnter={() => setHot(n.books[0]?.slug ?? null)}
+              />
+            ) : null}
             {/* THE MARK LIVES OUTSIDE THE CUT — it is drawn AROUND the shelf,
                 and `.nicheBox` clips. Drawn eagerly rather than on first look
                 (the prototype's `ensureMark`): that laziness paid for a wall of
@@ -829,7 +1069,20 @@ export function LearnRoomView({
             />
             <div className={styles.nicheBox}>
               <div className={styles.nichePersp} dangerouslySetInnerHTML={{ __html: nicheInk(n.ci, n.w, n.h, dark) }} />
-              {n.books.map((b) => (
+              {n.books.map((b) => {
+                /* The prototype's own arithmetic for a name on a board, kept:
+                   the size is a fraction of the spine's width, clamped, and
+                   the fit test is the name's own run down the board against
+                   the board's height. Two things are added to it, and both
+                   because this room is inside a product rather than a page of
+                   its own: the name is only written on the shelf being read
+                   (in the hall it would be three walls of speckle), and only
+                   when the camera has actually made it a size a person can
+                   read — 7px on screen, below which type is a texture. */
+                const fs = Math.max(2.6, Math.min(9, b.w * 0.52));
+                const fits = b.title.trim().length * fs * 0.58 <= b.h * 0.76;
+                const named = open === n.ci && fits && fs * camera.s >= 7;
+                return (
                 <Link
                   key={b.slug}
                   className={styles.book}
@@ -842,18 +1095,58 @@ export function LearnRoomView({
                   onFocus={() => setHot(b.slug)}
                 >
                   <span className={styles.bookDraw} dangerouslySetInnerHTML={{ __html: spineInk(b.w, b.h) }} />
-                  <span
-                    className={styles.bookSpine}
-                    aria-hidden="true"
-                    dangerouslySetInnerHTML={{ __html: codeInk(b.title, b.w, b.h) }}
-                  />
+                  {/* THE NAME ARRIVES WITH THE CAMERA, and this is the whole
+                      reason the camera exists. At wall distance a title on a
+                      20px board is speckle, which is why a spine wears a
+                      LABEL there (see `spineCode`). Walked up to, the same
+                      board is sixty pixels across and the label has something
+                      to say. The size is taken from the SPINE, never from a
+                      rem: a rem knows nothing about how wide the board is, so
+                      the camera used to multiply the letters past the edges
+                      of the thing they were written on. When even so the name
+                      will not fit down the board, the label stays — a cut
+                      title on a spine says nothing the label did not, and
+                      lies that it can be read. */}
+                  {named ? (
+                    <span className={styles.bookTitle} aria-hidden="true" style={{ fontSize: `${fs.toFixed(1)}px` }}>
+                      {b.title}
+                    </span>
+                  ) : (
+                    <span
+                      className={styles.bookSpine}
+                      aria-hidden="true"
+                      dangerouslySetInnerHTML={{ __html: codeInk(b.title, b.w, b.h) }}
+                    />
+                  )}
                 </Link>
-              ))}
+                );
+              })}
             </div>
             {n.label ? <span className={styles.nicheLabel}>{n.label}</span> : null}
             {n.more ? <span className={styles.nicheMore}>+{n.more}</span> : null}
           </div>
         ))}
+        </div>
+
+        {/* THE SHELF SAYS ITS OWN NAME WHILE YOU STAND AT IT.
+            Every niche's label goes out on the way in — the camera scales the
+            room's type along with the room, and a 0.6rem heading at three
+            times the size is a poster on the wall, in the middle of a drawing
+            that is otherwise all hairlines. So the name moves OUT of the
+            scene and into the frame, where it is set at the size it was
+            written for and does not travel with the camera. It is a caption,
+            not a control: the way back is the button beside it, and it is a
+            button rather than a chevron on the wall because leaving is a
+            thing done TO the room and not a place inside it. */}
+        {openCase && onCategory ? (
+          <div className={styles.frame}>
+            <button ref={backRef} className={styles.back} type="button" onClick={leaveCase}>
+              <span aria-hidden="true">←</span>
+              {copy.roomBack}
+            </button>
+            <span className={styles.frameName}>{openCase.label}</span>
+          </div>
+        ) : null}
       </div>
 
       {/* THE ROOM IS THE ENVIRONMENT; THIS IS THE CONTENT.
