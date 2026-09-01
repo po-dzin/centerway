@@ -129,10 +129,11 @@ describe("support bot — copy", () => {
   it("registers a command for every menu branch a command claims to open", () => {
     // /courses, /access, /help and /support are shortcuts into menu actions.
     // A registered command with no branch answers with the fallback.
-    const handled = new Set(["start", "courses", "access", "help", "support"]);
+    const handled = new Set(["start", "courses", "access", "help", "support", "bug"]);
     for (const command of botProfile.commands) {
       expect(handled.has(command.command), command.command).toBe(true);
     }
+    expect(botProfile.commands.map((command) => command.command)).toContain("bug");
   });
 });
 

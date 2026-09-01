@@ -5944,3 +5944,22 @@
   justify-items: start;
   padding-block: var(--cw-space-xs) var(--cw-space-md);
 }
+.recordTitleInput {
+  width: 100%;
+  min-width: 0;
+  min-height: var(--ds-touch-target-min);
+  font-size: var(--ds-type-body-size);
+  line-height: var(--ds-type-body-line-height);
+  overflow: hidden;
+  resize: none;
+}
+
+.courseSettingEdit[aria-expanded="true"] .settingsChevron {
+  transform: rotate(180deg);
+}
+.compositeEditor {
+  display: grid;
+  gap: var(--cw-space-md);
+  padding-inline-start: var(--cw-space-md);
+  min-width: 0;
+}

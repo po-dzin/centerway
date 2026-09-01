@@ -97,9 +97,9 @@ export function HubIntro() {
         </div>
         <aside className={styles.videoAside} id="diagnostics" data-cw-hub-intro="aside">
           <div className={styles.videoDecisionIntro}>
-            <p className={styles.label}>Орієнтація · перший крок</p>
-            <h2 className={styles.title}>Спочатку - зрозуміти свій стан</h2>
-            <p className={styles.videoDecisionText}>Перед програмами, тестами і консультаціями важливо побачити систему цілком.</p>
+            <p className={styles.label}>Тест доші · перший крок</p>
+            <h2 className={styles.title}>Почніть із тесту доші</h2>
+            <p className={styles.videoDecisionText}>Кілька хвилин, щоб уважніше подивитися на свій поточний стан і зрозуміти, з чого почати.</p>
           </div>
           <div className={styles.videoDecisionRail}>
             {/* ONE ACTION. This card used to offer the dosha test and a

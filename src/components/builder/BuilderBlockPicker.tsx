@@ -60,11 +60,13 @@ export function BuilderBlockPicker({
   anchor,
   onPick,
   onClose,
+  excludedTypes = [],
 }: {
   /** The ring that opened it, in viewport coordinates. */
   anchor: DOMRect;
   onPick: (type: LessonBlockType) => void;
   onClose: () => void;
+  excludedTypes?: LessonBlockType[];
 }) {
   const [query, setQuery] = useState("");
   const panel = useRef<HTMLDivElement>(null);
@@ -100,7 +102,7 @@ export function BuilderBlockPicker({
   const needle = query.trim().toLocaleLowerCase("uk");
   const groups = GROUPS.map((group) => ({
     ...group,
-    types: group.types.filter((type) =>
+    types: group.types.filter((type) => !excludedTypes.includes(type)).filter((type) =>
       `${BLOCK_TYPE_LABELS[type]} ${BLOCK_TYPE_HINTS[type]}`.toLocaleLowerCase("uk").includes(needle)
     ),
   })).filter((group) => group.types.length > 0);

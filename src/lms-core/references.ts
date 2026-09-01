@@ -7,6 +7,7 @@
  */
 
 import type { LessonBlock } from "./blocks";
+import { flattenBlocks } from "./blocks";
 import { flattenLessons, type Course } from "./course";
 import { inlineToPlainText } from "./inline";
 
@@ -74,7 +75,7 @@ export function buildInternalReferenceTargets(course: Course): InternalReference
       ...(lesson.dayIndex ? { dayIndex: lesson.dayIndex } : {}),
     });
 
-    lesson.blocks.forEach((block) => {
+    flattenBlocks(lesson.blocks).forEach((block) => {
       const label = referenceBlockLabel(block);
       if (!label) return;
       targets.push({
@@ -133,6 +134,7 @@ function referenceBlockLabel(block: LessonBlock): string | null {
     case "cta":
       return `Наступний крок: ${short(block.label)}`;
     case "rich_text":
+    case "group":
     case "code":
     case "faq_block":
       return null;

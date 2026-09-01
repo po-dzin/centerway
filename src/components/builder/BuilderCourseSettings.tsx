@@ -192,7 +192,7 @@ export type SettingsScope = "cover" | "page";
 
 /**
  * A setting reads as part of the course until the author explicitly reaches
- * for it. The pencil is deliberately the only permanent control: keeping the
+ * for it. The disclosure chevron is the permanent control: keeping the
  * form open all the time made rare configuration look as important as the
  * course's title and promise.
  */
@@ -221,12 +221,12 @@ function SettingsSection({
         <button
           className={styles.courseSettingEdit}
           type="button"
-          aria-label={editing ? `Закрити налаштування «${title}»` : `Редагувати «${title}»`}
-          title={editing ? "Готово" : "Редагувати"}
+          aria-label={editing ? `Згорнути «${title}»` : `Розгорнути «${title}»`}
+          title={editing ? "Згорнути" : "Розгорнути"}
           aria-expanded={editing}
           onClick={() => onEdit(editing ? null : id)}
         >
-          <Icon name={editing ? "close" : "edit"} size={16} />
+          <Icon name="chevron-down" size={20} className={styles.settingsChevron} />
         </button>
       </div>
       {editing ? <div className={styles.courseSettingEditor}>{children}</div> : null}

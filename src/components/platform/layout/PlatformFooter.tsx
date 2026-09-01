@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import { LEARNING_SHELF_HREF, contact, platformHomeHref, socialLinks } from "@/lib/platform/content";
 import styles from "@/components/platform/PlatformShellStyles";
 import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
@@ -76,12 +77,16 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
               stack where the storefront footer beside it has three tracks, so
               the two footers disagreed about their own shape. */}
           <div className={`${styles.footerLinks} ${styles.footerLegal}`}>
-            <Link href={shelfHref}>Мої матеріали</Link>
-            <Link href={profileHref}>Кабінет</Link>
+            <Link className={styles.footerTextLink} href={shelfHref} data-cw-ink-control>
+              <InteractionInkLabel>Мої матеріали</InteractionInkLabel>
+            </Link>
+            <Link className={styles.footerTextLink} href={profileHref} data-cw-ink-control>
+              <InteractionInkLabel>Кабінет</InteractionInkLabel>
+            </Link>
           </div>
           <div className={`${styles.footerLinks} ${styles.footerSocials}`}>
-            <a href={SUPPORT_BOT_URL} target="_blank" rel="noopener noreferrer">
-              Підтримка
+            <a className={styles.footerTextLink} href={SUPPORT_BOT_URL} target="_blank" rel="noopener noreferrer" data-cw-ink-control>
+              <InteractionInkLabel>Підтримка</InteractionInkLabel>
             </a>
           </div>
         </div>
@@ -104,11 +109,17 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
           </p>
         </div>
         <div className={`${styles.footerLinks} ${styles.footerLegal}`}>
-          <Link href={publicOfferHref}>Публічний договір</Link>
-          <Link href={privacyHref}>Політика конфіденційності</Link>
+          <Link className={styles.footerTextLink} href={publicOfferHref} data-cw-ink-control>
+            <InteractionInkLabel>Публічний договір</InteractionInkLabel>
+          </Link>
+          <Link className={styles.footerTextLink} href={privacyHref} data-cw-ink-control>
+            <InteractionInkLabel>Політика конфіденційності</InteractionInkLabel>
+          </Link>
         </div>
         <div className={`${styles.footerLinks} ${styles.footerSocials}`}>
-          <a href={`tel:${contact.phone.replace(/\s+/g, "")}`}>{contact.phone}</a>
+          <a className={styles.footerTextLink} href={`tel:${contact.phone.replace(/\s+/g, "")}`} data-cw-ink-control>
+            <InteractionInkLabel>{contact.phone}</InteractionInkLabel>
+          </a>
           <div className={styles.footerSocialsRow}>
             {socialLinks.map((item) => (
               <a key={item.label} href={item.href} target="_blank" rel="noopener noreferrer" aria-label={item.label}>
@@ -119,6 +130,12 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
           </div>
         </div>
       </div>
+      <p className={`${styles.container} ${styles.footerBugNote}`}>
+        Платформа наразі неідеальна, як і все у цьому світі. Якщо ви знайшли помилку — {" "}
+        <a className={styles.footerTextLink} href={`${SUPPORT_BOT_URL}?start=bug`} target="_blank" rel="noopener noreferrer" data-cw-ink-control>
+          <InteractionInkLabel>дайте нам знати</InteractionInkLabel>
+        </a>.
+      </p>
     </footer>
   );
 }

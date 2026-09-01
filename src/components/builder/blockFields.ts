@@ -16,6 +16,7 @@
  */
 
 import type { LessonBlock, RichTextNode } from "@/lms-core";
+import { LESSON_BLOCK_RECIPES } from "@/lms-core/composition";
 
 export type FieldKind = "inline" | "text" | "number" | "boolean" | "youtube" | "image";
 
@@ -71,6 +72,7 @@ export type BlockField = {
 };
 
 export const BLOCK_TYPE_LABELS: Record<LessonBlock["type"], string> = {
+  group: "Власний блок",
   lesson_objective: "Мета уроку",
   rich_text: "Текст",
   protocol_step: "Крок протоколу",
@@ -95,6 +97,7 @@ export const BLOCK_TYPE_LABELS: Record<LessonBlock["type"], string> = {
  * difference between a menu and a vocabulary.
  */
 export const BLOCK_TYPE_HINTS: Record<LessonBlock["type"], string> = {
+  group: "Композиція з тексту, медіа, таблиць та інших підблоків.",
   lesson_objective: "Одне речення: для чого цей урок. Стоїть першим.",
   rich_text: "Абзаци, підзаголовки та списки — основне тіло уроку.",
   protocol_step: "Пронумерований крок дня з часом або умовою.",
@@ -124,16 +127,9 @@ export const BLOCK_TYPE_HINTS: Record<LessonBlock["type"], string> = {
  * So the shapes live in the slash menu, where writing happens, and the roles
  * live behind «Шаблон…», where choosing is the point.
  */
-export const BLOCK_STRUCTURE_ORDER: LessonBlock["type"][] = ["table", "video", "image", "quote", "code", "cta"];
+export const BLOCK_STRUCTURE_ORDER: LessonBlock["type"][] = ["group", "table", "video", "image", "quote", "code", "cta"];
 
-export const BLOCK_TEMPLATE_ORDER: LessonBlock["type"][] = [
-  "lesson_objective",
-  "protocol_step",
-  "practice_block",
-  "checklist",
-  "faq_block",
-  "boundary_note",
-];
+export const BLOCK_TEMPLATE_ORDER = Object.keys(LESSON_BLOCK_RECIPES) as LessonBlock["type"][];
 
 /**
  * The order the picker offers types in — by how often a lesson needs one,
@@ -154,6 +150,8 @@ const RICH_NODE_LABELS: Record<RichTextNode["kind"], string> = {
 
 export function describeBlock(block: LessonBlock): BlockField[] {
   switch (block.type) {
+    case "group":
+      return [];
     case "lesson_objective":
       return [{ path: ["text"], label: "Мета", kind: "inline", multiline: true }];
 

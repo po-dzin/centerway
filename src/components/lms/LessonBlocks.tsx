@@ -198,6 +198,12 @@ function BlockRendererBody({ block, checklist, onToggleChecklistItem, disabled }
      title that can never be written. */
   const authoring = useContext(AuthoringContext);
   switch (block.type) {
+    case "group":
+      return <div className={styles.compositeBlock}>{block.children.map((child, index) => (
+        <AuthoringContext.Provider key={child.id} value={authoring ? { field: (path, value) => authoring.field(["children", index, ...path], value) } : null}>
+          <div id={`block-${child.id}`}><BlockRendererBody block={child} checklist={checklist} onToggleChecklistItem={onToggleChecklistItem} disabled={disabled} /></div>
+        </AuthoringContext.Provider>
+      ))}</div>;
     case "lesson_objective":
       return (
         <p className={styles.objective}>

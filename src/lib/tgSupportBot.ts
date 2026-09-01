@@ -40,7 +40,8 @@ type BotState =
   | "choosing_product_access"
   | "awaiting_access_lookup"
   | "awaiting_support_contact"
-  | "awaiting_support_message";
+  | "awaiting_support_message"
+  | "awaiting_bug_message";
 
 type BotSession = {
   telegram_user_id: string;
@@ -200,6 +201,7 @@ function mainMenuKeyboard(): InlineKeyboardMarkup {
       ],
       [{ text: "Не бачу доступ", callback_data: "menu:access" }],
       [{ text: "Написати підтримці", callback_data: "menu:support" }],
+      [{ text: "Повідомити про помилку", callback_data: "menu:bug" }],
     ],
   };
 }
@@ -445,6 +447,11 @@ async function handleMenuAction(
     await sendCaptionedPhoto(chatId, SUPPORT_PHOTO_URL, botCopy.supportAskContact);
     return;
   }
+  if (action === "bug") {
+    await saveSession(db, user, { state: "awaiting_bug_message", contact: null, selected_product: null });
+    await sendMessage(chatId, botCopy.bugAskMessage);
+    return;
+  }
 
   await sendMainMenu(chatId);
 }
@@ -554,6 +561,22 @@ async function handleSupportMessage(
   await sendMessage(chatId, botCopy.supportSent, backKeyboard());
 }
 
+async function handleBugMessage(db: Supabase, chatId: number, user: TelegramUser, message: string): Promise<void> {
+  const supportChatId = process.env.SUPPORT_CHAT_ID;
+  if (!supportChatId) { await sendMessage(chatId, botCopy.supportUnavailable, mainMenuKeyboard()); return; }
+  const threadRaw = process.env.BUG_REPORTS_THREAD_ID || process.env.SUPPORT_THREAD_ID;
+  const messageThreadId = threadRaw && /^\d+$/.test(threadRaw) ? Number(threadRaw) : null;
+  try {
+    await sendTelegramMessage(supportChatId, ["Новий баг-репорт", `Telegram ID: ${user.id}`, `Username: ${user.username ? `@${user.username}` : "-"}`, `Час: ${new Date().toISOString()}`, "", message.trim()].join("\n"), { messageThreadId });
+  } catch {
+    await sendMessage(chatId, botCopy.supportUnavailable, mainMenuKeyboard());
+    return;
+  }
+  await logEventBestEffort(db, "tg_bot_bug_reported", { telegram_user_id: String(user.id), telegram_username: user.username ?? null }).catch(() => undefined);
+  await saveSession(db, user, { state: "idle" });
+  await sendMessage(chatId, botCopy.bugSent, backKeyboard());
+}
+
 /**
  * Handles a `/start` payload issued by the cabinet's "connect Telegram" link.
  *
@@ -630,6 +653,7 @@ async function handleTextMessage(
     // else — including the product bots' own payloads — falls through to the
     // greeting, so the sales path is untouched.
     const payload = text.slice("/start".length).trim();
+    if (payload === "bug") { await saveSession(db, user, { state: "awaiting_bug_message", contact: null }); await sendMessage(chatId, botCopy.bugAskMessage); return; }
     if (payload && (await tryLinkAccount(db, chatId, user, payload))) return;
 
     await saveSession(db, user, { state: "idle", contact: null });
@@ -647,6 +671,7 @@ async function handleTextMessage(
     if (command === "access") return handleMenuAction(db, chatId, user, "access");
     if (command === "help") return handleMenuAction(db, chatId, user, "faq");
     if (command === "support") return handleMenuAction(db, chatId, user, "support");
+    if (command === "bug") return handleMenuAction(db, chatId, user, "bug");
     await sendMainMenu(chatId, botCopy.fallback);
     return;
   }
@@ -665,6 +690,10 @@ async function handleTextMessage(
 
   if (session.state === "awaiting_support_message") {
     await handleSupportMessage(db, chatId, user, session, text);
+    return;
+  }
+  if (session.state === "awaiting_bug_message") {
+    await handleBugMessage(db, chatId, user, text);
     return;
   }
 

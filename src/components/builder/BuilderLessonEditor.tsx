@@ -67,6 +67,8 @@ import {
 import { BuilderDraftRecovery } from "./BuilderDraftRecovery";
 import { BuilderExitPrompt } from "./BuilderExitPrompt";
 import { useBuilderExit } from "./useBuilderExit";
+import { changeNodeKind, transformRichNode } from "@/lms-core/blockTransforms";
+import { newBlockRecipe } from "@/lms-core/composition";
 
 type State =
   | { status: "loading" }
@@ -235,7 +237,7 @@ export function BuilderLessonEditor({ slug, lessonSlug }: { slug: string; lesson
       // before save, so opening a gap and changing one's mind is harmless.
       const block = type === "rich_text"
         ? { id: ids(), type, content: [{ kind: "p" as const, text: "" }] }
-        : newBlock(type, ids);
+        : newBlockRecipe(type, ids);
       setFreshBlockId(block.id);
       setSelectedBlockId(block.id);
       if (type !== "rich_text") {
@@ -1093,7 +1095,7 @@ function BlockInsert({
   );
 }
 
-function BlockEditor({
+export function BlockEditor({
   block,
   index,
   total,
@@ -1108,6 +1110,7 @@ function BlockEditor({
   onChange,
   onBlocks,
   onInsertAfter,
+  depth = 0,
 }: {
   block: LessonBlock;
   index: number;
@@ -1125,6 +1128,7 @@ function BlockEditor({
   onChange: (path: (string | number)[], value: unknown) => void;
   onBlocks: (next: (blocks: LessonBlock[]) => LessonBlock[]) => void;
   onInsertAfter: (type: LessonBlockType) => void;
+  depth?: number;
 }) {
   const editField = (path: (string | number)[], value: unknown) => onChange(["blocks", index, ...path], value);
 
@@ -1145,6 +1149,17 @@ function BlockEditor({
      out loud here: inside a node menu they sit under items about one paragraph,
      and «Видалити» / «Видалити блок» have to be tellable apart on sight. */
   const blockActions: MenuItem[] = [
+    ...(block.type !== "group" && depth < 4 ? [{
+      label: "Зібрати власний блок",
+      icon: "plus" as const,
+      onSelect: () => onBlocks((blocks) => blocks.map((current, position) => position === index
+        ? { id: ids(), type: "group" as const, children: [current] } : current)),
+    }] : []),
+    ...(block.type === "group" ? [{
+      label: "Розібрати на підблоки",
+      icon: "list" as const,
+      onSelect: () => onBlocks((blocks) => blocks.flatMap((current, position) => position === index && current.type === "group" ? current.children : [current])),
+    }] : []),
     {
       label: "Властивості блоку",
       icon: "settings",
@@ -1208,19 +1223,33 @@ function BlockEditor({
         </div>
       )}
 
-      {block.type === "rich_text" ? (
+      {block.type === "group" ? (
+        <CompositeEditor block={block} depth={depth} referenceOptions={referenceOptions} referenceTargets={referenceTargets} courseSlug={courseSlug}
+          onUpdate={(update) => onBlocks((blocks) => blocks.map((current, position) => position === index && current.type === "group" ? { ...current, children: update(current.children) } : current))} />
+      ) : block.type === "rich_text" ? (
         <RichTextEditor
           block={block}
           fresh={fresh}
-          blockCommands={BLOCK_COMMANDS}
+          blockCommands={depth >= 4 ? BLOCK_COMMANDS.filter((command) => command.id !== "block:group") : BLOCK_COMMANDS}
           blockActions={blockActions}
           referenceOptions={referenceOptions}
           /* A block type chosen from inside the prose adds a NEW block after
              this one rather than converting it. Converting would throw away
              every paragraph the author had written to get here. */
-          onBlockCommand={(id) => {
+          onBlockCommand={(id, nodeIndex, commandNode) => {
             const type = id.slice("block:".length) as LessonBlock["type"];
-            onInsertAfter(type);
+            if (type === "quote" || type === "code" || type === "checklist") {
+              onBlocks((blocks) => blocks.flatMap((current, position) =>
+                position === index && current.type === "rich_text"
+                  ? transformRichNode(commandNode ? { ...current, content: current.content.map((node, i) => i === nodeIndex ? commandNode : node) } : current, nodeIndex, type, ids)
+                  : [current]));
+            } else if (commandNode) {
+              onBlocks((blocks) => blocks.flatMap((current, position) => {
+                if (position !== index || current.type !== "rich_text") return [current];
+                const content = current.content.map((node, i) => i === nodeIndex ? commandNode : node);
+                return [{ ...current, content }, newBlock(type, ids)];
+              }));
+            } else onInsertAfter(type);
           }}
           onChange={editField}
         />
@@ -1246,7 +1275,7 @@ function BlockEditor({
                     bare
                     phrasing
                     key={path.join(".")}
-                    value={typeof value === "string" ? value : ""}
+                    value={value}
                     label={labels.get(path.join(".")) ?? "Текст блоку"}
                     placeholder={labels.get(path.join(".")) ?? "Текст"}
                     references={referenceOptions}
@@ -1281,9 +1310,35 @@ function BlockEditor({
         </>
       )}
 
-      {block.type === "rich_text" ? <RepeatControls block={block} onChange={editField} /> : null}
+      {selected ? <RepeatControls block={block} onChange={editField} /> : null}
     </section>
   );
+}
+
+function CompositeEditor({ block, depth, referenceOptions, referenceTargets, courseSlug, onUpdate }: {
+  block: Extract<LessonBlock, { type: "group" }>;
+  depth: number;
+  referenceOptions: InternalReferenceOption[];
+  referenceTargets: ReturnType<typeof buildInternalReferenceTargets>;
+  courseSlug: string;
+  onUpdate: (update: (children: LessonBlock[]) => LessonBlock[]) => void;
+}) {
+  const [selected, setSelected] = useState<string | null>(null);
+  const [picker, setPicker] = useState<DOMRect | null>(null);
+  const drag = useRowDrag((from, to, edge) => onUpdate((children) => moveItem(children, from.index, landingIndex(from.index, to.index, edge, true))));
+  return <div className={styles.compositeEditor} onDragStart={(event) => event.stopPropagation()} onDrop={(event) => event.stopPropagation()}>
+    {block.children.map((child, index) => <BlockEditor key={child.id} block={child} index={index} total={block.children.length}
+      depth={depth + 1} drag={drag} selected={selected === child.id} referenceOptions={referenceOptions} referenceTargets={referenceTargets} courseSlug={courseSlug}
+      onSelect={() => setSelected(child.id)} onProperties={() => setSelected(child.id)}
+      onChange={(path, value) => onUpdate((children) => writePath({ blocks: children }, path, value).blocks)}
+      onBlocks={onUpdate}
+      onInsertAfter={(type) => onUpdate((children) => [...children.slice(0, index + 1), newBlock(type, ids), ...children.slice(index + 1)])} />)}
+    <button type="button" className={styles.addAction} onClick={(event) => setPicker(event.currentTarget.getBoundingClientRect())}>
+      <span className={styles.addGlyph} aria-hidden="true">+</span> Підблок
+    </button>
+    {picker ? <BuilderBlockPicker anchor={picker} onClose={() => setPicker(null)} excludedTypes={depth >= 3 ? ["group"] : []}
+      onPick={(type) => { onUpdate((children) => [...children, newBlock(type, ids)]); setPicker(null); }} /> : null}
+  </div>;
 }
 
 const NODE_LABELS: Record<RichTextNode["kind"], string> = {
@@ -1420,7 +1475,7 @@ function RichTextEditor({
    */
   blockActions?: MenuItem[];
   referenceOptions: InternalReferenceOption[];
-  onBlockCommand?: (id: string) => void;
+  onBlockCommand?: (id: string, index: number, commandNode?: RichTextNode) => void;
   onChange: (path: (string | number)[], value: unknown) => void;
 }) {
   const setContent = (next: RichTextNode[]) => onChange(["content"], next);
@@ -1447,12 +1502,19 @@ function RichTextEditor({
 
   const commands: SlashCommand[] = [...NODE_COMMANDS, ...(blockCommands ?? [])];
 
-  const runCommand = (index: number, id: string) => {
+  const runCommand = (index: number, id: string, clearSlash = false, itemIndex = 0) => {
+    const current = block.content[index];
+    const commandNode: RichTextNode | undefined = clearSlash
+      ? current.kind === "ul" || current.kind === "ol"
+        ? { ...current, items: current.items.map((item, i) => i === itemIndex ? "" : item) }
+        : { ...current, text: "" }
+      : undefined;
     if (id.startsWith("block:")) {
-      onBlockCommand?.(id);
+      onBlockCommand?.(id, index, commandNode);
       return;
     }
-    setContent(changeNodeKind(block.content, index, id as RichTextNode["kind"]));
+    const content = commandNode ? block.content.map((node, i) => i === index ? commandNode : node) : block.content;
+    setContent(changeNodeKind(content, index, id as RichTextNode["kind"]));
     setFocus(id === "ul" || id === "ol" ? `${index}:0` : `${index}`);
   };
 
@@ -1556,7 +1618,7 @@ function RichTextEditor({
                       autoFocus={focus === `${index}:${itemIndex}`}
                       commands={commands}
                       references={referenceOptions}
-                      onCommand={(id) => runCommand(index, id)}
+                      onCommand={(id, clearSlash) => runCommand(index, id, clearSlash, itemIndex)}
                       onChange={(next) =>
                         onChange(
                           ["content", index, "items"],
@@ -1612,7 +1674,7 @@ function RichTextEditor({
                   autoFocus={focus === `${index}`}
                   commands={commands}
                   references={referenceOptions}
-                  onCommand={(id) => runCommand(index, id)}
+                  onCommand={(id, clearSlash) => runCommand(index, id, clearSlash)}
                   onChange={(next) => onChange(["content", index, "text"], next ?? "")}
                   onEnter={() => openParagraph(index)}
                   onEmptyBackspace={() => removeNode(index)}
@@ -1640,22 +1702,6 @@ function RichTextEditor({
  * break, which the inline model cannot carry — so they are joined with «; »
  * instead of silently dropping every item but the first.
  */
-function changeNodeKind(content: RichTextNode[], index: number, kind: RichTextNode["kind"]): RichTextNode[] {
-  const node = content[index];
-  if (node.kind === kind) return content;
-
-  const carried: RichTextNode =
-    kind === "ul" || kind === "ol"
-      ? { kind, items: node.kind === "ul" || node.kind === "ol" ? node.items : [node.text] }
-      : {
-          kind,
-          text: node.kind === "ul" || node.kind === "ol" ? node.items.map(inlineToPlainText).join("; ") : node.text,
-        };
-
-  const next = [...content];
-  next[index] = carried;
-  return next;
-}
 
 
 

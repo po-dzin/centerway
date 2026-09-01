@@ -125,53 +125,47 @@
 
 /* ── The guides ───────────────────────────────────────
 
-   One card per author, one size, at every count. `auto-fit` rather than a fixed
-   three because the number of guides is data — the same reason the products
-   rail is written this way.
-
-   `data-layout="single"` is the lone-card case, and it is not a smaller grid:
-   one column with three empty cells beside it reads as a page waiting for
-   people who have not arrived. A single guide takes the panorama — portrait
-   beside the copy — which is a finished object on its own and becomes a column
-   the moment a second guide lands. */
+   Standard offer-card dimensions at every count. A lone author never grows
+   into a panorama; long portraits crop inside their horizontal media slot. */
 .guideRail {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(20rem, 100%), 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, var(--ds-offer-card-width-desktop)), var(--ds-offer-card-width-desktop)));
   gap: var(--cw-space-md);
 }
 
 .guideCard {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  align-content: start;
-  gap: clamp(1rem, 2.4vw, 1.5rem);
-  padding: clamp(1.25rem, 4vw, 2rem);
+  grid-template-rows: auto minmax(0, 1fr);
+  height: var(--ds-offer-card-height-desktop);
+  min-width: 0;
+  overflow: hidden;
   border-radius: var(--cw-card-radius);
   background: var(--cw-mat-surface);
   box-shadow: var(--cw-mat-shadow-soft);
 }
 
-.guideRail[data-layout="single"] .guideCard {
-  grid-template-columns: minmax(14rem, 0.5fr) minmax(0, 1.5fr);
-  align-items: start;
-}
-
 .guideMedia {
   min-width: 0;
+  aspect-ratio: 16 / 9;
+  overflow: hidden;
 }
 
 .guidePortrait {
   display: block;
   width: 100%;
-  height: auto;
-  border-radius: calc(var(--cw-card-radius) - var(--cw-radius-inset));
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
 }
 
 .guideBody {
   display: grid;
-  align-content: start;
-  gap: 0.85rem;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-md);
   min-width: 0;
+  min-height: 0;
 }
 
 .guideIdentity {
@@ -193,6 +187,10 @@
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
   line-height: 1.4;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .guideNote {
@@ -200,6 +198,10 @@
   color: color-mix(in srgb, var(--cw-platform-text) 78%, var(--cw-platform-muted) 22%);
   font-size: var(--ds-type-body-size);
   line-height: var(--ds-type-body-line-height);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 /* Text with a marker in the margin — the platform's one list recipe. */
@@ -227,11 +229,17 @@
 }
 
 @media (max-width: 900px) {
-  /* The panorama needs two columns' worth of width. Below that a lone guide is
-     a column like any other — the same card, not a second design. */
-  .guideRail[data-layout="single"] .guideCard {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 1rem;
+  .guideRail {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    padding-bottom: var(--cw-space-sm);
+  }
+
+  .guideCard {
+    flex: 0 0 var(--ds-offer-card-rail-width);
+    height: var(--ds-offer-card-height-rail);
+    scroll-snap-align: start;
   }
 }
 
@@ -400,7 +408,7 @@
   height: 2.5rem;
   border-radius: var(--cw-radius-sm);
   background: var(--cw-mat-tone-icon);
-  color: var(--cw-sem-guide-primary);
+  color: var(--cw-platform-accent);
 }
 
 .expertCompactPanel {
