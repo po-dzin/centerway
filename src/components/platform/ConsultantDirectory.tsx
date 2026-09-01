@@ -10,15 +10,26 @@ export function ConsultantDirectory({ authors }: { authors: Author[] }) {
   return <PlatformBlock id="consultants" label="Провідники" title="Оберіть автора консультації" lead="Відкрийте профіль, подивіться досвід і домовтеся про розмову напряму.">
     <div className={styles.guideRail} data-layout={consultants.length === 1 ? "single" : undefined}>
       {consultants.map((author) => <Link key={author.slug} href={authorHref(author)} className={styles.guideCard}>
-        {author.photo ? <div className={styles.guideMedia}>
-          {/* Cabinet portraits may be public Supabase Storage URLs. Plain img
-              keeps an external photo from blocking this entire directory. */}
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img className={styles.guidePortrait} src={author.photo.src} alt={author.photo.alt} loading="lazy" decoding="async" />
-          <div className={styles.guideBadges}>{author.experienceBadge ? <span>{author.experienceBadge}</span> : null}{author.achievementBadge ? <span>{author.achievementBadge}</span> : null}</div>
-        </div> : null}
-        <div className={styles.guideBody}><div className={styles.guideIdentity}><h3 className={styles.guideName}>{author.name}</h3>{author.role ? <p className={styles.guideRole}>{author.role}</p> : null}</div>
-          <p className={styles.guideNote}>{author.consultation?.summary ?? author.bio}</p><span className={styles.guideLink}>Профіль і консультація</span></div>
+        <div className={styles.guideMedia}>
+          {author.photo ? <>
+            {/* Cabinet portraits may be public Supabase Storage URLs. Plain img
+                keeps an external photo from blocking this entire directory. */}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img className={styles.guidePortrait} src={author.photo.src} alt={author.photo.alt} loading="lazy" decoding="async" />
+          </> : <span className={styles.guideFallback} aria-hidden="true">{author.name.trim().charAt(0).toUpperCase()}</span>}
+          {(author.experienceBadge || author.achievementBadge) ? <div className={styles.guideBadges}>
+            {author.experienceBadge ? <span>{author.experienceBadge}</span> : null}
+            {author.achievementBadge ? <span>{author.achievementBadge}</span> : null}
+          </div> : null}
+        </div>
+        <div className={styles.guideBody}>
+          <div className={styles.guideIdentity}>
+            <h3 className={styles.guideName}>{author.name}</h3>
+            {author.role ? <p className={styles.guideRole}>{author.role}</p> : null}
+          </div>
+          {author.bio ? <p className={styles.guideNote}>{author.bio}</p> : author.consultation?.summary ? <p className={styles.guideNote}>{author.consultation.summary}</p> : null}
+          {author.facts?.length ? <ul className={styles.guideFacts}>{author.facts.slice(0, 3).map((fact) => <li key={fact}><span>{fact}</span></li>)}</ul> : null}
+        </div>
       </Link>)}
     </div>
   </PlatformBlock>;

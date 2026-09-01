@@ -34,8 +34,9 @@ export default async function ExpertsIndexPage() {
                 how this directory disagreed with the home page. */}
             {authors.map((author) => (
               <Link key={author.slug} href={authorHref(author)} className={trustStyles.guideCard}>
-                {author.photo ? (
-                  <div className={trustStyles.guideMedia}>
+                <div className={trustStyles.guideMedia}>
+                  {author.photo ? (
+                    <>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
                     <img
                       className={trustStyles.guidePortrait}
@@ -44,18 +45,20 @@ export default async function ExpertsIndexPage() {
                       loading="lazy"
                       decoding="async"
                     />
-                    {(author.experienceBadge || author.achievementBadge) ? <div className={trustStyles.guideBadges}>
-                      {author.experienceBadge ? <span>{author.experienceBadge}</span> : null}
-                      {author.achievementBadge ? <span>{author.achievementBadge}</span> : null}
-                    </div> : null}
-                  </div>
-                ) : null}
+                    </>
+                  ) : <span className={trustStyles.guideFallback} aria-hidden="true">{author.name.trim().charAt(0).toUpperCase()}</span>}
+                  {(author.experienceBadge || author.achievementBadge) ? <div className={trustStyles.guideBadges}>
+                    {author.experienceBadge ? <span>{author.experienceBadge}</span> : null}
+                    {author.achievementBadge ? <span>{author.achievementBadge}</span> : null}
+                  </div> : null}
+                </div>
                 <div className={trustStyles.guideBody}>
                   <div className={trustStyles.guideIdentity}>
                     <h3 className={trustStyles.guideName}>{author.name}</h3>
                     {author.role ? <p className={trustStyles.guideRole}>{author.role}</p> : null}
                   </div>
-                  {author.facts?.length ? <ul className={trustStyles.guideFacts}>{author.facts.slice(0, 3).map((fact) => <li key={fact}><span>{fact}</span></li>)}</ul> : author.bio ? <p className={trustStyles.guideNote}>{author.bio}</p> : null}
+                  {author.bio ? <p className={trustStyles.guideNote}>{author.bio}</p> : null}
+                  {author.facts?.length ? <ul className={trustStyles.guideFacts}>{author.facts.slice(0, 3).map((fact) => <li key={fact}><span>{fact}</span></li>)}</ul> : null}
                 </div>
               </Link>
             ))}

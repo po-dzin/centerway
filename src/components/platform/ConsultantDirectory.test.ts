@@ -14,12 +14,20 @@ describe("ConsultantDirectory", () => {
           src: "https://project.supabase.co/storage/v1/object/public/course-media/authors/author-1/photo.webp",
           alt: "Портрет автора",
         },
+        bio: "Дослідник і практик",
+        experienceBadge: "12 років практики",
+        achievementBadge: "Магістр комплементарної медицини",
+        facts: ["Перший факт", "Другий факт", "Третій факт", "Не показуємо"],
         consultation: { enabled: true, summary: "Онлайн-розмова" },
       }],
     }));
 
     expect(html).toContain('src="https://project.supabase.co/storage/v1/object/public/course-media/authors/author-1/photo.webp"');
     expect(html).toContain('loading="lazy"');
-    expect(html).toContain("Профіль і консультація");
+    expect(html).toContain("12 років практики");
+    expect(html).toContain("Магістр комплементарної медицини");
+    expect(html).toContain("Дослідник і практик");
+    expect(html).toContain("Третій факт");
+    expect(html).not.toContain("Не показуємо");
   });
 });

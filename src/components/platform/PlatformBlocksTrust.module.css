@@ -136,7 +136,7 @@
 .guideCard {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: auto minmax(0, 1fr);
+  grid-template-rows: minmax(13.5rem, 0.88fr) minmax(0, 1fr);
   height: var(--ds-offer-card-height-desktop);
   min-width: 0;
   overflow: hidden;
@@ -148,12 +148,22 @@
 .guideMedia {
   position: relative;
   min-width: 0;
-  aspect-ratio: 16 / 9;
   overflow: hidden;
+  background: var(--cw-mat-tone-proof);
+}
+
+.guideMedia::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  content: "";
+  background: linear-gradient(180deg, transparent 42%, color-mix(in srgb, var(--cw-mat-scrim-ink) 66%, transparent) 100%);
+  pointer-events: none;
 }
 
 .guideBadges {
   position: absolute;
+  z-index: 1;
   inset-inline: var(--cw-space-sm);
   inset-block-end: var(--cw-space-sm);
   display: flex;
@@ -178,9 +188,20 @@
   object-position: center 30%;
 }
 
+.guideFallback {
+  display: grid;
+  width: 100%;
+  height: 100%;
+  place-items: center;
+  color: var(--cw-mat-inverse-text);
+  background: var(--cw-platform-accent-strong);
+  font-family: var(--cw-font-display);
+  font-size: clamp(3rem, 10vw, 5rem);
+}
+
 .guideBody {
   display: grid;
-  grid-template-rows: auto minmax(0, 1fr) auto;
+  align-content: start;
   gap: var(--cw-space-sm);
   padding: var(--cw-space-md);
   min-width: 0;
@@ -218,7 +239,7 @@
   font-size: var(--ds-type-body-size);
   line-height: var(--ds-type-body-line-height);
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -236,10 +257,19 @@
 }
 
 .guideFacts li {
-  display: grid;
-  grid-template-columns: 1.25rem minmax(0, 1fr);
-  align-items: start;
-  gap: 0.6rem;
+  position: relative;
+  padding-left: 1.05rem;
+}
+
+.guideFacts li::before {
+  position: absolute;
+  top: 0.52em;
+  left: 0;
+  width: 0.38rem;
+  height: 0.38rem;
+  content: "";
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-platform-accent);
 }
 
 .guideFactIcon {
@@ -258,6 +288,7 @@
   .guideCard {
     flex: 0 0 var(--ds-offer-card-rail-width);
     height: var(--ds-offer-card-height-rail);
+    grid-template-rows: minmax(12.5rem, 0.88fr) minmax(0, 1fr);
     scroll-snap-align: start;
   }
 }
