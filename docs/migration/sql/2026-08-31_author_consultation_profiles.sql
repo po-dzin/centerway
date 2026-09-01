@@ -61,7 +61,13 @@ set profile_facts = coalesce(profile_facts, '["12 років практики", 
     consultation_summary = coalesce(consultation_summary, 'Персональна онлайн-консультація до 90 хвилин: стан, харчування, ритм і зрозумілий план на 2–4 тижні.'),
     consultation_points = coalesce(consultation_points, '["розбір поточного стану, конституції, харчування і ритму", "онлайн-зустріч тривалістю до 90 хвилин", "персональні пріоритети та план дій на 2–4 тижні"]'::jsonb),
     consultation_contact_url = coalesce(consultation_contact_url, 'https://t.me/E_Koriakin')
-where slug = 'koriakin';
+where id = (
+  select id
+  from public.lms_authors
+  where slug in ('yevhenii-koriakin', 'koriakin')
+  order by case slug when 'yevhenii-koriakin' then 0 else 1 end
+  limit 1
+);
 
 alter table public.lms_authors
   drop constraint if exists lms_authors_listed_badges_complete,
@@ -87,6 +93,12 @@ alter table public.lms_authors
 update public.lms_courses c
 set author_profile_id = a.id
 from public.lms_authors a
-where a.slug = 'koriakin'
+where a.id = (
+  select id
+  from public.lms_authors
+  where slug in ('yevhenii-koriakin', 'koriakin')
+  order by case slug when 'yevhenii-koriakin' then 0 else 1 end
+  limit 1
+)
   and c.slug in ('way21', 'natural-body')
   and c.author_profile_id is null;

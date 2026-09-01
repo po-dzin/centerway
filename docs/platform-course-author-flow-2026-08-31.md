@@ -83,6 +83,11 @@ badges on future public-profile writes without changing visibility of existing
 profiles. The generated
 `supabase/migrations/**` copy remains ignored by repository contract.
 
+Follow-up 2026-09-01: the founder backfill resolves both historical slugs,
+preferring seeded `yevhenii-koriakin` and falling back to live `koriakin`.
+Replayed and staging databases therefore receive the profile data and the same
+two founder course links exactly once.
+
 Remote SQL was applied on 2026-09-01 through the project's documented IPv4
 session pooler in one transaction and recorded as migration version
 `20260831000000 / author_consultation_profiles`. Post-write verification found
