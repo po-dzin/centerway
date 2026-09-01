@@ -113,6 +113,15 @@
     }
   },
   {
+    "kind": "mutate",
+    "method": "DELETE",
+    "path": "/api/admin/access/courses",
+    "body": {
+      "courseId": "smoke-course",
+      "confirmSlug": "smoke-course"
+    }
+  },
+  {
     "kind": "read",
     "method": "GET",
     "path": "/api/admin/access/learners"
@@ -133,11 +142,6 @@
     "routePath": "/api/admin/access/learners"
   },
   {
-    "kind": "read",
-    "method": "GET",
-    "path": "/api/admin/access/roles"
-  },
-  {
     "kind": "mutate",
     "method": "POST",
     "path": "/api/admin/access/roles",
@@ -145,11 +149,6 @@
       "email": "smoke@example.com",
       "role": "support"
     }
-  },
-  {
-    "kind": "read",
-    "method": "GET",
-    "path": "/api/admin/access/accounts"
   },
   {
     "kind": "mutate",
