@@ -165,10 +165,13 @@ export async function saveOffer(input: SaveOfferInput) {
     if (courseError) throw new AccessError(courseError.message, 500);
     if (!course) throw new AccessError("course_not_found", 404);
 
-    if (!Number.isInteger(input.amount) || input.amount <= 0) throw new AccessError("amount_invalid", 400);
+    if (!Number.isInteger(input.amount) || input.amount < 0) throw new AccessError("amount_invalid", 400);
 
     const listAmount = input.listAmount ?? null;
-    if (listAmount !== null && (!Number.isInteger(listAmount) || listAmount < input.amount)) {
+    if (
+        listAmount !== null &&
+        (!Number.isInteger(listAmount) || listAmount <= input.amount || input.amount === 0)
+    ) {
         // The struck-through figure is what the page QUOTES; below the charged
         // price it would advertise a discount that runs the wrong way.
         throw new AccessError("list_amount_invalid", 400);

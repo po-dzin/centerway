@@ -520,7 +520,7 @@ function PricingRow({
                         <span className="text-xs cw-muted">{t("catalog_amount")}</span>
                         <input
                             type="number"
-                            min={1}
+                            min={0}
                             step={1}
                             inputMode="numeric"
                             value={amount}

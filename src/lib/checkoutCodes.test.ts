@@ -95,15 +95,27 @@ describe("courseOfferCommerce", () => {
     expect(commerce.mode).toBe("checkout");
     if (commerce.mode !== "checkout") return;
     expect(commerce.checkoutHref).toContain("product=course%3Amy-course");
-    // No list price on a database offer means "quote what is charged" — unlike
-    // PRODUCTS, there is no test-price split here to hide behind.
     expect(commerce.price).toContain("790");
+    expect(commerce.compareAtPrice).toBeNull();
   });
 
-  it("quotes the struck-through figure when there is one", () => {
+  it("keeps the current figure primary and exposes the former one separately", () => {
     const commerce = courseOfferCommerce("my-course", { ...offer, listAmount: 1200 });
-    expect(commerce.mode === "checkout" && commerce.price).toContain("1");
-    expect(commerce.mode === "checkout" && commerce.price).toContain("200");
+    expect(commerce.mode === "checkout" && commerce.price).toContain("790");
+    expect(commerce.mode === "checkout" && commerce.compareAtPrice).toContain("1");
+    expect(commerce.mode === "checkout" && commerce.compareAtPrice).toContain("200");
+  });
+
+  it("turns a zero-priced course into a direct access action, never checkout", () => {
+    const commerce = courseOfferCommerce("my-course", { ...offer, amount: 0 });
+    expect(commerce).toEqual({
+      mode: "free",
+      accessHref: "/learn/my-course",
+      price: "Безкоштовно",
+      compareAtPrice: null,
+      amount: 0,
+      currency: "UAH",
+    });
   });
 
   it("falls back to the form when nobody has priced it", () => {

@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
+import { PlatformOfferCarousel } from "@/components/platform/PlatformOfferCarousel";
 import heroStyles from "@/components/platform/PlatformHeroStyles";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
@@ -14,20 +15,24 @@ import { getPlatformRoute } from "@/lib/surfaces/catalog";
 /**
  * The catalogue, no longer six constants — and since 2026-08-29, no constants.
  *
- * The two rails used to merge authored courses with the hand-written entries in
+ * The catalogue used to split authored courses into two carousel rails. Both
+ * rails read from the same source and asked the same comparison question, so
+ * the aggregate now keeps every listed course in one continuous catalogue,
+ * ordered by the author's own `sortOrder` and addressed by its program slug.
+ *
+ * Before the catalogue was database-backed, it merged authored courses with
+ * the hand-written entries in
  * `content.ts`, because both kinds existed and a buyer does not care which of
  * them was typed into a TS file. The last course left that array with reboot
  * and irem, so the merge has nothing left to merge: every card here is a
  * published, `listed` course read through `listStorefrontCourses`, ordered by
  * the author's own `sortOrder`, and addressed by its program slug.
  *
- * The split between the rails still means something to a reader — how much of
- * their life the thing asks for — and it is still a lesson count.
+ * Depth remains visible on each card through its kind and lesson count; it no
+ * longer hides part of the full set behind a second sequential carrier.
  */
 export async function PlatformProgramsIndexPage() {
   const authored = await listStorefrontCourses();
-  const authoredMini = authored.filter((course) => course.lessons <= 8);
-  const authoredLong = authored.filter((course) => course.lessons > 8);
 
   const heroStyle = heroFraming(platformAggregateArtwork.programs);
 
@@ -55,7 +60,7 @@ export async function PlatformProgramsIndexPage() {
               Короткі входи, довші програми і різна глибина роботи з тілом, ритмом, харчуванням та увагою.
             </p>
             <div className={heroStyles.heroFeatureActions}>
-              <Link className={heroStyles.heroPrimaryButton} href="#mini-courses">
+              <Link className={heroStyles.heroPrimaryButton} href="#program-catalog">
                 Перейти до програм
               </Link>
             </div>
@@ -75,40 +80,6 @@ export async function PlatformProgramsIndexPage() {
         </section>
 
         <section
-          id="mini-courses"
-          className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}
-          data-cw-semantic-role="offer-index"
-          data-cw-semantic-family="guide-offer"
-          data-cw-token-source="global-app-ds"
-        >
-          <div className={offerStyles.sectionHeader}>
-            <div>
-              <p className={offerStyles.label}>Міні-курси</p>
-              <h2 className={offerStyles.sectionTitle}>Короткий вхід у практику</h2>
-            </div>
-          </div>
-          <div className={offerStyles.aggregateRail} data-rail="mini">
-            {authoredMini.map((course) => (
-              <PlatformOfferCard
-                key={course.slug}
-                title={course.title}
-                tag={course.tag}
-                description={course.description}
-                href={course.href}
-                visual={course.visual}
-                slug={course.slug}
-                artwork={course.artwork}
-                kindBadge={course.kindBadge}
-                categories={course.categoryLabels}
-                pretitle={course.pretitle}
-                posttitle={course.posttitle}
-                ctaLabel="Деталі курсу"
-              />
-            ))}
-          </div>
-        </section>
-
-        <section
           id="program-catalog"
           className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}
           data-cw-semantic-role="offer-index"
@@ -117,12 +88,12 @@ export async function PlatformProgramsIndexPage() {
         >
           <div className={offerStyles.sectionHeader}>
             <div>
-              <p className={offerStyles.label}>Основні програми</p>
-              <h2 className={offerStyles.sectionTitle}>Глибші програми відновлення</h2>
+              <p className={offerStyles.label}>Усі програми</p>
+              <h2 className={offerStyles.sectionTitle}>Оберіть глибину і ритм практики</h2>
             </div>
           </div>
           <div className={offerStyles.aggregateRail}>
-            {authoredLong.map((course) => (
+            {authored.map((course) => (
               <PlatformOfferCard
                 key={course.slug}
                 title={course.title}
@@ -136,7 +107,10 @@ export async function PlatformProgramsIndexPage() {
                 categories={course.categoryLabels}
                 pretitle={course.pretitle}
                 posttitle={course.posttitle}
-                ctaLabel="Деталі програми"
+                commercialMode={course.commercialMode}
+                price={course.price}
+                compareAtPrice={course.compareAtPrice}
+                ctaLabel={course.lessons <= 8 ? "Деталі курсу" : "Деталі програми"}
               />
             ))}
           </div>
@@ -239,7 +213,7 @@ export function PlatformTestsHubPage() {
               <h2 className={offerStyles.sectionTitle}>{testsHubCopy.plannedTitle}</h2>
             </div>
           </div>
-          <div className={offerStyles.aggregateRail} data-rail="mini">
+          <div className={offerStyles.aggregateRail}>
             {plannedPlatformTests.map((test) => (
               <PlatformOfferCard
                 key={test.slug}
@@ -407,7 +381,7 @@ export async function PlatformProductsIndexPage() {
               <h2 className={offerStyles.sectionTitle}>Де продукт має найбільше сенсу</h2>
             </div>
           </div>
-          <div className={offerStyles.aggregateRail} data-rail="mini">
+          <PlatformOfferCarousel label="Пов’язані програми CenterWay" viewAllHref="/programs" viewAllLabel="Усі курси">
             {relatedPrograms.map((program) => (
               <PlatformOfferCard
                 key={program.slug}
@@ -419,9 +393,12 @@ export async function PlatformProductsIndexPage() {
                 ctaLabel="Деталі програми"
                 slug={program.slug}
                 artwork={program.artwork}
+                commercialMode={program.commercialMode}
+                price={program.price}
+                compareAtPrice={program.compareAtPrice}
               />
             ))}
-          </div>
+          </PlatformOfferCarousel>
         </section>
       </main>
     </PlatformShell>

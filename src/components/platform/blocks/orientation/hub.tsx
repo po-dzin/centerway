@@ -98,7 +98,7 @@ export function HubIntro() {
         <aside className={styles.videoAside} id="diagnostics" data-cw-hub-intro="aside">
           <div className={styles.videoDecisionIntro}>
             <p className={styles.label}>Тест доші · перший крок</p>
-            <h2 className={styles.title}>Почніть із тесту доші</h2>
+            <h2 className={`${styles.title} ${styles.videoDecisionTitle}`}>Спочатку — зрозуміти свій стан</h2>
             <p className={styles.videoDecisionText}>Кілька хвилин, щоб уважніше подивитися на свій поточний стан і зрозуміти, з чого почати.</p>
           </div>
           <div className={styles.videoDecisionRail}>

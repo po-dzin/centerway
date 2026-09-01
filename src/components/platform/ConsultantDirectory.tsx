@@ -5,11 +5,10 @@ import { authorHref } from "@/lib/lms/authors";
 import type { Author } from "@/lms-core";
 
 export function ConsultantDirectory({ authors }: { authors: Author[] }) {
-  const consultants = authors.filter((author) => author.consultation?.enabled);
-  if (consultants.length === 0) return null;
-  return <PlatformBlock id="consultants" label="Провідники" title="Оберіть автора консультації" lead="Відкрийте профіль, подивіться досвід і домовтеся про розмову напряму.">
-    <div className={styles.guideRail} data-layout={consultants.length === 1 ? "single" : undefined}>
-      {consultants.map((author) => <Link key={author.slug} href={authorHref(author)} className={styles.guideCard}>
+  if (authors.length === 0) return null;
+  return <PlatformBlock id="consultants" label="Провідники" title="Автори CenterWay" lead="Познайомтеся з авторами, подивіться їхній досвід і відкрийте профіль того, з ким хочете продовжити розмову.">
+    <div className={`${styles.guideRail} ${styles.consultantRail}`} data-layout={authors.length === 1 ? "single" : undefined}>
+      {authors.map((author) => <Link key={author.slug} href={authorHref(author)} className={styles.guideCard}>
         <div className={styles.guideMedia}>
           {author.photo ? <>
             {/* Cabinet portraits may be public Supabase Storage URLs. Plain img

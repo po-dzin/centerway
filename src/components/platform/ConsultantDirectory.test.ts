@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { ConsultantDirectory } from "./ConsultantDirectory";
 
 describe("ConsultantDirectory", () => {
-  it("renders a cabinet-uploaded external portrait without Next image host validation", () => {
+  it("renders every listed author in the consultation carousel, including an author without consultation opt-in", () => {
     const html = renderToStaticMarkup(createElement(ConsultantDirectory, {
       authors: [{
         id: "author-1",
@@ -19,6 +19,11 @@ describe("ConsultantDirectory", () => {
         achievementBadge: "Магістр комплементарної медицини",
         facts: ["Перший факт", "Другий факт", "Третій факт", "Не показуємо"],
         consultation: { enabled: true, summary: "Онлайн-розмова" },
+      }, {
+        id: "author-2",
+        slug: "second-author",
+        name: "Другий автор",
+        bio: "Автор програми",
       }],
     }));
 
@@ -29,5 +34,7 @@ describe("ConsultantDirectory", () => {
     expect(html).toContain("Дослідник і практик");
     expect(html).toContain("Третій факт");
     expect(html).not.toContain("Не показуємо");
+    expect(html).toContain("Другий автор");
+    expect(html).toContain("Автори CenterWay");
   });
 });

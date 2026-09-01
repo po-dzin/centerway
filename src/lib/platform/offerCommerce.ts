@@ -7,9 +7,9 @@
  * catalogue, from the header — could not buy the thing the page was selling.
  * They could only ask to be told how.
  *
- * One rule decides it, and it is not a per-page opinion: an offer that has a
- * payable product code sells itself; an offer that does not is sold in
- * conversation and keeps the form. That is the same split
+ * One rule decides it, and it is not a per-page opinion: an offer with a
+ * positive amount sells itself; a zero amount starts the LMS directly; an
+ * offer that does not exist is sold in conversation and keeps the form. That is the same split
  * `docs/checkout-test-flow-2026-08-21.md` settled for the landings, so the two
  * surfaces cannot drift into disagreeing about what is buyable.
  *
@@ -34,6 +34,8 @@ export type OfferCommerce =
       checkoutHref: string;
       /** Already formatted — a checkout without a quoted price is not offered. */
       price: string;
+      /** Former public price, shown struck through only when it exceeds `price`. */
+      compareAtPrice: string | null;
       /**
        * The same figure unformatted, and the currency it is in.
        *
@@ -42,6 +44,15 @@ export type OfferCommerce =
        * one source here so a page cannot print one price and publish another.
        */
       amount: number;
+      currency: string;
+    }
+  | {
+      mode: "free";
+      /** The learner's destination; no payment route is opened. */
+      accessHref: string;
+      price: "Безкоштовно";
+      compareAtPrice: null;
+      amount: 0;
       currency: string;
     }
   | {
@@ -93,9 +104,9 @@ function checkoutHref(productCode: PayableProductCode, slug: string): string {
  * a hand-written checkout where one exists, and otherwise the lead form, which
  * is exactly the state `herbs` is in.
  *
- * The quoted figure is `listAmount ?? amount`: unlike `PRODUCTS`, a database
- * offer has no test-price split, so a null list price means "quote what is
- * charged", not "quote nothing".
+ * `amount` is the current price and `listAmount` is the optional former price,
+ * exactly as the admin labels and validates them. The latter never replaces
+ * the former: it is rendered only when it is strictly greater.
  */
 export function courseOfferCommerce(slug: string, offer: CourseOffer | null): OfferCommerce {
   /* NO ROW IS NOT THE SAME AS NOT FOR SALE — it means nobody has written the
@@ -113,12 +124,27 @@ export function courseOfferCommerce(slug: string, offer: CourseOffer | null): Of
      tables below are keyed in. */
   if (!offer) return resolveOfferCommerce(slug);
 
+  if (offer.amount === 0) {
+    return {
+      mode: "free",
+      accessHref: `/learn/${encodeURIComponent(offer.courseSlug)}`,
+      price: "Безкоштовно",
+      compareAtPrice: null,
+      amount: 0,
+      currency: offer.currency,
+    };
+  }
+
   return {
     mode: "checkout",
     productCode: offer.code as PayableProductCode,
     checkoutHref: checkoutHref(offer.code as PayableProductCode, slug),
-    price: formatPrice(offer.listAmount ?? offer.amount, offer.currency),
-    amount: offer.listAmount ?? offer.amount,
+    price: formatPrice(offer.amount, offer.currency),
+    compareAtPrice:
+      offer.listAmount !== null && offer.listAmount > offer.amount
+        ? formatPrice(offer.listAmount, offer.currency)
+        : null,
+    amount: offer.amount,
     currency: offer.currency,
   };
 }
@@ -138,6 +164,7 @@ export function resolveOfferCommerce(slug: string): OfferCommerce {
       productCode,
       checkoutHref: checkoutHref(productCode, slug),
       price: formatPrice(listed, PRODUCTS[productCode].currency),
+      compareAtPrice: null,
       amount: listed,
       currency: PRODUCTS[productCode].currency,
     };

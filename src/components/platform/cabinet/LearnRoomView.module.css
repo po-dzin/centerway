@@ -28,13 +28,13 @@
  */
 
 .room {
-  --room-paper: #f4f1e8;
-  --room-paper-lit: #fbf9f3;
-  --room-paper-deep: #e8e4d8;
-  --room-wash: #ddd8c9;
-  --room-wash-2: #cdc7b5;
-  --room-fill: #faf7ef;
-  --room-ink-value: #2f2e2a;
+  --room-paper: var(--cw-sem-calm-bg);
+  --room-paper-lit: var(--cw-sem-calm-surface);
+  --room-paper-deep: var(--cw-sem-calm-surface-muted);
+  --room-wash: var(--cw-mat-stroke-quiet);
+  --room-wash-2: var(--cw-mat-stroke-inner);
+  --room-fill: var(--cw-mat-surface);
+  --room-ink-value: var(--cw-platform-text);
   --room-ink: var(--room-ink-value);
   /* INK AT REST IS STILL INK. These sat at 70%/46% of the ink value, which is
      the weight of a note in a margin, not of the list that IS the page — the
@@ -46,10 +46,10 @@
   --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 64%, var(--room-paper));
   --room-ink-line: color-mix(in srgb, var(--room-ink-value) 42%, transparent);
   --room-ink-hair: color-mix(in srgb, var(--room-ink-value) 15%, transparent);
-  --room-brass: #b97f2d;
-  --room-brass-lit: #e5ae65;
-  --room-brass-line: color-mix(in srgb, #b97f2d 60%, transparent);
-  --room-cast: rgba(44, 41, 34, 0.3);
+  --room-brass: var(--cw-sem-warmth-strong);
+  --room-brass-lit: var(--cw-sem-warmth);
+  --room-brass-line: color-mix(in srgb, var(--cw-sem-warmth-strong) 60%, transparent);
+  --room-cast: color-mix(in srgb, var(--cw-mat-scrim-ink) 30%, transparent);
   /* WHAT THE SELECT IS WRITTEN IN DEPENDS ON WHAT IT IS WRITTEN ON (2026-08-29,
      the user's rule). On paper it is INK: brass on cream is a smudge of warm
      paint on warm paper, and a room whose every mark is gold has no gold left.
@@ -90,8 +90,8 @@
      line reads as a pasted panel no matter how good the texture is. */
   --room-edge-fade: radial-gradient(
     96% 92% at 50% 50%,
-    #000 0 26%,
-    color-mix(in srgb, #000 42%, transparent) 62%,
+    var(--cw-mat-scrim-ink) 0 26%,
+    color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent) 62%,
     transparent 96%
   );
 }
@@ -105,21 +105,21 @@
 :root[data-cw-theme="dark"] .room {
   --room-paper: var(--cw-platform-bg);
   --room-paper-lit: var(--cw-platform-surface);
-  --room-paper-deep: #131312;
-  --room-wash: #0f0f0e;
-  --room-wash-2: #0a0a09;
+  --room-paper-deep: var(--cw-platform-bg);
+  --room-wash: var(--cw-platform-surface);
+  --room-wash-2: var(--cw-platform-surface-muted);
   --room-fill: var(--cw-platform-surface-muted);
   --room-ink-value: var(--cw-platform-text);
   --room-ink-line: color-mix(in srgb, var(--room-ink-value) 62%, transparent);
   --room-ink-hair: color-mix(in srgb, var(--room-ink-value) 22%, transparent);
   --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 72%, var(--room-paper));
-  --room-brass: #e5ae65;
-  --room-brass-lit: #f4cd96;
-  --room-brass-line: color-mix(in srgb, #e5ae65 55%, transparent);
+  --room-brass: var(--cw-sem-warmth);
+  --room-brass-lit: var(--cw-platform-accent-contrast);
+  --room-brass-line: color-mix(in srgb, var(--cw-sem-warmth) 55%, transparent);
   --room-select-ink: var(--room-brass-lit);
   --room-select-line: var(--room-brass-line);
   --room-select-tint: color-mix(in srgb, var(--room-brass) 34%, var(--room-fill));
-  --room-cast: rgba(0, 0, 0, 0.62);
+  --room-cast: color-mix(in srgb, var(--cw-mat-scrim-ink) 62%, transparent);
   /* A line thinner than a pixel does not sample cleanly on a dark ground —
      cream-on-dark flickers where dark-on-light merely fades. The pen goes
      heavier in the dark rather than brighter. */
@@ -131,21 +131,21 @@
   :root:not([data-cw-theme="light"]) .room {
     --room-paper: var(--cw-platform-bg);
     --room-paper-lit: var(--cw-platform-surface);
-    --room-paper-deep: #131312;
-    --room-wash: #0f0f0e;
-    --room-wash-2: #0a0a09;
+    --room-paper-deep: var(--cw-platform-bg);
+    --room-wash: var(--cw-platform-surface);
+    --room-wash-2: var(--cw-platform-surface-muted);
     --room-fill: var(--cw-platform-surface-muted);
     --room-ink-value: var(--cw-platform-text);
     --room-ink-line: color-mix(in srgb, var(--room-ink-value) 62%, transparent);
     --room-ink-hair: color-mix(in srgb, var(--room-ink-value) 22%, transparent);
     --room-ink-faint: color-mix(in srgb, var(--room-ink-value) 72%, var(--room-paper));
-    --room-brass: #e5ae65;
-    --room-brass-lit: #f4cd96;
-    --room-brass-line: color-mix(in srgb, #e5ae65 55%, transparent);
+    --room-brass: var(--cw-sem-warmth);
+    --room-brass-lit: var(--cw-platform-accent-contrast);
+    --room-brass-line: color-mix(in srgb, var(--cw-sem-warmth) 55%, transparent);
     --room-select-ink: var(--room-brass-lit);
     --room-select-line: var(--room-brass-line);
     --room-select-tint: color-mix(in srgb, var(--room-brass) 34%, var(--room-fill));
-    --room-cast: rgba(0, 0, 0, 0.62);
+    --room-cast: color-mix(in srgb, var(--cw-mat-scrim-ink) 62%, transparent);
     --room-ink-w: 1.7;
   --room-wall-shade: 0.62;
   }

@@ -28,7 +28,7 @@
  */
 
 import type { Metadata } from "next";
-import { notFound } from "next/navigation";
+import { notFound, redirect } from "next/navigation";
 
 import { ProgramDetailPage } from "@/components/platform/ProgramDetailPage";
 import { CourseNextStep } from "@/components/platform/CourseNextStep";
@@ -53,6 +53,18 @@ import { pageMetadata } from "@/lib/seo/metadata";
 async function publicCourse(address: string): Promise<Course | null> {
   const course = (await listLiveCourses()).find((one) => one.programSlug === address);
   return course && isPublicCourse(course) ? course : null;
+}
+
+/*
+ * Reset Day's checkout funnel is still a self-contained landing at
+ * `/reset-day`. The platform offer page is database-backed, so a deployment
+ * whose course row has not been restored must not turn the library's
+ * «Придбати доступ» action into a dead end. This is deliberately a redirect,
+ * not a snapshot rendered as a course: an absent LMS row remains absent for
+ * learning access, while the established sales surface stays reachable.
+ */
+function unavailableProgramFallback(address: string): string | null {
+  return address === "reset-day" ? "/reset-day" : null;
 }
 
 export async function generateMetadata({
@@ -90,7 +102,11 @@ export default async function CourseOfferPage({
 }) {
   const { slug } = await params;
   const course = await publicCourse(slug);
-  if (!course) notFound();
+  if (!course) {
+    const fallback = unavailableProgramFallback(slug);
+    if (fallback) redirect(fallback);
+    notFound();
+  }
 
   /* THE PRICE, AND WHY IT IS READ HERE. The offer row is owner-written and
      lives in a table the authoring routes hold no grant on, so it cannot come

@@ -73,6 +73,9 @@ type PlatformOfferCardProps = {
   pretitle?: string;
   /** The line below the title, in the author's own words — `StorefrontCard.posttitle`. */
   posttitle?: string;
+  commercialMode?: "fixed" | "free" | "inquiry";
+  price?: string | null;
+  compareAtPrice?: string | null;
 };
 
 export function PlatformOfferCard({
@@ -92,6 +95,9 @@ export function PlatformOfferCard({
   statusLabel = "Скоро",
   pretitle,
   posttitle,
+  commercialMode,
+  price,
+  compareAtPrice,
 }: PlatformOfferCardProps) {
   /* THE CARD IS NOT A HERO. It is roughly 370 CSS pixels wide in the grid, and
      it was drawing the same 1600px plate the full-bleed hero draws — six of them
@@ -165,6 +171,14 @@ export function PlatformOfferCard({
               <li key={point}>{point}</li>
             ))}
           </ul>
+        ) : null}
+        {commercialMode ? (
+          <div className={styles.programTilePrice} data-mode={commercialMode}>
+            {compareAtPrice ? <s>{compareAtPrice}</s> : null}
+            <strong>
+              {commercialMode === "fixed" ? price : commercialMode === "free" ? "Безкоштовно" : "Ціна за запитом"}
+            </strong>
+          </div>
         ) : null}
         {isPlanned ? (
           <span className={styles.programTileStatus}>{statusLabel}</span>

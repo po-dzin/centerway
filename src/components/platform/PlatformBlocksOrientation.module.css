@@ -454,6 +454,14 @@
   line-height: 1.1;
 }
 
+.heroPriceOld {
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 68%, transparent);
+  font-size: var(--ds-type-lead-size);
+  line-height: 1.2;
+  text-decoration-thickness: 0.08em;
+  text-decoration-color: currentColor;
+}
+
 .heroPriceNote {
   margin: 0;
   color: color-mix(in srgb, var(--cw-platform-accent-contrast) 70%, transparent);
@@ -716,6 +724,14 @@
 .videoDecisionIntro {
   display: grid;
   gap: 0.35rem;
+}
+
+/* The decision beside the 16:9 video is a compact orientation, not the
+   screen's main headline. Reuse the display step from the DS so its copy never
+   stretches the row and turns the neighbouring player into a taller object. */
+.videoDecisionTitle {
+  font-size: var(--ds-type-display-size);
+  line-height: var(--ds-type-display-line-height);
 }
 
 /* The diagnostics block's own way out, matching the showcase blocks' — see

@@ -36,32 +36,21 @@
 }
 
 @media (max-width: 900px) {
+  /* Aggregate routes are complete catalogues, not embedded recommendations.
+     On a phone their text-heavy offers form one predictable vertical reading
+     line; the universal carousel owns horizontal discovery elsewhere. */
   .aggregateRail {
-    display: flex;
-    flex-wrap: nowrap;
-    gap: 0.85rem;
-    overflow-x: auto;
-    overflow-y: visible;
-    margin: 0 -0.05rem;
-    padding: 0.1rem 0.35rem 0.35rem 0.05rem;
-    scroll-snap-type: x proximity;
-    overscroll-behavior-x: contain;
-    scrollbar-width: none;
-  }
-
-  .aggregateRail::-webkit-scrollbar {
-    display: none;
-  }
-
-  .aggregateRail > * {
-    flex: 0 0 var(--ds-offer-card-rail-width);
-    min-width: var(--ds-offer-card-rail-width);
-    scroll-snap-align: start;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--cw-space-md);
+    overflow: visible;
+    margin: 0;
+    padding: 0;
   }
 
   .aggregateRail[data-layout="single"] > * {
-    flex-basis: 100%;
-    min-width: 100%;
+    width: 100%;
+    min-width: 0;
   }
 
   /* Programs scroll instead of stacking or splitting. Two-up on a 375px phone
@@ -805,6 +794,33 @@
 
 .programTileBody[data-has-meta="true"][data-has-points="true"] {
   grid-template-rows: auto auto auto 1fr auto auto;
+}
+
+.programTilePrice {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 0.3rem 0.55rem;
+  color: var(--program-tile-fg);
+  font-family: var(--cw-font-data);
+  line-height: 1.15;
+}
+
+.programTilePrice s {
+  color: var(--program-tile-copy);
+  font-size: var(--ds-type-body-sm-size);
+  text-decoration-thickness: 0.08em;
+}
+
+.programTilePrice strong {
+  font-size: var(--ds-type-lead-size);
+  font-weight: 750;
+}
+
+.programTilePrice[data-mode="inquiry"] strong {
+  font-family: var(--cw-font-ui);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 650;
 }
 
 /* Marker inside the text column, the platform's one list rule — see

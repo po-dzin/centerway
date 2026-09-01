@@ -740,6 +740,15 @@ describe("entitlement", () => {
     });
     expect(result).toMatchObject({ entitled: true, source: "manual" });
   });
+
+  it("grants a published free course without inventing a payment order", () => {
+    const result = resolveEntitlement({
+      ...base,
+      orders: [],
+      freeCourse: true,
+    });
+    expect(result).toMatchObject({ entitled: true, source: "free", orderRef: null });
+  });
 });
 
 describe("enrollment deadline", () => {

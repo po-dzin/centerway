@@ -14,6 +14,7 @@ import type { GrantSource } from "@/lib/admin/accessTypes";
 import { isAdminRole, isStaffRole } from "@/lib/platform/adminRole";
 import {
   DEFAULT_TIMEZONE,
+  accessWindowEnd,
   accessRuleOf,
   accessStateOf,
   acceptedPaidOrders,
@@ -118,7 +119,7 @@ export type EnrollmentRecord = {
    * used to say only "manual", which was accurate until that screen learned to
    * label a seat as a bonus or a promo rather than a plain grant.
    */
-  source: "order" | "token" | GrantSource;
+  source: "order" | "token" | GrantSource | "free";
   orderRef: string | null;
   /** Deadline for this person on this course; `null` means access does not end. */
   expiresAt: string | null;
@@ -183,7 +184,17 @@ export async function checkEntitlement(
     return { entitled: true, source: "manual", grantedAt: now.toISOString(), orderRef: null };
   }
 
-  const purchases = await loadPurchases(identity);
+  const [purchases, offer] = await Promise.all([loadPurchases(identity), readOfferAccess(course)]);
+
+  if (offer.free) {
+    return resolveEntitlement({
+      courseProductCodes: course.entitlementProductCodes,
+      courseSlug: course.slug,
+      orders: purchases.orders,
+      freeCourse: true,
+      now,
+    });
+  }
   if (purchases.orders.length === 0) return { entitled: false, reason: "no_paid_order" };
 
   return resolveEntitlement({
@@ -251,19 +262,22 @@ async function loadPurchases(
  * buyer whose first visit landed after the offer closed would have received
  * access forever instead of the term they paid for.
  */
-async function readAccessRule(course: Course): Promise<AccessRule | null> {
+async function readOfferAccess(course: Course): Promise<{ rule: AccessRule | null; free: boolean }> {
   const db = adminClient();
   const { data } = await db
     .from("lms_course_offers")
-    .select("access_days, access_lifetime, active")
+    .select("access_days, access_lifetime, amount, active")
     .eq("course_id", course.id)
     .maybeSingle();
 
-  if (!data) return null;
-  return accessRuleOf({
-    accessDays: (data.access_days as number | null) ?? null,
-    accessLifetime: (data.access_lifetime as boolean | null) ?? null,
-  });
+  if (!data) return { rule: null, free: false };
+  return {
+    rule: accessRuleOf({
+      accessDays: (data.access_days as number | null) ?? null,
+      accessLifetime: (data.access_lifetime as boolean | null) ?? null,
+    }),
+    free: Boolean(data.active) && Number(data.amount) === 0,
+  };
 }
 
 /** The columns every enrollment read selects, so all of them fold the same way. */
@@ -343,11 +357,13 @@ export async function ensureEnrollment(
   // staff role and no offer term lifts it.
   if (row?.blocked_at) return { enrollment: null, reason: "blocked" };
 
-  const [rule, purchases, staff] = await Promise.all([
-    readAccessRule(course),
+  const [offerAccess, purchases, staff] = await Promise.all([
+    readOfferAccess(course),
     loadPurchases(identity),
     isStaff(identity.authUserId),
   ]);
+
+  const { rule, free } = offerAccess;
 
   const orders = acceptedPaidOrders({
     courseProductCodes: course.entitlementProductCodes,
@@ -386,7 +402,7 @@ export async function ensureEnrollment(
           revoked_at: null,
           // A hand-made grant that the learner has now paid for becomes an
           // ordinary purchase; the audit log keeps the record of the gift.
-          source: row.source === "manual" ? "order" : row.source,
+          source: row.source === "manual" || row.source === "free" ? "order" : row.source,
           updated_at: now.toISOString(),
         })
         .eq("id", row.id)
@@ -421,7 +437,7 @@ export async function ensureEnrollment(
 
   // No row yet. Staff open a published course without ever having paid, the
   // same way they open a draft; everyone else needs a purchase.
-  if (!plan.grant && !staff) {
+  if (!plan.grant && !staff && !free) {
     const entitlement = await checkEntitlement(identity, course, now);
     return {
       enrollment: null,
@@ -429,7 +445,7 @@ export async function ensureEnrollment(
     };
   }
 
-  const expiresAt = plan.grant ? plan.expiresAt : null;
+  const expiresAt = plan.grant ? plan.expiresAt : free && rule ? accessWindowEnd(now, rule) : null;
 
   // Nothing is written for a window that is already shut: the row would carry
   // no progress, no history worth keeping, and would have to be stepped over on
@@ -443,7 +459,7 @@ export async function ensureEnrollment(
     .insert({
       course_id: course.id,
       auth_user_id: identity.authUserId,
-      source: plan.grant ? "order" : "manual",
+      source: plan.grant ? "order" : free ? "free" : "manual",
       order_ref: plan.grant ? plan.orderRef : null,
       status: "active",
       // Day 1 is the day the learner FIRST OPENS the course, not the day they
@@ -618,7 +634,7 @@ export async function listLearnerCourses(
   // (`code` is unique), so there is nothing to choose between.
   const { data: offerRows } = await db
     .from("lms_course_offers")
-    .select("course_id, access_days, access_lifetime");
+    .select("course_id, access_days, access_lifetime, amount, active");
 
   const ruleByCourse = new Map<string, AccessRule | null>(
     ((offerRows ?? []) as Array<Record<string, unknown>>).map((row) => [
@@ -629,10 +645,17 @@ export async function listLearnerCourses(
       }),
     ])
   );
+  const freeByCourse = new Map<string, boolean>(
+    ((offerRows ?? []) as Array<Record<string, unknown>>).map((row) => [
+      row.course_id as string,
+      Boolean(row.active) && Number(row.amount) === 0,
+    ])
+  );
 
   const entries = await Promise.all(
     courses.map(async (course): Promise<LearnerShelfEntry | null> => {
       const row = enrollmentByCourse.get(course.id);
+      const free = freeByCourse.get(course.id) === true;
 
       const orders = acceptedPaidOrders({
         courseProductCodes: course.entitlementProductCodes,
@@ -659,9 +682,13 @@ export async function listLearnerCourses(
 
       const projected = plan.grant
         ? { status: "active", blockedAt: row?.blocked_at ?? null, expiresAt: plan.expiresAt }
-        : { status: row?.status ?? "active", blockedAt: row?.blocked_at ?? null, expiresAt: row?.expires_at ?? null };
+        : row
+          ? { status: row.status ?? "active", blockedAt: row.blocked_at ?? null, expiresAt: row.expires_at ?? null }
+          : free
+            ? { status: "active", blockedAt: null, expiresAt: null }
+            : { status: "active", blockedAt: null, expiresAt: null };
 
-      const state = row || plan.grant ? accessStateOf(projected, now) : null;
+      const state = row || plan.grant || free ? accessStateOf(projected, now) : null;
       const open = state === "active";
 
       // A draft is visible to an admin (house-wide oversight), to a coach who
@@ -678,7 +705,7 @@ export async function listLearnerCourses(
         course,
         expiresAt,
         daysLeft: daysRemaining(expiresAt, now),
-        source: (row?.source ?? (plan.grant ? "order" : null)) as EnrollmentRecord["source"] | null,
+        source: (row?.source ?? (plan.grant ? "order" : free ? "free" : null)) as EnrollmentRecord["source"] | null,
       };
 
       // Past its deadline the row still exists — the learner keeps their
