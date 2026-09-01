@@ -25,6 +25,7 @@
 
 import { inlineToPlainText, type Course } from "@/lms-core";
 import { contact, legal, programs } from "@/lib/platform/content";
+import { plural } from "@/lib/plural";
 import { PRODUCTS, formatPrice, productDescription, productHeading, productListPrice, type CatalogProductCode } from "@/lib/products";
 import { platformTests } from "@/lib/platform/tests";
 import { botCopy, SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
@@ -156,7 +157,11 @@ export function courseDocs(courses: Course[]): KnowledgeDoc[] {
       id: `course:${course.slug}`,
       kind: "course" as const,
       title: course.title,
-      href: `/programs/${course.slug}`,
+      // THE ADDRESS, NOT THE ROW NAME. A course is stored under `slug` and sold
+      // under `programSlug` — `short` at /programs/reboot, `irem-gymnastics` at
+      // /programs/irem — and the offer route resolves only the latter. An
+      // assistant citing the row name would hand a person a 404.
+      href: `/programs/${course.programSlug}`,
       text: paragraphs([
         [course.pretitle, course.title, course.posttitle].filter(Boolean).join(" — "),
         course.tagline,
@@ -164,8 +169,10 @@ export function courseDocs(courses: Course[]): KnowledgeDoc[] {
         list("Результати", course.results),
         list("Для кого", course.audience),
         list("З чого складається", course.format),
-        course.durationDays ? `Тривалість: ${course.durationDays} днів.` : null,
-        `Структура: ${course.modules.length} модулів, ${lessons} уроків — ${course.modules
+        course.durationDays
+          ? `Тривалість: ${course.durationDays} ${plural(course.durationDays, "день", "дні", "днів")}.`
+          : null,
+        `Структура: ${course.modules.length} ${plural(course.modules.length, "модуль", "модулі", "модулів")}, ${lessons} ${plural(lessons, "урок", "уроки", "уроків")} — ${course.modules
           .map((module) => module.title)
           .join("; ")}.`,
         scheduleSentence(course.schedule),

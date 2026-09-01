@@ -70,7 +70,8 @@ export function buildIndex(docs: KnowledgeDoc[]): KnowledgeIndex {
     // The title is worth more than a line in the body — a person asking about
     // «Шлях 21» means the document called that, not every document mentioning
     // it — so it is indexed twice rather than given a separate scoring field.
-    const tokens = [...tokenize(doc.title), ...tokenize(doc.title), ...tokenize(doc.text)];
+    const title = tokenize(doc.title);
+    const tokens = [...title, ...title, ...tokenize(doc.text)];
     lengths.push(tokens.length);
 
     for (const token of tokens) {

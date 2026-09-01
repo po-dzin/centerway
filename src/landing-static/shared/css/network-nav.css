@@ -82,7 +82,7 @@
   -webkit-backdrop-filter: var(--cw-net-mat-filter, blur(20px) saturate(1.08));
   box-shadow:
     inset 0 0 0 1px var(--cw-nav-border),
-    var(--cw-net-mat-shadow-chrome, 0 1px 2px rgb(23 38 31 / 0.06), 0 14px 34px rgb(23 38 31 / 0.10));
+    var(--cw-net-mat-shadow-chrome, 0 18px 40px rgb(35 29 20 / 0.10));
   /* Grows downward to cover the open drawer — see the single-sheet rule in the
      mobile block. 0px while closed, so this is inert at every other moment. */
   bottom: calc(-1 * var(--cwn-sheet-h, 0px));
