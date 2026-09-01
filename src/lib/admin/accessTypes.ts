@@ -67,8 +67,15 @@ export type CourseRow = {
     authorId: string | null;
     authorEmail: string | null;
     authorName: string | null;
+    authorProfileId: string | null;
     learners: number;
     updatedAt: string;
+};
+
+export type AuthorProfileRow = {
+    id: string;
+    slug: string;
+    name: string;
 };
 
 

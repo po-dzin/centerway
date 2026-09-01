@@ -31,12 +31,13 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { ProgramDetailPage } from "@/components/platform/ProgramDetailPage";
+import { CourseNextStep } from "@/components/platform/CourseNextStep";
 import { OfferPurchaseReturn, readPurchaseReturn } from "@/components/platform/OfferPurchaseReturn";
 import { getCourseAuthor } from "@/lib/lms/authors";
 import { toOfferSurface } from "@/lib/platform/courseOffer";
 import { listLiveCourses } from "@/lib/lms/liveCatalog";
 import { courseOfferCommerce } from "@/lib/platform/offerCommerce";
-import { isPublicCourse, loadCourseOffer, loadPayableOffer } from "@/lib/platform/offers";
+import { isPublicCourse, listStorefrontCourses, loadCourseOffer, loadPayableOffer } from "@/lib/platform/offers";
 import { courseOfferCode, inlineToPlainText, type Course } from "@/lms-core";
 import { describe } from "@/lib/brand/identity";
 import { pageMetadata } from "@/lib/seo/metadata";
@@ -98,10 +99,11 @@ export default async function CourseOfferPage({
   /* Both reads at once: they are independent, and a byline should not wait on a
      price. Neither can fail the page — `loadCourseOffer` falls back to the lead
      form and `getCourseAuthor` to no byline at all. */
-  const [offer, author, query] = await Promise.all([
+  const [offer, author, query, storefrontCourses] = await Promise.all([
     loadCourseOffer(course.slug),
     getCourseAuthor(course.slug),
     searchParams,
+    listStorefrontCourses(),
   ]);
 
   /* THE CODE COMES FROM THE RETURN, not from the course.
@@ -128,6 +130,7 @@ export default async function CourseOfferPage({
       purchase={
         returned ? <OfferPurchaseReturn purchase={{ ...returned, product: returnedCode }} /> : undefined
       }
+      nextStep={<CourseNextStep currentSlug={course.slug} courses={storefrontCourses} />}
     />
   );
 }

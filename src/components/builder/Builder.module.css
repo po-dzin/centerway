@@ -4206,6 +4206,10 @@
   display: flex;
   gap: var(--cw-space-sm);
   align-items: flex-start;
+  padding: var(--cw-space-sm);
+  border: 1px solid var(--builder-rule);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
 }
 
 .authorPreviewPhoto {
@@ -4216,10 +4220,25 @@
   flex: none;
 }
 
+.authorPreviewPhotoEmpty {
+  display: grid;
+  place-items: center;
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-muted);
+}
+
 .authorPreviewBody {
   display: grid;
   gap: var(--cw-space-2xs);
   min-width: 0;
+  flex: 1 1 auto;
+}
+
+.authorPreviewIdentity {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
 }
 
 .authorPreviewName {
@@ -4232,6 +4251,17 @@
   margin: 0;
   color: var(--cw-platform-muted);
   font-size: 0.85rem;
+}
+
+.authorCompletion {
+  flex: none;
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
 }
 
 .authorPreviewCue {
@@ -4255,6 +4285,10 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--cw-space-sm);
+}
+
+.authorLinkActions > .quietAction {
+  text-decoration: none;
 }
 
 .courseSettingEdit {

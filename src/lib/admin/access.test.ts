@@ -21,6 +21,9 @@ const {
     listPeople,
     grantCourse,
     listCourses,
+    listAuthorProfiles,
+    moderateCourse,
+    deleteAdminCourse,
     provisionAccess,
     recordManualPayment,
     blockCourse,
@@ -29,6 +32,7 @@ const {
     unblockCourse,
     sanitizeSearch,
     setCourseAuthor,
+    setCourseAuthorProfile,
     setEnrollmentDeadline,
     setRole,
 } = await import("./access");
@@ -48,8 +52,11 @@ function seed() {
             { auth_user_id: ADMIN, email: "admin@example.com", full_name: "Admin", avatar_url: null, last_sign_in_at: daysAgo(0) },
         ],
         lms_courses: [
-            { id: "course-reset", slug: "reset-day", title: "Reset Day", status: "published", locale: "uk", brand: "centerway", author_id: null, updated_at: daysAgo(3) },
-            { id: "course-way21", slug: "way21", title: "Way 21", status: "draft", locale: "uk", brand: "centerway", author_id: "auth-coach", updated_at: daysAgo(1) },
+            { id: "course-reset", slug: "reset-day", title: "Reset Day", status: "published", locale: "uk", brand: "centerway", author_id: null, author_profile_id: null, updated_at: daysAgo(3) },
+            { id: "course-way21", slug: "way21", title: "Way 21", status: "draft", locale: "uk", brand: "centerway", author_id: "auth-coach", author_profile_id: null, updated_at: daysAgo(1) },
+        ],
+        lms_authors: [
+            { id: "profile-1", slug: "coach", name: "Coach", auth_user_id: "auth-coach" },
         ],
         lms_lessons: [
             { id: "lesson-1", course_id: "course-reset" },
@@ -744,6 +751,26 @@ describe("listCourses", () => {
     });
 });
 
+describe("course moderation and admin deletion", () => {
+    it("lists an approved live version while its next revision is still in review", async () => {
+        const row = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
+        Object.assign(row, { review_status: "approved", visibility: "hidden", pending_content: { title: "Next" }, pending_review_status: "in_review" });
+
+        await moderateCourse({ courseId: "course-reset", actorId: ADMIN, action: "set_visibility", visibility: "listed" });
+        expect(row.visibility).toBe("listed");
+        expect(row.pending_review_status).toBe("in_review");
+    });
+
+    it("requires the exact slug, then lets an admin delete a course with learners", async () => {
+        await expect(deleteAdminCourse({ courseId: "course-reset", confirmSlug: "wrong", actorId: ADMIN }))
+            .rejects.toMatchObject({ message: "course_delete_confirmation_required", status: 400 });
+
+        await deleteAdminCourse({ courseId: "course-reset", confirmSlug: "reset-day", actorId: ADMIN });
+        expect(db.rows("lms_courses").some((row) => row.id === "course-reset")).toBe(false);
+        expect(auditRows().map((row) => row.action)).toEqual(["course.delete_requested", "course.deleted"]);
+    });
+});
+
 describe("setCourseAuthor", () => {
     it("hands a course to an author and audits both sides of the change", async () => {
         await setCourseAuthor({ courseId: "course-reset", email: "coach@example.com", actorId: ADMIN });
@@ -775,6 +802,51 @@ describe("setCourseAuthor", () => {
         ).rejects.toMatchObject({ message: "account_not_found" });
 
         expect(db.rows("lms_courses").find((row) => row.id === "course-reset")).toMatchObject({ author_id: null });
+        expect(auditRows()).toHaveLength(0);
+    });
+});
+
+describe("setCourseAuthorProfile", () => {
+    it("lists available profiles by name for the admin selector", async () => {
+        db.tables.lms_authors.push({ id: "profile-2", slug: "anna", name: "Анна", auth_user_id: "auth-anna" });
+        await expect(listAuthorProfiles()).resolves.toEqual([
+            { id: "profile-1", slug: "coach", name: "Coach" },
+            { id: "profile-2", slug: "anna", name: "Анна" },
+        ]);
+    });
+
+    it("changes only the byline relationship and audits the link", async () => {
+        await setCourseAuthorProfile({ courseId: "course-reset", authorProfileId: "profile-1", actorId: ADMIN });
+
+        expect(db.rows("lms_courses").find((row) => row.id === "course-reset")).toMatchObject({
+            author_id: null,
+            author_profile_id: "profile-1",
+        });
+        expect(db.rows("lms_authors")[0]).toMatchObject({ name: "Coach", slug: "coach" });
+        expect(auditRows()[0]).toMatchObject({ action: "course.author_profile_set", entity_id: "course-reset" });
+    });
+
+    it("refuses an unknown profile without changing the course", async () => {
+        await expect(setCourseAuthorProfile({ courseId: "course-reset", authorProfileId: "missing", actorId: ADMIN }))
+            .rejects.toMatchObject({ message: "author_profile_not_found", status: 404 });
+        expect(db.rows("lms_courses").find((row) => row.id === "course-reset")).toMatchObject({ author_profile_id: null });
+    });
+
+    it("clears a profile link without changing Builder ownership or the profile row", async () => {
+        const course = db.rows("lms_courses").find((row) => row.id === "course-way21")!;
+        course.author_profile_id = "profile-1";
+
+        await setCourseAuthorProfile({ courseId: "course-way21", authorProfileId: null, actorId: ADMIN });
+
+        expect(course).toMatchObject({ author_id: "auth-coach", author_profile_id: null });
+        expect(db.rows("lms_authors")[0]).toMatchObject({ id: "profile-1", name: "Coach" });
+        expect(auditRows()[0]).toMatchObject({ action: "course.author_profile_cleared" });
+    });
+
+    it("refuses a missing course before reading or changing a profile", async () => {
+        await expect(setCourseAuthorProfile({ courseId: "missing", authorProfileId: "profile-1", actorId: ADMIN }))
+            .rejects.toMatchObject({ message: "course_not_found", status: 404 });
+        expect(db.rows("lms_authors")[0]).toMatchObject({ id: "profile-1", name: "Coach" });
         expect(auditRows()).toHaveLength(0);
     });
 });

@@ -40,7 +40,7 @@ import { getAdminLocale } from "@/lib/adminLocale";
 import { getErrorMessage } from "@/lib/errors";
 import { supabaseClient } from "@/lib/supabaseClient";
 import type { CatalogRow, SaleBlocker } from "@/lib/admin/catalogTypes";
-import type { CourseRow } from "@/lib/admin/accessTypes";
+import type { AuthorProfileRow, CourseRow } from "@/lib/admin/accessTypes";
 import { CourseAuthorshipTab } from "@/components/admin/CourseAuthorshipTab";
 import { ACCESS_TERM_PRESETS } from "@/lib/admin/catalogTypes";
 
@@ -87,6 +87,7 @@ export default function CatalogPage() {
        reads on arrival for a tab most visits never touch is the cost of merging
        it here, and it is avoidable. */
     const [authorCourses, setAuthorCourses] = useState<CourseRow[]>([]);
+    const [authorProfiles, setAuthorProfiles] = useState<AuthorProfileRow[]>([]);
     const [canAssignAuthor, setCanAssignAuthor] = useState(false);
     const [rows, setRows] = useState<CatalogRow[] | null>(null);
     const [canEdit, setCanEdit] = useState(false);
@@ -120,8 +121,9 @@ export default function CatalogPage() {
 
     const loadAuthorship = useCallback(async () => {
         try {
-            const payload = (await authFetch("/api/admin/access/courses")) as { items?: CourseRow[]; canGrant?: boolean };
+            const payload = (await authFetch("/api/admin/access/courses")) as { items?: CourseRow[]; authorProfiles?: AuthorProfileRow[]; canGrant?: boolean };
             setAuthorCourses(payload.items ?? []);
+            setAuthorProfiles(payload.authorProfiles ?? []);
             setCanAssignAuthor(Boolean(payload.canGrant));
         } catch (e) {
             setError(errorText(getErrorMessage(e)));
@@ -179,6 +181,7 @@ export default function CatalogPage() {
             {tab === "authorship" ? (
                 <CourseAuthorshipTab
                     courses={authorCourses}
+                    authorProfiles={authorProfiles}
                     canGrant={canAssignAuthor}
                     locale={locale}
                     errorText={errorText}
@@ -304,7 +307,7 @@ function PublicationRow({
         }
     };
 
-    const inReview = row.reviewStatus === "in_review";
+    const inReview = (row.hasPendingRevision ? row.pendingReviewStatus : row.reviewStatus) === "in_review";
     // Already-published material an admin may wave through: the corner that
     // used to have no exit. A pending revision is NOT this case.
     const approvable = inReview || (!row.hasPendingRevision && row.status === "published" && row.reviewStatus !== "approved");
@@ -375,8 +378,42 @@ function PublicationRow({
             ) : (
                 <p className="text-xs cw-muted">{t("access_role_admin_only")}</p>
             )}
+            {canEdit ? <DeleteCourseAction row={row} onChanged={onChanged} /> : null}
         </div>
     );
+}
+
+function DeleteCourseAction({ row, onChanged }: { row: CatalogRow; onChanged: () => Promise<void> }) {
+    const { t } = useI18n();
+    const toast = useToast();
+    const [open, setOpen] = useState(false);
+    const [confirmation, setConfirmation] = useState("");
+    const [busy, setBusy] = useState(false);
+    async function remove() {
+        setBusy(true);
+        try {
+            await authFetch("/api/admin/access/courses", { method: "DELETE",
+                body: JSON.stringify({ courseId: row.courseId, confirmSlug: confirmation }) });
+            toast.success(t("catalog_deleted"));
+            await onChanged();
+        } catch {
+            toast.error(t("catalog_delete_failed"));
+        } finally { setBusy(false); }
+    }
+    return open ? (
+        <div className="cw-panel p-4 space-y-3" role="group" aria-label={t("catalog_delete")}>
+            <p className="text-sm cw-text">{t("catalog_delete_warning")} {t("access_course_learners")}: {row.learners}.</p>
+            <label className="block text-sm cw-text">
+                {t("catalog_delete_confirm")} <strong>{row.slug}</strong>
+                <input className="cw-input w-full mt-2" value={confirmation} autoComplete="off"
+                    onChange={(event) => setConfirmation(event.target.value)} disabled={busy} />
+            </label>
+            <div className="flex flex-wrap gap-2">
+                <button type="button" className="cw-btn cw-btn-muted px-4 py-2" disabled={busy || confirmation !== row.slug} onClick={() => void remove()}>{t("catalog_delete")}</button>
+                <button type="button" className="cw-btn px-4 py-2" disabled={busy} onClick={() => { setOpen(false); setConfirmation(""); }}>{t("catalog_delete_cancel")}</button>
+            </div>
+        </div>
+    ) : <button type="button" className="cw-btn cw-btn-muted px-4 py-2 text-sm" onClick={() => setOpen(true)}>{t("catalog_delete")}</button>;
 }
 
 function PricingRow({

@@ -825,7 +825,7 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       </section>
 
       <section className={styles.courseWorkspacePanel} id="course-author" hidden={workspaceMode !== "author"} aria-labelledby="course-author-title">
-        <div className={styles.courseSettingsPanel}>
+        <div className={styles.coursePageWorkspaceBody}>
           <h2 className={styles.visuallyHidden} id="course-author-title">Автор</h2>
           <BuilderCourseAuthor
             course={course}

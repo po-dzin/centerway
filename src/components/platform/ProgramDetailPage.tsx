@@ -91,6 +91,7 @@ export function ProgramDetailPage({
   commerce: givenCommerce,
   author = null,
   purchase,
+  nextStep,
 }: {
   program: OfferSurface;
   /**
@@ -125,6 +126,7 @@ export function ProgramDetailPage({
    * and only it can resolve the offer they name.
    */
   purchase?: ReactNode;
+  nextStep?: ReactNode;
 }) {
   const commerce = givenCommerce ?? resolveOfferCommerce(program.slug);
   // The SNAPSHOT on purpose: this page is statically prerendered and needs a
@@ -349,6 +351,7 @@ export function ProgramDetailPage({
           lead:
             "CenterWay працює як освітня wellness-платформа і супровід практики. Програми не замінюють діагностику, лікування або рекомендації вашого лікаря; якщо є гострі стани, вагітність, хронічні захворювання або медикаментозна терапія, спочатку потрібна медична консультація.",
         }}
+        afterBoundary={nextStep}
       />
     </OfferAccessProvider>
   );

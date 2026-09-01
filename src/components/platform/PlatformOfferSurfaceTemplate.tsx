@@ -87,6 +87,8 @@ type PlatformOfferSurfaceTemplateProps = {
    * not have to know that such a bar exists.
    */
   trailing?: ReactNode;
+  /** Final route guidance after the safety boundary, before fixed furniture. */
+  afterBoundary?: ReactNode;
 };
 
 export function PlatformOfferResultList({ items }: { items: string[] }) {
@@ -160,6 +162,7 @@ export function PlatformOfferSurfaceTemplate({
   supportRight,
   boundary,
   trailing,
+  afterBoundary,
 }: PlatformOfferSurfaceTemplateProps) {
   return (
     <PlatformShell headerMode="overlay">
@@ -229,6 +232,8 @@ export function PlatformOfferSurfaceTemplate({
             </article>
           </section>
         ) : null}
+
+        {afterBoundary}
 
         {trailing}
       </main>

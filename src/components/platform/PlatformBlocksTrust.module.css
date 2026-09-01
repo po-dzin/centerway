@@ -146,9 +146,28 @@
 }
 
 .guideMedia {
+  position: relative;
   min-width: 0;
   aspect-ratio: 16 / 9;
   overflow: hidden;
+}
+
+.guideBadges {
+  position: absolute;
+  inset-inline: var(--cw-space-sm);
+  inset-block-end: var(--cw-space-sm);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cw-space-2xs);
+}
+
+.guideBadges span {
+  padding: var(--cw-space-2xs) var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-scrim-ink);
+  color: var(--cw-mat-inverse-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 700;
 }
 
 .guidePortrait {

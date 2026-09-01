@@ -35,6 +35,7 @@ export type CatalogRow = {
     reviewStatus: string;
     visibility: "hidden" | "unlisted" | "listed";
     hasPendingRevision: boolean;
+    pendingReviewStatus?: string | null;
     authorEmail: string | null;
     learners: number;
     updatedAt: string;

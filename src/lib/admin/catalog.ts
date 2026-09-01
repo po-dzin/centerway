@@ -78,7 +78,7 @@ export async function listCatalog(): Promise<CatalogRow[]> {
     const { data: courseRows, error } = await db
         .from("lms_courses")
         .select(
-            "id, slug, title, status, review_status, pending_content, visibility, author_id, updated_at"
+            "id, slug, title, status, review_status, pending_content, pending_review_status, visibility, author_id, updated_at"
         )
         .order("updated_at", { ascending: false });
     if (error) throw new AccessError(error.message, 500);
@@ -121,6 +121,7 @@ export async function listCatalog(): Promise<CatalogRow[]> {
             reviewStatus,
             visibility,
             hasPendingRevision: Boolean(row.pending_content),
+            pendingReviewStatus: (row.pending_review_status as string | null) ?? null,
             authorEmail: emailByAuthor.get(row.author_id as string) ?? null,
             learners: learners.get(row.id as string) ?? 0,
             updatedAt: row.updated_at as string,

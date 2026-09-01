@@ -17,6 +17,11 @@ vi.mock("@/lib/auth/requireAdmin", () => ({
     requireAdmin: async () => session.value,
 }));
 
+vi.mock("next/cache", async (importOriginal) => ({
+    ...(await importOriginal<typeof import("next/cache")>()),
+    revalidateTag: vi.fn(),
+}));
+
 const access = {
     listPeople: vi.fn(),
     provisionAccess: vi.fn(),
@@ -24,7 +29,9 @@ const access = {
     revokeCourse: vi.fn(),
     setRole: vi.fn(),
     listCourses: vi.fn(),
+    listAuthorProfiles: vi.fn(),
     setCourseAuthor: vi.fn(),
+    setCourseAuthorProfile: vi.fn(),
 };
 
 class AccessError extends Error {
@@ -62,6 +69,7 @@ beforeEach(() => {
     for (const fn of Object.values(access)) fn.mockReset();
     access.listPeople.mockResolvedValue({ items: [], total: 0, truncated: false, summary: {} });
     access.listCourses.mockResolvedValue([]);
+    access.listAuthorProfiles.mockResolvedValue([]);
 });
 
 describe("authentication", () => {
@@ -472,6 +480,19 @@ describe("roles", () => {
 });
 
 describe("courses", () => {
+    it("returns both Builder ownership rows and selectable public profiles", async () => {
+        access.listCourses.mockResolvedValue([{ id: "c1" }]);
+        access.listAuthorProfiles.mockResolvedValue([{ id: "profile-1", slug: "coach", name: "Coach" }]);
+        const res = await courses.GET(get("http://x/api/admin/access/courses"));
+
+        expect(res.status).toBe(200);
+        expect(await res.json()).toMatchObject({
+            items: [{ id: "c1" }],
+            authorProfiles: [{ id: "profile-1", slug: "coach", name: "Coach" }],
+            canGrant: true,
+        });
+    });
+
     it("refuses an authorship change from support", async () => {
         session.value = SUPPORT;
         const res = await courses.PATCH(send("http://x/api/admin/access/courses", "PATCH", { courseId: "c1", email: "a@b.c" }));
@@ -496,5 +517,33 @@ describe("courses", () => {
         expect(res.status).toBe(200);
         expect(access.setCourseAuthor).toHaveBeenCalledWith({ courseId: "c1", email: null, actorId: "auth-admin" });
         expect(await res.json()).toMatchObject({ author: null });
+    });
+
+    it("changes only the public author-profile link through its explicit action", async () => {
+        access.setCourseAuthorProfile.mockResolvedValue({ id: "c1", slug: "reset-day", authorProfileId: "profile-1" });
+        const res = await courses.PATCH(send("http://x/api/admin/access/courses", "PATCH", {
+            courseId: "c1",
+            action: "set_author_profile",
+            authorProfileId: "profile-1",
+        }));
+        expect(res.status).toBe(200);
+        expect(access.setCourseAuthorProfile).toHaveBeenCalledWith({
+            courseId: "c1",
+            authorProfileId: "profile-1",
+            actorId: "auth-admin",
+        });
+        expect(access.setCourseAuthor).not.toHaveBeenCalled();
+    });
+
+    it("treats a blank profile id as clearing only the public byline", async () => {
+        access.setCourseAuthorProfile.mockResolvedValue({ id: "c1", slug: "reset-day", authorProfileId: null });
+        const res = await courses.PATCH(send("http://x/api/admin/access/courses", "PATCH", {
+            courseId: "c1",
+            action: "set_author_profile",
+            authorProfileId: "   ",
+        }));
+        expect(res.status).toBe(200);
+        expect(access.setCourseAuthorProfile).toHaveBeenCalledWith({ courseId: "c1", authorProfileId: null, actorId: "auth-admin" });
+        expect(access.setCourseAuthor).not.toHaveBeenCalled();
     });
 });

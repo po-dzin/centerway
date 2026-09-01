@@ -12,6 +12,15 @@
 
 import { assert, isNonEmptyString, isRecord } from "./inline";
 
+export type AuthorProfileBlock = {
+  id: string;
+  kind: "text" | "list" | "timeline";
+  label?: string;
+  title: string;
+  body?: string;
+  items?: string[];
+};
+
 export type Author = {
   id: string;
   /**
@@ -32,6 +41,19 @@ export type Author = {
   quote?: string;
   /** Short verifiable statements: degrees, years, titles. Never paragraphs. */
   credentials?: string[];
+  /** Six concise public facts; the first three are the card bullets. */
+  facts?: string[];
+  /** Ordered, author-owned sections for story, methods, education and path. */
+  profileBlocks?: AuthorProfileBlock[];
+  experienceBadge?: string;
+  achievementBadge?: string;
+  consultation?: {
+    enabled: boolean;
+    title?: string;
+    summary?: string;
+    points?: string[];
+    contactUrl?: string;
+  };
   photo?: {
     src: string;
     /** Mandatory wherever an image is — a11y is a release gate in this repo. */
@@ -49,16 +71,71 @@ export type Author = {
   listed?: boolean;
 };
 
+/**
+ * Shared profile readiness for the Builder and any future author tools.
+ *
+ * These are the ten author-owned content groups that make the public profile
+ * and its cards useful. Publishing, consultation availability and the
+ * decorative background are choices, so they do not lower the score.
+ */
+export function authorProfileCompletion(author: Author): {
+  completed: number;
+  total: number;
+  percent: number;
+} {
+  const checks = [
+    Boolean(author.name.trim()),
+    Boolean(author.photo?.src && author.photo.alt.trim()),
+    Boolean(author.role?.trim()),
+    Boolean(author.bio?.trim()),
+    Boolean(author.quote?.trim()),
+    Boolean(author.credentials?.some((item) => item.trim())),
+    (author.facts?.filter((item) => item.trim()).length ?? 0) === 6,
+    Boolean(author.profileBlocks?.length),
+    Boolean(author.experienceBadge?.trim()),
+    Boolean(author.achievementBadge?.trim()),
+  ];
+  const completed = checks.filter(Boolean).length;
+  return { completed, total: checks.length, percent: Math.round((completed / checks.length) * 100) };
+}
+
 export function validateAuthor(input: unknown, path = "author"): asserts input is Author {
   assert(isRecord(input), `lms_author_invalid_shape:${path}`);
   assert(isNonEmptyString(input.id), `lms_author_missing_id:${path}`);
   assert(isNonEmptyString(input.slug), `lms_author_missing_slug:${path}`);
   assert(isNonEmptyString(input.name), `lms_author_missing_name:${path}`);
 
-  for (const textKey of ["role", "bio", "quote"] as const) {
+  for (const textKey of ["role", "bio", "quote", "experienceBadge", "achievementBadge"] as const) {
     const value = input[textKey];
     if (value === undefined) continue;
     assert(isNonEmptyString(value), `lms_author_invalid_${textKey}:${path}`);
+  }
+
+  if (input.facts !== undefined) {
+    assert(Array.isArray(input.facts) && input.facts.length <= 6 && input.facts.every(isNonEmptyString), `lms_author_invalid_facts:${path}`);
+  }
+  if (input.profileBlocks !== undefined) {
+    assert(Array.isArray(input.profileBlocks) && input.profileBlocks.length <= 12, `lms_author_invalid_profile_blocks:${path}`);
+    for (const [index, block] of input.profileBlocks.entries()) {
+      const blockPath = `${path}.profileBlocks.${index}`;
+      assert(isRecord(block), `lms_author_invalid_profile_block:${blockPath}`);
+      assert(isNonEmptyString(block.id), `lms_author_profile_block_missing_id:${blockPath}`);
+      assert(["text", "list", "timeline"].includes(String(block.kind)), `lms_author_profile_block_invalid_kind:${blockPath}`);
+      assert(isNonEmptyString(block.title), `lms_author_profile_block_missing_title:${blockPath}`);
+      if (block.label !== undefined) assert(isNonEmptyString(block.label), `lms_author_profile_block_invalid_label:${blockPath}`);
+      if (block.body !== undefined) assert(isNonEmptyString(block.body), `lms_author_profile_block_invalid_body:${blockPath}`);
+      if (block.items !== undefined) {
+        assert(Array.isArray(block.items) && block.items.length <= 30 && block.items.every(isNonEmptyString), `lms_author_profile_block_invalid_items:${blockPath}`);
+      }
+      assert(block.body !== undefined || (Array.isArray(block.items) && block.items.length > 0), `lms_author_profile_block_empty:${blockPath}`);
+    }
+  }
+  if (input.consultation !== undefined) {
+    assert(isRecord(input.consultation) && typeof input.consultation.enabled === "boolean", `lms_author_invalid_consultation:${path}`);
+    for (const key of ["title", "summary", "contactUrl"] as const) {
+      if (input.consultation[key] !== undefined) assert(isNonEmptyString(input.consultation[key]), `lms_author_invalid_consultation_${key}:${path}`);
+    }
+    if (input.consultation.points !== undefined) assert(Array.isArray(input.consultation.points) && input.consultation.points.length <= 3 && input.consultation.points.every(isNonEmptyString), `lms_author_invalid_consultation_points:${path}`);
   }
 
   if (input.credentials !== undefined) {

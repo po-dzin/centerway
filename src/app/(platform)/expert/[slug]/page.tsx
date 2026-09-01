@@ -18,11 +18,11 @@
  */
 
 import type { Metadata } from "next";
-import { notFound, permanentRedirect } from "next/navigation";
+import { notFound } from "next/navigation";
 
 import { AuthorProfileShowcase } from "@/components/platform/AuthorProfileShowcase";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
-import { getAuthor, isFounderAuthorSlug, listCoursesByAuthor } from "@/lib/lms/authors";
+import { getAuthor, listCoursesByAuthor } from "@/lib/lms/authors";
 import { describe } from "@/lib/brand/identity";
 import { pageMetadata } from "@/lib/seo/metadata";
 
@@ -50,8 +50,6 @@ export async function generateMetadata({
 
 export default async function AuthorProfilePage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  if (isFounderAuthorSlug(slug)) permanentRedirect("/consult");
-
   const author = await listedAuthor(slug);
   if (!author) notFound();
 

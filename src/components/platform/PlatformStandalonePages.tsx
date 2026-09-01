@@ -6,10 +6,11 @@ import {
   PlatformOfferSurfaceTemplate,
 } from "@/components/platform/PlatformOfferSurfaceTemplate";
 import { ConsultBoundary, ConsultFaq } from "@/components/platform/ConsultPageSections";
+import { ConsultantDirectory } from "@/components/platform/ConsultantDirectory";
+import type { Author } from "@/lms-core";
 import { consultationExpectations, consultationSteps } from "@/components/platform/consultPageContract";
 import { HubMini, HubPrograms } from "@/components/platform/blocks/offer/hub";
 import { HubHero, HubIntro } from "@/components/platform/blocks/orientation/hub";
-import { ExpertPath, ExpertProof } from "@/components/platform/blocks/trust/expert";
 import { HubGuides } from "@/components/platform/blocks/trust/guides";
 import { HubProof, HubSupport } from "@/components/platform/blocks/trust/hub";
 import { bodySignals, consultationCopy, platformPageArtwork } from "@/lib/platform/content";
@@ -47,7 +48,7 @@ export function PlatformHomePage() {
  * the request form: after the reader knows what is on offer, before they are
  * asked to commit to it.
  */
-export function PlatformConsultPage() {
+export function PlatformConsultPage({ authors = [] }: { authors?: Author[] }) {
   return (
     <PlatformOfferSurfaceTemplate
       templateKind="consult"
@@ -82,8 +83,7 @@ export function PlatformConsultPage() {
       }}
       beforeSupport={
         <>
-          <ExpertProof />
-          <ExpertPath />
+          <ConsultantDirectory authors={authors} />
           <ConsultBoundary />
           <ConsultFaq />
         </>

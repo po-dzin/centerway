@@ -45,6 +45,17 @@ function authorFromRow(row: Row): Author {
     ...(Array.isArray(row.credentials) && row.credentials.length > 0
       ? { credentials: row.credentials as string[] }
       : {}),
+    ...(Array.isArray(row.profile_facts) && row.profile_facts.length > 0 ? { facts: row.profile_facts as string[] } : {}),
+    ...(Array.isArray(row.profile_blocks) && row.profile_blocks.length > 0 ? { profileBlocks: row.profile_blocks as NonNullable<Author["profileBlocks"]> } : {}),
+    ...(row.experience_badge ? { experienceBadge: row.experience_badge as string } : {}),
+    ...(row.achievement_badge ? { achievementBadge: row.achievement_badge as string } : {}),
+    ...((row.consultation_enabled || row.consultation_title || row.consultation_summary) ? { consultation: {
+      enabled: Boolean(row.consultation_enabled),
+      ...(row.consultation_title ? { title: row.consultation_title as string } : {}),
+      ...(row.consultation_summary ? { summary: row.consultation_summary as string } : {}),
+      ...(Array.isArray(row.consultation_points) && row.consultation_points.length > 0 ? { points: row.consultation_points as string[] } : {}),
+      ...(row.consultation_contact_url ? { contactUrl: row.consultation_contact_url as string } : {}),
+    }} : {}),
     ...(row.photo ? { photo: row.photo as Author["photo"] } : {}),
     ...(row.background ? { background: row.background as Author["background"] } : {}),
     // `false` reads back as ABSENT, the same way `visibility: "hidden"` does on
@@ -174,7 +185,7 @@ export function isFounderAuthorSlug(slug: string): boolean {
 
 /** Where an author's card should point. */
 export function authorHref(author: Pick<Author, "slug">): string {
-  return isFounderAuthorSlug(author.slug) ? "/consult" : `/expert/${author.slug}`;
+  return `/expert/${author.slug}`;
 }
 
 /** Every author with a public page, for the directory. */
@@ -256,6 +267,11 @@ export type AuthorProfileInput = {
   bio?: string;
   quote?: string;
   credentials?: string[];
+  facts?: string[];
+  profileBlocks?: Author["profileBlocks"];
+  experienceBadge?: string;
+  achievementBadge?: string;
+  consultation?: Author["consultation"];
   photo?: { src: string; alt: string };
   background?: { src: string };
   listed?: boolean;
@@ -279,6 +295,15 @@ export async function upsertAuthorProfile(
   input: AuthorProfileInput
 ): Promise<UpsertAuthorProfileResult> {
   if (!(await isEligibleAuthor(userId))) return { ok: false, error: "not_an_author" };
+  if (input.listed && (!input.experienceBadge?.trim() || !input.achievementBadge?.trim())) {
+    return { ok: false, error: "invalid_profile" };
+  }
+  if (
+    input.consultation?.enabled &&
+    (!input.consultation.title?.trim() || !input.consultation.summary?.trim() || !input.consultation.contactUrl?.trim())
+  ) {
+    return { ok: false, error: "invalid_profile" };
+  }
 
   const db = adminClient();
   const existing = await findAuthorByUser(userId);
@@ -305,6 +330,11 @@ export async function upsertAuthorProfile(
     ...(input.bio ? { bio: input.bio } : {}),
     ...(input.quote ? { quote: input.quote } : {}),
     ...(input.credentials ? { credentials: input.credentials } : {}),
+    ...(input.facts ? { facts: input.facts } : {}),
+    ...(input.profileBlocks ? { profileBlocks: input.profileBlocks } : {}),
+    ...(input.experienceBadge ? { experienceBadge: input.experienceBadge } : {}),
+    ...(input.achievementBadge ? { achievementBadge: input.achievementBadge } : {}),
+    ...(input.consultation ? { consultation: input.consultation } : {}),
     ...(input.photo ? { photo: input.photo } : {}),
     ...(input.background ? { background: input.background } : {}),
     ...(input.listed ? { listed: true } : {}),
@@ -327,6 +357,15 @@ export async function upsertAuthorProfile(
         bio: input.bio ?? null,
         quote: input.quote ?? null,
         credentials: input.credentials ?? null,
+        profile_facts: input.facts ?? null,
+        profile_blocks: input.profileBlocks ?? null,
+        experience_badge: input.experienceBadge ?? null,
+        achievement_badge: input.achievementBadge ?? null,
+        consultation_enabled: input.consultation?.enabled ?? false,
+        consultation_title: input.consultation?.title ?? null,
+        consultation_summary: input.consultation?.summary ?? null,
+        consultation_points: input.consultation?.points ?? null,
+        consultation_contact_url: input.consultation?.contactUrl ?? null,
         photo: input.photo ?? null,
         background: input.background ?? null,
         listed: input.listed ?? false,
