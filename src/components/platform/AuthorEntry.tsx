@@ -116,7 +116,7 @@ export function CourseAuthorLink({
       href={builderHref(`/${courseSlug}`)}
     >
       <Icon name="settings" size={20} />
-      <span>Редагувати цей курс у майстерні</span>
+      <span>Редагувати</span>
     </a>
   );
 

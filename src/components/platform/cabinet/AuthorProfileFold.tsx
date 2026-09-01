@@ -22,7 +22,7 @@ import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
-import type { Author } from "@/lms-core";
+import type { Author, AuthorProfileBlock } from "@/lms-core";
 import type { ProfileLang } from "@/components/platform/profile/types";
 import type { AuthorProfileInput } from "./useCabinet";
 import styles from "./Cabinet.module.css";
@@ -34,6 +34,11 @@ type Draft = {
   bio: string;
   quote: string;
   credentials: string[];
+  facts: string[];
+  profileBlocks: AuthorProfileBlock[];
+  experienceBadge: string;
+  achievementBadge: string;
+  consultation: { enabled: boolean; title: string; summary: string; points: string[]; contactUrl: string };
   photo: { src: string; alt: string } | null;
   background: { src: string } | null;
   listed: boolean;
@@ -47,6 +52,11 @@ function draftFromAuthor(author: Author | null): Draft {
     bio: author?.bio ?? "",
     quote: author?.quote ?? "",
     credentials: author?.credentials ?? [],
+    facts: author?.facts ?? [],
+    profileBlocks: author?.profileBlocks ?? [],
+    experienceBadge: author?.experienceBadge ?? "",
+    achievementBadge: author?.achievementBadge ?? "",
+    consultation: { enabled: author?.consultation?.enabled ?? false, title: author?.consultation?.title ?? "", summary: author?.consultation?.summary ?? "", points: author?.consultation?.points ?? [], contactUrl: author?.consultation?.contactUrl ?? "" },
     photo: author?.photo ?? null,
     background: author?.background ?? null,
     listed: author?.listed ?? false,
@@ -64,6 +74,26 @@ const STRINGS = {
     bio: "Біографія",
     quote: "Цитата від першої особи",
     credentials: "Досягнення",
+    facts: "6 головних фактів про себе",
+    profileBlocks: "Блоки сторінки автора",
+    profileBlockAdd: "Додати блок",
+    profileBlockRemove: "Прибрати блок",
+    profileBlockKind: "Формат блока",
+    profileBlockLabel: "Надзаголовок",
+    profileBlockTitle: "Заголовок",
+    profileBlockBody: "Текст блока",
+    profileBlockItems: "Пункти — кожен з нового рядка",
+    profileBlockText: "Текст",
+    profileBlockList: "Список",
+    profileBlockTimeline: "Шлях / хронологія",
+    experienceBadge: "Бейдж досвіду (обов’язково для картки)",
+    achievementBadge: "Головне досягнення (обов’язково для картки)",
+    consultation: "Консультація",
+    consultationEnabled: "Приймаю запити на консультацію",
+    consultationTitle: "Назва консультації",
+    consultationSummary: "Кому і з чим допомагаю",
+    consultationPoints: "3 головні пункти",
+    consultationContact: "Посилання для домовленості",
     credentialAdd: "Додати досягнення",
     credentialRemove: "Прибрати досягнення",
     photo: "Фото",
@@ -95,6 +125,26 @@ const STRINGS = {
     bio: "Bio",
     quote: "A quote, in your own voice",
     credentials: "Credentials",
+    facts: "6 key facts about you",
+    profileBlocks: "Author page blocks",
+    profileBlockAdd: "Add block",
+    profileBlockRemove: "Remove block",
+    profileBlockKind: "Block format",
+    profileBlockLabel: "Eyebrow",
+    profileBlockTitle: "Heading",
+    profileBlockBody: "Block text",
+    profileBlockItems: "Items — one per line",
+    profileBlockText: "Text",
+    profileBlockList: "List",
+    profileBlockTimeline: "Path / timeline",
+    experienceBadge: "Experience badge (required on cards)",
+    achievementBadge: "Key achievement (required on cards)",
+    consultation: "Consultation",
+    consultationEnabled: "Accept consultation requests",
+    consultationTitle: "Consultation title",
+    consultationSummary: "Who you help and with what",
+    consultationPoints: "3 key points",
+    consultationContact: "Contact link",
     credentialAdd: "Add credential",
     credentialRemove: "Remove credential",
     photo: "Photo",
@@ -137,12 +187,22 @@ export function AuthorProfileFold({
   const toast = useToast();
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [open, setOpen] = useState(false);
 
   // Re-syncs only when the SAVED row changes underneath — not on every render,
   // which would erase whatever the author is mid-typing.
   useEffect(() => {
     setDraft(draftFromAuthor(author));
   }, [author]);
+
+  useEffect(() => {
+    const openFromHash = () => {
+      if (window.location.hash === "#author") setOpen(true);
+    };
+    openFromHash();
+    window.addEventListener("hashchange", openFromHash);
+    return () => window.removeEventListener("hashchange", openFromHash);
+  }, []);
 
   async function handlePhoto(file: File) {
     setUploading(true);
@@ -204,6 +264,30 @@ export function AuthorProfileFold({
       bio: draft.bio.trim() || undefined,
       quote: draft.quote.trim() || undefined,
       credentials: credentials.length > 0 ? credentials : undefined,
+      facts: draft.facts.map((line) => line.trim()).filter(Boolean).slice(0, 6),
+      profileBlocks: draft.profileBlocks.flatMap((block) => {
+        const title = block.title.trim();
+        const body = block.body?.trim();
+        const items = block.items?.map((line) => line.trim()).filter(Boolean).slice(0, 30);
+        if (!title || (!body && !items?.length)) return [];
+        return [{
+          id: block.id,
+          kind: block.kind,
+          ...(block.label?.trim() ? { label: block.label.trim() } : {}),
+          title,
+          ...(body ? { body } : {}),
+          ...(items?.length ? { items } : {}),
+        }];
+      }),
+      experienceBadge: draft.experienceBadge.trim() || undefined,
+      achievementBadge: draft.achievementBadge.trim() || undefined,
+      consultation: {
+        enabled: draft.consultation.enabled,
+        title: draft.consultation.title.trim() || undefined,
+        summary: draft.consultation.summary.trim() || undefined,
+        points: draft.consultation.points.map((line) => line.trim()).filter(Boolean).slice(0, 3),
+        contactUrl: draft.consultation.contactUrl.trim() || undefined,
+      },
       photo,
       background: draft.background?.src ? { src: draft.background.src } : undefined,
       listed: draft.listed,
@@ -214,7 +298,7 @@ export function AuthorProfileFold({
   }
 
   return (
-    <details className={styles.fold}>
+    <details id="author" className={styles.fold} open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
       <summary className={styles.foldHead}>
         <span className={styles.foldText}>
           <span className={styles.sectionLabel}>{t.label}</span>
@@ -301,6 +385,115 @@ export function AuthorProfileFold({
               <Icon name="plus" size={20} />
             </button>
           </div>
+
+          <div className={`${styles.authorField} ${styles.authorFactsField}`}>
+            <span>{t.facts}</span>
+            {Array.from({ length: 6 }, (_, index) => (
+              <input key={index} className={styles.authorInput} value={draft.facts[index] ?? ""}
+                onChange={(e) => setDraft((prev) => { const facts = [...prev.facts]; facts[index] = e.target.value; return { ...prev, facts }; })} />
+            ))}
+          </div>
+          <div className={`${styles.authorField} ${styles.authorProfileBlocksField}`}>
+            <span>{t.profileBlocks}</span>
+            {draft.profileBlocks.map((block, index) => (
+              <fieldset className={styles.authorProfileBlockEditor} key={block.id}>
+                <div className={styles.authorProfileBlockHead}>
+                  <span>{index + 1}</span>
+                  <button
+                    type="button"
+                    className={styles.authorIconAction}
+                    aria-label={t.profileBlockRemove}
+                    title={t.profileBlockRemove}
+                    onClick={() => setDraft((prev) => ({
+                      ...prev,
+                      profileBlocks: prev.profileBlocks.filter((item) => item.id !== block.id),
+                    }))}
+                  >
+                    <Icon name="close" size={18} />
+                  </button>
+                </div>
+                <label className={styles.authorField}>
+                  <span>{t.profileBlockKind}</span>
+                  <select
+                    className={styles.authorInput}
+                    value={block.kind}
+                    onChange={(event) => setDraft((prev) => ({
+                      ...prev,
+                      profileBlocks: prev.profileBlocks.map((item) => item.id === block.id
+                        ? { ...item, kind: event.target.value as AuthorProfileBlock["kind"] }
+                        : item),
+                    }))}
+                  >
+                    <option value="text">{t.profileBlockText}</option>
+                    <option value="list">{t.profileBlockList}</option>
+                    <option value="timeline">{t.profileBlockTimeline}</option>
+                  </select>
+                </label>
+                <label className={styles.authorField}>
+                  <span>{t.profileBlockLabel}</span>
+                  <input className={styles.authorInput} value={block.label ?? ""} onChange={(event) => setDraft((prev) => ({
+                    ...prev,
+                    profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, label: event.target.value } : item),
+                  }))} />
+                </label>
+                <label className={styles.authorField}>
+                  <span>{t.profileBlockTitle}</span>
+                  <input className={styles.authorInput} value={block.title} required onChange={(event) => setDraft((prev) => ({
+                    ...prev,
+                    profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, title: event.target.value } : item),
+                  }))} />
+                </label>
+                {block.kind === "text" ? (
+                  <label className={styles.authorField}>
+                    <span>{t.profileBlockBody}</span>
+                    <textarea className={styles.authorTextarea} rows={6} value={block.body ?? ""} required onChange={(event) => setDraft((prev) => ({
+                      ...prev,
+                      profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, body: event.target.value } : item),
+                    }))} />
+                  </label>
+                ) : (
+                  <label className={styles.authorField}>
+                    <span>{t.profileBlockItems}</span>
+                    <textarea className={styles.authorTextarea} rows={7} value={(block.items ?? []).join("\n")} required onChange={(event) => setDraft((prev) => ({
+                      ...prev,
+                      profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, items: event.target.value.split("\n") } : item),
+                    }))} />
+                  </label>
+                )}
+              </fieldset>
+            ))}
+            {draft.profileBlocks.length < 12 ? (
+              <button
+                type="button"
+                className={styles.authorBlockAdd}
+                aria-label={t.profileBlockAdd}
+                title={t.profileBlockAdd}
+                onClick={() => setDraft((prev) => ({
+                  ...prev,
+                  profileBlocks: [...prev.profileBlocks, {
+                    id: `section-${Date.now()}`,
+                    kind: "text",
+                    title: "",
+                    body: "",
+                  }],
+                }))}
+              >
+                <Icon name="plus" size={20} />
+                <span>{t.profileBlockAdd}</span>
+              </button>
+            ) : null}
+          </div>
+          <label className={`${styles.authorField} ${styles.authorExperienceField}`}><span>{t.experienceBadge}</span><input className={styles.authorInput} value={draft.experienceBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, experienceBadge: e.target.value }))} /></label>
+          <label className={`${styles.authorField} ${styles.authorAchievementField}`}><span>{t.achievementBadge}</span><input className={styles.authorInput} value={draft.achievementBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, achievementBadge: e.target.value }))} /></label>
+          <fieldset className={`${styles.authorField} ${styles.authorConsultationField}`}>
+            <legend>{t.consultation}</legend>
+            <label className={styles.authorVisibilityRow}><input className={styles.authorVisibilityInput} type="checkbox" checked={draft.consultation.enabled} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, enabled: e.target.checked } }))} /><span className={styles.authorVisibilityMark} aria-hidden="true"><Icon name="check" size={14} /></span><span>{t.consultationEnabled}</span></label>
+            <input className={styles.authorInput} placeholder={t.consultationTitle} value={draft.consultation.title} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, title: e.target.value } }))} />
+            <textarea className={styles.authorTextarea} rows={3} placeholder={t.consultationSummary} value={draft.consultation.summary} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, summary: e.target.value } }))} />
+            <span>{t.consultationPoints}</span>
+            {Array.from({ length: 3 }, (_, index) => <input key={index} className={styles.authorInput} value={draft.consultation.points[index] ?? ""} onChange={(e) => setDraft((prev) => { const points = [...prev.consultation.points]; points[index] = e.target.value; return { ...prev, consultation: { ...prev.consultation, points } }; })} />)}
+            <input className={styles.authorInput} placeholder={t.consultationContact} value={draft.consultation.contactUrl} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, contactUrl: e.target.value } }))} />
+          </fieldset>
 
           {/* THE PICTURE, THEN THE WAY TO CHANGE IT, THEN WHAT IT SHOWS.
               The alt field used to come FIRST, before there was any image to

@@ -46,6 +46,7 @@ import {
 import { foldProgress, type ProgressEvent, type ProgressEventType } from "@/lms-core/progress";
 import { ELEVATED_ROLES, groupLearnersByAccount, learnerStatusOf, type AccessFacet, type GrantSource, type PersonRow } from "@/lib/admin/accessTypes";
 import type {
+    AuthorProfileRow,
     CourseRow,
     GrantableRole,
     PaymentCurrency,
@@ -1269,10 +1270,52 @@ export async function listCourses(): Promise<CourseRow[]> {
             authorId: (row.author_id as string | null) ?? null,
             authorEmail: author?.email ?? null,
             authorName: author?.fullName ?? null,
+            authorProfileId: (row.author_profile_id as string | null) ?? null,
             learners: learners.get(row.id as string) ?? 0,
             updatedAt: row.updated_at as string,
         } satisfies CourseRow;
     });
+}
+
+export async function listAuthorProfiles(): Promise<AuthorProfileRow[]> {
+    const db = adminClient();
+    const { data, error } = await db.from("lms_authors").select("id, slug, name").order("name", { ascending: true });
+    if (error) throw new AccessError(error.message, 500);
+    return (data ?? []).map((row) => ({
+        id: row.id as string,
+        slug: row.slug as string,
+        name: row.name as string,
+    }));
+}
+
+/** Admin route only. The single DELETE cascades atomically in Postgres;
+ * accounts, orders and audit_log do not belong to that cascade. */
+export async function deleteAdminCourse(input: { courseId: string; confirmSlug: string; actorId: string }) {
+    const db = adminClient();
+    const { data: course, error: readError } = await db.from("lms_courses")
+        .select("id, slug, title").eq("id", input.courseId).maybeSingle();
+    if (readError) throw new AccessError(readError.message, 500);
+    if (!course) throw new AccessError("course_not_found", 404);
+    if (input.confirmSlug !== course.slug) throw new AccessError("course_delete_confirmation_required", 400);
+
+    const { count, error: countError } = await db.from("lms_enrollments")
+        .select("id", { count: "exact", head: true }).eq("course_id", course.id);
+    if (countError) throw new AccessError(countError.message, 500);
+    // Fail closed if the destructive request cannot be recorded. This entry
+    // describes intent, so a database rejection cannot masquerade as success.
+    const { error: auditError } = await db.from("audit_log").insert({
+        actor_id: input.actorId, action: "course.delete_requested",
+        entity_type: "lms_course", entity_id: input.courseId,
+        metadata: { slug: course.slug, title: course.title, learners: count ?? 0 },
+    });
+    if (auditError) throw new AccessError("course_delete_audit_failed", 500);
+    const { data: deleted, error } = await db.from("lms_courses").delete()
+        .eq("id", input.courseId).eq("slug", input.confirmSlug).select("id");
+    if (error) throw new AccessError(error.message, 500);
+    if (!deleted?.length) throw new AccessError("course_not_found", 404);
+    await writeAudit(db, { actorId: input.actorId, action: "course.deleted", entityType: "lms_course",
+        entityId: input.courseId, metadata: { slug: course.slug, learners: count ?? 0 } });
+    return { id: input.courseId, slug: course.slug as string };
 }
 
 export async function moderateCourse(input: {
@@ -1345,7 +1388,10 @@ export async function moderateCourse(input: {
         if (!input.visibility || !["hidden", "unlisted", "listed"].includes(input.visibility)) throw new AccessError("invalid_visibility", 400);
         // Hiding is always allowed: taking something OFF the storefront must
         // never be gated on the state that put it there.
-        if (input.visibility !== "hidden" && (course.status !== "published" || reviewStatus !== "approved")) {
+        // Visibility belongs to the live version. A separate draft may still
+        // await review without withdrawing the already approved publication.
+        const liveReviewStatus = course.review_status ?? (course.status === "published" ? "approved" : "draft");
+        if (input.visibility !== "hidden" && (course.status !== "published" || liveReviewStatus !== "approved")) {
             throw new AccessError("course_not_ready_for_storefront", 409);
         }
         values = { visibility: input.visibility };
@@ -1399,4 +1445,32 @@ export async function setCourseAuthor(input: { courseId: string; email: string |
     });
 
     return { course, account };
+}
+
+/** Select the public byline without editing the selected person's profile. */
+export async function setCourseAuthorProfile(input: { courseId: string; authorProfileId: string | null; actorId: string }) {
+    const db = adminClient();
+    const { data: course, error: courseError } = await db.from("lms_courses")
+        .select("id, slug, author_profile_id").eq("id", input.courseId).maybeSingle();
+    if (courseError) throw new AccessError(courseError.message, 500);
+    if (!course) throw new AccessError("course_not_found", 404);
+
+    if (input.authorProfileId) {
+        const { data: profile, error: profileError } = await db.from("lms_authors")
+            .select("id").eq("id", input.authorProfileId).maybeSingle();
+        if (profileError) throw new AccessError(profileError.message, 500);
+        if (!profile) throw new AccessError("author_profile_not_found", 404);
+    }
+
+    const before = (course.author_profile_id as string | null) ?? null;
+    const { error } = await db.from("lms_courses").update({ author_profile_id: input.authorProfileId }).eq("id", input.courseId);
+    if (error) throw new AccessError(error.message, 500);
+    await writeAudit(db, {
+        actorId: input.actorId,
+        action: input.authorProfileId ? "course.author_profile_set" : "course.author_profile_cleared",
+        entityType: "lms_course",
+        entityId: input.courseId,
+        metadata: { course_slug: course.slug, author_profile_before: before, author_profile_after: input.authorProfileId },
+    });
+    return { id: input.courseId, slug: course.slug as string, authorProfileId: input.authorProfileId };
 }

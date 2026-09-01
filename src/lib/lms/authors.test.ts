@@ -106,6 +106,46 @@ describe("upsertAuthorProfile", () => {
     expect(result).toMatchObject({ ok: true, author: { background: { src: "https://example.com/background.webp" } } });
     expect(db.tables.lms_authors[0]).toMatchObject({ background: { src: "https://example.com/background.webp" } });
   });
+
+  it("requires both public-card badges before listing a profile", async () => {
+    const { module } = await withDatabase({
+      lms_courses: [{ id: "c1", author_id: "user-1", slug: "way21" }],
+    });
+    const result = await module.upsertAuthorProfile("user-1", {
+      name: "Іван",
+      listed: true,
+      experienceBadge: "12 років практики",
+    });
+    expect(result).toEqual({ ok: false, error: "invalid_profile" });
+  });
+
+  it("requires a complete contact surface when consultations are enabled", async () => {
+    const { module } = await withDatabase({
+      lms_courses: [{ id: "c1", author_id: "user-1", slug: "way21" }],
+    });
+    const result = await module.upsertAuthorProfile("user-1", {
+      name: "Іван",
+      consultation: {
+        enabled: true,
+        title: "Особиста консультація",
+        summary: "Розберемо запит і визначимо наступний крок.",
+      },
+    });
+    expect(result).toEqual({ ok: false, error: "invalid_profile" });
+  });
+
+  it("stores ordered author-owned profile blocks", async () => {
+    const { db, module } = await withDatabase({
+      lms_courses: [{ id: "c1", author_id: "user-1", slug: "way21" }],
+    });
+    const profileBlocks = [
+      { id: "story", kind: "text" as const, label: "Про автора", title: "Мій шлях", body: "Повна історія автора." },
+      { id: "path", kind: "timeline" as const, title: "Освіта", items: ["Перший етап", "Другий етап"] },
+    ];
+    const result = await module.upsertAuthorProfile("user-1", { name: "Іван", profileBlocks });
+    expect(result).toMatchObject({ ok: true, author: { profileBlocks } });
+    expect(db.tables.lms_authors[0].profile_blocks).toEqual(profileBlocks);
+  });
 });
 
 describe("getAuthorProfileForUser", () => {

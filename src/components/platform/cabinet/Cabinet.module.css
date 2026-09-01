@@ -1022,6 +1022,34 @@
   align-self: flex-start;
 }
 
+.authorBlockAdd {
+  composes: secondary hug from "../PlatformButtons.module.css";
+  align-self: flex-start;
+}
+
+.authorProfileBlocksField {
+  gap: var(--cw-space-sm);
+}
+
+.authorProfileBlockEditor {
+  display: grid;
+  gap: var(--cw-space-sm);
+  margin: 0;
+  padding: var(--cw-space-md);
+  border: 1px solid var(--cw-mat-stroke-quiet, var(--cw-platform-border));
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+}
+
+.authorProfileBlockHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  color: var(--cw-platform-muted);
+  font-weight: 700;
+}
+
 .authorInput,
 .authorTextarea {
   box-sizing: border-box;
@@ -1255,12 +1283,10 @@
 
   .authorPhotoField {
     grid-column: 1;
-    grid-row: 1;
   }
 
   .authorBackgroundField {
     grid-column: 1;
-    grid-row: 2;
   }
 
   .authorPhotoPreview,
@@ -1278,17 +1304,22 @@
     aspect-ratio: auto;
   }
 
-  .authorNameField { grid-column: 2; grid-row: 1; }
-  .authorRoleField { grid-column: 2; grid-row: 2; }
-  .authorBioField { grid-column: 2; grid-row: 3; }
-  .authorQuoteField { grid-column: 2; grid-row: 4; }
-  .authorCredentialsField { grid-column: 2; grid-row: 5; }
-  .authorSlugField { grid-column: 2; grid-row: 6; }
-  .authorVisibilityRow { grid-column: 2; grid-row: 7; }
-  .authorFormActions { grid-column: 2; grid-row: 8; }
+  .authorNameField,
+  .authorRoleField,
+  .authorBioField,
+  .authorQuoteField,
+  .authorCredentialsField,
+  .authorFactsField,
+  .authorProfileBlocksField,
+  .authorExperienceField,
+  .authorAchievementField,
+  .authorConsultationField,
+  .authorSlugField,
+  .authorVisibilityRow,
+  .authorFormActions { grid-column: 2; }
   .authorFormNotice { grid-column: 2; }
 
-  .authorForm > :not(.authorPhotoField):not(.authorBackgroundField):not(.authorNameField):not(.authorRoleField):not(.authorBioField):not(.authorQuoteField):not(.authorCredentialsField):not(.authorSlugField):not(.authorVisibilityRow):not(.authorFormActions):not(.authorFormNotice) {
+  .authorForm > :not(.authorPhotoField):not(.authorBackgroundField):not(.authorNameField):not(.authorRoleField):not(.authorBioField):not(.authorQuoteField):not(.authorCredentialsField):not(.authorFactsField):not(.authorProfileBlocksField):not(.authorExperienceField):not(.authorAchievementField):not(.authorConsultationField):not(.authorSlugField):not(.authorVisibilityRow):not(.authorFormActions):not(.authorFormNotice) {
     grid-column: 2;
   }
 }

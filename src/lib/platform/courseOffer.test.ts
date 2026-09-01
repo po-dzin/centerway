@@ -102,3 +102,11 @@ describe("the subtitle", () => {
     expect(toOfferSurface(course({ title: "Шлях 21" })).subtitle).toBeUndefined();
   });
 });
+
+describe("the course-specific author note", () => {
+  it("carries it to the offer surface without inventing one for another course", () => {
+    expect(toOfferSurface(course({ authorNote: "Я створив цей курс для м’якого старту." })).authorNote)
+      .toBe("Я створив цей курс для м’якого старту.");
+    expect(toOfferSurface(course()).authorNote).toBeUndefined();
+  });
+});

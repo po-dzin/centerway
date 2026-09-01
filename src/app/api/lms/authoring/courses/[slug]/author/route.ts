@@ -57,9 +57,10 @@ export async function PATCH(req: NextRequest, { params }: { params: Promise<{ sl
       return NextResponse.json({ error: "lms_author_link_invalid_action" }, { status: 400 });
     }
 
+    const own = await getAuthorProfileForUser(grant.identity.authUserId);
+
     let authorProfileId: string | null = null;
     if (action === "attach-self") {
-      const own = await getAuthorProfileForUser(grant.identity.authUserId);
       if (!own.author) {
         return NextResponse.json({ error: "lms_author_profile_missing" }, { status: 422 });
       }

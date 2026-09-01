@@ -22,7 +22,7 @@ import { useI18n } from "@/components/I18nProvider";
 import { useToast } from "@/components/ToastProvider";
 import { getErrorMessage } from "@/lib/errors";
 import { supabaseClient } from "@/lib/supabaseClient";
-import type { CourseRow } from "@/lib/admin/accessTypes";
+import type { AuthorProfileRow, CourseRow } from "@/lib/admin/accessTypes";
 
 async function authFetch(input: string, init: RequestInit = {}) {
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -50,12 +50,14 @@ function EmptyIcon() {
 
 export function CourseAuthorshipTab({
     courses,
+    authorProfiles,
     canGrant,
     locale,
     errorText,
     onChanged,
 }: {
     courses: CourseRow[];
+    authorProfiles: AuthorProfileRow[];
     canGrant: boolean;
     locale: string;
     errorText: (message: string) => string;
@@ -92,6 +94,22 @@ export function CourseAuthorshipTab({
             onChanged();
         } catch (e) { toast.error(errorText(getErrorMessage(e))); }
         finally { setSavingId(null); }
+    };
+
+    const selectProfile = async (course: CourseRow, authorProfileId: string | null) => {
+        setSavingId(course.id);
+        try {
+            await authFetch("/api/admin/access/courses", {
+                method: "PATCH",
+                body: JSON.stringify({ courseId: course.id, action: "set_author_profile", authorProfileId }),
+            });
+            toast.success(t("access_author_profile_set"));
+            onChanged();
+        } catch (e) {
+            toast.error(errorText(getErrorMessage(e)));
+        } finally {
+            setSavingId(null);
+        }
     };
 
     if (courses.length === 0) {
@@ -148,7 +166,22 @@ export function CourseAuthorshipTab({
                         ) : null}
 
                         {canGrant ? (
-                            <div className="flex flex-col sm:flex-row gap-2">
+                            <div className="grid gap-2">
+                              <label className="grid gap-1">
+                                <span className="text-xs cw-muted">{t("access_author_profile")}</span>
+                                <select
+                                    className="cw-input cw-select px-3 py-2 text-sm"
+                                    value={course.authorProfileId ?? ""}
+                                    disabled={savingId === course.id}
+                                    onChange={(event) => void selectProfile(course, event.target.value || null)}
+                                >
+                                    <option value="">{t("access_author_profile_none")}</option>
+                                    {authorProfiles.map((profile) => (
+                                        <option key={profile.id} value={profile.id}>{profile.name} · /expert/{profile.slug}</option>
+                                    ))}
+                                </select>
+                              </label>
+                              <div className="flex flex-col sm:flex-row gap-2">
                                 <input
                                     type="email"
                                     value={draft[course.id] ?? ""}
@@ -174,6 +207,7 @@ export function CourseAuthorshipTab({
                                         {t("access_author_clear")}
                                     </button>
                                 ) : null}
+                              </div>
                             </div>
                         ) : null}
                     </div>

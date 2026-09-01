@@ -26,7 +26,7 @@ export default async function ExpertsIndexPage() {
 
   return (
     <PlatformShell>
-      <main>
+      <>
         <PlatformBlock id="authors" label="Автори" title="Автори CenterWay" lead="Хто веде курси й програми на платформі.">
           <div className={trustStyles.guideRail} data-layout={authors.length === 1 ? "single" : undefined}>
             {/* The destination comes from `authorHref`, not from the slug: the
@@ -44,6 +44,10 @@ export default async function ExpertsIndexPage() {
                       loading="lazy"
                       decoding="async"
                     />
+                    {(author.experienceBadge || author.achievementBadge) ? <div className={trustStyles.guideBadges}>
+                      {author.experienceBadge ? <span>{author.experienceBadge}</span> : null}
+                      {author.achievementBadge ? <span>{author.achievementBadge}</span> : null}
+                    </div> : null}
                   </div>
                 ) : null}
                 <div className={trustStyles.guideBody}>
@@ -51,13 +55,13 @@ export default async function ExpertsIndexPage() {
                     <h3 className={trustStyles.guideName}>{author.name}</h3>
                     {author.role ? <p className={trustStyles.guideRole}>{author.role}</p> : null}
                   </div>
-                  {author.bio ? <p className={trustStyles.guideNote}>{author.bio}</p> : null}
+                  {author.facts?.length ? <ul className={trustStyles.guideFacts}>{author.facts.slice(0, 3).map((fact) => <li key={fact}><span>{fact}</span></li>)}</ul> : author.bio ? <p className={trustStyles.guideNote}>{author.bio}</p> : null}
                 </div>
               </Link>
             ))}
           </div>
         </PlatformBlock>
-      </main>
+      </>
     </PlatformShell>
   );
 }

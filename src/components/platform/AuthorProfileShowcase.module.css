@@ -19,11 +19,14 @@
 }
 
 .identity {
+  position: relative;
   display: grid;
   grid-template-columns: auto minmax(0, 1fr);
   align-items: center;
   gap: var(--cw-space-lg);
 }
+.badges { grid-column: 2; display: flex; flex-wrap: wrap; gap: var(--cw-space-2xs); }
+.badges span { padding: var(--cw-space-2xs) var(--cw-space-xs); border-radius: var(--cw-radius-pill); background: var(--cw-mat-surface-sunk); color: var(--cw-platform-text); font-size: var(--ds-type-body-sm-size); font-weight: 700; }
 
 .portrait,
 .portraitFallback {
@@ -53,8 +56,26 @@
   min-width: 0;
 }
 
-.label,
-.stat dt {
+.statusLine {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+}
+
+.courseCount {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding-inline: var(--cw-space-xs);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  font-weight: 700;
+}
+
+.label {
   margin: 0;
   color: var(--cw-platform-muted);
   font-size: 0.76rem;
@@ -93,33 +114,101 @@
   font-size: clamp(1.15rem, 3vw, 1.45rem);
 }
 
-.stats {
-  display: grid;
-  grid-template-columns: minmax(0, 12rem);
-  gap: var(--cw-space-md);
-  margin: var(--cw-space-xl) 0 0;
-  padding-top: var(--cw-space-md);
-  border-top: 1px solid transparent;
-  border-image: var(--cw-rule-fade-x);
-}
-
-.stat {
-  display: grid;
-  gap: var(--cw-space-2xs);
-}
-
-.stat dd {
-  margin: 0;
-  color: var(--cw-platform-text);
-  font-weight: 600;
-}
-
 .credentials {
   display: grid;
   gap: var(--cw-space-xs);
   margin: 0;
   padding: 0;
   list-style: none;
+}
+
+.profileSection {
+  width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
+  margin-inline: auto;
+  padding-block: 0 var(--cw-space-2xl);
+}
+
+.sectionHeader {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  margin-bottom: var(--cw-space-md);
+}
+
+.profilePanel,
+.factGrid {
+  margin: 0;
+  padding: var(--cw-space-lg);
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-xl);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+}
+
+.profileParagraph {
+  max-width: 52rem;
+  margin: 0;
+  color: var(--cw-platform-muted);
+  line-height: 1.7;
+}
+
+.profileParagraph + .profileParagraph {
+  margin-top: var(--cw-space-sm);
+}
+
+.factGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--cw-space-sm);
+  list-style: none;
+}
+
+.factGrid li {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-xs);
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-sm);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-text);
+  font-weight: 700;
+}
+
+.factGrid svg {
+  flex: 0 0 auto;
+  color: var(--cw-sem-warmth-strong);
+}
+
+.timelineList {
+  display: grid;
+  gap: var(--cw-space-xs);
+  margin: 0;
+  padding-inline-start: var(--cw-space-lg);
+  color: var(--cw-platform-muted);
+  line-height: 1.55;
+}
+
+.timelineList li::marker {
+  color: var(--cw-sem-warmth-strong);
+}
+
+.timelineMore {
+  margin-top: var(--cw-space-sm);
+}
+
+.timelineMore summary {
+  min-height: var(--ds-touch-target-min);
+  padding: var(--cw-space-sm);
+  border: 1px solid var(--cw-mat-stroke-quiet, var(--cw-platform-border));
+  border-radius: var(--cw-radius-md);
+  color: var(--cw-platform-text);
+  font-weight: 700;
+  cursor: pointer;
+  user-select: none;
+}
+
+.timelineMore .timelineList {
+  margin-top: var(--cw-space-sm);
 }
 
 .credential {
@@ -139,6 +228,12 @@
   margin-inline: auto;
   padding-block: 0 var(--cw-space-3xl);
 }
+.consultation { width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width)); margin-inline: auto; padding-block: 0 var(--cw-space-2xl); display: grid; gap: var(--cw-space-md); }
+.consultationAction { composes: primary hug from "./PlatformButtons.module.css"; justify-self: start; }
+.steps { display: grid; gap: var(--cw-space-sm); margin: 0; padding-inline-start: var(--cw-space-lg); color: var(--cw-platform-text); }
+.steps li { padding-inline-start: var(--cw-space-xs); }
+.steps strong, .steps span { display: block; }
+.steps span { margin-top: var(--cw-space-2xs); color: var(--cw-platform-muted); line-height: 1.6; }
 
 .courseHeader {
   display: flex;
@@ -186,5 +281,9 @@
   .courseHeader {
     align-items: start;
     flex-direction: column;
+  }
+
+  .factGrid {
+    grid-template-columns: 1fr;
   }
 }

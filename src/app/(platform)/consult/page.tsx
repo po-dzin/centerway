@@ -5,6 +5,7 @@ import { pageMetadata } from "@/lib/seo/metadata";
 import { JsonLd } from "@/lib/seo/StructuredData";
 import { breadcrumbLd, graph, personLd, serviceLd } from "@/lib/seo/jsonLd";
 import { BRAND } from "@/lib/brand/identity";
+import { listListedAuthors } from "@/lib/lms/authors";
 
 export const metadata: Metadata = pageMetadata({
   title: "Аюрведична консультація",
@@ -14,7 +15,8 @@ export const metadata: Metadata = pageMetadata({
   path: "/consult",
 });
 
-export default function ConsultPage() {
+export default async function ConsultPage() {
+  const authors = await listListedAuthors();
   return (
     <>
       {/* A Service, not a Course: nothing is delivered as lessons, and no price
@@ -44,7 +46,7 @@ export default function ConsultPage() {
           ])
         )}
       />
-      <PlatformConsultPage />
+      <PlatformConsultPage authors={authors} />
     </>
   );
 }

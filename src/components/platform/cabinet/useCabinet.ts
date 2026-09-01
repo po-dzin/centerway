@@ -310,6 +310,11 @@ export type AuthorProfileInput = {
   bio?: string;
   quote?: string;
   credentials?: string[];
+  facts?: string[];
+  profileBlocks?: Author["profileBlocks"];
+  experienceBadge?: string;
+  achievementBadge?: string;
+  consultation?: Author["consultation"];
   photo?: { src: string; alt: string };
   background?: { src: string };
   listed?: boolean;

@@ -1,4 +1,4 @@
-.rail {
+.rail[data-cw-material="chrome"] {
   width: var(--cw-workspace-side-panel-width);
   display: grid;
   grid-template-rows: minmax(0, 1fr) auto;
@@ -6,10 +6,11 @@
   overflow: clip;
   border-inline-end: 1px solid var(--cw-mat-stroke-chrome);
   border-image: var(--cw-rule-fade-y);
+  box-shadow: none;
   transition: width var(--cw-workspace-panel-motion) var(--cw-workspace-panel-ease);
 }
 
-.railCompact {
+.railCompact[data-cw-material="chrome"] {
   width: var(--cw-workspace-mode-rail-width);
 }
 
@@ -64,6 +65,7 @@
 }
 
 .railToggle {
+  composes: base chromeBare from "@/components/platform/PlatformButtons.module.css";
   width: 100%;
   padding-block-start: var(--cw-space-md);
   padding-block-end: max(var(--cw-space-md), env(safe-area-inset-bottom));

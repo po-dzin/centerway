@@ -268,7 +268,7 @@ function AdminShell({ children }: { children: ReactNode }) {
                                     }
                                 `}
                             >
-                                <InteractionInkIcon><Icon name={icon} size={20} /></InteractionInkIcon>
+                                {expanded ? <Icon name={icon} size={20} /> : <InteractionInkIcon><Icon name={icon} size={20} /></InteractionInkIcon>}
                                 <span className={styles.railLabel}>
                                     <InteractionInkLabel>{t(key)}</InteractionInkLabel>
                                 </span>
@@ -287,10 +287,11 @@ function AdminShell({ children }: { children: ReactNode }) {
                         type="button"
                         onClick={() => setExpanded(v => !v)}
                         title={expanded ? t("common_collapse") : t("common_expand")}
+                        aria-label={expanded ? t("common_collapse") : t("common_expand")}
                         aria-expanded={expanded}
-                        className={`cw-icon-btn ${styles.railToggle} flex justify-center`}
+                        className={styles.railToggle}
                     >
-                        <InteractionInkIcon><Icon name={expanded ? "arrow-up" : "arrow-down"} size={18} /></InteractionInkIcon>
+                        <Icon name={expanded ? "arrow-left" : "arrow-right"} size={18} />
                     </button>
                 </div>
             </aside>

@@ -106,7 +106,7 @@ describe("platform interaction layers", () => {
     expect(layout).toContain('surface="personal"');
     expect(layout).toContain('mode="workspace"');
     expect(layout).not.toContain("workspaceMobileContent");
-    expect(layout).toContain('name={expanded ? "arrow-up" : "arrow-down"}');
+    expect(layout).toContain('name={expanded ? "arrow-left" : "arrow-right"}');
     expect(layout).not.toContain("LanguageSwitcher");
     expect(rail).toContain("var(--cw-workspace-side-panel-width)");
     expect(rail).toContain("var(--cw-rule-fade-y)");
