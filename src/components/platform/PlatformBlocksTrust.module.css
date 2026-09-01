@@ -408,7 +408,7 @@
   height: 2.5rem;
   border-radius: var(--cw-radius-sm);
   background: var(--cw-mat-tone-icon);
-  color: var(--cw-sem-guide-primary);
+  color: var(--cw-platform-accent);
 }
 
 .expertCompactPanel {

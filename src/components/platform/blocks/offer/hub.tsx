@@ -31,7 +31,7 @@ export async function HubMini() {
       label="Міні-курси"
       title="М&apos;який вхід без довгого зобов&apos;язання"
       lead="Кілька днів практики, щоб спробувати підхід без довгого зобов'язання."
-      headActions={<PlatformBlockLink href="/programs" label="Усі програми і курси" />}
+      headActions={<PlatformBlockLink href="/programs" label="Усі матеріали" />}
     >
       <div className={styles.programShowcase} data-layout="mini">
         {authored.map((course) => (
@@ -63,9 +63,9 @@ export async function HubPrograms() {
     <PlatformBlock
       id="programs"
       label="Програми"
-      title="Глибші програми для тіла, харчування і ритму"
-      lead="Яка програма підходить моєму поточному стану?"
-      headActions={<PlatformBlockLink href="/programs" label="Усі програми" />}
+      title="Глибші формати для тіла, харчування і ритму"
+      lead="Що обрати для свого поточного стану?"
+      headActions={<PlatformBlockLink href="/programs" label="Усі матеріали" />}
     >
       <div className={styles.programShowcase}>
         {authored.map((course) => (
@@ -82,7 +82,7 @@ export async function HubPrograms() {
             categories={course.categoryLabels}
             pretitle={course.pretitle}
             posttitle={course.posttitle}
-            ctaLabel="Деталі програми"
+            ctaLabel="Переглянути деталі"
           />
         ))}
       </div>

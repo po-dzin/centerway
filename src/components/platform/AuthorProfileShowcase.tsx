@@ -50,11 +50,7 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
 
         <dl className={styles.stats}>
           <div className={styles.stat}>
-            <dt>Статус</dt>
-            <dd>{author.role || "Автор CenterWay"}</dd>
-          </div>
-          <div className={styles.stat}>
-            <dt>Опубліковані курси</dt>
+            <dt>Курси</dt>
             <dd>{courses.length}</dd>
           </div>
         </dl>

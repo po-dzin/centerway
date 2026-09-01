@@ -95,7 +95,7 @@
 
 .stats {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 12rem);
   gap: var(--cw-space-md);
   margin: var(--cw-space-xl) 0 0;
   padding-top: var(--cw-space-md);

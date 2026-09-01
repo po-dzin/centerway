@@ -1431,6 +1431,15 @@ Three surfaces answered "you are here" three ways: the topbar drew an ink underl
 
 ### Selection grammar: contour, ink, hybrid (2026-08-30)
 
+### Text links: visible ink, warm interaction (2026-08-31)
+
+Ordinary inline and footer text links remain visibly underlined at rest: the
+underline uses the readable ink role, so a link does not depend on hover or
+colour alone to announce itself. On hover and keyboard focus, foreground and
+underline move to the existing warm guide accent; where a platform link uses
+the shared `InteractionInkLabel`, its baked ink stroke is the only drawn mark.
+Do not apply this treatment to icon-only links or plated route actions.
+
 Every interaction must declare one `selection_family` before code review. The
 family is a semantic choice, not a cosmetic preference:
 

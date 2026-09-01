@@ -149,6 +149,8 @@ export const botCopy = {
   supportAskMessage: "Тепер опишіть ситуацію одним повідомленням.",
   supportSent: "Передали звернення підтримці. Відповідь прийде сюди, в цей чат.",
   supportUnavailable: "Підтримка тимчасово недоступна. Спробуйте, будь ласка, пізніше.",
+  bugAskMessage: "Опишіть помилку одним повідомленням. Додайте сторінку, що робили перед помилкою і, якщо можете, скриншот окремим повідомленням.",
+  bugSent: "Дякуємо. Помилку передано технічній команді.",
 
   linkedOk: "Готово — акаунт CenterWay підключено. Нагадування про уроки приходитимуть сюди.",
   linkExpired: "Посилання застаріло. Відкрийте кабінет і натисніть «Підключити Telegram» ще раз.",
@@ -194,6 +196,7 @@ export const botProfile = {
     { command: "access", description: "Не бачу доступ" },
     { command: "help", description: "Часті питання" },
     { command: "support", description: "Написати підтримці" },
+    { command: "bug", description: "Повідомити про помилку" },
   ],
   /**
    * The blue button next to the input field: the command list, not a web_app
