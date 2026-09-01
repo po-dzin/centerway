@@ -1,6 +1,6 @@
 import { Icon } from "@/components/Icon";
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
-import offerStyles from "@/components/platform/PlatformOfferStyles";
+import { PlatformOfferCarousel } from "@/components/platform/PlatformOfferCarousel";
 import type { StorefrontCard } from "@/lib/platform/offers";
 import type { Author } from "@/lms-core";
 import styles from "./AuthorProfileShowcase.module.css";
@@ -119,7 +119,7 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
           </div>
         </div>
         {courses.length > 0 ? (
-          <div className={offerStyles.aggregateRail}>
+          <PlatformOfferCarousel label={`Курси автора ${author.name}`} viewAllHref="/programs" viewAllLabel="Усі курси">
             {courses.map((course) => (
               <PlatformOfferCard
                 key={course.slug}
@@ -130,10 +130,13 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
                 visual={course.visual}
                 slug={course.slug}
                 artwork={course.artwork}
+                commercialMode={course.commercialMode}
+                price={course.price}
+                compareAtPrice={course.compareAtPrice}
                 ctaLabel="Деталі курсу"
               />
             ))}
-          </div>
+          </PlatformOfferCarousel>
         ) : (
           <p className={styles.empty}>Публічних курсів цього автора поки немає.</p>
         )}

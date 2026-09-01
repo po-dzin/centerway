@@ -14,7 +14,7 @@ import { courseOfferCode } from "./offerCode";
  * "token" is retained for callers that still name it and for stored history; it
  * is no longer PRODUCED here. See the note on access tokens below.
  */
-export type EntitlementSource = "order" | "token" | "manual";
+export type EntitlementSource = "order" | "token" | "manual" | "free";
 
 export type PaidOrderRef = {
   orderRef: string;
@@ -54,6 +54,8 @@ export type EntitlementInput = {
   orders: PaidOrderRef[];
   /** Explicit grants (admin, gift, cohort import). */
   manualGrants?: Array<{ courseSlug: string; grantedAt: string }>;
+  /** A published active offer with amount 0 grants access without an order. */
+  freeCourse?: boolean;
   courseSlug: string;
   now: Date;
 };
@@ -116,6 +118,10 @@ export function resolveEntitlement(input: EntitlementInput): Entitlement {
   const manual = (input.manualGrants ?? []).find((grant) => grant.courseSlug === input.courseSlug);
   if (manual) {
     return { entitled: true, source: "manual", grantedAt: manual.grantedAt, orderRef: null };
+  }
+
+  if (input.freeCourse) {
+    return { entitled: true, source: "free", grantedAt: input.now.toISOString(), orderRef: null };
   }
 
   const paidOrders = input.orders

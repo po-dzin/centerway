@@ -28,6 +28,7 @@ import {
   PLATFORM_THANKS_URL,
   PRODUCTS,
   catalogOffer,
+  formatPrice,
   isCatalogProduct,
   normalizePayableProduct,
   type CatalogProductCode,
@@ -164,6 +165,10 @@ export type StorefrontCard = {
   tag: string;
   description: string;
   href: string;
+  /** Commercial state is always explicit; a missing row is an inquiry, not zero. */
+  commercialMode: "fixed" | "free" | "inquiry";
+  price: string | null;
+  compareAtPrice: string | null;
   artwork?: PlatformOfferArtwork;
   /**
    * The card's decorative variant, from a closed list the catalogue's CSS knows.
@@ -244,10 +249,12 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
     return [];
   }
 
-  return courses
+  const listed = courses
     .filter((course) => isPublicCourse(course, ["listed"]))
-    .sort((a, b) => (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER))
-    .map((course) => {
+    .sort((a, b) => (a.sortOrder ?? Number.MAX_SAFE_INTEGER) - (b.sortOrder ?? Number.MAX_SAFE_INTEGER));
+  const offers = await Promise.all(listed.map((course) => loadCourseOffer(course.slug)));
+
+  return listed.map((course, index) => {
       /* THE CARD SAYS WHAT THE PAGE SAYS. The eyebrow, the name and the
          duration are read off the same `toOfferSurface` the offer page is built
          from, so a reader who follows a card meets the two facts they were
@@ -256,6 +263,7 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
          a course was authored with a long title. */
       const surface = toOfferSurface(course);
       const card = course.cover ? coverCard(course.cover.src) : undefined;
+      const offer = offers[index];
       return {
         slug: course.slug,
         programSlug: course.programSlug,
@@ -269,6 +277,12 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
         ...(course.kind ? { kindBadge: surface.tag } : {}),
         description: course.summary ? inlineToPlainText(course.summary) : "",
         href: `/programs/${course.programSlug}`,
+        commercialMode: offer ? (offer.amount === 0 ? "free" : "fixed") : "inquiry",
+        price: offer ? (offer.amount === 0 ? "Безкоштовно" : formatPrice(offer.amount, offer.currency)) : null,
+        compareAtPrice:
+          offer && offer.amount > 0 && offer.listAmount !== null && offer.listAmount !== undefined && offer.listAmount > offer.amount
+            ? formatPrice(offer.listAmount, offer.currency)
+            : null,
         ...(course.cover
           ? {
               artwork: {
@@ -364,7 +378,7 @@ async function loadCourseOfferFor(slug: string): Promise<PayableOffer | null> {
   // says the author finished it and let strangers see it, the offer row says
   // the owner set a price. Selling a draft would deliver a half-written course;
   // selling without a row would charge a figure nobody agreed.
-  if (!course || !isPublicCourse(course) || !offer) return null;
+  if (!course || !isPublicCourse(course) || !offer || offer.amount <= 0) return null;
 
   const summary = course.summary ? inlineToPlainText(course.summary) : "";
   const heading = `${course.title} — CenterWay`;

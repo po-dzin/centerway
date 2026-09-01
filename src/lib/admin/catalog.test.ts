@@ -132,6 +132,22 @@ describe("saveOffer", () => {
         expect(row.pixel_content_name).toBe("Reset Day");
     });
 
+    it("accepts zero as an explicit free offer", async () => {
+        seed([course()], []);
+
+        await saveOffer({ courseId: "course-reset", actorId: ADMIN, amount: 0, accessDays: 30 });
+
+        expect(db.rows("lms_course_offers")[0]).toMatchObject({ amount: 0, access_days: 30, active: true });
+    });
+
+    it("does not allow a struck-through price on a free offer", async () => {
+        seed([course()], []);
+
+        await expect(
+            saveOffer({ courseId: "course-reset", actorId: ADMIN, amount: 0, listAmount: 100, accessDays: 30 })
+        ).rejects.toMatchObject({ message: "list_amount_invalid" });
+    });
+
     /* An offer with no term grants perpetual access to everyone who ever buys
        it, silently, and in the direction that cannot be taken back. */
     it("refuses an offer that says nothing about time", async () => {

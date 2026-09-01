@@ -435,6 +435,15 @@
   line-height: 1.05;
 }
 
+.priceOld {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-lead-size);
+  line-height: 1.2;
+  text-decoration-thickness: 0.08em;
+  text-decoration-color: currentColor;
+}
+
 .priceNote {
   margin: 0;
   color: var(--cw-platform-muted);

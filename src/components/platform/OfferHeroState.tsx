@@ -36,6 +36,7 @@ export type OfferHeroCommerce = {
    * advertise a hryvnia.
    */
   price: string | null;
+  compareAtPrice?: string | null;
   /** The author's own access promise — "доступ назавжди". */
   accessNote: string | null;
 };
@@ -50,6 +51,7 @@ export function OfferHeroCommitment({ commerce }: { commerce: OfferHeroCommerce 
     if (!commerce.price) return null;
     return (
       <div className={styles.heroPriceRow}>
+        {commerce.compareAtPrice ? <s className={styles.heroPriceOld}>{commerce.compareAtPrice}</s> : null}
         <p className={styles.heroPriceValue}>{commerce.price}</p>
         <p className={styles.heroPriceNote}>{commerce.accessNote ?? "разова оплата"}</p>
       </div>

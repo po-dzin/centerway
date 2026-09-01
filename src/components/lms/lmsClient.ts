@@ -82,7 +82,7 @@ export type LearnerShelfCourseDto = {
   expiresAt: string | null;
   /** Whole days left, computed on the server so every surface counts the same way. */
   daysLeft: number | null;
-  source: "order" | "token" | "manual" | "bonus" | "promotion" | null;
+  source: "order" | "token" | "manual" | "bonus" | "promotion" | "free" | null;
   /** Last successful lesson interaction; the dashboard's resume order uses this. */
   lastActivityAt: string | null;
   standing: CourseViewDto["standing"] | null;

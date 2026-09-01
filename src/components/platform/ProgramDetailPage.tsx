@@ -2,7 +2,7 @@ import {
   PlatformOfferMetaList,
   PlatformOfferSurfaceTemplate,
 } from "@/components/platform/PlatformOfferSurfaceTemplate";
-import { OfferCheckoutPanel, OfferSupportPanel } from "@/components/platform/OfferCommerce";
+import { OfferCheckoutPanel, OfferFreePanel, OfferSupportPanel } from "@/components/platform/OfferCommerce";
 import { OfferCurriculum } from "@/components/platform/OfferCurriculum";
 import { OfferAccessProvider } from "@/components/platform/OfferAccess";
 import { OfferHeroActions, OfferHeroCommitment } from "@/components/platform/OfferHeroState";
@@ -129,6 +129,8 @@ export function ProgramDetailPage({
   nextStep?: ReactNode;
 }) {
   const commerce = givenCommerce ?? resolveOfferCommerce(program.slug);
+  const isCheckout = commerce.mode === "checkout";
+  const isFree = commerce.mode === "free";
   // The SNAPSHOT on purpose: this page is statically prerendered and needs a
   // lesson count for a marketing claim, not live content. A live read here
   // would turn a static page into a per-request query.
@@ -145,7 +147,9 @@ export function ProgramDetailPage({
      keep. The course catalogue is the discriminator, because it is the thing
      that makes a cabinet delivery possible in the first place. */
   const deliveryLine = course
-    ? "курс відкриється у вашому кабінеті одразу після оплати"
+    ? isFree
+      ? "курс відкриється у вашому кабінеті одразу після старту"
+      : "курс відкриється у вашому кабінеті одразу після оплати"
     : "доступ приходить одразу після оплати — на сторінці підтвердження буде вхід у Telegram-бот";
 
   const includes = [
@@ -153,7 +157,7 @@ export function ProgramDetailPage({
       ? `${lessonCount} ${plural(lessonCount, "урок", "уроки", "уроків")} у ${course.modules.length} ${plural(course.modules.length, "модулі", "модулях", "модулях")}`
       : `${program.duration} за структурою автора`,
     deliveryLine,
-    "разова оплата, без підписки і автоплатежів",
+    isFree ? "без оплати, підписки й автоплатежів" : "разова оплата, без підписки і автоплатежів",
     "проходити можна з телефона і з компʼютера",
   ];
 
@@ -163,7 +167,7 @@ export function ProgramDetailPage({
   const formatMeta = [
     course ? `${lessonCount} ${plural(lessonCount, "урок", "уроки", "уроків")}` : program.tag,
     ...(program.accessNote ? [program.accessNote] : []),
-    commerce.mode === "checkout" ? "оплата просто тут, без переходу на лендинг" : "участь узгоджуємо в розмові",
+    isCheckout ? "оплата просто тут, без переходу на лендинг" : isFree ? "доступ без оплати" : "участь узгоджуємо в розмові",
   ];
 
   /* THE FACTS, MOVED INTO THE HERO. These three used to be reachable only by
@@ -181,8 +185,8 @@ export function ProgramDetailPage({
     ...(program.accessNote ? [{ label: program.accessNote, icon: "shield-check" as const }] : []),
   ];
 
-  const buyHref = commerce.mode === "checkout" ? commerce.checkoutHref : "#program-enroll";
-  const buyLabel = commerce.mode === "checkout" ? "Придбати доступ" : "Записатися на програму";
+  const buyHref = isCheckout ? commerce.checkoutHref : isFree ? commerce.accessHref : "#program-enroll";
+  const buyLabel = isCheckout ? "Придбати доступ" : isFree ? "Почати безкоштовно" : "Записатися на програму";
 
   return (
     /* EVERYTHING INSIDE ONE PROVIDER, and only two things read it. The hero and
@@ -209,7 +213,8 @@ export function ProgramDetailPage({
           commitment: (
             <OfferHeroCommitment
               commerce={{
-                price: commerce.mode === "checkout" ? commerce.price : null,
+                price: isCheckout || isFree ? commerce.price : null,
+                compareAtPrice: isCheckout ? commerce.compareAtPrice : null,
                 accessNote: program.accessNote ?? null,
               }}
             />
@@ -247,8 +252,8 @@ export function ProgramDetailPage({
                   path: `/programs/${program.slug}`,
                   name: program.fullTitle,
                   description: program.longDescription || program.description,
-                  price: commerce.mode === "checkout" ? commerce.amount : null,
-                  currency: commerce.mode === "checkout" ? commerce.currency : undefined,
+                  price: isCheckout || isFree ? commerce.amount : null,
+                  currency: isCheckout || isFree ? commerce.currency : undefined,
                   duration: program.duration,
                   ...(program.artwork ? { image: program.artwork.desktop } : {}),
                 }),
@@ -304,19 +309,23 @@ export function ProgramDetailPage({
             sales={
               <>
                 <article className={offerPanelStyles.panel}>
-                  <p className={offerPanelStyles.label}>{commerce.mode === "checkout" ? "Участь" : "Запис"}</p>
+                  <p className={offerPanelStyles.label}>{isCheckout ? "Участь" : isFree ? "Доступ" : "Запис"}</p>
                   <h2 className={offerPanelStyles.title}>
-                    {commerce.mode === "checkout"
+                    {isCheckout
                       ? `Відкрити доступ до «${program.title}»`
+                      : isFree
+                        ? `Почати «${program.title}» без оплати`
                       : `Записатися на «${program.title}»`}
                   </h2>
                   <p className={offerPanelStyles.lead}>
-                    {commerce.mode === "checkout"
+                    {isCheckout
                       ? `Оплата проходить тут, на платформі, без переходу на окремий лендинг: ${deliveryLine}.`
+                      : isFree
+                        ? `Це безкоштовний доступ до курсу: ${deliveryLine}. Увійдіть або створіть акаунт, щоб зберегти прогрес.`
                       : "Цю програму ми узгоджуємо в розмові — щоб формат, темп і межі методу підходили саме вашому стану. Залиште контакт, і ми повернемося з деталями і способом оплати."}
                   </p>
                 </article>
-                {commerce.mode === "checkout" ? (
+                {isCheckout ? (
                   <OfferCheckoutPanel
                     commerce={commerce}
                     label="Оплата"
@@ -324,6 +333,15 @@ export function ProgramDetailPage({
                     lead={program.description}
                     includes={includes}
                     ctaLabel={`Оплатити ${commerce.price}`}
+                  />
+                ) : isFree ? (
+                  <OfferFreePanel
+                    commerce={commerce}
+                    label="Безкоштовний доступ"
+                    title="Почати навчання"
+                    lead={program.description}
+                    includes={includes}
+                    ctaLabel="Відкрити курс"
                   />
                 ) : (
                   <OfferSupportPanel label="Форма" title="Залишити контакти">
@@ -340,7 +358,7 @@ export function ProgramDetailPage({
         }
         trailing={
           <OfferStickyBar
-            price={commerce.mode === "checkout" ? commerce.price : null}
+            price={isCheckout || isFree ? commerce.price : null}
             buyHref={buyHref}
             buyLabel={buyLabel}
           />

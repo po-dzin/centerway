@@ -1,6 +1,6 @@
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
+import { PlatformOfferCarousel } from "@/components/platform/PlatformOfferCarousel";
 import { PlatformBlock, PlatformBlockLink } from "@/components/platform/PlatformBlock";
-import styles from "@/components/platform/PlatformOfferStyles";
 import { listStorefrontCourses } from "@/lib/platform/offers";
 
 /**
@@ -33,7 +33,7 @@ export async function HubMini() {
       lead="Кілька днів практики, щоб спробувати підхід без довгого зобов'язання."
       headActions={<PlatformBlockLink href="/programs" label="Усі матеріали" />}
     >
-      <div className={styles.programShowcase} data-layout="mini">
+      <PlatformOfferCarousel label="Міні-курси CenterWay" viewAllHref="/programs" viewAllLabel="Усі курси">
         {authored.map((course) => (
           <PlatformOfferCard
             key={course.slug}
@@ -48,10 +48,13 @@ export async function HubMini() {
             categories={course.categoryLabels}
             pretitle={course.pretitle}
             posttitle={course.posttitle}
+            commercialMode={course.commercialMode}
+            price={course.price}
+            compareAtPrice={course.compareAtPrice}
             ctaLabel="Деталі курсу"
           />
         ))}
-      </div>
+      </PlatformOfferCarousel>
     </PlatformBlock>
   );
 }
@@ -67,7 +70,7 @@ export async function HubPrograms() {
       lead="Що обрати для свого поточного стану?"
       headActions={<PlatformBlockLink href="/programs" label="Усі матеріали" />}
     >
-      <div className={styles.programShowcase}>
+      <PlatformOfferCarousel label="Програми CenterWay" viewAllHref="/programs" viewAllLabel="Усі курси">
         {authored.map((course) => (
           <PlatformOfferCard
             key={course.slug}
@@ -82,10 +85,13 @@ export async function HubPrograms() {
             categories={course.categoryLabels}
             pretitle={course.pretitle}
             posttitle={course.posttitle}
+            commercialMode={course.commercialMode}
+            price={course.price}
+            compareAtPrice={course.compareAtPrice}
             ctaLabel="Переглянути деталі"
           />
         ))}
-      </div>
+      </PlatformOfferCarousel>
     </PlatformBlock>
   );
 }

@@ -133,6 +133,34 @@
   gap: var(--cw-space-md);
 }
 
+/* The consultation page introduces people, rather than indexing them: retain
+   one horizontal sequence at every viewport so adding an author extends the
+   rail instead of changing the block into a new grid. */
+.consultantRail,
+.consultantRail[data-layout="single"] {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: var(--cw-space-md);
+  overflow-x: auto;
+  overflow-y: visible;
+  padding: 0.1rem 0.35rem 0.35rem 0.05rem;
+  scroll-snap-type: x proximity;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.consultantRail::-webkit-scrollbar {
+  display: none;
+}
+
+.consultantRail > .guideCard,
+.consultantRail[data-layout="single"] > .guideCard {
+  flex: 0 0 var(--ds-offer-card-rail-width);
+  width: var(--ds-offer-card-rail-width);
+  min-width: var(--ds-offer-card-rail-width);
+  scroll-snap-align: start;
+}
+
 .guideCard {
   display: grid;
   grid-template-columns: minmax(0, 1fr);

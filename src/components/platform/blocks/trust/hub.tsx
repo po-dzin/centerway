@@ -1,6 +1,7 @@
 import styles from "@/components/platform/PlatformTrustStyles";
 import { PlatformBlock, PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
+import { PlatformOfferCarousel } from "@/components/platform/PlatformOfferCarousel";
 import { Icon } from "@/components/Icon";
 import { platformProductOffers, proofItems } from "@/lib/platform/content";
 
@@ -35,7 +36,7 @@ export function HubSupport() {
       {/* One product is one card and not a lonely cell; more than one is a rail.
           The same switch the aggregate pages use, so the block does not change
           shape when the catalogue grows. */}
-      <div className={styles.aggregateRail} data-layout={products.length === 1 ? "single" : undefined}>
+      <PlatformOfferCarousel label="Продукти CenterWay" viewAllHref="/products" viewAllLabel="Усі продукти">
         {products.map((product) => (
           <PlatformOfferCard
             key={product.slug}
@@ -48,7 +49,7 @@ export function HubSupport() {
             artwork={product.artwork}
           />
         ))}
-      </div>
+      </PlatformOfferCarousel>
     </PlatformBlock>
   );
 }

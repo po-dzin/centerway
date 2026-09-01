@@ -1,0 +1,168 @@
+.carousel {
+  display: grid;
+  min-width: 0;
+  gap: var(--cw-space-xs);
+}
+
+/* A stable row: measuring overflow must not move the cards after hydration. */
+.controls {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--cw-space-xs);
+  min-height: var(--ds-touch-target-min);
+}
+
+.carousel[data-overflow="false"] .controls {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/* Labelled by aria-label; geometry is the shared quiet command contour. */
+.control {
+  composes: secondary square round from "./PlatformButtons.module.css";
+}
+
+.viewport {
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x mandatory;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+}
+
+.viewport::-webkit-scrollbar {
+  display: none;
+}
+
+.viewport:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-tight);
+  border-radius: var(--cw-radius-sm);
+}
+
+.track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: calc((100% - var(--cw-space-md) - var(--cw-space-md)) / 3);
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--cw-space-md);
+}
+
+.track > * {
+  width: 100%;
+  min-width: 0;
+  height: var(--ds-offer-card-height-rail);
+  min-height: 0;
+  scroll-snap-align: start;
+}
+
+.queueFooter {
+  display: grid;
+  justify-items: center;
+  min-width: 0;
+  gap: var(--cw-space-sm);
+  padding-block-start: var(--cw-space-2xs);
+}
+
+.queueDots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 1rem;
+  gap: var(--cw-space-2xs);
+  color: var(--cw-platform-muted);
+}
+
+.queueDot {
+  display: grid;
+  place-items: center;
+  width: 1rem;
+  height: 1rem;
+  opacity: 0.36;
+}
+
+.queueDotCurrent {
+  color: var(--cw-sem-warmth);
+  opacity: 1;
+}
+
+.queueOverflow {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--cw-space-sm) var(--cw-space-md);
+}
+
+.queueRange {
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: var(--ds-type-label-line-height);
+}
+
+.queueActions {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: var(--cw-space-xs);
+}
+
+.queueLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--ds-touch-target-min);
+  gap: var(--cw-space-xs);
+  color: var(--cw-platform-text);
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+  text-underline-offset: 0.22em;
+}
+
+.queueLink:hover,
+.queueLink:focus-visible {
+  color: var(--cw-sem-warmth);
+}
+
+.queueLink:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-tight);
+  border-radius: var(--cw-radius-sm);
+}
+
+.srOnly {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (min-width: 561px) and (max-width: 900px) {
+  .track {
+    grid-auto-columns: calc((100% - var(--cw-space-md)) / 2);
+  }
+}
+
+@media (max-width: 560px) {
+  .controls {
+    display: none;
+  }
+
+  .track {
+    grid-auto-columns: var(--ds-offer-card-rail-width);
+    gap: var(--cw-space-sm);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .viewport {
+    scroll-behavior: auto;
+  }
+}

@@ -39,7 +39,11 @@ export async function GET(): Promise<Response> {
   const offers = programs.map((program) => {
     const commerce = resolveOfferCommerce(program.slug);
     const price =
-      commerce.mode === "checkout" ? `Ціна: ${commerce.price}.` : "Ціна узгоджується в розмові.";
+      commerce.mode === "checkout"
+        ? `Ціна: ${commerce.price}.`
+        : commerce.mode === "free"
+          ? "Доступ безкоштовний."
+          : "Ціна узгоджується в розмові.";
     const base = program.surfaceType === "product" ? "/products" : "/programs";
     return line(
       `${base}/${program.slug}`,
@@ -72,7 +76,11 @@ export async function GET(): Promise<Response> {
       .map(async (course) => {
         const commerce = courseOfferCommerce(course.programSlug, await loadCourseOffer(course.slug));
         const price =
-          commerce.mode === "checkout" ? `Ціна: ${commerce.price}.` : "Ціна узгоджується в розмові.";
+          commerce.mode === "checkout"
+            ? `Ціна: ${commerce.price}.`
+            : commerce.mode === "free"
+              ? "Доступ безкоштовний."
+              : "Ціна узгоджується в розмові.";
         return line(course.href, course.title, `${course.description || course.tag} ${price}`);
       })
   );
