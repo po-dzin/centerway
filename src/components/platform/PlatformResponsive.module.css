@@ -1243,10 +1243,8 @@
      it measured 287px inside a 228px column and simply ran out of the card.
      Ukrainian compounds are the normal case here, so the card sizes for them.
 
-     Hyphenation is gone with the second line it existed for: the preview format
-     gives the name one line at every width (see PlatformBlocksOffer.module.css),
-     and the phone keeps the same card-title token rather than a step of its own
-     — a bigger step here would only decide which name gets an ellipsis. */
+     The preview reserves two lines at every width; the phone keeps the shared
+     card-title token rather than inventing a second scale. */
   .programTileBody h3 {
     font-size: var(--ds-offer-card-title-size);
     line-height: var(--ds-offer-card-title-line-height);

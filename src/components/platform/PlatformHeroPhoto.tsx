@@ -1,3 +1,7 @@
+"use client";
+
+import { useEffect, useState } from "react";
+
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 import { MEDIA_SIZES, mediaSources } from "@/lib/lms/media";
 
@@ -21,17 +25,38 @@ type PlatformHeroPhotoProps = {
 };
 
 export function PlatformHeroPhoto({ artwork, alt, className, eager }: PlatformHeroPhotoProps) {
-  if (!artwork?.desktop) return null;
-
   // An author's cover arrives here as one URL. When it is one this application
   // stored, the smaller rendition exists and a phone should be given it — the
   // hero is full-bleed, so `sizes` is simply the viewport.
-  const desktop = mediaSources(artwork.desktop);
-  const mobile = artwork.mobile ? mediaSources(artwork.mobile) : undefined;
+  const desktop = artwork?.desktop ? mediaSources(artwork.desktop) : undefined;
+  const mobile = artwork?.mobile ? mediaSources(artwork.mobile) : undefined;
+  const [mobileStatus, setMobileStatus] = useState<{ src: string; ready: boolean } | null>(null);
+
+  /* A `picture > source` cannot recover when its own URL was deleted from
+     Storage: the browser has already selected it before the fallback `img` can
+     help. Verify the optional portrait master first; until it loads, the
+     desktop cover remains in place and uses its authored mobile crop. */
+  useEffect(() => {
+    if (!mobile?.src) return;
+    let active = true;
+    const probe = new window.Image();
+    probe.onload = () => {
+      if (active) setMobileStatus({ src: mobile.src, ready: true });
+    };
+    probe.onerror = () => {
+      if (active) setMobileStatus({ src: mobile.src, ready: false });
+    };
+    probe.src = mobile.src;
+    return () => {
+      active = false;
+    };
+  }, [mobile?.src]);
+
+  if (!desktop) return null;
 
   return (
     <picture>
-      {mobile ? (
+      {mobile && mobileStatus?.src === mobile.src && mobileStatus.ready ? (
         <source media={PORTRAIT_MEDIA} srcSet={mobile.srcSet ?? mobile.src} sizes={mobile.srcSet ? MEDIA_SIZES.full : undefined} />
       ) : null}
       <img

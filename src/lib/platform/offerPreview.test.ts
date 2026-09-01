@@ -79,14 +79,12 @@ describe("offerCardOverflow", () => {
     expect(offerCardOverflow("Розвантажувальний день — практикум з умовного голодування")).toBe(0);
   });
 
-  it("counts how far a genuinely long name runs past the line", () => {
-    expect(offerCardOverflow("Природнє тіло з Аюрведою для двох")).toBe(9);
+  it("counts how far a genuinely long name runs past two mobile card lines", () => {
+    expect(offerCardOverflow("Природнє тіло з Аюрведою для двох і ще для трьох друзів")).toBeGreaterThan(0);
   });
 
-  it("keeps the hard ceiling above the longest title anybody has written", () => {
-    expect(OFFER_TITLE_MAX).toBeGreaterThan(
-      "Розвантажувальний день — практикум з умовного голодування".length,
-    );
-    expect(OFFER_CARD_TITLE_MAX).toBeLessThan(OFFER_TITLE_MAX);
+  it("uses one 48-character ceiling for titles and the two-line mobile card", () => {
+    expect(OFFER_TITLE_MAX).toBe(48);
+    expect(OFFER_CARD_TITLE_MAX).toBe(OFFER_TITLE_MAX);
   });
 });

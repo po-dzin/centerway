@@ -63,7 +63,6 @@ export function OfferCurriculum({ course }: { course: Course }) {
   const access = useOfferAccess();
   const surfaceHref = useSurfaceHref();
 
-  const lessonCount = course.modules.reduce((total, module) => total + module.lessons.length, 0);
   const owned = access.state === "owned";
   const outline = owned ? access.outline : null;
   const currentSlug = owned ? access.shelf.currentLessonSlug : null;
@@ -163,7 +162,6 @@ export function OfferCurriculum({ course }: { course: Course }) {
               >
                 <summary className={styles.outlineModuleHead}>
                   <h3 className={styles.outlineModuleTitle}>{module.title}</h3>
-                  <span className={styles.outlineCount}>{module.lessons.length}</span>
                   <Icon className={styles.outlineChevron} name="chevron-down" size={20} />
                 </summary>
                 <ul className={styles.outlineLessons}>
@@ -195,24 +193,9 @@ export function OfferCurriculum({ course }: { course: Course }) {
             </li>
           ))}
         </ul>
-        <p className={styles.priceNote}>
-          {course.modules.length} {plural(course.modules.length, "модуль", "модулі", "модулів")} ·{" "}
-          {lessonCount} {plural(lessonCount, "урок", "уроки", "уроків")}
-        </p>
       </article>
     </section>
   );
-}
-
-/* Ukrainian counts take three forms, and "3 уроки / 5 уроків" is the kind of
-   thing a reader notices immediately when it is wrong. */
-function plural(count: number, one: string, few: string, many: string): string {
-  const mod100 = count % 100;
-  if (mod100 >= 11 && mod100 <= 14) return many;
-  const mod10 = count % 10;
-  if (mod10 === 1) return one;
-  if (mod10 >= 2 && mod10 <= 4) return few;
-  return many;
 }
 
 /* The catalogue's inline text is either a string or a run of spans; an offer

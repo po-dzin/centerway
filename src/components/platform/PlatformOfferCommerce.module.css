@@ -187,14 +187,6 @@
   line-height: 1.3;
 }
 
-.outlineCount {
-  flex: none;
-  color: var(--cw-platform-muted);
-  font-family: var(--cw-font-data);
-  font-size: var(--ds-type-label-size);
-  font-weight: 700;
-}
-
 .outlineLessons {
   display: grid;
   gap: 0.3rem;

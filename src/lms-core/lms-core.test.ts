@@ -5,6 +5,7 @@ import {
   COURSE_DURATION_DAYS_MAX,
   COURSE_POSTTITLE_MAX,
   COURSE_PRETITLE_MAX,
+  COURSE_TITLE_MAX,
   flattenLessons,
   validateCourse,
   type Course,
@@ -189,6 +190,12 @@ describe("course validation", () => {
     course.pretitle = "я".repeat(COURSE_PRETITLE_MAX);
     course.posttitle = "я".repeat(COURSE_POSTTITLE_MAX + 1);
     expect(() => validateCourse(course)).toThrow(/lms_course_posttitle_too_long/);
+  });
+
+  it("holds the title to two mobile catalogue lines for every writer", () => {
+    const course = dailyCourse() as unknown as Record<string, unknown>;
+    course.title = "я".repeat(COURSE_TITLE_MAX + 1);
+    expect(() => validateCourse(course)).toThrow(/lms_course_title_too_long/);
   });
 
   it("refuses a duration that is not a plausible number of days", () => {
