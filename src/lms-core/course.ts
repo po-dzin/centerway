@@ -133,10 +133,11 @@ export type CourseCategory = (typeof COURSE_CATEGORIES)[number];
  * card into a different shape than the cards beside it — which is the one
  * failure a grid cannot absorb.
  *
- * `COURSE_TITLE_MAX` is not here: the title's ceiling is
- * `OFFER_TITLE_MAX` and it guards more surfaces than a card (the h1, the tab,
- * the invoice line). See src/lib/platform/offerPreview.ts.
+ * The title is part of the same contract: two lines on the narrowest mobile
+ * catalogue card. It lives in the core so imports and API writers cannot
+ * bypass the Builder's input limit.
  */
+export const COURSE_TITLE_MAX = 48;
 export const COURSE_PRETITLE_MAX = 24;
 export const COURSE_POSTTITLE_MAX = 64;
 
@@ -316,6 +317,7 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
   assert(isNonEmptyString(input.id), `lms_course_missing_id:${path}`);
   assert(isNonEmptyString(input.slug), `lms_course_missing_slug:${path}`);
   assert(isNonEmptyString(input.title), `lms_course_missing_title:${path}`);
+  assert(input.title.trim().length <= COURSE_TITLE_MAX, `lms_course_title_too_long:${path}`);
   assert(isNonEmptyString(input.programSlug), `lms_course_missing_program:${path}`);
   assert(isNonEmptyString(input.brand), `lms_course_missing_brand:${path}`);
   assert(

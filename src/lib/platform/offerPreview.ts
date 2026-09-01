@@ -1,3 +1,5 @@
+import { COURSE_TITLE_MAX } from "@/lms-core";
+
 /**
  * What a card is allowed to say about an offer.
  *
@@ -11,7 +13,7 @@
  * So the preview has a shape now, and it is the same shape for every card:
  *
  *   eyebrow  — one line, the offer page's own badge (kind · duration);
- *   title    — one line, the name and nothing after the dash;
+ *   title    — two lines, the name and nothing after the dash;
  *   summary  — three lines, why this exists.
  *
  * The line limits are enforced in CSS (`.programTileBody`, preview format);
@@ -31,27 +33,22 @@ const NAME_TAIL = /\s[—–-]\s.*$/u;
  * those clip, so an unbounded title does not get cut there, it gets four lines
  * of hero or a truncated payment description a buyer has to trust.
  *
- * Set above the longest title anybody has actually written — Reset Day's is 57
- * — so the rule stops runaways rather than editing existing work. A limit that
- * bites on the courses already in the shelf is a migration, not a limit.
+ * Two mobile lines fit the measured 24 Cyrillic characters each. 48 is a
+ * product boundary, not a clipping preference: every longer title would make
+ * the card's fixed preview geometry depend on its copy.
  */
-export const OFFER_TITLE_MAX = 70;
+export const OFFER_TITLE_MAX = COURSE_TITLE_MAX;
 
 /**
- * What fits on one line of a card, in characters. SOFT — the builder warns and
- * lets the author decide.
+ * What fits in two lines of a card, in characters. The hard course-title limit
+ * enforces this same ceiling; the builder's warning remains a clear recovery
+ * path for already persisted legacy data.
  *
- * Measured, not chosen: at the tightest desktop step the tile gives the name
- * 280px at 19.5px type, which is about 24 Cyrillic characters, and every name
- * in the current catalogue is at or under it («Природнє тіло з Аюрведою» is
- * exactly 24). Past that the CSS clamp ellipsises, which is a correct answer to
- * a title nobody warned the author about — and a poor substitute for warning
- * them.
- *
- * Soft on purpose. A name is the author's, some names are genuinely long, and
- * an ellipsis on a card is survivable in a way that a rejected title is not.
+ * Measured at the tightest mobile rail: one line holds about 24 Cyrillic
+ * characters at the shared card-title step. The two-line title therefore owns
+ * 48 characters, with the CSS clamp as a defence for legacy rows.
  */
-export const OFFER_CARD_TITLE_MAX = 24;
+export const OFFER_CARD_TITLE_MAX = COURSE_TITLE_MAX;
 
 /**
  * How many characters past the card's line this title runs — 0 when it fits.

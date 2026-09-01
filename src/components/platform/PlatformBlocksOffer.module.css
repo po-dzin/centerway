@@ -684,7 +684,7 @@
    text rows have fixed heights so that a row of cards reads as one object:
 
      .label  — one line, the offer page's badge (kind · duration);
-     h3      — one line, the name;
+     h3      — two lines, the name;
      p       — three lines, why it exists.
 
    What forced this: a course out of the builder carries whatever its author
@@ -695,8 +695,8 @@
    are the ceilings that hold when an author writes past them anyway.
 
    The title steps down from the display size to its own: a name that has to
-   survive on one line inside a card is not the same type job as a heading with
-   the width of a section. */
+   stay within two lines inside a card is not the same type job as a heading
+   with the width of a section. */
 .programTileBody h3 {
   display: -webkit-box;
   overflow: hidden;
@@ -704,7 +704,7 @@
   font-size: var(--ds-offer-card-title-size);
   line-height: var(--ds-offer-card-title-line-height);
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
+  -webkit-line-clamp: 2;
 }
 
 .programTileBody .label {

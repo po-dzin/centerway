@@ -704,17 +704,14 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             {published ? "Опубліковано" : "Чернетка"}
           </span>
         </div>
-        {/* TWO LIMITS, AND THEY ARE DIFFERENT KINDS OF LIMIT. The page cannot
-            clip, so its ceiling is hard and the field above simply stops at
-            OFFER_TITLE_MAX. A card CAN clip, so its ceiling is a warning: the
-            name is the author's, some names really are long, and an ellipsis on
-            a card is a smaller cost than a title they were not allowed to
-            write. What they may not have is the ellipsis as a surprise. */}
+        {/* One shared hard limit holds both the page and two catalogue lines on
+            the narrowest phone. The hint below only appears for an older
+            imported title that predates this contract. */}
         {titleOverflow > 0 ? (
           <p className={styles.courseTitleHint}>
-            На картці в каталозі вміщається {OFFER_CARD_TITLE_MAX}{" "}
-            {plural(OFFER_CARD_TITLE_MAX, "символ", "символи", "символів")} — у назві на {titleOverflow}{" "}
-            {plural(titleOverflow, "символ", "символи", "символів")} більше. Там її буде обрізано.
+            Назва довша за ліміт {OFFER_CARD_TITLE_MAX}{" "}
+            {plural(OFFER_CARD_TITLE_MAX, "символ", "символи", "символів")} на {titleOverflow}{" "}
+            {plural(titleOverflow, "символ", "символи", "символів")}. Скоротіть її: на картці доступні дві строки.
           </p>
         ) : null}
         <div className={styles.pageLead}>

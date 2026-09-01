@@ -22,7 +22,7 @@
 }
 
 .railCompact .railNav {
-  padding-inline: var(--cw-space-xs);
+  padding-inline: 0;
 }
 
 .railLink {
@@ -34,6 +34,8 @@
 }
 
 .railCompact .railLink {
+  width: 100%;
+  padding-inline: 0;
   justify-content: center;
 }
 
