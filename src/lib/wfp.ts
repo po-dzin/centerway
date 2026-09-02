@@ -55,20 +55,124 @@ export function verifyWfpCallbackSignature(payload: Record<string, string>): Wfp
   return { ok, present: true, reason: ok ? "match" : "mismatch" };
 }
 
-export function isWfpApproved(payload: Record<string, string>): boolean {
-  const ts = norm(payload["transactionStatus"] ?? payload["status"])?.toLowerCase();
-  return ts === "approved" || ts === "success" || ts === "paid";
+// ─── WHAT A CALLBACK MEANS, AND WHAT IT IS ALLOWED TO DO ───────────────────
+
+/**
+ * A callback's meaning, in the only four flavours an order can act on.
+ *
+ * The webhook used to collapse this to a boolean — approved, or not approved —
+ * and everything wrong below flowed from that one simplification. "Not
+ * approved" was written to the order as `created`, which made a refund
+ * indistinguishable from an abandoned cart, and, far worse, made a *late
+ * declined callback* indistinguishable from an instruction to un-sell a course
+ * somebody had already paid for.
+ */
+export type WfpCallbackOutcome = "approved" | "refunded" | "rejected" | "pending";
+
+/** The statuses `orders.status` and `payments.status` are allowed to hold. */
+export type OrderStatus = "created" | "paid" | "refunded";
+
+/* WayForPay's own vocabulary. `Voided` sits with the refunds because the money
+   goes back to the buyer either way — the difference is whether the payment had
+   settled, which matters to accounting and not to entitlement. Anything not
+   listed is `pending` (InProcessing, WaitingAuthComplete, RefundInProcessing):
+   the payment is still moving, and a status in motion must not be written down
+   as an outcome. */
+const WFP_APPROVED = new Set(["approved", "success", "paid"]);
+const WFP_REFUNDED = new Set(["refunded", "voided", "void"]);
+const WFP_REJECTED = new Set(["declined", "expired", "failed"]);
+
+export function wfpCallbackOutcome(payload: Record<string, string>): WfpCallbackOutcome {
+  const raw = norm(payload["transactionStatus"] ?? payload["status"])?.toLowerCase() ?? "";
+  if (WFP_APPROVED.has(raw)) return "approved";
+  if (WFP_REFUNDED.has(raw)) return "refunded";
+  if (WFP_REJECTED.has(raw)) return "rejected";
+  return "pending";
 }
+
+/* `isWfpApproved` used to live here, and it is deliberately gone rather than
+   rewritten on top of the classifier. It asked "approved, yes or no?", and
+   answering a four-state question with a boolean is the shape of the bug this
+   module now guards against: everything that was not an approval became one
+   undifferentiated "not paid", which the webhook then wrote over a paid order.
+   Call `wfpCallbackOutcome` and handle what it actually says. */
 
 export function wfpEventTypeFromStatus(
   payload: Record<string, string>
 ): "payment_paid" | "payment_failed" | null {
-  const raw = norm(payload["transactionStatus"] ?? payload["status"])?.toLowerCase() ?? "";
-  if (raw === "approved" || raw === "success" || raw === "paid") return "payment_paid";
-  if (raw === "declined" || raw === "expired" || raw === "failed" || raw === "void" || raw === "refunded") {
-    return "payment_failed";
+  const outcome = wfpCallbackOutcome(payload);
+  if (outcome === "approved") return "payment_paid";
+  if (outcome === "pending") return null;
+  return "payment_failed";
+}
+
+/** The status this outcome writes when nothing stands in its way. */
+export function orderStatusForOutcome(outcome: WfpCallbackOutcome): OrderStatus | null {
+  switch (outcome) {
+    case "approved":
+      return "paid";
+    case "refunded":
+      return "refunded";
+    case "rejected":
+      return "created";
+    case "pending":
+      return null;
   }
-  return null;
+}
+
+/**
+ * The statuses this outcome must never overwrite — the guard, stated once so
+ * that the in-memory decision and the SQL predicate cannot drift apart.
+ *
+ * WHY THERE HAS TO BE A GUARD AT ALL. WayForPay redelivers a service callback
+ * for up to four days and promises nothing about the order they arrive in. A
+ * buyer whose card is declined and who immediately retries on the same invoice
+ * therefore produces two callbacks, Declined and Approved, that can land in
+ * either sequence — and until 2026-08-29 we never returned the signed
+ * acceptance that stops redelivery, so every one of those callbacks was
+ * arriving again and again for days.
+ *
+ * This is not hypothetical. Four production orders (2026-04-12, 04-25, 04-27,
+ * 06-12) carry exactly that pair on one order reference. They are `paid` today
+ * because the approval happened to be written last. Had a redelivered Declined
+ * landed after it, the old code would have written `created` over `paid`, and
+ * `acceptedPaidOrders` — which asks only whether the status reads "paid" —
+ * would have closed the course on a paying customer, with no event, no alert
+ * and no trace of why.
+ *
+ * A refund is the one thing that may take access away, and once taken it is
+ * final for that reference: a repeat purchase gets a new one.
+ */
+export function statusesProtectedFrom(outcome: WfpCallbackOutcome): OrderStatus[] {
+  switch (outcome) {
+    case "approved":
+      return ["refunded"];
+    case "rejected":
+      return ["paid", "refunded"];
+    case "refunded":
+    case "pending":
+      return [];
+  }
+}
+
+/**
+ * The status to write for this callback, or `null` to leave the row untouched.
+ *
+ * `current` is deliberately `string | null` rather than `OrderStatus`: it comes
+ * out of the database, where the column is free text, and a value this function
+ * does not recognise must not be treated as an empty one.
+ */
+export function nextOrderStatus(
+  current: string | null | undefined,
+  outcome: WfpCallbackOutcome
+): OrderStatus | null {
+  const target = orderStatusForOutcome(outcome);
+  if (!target) return null;
+
+  const held = norm(current ?? null)?.toLowerCase() ?? null;
+  if (held && statusesProtectedFrom(outcome).includes(held as OrderStatus)) return null;
+
+  return target;
 }
 
 // ─── The ANSWER WayForPay requires, which is not an HTTP status ─────────────

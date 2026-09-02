@@ -33,6 +33,7 @@ describe("resolveOfferCommerce", () => {
     for (const program of programs) {
       const commerce = resolveOfferCommerce(program.slug);
       if (commerce.mode === "lead") expect(commerce.leadProductCode.length).toBeGreaterThan(0);
+      else if (commerce.mode === "free") expect(commerce.accessHref.length).toBeGreaterThan(0);
       else expect(commerce.checkoutHref.length).toBeGreaterThan(0);
     }
   });
