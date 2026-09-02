@@ -29,12 +29,17 @@ describe("ConsultantDirectory", () => {
 
     expect(html).toContain('src="https://project.supabase.co/storage/v1/object/public/course-media/authors/author-1/photo.webp"');
     expect(html).toContain('loading="lazy"');
-    expect(html).toContain("12 років практики");
-    expect(html).toContain("Магістр комплементарної медицини");
-    expect(html).toContain("Дослідник і практик");
     expect(html).toContain("Третій факт");
     expect(html).not.toContain("Не показуємо");
+    /* The badges repeat the facts word for word on a real profile, so a card
+       that has facts shows the list alone — see `AuthorCard`. */
+    expect(html).not.toContain("12 років практики");
     expect(html).toContain("Другий автор");
+    /* An author with nothing to list still says something: their own line. */
+    expect(html).toContain("Автор програми");
+    /* Every card carries the way through to the author's own page. */
+    expect(html).toContain('href="/expert/author"');
+    expect(html).toContain("Більше про автора");
     expect(html).toContain("Автори CenterWay");
   });
 });

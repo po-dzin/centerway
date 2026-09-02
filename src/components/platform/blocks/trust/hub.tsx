@@ -36,7 +36,7 @@ export function HubSupport() {
       {/* One product is one card and not a lonely cell; more than one is a rail.
           The same switch the aggregate pages use, so the block does not change
           shape when the catalogue grows. */}
-      <PlatformOfferCarousel label="Продукти CenterWay" viewAllHref="/products" viewAllLabel="Усі продукти">
+      <PlatformOfferCarousel label="Продукти CenterWay">
         {products.map((product) => (
           <PlatformOfferCard
             key={product.slug}

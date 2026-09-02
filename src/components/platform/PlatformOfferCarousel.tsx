@@ -10,7 +10,7 @@ import {
 } from "react";
 import Link from "next/link";
 
-import { HandGraphic, Icon } from "@/components/Icon";
+import { Icon } from "@/components/Icon";
 import styles from "./PlatformOfferCarousel.module.css";
 
 type EdgeState = {
@@ -46,7 +46,12 @@ export function PlatformOfferCarousel({
 }: {
   children: ReactNode;
   label?: string;
-  /** Aggregate route for the complete set; required when the sample exceeds ten. */
+  /**
+   * Aggregate route for the complete set — ONLY when the block around this
+   * carousel has no link of its own. The home blocks carry
+   * `PlatformBlockLink` in their head, and passing it here as well printed the
+   * same destination twice in one section, above and below the same rail.
+   */
   viewAllHref?: string;
   viewAllLabel?: string;
 }) {
@@ -158,12 +163,13 @@ export function PlatformOfferCarousel({
         {visibleCount > 1 ? (
           <div className={styles.queueDots} aria-hidden="true">
             {visibleItems.map((_, index) => (
+              /* A filled disc, drawn in CSS — the drawn `dot` glyph read as a
+                 ring at this size and the current page was told apart by
+                 opacity alone. The page you are on is gold and larger. */
               <span
                 className={`${styles.queueDot} ${index >= edges.firstVisible && index <= edges.lastVisible ? styles.queueDotCurrent : ""}`}
                 key={index}
-              >
-                <HandGraphic name="dot" size={14} />
-              </span>
+              />
             ))}
           </div>
         ) : null}

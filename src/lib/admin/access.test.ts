@@ -15,6 +15,15 @@ vi.mock("@/lib/auth/adminClient", () => ({
     adminClient: () => db,
 }));
 
+/* The receipt is mocked rather than let through: what matters here is that a
+   hand-made SALE tells the buyer and a hand-made GIFT does not, which is this
+   module's decision. Whether the mail leaves the building is `purchaseEmail`'s
+   own contract, tested there. */
+const sendPurchaseEmail = vi.fn<(input: unknown) => Promise<{ sent: true }>>(async () => ({ sent: true }));
+vi.mock("@/lib/email/purchaseEmail", () => ({
+    sendPurchaseEmail: (input: unknown) => sendPurchaseEmail(input as never),
+}));
+
 const {
     AccessError,
     createAccount,
@@ -94,6 +103,7 @@ const auditRows = () => db.rows("audit_log");
 
 beforeEach(() => {
     seed();
+    sendPurchaseEmail.mockClear();
     vi.useFakeTimers();
     vi.setSystemTime(NOW);
 });
@@ -565,6 +575,21 @@ describe("provisionAccess", () => {
         // The customer row is linked to the new account, so entitlement finds it.
         const customer = db.rows("customers").find((row) => row.email === "buyer@example.com") as Row;
         expect(customer.auth_user_id).toBe(result.account.authUserId);
+
+        /* AND THE BUYER IS TOLD. Before 2026-09-02 this sale completed in
+           silence: a working account at an address only the operator knew.
+           The link points at the course rather than the cabinet, because the
+           slug is known here and sending them to go looking would be worse. */
+        expect(sendPurchaseEmail).toHaveBeenCalledTimes(1);
+        expect(sendPurchaseEmail).toHaveBeenCalledWith(
+            expect.objectContaining({
+                email: "buyer@example.com",
+                amount: 1200,
+                currency: "UAH",
+                orderRef: result.payment?.orderRef,
+                fulfilment: { kind: "course", courseSlug: "reset-day" },
+            })
+        );
     });
 
     it("grants without money when there was none — a gift or a review copy", async () => {
@@ -576,6 +601,9 @@ describe("provisionAccess", () => {
 
         expect(result).toMatchObject({ accountCreated: false, payment: null });
         expect(db.rows("orders")).toHaveLength(0);
+        /* No money, no receipt. "Оплату отримано" with an order number, sent to
+           somebody who paid nothing, would be stranger than saying nothing. */
+        expect(sendPurchaseEmail).not.toHaveBeenCalled();
     });
 
     it("applies a deadline typed for someone who is already enrolled", async () => {

@@ -18,7 +18,7 @@ export function CourseNextStep({ currentSlug, courses }: { currentSlug: string; 
           one horizontal rail at every viewport. `PlatformOfferCard` owns one
           whole-card link, so both the card body and its visible CTA open the
           same destination without creating duplicate tab stops. */}
-      <PlatformOfferCarousel label="Рекомендовані курси" viewAllHref="/programs" viewAllLabel="Усі курси">
+      <PlatformOfferCarousel label="Рекомендовані курси">
         {next.map((course) => (
           <PlatformOfferCard key={course.slug} title={course.title} tag={course.tag}
             description={course.description} href={course.href} visual={course.visual}

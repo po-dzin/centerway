@@ -76,16 +76,26 @@
 }
 
 .queueDot {
-  display: grid;
-  place-items: center;
-  width: 1rem;
-  height: 1rem;
-  opacity: 0.36;
+  flex: 0 0 auto;
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: var(--cw-radius-pill);
+  background: currentColor;
+  opacity: 0.32;
+  transition: width 160ms ease, height 160ms ease, opacity 160ms ease;
 }
 
 .queueDotCurrent {
-  color: var(--cw-sem-warmth);
+  width: 0.75rem;
+  height: 0.75rem;
+  background: var(--cw-platform-accent);
   opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .queueDot {
+    transition: none;
+  }
 }
 
 .queueOverflow {

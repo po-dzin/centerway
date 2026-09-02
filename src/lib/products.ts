@@ -22,6 +22,14 @@ export type SearchParams = Record<string, string | string[] | undefined>;
  */
 export const PLATFORM_THANKS_URL = "https://www.centerway.net.ua/pay/thanks";
 export const PLATFORM_FAILED_URL = "https://www.centerway.net.ua/pay/failed";
+/**
+ * Where a buyer waits while we do not yet know.
+ *
+ * Not per-product, unlike the pair above, because there is nothing
+ * product-shaped about not knowing yet — and because every product's approved
+ * and declined URLs already resolve to the same platform pages anyway.
+ */
+export const PLATFORM_PENDING_URL = "https://www.centerway.net.ua/pay/pending";
 
 /**
  * TEST PRICE — 1 UAH. Short-lived: put in on 2026-08-21 for a couple of days of

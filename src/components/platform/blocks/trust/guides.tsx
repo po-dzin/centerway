@@ -1,9 +1,7 @@
-import Link from "next/link";
-import { Icon } from "@/components/Icon";
-
-import { PlatformBlock } from "@/components/platform/PlatformBlock";
+import { AuthorCard } from "@/components/platform/AuthorCard";
+import { PlatformBlock, PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import styles from "@/components/platform/PlatformTrustStyles";
-import { authorHref, listListedAuthors } from "@/lib/lms/authors";
+import { listListedAuthors } from "@/lib/lms/authors";
 import { platformGuides } from "@/lib/platform/content";
 import type { Author } from "@/lms-core";
 
@@ -61,40 +59,15 @@ export async function HubGuides() {
          person «Провідники» is a promise the page cannot keep yet. */
       title={single ? "Про автора" : "Провідники CenterWay"}
       lead="Хто веде цей процес і як відбувається супровід?"
+      /* The block introduces people; the consultation is what a reader does
+         with that introduction, and until now the home page never said so. */
+      headActions={<PlatformBlockLink href="/consult" label="Консультації" />}
     >
       <div className={styles.guideRail} data-layout={single ? "single" : undefined}>
         {guides.map((guide) => (
-          <GuideCard key={guide.slug} guide={guide} />
+          <AuthorCard key={guide.slug} author={guide} />
         ))}
       </div>
     </PlatformBlock>
-  );
-}
-
-function GuideCard({ guide }: { guide: Author }) {
-  return (
-    <article className={styles.guideCard}>
-        <div className={styles.guideMedia}>
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          {guide.photo ? <img className={styles.guidePortrait} src={guide.photo.src} alt={guide.photo.alt} loading="lazy" decoding="async" /> : null}
-          {(guide.experienceBadge || guide.achievementBadge) ? <div className={styles.guideBadges}>
-            {guide.experienceBadge ? <span>{guide.experienceBadge}</span> : null}
-            {guide.achievementBadge ? <span>{guide.achievementBadge}</span> : null}
-          </div> : null}
-        </div>
-      <div className={styles.guideBody}>
-        <div className={styles.guideIdentity}>
-          <h3 className={styles.guideName}>{guide.name}</h3>
-          {guide.role ? <p className={styles.guideRole}>{guide.role}</p> : null}
-        </div>
-        {guide.facts?.length ? <ul className={styles.guideFacts}>{guide.facts.slice(0, 3).map((fact) => <li key={fact}><Icon className={styles.guideFactIcon} name="star" size={18} /><span>{fact}</span></li>)}</ul> : <p className={styles.guideNote}>{guide.bio ?? guide.credentials?.join(" · ")}</p>}
-        {/* A list is text (see docs/design-system.md). These were four plates in
-            a 2×2 grid inside a card — six surfaces to say four short facts, and
-            the plates read as pressable when none of them are. */}
-        <Link className={styles.guideLink} href={authorHref(guide)}>
-          Більше про автора
-        </Link>
-      </div>
-    </article>
   );
 }

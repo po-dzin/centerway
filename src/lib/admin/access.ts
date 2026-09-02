@@ -33,6 +33,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
+import { sendPurchaseEmail } from "@/lib/email/purchaseEmail";
 import { writeCourseStructure } from "@/lib/lms/authoring";
 import {
     accessRuleOf,
@@ -907,6 +908,14 @@ async function assertGrantable(db: Db, courseSlug: string, authUserId: string): 
  *
  * Each step is independently useful and independently audited — this only fixes
  * the sequence, it does not hide the steps.
+ *
+ * AND THEN IT TELLS THE BUYER. Until 2026-09-02 it did not: a hand-made sale
+ * wrote the order, made the account and opened the course, and sent nothing at
+ * all. The person had a working account they had never been told about, at an
+ * address only the operator knew, and `createAccount`'s own note promised them
+ * "a magic link to this address" that the platform could not send. The receipt
+ * goes out at the END, after the grant, because it says the course is ready and
+ * that is not true a moment earlier.
  */
 export async function provisionAccess(input: ProvisionAccessInput) {
     const db = adminClient();
@@ -951,7 +960,66 @@ export async function provisionAccess(input: ProvisionAccessInput) {
         orderRef: payment?.orderRef ?? null,
     });
 
-    return { accountCreated: account.created, account: grant.account, payment, grant };
+    /* ONLY FOR A SALE. A grant with no payment is a gift or a promo seat, and
+       posting "Оплату отримано" with an order number to somebody who paid
+       nothing would be a stranger message than silence. That case still has no
+       notification of its own; it wants different words, not this one's. */
+    const receipt = payment
+        ? await sendManualSaleReceipt(db, {
+              email: input.email,
+              courseSlug: input.courseSlug,
+              amount: payment.amount,
+              currency: payment.currency,
+              orderRef: payment.orderRef,
+          })
+        : null;
+
+    return { accountCreated: account.created, account: grant.account, payment, grant, receipt };
+}
+
+/**
+ * The same receipt a WayForPay buyer gets, for a sale made by hand.
+ *
+ * Deliberately the same builder rather than a manual-sale variant. The
+ * paragraph naming the address the purchase is tied to is the load-bearing part
+ * of that message (see `lib/email/purchaseEmail.ts`), and it matters MORE here:
+ * the operator typed that address, so the buyer has not yet seen it written
+ * down anywhere. Two templates would drift, and the one that drifted would be
+ * this one, because it is sent a hundred times less often.
+ *
+ * Never throws. `sendPurchaseEmail` already swallows its own failures, and a
+ * sale that is recorded, granted and audited must not be reported as failed
+ * because a mail provider was slow — the operator can resend, and the caller
+ * gets the outcome back to say so.
+ */
+async function sendManualSaleReceipt(
+    db: Db,
+    input: { email: string; courseSlug: string; amount: number; currency: PaymentCurrency; orderRef: string }
+) {
+    /* THE COURSE ROW, not `loadPayableOffer`. The offer loader is the right
+       answer at the checkout, where the product code is all anyone has — but it
+       reads through `unstable_cache`, so it only works inside a request, and it
+       returns null for a course that is unlisted or priced at zero. Both of
+       those are ordinary states for something sold by hand, and the first would
+       make this whole function unusable from anywhere but a route handler.
+       Here the slug is already known, so the title comes from the row and the
+       link goes straight to the course. */
+    const { data: course } = await db
+        .from("lms_courses")
+        .select("title")
+        .eq("slug", input.courseSlug)
+        .maybeSingle();
+
+    const title = typeof course?.title === "string" && course.title.trim() ? course.title.trim() : null;
+
+    return sendPurchaseEmail({
+        email: input.email,
+        productTitle: title ?? "Ваше замовлення",
+        amount: input.amount,
+        currency: input.currency,
+        fulfilment: { kind: "course", courseSlug: input.courseSlug },
+        orderRef: input.orderRef,
+    });
 }
 
 /**
