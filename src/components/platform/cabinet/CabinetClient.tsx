@@ -41,11 +41,9 @@ import {
   dateLocaleFor,
   fmtDate,
   fmtMoney,
-  formatAccessStatus,
   formatDoshaResult,
   formatTelegram,
   getUserInitial,
-  isAccessActive,
   isProgramKind,
 } from "./format";
 import { getCabinetCopy } from "./copy";
@@ -118,28 +116,15 @@ export function CabinetClient() {
 
   const purchases = useMemo(() => profile?.profile.purchases ?? [], [profile]);
 
-  const activePrograms = useMemo(
-    () =>
-      purchases.filter(
-        (purchase) =>
-          isProgramKind(purchase.offerKind) &&
-          purchase.access &&
-          !purchase.access.used &&
-          isAccessActive(purchase.access.expires_at),
-      ),
-    [purchases],
-  );
-
-  const completedPrograms = useMemo(
-    () =>
-      purchases.filter(
-        (purchase) =>
-          isProgramKind(purchase.offerKind) &&
-          (purchase.access?.used || !purchase.access || !isAccessActive(purchase.access.expires_at)),
-      ),
-    [purchases],
-  );
-
+  /* «Активні» и «завершені» программы used to be counted here by reading the
+     purchase's `access_tokens` row: a live token meant active, a used or
+     lapsed one meant completed. That was never what those words mean — a
+     token is a hand-off link with a 30-minute life, and it stopped deciding
+     anything at all on 2026-08-29 — so by now every programme anyone owns fell
+     into «завершені» by default. The counts are gone rather than re-derived:
+     the shelf knows enrollment and its deadline, and neither of them knows
+     "completed" either. A number nobody can compute honestly is better absent
+     than replaced with a second wrong one. */
   const productPurchases = useMemo(
     () => purchases.filter((purchase) => purchase.offerKind === "product"),
     [purchases],
@@ -148,11 +133,9 @@ export function CabinetClient() {
   const copy = useMemo(
     () =>
       getProfileCopy(lang, {
-        activePrograms: activePrograms.length,
-        completedPrograms: completedPrograms.length,
         productPurchases: productPurchases.length,
       }),
-    [lang, activePrograms.length, completedPrograms.length, productPurchases.length],
+    [lang, productPurchases.length],
   );
 
   const cab = useMemo(() => getCabinetCopy(lang), [lang]);
@@ -353,14 +336,6 @@ export function CabinetClient() {
                       </li>
                       <li>
                         {copy.price}: <strong>{fmtMoney(purchase.amount, purchase.currency)}</strong>
-                      </li>
-                      <li>
-                        {copy.accessStatus}:{" "}
-                        <strong>
-                          {purchase.access
-                            ? formatAccessStatus(purchase.access.used, purchase.access.expires_at, lang)
-                            : copy.productNoAccess}
-                        </strong>
                       </li>
                     </ul>
                     {/* No link into the course from here on purpose: a

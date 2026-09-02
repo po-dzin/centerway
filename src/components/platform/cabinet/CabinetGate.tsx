@@ -62,7 +62,7 @@ export function cabinetGate({
       route owns the space its final content will occupy. */
   loadingFallback?: ReactNode;
 }) {
-  const copy = getProfileCopy(lang, { activePrograms: 0, completedPrograms: 0, productPurchases: 0 });
+  const copy = getProfileCopy(lang, { productPurchases: 0 });
 
   if (!isAuthEnabled) {
     return <StatePanel label={copy.profile} title={copy.unavailableTitle} lead={copy.unavailableLead} />;

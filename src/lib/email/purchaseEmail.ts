@@ -18,7 +18,7 @@
  */
 
 import { adminClient } from "@/lib/auth/adminClient";
-import { PROFILE_PATH_PREFIX, surfaceUrl } from "@/lib/surfaces/catalog";
+import { fulfilmentDestination } from "@/lib/fulfilmentDestination";
 import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
 import type { ProductFulfilment } from "@/lib/products";
 import { sendEmail } from "./resend";
@@ -37,17 +37,6 @@ export type PurchaseEmailInput = {
   fulfilment: ProductFulfilment;
   orderRef: string;
 };
-
-/** Where this purchase is collected — the same three answers `/pay/thanks` gives. */
-function destination(fulfilment: ProductFulfilment): { href: string; label: string } {
-  if (fulfilment.kind === "bot") return { href: fulfilment.url, label: "Відкрити бот" };
-  if (fulfilment.kind === "course") {
-    // ABSOLUTE. The course lives on the personal host and this link is read in
-    // a mail client, which has no origin to be relative to.
-    return { href: surfaceUrl(`/learn/${fulfilment.courseSlug}`), label: "Перейти до курсу" };
-  }
-  return { href: surfaceUrl(PROFILE_PATH_PREFIX), label: "Перейти в кабінет" };
-}
 
 function formatAmount(amount: number | null, currency: string): string | null {
   if (amount == null || !Number.isFinite(amount)) return null;
@@ -73,7 +62,7 @@ function escapeHtml(value: string): string {
  * adopted to stop.
  */
 export function buildPurchaseEmail(input: PurchaseEmailInput): PurchaseEmailContent {
-  const { href, label } = destination(input.fulfilment);
+  const { href, label } = fulfilmentDestination(input.fulfilment);
   const price = formatAmount(input.amount, input.currency);
   const title = input.productTitle;
 

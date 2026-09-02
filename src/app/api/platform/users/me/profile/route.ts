@@ -109,23 +109,14 @@ export async function GET(req: NextRequest) {
     };
   });
 
-  const orderRefs = orders.map((order) => order.order_ref).filter(Boolean);
-  const accessTokensResult =
-    orderRefs.length > 0
-      ? await db
-          .from("access_tokens")
-          .select("order_ref, used, expires_at, created_at")
-          .in("order_ref", orderRefs)
-          .order("created_at", { ascending: false })
-      : { data: [], error: null as { message?: string } | null };
-
-  if (accessTokensResult.error) {
-    return NextResponse.json({ error: accessTokensResult.error.message ?? "access_tokens_fetch_failed" }, { status: 500 });
-  }
-
-  const accessTokens = accessTokensResult.data ?? [];
-  const tokenByOrderRef = new Map(accessTokens.map((token) => [token.order_ref, token]));
-
+  /* `access_tokens` is NOT read here any more (2026-09-02), and this is the
+     last place that did. Entitlement stopped consulting tokens on 2026-08-29
+     (`lms-core/access.ts`), but the cabinet went on labelling every purchase by
+     one — so a receipt read «Термін доступу минув» on a course the person still
+     fully owned, and every purchase made since the token contour went quiet
+     read «Доступ створено» over an order that has no token at all. The status
+     of a link says nothing about the status of a purchase; the shelf, keyed by
+     the enrollment, is what answers that, and it is one fold away. */
   const purchases = orders
     .filter((order) => order.status === "paid")
     .map((order) => ({
@@ -136,7 +127,6 @@ export async function GET(req: NextRequest) {
       amount: order.amount,
       currency: order.currency,
       createdAt: order.created_at,
-      access: tokenByOrderRef.get(order.order_ref) ?? null,
     }));
 
   return NextResponse.json({

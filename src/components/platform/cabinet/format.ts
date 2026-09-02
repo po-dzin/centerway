@@ -65,12 +65,6 @@ export function isProgramKind(kind: string) {
   return kind === "program" || kind === "mini-course";
 }
 
-export function isAccessActive(expiresAt: string | null | undefined) {
-  if (!expiresAt) return true;
-  const expiry = new Date(expiresAt).getTime();
-  return Number.isFinite(expiry) && expiry > Date.now();
-}
-
 export function formatDoshaResult(resultType: string | null | undefined, lang: ProfileLang) {
   const raw = (resultType ?? "").trim().toLowerCase();
   // The em dash, not a phrase: this value only ever renders in the identity
@@ -92,16 +86,4 @@ export function formatDoshaResult(resultType: string | null | undefined, lang: P
     .filter(Boolean)
     .map((token) => dictionary[token as keyof typeof dictionary] ?? token)
     .join("-");
-}
-
-export function formatAccessStatus(used: boolean, expiresAt: string | null | undefined, lang: ProfileLang) {
-  if (used) return lang === "en" ? "Access used" : "Доступ використано";
-  if (!expiresAt) return lang === "en" ? "Access created" : "Доступ створено";
-
-  const expiry = new Date(expiresAt).getTime();
-  if (Number.isFinite(expiry) && Date.now() > expiry) {
-    return lang === "en" ? "Access expired" : "Термін доступу минув";
-  }
-
-  return lang === "en" ? "Access active" : "Доступ активний";
 }

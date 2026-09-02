@@ -131,7 +131,7 @@ type PersonalOfferLabels = {
 
 function ResendAccessButton({ orderRef, labels }: {
     orderRef: string;
-    labels: { copied: string; copyLink: string; createError: string; networkError: string; unknown: string; };
+    labels: { copied: string; copiedUnpaid: string; copyLink: string; createError: string; networkError: string; unknown: string; };
 }) {
     const [loading, setLoading] = useState(false);
     const [copied, setCopied] = useState(false);
@@ -142,7 +142,7 @@ function ResendAccessButton({ orderRef, labels }: {
         setLoading(true);
         try {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            const res = await fetch("/api/tokens/create", {
+            const res = await fetch("/api/admin/orders/access-link", {
                 method: "POST",
                 headers: {
                     "Content-Type": "application/json",
@@ -151,14 +151,17 @@ function ResendAccessButton({ orderRef, labels }: {
                 body: JSON.stringify({ order_ref: orderRef }),
             });
             const data = await res.json();
-            if (data.ok && data.token) {
-                // Return a full URL if possible, assuming /pay/return?token=... or something similar.
-                // For now, we craft a generic access link.
-                const baseUrl = window.location.origin;
-                const link = `${baseUrl}/pay/return?token=${data.token}`;
-                await navigator.clipboard.writeText(link);
+            if (data.ok && data.link) {
+                /* The server hands back a whole URL and it is pasted verbatim.
+                   The old code built one here out of `window.location.origin`
+                   and a guessed path — which is how it came to point at
+                   `/pay/return?token=…`, a route that reads no token and
+                   redirected the customer to the payment-failed page. The admin
+                   also runs on a different host from the course, so an origin
+                   taken from the operator's address bar was wrong twice. */
+                await navigator.clipboard.writeText(data.link);
                 setCopied(true);
-                toast.success(labels.copied);
+                toast.success(data.paid === false ? labels.copiedUnpaid : labels.copied);
                 setTimeout(() => setCopied(false), 2000);
             } else {
                 toast.error(`${labels.createError}: ${data.error || labels.unknown}`);
@@ -722,6 +725,7 @@ export default function OrdersPage() {
 
     const copyLabels = {
         copied: t("orders_copy_copied"),
+        copiedUnpaid: t("orders_copy_copied_unpaid"),
         copyLink: t("orders_copy_link"),
         createError: t("orders_copy_error"),
         networkError: t("orders_network_error"),
