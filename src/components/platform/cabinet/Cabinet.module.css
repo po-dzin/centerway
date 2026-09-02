@@ -1223,7 +1223,7 @@
   place-items: center;
   gap: var(--cw-space-2xs);
   padding: var(--cw-space-sm);
-  border: 1px dashed var(--cw-mat-stroke-control);
+  border: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-empty);
   border-radius: var(--cw-radius-md);
   background: var(--cw-mat-surface-sunk);
   color: var(--cw-platform-muted);

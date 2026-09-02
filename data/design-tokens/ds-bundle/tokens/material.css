@@ -26,6 +26,7 @@
   --cw-mat-stroke: color-mix(in srgb, #ffffff 55%, transparent);
   --cw-mat-stroke-inner: color-mix(in srgb, #16211a 8%, transparent);
   --cw-mat-stroke-control: color-mix(in srgb, #16211a 52%, transparent);
+  --cw-mat-stroke-quiet: color-mix(in srgb, #16211a 26%, transparent);
   --cw-mat-scrim-ink: #171817;
   --cw-mat-hover-bg: color-mix(in srgb, var(--cw-platform-text) 6%, transparent);
   --cw-mat-hover-stroke: color-mix(in srgb, var(--cw-platform-text) 14%, var(--cw-platform-border));
@@ -77,6 +78,7 @@
   --cw-mat-stroke: color-mix(in srgb, #ffffff 14%, transparent);
   --cw-mat-stroke-inner: color-mix(in srgb, #ffffff 4%, transparent);
   --cw-mat-stroke-control: color-mix(in srgb, #faefe0 42%, transparent);
+  --cw-mat-stroke-quiet: color-mix(in srgb, #faefe0 22%, transparent);
   --cw-mat-scrim-ink: #171817;
   --cw-mat-hover-bg: color-mix(in srgb, var(--cw-platform-text) 6%, transparent);
   --cw-mat-hover-stroke: color-mix(in srgb, var(--cw-platform-text) 14%, var(--cw-platform-border));

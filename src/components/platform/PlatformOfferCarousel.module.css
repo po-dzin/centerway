@@ -93,13 +93,16 @@
    pseudo-element widens the hit area past the visible dot so the row keeps its
    quiet height instead of growing to 44px of button. */
 .queueDotButton {
+  /* The contract owns the corner, and a dot is its `round` case — the pill
+     radius written here was the same circle by a different name, which is
+     exactly what guard:buttons exists to stop. */
+  composes: round from "./PlatformButtons.module.css";
   position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   padding: var(--cw-space-2xs);
   border: 0;
-  border-radius: var(--cw-radius-pill);
   background: none;
   color: inherit;
   cursor: pointer;

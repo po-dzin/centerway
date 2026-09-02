@@ -598,18 +598,21 @@
    visible before interaction, and the shared baked mark takes over with the
    warm guide accent on hover or keyboard focus. Icon-only social links stay
    glyphs and do not receive a text treatment. */
+/* ONE MARK, AND IT IS THE STROKE. These links already wrap their labels in
+   `InteractionInkLabel` and already carry `data-cw-ink-control`; what they drew
+   was the browser's underline, because the ink rule that reads that attribute
+   was missing from the label list in globals.css. Both were present, only one
+   was visible, and it was the one nobody designed. The stroke is the mark now
+   — at rest, on hover and when current — so this rule keeps the colour change
+   and hands the line back. */
 .footer a.footerTextLink {
-  text-decoration-line: underline;
-  text-decoration-color: var(--cw-platform-text);
-  text-decoration-thickness: 1px;
-  text-underline-offset: 0.24em;
-  transition: color 0.16s ease, text-decoration-color 0.16s ease;
+  text-decoration: none;
+  transition: color 0.16s ease;
 }
 
 .footerTextLink:hover,
 .footerTextLink:focus-visible {
   color: var(--cw-platform-accent);
-  text-decoration-color: var(--cw-platform-accent);
 }
 
 .footerBrandText {

@@ -1472,16 +1472,92 @@ Three surfaces answered "you are here" three ways: the topbar drew an ink underl
 
 **Two baked gestures, one interaction language.** Text navigation uses `ink-stroke`: two slightly non-parallel paths with two restrained ink droplets. Icon-only controls use `ink-ring`: an open, irregular loop plus one tiny drop. Both are graphics baked into `cw-icons.svg`, not CSS drawings, inline SVGs or runtime filters. `--cw-ink-stroke-height`, `--cw-ink-ring-size`, `--cw-ink-hover-opacity` and `--cw-ink-hover-scale` keep the gesture consistent in the topbar, account/mobile menu and Builder. The graphic never carries state alone: active/current also changes foreground and weight and remains exposed through `aria-current`, `aria-expanded` or `aria-pressed`.
 
+## Ink and contour: the interaction primitives (2026-09-02)
+
+Every interaction state in this product is drawn with **one of three marks**, and
+there is no fourth. Before adding a state to any control, name its mark here and
+use the primitive that owns it. A control that needs a mark this canon does not
+have is a change to this canon, not a local recipe.
+
+| primitive | what it is | what it marks | entry point |
+| --- | --- | --- | --- |
+| **ink stroke** | a baked hand-drawn line under text (`ink-stroke` in `cw-icons.svg`) | a text choice: a link, a nav row, a tab, a selected label | `InteractionInkLabel` |
+| **ink ring** | a baked open loop around a glyph (`ink-ring`) | an icon-only choice: a mode, a toggle, a pressed utility | `InteractionInkIcon` |
+| **contour** | a dashed line on the object's own edge | a chosen or empty *object*: a selected block, a library cell, a slot with nothing in it | `--cw-contour-*` tokens |
+
+### The three strengths of a stroke
+
+The ink graphic is one drawing at three strengths. Consumers read the tokens and
+never restate the numbers.
+
+| strength | token | drawn when |
+| --- | --- | --- |
+| rest | `--cw-ink-rest-opacity` (0.34) at `--cw-ink-rest-scale` | only for `variant="link"` |
+| hover / focus | `--cw-ink-hover-opacity` (0.42), or full for a link | pointer or keyboard is on the control |
+| current | full | `aria-current`, `aria-pressed`, `.cw-*-active`, `data-cw-ink-active` |
+
+**Why a link rests visible and a nav row does not.** A nav item sits inside a bar
+that already says "these are the ways out"; a permanent mark under every item
+would leave the current one with nothing to say. A link in running copy or in a
+block head has no such frame, so it carries its own affordance — which is what
+the browser's `text-decoration` was doing before, and what the stroke does now.
+
+**A link therefore never draws both marks.** `data-cw-ink-control` is the opt-in:
+it turns off the `.text` role's `text-decoration` and it is the attribute the ink
+rules key on. A `.text` control with no ink label keeps the browser underline as
+its fallback — one mark, never two, never none.
+
+### The contour, and the three things a dashed line used to mean
+
+The dashed line existed in five places in five colours and meant three different
+things. It has two roles now, and both are tokens:
+
+- `--cw-contour-selected` — *this object is the chosen one.* The builder's
+  selected block and the library's chosen cell. Drawn in the navigation marker's
+  own ink, outside the object's edge (`--cw-contour-offset`), so the selection
+  reads as a draughtsman's mark around the thing rather than as a new border on
+  it.
+- `--cw-contour-empty` — *there is nothing here yet.* Cover slots, photo slots,
+  empty states. Never the selection colour: an empty slot is not a chosen one.
+
+Geometry is shared: `--cw-contour-width`, `--cw-contour-style`,
+`--cw-contour-offset`. A drop target, a validation error and a disabled control
+are **not** contour states — they belong to their own semantics (material,
+status colour, opacity) and must not borrow the selection line.
+
+### What is forbidden
+
+- **No local ink.** Never draw, transform, resize, re-scale, re-opacity or
+  animate an ink stroke or ring in a component stylesheet. Local CSS may
+  position a control and reserve a label's inline width; it may not imitate the
+  graphic. `guard:ds-contract` and review both check this.
+- **No second mark on one control.** An icon beside a marked label does not also
+  get a ring. A contoured object does not also underline its own title.
+- **No browser default as a design.** `text-decoration`, `outline` and the
+  native focus ring are fallbacks, not marks. Where a primitive applies, it
+  replaces them.
+- **No new colour for a state.** States are the ink at three strengths and the
+  two contour roles. A state that needs a hue is a status, not an interaction.
+
+### Where each family goes (unchanged from 2026-08-30, restated with its mark)
+
+| `selection_family` | mark | examples |
+| --- | --- | --- |
+| `contour` | material boundary + focus ring, or `--cw-contour-selected` for a chosen object | search field, icon+text button, CTA, checkbox box, popover, selected block, library cell |
+| `ink` | stroke under a label, ring around a glyph | link, route navigation, tab, current view mode |
+| `hybrid` | contour on the input, ink bounded to the selected label | multi-select filter option |
+
 ### Selection grammar: contour, ink, hybrid (2026-08-30)
 
 ### Text links: visible ink, warm interaction (2026-08-31)
 
-Ordinary inline and footer text links remain visibly underlined at rest: the
-underline uses the readable ink role, so a link does not depend on hover or
-colour alone to announce itself. On hover and keyboard focus, foreground and
-underline move to the existing warm guide accent; where a platform link uses
-the shared `InteractionInkLabel`, its baked ink stroke is the only drawn mark.
-Do not apply this treatment to icon-only links or plated route actions.
+Ordinary inline and footer text links remain visibly marked at rest, so a link
+does not depend on hover or colour alone to announce itself. Since 2026-09-02
+that mark is the ink stroke at rest strength, not the browser underline — see
+"Ink and contour: the interaction primitives" above, which supersedes this
+paragraph's `text-decoration` recipe. On hover and keyboard focus the foreground
+moves to the warm guide accent and the stroke runs to full. Do not apply this
+treatment to icon-only links or plated route actions.
 
 Every interaction must declare one `selection_family` before code review. The
 family is a semantic choice, not a cosmetic preference:

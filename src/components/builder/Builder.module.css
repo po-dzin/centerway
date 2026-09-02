@@ -3038,7 +3038,10 @@
   content: "";
   position: absolute;
   inset: calc(var(--cw-space-2xs) * -1) calc(var(--cw-space-sm) * -1);
-  border: 1px dashed color-mix(in srgb, var(--cw-nav-marker) 62%, transparent);
+  /* The system's selection contour — see docs/design-system.md → "Ink and
+     contour: the interaction primitives". Written as tokens rather than as a
+     local mix so the library cell and this block draw the same line. */
+  border: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-selected);
   border-radius: var(--cw-radius-btn);
   opacity: 0;
   pointer-events: none;
@@ -3397,7 +3400,7 @@
 .coverEditorEmpty {
   margin: 0;
   padding: var(--cw-space-md);
-  border: 1px dashed var(--builder-rule);
+  border: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-empty);
   border-radius: var(--cw-radius-md);
   color: var(--cw-platform-muted);
   font-size: 0.88rem;
