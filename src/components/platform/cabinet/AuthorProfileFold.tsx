@@ -16,7 +16,7 @@
  * only until one of them changes shape.
  */
 
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import Link from "next/link";
 
@@ -24,6 +24,7 @@ import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
 import type { Author, AuthorProfileBlock } from "@/lms-core";
 import type { ProfileLang } from "@/components/platform/profile/types";
+import { AUTHOR_AVATAR_CROP_DEFAULT, AUTHOR_CARD_CROP_DEFAULT } from "@/lib/lms/authorPhoto";
 import type { AuthorProfileInput } from "./useCabinet";
 import styles from "./Cabinet.module.css";
 import { matte } from "./CourseCard";
@@ -39,11 +40,112 @@ type Draft = {
   experienceBadge: string;
   achievementBadge: string;
   consultation: { enabled: boolean; title: string; summary: string; points: string[]; contactUrl: string };
-  photo: { src: string; alt: string } | null;
+  photo: NonNullable<Author["photo"]> | null;
   background: { src: string } | null;
   listed: boolean;
   slug: string;
 };
+
+type PhotoCropShape = "card" | "avatar";
+
+const PHOTO_CROP_FRAME: Record<PhotoCropShape, { className: "photoCropCard" | "photoCropAvatar" }> = {
+  card: { className: "photoCropCard" },
+  avatar: { className: "photoCropAvatar" },
+};
+
+const clampCrop = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
+
+/**
+ * One focal point, dragged or nudged with the keyboard — the same interaction
+ * the builder's cover editor uses for a course's own crop (`BuilderCoverEditor`).
+ * Reimplemented here rather than shared: the two editors format their frames
+ * differently (a course chooses among 16:9/21:9/9:16, an author's photo
+ * between one card shape and one round avatar) and neither owns the other.
+ */
+function PhotoCropPreview({
+  src,
+  alt,
+  shape,
+  x,
+  y,
+  onChange,
+  reset,
+}: {
+  src: string;
+  alt: string;
+  shape: PhotoCropShape;
+  x: number;
+  y: number;
+  onChange: (x: number, y: number) => void;
+  reset: { label: string; onReset: () => void };
+}) {
+  const activePointer = useRef<number | null>(null);
+  const [dragging, setDragging] = useState(false);
+  const frameClass = PHOTO_CROP_FRAME[shape].className;
+
+  const placeFocus = (event: PointerEvent<HTMLDivElement>) => {
+    const bounds = event.currentTarget.getBoundingClientRect();
+    onChange(
+      clampCrop(((event.clientX - bounds.left) / Math.max(bounds.width, 1)) * 100),
+      clampCrop(((event.clientY - bounds.top) / Math.max(bounds.height, 1)) * 100)
+    );
+  };
+
+  const beginDrag = (event: PointerEvent<HTMLDivElement>) => {
+    event.currentTarget.setPointerCapture(event.pointerId);
+    activePointer.current = event.pointerId;
+    setDragging(true);
+    placeFocus(event);
+  };
+
+  const drag = (event: PointerEvent<HTMLDivElement>) => {
+    if (activePointer.current !== event.pointerId) return;
+    placeFocus(event);
+  };
+
+  const endDrag = (event: PointerEvent<HTMLDivElement>) => {
+    if (activePointer.current !== event.pointerId) return;
+    activePointer.current = null;
+    setDragging(false);
+  };
+
+  const moveByKey = (event: KeyboardEvent<HTMLDivElement>) => {
+    const step = event.shiftKey ? 5 : 2;
+    if (event.key === "ArrowLeft") onChange(clampCrop(x - step), y);
+    else if (event.key === "ArrowRight") onChange(clampCrop(x + step), y);
+    else if (event.key === "ArrowUp") onChange(x, clampCrop(y - step));
+    else if (event.key === "ArrowDown") onChange(x, clampCrop(y + step));
+    else return;
+    event.preventDefault();
+  };
+
+  return (
+    <div className={styles.photoCropStack}>
+      <div
+        className={styles[frameClass]}
+        data-dragging={dragging || undefined}
+        tabIndex={0}
+        aria-label={`Точка фокуса. Перетягуйте або використовуйте стрілки.`}
+        onKeyDown={moveByKey}
+        onPointerDown={beginDrag}
+        onPointerMove={drag}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- the cabinet's own upload, any public host */}
+        <img src={src} alt={alt} style={{ objectPosition: `${x}% ${y}%` }} draggable={false} />
+        <span className={styles.photoCropHandle} style={{ left: `${x}%`, top: `${y}%` }} aria-hidden="true">
+          <Icon name="grip" size={20} />
+        </span>
+      </div>
+      <div className={styles.photoCropTools}>
+        <button className={styles.photoCropReset} type="button" onClick={reset.onReset}>
+          {reset.label}
+        </button>
+      </div>
+    </div>
+  );
+}
 
 function draftFromAuthor(author: Author | null): Draft {
   return {
@@ -102,6 +204,11 @@ const STRINGS = {
     photoRemove: "Прибрати фото",
     photoUploading: "Завантаження…",
     photoAlt: "Опис фото (для читачів екрана)",
+    photoCropCardTitle: "Картка",
+    photoCropCardNote: "Головна · консультації · директорія авторів",
+    photoCropAvatarTitle: "Кругла аватарка",
+    photoCropAvatarNote: "Сторінка автора · автор курсу",
+    photoCropCenter: "По центру",
     background: "Фон публічної сторінки",
     backgroundUpload: "Завантажити фон",
     backgroundReplace: "Замінити фон",
@@ -153,6 +260,11 @@ const STRINGS = {
     photoRemove: "Remove photo",
     photoUploading: "Uploading…",
     photoAlt: "Photo description (for screen readers)",
+    photoCropCardTitle: "Card",
+    photoCropCardNote: "Home · consultations · author directory",
+    photoCropAvatarTitle: "Round avatar",
+    photoCropAvatarNote: "Author's own page · course byline",
+    photoCropCenter: "Centre",
     background: "Public page background",
     backgroundUpload: "Upload background",
     backgroundReplace: "Replace background",
@@ -256,7 +368,16 @@ export function AuthorProfileFold({
     event.preventDefault();
 
     const credentials = draft.credentials.map((line) => line.trim()).filter(Boolean);
-    const photo = draft.photo?.src && draft.photo.alt.trim() ? { src: draft.photo.src, alt: draft.photo.alt.trim() } : undefined;
+    const photo = draft.photo?.src && draft.photo.alt.trim()
+      ? {
+          src: draft.photo.src,
+          alt: draft.photo.alt.trim(),
+          ...(draft.photo.cropX !== undefined ? { cropX: draft.photo.cropX } : {}),
+          ...(draft.photo.cropY !== undefined ? { cropY: draft.photo.cropY } : {}),
+          ...(draft.photo.avatarCropX !== undefined ? { avatarCropX: draft.photo.avatarCropX } : {}),
+          ...(draft.photo.avatarCropY !== undefined ? { avatarCropY: draft.photo.avatarCropY } : {}),
+        }
+      : undefined;
 
     const ok = await save({
       name: draft.name.trim(),
@@ -551,6 +672,64 @@ export function AuthorProfileFold({
               />
             ) : null}
             {uploadError ? <span className={styles.authorNotice}>{uploadError}</span> : null}
+            {draft.photo?.src ? (
+              <div className={styles.photoCropGrid}>
+                <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-card-title">
+                  <div className={styles.photoCropHead}>
+                    <div>
+                      <h4 id="author-photo-crop-card-title">{t.photoCropCardTitle}</h4>
+                      <p>{t.photoCropCardNote}</p>
+                    </div>
+                  </div>
+                  <PhotoCropPreview
+                    src={draft.photo.src}
+                    alt=""
+                    shape="card"
+                    x={draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x}
+                    y={draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y}
+                    onChange={(x, y) =>
+                      setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, cropX: x, cropY: y } } : prev))
+                    }
+                    reset={{
+                      label: t.photoCropCenter,
+                      onReset: () =>
+                        setDraft((prev) =>
+                          prev.photo
+                            ? { ...prev, photo: { ...prev.photo, cropX: AUTHOR_CARD_CROP_DEFAULT.x, cropY: AUTHOR_CARD_CROP_DEFAULT.y } }
+                            : prev
+                        ),
+                    }}
+                  />
+                </section>
+                <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-avatar-title">
+                  <div className={styles.photoCropHead}>
+                    <div>
+                      <h4 id="author-photo-crop-avatar-title">{t.photoCropAvatarTitle}</h4>
+                      <p>{t.photoCropAvatarNote}</p>
+                    </div>
+                  </div>
+                  <PhotoCropPreview
+                    src={draft.photo.src}
+                    alt=""
+                    shape="avatar"
+                    x={draft.photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x}
+                    y={draft.photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y}
+                    onChange={(x, y) =>
+                      setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, avatarCropX: x, avatarCropY: y } } : prev))
+                    }
+                    reset={{
+                      label: t.photoCropCenter,
+                      onReset: () =>
+                        setDraft((prev) =>
+                          prev.photo
+                            ? { ...prev, photo: { ...prev.photo, avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x, avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y } }
+                            : prev
+                        ),
+                    }}
+                  />
+                </section>
+              </div>
+            ) : null}
           </div>
 
           <div className={`${styles.authorField} ${styles.authorBackgroundField}`}>

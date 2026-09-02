@@ -1192,6 +1192,133 @@
   background: var(--cw-mat-surface-sunk);
 }
 
+/* The photo's own crop, on the two frames it is actually shown through — the
+   builder's `BuilderCoverEditor` set the pattern for a course's cover. */
+.photoCropGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-md);
+  margin-block-start: var(--cw-space-2xs);
+}
+
+.photoCropPanel {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: var(--cw-space-sm);
+  padding: var(--cw-space-md);
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-lg);
+  background: var(--cw-mat-surface);
+}
+
+.photoCropHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
+.photoCropHead h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.photoCropHead p {
+  margin: 0.15rem 0 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.photoCropStack {
+  display: grid;
+  gap: var(--cw-space-2xs);
+}
+
+.photoCropCard,
+.photoCropAvatar {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+  background: var(--cw-mat-surface-sunk);
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+
+/* Same ratio as `.guideCard` at its desktop measure — the frame the author's
+   photo fills wherever `AuthorCard` renders it. */
+.photoCropCard {
+  aspect-ratio: 24 / 29;
+  max-width: 16rem;
+  border-radius: var(--cw-radius-md);
+}
+
+/* The round avatar's own frame — the author's own page and a course's byline.
+   Square while dragging, so the focal point maps the same way as the card;
+   the circular crop is what the border-radius shows. */
+.photoCropAvatar {
+  width: 10rem;
+  aspect-ratio: 1;
+  border-radius: var(--cw-radius-pill);
+}
+
+.photoCropCard[data-dragging],
+.photoCropAvatar[data-dragging] {
+  cursor: crosshair;
+}
+
+.photoCropCard:focus-visible,
+.photoCropAvatar:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.photoCropCard img,
+.photoCropAvatar img {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  display: block;
+  object-fit: cover;
+  pointer-events: none;
+}
+
+.photoCropHandle {
+  position: absolute;
+  width: 2.25rem;
+  height: 2.25rem;
+  display: grid;
+  place-items: center;
+  translate: -50% -50%;
+  border: 1px solid var(--cw-platform-border);
+  border-radius: var(--cw-radius-pill);
+  background: var(--cw-mat-tint-media, var(--cw-mat-surface));
+  color: var(--cw-platform-text);
+  box-shadow: var(--cw-mat-shadow-soft);
+  pointer-events: none;
+}
+
+.photoCropTools {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.photoCropReset {
+  composes: secondary from "../PlatformButtons.module.css";
+  composes: hug from "../PlatformButtons.module.css";
+}
+
+@media (min-width: 641px) {
+  .photoCropGrid {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
 .authorBackgroundPreview,
 .authorBackgroundEmpty {
   width: 100%;

@@ -2,6 +2,7 @@ import Link from "next/link";
 
 import styles from "@/components/platform/PlatformTrustStyles";
 import { authorHref } from "@/lib/lms/authors";
+import { authorCardCropPosition } from "@/lib/lms/authorPhoto";
 import type { Author } from "@/lms-core";
 
 /**
@@ -56,6 +57,7 @@ export function AuthorCard({
             alt={author.photo.alt}
             loading="lazy"
             decoding="async"
+            style={{ objectPosition: authorCardCropPosition(author.photo) }}
           />
         ) : (
           <span className={styles.guideFallback} aria-hidden="true">
