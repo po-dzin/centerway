@@ -3371,6 +3371,24 @@
   background: var(--cw-mat-surface);
 }
 
+/* The drop target — spans the preview and the upload button, so a file
+   dragged onto either replaces the image. Quiet at rest; the dashed ring only
+   appears while a file is actually over it, the same "nothing until it
+   matters" rule the rest of this form follows. */
+.uploadZone {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  border-radius: var(--cw-radius-md);
+  transition: outline-color var(--builder-motion-tool) ease, background-color var(--builder-motion-tool) ease;
+  outline: 2px dashed transparent;
+  outline-offset: 4px;
+}
+
+.uploadZone[data-drag-over] {
+  outline-color: var(--cw-platform-accent);
+  background: color-mix(in srgb, var(--cw-platform-accent) 8%, transparent);
+}
+
 .coverEditor {
   display: grid;
   gap: var(--cw-space-md);

@@ -1154,10 +1154,18 @@
 }
 
 /* One media object, then its compact edit controls. selection_family: contour
-   for edit/remove: both are direct commands on this particular object. */
+   for edit/remove: both are direct commands on this particular object.
+
+   `width: fit-content` here, on a frame whose EMPTY child used to ask for
+   `width: 100%` (`.authorBackgroundEmpty`, below), is a circular size no
+   browser resolves to anything but zero — the slot was there, it just had no
+   size to paint. The frame no longer constrains width at all; the photo and
+   background variants size themselves explicitly instead (13rem square,
+   20rem wide), and the frame shrinks to whichever child is actually
+   rendered. */
 .authorMediaFrame {
   position: relative;
-  width: fit-content;
+  display: inline-block;
   max-width: 100%;
 }
 
@@ -1183,13 +1191,60 @@
     var(--cw-mat-shadow-soft);
 }
 
+/* The empty slot IS the control — a `<label>` wrapping its own hidden file
+   input (`AuthorMediaSlot`), not a blank rectangle with a corner pencil icon
+   nobody would find. Dashed, not filled, so it reads as "nothing here yet"
+   rather than as a loaded plate. */
+.authorPhotoEmpty,
+.authorBackgroundEmpty {
+  display: grid;
+  place-items: center;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-sm);
+  border: 1px dashed var(--cw-mat-stroke-control);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: 1.4;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
+}
+
+.authorPhotoEmpty:hover,
+.authorBackgroundEmpty:hover {
+  border-color: var(--cw-mat-stroke-quiet, var(--cw-platform-border));
+  color: var(--cw-platform-text);
+}
+
+.authorPhotoEmpty:has(.visuallyHidden:focus-visible),
+.authorBackgroundEmpty:has(.visuallyHidden:focus-visible) {
+  outline: none;
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+/* The frame itself carries the drag state — dropping onto the picture
+   restyles the same way dropping onto the empty slot does, so a file dragged
+   over an already-filled photo still reads as "drop to replace". */
+.authorMediaFrame[data-drag-over] .authorPhotoEmpty,
+.authorMediaFrame[data-drag-over] .authorBackgroundEmpty {
+  border-color: var(--cw-platform-accent);
+  background: color-mix(in srgb, var(--cw-platform-accent) 10%, transparent);
+  color: var(--cw-platform-text);
+}
+
+.authorMediaFrame[data-drag-over] .authorPhotoPreview,
+.authorMediaFrame[data-drag-over] .authorBackgroundPreview {
+  outline: 2px dashed var(--cw-platform-accent);
+  outline-offset: 2px;
+}
+
 /* An empty slot at the portrait's own size, so the row does not jump the first
    time an image lands in it. */
 .authorPhotoEmpty {
   width: 13rem;
   height: 13rem;
-  border-radius: var(--cw-radius-md);
-  background: var(--cw-mat-surface-sunk);
 }
 
 /* The photo's own crop, on the two frames it is actually shown through — the
@@ -1319,21 +1374,20 @@
   }
 }
 
+/* A real length, not `width: 100%` — see the note on `.authorMediaFrame`
+   above. `max-width: 100%` still lets it shrink on a narrow phone; it just
+   never has to ask its shrink-to-fit parent what its own width is. */
 .authorBackgroundPreview,
 .authorBackgroundEmpty {
-  width: 100%;
-  max-width: 17rem;
-  height: 6rem;
+  width: 20rem;
+  max-width: 100%;
+  height: 7rem;
   border-radius: var(--cw-radius-md);
 }
 
 .authorBackgroundPreview {
   display: block;
   object-fit: cover;
-}
-
-.authorBackgroundEmpty {
-  background: var(--cw-mat-surface-sunk);
 }
 
 /* THE FILE INPUT IS HIDDEN, NOT REMOVED. `Choose file / No file chosen` is the
@@ -1425,9 +1479,9 @@
 
   .authorBackgroundPreview,
   .authorBackgroundEmpty {
-    width: 100%;
-    max-width: 17rem;
-    height: 6rem;
+    width: 20rem;
+    max-width: 100%;
+    height: 7rem;
     aspect-ratio: auto;
   }
 
