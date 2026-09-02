@@ -161,39 +161,53 @@
   scroll-snap-align: start;
 }
 
+/* THE PHOTOGRAPH IS THE CARD — see `AuthorCard`. Two forms of picture are
+   allowed on this platform: a horizontal image seated inside a card, or the
+   image AS the card. The author card takes the second, so a portrait is never
+   cropped into a short band that cuts the person off at the chin. */
 .guideCard {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: minmax(13.5rem, 0.88fr) minmax(0, 1fr);
+  position: relative;
+  display: flex;
+  align-items: flex-end;
   height: var(--ds-offer-card-height-desktop);
   min-width: 0;
   overflow: hidden;
   border-radius: var(--cw-card-radius);
-  background: var(--cw-mat-surface);
+  color: var(--cw-platform-accent-contrast);
+  background: var(--cw-platform-accent-strong);
   box-shadow: var(--cw-mat-shadow-soft);
 }
 
 .guideMedia {
-  position: relative;
+  position: absolute;
+  inset: 0;
   min-width: 0;
   overflow: hidden;
   background: var(--cw-mat-tone-proof);
 }
 
+/* The ground under the text. A portrait is an arbitrary photograph, so the
+   copy carries its own contrast rather than trusting what was uploaded. */
 .guideMedia::after {
   position: absolute;
   z-index: 0;
   inset: 0;
   content: "";
-  background: linear-gradient(180deg, transparent 42%, color-mix(in srgb, var(--cw-mat-scrim-ink) 66%, transparent) 100%);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--cw-mat-scrim-ink) 6%, transparent) 0%,
+    color-mix(in srgb, var(--cw-mat-scrim-ink) 24%, transparent) 30%,
+    color-mix(in srgb, var(--cw-mat-scrim-ink) 76%, transparent) 58%,
+    color-mix(in srgb, var(--cw-mat-scrim-ink) 94%, transparent) 100%
+  );
   pointer-events: none;
 }
 
 .guideBadges {
   position: absolute;
   z-index: 1;
-  inset-inline: var(--cw-space-sm);
-  inset-block-end: var(--cw-space-sm);
+  inset-inline-start: var(--cw-space-sm);
+  inset-block-start: var(--cw-space-sm);
   display: flex;
   flex-wrap: wrap;
   gap: var(--cw-space-2xs);
@@ -213,7 +227,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  object-position: center 30%;
+  object-position: center 22%;
 }
 
 .guideFallback {
@@ -227,10 +241,26 @@
   font-size: clamp(3rem, 10vw, 5rem);
 }
 
+/* The one real link in the card; the visible button is its label. */
+.guideOverlay {
+  position: absolute;
+  z-index: 2;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.guideOverlay:focus-visible {
+  outline: 2px solid var(--cw-platform-accent-contrast);
+  outline-offset: -4px;
+}
+
 .guideBody {
+  position: relative;
+  z-index: 1;
   display: grid;
-  align-content: start;
-  gap: var(--cw-space-sm);
+  align-content: end;
+  gap: var(--cw-space-xs);
+  width: 100%;
   padding: var(--cw-space-md);
   min-width: 0;
   min-height: 0;
@@ -243,7 +273,7 @@
 
 .guideName {
   margin: 0;
-  color: var(--cw-platform-text);
+  color: var(--cw-platform-accent-contrast);
   font-family: var(--cw-font-ui);
   font-size: 1.35rem;
   font-weight: 700;
@@ -252,41 +282,49 @@
 
 .guideRole {
   margin: 0;
-  color: var(--cw-platform-muted);
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 80%, transparent);
   font-size: var(--ds-type-body-sm-size);
   line-height: 1.4;
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
 .guideNote {
   margin: 0;
-  color: color-mix(in srgb, var(--cw-platform-text) 78%, var(--cw-platform-muted) 22%);
-  font-size: var(--ds-type-body-size);
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 84%, transparent);
+  font-size: var(--ds-type-body-sm-size);
   line-height: var(--ds-type-body-line-height);
   display: -webkit-box;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
 
-/* Text with a marker in the margin — the platform's one list recipe. */
+/* Text with a marker in the margin — the platform's one list recipe. Three
+   lines per fact: «Магістр комплементарної медицини та інтегративної
+   психології» is a real credential, it needs three lines inside a phone-width
+   card, and a clamp that cut it mid-word was the reason to measure at all.
+   Three facts still leave the photograph the top third of the card. */
 .guideFacts {
   display: grid;
-  gap: 0.5rem;
+  gap: 0.35rem;
   margin: 0;
   padding: 0;
   list-style: none;
-  color: var(--cw-platform-text);
+  color: color-mix(in srgb, var(--cw-platform-accent-contrast) 88%, transparent);
   font-size: var(--ds-type-body-sm-size);
-  line-height: 1.45;
+  line-height: 1.35;
 }
 
 .guideFacts li {
   position: relative;
   padding-left: 1.05rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .guideFacts li::before {
@@ -300,9 +338,13 @@
   background: var(--cw-platform-accent);
 }
 
-.guideFactIcon {
-  margin-top: 0.05rem;
-  color: color-mix(in srgb, var(--cw-platform-text) 52%, transparent);
+/* The card is the measure — see the button contract's `fill`. A guide card is
+   the same object at every count, so its action cannot be sized by its label.
+   A span, not a link: `.guideOverlay` above already routes the whole card. */
+.guideLink {
+  composes: secondary from "./PlatformButtons.module.css";
+  composes: fill from "./PlatformButtons.module.css";
+  margin-top: 0.25rem;
 }
 
 @media (max-width: 900px) {
@@ -316,17 +358,8 @@
   .guideCard {
     flex: 0 0 var(--ds-offer-card-rail-width);
     height: var(--ds-offer-card-height-rail);
-    grid-template-rows: minmax(12.5rem, 0.88fr) minmax(0, 1fr);
     scroll-snap-align: start;
   }
-}
-
-/* The card is the measure — see the button contract's `fill`. A guide card is
-   the same object at every count, so its action cannot be sized by its label. */
-.guideLink {
-  composes: secondary from "./PlatformButtons.module.css";
-  composes: fill from "./PlatformButtons.module.css";
-  margin-top: 0.25rem;
 }
 
 .copyStack {

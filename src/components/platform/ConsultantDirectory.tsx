@@ -1,35 +1,20 @@
-import Link from "next/link";
+import { AuthorCard } from "@/components/platform/AuthorCard";
 import { PlatformBlock } from "@/components/platform/PlatformBlock";
 import styles from "@/components/platform/PlatformTrustStyles";
-import { authorHref } from "@/lib/lms/authors";
 import type { Author } from "@/lms-core";
 
+/**
+ * The authors, on the consultation page.
+ *
+ * The card itself is `AuthorCard` and nothing else — this block used to draw
+ * its own, and the same founder read as two different objects depending on
+ * whether you met him here or on the home page.
+ */
 export function ConsultantDirectory({ authors }: { authors: Author[] }) {
   if (authors.length === 0) return null;
   return <PlatformBlock id="consultants" label="Провідники" title="Автори CenterWay" lead="Познайомтеся з авторами, подивіться їхній досвід і відкрийте профіль того, з ким хочете продовжити розмову.">
     <div className={`${styles.guideRail} ${styles.consultantRail}`} data-layout={authors.length === 1 ? "single" : undefined}>
-      {authors.map((author) => <Link key={author.slug} href={authorHref(author)} className={styles.guideCard}>
-        <div className={styles.guideMedia}>
-          {author.photo ? <>
-            {/* Cabinet portraits may be public Supabase Storage URLs. Plain img
-                keeps an external photo from blocking this entire directory. */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img className={styles.guidePortrait} src={author.photo.src} alt={author.photo.alt} loading="lazy" decoding="async" />
-          </> : <span className={styles.guideFallback} aria-hidden="true">{author.name.trim().charAt(0).toUpperCase()}</span>}
-          {(author.experienceBadge || author.achievementBadge) ? <div className={styles.guideBadges}>
-            {author.experienceBadge ? <span>{author.experienceBadge}</span> : null}
-            {author.achievementBadge ? <span>{author.achievementBadge}</span> : null}
-          </div> : null}
-        </div>
-        <div className={styles.guideBody}>
-          <div className={styles.guideIdentity}>
-            <h3 className={styles.guideName}>{author.name}</h3>
-            {author.role ? <p className={styles.guideRole}>{author.role}</p> : null}
-          </div>
-          {author.bio ? <p className={styles.guideNote}>{author.bio}</p> : author.consultation?.summary ? <p className={styles.guideNote}>{author.consultation.summary}</p> : null}
-          {author.facts?.length ? <ul className={styles.guideFacts}>{author.facts.slice(0, 3).map((fact) => <li key={fact}><span>{fact}</span></li>)}</ul> : null}
-        </div>
-      </Link>)}
+      {authors.map((author) => <AuthorCard key={author.slug} author={author} />)}
     </div>
   </PlatformBlock>;
 }

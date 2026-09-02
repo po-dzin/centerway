@@ -6,12 +6,12 @@
  */
 
 import type { Metadata } from "next";
-import Link from "next/link";
 
+import { AuthorCard } from "@/components/platform/AuthorCard";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { PlatformBlock } from "@/components/platform/PlatformBlock";
 import trustStyles from "@/components/platform/PlatformTrustStyles";
-import { authorHref, listListedAuthors } from "@/lib/lms/authors";
+import { listListedAuthors } from "@/lib/lms/authors";
 import { describe } from "@/lib/brand/identity";
 import { pageMetadata } from "@/lib/seo/metadata";
 
@@ -29,38 +29,11 @@ export default async function ExpertsIndexPage() {
       <>
         <PlatformBlock id="authors" label="Автори" title="Автори CenterWay" lead="Хто веде курси й програми на платформі.">
           <div className={trustStyles.guideRail} data-layout={authors.length === 1 ? "single" : undefined}>
-            {/* The destination comes from `authorHref`, not from the slug: the
-                founder's card points at /consult, and deriving the URL here is
-                how this directory disagreed with the home page. */}
+            {/* One card everywhere an author is previewed — the home block,
+                /consult and this index render the same component, and the
+                destination comes from `authorHref` inside it. */}
             {authors.map((author) => (
-              <Link key={author.slug} href={authorHref(author)} className={trustStyles.guideCard}>
-                <div className={trustStyles.guideMedia}>
-                  {author.photo ? (
-                    <>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      className={trustStyles.guidePortrait}
-                      src={author.photo.src}
-                      alt={author.photo.alt}
-                      loading="lazy"
-                      decoding="async"
-                    />
-                    </>
-                  ) : <span className={trustStyles.guideFallback} aria-hidden="true">{author.name.trim().charAt(0).toUpperCase()}</span>}
-                  {(author.experienceBadge || author.achievementBadge) ? <div className={trustStyles.guideBadges}>
-                    {author.experienceBadge ? <span>{author.experienceBadge}</span> : null}
-                    {author.achievementBadge ? <span>{author.achievementBadge}</span> : null}
-                  </div> : null}
-                </div>
-                <div className={trustStyles.guideBody}>
-                  <div className={trustStyles.guideIdentity}>
-                    <h3 className={trustStyles.guideName}>{author.name}</h3>
-                    {author.role ? <p className={trustStyles.guideRole}>{author.role}</p> : null}
-                  </div>
-                  {author.bio ? <p className={trustStyles.guideNote}>{author.bio}</p> : null}
-                  {author.facts?.length ? <ul className={trustStyles.guideFacts}>{author.facts.slice(0, 3).map((fact) => <li key={fact}><span>{fact}</span></li>)}</ul> : null}
-                </div>
-              </Link>
+              <AuthorCard key={author.slug} author={author} />
             ))}
           </div>
         </PlatformBlock>

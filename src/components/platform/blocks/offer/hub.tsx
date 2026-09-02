@@ -33,7 +33,7 @@ export async function HubMini() {
       lead="Кілька днів практики, щоб спробувати підхід без довгого зобов'язання."
       headActions={<PlatformBlockLink href="/programs" label="Усі матеріали" />}
     >
-      <PlatformOfferCarousel label="Міні-курси CenterWay" viewAllHref="/programs" viewAllLabel="Усі курси">
+      <PlatformOfferCarousel label="Міні-курси CenterWay">
         {authored.map((course) => (
           <PlatformOfferCard
             key={course.slug}
@@ -70,7 +70,7 @@ export async function HubPrograms() {
       lead="Що обрати для свого поточного стану?"
       headActions={<PlatformBlockLink href="/programs" label="Усі матеріали" />}
     >
-      <PlatformOfferCarousel label="Програми CenterWay" viewAllHref="/programs" viewAllLabel="Усі курси">
+      <PlatformOfferCarousel label="Програми CenterWay">
         {authored.map((course) => (
           <PlatformOfferCard
             key={course.slug}

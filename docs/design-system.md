@@ -245,6 +245,35 @@ The catalogue drew two cards: `compact` (24rem) for mini-courses, the default (2
 
 The phone rail had already settled this and said so in its own comment: *one height for every card on every rail*, fixed rather than min, because the card's three text rows are clamped to 1/1/3 lines and a card that grows is a card that stopped matching its row. The desktop kept the split. It now takes the same answer — `--ds-offer-card-height-desktop` (29rem), `height` not `min-height` — and the `compact` variant, its three tokens and the `size` prop are gone. A marketplace row is a row of one object at one size; the only thing that varies between two offers is what is printed inside them.
 
+### A photograph is inset, or it is the card (2026-09-02)
+
+**There is no third form.** A picture on this platform is either a horizontal
+image seated INSIDE a card, with the copy on the card's own surface below it, or
+it is the ground of the whole card, with the copy over a scrim. Anything between
+the two is a portrait cropped into a short band — the shape the author cards used
+until this date, which cut a standing person off at the chin at one width and at
+the shoulders at another, and did it differently on the home page than on
+`/consult`.
+
+The author card takes the second form: `.guideCard` is `position: relative` at
+`--ds-offer-card-height-desktop`, the portrait fills it with `object-fit: cover`,
+and the name, the facts and the way through to the profile sit at the bottom over
+`.guideMedia::after`. Product cards (`.programTile`) have always been drawn this
+way; the difference is that the rule is now written down.
+
+**Any object previewed on more than one page has one component.** The founder was
+drawn by three pieces of markup — the home block, `/consult`'s directory and
+`/experts` — and the three had already drifted apart in what they showed and how
+it was marked up. `AuthorCard` is the only author card; the pages choose the rail,
+never the card. The same reasoning as "one offer card, one size", one level up: a
+reader who meets a person twice has to be meeting one object.
+
+Two consequences the card carries: the experience/achievement badges show only
+when the author has no facts to list (on a filled profile they repeat the first
+fact word for word), and the whole card is one link — an absolutely positioned
+anchor — with the visible button as its label, so the card does not put two
+targets with one destination into the tab order.
+
 ### The hero carries the trail, and the author's way in (2026-08-27)
 
 `OfferTrail` used to render in a row **under** the hero, with a comment defending it: the hero is a photograph with a dark bar over it, and a quiet text control there is the first thing to disappear. True of ink on a photograph — but the fix for the wrong palette is the right palette, not a different position. "Where am I" printed below the thing it locates means a reader on a phone meets a full-height photograph, a headline, a price and two buttons before the page will say which section it belongs to.
