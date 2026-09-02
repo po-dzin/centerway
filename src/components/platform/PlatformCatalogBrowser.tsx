@@ -26,7 +26,7 @@
  * axis. See `lib/platform/catalogQuery.ts`.
  */
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 
 import { PlatformOfferCard, type PlatformOfferCardProps } from "@/components/platform/PlatformOfferCard";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
@@ -57,6 +57,16 @@ const copy = {
   reset: "Показати всі",
 };
 
+/**
+ * A store that never changes — the "am I past hydration" idiom.
+ *
+ * Module scope because `useSyncExternalStore` re-subscribes whenever this
+ * identity changes, and a new function each render would do that every time.
+ */
+function subscribeNothing(): () => void {
+  return () => {};
+}
+
 /** «₴» rather than «UAH» — the label sits above a field a person types into. */
 function currencyMark(code: string | null | undefined): string | null {
   if (!code) return null;
@@ -73,25 +83,44 @@ export function PlatformCatalogBrowser({
   /** `single` is the rail's own one-column form; the grid is the default. */
   layout?: "single";
 }) {
-  const [query, setQuery] = useState<CatalogQuery>(EMPTY_CATALOG_QUERY);
+  /* THE ADDRESS IS READ AFTER HYDRATION, NOT DURING THE FIRST RENDER. The server
+     renders the unnarrowed catalogue — it is the same page for everybody and it
+     is what gets cached and crawled — so seeding state from `location.search`
+     while hydrating would be a mismatch against that markup.
 
-  /* THE ADDRESS IS READ AFTER MOUNT, NOT DURING RENDER. The server renders the
-     unnarrowed catalogue — it is the same page for everybody and it is what
-     gets cached and crawled — so seeding state from `location.search` in the
-     initial render would be a hydration mismatch. One effect, once. */
-  useEffect(() => {
-    const incoming = readCatalogQuery(new URLSearchParams(window.location.search));
-    if (!isCatalogQueryEmpty(incoming)) setQuery(incoming);
-  }, []);
+     WHY A STORE AND NOT AN EFFECT THAT SETS STATE. "Render empty, then set the
+     real value" spends a committed render on a catalogue nobody asked for, and
+     the second render is a cascade React has to chase — which is what the
+     `set-state-in-effect` rule is about. `useSyncExternalStore` says the same
+     thing in the shape React has for it: one answer for the server and the
+     hydrating client, another once hydration is done, and the switch is a
+     render React schedules itself rather than a write it discovers afterwards.
 
+     TWO SOURCES, ONE ANSWER. `fromAddress` is where the reader ARRIVED;
+     `edited` is what they have done since, and it wins the moment it exists —
+     including when it is empty, which is what «Показати всі» sets. */
+  const hydrated = useSyncExternalStore(subscribeNothing, () => true, () => false);
+  const fromAddress = useMemo(
+    () => (hydrated ? readCatalogQuery(new URLSearchParams(window.location.search)) : EMPTY_CATALOG_QUERY),
+    [hydrated],
+  );
+  const [edited, setEdited] = useState<CatalogQuery | null>(null);
+  const query = edited ?? fromAddress;
+
+  /* NOTHING IS WRITTEN BEFORE THE ADDRESS HAS BEEN READ. This effect commits on
+     the hydrating render too, where `query` is still the empty one — and it
+     would replace `?topic=cleansing` with nothing a moment before the store
+     flips and that query is read back. So the arrival query survives by the
+     writer waiting for the reader. */
   useEffect(() => {
+    if (!hydrated) return;
     const params = writeCatalogQuery(query);
     const search = params.toString();
     const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
     if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
       window.history.replaceState(window.history.state, "", next);
     }
-  }, [query]);
+  }, [hydrated, query]);
 
   const facets = useMemo(() => catalogFacets(entries.map((entry) => entry.filter)), [entries]);
   const shown = useMemo(
@@ -119,7 +148,7 @@ export function PlatformCatalogBrowser({
     <div className={offerStyles.sectionFlow}>
       <PlatformCatalogFilter
         query={query}
-        onChange={setQuery}
+        onChange={setEdited}
         facets={facets}
         currency={currencyMark(currency)}
       />
@@ -127,7 +156,7 @@ export function PlatformCatalogBrowser({
       {narrowed ? (
         <p className={styles.summary} role="status">
           <span>{copy.showing(shown.length, entries.length)}</span>
-          <button className={styles.summaryReset} type="button" onClick={() => setQuery(EMPTY_CATALOG_QUERY)}>
+          <button className={styles.summaryReset} type="button" onClick={() => setEdited(EMPTY_CATALOG_QUERY)}>
             {copy.reset}
           </button>
         </p>
