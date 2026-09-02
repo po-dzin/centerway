@@ -248,14 +248,32 @@ function AuthorMediaSlot({
   );
 }
 
+/**
+ * A field that is only sometimes required — the badges are, once the profile
+ * is public — marked once, here, rather than as prose in parentheses after
+ * every label that needs it. `title` is a real hover tooltip; the visually
+ * hidden text is what a screen reader says instead of a bare asterisk.
+ */
+function RequiredMark({ tooltip }: { tooltip: string }) {
+  return (
+    <span className={styles.authorRequiredMark} title={tooltip}>
+      <span aria-hidden="true">*</span>
+      <span className={styles.visuallyHidden}> — {tooltip}</span>
+    </span>
+  );
+}
+
 function draftFromAuthor(author: Author | null): Draft {
   return {
     name: author?.name ?? "",
     role: author?.role ?? "",
     bio: author?.bio ?? "",
     quote: author?.quote ?? "",
-    credentials: author?.credentials ?? [],
-    facts: author?.facts ?? [],
+    // A blank starting row rather than an empty list — see `AuthorMediaSlot`'s
+    // note on the same instinct: a list with nothing to click but "+" reads as
+    // broken, not as "add your first one".
+    credentials: author?.credentials?.length ? author.credentials : [""],
+    facts: author?.facts?.length ? author.facts : [""],
     profileBlocks: author?.profileBlocks ?? [],
     experienceBadge: author?.experienceBadge ?? "",
     achievementBadge: author?.achievementBadge ?? "",
@@ -277,7 +295,12 @@ const STRINGS = {
     bio: "Біографія",
     quote: "Цитата від першої особи",
     credentials: "Досягнення",
-    facts: "6 головних фактів про себе",
+    credentialAdd: "Додати досягнення",
+    credentialRemove: "Прибрати досягнення",
+    facts: "Головні факти про себе",
+    factsHint: "До 6 — перші три показуються на картці.",
+    factAdd: "Додати факт",
+    factRemove: "Прибрати факт",
     profileBlocks: "Блоки сторінки автора",
     profileBlockAdd: "Додати блок",
     profileBlockRemove: "Прибрати блок",
@@ -289,16 +312,15 @@ const STRINGS = {
     profileBlockText: "Текст",
     profileBlockList: "Список",
     profileBlockTimeline: "Шлях / хронологія",
-    experienceBadge: "Бейдж досвіду (обов’язково для картки)",
-    achievementBadge: "Головне досягнення (обов’язково для картки)",
+    experienceBadge: "Бейдж досвіду",
+    achievementBadge: "Головне досягнення",
+    requiredForCard: "Обов’язково для публічної картки",
     consultation: "Консультація",
     consultationEnabled: "Приймаю запити на консультацію",
     consultationTitle: "Назва консультації",
     consultationSummary: "Кому і з чим допомагаю",
     consultationPoints: "3 головні пункти",
     consultationContact: "Посилання для домовленості",
-    credentialAdd: "Додати досягнення",
-    credentialRemove: "Прибрати досягнення",
     photo: "Фото",
     photoUpload: "Завантажити фото",
     photoReplace: "Замінити фото",
@@ -334,7 +356,12 @@ const STRINGS = {
     bio: "Bio",
     quote: "A quote, in your own voice",
     credentials: "Credentials",
-    facts: "6 key facts about you",
+    credentialAdd: "Add credential",
+    credentialRemove: "Remove credential",
+    facts: "Key facts about you",
+    factsHint: "Up to 6 — the first three show on the card.",
+    factAdd: "Add fact",
+    factRemove: "Remove fact",
     profileBlocks: "Author page blocks",
     profileBlockAdd: "Add block",
     profileBlockRemove: "Remove block",
@@ -346,16 +373,15 @@ const STRINGS = {
     profileBlockText: "Text",
     profileBlockList: "List",
     profileBlockTimeline: "Path / timeline",
-    experienceBadge: "Experience badge (required on cards)",
-    achievementBadge: "Key achievement (required on cards)",
+    experienceBadge: "Experience badge",
+    achievementBadge: "Key achievement",
+    requiredForCard: "Required for the public card",
     consultation: "Consultation",
     consultationEnabled: "Accept consultation requests",
     consultationTitle: "Consultation title",
     consultationSummary: "Who you help and with what",
     consultationPoints: "3 key points",
     consultationContact: "Contact link",
-    credentialAdd: "Add credential",
-    credentialRemove: "Remove credential",
     photo: "Photo",
     photoUpload: "Upload photo",
     photoReplace: "Replace photo",
@@ -691,7 +717,18 @@ export function AuthorProfileFold({
           </label>
 
           <div className={`${styles.authorField} ${styles.authorCredentialsField}`}>
-            <span>{t.credentials}</span>
+            <div className={styles.authorFieldHead}>
+              <span>{t.credentials}</span>
+              <button
+                type="button"
+                className={styles.authorAddIcon}
+                aria-label={t.credentialAdd}
+                title={t.credentialAdd}
+                onClick={() => setDraft((prev) => ({ ...prev, credentials: [...prev.credentials, ""] }))}
+              >
+                <Icon name="plus" size={18} />
+              </button>
+            </div>
             {draft.credentials.map((line, index) => (
               <div className={styles.authorCredentialRow} key={index}>
                 <input
@@ -717,22 +754,58 @@ export function AuthorProfileFold({
                 </button>
               </div>
             ))}
-            <button
-              type="button"
-              className={styles.authorAddRow}
-              aria-label={t.credentialAdd}
-              title={t.credentialAdd}
-              onClick={() => setDraft((prev) => ({ ...prev, credentials: [...prev.credentials, ""] }))}
-            >
-              <Icon name="plus" size={20} />
-            </button>
           </div>
 
+          {/* Six is a recommendation, not a shape the form forces on an author
+              who has three good facts and no use for the other three slots —
+              the field used to draw all six as empty inputs regardless. One row
+              stays (the list a card can print from cannot go to none), the rest
+              are added and removed like every other list in this form. */}
           <div className={`${styles.authorField} ${styles.authorFactsField}`}>
-            <span>{t.facts}</span>
-            {Array.from({ length: 6 }, (_, index) => (
-              <input key={index} className={styles.authorInput} value={draft.facts[index] ?? ""}
-                onChange={(e) => setDraft((prev) => { const facts = [...prev.facts]; facts[index] = e.target.value; return { ...prev, facts }; })} />
+            <div className={styles.authorFieldHead}>
+              <span>
+                {t.facts}
+                {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
+              </span>
+              {draft.facts.length < 6 ? (
+                <button
+                  type="button"
+                  className={styles.authorAddIcon}
+                  aria-label={t.factAdd}
+                  title={t.factAdd}
+                  onClick={() => setDraft((prev) => ({ ...prev, facts: [...prev.facts, ""] }))}
+                >
+                  <Icon name="plus" size={18} />
+                </button>
+              ) : null}
+            </div>
+            <p className={styles.authorNotice}>{t.factsHint}</p>
+            {draft.facts.map((line, index) => (
+              <div className={styles.authorCredentialRow} key={index}>
+                <input
+                  className={styles.authorInput}
+                  value={line}
+                  required={index === 0 && draft.listed}
+                  onChange={(e) =>
+                    setDraft((prev) => {
+                      const facts = [...prev.facts];
+                      facts[index] = e.target.value;
+                      return { ...prev, facts };
+                    })
+                  }
+                />
+                {draft.facts.length > 1 ? (
+                  <button
+                    type="button"
+                    className={styles.authorIconAction}
+                    aria-label={t.factRemove}
+                    title={t.factRemove}
+                    onClick={() => setDraft((prev) => ({ ...prev, facts: prev.facts.filter((_, i) => i !== index) }))}
+                  >
+                    <Icon name="close" size={18} />
+                  </button>
+                ) : null}
+              </div>
             ))}
           </div>
           <div className={`${styles.authorField} ${styles.authorProfileBlocksField}`}>
@@ -825,8 +898,20 @@ export function AuthorProfileFold({
               </button>
             ) : null}
           </div>
-          <label className={`${styles.authorField} ${styles.authorExperienceField}`}><span>{t.experienceBadge}</span><input className={styles.authorInput} value={draft.experienceBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, experienceBadge: e.target.value }))} /></label>
-          <label className={`${styles.authorField} ${styles.authorAchievementField}`}><span>{t.achievementBadge}</span><input className={styles.authorInput} value={draft.achievementBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, achievementBadge: e.target.value }))} /></label>
+          <label className={`${styles.authorField} ${styles.authorExperienceField}`}>
+            <span>
+              {t.experienceBadge}
+              {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
+            </span>
+            <input className={styles.authorInput} value={draft.experienceBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, experienceBadge: e.target.value }))} />
+          </label>
+          <label className={`${styles.authorField} ${styles.authorAchievementField}`}>
+            <span>
+              {t.achievementBadge}
+              {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
+            </span>
+            <input className={styles.authorInput} value={draft.achievementBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, achievementBadge: e.target.value }))} />
+          </label>
           <fieldset className={`${styles.authorField} ${styles.authorConsultationField}`}>
             <legend>{t.consultation}</legend>
             <label className={styles.authorVisibilityRow}><input className={styles.authorVisibilityInput} type="checkbox" checked={draft.consultation.enabled} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, enabled: e.target.checked } }))} /><span className={styles.authorVisibilityMark} aria-hidden="true"><Icon name="check" size={14} /></span><span>{t.consultationEnabled}</span></label>
