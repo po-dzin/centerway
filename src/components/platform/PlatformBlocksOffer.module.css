@@ -184,7 +184,21 @@
    arbitrary photograph, and white text over "whatever the author uploaded" is
    the one contrast failure a design system cannot check for. The ground is the
    card's own accent at high opacity, so the chip belongs to the card rather
-   than looking like a sticker on the picture. */
+   than looking like a sticker on the picture.
+
+   THAT GROUND STAYED A FLAT RECTANGLE, and that is the bug: `.heroBadge` reads
+   as material because it carries `--cw-mat-grain-image` and `--cw-mat-shadow-
+   raised` on top of its tint; this chip carried neither, so on the dark
+   palette — where `--cw-platform-accent-strong` is `#0f0f0e`, near enough to
+   the card's own background to disappear against it — it read as a plain black
+   plate rather than a chip made of anything.
+
+   THE OPACITY DOES NOT MOVE. `.heroBadge` can afford a translucent tint because
+   it always sits inside `.heroPhotoLayer::after`'s guaranteed scrim; this badge
+   sits on `.programPhoto`'s bare top-left corner, which no scrim reaches (the
+   card's own scrim starts at 38% down, see `.programPhoto::after`), so this is
+   the one chip that still has to stay its own opaque ground against an
+   arbitrary photo. What changes is texture, not transparency. */
 .programTileKind {
   position: absolute;
   inset-block-start: var(--cw-space-sm);
@@ -193,18 +207,29 @@
   margin: 0;
   padding: 0.3rem 0.6rem;
   border-radius: var(--cw-radius-sm);
-  background: color-mix(in srgb, var(--cw-platform-accent-strong) 88%, transparent);
+  background-color: color-mix(in srgb, var(--cw-platform-accent-strong) 88%, transparent);
+  background-image: var(--cw-mat-grain-image);
   color: var(--cw-platform-accent-contrast);
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
   backdrop-filter: var(--cw-mat-filter);
+  box-shadow: var(--cw-mat-shadow-raised);
 }
 
 /* The sections, under the name. A row, wrapping, because a course with three of
    them must not push the description out of the tile's fixed height — the two
-   text rows below are clamped and this one has to behave like them. */
+   text rows below are clamped and this one has to behave like them.
+
+   THESE SIT IN THE BODY, WHICH IS SCRIMMED — unlike the kind chip above, this
+   row is always inside `.programTileBody`, on the dark 78%-scrim-ink floor
+   `.programPhoto::after` guarantees under the text block. So the outline-only
+   chip that used to draw here (border, no fill at all) is the "прозрачные
+   совсем" half of the report: with nothing behind the border, the chip had no
+   ground of its own and read as bare text with a thin frame, not as a badge on
+   the card. A translucent ink fill is safe here precisely because the scrim
+   already is. */
 .programTileCategories {
   display: flex;
   flex-wrap: wrap;
@@ -220,6 +245,8 @@
   padding: 0.15rem 0.45rem;
   border: 1px solid color-mix(in srgb, var(--cw-platform-accent-contrast) 30%, transparent);
   border-radius: var(--cw-radius-sm);
+  background: color-mix(in srgb, var(--cw-mat-scrim-ink) 42%, transparent);
+  backdrop-filter: var(--cw-mat-filter);
 }
 
 .offerHeroVisualCard {
