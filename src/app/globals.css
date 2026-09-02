@@ -138,6 +138,13 @@
     --cw-brand-size-wordmark-header-height: 1.93rem;
     --cw-ink-stroke-height: 0.85rem;
     --cw-ink-ring-size: 3rem;
+    --cw-contour-width: 1px;
+    --cw-contour-style: dashed;
+    --cw-contour-offset: 0.35rem;
+    --cw-contour-selected: color-mix(in srgb, var(--cw-nav-marker) 62%, transparent);
+    --cw-contour-empty: color-mix(in srgb, var(--cw-platform-text) 22%, transparent);
+    --cw-ink-rest-opacity: 0.34;
+    --cw-ink-rest-scale: 0.9;
     --cw-ink-hover-opacity: 0.42;
     --cw-ink-hover-scale: 0.74;
     --cw-ink-ring-optical-ratio: 0.82;
@@ -1746,13 +1753,35 @@ body {
     transition: opacity 0.16s ease, transform 0.18s ease;
   }
 
-  :is(.cw-tab, .cw-nav-link):hover .cw-ink-label-mark,
-  :is(.cw-tab, .cw-nav-link):focus-visible .cw-ink-label-mark {
+  /* THE STROKE HAS THREE STRENGTHS, and every consumer reads them from here.
+
+     rest    — only the `link` variant draws one. See the variant note in
+               InteractionInk.tsx: a link in running copy has no bar around it
+               to say it is a way out, so it carries the mark itself.
+     hover   — the same stroke, brought up and out to nearly full width.
+     current — full.
+
+     `[data-cw-ink-control]` BELONGS IN THE LABEL LIST, and its absence was a
+     real bug rather than a decision: the attribute already lit the ICON ring
+     two rules below, so every footer link — which wraps its text in
+     InteractionInkLabel and marks itself `data-cw-ink-control` — carried a
+     baked stroke that could never reach an opacity above zero. The reader saw
+     the browser's own `text-decoration` underneath it and nothing else, which
+     is exactly the "I still don't see the ink underline" report. */
+  .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark {
+    opacity: var(--cw-ink-rest-opacity);
+    transform: scaleX(var(--cw-ink-rest-scale)) rotate(-1deg);
+  }
+
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):hover .cw-ink-label-mark,
+  :is(.cw-tab, .cw-nav-link, [data-cw-ink-control]):focus-visible .cw-ink-label-mark {
     opacity: var(--cw-ink-hover-opacity);
     transform: scaleX(0.92) rotate(-1deg);
   }
 
-  :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]) .cw-ink-label-mark {
+  :is(.cw-tab-active, .cw-nav-link-active, [aria-pressed="true"], [aria-current="page"]) .cw-ink-label-mark,
+  [data-cw-ink-control]:hover .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark,
+  [data-cw-ink-control]:focus-visible .cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark {
     opacity: 1;
     transform: scaleX(1) rotate(-1deg);
   }
@@ -1845,7 +1874,7 @@ body {
   }
 
   .cw-empty-state {
-    border: 1px dashed var(--cw-border);
+    border: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-empty);
     border-radius: var(--cw-radius-md);
     color: var(--cw-muted);
   }

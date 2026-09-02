@@ -319,6 +319,20 @@
    <button> someone styled as a link. Its type is deliberately the small body
    size: it annotates something, and a 1rem 700 label would outweigh the thing
    it annotates. */
+/* THE TEXT ROLE IS A LINK, AND A LINK'S MARK IS THE INK STROKE.
+
+   It used to draw `text-decoration: underline` — the browser's line, which is
+   the one graphic in the product nobody drew. Beside a nav item wearing the
+   baked stroke and a footer link wearing both, that made three answers to
+   "what does a link look like" on one page.
+
+   The line is not simply deleted: a link still has to announce itself without
+   hover or colour (see the 2026-08-31 note in docs/design-system.md). It is
+   REPLACED — wrap the label in `InteractionInkLabel variant="link"` and the
+   stroke draws at rest, strengthens on hover and runs full when current. The
+   underline stays here as the fallback for a `.text` control that has no ink
+   label yet, and `[data-cw-ink-control]` turns it off for the ones that do,
+   so the two marks can never both be drawn. */
 .text {
   composes: base;
   min-width: 0;
@@ -332,6 +346,10 @@
   font-weight: 600;
   text-decoration: underline;
   text-underline-offset: 0.24em;
+}
+
+.text[data-cw-ink-control] {
+  text-decoration: none;
 }
 
 .text:hover:not(:disabled) {

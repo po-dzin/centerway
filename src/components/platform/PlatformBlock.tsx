@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import baseStyles from "./PlatformBlocksBase.module.css";
 import shellStyles from "./PlatformShell.module.css";
 import { mergeStyleModules } from "./mergeStyleModules";
@@ -85,8 +86,12 @@ export function PlatformBlock({
  */
 export function PlatformBlockLink({ href, label }: { href: string; label: string }) {
   return (
-    <Link className={styles.blockAction} href={href}>
-      {label}
+    /* `data-cw-ink-control` is the opt-in, and it does two things at once: it
+       turns off the `.text` role's browser underline and it is what the ink
+       rules key on. The stroke under the words is the block's only mark; the
+       arrow is not a second one and gets no ring of its own. */
+    <Link className={styles.blockAction} href={href} data-cw-ink-control>
+      <InteractionInkLabel variant="link">{label}</InteractionInkLabel>
       <Icon className={styles.blockActionArrow} name="arrow-right" size={18} />
     </Link>
   );

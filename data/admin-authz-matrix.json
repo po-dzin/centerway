@@ -172,5 +172,13 @@
       "courseId": "smoke-course",
       "action": "withdraw_offer"
     }
+  },
+  {
+    "kind": "mutate",
+    "method": "POST",
+    "path": "/api/admin/orders/access-link",
+    "body": {
+      "order_ref": "smoke-order"
+    }
   }
 ]

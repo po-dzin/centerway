@@ -177,12 +177,20 @@ export function ProgramDetailPage({
      answered below the thing they were deciding about.
 
      Filtered rather than padded: a course whose author has not written an
-     access promise shows two pills, not three and a blank. */
+     access promise shows two pills, not three and a blank.
+
+     THE LESSON PILL IS SKIPPED WHEN IT WOULD REPEAT THE FIRST ONE. `program.
+     duration` already falls back to a lesson count — "6 уроків" — for any
+     course with no `durationDays` and no daily schedule (see the `duration`
+     field in courseOffer.ts), which is most checklists and mini-courses. Adding
+     a second pill for the same count then printed «6 уроків · 6 уроків»: two
+     pills, one fact. Comparing the strings, not re-deriving the condition,
+     keeps this in agreement with courseOffer.ts even if its fallback rule
+     changes. */
+  const lessonLabel = `${lessonCount} ${plural(lessonCount, "урок", "уроки", "уроків")}`;
   const heroMeta = [
     { label: program.duration, icon: "clock" as const },
-    ...(course
-      ? [{ label: `${lessonCount} ${plural(lessonCount, "урок", "уроки", "уроків")}`, icon: "day" as const }]
-      : []),
+    ...(course && lessonLabel !== program.duration ? [{ label: lessonLabel, icon: "day" as const }] : []),
     ...(program.accessNote ? [{ label: program.accessNote, icon: "shield-check" as const }] : []),
   ];
 

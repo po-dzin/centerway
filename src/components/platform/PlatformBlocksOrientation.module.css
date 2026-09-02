@@ -729,9 +729,20 @@
 /* The decision beside the 16:9 video is a compact orientation, not the
    screen's main headline. Reuse the display step from the DS so its copy never
    stretches the row and turns the neighbouring player into a taller object. */
+/* THE SAME STEP AS THE BLOCK TITLES BELOW IT. This panel is the first block a
+   reader meets on the home page, and it was set at `--ds-type-display-size`
+   (2.2rem at the top of its clamp) while «М'який вхід без довгого зобов'язання»
+   directly beneath it is a `.blockTitle` at 2.4rem — so the page opened with
+   its quietest heading and grew louder as you scrolled. The panel sits in a
+   half-width aside, which is why it does not take the full `.title` step the
+   wide sections use; it takes the one its neighbours take. */
 .videoDecisionTitle {
-  font-size: var(--ds-type-display-size);
-  line-height: var(--ds-type-display-line-height);
+  font-size: clamp(1.65rem, 4.2vw, 2.4rem);
+  /* Weight too, not only size: `.title` sets 700 and every block title on this
+     page is 500, so matching one and not the other would trade "smaller than
+     its neighbours" for "heavier than its neighbours". */
+  font-weight: 500;
+  line-height: 1.12;
 }
 
 /* The diagnostics block's own way out, matching the showcase blocks' — see

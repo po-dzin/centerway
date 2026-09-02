@@ -1,8 +1,6 @@
 import type { ProfileCopy, ProfileLang } from "./types";
 
 type ProfileCopyCounts = {
-  activePrograms: number;
-  completedPrograms: number;
   productPurchases: number;
 };
 
@@ -10,11 +8,7 @@ export function getProfileCopy(
   lang: ProfileLang,
   counts: ProfileCopyCounts,
 ): ProfileCopy {
-  const {
-    activePrograms,
-    completedPrograms,
-    productPurchases,
-  } = counts;
+  const { productPurchases } = counts;
 
   if (lang === "en") {
     return {
@@ -55,8 +49,6 @@ export function getProfileCopy(
       summaryActivePrograms: "Active programs",
       summaryCompletedPrograms: "Completed programs",
       summaryProducts: "Products in account",
-      summaryActiveProgramsValue: activePrograms > 0 ? `${activePrograms}` : "None yet",
-      summaryCompletedProgramsValue: completedPrograms > 0 ? `${completedPrograms}` : "None yet",
       summaryProductsValue: productPurchases > 0 ? `${productPurchases}` : "None yet",
       programsLabel: "Programs",
       programsTitle: "Active and completed programs",
@@ -64,7 +56,6 @@ export function getProfileCopy(
       completedProgramLabel: "Completed program",
       routeStarted: "Program started",
       purchasedAt: "Purchase date",
-      accessStatus: "Access status",
       programProgressNote: "Program access and status stay visible here, and detailed lesson progress gathers into this map as the program unfolds.",
       programAccessManual: "Access is confirmed separately",
       programAccessNoToken: "This program was issued without a separate access token",
@@ -73,7 +64,6 @@ export function getProfileCopy(
       productsLead: "Everything you have purchased and the current state of each access.",
       productLabel: "Product",
       price: "Price",
-      productNoAccess: "Access is being prepared",
       noProductsLead: "There are no purchased products linked to this account yet.",
       progressLabel: "Progress",
       progressTitle: "Program progress",
@@ -129,8 +119,6 @@ export function getProfileCopy(
     summaryActivePrograms: "Активні програми",
     summaryCompletedPrograms: "Завершені програми",
     summaryProducts: "Продукти в кабінеті",
-    summaryActiveProgramsValue: activePrograms > 0 ? `${activePrograms}` : "Поки немає",
-    summaryCompletedProgramsValue: completedPrograms > 0 ? `${completedPrograms}` : "Поки немає",
     summaryProductsValue: productPurchases > 0 ? `${productPurchases}` : "Поки немає",
     programsLabel: "Програми",
     programsTitle: "Активні та завершені програми",
@@ -138,7 +126,6 @@ export function getProfileCopy(
     completedProgramLabel: "Завершена програма",
     routeStarted: "Старт програми",
     purchasedAt: "Дата покупки",
-    accessStatus: "Стан доступу",
     programProgressNote: "Тут уже видно доступ і стан програми, а детальний поступ уроків збирається в цю ж карту проходження.",
     programAccessManual: "Доступ підтверджено окремо",
     programAccessNoToken: "Програма була оформлена без окремого токена доступу",
@@ -147,7 +134,6 @@ export function getProfileCopy(
     productsLead: "Тут зібрані всі придбані формати підтримки та поточний стан доступу до них.",
     productLabel: "Продукт",
     price: "Сума",
-    productNoAccess: "Доступ готується",
     noProductsLead: "Куплених продуктів, прив’язаних до цього кабінету, поки не знайдено.",
     progressLabel: "Поступ",
     progressTitle: "Проходження програм",

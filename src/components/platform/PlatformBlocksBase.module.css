@@ -83,11 +83,22 @@
   font-size: var(--ds-type-title-size);
 }
 
+/* THE MEASURE, AND WHY IT IS NOT 16ch ANY MORE. A title inside a panel needs a
+   ceiling — run one full-width across a 60rem panel and it reads as a paragraph
+   set in display type. But 16 characters is roughly two words of Ukrainian, so
+   every panel title on a desktop broke into four stacked fragments («До 90
+   хвилин / онлайн і / зрозумілий / наступний крок») inside a column with room
+   for twice that. The page looked like a phone layout someone had stretched.
+
+   24ch is measured against the narrowest place these live: the 0.8fr column of
+   `.split` at the desktop step, where it still wraps to two or three lines and
+   still cannot run the full width of a wide panel. `text-wrap: balance` keeps
+   whatever wrapping does happen even. */
 .panel :where(.title, .sectionTitle),
 .card :where(.title, .sectionTitle),
 .formPanel :where(.title, .sectionTitle),
 .mediaPanel :where(.title, .sectionTitle) {
-  max-width: min(16ch, 100%);
+  max-width: min(24ch, 100%);
   text-wrap: balance;
   overflow-wrap: normal;
 }

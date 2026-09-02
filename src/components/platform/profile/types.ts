@@ -36,12 +36,6 @@ export type ProfileResponse = {
       amount: number | null;
       currency: string | null;
       createdAt: string | null;
-      access: {
-        order_ref: string;
-        used: boolean;
-        expires_at: string | null;
-        created_at: string | null;
-      } | null;
     }>;
     progress: {
       items: unknown[];
@@ -90,8 +84,6 @@ export type ProfileCopy = {
   summaryActivePrograms: string;
   summaryCompletedPrograms: string;
   summaryProducts: string;
-  summaryActiveProgramsValue: string;
-  summaryCompletedProgramsValue: string;
   summaryProductsValue: string;
   programsLabel: string;
   programsTitle: string;
@@ -99,7 +91,6 @@ export type ProfileCopy = {
   completedProgramLabel: string;
   routeStarted: string;
   purchasedAt: string;
-  accessStatus: string;
   programProgressNote: string;
   programAccessManual: string;
   programAccessNoToken: string;
@@ -108,7 +99,6 @@ export type ProfileCopy = {
   productsLead: string;
   productLabel: string;
   price: string;
-  productNoAccess: string;
   noProductsLead: string;
   progressLabel: string;
   progressTitle: string;

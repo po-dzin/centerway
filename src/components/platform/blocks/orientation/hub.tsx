@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import Link from "next/link";
 import { Icon } from "@/components/Icon";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 import styles from "@/components/platform/PlatformHeroStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { DOSHA_TEST_ROUTE } from "@/lib/platform/tests";
@@ -116,8 +117,8 @@ export function HubIntro() {
             {/* These two are entries in the diagnostics catalogue, not the
                 catalogue — the panel names the rest rather than leaving the
                 topbar as the only route to it. */}
-            <Link className={styles.videoDecisionMore} href="/tests">
-              Усі тести
+            <Link className={styles.videoDecisionMore} href="/tests" data-cw-ink-control>
+              <InteractionInkLabel variant="link">Усі тести</InteractionInkLabel>
               <Icon className={styles.videoDecisionMoreArrow} name="arrow-right" size={18} />
             </Link>
           </div>

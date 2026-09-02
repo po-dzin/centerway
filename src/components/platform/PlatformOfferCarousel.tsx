@@ -9,6 +9,7 @@ import {
   type ReactNode,
 } from "react";
 import Link from "next/link";
+import { InteractionInkLabel } from "@/components/platform/InteractionInk";
 
 import { Icon } from "@/components/Icon";
 import styles from "./PlatformOfferCarousel.module.css";
@@ -226,8 +227,8 @@ export function PlatformOfferCarousel({
             ) : null}
             <div className={styles.queueActions}>
               {viewAllHref ? (
-                <Link className={styles.queueLink} href={viewAllHref}>
-                  {viewAllLabel}
+                <Link className={styles.queueLink} href={viewAllHref} data-cw-ink-control>
+                  <InteractionInkLabel variant="link">{viewAllLabel}</InteractionInkLabel>
                   <Icon name="arrow-right" size={18} />
                 </Link>
               ) : null}

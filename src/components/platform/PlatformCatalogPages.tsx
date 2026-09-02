@@ -2,6 +2,7 @@ import Link from "next/link";
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { PlatformOfferCard } from "@/components/platform/PlatformOfferCard";
 import { PlatformOfferCarousel } from "@/components/platform/PlatformOfferCarousel";
+import { PlatformBlockLink } from "@/components/platform/PlatformBlock";
 import heroStyles from "@/components/platform/PlatformHeroStyles";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
 import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
@@ -195,8 +196,17 @@ export function PlatformTestsHubPage() {
         </section>
 
         <section className={`${offerStyles.container} ${offerStyles.section} ${offerStyles.sectionFlow}`}>
+          {/* The head is the section's, not the panel's — the same shape every
+              other section on this page opens with. It used to be a bare label
+              inside the panel, which made this the one block that started with
+              an eyebrow and never said a heading out loud. */}
+          <div className={offerStyles.sectionHeader}>
+            <div>
+              <p className={offerStyles.label}>{testsHubCopy.readingLabel}</p>
+              <h2 className={offerStyles.sectionTitle}>{testsHubCopy.readingTitle}</h2>
+            </div>
+          </div>
           <article className={offerStyles.panel}>
-            <p className={offerStyles.label}>{testsHubCopy.readingLabel}</p>
             <ul className={offerStyles.timeline}>
               {testsHubCopy.readingItems.map((item) => (
                 <li key={item}>{item}</li>
@@ -421,13 +431,19 @@ export async function PlatformProductsIndexPage() {
           data-cw-semantic-family="guide-support"
           data-cw-token-source="global-app-ds"
         >
+          {/* THE WAY OUT SITS IN THE HEAD, like every other block on the
+              platform. Passed to the carousel it rendered in the rail's
+              FOOTER — under the cards, after the dots — so this one section
+              answered "where is the rest" in a different place than the six
+              blocks a reader had already scrolled past. */}
           <div className={offerStyles.sectionHeader}>
             <div>
               <p className={offerStyles.label}>Пов&apos;язані програми</p>
               <h2 className={offerStyles.sectionTitle}>Де продукт має найбільше сенсу</h2>
             </div>
+            <PlatformBlockLink href="/programs" label="Усі курси" />
           </div>
-          <PlatformOfferCarousel label="Пов’язані програми CenterWay" viewAllHref="/programs" viewAllLabel="Усі курси">
+          <PlatformOfferCarousel label="Пов’язані програми CenterWay">
             {relatedPrograms.map((program) => (
               <PlatformOfferCard
                 key={program.slug}
