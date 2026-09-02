@@ -1014,12 +1014,34 @@
   color: var(--cw-platform-muted);
 }
 
+/* The label and the command that grows its list, on one row — the same
+   lockup `.authorProfileBlockHead` already uses for a block's own remove
+   button. A `+` below a list of unknown length pushed everything under it
+   down every time a row was added; here it stays put beside the title. */
+.authorFieldHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+}
+
 /* `+` changes the list; it is not the form's save action. selection_family:
    contour — each icon invokes a command, so it keeps the DS control boundary. */
-.authorAddRow {
+.authorAddIcon {
   composes: secondary from "../PlatformButtons.module.css";
   composes: square from "../PlatformButtons.module.css";
-  align-self: flex-start;
+  flex: none;
+}
+
+/* A dotted underline is the standard hint that a title attribute is behind a
+   span — selection_family: ink, a mark rather than a plate, since it modifies
+   the label it sits beside rather than acting on its own. */
+.authorRequiredMark {
+  margin-inline-start: 0.2em;
+  color: var(--cw-sem-boundary);
+  text-decoration: underline dotted;
+  text-underline-offset: 0.2em;
+  cursor: help;
 }
 
 .authorBlockAdd {
