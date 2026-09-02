@@ -43,6 +43,7 @@ import type { CatalogRow, SaleBlocker } from "@/lib/admin/catalogTypes";
 import type { AuthorProfileRow, CourseRow } from "@/lib/admin/accessTypes";
 import { CourseAuthorshipTab } from "@/components/admin/CourseAuthorshipTab";
 import { ACCESS_TERM_PRESETS } from "@/lib/admin/catalogTypes";
+import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 
 async function authFetch(input: string, init: RequestInit = {}) {
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -60,6 +61,7 @@ async function authFetch(input: string, init: RequestInit = {}) {
 }
 
 const BLOCKER_KEY: Record<SaleBlocker, string> = {
+    not_renderable: "catalog_blocker_not_renderable",
     not_published: "catalog_blocker_not_published",
     not_approved: "catalog_blocker_not_approved",
     hidden: "catalog_blocker_hidden",
@@ -240,6 +242,37 @@ export default function CatalogPage() {
     );
 }
 
+/**
+ * The two doors into the course itself, from the row that decides its fate.
+ *
+ * MODERATION WITHOUT READING IS RUBBER-STAMPING. Approving a revision and
+ * putting a course in the catalogue are decisions about CONTENT, and until now
+ * this screen offered no way to see any: an operator had to know that the
+ * reader lives on the personal host, and type the slug there by hand.
+ *
+ * Two links because there are two things to look at, and they are not the same
+ * thing: «курс» is the material as a learner reads it (staff open any course,
+ * draft included — see lms/server.ts), «сторінка» is the offer a buyer lands
+ * on. Both cross an origin — this screen is on `www`, the reader is on `my` —
+ * so both go through the one resolver that owns that question.
+ */
+function CourseLinks({ row }: { row: CatalogRow }) {
+    const { t } = useI18n();
+    const href = useSurfaceHref();
+    const link = "text-xs cw-link-hover underline underline-offset-2";
+
+    return (
+        <div className="flex items-center gap-3 flex-wrap">
+            <a className={link} href={href(`/learn/${row.slug}`)} target="_blank" rel="noreferrer">
+                {t("catalog_open_course")}
+            </a>
+            <a className={link} href={href(`/programs/${row.programSlug}`)} target="_blank" rel="noreferrer">
+                {t("catalog_open_offer")}
+            </a>
+        </div>
+    );
+}
+
 /** The state chain a course walks, printed as chips so the stuck step is visible. */
 function StateChips({ row }: { row: CatalogRow }) {
     const { t } = useI18n();
@@ -248,7 +281,15 @@ function StateChips({ row }: { row: CatalogRow }) {
     return (
         <div className="flex items-center gap-2 flex-wrap">
             <span className={chip}>{row.status}</span>
-            <span className={chip}>{row.hasPendingRevision ? `${t("catalog_pending_revision")} · ${row.reviewStatus}` : row.reviewStatus}</span>
+            {/* THE CHIP SAYS WHAT THE BUTTONS BELOW OBEY. It used to print the
+                LIVE review status beside the «оновлення» word, so a returned
+                revision on an approved course read «ОНОВЛЕННЯ · APPROVED» —
+                the one state where there is nothing to approve. */}
+            <span className={chip}>
+                {row.hasPendingRevision
+                    ? `${t("catalog_pending_revision")} · ${row.pendingReviewStatus ?? "draft"}`
+                    : row.reviewStatus}
+            </span>
             <span className={chip}>{row.visibility}</span>
             {row.blockers.length === 0 ? (
                 <span className="text-[10px] px-1.5 py-0.5 rounded-full font-medium cw-status-paid uppercase tracking-wide">
@@ -325,6 +366,7 @@ function PublicationRow({
                         <span>{new Date(row.updatedAt).toLocaleDateString(locale, { day: "2-digit", month: "short" })}</span>
                     </div>
                     <Blockers row={row} />
+                    <CourseLinks row={row} />
                 </div>
             </div>
 
@@ -511,6 +553,7 @@ function PricingRow({
                         )}
                     </div>
                     <Blockers row={row} />
+                    <CourseLinks row={row} />
                 </div>
             </div>
 

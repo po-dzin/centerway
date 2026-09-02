@@ -574,3 +574,33 @@
     min-width: var(--ds-button-min-width);
   }
 }
+
+/* THE WAY OUT TO THE FUNNEL, at the foot of the outline.
+   Secondary by role and by paint: the page's one primary action is the
+   checkout, and a second filled button here would make the offer page ask two
+   questions at once. The note under it says where the link goes, so leaving the
+   platform is a choice and not a surprise. */
+.outlineMore {
+  display: grid;
+  gap: var(--cw-space-sm);
+  justify-items: start;
+  margin-top: var(--cw-space-md);
+  padding-top: var(--cw-space-md);
+  /* The system's rule, fading at both ends — the same separator the outline's
+     own rows and the bento heads draw. */
+  border-top: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+}
+
+.outlineMoreLink {
+  composes: secondary from "./PlatformButtons.module.css";
+  composes: hug from "./PlatformButtons.module.css";
+  text-decoration: none;
+}
+
+.outlineMoreNote {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.5;
+}

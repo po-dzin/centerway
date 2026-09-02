@@ -19,6 +19,7 @@
 import { adminClient } from "@/lib/auth/adminClient";
 import { AccessError, writeAudit } from "@/lib/admin/access";
 import { courseOfferCode } from "@/lms-core";
+import { listLiveCourses } from "@/lib/lms/liveCatalog";
 import type { CatalogOffer, CatalogRow, SaleBlocker } from "@/lib/admin/catalogTypes";
 
 /* The shapes live in catalogTypes.ts so the screen can name them without
@@ -52,8 +53,19 @@ export function saleBlockersOf(input: {
     reviewStatus: string;
     visibility: string;
     offer: CatalogOffer | null;
+    /**
+     * Whether the storefront could build this course from its own rows.
+     * Undefined means "not asked" — the callers that only have columns to work
+     * with keep the answer they always had.
+     */
+    onShelf?: boolean;
 }): SaleBlocker[] {
     const blockers: SaleBlocker[] = [];
+
+    // First, because nothing below it matters while the shelf cannot render
+    // the course at all — and because this is the fault an operator would
+    // otherwise chase through four correct-looking columns.
+    if (input.onShelf === false) blockers.push("not_renderable");
 
     if (input.status !== "published") blockers.push("not_published");
     else if (input.reviewStatus !== "approved") blockers.push("not_approved");
@@ -78,12 +90,25 @@ export async function listCatalog(): Promise<CatalogRow[]> {
     const { data: courseRows, error } = await db
         .from("lms_courses")
         .select(
-            "id, slug, title, status, review_status, pending_content, pending_review_status, visibility, author_id, updated_at"
+            "id, slug, program_slug, title, status, review_status, pending_content, pending_review_status, visibility, author_id, updated_at"
         )
         .order("updated_at", { ascending: false });
     if (error) throw new AccessError(error.message, 500);
 
     const courses = courseRows ?? [];
+
+    /* The shelf's OWN answer, not a second opinion about it. `listLiveCourses`
+       drops any course whose rows it cannot assemble into a valid course, and
+       says so only in a server log — so this screen asks it directly rather
+       than inferring readiness from columns that all look fine. */
+    let shelfSlugs: Set<string> | null = null;
+    try {
+        shelfSlugs = new Set((await listLiveCourses()).map((course) => course.slug));
+    } catch {
+        // A shelf that cannot be read is not evidence against any course:
+        // leave the check unasked rather than accusing every row at once.
+        shelfSlugs = null;
+    }
     const { data: offerRows } = await db
         .from("lms_course_offers")
         .select("course_id, code, amount, list_amount, currency, pixel_content_name, access_days, access_lifetime, active, updated_at");
@@ -113,9 +138,12 @@ export async function listCatalog(): Promise<CatalogRow[]> {
             (row.review_status as string | null) ?? (row.status === "published" ? "approved" : "draft");
         const visibility = ((row.visibility as string | null) ?? "hidden") as CatalogRow["visibility"];
 
+        const onShelf = shelfSlugs ? shelfSlugs.has(row.slug as string) : undefined;
+
         return {
             courseId: row.id as string,
             slug: row.slug as string,
+            programSlug: (row.program_slug as string | null) ?? (row.slug as string),
             title: row.title as string,
             status: row.status as string,
             reviewStatus,
@@ -126,7 +154,7 @@ export async function listCatalog(): Promise<CatalogRow[]> {
             learners: learners.get(row.id as string) ?? 0,
             updatedAt: row.updated_at as string,
             offer,
-            blockers: saleBlockersOf({ status: row.status as string, reviewStatus, visibility, offer }),
+            blockers: saleBlockersOf({ status: row.status as string, reviewStatus, visibility, offer, onShelf }),
         } satisfies CatalogRow;
     });
 }
@@ -168,12 +196,16 @@ export async function saveOffer(input: SaveOfferInput) {
     if (!Number.isInteger(input.amount) || input.amount < 0) throw new AccessError("amount_invalid", 400);
 
     const listAmount = input.listAmount ?? null;
-    if (
-        listAmount !== null &&
-        (!Number.isInteger(listAmount) || listAmount <= input.amount || input.amount === 0)
-    ) {
+    if (listAmount !== null && (!Number.isInteger(listAmount) || listAmount <= input.amount)) {
         // The struck-through figure is what the page QUOTES; below the charged
         // price it would advertise a discount that runs the wrong way.
+        //
+        // A FREE COURSE MAY STILL QUOTE ONE. Zero used to be refused here on
+        // the theory that nothing is being discounted — but «було 795 ₴,
+        // зараз безкоштовно» is the most ordinary thing a free offer says, and
+        // refusing it forced the owner to choose between the price and the
+        // reason it is worth taking. The only rule that has to hold is the one
+        // above: the quoted figure is strictly greater than the charged one.
         throw new AccessError("list_amount_invalid", 400);
     }
 

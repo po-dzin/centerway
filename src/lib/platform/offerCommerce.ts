@@ -51,7 +51,16 @@ export type OfferCommerce =
       /** The learner's destination; no payment route is opened. */
       accessHref: string;
       price: "Безкоштовно";
-      compareAtPrice: null;
+      /**
+       * What this course COSTS when it is not being given away — struck
+       * through beside the word «безкоштовно», exactly as on a paid offer.
+       *
+       * Free is a price, not the absence of one, and «було 795 ₴» is the
+       * sentence that says why a free thing is worth the hour it asks for.
+       * Null when the owner has not quoted a figure; never invented from the
+       * hand-written tables, which describe a different product.
+       */
+      compareAtPrice: string | null;
       amount: 0;
       currency: string;
     }
@@ -129,7 +138,10 @@ export function courseOfferCommerce(slug: string, offer: CourseOffer | null): Of
       mode: "free",
       accessHref: `/learn/${encodeURIComponent(offer.courseSlug)}`,
       price: "Безкоштовно",
-      compareAtPrice: null,
+      compareAtPrice:
+        offer.listAmount !== null && offer.listAmount > 0
+          ? formatPrice(offer.listAmount, offer.currency)
+          : null,
       amount: 0,
       currency: offer.currency,
     };

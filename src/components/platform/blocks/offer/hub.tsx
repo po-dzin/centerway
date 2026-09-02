@@ -59,6 +59,57 @@ export async function HubMini() {
   );
 }
 
+/**
+ * WHAT COSTS NOTHING — the shelf a reader who has not decided anything can open.
+ *
+ * `commercialMode === "free"` and nothing else. Not "cheap", not "no price
+ * set": a course whose owner has agreed a price of zero, which the catalogue
+ * contract keeps strictly apart from «ціна за запитом» — an offer nobody has
+ * priced is not free, it is unanswered. The same distinction the catalogue's
+ * price filter makes (`catalogQuery.ts`), applied here as a fixed question.
+ *
+ * SILENT WHEN EMPTY. A block whose rail has no cards is a heading over a hole,
+ * and this one is entirely possible to empty: the day the last free course is
+ * priced, the section should disappear rather than announce an absence.
+ */
+export async function HubFree() {
+  const free = (await listStorefrontCourses()).filter((course) => course.commercialMode === "free");
+  if (free.length === 0) return null;
+
+  return (
+    <PlatformBlock
+      id="free-materials"
+      label="Безкоштовні матеріали"
+      title="З чого можна почати, нічого не витрачаючи"
+      lead="Короткі матеріали, відкриті повністю — щоб побачити підхід зсередини, а не з опису."
+      headActions={<PlatformBlockLink href="/programs?free=1" label="Усі безкоштовні" />}
+    >
+      <PlatformOfferCarousel label="Безкоштовні матеріали CenterWay">
+        {free.map((course) => (
+          <PlatformOfferCard
+            key={course.slug}
+            title={course.title}
+            tag={course.tag}
+            description={course.description}
+            href={course.href}
+            visual={course.visual}
+            slug={course.slug}
+            artwork={course.artwork}
+            kindBadge={course.kindBadge}
+            categories={course.categoryLabels}
+            pretitle={course.pretitle}
+            posttitle={course.posttitle}
+            commercialMode={course.commercialMode}
+            price={course.price}
+            compareAtPrice={course.compareAtPrice}
+            ctaLabel="Відкрити"
+          />
+        ))}
+      </PlatformOfferCarousel>
+    </PlatformBlock>
+  );
+}
+
 export async function HubPrograms() {
   const authored = (await listStorefrontCourses()).filter((course) => course.lessons > MINI_LESSON_CEILING);
 

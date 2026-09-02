@@ -13,6 +13,7 @@ import offerPanelStyles from "@/components/platform/PlatformOfferStyles";
 import { LeadForm } from "@/components/platform/LeadForm";
 import { CourseAuthorLink } from "@/components/platform/AuthorEntry";
 import { getSnapshotCourseByProgram } from "@/lib/lms/catalog";
+import { offerLandingUrl } from "@/lib/platform/offerLanding";
 import { resolveOfferCommerce, type OfferCommerce } from "@/lib/platform/offerCommerce";
 import type { PlatformOfferSurfaceType } from "@/lib/platform/content";
 import type { Author, Course } from "@/lms-core";
@@ -214,7 +215,10 @@ export function ProgramDetailPage({
             <OfferHeroCommitment
               commerce={{
                 price: isCheckout || isFree ? commerce.price : null,
-                compareAtPrice: isCheckout ? commerce.compareAtPrice : null,
+                // The free branch quotes a former price too, when the owner has
+                // set one: «було 795 ₴ — зараз безкоштовно» is the whole
+                // sentence, and the hero is where it is read.
+                compareAtPrice: isCheckout || isFree ? commerce.compareAtPrice : null,
                 accessNote: program.accessNote ?? null,
               }}
             />
@@ -294,7 +298,7 @@ export function ProgramDetailPage({
         }}
         beforeSupport={
           <>
-            {course ? <OfferCurriculum course={course} /> : null}
+            {course ? <OfferCurriculum course={course} landingHref={offerLandingUrl(program.slug)} /> : null}
             <OfferAuthor author={author} note={program.authorNote} />
           </>
         }

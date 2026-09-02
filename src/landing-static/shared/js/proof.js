@@ -2,7 +2,9 @@
    - [data-car]           carousel root; child .car-track scrolls, .car-nav buttons step it
    - .shot-card           screenshot testimonial; click → enlarged in lightbox
    - .vid-card[data-video] video testimonial; click → plays in lightbox ("on request")
-     data-video accepts a YouTube/Shorts URL or a direct video file URL. */
+     data-video accepts a YouTube/Shorts URL, a Facebook video URL, or a direct
+     video file URL. Optional data-video-ratio ("9/16", "16/9") sizes the frame;
+     it only matters for Facebook, whose plugin needs pixel dimensions. */
 (function(){
   'use strict';
 
@@ -94,6 +96,31 @@
     return m ? m[1] : null;
   }
 
+  /* Facebook is embeddable, but not the way YouTube is.
+     YouTube takes a fluid iframe and works out its own size; the Facebook video
+     plugin renders at a WIDTH GIVEN IN PIXELS in the URL, so the frame has to
+     be measured before it is built — which is fine here, because the lightbox
+     builds it at click time and knows the viewport. */
+  function facebookVideo(url){
+    return /^https?:\/\/(?:www\.|web\.|m\.)?facebook\.com\/[^\s]+\/videos\/|^https?:\/\/fb\.watch\//i.test(url)
+      ? url
+      : null;
+  }
+
+  /* The box the plugin gets: as wide as the lightbox allows, then shortened if
+     the resulting height would run off the screen. Mirrors the CSS box in
+     landing.css (`min(94vw,520px)`, 92vh) so the two cannot drift. */
+  function frameBox(ratio){
+    var parts = String(ratio || '9/16').split('/');
+    var rw = parseFloat(parts[0]) || 9;
+    var rh = parseFloat(parts[1]) || 16;
+    var w = Math.min(520, Math.round(window.innerWidth * 0.94) - 40);
+    var h = Math.round(w * rh / rw);
+    var maxH = Math.round(window.innerHeight * 0.92) - 40;
+    if(h > maxH){ h = maxH; w = Math.round(h * rw / rh); }
+    return { w: Math.max(200, w), h: Math.max(200, h) };
+  }
+
   document.addEventListener('click', function(e){
     var shot = e.target.closest('.shot-card');
     if(shot){
@@ -110,11 +137,30 @@
     if(vid){
       var url = vid.getAttribute('data-video');
       var yt = youtubeId(url);
+      var fb = yt ? null : facebookVideo(url);
       var node;
       if(yt){
         node = document.createElement('iframe');
         node.src = 'https://www.youtube-nocookie.com/embed/' + yt + '?autoplay=1&rel=0';
         node.allow = 'autoplay; encrypted-media; picture-in-picture';
+        node.allowFullscreen = true;
+      }else if(fb){
+        /* No autoplay, deliberately. Facebook's plugin will only autoplay
+           MUTED, and a muted testimonial is a person moving their lips — worse
+           than one play button. The visitor presses play and hears it. */
+        var box = frameBox(vid.getAttribute('data-video-ratio'));
+        node = document.createElement('iframe');
+        node.src = 'https://www.facebook.com/plugins/video.php?href=' +
+          encodeURIComponent(fb) + '&show_text=false&width=' + box.w;
+        node.width = box.w;
+        node.height = box.h;
+        /* The pixel box beats the CSS 9/16 rule: the plugin was asked for this
+           exact width and will not reflow inside a taller frame. */
+        node.style.width = box.w + 'px';
+        node.style.height = box.h + 'px';
+        node.style.aspectRatio = 'auto';
+        node.scrolling = 'no';
+        node.allow = 'autoplay; clipboard-write; encrypted-media; picture-in-picture; web-share';
         node.allowFullscreen = true;
       }else{
         node = document.createElement('video');

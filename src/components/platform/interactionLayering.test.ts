@@ -63,6 +63,24 @@ describe("platform interaction layers", () => {
     expect(shelfCss).not.toContain("cw-ink-label-mark");
   });
 
+  it("holds the public catalogue filter to the shelf's recipe rather than a second copy", () => {
+    const filter = read("src/components/platform/PlatformCatalogFilter.tsx");
+    const filterCss = read("src/components/platform/PlatformCatalogFilter.module.css");
+
+    // Every selected option is the canonical compound-control gesture: kinds,
+    // subjects and the free switch alike.
+    expect(filter).toContain('InteractionInkLabel variant="menu" active={query.kinds.includes(kind)}');
+    expect(filter).toContain('InteractionInkLabel variant="menu" active={query.categories.includes(category)}');
+    expect(filter).toContain('InteractionInkLabel variant="menu" active={query.freeOnly}');
+    expect(filterCss).not.toContain("cw-ink-label-mark");
+
+    // The bounded control recipes are composed from the shelf, not restated —
+    // one edge, one counter, one popover across both surfaces.
+    for (const recipe of ["find", "filterToggle", "filterCount", "filterPopover", "filterCheckbox"]) {
+      expect(filterCss).toContain(`composes: ${recipe} from "./cabinet/ShelfFilter.module.css";`);
+    }
+  });
+
   it("keeps both shelves on the same post-filter and presentation primitives", () => {
     const library = read("src/components/platform/cabinet/LearnShelfClient.tsx");
     const workshop = read("src/components/builder/BuilderCourseList.tsx");

@@ -271,7 +271,9 @@ export function courseFromRows(
     modules,
   };
 
-  validateCourse(course, `db:${course.slug}`);
+  // A stored row is READ here, never written: a presentation ceiling
+  // tightened after the fact must not delete a live course from the shelf.
+  validateCourse(course, `db:${course.slug}`, "stored");
   return course;
 }
 

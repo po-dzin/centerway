@@ -18,6 +18,7 @@
 export * from "./inline";
 export * from "./blocks";
 export * from "./course";
+export * from "./title";
 export * from "./author";
 export * from "./readiness";
 export * from "./time";

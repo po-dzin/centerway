@@ -1,4 +1,9 @@
-import { COURSE_TITLE_MAX } from "@/lms-core";
+import {
+  COURSE_TITLE_MAX,
+  COURSE_TITLE_RAW_MAX,
+  courseTitleName,
+  courseTitleTail,
+} from "@/lms-core";
 
 /**
  * What a card is allowed to say about an offer.
@@ -21,23 +26,31 @@ import { COURSE_TITLE_MAX } from "@/lms-core";
  * title cut for a rail are cut the same way.
  */
 
-/** The dashes a Ukrainian title actually uses to hang an explanation off a name. */
-const NAME_TAIL = /\s[—–-]\s.*$/u;
-
 /**
- * The ceiling on a course title, in characters. HARD — the builder will not
- * accept a longer one.
+ * The ceiling on a course NAME, in characters. HARD — the contract rejects a
+ * longer one.
  *
- * It guards the surfaces a title cannot be shortened for: the h1 of the offer
- * page, the browser tab, the breadcrumb, the WayForPay invoice line. None of
- * those clip, so an unbounded title does not get cut there, it gets four lines
- * of hero or a truncated payment description a buyer has to trust.
+ * It guards the surfaces a name cannot be shortened for: the h1 of the offer
+ * page, the browser tab, the breadcrumb, the card. None of those clip, so an
+ * unbounded name does not get cut there, it gets four lines of hero.
  *
  * Two mobile lines fit the measured 24 Cyrillic characters each. 48 is a
- * product boundary, not a clipping preference: every longer title would make
+ * product boundary, not a clipping preference: every longer name would make
  * the card's fixed preview geometry depend on its copy.
  */
 export const OFFER_TITLE_MAX = COURSE_TITLE_MAX;
+
+/**
+ * The ceiling on the whole TITLE STRING — the name plus the explanation hung
+ * off it after a spaced dash.
+ *
+ * The two are different numbers because they guard different things: the name
+ * has to fit a frame, the string has to fit an invoice line. A title field
+ * capped at the NAME's ceiling silently truncates «Розвантажувальний день —
+ * практикум з умовного голодування» while the author types it, which is how a
+ * limit stops being a rule and starts being a bug.
+ */
+export const OFFER_TITLE_RAW_MAX = COURSE_TITLE_RAW_MAX;
 
 /**
  * What fits in two lines of a card, in characters. The hard course-title limit
@@ -64,34 +77,24 @@ export function offerCardOverflow(title: string): number {
  * The name, without the explanation someone hung off it.
  *
  * «Розвантажувальний день — практикум з умовного голодування» is two fields
- * written into one, and the second half already has a home: the tagline on the
- * offer page, which says the same thing in a sentence the buyer can read. A
- * card gets the name.
+ * written into one, and the second half already has a home: the subtitle on the
+ * offer page, which says the same thing where there is room for it. A card gets
+ * the name.
  *
- * Only a SPACED dash counts. «Short-Перезавантаження» is one word with a hyphen
- * in it, and cutting there would leave the product called «Short».
+ * The split itself now lives in the core (src/lms-core/title.ts), because the
+ * contract measures the title's ceiling against it — see COURSE_TITLE_MAX.
+ * Re-exported under the storefront's own names so every caller here keeps them.
  */
-export function offerName(title: string): string {
-  return title.replace(NAME_TAIL, "").trim() || title.trim();
-}
+export const offerName = courseTitleName;
 
 /**
  * The half the name gave up, for the one surface with room to print it.
  *
  * The tail is not noise — «практикум з умовного голодування» says what kind of
  * thing this is, and an author who wrote it into the title wrote it for a
- * reason. It just cannot be part of a name. So the offer page prints it as a
- * subtitle, between the name and the tagline: the name says what it is called,
- * this says what it is, the tagline says why you would.
- *
- * Empty when the title is only a name, and the page prints nothing rather than
- * an empty line.
+ * reason. It just cannot be part of a name.
  */
-export function offerSubtitle(title: string): string {
-  const match = title.match(NAME_TAIL);
-  if (!match || offerName(title) === title.trim()) return "";
-  return match[0].replace(/^\s[—–-]\s/u, "").trim();
-}
+export const offerSubtitle = courseTitleTail;
 
 /**
  * The line above the title: the offer page's badge, verbatim.

@@ -1,0 +1,102 @@
+{
+  "note": "Питання, на яких міряється пошук по базі знань. Кожен кейс — питання і документ, який МАЄ на нього відповісти (id з src/lib/agent/knowledge/corpus.ts). Мітку ставить людина, читаючи питання; мітка, згенерована пошуком, вимірює тільки те, що код дорівнює сам собі. Джерело 'seed' — написано вручну на старті, бо зібраних питань ще не було; джерело 'bot_fallback'/'bot_support' — реальні питання з agent_questions після розмітки.",
+  "cases": [
+    {
+      "question": "де мій курс після оплати",
+      "expectedDocId": "support:where-course",
+      "origin": "seed"
+    },
+    {
+      "question": "купив вчора, у кабінеті нічого немає",
+      "expectedDocId": "support:access-missing",
+      "origin": "seed"
+    },
+    {
+      "question": "не приходить лист для входу",
+      "expectedDocId": "support:login",
+      "origin": "seed"
+    },
+    {
+      "question": "як увійти без пароля",
+      "expectedDocId": "support:login",
+      "origin": "seed"
+    },
+    {
+      "question": "чи можна дивитися уроки наперед",
+      "expectedDocId": "support:schedule",
+      "origin": "seed"
+    },
+    {
+      "question": "коли приходять нагадування",
+      "expectedDocId": "support:schedule",
+      "origin": "seed"
+    },
+    {
+      "question": "як перевірити чи пройшла оплата",
+      "expectedDocId": "support:check-payment",
+      "origin": "seed"
+    },
+    {
+      "question": "гроші списались а доступу немає",
+      "expectedDocId": "support:payment-problem",
+      "origin": "seed"
+    },
+    {
+      "question": "як повернути гроші за курс",
+      "expectedDocId": "policy:public-offer",
+      "origin": "seed"
+    },
+    {
+      "question": "що ви робите з моїми персональними даними",
+      "expectedDocId": "policy:privacy",
+      "origin": "seed"
+    },
+    {
+      "question": "що показує тест доші",
+      "expectedDocId": "test:dosha",
+      "origin": "seed"
+    },
+    {
+      "question": "тест платний?",
+      "expectedDocId": "test:dosha",
+      "origin": "seed"
+    },
+    {
+      "question": "скільки коштує Шлях 21",
+      "expectedDocId": "product:way21",
+      "origin": "seed"
+    },
+    {
+      "question": "з чого складається Шлях 21",
+      "expectedDocId": "course:way21",
+      "origin": "seed"
+    }
+  ],
+  "boundaryNote": "Питання про здоров'я міряються ПРАВИЛОМ (src/lib/agent/knowledge/boundaries.ts), а не пошуком. Причина емпірична: «у мене гіпертонія, чи підходить програма» знаходить курс, а не документ про межу, бо слова «гіпертонія» в тому документі немає — і не буде, скільки б діагнозів туди не дописали. Пошук тут не механізм; механізм — словник основ, який спрацьовує до пошуку й до моделі.",
+  "boundaryCases": [
+    {
+      "question": "у мене гіпертонія, чи підходить програма",
+      "mustEscalate": true
+    },
+    {
+      "question": "чи можна мені це при захворюванні щитовидки",
+      "mustEscalate": true
+    },
+    {
+      "question": "можно ли мне детокс при беременности",
+      "mustEscalate": true
+    },
+    {
+      "question": "я принимаю лекарства, это совместимо",
+      "mustEscalate": true
+    },
+    {
+      "question": "скільки коштує Шлях 21",
+      "mustEscalate": false
+    },
+    {
+      "question": "у мене болить спина після сидячої роботи, який курс підійде",
+      "mustEscalate": false
+    }
+  ]
+}

@@ -42,7 +42,7 @@ function loadCourses(): Course[] {
   return rawCourses.map((raw, index) => {
     // Throws with a machine-readable `lms_*:path` code — same shape as the
     // generator validators, so seed, gate and runtime all fail identically.
-    validateCourse(raw, `data/courses[${index}]`);
+    validateCourse(raw, `data/courses[${index}]`, "stored");
     return raw;
   });
 }

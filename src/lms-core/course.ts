@@ -16,6 +16,7 @@ import {
 } from "./inline";
 import { addressedBlocks, validateLessonBlock, type LessonBlock } from "./blocks";
 import { validateCourseTheme, type CourseTheme } from "./theme";
+import { courseTitleName } from "./title";
 
 /**
  * Content locale. Two locales, and only two: uk is what the platform ships
@@ -136,8 +137,19 @@ export type CourseCategory = (typeof COURSE_CATEGORIES)[number];
  * The title is part of the same contract: two lines on the narrowest mobile
  * catalogue card. It lives in the core so imports and API writers cannot
  * bypass the Builder's input limit.
+ *
+ * IT IS MEASURED ON THE NAME, NOT ON THE STRING. Every surface that cannot
+ * clip — the card, the h1, the breadcrumb — already prints `courseTitleName`,
+ * because a title like «Розвантажувальний день — практикум з умовного
+ * голодування» is two fields written into one and the tail is rendered as the
+ * subtitle beneath. Measuring the whole string was the 2026-09-01 mistake: it
+ * declared a live, listed, sold course invalid, and an invalid row is dropped
+ * from the shelf and refuses to open in the builder. `COURSE_TITLE_RAW_MAX`
+ * still bounds the whole thing, because the WayForPay invoice line and the
+ * browser tab do print all of it.
  */
 export const COURSE_TITLE_MAX = 48;
+export const COURSE_TITLE_RAW_MAX = 120;
 export const COURSE_PRETITLE_MAX = 24;
 export const COURSE_POSTTITLE_MAX = 64;
 
@@ -312,12 +324,41 @@ export const COURSE_VISIBILITIES = ["hidden", "unlisted", "listed"] as const;
 
 export type CourseVisibility = (typeof COURSE_VISIBILITIES)[number];
 
-export function validateCourse(input: unknown, path = "course"): asserts input is Course {
+/**
+ * How strictly the presentation ceilings are read.
+ *
+ * `write` is every writer — the builder, an import, the agent, an approval:
+ * material entering the system obeys the current contract in full.
+ *
+ * `stored` is every reader of material that is ALREADY here. A ceiling is a
+ * rule about what may be written, never a reason to stop serving a row that
+ * predates it: when the two were the same rule, one tightened constant took a
+ * published, listed, paid course off the shelf without a word and locked its
+ * author out of the builder they would have fixed it in. Structure is still
+ * checked in full — a course that cannot be RENDERED is still refused.
+ */
+export type CourseValidationMode = "write" | "stored";
+
+export function validateCourse(
+  input: unknown,
+  path = "course",
+  mode: CourseValidationMode = "write"
+): asserts input is Course {
+  const bounded = mode === "write";
   assert(isRecord(input), `lms_course_invalid_shape:${path}`);
   assert(isNonEmptyString(input.id), `lms_course_missing_id:${path}`);
   assert(isNonEmptyString(input.slug), `lms_course_missing_slug:${path}`);
   assert(isNonEmptyString(input.title), `lms_course_missing_title:${path}`);
-  assert(input.title.trim().length <= COURSE_TITLE_MAX, `lms_course_title_too_long:${path}`);
+  // The NAME is what the card and the h1 print; the tail becomes the subtitle
+  // under them. See the constants above.
+  assert(
+    !bounded || courseTitleName(input.title).trim().length <= COURSE_TITLE_MAX,
+    `lms_course_title_too_long:${path}`
+  );
+  assert(
+    !bounded || input.title.trim().length <= COURSE_TITLE_RAW_MAX,
+    `lms_course_title_too_long:${path}`
+  );
   assert(isNonEmptyString(input.programSlug), `lms_course_missing_program:${path}`);
   assert(isNonEmptyString(input.brand), `lms_course_missing_brand:${path}`);
   assert(
@@ -374,7 +415,7 @@ export function validateCourse(input: unknown, path = "course"): asserts input i
     const value = input[key];
     if (value === undefined) continue;
     assert(isNonEmptyString(value), `lms_course_invalid_${key}:${path}`);
-    assert(value.trim().length <= max, `lms_course_${key}_too_long:${path}`);
+    assert(!bounded || value.trim().length <= max, `lms_course_${key}_too_long:${path}`);
   }
 
   if (input.kind !== undefined) {

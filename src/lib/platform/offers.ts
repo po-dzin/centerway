@@ -38,6 +38,7 @@ import { mediaSources } from "@/lib/lms/media";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 import { toOfferSurface } from "@/lib/platform/courseOffer";
+import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
 import { offerEyebrow } from "@/lib/platform/offerPreview";
 
 /**
@@ -62,6 +63,7 @@ import {
   parseCourseOfferCode,
   type Course,
   type CourseCategory,
+  type CourseKind,
   type CourseVisibility,
 } from "@/lms-core";
 
@@ -169,6 +171,18 @@ export type StorefrontCard = {
   commercialMode: "fixed" | "free" | "inquiry";
   price: string | null;
   compareAtPrice: string | null;
+  /**
+   * The figure behind `price`, for the surfaces that COMPARE rather than print.
+   *
+   * `price` is already formatted («1 795 ₴», «Безкоштовно») and a formatted
+   * string cannot be put inside an interval — parsing it back would mean
+   * teaching a filter to un-format a currency, in every locale the storefront
+   * ever gains. Null is «ціна за запитом» and is deliberately not zero: see
+   * `catalogQuery.ts`, where the three commercial states stay three.
+   */
+  amount: number | null;
+  /** The currency `amount` is in; null wherever `amount` is. */
+  currency: string | null;
   artwork?: PlatformOfferArtwork;
   /**
    * The card's decorative variant, from a closed list the catalogue's CSS knows.
@@ -203,22 +217,16 @@ export type StorefrontCard = {
   kindBadge?: string;
   /** `categories`, in the words a reader sees. Codes never reach a component. */
   categoryLabels?: string[];
+  /**
+   * The kind as its CODE, beside `kindBadge`'s word.
+   *
+   * The badge is for reading and this is for filtering — the same split as
+   * `categories` / `categoryLabels`, and for the same reason: a control that
+   * narrowed by the printed word would break the day a badge is reworded.
+   */
+  kind?: CourseKind;
 };
 
-/**
- * The sections, in the words a card prints.
- *
- * Here rather than in the component because this module is the storefront's
- * one translation point between the model's closed codes and the reader's
- * language — the same place `VISUAL_BY_PALETTE` turns a palette into a card
- * variant. A component that knew the vocabulary would have to be edited every
- * time the vocabulary grew.
- */
-const CATEGORY_LABELS: Record<CourseCategory, string> = {
-  movement: "Рух",
-  nutrition: "Харчування",
-  cleansing: "Очищення",
-};
 
 /** Course palette → the card variant closest to it. */
 const VISUAL_BY_PALETTE: Record<string, string> = {
@@ -274,13 +282,18 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
            author has not set a kind keeps the old, joined eyebrow — the
            derivation still runs, it just has nowhere better to go. */
         tag: course.kind ? surface.duration : offerEyebrow(surface.tag, surface.duration),
-        ...(course.kind ? { kindBadge: surface.tag } : {}),
+        ...(course.kind ? { kindBadge: surface.tag, kind: course.kind } : {}),
         description: course.summary ? inlineToPlainText(course.summary) : "",
         href: `/programs/${course.programSlug}`,
         commercialMode: offer ? (offer.amount === 0 ? "free" : "fixed") : "inquiry",
         price: offer ? (offer.amount === 0 ? "Безкоштовно" : formatPrice(offer.amount, offer.currency)) : null,
+        amount: offer ? offer.amount : null,
+        currency: offer ? offer.currency : null,
+        // A free course quotes its former price too — see the free branch of
+        // `courseOfferCommerce`. The one rule is that the quoted figure is
+        // strictly above the charged one, which zero satisfies like any other.
         compareAtPrice:
-          offer && offer.amount > 0 && offer.listAmount !== null && offer.listAmount !== undefined && offer.listAmount > offer.amount
+          offer && offer.listAmount !== null && offer.listAmount !== undefined && offer.listAmount > offer.amount
             ? formatPrice(offer.listAmount, offer.currency)
             : null,
         ...(course.cover
@@ -307,7 +320,7 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
         ...(course.categories
           ? {
               categories: course.categories,
-              categoryLabels: course.categories.map((one) => CATEGORY_LABELS[one]),
+              categoryLabels: course.categories.map((one) => COURSE_CATEGORY_LABELS[one]),
             }
           : {}),
       };

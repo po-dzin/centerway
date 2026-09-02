@@ -13,7 +13,7 @@ import type { PlatformOfferArtwork } from "@/lib/platform/content";
  * title. The strings are cut to fit before they arrive — see
  * src/lib/platform/offerPreview.ts — and the CSS ceilings catch the rest.
  */
-type PlatformOfferCardProps = {
+export type PlatformOfferCardProps = {
   /** The NAME, one line. Not the name plus what it is — `offerName` cuts that. */
   title: string;
   /**

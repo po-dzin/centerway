@@ -148,7 +148,9 @@ export async function loadBuilderCourse(
   const hasPendingRevision = pendingContent !== null && pendingContent !== undefined;
   let course = liveCourse;
   if (hasPendingRevision) {
-    validateCourse(pendingContent, "pending_revision");
+    // Reading the author's saved revision so they can OPEN it. The write
+    // paths below still hold it to the full contract.
+    validateCourse(pendingContent, "pending_revision", "stored");
     course = pendingContent as Course;
   }
 
