@@ -15,9 +15,16 @@ const BLOCKER_LABELS: Record<string, string> = {
   lms_ready_invalid_video_id: "Невалідний ID відео",
   lms_ready_invalid_image_src: "Зображення без файлу",
   lms_ready_missing_boundary: "У тілесному протоколі немає блоку меж",
-  // The five the showcase gate adds. They fire only once the course is pointed
+  // The six the showcase gate adds. They fire only once the course is pointed
   // at strangers — see `courseReadiness` — so an author who reads one is
   // already looking at a catalogue entry, not at a private draft.
+  //
+  // The slug one names the consequence rather than the rule: an author does not
+  // think about addresses, and «змініть slug» would read as bureaucracy. What
+  // they can act on is that the address is about to become permanent and still
+  // says «новий курс».
+  lms_ready_default_slug:
+    "Адреса курсу лишилась типовою — її видно в каталозі й потім не змінити",
   lms_ready_missing_cover: "Немає обкладинки — картка в каталозі буде порожньою",
   lms_ready_missing_cover_alt: "Обкладинка без опису для читача з екранним диктором",
   lms_ready_missing_tagline: "Немає рядка під назвою — картці нічого сказати",

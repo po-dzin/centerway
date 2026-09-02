@@ -64,7 +64,14 @@ async function publicCourse(address: string): Promise<Course | null> {
  * learning access, while the established sales surface stays reachable.
  */
 function unavailableProgramFallback(address: string): string | null {
-  return address === "reset-day" ? "/reset-day" : null;
+  if (address === "reset-day") return "/reset-day";
+  /* Renamed 2026-09-02. «Soul Daily Ritual» was published at the address the
+     builder generated from its default title, and that address had already
+     reached `sitemap.xml` on a route tree that carries no `noindex`. The row
+     moved; whoever holds the old link — a crawler, a saved tab — is sent on
+     rather than shown a 404. Kept until the old URL stops being requested. */
+  if (address === "novyi-kurs-5") return "/programs/soul-daily-ritual";
+  return null;
 }
 
 export async function generateMetadata({
