@@ -58,6 +58,23 @@ export type Author = {
     src: string;
     /** Mandatory wherever an image is — a11y is a release gate in this repo. */
     alt: string;
+    /**
+     * Focal point for the card frame — the shape `AuthorCard` fills the whole
+     * plate with (home, `/consult`, `/experts`) — as a percentage of the
+     * image, 0–100. Absent keeps the platform's own default rather than
+     * freezing "centre" into every profile that predates this field.
+     */
+    cropX?: number;
+    cropY?: number;
+    /**
+     * Focal point for the round avatar frame — the author's own page and a
+     * course's byline. Absent means "follow the card's own point", the same
+     * relationship `Course.cover.wideCropY` has to its landscape crop: most
+     * portraits read fine cropped once, and a second point is there for the
+     * ones that do not.
+     */
+    avatarCropX?: number;
+    avatarCropY?: number;
   };
   /** Decorative backdrop for the public author showcase. */
   background?: { src: string };
@@ -154,6 +171,11 @@ export function validateAuthor(input: unknown, path = "author"): asserts input i
     assert(isRecord(input.photo), `lms_author_invalid_photo:${path}`);
     assert(isNonEmptyString(input.photo.src), `lms_author_photo_missing_src:${path}`);
     assert(isNonEmptyString(input.photo.alt), `lms_author_photo_missing_alt:${path}`);
+    for (const cropKey of ["cropX", "cropY", "avatarCropX", "avatarCropY"] as const) {
+      const value = input.photo[cropKey];
+      if (value === undefined) continue;
+      assert(typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100, `lms_author_invalid_photo_${cropKey}:${path}`);
+    }
   }
 
   if (input.background !== undefined) {

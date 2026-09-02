@@ -315,7 +315,7 @@ export type AuthorProfileInput = {
   experienceBadge?: string;
   achievementBadge?: string;
   consultation?: Author["consultation"];
-  photo?: { src: string; alt: string };
+  photo?: Author["photo"];
   background?: { src: string };
   listed?: boolean;
   slug?: string;

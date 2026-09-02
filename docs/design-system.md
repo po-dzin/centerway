@@ -274,6 +274,20 @@ fact word for word), and the whole card is one link — an absolutely positioned
 anchor — with the visible button as its label, so the card does not put two
 targets with one destination into the tab order.
 
+**Filling the card means the author gets to choose what fills it.** `AuthorProfileFold`
+carries the same crop editor `BuilderCoverEditor` gives a course cover — drag or
+arrow-key a focal point, two frames instead of three because a photo (not an
+authored cover) is only ever shown two shapes here: the card (`24 / 29`, the
+ratio `AuthorCard` fills everywhere) and the round avatar (`1 / 1`, the author's
+own page and a course's byline). The two points are independent — an avatar
+crop does not inherit the card's, the way `Course.cover.wideCropY` inherits its
+landscape crop — because a portrait and a square rarely want the same framing.
+Stored as `Author.photo.{cropX,cropY,avatarCropX,avatarCropY}`, 0–100, absent
+meaning "the default that was always drawn" (`50/22` for the card, `50/50` for
+the avatar) so a profile nobody has touched renders exactly as it did before
+the editor existed. `src/lib/lms/authorPhoto.ts` holds the one function each
+consumer calls for its `object-position`.
+
 ### The hero carries the trail, and the author's way in (2026-08-27)
 
 `OfferTrail` used to render in a row **under** the hero, with a comment defending it: the hero is a photograph with a dark bar over it, and a quiet text control there is the first thing to disappear. True of ink on a photograph — but the fix for the wrong palette is the right palette, not a different position. "Where am I" printed below the thing it locates means a reader on a phone meets a full-height photograph, a headline, a price and two buttons before the page will say which section it belongs to.

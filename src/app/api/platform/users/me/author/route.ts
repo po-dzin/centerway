@@ -30,12 +30,28 @@ function readStringArray(value: unknown): string[] | undefined {
   return items.length > 0 ? items : undefined;
 }
 
-function readPhoto(value: unknown): { src: string; alt: string } | undefined {
+function readCrop(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : undefined;
+}
+
+function readPhoto(value: unknown): AuthorProfileInput["photo"] {
   if (!value || typeof value !== "object") return undefined;
-  const src = (value as Record<string, unknown>).src;
-  const alt = (value as Record<string, unknown>).alt;
+  const item = value as Record<string, unknown>;
+  const src = item.src;
+  const alt = item.alt;
   if (typeof src !== "string" || !src || typeof alt !== "string" || !alt) return undefined;
-  return { src, alt };
+  const cropX = readCrop(item.cropX);
+  const cropY = readCrop(item.cropY);
+  const avatarCropX = readCrop(item.avatarCropX);
+  const avatarCropY = readCrop(item.avatarCropY);
+  return {
+    src,
+    alt,
+    ...(cropX !== undefined ? { cropX } : {}),
+    ...(cropY !== undefined ? { cropY } : {}),
+    ...(avatarCropX !== undefined ? { avatarCropX } : {}),
+    ...(avatarCropY !== undefined ? { avatarCropY } : {}),
+  };
 }
 
 function readBackground(value: unknown): { src: string } | undefined {
