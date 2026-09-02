@@ -6,6 +6,8 @@ import { MANAGED_LANDING_FILE_BY_PAGE, type ManagedLandingPage } from "@/lib/lan
 import type { LandingResolvedOffer } from "@/lib/landing/offers";
 import type { StaticLandingProduct } from "@/lib/landing/types";
 import { VERCEL_WEB_ANALYTICS_SNIPPET } from "@/lib/landing/vercelAnalytics";
+import { applyPriceSync } from "./priceSync";
+import { resolveLandingPrices } from "./landingPrices";
 
 type PrepareEntryOptions = {
   product: StaticLandingProduct;
@@ -406,6 +408,10 @@ export async function prepareLandingHtml(
   if (options.pageKind === "entry") {
     html = applyTypedHeroReplacements(product, html);
     html = applyOfferReplacements(product, html, options.offer);
+    /* The printed price follows the charged one. Opt-in per element via
+       `data-cw-price`, and a product with nothing to read keeps the figure
+       typed into the HTML — see `priceSync`. */
+    html = applyPriceSync(html, await resolveLandingPrices(html));
     const bodyHtml = extractBody(html, product).replace(SCRIPT_TAG_BLOCK, "").trim();
     return {
       pageKind: "entry",
