@@ -16,6 +16,7 @@ import type { ReactNode } from "react";
 import type { Session } from "@supabase/supabase-js";
 
 import surfaceStyles from "@/components/platform/PlatformSurfaceStyles";
+import { SignInOptions } from "@/components/auth/SignInOptions";
 import { PlatformLoadingState } from "@/components/platform/PlatformLoadingState";
 import { getProfileCopy } from "@/components/platform/profile/copy";
 import type { ProfileLang } from "@/components/platform/profile/types";
@@ -83,16 +84,22 @@ export function cabinetGate({
   }
 
   if (!session?.user) {
+    /* THE DOOR A BUYER ARRIVES AT. The receipt sends them here and tells them
+       to use the address they paid with, because that address is what links the
+       purchase to an account. Offering only Google made that instruction
+       impossible to follow for anyone whose mail is not Google — so the email
+       form leads, and Google sits below it for the accounts that already exist. */
     return (
       <StatePanel label={copy.profile} title={copy.authTitle} lead={copy.authLead}>
-        <div className={`${surfaceStyles.heroFooter} ${surfaceStyles.profileEmptyActions}`}>
-          <button className={surfaceStyles.primaryButton} type="button" onClick={onSignIn}>
-            {copy.signIn}
-          </button>
-          <Link className={surfaceStyles.secondaryButton} href={homeHref}>
-            {copy.returnHome}
-          </Link>
-        </div>
+        <SignInOptions
+          googleLabel={copy.signIn}
+          onGoogle={onSignIn}
+          footer={
+            <Link className={surfaceStyles.secondaryButton} href={homeHref}>
+              {copy.returnHome}
+            </Link>
+          }
+        />
       </StatePanel>
     );
   }
