@@ -8,7 +8,8 @@ import { PlatformHeroPhoto } from "@/components/platform/PlatformHeroPhoto";
 import { heroFraming } from "@/components/platform/heroFraming";
 import { platformAggregateArtwork, platformPageArtwork, platformProductOffers } from "@/lib/platform/content";
 import { activePlatformTests, plannedPlatformTests, testsHubCopy } from "@/lib/platform/tests";
-import { listStorefrontCourses } from "@/lib/platform/offers";
+import { listStorefrontCourses, type StorefrontCard } from "@/lib/platform/offers";
+import { PlatformCatalogBrowser, type CatalogEntry } from "@/components/platform/PlatformCatalogBrowser";
 import { offerEyebrow } from "@/lib/platform/offerPreview";
 import { getPlatformRoute } from "@/lib/surfaces/catalog";
 
@@ -31,6 +32,58 @@ import { getPlatformRoute } from "@/lib/surfaces/catalog";
  * Depth remains visible on each card through its kind and lesson count; it no
  * longer hides part of the full set behind a second sequential carrier.
  */
+/**
+ * One listed course, as the browser's two halves see it.
+ *
+ * The `filter` half is codes and figures; the `card` half is the card this
+ * surface already rendered, unchanged. Written once here because the home
+ * page's free shelf and the products rail ask for the same pair — and a second
+ * copy of it would be a second opinion about which words a search may match.
+ */
+export function storefrontEntry(course: StorefrontCard): CatalogEntry {
+  return {
+    key: course.slug,
+    filter: {
+      title: course.title,
+      description: course.description,
+      keywords: [
+        ...(course.categoryLabels ?? []),
+        ...(course.kindBadge ? [course.kindBadge] : []),
+        ...(course.pretitle ? [course.pretitle] : []),
+        ...(course.posttitle ? [course.posttitle] : []),
+      ],
+      ...(course.categories ? { categories: course.categories } : {}),
+      ...(course.kind ? { kind: course.kind } : {}),
+      amount: course.amount,
+    },
+    card: {
+      title: course.title,
+      tag: course.tag,
+      description: course.description,
+      href: course.href,
+      visual: course.visual,
+      slug: course.slug,
+      artwork: course.artwork,
+      kindBadge: course.kindBadge,
+      categories: course.categoryLabels,
+      pretitle: course.pretitle,
+      posttitle: course.posttitle,
+      commercialMode: course.commercialMode,
+      price: course.price,
+      compareAtPrice: course.compareAtPrice,
+      ctaLabel: course.lessons <= 8 ? "Деталі курсу" : "Деталі програми",
+    },
+  };
+}
+
+/**
+ * The currency the interval is typed in. One catalogue, one currency today; the
+ * first priced offer answers for it rather than the filter inventing a symbol.
+ */
+export function catalogCurrency(courses: readonly StorefrontCard[]): string | null {
+  return courses.find((course) => course.currency)?.currency ?? null;
+}
+
 export async function PlatformProgramsIndexPage() {
   const authored = await listStorefrontCourses();
 
@@ -92,28 +145,11 @@ export async function PlatformProgramsIndexPage() {
               <h2 className={offerStyles.sectionTitle}>Оберіть глибину і ритм практики</h2>
             </div>
           </div>
-          <div className={offerStyles.aggregateRail}>
-            {authored.map((course) => (
-              <PlatformOfferCard
-                key={course.slug}
-                title={course.title}
-                tag={course.tag}
-                description={course.description}
-                href={course.href}
-                visual={course.visual}
-                slug={course.slug}
-                artwork={course.artwork}
-                kindBadge={course.kindBadge}
-                categories={course.categoryLabels}
-                pretitle={course.pretitle}
-                posttitle={course.posttitle}
-                commercialMode={course.commercialMode}
-                price={course.price}
-                compareAtPrice={course.compareAtPrice}
-                ctaLabel={course.lessons <= 8 ? "Деталі курсу" : "Деталі програми"}
-              />
-            ))}
-          </div>
+          {/* The same one continuous catalogue, now narrowable. The filter
+              removes cards from this grid; it never re-orders it, never splits
+              it into rails and never replaces it with a feed — see
+              `PlatformCatalogBrowser` and the aggregate-catalogue contract. */}
+          <PlatformCatalogBrowser entries={authored.map(storefrontEntry)} currency={catalogCurrency(authored)} />
         </section>
       </main>
     </PlatformShell>
@@ -349,23 +385,33 @@ export async function PlatformProductsIndexPage() {
               exactly the shape a marketplace cannot use. Each card carries its
               own appropriateness/limits/context now (`points`), which also means
               they travel to the home block and the detail page unchanged. */}
-          <div
-            className={offerStyles.aggregateRail}
-            data-layout={platformProductOffers.length === 1 ? "single" : undefined}
-          >
-            {platformProductOffers.map((product) => (
-              <PlatformOfferCard
-                key={product.slug}
-                title={product.title}
-                tag={offerEyebrow(product.tag, product.duration)}
-                description={product.description}
-                href={product.href}
-                visual={product.visual}
-                slug={product.slug}
-                artwork={product.artwork}
-              />
-            ))}
-          </div>
+          {/* The product rail is the same narrowable catalogue as /programs.
+              With one product on the shelf the browser draws no control at all
+              — one card cannot be narrowed to fewer than one — so this renders
+              exactly as it did, and gains search and a price interval on the
+              day a second product lands rather than needing a second pass. */}
+          <PlatformCatalogBrowser
+            entries={platformProductOffers.map((product) => ({
+              key: product.slug,
+              filter: {
+                title: product.title,
+                description: product.description,
+                keywords: [product.tag, product.duration],
+                // A herb jar is sold on its own funnel and has no offer row
+                // here: «ціна за запитом», which is not zero. See catalogQuery.
+                amount: null,
+              },
+              card: {
+                title: product.title,
+                tag: offerEyebrow(product.tag, product.duration),
+                description: product.description,
+                href: product.href,
+                visual: product.visual,
+                slug: product.slug,
+                artwork: product.artwork,
+              },
+            }))}
+          />
         </section>
 
         <section

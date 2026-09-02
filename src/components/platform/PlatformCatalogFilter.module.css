@@ -1,0 +1,188 @@
+/*
+ * THE PUBLIC CATALOGUE'S FILTER — the shelf's control, with two axes more.
+ *
+ * The search field, the disclosure button, its counter, the popover and the
+ * checkbox rows are COMPOSED from the shelf's module rather than restated here.
+ * Those recipes are the ones `surfaceBoundaries.test.ts` and
+ * `interactionLayering.test.ts` hold to the boundary and selection contracts,
+ * and a second copy of them would be a second thing to keep true: the day the
+ * shelf's popover changes its edge, a catalogue that had its own would quietly
+ * stop matching it.
+ *
+ * What is genuinely new lives here and only here: the popover now carries more
+ * than one group, and one of those groups is a numeric interval rather than a
+ * set of checkboxes. No palette, no shadow and no radius of its own — every
+ * value is a delivery token.
+ *
+ * selection_family: the search field and the disclosure are `contour` (one
+ * whole quiet edge, gold on hover/focus/open); the option rows are `hybrid`
+ * (system checkbox plus the canonical account-menu ink under the label only);
+ * the free switch is the same `hybrid` row, because it is a checkbox.
+ */
+
+.filter {
+  composes: filter from "./cabinet/ShelfFilter.module.css";
+}
+
+.find {
+  composes: find from "./cabinet/ShelfFilter.module.css";
+}
+
+.findInput {
+  composes: findInput from "./cabinet/ShelfFilter.module.css";
+}
+
+.filterMenu {
+  composes: filterMenu from "./cabinet/ShelfFilter.module.css";
+}
+
+.filterToggle {
+  composes: filterToggle from "./cabinet/ShelfFilter.module.css";
+}
+
+.filterCount {
+  composes: filterCount from "./cabinet/ShelfFilter.module.css";
+}
+
+.filterPopover {
+  composes: filterPopover from "./cabinet/ShelfFilter.module.css";
+  /* Three groups instead of one: wider than the shelf's subject list, and
+     bounded by the viewport on a phone exactly as that one is. */
+  inline-size: min(21rem, calc(100vw - 2 * var(--cw-page-gutter)));
+  max-block-size: min(30rem, calc(100vh - 8rem));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.filterPopoverHead {
+  composes: filterPopoverHead from "./cabinet/ShelfFilter.module.css";
+}
+
+.filterClear {
+  composes: filterClear from "./cabinet/ShelfFilter.module.css";
+}
+
+.filterOptions {
+  composes: filterOptions from "./cabinet/ShelfFilter.module.css";
+}
+
+.filterOption {
+  composes: filterOption from "./cabinet/ShelfFilter.module.css";
+}
+
+.filterCheckbox {
+  composes: filterCheckbox from "./cabinet/ShelfFilter.module.css";
+}
+
+/* A group's own name, quieter than the popover's title: the head says what the
+   control is, these say which question each block of rows answers. */
+.groupLabel {
+  margin: 0;
+  padding: var(--cw-space-2xs) var(--ds-button-padding-inline) 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.72rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+/* The interval is two fields on one row with a fixed «–» between them. A grid
+   rather than flex so the two inputs stay exactly equal: an interval whose ends
+   are different widths reads as one field and one addendum. */
+.band {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  padding: var(--cw-space-2xs) var(--ds-button-padding-inline) var(--cw-space-xs);
+}
+
+.bandDash {
+  color: var(--cw-platform-muted);
+}
+
+.bandField {
+  display: flex;
+  align-items: center;
+  min-inline-size: 0;
+  min-block-size: var(--ds-touch-target-min);
+  padding: 0 var(--cw-space-xs);
+  border: 1px solid var(--cw-mat-stroke-quiet);
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface-sunk);
+  transition: border-color 180ms ease, background 180ms ease, box-shadow 180ms ease;
+}
+
+.bandField:hover {
+  border-color: var(--cw-nav-marker);
+  background: var(--cw-mat-surface);
+}
+
+.bandField:focus-within {
+  border-color: var(--cw-nav-marker);
+  background: var(--cw-mat-surface);
+  box-shadow: 0 0 0 var(--ds-focus-ring-width) var(--ds-focus-ring-color);
+}
+
+.bandInput {
+  inline-size: 100%;
+  min-inline-size: 0;
+  appearance: textfield;
+  -moz-appearance: textfield;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--cw-platform-text);
+  font: inherit;
+  font-family: var(--cw-font-data);
+  font-size: 0.9rem;
+}
+
+.bandInput::-webkit-outer-spin-button,
+.bandInput::-webkit-inner-spin-button {
+  appearance: none;
+  margin: 0;
+}
+
+.bandInput:focus {
+  outline: none;
+}
+
+.bandInput::placeholder {
+  color: var(--cw-platform-muted);
+  font-family: var(--cw-font-body);
+}
+
+/* The row under the control: how many of the whole set are showing, and the way
+   back to all of them. It speaks in the catalogue's voice, not a status bar's. */
+.summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--cw-space-2xs) var(--cw-space-sm);
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: 0.9rem;
+}
+
+.summaryReset {
+  composes: chromeBare from "./PlatformButtons.module.css";
+  min-height: auto;
+  padding: 0.1rem var(--cw-space-2xs);
+  color: var(--cw-platform-text);
+  font-size: 0.9rem;
+  letter-spacing: normal;
+  text-transform: none;
+}
+
+/* An empty result is the list's own voice, not an error's — the same line the
+   shelf uses when a query matches nothing. */
+.noMatch {
+  composes: noMatch from "./cabinet/ShelfFilter.module.css";
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bandField {
+    transition: none;
+  }
+}

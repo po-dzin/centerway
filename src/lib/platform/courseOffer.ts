@@ -18,6 +18,7 @@
 import type { OfferSurface } from "@/components/platform/ProgramDetailPage";
 import { plural } from "@/lib/plural";
 import { offerName, offerSubtitle } from "@/lib/platform/offerPreview";
+import { COURSE_KIND_BADGES } from "@/lib/platform/catalogVocabulary";
 import { inlineToPlainText, type Course, type CourseKind } from "@/lms-core";
 
 /**
@@ -30,9 +31,9 @@ import { inlineToPlainText, type Course, type CourseKind } from "@/lms-core";
  * keeping its own word on the card.
  */
 const KIND: Record<CourseKind, { badge: string; surface: "mini-course" | "program" }> = {
-  course: { badge: "Курс", surface: "program" },
-  mini: { badge: "Міні-курс", surface: "mini-course" },
-  checklist: { badge: "Чек-лист", surface: "mini-course" },
+  course: { badge: COURSE_KIND_BADGES.course, surface: "program" },
+  mini: { badge: COURSE_KIND_BADGES.mini, surface: "mini-course" },
+  checklist: { badge: COURSE_KIND_BADGES.checklist, surface: "mini-course" },
 };
 
 export function toOfferSurface(course: Course): OfferSurface {

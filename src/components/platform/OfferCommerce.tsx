@@ -88,6 +88,7 @@ export function OfferFreePanel({
       <p className={offerStyles.label}>{label}</p>
       <h2 className={offerStyles.title}>{title}</h2>
       <div className={styles.priceRow}>
+        {commerce.compareAtPrice ? <s className={styles.priceOld}>{commerce.compareAtPrice}</s> : null}
         <p className={styles.priceValue}>{commerce.price}</p>
         <p className={styles.priceNote}>без оплати</p>
       </div>

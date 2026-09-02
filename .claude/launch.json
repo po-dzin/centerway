@@ -147,6 +147,17 @@
       "port": 8123,
       "autoPort": false,
       "url": "http://localhost:8123/"
+    },
+    {
+      "name": "room-camera-8095",
+      "runtimeExecutable": "sh",
+      "runtimeArgs": [
+        "-c",
+        "cd .claude/worktrees/mystifying-heisenberg-eb5cd5 && npx next dev -p 8095"
+      ],
+      "port": 8095,
+      "autoPort": false,
+      "url": "http://localhost:8095/"
     }
   ]
 }

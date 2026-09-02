@@ -59,9 +59,16 @@ class FakeQuery implements PromiseLike<{ data: Row[] | Row | null; error: { mess
         return this;
     }
 
-    upsert(values: Row, options?: { onConflict?: string }) {
+    /**
+     * Accepts a LIST as well as one row, like `insert` above and like the real
+     * client. It used to take a single row and wrap whatever it was given in an
+     * array, so a batch upsert — how every course, module and lesson is
+     * written — landed as one nonsense row of numeric keys, and a test of that
+     * path silently asserted against unwritten data.
+     */
+    upsert(values: Row | Row[], options?: { onConflict?: string }) {
         this.mode = "insert";
-        this.payload = [values];
+        this.payload = Array.isArray(values) ? values : [values];
         this.db.conflictKey = options?.onConflict ?? null;
         return this;
     }

@@ -4,12 +4,24 @@
   gap: var(--cw-space-xs);
 }
 
-/* A stable row: measuring overflow must not move the cards after hydration. */
+/* The rail and its two controls share one box, so the arrows can sit on the
+   vertical middle of the cards rather than in a row of their own above them. */
+.stage {
+  position: relative;
+  min-width: 0;
+}
+
+/* Measuring overflow must not move the cards after hydration: the controls are
+   lifted out of flow, and only the buttons themselves take the pointer. */
 .controls {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: 50%;
+  inset-inline: var(--cw-space-2xs);
   display: flex;
-  justify-content: flex-end;
-  gap: var(--cw-space-xs);
-  min-height: var(--ds-touch-target-min);
+  justify-content: space-between;
+  transform: translateY(-50%);
+  pointer-events: none;
 }
 
 .carousel[data-overflow="false"] .controls {
@@ -20,6 +32,7 @@
 /* Labelled by aria-label; geometry is the shared quiet command contour. */
 .control {
   composes: secondary square round from "./PlatformButtons.module.css";
+  pointer-events: auto;
 }
 
 .viewport {
@@ -71,8 +84,38 @@
   align-items: center;
   justify-content: center;
   min-height: 1rem;
-  gap: var(--cw-space-2xs);
+  /* The gap now lives in each button's own padding, which is what the pointer
+     lands on; adding it here as well doubled the spacing between discs. */
   color: var(--cw-platform-muted);
+}
+
+/* The disc stays small, the button around it carries the touch target: a
+   pseudo-element widens the hit area past the visible dot so the row keeps its
+   quiet height instead of growing to 44px of button. */
+.queueDotButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--cw-space-2xs);
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  background: none;
+  color: inherit;
+  cursor: pointer;
+}
+
+.queueDotButton::after {
+  content: "";
+  position: absolute;
+  /* Vertical only: widening it sideways made neighbouring dots overlap, and
+     the taps at the seam landed on the wrong page. */
+  inset: -0.5rem 0;
+}
+
+.queueDotButton:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset-tight);
 }
 
 .queueDot {
@@ -85,7 +128,12 @@
   transition: width 160ms ease, height 160ms ease, opacity 160ms ease;
 }
 
-.queueDotCurrent {
+.queueDotButton:hover .queueDot {
+  opacity: 0.64;
+}
+
+.queueDotButtonCurrent .queueDot,
+.queueDotButtonCurrent:hover .queueDot {
   width: 0.75rem;
   height: 0.75rem;
   background: var(--cw-platform-accent);

@@ -6,6 +6,7 @@ import {
   COURSE_POSTTITLE_MAX,
   COURSE_PRETITLE_MAX,
   COURSE_TITLE_MAX,
+  COURSE_TITLE_RAW_MAX,
   flattenLessons,
   validateCourse,
   type Course,
@@ -196,6 +197,36 @@ describe("course validation", () => {
     const course = dailyCourse() as unknown as Record<string, unknown>;
     course.title = "я".repeat(COURSE_TITLE_MAX + 1);
     expect(() => validateCourse(course)).toThrow(/lms_course_title_too_long/);
+  });
+
+  it("measures that ceiling on the name, not on the explanation hung off it", () => {
+    const course = dailyCourse() as unknown as Record<string, unknown>;
+    // The real case: «Розвантажувальний день — практикум з умовного
+    // голодування» is 57 characters and 22 of them are the name. Every surface
+    // that cannot clip prints the name; the tail becomes the subtitle.
+    course.title = "Розвантажувальний день — практикум з умовного голодування";
+    expect(() => validateCourse(course)).not.toThrow();
+
+    // The whole string is still bounded — the invoice line prints all of it.
+    course.title = `${"я".repeat(COURSE_TITLE_MAX)} — ${"я".repeat(COURSE_TITLE_RAW_MAX)}`;
+    expect(() => validateCourse(course)).toThrow(/lms_course_title_too_long/);
+  });
+
+  it("serves a stored course whose title predates the ceiling", () => {
+    const course = dailyCourse() as unknown as Record<string, unknown>;
+    course.title = "я".repeat(COURSE_TITLE_MAX + 1);
+    course.pretitle = "я".repeat(COURSE_PRETITLE_MAX + 1);
+
+    // A tightened constant must never take a published row off the shelf: the
+    // reader keeps serving it, and only the next WRITE has to fit.
+    expect(() => validateCourse(course, "db", "stored")).not.toThrow();
+    expect(() => validateCourse(course, "builder", "write")).toThrow(/lms_course_title_too_long/);
+  });
+
+  it("still refuses stored material that cannot be rendered", () => {
+    const course = dailyCourse() as unknown as Record<string, unknown>;
+    delete course.title;
+    expect(() => validateCourse(course, "db", "stored")).toThrow(/lms_course_missing_title/);
   });
 
   it("refuses a duration that is not a plausible number of days", () => {

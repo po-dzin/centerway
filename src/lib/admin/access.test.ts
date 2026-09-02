@@ -8,6 +8,7 @@
 
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { FakeSupabase, type Row } from "./fakeSupabase";
+import { getSnapshotCourse } from "@/lib/lms/catalog";
 
 const db = new FakeSupabase();
 
@@ -780,6 +781,51 @@ describe("listCourses", () => {
 });
 
 describe("course moderation and admin deletion", () => {
+    /* THE LOOP THE OWNER ACTUALLY WALKS: the author republishes a live course,
+       which stages a revision; the admin approves it; the storefront must show
+       the new version. It broke on 2026-09-01 for a reason no screen said out
+       loud — the stored title was longer than a ceiling added that day, so the
+       approval threw, the shelf dropped the course, and the builder refused to
+       open it. The title here is the real one. */
+    it("publishes the revision it approves and keeps the course on the shelf", async () => {
+        /* The shared fixture's two bare lesson rows are not part of the
+           revision, so reconciliation would refuse to drop them for having
+           progress against them. That refusal has its own test; here the
+           course's rows are the revision's. */
+        db.tables.lms_lessons = [];
+        db.tables.lms_progress_events = [];
+
+        const snapshot = getSnapshotCourse("reset-day")!;
+        const revision = {
+            ...snapshot,
+            id: "course-reset",
+            slug: "reset-day",
+            title: "Розвантажувальний день — практикум з умовного голодування",
+            status: "draft",
+        };
+        const row = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
+        Object.assign(row, {
+            review_status: "approved",
+            visibility: "listed",
+            version: 12,
+            pending_content: revision,
+            pending_review_status: "in_review",
+        });
+
+        await moderateCourse({ courseId: "course-reset", actorId: ADMIN, action: "approve" });
+
+        const after = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
+        expect(after).toMatchObject({
+            status: "published",
+            visibility: "listed",
+            review_status: "approved",
+            pending_content: null,
+            pending_review_status: null,
+        });
+        expect(after.title).toBe("Розвантажувальний день — практикум з умовного голодування");
+        expect(Number(after.version)).toBe(13);
+    });
+
     it("lists an approved live version while its next revision is still in review", async () => {
         const row = db.rows("lms_courses").find((item) => item.id === "course-reset")!;
         Object.assign(row, { review_status: "approved", visibility: "hidden", pending_content: { title: "Next" }, pending_review_status: "in_review" });

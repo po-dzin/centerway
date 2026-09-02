@@ -55,5 +55,13 @@ describe("shared surface boundaries", () => {
     expect(filter).toContain(".filterToggle:hover:not(:disabled)");
     expect(filter).toContain(".filterToggle:active:not(:disabled)");
     expect(block(filter, '.filterToggle[aria-expanded="true"]')).toContain("transform: none");
+
+    // The catalogue's price interval is the only new bounded control on the
+    // public filter, so it answers the same quiet-contour rule as the search
+    // field beside it — and never reaches for the checkbox's strong stroke.
+    const catalogue = read("src/components/platform/PlatformCatalogFilter.module.css");
+    expect(block(catalogue, ".bandField")).toContain("--cw-mat-stroke-quiet");
+    expect(block(catalogue, ".bandField")).not.toContain("--cw-mat-stroke-control");
+    expect(block(catalogue, ".bandField:focus-within")).toContain("--ds-focus-ring-color");
   });
 });

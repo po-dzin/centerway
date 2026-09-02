@@ -72,6 +72,33 @@ describe("saleBlockersOf", () => {
         ).toEqual([]);
     });
 
+    /* THE FAULT THAT USED TO BE INVISIBLE. Every column can say «у продажу»
+       while the shelf drops the course, because `listLiveCourses` skips any
+       row it cannot assemble and reports it only to a server log. That is
+       exactly what a tightened title ceiling did on 2026-09-01. */
+    it("says so first when the storefront cannot build the course at all", () => {
+        expect(
+            saleBlockersOf({
+                status: "published",
+                reviewStatus: "approved",
+                visibility: "listed",
+                offer: { accessDays: 30, accessLifetime: false, active: true } as never,
+                onShelf: false,
+            })
+        ).toEqual(["not_renderable"]);
+    });
+
+    it("accuses nobody when the shelf was not asked", () => {
+        expect(
+            saleBlockersOf({
+                status: "published",
+                reviewStatus: "approved",
+                visibility: "listed",
+                offer: { accessDays: 30, accessLifetime: false, active: true } as never,
+            })
+        ).toEqual([]);
+    });
+
     /* The corner that had no exit: published by the author, never reviewed,
        so invisible — and nothing said so. */
     it("names approval and visibility for a course published straight from the builder", () => {
@@ -140,11 +167,22 @@ describe("saveOffer", () => {
         expect(db.rows("lms_course_offers")[0]).toMatchObject({ amount: 0, access_days: 30, active: true });
     });
 
-    it("does not allow a struck-through price on a free offer", async () => {
+    /* «Було 795 ₴, зараз безкоштовно» is the most ordinary sentence a free
+       offer says, and it was refused until 2026-09-02. The only rule that has
+       to hold is the one below: the quoted figure is above the charged one. */
+    it("lets a free offer quote what it used to cost", async () => {
+        seed([course()], []);
+
+        await saveOffer({ courseId: "course-reset", actorId: ADMIN, amount: 0, listAmount: 795, accessDays: 30 });
+
+        expect(db.rows("lms_course_offers")[0]).toMatchObject({ amount: 0, list_amount: 795, active: true });
+    });
+
+    it("still refuses a quoted price that is not above the charged one", async () => {
         seed([course()], []);
 
         await expect(
-            saveOffer({ courseId: "course-reset", actorId: ADMIN, amount: 0, listAmount: 100, accessDays: 30 })
+            saveOffer({ courseId: "course-reset", actorId: ADMIN, amount: 0, listAmount: 0, accessDays: 30 })
         ).rejects.toMatchObject({ message: "list_amount_invalid" });
     });
 

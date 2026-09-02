@@ -1,0 +1,149 @@
+"use client";
+
+/**
+ * ONE CONTINUOUS CATALOGUE, NARROWABLE — the aggregate rail with a filter over it.
+ *
+ * WHAT IT IS NOT. It is not a second rail, not a carousel and not a feed. The
+ * aggregate-catalogue contract is explicit on all three: an entity's main page
+ * shows one comparable set, "категории могут сужать этот каталог через
+ * компактные фильтры, но не дробят полный набор на последовательные карусели",
+ * and growth is answered by progressive loading on the same surface rather than
+ * by an endless personalised stream. So the grid below is exactly the grid that
+ * was there before; the control above it removes cards from it and never
+ * re-orders, re-groups or re-shapes what remains.
+ *
+ * WHY THE FILTER STATE IS A CLIENT'S AND THE ADDRESS IS THE SERVER'S. Narrowing
+ * has to answer a keystroke, so it cannot be a round trip. But a narrowed
+ * catalogue is also a thing a reader SENDS to someone, so the query is written
+ * into the address as it changes and read back out on arrival. `replaceState`
+ * rather than `push`: five axes typed one field at a time would otherwise bury
+ * the back button under a history entry per keystroke.
+ *
+ * THE SPLIT BETWEEN `filter` AND `card` IS DELIBERATE. The engine reads codes —
+ * `kind`, `categories`, `amount` — and the card renders words. A component that
+ * filtered on the words it prints would break the day a badge is reworded, and
+ * a card that carried the filter's vocabulary would gain a prop for every new
+ * axis. See `lib/platform/catalogQuery.ts`.
+ */
+
+import { useEffect, useMemo, useState } from "react";
+
+import { PlatformOfferCard, type PlatformOfferCardProps } from "@/components/platform/PlatformOfferCard";
+import offerStyles from "@/components/platform/PlatformOfferStyles";
+import {
+  EMPTY_CATALOG_QUERY,
+  catalogFacets,
+  filterCatalog,
+  isCatalogQueryEmpty,
+  readCatalogQuery,
+  writeCatalogQuery,
+  type CatalogItem,
+  type CatalogQuery,
+} from "@/lib/platform/catalogQuery";
+import { PlatformCatalogFilter, catalogFilterCopy } from "./PlatformCatalogFilter";
+import styles from "./PlatformCatalogFilter.module.css";
+
+export type CatalogEntry = {
+  key: string;
+  /** What the engine compares. Codes and figures, never printed words. */
+  filter: CatalogItem;
+  /** What the reader sees. Exactly the card this surface rendered before. */
+  card: PlatformOfferCardProps;
+};
+
+const copy = {
+  showing: (shown: number, total: number) => `Показано ${shown} з ${total}`,
+  empty: "За цим запитом нічого немає. Спробуйте зняти частину умов або пошукати інакше.",
+  reset: "Показати всі",
+};
+
+/** «₴» rather than «UAH» — the label sits above a field a person types into. */
+function currencyMark(code: string | null | undefined): string | null {
+  if (!code) return null;
+  return code === "UAH" ? "₴" : code;
+}
+
+export function PlatformCatalogBrowser({
+  entries,
+  currency,
+  layout,
+}: {
+  entries: readonly CatalogEntry[];
+  currency?: string | null;
+  /** `single` is the rail's own one-column form; the grid is the default. */
+  layout?: "single";
+}) {
+  const [query, setQuery] = useState<CatalogQuery>(EMPTY_CATALOG_QUERY);
+
+  /* THE ADDRESS IS READ AFTER MOUNT, NOT DURING RENDER. The server renders the
+     unnarrowed catalogue — it is the same page for everybody and it is what
+     gets cached and crawled — so seeding state from `location.search` in the
+     initial render would be a hydration mismatch. One effect, once. */
+  useEffect(() => {
+    const incoming = readCatalogQuery(new URLSearchParams(window.location.search));
+    if (!isCatalogQueryEmpty(incoming)) setQuery(incoming);
+  }, []);
+
+  useEffect(() => {
+    const params = writeCatalogQuery(query);
+    const search = params.toString();
+    const next = `${window.location.pathname}${search ? `?${search}` : ""}${window.location.hash}`;
+    if (next !== `${window.location.pathname}${window.location.search}${window.location.hash}`) {
+      window.history.replaceState(window.history.state, "", next);
+    }
+  }, [query]);
+
+  const facets = useMemo(() => catalogFacets(entries.map((entry) => entry.filter)), [entries]);
+  const shown = useMemo(
+    () => filterCatalog(entries, query, (entry) => entry.filter),
+    [entries, query],
+  );
+
+  const narrowed = !isCatalogQueryEmpty(query);
+
+  /* A CONTROL WITH NOTHING BEHIND IT IS NOT SHOWN. One card cannot be narrowed
+     to fewer than one, so a catalogue of one renders exactly the grid it
+     rendered before this component existed — and grows the control the day a
+     second offer lands. Same rule the shelf's filter applies to its chips. */
+  if (entries.length < 2) {
+    return (
+      <div className={offerStyles.aggregateRail} data-layout={entries.length === 1 ? "single" : layout}>
+        {entries.map((entry) => (
+          <PlatformOfferCard key={entry.key} {...entry.card} />
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div className={offerStyles.sectionFlow}>
+      <PlatformCatalogFilter
+        query={query}
+        onChange={setQuery}
+        facets={facets}
+        currency={currencyMark(currency)}
+      />
+
+      {narrowed ? (
+        <p className={styles.summary} role="status">
+          <span>{copy.showing(shown.length, entries.length)}</span>
+          <button className={styles.summaryReset} type="button" onClick={() => setQuery(EMPTY_CATALOG_QUERY)}>
+            {copy.reset}
+          </button>
+        </p>
+      ) : null}
+
+      {shown.length === 0 ? (
+        <p className={styles.noMatch}>{copy.empty}</p>
+      ) : (
+        <div className={offerStyles.aggregateRail} data-layout={layout}>
+          {shown.map((entry) => (
+            <PlatformOfferCard key={entry.key} {...entry.card} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export { catalogFilterCopy };

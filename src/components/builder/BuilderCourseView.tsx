@@ -22,7 +22,7 @@ import {
 } from "@/lms-core";
 import type { LessonDocumentFormat } from "@/lib/lms/lessonDocuments";
 import { plural } from "@/lib/plural";
-import { OFFER_CARD_TITLE_MAX, OFFER_TITLE_MAX, offerCardOverflow } from "@/lib/platform/offerPreview";
+import { OFFER_CARD_TITLE_MAX, OFFER_TITLE_RAW_MAX, offerCardOverflow } from "@/lib/platform/offerPreview";
 import { BuilderFailureNotice, BuilderShell } from "./BuilderShell";
 import { BuilderMenu } from "./BuilderMenu";
 import { BuilderCourseSettings } from "./BuilderCourseSettings";
@@ -697,7 +697,10 @@ export function BuilderCourseView({ slug }: { slug: string }) {
             register="record"
             value={course.title}
             label="Редагувати назву курсу"
-            maxLength={OFFER_TITLE_MAX}
+            /* The RAW ceiling, not the card's: the field must accept «назва —
+               пояснення» whole, and the hint below is what asks for a shorter
+               NAME. A cap at the card's number truncates mid-word as you type. */
+            maxLength={OFFER_TITLE_RAW_MAX}
             onChange={(value) => editCourse(["title"], value)}
           />
           <span className={published ? styles.pillPublished : styles.pill}>

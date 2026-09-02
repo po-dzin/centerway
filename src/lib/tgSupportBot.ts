@@ -20,6 +20,7 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import type { ProductCode } from "@/lib/products";
 import { callTelegramBotApi, sendTelegramMessage } from "@/lib/tg";
 import { verifyTelegramLinkToken } from "@/lib/platform/telegramLink";
+import { captureQuestion } from "@/lib/agent/questions/store";
 import {
   botCopy,
   ACCESS_PHOTO_URL,
@@ -557,6 +558,11 @@ async function handleSupportMessage(
     contact: session.contact,
   }).catch(() => undefined);
 
+  // The question itself, with the person stripped out, into the corpus the
+  // assistant will be measured against. Deliberately NOT the event payload
+  // above: that row identifies who wrote it, and the two must not be joinable.
+  await captureQuestion({ text: message, source: "bot_support" });
+
   await saveSession(db, user, { state: "idle", contact: null });
   await sendMessage(chatId, botCopy.supportSent, backKeyboard());
 }
@@ -699,6 +705,12 @@ async function handleTextMessage(
 
   // Free text with no task running. Previously this fell into the product
   // picker, which read as the bot ignoring what was just typed.
+  //
+  // THIS IS THE MOST VALUABLE LINE IN THE FILE for the knowledge base: a person
+  // typed a question, and the bot answered with a menu. Every one of these is a
+  // question nothing on the platform answers, and until now each was discarded
+  // the moment it was read.
+  await captureQuestion({ text, source: "bot_fallback" });
   await sendMainMenu(chatId, botCopy.fallback);
 }
 

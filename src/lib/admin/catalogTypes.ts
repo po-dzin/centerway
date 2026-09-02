@@ -20,6 +20,18 @@ export type CatalogOffer = {
 };
 
 export type SaleBlocker =
+    /**
+     * The storefront cannot BUILD this course out of its own rows.
+     *
+     * The one blocker not derived from a column: it is the answer the shelf
+     * itself gives. `listLiveCourses` skips any course `courseFromRows`
+     * refuses, with nothing but a server log to show for it — so on
+     * 2026-09-01 a tightened title ceiling took a published, listed, priced
+     * course off the catalogue while this screen went on calling it «у
+     * продажу». A screen that claims a course is on sale has to be reading
+     * the same shelf a buyer does.
+     */
+    | "not_renderable"
     | "not_published"
     | "not_approved"
     | "hidden"
@@ -30,6 +42,12 @@ export type SaleBlocker =
 export type CatalogRow = {
     courseId: string;
     slug: string;
+    /**
+     * The address the offer is SOLD at, which is not always the slug — `short`
+     * is sold as /programs/reboot. Carried so the screen can link the page a
+     * buyer would land on, rather than one built from the row name.
+     */
+    programSlug: string;
     title: string;
     status: string;
     reviewStatus: string;

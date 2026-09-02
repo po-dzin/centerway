@@ -59,7 +59,28 @@ function scheduleNote(availability: LessonAvailability): string {
   return "спершу заверши попередній урок";
 }
 
-export function OfferCurriculum({ course }: { course: Course }) {
+export function OfferCurriculum({
+  course,
+  landingHref = null,
+}: {
+  course: Course;
+  /**
+   * The product's own funnel landing, when it still has one.
+   *
+   * WHY IT HANGS OFF THE OUTLINE. The outline is the last thing a reader who is
+   * still deciding actually reads — it is where «що всередині» runs out and the
+   * page has nothing further to say to someone who wants more convincing. The
+   * landing is the long version: the argument, the screenshots, the before and
+   * after, the formats side by side. Anywhere higher and it would compete with
+   * the buy button; anywhere lower and it sits under the checkout, offering an
+   * exit to somebody who had already decided to stay.
+   *
+   * Resolved by the caller (`offerLandingUrl`) rather than here, because which
+   * offers have a funnel is a fact about the surface registry and not about a
+   * course.
+   */
+  landingHref?: string | null;
+}) {
   const access = useOfferAccess();
   const surfaceHref = useSurfaceHref();
 
@@ -193,6 +214,21 @@ export function OfferCurriculum({ course }: { course: Course }) {
             </li>
           ))}
         </ul>
+        {/* NOT FOR AN OWNER. Somebody who has bought this has no use for the
+            page that sells it, and offering them a sales funnel where the next
+            lesson should be is the platform forgetting who it is talking to. */}
+        {landingHref && !owned ? (
+          <div className={styles.outlineMore}>
+            {/* A plain anchor, not `Link`: this is a different origin, and the
+                router has nothing to prefetch there. */}
+            <a className={styles.outlineMoreLink} href={landingHref} rel="noopener">
+              Дізнатися більше
+            </a>
+            <p className={styles.outlineMoreNote}>
+              Докладна сторінка програми: історії учасників, формати участі й відповіді на питання.
+            </p>
+          </div>
+        ) : null}
       </article>
     </section>
   );

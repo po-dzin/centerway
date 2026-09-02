@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { programs } from "./content";
-import { resolveOfferCommerce } from "./offerCommerce";
+import { courseOfferCommerce, resolveOfferCommerce } from "./offerCommerce";
+import type { CourseOffer } from "./offers";
 
 describe("resolveOfferCommerce", () => {
   it("sells the four offers that have both a checkout and an agreed price", () => {
@@ -36,5 +37,37 @@ describe("resolveOfferCommerce", () => {
       else if (commerce.mode === "free") expect(commerce.accessHref.length).toBeGreaterThan(0);
       else expect(commerce.checkoutHref.length).toBeGreaterThan(0);
     }
+  });
+});
+
+describe("courseOfferCommerce", () => {
+  const offer = (over: Partial<CourseOffer> = {}): CourseOffer => ({
+    code: "course:reset-day",
+    courseId: "course-reset",
+    courseSlug: "reset-day",
+    amount: 0,
+    listAmount: null,
+    currency: "UAH",
+    pixelContentName: "Reset Day",
+    ...over,
+  });
+
+  it("gives a free course a way in, and no checkout", () => {
+    const commerce = courseOfferCommerce("reset-day", offer());
+    expect(commerce.mode).toBe("free");
+    expect(commerce.mode === "free" && commerce.accessHref).toBe("/learn/reset-day");
+    expect(commerce.mode === "free" && commerce.compareAtPrice).toBeNull();
+  });
+
+  it("lets a free course say what it used to cost", () => {
+    // Free is a price, not the absence of one: «було 795 ₴» is why the hour it
+    // asks for is worth giving it.
+    const commerce = courseOfferCommerce("reset-day", offer({ listAmount: 795 }));
+    expect(commerce.mode === "free" && commerce.compareAtPrice).toMatch(/795/);
+  });
+
+  it("never quotes a figure at or below the charged one", () => {
+    const paid = courseOfferCommerce("reset-day", offer({ amount: 990, listAmount: 990 }));
+    expect(paid.mode === "checkout" && paid.compareAtPrice).toBeNull();
   });
 });

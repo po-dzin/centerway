@@ -9,7 +9,7 @@ import { ConsultBoundary, ConsultFaq } from "@/components/platform/ConsultPageSe
 import { ConsultantDirectory } from "@/components/platform/ConsultantDirectory";
 import type { Author } from "@/lms-core";
 import { consultationExpectations, consultationSteps } from "@/components/platform/consultPageContract";
-import { HubMini, HubPrograms } from "@/components/platform/blocks/offer/hub";
+import { HubFree, HubMini, HubPrograms } from "@/components/platform/blocks/offer/hub";
 import { HubHero, HubIntro } from "@/components/platform/blocks/orientation/hub";
 import { HubGuides } from "@/components/platform/blocks/trust/guides";
 import { HubProof, HubSupport } from "@/components/platform/blocks/trust/hub";
@@ -23,6 +23,9 @@ export function PlatformHomePage() {
         <HubIntro />
         <HubMini />
         <HubPrograms />
+        {/* After the programs, not before them: the free shelf is an entry to
+            the catalogue, not the offer the home page leads with. */}
+        <HubFree />
         <HubProof />
         <HubSupport />
         <HubGuides />
