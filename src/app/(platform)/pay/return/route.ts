@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { buildReturnDestination } from "@/lib/payReturn";
+import { buildReturnDestination, resolveReturnStatus } from "@/lib/payReturn";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { normalizePayableProduct, productReturnUrls, type PayableProductCode } from "@/lib/products";
 
@@ -113,13 +113,27 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// orders.status is written by the server-to-server WFP webhook, which races the browser
-// return. When the return carries no status param we can read the row before the webhook
-// commits `paid`; retry briefly so a real payment is not mislabelled as failed. Each read
-// is guarded so a transient DB error degrades to a retry instead of a 500.
-async function statusFromDb(orderRef: string): Promise<"paid" | "failed"> {
+/**
+ * What the database knows about this payment right now.
+ *
+ * `orders.status` is written by the server-to-server callback, which races the
+ * browser's return, so a short retry is still worth it — most callbacks land
+ * within the second and waiting spares the buyer a pending screen they did not
+ * need to see.
+ *
+ * What changed is what happens when the retries run out. This used to return
+ * `failed`, turning "we have not heard yet" into "your payment was declined";
+ * it now reports the evidence and lets `resolveReturnStatus` decide. The last
+ * stored callback is read alongside, because a callback that ARRIVED and said
+ * Declined is the one thing that distinguishes a real failure from silence.
+ */
+async function paymentEvidence(
+  orderRef: string
+): Promise<{ orderStatus: string | null; lastCallbackStatus: string | null }> {
   const attempts = 4;
   const delayMs = 350;
+  let orderStatus: string | null = null;
+
   for (let attempt = 0; attempt < attempts; attempt++) {
     try {
       const sb = supabaseAdmin();
@@ -128,7 +142,10 @@ async function statusFromDb(orderRef: string): Promise<"paid" | "failed"> {
         .select("status")
         .eq("order_ref", orderRef)
         .maybeSingle();
-      if (order?.status === "paid") return "paid";
+      orderStatus = (order?.status as string | null) ?? orderStatus;
+      if (orderStatus === "paid" || orderStatus === "refunded") {
+        return { orderStatus, lastCallbackStatus: null };
+      }
     } catch (err) {
       console.warn("pay_return_status_read_failed", {
         orderRef,
@@ -140,7 +157,32 @@ async function statusFromDb(orderRef: string): Promise<"paid" | "failed"> {
       await sleep(delayMs);
     }
   }
-  return "failed";
+
+  return { orderStatus, lastCallbackStatus: await lastCallbackStatus(orderRef) };
+}
+
+/** `transactionStatus` from the most recent stored callback for this order. */
+async function lastCallbackStatus(orderRef: string): Promise<string | null> {
+  try {
+    const sb = supabaseAdmin();
+    const { data } = await sb
+      .from("payments")
+      .select("raw_payload")
+      .eq("order_ref", orderRef)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    const raw = data?.raw_payload as Record<string, unknown> | null | undefined;
+    const status = raw?.transactionStatus ?? raw?.status;
+    return typeof status === "string" && status.trim() ? status.trim() : null;
+  } catch (err) {
+    console.warn("pay_return_callback_read_failed", {
+      orderRef,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return null;
+  }
 }
 
 async function latestPaymentMeta(orderRef: string) {
@@ -204,9 +246,15 @@ async function handler(req: NextRequest) {
       product = (await productFromOrder(orderRef)) ?? product;
     }
 
-    // 1) пробуем понять из параметров, 2) иначе смотрим БД (с ретраем на гонку webhook)
+    // 1) what the gateway told the browser, 2) otherwise what the database can
+    // prove. Never a timeout: see `resolveReturnStatus`.
     const byParams = statusFromParams(body, sp);
-    const finalStatus = byParams ?? (await statusFromDb(orderRef));
+    const evidence = byParams ? null : await paymentEvidence(orderRef);
+    const finalStatus = resolveReturnStatus({
+      fromParams: byParams,
+      orderStatus: evidence?.orderStatus ?? null,
+      lastCallbackStatus: evidence?.lastCallbackStatus ?? null,
+    });
 
     // мета платежа (rrn/amount/currency) — берём из payments.raw_payload если есть
     const metaFromParams = pickMeta(body, sp);

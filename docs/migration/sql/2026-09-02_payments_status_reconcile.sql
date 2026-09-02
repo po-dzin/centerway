@@ -1,7 +1,14 @@
 -- CenterWay: four paid orders that revenue reporting cannot see.
 --
--- NOT YET APPLIED. This is a data repair, not a schema change, and it touches
--- money rows — run it deliberately, read the verification block first.
+-- APPLIED 2026-09-02 to production over the session pooler. The BEFORE query
+-- returned exactly the four rows named below and nothing else; the UPDATE
+-- returned those same four order references; the AFTER query then showed only
+-- two pairings left in the whole table — created/created 475 and paid/paid 275
+-- — with zero rows where the order says paid and the payment does not. Paid
+-- payments went 271 → 275, which is the four sales rejoining revenue.
+--
+-- This is a data repair, not a schema change, and it touches money rows. It is
+-- idempotent: a second run matches nothing.
 -- Contract: src/app/api/wfp/webhook/route.ts, src/lib/wfp.ts
 --
 -- ─── WHY ────────────────────────────────────────────────────────────────────

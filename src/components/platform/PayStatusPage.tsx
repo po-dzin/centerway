@@ -2,11 +2,13 @@ import Link from "next/link";
 
 import { PlatformShell } from "@/components/platform/PlatformLayout";
 import { PurchaseSignal } from "@/components/platform/PurchaseSignal";
+import { PayPendingWatcher } from "@/components/platform/PayPendingWatcher";
 import offerStyles from "@/components/platform/PlatformOfferStyles";
 import styles from "@/components/platform/PlatformOfferCommerce.module.css";
 import { SUPPORT_BOT_URL } from "@/lib/tgSupportBotCopy";
 import { PROFILE_PATH_PREFIX, surfaceUrl } from "@/lib/surfaces/catalog";
 import { loadPayableOffer } from "@/lib/platform/offers";
+import type { ReturnStatus } from "@/lib/payReturn";
 import {
   formatPrice,
   type ProductFulfilment,
@@ -49,7 +51,7 @@ export async function PayStatusPage({
   status,
   searchParams,
 }: {
-  status: "paid" | "failed";
+  status: ReturnStatus;
   searchParams: SearchParams;
 }) {
   /* NO LONGER DEFAULTS TO "short". It used to, so that the page rendered
@@ -64,9 +66,16 @@ export async function PayStatusPage({
   const currency = (firstParam(searchParams.currency) ?? offer?.currency ?? "UAH").toUpperCase();
 
   const paid = status === "paid";
+  const pending = status === "pending";
   const fulfilment: ProductFulfilment = offer?.fulfilment ?? { kind: "cabinet" };
   const contentName = offer?.pixelContentName ?? "CenterWay";
   const product: string = offer?.code ?? firstParam(searchParams.product) ?? "";
+
+  /* A DECLINE IS THE MOST RECOVERABLE MOMENT IN THE FUNNEL, and until now it
+     ended at a catalogue. The product is already resolved on this page, so the
+     way back to the same checkout is one link — a buyer whose bank refused the
+     first card is trying again, not shopping. */
+  const retryHref = offer?.code ? `/api/pay/start?product=${encodeURIComponent(offer.code)}&cta_place=pay_failed_retry` : null;
 
   const destination = paid
     ? fulfilment.kind === "bot"
@@ -82,7 +91,11 @@ export async function PayStatusPage({
              has already issued) and the cabinet moved to `my`. Naming the
              owner skips the 308. */
           { href: surfaceUrl(PROFILE_PATH_PREFIX), label: "Перейти в кабінет", external: false }
-    : { href: "/programs", label: "Повернутися до програм", external: false };
+    : pending
+      ? { href: "/programs", label: "Повернутися до програм", external: false }
+      : retryHref
+        ? { href: retryHref, label: "Спробувати ще раз", external: false }
+        : { href: "/programs", label: "Повернутися до програм", external: false };
 
   const lead = paid
     ? fulfilment.kind === "bot"
@@ -90,7 +103,12 @@ export async function PayStatusPage({
       : fulfilment.kind === "course"
         ? "Курс уже ваш. Він відкритий у кабінеті — там усі матеріали і прогрес."
         : "Замовлення прийнято, і воно вже видно у вашому кабінеті. Деталі складу і доставки уточнимо в Telegram."
-    : "Оплата не пройшла, і гроші не списані. Найчастіше це ліміт картки або відмова банку — спробуйте ще раз або напишіть нам, розберемось разом.";
+    : pending
+      ? /* NOT "гроші не списані". We do not know that yet, and this is the
+           sentence the old page said to people whose card HAD been charged —
+           whose likely next act was to pay a second time. */
+        "Банк ще підтверджує оплату — зазвичай це триває до хвилини. Сторінка оновиться сама, щойно надійде відповідь. Не закривайте її і не платіть удруге."
+      : "Оплата не пройшла, і гроші не списані. Найчастіше це ліміт картки або відмова банку — спробуйте ще раз або напишіть нам, розберемось разом.";
 
   const meta = [
     transactionId || orderRef ? `Номер платежу: ${transactionId || orderRef}` : null,
@@ -104,7 +122,9 @@ export async function PayStatusPage({
        and the overlay bar came out light-on-light — the navigation was there and
        could not be read. */
     <PlatformShell headerMode="default">
-      <main data-cw-platform-template={paid ? "pay-thanks" : "pay-failed"}>
+      <main data-cw-platform-template={paid ? "pay-thanks" : pending ? "pay-pending" : "pay-failed"}>
+        {/* Only on a confirmed payment. A Purchase fired while we are still
+            asking the gateway would report a sale that may not have happened. */}
         {paid ? (
           <PurchaseSignal
             orderRef={orderRef}
@@ -123,12 +143,24 @@ export async function PayStatusPage({
           data-cw-token-source="global-app-ds"
         >
           <article className={`${offerStyles.panel} ${styles.statusPanel}`}>
-            <p className={offerStyles.label}>{paid ? "Підтвердження оплати" : "Оплата не пройшла"}</p>
-            <h1 className={offerStyles.title}>{paid ? "Дякуємо! Оплату прийнято" : "Платіж не завершився"}</h1>
+            <p className={offerStyles.label}>
+              {paid ? "Підтвердження оплати" : pending ? "Перевіряємо оплату" : "Оплата не пройшла"}
+            </p>
+            <h1 className={offerStyles.title}>
+              {paid ? "Дякуємо! Оплату прийнято" : pending ? "Чекаємо підтвердження банку" : "Платіж не завершився"}
+            </h1>
             <p className={offerStyles.lead}>{lead}</p>
 
+            {pending && orderRef ? (
+              <PayPendingWatcher orderRef={orderRef} product={product || null} />
+            ) : null}
+
             <div className={styles.statusActions}>
-              {destination.external ? (
+              {/* NO PRIMARY ACTION WHILE WAITING. The sentence above asks the
+                  buyer not to close the page; offering them the catalogue in
+                  the loudest button on it would be telling them to leave. The
+                  page's whole job here is to wait, and it moves on by itself. */}
+              {pending ? null : destination.external ? (
                 <a
                   className={styles.statusPrimaryAction}
                   href={destination.href}

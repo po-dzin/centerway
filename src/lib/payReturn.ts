@@ -1,6 +1,26 @@
-import { productProgramPath, productReturnUrls, type PayableProductCode } from "@/lib/products";
+import {
+  PLATFORM_PENDING_URL,
+  productProgramPath,
+  productReturnUrls,
+  type PayableProductCode,
+} from "@/lib/products";
+import { wfpCallbackOutcome } from "@/lib/wfp";
 
-export type ReturnStatus = "paid" | "failed";
+/**
+ * `pending` is the state this flow was missing, and its absence was a lie told
+ * to paying customers.
+ *
+ * The browser comes back from WayForPay in a race with the server-to-server
+ * callback, and the return handler used to poll the order for 1.4 seconds and
+ * then answer `failed` — which routes to a page that states, in so many words,
+ * that the money was not taken. On a slow callback that sentence is false, and
+ * it is read by somebody whose card has just been charged. The likely next act
+ * is paying a second time.
+ *
+ * "Not yet confirmed" is not a synonym for "declined", and only WayForPay can
+ * tell us which one it is. Until it does, we say so.
+ */
+export type ReturnStatus = "paid" | "failed" | "pending";
 
 /**
  * WIDER THAN `PRODUCTS` SINCE 2026-08-22. A course out of the builder returns
@@ -15,6 +35,49 @@ export type ReturnMeta = {
   amount?: string | null;
   currency?: string | null;
 };
+
+/**
+ * Decide what to tell the buyer, from evidence rather than from a timeout.
+ *
+ * The order in which these are consulted is the order of how much each one
+ * actually knows:
+ *
+ * 1. What the gateway told the BROWSER. WayForPay puts the transaction status
+ *    on the return itself, and when it is there it is first-hand and current.
+ * 2. What the order says. `paid` is written only by a signature-checked
+ *    callback, so it is proof. `refunded` is proof of the opposite.
+ * 3. What the last stored callback said. This is the one that separates the two
+ *    states the old code collapsed: if a callback has ARRIVED and it declined
+ *    the payment, that is a real failure. Read through `wfpCallbackOutcome` so
+ *    the gateway's vocabulary is interpreted in exactly one place.
+ * 4. Otherwise nothing has come back yet, and the honest answer is `pending`.
+ *
+ * Note what is deliberately NOT here: elapsed time. How long we have waited is
+ * a fact about us, not about the payment, and turning it into a verdict is the
+ * bug this replaces.
+ */
+export function resolveReturnStatus(input: {
+  /** The status carried on the return itself, already normalised. */
+  fromParams: "paid" | "failed" | null;
+  /** `orders.status`, or null when the row could not be read. */
+  orderStatus: string | null;
+  /** `transactionStatus` from the most recent stored callback, if any. */
+  lastCallbackStatus: string | null;
+}): ReturnStatus {
+  if (input.fromParams) return input.fromParams;
+
+  const orderStatus = input.orderStatus?.trim().toLowerCase() ?? null;
+  if (orderStatus === "paid") return "paid";
+  if (orderStatus === "refunded") return "failed";
+
+  if (input.lastCallbackStatus) {
+    const outcome = wfpCallbackOutcome({ transactionStatus: input.lastCallbackStatus });
+    if (outcome === "approved") return "paid";
+    if (outcome === "rejected" || outcome === "refunded") return "failed";
+  }
+
+  return "pending";
+}
 
 export function buildReturnDestination(
   status: ReturnStatus,
@@ -43,7 +106,11 @@ export function buildReturnDestination(
      one payment twice, which is the reason this is a redirect target and not a
      deletion of /pay/thanks. */
   const programPath = status === "paid" ? productProgramPath(product) : null;
-  const destBase = status === "paid" ? urls.approvedUrl : urls.declinedUrl;
+  /* Pending has its own page rather than borrowing the declined one. The two
+     say opposite things about the buyer's money, and a shared page with a
+     conditional sentence is how they would drift back together. */
+  const destBase =
+    status === "paid" ? urls.approvedUrl : status === "pending" ? PLATFORM_PENDING_URL : urls.declinedUrl;
   const dest = programPath ? new URL(programPath, urls.approvedUrl) : new URL(destBase);
 
   dest.searchParams.set("order_ref", orderRef);
