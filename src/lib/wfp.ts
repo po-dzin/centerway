@@ -69,8 +69,23 @@ export function verifyWfpCallbackSignature(payload: Record<string, string>): Wfp
  */
 export type WfpCallbackOutcome = "approved" | "refunded" | "rejected" | "pending";
 
-/** The statuses `orders.status` and `payments.status` are allowed to hold. */
-export type OrderStatus = "created" | "paid" | "refunded";
+/**
+ * The statuses `orders.status` and `payments.status` are allowed to hold.
+ *
+ * `ORDER_STATUSES` is the same set at runtime, because the column is free text
+ * in Postgres — there is no CHECK constraint standing behind this type. Anything
+ * that writes the column from outside the callback (the admin reconcile, for
+ * one) has to validate against something, and it must be THIS something: a
+ * second hand-written list would eventually disagree with the transition rules
+ * below, and the disagreement would show up as a customer losing a course.
+ */
+export const ORDER_STATUSES = ["created", "paid", "refunded"] as const;
+
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+export function isOrderStatus(value: unknown): value is OrderStatus {
+  return typeof value === "string" && (ORDER_STATUSES as readonly string[]).includes(value);
+}
 
 /* WayForPay's own vocabulary. `Voided` sits with the refunds because the money
    goes back to the buyer either way — the difference is whether the payment had
