@@ -90,12 +90,22 @@ function buildClient(): SupabaseClient | null {
   return cachedClient;
 }
 
+type NoopAuthError = { message: string; status?: number };
+
 type NoopAuth = {
   getSession: () => Promise<{ data: { session: null } }>;
   onAuthStateChange: () => { data: { subscription: { unsubscribe: () => void } } };
   signInWithOAuth: () => Promise<{ data: { provider?: string; url?: string | null }; error: null }>;
+  /* The email pair reports an error rather than a cheerful null. A caller that
+     asked us to send a code has to be told that no code was sent — the OAuth
+     stub can stay silent because a redirect that does not happen is visible on
+     screen, while a code that never arrives looks exactly like a slow inbox. */
+  signInWithOtp: () => Promise<{ data: { user: null; session: null }; error: NoopAuthError }>;
+  verifyOtp: () => Promise<{ data: { user: null; session: null }; error: NoopAuthError }>;
   signOut: () => Promise<{ error: null }>;
 };
+
+const authUnavailable: NoopAuthError = { message: "auth_unavailable" };
 
 const noopAuth: NoopAuth = {
   getSession: async () => ({ data: { session: null } }),
@@ -107,6 +117,8 @@ const noopAuth: NoopAuth = {
     },
   }),
   signInWithOAuth: async () => ({ data: { provider: "google", url: null }, error: null }),
+  signInWithOtp: async () => ({ data: { user: null, session: null }, error: authUnavailable }),
+  verifyOtp: async () => ({ data: { user: null, session: null }, error: authUnavailable }),
   signOut: async () => ({ error: null }),
 };
 

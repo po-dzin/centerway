@@ -6,9 +6,13 @@ import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { extractPaymentMeta } from "@/lib/paymentMeta";
 import {
   buildWfpAcceptResponse,
-  isWfpApproved,
+  nextOrderStatus,
+  orderStatusForOutcome,
+  statusesProtectedFrom,
   verifyWfpCallbackSignature,
+  wfpCallbackOutcome,
   wfpEventTypeFromStatus,
+  type WfpCallbackOutcome,
   type WfpSignatureCheck,
 } from "@/lib/wfp";
 import { dispatchCapiEventInline } from "@/lib/tracking/capiDispatch";
@@ -50,6 +54,23 @@ async function readBodyParams(req: NextRequest): Promise<Payload> {
 
 function norm(v: unknown): string | null {
   return typeof v === "string" && v.trim() ? v.trim() : null;
+}
+
+/**
+ * Attach the no-downgrade rule to a status write as a WHERE clause, so the row
+ * itself refuses the transition instead of relying on a value we read earlier.
+ *
+ * The set of protected statuses lives in `@/lib/wfp` and is shared with
+ * `nextOrderStatus`; keeping one source for it is the whole point, because a
+ * guard that disagrees with the decision that preceded it is worse than none.
+ */
+function guardStatus<T extends { not(column: string, operator: string, value: string): T }>(
+  query: T,
+  outcome: WfpCallbackOutcome
+): T {
+  const protectedStatuses = statusesProtectedFrom(outcome);
+  if (protectedStatuses.length === 0) return query;
+  return query.not("status", "in", `(${protectedStatuses.join(",")})`);
 }
 
 function normEmail(email: string | null): string | null {
@@ -155,8 +176,19 @@ async function upsertCustomer(
       .sort((a, b) => (a.created_at ?? "").localeCompare(b.created_at ?? ""))
       .map((x) => x.id)[0] ?? null;
   if (foundId) {
-    const { error } = await sb.from("customers").update({ email: e, phone: p }).eq("id", foundId);
-    if (error) throw error;
+    /* PATCH WHAT THE CALLBACK CARRIED, AND ONLY THAT. This used to write both
+       columns unconditionally, so a callback that quoted an email and no phone
+       wrote NULL over the stored phone. That is not a cosmetic loss: the match
+       above can find a customer BY phone, so the erased column was, for older
+       purchases made before we collected emails, the only key tying a person to
+       what they had bought. */
+    const patch: { email?: string; phone?: string } = {};
+    if (e) patch.email = e;
+    if (p) patch.phone = p;
+    if (Object.keys(patch).length > 0) {
+      const { error } = await sb.from("customers").update(patch).eq("id", foundId);
+      if (error) throw error;
+    }
     return foundId;
   }
 
@@ -222,8 +254,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ok: false, error: "missing_order_ref" }, { status: 400 });
   }
 
-  const paid = isWfpApproved(payload);
-  const status = paid ? "paid" : "created"; // твоя бинарная модель
+  /* What this callback means, kept as its own value rather than a boolean. The
+     status each table ends up holding is decided per row, against what that row
+     already holds — see `nextOrderStatus`. */
+  const outcome = wfpCallbackOutcome(payload);
+  const paid = outcome === "approved";
+  /* What this callback asserts about the payment, before any row's own history
+     is taken into account. It is what the `events` row records — an event is a
+     report of what arrived, not of what we decided to do about it. */
+  const callbackStatus = orderStatusForOutcome(outcome) ?? "created";
   const eventType = wfpEventTypeFromStatus(payload);
 
   // The signature is the gate, and it stands before every write below: an unsigned or
@@ -262,6 +301,27 @@ export async function POST(req: NextRequest) {
   const safeProviderTxId = providerTxId ?? `order:${orderRef}`;
 
   try {
+    const errors: string[] = [];
+
+    /* THE ORDER AS IT STANDS BEFORE THIS CALLBACK, read before anything is
+       written, because what it already holds is what decides whether this
+       callback may write at all. */
+    const { data: order, error: oGetErr } = await sb
+      .from("orders")
+      .select("customer_id, product_code, status")
+      .eq("order_ref", orderRef)
+      .maybeSingle();
+
+    if (oGetErr) {
+      errors.push(`orders_get: ${oGetErr.message ?? "unknown"}`);
+    }
+
+    /* A FAILED READ IS NOT AN ABSENT ORDER. Without a known current status we
+       decline to guess one — treating a read error as "no row yet" is exactly
+       how a rejected callback would write `created` over `paid`. The collected
+       error withholds the acceptance further down, and WayForPay redelivers. */
+    const nextStatus = oGetErr ? null : nextOrderStatus(order?.status ?? null, outcome);
+
     // 1) payments: сохраняем как источник правды
     // ⚠️ provider обязателен (у тебя NOT NULL) — ставим явно
     // ⚠️ raw_payload NOT NULL — кладём payload
@@ -269,42 +329,70 @@ export async function POST(req: NextRequest) {
       provider: "wfp",
       order_ref: orderRef,
       provider_tx_id: safeProviderTxId,
-      status,
+      status: callbackStatus,
       raw_payload: payload,
     });
 
-    // 2) orders.status
-    const { data: order, error: oGetErr } = await sb
-      .from("orders")
-      .select("customer_id, product_code")
-      .eq("order_ref", orderRef)
-      .maybeSingle();
-
-    const { error: oErr } = await sb
-      .from("orders")
-      .update({
-        status,
-        customer_id: order?.customer_id ?? null,
-      })
-      .eq("order_ref", orderRef);
-
-    // 3) customers: материализуем email/phone из платежа
-    const errors: string[] = [];
-
     if (pErr) {
-      const code = (pErr as any)?.code;
-      if (code !== "23505") {
+      const code = (pErr as { code?: string })?.code;
+      if (code === "23505") {
+        /* ONE ROW PER (provider, order_ref), so the FIRST callback wins and
+           every later one collapsed into this conflict and was thrown away.
+           For a buyer who is declined and then succeeds on the same invoice
+           that leaves the row frozen at the decline: four production orders
+           (2026-04-12, 04-25, 04-27, 06-12) read `created` in `payments` while
+           `orders` reads `paid`. Both `/api/admin/analytics` and the purchases
+           backfill select payments by `status IN ('paid','completed')`, so
+           those four sales are missing from revenue entirely.
+
+           A conflict therefore means "a row for this payment already exists and
+           may be out of date", not "nothing to do". Move it forward under the
+           same guard the order uses, and never backwards.
+
+           `provider_tx_id` is deliberately left as the first attempt's. It
+           carries a unique index of its own, and racing a second row for it is
+           a worse failure than an imprecise reference — `raw_payload`, which
+           IS updated here, carries the authoritative transaction. */
+        if (nextStatus) {
+          const { error: pFixErr } = await guardStatus(
+            sb.from("payments").update({ status: nextStatus, raw_payload: payload }),
+            outcome
+          )
+            .eq("provider", "wfp")
+            .eq("order_ref", orderRef);
+          if (pFixErr) errors.push(`payments_reconcile: ${pFixErr.message ?? "unknown"}`);
+        }
+      } else {
         errors.push(`payments: ${pErr.message ?? "unknown"}`);
       }
     }
 
-    if (oGetErr) {
-      errors.push(`orders_get: ${oGetErr.message ?? "unknown"}`);
+    // 2) orders.status — only ever forwards; see `statusesProtectedFrom`.
+    if (nextStatus && nextStatus !== (order?.status ?? null)) {
+      /* The guard is repeated as a SQL predicate rather than trusted from the
+         read above. Two redelivered callbacks can be in flight at once, and a
+         decision made from a value read a moment ago is a decision made about
+         a row that may have changed since. */
+      const { error: oErr } = await guardStatus(
+        sb.from("orders").update({ status: nextStatus }),
+        outcome
+      ).eq("order_ref", orderRef);
+
+      if (oErr) {
+        errors.push(`orders: ${oErr.message ?? "unknown"}`);
+      }
+    } else if (!nextStatus && !oGetErr) {
+      /* Loud on purpose. This is the branch that used to silently un-sell a
+         course, and a refused write is the one thing about it worth being able
+         to find in a log afterwards. */
+      console.warn("[wfp webhook] callback refused, would not move the order forward", {
+        orderRef,
+        outcome,
+        held: order?.status ?? null,
+      });
     }
 
-    if (oErr) {
-      errors.push(`orders: ${oErr.message ?? "unknown"}`);
-    }
+    // 3) customers: материализуем email/phone из платежа
 
     try {
       const customerId = await upsertCustomer(sb, meta.email ?? null, meta.phone ?? null);
@@ -323,7 +411,7 @@ export async function POST(req: NextRequest) {
           .select("id")
           .eq("order_ref", orderRef)
           .eq("type", eventType)
-          .contains("payload", { provider_tx_id: safeProviderTxId, status });
+          .contains("payload", { provider_tx_id: safeProviderTxId, status: callbackStatus });
 
         if (!existing || existing.length === 0) {
           const { error: eErr } = await sb.from("events").insert({
@@ -331,7 +419,7 @@ export async function POST(req: NextRequest) {
             order_ref: orderRef,
             customer_id: order?.customer_id ?? customerId ?? null,
             payload: {
-              status,
+              status: callbackStatus,
               provider: "wfp",
               provider_tx_id: safeProviderTxId,
               amount: meta.amount ?? null,

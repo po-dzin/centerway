@@ -4,6 +4,7 @@ import { PropsWithChildren, useCallback, useEffect, useMemo, useState } from "re
 import type { Session } from "@supabase/supabase-js";
 import type { ScreenRouteKey } from "@/lib/generator/types";
 import { supabaseClient } from "@/lib/supabaseClient";
+import { SignInOptions } from "./SignInOptions";
 
 type RouteAuthGateProps = PropsWithChildren<{
   routeKey: ScreenRouteKey;
@@ -105,15 +106,14 @@ export function RouteAuthGate({ routeKey, children }: RouteAuthGateProps) {
         <p className="mt-3 text-sm leading-relaxed" style={{ color: "var(--cw-muted)" }}>
           {copy.subtitle}
         </p>
-        <button
-          type="button"
-          onClick={() => {
-            void signInWithGoogle();
-          }}
-          className="cw-btn-primary mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 px-4 py-3 text-sm font-semibold"
-        >
-          Увійти через Google
-        </button>
+        <div className="mt-6">
+          <SignInOptions
+            googleLabel="Увійти через Google"
+            onGoogle={() => {
+              void signInWithGoogle();
+            }}
+          />
+        </div>
       </section>
     </main>
   );
