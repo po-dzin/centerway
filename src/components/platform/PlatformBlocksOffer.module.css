@@ -935,8 +935,14 @@
   filter: saturate(0.72);
 }
 
+/* THE TWO PANELS IN A ROW ARE ONE OBJECT, so they end at the same line. This
+   used to be `align-items: start`, which let each panel stop wherever its own
+   copy ran out — two plates of different heights side by side, the shorter one
+   reading as unfinished rather than as brief. Stretch is the grid's own
+   default; the panels have no fixed height of their own, so they simply fill
+   the row. */
 .programOfferDetailsGrid {
-  align-items: start;
+  align-items: stretch;
 }
 
 /* Format facts are a list of sentences, so they are a .timeline like every

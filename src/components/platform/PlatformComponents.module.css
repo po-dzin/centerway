@@ -533,7 +533,23 @@
 .footerLinks {
   display: grid;
 }
-.footerBugNote { margin-block: var(--cw-space-lg) 0; color: var(--cw-platform-muted); line-height: 1.6; }
+/* THE CLOSING LINE OF THE WHOLE FOOTER, and it has to read as one.
+   It used to be a paragraph dropped under the grid with nothing but a top
+   margin: on desktop it landed directly beneath «Тут тихо.» in the brand
+   column's own measure, so it read as a fourth line of the brand block that had
+   wandered out of the column; on a phone it sat under the social icons with the
+   same ambiguity. It belongs to the footer, not to the first column — so it
+   gets the footer's full width, the system's own fading rule above it, and a
+   caption's size, which is what a note about imperfection should be set in. */
+.footerBugNote {
+  margin-block: var(--cw-space-lg) 0;
+  padding-block-start: var(--cw-space-md);
+  border-top: 1px solid transparent;
+  border-image: var(--cw-rule-fade-x);
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.6;
+}
 
 .footerLead,
 .footerLinks a:first-child,

@@ -63,7 +63,12 @@ export function LeadForm({
       name: String(data.get("name") ?? ""),
       phone: String(data.get("phone") ?? ""),
       email: String(data.get("email") ?? ""),
-      interest: String(data.get("interest") ?? ""),
+      /* No «що цікавить» select any more. It asked the reader to classify their
+         own request from a list of six products before they had said anything,
+         and the page it sits on already knows which offer it is — `productCode`
+         is sent below and is the honest answer. Anything the list could not
+         express belongs in the comment, where a person can say it in their own
+         words. */
       message: String(data.get("message") ?? ""),
       product_code: productCode,
       source,
@@ -158,17 +163,6 @@ export function LeadForm({
           spellCheck={false}
           enterKeyHint="next"
         />
-      </div>
-      <div className={styles.field}>
-        <label htmlFor="lead-interest">Що цікавить</label>
-        <select id="lead-interest" name="interest" defaultValue="consultation">
-          <option value="consultation">Особиста консультація</option>
-          <option value="way21">Шлях 21</option>
-          <option value="reset-day">Reset Day</option>
-          <option value="natural-body">Природнє тіло з Аюрведою</option>
-          <option value="irem">Відновлююча гімнастика</option>
-          <option value="herbs">Трав&apos;яна підтримка</option>
-        </select>
       </div>
       <div className={styles.field}>
         <label htmlFor="lead-message">Коментар</label>
