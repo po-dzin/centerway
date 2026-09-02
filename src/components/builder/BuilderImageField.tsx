@@ -21,7 +21,7 @@
  * where the difference went.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type DragEvent } from "react";
 
 import { Icon } from "@/components/Icon";
 
@@ -153,6 +153,7 @@ export function BuilderImageField({
   const [busy, setBusy] = useState(false);
   const [note, setNote] = useState<string | null>(null);
   const [report, setReport] = useState<string | null>(null);
+  const [dragOver, setDragOver] = useState(false);
   /* KEYED TO THE ADDRESS IT DESCRIBES, rather than cleared when the address
      changes. A note about the old file must not survive a new one for the render
      between the change and the measurement — and clearing it synchronously at
@@ -200,6 +201,27 @@ export function BuilderImageField({
     onChange(result.data.src);
   };
 
+  /* Anything with files dragged over this zone is a candidate — the drop
+     handler itself rejects a non-image the way a picked file already does
+     (`send` → `uploadMedia` → the route's own type check). Highlighting only
+     for image drags would need reading the drag payload's MIME type, which
+     browsers do not expose until the drop actually happens. */
+  const onDragOver = (event: DragEvent<HTMLDivElement>) => {
+    if (!event.dataTransfer.types.includes("Files")) return;
+    event.preventDefault();
+    setDragOver(true);
+  };
+  const onDragLeave = (event: DragEvent<HTMLDivElement>) => {
+    if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+    setDragOver(false);
+  };
+  const onDrop = (event: DragEvent<HTMLDivElement>) => {
+    event.preventDefault();
+    setDragOver(false);
+    const file = event.dataTransfer.files?.[0];
+    if (file) void send(file);
+  };
+
   return (
     <div className={styles.field}>
       <span className={styles.fieldLabel}>
@@ -207,61 +229,73 @@ export function BuilderImageField({
         {required ? <RequiredMark /> : null}
       </span>
 
-      {src && showPreview ? (
-        /* eslint-disable-next-line @next/next/no-img-element -- authored content, arbitrary remote hosts */
-        <img
-          className={styles.previewImage}
-          {...mediaSources(src)}
-          sizes={MEDIA_SIZES.figure}
-          alt={alt ?? ""}
-          decoding="async"
-        />
-      ) : null}
-
-      <div className={styles.itemRow}>
-        <input
-          className={styles.input}
-          type="text"
-          inputMode="url"
-          placeholder="/cw/… або https://…"
-          aria-label={`${label} — адреса`}
-          value={src ?? ""}
-          // Empty is ABSENT, the rule every other field follows.
-          onChange={(event) => onChange(event.target.value.trim() === "" ? undefined : event.target.value)}
-          onKeyDown={(event) => {
-            if (event.key === "Enter") {
-              event.preventDefault();
-              event.currentTarget.blur();
-            }
-          }}
-        />
-        {src ? (
-          <button
-            className={styles.iconAction}
-            type="button"
-            title="Прибрати зображення"
-            aria-label={`Прибрати ${label.toLowerCase()}`}
-            onClick={() => onChange(undefined)}
-          >
-            <Icon name="close" size={18} />
-          </button>
+      {/* The drop target spans the preview and the upload button — a file
+          dragged onto either replaces the image the same way picking one does. */}
+      <div
+        className={styles.uploadZone}
+        data-drag-over={dragOver || undefined}
+        onDragOver={onDragOver}
+        onDragLeave={onDragLeave}
+        onDrop={onDrop}
+      >
+        {src && showPreview ? (
+          /* eslint-disable-next-line @next/next/no-img-element -- authored content, arbitrary remote hosts */
+          <img
+            className={styles.previewImage}
+            {...mediaSources(src)}
+            sizes={MEDIA_SIZES.figure}
+            alt={alt ?? ""}
+            decoding="async"
+          />
         ) : null}
-      </div>
 
-      {/* The picker is a button, not a bare file input: a native file input
-          renders as an unstyleable control with its own English label, and this
-          one has to sit in a row with a text field without looking like a
-          different application. */}
-      <div className={styles.addRow}>
-        <button
-          className={styles.quietAction}
-          type="button"
-          disabled={busy}
-          onClick={() => input.current?.click()}
-        >
-          {busy ? "Завантажуємо…" : "Завантажити файл"}
-        </button>
-        <span className={styles.fieldHint}>або вставте адресу вище</span>
+        <div className={styles.itemRow}>
+          <input
+            className={styles.input}
+            type="text"
+            inputMode="url"
+            placeholder="/cw/… або https://…"
+            aria-label={`${label} — адреса`}
+            value={src ?? ""}
+            // Empty is ABSENT, the rule every other field follows.
+            onChange={(event) => onChange(event.target.value.trim() === "" ? undefined : event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === "Enter") {
+                event.preventDefault();
+                event.currentTarget.blur();
+              }
+            }}
+          />
+          {src ? (
+            <button
+              className={styles.iconAction}
+              type="button"
+              title="Прибрати зображення"
+              aria-label={`Прибрати ${label.toLowerCase()}`}
+              onClick={() => onChange(undefined)}
+            >
+              <Icon name="close" size={18} />
+            </button>
+          ) : null}
+        </div>
+
+        {/* The picker is a button, not a bare file input: a native file input
+            renders as an unstyleable control with its own English label, and this
+            one has to sit in a row with a text field without looking like a
+            different application. */}
+        <div className={styles.addRow}>
+          <button
+            className={styles.quietAction}
+            type="button"
+            disabled={busy}
+            onClick={() => input.current?.click()}
+          >
+            {busy ? "Завантажуємо…" : "Завантажити файл"}
+          </button>
+          <span className={styles.fieldHint}>
+            {dragOver ? "Відпустіть, щоб завантажити" : "перетягніть файл сюди або вставте адресу вище"}
+          </span>
+        </div>
       </div>
 
       <input

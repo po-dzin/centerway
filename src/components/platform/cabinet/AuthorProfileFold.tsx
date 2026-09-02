@@ -16,7 +16,7 @@
  * only until one of them changes shape.
  */
 
-import { useEffect, useRef, useState, type FormEvent, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent, type PointerEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import Link from "next/link";
 
@@ -147,6 +147,107 @@ function PhotoCropPreview({
   );
 }
 
+/**
+ * The photo and the background share one frame: an image once there is one, a
+ * clickable dashed slot before there is — dragged onto or picked through the
+ * same hidden input — and a corner replace/remove pair once it is filled.
+ *
+ * Reused rather than written twice: the two fields used to diverge on exactly
+ * this, and the background's empty slot was invisible — its span asked for
+ * `width: 100%` inside a `width: fit-content` frame, a circular size neither
+ * browser resolves to anything but zero. One component means there is only
+ * one place this can go wrong again.
+ */
+function AuthorMediaSlot({
+  src,
+  previewClassName,
+  emptyClassName,
+  uploadLabel,
+  replaceLabel,
+  removeLabel,
+  dropLabel,
+  uploading,
+  onFile,
+  onRemove,
+}: {
+  src: string | undefined;
+  previewClassName: string;
+  emptyClassName: string;
+  uploadLabel: string;
+  replaceLabel: string;
+  removeLabel: string;
+  dropLabel: string;
+  uploading: boolean;
+  onFile: (file: File) => void;
+  onRemove: () => void;
+}) {
+  const [dragOver, setDragOver] = useState(false);
+
+  const pick = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (file) onFile(file);
+  };
+
+  return (
+    <div
+      className={styles.authorMediaFrame}
+      data-drag-over={dragOver || undefined}
+      onDragOver={(event) => {
+        if (!event.dataTransfer.types.includes("Files")) return;
+        event.preventDefault();
+        setDragOver(true);
+      }}
+      onDragLeave={(event) => {
+        if (event.currentTarget.contains(event.relatedTarget as Node | null)) return;
+        setDragOver(false);
+      }}
+      onDrop={(event) => {
+        event.preventDefault();
+        setDragOver(false);
+        const file = event.dataTransfer.files?.[0];
+        if (file) onFile(file);
+      }}
+    >
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img className={previewClassName} src={src} alt="" />
+      ) : (
+        <label className={emptyClassName} aria-label={uploadLabel}>
+          <input
+            className={styles.visuallyHidden}
+            type="file"
+            aria-label={uploadLabel}
+            accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+            disabled={uploading}
+            onChange={pick}
+          />
+          <Icon name="import" size={22} />
+          <span>{dragOver ? dropLabel : uploadLabel}</span>
+        </label>
+      )}
+      {src ? (
+        <div className={styles.authorMediaActions}>
+          <label className={styles.authorMediaAction} aria-label={replaceLabel} title={replaceLabel}>
+            <input
+              className={styles.visuallyHidden}
+              type="file"
+              aria-label={replaceLabel}
+              accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+              disabled={uploading}
+              onChange={pick}
+            />
+            <Icon name="edit" size={18} />
+          </label>
+          <button type="button" className={styles.authorMediaAction} aria-label={removeLabel} title={removeLabel} onClick={onRemove}>
+            <Icon name="close" size={18} />
+          </button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function draftFromAuthor(author: Author | null): Draft {
   return {
     name: author?.name ?? "",
@@ -204,6 +305,7 @@ const STRINGS = {
     photoRemove: "Прибрати фото",
     photoUploading: "Завантаження…",
     photoAlt: "Опис фото (для читачів екрана)",
+    mediaDrop: "Відпустіть, щоб завантажити",
     photoCropCardTitle: "Картка",
     photoCropCardNote: "Головна · консультації · директорія авторів",
     photoCropAvatarTitle: "Кругла аватарка",
@@ -260,6 +362,7 @@ const STRINGS = {
     photoRemove: "Remove photo",
     photoUploading: "Uploading…",
     photoAlt: "Photo description (for screen readers)",
+    mediaDrop: "Drop to upload",
     photoCropCardTitle: "Card",
     photoCropCardNote: "Home · consultations · author directory",
     photoCropAvatarTitle: "Round avatar",
@@ -299,6 +402,7 @@ export function AuthorProfileFold({
   const toast = useToast();
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
+  const [uploadTarget, setUploadTarget] = useState<"photo" | "background" | null>(null);
   const [open, setOpen] = useState(false);
 
   // Re-syncs only when the SAVED row changes underneath — not on every render,
@@ -319,6 +423,7 @@ export function AuthorProfileFold({
   async function handlePhoto(file: File) {
     setUploading(true);
     setUploadError(null);
+    setUploadTarget("photo");
     try {
       const form = new FormData();
       form.append("file", file);
@@ -343,6 +448,7 @@ export function AuthorProfileFold({
   async function handleBackground(file: File) {
     setUploading(true);
     setUploadError(null);
+    setUploadTarget("background");
     try {
       const form = new FormData();
       form.append("file", file);
@@ -448,6 +554,121 @@ export function AuthorProfileFold({
               onChange={(e) => setDraft((prev) => ({ ...prev, role: e.target.value }))}
             />
           </label>
+
+          {/* THE PICTURE, THEN THE WAY TO CHANGE IT, THEN WHAT IT SHOWS.
+              The alt field used to come FIRST, before there was any image to
+              describe — a text box asking «опис фото» above an empty slot. It
+              only makes sense once something is there, so it appears with the
+              photo and not before.
+
+              Near the top of the form, not after ten other fields — a photo is
+              the first thing an author reaches for, and used to sit below the
+              bio, the credentials, the facts, every profile block and the
+              consultation settings before it ever appeared. */}
+          <div className={`${styles.authorField} ${styles.authorPhotoField}`}>
+            <span>{t.photo}</span>
+            <AuthorMediaSlot
+              src={draft.photo?.src}
+              uploading={uploading}
+              uploadLabel={t.photoUpload}
+              replaceLabel={t.photoReplace}
+              removeLabel={t.photoRemove}
+              dropLabel={t.mediaDrop}
+              previewClassName={styles.authorPhotoPreview}
+              emptyClassName={styles.authorPhotoEmpty}
+              onFile={(file) => void handlePhoto(file)}
+              onRemove={() => setDraft((prev) => ({ ...prev, photo: null }))}
+            />
+            {draft.photo?.src ? (
+              <input
+                className={styles.authorInput}
+                placeholder={t.photoAlt}
+                value={draft.photo.alt}
+                onChange={(e) =>
+                  setDraft((prev) => ({
+                    ...prev,
+                    photo: prev.photo ? { ...prev.photo, alt: e.target.value } : prev.photo,
+                  }))
+                }
+              />
+            ) : null}
+            {uploadError && uploadTarget === "photo" ? <span className={styles.authorNotice}>{uploadError}</span> : null}
+            {draft.photo?.src ? (
+              <div className={styles.photoCropGrid}>
+                <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-card-title">
+                  <div className={styles.photoCropHead}>
+                    <div>
+                      <h4 id="author-photo-crop-card-title">{t.photoCropCardTitle}</h4>
+                      <p>{t.photoCropCardNote}</p>
+                    </div>
+                  </div>
+                  <PhotoCropPreview
+                    src={draft.photo.src}
+                    alt=""
+                    shape="card"
+                    x={draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x}
+                    y={draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y}
+                    onChange={(x, y) =>
+                      setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, cropX: x, cropY: y } } : prev))
+                    }
+                    reset={{
+                      label: t.photoCropCenter,
+                      onReset: () =>
+                        setDraft((prev) =>
+                          prev.photo
+                            ? { ...prev, photo: { ...prev.photo, cropX: AUTHOR_CARD_CROP_DEFAULT.x, cropY: AUTHOR_CARD_CROP_DEFAULT.y } }
+                            : prev
+                        ),
+                    }}
+                  />
+                </section>
+                <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-avatar-title">
+                  <div className={styles.photoCropHead}>
+                    <div>
+                      <h4 id="author-photo-crop-avatar-title">{t.photoCropAvatarTitle}</h4>
+                      <p>{t.photoCropAvatarNote}</p>
+                    </div>
+                  </div>
+                  <PhotoCropPreview
+                    src={draft.photo.src}
+                    alt=""
+                    shape="avatar"
+                    x={draft.photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x}
+                    y={draft.photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y}
+                    onChange={(x, y) =>
+                      setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, avatarCropX: x, avatarCropY: y } } : prev))
+                    }
+                    reset={{
+                      label: t.photoCropCenter,
+                      onReset: () =>
+                        setDraft((prev) =>
+                          prev.photo
+                            ? { ...prev, photo: { ...prev.photo, avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x, avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y } }
+                            : prev
+                        ),
+                    }}
+                  />
+                </section>
+              </div>
+            ) : null}
+          </div>
+
+          <div className={`${styles.authorField} ${styles.authorBackgroundField}`}>
+            <span>{t.background}</span>
+            <AuthorMediaSlot
+              src={draft.background?.src}
+              uploading={uploading}
+              uploadLabel={t.backgroundUpload}
+              replaceLabel={t.backgroundReplace}
+              removeLabel={t.backgroundRemove}
+              dropLabel={t.mediaDrop}
+              previewClassName={styles.authorBackgroundPreview}
+              emptyClassName={styles.authorBackgroundEmpty}
+              onFile={(file) => void handleBackground(file)}
+              onRemove={() => setDraft((prev) => ({ ...prev, background: null }))}
+            />
+            {uploadError && uploadTarget === "background" ? <span className={styles.authorNotice}>{uploadError}</span> : null}
+          </div>
 
           <label className={`${styles.authorField} ${styles.authorBioField}`}>
             <span>{t.bio}</span>
@@ -616,154 +837,6 @@ export function AuthorProfileFold({
             <input className={styles.authorInput} placeholder={t.consultationContact} value={draft.consultation.contactUrl} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, contactUrl: e.target.value } }))} />
           </fieldset>
 
-          {/* THE PICTURE, THEN THE WAY TO CHANGE IT, THEN WHAT IT SHOWS.
-              The alt field used to come FIRST, before there was any image to
-              describe — a text box asking «опис фото» above an empty slot. It
-              only makes sense once something is there, so it appears with the
-              photo and not before.
-
-              The native file input is replaced by its own label: `Choose file /
-              No file chosen` is the browser's chrome, in the browser's type, on
-              a form where everything else is the product's. The input is still
-              a real `<input type="file">` — visually hidden, not removed — so
-              the keyboard and the file dialog behave exactly as they do. */}
-          <div className={`${styles.authorField} ${styles.authorPhotoField}`}>
-            <span>{t.photo}</span>
-            <div className={styles.authorMediaFrame}>
-              {draft.photo?.src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className={styles.authorPhotoPreview} src={draft.photo.src} alt="" />
-              ) : (
-                <span className={styles.authorPhotoEmpty} aria-hidden="true" />
-              )}
-              <div className={styles.authorMediaActions}>
-              <label className={styles.authorMediaAction} aria-label={draft.photo?.src ? t.photoReplace : t.photoUpload} title={draft.photo?.src ? t.photoReplace : t.photoUpload}>
-                <input
-                  className={styles.visuallyHidden}
-                  type="file"
-                  aria-label={draft.photo?.src ? t.photoReplace : t.photoUpload}
-                  accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
-                  disabled={uploading}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) void handlePhoto(file);
-                  }}
-                />
-                <Icon name="edit" size={18} />
-              </label>
-              {draft.photo ? (
-                <button type="button" className={styles.authorMediaAction} aria-label={t.photoRemove} title={t.photoRemove} onClick={() => setDraft((prev) => ({ ...prev, photo: null }))}>
-                  <Icon name="close" size={18} />
-                </button>
-              ) : null}
-              </div>
-            </div>
-            {draft.photo?.src ? (
-              <input
-                className={styles.authorInput}
-                placeholder={t.photoAlt}
-                value={draft.photo.alt}
-                onChange={(e) =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    photo: prev.photo ? { ...prev.photo, alt: e.target.value } : prev.photo,
-                  }))
-                }
-              />
-            ) : null}
-            {uploadError ? <span className={styles.authorNotice}>{uploadError}</span> : null}
-            {draft.photo?.src ? (
-              <div className={styles.photoCropGrid}>
-                <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-card-title">
-                  <div className={styles.photoCropHead}>
-                    <div>
-                      <h4 id="author-photo-crop-card-title">{t.photoCropCardTitle}</h4>
-                      <p>{t.photoCropCardNote}</p>
-                    </div>
-                  </div>
-                  <PhotoCropPreview
-                    src={draft.photo.src}
-                    alt=""
-                    shape="card"
-                    x={draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x}
-                    y={draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y}
-                    onChange={(x, y) =>
-                      setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, cropX: x, cropY: y } } : prev))
-                    }
-                    reset={{
-                      label: t.photoCropCenter,
-                      onReset: () =>
-                        setDraft((prev) =>
-                          prev.photo
-                            ? { ...prev, photo: { ...prev.photo, cropX: AUTHOR_CARD_CROP_DEFAULT.x, cropY: AUTHOR_CARD_CROP_DEFAULT.y } }
-                            : prev
-                        ),
-                    }}
-                  />
-                </section>
-                <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-avatar-title">
-                  <div className={styles.photoCropHead}>
-                    <div>
-                      <h4 id="author-photo-crop-avatar-title">{t.photoCropAvatarTitle}</h4>
-                      <p>{t.photoCropAvatarNote}</p>
-                    </div>
-                  </div>
-                  <PhotoCropPreview
-                    src={draft.photo.src}
-                    alt=""
-                    shape="avatar"
-                    x={draft.photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x}
-                    y={draft.photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y}
-                    onChange={(x, y) =>
-                      setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, avatarCropX: x, avatarCropY: y } } : prev))
-                    }
-                    reset={{
-                      label: t.photoCropCenter,
-                      onReset: () =>
-                        setDraft((prev) =>
-                          prev.photo
-                            ? { ...prev, photo: { ...prev.photo, avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x, avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y } }
-                            : prev
-                        ),
-                    }}
-                  />
-                </section>
-              </div>
-            ) : null}
-          </div>
-
-          <div className={`${styles.authorField} ${styles.authorBackgroundField}`}>
-            <span>{t.background}</span>
-            <div className={styles.authorMediaFrame}>
-              {draft.background?.src ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img className={styles.authorBackgroundPreview} src={draft.background.src} alt="" />
-              ) : (
-                <span className={styles.authorBackgroundEmpty} aria-hidden="true" />
-              )}
-              <div className={styles.authorMediaActions}>
-              <label className={styles.authorMediaAction} aria-label={draft.background?.src ? t.backgroundReplace : t.backgroundUpload} title={draft.background?.src ? t.backgroundReplace : t.backgroundUpload}>
-                <input
-                  className={styles.visuallyHidden}
-                  type="file"
-                  aria-label={draft.background?.src ? t.backgroundReplace : t.backgroundUpload}
-                  accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
-                  disabled={uploading}
-                  onChange={(e) => {
-                    const file = e.target.files?.[0];
-                    if (file) void handleBackground(file);
-                  }}
-                />
-                <Icon name="edit" size={18} />
-              </label>
-              {draft.background ? (
-                <button type="button" className={styles.authorMediaAction} aria-label={t.backgroundRemove} title={t.backgroundRemove} onClick={() => setDraft((prev) => ({ ...prev, background: null }))}>
-                  <Icon name="close" size={18} />
-                </button>
-              ) : null}
-              </div>
-            </div>
-          </div>
 
           <label className={`${styles.authorField} ${styles.authorSlugField}`}>
             <span>{t.slug}</span>
