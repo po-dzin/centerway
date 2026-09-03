@@ -45,15 +45,126 @@
       var item = track.firstElementChild;
       return item ? item.getBoundingClientRect().width + 15 : 280;
     }
+
+    /* --- dots, for the rails that asked for them --- */
+    /* The dots sit AFTER the carousel, not inside it: `.car` is the positioning
+       context for the two arrows, and a strip added to its height would push
+       them off the middle of the pictures. */
+    var after = car.nextElementSibling;
+    var dotsBox = car.querySelector('[data-car-dots]') ||
+      (after && after.matches && after.matches('[data-car-dots]') ? after : null);
+    var dotButtons = [];
+    function cards(){ return Array.prototype.slice.call(track.children); }
+    /* How many places this track can actually stop at. Not the card count:
+       a desktop rail shows two cards and a phone one, and the last card
+       cannot be scrolled to the left edge — asking for that leaves the reader
+       pressing a dot that moves nothing. */
+    function stops(){
+      var items = cards();
+      if(!items.length) return 1;
+      var visible = Math.max(1, Math.floor((track.clientWidth + 15) / step()));
+      return Math.max(1, items.length - visible + 1);
+    }
+    var dotRow = null;
+    function buildDots(){
+      if(!dotsBox) return;
+      var n = stops();
+      if(n < 2) n = 0;
+      if(n === dotButtons.length) return;
+      dotsBox.textContent = '';
+      dotButtons = [];
+      dotRow = null;
+      if(!n) return;
+      dotRow = document.createElement('div');
+      dotRow.className = 'car-dots__row';
+      for(var i = 0; i < n; i++){
+        dotRow.appendChild(makeDot(i, n));
+      }
+      dotsBox.appendChild(dotRow);
+    }
+
+    /* Slide the strip under its window.
+       Fourteen screenshots would be fourteen dots, which is a ruler and not a
+       control, so the window holds ten and the row moves beneath it. While the
+       row fits it is simply centred; once it does not, the active dot is held
+       in the middle and the row is clamped at both ends so the strip never
+       pulls away from its own edge. */
+    function placeRow(active){
+      if(!dotRow || !dotButtons.length) return;
+      var first = dotButtons[0].getBoundingClientRect();
+      var size = first.width;
+      var stride = dotButtons.length > 1
+        ? dotButtons[1].getBoundingClientRect().left - first.left
+        : size;
+      var rowWidth = size + stride * (dotButtons.length - 1);
+      var windowWidth = dotsBox.clientWidth;
+      var x;
+      if(rowWidth <= windowWidth){
+        x = (windowWidth - rowWidth) / 2;
+      }else{
+        x = windowWidth / 2 - (active * stride + size / 2);
+        x = Math.max(windowWidth - rowWidth, Math.min(0, x));
+      }
+      dotRow.style.transform = 'translateX(' + Math.round(x) + 'px)';
+      /* A dot fades only where the row actually continues. Clamped hard against
+         either end there is nothing further that way, and a shrunken dot would
+         promise more of a strip that has run out. Never the active one either:
+         at the ends the lit dot IS the one on the edge. */
+      var overflowing = rowWidth > windowWidth + 1;
+      var atStart = x >= -0.5;
+      var atEnd = x <= windowWidth - rowWidth + 0.5;
+      dotButtons.forEach(function(b, i){
+        if(!overflowing){ b.classList.remove('is-edge'); return; }
+        var centre = x + i * stride + size / 2;
+        b.classList.toggle('is-edge', i !== active && (
+          (!atStart && centre < stride) ||
+          (!atEnd && centre > windowWidth - stride)
+        ));
+      });
+    }
+    function makeDot(index, total){
+      var b = document.createElement('button');
+      b.type = 'button';
+      b.className = 'car-dot';
+      b.setAttribute('aria-label', 'Показати ' + (index + 1) + ' з ' + total);
+      b.addEventListener('click', function(){
+        var item = cards()[index];
+        if(!item) return;
+        glide(track, item.getBoundingClientRect().left - track.getBoundingClientRect().left, sync);
+      });
+      dotButtons.push(b);
+      return b;
+    }
+    /* Which dot is lit: the card nearest the left edge, clamped to the last
+       dot — past the final stop several cards share the same resting place. */
+    function syncDots(){
+      if(!dotButtons.length) return;
+      var left = track.getBoundingClientRect().left;
+      var nearest = 0, best = Infinity;
+      cards().forEach(function(item, i){
+        var d = Math.abs(item.getBoundingClientRect().left - left);
+        if(d < best){ best = d; nearest = i; }
+      });
+      var active = Math.min(nearest, dotButtons.length - 1);
+      dotButtons.forEach(function(b, i){
+        var on = i === active;
+        b.classList.toggle('is-active', on);
+        b.setAttribute('aria-current', on ? 'true' : 'false');
+      });
+      placeRow(active);
+    }
+
     function sync(){
       var max = track.scrollWidth - track.clientWidth - 4;
       prev.disabled = track.scrollLeft <= 4;
       next.disabled = track.scrollLeft >= max;
+      syncDots();
     }
     prev.addEventListener('click', function(){ glide(track, -step()*2, sync); });
     next.addEventListener('click', function(){ glide(track,  step()*2, sync); });
     track.addEventListener('scroll', sync, {passive:true});
-    window.addEventListener('resize', sync);
+    window.addEventListener('resize', function(){ buildDots(); sync(); });
+    buildDots();
     sync();
   });
 
@@ -144,6 +255,12 @@
         node.src = 'https://www.youtube-nocookie.com/embed/' + yt + '?autoplay=1&rel=0';
         node.allow = 'autoplay; encrypted-media; picture-in-picture';
         node.allowFullscreen = true;
+        /* The lightbox is 9:16 by default because this rail was built for
+           vertical phone testimonials. A landscape video in that frame is two
+           thick black bars and a stamp-sized picture, so a card that knows its
+           shape says so. */
+        var ytRatio = vid.getAttribute('data-video-ratio');
+        if(ytRatio) node.style.aspectRatio = ytRatio.replace('/', ' / ');
       }else if(fb){
         /* No autoplay, deliberately. Facebook's plugin will only autoplay
            MUTED, and a muted testimonial is a person moving their lips — worse

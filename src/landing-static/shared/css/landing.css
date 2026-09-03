@@ -807,9 +807,17 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .testimonial-carousel__nav svg{width:1.125rem;height:1.125rem}
 .testimonial-carousel__nav--prev{left:0}
 .testimonial-carousel__nav--next{right:0}
-.testimonial-carousel__dots{display:flex;flex-wrap:wrap;justify-content:center;gap:.45rem}
-.testimonial-carousel__dot{width:.625rem;height:.625rem;padding:0;border:0;border-radius:50%;background:var(--line-strong);cursor:pointer;transition:transform 180ms ease-out,background-color 180ms ease-out}
+/* Ten dots, and the rest slide under the window. See the same recipe on
+   `.car-dots` further down — this strip and the proof rails' one are the same
+   control, and a landing with ten or fewer testimonials is unaffected. */
+.testimonial-carousel__dots{--dot-size:.625rem;--dot-gap:.45rem;--dot-window:10;
+  display:flex;justify-content:flex-start;overflow:hidden;margin-inline:auto;
+  max-width:calc(var(--dot-window) * var(--dot-size) + (var(--dot-window) - 1) * var(--dot-gap))}
+.testimonial-carousel__dots-row{display:flex;gap:var(--dot-gap);transition:transform 240ms ease-out}
+.testimonial-carousel__dot{flex:0 0 auto;width:var(--dot-size);height:var(--dot-size);padding:0;border:0;border-radius:50%;background:var(--line-strong);cursor:pointer;transition:transform 180ms ease-out,background-color 180ms ease-out,opacity 180ms ease-out}
 .testimonial-carousel__dot.is-active{background:var(--cta);transform:scale(1.08)}
+.testimonial-carousel__dot.is-edge{transform:scale(.55);opacity:.55}
+@media(prefers-reduced-motion:reduce){.testimonial-carousel__dots-row{transition:none}}
 .proof-grid[hidden],.car[hidden],.proof-note[hidden]{display:none!important}
 @media(max-width:1080px){.testimonial-carousel__track{grid-auto-columns:calc((100% - 1rem) / 2)}}
 @media(max-width:640px){.testimonial-carousel__track{grid-auto-columns:84%;padding-inline:2.4rem}.testimonial-carousel__nav{width:2.75rem;height:2.75rem}}
@@ -996,7 +1004,7 @@ body:has(.lead-modal__input:focus) .sticky-cta{transform:translateY(110%)}
 .car-track .review{width:min(84vw,340px)}
 
 /* video testimonial card — poster + play; opens lightbox on click */
-.vid-card{position:relative;width:min(74vw,264px);aspect-ratio:9/14;border:0;padding:0;
+.vid-card{position:relative;width:min(80vw,360px);aspect-ratio:9/14;border:0;padding:0;
   border-radius:var(--r-md);overflow:hidden;cursor:pointer;background:var(--ink);
   box-shadow:var(--shadow-soft);transition:transform .3s,box-shadow .3s}
 .vid-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-med)}
@@ -1025,24 +1033,89 @@ body:has(.lead-modal__input:focus) .sticky-cta{transform:translateY(110%)}
 .proof-subhead small{font-family:var(--f-mono);font-size:.66rem;letter-spacing:.1em;
   text-transform:uppercase;color:var(--text-soft);font-weight:500}
 
-/* before / after — one participant, two photographs, one caption.
+/* before / after — one participant, two photographs.
    Deliberately NOT a drag-slider with a wipe handle: a wipe invites the two
    frames to be read as one continuous image, and these are two photographs
-   taken weeks apart. Side by side, labelled, with the interval stated. */
-.ba-card{width:min(88vw,420px);margin:0;border:1px solid var(--line);border-radius:var(--r-md);
+   taken weeks apart. Side by side, labelled.
+
+   The cells are 1:2, which is TALL. At 2:3 the pair stood half the height of
+   the testimonial screenshots beside it, and a standing full-body portrait in
+   a squat frame reads as the small print of the rail rather than its evidence.
+   Every source here is a person photographed head to foot; the frame should be
+   the shape of that.
+
+   Height then has to come from WIDTH — two photographs side by side cannot get
+   taller on their own without cropping into the people — so the card is 560
+   rather than 420, and the video card grew to 360 with it. A phone is the one
+   place the pair stays squat: 92vw of a 375px screen is two 172px cells, and
+   nothing but stacking would fix that, which would stop being a pair. */
+.ba-card{width:min(92vw,560px);margin:0;border:1px solid var(--line);border-radius:var(--r-md);
   overflow:hidden;background:var(--surface);box-shadow:var(--shadow-soft)}
 .ba-pair{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line)}
 .ba-shot{position:relative;display:block;background:var(--chip)}
 /* `height:auto` is load-bearing: the width/height attributes on <img> are
    presentational hints, and leaving `height` alone lets the 640 in the markup
    win over aspect-ratio — the pair renders at full natural height. */
-.ba-shot img{display:block;width:100%;height:auto;aspect-ratio:3/4;object-fit:cover}
+.ba-shot img{display:block;width:100%;height:auto;aspect-ratio:1/2;object-fit:cover}
+
+/* A pair somebody already glued into one JPEG.
+   The card is the same card — the difference is that the two halves live
+   inside the picture, so drawing the grid and the до/після tags again would
+   put our labels on top of someone else's composition. One cell.
+   The card stays exactly the size of every other card — a glued 1:1 photo
+   given its own proportions made one card twice as tall as its neighbours,
+   which is the carousel losing its rhythm. So the frame is the box the
+   two-cell pair adds up to (two 1:2 cells side by side is a square), and the
+   picture is CONTAINED rather than cropped: cover would cut the heads and feet
+   off a composition somebody else already framed. */
+.ba-pair--single{grid-template-columns:1fr}
+.ba-pair--single .ba-shot img{aspect-ratio:1/1;object-fit:contain;background:var(--chip)}
+/* On a phone the pair has no width to spend — 92vw is two 172px cells — so the
+   cells get TALLER instead: 2:5 rather than 1:2, which crops a fifth off the
+   sides of a centred standing figure and buys back the height. The single card
+   follows the same arithmetic (two 2:5 cells side by side is 4:5) so the two
+   kinds of card stay the same size, which is the whole point of the frame. */
+@media(max-width:640px){
+  .ba-shot img{aspect-ratio:2/5}
+  .ba-pair--single .ba-shot img{aspect-ratio:4/5}
+}
+/* The pill centres its own text. `letter-spacing` puts a trailing gap after
+   the last letter, which reads as the word sitting left inside the capsule;
+   the flex box plus the compensating indent puts it back in the middle. */
 .ba-tag{position:absolute;left:.5rem;bottom:.5rem;font-family:var(--f-mono);font-size:.6rem;
-  letter-spacing:.1em;text-transform:uppercase;padding:.3em .65em;border-radius:999px;
-  background:rgba(255,253,247,.94);color:var(--ink);box-shadow:var(--shadow-soft)}
+  letter-spacing:.1em;text-indent:.1em;text-transform:uppercase;padding:.35em .7em;
+  min-height:1.9em;display:inline-flex;align-items:center;justify-content:center;line-height:1;
+  border-radius:999px;background:rgba(255,253,247,.94);color:var(--ink);box-shadow:var(--shadow-soft)}
+/* Kept for a card that one day carries a line, and unused today: the
+   photographs say the whole thing, and a caption under every one of them was
+   three variations of «фото до і після» under three pictures of exactly that. */
 .ba-card figcaption{padding:.75em .9em;border-top:1px solid var(--line);
   font-size:.86rem;line-height:1.45;color:var(--text-soft)}
 .ba-card figcaption b{display:block;color:var(--ink);font-weight:600}
+
+/* Pagination under a proof rail.
+   One dot per SCROLL POSITION, not per card: two cards fit a desktop rail and
+   one fits a phone, so a dot per card would offer stops the track cannot
+   actually reach at its end. proof.js builds them, and builds none at all when
+   everything already fits — a lone dot is a control that can do nothing. */
+.car-dots{--car-dot-size:.625rem;--car-dot-gap:.45rem;--car-dot-window:10;
+  display:flex;justify-content:flex-start;overflow:hidden;margin:.75rem auto 0;
+  max-width:calc(var(--car-dot-window) * var(--car-dot-size)
+    + (var(--car-dot-window) - 1) * var(--car-dot-gap))}
+.car-dots:empty{display:none}
+/* The row that slides under the window. proof.js sets the transform: it
+   centres the row while it fits, and once there are more dots than the window
+   holds it keeps the active one in the middle. */
+.car-dots__row{display:flex;gap:var(--car-dot-gap);transition:transform 240ms ease-out}
+.car-dot{flex:0 0 auto;width:var(--car-dot-size);height:var(--car-dot-size);padding:0;border:0;
+  border-radius:50%;background:var(--line-strong);cursor:pointer;
+  transition:transform 180ms ease-out,background-color 180ms ease-out,opacity 180ms ease-out}
+.car-dot.is-active{background:var(--cta);transform:scale(1.08)}
+/* The dot sitting on the window's edge shrinks — the strip says «there is more
+   this way» in the strip's own language, without a number or an arrow. */
+.car-dot.is-edge{transform:scale(.55);opacity:.55}
+.car-dot:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){.car-dots__row{transition:none}}
 
 /* A video card with no poster yet.
    Facebook publishes no thumbnail a page can link to, so a testimonial that

@@ -119,3 +119,116 @@ the page, and the boundary has to travel with it.
 No before/after photographs and no videos exist in the repository yet, so both
 rails currently render nothing on way21. Drop the assets in and uncomment the
 example cards; the same pair of rails can then be lifted onto `reset-day`.
+
+
+## What is actually live on way21 (2026-09-03)
+
+**До і після — three cards.** Sources came from the owner's `Фото До-После`
+Drive folder; the files were cropped to 2:3, converted to webp and given a baked
+sRGB profile (untagged webp reads as P3 on iOS and picks up a different white
+than the page — see the colour-seam note in the DS docs).
+
+| card | files | note |
+| --- | --- | --- |
+| glued pair | `ba-2026-06-back.webp` | already one JPEG, side by side. Renders through `.ba-pair--single`: one cell, no `до`/`після` tags drawn over somebody else's composition, and the picture is CONTAINED in the same 4:3 frame the two-cell pair adds up to. Every card is the same size — 420×377 desktop, 330×329 phone — because a glued 1:1 photo given its own proportions made one card twice as tall as its neighbours and the rail lost its rhythm. |
+| Люба | `ba-lyuba-2021-before/after.webp` | two photographs, both full-body. Which one is «до» was inferred from the pictures, not from the filenames — confirm. |
+| studio | `ba-2026-06-studio-before/after.webp` | **the weak one.** «До» is a seated close-up at 296px wide, «після» is a full-body shot across a dance studio. Different distance, different framing, and the source is too small to fix by cropping. |
+
+`.ba-shot img` is 2:3, not 3:4: every real photograph in this set is a standing
+full-body portrait, and a 3:4 frame cut the legs off all of them.
+
+**No captions, by the owner's call (2026-09-03).** Three cards each carrying a
+variation of «фото до і після» under a picture of exactly that added nothing the
+до/після pills were not already saying. The `.ba-card figcaption` rule stays in
+the stylesheet — the component still supports a line — but no card carries one.
+
+Same reasoning on the video cards: the YouTube one has a poster of the person
+and needs no words. The Facebook one keeps a single word, «Facebook», because it
+has no poster at all and would otherwise be a blank tile with a play button.
+
+**Відеовідгуки — two cards.** The Facebook one (Наталія) and
+`youtu.be/2cxLE4GUuRw`, the same video that sits in the proof section of the
+`short` landing. Its poster is YouTube's own frame saved locally, so nothing is
+requested from Google until somebody presses play.
+
+`data-video-ratio` now applies to YouTube as well as Facebook. It has to: the
+lightbox is 9:16 because this rail was built for vertical phone testimonials,
+and this video is 16:9 — without the attribute it played as a stamp between two
+black bars. Verified in the browser at 520×293.
+
+
+## Dots
+
+Both new rails carry pagination (`.car-dots` / `[data-car-dots]`, built by
+proof.js). Two things about them:
+
+- **One dot per scroll POSITION, not per card.** A desktop rail shows two cards
+  and a phone one, and the last card can never be scrolled to the left edge — a
+  dot per card would offer stops that move nothing. `stops()` is
+  `cards - visible + 1`, recomputed on resize: the до/після rail draws 2 dots on
+  a desktop and 3 on a phone, the video rail draws none on a desktop (both cards
+  already fit) and 2 on a phone.
+- **They sit after `.car`, not inside it.** `.car` is the positioning context
+  for the two arrows, which centre on its height; a strip added inside would
+  push them off the middle of the pictures.
+
+The active dot is the card nearest the track's left edge, clamped to the last
+dot, because past the final stop several cards share one resting place.
+
+### Ten dots and a window (2026-09-03)
+
+The strip never grows past ten. Past that the row of dots slides underneath a
+fixed window, the active dot is held in the middle, and the row is clamped at
+both ends so it never pulls away from its own edge. The dot sitting ON the
+window's edge shrinks — but only where the row actually continues: clamped hard
+against either end there is nothing further that way, and a shrunken dot there
+would promise more of a strip that has run out. Never the active dot either: at
+the ends the lit dot IS the one on the edge.
+
+This applies to `.testimonial-carousel` too, which is the rail this was actually
+asked for. Note the correction: the SCREENSHOT rail on way21 carries `hidden` —
+it is dead markup, and the fifteen dots a reader can see belong to the
+testimonial carousel above it. That component is shared by all five platform
+landings; a landing with ten or fewer testimonials is unaffected, because a row
+that fits is simply centred.
+
+Measured on way21's fifteen: window `0..9` at the start with only the right dot
+faded, `2..10` in the middle with both faded, `5..14` at the end with only the
+left one.
+
+One thing to know when testing this in a headless pane: a hidden document
+suspends transitions, rAF and scroll events, so the dot row measures frozen at
+its starting position. That is the harness, not the code — the preview file
+carries a small shim that says so.
+
+## Sizes, and the Facebook poster (2026-09-04)
+
+**The cards were half the height of their neighbours.** A testimonial screenshot
+slide is 886px tall on a desktop; the до/після card was 377 and the video card
+411. So the pair cells went from 2:3 to **1:2** — every source here is a person
+photographed head to foot, and a squat frame made the photographs read as the
+rail's small print. Height then has to come from WIDTH, because two pictures
+side by side cannot grow taller on their own without cropping into the people:
+the card is now 560 rather than 420, and the video card 360 rather than 264.
+Both land at 560 tall.
+
+The source crops were regenerated at 1:2 from the originals rather than
+re-cropped from the 2:3 files, so nothing was cut twice.
+
+A phone has no width to spend — 92vw is two 172px cells — so there the cells go
+taller instead (**2:5**), which crops a fifth off the sides of a centred
+standing figure and buys back the height: 345×431 beside a 467 video and a 470
+slide. The glued card follows the same arithmetic (two 2:5 cells side by side
+is 4:5) so both kinds of card stay the same size.
+
+**The Facebook card has a poster now**, which contradicts what this document
+said two days ago. Facebook publishes no thumbnail URL a page may link to —
+theirs are signed and expire — but the player renders one before play, and the
+BYTES can be saved even though the address cannot be used. Opening the plugin
+page and taking the frame it serves gives `video-fb-nataliia.webp`: the
+participant in front of a CenterWay «Путь» banner, which is a better card than
+any paper tile. `.vid-card:not(:has(img))` stays for the next posterless video.
+
+One note for whoever tests this in the headless pane: it composites stale while
+hidden, so a screenshot can come back blank or a scroll frame behind the DOM.
+Measure through the DOM there; the numbers above are all measured, not seen.
