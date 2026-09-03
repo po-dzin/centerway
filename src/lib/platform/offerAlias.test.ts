@@ -16,9 +16,15 @@ import type { Course } from "@/lms-core";
 
 const getLiveCourse = vi.fn();
 const readOfferRow = vi.fn();
+const readProductOffer = vi.fn();
 
 vi.mock("next/cache", () => ({
   unstable_cache: (fn: () => unknown) => fn,
+}));
+
+vi.mock("@/lib/platform/productOffers", () => ({
+  loadProductOffer: (code: string) => readProductOffer(code),
+  PRODUCT_OFFERS_TAG: "product-offers",
 }));
 
 vi.mock("@/lib/lms/liveCatalog", () => ({
@@ -66,6 +72,10 @@ beforeEach(() => {
   vi.resetModules();
   getLiveCourse.mockReset();
   readOfferRow.mockReset();
+  readProductOffer.mockReset();
+  // No row unless a test says otherwise, which is the state of every course
+  // product: they are priced in `lms_course_offers`, not here.
+  readProductOffer.mockResolvedValue(null);
 });
 
 describe("the legacy reset-day code", () => {
@@ -178,17 +188,80 @@ describe("every legacy code that names a course", () => {
 
 describe("the products that are not a course of their own", () => {
   /* `lms_course_offers` is unique on course_id, so neither of these can have a
-     row: way21-support is a second offer against the way21 course, and herbs is
-     not a course at all. They are read from the constant on purpose — the test
-     exists so that "still on the constant" stays a decision somebody made. */
-  it.each(["way21-support", "herbs"])("reads %s from PRODUCTS without touching the database", async (code) => {
+     row there: way21-support is a second offer against the way21 course, and
+     herbs is not a course at all. Since 2026-09-03 they are priced in
+     `product_offers` instead, and none of it goes near the course tables. */
+
+  it("charges herbs from its product_offers row", async () => {
+    readProductOffer.mockResolvedValue({
+      code: "herbs",
+      amount: 640,
+      listAmount: null,
+      currency: "UAH",
+      kind: "checkout",
+      pixelContentName: null,
+      active: true,
+      updatedAt: null,
+    });
+    const { loadPayableOffer } = await import("./offers");
+
+    const offer = await loadPayableOffer("herbs");
+
+    expect(offer?.amount).toBe(640);
+    // Prose stays hand-written: a row has no sentence in two languages, and a
+    // WayForPay invoice line is read by a person.
+    const { PRODUCTS } = await import("@/lib/products");
+    expect(offer?.heading).toEqual(PRODUCTS.herbs.heading);
+    expect(getLiveCourse).not.toHaveBeenCalled();
+  });
+
+  it("refuses a checkout for a package sold as an enquiry", async () => {
+    readProductOffer.mockResolvedValue({
+      code: "way21-support",
+      amount: 9000,
+      listAmount: null,
+      currency: "UAH",
+      kind: "lead",
+      pixelContentName: null,
+      active: true,
+      updatedAt: null,
+    });
+    const { loadPayableOffer } = await import("./offers");
+
+    // The way21 landing quotes this figure beside a lead form and has no buy
+    // button for it. A price typed into the admin must not become one.
+    expect(await loadPayableOffer("way21-support")).toBeNull();
+  });
+
+  it("refuses a checkout when the price is «за запитом»", async () => {
+    readProductOffer.mockResolvedValue({
+      code: "herbs",
+      amount: null,
+      listAmount: null,
+      currency: "UAH",
+      kind: "checkout",
+      pixelContentName: null,
+      active: true,
+      updatedAt: null,
+    });
+    const { loadPayableOffer } = await import("./offers");
+
+    // Null is not zero and not a free sale: it means nobody has agreed a figure.
+    expect(await loadPayableOffer("herbs")).toBeNull();
+  });
+
+  it("falls back to the constant when no row exists at all", async () => {
+    readProductOffer.mockResolvedValue(null);
     const { loadPayableOffer } = await import("./offers");
     const { PRODUCTS } = await import("@/lib/products");
 
-    const offer = await loadPayableOffer(code);
-
-    expect(offer?.code).toBe(code);
-    expect(offer?.amount).toBe(PRODUCTS[code as keyof typeof PRODUCTS].amount);
-    expect(getLiveCourse).not.toHaveBeenCalled();
+    /* Unlike a course, where an absent offer is the owner declining to sell.
+       These products were sold from a hand-written constant for as long as they
+       have existed, so an absent row is an absence — and closing a live
+       checkout over it would be a decision nobody made. Safe here because both
+       doors read this one function, which is what the way21 bug was actually
+       about. */
+    const offer = await loadPayableOffer("herbs");
+    expect(offer?.amount).toBe(PRODUCTS.herbs.amount);
   });
 });

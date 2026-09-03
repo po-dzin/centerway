@@ -9,12 +9,24 @@
  * `loadPayableOffer` rather than a direct table read, on purpose. It is the
  * same function the checkout charges from, including its alias step, so the
  * number printed on the page and the number WayForPay is asked for come from
- * one call. Products that legitimately still live in `PRODUCTS` — the guided
- * package, the herbal blend — resolve through it too, so this works for them
- * without knowing which kind they are.
+ * one call.
+ *
+ * WHAT MAY BE PRINTED IS NOT WHAT MAY BE CHARGED, and that is why
+ * `product_offers` is consulted first. A guided package is agreed in
+ * conversation: its landing quotes «9000 грн» beside a lead form, and
+ * `loadPayableOffer` deliberately answers `null` for it so that no buy button
+ * can open at that figure. Asking only the payable path would leave every
+ * enquiry product printing whatever was typed into the HTML — the owner could
+ * set a quote in the admin and the page it appears on would never move, which
+ * is the whole thing this was built to fix.
+ *
+ * So: the row's figure is the printed one when a row exists, and the payable
+ * offer answers for everything else. The distinction already exists in this
+ * codebase as `amount` versus `listAmount`; this is the same split one level up.
  */
 
 import { loadPayableOffer } from "@/lib/platform/offers";
+import { loadProductOffer } from "@/lib/platform/productOffers";
 import { collectPriceCodes, type LandingPrices } from "./priceSync";
 
 export async function resolveLandingPrices(html: string): Promise<LandingPrices> {
@@ -24,6 +36,14 @@ export async function resolveLandingPrices(html: string): Promise<LandingPrices>
   const entries = await Promise.all(
     codes.map(async (code) => {
       try {
+        /* A product priced in `product_offers` — an enquiry package, the herbal
+           blend — answers here even when it has no checkout to charge. */
+        const row = await loadProductOffer(code);
+        if (row) {
+          if (row.amount === null) return null; // «ціна за запитом»: the typed text stands.
+          return [code, { amount: row.amount, listAmount: row.listAmount }] as const;
+        }
+
         const offer = await loadPayableOffer(code);
         if (!offer) return null;
         return [code, { amount: offer.amount, listAmount: offer.listAmount ?? null }] as const;

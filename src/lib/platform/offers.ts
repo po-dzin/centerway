@@ -36,6 +36,7 @@ import {
 } from "@/lib/products";
 import { mediaSources } from "@/lib/lms/media";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
+import { loadProductOffer } from "@/lib/platform/productOffers";
 import type { PlatformOfferArtwork } from "@/lib/platform/content";
 import { toOfferSurface } from "@/lib/platform/courseOffer";
 import { COURSE_CATEGORY_LABELS } from "@/lib/platform/catalogVocabulary";
@@ -378,13 +379,48 @@ const COURSE_CODE_ALIASES: Partial<Record<CatalogProductCode, string>> = {
   "reset-day": "reset-day",
 };
 
+/**
+ * A catalogue product with no course of its own: the price comes from
+ * `product_offers`, and from the constant only when there is no row.
+ *
+ * Two products cannot be in `lms_course_offers` — `way21-support` is a second
+ * offer against the way21 course and `herbs` is not a course at all — so before
+ * this they were priced in `products.ts`, where only a deployment could change
+ * them. See `platform/productOffers.ts` for why an absent row falls back here
+ * while an absent COURSE offer refuses the sale instead.
+ *
+ * The prose stays hand-written for the same reason it does on the aliased path:
+ * a WayForPay invoice line is read by a person, and a table row has no sentence
+ * in two languages to give them.
+ *
+ * `amount: null` in the row means «ціна за запитом» and is NOT a price of zero,
+ * so it withdraws the checkout rather than opening a free one. `kind: "lead"`
+ * does the same: a package agreed in conversation and invoiced afterwards must
+ * not become a buy button because somebody typed a figure next to it.
+ */
+async function productOffer(code: CatalogProductCode): Promise<PayableOffer | null> {
+  const base = catalogOffer(code);
+  const row = await loadProductOffer(code);
+  if (!row) return base;
+
+  if (row.kind === "lead" || row.amount === null || row.amount <= 0) return null;
+
+  return {
+    ...base,
+    amount: row.amount,
+    listAmount: row.listAmount ?? base.listAmount,
+    currency: row.currency,
+    pixelContentName: row.pixelContentName ?? base.pixelContentName,
+  };
+}
+
 export async function loadPayableOffer(code: unknown): Promise<PayableOffer | null> {
   const normalized = normalizePayableProduct(code);
   if (!normalized) return null;
 
   if (isCatalogProduct(normalized)) {
     const aliasSlug = COURSE_CODE_ALIASES[normalized];
-    if (!aliasSlug) return catalogOffer(normalized);
+    if (!aliasSlug) return productOffer(normalized);
 
     const aliased = await loadCourseOfferFor(aliasSlug);
     if (!aliased) return null;
