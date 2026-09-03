@@ -1,6 +1,7 @@
 import crypto from "crypto";
 import { adminClient } from "@/lib/auth/adminClient";
 import { PRODUCTS, type SearchParams } from "@/lib/products";
+import { loadPayableOffer } from "@/lib/platform/offers";
 
 type QueryLike = URLSearchParams | SearchParams | Record<string, string | string[] | undefined> | null | undefined;
 
@@ -164,12 +165,25 @@ function buildIremLandingUrl(offerToken: string): string {
   return url.toString();
 }
 
-function buildBaseIremOffer(offerRequested: boolean): LandingResolvedOffer {
+/**
+ * `amount` is passed in rather than read from `PRODUCTS` here (2026-09-02).
+ *
+ * The constant used to be both the printed price and, before the alias, the
+ * charged one — so they could not disagree. Now the charge comes from
+ * `lms_course_offers` through `loadPayableOffer`, and a base offer that kept
+ * reading the file would print one figure while WayForPay took another the
+ * moment somebody edited the row. That is the exact drift that put «4100 грн»
+ * on the way21 landing over a 1 ₴ checkout.
+ *
+ * The constant remains the FALLBACK at the call site: a landing must render a
+ * stale price rather than no price.
+ */
+function buildBaseIremOffer(offerRequested: boolean, amount: number): LandingResolvedOffer {
   const base = PRODUCTS.irem;
   return {
     product: "irem",
     offerId: "irem_main_4100",
-    amount: base.amount,
+    amount,
     currency: base.currency,
     oldAmount: null,
     offerToken: null,
@@ -181,7 +195,7 @@ function buildBaseIremOffer(offerRequested: boolean): LandingResolvedOffer {
     recipientKey: null,
     campaign: null,
     channel: null,
-    currentPriceLabel: formatPriceLabel(base.amount, base.currency),
+    currentPriceLabel: formatPriceLabel(amount, base.currency),
     oldPriceLabel: null,
     activeNote: null,
     expiredNote: null,
@@ -282,9 +296,19 @@ async function activateDraftIremOffer(offerToken: string): Promise<PersonalOffer
   return (data as PersonalOfferTokenRow | null) ?? null;
 }
 
+/** The live price of irem, falling back to the constant if it cannot be read. */
+async function iremBaseAmount(): Promise<number> {
+  try {
+    const offer = await loadPayableOffer("irem");
+    return offer?.amount ?? PRODUCTS.irem.amount;
+  } catch {
+    return PRODUCTS.irem.amount;
+  }
+}
+
 export async function resolveIremLandingOffer(input: QueryLike): Promise<LandingResolvedOffer> {
   const offerToken = first(readQueryValue(input, "offer_token"));
-  const base = buildBaseIremOffer(Boolean(offerToken));
+  const base = buildBaseIremOffer(Boolean(offerToken), await iremBaseAmount());
 
   if (!offerToken) {
     return base;

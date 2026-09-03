@@ -32,6 +32,7 @@ import { courseFromRows, writeCourseStructure } from "./authoring";
 import { getSnapshotCourse } from "./catalog";
 import { immediatePublishedPatch } from "./publishedEditPolicy";
 import {
+  DEFAULT_DRAFT_TITLE,
   courseReadiness,
   newCourseFromTemplate,
   preparePortableCourse,
@@ -639,7 +640,7 @@ export async function createBuilderCourse(input: {
   throw new Error("lms_builder_create_conflict");
 }
 
-export function nextDraftTitle(titles: Iterable<string>, base = "Новий курс"): string {
+export function nextDraftTitle(titles: Iterable<string>, base = DEFAULT_DRAFT_TITLE): string {
   const escaped = base.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const pattern = new RegExp(`^${escaped}(?: (\\d+))?$`, "i");
   let highest = 0;

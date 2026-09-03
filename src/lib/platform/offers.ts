@@ -342,24 +342,39 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
  * missing row is a decision, not an outage.
  */
 /**
- * Hand-written codes that now name a course sold from the offer table.
+ * Hand-written codes that name a course sold from the offer table.
  *
- * `reset-day` is sold twice: the platform charges `course:reset-day` and reads
- * the price from `lms_course_offers`, while the funnel landing still links
- * `?product=reset-day` and charged the figure written in `PRODUCTS`. Two
- * numbers for one course, agreeing today only because both were typed as 1 and
- * 795 — and the day the QA price is lifted in one place, the landing quotes 795
- * and charges something else.
+ * THE PRICE HAS ONE SOURCE, AND IT IS THE ROW. Every product here is sold
+ * through two doors — the funnel landing links `?product=way21`, the storefront
+ * charges `course:way21` — and each door used to read a different number: the
+ * landing from the constant in `PRODUCTS`, the storefront from
+ * `lms_course_offers`. The prose above this list used to warn what that costs,
+ * and then covered only `reset-day`. The bill arrived on 2026-09-02: the way21
+ * landing was quoting 4100 ₴ in its own CTA and charging 1 ₴, because the QA
+ * window had been opened in the constant and the row knew nothing about it.
  *
- * So the legacy code resolves to the same row. What it keeps from the constant
- * is the invoice PROSE, which the database path cannot express: a course row
- * yields one title in one language, and the hand-written entry has a real
- * sentence in both. Money, code and term come from the row; the words stay here.
+ * So the legacy code resolves to the same row for every product that IS a
+ * course. Money, code and access term come from the row; what stays in the
+ * constant is the invoice PROSE, which the database path cannot express — a
+ * course row yields one title in one language, and the hand-written entry has a
+ * real sentence in both, read by a person on a WayForPay invoice.
  *
- * The consequence is deliberate: withdrawing the offer now stops the funnel too,
- * instead of leaving one door selling a course the storefront calls closed.
+ * WHAT IS DELIBERATELY ABSENT. `lms_course_offers` is unique on `course_id` —
+ * one course, one offer — so two products structurally cannot be here:
+ * `way21-support` is a second offer against the same way21 course, and `herbs`
+ * is not a course at all (`fulfilment: cabinet`). They keep their constants,
+ * and that is the shape of the table rather than an omission. A price that must
+ * live in the database for them needs a table that can hold it.
+ *
+ * Two consequences, both intended. Withdrawing the offer stops the funnel too,
+ * instead of leaving one door selling a course the storefront calls closed. And
+ * a QA price is now set where the price is — one UPDATE on the row — rather
+ * than in a constant that only half the doors read.
  */
 const COURSE_CODE_ALIASES: Partial<Record<CatalogProductCode, string>> = {
+  short: "short",
+  irem: "irem-gymnastics",
+  way21: "way21",
   "reset-day": "reset-day",
 };
 

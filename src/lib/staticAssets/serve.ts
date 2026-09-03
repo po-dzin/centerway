@@ -1,6 +1,9 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
+import { resolveLandingPrices } from "@/lib/landing/landingPrices";
+import { applyPriceSync, collectPriceCodes } from "@/lib/landing/priceSync";
+
 const STATIC_ROOT = path.join(process.cwd(), "src", "landing-static");
 
 const CONTENT_TYPES: Record<string, string> = {
@@ -57,6 +60,28 @@ function sourceDirectoryForPrefix(prefix: string): string {
  */
 const ASSET_CACHE = "public, max-age=3600, s-maxage=31536000, stale-while-revalidate=86400";
 
+/**
+ * A page that prints a live price cannot be cached until the next deployment.
+ *
+ * The year above is safe for a file whose only source of truth is the file —
+ * an image changes when the repository does. A price does not: it lives in
+ * `lms_course_offers`, an owner can change it this afternoon, and the whole
+ * point of the sync is that the change reaches the page. Cached for a year, a
+ * landing would advertise last month's figure over a checkout charging the new
+ * one, which is the failure this was built to end, only slower.
+ *
+ * Five minutes rather than zero: these are the pages paid traffic lands on, and
+ * they are worth serving from the edge. `stale-while-revalidate` means a price
+ * change shows up on the next request after that window and nobody waits for a
+ * database read to see a landing page.
+ *
+ * Only pages that actually carry `data-cw-price` pay this. Everything else —
+ * images, stylesheets, the utility pages with no figure on them — keeps the
+ * long cache, so the cost is scoped to the handful of documents that quote
+ * money.
+ */
+const PRICED_HTML_CACHE = "public, max-age=0, s-maxage=300, stale-while-revalidate=3600";
+
 export async function serveStaticAsset(prefix: string, segments: string[]): Promise<Response> {
   const safe = safeSegments(segments);
   if (!safe) {
@@ -67,10 +92,29 @@ export async function serveStaticAsset(prefix: string, segments: string[]): Prom
   try {
     const data = await readFile(filePath);
     const isDev = process.env.NODE_ENV !== "production";
+    const contentType = contentTypeByExt(filePath);
+
+    /* HTML is the only thing here that can quote a price, and most of it does
+       not. `collectPriceCodes` on the decoded text is the cheap test that keeps
+       every other asset on the path it had before this existed. */
+    if (contentType.startsWith("text/html")) {
+      const html = data.toString("utf-8");
+      if (collectPriceCodes(html).length > 0) {
+        const synced = applyPriceSync(html, await resolveLandingPrices(html));
+        return new Response(synced, {
+          status: 200,
+          headers: {
+            "content-type": contentType,
+            "cache-control": isDev ? "no-store, max-age=0" : PRICED_HTML_CACHE,
+          },
+        });
+      }
+    }
+
     return new Response(data, {
       status: 200,
       headers: {
-        "content-type": contentTypeByExt(filePath),
+        "content-type": contentType,
         "cache-control": isDev ? "no-store, max-age=0" : ASSET_CACHE,
       },
     });

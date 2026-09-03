@@ -67,6 +67,38 @@ export function slugify(title: string): string {
   return base.length > 0 ? base : "item";
 }
 
+/**
+ * The name a course is born with, before its author has given it one.
+ *
+ * Lives here, beside `slugify`, because it is the INPUT that produces the
+ * default address: the builder titles a new draft «Новий курс», «Новий курс 2»,
+ * … and derives the slug from that title. Two modules therefore have to agree
+ * on this string — the one that hands out the name and the one that refuses to
+ * publish it — and a second copy of it would drift the first time the wording
+ * changed.
+ */
+export const DEFAULT_DRAFT_TITLE = "Новий курс";
+
+/**
+ * Is this address still the one the builder invented?
+ *
+ * A slug is not a name, it is a PERMANENT address: it goes into the sitemap,
+ * into `course:<slug>` on every order, and into the link a buyer is sent. It is
+ * also the one field an author never has to look at — the title is in front of
+ * them and the slug is not — so the failure is silent and one-directional. A
+ * real course reached the storefront titled «Soul Daily Ritual» and addressed
+ * `/programs/novyi-kurs-5`, in the sitemap, indexable, with the slug already
+ * written into fourteen orders.
+ *
+ * Matches both ways the default can be numbered: the title counter
+ * («Новий курс 5» → `novyi-kurs-5`) and `uniqueSlug`'s collision suffix, which
+ * produce the same shape and are equally unmeant.
+ */
+export function isDefaultDraftSlug(slug: string): boolean {
+  const base = slugify(DEFAULT_DRAFT_TITLE);
+  return new RegExp(`^${base}(?:-\\d+)?$`).test(slug.trim().toLowerCase());
+}
+
 /** `slugify`, then a numeric suffix until it stops colliding. */
 export function uniqueSlug(title: string, taken: Iterable<string>): string {
   const used = new Set(taken);
