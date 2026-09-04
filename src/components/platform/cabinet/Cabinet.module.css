@@ -310,7 +310,10 @@
   line-height: 1.35;
 }
 
-@media (min-width: 900px) {
+/* 901px, not 900px: the tablet band ends AT 900 (mobile ≤ 560, tablet
+   561–900, desktop ≥ 901), so `min-width: 900px` handed a 900px tablet the
+   desktop layout by one pixel. */
+@media (min-width: 901px) {
   /* AN ISLAND, NOT A BAND. Spread across the full content column the row read
      as a strip pinned to the bottom of the screen rather than as one object
      standing in the room. Capped and centred, it sits under the middle of the
@@ -999,9 +1002,16 @@
 /* The compact form is read down one column. Desktop holds compact media at the
    left and the complete editable profile at the right, within one full-width
    material card. */
+/* ONE FIELD RHYTHM, ALL THREE BANDS. `.card`'s own `sm` applied on phone and
+   tablet while the desktop rule below set `row-gap: md`, so the same form had
+   two different vertical rhythms depending on width. `md` between fields
+   against `.authorField`'s own `2xs` from label to control is the 4:1 the
+   spacing scale is for: a field's parts read as one object, the fields as
+   separate ones. */
 .authorForm {
   composes: card;
   display: grid;
+  gap: var(--cw-space-md);
   width: 100%;
   max-width: none;
 }
@@ -1014,13 +1024,15 @@
   color: var(--cw-platform-muted);
 }
 
-/* Photo, then background — its own vertical stack, independent of the grid
-   row a text field beside it would land in. See the ≥901px rule below for
-   why that independence is the point, not just a grouping convenience. */
-.authorFormMedia {
-  display: flex;
-  flex-direction: column;
+/* THE FORM'S TWO HALVES. One grid item each, so neither can be held to the
+   other's row heights — the whole point, not a grouping convenience. Same
+   `md` rhythm inside them as between them, on all three bands. */
+.authorFormMedia,
+.authorFormText {
+  display: grid;
+  align-content: start;
   gap: var(--cw-space-md);
+  min-width: 0;
 }
 
 /* The label and the command that grows its list, on one row — the same
@@ -1170,7 +1182,7 @@
 
 .authorVisibilityCopy {
   display: grid;
-  gap: 0.15rem;
+  gap: var(--cw-space-2xs);
   min-width: 0;
 }
 
@@ -1311,42 +1323,45 @@
 
 /* The photo's own crop, on the two frames it is actually shown through — the
    builder's `BuilderCoverEditor` set the pattern for a course's cover. */
+/* No margin of its own — the field it sits in already spaces its own parts
+   with `.authorField`'s gap, and a margin on top of that gap is a second
+   answer to one question. */
 .photoCropGrid {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: var(--cw-space-md);
-  margin-block-start: var(--cw-space-2xs);
 }
 
+/* A label over a crop frame, not a plate around one — `.authorForm` is
+   already the matte card this sits inside, and a bordered surface here on
+   top of that read as a card inside a card inside a card. */
 .photoCropPanel {
   min-width: 0;
   display: grid;
   align-content: start;
   gap: var(--cw-space-sm);
-  padding: var(--cw-space-md);
-  border: 1px solid var(--cw-platform-border);
-  border-radius: var(--cw-radius-lg);
-  background: var(--cw-mat-surface);
 }
 
+/* A grid with a token gap, not a margin under the title — `0.15rem` was
+   2.4px, off the 4px rhythm grid `guard:rhythm` holds every spacing value to,
+   and the two font sizes (0.95rem / 0.78rem) were a type scale of their own
+   next to the one in the token file. */
 .photoCropHead {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: var(--cw-space-sm);
+  display: grid;
+  gap: var(--cw-space-2xs);
 }
 
 .photoCropHead h4 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: var(--ds-type-body-sm-size);
   font-weight: 700;
   line-height: 1.35;
 }
 
 .photoCropHead p {
-  margin: 0.15rem 0 0;
+  margin: 0;
   color: var(--cw-platform-muted);
-  font-size: 0.78rem;
+  font-size: var(--ds-type-label-size);
   line-height: 1.45;
 }
 
@@ -1445,12 +1460,17 @@
   composes: onMedia from "../PlatformButtons.module.css";
   composes: square from "../PlatformButtons.module.css";
   position: absolute;
-  right: -0.35rem;
-  bottom: -0.35rem;
+  right: calc(var(--cw-space-2xs) * -1);
+  bottom: calc(var(--cw-space-2xs) * -1);
   cursor: pointer;
 }
 
-@media (min-width: 641px) {
+/* 561px, the platform's tablet boundary — not 641px, which was a fourth
+   system on top of the three this file already reconciled (see the note over
+   the wider-viewport section below). The two frames go side by side for the
+   whole tablet band and stay there on desktop, where the media column is
+   still wide enough for both. */
+@media (min-width: 561px) {
   .photoCropGrid {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
@@ -1538,21 +1558,12 @@
    and writing the profile they read. On desktop those tasks deserve their own
    columns; on compact screens the source order remains the one-column form. */
 @media (min-width: 901px) {
+  /* Columns and the gutter between them. The row rhythm is NOT restated
+     here — it is `md` in the base rule, on every band. */
   .authorForm {
     grid-template-columns: minmax(18rem, 2fr) minmax(0, 3fr);
     column-gap: var(--cw-space-xl);
-    row-gap: var(--cw-space-md);
     align-items: start;
-  }
-
-  /* Its own grid column, not a cell sharing a row with the text fields. A
-     CSS grid row is only ever as tall as its shortest cell — pair a text
-     field with the photo in the same row and every field below it waits on
-     however tall the crop cards happen to be that day. `.authorFormMedia` is
-     one grid item; what happens inside it (photo, then background) never
-     touches the text column's own row heights. */
-  .authorFormMedia {
-    grid-column: 1;
   }
 
   .authorPhotoPreview,
@@ -1570,11 +1581,16 @@
     aspect-ratio: auto;
   }
 
-  /* Everything else is a text field, in the second column — this used to be
-     an explicit list mirrored by its own `:not()` catch-all so a field
-     nobody remembered to add to either stayed on the grid at all. Now there
-     are only two groups: the media column, named above, and everyone else. */
-  .authorForm > :not(.authorFormMedia) {
+  /* Two children, two columns — no per-field placement at all any more. This
+     used to be an explicit list of every field class, mirrored by a `:not()`
+     catch-all so a field nobody remembered to add to the list still landed
+     somewhere. Both are gone: a new field is added inside one of the two
+     halves and needs no rule of its own here. */
+  .authorFormMedia {
+    grid-column: 1;
+  }
+
+  .authorFormText {
     grid-column: 2;
   }
 }

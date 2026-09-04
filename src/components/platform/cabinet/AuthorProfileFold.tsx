@@ -289,7 +289,13 @@ function draftFromAuthor(author: Author | null): Draft {
     profileBlocks: author?.profileBlocks ?? [],
     experienceBadge: author?.experienceBadge ?? "",
     achievementBadge: author?.achievementBadge ?? "",
-    consultation: { enabled: author?.consultation?.enabled ?? false, title: author?.consultation?.title ?? "", summary: author?.consultation?.summary ?? "", points: author?.consultation?.points ?? [], contactUrl: author?.consultation?.contactUrl ?? "" },
+    consultation: {
+      enabled: author?.consultation?.enabled ?? false,
+      title: author?.consultation?.title ?? "",
+      summary: author?.consultation?.summary ?? "",
+      points: author?.consultation?.points?.length ? author.consultation.points : [""],
+      contactUrl: author?.consultation?.contactUrl ?? "",
+    },
     photo: author?.photo ?? null,
     background: author?.background ?? null,
     listed: author?.listed ?? false,
@@ -331,7 +337,10 @@ const STRINGS = {
     consultationEnabled: "Приймаю запити на консультацію",
     consultationTitle: "Назва консультації",
     consultationSummary: "Кому і з чим допомагаю",
-    consultationPoints: "3 головні пункти",
+    consultationPoints: "Головні пункти",
+    consultationPointsHint: "До 3.",
+    consultationPointAdd: "Додати пункт",
+    consultationPointRemove: "Прибрати пункт",
     consultationContact: "Посилання для домовленості",
     photo: "Фото",
     photoUpload: "Завантажити фото",
@@ -392,7 +401,10 @@ const STRINGS = {
     consultationEnabled: "Accept consultation requests",
     consultationTitle: "Consultation title",
     consultationSummary: "Who you help and with what",
-    consultationPoints: "3 key points",
+    consultationPoints: "Key points",
+    consultationPointsHint: "Up to 3.",
+    consultationPointAdd: "Add point",
+    consultationPointRemove: "Remove point",
     consultationContact: "Contact link",
     photo: "Photo",
     photoUpload: "Upload photo",
@@ -597,10 +609,8 @@ export function AuthorProfileFold({
                   <div className={styles.photoCropGrid}>
                     <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-card-title">
                       <div className={styles.photoCropHead}>
-                        <div>
-                          <h4 id="author-photo-crop-card-title">{t.photoCropCardTitle}</h4>
-                          <p>{t.photoCropCardNote}</p>
-                        </div>
+                        <h4 id="author-photo-crop-card-title">{t.photoCropCardTitle}</h4>
+                        <p>{t.photoCropCardNote}</p>
                       </div>
                       <PhotoCropPreview
                         src={draft.photo.src}
@@ -624,10 +634,8 @@ export function AuthorProfileFold({
                     </section>
                     <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-avatar-title">
                       <div className={styles.photoCropHead}>
-                        <div>
-                          <h4 id="author-photo-crop-avatar-title">{t.photoCropAvatarTitle}</h4>
-                          <p>{t.photoCropAvatarNote}</p>
-                        </div>
+                        <h4 id="author-photo-crop-avatar-title">{t.photoCropAvatarTitle}</h4>
+                        <p>{t.photoCropAvatarNote}</p>
                       </div>
                       <PhotoCropPreview
                         src={draft.photo.src}
@@ -723,290 +731,348 @@ export function AuthorProfileFold({
             </div>
           </div>
 
-          <label className={`${styles.authorField} ${styles.authorNameField}`}>
-            <span>{t.name}</span>
-            <input
-              className={styles.authorInput}
-              value={draft.name}
-              required
-              onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
-            />
-          </label>
+          {/* THE OTHER COLUMN, AS ONE ELEMENT. Both sides have to be single
+              grid items for the two to flow independently: a CSS grid row is
+              as tall as its tallest cell, so while the text fields were
+              direct children of the form, whichever one shared a row with the
+              media column still waited on the photo's full height — the gap
+              under «Ім'я» that started all this. Two children, two columns,
+              no shared rows. */}
+          <div className={styles.authorFormText}>
+            <label className={`${styles.authorField} ${styles.authorNameField}`}>
+              <span>{t.name}</span>
+              <input
+                className={styles.authorInput}
+                value={draft.name}
+                required
+                onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
+              />
+            </label>
 
-          <label className={`${styles.authorField} ${styles.authorRoleField}`}>
-            <span>{t.role}</span>
-            <input
-              className={styles.authorInput}
-              value={draft.role}
-              onChange={(e) => setDraft((prev) => ({ ...prev, role: e.target.value }))}
-            />
-          </label>
+            <label className={`${styles.authorField} ${styles.authorRoleField}`}>
+              <span>{t.role}</span>
+              <input
+                className={styles.authorInput}
+                value={draft.role}
+                onChange={(e) => setDraft((prev) => ({ ...prev, role: e.target.value }))}
+              />
+            </label>
 
-          <label className={`${styles.authorField} ${styles.authorBioField}`}>
-            <span>{t.bio}</span>
-            <textarea
-              className={styles.authorTextarea}
-              value={draft.bio}
-              rows={4}
-              onChange={(e) => setDraft((prev) => ({ ...prev, bio: e.target.value }))}
-            />
-          </label>
+            <label className={`${styles.authorField} ${styles.authorBioField}`}>
+              <span>{t.bio}</span>
+              <textarea
+                className={styles.authorTextarea}
+                value={draft.bio}
+                rows={4}
+                onChange={(e) => setDraft((prev) => ({ ...prev, bio: e.target.value }))}
+              />
+            </label>
 
-          <label className={`${styles.authorField} ${styles.authorQuoteField}`}>
-            <span>{t.quote}</span>
-            <textarea
-              className={styles.authorTextarea}
-              value={draft.quote}
-              rows={2}
-              onChange={(e) => setDraft((prev) => ({ ...prev, quote: e.target.value }))}
-            />
-          </label>
+            <label className={`${styles.authorField} ${styles.authorQuoteField}`}>
+              <span>{t.quote}</span>
+              <textarea
+                className={styles.authorTextarea}
+                value={draft.quote}
+                rows={2}
+                onChange={(e) => setDraft((prev) => ({ ...prev, quote: e.target.value }))}
+              />
+            </label>
 
-          <div className={`${styles.authorField} ${styles.authorCredentialsField}`}>
-            <div className={styles.authorFieldHead}>
-              <span>{t.credentials}</span>
-              <button
-                type="button"
-                className={styles.authorAddIcon}
-                aria-label={t.credentialAdd}
-                title={t.credentialAdd}
-                onClick={() => setDraft((prev) => ({ ...prev, credentials: [...prev.credentials, ""] }))}
-              >
-                <Icon name="plus" size={18} />
-              </button>
-            </div>
-            {draft.credentials.map((line, index) => (
-              <div className={styles.authorCredentialRow} key={index}>
-                <input
-                  className={styles.authorInput}
-                  value={line}
-                  onChange={(e) =>
-                    setDraft((prev) => ({
-                      ...prev,
-                      credentials: prev.credentials.map((v, i) => (i === index ? e.target.value : v)),
-                    }))
-                  }
-                />
-                <button
-                  type="button"
-                  className={styles.authorIconAction}
-                  aria-label={t.credentialRemove}
-                  title={t.credentialRemove}
-                  onClick={() =>
-                    setDraft((prev) => ({ ...prev, credentials: prev.credentials.filter((_, i) => i !== index) }))
-                  }
-                >
-                  <Icon name="close" size={18} />
-                </button>
-              </div>
-            ))}
-          </div>
-
-          {/* Six is a recommendation, not a shape the form forces on an author
-              who has three good facts and no use for the other three slots —
-              the field used to draw all six as empty inputs regardless. One row
-              stays (the list a card can print from cannot go to none), the rest
-              are added and removed like every other list in this form. */}
-          <div className={`${styles.authorField} ${styles.authorFactsField}`}>
-            <div className={styles.authorFieldHead}>
-              <span>
-                {t.facts}
-                {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
-              </span>
-              {draft.facts.length < 6 ? (
+            <div className={`${styles.authorField} ${styles.authorCredentialsField}`}>
+              <div className={styles.authorFieldHead}>
+                <span>{t.credentials}</span>
                 <button
                   type="button"
                   className={styles.authorAddIcon}
-                  aria-label={t.factAdd}
-                  title={t.factAdd}
-                  onClick={() => setDraft((prev) => ({ ...prev, facts: [...prev.facts, ""] }))}
+                  aria-label={t.credentialAdd}
+                  title={t.credentialAdd}
+                  onClick={() => setDraft((prev) => ({ ...prev, credentials: [...prev.credentials, ""] }))}
                 >
                   <Icon name="plus" size={18} />
                 </button>
-              ) : null}
-            </div>
-            <p className={styles.authorNotice}>{t.factsHint}</p>
-            {draft.facts.map((line, index) => (
-              <div className={styles.authorCredentialRow} key={index}>
-                <input
-                  className={styles.authorInput}
-                  value={line}
-                  required={index === 0 && draft.listed}
-                  onChange={(e) =>
-                    setDraft((prev) => {
-                      const facts = [...prev.facts];
-                      facts[index] = e.target.value;
-                      return { ...prev, facts };
-                    })
-                  }
-                />
-                {draft.facts.length > 1 ? (
-                  <button
-                    type="button"
-                    className={styles.authorIconAction}
-                    aria-label={t.factRemove}
-                    title={t.factRemove}
-                    onClick={() => setDraft((prev) => ({ ...prev, facts: prev.facts.filter((_, i) => i !== index) }))}
-                  >
-                    <Icon name="close" size={18} />
-                  </button>
-                ) : null}
               </div>
-            ))}
-          </div>
-          <div className={`${styles.authorField} ${styles.authorProfileBlocksField}`}>
-            <span>{t.profileBlocks}</span>
-            {draft.profileBlocks.map((block, index) => (
-              <fieldset className={styles.authorProfileBlockEditor} key={block.id}>
-                <div className={styles.authorProfileBlockHead}>
-                  <span>{index + 1}</span>
+              {draft.credentials.map((line, index) => (
+                <div className={styles.authorCredentialRow} key={index}>
+                  <input
+                    className={styles.authorInput}
+                    value={line}
+                    onChange={(e) =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        credentials: prev.credentials.map((v, i) => (i === index ? e.target.value : v)),
+                      }))
+                    }
+                  />
                   <button
                     type="button"
                     className={styles.authorIconAction}
-                    aria-label={t.profileBlockRemove}
-                    title={t.profileBlockRemove}
-                    onClick={() => setDraft((prev) => ({
-                      ...prev,
-                      profileBlocks: prev.profileBlocks.filter((item) => item.id !== block.id),
-                    }))}
+                    aria-label={t.credentialRemove}
+                    title={t.credentialRemove}
+                    onClick={() =>
+                      setDraft((prev) => ({ ...prev, credentials: prev.credentials.filter((_, i) => i !== index) }))
+                    }
                   >
                     <Icon name="close" size={18} />
                   </button>
                 </div>
-                <label className={styles.authorField}>
-                  <span>{t.profileBlockKind}</span>
-                  <select
-                    className={styles.authorInput}
-                    value={block.kind}
-                    onChange={(event) => setDraft((prev) => ({
-                      ...prev,
-                      profileBlocks: prev.profileBlocks.map((item) => item.id === block.id
-                        ? { ...item, kind: event.target.value as AuthorProfileBlock["kind"] }
-                        : item),
-                    }))}
+              ))}
+            </div>
+
+            {/* Six is a recommendation, not a shape the form forces on an author
+                who has three good facts and no use for the other three slots —
+                the field used to draw all six as empty inputs regardless. One row
+                stays (the list a card can print from cannot go to none), the rest
+                are added and removed like every other list in this form. */}
+            <div className={`${styles.authorField} ${styles.authorFactsField}`}>
+              <div className={styles.authorFieldHead}>
+                <span>
+                  {t.facts}
+                  {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
+                </span>
+                {draft.facts.length < 6 ? (
+                  <button
+                    type="button"
+                    className={styles.authorAddIcon}
+                    aria-label={t.factAdd}
+                    title={t.factAdd}
+                    onClick={() => setDraft((prev) => ({ ...prev, facts: [...prev.facts, ""] }))}
                   >
-                    <option value="text">{t.profileBlockText}</option>
-                    <option value="list">{t.profileBlockList}</option>
-                    <option value="timeline">{t.profileBlockTimeline}</option>
-                  </select>
-                </label>
-                <label className={styles.authorField}>
-                  <span>{t.profileBlockLabel}</span>
-                  <input className={styles.authorInput} value={block.label ?? ""} onChange={(event) => setDraft((prev) => ({
-                    ...prev,
-                    profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, label: event.target.value } : item),
-                  }))} />
-                </label>
-                <label className={styles.authorField}>
-                  <span>{t.profileBlockTitle}</span>
-                  <input className={styles.authorInput} value={block.title} required onChange={(event) => setDraft((prev) => ({
-                    ...prev,
-                    profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, title: event.target.value } : item),
-                  }))} />
-                </label>
-                {block.kind === "text" ? (
+                    <Icon name="plus" size={18} />
+                  </button>
+                ) : null}
+              </div>
+              <p className={styles.authorNotice}>{t.factsHint}</p>
+              {draft.facts.map((line, index) => (
+                <div className={styles.authorCredentialRow} key={index}>
+                  <input
+                    className={styles.authorInput}
+                    value={line}
+                    required={index === 0 && draft.listed}
+                    onChange={(e) =>
+                      setDraft((prev) => {
+                        const facts = [...prev.facts];
+                        facts[index] = e.target.value;
+                        return { ...prev, facts };
+                      })
+                    }
+                  />
+                  {draft.facts.length > 1 ? (
+                    <button
+                      type="button"
+                      className={styles.authorIconAction}
+                      aria-label={t.factRemove}
+                      title={t.factRemove}
+                      onClick={() => setDraft((prev) => ({ ...prev, facts: prev.facts.filter((_, i) => i !== index) }))}
+                    >
+                      <Icon name="close" size={18} />
+                    </button>
+                  ) : null}
+                </div>
+              ))}
+            </div>
+            <div className={`${styles.authorField} ${styles.authorProfileBlocksField}`}>
+              <span>{t.profileBlocks}</span>
+              {draft.profileBlocks.map((block, index) => (
+                <fieldset className={styles.authorProfileBlockEditor} key={block.id}>
+                  <div className={styles.authorProfileBlockHead}>
+                    <span>{index + 1}</span>
+                    <button
+                      type="button"
+                      className={styles.authorIconAction}
+                      aria-label={t.profileBlockRemove}
+                      title={t.profileBlockRemove}
+                      onClick={() => setDraft((prev) => ({
+                        ...prev,
+                        profileBlocks: prev.profileBlocks.filter((item) => item.id !== block.id),
+                      }))}
+                    >
+                      <Icon name="close" size={18} />
+                    </button>
+                  </div>
                   <label className={styles.authorField}>
-                    <span>{t.profileBlockBody}</span>
-                    <textarea className={styles.authorTextarea} rows={6} value={block.body ?? ""} required onChange={(event) => setDraft((prev) => ({
+                    <span>{t.profileBlockKind}</span>
+                    <select
+                      className={styles.authorInput}
+                      value={block.kind}
+                      onChange={(event) => setDraft((prev) => ({
+                        ...prev,
+                        profileBlocks: prev.profileBlocks.map((item) => item.id === block.id
+                          ? { ...item, kind: event.target.value as AuthorProfileBlock["kind"] }
+                          : item),
+                      }))}
+                    >
+                      <option value="text">{t.profileBlockText}</option>
+                      <option value="list">{t.profileBlockList}</option>
+                      <option value="timeline">{t.profileBlockTimeline}</option>
+                    </select>
+                  </label>
+                  <label className={styles.authorField}>
+                    <span>{t.profileBlockLabel}</span>
+                    <input className={styles.authorInput} value={block.label ?? ""} onChange={(event) => setDraft((prev) => ({
                       ...prev,
-                      profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, body: event.target.value } : item),
+                      profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, label: event.target.value } : item),
                     }))} />
                   </label>
-                ) : (
                   <label className={styles.authorField}>
-                    <span>{t.profileBlockItems}</span>
-                    <textarea className={styles.authorTextarea} rows={7} value={(block.items ?? []).join("\n")} required onChange={(event) => setDraft((prev) => ({
+                    <span>{t.profileBlockTitle}</span>
+                    <input className={styles.authorInput} value={block.title} required onChange={(event) => setDraft((prev) => ({
                       ...prev,
-                      profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, items: event.target.value.split("\n") } : item),
+                      profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, title: event.target.value } : item),
                     }))} />
                   </label>
-                )}
-              </fieldset>
-            ))}
-            {draft.profileBlocks.length < 12 ? (
-              <button
-                type="button"
-                className={styles.authorBlockAdd}
-                aria-label={t.profileBlockAdd}
-                title={t.profileBlockAdd}
-                onClick={() => setDraft((prev) => ({
-                  ...prev,
-                  profileBlocks: [...prev.profileBlocks, {
-                    id: `section-${Date.now()}`,
-                    kind: "text",
-                    title: "",
-                    body: "",
-                  }],
-                }))}
-              >
-                <Icon name="plus" size={20} />
-                <span>{t.profileBlockAdd}</span>
+                  {block.kind === "text" ? (
+                    <label className={styles.authorField}>
+                      <span>{t.profileBlockBody}</span>
+                      <textarea className={styles.authorTextarea} rows={6} value={block.body ?? ""} required onChange={(event) => setDraft((prev) => ({
+                        ...prev,
+                        profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, body: event.target.value } : item),
+                      }))} />
+                    </label>
+                  ) : (
+                    <label className={styles.authorField}>
+                      <span>{t.profileBlockItems}</span>
+                      <textarea className={styles.authorTextarea} rows={7} value={(block.items ?? []).join("\n")} required onChange={(event) => setDraft((prev) => ({
+                        ...prev,
+                        profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, items: event.target.value.split("\n") } : item),
+                      }))} />
+                    </label>
+                  )}
+                </fieldset>
+              ))}
+              {draft.profileBlocks.length < 12 ? (
+                <button
+                  type="button"
+                  className={styles.authorBlockAdd}
+                  aria-label={t.profileBlockAdd}
+                  title={t.profileBlockAdd}
+                  onClick={() => setDraft((prev) => ({
+                    ...prev,
+                    profileBlocks: [...prev.profileBlocks, {
+                      id: `section-${Date.now()}`,
+                      kind: "text",
+                      title: "",
+                      body: "",
+                    }],
+                  }))}
+                >
+                  <Icon name="plus" size={20} />
+                  <span>{t.profileBlockAdd}</span>
+                </button>
+              ) : null}
+            </div>
+            <label className={`${styles.authorField} ${styles.authorExperienceField}`}>
+              <span>
+                {t.experienceBadge}
+                {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
+              </span>
+              <input className={styles.authorInput} value={draft.experienceBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, experienceBadge: e.target.value }))} />
+            </label>
+            <label className={`${styles.authorField} ${styles.authorAchievementField}`}>
+              <span>
+                {t.achievementBadge}
+                {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
+              </span>
+              <input className={styles.authorInput} value={draft.achievementBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, achievementBadge: e.target.value }))} />
+            </label>
+            <fieldset className={`${styles.authorField} ${styles.authorConsultationField}`}>
+              <legend>{t.consultation}</legend>
+              <label className={styles.authorVisibilityRow}><input className={styles.authorVisibilityInput} type="checkbox" checked={draft.consultation.enabled} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, enabled: e.target.checked } }))} /><span className={styles.authorVisibilityMark} aria-hidden="true"><Icon name="check" size={14} /></span><span>{t.consultationEnabled}</span></label>
+              <input className={styles.authorInput} placeholder={t.consultationTitle} value={draft.consultation.title} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, title: e.target.value } }))} />
+              <textarea className={styles.authorTextarea} rows={3} placeholder={t.consultationSummary} value={draft.consultation.summary} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, summary: e.target.value } }))} />
+              <div className={styles.authorFieldHead}>
+                <span>{t.consultationPoints}</span>
+                {draft.consultation.points.length < 3 ? (
+                  <button
+                    type="button"
+                    className={styles.authorAddIcon}
+                    aria-label={t.consultationPointAdd}
+                    title={t.consultationPointAdd}
+                    onClick={() =>
+                      setDraft((prev) => ({
+                        ...prev,
+                        consultation: { ...prev.consultation, points: [...prev.consultation.points, ""] },
+                      }))
+                    }
+                  >
+                    <Icon name="plus" size={18} />
+                  </button>
+                ) : null}
+              </div>
+              <p className={styles.authorNotice}>{t.consultationPointsHint}</p>
+              {draft.consultation.points.map((line, index) => (
+                <div className={styles.authorCredentialRow} key={index}>
+                  <input
+                    className={styles.authorInput}
+                    value={line}
+                    onChange={(e) =>
+                      setDraft((prev) => {
+                        const points = [...prev.consultation.points];
+                        points[index] = e.target.value;
+                        return { ...prev, consultation: { ...prev.consultation, points } };
+                      })
+                    }
+                  />
+                  {draft.consultation.points.length > 1 ? (
+                    <button
+                      type="button"
+                      className={styles.authorIconAction}
+                      aria-label={t.consultationPointRemove}
+                      title={t.consultationPointRemove}
+                      onClick={() =>
+                        setDraft((prev) => ({
+                          ...prev,
+                          consultation: { ...prev.consultation, points: prev.consultation.points.filter((_, i) => i !== index) },
+                        }))
+                      }
+                    >
+                      <Icon name="close" size={18} />
+                    </button>
+                  ) : null}
+                </div>
+              ))}
+              <input className={styles.authorInput} placeholder={t.consultationContact} value={draft.consultation.contactUrl} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, contactUrl: e.target.value } }))} />
+            </fieldset>
+
+
+            <label className={`${styles.authorField} ${styles.authorSlugField}`}>
+              <span>{t.slug}</span>
+              <input
+                className={styles.authorInput}
+                value={draft.slug}
+                placeholder="/expert/…"
+                onChange={(e) => setDraft((prev) => ({ ...prev, slug: e.target.value }))}
+              />
+            </label>
+
+            {/* A system checkbox sits before the setting it controls. The copy is
+                one readable unit, not a paragraph with a detached box. */}
+            <label className={styles.authorVisibilityRow}>
+              <input
+                className={styles.authorVisibilityInput}
+                type="checkbox"
+                checked={draft.listed}
+                onChange={(e) => setDraft((prev) => ({ ...prev, listed: e.target.checked }))}
+              />
+              <span className={styles.authorVisibilityMark} aria-hidden="true">
+                <Icon name="check" size={14} />
+              </span>
+              <span className={styles.authorVisibilityCopy}>
+                <strong>{t.listed}</strong>
+                <span className={styles.authorVisibilityNote}>{draft.listed ? t.listedOn : t.listedOff}</span>
+              </span>
+            </label>
+
+            <div className={`${styles.actions} ${styles.authorFormActions}`}>
+              <button className={styles.actionPrimary} type="submit" disabled={saving || uploading}>
+                {saving ? t.saving : t.save}
               </button>
-            ) : null}
-          </div>
-          <label className={`${styles.authorField} ${styles.authorExperienceField}`}>
-            <span>
-              {t.experienceBadge}
-              {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
-            </span>
-            <input className={styles.authorInput} value={draft.experienceBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, experienceBadge: e.target.value }))} />
-          </label>
-          <label className={`${styles.authorField} ${styles.authorAchievementField}`}>
-            <span>
-              {t.achievementBadge}
-              {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
-            </span>
-            <input className={styles.authorInput} value={draft.achievementBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, achievementBadge: e.target.value }))} />
-          </label>
-          <fieldset className={`${styles.authorField} ${styles.authorConsultationField}`}>
-            <legend>{t.consultation}</legend>
-            <label className={styles.authorVisibilityRow}><input className={styles.authorVisibilityInput} type="checkbox" checked={draft.consultation.enabled} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, enabled: e.target.checked } }))} /><span className={styles.authorVisibilityMark} aria-hidden="true"><Icon name="check" size={14} /></span><span>{t.consultationEnabled}</span></label>
-            <input className={styles.authorInput} placeholder={t.consultationTitle} value={draft.consultation.title} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, title: e.target.value } }))} />
-            <textarea className={styles.authorTextarea} rows={3} placeholder={t.consultationSummary} value={draft.consultation.summary} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, summary: e.target.value } }))} />
-            <span>{t.consultationPoints}</span>
-            {Array.from({ length: 3 }, (_, index) => <input key={index} className={styles.authorInput} value={draft.consultation.points[index] ?? ""} onChange={(e) => setDraft((prev) => { const points = [...prev.consultation.points]; points[index] = e.target.value; return { ...prev, consultation: { ...prev.consultation, points } }; })} />)}
-            <input className={styles.authorInput} placeholder={t.consultationContact} value={draft.consultation.contactUrl} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, contactUrl: e.target.value } }))} />
-          </fieldset>
-
-
-          <label className={`${styles.authorField} ${styles.authorSlugField}`}>
-            <span>{t.slug}</span>
-            <input
-              className={styles.authorInput}
-              value={draft.slug}
-              placeholder="/expert/…"
-              onChange={(e) => setDraft((prev) => ({ ...prev, slug: e.target.value }))}
-            />
-          </label>
-
-          {/* A system checkbox sits before the setting it controls. The copy is
-              one readable unit, not a paragraph with a detached box. */}
-          <label className={styles.authorVisibilityRow}>
-            <input
-              className={styles.authorVisibilityInput}
-              type="checkbox"
-              checked={draft.listed}
-              onChange={(e) => setDraft((prev) => ({ ...prev, listed: e.target.checked }))}
-            />
-            <span className={styles.authorVisibilityMark} aria-hidden="true">
-              <Icon name="check" size={14} />
-            </span>
-            <span className={styles.authorVisibilityCopy}>
-              <strong>{t.listed}</strong>
-              <span className={styles.authorVisibilityNote}>{draft.listed ? t.listedOn : t.listedOff}</span>
-            </span>
-          </label>
-
-          <div className={`${styles.actions} ${styles.authorFormActions}`}>
-            <button className={styles.actionPrimary} type="submit" disabled={saving || uploading}>
-              {saving ? t.saving : t.save}
-            </button>
-            {author?.listed && author.slug ? (
-              <Link className={styles.actionGhost} href={`/expert/${author.slug}`} target="_blank" rel="noopener noreferrer">
-                <span>{t.viewPublic}</span>
-                <Icon name="arrow-right" size={18} />
-              </Link>
-            ) : null}
+              {author?.listed && author.slug ? (
+                <Link className={styles.actionGhost} href={`/expert/${author.slug}`} target="_blank" rel="noopener noreferrer">
+                  <span>{t.viewPublic}</span>
+                  <Icon name="arrow-right" size={18} />
+                </Link>
+              ) : null}
+            </div>
           </div>
 
         </form>
