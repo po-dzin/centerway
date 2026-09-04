@@ -98,6 +98,10 @@ export type CabinetCopy = {
   buyAccess: string;
   renewAccess: string;
 
+  /* ADDRESS THEN SUBJECT, and the two must not be the same word. The label
+     names the part of the cabinet — «Акаунт» — and the title says what is
+     inside it. The title used to open with the label's own word, so the fold
+     read «Акаунт / Акаунт і контакти». */
   accountLabel: string;
   accountTitle: string;
   accountLead: string;
@@ -191,7 +195,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
       renewAccess: "Renew access",
 
       accountLabel: "Account",
-      accountTitle: "Account and contacts",
+      accountTitle: "Details and contacts",
       accountLead: "The fields orders and access notifications are matched against.",
 
       notificationsTitle: "Course reminders",
@@ -274,7 +278,7 @@ export function getCabinetCopy(lang: ProfileLang): CabinetCopy {
     renewAccess: "Продовжити доступ",
 
     accountLabel: "Акаунт",
-    accountTitle: "Акаунт і контакти",
+    accountTitle: "Дані та контакти",
     accountLead: "Поля, за якими зіставляються замовлення і повідомлення про доступ.",
 
     notificationsTitle: "Нагадування про курс",

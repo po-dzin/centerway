@@ -29,7 +29,12 @@ export function ShelfResultBar({
   return (
     <div className={styles.resultBar} data-filtering={filtering || undefined}>
       <span className={styles.resultCount} aria-live="polite">
-        <span className={styles.resultLabel}>{label}</span>
+        {/* THE LABEL ONLY WHEN THE COUNT DOES NOT ALREADY SAY IT. At rest the
+            count is «9 матеріалів», so a caption reading «МАТЕРІАЛИ» beside it
+            printed the noun twice in one line, on a page whose title is «Мої
+            матеріали». Narrowed, the count is «3 з 9» and names nothing — that
+            is where the caption is the only word for what is being counted. */}
+        {filtering ? <span className={styles.resultLabel}>{label}</span> : null}
         {count}
       </span>
       {children}

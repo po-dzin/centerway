@@ -927,7 +927,10 @@ export function BuilderCourseView({ slug }: { slug: string }) {
       <section className={styles.releaseWorkspace} id="course-release" hidden={workspaceMode !== "release"} aria-labelledby="course-release-title">
         <header className={styles.releaseWorkspaceHead}>
           <div>
-            <span className={styles.courseMeta}>Публікація курсу</span>
+            {/* No eyebrow. The rail item that opened this workspace already
+                says «Публікація», the heading says it again, and neither of
+                the other two workspaces captions itself — this line was the
+                word a third time before the reader had read anything. */}
             <h2 className={styles.pageTitle} id="course-release-title">Перевірка й публікація</h2>
           </div>
           <div className={styles.releaseSummary}>
