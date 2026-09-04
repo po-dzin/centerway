@@ -16,7 +16,7 @@
  * only until one of them changes shape.
  */
 
-import { useEffect, useRef, useState, type ChangeEvent, type FormEvent, type KeyboardEvent, type PointerEvent } from "react";
+import { useEffect, useId, useRef, useState, type ChangeEvent, type CSSProperties, type FormEvent, type KeyboardEvent, type PointerEvent } from "react";
 import type { Session } from "@supabase/supabase-js";
 import Link from "next/link";
 
@@ -38,7 +38,6 @@ type Draft = {
   facts: string[];
   profileBlocks: AuthorProfileBlock[];
   experienceBadge: string;
-  achievementBadge: string;
   consultation: { enabled: boolean; title: string; summary: string; points: string[]; contactUrl: string };
   photo: NonNullable<Author["photo"]> | null;
   background: { src: string } | null;
@@ -268,11 +267,33 @@ function AuthorMediaSlot({
  * hidden text is what a screen reader says instead of a bare asterisk.
  */
 function RequiredMark({ tooltip }: { tooltip: string }) {
+  const id = useId();
+  /* A NAME PER MARK. `anchor-name` written once in the stylesheet gives every
+     mark on the page the SAME name, and a popover then anchors to the last
+     element carrying it — measured 227px away, beside a different field.
+     The name has to be per instance, so it comes from `useId` here; the
+     stylesheet keeps the geometry. */
+  const anchor = `--cw-required-${id.replace(/[^a-zA-Z0-9]/g, "")}`;
   return (
-    <span className={styles.authorRequiredMark} title={tooltip}>
-      <span aria-hidden="true">*</span>
-      <span className={styles.visuallyHidden}> — {tooltip}</span>
-    </span>
+    <>
+      <button
+        type="button"
+        className={styles.authorRequiredMark}
+        style={{ anchorName: anchor } as CSSProperties}
+        popoverTarget={id}
+        aria-label={tooltip}
+      >
+        *
+      </button>
+      <span
+        className={styles.authorRequiredHint}
+        style={{ positionAnchor: anchor } as CSSProperties}
+        popover="auto"
+        id={id}
+      >
+        {tooltip}
+      </span>
+    </>
   );
 }
 
@@ -285,11 +306,23 @@ function draftFromAuthor(author: Author | null): Draft {
     // A blank starting row rather than an empty list — see `AuthorMediaSlot`'s
     // note on the same instinct: a list with nothing to click but "+" reads as
     // broken, not as "add your first one".
-    credentials: author?.credentials?.length ? author.credentials : [""],
+    /* ONE FIELD, NOT TWO. «Головне досягнення» was a separate input that the
+       card printed as a badge while this list printed underneath it — two
+       places to say the same kind of thing, and the badge was the one that
+       blocked publishing. The list's first row is the badge now. An existing
+       profile filled both, so the stored badge is seeded as row one: without
+       that, the first save after this change would overwrite it with whatever
+       happened to be first in the list. */
+    credentials: (() => {
+      const stored = author?.credentials ?? [];
+      const badge = author?.achievementBadge?.trim();
+      const rest = stored.filter((line) => line.trim() !== badge);
+      const rows = badge ? [badge, ...rest] : stored;
+      return rows.length ? rows : [""];
+    })(),
     facts: author?.facts?.length ? author.facts : [""],
     profileBlocks: author?.profileBlocks ?? [],
     experienceBadge: author?.experienceBadge ?? "",
-    achievementBadge: author?.achievementBadge ?? "",
     consultation: {
       enabled: author?.consultation?.enabled ?? false,
       title: author?.consultation?.title ?? "",
@@ -316,6 +349,8 @@ const STRINGS = {
     credentials: "Досягнення",
     credentialAdd: "Додати досягнення",
     credentialRemove: "Прибрати досягнення",
+    credentialRequired: "Перший рядок потрібен, щоб сторінку було видно",
+    credentialsHint: "Перше — головне: саме воно стоїть бейджем на картці.",
     facts: "Головні факти про себе",
     factsHint: "До 6 — перші три показуються на картці.",
     factAdd: "Додати факт",
@@ -332,7 +367,6 @@ const STRINGS = {
     profileBlockList: "Список",
     profileBlockTimeline: "Шлях / хронологія",
     experienceBadge: "Бейдж досвіду",
-    achievementBadge: "Головне досягнення",
     requiredForCard: "Обов’язково для публічної картки",
     consultation: "Консультація",
     consultationEnabled: "Приймаю запити на консультацію",
@@ -340,7 +374,6 @@ const STRINGS = {
     consultationPointsHint: "До 3.",
     consultationPointAdd: "Додати пункт",
     consultationPointRemove: "Прибрати пункт",
-    sectionPublicOnNote: "Поля з * потрібні, щоб сторінку було видно.",
     photo: "Фото",
     photoUpload: "Завантажити фото",
     photoReplace: "Замінити фото",
@@ -393,6 +426,8 @@ const STRINGS = {
     credentials: "Credentials",
     credentialAdd: "Add credential",
     credentialRemove: "Remove credential",
+    credentialRequired: "The first line is needed for the page to be visible",
+    credentialsHint: "The first one is the main one — it stands as the badge on your card.",
     facts: "Key facts about you",
     factsHint: "Up to 6 — the first three show on the card.",
     factAdd: "Add fact",
@@ -409,7 +444,6 @@ const STRINGS = {
     profileBlockList: "List",
     profileBlockTimeline: "Path / timeline",
     experienceBadge: "Experience badge",
-    achievementBadge: "Key achievement",
     requiredForCard: "Required for the public card",
     consultation: "Consultation",
     consultationEnabled: "Accept consultation requests",
@@ -417,7 +451,6 @@ const STRINGS = {
     consultationPointsHint: "Up to 3.",
     consultationPointAdd: "Add point",
     consultationPointRemove: "Remove point",
-    sectionPublicOnNote: "Fields marked * are needed for the page to be visible.",
     photo: "Photo",
     photoUpload: "Upload photo",
     photoReplace: "Replace photo",
@@ -552,7 +585,12 @@ export function AuthorProfileFold({
   async function handleSubmit(event: FormEvent) {
     event.preventDefault();
 
-    const credentials = draft.credentials.map((line) => line.trim()).filter(Boolean);
+    /* Row one is the badge, the remainder is the list — sending row one in
+       both would print the same sentence twice on `/expert`, once in the hero
+       badge row and once in the starred list under it. */
+    const credentialLines = draft.credentials.map((line) => line.trim()).filter(Boolean);
+    const achievementBadge = credentialLines[0];
+    const credentials = credentialLines.slice(1);
     const photo = draft.photo?.src && draft.photo.alt.trim()
       ? {
           src: draft.photo.src,
@@ -586,7 +624,7 @@ export function AuthorProfileFold({
         }];
       }),
       experienceBadge: draft.experienceBadge.trim() || undefined,
-      achievementBadge: draft.achievementBadge.trim() || undefined,
+      achievementBadge,
       consultation: {
         enabled: draft.consultation.enabled,
         title: draft.consultation.title.trim() || undefined,
@@ -657,8 +695,11 @@ export function AuthorProfileFold({
                     used in, and lets you drag to refocus it. So the plain preview
                     only appears before there is anything to crop; once a photo
                     lands, the crop cards are the photo. */}
-                <div className={styles.authorField}>
-                <span>{t.photo}</span>
+                {/* NO PRE-TITLE. «Фото» over «Картка» over its own note is
+                  three labels deep inside a section already called «Ви» —
+                  the frames name themselves, and the empty slot says
+                  «Завантажити фото» on its face. */}
+              <div className={styles.authorField}>
                   {draft.photo?.src ? (
                     <>
                       <div className={styles.photoCropGrid}>
@@ -911,7 +952,10 @@ export function AuthorProfileFold({
               </div>
               <div className={styles.authorField}>
                 <div className={styles.authorFieldHead}>
-                  <span>{t.credentials}</span>
+                  <span>
+                    {t.credentials}
+                    {draft.listed ? <RequiredMark tooltip={t.credentialRequired} /> : null}
+                  </span>
                   <button
                     type="button"
                     className={styles.authorAddIcon}
@@ -922,11 +966,13 @@ export function AuthorProfileFold({
                     <Icon name="plus" size={18} />
                   </button>
                 </div>
+                <p className={styles.authorNotice}>{t.credentialsHint}</p>
                 {draft.credentials.map((line, index) => (
                   <div className={styles.authorCredentialRow} key={index}>
                     <input
                       className={styles.authorInput}
                       value={line}
+                      required={index === 0 && draft.listed}
                       onChange={(e) =>
                         setDraft((prev) => ({
                           ...prev,
@@ -934,6 +980,7 @@ export function AuthorProfileFold({
                         }))
                       }
                     />
+                    {index > 0 ? (
                     <button
                       type="button"
                       className={styles.authorIconAction}
@@ -945,6 +992,7 @@ export function AuthorProfileFold({
                     >
                       <Icon name="close" size={18} />
                     </button>
+                    ) : null}
                   </div>
                 ))}
               </div>
@@ -954,13 +1002,6 @@ export function AuthorProfileFold({
                   {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
                 </span>
                 <input className={styles.authorInput} value={draft.experienceBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, experienceBadge: e.target.value }))} />
-              </label>
-              <label className={styles.authorField}>
-                <span>
-                  {t.achievementBadge}
-                  {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
-                </span>
-                <input className={styles.authorInput} value={draft.achievementBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, achievementBadge: e.target.value }))} />
               </label>
             </div>
           </details>
@@ -998,7 +1039,6 @@ export function AuthorProfileFold({
                   onChange={(e) => setDraft((prev) => ({ ...prev, slug: e.target.value }))}
                 />
               </label>
-              {draft.listed ? <p className={styles.authorNotice}>{t.sectionPublicOnNote}</p> : null}
               <div className={styles.authorField}>
                 <span>{t.background}</span>
                 <AuthorMediaSlot

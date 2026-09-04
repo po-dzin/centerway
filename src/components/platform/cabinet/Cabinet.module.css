@@ -425,6 +425,18 @@
   line-height: 1.45;
 }
 
+/* Beside the mark it explains, where the browser can anchor it. Without
+   anchor positioning a popover opens centred in the top layer — which is
+   correct and reachable, just not adjacent — so this is an enhancement on
+   top of a working default, not a requirement. */
+@supports (anchor-name: --cw-required-mark) {
+  .authorRequiredHint {
+    position-area: block-end span-inline-end;
+    position-try-fallbacks: block-start span-inline-end, block-end span-inline-start;
+    margin: var(--cw-space-2xs) 0 0;
+  }
+}
+
 .shelfCardMeta {
   margin: 0;
   color: var(--cw-platform-muted);
@@ -1197,12 +1209,51 @@
 /* A dotted underline is the standard hint that a title attribute is behind a
    span — selection_family: ink, a mark rather than a plate, since it modifies
    the label it sits beside rather than acting on its own. */
+/* THE MARK EXPLAINS ITSELF ON A TAP. It used to be a `span` with a `title`,
+   which is a hover tooltip: on a phone there was no way to reach the
+   explanation at all, and the dotted underline that advertised it rendered
+   as two stray dots under a single narrow glyph. It is a button with a
+   popover now — reachable by tap, by click and by keyboard, in the top
+   layer, with no script.
+
+   No `min-height`/`padding-inline` here on purpose: those belong to the
+   button contract, and this is a text mark, not a plate. The hit area comes
+   from the pseudo-element below, which is the documented way to keep a
+   target usable while its visible mark stays small. */
 .authorRequiredMark {
+  position: relative;
   margin-inline-start: 0.2em;
+  border: 0;
+  background: none;
   color: var(--cw-sem-boundary);
-  text-decoration: underline dotted;
-  text-underline-offset: 0.2em;
+  font: inherit;
+  line-height: 1;
   cursor: help;
+}
+
+.authorRequiredMark::after {
+  content: "";
+  position: absolute;
+  inset: calc(var(--cw-space-sm) * -1);
+}
+
+.authorRequiredMark:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+}
+
+.authorRequiredHint {
+  max-width: 22rem;
+  margin-block: var(--cw-space-2xs);
+  margin: 0;
+  padding: var(--cw-space-xs) var(--cw-space-sm);
+  border: 1px solid var(--cw-mat-stroke-quiet, var(--cw-platform-border));
+  border-radius: var(--cw-radius-md);
+  background: var(--cw-mat-surface);
+  box-shadow: var(--cw-mat-shadow-soft);
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-sm-size);
+  line-height: 1.45;
 }
 
 .authorBlockAdd {
