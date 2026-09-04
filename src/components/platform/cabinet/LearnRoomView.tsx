@@ -69,15 +69,27 @@ type RoomCase = {
   books: RoomBook[];
 };
 
-/** Groups the shelf by `course.categories`. A course in two categories
-    appears on both walls — the model allows it, and a reader looking under
-    either heading should find it there. A course with none is unreachable
-    here on purpose: `categories` is required before a course goes public
-    (see readiness.ts), so an empty case is a draft, not a gap in the room. */
+/** ONE COURSE, ONE BOOK. A course may carry several subjects, and it used to
+    be cut into every matching niche — so pointing at it lit two shelves at
+    once and two spines that were the same course, which is the room saying
+    there are more books in it than the reader owns. A book is an object: it
+    stands in one place.
+
+    THE PLACE IS THE FIRST OF ITS SUBJECTS IN `CATEGORY_ORDER`, not the first
+    in `course.categories`. The author's array is written in the order they
+    tapped the choices, so a course would change walls because someone
+    unchecked a subject and checked it again; the room's own order does not
+    move. The other subjects are not lost — the sheet's row prints all of
+    them, which is now the one place that says a course belongs to two.
+
+    A course with no subject is unreachable here on purpose: `categories` is
+    required before a course goes public (see readiness.ts), so an empty case
+    is a draft, not a gap in the room. */
 function toCases(courses: LearnerShelfCourseDto[], copy: CabinetCopy): RoomCase[] {
+  const home = (c: LearnerShelfCourseDto) => CATEGORY_ORDER.find((key) => c.categories.includes(key));
   return CATEGORY_ORDER.map((key, ci) => {
     const books: RoomBook[] = courses
-      .filter((c) => c.categories.includes(key))
+      .filter((c) => home(c) === key)
       .map((c) => ({
         slug: c.slug,
         title: c.title,
