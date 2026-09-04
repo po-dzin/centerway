@@ -1,6 +1,7 @@
 import { PlatformOfferResultList, PlatformOfferSurfaceTemplate } from "@/components/platform/PlatformOfferSurfaceTemplate";
 import { OfferCheckoutPanel } from "@/components/platform/OfferCommerce";
-import { resolveOfferCommerce } from "@/lib/platform/offerCommerce";
+import { productOfferCommerce } from "@/lib/platform/offerCommerce";
+import { loadPayableOffer } from "@/lib/platform/offers";
 import type { programs } from "@/lib/platform/content";
 import { JsonLd } from "@/lib/seo/StructuredData";
 import { breadcrumbLd, graph, productLd } from "@/lib/seo/jsonLd";
@@ -14,11 +15,12 @@ type Product = (typeof programs)[number];
  * asks when there is not. Today `herbs` is in the second case on purpose — it
  * has a checkout route but no agreed figure (docs/checkout-test-flow-2026-08-21.md),
  * and an individual blend is chosen against a state rather than added to a cart.
- * The moment a price is set in `products.ts`, this page starts selling with no
- * edit here.
+ * The moment the owner sets a price in the admin catalogue, this page starts
+ * selling with no edit here — the read is `loadPayableOffer`, the same call the
+ * checkout and the landing CTA make, so the three cannot answer differently.
  */
-export function ProductDetailPage({ product }: { product: Product }) {
-  const commerce = resolveOfferCommerce(product.slug);
+export async function ProductDetailPage({ product }: { product: Product }) {
+  const commerce = productOfferCommerce(product.slug, await loadPayableOffer(product.slug));
 
   return (
     <PlatformOfferSurfaceTemplate

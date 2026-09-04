@@ -665,18 +665,27 @@
       <div class="car reveal" data-car>
         <button type="button" class="car-nav prev" aria-label="Попередні фото"><svg class="ico ico-flip" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
         <div class="car-track">
-          <!-- Uncomment one card per participant and swap in the real files.
+          <figure class="ba-card">
+            <div class="ba-pair ba-pair--single">
+              <span class="ba-shot"><img src="/shared/img/feedback/ba-2026-06-back.webp" width="1000" height="1000" loading="lazy" decoding="async" alt="Учасниця програми до і після — знімки зі спини поруч в одному кадрі"></span>
+            </div>
+          </figure>
           <figure class="ba-card">
             <div class="ba-pair">
-              <span class="ba-shot"><img src="/shared/img/feedback/ba-oksana-202207-before.webp" width="480" height="640" loading="lazy" decoding="async" alt="Оксана до програми Шлях 21"><span class="ba-tag">до</span></span>
-              <span class="ba-shot"><img src="/shared/img/feedback/ba-oksana-202207-after.webp" width="480" height="640" loading="lazy" decoding="async" alt="Оксана після 21 дня програми"><span class="ba-tag">після</span></span>
+              <span class="ba-shot"><img src="/shared/img/feedback/ba-lyuba-2021-before.webp" width="362" height="724" loading="lazy" decoding="async" alt="Люба до програми"><span class="ba-tag">до</span></span>
+              <span class="ba-shot"><img src="/shared/img/feedback/ba-lyuba-2021-after.webp" width="560" height="1120" loading="lazy" decoding="async" alt="Люба після програми"><span class="ba-tag">після</span></span>
             </div>
-            <figcaption><b>Оксана · 21 день</b>Легкість у тілі, спокійніший сон і харчування, яке лишилось після програми.</figcaption>
           </figure>
-          -->
+          <figure class="ba-card">
+            <div class="ba-pair">
+              <span class="ba-shot"><img src="/shared/img/feedback/ba-2026-06-studio-before.webp" width="296" height="592" loading="lazy" decoding="async" alt="Учасниця програми до неї"><span class="ba-tag">до</span></span>
+              <span class="ba-shot"><img src="/shared/img/feedback/ba-2026-06-studio-after.webp" width="400" height="800" loading="lazy" decoding="async" alt="Та сама учасниця після програми, у залі"><span class="ba-tag">після</span></span>
+            </div>
+          </figure>
         </div>
         <button type="button" class="car-nav next" aria-label="Наступні фото"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
       </div>
+      <div class="car-dots" data-car-dots aria-label="Пагінація"></div>
       <p class="proof-note reveal">Фото опубліковані за згодою учасників. Результат індивідуальний і залежить від стану, режиму та дотримання протоколу — це не медична обіцянка і не гарантія цифри на вагах.</p>
     </div>
 
@@ -689,26 +698,28 @@
       <div class="car reveal" data-car>
         <button type="button" class="car-nav prev" aria-label="Попередні відео"><svg class="ico ico-flip" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
         <div class="car-track">
-          <!-- Facebook, not YouTube, and it costs one thing: FB publishes no
-               thumbnail a page may link to, so this card has no poster and
-               draws a paper tile instead. Export a frame to
-               shared/img/feedback/video-nataliia.webp and add an <img> when
-               there is one. The post must stay PUBLIC on Facebook or the
-               player renders empty for visitors. -->
+          <!-- The poster is the frame Facebook's own player shows before play,
+               saved here as a file. FB publishes no thumbnail URL a page may
+               link to — theirs are signed and expire — so the bytes are ours
+               and the address is not. The post must stay PUBLIC on Facebook or
+               the player itself renders empty for visitors. -->
           <button type="button" class="vid-card" data-video="https://www.facebook.com/nataliia.vanieieva/videos/1417281108317980/" data-video-ratio="9/16">
+            <img src="/shared/img/feedback/video-fb-nataliia.webp" width="480" height="746" loading="lazy" decoding="async" alt="">
             <span class="vp"><span><svg class="ico ico-chrome" width="22" height="22" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-play"/></svg></span></span>
-            <span class="vl">Наталія · відгук у Facebook</span>
           </button>
-          <!-- Uncomment one card per video and swap in the real URL and poster.
-          <button type="button" class="vid-card" data-video="https://youtube.com/shorts/XXXXXXXX">
-            <img src="/shared/img/feedback/video-oksana.webp" width="480" height="747" loading="lazy" decoding="async" alt="">
+          <!-- The same video that already sits in the proof section of the
+               `short` landing. It is 16:9, hence data-video-ratio — the
+               lightbox is 9:16 by default and would letterbox it to a stamp.
+               The poster is YouTube's own frame, saved locally so nothing is
+               requested from Google until somebody actually presses play. -->
+          <button type="button" class="vid-card" data-video="https://youtu.be/2cxLE4GUuRw" data-video-ratio="16/9">
+            <img src="/shared/img/feedback/video-yt-2cxLE4GUuRw.webp" width="480" height="745" loading="lazy" decoding="async" alt="">
             <span class="vp"><span><svg class="ico ico-chrome" width="22" height="22" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-play"/></svg></span></span>
-            <span class="vl">Оксана · 21 день</span>
           </button>
-          -->
         </div>
         <button type="button" class="car-nav next" aria-label="Наступні відео"><svg class="ico" width="18" height="18" aria-hidden="true" focusable="false"><use href="/shared/img/cw-icons.svg#cw-chevron-right"/></svg></button>
       </div>
+      <div class="car-dots" data-car-dots aria-label="Пагінація"></div>
       <p class="proof-note reveal">Відео записані учасниками самостійно й опубліковані за їхньою згодою.</p>
     </div>
 

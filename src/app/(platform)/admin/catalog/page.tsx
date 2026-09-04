@@ -42,6 +42,8 @@ import { supabaseClient } from "@/lib/supabaseClient";
 import type { CatalogRow, SaleBlocker } from "@/lib/admin/catalogTypes";
 import type { AuthorProfileRow, CourseRow } from "@/lib/admin/accessTypes";
 import { CourseAuthorshipTab } from "@/components/admin/CourseAuthorshipTab";
+import { ProductPricingTab } from "@/components/admin/ProductPricingTab";
+import type { ProductOfferRow } from "@/lib/admin/productOfferTypes";
 import { ACCESS_TERM_PRESETS } from "@/lib/admin/catalogTypes";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
 
@@ -82,7 +84,7 @@ export default function CatalogPage() {
     const { lang, t } = useI18n();
     const locale = getAdminLocale(lang);
 
-    const [tab, setTab] = useState<"publication" | "pricing" | "authorship">("publication");
+    const [tab, setTab] = useState<"publication" | "pricing" | "products" | "authorship">("publication");
     /* Authorship needs the ACCESS shape of a course — `author_id` resolved to an
        email, plus whether this operator may write it — which `/admin/catalog`
        does not carry. It is fetched only when that tab is first opened: two
@@ -91,6 +93,10 @@ export default function CatalogPage() {
     const [authorCourses, setAuthorCourses] = useState<CourseRow[]>([]);
     const [authorProfiles, setAuthorProfiles] = useState<AuthorProfileRow[]>([]);
     const [canAssignAuthor, setCanAssignAuthor] = useState(false);
+    /* Same lazy-load shape as authorship: a different table, fetched only when
+       the tab is first opened. */
+    const [productOffers, setProductOffers] = useState<ProductOfferRow[]>([]);
+    const [canEditProducts, setCanEditProducts] = useState(false);
     const [rows, setRows] = useState<CatalogRow[] | null>(null);
     const [canEdit, setCanEdit] = useState(false);
     const [error, setError] = useState<string | null>(null);
@@ -105,6 +111,11 @@ export default function CatalogPage() {
             offer_not_found: t("catalog_error_offer_not_found"),
             course_not_in_review: t("catalog_error_not_in_review"),
             course_not_ready_for_storefront: t("catalog_error_not_ready"),
+            product_amount_invalid: t("products_error_amount"),
+            product_list_amount_invalid: t("products_error_list_amount"),
+            product_list_amount_without_amount: t("products_error_list_amount_without_amount"),
+            product_unknown: t("products_error_product_unknown"),
+            product_kind_invalid: t("products_error_kind"),
             Forbidden: t("access_error_forbidden"),
         };
         return known[message] ?? message;
@@ -127,6 +138,16 @@ export default function CatalogPage() {
             setAuthorCourses(payload.items ?? []);
             setAuthorProfiles(payload.authorProfiles ?? []);
             setCanAssignAuthor(Boolean(payload.canGrant));
+        } catch (e) {
+            setError(errorText(getErrorMessage(e)));
+        }
+    }, [errorText]);
+
+    const loadProductOffers = useCallback(async () => {
+        try {
+            const payload = (await authFetch("/api/admin/catalog/products")) as { items?: ProductOfferRow[]; canEdit?: boolean };
+            setProductOffers(payload.items ?? []);
+            setCanEditProducts(Boolean(payload.canEdit));
         } catch (e) {
             setError(errorText(getErrorMessage(e)));
         }
@@ -166,6 +187,7 @@ export default function CatalogPage() {
                 items={[
                     { key: "publication", label: t("catalog_tab_publication") },
                     { key: "pricing", label: t("catalog_tab_pricing") },
+                    { key: "products", label: t("catalog_tab_products") },
                     { key: "authorship", label: t("access_tab_builder") },
                 ]}
                 activeKey={tab}
@@ -173,6 +195,7 @@ export default function CatalogPage() {
                     const next = key as typeof tab;
                     setTab(next);
                     if (next === "authorship") void loadAuthorship();
+                    if (next === "products") void loadProductOffers();
                 }}
                 className="overflow-x-auto no-scrollbar"
             />
@@ -188,6 +211,13 @@ export default function CatalogPage() {
                     locale={locale}
                     errorText={errorText}
                     onChanged={loadAuthorship}
+                />
+            ) : tab === "products" ? (
+                <ProductPricingTab
+                    products={productOffers}
+                    canEdit={canEditProducts}
+                    errorText={errorText}
+                    onChanged={loadProductOffers}
                 />
             ) : (
             <>

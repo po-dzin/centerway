@@ -22,6 +22,7 @@ import {
   productListPrice,
   PRODUCTS,
   type CatalogProductCode,
+  type PayableOffer,
   type PayableProductCode,
 } from "@/lib/products";
 import type { CourseOffer } from "@/lib/platform/offers";
@@ -183,4 +184,37 @@ export function resolveOfferCommerce(slug: string): OfferCommerce {
   }
 
   return { mode: "lead", leadProductCode: LEAD_BY_SLUG[slug] ?? "platform" };
+}
+
+/**
+ * How a PRODUCT that is not a course of its own converts.
+ *
+ * `resolveOfferCommerce` reads `products.ts`, where these prices no longer
+ * live: since 2026-09-03 the owner sets them in `product_offers` from the admin
+ * catalogue. Left on the constant, the platform page would keep showing an
+ * enquiry form for a product the owner had just priced — the landing would sell
+ * it and /products/<slug> would still be asking, which is the two-doors-
+ * disagree bug one table over.
+ *
+ * So it asks the payable offer, exactly as the landing's CTA gate does. `null`
+ * covers every way there is no price to charge — none agreed, a figure quoted
+ * beside a lead form, an offer withdrawn — and all of them mean the form.
+ */
+export function productOfferCommerce(slug: string, offer: PayableOffer | null): OfferCommerce {
+  if (!offer || offer.amount <= 0) {
+    return { mode: "lead", leadProductCode: LEAD_BY_SLUG[slug] ?? "platform" };
+  }
+
+  return {
+    mode: "checkout",
+    productCode: offer.code as PayableProductCode,
+    checkoutHref: checkoutHref(offer.code as PayableProductCode, slug),
+    price: formatPrice(offer.amount, offer.currency),
+    compareAtPrice:
+      offer.listAmount !== null && offer.listAmount > offer.amount
+        ? formatPrice(offer.listAmount, offer.currency)
+        : null,
+    amount: offer.amount,
+    currency: offer.currency,
+  };
 }

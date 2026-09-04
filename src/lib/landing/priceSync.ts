@@ -46,12 +46,59 @@ const PRICED_ELEMENT =
 /** The analytics value on a checkout trigger, so the pixel matches the page. */
 const PRICE_VALUE_ATTR = /(<[^<>]*?\sdata-cw-product="([^"]+)"[^<>]*?\sdata-cw-price-value=")(\d+)(")/g;
 
+/**
+ * An element that starts a checkout: `data-cw-checkout` plus the product code
+ * `checkout.js` reads off it. Matched as a whole open tag because the two
+ * attributes are written in either order by whoever built the page.
+ */
+const CHECKOUT_TRIGGER = /<[a-z][a-z0-9-]*\b[^<>]*\sdata-cw-checkout(?=[\s/>=])[^<>]*>/gi;
+const CHECKOUT_TRIGGER_PRODUCT = /\sdata-cw-product="([^"]+)"/i;
+const CHECKOUT_TRIGGER_ATTR = /\sdata-cw-checkout(="[^"]*")?/i;
+
 /** Every product code the markup asks about, so the caller knows what to load. */
 export function collectPriceCodes(html: string): string[] {
   const codes = new Set<string>();
   for (const match of html.matchAll(PRICED_ELEMENT)) codes.add(match[3]);
   for (const match of html.matchAll(PRICE_VALUE_ATTR)) codes.add(match[2]);
   return [...codes];
+}
+
+/** Every product a page would try to charge for, so the caller can ask whether it may. */
+export function collectCheckoutCodes(html: string): string[] {
+  const codes = new Set<string>();
+  for (const [tag] of html.matchAll(CHECKOUT_TRIGGER)) {
+    const code = CHECKOUT_TRIGGER_PRODUCT.exec(tag)?.[1];
+    if (code) codes.add(code);
+  }
+  return [...codes];
+}
+
+/**
+ * Closes the buy button on a product with no price to charge.
+ *
+ * A landing's CTA is written once and outlives every pricing decision made
+ * after it. `herbs` is the case this was built for: its hero button reads
+ * «Замовити збір» and points at `href="#lead"`, but `checkout.js` claims every
+ * `[data-cw-checkout]` click and sent buyers to WayForPay at the 1 ₴ QA amount
+ * instead of to the form the markup names. Removing the trigger attribute hands
+ * the click back to the anchor, so the page does what its own href says.
+ *
+ * WHICH IS WHY IT ONLY EVER REMOVES. Nothing here can open a checkout that the
+ * HTML did not already declare, and every trigger in the tree is an `<a>` with
+ * a real destination — a button with no fallback would be made dead by this
+ * rather than made honest, and that is a property of the markup to keep.
+ *
+ * The product attributes stay: `checkout.js` keys on `data-cw-checkout` alone,
+ * and the rest is what the pixel reads.
+ */
+export function applyCheckoutGate(html: string, closed: ReadonlySet<string>): string {
+  if (closed.size === 0) return html;
+
+  return html.replace(CHECKOUT_TRIGGER, (tag) => {
+    const code = CHECKOUT_TRIGGER_PRODUCT.exec(tag)?.[1];
+    if (!code || !closed.has(code)) return tag;
+    return tag.replace(CHECKOUT_TRIGGER_ATTR, "");
+  });
 }
 
 function figureFor(price: LandingPrice, kind: string | undefined): number | null {
