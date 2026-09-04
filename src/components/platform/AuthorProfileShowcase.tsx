@@ -43,7 +43,9 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
             </span>
           )}
           <div className={styles.identityCopy}>
-            <p className={styles.label}>Профіль автора</p>
+            {/* No eyebrow. The portrait is beside it and the name is the H1:
+                a line reading «Профіль автора» over a face and a name told
+                the reader only what they were already looking at. */}
             <h1 className={styles.name}>{author.name}</h1>
             <div className={styles.statusLine}>
               {author.role ? <p className={styles.role}>{author.role}</p> : null}
@@ -75,7 +77,9 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
       {author.facts?.length ? (
         <section className={styles.profileSection}>
           <div className={styles.sectionHeader}>
-            <p className={styles.label}>Коротко про автора</p>
+            {/* Two lines said one thing: «Коротко про автора» and «Досвід і
+                головні орієнтири» name the same list. The heading is the more
+                specific of the two, so it is the one that stays. */}
             <h2 className={styles.courseTitle}>Досвід і головні орієнтири</h2>
           </div>
           <ul className={styles.factGrid}>
@@ -108,7 +112,10 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
       ))}
 
       {author.consultation?.enabled ? <section className={styles.consultation} id="consultation">
-        <p className={styles.label}>Консультація</p>
+        {/* No eyebrow: the heading already carries the word. When the author
+            leaves the title empty it falls back to «Консультація з …», and
+            when they write their own, their word is the better one. Either
+            way the eyebrow was never the best available line. */}
         <h2 className={styles.courseTitle}>{author.consultation.title || `Консультація з ${author.name}`}</h2>
         {author.consultation.summary ? <p className={styles.bio}>{author.consultation.summary}</p> : null}
         {author.consultation.points?.length ? <ul className={styles.credentials}>{author.consultation.points.map((point) => <li className={styles.credential} key={point}><Icon name="check" size={20} /><span>{point}</span></li>)}</ul> : null}

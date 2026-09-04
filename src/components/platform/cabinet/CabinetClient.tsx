@@ -287,7 +287,11 @@ export function CabinetClient() {
                 the answer that belongs to this person, at the size of a glance
                 rather than of a card: the shape, the type, one way back in. */}
             <article className={styles.shelfAside} {...glassMedia}>
-              <p className={styles.sectionLabel}>{copy.dosha}</p>
+              {/* The word «Доша» and the result are BOTH printed in the fact
+                  row at the top of this same screen — naming the tile again
+                  here said nothing the reader had not just read. The wheel
+                  carries the type at its own size, and its `<title>` names
+                  it for a screen reader. */}
               {dosha ? (
                 <>
                   {/* The shape, the type and the three scores — three

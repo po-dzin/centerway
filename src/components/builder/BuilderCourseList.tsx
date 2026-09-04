@@ -621,10 +621,14 @@ export function BuilderCourseList() {
             <ShelfResultBar
               label="Матеріали"
               filtering={filtering}
+              /* Counted off `filtering`, not off whether the filter happened
+                 to keep everything: the library says «3 з 9» whenever a query
+                 is active, and a filter that matches all nine is still a
+                 narrowed shelf. Two sides of one shelf, one sentence. */
               count={
-                shown.length === state.courses.length
-                  ? SHELF_COPY.materialsCount(state.courses.length)
-                  : `${shown.length} з ${state.courses.length}`
+                filtering
+                  ? `${shown.length} з ${state.courses.length}`
+                  : SHELF_COPY.materialsCount(state.courses.length)
               }
             >
               <ViewSwitch view={stored} onChange={chooseView} />

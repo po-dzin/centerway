@@ -2465,10 +2465,6 @@
   border-block-start-color: var(--builder-rule);
 }
 
-.structureCards .lessonRow {
-  background: var(--cw-mat-surface);
-}
-
 .moduleHead {
   composes: gripRow;
   position: relative;

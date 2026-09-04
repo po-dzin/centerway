@@ -182,11 +182,13 @@ export function BuilderCourseAuthor({
       </section>
 
       <section className={styles.courseSettingSection}>
+        {/* NO SUMMARY OVER A SINGLE FIELD. The section held four lines of
+            naming for one textarea — heading, summary, label, hint — and the
+            summary said where the sentence is printed, which is the field's
+            own business. It moved into the hint, where it stands beside the
+            example instead of above the question. */}
         <div className={styles.courseSettingCopy}>
           <h3 className={styles.courseSettingTitle}>Про цей курс</h3>
-          <p className={styles.courseSettingSummary}>
-            Це коротке речення в блоці «Автор» на сторінці саме цього курсу. Воно не повторюється у вашому профілі чи інших курсах.
-          </p>
         </div>
         <FieldInput
           field={{
@@ -194,7 +196,7 @@ export function BuilderCourseAuthor({
             label: "Чому саме ви створили цей курс",
             kind: "text",
             multiline: true,
-            hint: "Наприклад: «Створив цей курс, щоб дати м’який перший крок у практику». Біографія, фото й досягнення живуть у профілі автора вище.",
+            hint: "Наприклад: «Створив цей курс, щоб дати м’який перший крок у практику». Друкується в блоці «Автор» на сторінці саме цього курсу і не повторюється в інших. Біографія, фото й досягнення живуть у профілі автора вище.",
           }}
           value={course.authorNote}
           onChange={onChange}

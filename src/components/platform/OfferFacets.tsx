@@ -104,7 +104,12 @@ export function OfferAuthor({ author, note }: { author: Author | null; note?: st
       id="program-author"
     >
       <article className={offerStyles.panel}>
-        <p className={offerStyles.label}>Автор</p>
+        {/* This line is the section's title, not an eyebrow: every sibling
+            section on the page titles itself with an H2, and here the H2 held
+            a person's name — so anyone navigating by heading landed on a bare
+            name with nothing saying why the person was there. Same class, same
+            look; only the outline changes. */}
+        <h2 className={offerStyles.label}>Автор</h2>
         <div className={styles.author}>
           {author?.photo ? (
             <Image
@@ -117,7 +122,7 @@ export function OfferAuthor({ author, note }: { author: Author | null; note?: st
             />
           ) : null}
           <div className={styles.authorBody}>
-            {author ? <h2 className={styles.authorName}>{author.name}</h2> : null}
+            {author ? <p className={styles.authorName}>{author.name}</p> : null}
             {author?.role ? <p className={styles.authorRole}>{author.role}</p> : null}
             {note ? <p className={styles.authorNote}>{note}</p> : null}
             {/* Only when the profile is published. An author who has not asked
