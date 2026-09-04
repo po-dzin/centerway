@@ -339,7 +339,6 @@ function draftFromAuthor(author: Author | null): Draft {
 
 const STRINGS = {
   uk: {
-    label: "Профіль автора",
     title: "Профіль автора",
     lead: "Ім'я, фото і біографія тут — вони підуть на кожен ваш курс і, якщо публічний, на власну сторінку.",
     name: "Ім'я",
@@ -416,7 +415,6 @@ const STRINGS = {
     error: "Не вдалося зберегти. Перевірте поля і спробуйте ще раз.",
   },
   en: {
-    label: "Author profile",
     title: "Author profile",
     lead: "Name, photo and bio live here — they follow every course you write, and your own page if it's public.",
     name: "Name",
@@ -645,7 +643,9 @@ export function AuthorProfileFold({
     <details id="author" className={styles.fold} open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
       <summary className={styles.foldHead}>
         <div className={styles.foldText}>
-          <span className={styles.sectionLabel}>{t.label}</span>
+          {/* No eyebrow: `label` and `title` were the same string, byte for
+              byte, in both languages — the heading was being announced by a
+              smaller copy of itself. */}
           <h2 className={styles.sectionTitle}>{t.title}</h2>
           <span className={styles.sectionLead}>{t.lead}</span>
         </div>
