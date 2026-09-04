@@ -1342,13 +1342,16 @@
   gap: var(--cw-space-sm);
 }
 
-/* A grid with a token gap, not a margin under the title — `0.15rem` was
-   2.4px, off the 4px rhythm grid `guard:rhythm` holds every spacing value to,
-   and the two font sizes (0.95rem / 0.78rem) were a type scale of their own
-   next to the one in the token file. */
+/* The frame's name and what it is used for, stacked — the left half of the
+   `.authorFieldHead` lockup this panel shares with every other list in the
+   form, whose right half is the recentre action. A token gap, not a margin
+   under the title: `0.15rem` was 2.4px, off the 4px rhythm grid, and the
+   two font sizes (0.95rem / 0.78rem) were a type scale of their own next to
+   the one in the token file. */
 .photoCropHead {
   display: grid;
   gap: var(--cw-space-2xs);
+  min-width: 0;
 }
 
 .photoCropHead h4 {
@@ -1365,41 +1368,10 @@
   line-height: 1.45;
 }
 
-.photoCropStack {
-  display: grid;
-  gap: var(--cw-space-2xs);
-}
-
-/* Unclipped, sized to match the frame it wraps exactly — the reset badge
-   below anchors to this box's own corner. The frame itself stays the clipped,
-   focusable, draggable element (`overflow: hidden` is why it cannot also
-   host the badge: a round avatar clips anything sitting near its bounding
-   box's corner, since the circle touches the box only at each edge's
-   midpoint). */
-.photoCropFrameWrap {
-  position: relative;
-}
-
-/* Same ratio as `.guideCard` at its desktop measure — the frame the author's
-   photo fills wherever `AuthorCard` renders it. */
-.photoCropFrameWrap[data-shape="card"] {
-  aspect-ratio: 24 / 29;
-  max-width: 16rem;
-}
-
-/* The round avatar's own frame — the author's own page and a course's byline.
-   Square while dragging, so the focal point maps the same way as the card;
-   the circular crop is what the inner frame's border-radius shows. */
-.photoCropFrameWrap[data-shape="avatar"] {
-  width: 10rem;
-  aspect-ratio: 1;
-}
-
 .photoCropCard,
 .photoCropAvatar {
   position: relative;
   width: 100%;
-  height: 100%;
   overflow: hidden;
   background: var(--cw-mat-surface-sunk);
   cursor: grab;
@@ -1407,11 +1379,20 @@
   user-select: none;
 }
 
+/* Same ratio as `.guideCard` at its desktop measure — the frame the author's
+   photo fills wherever `AuthorCard` renders it. */
 .photoCropCard {
+  aspect-ratio: 24 / 29;
+  max-width: 16rem;
   border-radius: var(--cw-radius-md);
 }
 
+/* The round avatar's own frame — the author's own page and a course's byline.
+   Square while dragging, so the focal point maps the same way as the card;
+   the circular crop is what the border-radius shows. */
 .photoCropAvatar {
+  width: 10rem;
+  aspect-ratio: 1;
   border-radius: var(--cw-radius-pill);
 }
 
@@ -1449,20 +1430,6 @@
   color: var(--cw-platform-text);
   box-shadow: var(--cw-mat-shadow-soft);
   pointer-events: none;
-}
-
-/* A badge at the frame's corner, not a full-width text row beneath it — the
-   row cost the frame's entire width for one word, twice per photo. Sits
-   just outside the frame's own edge (negative inset) so a round avatar's
-   circular clip never eats it; `onMedia` is the same translucent-on-photo
-   chip `.authorMediaAction`'s edit/remove pair already uses. */
-.photoCropReset {
-  composes: onMedia from "../PlatformButtons.module.css";
-  composes: square from "../PlatformButtons.module.css";
-  position: absolute;
-  right: calc(var(--cw-space-2xs) * -1);
-  bottom: calc(var(--cw-space-2xs) * -1);
-  cursor: pointer;
 }
 
 /* 561px, the platform's tablet boundary — not 641px, which was a fourth

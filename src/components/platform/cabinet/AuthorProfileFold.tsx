@@ -61,6 +61,12 @@ const clampCrop = (value: number) => Math.max(0, Math.min(100, Math.round(value)
  * Reimplemented here rather than shared: the two editors format their frames
  * differently (a course chooses among 16:9/21:9/9:16, an author's photo
  * between one card shape and one round avatar) and neither owns the other.
+ *
+ * The frame only. Recentring lives in the panel's heading beside the frame's
+ * name, not on the picture: as a corner badge it had nowhere to sit that was
+ * not wrong for one of the two shapes — inside the frame the round avatar's
+ * clip ate it, outside the frame it floated in the empty corner of a
+ * bounding box with no visible edge to belong to.
  */
 function PhotoCropPreview({
   src,
@@ -69,7 +75,6 @@ function PhotoCropPreview({
   x,
   y,
   onChange,
-  reset,
 }: {
   src: string;
   alt: string;
@@ -77,7 +82,6 @@ function PhotoCropPreview({
   x: number;
   y: number;
   onChange: (x: number, y: number) => void;
-  reset: { label: string; onReset: () => void };
 }) {
   const activePointer = useRef<number | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -120,41 +124,22 @@ function PhotoCropPreview({
   };
 
   return (
-    <div className={styles.photoCropStack}>
-      <div className={styles.photoCropFrameWrap} data-shape={shape}>
-        <div
-          className={styles[frameClass]}
-          data-dragging={dragging || undefined}
-          tabIndex={0}
-          aria-label={`Точка фокуса. Перетягуйте або використовуйте стрілки.`}
-          onKeyDown={moveByKey}
-          onPointerDown={beginDrag}
-          onPointerMove={drag}
-          onPointerUp={endDrag}
-          onPointerCancel={endDrag}
-        >
-          {/* eslint-disable-next-line @next/next/no-img-element -- the cabinet's own upload, any public host */}
-          <img src={src} alt={alt} style={{ objectPosition: `${x}% ${y}%` }} draggable={false} />
-          <span className={styles.photoCropHandle} style={{ left: `${x}%`, top: `${y}%` }} aria-hidden="true">
-            <Icon name="grip" size={20} />
-          </span>
-        </div>
-        {/* Outside the clipped frame, at its own wrapper's corner — a round
-            avatar's circular clip eats anything positioned near the frame's
-            corner from inside it. `stopPropagation` on pointerdown: without
-            it the frame beneath still owns the drag and every reset starts
-            by yanking the focal point under the cursor first. */}
-        <button
-          type="button"
-          className={styles.photoCropReset}
-          aria-label={reset.label}
-          title={reset.label}
-          onPointerDown={(event) => event.stopPropagation()}
-          onClick={reset.onReset}
-        >
-          <Icon name="undo" size={20} />
-        </button>
-      </div>
+    <div
+      className={styles[frameClass]}
+      data-dragging={dragging || undefined}
+      tabIndex={0}
+      aria-label={`Точка фокуса. Перетягуйте або використовуйте стрілки.`}
+      onKeyDown={moveByKey}
+      onPointerDown={beginDrag}
+      onPointerMove={drag}
+      onPointerUp={endDrag}
+      onPointerCancel={endDrag}
+    >
+      {/* eslint-disable-next-line @next/next/no-img-element -- the cabinet's own upload, any public host */}
+      <img src={src} alt={alt} style={{ objectPosition: `${x}% ${y}%` }} draggable={false} />
+      <span className={styles.photoCropHandle} style={{ left: `${x}%`, top: `${y}%` }} aria-hidden="true">
+        <Icon name="grip" size={20} />
+      </span>
     </div>
   );
 }
@@ -608,9 +593,26 @@ export function AuthorProfileFold({
                 <>
                   <div className={styles.photoCropGrid}>
                     <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-card-title">
-                      <div className={styles.photoCropHead}>
-                        <h4 id="author-photo-crop-card-title">{t.photoCropCardTitle}</h4>
-                        <p>{t.photoCropCardNote}</p>
+                      <div className={styles.authorFieldHead}>
+                        <span className={styles.photoCropHead}>
+                          <h4 id="author-photo-crop-card-title">{t.photoCropCardTitle}</h4>
+                          <p>{t.photoCropCardNote}</p>
+                        </span>
+                        <button
+                          type="button"
+                          className={styles.authorIconAction}
+                          aria-label={t.photoCropCenter}
+                          title={t.photoCropCenter}
+                          onClick={() =>
+                            setDraft((prev) =>
+                              prev.photo
+                                ? { ...prev, photo: { ...prev.photo, cropX: AUTHOR_CARD_CROP_DEFAULT.x, cropY: AUTHOR_CARD_CROP_DEFAULT.y } }
+                                : prev
+                            )
+                          }
+                        >
+                          <Icon name="undo" size={20} />
+                        </button>
                       </div>
                       <PhotoCropPreview
                         src={draft.photo.src}
@@ -621,21 +623,29 @@ export function AuthorProfileFold({
                         onChange={(x, y) =>
                           setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, cropX: x, cropY: y } } : prev))
                         }
-                        reset={{
-                          label: t.photoCropCenter,
-                          onReset: () =>
-                            setDraft((prev) =>
-                              prev.photo
-                                ? { ...prev, photo: { ...prev.photo, cropX: AUTHOR_CARD_CROP_DEFAULT.x, cropY: AUTHOR_CARD_CROP_DEFAULT.y } }
-                                : prev
-                            ),
-                        }}
                       />
                     </section>
                     <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-avatar-title">
-                      <div className={styles.photoCropHead}>
-                        <h4 id="author-photo-crop-avatar-title">{t.photoCropAvatarTitle}</h4>
-                        <p>{t.photoCropAvatarNote}</p>
+                      <div className={styles.authorFieldHead}>
+                        <span className={styles.photoCropHead}>
+                          <h4 id="author-photo-crop-avatar-title">{t.photoCropAvatarTitle}</h4>
+                          <p>{t.photoCropAvatarNote}</p>
+                        </span>
+                        <button
+                          type="button"
+                          className={styles.authorIconAction}
+                          aria-label={t.photoCropCenter}
+                          title={t.photoCropCenter}
+                          onClick={() =>
+                            setDraft((prev) =>
+                              prev.photo
+                                ? { ...prev, photo: { ...prev.photo, avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x, avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y } }
+                                : prev
+                            )
+                          }
+                        >
+                          <Icon name="undo" size={20} />
+                        </button>
                       </div>
                       <PhotoCropPreview
                         src={draft.photo.src}
@@ -646,15 +656,6 @@ export function AuthorProfileFold({
                         onChange={(x, y) =>
                           setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, avatarCropX: x, avatarCropY: y } } : prev))
                         }
-                        reset={{
-                          label: t.photoCropCenter,
-                          onReset: () =>
-                            setDraft((prev) =>
-                              prev.photo
-                                ? { ...prev, photo: { ...prev.photo, avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x, avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y } }
-                                : prev
-                            ),
-                        }}
                       />
                     </section>
                   </div>
