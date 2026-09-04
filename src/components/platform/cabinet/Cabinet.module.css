@@ -1002,18 +1002,75 @@
 /* The compact form is read down one column. Desktop holds compact media at the
    left and the complete editable profile at the right, within one full-width
    material card. */
-/* ONE FIELD RHYTHM, ALL THREE BANDS. `.card`'s own `sm` applied on phone and
-   tablet while the desktop rule below set `row-gap: md`, so the same form had
-   two different vertical rhythms depending on width. `md` between fields
-   against `.authorField`'s own `2xs` from label to control is the 4:1 the
-   spacing scale is for: a field's parts read as one object, the fields as
-   separate ones. */
+/* ONE COLUMN OF SECTIONS, ALL THREE BANDS. The form used to be a two-column
+   grid whose left column held the photo for no reason except that the photo
+   is tall — which put the picture beside whichever text field the grid's
+   auto-placement happened to pair it with. Sections group by who reads the
+   field instead (byline, card, page, consultation), and a section is a
+   whole-width band, so there are no cross-column rows left to couple.
+
+   Three steps, one scale: `lg` between sections, `md` between fields inside
+   one, `2xs` from a label to its control (`.authorField`). Same on phone,
+   tablet and desktop — `.card`'s `sm` used to apply below 901px while the
+   desktop rule restated `row-gap: md` above it. */
 .authorForm {
   composes: card;
   display: grid;
-  gap: var(--cw-space-md);
+  gap: var(--cw-space-lg);
   width: 100%;
   max-width: none;
+}
+
+.authorSection {
+  display: grid;
+  align-content: start;
+  gap: var(--cw-space-md);
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.authorSectionHead {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+/* The band's own name. Also the consultation `fieldset`'s `legend`, which is
+   that section's title element rather than a second kind of heading. */
+.authorSectionTitle {
+  margin: 0;
+  padding: 0;
+  color: var(--cw-platform-text);
+  font-size: var(--ds-type-body-size);
+  font-weight: 700;
+  line-height: 1.3;
+}
+
+/* Who reads this section — the answer to "why is this field here", printed
+   once per band instead of guessed field by field. */
+.authorSectionNote {
+  margin: 0;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  line-height: 1.45;
+}
+
+/* The byline's own row: the photo's two frames, then the name and role that
+   print beside them. Stacked below 901px, where a phone has no width to put
+   a 26rem pair of crop frames next to a text column. */
+.authorIdentity {
+  display: grid;
+  gap: var(--cw-space-md);
+  min-width: 0;
+}
+
+.authorIdentityFields {
+  display: grid;
+  align-content: start;
+  gap: var(--cw-space-md);
+  min-width: 0;
 }
 
 .authorField {
@@ -1024,16 +1081,6 @@
   color: var(--cw-platform-muted);
 }
 
-/* THE FORM'S TWO HALVES. One grid item each, so neither can be held to the
-   other's row heights — the whole point, not a grouping convenience. Same
-   `md` rhythm inside them as between them, on all three bands. */
-.authorFormMedia,
-.authorFormText {
-  display: grid;
-  align-content: start;
-  gap: var(--cw-space-md);
-  min-width: 0;
-}
 
 /* The label and the command that grows its list, on one row — the same
    lockup `.authorProfileBlockHead` already uses for a block's own remove
@@ -1342,12 +1389,20 @@
   gap: var(--cw-space-sm);
 }
 
-/* The frame's name and what it is used for, stacked — the left half of the
-   `.authorFieldHead` lockup this panel shares with every other list in the
-   form, whose right half is the recentre action. A token gap, not a margin
-   under the title: `0.15rem` was 2.4px, off the 4px rhythm grid, and the
-   two font sizes (0.95rem / 0.78rem) were a type scale of their own next to
-   the one in the token file. */
+/* The frame's name, what it is used for, and the recentre action — beside the
+   title, NOT pushed to the far edge of the column. `.authorFieldHead`'s
+   `space-between` is right for a list whose rows span the field's full width;
+   here it left the button hanging in the gap between the two panels, the
+   same detached-from-its-frame reading the corner badge had. */
+.photoCropPanelHead {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--cw-space-xs);
+}
+
+/* A token gap, not a margin under the title: `0.15rem` was 2.4px, off the 4px
+   rhythm grid, and the two font sizes (0.95rem / 0.78rem) were a type scale
+   of their own next to the one in the token file. */
 .photoCropHead {
   display: grid;
   gap: var(--cw-space-2xs);
@@ -1525,10 +1580,13 @@
    and writing the profile they read. On desktop those tasks deserve their own
    columns; on compact screens the source order remains the one-column form. */
 @media (min-width: 901px) {
-  /* Columns and the gutter between them. The row rhythm is NOT restated
-     here — it is `md` in the base rule, on every band. */
-  .authorForm {
-    grid-template-columns: minmax(18rem, 2fr) minmax(0, 3fr);
+  /* The byline's photo frames and its name/role side by side — the only
+     place in this form that wants two columns, and it wants them because the
+     three belong to one another, not because one of them is tall. The photo
+     side is sized by its content (a 16rem card frame beside a 10rem avatar);
+     the fields take what is left and never go below 16rem. */
+  .authorIdentity {
+    grid-template-columns: minmax(0, auto) minmax(16rem, 1fr);
     column-gap: var(--cw-space-xl);
     align-items: start;
   }
@@ -1546,19 +1604,6 @@
     max-width: 100%;
     height: 7rem;
     aspect-ratio: auto;
-  }
-
-  /* Two children, two columns — no per-field placement at all any more. This
-     used to be an explicit list of every field class, mirrored by a `:not()`
-     catch-all so a field nobody remembered to add to the list still landed
-     somewhere. Both are gone: a new field is added inside one of the two
-     halves and needs no rule of its own here. */
-  .authorFormMedia {
-    grid-column: 1;
-  }
-
-  .authorFormText {
-    grid-column: 2;
   }
 }
 
