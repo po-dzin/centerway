@@ -1014,6 +1014,15 @@
   color: var(--cw-platform-muted);
 }
 
+/* Photo, then background — its own vertical stack, independent of the grid
+   row a text field beside it would land in. See the ≥901px rule below for
+   why that independence is the point, not just a grouping convenience. */
+.authorFormMedia {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cw-space-md);
+}
+
 /* The label and the command that grows its list, on one row — the same
    lockup `.authorProfileBlockHead` already uses for a block's own remove
    button. A `+` below a list of unknown length pushed everything under it
@@ -1213,6 +1222,37 @@
     var(--cw-mat-shadow-soft);
 }
 
+/* Replace/remove for a photo that already has its two crop cards below it —
+   plain buttons beside the alt text, not icons floated on top of an image
+   that is no longer shown here at full size. Same square-secondary shape as
+   `.authorIconAction` (the credential row's own remove button); a distinct
+   class only because it needs the same hidden-input focus ring as
+   `.authorMediaAction` above, which a plain button never has to carry. */
+.authorPhotoToolbar {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+}
+
+.authorPhotoToolbar .authorInput {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.authorPhotoToolbarAction {
+  composes: secondary from "../PlatformButtons.module.css";
+  composes: square from "../PlatformButtons.module.css";
+  flex: none;
+  cursor: pointer;
+}
+
+.authorPhotoToolbarAction:has(.visuallyHidden:focus-visible) {
+  outline: none;
+  box-shadow:
+    0 0 0 2px color-mix(in srgb, var(--cw-platform-accent) 28%, transparent),
+    var(--cw-mat-shadow-soft);
+}
+
 /* The empty slot IS the control — a `<label>` wrapping its own hidden file
    input (`AuthorMediaSlot`), not a blank rectangle with a corner pencil icon
    nobody would find. Dashed, not filled, so it reads as "nothing here yet"
@@ -1315,10 +1355,36 @@
   gap: var(--cw-space-2xs);
 }
 
+/* Unclipped, sized to match the frame it wraps exactly — the reset badge
+   below anchors to this box's own corner. The frame itself stays the clipped,
+   focusable, draggable element (`overflow: hidden` is why it cannot also
+   host the badge: a round avatar clips anything sitting near its bounding
+   box's corner, since the circle touches the box only at each edge's
+   midpoint). */
+.photoCropFrameWrap {
+  position: relative;
+}
+
+/* Same ratio as `.guideCard` at its desktop measure — the frame the author's
+   photo fills wherever `AuthorCard` renders it. */
+.photoCropFrameWrap[data-shape="card"] {
+  aspect-ratio: 24 / 29;
+  max-width: 16rem;
+}
+
+/* The round avatar's own frame — the author's own page and a course's byline.
+   Square while dragging, so the focal point maps the same way as the card;
+   the circular crop is what the inner frame's border-radius shows. */
+.photoCropFrameWrap[data-shape="avatar"] {
+  width: 10rem;
+  aspect-ratio: 1;
+}
+
 .photoCropCard,
 .photoCropAvatar {
   position: relative;
   width: 100%;
+  height: 100%;
   overflow: hidden;
   background: var(--cw-mat-surface-sunk);
   cursor: grab;
@@ -1326,20 +1392,11 @@
   user-select: none;
 }
 
-/* Same ratio as `.guideCard` at its desktop measure — the frame the author's
-   photo fills wherever `AuthorCard` renders it. */
 .photoCropCard {
-  aspect-ratio: 24 / 29;
-  max-width: 16rem;
   border-radius: var(--cw-radius-md);
 }
 
-/* The round avatar's own frame — the author's own page and a course's byline.
-   Square while dragging, so the focal point maps the same way as the card;
-   the circular crop is what the border-radius shows. */
 .photoCropAvatar {
-  width: 10rem;
-  aspect-ratio: 1;
   border-radius: var(--cw-radius-pill);
 }
 
@@ -1379,14 +1436,18 @@
   pointer-events: none;
 }
 
-.photoCropTools {
-  display: flex;
-  justify-content: flex-end;
-}
-
+/* A badge at the frame's corner, not a full-width text row beneath it — the
+   row cost the frame's entire width for one word, twice per photo. Sits
+   just outside the frame's own edge (negative inset) so a round avatar's
+   circular clip never eats it; `onMedia` is the same translucent-on-photo
+   chip `.authorMediaAction`'s edit/remove pair already uses. */
 .photoCropReset {
-  composes: secondary from "../PlatformButtons.module.css";
-  composes: hug from "../PlatformButtons.module.css";
+  composes: onMedia from "../PlatformButtons.module.css";
+  composes: square from "../PlatformButtons.module.css";
+  position: absolute;
+  right: -0.35rem;
+  bottom: -0.35rem;
+  cursor: pointer;
 }
 
 @media (min-width: 641px) {
@@ -1484,11 +1545,13 @@
     align-items: start;
   }
 
-  .authorPhotoField {
-    grid-column: 1;
-  }
-
-  .authorBackgroundField {
+  /* Its own grid column, not a cell sharing a row with the text fields. A
+     CSS grid row is only ever as tall as its shortest cell — pair a text
+     field with the photo in the same row and every field below it waits on
+     however tall the crop cards happen to be that day. `.authorFormMedia` is
+     one grid item; what happens inside it (photo, then background) never
+     touches the text column's own row heights. */
+  .authorFormMedia {
     grid-column: 1;
   }
 
@@ -1507,22 +1570,11 @@
     aspect-ratio: auto;
   }
 
-  .authorNameField,
-  .authorRoleField,
-  .authorBioField,
-  .authorQuoteField,
-  .authorCredentialsField,
-  .authorFactsField,
-  .authorProfileBlocksField,
-  .authorExperienceField,
-  .authorAchievementField,
-  .authorConsultationField,
-  .authorSlugField,
-  .authorVisibilityRow,
-  .authorFormActions { grid-column: 2; }
-  .authorFormNotice { grid-column: 2; }
-
-  .authorForm > :not(.authorPhotoField):not(.authorBackgroundField):not(.authorNameField):not(.authorRoleField):not(.authorBioField):not(.authorQuoteField):not(.authorCredentialsField):not(.authorFactsField):not(.authorProfileBlocksField):not(.authorExperienceField):not(.authorAchievementField):not(.authorConsultationField):not(.authorSlugField):not(.authorVisibilityRow):not(.authorFormActions):not(.authorFormNotice) {
+  /* Everything else is a text field, in the second column — this used to be
+     an explicit list mirrored by its own `:not()` catch-all so a field
+     nobody remembered to add to either stayed on the grid at all. Now there
+     are only two groups: the media column, named above, and everyone else. */
+  .authorForm > :not(.authorFormMedia) {
     grid-column: 2;
   }
 }

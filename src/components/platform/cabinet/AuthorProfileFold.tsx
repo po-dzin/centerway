@@ -121,26 +121,38 @@ function PhotoCropPreview({
 
   return (
     <div className={styles.photoCropStack}>
-      <div
-        className={styles[frameClass]}
-        data-dragging={dragging || undefined}
-        tabIndex={0}
-        aria-label={`Точка фокуса. Перетягуйте або використовуйте стрілки.`}
-        onKeyDown={moveByKey}
-        onPointerDown={beginDrag}
-        onPointerMove={drag}
-        onPointerUp={endDrag}
-        onPointerCancel={endDrag}
-      >
-        {/* eslint-disable-next-line @next/next/no-img-element -- the cabinet's own upload, any public host */}
-        <img src={src} alt={alt} style={{ objectPosition: `${x}% ${y}%` }} draggable={false} />
-        <span className={styles.photoCropHandle} style={{ left: `${x}%`, top: `${y}%` }} aria-hidden="true">
-          <Icon name="grip" size={20} />
-        </span>
-      </div>
-      <div className={styles.photoCropTools}>
-        <button className={styles.photoCropReset} type="button" onClick={reset.onReset}>
-          {reset.label}
+      <div className={styles.photoCropFrameWrap} data-shape={shape}>
+        <div
+          className={styles[frameClass]}
+          data-dragging={dragging || undefined}
+          tabIndex={0}
+          aria-label={`Точка фокуса. Перетягуйте або використовуйте стрілки.`}
+          onKeyDown={moveByKey}
+          onPointerDown={beginDrag}
+          onPointerMove={drag}
+          onPointerUp={endDrag}
+          onPointerCancel={endDrag}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element -- the cabinet's own upload, any public host */}
+          <img src={src} alt={alt} style={{ objectPosition: `${x}% ${y}%` }} draggable={false} />
+          <span className={styles.photoCropHandle} style={{ left: `${x}%`, top: `${y}%` }} aria-hidden="true">
+            <Icon name="grip" size={20} />
+          </span>
+        </div>
+        {/* Outside the clipped frame, at its own wrapper's corner — a round
+            avatar's circular clip eats anything positioned near the frame's
+            corner from inside it. `stopPropagation` on pointerdown: without
+            it the frame beneath still owns the drag and every reset starts
+            by yanking the focal point under the cursor first. */}
+        <button
+          type="button"
+          className={styles.photoCropReset}
+          aria-label={reset.label}
+          title={reset.label}
+          onPointerDown={(event) => event.stopPropagation()}
+          onClick={reset.onReset}
+        >
+          <Icon name="undo" size={20} />
         </button>
       </div>
     </div>
@@ -562,6 +574,155 @@ export function AuthorProfileFold({
       </summary>
       <div className={styles.foldBody}>
         <form className={styles.authorForm} {...matte} onSubmit={handleSubmit}>
+          {/* THE PICTURE FIRST — an author reaches for it before anything
+              else, and it used to sit below the bio, the credentials, the
+              facts, every profile block and the consultation settings before
+              it ever appeared. It also has to stand alone: on desktop this is
+              the only field group that runs down its own column, and a grid
+              row is only ever as short as its shortest cell — pairing it with
+              a text field left that field waiting on the photo's height
+              every time the crop tools grew. */}
+          <div className={styles.authorFormMedia}>
+            {/* ONE UPLOAD, SHOWN THROUGH ITS OWN TWO FRAMES. A separate full
+                preview above the crop cards used to repeat the same photo a
+                third time for no reason a crop card doesn't already serve —
+                each one already shows the image, in the shape it is actually
+                used in, and lets you drag to refocus it. So the plain preview
+                only appears before there is anything to crop; once a photo
+                lands, the crop cards are the photo. */}
+            <div className={`${styles.authorField} ${styles.authorPhotoField}`}>
+              <span>{t.photo}</span>
+              {draft.photo?.src ? (
+                <>
+                  <div className={styles.photoCropGrid}>
+                    <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-card-title">
+                      <div className={styles.photoCropHead}>
+                        <div>
+                          <h4 id="author-photo-crop-card-title">{t.photoCropCardTitle}</h4>
+                          <p>{t.photoCropCardNote}</p>
+                        </div>
+                      </div>
+                      <PhotoCropPreview
+                        src={draft.photo.src}
+                        alt=""
+                        shape="card"
+                        x={draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x}
+                        y={draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y}
+                        onChange={(x, y) =>
+                          setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, cropX: x, cropY: y } } : prev))
+                        }
+                        reset={{
+                          label: t.photoCropCenter,
+                          onReset: () =>
+                            setDraft((prev) =>
+                              prev.photo
+                                ? { ...prev, photo: { ...prev.photo, cropX: AUTHOR_CARD_CROP_DEFAULT.x, cropY: AUTHOR_CARD_CROP_DEFAULT.y } }
+                                : prev
+                            ),
+                        }}
+                      />
+                    </section>
+                    <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-avatar-title">
+                      <div className={styles.photoCropHead}>
+                        <div>
+                          <h4 id="author-photo-crop-avatar-title">{t.photoCropAvatarTitle}</h4>
+                          <p>{t.photoCropAvatarNote}</p>
+                        </div>
+                      </div>
+                      <PhotoCropPreview
+                        src={draft.photo.src}
+                        alt=""
+                        shape="avatar"
+                        x={draft.photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x}
+                        y={draft.photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y}
+                        onChange={(x, y) =>
+                          setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, avatarCropX: x, avatarCropY: y } } : prev))
+                        }
+                        reset={{
+                          label: t.photoCropCenter,
+                          onReset: () =>
+                            setDraft((prev) =>
+                              prev.photo
+                                ? { ...prev, photo: { ...prev.photo, avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x, avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y } }
+                                : prev
+                            ),
+                        }}
+                      />
+                    </section>
+                  </div>
+                  <div className={styles.authorPhotoToolbar}>
+                    <input
+                      className={styles.authorInput}
+                      placeholder={t.photoAlt}
+                      value={draft.photo.alt}
+                      onChange={(e) =>
+                        setDraft((prev) => ({
+                          ...prev,
+                          photo: prev.photo ? { ...prev.photo, alt: e.target.value } : prev.photo,
+                        }))
+                      }
+                    />
+                    <label className={styles.authorPhotoToolbarAction} aria-label={t.photoReplace} title={t.photoReplace}>
+                      <input
+                        className={styles.visuallyHidden}
+                        type="file"
+                        aria-label={t.photoReplace}
+                        accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                        disabled={uploading}
+                        onChange={(e) => {
+                          const file = e.target.files?.[0];
+                          e.target.value = "";
+                          if (file) void handlePhoto(file);
+                        }}
+                      />
+                      <Icon name="edit" size={18} />
+                    </label>
+                    <button
+                      type="button"
+                      className={styles.authorPhotoToolbarAction}
+                      aria-label={t.photoRemove}
+                      title={t.photoRemove}
+                      onClick={() => setDraft((prev) => ({ ...prev, photo: null }))}
+                    >
+                      <Icon name="close" size={18} />
+                    </button>
+                  </div>
+                </>
+              ) : (
+                <AuthorMediaSlot
+                  src={undefined}
+                  uploading={uploading}
+                  uploadLabel={t.photoUpload}
+                  replaceLabel={t.photoReplace}
+                  removeLabel={t.photoRemove}
+                  dropLabel={t.mediaDrop}
+                  previewClassName={styles.authorPhotoPreview}
+                  emptyClassName={styles.authorPhotoEmpty}
+                  onFile={(file) => void handlePhoto(file)}
+                  onRemove={() => setDraft((prev) => ({ ...prev, photo: null }))}
+                />
+              )}
+              {uploadError && uploadTarget === "photo" ? <span className={styles.authorNotice}>{uploadError}</span> : null}
+            </div>
+
+            <div className={`${styles.authorField} ${styles.authorBackgroundField}`}>
+              <span>{t.background}</span>
+              <AuthorMediaSlot
+                src={draft.background?.src}
+                uploading={uploading}
+                uploadLabel={t.backgroundUpload}
+                replaceLabel={t.backgroundReplace}
+                removeLabel={t.backgroundRemove}
+                dropLabel={t.mediaDrop}
+                previewClassName={styles.authorBackgroundPreview}
+                emptyClassName={styles.authorBackgroundEmpty}
+                onFile={(file) => void handleBackground(file)}
+                onRemove={() => setDraft((prev) => ({ ...prev, background: null }))}
+              />
+              {uploadError && uploadTarget === "background" ? <span className={styles.authorNotice}>{uploadError}</span> : null}
+            </div>
+          </div>
+
           <label className={`${styles.authorField} ${styles.authorNameField}`}>
             <span>{t.name}</span>
             <input
@@ -580,121 +741,6 @@ export function AuthorProfileFold({
               onChange={(e) => setDraft((prev) => ({ ...prev, role: e.target.value }))}
             />
           </label>
-
-          {/* THE PICTURE, THEN THE WAY TO CHANGE IT, THEN WHAT IT SHOWS.
-              The alt field used to come FIRST, before there was any image to
-              describe — a text box asking «опис фото» above an empty slot. It
-              only makes sense once something is there, so it appears with the
-              photo and not before.
-
-              Near the top of the form, not after ten other fields — a photo is
-              the first thing an author reaches for, and used to sit below the
-              bio, the credentials, the facts, every profile block and the
-              consultation settings before it ever appeared. */}
-          <div className={`${styles.authorField} ${styles.authorPhotoField}`}>
-            <span>{t.photo}</span>
-            <AuthorMediaSlot
-              src={draft.photo?.src}
-              uploading={uploading}
-              uploadLabel={t.photoUpload}
-              replaceLabel={t.photoReplace}
-              removeLabel={t.photoRemove}
-              dropLabel={t.mediaDrop}
-              previewClassName={styles.authorPhotoPreview}
-              emptyClassName={styles.authorPhotoEmpty}
-              onFile={(file) => void handlePhoto(file)}
-              onRemove={() => setDraft((prev) => ({ ...prev, photo: null }))}
-            />
-            {draft.photo?.src ? (
-              <input
-                className={styles.authorInput}
-                placeholder={t.photoAlt}
-                value={draft.photo.alt}
-                onChange={(e) =>
-                  setDraft((prev) => ({
-                    ...prev,
-                    photo: prev.photo ? { ...prev.photo, alt: e.target.value } : prev.photo,
-                  }))
-                }
-              />
-            ) : null}
-            {uploadError && uploadTarget === "photo" ? <span className={styles.authorNotice}>{uploadError}</span> : null}
-            {draft.photo?.src ? (
-              <div className={styles.photoCropGrid}>
-                <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-card-title">
-                  <div className={styles.photoCropHead}>
-                    <div>
-                      <h4 id="author-photo-crop-card-title">{t.photoCropCardTitle}</h4>
-                      <p>{t.photoCropCardNote}</p>
-                    </div>
-                  </div>
-                  <PhotoCropPreview
-                    src={draft.photo.src}
-                    alt=""
-                    shape="card"
-                    x={draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x}
-                    y={draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y}
-                    onChange={(x, y) =>
-                      setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, cropX: x, cropY: y } } : prev))
-                    }
-                    reset={{
-                      label: t.photoCropCenter,
-                      onReset: () =>
-                        setDraft((prev) =>
-                          prev.photo
-                            ? { ...prev, photo: { ...prev.photo, cropX: AUTHOR_CARD_CROP_DEFAULT.x, cropY: AUTHOR_CARD_CROP_DEFAULT.y } }
-                            : prev
-                        ),
-                    }}
-                  />
-                </section>
-                <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-avatar-title">
-                  <div className={styles.photoCropHead}>
-                    <div>
-                      <h4 id="author-photo-crop-avatar-title">{t.photoCropAvatarTitle}</h4>
-                      <p>{t.photoCropAvatarNote}</p>
-                    </div>
-                  </div>
-                  <PhotoCropPreview
-                    src={draft.photo.src}
-                    alt=""
-                    shape="avatar"
-                    x={draft.photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x}
-                    y={draft.photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y}
-                    onChange={(x, y) =>
-                      setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, avatarCropX: x, avatarCropY: y } } : prev))
-                    }
-                    reset={{
-                      label: t.photoCropCenter,
-                      onReset: () =>
-                        setDraft((prev) =>
-                          prev.photo
-                            ? { ...prev, photo: { ...prev.photo, avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x, avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y } }
-                            : prev
-                        ),
-                    }}
-                  />
-                </section>
-              </div>
-            ) : null}
-          </div>
-
-          <div className={`${styles.authorField} ${styles.authorBackgroundField}`}>
-            <span>{t.background}</span>
-            <AuthorMediaSlot
-              src={draft.background?.src}
-              uploading={uploading}
-              uploadLabel={t.backgroundUpload}
-              replaceLabel={t.backgroundReplace}
-              removeLabel={t.backgroundRemove}
-              dropLabel={t.mediaDrop}
-              previewClassName={styles.authorBackgroundPreview}
-              emptyClassName={styles.authorBackgroundEmpty}
-              onFile={(file) => void handleBackground(file)}
-              onRemove={() => setDraft((prev) => ({ ...prev, background: null }))}
-            />
-            {uploadError && uploadTarget === "background" ? <span className={styles.authorNotice}>{uploadError}</span> : null}
-          </div>
 
           <label className={`${styles.authorField} ${styles.authorBioField}`}>
             <span>{t.bio}</span>
