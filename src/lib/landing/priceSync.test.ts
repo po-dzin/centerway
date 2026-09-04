@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { applyPriceSync, collectPriceCodes } from "./priceSync";
+import { applyCheckoutGate, applyPriceSync, collectCheckoutCodes, collectPriceCodes } from "./priceSync";
 
 const PRICES = {
   way21: { amount: 4100, listAmount: null },
@@ -66,5 +66,55 @@ describe("applyPriceSync", () => {
   it("touches nothing on a page that marks no prices", () => {
     const html = '<div class="hero-price"><b>4100 грн</b><small>повний доступ</small></div>';
     expect(applyPriceSync(html, PRICES)).toBe(html);
+  });
+});
+
+/* The herbs hero, copied from the page it broke on: an anchor that names the
+   enquiry form in its href and is claimed by checkout.js all the same. */
+const HERBS_CTA =
+  '<a href="#lead" class="btn btn-primary" data-cta-hero data-cw-checkout data-cw-product="herbs" data-cw-offer-id="herbs_single" data-cw-content-name="Herbal Blend">Замовити збір</a>';
+
+describe("collectCheckoutCodes", () => {
+  it("finds every product a page offers to charge for", () => {
+    expect(collectCheckoutCodes(HERBS_CTA)).toEqual(["herbs"]);
+  });
+
+  it("reads the two attributes in either order", () => {
+    expect(collectCheckoutCodes('<button data-cw-product="way21" data-cw-checkout>Купити</button>')).toEqual([
+      "way21",
+    ]);
+  });
+
+  it("ignores a product named without a checkout on it", () => {
+    // `data-cw-product` alone is a pixel label, not a buy button.
+    expect(collectCheckoutCodes('<a data-cw-product="herbs" data-cw-price-value="1">Замовити</a>')).toEqual([]);
+  });
+});
+
+describe("applyCheckoutGate", () => {
+  it("hands the click back to the anchor when there is no price to charge", () => {
+    const out = applyCheckoutGate(HERBS_CTA, new Set(["herbs"]));
+    expect(out).not.toContain("data-cw-checkout");
+    // Everything the pixel reads survives, and so does the destination the
+    // markup already named — the button is not made dead, it is made honest.
+    expect(out).toContain('href="#lead"');
+    expect(out).toContain('data-cw-product="herbs"');
+    expect(out).toContain('data-cw-content-name="Herbal Blend"');
+    expect(out).toContain("Замовити збір");
+  });
+
+  it("leaves a product that may be charged exactly as it was", () => {
+    expect(applyCheckoutGate(HERBS_CTA, new Set(["way21"]))).toEqual(HERBS_CTA);
+    expect(applyCheckoutGate(HERBS_CTA, new Set())).toEqual(HERBS_CTA);
+  });
+
+  it("never opens a checkout the page did not declare", () => {
+    const plain = '<a href="#lead">Замовити збір</a>';
+    expect(applyCheckoutGate(plain, new Set(["herbs"]))).toEqual(plain);
+  });
+
+  it("closes every trigger for the product, not only the first", () => {
+    const out = applyCheckoutGate(`${HERBS_CTA}\n<p>текст</p>\n${HERBS_CTA}`, new Set(["herbs"]));
+    expect(out).not.toContain("data-cw-checkout");
   });
 });

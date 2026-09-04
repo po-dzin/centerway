@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 
 import { programs } from "./content";
-import { courseOfferCommerce, resolveOfferCommerce } from "./offerCommerce";
+import { courseOfferCommerce, productOfferCommerce, resolveOfferCommerce } from "./offerCommerce";
+import type { PayableOffer } from "@/lib/products";
 import type { CourseOffer } from "./offers";
 
 describe("resolveOfferCommerce", () => {
@@ -69,5 +70,41 @@ describe("courseOfferCommerce", () => {
   it("never quotes a figure at or below the charged one", () => {
     const paid = courseOfferCommerce("reset-day", offer({ amount: 990, listAmount: 990 }));
     expect(paid.mode === "checkout" && paid.compareAtPrice).toBeNull();
+  });
+});
+
+describe("productOfferCommerce", () => {
+  const priced = (amount: number, listAmount: number | null = null): PayableOffer =>
+    ({
+      code: "herbs",
+      heading: { uk: "Фітозбір", en: "Herbal blend" },
+      description: { uk: "Фітозбір", en: "Herbal blend" },
+      amount,
+      listAmount,
+      currency: "UAH",
+      pixelContentName: "Herbal Blend",
+      fulfilment: { kind: "cabinet" },
+      approvedUrl: "https://example.test/thanks",
+      declinedUrl: "https://example.test/failed",
+    }) as unknown as PayableOffer;
+
+  it("asks when the owner has agreed no price", () => {
+    // The whole rule, in one line: no price, the form. Withdrawn, «за запитом»
+    // and never-priced all arrive here as the same null.
+    expect(productOfferCommerce("herbs", null)).toEqual({ mode: "lead", leadProductCode: "herbs" });
+  });
+
+  it("sells at the figure in the row, with no edit to this file", () => {
+    const commerce = productOfferCommerce("herbs", priced(640));
+    expect(commerce.mode).toBe("checkout");
+    if (commerce.mode !== "checkout") return;
+    expect(commerce.amount).toBe(640);
+    expect(commerce.price).toContain("640");
+    expect(commerce.checkoutHref).toContain("product=herbs");
+  });
+
+  it("strikes through a former price only when it is higher", () => {
+    expect(productOfferCommerce("herbs", priced(640, 800))).toMatchObject({ compareAtPrice: expect.any(String) });
+    expect(productOfferCommerce("herbs", priced(640, 640))).toMatchObject({ compareAtPrice: null });
   });
 });

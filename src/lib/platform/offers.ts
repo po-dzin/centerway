@@ -397,11 +397,22 @@ const COURSE_CODE_ALIASES: Partial<Record<CatalogProductCode, string>> = {
  * so it withdraws the checkout rather than opening a free one. `kind: "lead"`
  * does the same: a package agreed in conversation and invoiced afterwards must
  * not become a buy button because somebody typed a figure next to it.
+ *
+ * THE FALLBACK NEEDS A PRICE TO FALL BACK TO, and one product has none.
+ * `listAmount` is already this file's marker for «nobody agreed a figure» —
+ * `herbs` carries `null` there with the comment saying so, because it was never
+ * sold self-serve and its `amount` is the 1 ₴ QA placeholder. Returning that
+ * constant charged a hryvnia for an individual blend on any request the row did
+ * not answer: while the row was absent, after an admin deactivated it, and
+ * after any read failure, since `loadProductOffer` reports all three the same
+ * way. So the fallback applies to a constant that quotes a price and refuses
+ * for one that does not — no price means the enquiry form, which is the state
+ * this product was always in.
  */
 async function productOffer(code: CatalogProductCode): Promise<PayableOffer | null> {
   const base = catalogOffer(code);
   const row = await loadProductOffer(code);
-  if (!row) return base;
+  if (!row) return base.listAmount === null ? null : base;
 
   if (row.kind === "lead" || row.amount === null || row.amount <= 0) return null;
 

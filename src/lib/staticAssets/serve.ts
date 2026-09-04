@@ -1,8 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 
-import { resolveLandingPrices } from "@/lib/landing/landingPrices";
-import { applyPriceSync, collectPriceCodes } from "@/lib/landing/priceSync";
+import { hasLandingCommerce, syncLandingCommerce } from "@/lib/landing/landingPrices";
 
 const STATIC_ROOT = path.join(process.cwd(), "src", "landing-static");
 
@@ -94,13 +93,14 @@ export async function serveStaticAsset(prefix: string, segments: string[]): Prom
     const isDev = process.env.NODE_ENV !== "production";
     const contentType = contentTypeByExt(filePath);
 
-    /* HTML is the only thing here that can quote a price, and most of it does
-       not. `collectPriceCodes` on the decoded text is the cheap test that keeps
-       every other asset on the path it had before this existed. */
+    /* HTML is the only thing here that can quote a price or open a checkout,
+       and most of it does neither. `hasLandingCommerce` on the decoded text is
+       the cheap test that keeps every other asset on the path it had before
+       this existed. */
     if (contentType.startsWith("text/html")) {
       const html = data.toString("utf-8");
-      if (collectPriceCodes(html).length > 0) {
-        const synced = applyPriceSync(html, await resolveLandingPrices(html));
+      if (hasLandingCommerce(html)) {
+        const synced = await syncLandingCommerce(html);
         return new Response(synced, {
           status: 200,
           headers: {

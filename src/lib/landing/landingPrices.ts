@@ -27,7 +27,13 @@
 
 import { loadPayableOffer } from "@/lib/platform/offers";
 import { loadProductOffer } from "@/lib/platform/productOffers";
-import { collectPriceCodes, type LandingPrices } from "./priceSync";
+import {
+  applyCheckoutGate,
+  applyPriceSync,
+  collectCheckoutCodes,
+  collectPriceCodes,
+  type LandingPrices,
+} from "./priceSync";
 
 export async function resolveLandingPrices(html: string): Promise<LandingPrices> {
   const codes = collectPriceCodes(html);
@@ -58,4 +64,61 @@ export async function resolveLandingPrices(html: string): Promise<LandingPrices>
   );
 
   return Object.fromEntries(entries.filter((entry) => entry !== null));
+}
+
+/**
+ * The products a page offers to sell that it may not sell.
+ *
+ * `loadPayableOffer` is the only authority — the same call the checkout makes
+ * — so a landing cannot open a buy button the payment route would refuse. It
+ * answers `null` for a price nobody agreed, for a package quoted beside a lead
+ * form, and for a withdrawn offer; all three mean the same thing to a CTA.
+ *
+ * A THROWN READ CLOSES THE BUTTON. `loadPayableOffer` already absorbs a
+ * database failure into the product's constant, so anything reaching here is
+ * unexpected, and the two ways to be wrong are not equal: sending a buyer to
+ * the enquiry form costs a form submission, and charging them a figure nobody
+ * agreed costs a refund and the trust behind it.
+ */
+export async function resolveClosedCheckouts(codes: string[]): Promise<Set<string>> {
+  const closed = new Set<string>();
+  if (codes.length === 0) return closed;
+
+  await Promise.all(
+    codes.map(async (code) => {
+      try {
+        if (!(await loadPayableOffer(code))) closed.add(code);
+      } catch (error) {
+        console.warn("landing_checkout_gate_read_failed", {
+          code,
+          error: error instanceof Error ? error.message : String(error),
+        });
+        closed.add(code);
+      }
+    })
+  );
+
+  return closed;
+}
+
+/** True when the page quotes money or offers to take it — the cheap test callers gate on. */
+export function hasLandingCommerce(html: string): boolean {
+  return collectPriceCodes(html).length > 0 || collectCheckoutCodes(html).length > 0;
+}
+
+/**
+ * One pass over a landing's commercial claims: what it prints, and what it sells.
+ *
+ * Both halves in one function on purpose. They read the same source and have to
+ * agree — a page printing a figure it cannot charge, or charging a figure it
+ * does not print, is the exact failure `priceSync` was written for, and two
+ * call sites each wiring their own half is how that comes back.
+ */
+export async function syncLandingCommerce(html: string): Promise<string> {
+  const [prices, closed] = await Promise.all([
+    resolveLandingPrices(html),
+    resolveClosedCheckouts(collectCheckoutCodes(html)),
+  ]);
+
+  return applyCheckoutGate(applyPriceSync(html, prices), closed);
 }

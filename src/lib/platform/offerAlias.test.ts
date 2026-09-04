@@ -250,18 +250,47 @@ describe("the products that are not a course of their own", () => {
     expect(await loadPayableOffer("herbs")).toBeNull();
   });
 
-  it("falls back to the constant when no row exists at all", async () => {
+  it("falls back to the constant when no row exists and the constant quotes a price", async () => {
     readProductOffer.mockResolvedValue(null);
     const { loadPayableOffer } = await import("./offers");
     const { PRODUCTS } = await import("@/lib/products");
 
     /* Unlike a course, where an absent offer is the owner declining to sell.
-       These products were sold from a hand-written constant for as long as they
-       have existed, so an absent row is an absence — and closing a live
-       checkout over it would be a decision nobody made. Safe here because both
-       doors read this one function, which is what the way21 bug was actually
-       about. */
-    const offer = await loadPayableOffer("herbs");
-    expect(offer?.amount).toBe(PRODUCTS.herbs.amount);
+       way21-support was sold from a hand-written constant for as long as it has
+       existed, so an absent row is an absence — and closing a live checkout
+       over it would be a decision nobody made. Safe here because both doors
+       read this one function, which is what the way21 bug was actually about. */
+    const offer = await loadPayableOffer("way21-support");
+    expect(offer?.amount).toBe(PRODUCTS["way21-support"].amount);
+  });
+
+  it("refuses when no row exists and the constant has no price to fall back to", async () => {
+    readProductOffer.mockResolvedValue(null);
+    const { loadPayableOffer } = await import("./offers");
+    const { PRODUCTS } = await import("@/lib/products");
+
+    /* herbs was never sold self-serve: its `amount` is the 1 ₴ QA placeholder
+       and its `listAmount` is null to say no figure was agreed. Falling back to
+       the placeholder charged a hryvnia for an individual blend on every
+       request the row did not answer — while it was absent, after an admin
+       deactivated it, and after any read failure. No price means the form. */
+    expect(PRODUCTS.herbs.listAmount).toBeNull();
+    expect(await loadPayableOffer("herbs")).toBeNull();
+  });
+
+  it("sells herbs the moment the owner sets its price, with no deployment", async () => {
+    readProductOffer.mockResolvedValue({
+      code: "herbs",
+      amount: 640,
+      listAmount: null,
+      currency: "UAH",
+      kind: "checkout",
+      pixelContentName: null,
+      active: true,
+      updatedAt: null,
+    });
+    const { loadPayableOffer } = await import("./offers");
+
+    expect((await loadPayableOffer("herbs"))?.amount).toBe(640);
   });
 });
