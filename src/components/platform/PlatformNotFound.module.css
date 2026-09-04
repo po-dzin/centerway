@@ -1,0 +1,12 @@
+/* The document a 404 draws when there is no layout above it.
+
+   `global-not-found.tsx` owns its whole page (see the comment there), so the
+   one thing the platform shell would normally do for it — put the content
+   somewhere other than jammed against the top edge of an otherwise empty
+   viewport — has to be said here. One rule, and it is a layout rule, not a
+   second visual recipe: the panel inside is the payment-status panel. */
+.standaloneMain {
+  display: grid;
+  align-content: center;
+  min-height: 100dvh;
+}

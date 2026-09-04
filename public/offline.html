@@ -1,22 +1,41 @@
 <!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#faefe0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#191918" media="(prefers-color-scheme: dark)">
 <title>CenterWay — немає зʼєднання</title>
 <!-- Served by public/sw.js as the navigation fallback. Everything is inline on
      purpose: this page has to render with nothing on the network, so it cannot
-     reference a hashed Next asset. Colours are copied from the default light
-     ground (--cw-sem-calm-bg / --cw-sem-calm-surface / --cw-platform-text);
+     reference a hashed Next asset. Colours are copied from the resolved
+     platform palette (--cw-sem-calm-bg / --cw-platform-* in both scopes);
      keep them in step with globals.css by hand if the gamma moves again.
 
-     THE GROUND, LIT. Held to the light gamma in both schemes on purpose: the
-     dark inverse turned the whole viewport into one flat green field, and a
-     full-bleed inverse is a surface this system only ever uses for a plate,
-     never for the page itself. Instead the paper is lit the way the platform
-     lights it — two wide, off-centre warm washes (the same warmth and muted
-     calm the material layer mixes from) over the calm ground, plus the matte
-     grain from --cw-mat-grain-image. Organic, not gradient-y: the washes are
-     larger than the viewport, so no edge or centre of either one is visible —
-     what reads is a slow tonal drift across paper, not a light source.
+     THE GROUND, LIT. Two wide, off-centre washes over the ground plus the
+     matte grain — the same warmth and muted calm the material layer mixes
+     from. Organic, not gradient-y: the washes are larger than the viewport, so
+     no edge or centre of either one is visible — what reads is a slow tonal
+     drift across paper, not a light source.
+
+     BOTH GAMMAS SINCE 2026-09-05, and the reversal is the point. This page
+     used to hold the light ground at night on the grounds that the dark
+     inverse turned the whole viewport into one flat GREEN field, and a
+     full-bleed inverse is a surface this system only uses for a plate. That
+     objection died with the green night: the product's dark ground has been
+     warm graphite since 2026-08-28, and graphite is exactly the surface the
+     rest of the app already covers a viewport with. What was left was the
+     worst version of both — a reader whose whole product is graphite losing
+     the network at 2am and taking a full-bleed cream page to the face.
+
+     THE CHOICE FIRST, THE OS SECOND, same order as everywhere else (see
+     src/lib/platform/theme.ts). The script below only stamps `data-cw-theme`
+     when the reader has actually CHOSEN light or dark; with no choice stored
+     nothing is stamped and `prefers-color-scheme` answers. That is why the
+     media query is allowed here and forbidden in globals.css: there is one
+     palette in this file and no course pack to keep in step with it, and the
+     alternative — shipping the boot script’s OS-query branch — would leave
+     a reader with no JavaScript on the wrong gamma, which on the one page that
+     must survive a dead network is the wrong trade. The two dark blocks below
+     are therefore byte-identical on purpose, and the test holds them so.
 
      THE MARK, BROKEN. Three centrelines lifted from the F2 geometry
      (data/brand/cw-mark-f2.json, `full.mids`) — the same strokes the `draw`
@@ -28,28 +47,101 @@
      at full strength — a stroke this thin is the mark UNDER strain, not the
      mark at rest. No animation: a flicker would read as loading, and offline
      is not loading. -->
+<script>
+  /* The stored choice, and nothing else. No OS-query branch and no default:
+     an unstamped document is the "system" case, which the stylesheet answers
+     on its own — so this script failing, or never running, costs nothing.
+     The theme-color pair above is media-keyed for the same reason, and an
+     explicit choice has to collapse it to one unqualified meta, because a
+     media-qualified meta that does not match is simply ignored. */
+  (function () {
+    var c;
+    try { c = localStorage.getItem("cw-theme"); } catch (e) {}
+    if (c !== "light" && c !== "dark") return;
+    document.documentElement.setAttribute("data-cw-theme", c);
+    var metas = document.querySelectorAll('meta[name="theme-color"]');
+    for (var i = metas.length - 1; i > 0; i--) metas[i].remove();
+    if (!metas[0]) return;
+    metas[0].removeAttribute("media");
+    metas[0].setAttribute("content", c === "dark" ? "#191918" : "#faefe0");
+  })();
+</script>
 <style>
-  :root { color-scheme: light; }
+  :root {
+    color-scheme: light;
+    --ground: #faefe0;
+    --wash-lift: rgba(255, 248, 239, 0.92);
+    --wash-sink: rgba(243, 228, 208, 0.85);
+    --wash-warm: rgba(229, 174, 101, 0.14);
+    --ink: #18261d;
+    --ink-muted: #48544c;
+    /* The grain filter below is authored at the DARK alpha and scaled down
+       here, so one <svg> serves both gammas: noise that reads as matte on
+       graphite is visible as dirt on cream. */
+    --grain-strength: 0.31;
+    --plate-top: #eebd7c;
+    --plate-bottom: #e5ae65;
+    --plate-ink: #18261d;
+    --plate-shadow: 0 1px 2px rgba(35, 29, 20, 0.05), 0 10px 28px rgba(35, 29, 20, 0.07);
+  }
+
+  /* No choice stored — the OS answers. */
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-cw-theme="light"]) {
+    color-scheme: dark;
+    --ground: #191918;
+    --wash-lift: rgba(46, 46, 44, 0.9);
+    --wash-sink: rgba(35, 35, 34, 0.85);
+    --wash-warm: rgba(229, 174, 101, 0.1);
+    --ink: #e4e4e1;
+    --ink-muted: #a3a3a1;
+    --grain-strength: 1;
+    --plate-top: #e5ae65;
+    --plate-bottom: #c8913f;
+    --plate-ink: #191918;
+    --plate-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+    }
+  }
+
+  /* A choice stored — it wins over the OS, in both directions. */
+  :root[data-cw-theme="dark"] {
+    color-scheme: dark;
+    --ground: #191918;
+    --wash-lift: rgba(46, 46, 44, 0.9);
+    --wash-sink: rgba(35, 35, 34, 0.85);
+    --wash-warm: rgba(229, 174, 101, 0.1);
+    --ink: #e4e4e1;
+    --ink-muted: #a3a3a1;
+    --grain-strength: 1;
+    --plate-top: #e5ae65;
+    --plate-bottom: #c8913f;
+    --plate-ink: #191918;
+    --plate-shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+  }
+
   html, body { margin: 0; height: 100%; }
   body {
     position: relative;
     display: grid; place-items: center;
     padding: 2rem calc(1.5rem + env(safe-area-inset-left)) 2rem calc(1.5rem + env(safe-area-inset-right));
-    background-color: #faefe0;
+    background-color: var(--ground);
     background-image:
-      radial-gradient(120% 90% at 18% 8%, rgba(255, 248, 239, 0.92), rgba(255, 248, 239, 0) 62%),
-      radial-gradient(100% 80% at 88% 92%, rgba(243, 228, 208, 0.85), rgba(243, 228, 208, 0) 58%),
-      radial-gradient(90% 70% at 78% 12%, rgba(229, 174, 101, 0.14), rgba(229, 174, 101, 0) 60%);
-    color: #18261d;
+      radial-gradient(120% 90% at 18% 8%, var(--wash-lift), transparent 62%),
+      radial-gradient(100% 80% at 88% 92%, var(--wash-sink), transparent 58%),
+      radial-gradient(90% 70% at 78% 12%, var(--wash-warm), transparent 60%);
+    color: var(--ink);
     font: 400 1rem/1.55 "Manrope", system-ui, -apple-system, "Segoe UI", sans-serif;
     text-align: center;
   }
   /* Matte, not plastic — the same grain the material layer carries, drawn as
      an inline element rather than a data: URI so the file keeps its promise
      of holding no URL of any kind. */
-  .grain { position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
+  .grain {
+    position: fixed; inset: 0; width: 100%; height: 100%; z-index: 0;
+    pointer-events: none; opacity: var(--grain-strength);
+  }
   main { position: relative; z-index: 1; max-width: 26rem; }
-  .mark { display: block; margin: 0 auto 1.25rem; color: #48544c; }
+  .mark { display: block; margin: 0 auto 1.25rem; color: var(--ink-muted); }
   .mark path {
     fill: none;
     stroke: currentColor;
@@ -58,18 +150,18 @@
     opacity: 0.62;
   }
   h1 { margin: 0 0 0.75rem; font-size: 1.5rem; letter-spacing: -0.01em; }
-  p { margin: 0 0 1.75rem; color: #48544c; }
+  p { margin: 0 0 1.75rem; color: var(--ink-muted); }
   button {
     min-height: 3rem; padding: 0 1.5rem; border: 0; border-radius: 0.9rem;
-    background: linear-gradient(165deg, #eebd7c, #e5ae65);
-    color: #18261d; font: inherit; font-weight: 700; cursor: pointer;
-    box-shadow: 0 1px 2px rgba(35, 29, 20, 0.05), 0 10px 28px rgba(35, 29, 20, 0.07);
+    background: linear-gradient(165deg, var(--plate-top), var(--plate-bottom));
+    color: var(--plate-ink); font: inherit; font-weight: 700; cursor: pointer;
+    box-shadow: var(--plate-shadow);
   }
 </style>
 <svg class="grain" aria-hidden="true" focusable="false">
   <filter id="cw-grain">
     <feTurbulence type="fractalNoise" baseFrequency="0.8" numOctaves="3" stitchTiles="stitch" />
-    <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.05 0" />
+    <feColorMatrix values="0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  0 0 0 0.16 0" />
   </filter>
   <rect width="100%" height="100%" filter="url(#cw-grain)" />
 </svg>

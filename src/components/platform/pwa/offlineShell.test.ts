@@ -45,15 +45,60 @@ describe("offline.html stays self-contained", () => {
   });
 
   /**
-   * This page holds the light gamma in both schemes. Under the dark inverse
-   * the whole viewport became one flat green field, and a full-bleed inverse
-   * is a surface this system only ever uses for a plate — never for the page
-   * itself. So there is deliberately no dark block here, and the ground must
-   * stay declared as light rather than left to `light dark`.
+   * Both gammas since 2026-09-05, and with the same precedence the rest of the
+   * product uses: a stored choice first, `prefers-color-scheme` only when
+   * there is none. The page used to hold the light ground at night because the
+   * dark inverse was a flat green field; the dark ground has been graphite
+   * since 2026-08-28, so what was left was a cream page full-bleed to a reader
+   * whose whole product is graphite.
+   *
+   * The media query is allowed HERE and forbidden in globals.css because this
+   * file has one palette and no course pack to keep in step with it — but that
+   * only holds while the two dark blocks say exactly the same thing, so they
+   * are compared rather than trusted.
    */
-  it("stays on the light ground in both schemes", () => {
-    expect(offlineHtml).toMatch(/color-scheme:\s*light\s*;/);
-    expect(offlineHtml).not.toMatch(/prefers-color-scheme/);
+  const darkBlocks = () => {
+    const blocks = [
+      /@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-cw-theme="light"\]\) \{([^}]*)\}/,
+      /:root\[data-cw-theme="dark"\] \{([^}]*)\}/,
+    ].map((pattern) => offlineHtml.match(pattern)?.[1]);
+    return blocks;
+  };
+
+  it("carries a dark ground for the OS setting and for a stored choice", () => {
+    const [fromMedia, fromStamp] = darkBlocks();
+    expect(fromMedia).toBeTruthy();
+    expect(fromStamp).toBeTruthy();
+    // One palette, written twice because CSS has no other way to say it.
+    expect(fromStamp?.trim()).toBe(fromMedia?.trim());
+    // The graphite ground, not the green night the objection was about.
+    expect(fromStamp).toContain("--ground: #191918;");
+    expect(fromStamp).toMatch(/color-scheme:\s*dark;/);
+  });
+
+  /**
+   * The stored choice has to beat the OS in BOTH directions, and the page has
+   * to render correctly with no JavaScript at all — it is the one page that
+   * must survive a dead network. So the script only ever stamps an explicit
+   * light/dark choice: no `matchMedia` branch, no default. An unstamped
+   * document is the "system" case, which the stylesheet answers on its own.
+   */
+  it("stamps only an explicit choice, and leaves system to the stylesheet", () => {
+    expect(offlineHtml).toContain('localStorage.getItem("cw-theme")');
+    expect(offlineHtml).not.toContain("matchMedia");
+    // The light stamp needs no palette of its own — it wins by excluding
+    // itself from the media block above.
+    expect(offlineHtml).toContain(':root:not([data-cw-theme="light"])');
+  });
+
+  /**
+   * `theme-color` is the surround — the iOS status bar and the installed
+   * window's title bar — and a page that themes itself while the bar behind it
+   * stays cream is worse than one that does neither.
+   */
+  it("paints the browser's surround in both gammas", () => {
+    expect(offlineHtml).toContain('<meta name="theme-color" content="#faefe0" media="(prefers-color-scheme: light)">');
+    expect(offlineHtml).toContain('<meta name="theme-color" content="#191918" media="(prefers-color-scheme: dark)">');
   });
 });
 

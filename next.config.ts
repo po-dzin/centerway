@@ -35,6 +35,20 @@ const isDev = process.env.NODE_ENV === "development";
 
 const nextConfig: NextConfig = {
   reactCompiler: true,
+
+  /**
+   * `app/global-not-found.tsx` — the 404 for an address that matched no route.
+   *
+   * It needs a flag because it is still experimental in Next 16, and it is the
+   * only way to theme that page here: this app has no root layout (each route
+   * group is its own root), so an unmatched URL has no layout to render a
+   * `not-found` into and falls to Next's built-in black-on-white page. The
+   * flag changes nothing else — with the file present, that one built-in
+   * fallback is replaced; without it the file is ignored.
+   */
+  experimental: {
+    globalNotFound: true,
+  },
   devIndicators: false,
   distDir: isDev ? ".next-dev" : ".next",
 
