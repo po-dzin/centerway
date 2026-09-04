@@ -75,6 +75,8 @@ function PhotoCropPreview({
   x,
   y,
   onChange,
+  label,
+  position,
 }: {
   src: string;
   alt: string;
@@ -82,6 +84,8 @@ function PhotoCropPreview({
   x: number;
   y: number;
   onChange: (x: number, y: number) => void;
+  label: string;
+  position: string;
 }) {
   const activePointer = useRef<number | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -124,11 +128,20 @@ function PhotoCropPreview({
   };
 
   return (
+    /* `role="group"`, not a bare div: a `div` with `tabindex` maps to
+       `role="generic"`, and ARIA forbids naming a generic element — so the
+       label below was being dropped, and a keyboard user landed on a tab stop
+       that announced nothing. The label was also hardcoded Ukrainian inside a
+       component whose file carries a full `en` table. The live region reports
+       where the focus point moved to, which arrow keys otherwise change in
+       complete silence. */
     <div
       className={styles[frameClass]}
       data-dragging={dragging || undefined}
       tabIndex={0}
-      aria-label={`Точка фокуса. Перетягуйте або використовуйте стрілки.`}
+      role="group"
+      aria-label={label}
+      aria-describedby={`${frameClass}-position`}
       onKeyDown={moveByKey}
       onPointerDown={beginDrag}
       onPointerMove={drag}
@@ -139,6 +152,9 @@ function PhotoCropPreview({
       <img src={src} alt={alt} style={{ objectPosition: `${x}% ${y}%` }} draggable={false} />
       <span className={styles.photoCropHandle} style={{ left: `${x}%`, top: `${y}%` }} aria-hidden="true">
         <Icon name="grip" size={20} />
+      </span>
+      <span className={styles.visuallyHidden} id={`${frameClass}-position`} role="status">
+        {position}
       </span>
     </div>
   );
@@ -320,27 +336,31 @@ const STRINGS = {
     requiredForCard: "Обов’язково для публічної картки",
     consultation: "Консультація",
     consultationEnabled: "Приймаю запити на консультацію",
-    consultationTitle: "Назва консультації",
-    consultationSummary: "Кому і з чим допомагаю",
     consultationPoints: "Головні пункти",
     consultationPointsHint: "До 3.",
     consultationPointAdd: "Додати пункт",
     consultationPointRemove: "Прибрати пункт",
-    consultationContact: "Посилання для домовленості",
-    sectionByline: "Підпис під курсом",
-    sectionBylineNote: "Друкується під кожним вашим курсом — навіть поки сторінка прихована.",
-    sectionPublic: "Публічна сторінка",
-    sectionPublicNote: "Поки вимкнено, все нижче нікуди не потрапляє.",
     sectionPublicOnNote: "Поля з * потрібні, щоб сторінку було видно.",
-    sectionCard: "Картка автора",
-    sectionCardNote: "Головна · консультації · директорія авторів.",
-    sectionPage: "Ваша сторінка",
-    sectionPageNote: "Те, що читають на /expert.",
     photo: "Фото",
     photoUpload: "Завантажити фото",
     photoReplace: "Замінити фото",
     photoRemove: "Прибрати фото",
     photoUploading: "Завантаження…",
+    sectionYou: "Ви",
+    sectionYouNote: "Фото, ім'я і роль — друкуються під кожним вашим курсом, навіть поки сторінка прихована.",
+    sectionAbout: "Про себе",
+    sectionAboutNote: "Текст і факти. Перші три факти та бейджі показуються на картці автора.",
+    sectionPage: "Ваша сторінка",
+    sectionPageNote: "Чи є вона, за якою адресою, і з чого складається.",
+    photoAltRequired: "Без опису фото не збережеться",
+    consultationTitleLabel: "Назва консультації",
+    consultationSummaryLabel: "Кому і з чим допомагаю",
+    consultationContactLabel: "Посилання для домовленості",
+    consultationRequired: "Потрібно, поки консультації увімкнено",
+    cropFocus: "Точка фокуса. Перетягуйте або використовуйте стрілки.",
+    cropFocusAt: "Фокус: {x}% по горизонталі, {y}% по вертикалі",
+    nameRequired: "Ім'я потрібне завжди — воно стоїть під кожним курсом",
+    blockNumber: "Блок",
     photoAlt: "Опис фото (для читачів екрана)",
     mediaDrop: "Відпустіть, щоб завантажити",
     photoCropCardTitle: "Картка",
@@ -393,27 +413,31 @@ const STRINGS = {
     requiredForCard: "Required for the public card",
     consultation: "Consultation",
     consultationEnabled: "Accept consultation requests",
-    consultationTitle: "Consultation title",
-    consultationSummary: "Who you help and with what",
     consultationPoints: "Key points",
     consultationPointsHint: "Up to 3.",
     consultationPointAdd: "Add point",
     consultationPointRemove: "Remove point",
-    consultationContact: "Contact link",
-    sectionByline: "Course byline",
-    sectionBylineNote: "Printed under every course you write — even while your page is hidden.",
-    sectionPublic: "Public page",
-    sectionPublicNote: "While this is off, nothing below it goes anywhere.",
     sectionPublicOnNote: "Fields marked * are needed for the page to be visible.",
-    sectionCard: "Author card",
-    sectionCardNote: "Home · consultations · author directory.",
-    sectionPage: "Your page",
-    sectionPageNote: "What people read on /expert.",
     photo: "Photo",
     photoUpload: "Upload photo",
     photoReplace: "Replace photo",
     photoRemove: "Remove photo",
     photoUploading: "Uploading…",
+    sectionYou: "You",
+    sectionYouNote: "Photo, name and role — printed under every course you write, even while your page is hidden.",
+    sectionAbout: "About you",
+    sectionAboutNote: "The text and the facts. The first three facts and both badges show on your card.",
+    sectionPage: "Your page",
+    sectionPageNote: "Whether it exists, at what address, and what it is made of.",
+    photoAltRequired: "Without a description the photo is not saved",
+    consultationTitleLabel: "Consultation title",
+    consultationSummaryLabel: "Who you help, and with what",
+    consultationContactLabel: "Link for arranging it",
+    consultationRequired: "Needed while consultations are on",
+    cropFocus: "Focal point. Drag, or use the arrow keys.",
+    cropFocusAt: "Focus: {x}% across, {y}% down",
+    nameRequired: "Always needed — it prints under every course",
+    blockNumber: "Block",
     photoAlt: "Photo description (for screen readers)",
     mediaDrop: "Drop to upload",
     photoCropCardTitle: "Card",
@@ -451,6 +475,8 @@ export function AuthorProfileFold({
   lang: ProfileLang;
 }) {
   const t = STRINGS[lang];
+  const cropPosition = (x: number, y: number) =>
+    t.cropFocusAt.replace("{x}", String(Math.round(x))).replace("{y}", String(Math.round(y)));
   const [draft, setDraft] = useState<Draft>(() => draftFromAuthor(author));
   const toast = useToast();
   const [uploading, setUploading] = useState(false);
@@ -580,538 +606,611 @@ export function AuthorProfileFold({
   return (
     <details id="author" className={styles.fold} open={open} onToggle={(event) => setOpen(event.currentTarget.open)}>
       <summary className={styles.foldHead}>
-        <span className={styles.foldText}>
+        <div className={styles.foldText}>
           <span className={styles.sectionLabel}>{t.label}</span>
           <h2 className={styles.sectionTitle}>{t.title}</h2>
           <span className={styles.sectionLead}>{t.lead}</span>
-        </span>
+        </div>
         <Icon className={styles.foldChevron} name="chevron-down" size={20} />
       </summary>
       <div className={styles.foldBody}>
-        <form className={styles.authorForm} {...matte} onSubmit={handleSubmit}>
-          {/* THE ORDER FOLLOWS WHO READS THE FIELD, not what type it is. The
-              byline prints under every course whether or not a page is
-              published, so it comes first and can never be switched off. The
-              publish decision comes second because it is what makes every «*»
-              below it mean anything — it used to sit last, after fifteen
-              fields whose required-ness it silently governed. Then the two
-              published surfaces in the order they are read: the card that
-              links to the page, then the page, then the consultation the page
-              offers. `docs/design-system.md` band rules apply throughout; the
-              two-column split this replaced put the photo beside unrelated
-              text purely because it was tall. */}
-
-          <section className={styles.authorSection}>
-            <div className={styles.authorSectionHead}>
-              <h3 className={styles.authorSectionTitle}>{t.sectionByline}</h3>
-              <p className={styles.authorSectionNote}>{t.sectionBylineNote}</p>
-            </div>
-            <div className={styles.authorIdentity}>
-              {/* ONE UPLOAD, SHOWN THROUGH ITS OWN TWO FRAMES. A separate full
-                  preview above the crop cards used to repeat the same photo a
-                  third time for no reason a crop card doesn't already serve —
-                  each one already shows the image, in the shape it is actually
-                  used in, and lets you drag to refocus it. So the plain preview
-                  only appears before there is anything to crop; once a photo
-                  lands, the crop cards are the photo. */}
-              <div className={`${styles.authorField} ${styles.authorPhotoField}`}>
+        <form
+          className={styles.authorForm}
+          {...matte}
+          onSubmit={handleSubmit}
+          /* A REQUIRED FIELD INSIDE A CLOSED SECTION IS NOT FOCUSABLE, and a
+             browser that cannot focus the control it wants to complain about
+             gives up silently: no message, no submit, a dead «Зберегти».
+             `invalid` bubbles and fires before that focus attempt, so opening
+             every `details` above the offending control here is what keeps the
+             sections collapsible at all. */
+          onInvalid={(event) => {
+            let node = (event.target as HTMLElement).parentElement;
+            while (node) {
+              if (node instanceof HTMLDetailsElement) node.open = true;
+              node = node.parentElement;
+            }
+          }}
+        >
+          {/* GROUPED BY WHAT THE AUTHOR IS EDITING, not by which surface
+              renders it. The first split was by consumer — byline / card /
+              page / offer — which is true of the data and wrong for the
+              hand: it put the background two sections away from the photo,
+              the credentials away from the facts, and cut one page into a
+              "publish it" band and a "fill it" band. Where a field actually
+              prints is said in the field's own hint, which is where someone
+              filling it in is already looking. */}
+          <details className={styles.authorSection} open>
+            <summary className={styles.authorSectionHead}>
+              <div className={styles.authorSectionHeadText}>
+                <h3 className={styles.authorSectionTitle}>{t.sectionYou}</h3>
+                <p className={styles.authorSectionNote}>{t.sectionYouNote}</p>
+              </div>
+              <Icon className={styles.authorSectionChevron} name="chevron-down" size={20} />
+            </summary>
+            <div className={styles.authorSectionBody}>
+              <div className={styles.authorIdentity}>
+                {/* ONE UPLOAD, SHOWN THROUGH ITS OWN TWO FRAMES. A separate full
+                    preview above the crop cards used to repeat the same photo a
+                    third time for no reason a crop card doesn't already serve —
+                    each one already shows the image, in the shape it is actually
+                    used in, and lets you drag to refocus it. So the plain preview
+                    only appears before there is anything to crop; once a photo
+                    lands, the crop cards are the photo. */}
+                <div className={styles.authorField}>
                 <span>{t.photo}</span>
-                {draft.photo?.src ? (
-                  <>
-                    <div className={styles.photoCropGrid}>
-                      <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-card-title">
-                        <div className={styles.photoCropPanelHead}>
-                          <span className={styles.photoCropHead}>
+                  {draft.photo?.src ? (
+                    <>
+                      <div className={styles.photoCropGrid}>
+                        <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-card-title">
+                          <div className={styles.photoCropHead}>
                             <h4 id="author-photo-crop-card-title">{t.photoCropCardTitle}</h4>
                             <p>{t.photoCropCardNote}</p>
-                          </span>
-                          <button
-                            type="button"
-                            className={styles.authorIconAction}
-                            aria-label={t.photoCropCenter}
-                            title={t.photoCropCenter}
-                            onClick={() =>
-                              setDraft((prev) =>
-                                prev.photo
-                                  ? { ...prev, photo: { ...prev.photo, cropX: AUTHOR_CARD_CROP_DEFAULT.x, cropY: AUTHOR_CARD_CROP_DEFAULT.y } }
-                                  : prev
-                              )
-                            }
-                          >
-                            <Icon name="undo" size={20} />
-                          </button>
-                        </div>
-                        <PhotoCropPreview
-                          src={draft.photo.src}
-                          alt=""
-                          shape="card"
-                          x={draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x}
-                          y={draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y}
-                          onChange={(x, y) =>
-                            setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, cropX: x, cropY: y } } : prev))
-                          }
-                        />
-                      </section>
-                      <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-avatar-title">
-                        <div className={styles.photoCropPanelHead}>
-                          <span className={styles.photoCropHead}>
+                          </div>
+                          <div className={styles.photoCropAside}>
+                            {/* ON THE PICTURE, because that is what they change.
+                                In the field's heading they were an inch of
+                                nothing away from the photograph, next to a
+                                label; here they are the same corner pair the
+                                background slot has carried all along
+                                (`.authorMediaActions`). `stopPropagation`
+                                because the frame under them owns the drag. */}
+                            <div className={styles.photoCropFrame}>
+                                <PhotoCropPreview
+                                  src={draft.photo.src}
+                                  alt=""
+                                  shape="card"
+                                label={t.cropFocus}
+                                position={cropPosition(draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x, draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y)}
+                                x={draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x}
+                                y={draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y}
+                                onChange={(x, y) =>
+                                  setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, cropX: x, cropY: y } } : prev))
+                                }
+                              />
+                              <div className={styles.authorMediaActions}>
+                                <label className={styles.authorPhotoToolbarAction} aria-label={t.photoReplace} title={t.photoReplace}>
+                                  <input
+                                    className={styles.visuallyHidden}
+                                    type="file"
+                                    aria-label={t.photoReplace}
+                                    accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                                    disabled={uploading}
+                                    onChange={(e) => {
+                                      const file = e.target.files?.[0];
+                                      e.target.value = "";
+                                      if (file) void handlePhoto(file);
+                                    }}
+                                  />
+                                  <Icon name="edit" size={18} />
+                                </label>
+                                <button
+                                  type="button"
+                                  className={styles.authorPhotoToolbarAction}
+                                  aria-label={t.photoRemove}
+                                  title={t.photoRemove}
+                                  onClick={() => setDraft((prev) => ({ ...prev, photo: null }))}
+                                >
+                                  <Icon name="close" size={18} />
+                                </button>
+                              </div>
+                            </div>
+                            <button
+                                type="button"
+                                className={styles.authorIconAction}
+                                aria-label={`${t.photoCropCenter} — ${t.photoCropCardTitle}`}
+                                title={t.photoCropCenter}
+                                onClick={() =>
+                                  setDraft((prev) =>
+                                    prev.photo
+                                      ? { ...prev, photo: { ...prev.photo, cropX: AUTHOR_CARD_CROP_DEFAULT.x, cropY: AUTHOR_CARD_CROP_DEFAULT.y } }
+                                      : prev
+                                  )
+                                }
+                              >
+                                <Icon name="undo" size={20} />
+                              </button>
+                          </div>
+            
+                        </section>
+                        <section className={styles.photoCropPanel} aria-labelledby="author-photo-crop-avatar-title">
+                          <div className={styles.photoCropHead}>
                             <h4 id="author-photo-crop-avatar-title">{t.photoCropAvatarTitle}</h4>
                             <p>{t.photoCropAvatarNote}</p>
-                          </span>
-                          <button
-                            type="button"
-                            className={styles.authorIconAction}
-                            aria-label={t.photoCropCenter}
-                            title={t.photoCropCenter}
-                            onClick={() =>
-                              setDraft((prev) =>
-                                prev.photo
-                                  ? { ...prev, photo: { ...prev.photo, avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x, avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y } }
-                                  : prev
-                              )
-                            }
-                          >
-                            <Icon name="undo" size={20} />
-                          </button>
-                        </div>
-                        <PhotoCropPreview
-                          src={draft.photo.src}
-                          alt=""
-                          shape="avatar"
-                          x={draft.photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x}
-                          y={draft.photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y}
-                          onChange={(x, y) =>
-                            setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, avatarCropX: x, avatarCropY: y } } : prev))
+                          </div>
+                          <div className={styles.photoCropAside}>
+                            <PhotoCropPreview
+                              src={draft.photo.src}
+                              alt=""
+                              shape="avatar"
+                              label={t.cropFocus}
+                              position={cropPosition(draft.photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x, draft.photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y)}
+                              x={draft.photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x}
+                              y={draft.photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y}
+                              onChange={(x, y) =>
+                                setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, avatarCropX: x, avatarCropY: y } } : prev))
+                              }
+                            />
+                            <button
+                                type="button"
+                                className={styles.authorIconAction}
+                                aria-label={`${t.photoCropCenter} — ${t.photoCropAvatarTitle}`}
+                                title={t.photoCropCenter}
+                                onClick={() =>
+                                  setDraft((prev) =>
+                                    prev.photo
+                                      ? { ...prev, photo: { ...prev.photo, avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x, avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y } }
+                                      : prev
+                                  )
+                                }
+                              >
+                                <Icon name="undo" size={20} />
+                              </button>
+                          </div>
+                        </section>
+                      </div>
+                      {/* A LABEL, NOT A PLACEHOLDER, AND REQUIRED — a placeholder
+                          is gone the moment you type into the field, and this
+                          particular field decides whether the photograph above
+                          it is kept at all. */}
+                      <label className={styles.authorField}>
+                        <span>
+                          {t.photoAlt}
+                          <RequiredMark tooltip={t.photoAltRequired} />
+                        </span>
+                        <input
+                          className={styles.authorInput}
+                          value={draft.photo.alt}
+                          required
+                          onChange={(e) =>
+                            setDraft((prev) => ({
+                              ...prev,
+                              photo: prev.photo ? { ...prev.photo, alt: e.target.value } : prev.photo,
+                            }))
                           }
                         />
-                      </section>
-                    </div>
-                    <div className={styles.authorPhotoToolbar}>
-                      <input
-                        className={styles.authorInput}
-                        placeholder={t.photoAlt}
-                        value={draft.photo.alt}
-                        onChange={(e) =>
-                          setDraft((prev) => ({
-                            ...prev,
-                            photo: prev.photo ? { ...prev.photo, alt: e.target.value } : prev.photo,
-                          }))
-                        }
-                      />
-                      <label className={styles.authorPhotoToolbarAction} aria-label={t.photoReplace} title={t.photoReplace}>
-                        <input
-                          className={styles.visuallyHidden}
-                          type="file"
-                          aria-label={t.photoReplace}
-                          accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
-                          disabled={uploading}
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            e.target.value = "";
-                            if (file) void handlePhoto(file);
-                          }}
-                        />
-                        <Icon name="edit" size={18} />
                       </label>
-                      <button
-                        type="button"
-                        className={styles.authorPhotoToolbarAction}
-                        aria-label={t.photoRemove}
-                        title={t.photoRemove}
-                        onClick={() => setDraft((prev) => ({ ...prev, photo: null }))}
-                      >
-                        <Icon name="close" size={18} />
-                      </button>
-                    </div>
-                  </>
-                ) : (
-                  <AuthorMediaSlot
-                    src={undefined}
-                    uploading={uploading}
-                    uploadLabel={t.photoUpload}
-                    replaceLabel={t.photoReplace}
-                    removeLabel={t.photoRemove}
-                    dropLabel={t.mediaDrop}
-                    previewClassName={styles.authorPhotoPreview}
-                    emptyClassName={styles.authorPhotoEmpty}
-                    onFile={(file) => void handlePhoto(file)}
-                    onRemove={() => setDraft((prev) => ({ ...prev, photo: null }))}
-                  />
-                )}
-                {uploadError && uploadTarget === "photo" ? <span className={styles.authorNotice}>{uploadError}</span> : null}
-              </div>
-              <div className={styles.authorIdentityFields}>
-                <label className={`${styles.authorField} ${styles.authorNameField}`}>
-                  <span>{t.name}</span>
-                  <input
-                    className={styles.authorInput}
-                    value={draft.name}
-                    required
-                    onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
-                  />
-                </label>
-                <label className={`${styles.authorField} ${styles.authorRoleField}`}>
-                  <span>{t.role}</span>
-                  <input
-                    className={styles.authorInput}
-                    value={draft.role}
-                    onChange={(e) => setDraft((prev) => ({ ...prev, role: e.target.value }))}
-                  />
-                </label>
-              </div>
-            </div>
-          </section>
-
-          <section className={styles.authorSection}>
-            <div className={styles.authorSectionHead}>
-              <h3 className={styles.authorSectionTitle}>{t.sectionPublic}</h3>
-              <p className={styles.authorSectionNote}>{t.sectionPublicNote}</p>
-            </div>
-            {/* A system checkbox sits before the setting it controls. The copy is
-                one readable unit, not a paragraph with a detached box. */}
-            <label className={styles.authorVisibilityRow}>
-              <input
-                className={styles.authorVisibilityInput}
-                type="checkbox"
-                checked={draft.listed}
-                onChange={(e) => setDraft((prev) => ({ ...prev, listed: e.target.checked }))}
-              />
-              <span className={styles.authorVisibilityMark} aria-hidden="true">
-                <Icon name="check" size={14} />
-              </span>
-              <span className={styles.authorVisibilityCopy}>
-                <strong>{t.listed}</strong>
-                <span className={styles.authorVisibilityNote}>{draft.listed ? t.listedOn : t.listedOff}</span>
-              </span>
-            </label>
-            <label className={`${styles.authorField} ${styles.authorSlugField}`}>
-              <span>{t.slug}</span>
-              <input
-                className={styles.authorInput}
-                value={draft.slug}
-                placeholder="/expert/…"
-                onChange={(e) => setDraft((prev) => ({ ...prev, slug: e.target.value }))}
-              />
-            </label>
-            {draft.listed ? <p className={styles.authorNotice}>{t.sectionPublicOnNote}</p> : null}
-          </section>
-
-          <section className={styles.authorSection}>
-            <div className={styles.authorSectionHead}>
-              <h3 className={styles.authorSectionTitle}>{t.sectionCard}</h3>
-              <p className={styles.authorSectionNote}>{t.sectionCardNote}</p>
-            </div>
-            {/* Six is a recommendation, not a shape the form forces on an author
-                who has three good facts and no use for the other three slots —
-                the field used to draw all six as empty inputs regardless. One row
-                stays (the list a card can print from cannot go to none), the rest
-                are added and removed like every other list in this form. */}
-            <div className={`${styles.authorField} ${styles.authorFactsField}`}>
-              <div className={styles.authorFieldHead}>
-                <span>
-                  {t.facts}
-                  {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
-                </span>
-                {draft.facts.length < 6 ? (
-                  <button
-                    type="button"
-                    className={styles.authorAddIcon}
-                    aria-label={t.factAdd}
-                    title={t.factAdd}
-                    onClick={() => setDraft((prev) => ({ ...prev, facts: [...prev.facts, ""] }))}
-                  >
-                    <Icon name="plus" size={18} />
-                  </button>
-                ) : null}
-              </div>
-              <p className={styles.authorNotice}>{t.factsHint}</p>
-              {draft.facts.map((line, index) => (
-                <div className={styles.authorCredentialRow} key={index}>
-                  <input
-                    className={styles.authorInput}
-                    value={line}
-                    required={index === 0 && draft.listed}
-                    onChange={(e) =>
-                      setDraft((prev) => {
-                        const facts = [...prev.facts];
-                        facts[index] = e.target.value;
-                        return { ...prev, facts };
-                      })
-                    }
-                  />
-                  {draft.facts.length > 1 ? (
-                    <button
-                      type="button"
-                      className={styles.authorIconAction}
-                      aria-label={t.factRemove}
-                      title={t.factRemove}
-                      onClick={() => setDraft((prev) => ({ ...prev, facts: prev.facts.filter((_, i) => i !== index) }))}
-                    >
-                      <Icon name="close" size={18} />
-                    </button>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-            <label className={`${styles.authorField} ${styles.authorExperienceField}`}>
-              <span>
-                {t.experienceBadge}
-                {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
-              </span>
-              <input className={styles.authorInput} value={draft.experienceBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, experienceBadge: e.target.value }))} />
-            </label>
-            <label className={`${styles.authorField} ${styles.authorAchievementField}`}>
-              <span>
-                {t.achievementBadge}
-                {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
-              </span>
-              <input className={styles.authorInput} value={draft.achievementBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, achievementBadge: e.target.value }))} />
-            </label>
-          </section>
-
-          <section className={styles.authorSection}>
-            <div className={styles.authorSectionHead}>
-              <h3 className={styles.authorSectionTitle}>{t.sectionPage}</h3>
-              <p className={styles.authorSectionNote}>{t.sectionPageNote}</p>
-            </div>
-            <div className={`${styles.authorField} ${styles.authorBackgroundField}`}>
-              <span>{t.background}</span>
-              <AuthorMediaSlot
-                src={draft.background?.src}
-                uploading={uploading}
-                uploadLabel={t.backgroundUpload}
-                replaceLabel={t.backgroundReplace}
-                removeLabel={t.backgroundRemove}
-                dropLabel={t.mediaDrop}
-                previewClassName={styles.authorBackgroundPreview}
-                emptyClassName={styles.authorBackgroundEmpty}
-                onFile={(file) => void handleBackground(file)}
-                onRemove={() => setDraft((prev) => ({ ...prev, background: null }))}
-              />
-              {uploadError && uploadTarget === "background" ? <span className={styles.authorNotice}>{uploadError}</span> : null}
-            </div>
-            <label className={`${styles.authorField} ${styles.authorBioField}`}>
-              <span>{t.bio}</span>
-              <textarea
-                className={styles.authorTextarea}
-                value={draft.bio}
-                rows={4}
-                onChange={(e) => setDraft((prev) => ({ ...prev, bio: e.target.value }))}
-              />
-            </label>
-            <label className={`${styles.authorField} ${styles.authorQuoteField}`}>
-              <span>{t.quote}</span>
-              <textarea
-                className={styles.authorTextarea}
-                value={draft.quote}
-                rows={2}
-                onChange={(e) => setDraft((prev) => ({ ...prev, quote: e.target.value }))}
-              />
-            </label>
-            <div className={`${styles.authorField} ${styles.authorCredentialsField}`}>
-              <div className={styles.authorFieldHead}>
-                <span>{t.credentials}</span>
-                <button
-                  type="button"
-                  className={styles.authorAddIcon}
-                  aria-label={t.credentialAdd}
-                  title={t.credentialAdd}
-                  onClick={() => setDraft((prev) => ({ ...prev, credentials: [...prev.credentials, ""] }))}
-                >
-                  <Icon name="plus" size={18} />
-                </button>
-              </div>
-              {draft.credentials.map((line, index) => (
-                <div className={styles.authorCredentialRow} key={index}>
-                  <input
-                    className={styles.authorInput}
-                    value={line}
-                    onChange={(e) =>
-                      setDraft((prev) => ({
-                        ...prev,
-                        credentials: prev.credentials.map((v, i) => (i === index ? e.target.value : v)),
-                      }))
-                    }
-                  />
-                  <button
-                    type="button"
-                    className={styles.authorIconAction}
-                    aria-label={t.credentialRemove}
-                    title={t.credentialRemove}
-                    onClick={() =>
-                      setDraft((prev) => ({ ...prev, credentials: prev.credentials.filter((_, i) => i !== index) }))
-                    }
-                  >
-                    <Icon name="close" size={18} />
-                  </button>
-                </div>
-              ))}
-            </div>
-            <div className={`${styles.authorField} ${styles.authorProfileBlocksField}`}>
-              <span>{t.profileBlocks}</span>
-              {draft.profileBlocks.map((block, index) => (
-                <fieldset className={styles.authorProfileBlockEditor} key={block.id}>
-                  <div className={styles.authorProfileBlockHead}>
-                    <span>{index + 1}</span>
-                    <button
-                      type="button"
-                      className={styles.authorIconAction}
-                      aria-label={t.profileBlockRemove}
-                      title={t.profileBlockRemove}
-                      onClick={() => setDraft((prev) => ({
-                        ...prev,
-                        profileBlocks: prev.profileBlocks.filter((item) => item.id !== block.id),
-                      }))}
-                    >
-                      <Icon name="close" size={18} />
-                    </button>
-                  </div>
-                  <label className={styles.authorField}>
-                    <span>{t.profileBlockKind}</span>
-                    <select
-                      className={styles.authorInput}
-                      value={block.kind}
-                      onChange={(event) => setDraft((prev) => ({
-                        ...prev,
-                        profileBlocks: prev.profileBlocks.map((item) => item.id === block.id
-                          ? { ...item, kind: event.target.value as AuthorProfileBlock["kind"] }
-                          : item),
-                      }))}
-                    >
-                      <option value="text">{t.profileBlockText}</option>
-                      <option value="list">{t.profileBlockList}</option>
-                      <option value="timeline">{t.profileBlockTimeline}</option>
-                    </select>
-                  </label>
-                  <label className={styles.authorField}>
-                    <span>{t.profileBlockLabel}</span>
-                    <input className={styles.authorInput} value={block.label ?? ""} onChange={(event) => setDraft((prev) => ({
-                      ...prev,
-                      profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, label: event.target.value } : item),
-                    }))} />
-                  </label>
-                  <label className={styles.authorField}>
-                    <span>{t.profileBlockTitle}</span>
-                    <input className={styles.authorInput} value={block.title} required onChange={(event) => setDraft((prev) => ({
-                      ...prev,
-                      profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, title: event.target.value } : item),
-                    }))} />
-                  </label>
-                  {block.kind === "text" ? (
-                    <label className={styles.authorField}>
-                      <span>{t.profileBlockBody}</span>
-                      <textarea className={styles.authorTextarea} rows={6} value={block.body ?? ""} required onChange={(event) => setDraft((prev) => ({
-                        ...prev,
-                        profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, body: event.target.value } : item),
-                      }))} />
-                    </label>
+                    </>
                   ) : (
-                    <label className={styles.authorField}>
-                      <span>{t.profileBlockItems}</span>
-                      <textarea className={styles.authorTextarea} rows={7} value={(block.items ?? []).join("\n")} required onChange={(event) => setDraft((prev) => ({
-                        ...prev,
-                        profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, items: event.target.value.split("\n") } : item),
-                      }))} />
-                    </label>
+                    <AuthorMediaSlot
+                      src={undefined}
+                      uploading={uploading}
+                      uploadLabel={t.photoUpload}
+                      replaceLabel={t.photoReplace}
+                      removeLabel={t.photoRemove}
+                      dropLabel={t.mediaDrop}
+                      previewClassName={styles.authorPhotoPreview}
+                      emptyClassName={styles.authorPhotoEmpty}
+                      onFile={(file) => void handlePhoto(file)}
+                      onRemove={() => setDraft((prev) => ({ ...prev, photo: null }))}
+                    />
                   )}
-                </fieldset>
-              ))}
-              {draft.profileBlocks.length < 12 ? (
-                <button
-                  type="button"
-                  className={styles.authorBlockAdd}
-                  aria-label={t.profileBlockAdd}
-                  title={t.profileBlockAdd}
-                  onClick={() => setDraft((prev) => ({
-                    ...prev,
-                    profileBlocks: [...prev.profileBlocks, {
-                      id: `section-${Date.now()}`,
-                      kind: "text",
-                      title: "",
-                      body: "",
-                    }],
-                  }))}
-                >
-                  <Icon name="plus" size={20} />
-                  <span>{t.profileBlockAdd}</span>
-                </button>
-              ) : null}
+                  {uploading && uploadTarget === "photo" ? <span className={styles.authorNotice} role="status">{t.photoUploading}</span> : null}
+                {uploadError && uploadTarget === "photo" ? <span className={styles.authorNoticeError} role="alert">{uploadError}</span> : null}
+                </div>
+                <div className={styles.authorIdentityFields}>
+                  <label className={styles.authorField}>
+                    <span>
+                      {t.name}
+                      <RequiredMark tooltip={t.nameRequired} />
+                    </span>
+                    <input
+                      className={styles.authorInput}
+                      value={draft.name}
+                      autoComplete="name"
+                      required
+                      onChange={(e) => setDraft((prev) => ({ ...prev, name: e.target.value }))}
+                    />
+                  </label>
+                  <label className={styles.authorField}>
+                    <span>{t.role}</span>
+                    <input
+                      className={styles.authorInput}
+                      value={draft.role}
+                      onChange={(e) => setDraft((prev) => ({ ...prev, role: e.target.value }))}
+                    />
+                  </label>
+                </div>
+              </div>
             </div>
-          </section>
+          </details>
 
-            {/* The offer the page carries, and only the page: nothing here renders
-              anywhere until the profile is public AND this is on. So the
-              fields arrive with the switch rather than sitting there asking
-              to be filled for a service nobody has offered — the same reason
-              the three empty point rows went. `legend` is this section's own
-              title; the write side needs the title, the summary and the
-              contact link once `enabled` is set (`authors.ts`). */}
-          <fieldset className={`${styles.authorSection} ${styles.authorConsultationField}`}>
-            <legend className={styles.authorSectionTitle}>{t.consultation}</legend>
-              <label className={styles.authorVisibilityRow}><input className={styles.authorVisibilityInput} type="checkbox" checked={draft.consultation.enabled} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, enabled: e.target.checked } }))} /><span className={styles.authorVisibilityMark} aria-hidden="true"><Icon name="check" size={14} /></span><span>{t.consultationEnabled}</span></label>
-              {draft.consultation.enabled ? (
-                <>
-  <input className={styles.authorInput} placeholder={t.consultationTitle} value={draft.consultation.title} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, title: e.target.value } }))} />
-                <textarea className={styles.authorTextarea} rows={3} placeholder={t.consultationSummary} value={draft.consultation.summary} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, summary: e.target.value } }))} />
+          <details className={styles.authorSection} open>
+            <summary className={styles.authorSectionHead}>
+              <div className={styles.authorSectionHeadText}>
+                <h3 className={styles.authorSectionTitle}>{t.sectionAbout}</h3>
+                <p className={styles.authorSectionNote}>{t.sectionAboutNote}</p>
+              </div>
+              <Icon className={styles.authorSectionChevron} name="chevron-down" size={20} />
+            </summary>
+            <div className={styles.authorSectionBody}>
+              <label className={styles.authorField}>
+                <span>{t.bio}</span>
+                <textarea
+                  className={styles.authorTextarea}
+                  value={draft.bio}
+                  rows={4}
+                  onChange={(e) => setDraft((prev) => ({ ...prev, bio: e.target.value }))}
+                />
+              </label>
+              <label className={styles.authorField}>
+                <span>{t.quote}</span>
+                <textarea
+                  className={styles.authorTextarea}
+                  value={draft.quote}
+                  rows={2}
+                  onChange={(e) => setDraft((prev) => ({ ...prev, quote: e.target.value }))}
+                />
+              </label>
+              <div className={styles.authorField}>
                 <div className={styles.authorFieldHead}>
-                  <span>{t.consultationPoints}</span>
-                  {draft.consultation.points.length < 3 ? (
+                  <span>
+                    {t.facts}
+                    {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
+                  </span>
+                  {draft.facts.length < 6 ? (
                     <button
                       type="button"
                       className={styles.authorAddIcon}
-                      aria-label={t.consultationPointAdd}
-                      title={t.consultationPointAdd}
-                      onClick={() =>
-                        setDraft((prev) => ({
-                          ...prev,
-                          consultation: { ...prev.consultation, points: [...prev.consultation.points, ""] },
-                        }))
-                      }
+                      aria-label={t.factAdd}
+                      title={t.factAdd}
+                      onClick={() => setDraft((prev) => ({ ...prev, facts: [...prev.facts, ""] }))}
                     >
                       <Icon name="plus" size={18} />
                     </button>
                   ) : null}
                 </div>
-                <p className={styles.authorNotice}>{t.consultationPointsHint}</p>
-                {draft.consultation.points.map((line, index) => (
+                <p className={styles.authorNotice}>{t.factsHint}</p>
+                {draft.facts.map((line, index) => (
                   <div className={styles.authorCredentialRow} key={index}>
                     <input
                       className={styles.authorInput}
                       value={line}
+                      required={index === 0 && draft.listed}
                       onChange={(e) =>
                         setDraft((prev) => {
-                          const points = [...prev.consultation.points];
-                          points[index] = e.target.value;
-                          return { ...prev, consultation: { ...prev.consultation, points } };
+                          const facts = [...prev.facts];
+                          facts[index] = e.target.value;
+                          return { ...prev, facts };
                         })
                       }
                     />
-                    {draft.consultation.points.length > 1 ? (
+                    {draft.facts.length > 1 ? (
                       <button
                         type="button"
                         className={styles.authorIconAction}
-                        aria-label={t.consultationPointRemove}
-                        title={t.consultationPointRemove}
-                        onClick={() =>
-                          setDraft((prev) => ({
-                            ...prev,
-                            consultation: { ...prev.consultation, points: prev.consultation.points.filter((_, i) => i !== index) },
-                          }))
-                        }
+                        aria-label={t.factRemove}
+                        title={t.factRemove}
+                        onClick={() => setDraft((prev) => ({ ...prev, facts: prev.facts.filter((_, i) => i !== index) }))}
                       >
                         <Icon name="close" size={18} />
                       </button>
                     ) : null}
                   </div>
                 ))}
-                <input className={styles.authorInput} placeholder={t.consultationContact} value={draft.consultation.contactUrl} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, contactUrl: e.target.value } }))} />
-                </>
-              ) : null}
-            </fieldset>
+              </div>
+              <div className={styles.authorField}>
+                <div className={styles.authorFieldHead}>
+                  <span>{t.credentials}</span>
+                  <button
+                    type="button"
+                    className={styles.authorAddIcon}
+                    aria-label={t.credentialAdd}
+                    title={t.credentialAdd}
+                    onClick={() => setDraft((prev) => ({ ...prev, credentials: [...prev.credentials, ""] }))}
+                  >
+                    <Icon name="plus" size={18} />
+                  </button>
+                </div>
+                {draft.credentials.map((line, index) => (
+                  <div className={styles.authorCredentialRow} key={index}>
+                    <input
+                      className={styles.authorInput}
+                      value={line}
+                      onChange={(e) =>
+                        setDraft((prev) => ({
+                          ...prev,
+                          credentials: prev.credentials.map((v, i) => (i === index ? e.target.value : v)),
+                        }))
+                      }
+                    />
+                    <button
+                      type="button"
+                      className={styles.authorIconAction}
+                      aria-label={t.credentialRemove}
+                      title={t.credentialRemove}
+                      onClick={() =>
+                        setDraft((prev) => ({ ...prev, credentials: prev.credentials.filter((_, i) => i !== index) }))
+                      }
+                    >
+                      <Icon name="close" size={18} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <label className={styles.authorField}>
+                <span>
+                  {t.experienceBadge}
+                  {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
+                </span>
+                <input className={styles.authorInput} value={draft.experienceBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, experienceBadge: e.target.value }))} />
+              </label>
+              <label className={styles.authorField}>
+                <span>
+                  {t.achievementBadge}
+                  {draft.listed ? <RequiredMark tooltip={t.requiredForCard} /> : null}
+                </span>
+                <input className={styles.authorInput} value={draft.achievementBadge} required={draft.listed} onChange={(e) => setDraft((prev) => ({ ...prev, achievementBadge: e.target.value }))} />
+              </label>
+            </div>
+          </details>
 
-            <div className={`${styles.actions} ${styles.authorFormActions}`}>
+          <details className={styles.authorSection} open>
+            <summary className={styles.authorSectionHead}>
+              <div className={styles.authorSectionHeadText}>
+                <h3 className={styles.authorSectionTitle}>{t.sectionPage}</h3>
+                <p className={styles.authorSectionNote}>{t.sectionPageNote}</p>
+              </div>
+              <Icon className={styles.authorSectionChevron} name="chevron-down" size={20} />
+            </summary>
+            <div className={styles.authorSectionBody}>
+              <label className={styles.authorVisibilityRow}>
+                <input
+                  className={styles.authorVisibilityInput}
+                  type="checkbox"
+                  checked={draft.listed}
+                  onChange={(e) => setDraft((prev) => ({ ...prev, listed: e.target.checked }))}
+                />
+                <span className={styles.authorVisibilityMark} aria-hidden="true">
+                  <Icon name="check" size={14} />
+                </span>
+                <span className={styles.authorVisibilityCopy}>
+                  <strong>{t.listed}</strong>
+                  <span className={styles.authorVisibilityNote}>{draft.listed ? t.listedOn : t.listedOff}</span>
+                </span>
+              </label>
+              <label className={styles.authorField}>
+                <span>{t.slug}</span>
+                <input
+                  className={styles.authorInput}
+                  value={draft.slug}
+                  placeholder="/expert/…"
+                  onChange={(e) => setDraft((prev) => ({ ...prev, slug: e.target.value }))}
+                />
+              </label>
+              {draft.listed ? <p className={styles.authorNotice}>{t.sectionPublicOnNote}</p> : null}
+              <div className={styles.authorField}>
+                <span>{t.background}</span>
+                <AuthorMediaSlot
+                  src={draft.background?.src}
+                  uploading={uploading}
+                  uploadLabel={t.backgroundUpload}
+                  replaceLabel={t.backgroundReplace}
+                  removeLabel={t.backgroundRemove}
+                  dropLabel={t.mediaDrop}
+                  previewClassName={styles.authorBackgroundPreview}
+                  emptyClassName={styles.authorBackgroundEmpty}
+                  onFile={(file) => void handleBackground(file)}
+                  onRemove={() => setDraft((prev) => ({ ...prev, background: null }))}
+                />
+                {uploading && uploadTarget === "background" ? <span className={styles.authorNotice} role="status">{t.photoUploading}</span> : null}
+                {uploadError && uploadTarget === "background" ? <span className={styles.authorNoticeError} role="alert">{uploadError}</span> : null}
+              </div>
+              <div className={`${styles.authorField} ${styles.authorProfileBlocksField}`}>
+                <span>{t.profileBlocks}</span>
+                {draft.profileBlocks.map((block, index) => (
+                  <fieldset className={styles.authorProfileBlockEditor} key={block.id}>
+                    <div className={styles.authorProfileBlockHead}>
+                      {/* A `fieldset` with no `legend` announces as an unnamed
+                          group, and every field inside carries the same label as
+                          its counterpart in every other block — nothing told a
+                          screen reader which block it was in. */}
+                      <legend className={styles.authorProfileBlockNumber}>{t.blockNumber} {index + 1}</legend>
+                      <button
+                        type="button"
+                        className={styles.authorIconAction}
+                        aria-label={t.profileBlockRemove}
+                        title={t.profileBlockRemove}
+                        onClick={() => setDraft((prev) => ({
+                          ...prev,
+                          profileBlocks: prev.profileBlocks.filter((item) => item.id !== block.id),
+                        }))}
+                      >
+                        <Icon name="close" size={18} />
+                      </button>
+                    </div>
+                    <label className={styles.authorField}>
+                      <span>{t.profileBlockKind}</span>
+                      <select
+                        className={styles.authorInput}
+                        value={block.kind}
+                        onChange={(event) => setDraft((prev) => ({
+                          ...prev,
+                          profileBlocks: prev.profileBlocks.map((item) => item.id === block.id
+                            ? { ...item, kind: event.target.value as AuthorProfileBlock["kind"] }
+                            : item),
+                        }))}
+                      >
+                        <option value="text">{t.profileBlockText}</option>
+                        <option value="list">{t.profileBlockList}</option>
+                        <option value="timeline">{t.profileBlockTimeline}</option>
+                      </select>
+                    </label>
+                    <label className={styles.authorField}>
+                      <span>{t.profileBlockLabel}</span>
+                      <input className={styles.authorInput} value={block.label ?? ""} onChange={(event) => setDraft((prev) => ({
+                        ...prev,
+                        profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, label: event.target.value } : item),
+                      }))} />
+                    </label>
+                    <label className={styles.authorField}>
+                      <span>{t.profileBlockTitle}</span>
+                      <input className={styles.authorInput} value={block.title} required onChange={(event) => setDraft((prev) => ({
+                        ...prev,
+                        profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, title: event.target.value } : item),
+                      }))} />
+                    </label>
+                    {block.kind === "text" ? (
+                      <label className={styles.authorField}>
+                        <span>{t.profileBlockBody}</span>
+                        <textarea className={styles.authorTextarea} rows={6} value={block.body ?? ""} required onChange={(event) => setDraft((prev) => ({
+                          ...prev,
+                          profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, body: event.target.value } : item),
+                        }))} />
+                      </label>
+                    ) : (
+                      <label className={styles.authorField}>
+                        <span>{t.profileBlockItems}</span>
+                        <textarea className={styles.authorTextarea} rows={7} value={(block.items ?? []).join("\n")} required onChange={(event) => setDraft((prev) => ({
+                          ...prev,
+                          profileBlocks: prev.profileBlocks.map((item) => item.id === block.id ? { ...item, items: event.target.value.split("\n") } : item),
+                        }))} />
+                      </label>
+                    )}
+                  </fieldset>
+                ))}
+                {draft.profileBlocks.length < 12 ? (
+                  <button
+                    type="button"
+                    className={styles.authorBlockAdd}
+                    aria-label={t.profileBlockAdd}
+                    title={t.profileBlockAdd}
+                    onClick={() => setDraft((prev) => ({
+                      ...prev,
+                      profileBlocks: [...prev.profileBlocks, {
+                        id: `section-${crypto.randomUUID()}`,
+                        kind: "text",
+                        title: "",
+                        body: "",
+                      }],
+                    }))}
+                  >
+                    <Icon name="plus" size={20} />
+                    <span>{t.profileBlockAdd}</span>
+                  </button>
+                ) : null}
+              </div>
+            </div>
+          </details>
+
+          <details className={`${styles.authorSection} ${styles.authorConsultationField}`} open>
+            <summary className={styles.authorSectionHead}>
+              <div className={styles.authorSectionHeadText}>
+                <h3 className={styles.authorSectionTitle}>{t.consultation}</h3>
+              </div>
+              <Icon className={styles.authorSectionChevron} name="chevron-down" size={20} />
+            </summary>
+            <div className={styles.authorSectionBody}>
+                <label className={styles.authorVisibilityRow}><input className={styles.authorVisibilityInput} type="checkbox" checked={draft.consultation.enabled} onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, enabled: e.target.checked } }))} /><span className={styles.authorVisibilityMark} aria-hidden="true"><Icon name="check" size={14} /></span><span>{t.consultationEnabled}</span></label>
+                {draft.consultation.enabled ? (
+                  <>
+                  {/* `upsertAuthorProfile` REFUSES the whole save when consultations
+                      are on and any of these three is blank (`authors.ts` returns
+                      `invalid_profile`). They were optional, unlabelled placeholders
+                      here — so the one rule that actually blocks the form was the one
+                      thing the form never said, and the author got a dead button and a
+                      generic toast. Labelled, marked, and required in the markup, which
+                      also routes them through the `onInvalid` reopener above. */}
+                  <label className={styles.authorField}>
+                    <span>
+                      {t.consultationTitleLabel}
+                      <RequiredMark tooltip={t.consultationRequired} />
+                    </span>
+                    <input className={styles.authorInput} value={draft.consultation.title} required onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, title: e.target.value } }))} />
+                  </label>
+                  <label className={styles.authorField}>
+                    <span>
+                      {t.consultationSummaryLabel}
+                      <RequiredMark tooltip={t.consultationRequired} />
+                    </span>
+                    <textarea className={styles.authorTextarea} rows={3} value={draft.consultation.summary} required onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, summary: e.target.value } }))} />
+                  </label>
+                  <div className={styles.authorFieldHead}>
+                    <span>{t.consultationPoints}</span>
+                    {draft.consultation.points.length < 3 ? (
+                      <button
+                        type="button"
+                        className={styles.authorAddIcon}
+                        aria-label={t.consultationPointAdd}
+                        title={t.consultationPointAdd}
+                        onClick={() =>
+                          setDraft((prev) => ({
+                            ...prev,
+                            consultation: { ...prev.consultation, points: [...prev.consultation.points, ""] },
+                          }))
+                        }
+                      >
+                        <Icon name="plus" size={18} />
+                      </button>
+                    ) : null}
+                  </div>
+                  <p className={styles.authorNotice}>{t.consultationPointsHint}</p>
+                  {draft.consultation.points.map((line, index) => (
+                    <div className={styles.authorCredentialRow} key={index}>
+                      <input
+                        className={styles.authorInput}
+                        value={line}
+                        onChange={(e) =>
+                          setDraft((prev) => {
+                            const points = [...prev.consultation.points];
+                            points[index] = e.target.value;
+                            return { ...prev, consultation: { ...prev.consultation, points } };
+                          })
+                        }
+                      />
+                      {draft.consultation.points.length > 1 ? (
+                        <button
+                          type="button"
+                          className={styles.authorIconAction}
+                          aria-label={t.consultationPointRemove}
+                          title={t.consultationPointRemove}
+                          onClick={() =>
+                            setDraft((prev) => ({
+                              ...prev,
+                              consultation: { ...prev.consultation, points: prev.consultation.points.filter((_, i) => i !== index) },
+                            }))
+                          }
+                        >
+                          <Icon name="close" size={18} />
+                        </button>
+                      ) : null}
+                    </div>
+                  ))}
+                  <label className={styles.authorField}>
+                    <span>
+                      {t.consultationContactLabel}
+                      <RequiredMark tooltip={t.consultationRequired} />
+                    </span>
+                    <input className={styles.authorInput} type="url" inputMode="url" value={draft.consultation.contactUrl} required onChange={(e) => setDraft((prev) => ({ ...prev, consultation: { ...prev.consultation, contactUrl: e.target.value } }))} />
+                  </label>
+                  </>
+                ) : null}
+            </div>
+          </details>
+
+            <div className={styles.actions}>
               <button className={styles.actionPrimary} type="submit" disabled={saving || uploading}>
-                {saving ? t.saving : t.save}
+                {saving ? t.saving : uploading ? t.photoUploading : t.save}
               </button>
               {author?.listed && author.slug ? (
                 <Link className={styles.actionGhost} href={`/expert/${author.slug}`} target="_blank" rel="noopener noreferrer">

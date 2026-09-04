@@ -946,10 +946,20 @@
   display: none;
 }
 
+/* THE SAME LEFT EDGE AS THE CARDS IT SITS AMONG. This is deliberately a
+   line and not a fourth card — but a line with no inset started at the
+   section's own edge while every card beside it indents its text by `lg`,
+   so it read as a caption that had fallen out of the layout. The inset is
+   the card's; the plate is still absent. Font size off the type scale
+   rather than a literal 0.95rem. */
+.installRow {
+  padding-inline: var(--cw-space-lg);
+}
+
 .installRowText {
   margin: 0;
   color: var(--cw-platform-muted);
-  font-size: 0.95rem;
+  font-size: var(--ds-type-body-sm-size);
 }
 
 /* The iOS branch has no control to press, so the row becomes a disclosure and
@@ -1021,6 +1031,17 @@
   max-width: none;
 }
 
+/* A BAND YOU CAN CLOSE, AND A LINE THAT SAYS WHERE IT STARTS. Five sections
+   separated by nothing but `lg` read as one continuous roll — the length was
+   the problem, not the spacing. `details` per section is the same idiom this
+   whole fold already is (`.fold` above), so a finished band folds away and
+   the form stops being six screens of canvas.
+
+   Open by default, every one of them: a `required` field inside a section
+   the author never opened is a submit that fails with nothing on screen (see
+   the form's `onInvalid` in AuthorProfileFold.tsx, which reopens the band
+   holding an offending control). Collapsing is theirs to choose, not a state
+   they inherit. */
 .authorSection {
   display: grid;
   align-content: start;
@@ -1031,10 +1052,69 @@
   border: 0;
 }
 
+/* The rule between bands, not around them: width on ONE side only, because
+   `border-image` paints every side that has width (the trap named over
+   `--cw-rule-fade-x` in globals.css). It fades out at both ends — a
+   divider is not the edge of a box, and the first band has nothing above it
+   to divide from. */
+.authorSection + .authorSection {
+  padding-block-start: var(--cw-space-lg);
+  border-block-start: 1px solid var(--cw-rule-ink);
+  border-image: var(--cw-rule-fade-x);
+}
+
+/* The whole head is the hit area — title, note and chevron. `list-style` and
+   the WebKit pseudo-element both have to go, exactly as `.foldHead` does it
+   one screen up. */
 .authorSectionHead {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  min-width: 0;
+  list-style: none;
+  cursor: pointer;
+}
+
+.authorSectionHead::-webkit-details-marker {
+  display: none;
+}
+
+.authorSectionHead:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+  border-radius: var(--cw-radius-md);
+}
+
+.authorSectionHeadText {
   display: grid;
   gap: var(--cw-space-2xs);
   min-width: 0;
+}
+
+.authorSectionChevron {
+  flex: none;
+  color: var(--cw-platform-muted);
+  transition: transform 200ms ease;
+}
+
+.authorSection[open] .authorSectionChevron {
+  transform: rotate(180deg);
+}
+
+.authorSectionBody {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: var(--cw-space-md);
+  min-width: 0;
+}
+
+/* A closed band keeps its hidden body as a grid ITEM, so the `md` gap above
+   it still takes 16px — measured as a phantom step under the title of every
+   collapsed section (76px box against a 60px summary). Nothing is there to
+   be spaced from while it is closed. */
+.authorSection:not([open]) {
+  gap: 0;
 }
 
 /* The band's own name. Also the consultation `fieldset`'s `legend`, which is
@@ -1093,12 +1173,25 @@
   gap: var(--cw-space-sm);
 }
 
-/* `+` changes the list; it is not the form's save action. selection_family:
-   contour — each icon invokes a command, so it keeps the DS control boundary. */
+/* THE VISIBLE MARK IS THE GLYPH; THE TOUCH TARGET IS STILL 3rem. As bordered
+   `secondary` plates these read as the loudest things in the form — a row of
+   filled chips towering over 2.3rem inputs, which is what "too aggressive"
+   was. `base chromeBare square` is the platform's own quiet icon-button
+   idiom (`ShelfPresentation.viewOption`, the toast's dismiss): transparent at
+   rest, ink ring on hover, contract geometry intact. `base` is named
+   explicitly beside `chromeBare` because the transitive chain drops it under
+   this bundler — see the note in PlatformButtons.module.css.
+
+   selection_family: ink — a mark that acts on the row it sits in, not a
+   plate competing with the field beside it. */
 .authorAddIcon {
-  composes: secondary from "../PlatformButtons.module.css";
-  composes: square from "../PlatformButtons.module.css";
+  composes: base chromeBare square from "../PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
   flex: none;
+}
+
+.authorAddIcon:hover:not(:disabled) {
+  color: var(--cw-platform-text);
 }
 
 /* A dotted underline is the standard hint that a title attribute is behind a
@@ -1140,10 +1233,32 @@
   font-weight: 700;
 }
 
+/* The group's name, which it did not have — a `legend` rather than the bare
+   integer a screen reader used to read out with no context. Kept at the
+   number's own weight so the block still reads as numbered, not titled. */
+.authorProfileBlockNumber {
+  padding: 0;
+  color: inherit;
+  font: inherit;
+}
+
+/* A FIELD IS A TOUCH TARGET TOO. These sat at ~2.2rem while every control
+   beside them is held to `--ds-touch-target-min` (3rem) — which is both a
+   miss against the platform's own floor and the reason the icon buttons read
+   as "too aggressive": they were not oversized, the fields were undersized,
+   and a 3rem control beside a 2.2rem one always looks like it is shouting.
+   One height for every control in the form settles both. */
 .authorInput,
 .authorTextarea {
   box-sizing: border-box;
   width: 100%;
+  min-height: var(--ds-touch-target-min);
+  /* NEVER BELOW 16px. `.authorField` sets `body-sm` (15px) and these inherit
+     it — and Safari on iOS zooms the whole viewport into any focused control
+     under 16px, then does not zoom back out. On a form this long that is a
+     zoom-in per field, with the page left magnified in between. `max()`
+     keeps the token wherever the token is already big enough. */
+  font-size: max(1rem, var(--ds-type-body-sm-size));
   padding: var(--cw-space-xs) var(--cw-space-sm);
   border-radius: var(--cw-radius-md);
   border: 1px solid var(--cw-platform-border);
@@ -1153,26 +1268,67 @@
   font-family: var(--cw-font-ui);
 }
 
+/* A MEASURE FOR PROSE. Single-line inputs deliberately reach the card's own
+   right edge — that is the straight edge the field alignment above is for —
+   but the bio, the quote and a block's body are read as text, and at the
+   card's full width they set ~140 characters to the line against the 60–75
+   that prose is legible at. */
 .authorTextarea {
+  max-width: 68ch;
   resize: vertical;
 }
 
+/* ONE RIGHT EDGE FOR THE WHOLE FORM. This was a two-track grid — input, then
+   a 3rem column for the remove button — so every row that could be removed
+   was 3rem narrower than every row that could not. Down a form mixing both,
+   the right edge came out ragged: «Ім'я» and «Біографія» reached the margin,
+   «Досягнення» and each fact stopped short of it. That is the crookedness,
+   and no amount of spacing tokens fixes it, because it is a difference in
+   the boxes themselves.
+
+   The input now spans the row and the action sits inside its trailing end,
+   over the field's own padding — so a removable row and a plain one are the
+   same box. The input reserves room for it with `padding-inline-end`, and
+   the button is transparent (`chromeBare`), so what overlaps the field is a
+   glyph, not a plate. */
 .authorCredentialRow {
+  position: relative;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) var(--ds-touch-target-min);
   align-items: center;
-  gap: var(--cw-space-2xs);
+}
+
+/* Only where the button exists: a list down to its last row renders no
+   remove control (there is nothing left to remove), and the reserve became
+   48px of dead space at that row's trailing edge. */
+.authorCredentialRow:has(.authorIconAction) .authorInput {
+  padding-inline-end: var(--ds-touch-target-min);
 }
 
 .authorCredentialRow .authorInput {
   min-width: 0;
 }
 
-/* selection_family: contour — removal is an irreversible local command, not
-   a quiet navigation choice. */
+/* Centred, NOT stretched to the row: `inset-block: 0` would fight the
+   button contract's own 3rem floor. With the field at that same height the
+   two now agree exactly. */
+.authorCredentialRow .authorIconAction {
+  position: absolute;
+  inset-inline-end: 0;
+  top: 50%;
+  translate: 0 -50%;
+  margin: 0;
+}
+
+/* Same quiet idiom as `.authorAddIcon` above. Removal is still a real
+   command — it earns the ink ring on hover and a full 3rem target — but a
+   filled plate per row made every list read as a wall of buttons. */
 .authorIconAction {
-  composes: secondary from "../PlatformButtons.module.css";
-  composes: square from "../PlatformButtons.module.css";
+  composes: base chromeBare square from "../PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
+}
+
+.authorIconAction:hover:not(:disabled) {
+  color: var(--cw-platform-text);
 }
 
 .authorPhotoPreview {
@@ -1253,9 +1409,14 @@
    background variants size themselves explicitly instead (13rem square,
    20rem wide), and the frame shrinks to whichever child is actually
    rendered. */
+/* `align-self: start`, because the frame is a flex item of `.authorField`
+   and was being stretched to the full card width — which took its absolutely
+   positioned replace/remove pair to the far right of the card, hundreds of
+   pixels from the 20rem background image they act on. */
 .authorMediaFrame {
   position: relative;
   display: inline-block;
+  align-self: start;
   max-width: 100%;
 }
 
@@ -1263,7 +1424,7 @@
   position: absolute;
   inset: var(--cw-space-2xs) var(--cw-space-2xs) auto auto;
   display: flex;
-  gap: var(--cw-space-2xs);
+  gap: var(--cw-space-xs);
 }
 
 .authorMediaAction {
@@ -1287,22 +1448,27 @@
    `.authorIconAction` (the credential row's own remove button); a distinct
    class only because it needs the same hidden-input focus ring as
    `.authorMediaAction` above, which a plain button never has to carry. */
-.authorPhotoToolbar {
+/* Replace and remove act on the whole field, so they sit in its heading with
+   the label — the same place every other action in this form lives. They used
+   to share a row with the alt-text input, which made that one input narrower
+   than every other input in the form: the ragged right edge. */
+/* The pair in the photo field's heading. `flex-end` so they sit against the
+   same right edge as every other head action in the form. */
+.authorPhotoActions {
   display: flex;
   align-items: center;
-  gap: var(--cw-space-2xs);
-}
-
-.authorPhotoToolbar .authorInput {
-  flex: 1 1 auto;
-  min-width: 0;
+  gap: var(--cw-space-xs);
 }
 
 .authorPhotoToolbarAction {
-  composes: secondary from "../PlatformButtons.module.css";
-  composes: square from "../PlatformButtons.module.css";
+  composes: base chromeBare square from "../PlatformButtons.module.css";
+  color: var(--cw-platform-muted);
   flex: none;
   cursor: pointer;
+}
+
+.authorPhotoToolbarAction:hover {
+  color: var(--cw-platform-text);
 }
 
 .authorPhotoToolbarAction:has(.visuallyHidden:focus-visible) {
@@ -1389,15 +1555,43 @@
   gap: var(--cw-space-sm);
 }
 
-/* The frame's name, what it is used for, and the recentre action — beside the
-   title, NOT pushed to the far edge of the column. `.authorFieldHead`'s
-   `space-between` is right for a list whose rows span the field's full width;
-   here it left the button hanging in the gap between the two panels, the
-   same detached-from-its-frame reading the corner badge had. */
-.photoCropPanelHead {
+/* The card frame plus the pair of actions that sit on it. `position:
+   relative` here rather than on the frame itself, because the frame is the
+   element with `overflow: hidden` — a corner overlay inside it would be
+   clipped by its own radius. */
+.photoCropFrame {
+  position: relative;
+  display: grid;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* BESIDE THE FRAME IT ACTS ON, at its vertical middle. Three placements were
+   tried: inside the frame (the round avatar's clip ate it), just outside the
+   frame's corner (it floated in the empty corner of a box with no drawn
+   edge), and in the panel heading with `space-between` (which pushed it to
+   the far end of the column, an inch of nothing between it and the picture).
+   Here it is adjacent to the picture in every band and for both shapes, and
+   `center` keeps it attached to a circle as readily as to a tall card. */
+.photoCropAside {
   display: flex;
-  align-items: flex-start;
-  gap: var(--cw-space-xs);
+  align-items: center;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+}
+
+/* The card frame takes the row; the avatar keeps its own 10rem circle. */
+.photoCropAside .photoCropCard {
+  min-width: 0;
+}
+
+/* Shrinkable, not fixed. `flex: none` on a 10rem circle beside a 3rem button
+   needs 212px that the tablet band's half-column does not always have — at
+   200% zoom (WCAG 1.4.4) it overflowed sideways. The card frame next to it
+   was already `1 1 auto`; this is the asymmetry, not a second rule. */
+.photoCropAside .photoCropAvatar {
+  flex: 0 1 auto;
+  max-width: 100%;
 }
 
 /* A token gap, not a margin under the title: `0.15rem` was 2.4px, off the 4px
@@ -1435,10 +1629,15 @@
 }
 
 /* Same ratio as `.guideCard` at its desktop measure — the frame the author's
-   photo fills wherever `AuthorCard` renders it. */
+   photo fills wherever `AuthorCard` renders it.
+
+   NO WIDTH CAP ON A PHONE. `max-width: 16rem` left a 256px portrait in a
+   350px column with dead paper beside it, which reads as a thumbnail rather
+   than as the card this photograph is actually printed on. The cap returns
+   at 561px, where this frame shares its row with the avatar — see the tablet
+   band below. */
 .photoCropCard {
   aspect-ratio: 24 / 29;
-  max-width: 16rem;
   border-radius: var(--cw-radius-md);
 }
 
@@ -1497,6 +1696,13 @@
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: start;
   }
+
+  /* Two frames on one row: the card takes its own measure back, because at
+     half a tablet's width an unbounded 24:29 portrait is taller than the
+     viewport. */
+  .photoCropCard {
+    max-width: 16rem;
+  }
 }
 
 /* A real length, not `width: 100%` — see the note on `.authorMediaFrame`
@@ -1542,6 +1748,15 @@
   color: var(--cw-platform-muted);
   font-size: var(--ds-type-body-sm-size);
   line-height: 1.5;
+}
+
+/* Upload failures used to render through `.authorNotice` — the same muted
+   grey as the "up to 6 facts" hint beside them, with nothing announcing
+   them either. Failure is a state, not a tip: it takes the boundary ink and
+   `role="alert"` at the call site. */
+.authorNoticeError {
+  composes: authorNotice;
+  color: var(--cw-sem-boundary);
 }
 
 .notice[data-cw-material] {
@@ -1608,7 +1823,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .authorVisibilityMark {
+  /* The section chevrons are five of these, one per band, and they were the
+     one control in this form that ignored the preference — its own twin
+     `.foldChevron` is guarded a screen up. The empty media slots animate
+     three properties on hover and were unguarded too. */
+  .authorVisibilityMark,
+  .authorSectionChevron,
+  .authorPhotoEmpty,
+  .authorBackgroundEmpty {
     transition: none;
   }
 }
