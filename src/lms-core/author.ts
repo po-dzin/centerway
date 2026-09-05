@@ -75,6 +75,18 @@ export type Author = {
      */
     avatarCropX?: number;
     avatarCropY?: number;
+    /**
+     * Magnification for each frame, 1–4, where 1 is the whole photograph as
+     * `cover` fills that shape. Absent means 1 — a profile authored before the
+     * zoom existed renders exactly as it did.
+     *
+     * TWO NUMBERS, NOT ONE, for the same reason the focal points are two: the
+     * card is a tall plate the whole person can stand in, and the avatar is a
+     * circle whose job is usually a face. The crop that frames a portrait in
+     * one is rarely the crop that frames it in the other.
+     */
+    cropScale?: number;
+    avatarCropScale?: number;
   };
   /** Decorative backdrop for the public author showcase. */
   background?: { src: string };
@@ -175,6 +187,17 @@ export function validateAuthor(input: unknown, path = "author"): asserts input i
       const value = input.photo[cropKey];
       if (value === undefined) continue;
       assert(typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100, `lms_author_invalid_photo_${cropKey}:${path}`);
+    }
+    // The zoom is bounded on both sides, and the floor is 1 rather than 0: a
+    // scale below 1 would shrink the picture inside a frame it is there to
+    // fill, uncovering the plate behind it.
+    for (const scaleKey of ["cropScale", "avatarCropScale"] as const) {
+      const value = input.photo[scaleKey];
+      if (value === undefined) continue;
+      assert(
+        typeof value === "number" && Number.isFinite(value) && value >= 1 && value <= 4,
+        `lms_author_invalid_photo_${scaleKey}:${path}`
+      );
     }
   }
 

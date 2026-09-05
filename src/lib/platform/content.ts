@@ -102,6 +102,15 @@ export type PlatformOfferArtwork = {
   mobilePosition?: string;
   /** Vertical focus past 16:9 — see the hero framing contract. */
   widePosition?: string;
+  /**
+   * The magnification each of those focal points is read at, 1–4. Absent means
+   * 1, which is `cover` and is what every hand-written plate in this file is:
+   * the zoom exists for covers an author uploaded whole and framed in the
+   * builder, not for artwork already cropped before it reached the repo.
+   */
+  desktopScale?: number;
+  mobileScale?: number;
+  wideScale?: number;
 };
 
 export const programs = [

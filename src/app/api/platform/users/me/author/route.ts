@@ -11,6 +11,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
 import { requireUserFromBearer } from "@/lib/auth/requireUser";
+import { clampCropScale } from "@/lib/media/imageCrop";
 import { getAuthorProfileForUser, upsertAuthorProfile, type AuthorProfileInput } from "@/lib/lms/authors";
 
 export const runtime = "nodejs";
@@ -34,6 +35,14 @@ function readCrop(value: unknown): number | undefined {
   return typeof value === "number" && Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : undefined;
 }
 
+/* Clamped here as well as validated in `lms-core`, and deliberately: this is
+   the network edge, where a number out of range is a request to fix rather
+   than a profile to reject. `clampCropScale` is the same ceiling the editor's
+   slider stops at, read from one place so the two cannot drift. */
+function readCropScale(value: unknown): number | undefined {
+  return typeof value === "number" && Number.isFinite(value) ? clampCropScale(value) : undefined;
+}
+
 function readPhoto(value: unknown): AuthorProfileInput["photo"] {
   if (!value || typeof value !== "object") return undefined;
   const item = value as Record<string, unknown>;
@@ -44,6 +53,8 @@ function readPhoto(value: unknown): AuthorProfileInput["photo"] {
   const cropY = readCrop(item.cropY);
   const avatarCropX = readCrop(item.avatarCropX);
   const avatarCropY = readCrop(item.avatarCropY);
+  const cropScale = readCropScale(item.cropScale);
+  const avatarCropScale = readCropScale(item.avatarCropScale);
   return {
     src,
     alt,
@@ -51,6 +62,8 @@ function readPhoto(value: unknown): AuthorProfileInput["photo"] {
     ...(cropY !== undefined ? { cropY } : {}),
     ...(avatarCropX !== undefined ? { avatarCropX } : {}),
     ...(avatarCropY !== undefined ? { avatarCropY } : {}),
+    ...(cropScale !== undefined ? { cropScale } : {}),
+    ...(avatarCropScale !== undefined ? { avatarCropScale } : {}),
   };
 }
 

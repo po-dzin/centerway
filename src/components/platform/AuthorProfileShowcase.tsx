@@ -6,7 +6,7 @@ import type { Author } from "@/lms-core";
 import styles from "./AuthorProfileShowcase.module.css";
 import { ConsultBoundary, ConsultFaq } from "@/components/platform/ConsultPageSections";
 import { consultationSteps } from "@/components/platform/consultPageContract";
-import { authorAvatarCropPosition } from "@/lib/lms/authorPhoto";
+import { authorAvatarCropStyle } from "@/lib/lms/authorPhoto";
 
 function courseCountLabel(count: number) {
   const mod10 = count % 10;
@@ -35,7 +35,7 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
               className={styles.portrait}
               src={author.photo.src}
               alt={author.photo.alt}
-              style={{ objectPosition: authorAvatarCropPosition(author.photo) }}
+              style={authorAvatarCropStyle(author.photo)}
             />
           ) : (
             <span className={styles.portraitFallback} aria-hidden="true">

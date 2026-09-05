@@ -108,6 +108,7 @@ export function PlatformOfferCard({
      course carries from the database, an author's own upload — behaves exactly
      as it did before. */
   const photo = artwork?.card ?? artwork?.desktop;
+  const photoZoom = artwork?.desktopScale && artwork.desktopScale > 1 ? artwork.desktopScale : undefined;
 
   const cardStyle = artwork && photo
     ? ({
@@ -117,6 +118,12 @@ export function PlatformOfferCard({
         "--program-photo-image-mobile": `url("${photo}")`,
         "--program-photo-position-desktop": artwork.desktopPosition ?? "center 20%",
         "--program-photo-position-mobile": artwork.desktopPosition ?? "center 20%",
+        /* The card keeps the horizontal master at every breakpoint, so it keeps
+           that master's zoom too — the portrait's own is for the standalone
+           hero. Declared only when there is one: see the `data-photo-zoom` note
+           in PlatformBlocksOffer.module.css for why an unzoomed card must not
+           carry a `scale(1)`. */
+        ...(photoZoom ? { "--program-photo-scale": String(photoZoom) } : {}),
       } as CSSProperties)
     : undefined;
 
@@ -129,6 +136,7 @@ export function PlatformOfferCard({
       data-program={slug}
       data-status={isPlanned ? "planned" : "active"}
       data-has-art={artwork?.desktop ? "true" : "false"}
+      data-photo-zoom={photoZoom ? "true" : undefined}
       style={cardStyle}
     >
       <div className={styles.programPhoto} aria-hidden="true" />

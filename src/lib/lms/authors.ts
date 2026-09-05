@@ -272,7 +272,11 @@ export type AuthorProfileInput = {
   experienceBadge?: string;
   achievementBadge?: string;
   consultation?: Author["consultation"];
-  photo?: { src: string; alt: string };
+  /* The author's own type, not a narrowing of it. This said `{src, alt}` while
+     the route beside it had been writing four crop numbers through a spread
+     that excess-property checking does not see — the shape was wrong and
+     nothing said so. */
+  photo?: Author["photo"];
   background?: { src: string };
   listed?: boolean;
   slug?: string;

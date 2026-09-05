@@ -20,6 +20,7 @@
  * expressed by the surrounding card rather than by recropping the cover.
  */
 
+import { coverCardStyle } from "@/lib/lms/courseCover";
 import type { LearnerShelfCourseDto } from "@/components/lms/lmsClient";
 import { MEDIA_SIZES, mediaSources } from "@/lib/lms/media";
 import styles from "./Cabinet.module.css";
@@ -53,7 +54,7 @@ export function CourseCover({ course, dimmed }: { course: LearnerShelfCourseDto;
         alt={course.cover.alt}
         loading="lazy"
         decoding="async"
-        style={{ objectPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%` }}
+        style={coverCardStyle(course.cover)}
       />
     );
   }

@@ -273,6 +273,21 @@
     var(--program-photo-image) var(--program-photo-position, center 20%) / cover no-repeat;
 }
 
+/* The zoomed hero keeps the plate and nothing else in its own background: the
+   two scrims above are baked into the same shorthand as the image and would
+   ride the scale with it, which is the one thing the scrim must not do. They
+   move to a layer that takes the inverse (the rule below `.programPhoto::after`),
+   and only when there is a zoom to defend against. */
+.offerHeroVisualCard[data-photo-zoom="true"][data-has-art="true"] .programPhoto {
+  background: var(--program-photo-image) var(--program-photo-position, center 20%) / cover no-repeat;
+}
+
+.offerHeroVisualCard[data-photo-zoom="true"][data-has-art="true"] .programPhoto::after {
+  background:
+    linear-gradient(180deg, transparent 0 22%, color-mix(in srgb, var(--cw-mat-scrim-ink) 84%, transparent) 100%),
+    linear-gradient(135deg, color-mix(in srgb, var(--cw-mat-scrim-ink) 12%, transparent), color-mix(in srgb, var(--cw-mat-scrim-ink) 30%, transparent));
+}
+
 .offerHeroVisualCard[data-has-art="true"] .programPhoto::before {
   position: absolute;
   inset: 0;
@@ -406,6 +421,38 @@
     linear-gradient(180deg, transparent 0 38%, color-mix(in srgb, var(--cw-mat-scrim-ink) 78%, transparent) 100%);
   opacity: 1;
   pointer-events: none;
+}
+
+/* ── The card's zoom ─────────────────────────────────────────────────────────
+   An author's crop is a focal point AND a magnification (src/lib/media/
+   imageCrop.ts). The point has always been `--program-photo-position`; this is
+   the magnification, and it is the same construction the hero uses: scale the
+   plate about the focus, so the point the author aimed at stays put and the
+   picture grows around it.
+
+   GATED ON THE ATTRIBUTE, NOT WRITTEN WITH A DEFAULT OF 1. `transform: scale(1)`
+   is not free — it promotes every card's plate to its own layer, and a
+   catalogue row is six of them. `data-photo-zoom` is absent unless an author
+   actually zoomed, so an unzoomed catalogue paints exactly as it did.
+
+   THE SCRIMS TAKE THE INVERSE. They are `.programPhoto`'s own pseudo-elements
+   and would otherwise ride the scale — and this scrim is not decoration, it is
+   what the card's title is legible against (`.programPhoto::after`, the 38%
+   line above). Scaling by the reciprocal about the same origin restores their
+   boxes exactly, so the plate zooms and the scrim stays where the type needs
+   it. */
+.programTile[data-photo-zoom="true"] .programPhoto,
+.offerHeroVisualCard[data-photo-zoom="true"] .programPhoto {
+  transform: scale(var(--program-photo-scale, 1));
+  transform-origin: var(--program-photo-position);
+}
+
+.programTile[data-photo-zoom="true"] .programPhoto::before,
+.programTile[data-photo-zoom="true"] .programPhoto::after,
+.offerHeroVisualCard[data-photo-zoom="true"] .programPhoto::before,
+.offerHeroVisualCard[data-photo-zoom="true"] .programPhoto::after {
+  transform: scale(calc(1 / var(--program-photo-scale, 1)));
+  transform-origin: var(--program-photo-position);
 }
 
 .programTile[data-visual="movement"] .programPhoto {
