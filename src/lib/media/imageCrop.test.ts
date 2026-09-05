@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
-import { CROP_SCALE_MAX, clampCropScale, cropIsZoomed, cropStyle } from "./imageCrop";
+import { CROP_SCALE_MAX, clampCropScale, cropBackgroundStyle, cropIsZoomed, cropStyle } from "./imageCrop";
+import { shrinkForUpload } from "./shrinkForUpload";
 import { authorAvatarCropStyle, authorCardCropStyle } from "@/lib/lms/authorPhoto";
 import { coverArtworkFraming, coverCardStyle } from "@/lib/lms/courseCover";
 
@@ -82,5 +83,32 @@ describe("course cover frames", () => {
 
   it("draws an uncropped cover exactly as it did before the zoom existed", () => {
     expect(coverCardStyle({ src: "/c.jpg", alt: "c" })).toEqual({ objectPosition: "50% 50%" });
+  });
+});
+
+describe("the backdrop band", () => {
+  it("keeps `cover` and scales the layer, never `background-size`", () => {
+    // A percentage `background-size` abandons the cover fit and uncovers an
+    // edge as soon as the photo's ratio differs from the band's 6:1.
+    expect(cropBackgroundStyle({ x: 50, y: 20 }, { x: 50, y: 50 })).toEqual({ backgroundPosition: "50% 20%" });
+    expect(cropBackgroundStyle({ x: 50, y: 20, scale: 1.8 }, { x: 50, y: 50 })).toEqual({
+      backgroundPosition: "50% 20%",
+      transformOrigin: "50% 20%",
+      transform: "scale(1.8)",
+    });
+  });
+});
+
+describe("shrinkForUpload", () => {
+  it("hands the file straight through where it cannot decode one", async () => {
+    // No `createImageBitmap` here, which is also the real fallback path in an
+    // engine that cannot read what the author picked: the route answers, not us.
+    const file = new File([new Uint8Array(32)], "photo.jpg", { type: "image/jpeg" });
+    expect(await shrinkForUpload(file)).toBe(file);
+  });
+
+  it("never touches a GIF — a canvas would return its first frame and call that the picture", async () => {
+    const gif = new File([new Uint8Array(4 * 1024 * 1024)], "loop.gif", { type: "image/gif" });
+    expect(await shrinkForUpload(gif)).toBe(gif);
   });
 });

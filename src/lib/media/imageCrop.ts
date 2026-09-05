@@ -79,13 +79,22 @@ export function cropStyle(crop: ImageCrop | undefined, fallback: { x: number; y:
   return { objectPosition: position, transformOrigin: position, transform: `scale(${scale})` };
 }
 
-/** The same crop as a `background-image` framing, for the frames that are not `<img>`. */
+/**
+ * The same crop for a layer painted with `background-image` rather than an
+ * `<img>`.
+ *
+ * IT SCALES THE LAYER, NOT `background-size`. There is no way to say "cover,
+ * times 1.4" in `background-size` — a percentage there is measured against the
+ * box and abandons the `cover` fit entirely, which uncovers an edge the moment
+ * the image's aspect ratio differs from its frame's. So the layer keeps
+ * `cover` and takes a transform, which means the layer needs a parent that
+ * clips it: see `.bannerFrame` in AuthorProfileShowcase.module.css.
+ */
 export function cropBackgroundStyle(crop: ImageCrop | undefined, fallback: { x: number; y: number }): CSSProperties {
   const x = crop?.x ?? fallback.x;
   const y = crop?.y ?? fallback.y;
+  const position = `${x}% ${y}%`;
   const scale = crop?.scale;
-  return {
-    backgroundPosition: `${x}% ${y}%`,
-    backgroundSize: cropIsZoomed(scale) ? `${(scale as number) * 100}% auto` : "cover",
-  };
+  if (!cropIsZoomed(scale)) return { backgroundPosition: position };
+  return { backgroundPosition: position, transformOrigin: position, transform: `scale(${scale})` };
 }

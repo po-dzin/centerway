@@ -6,7 +6,8 @@ import type { Author } from "@/lms-core";
 import styles from "./AuthorProfileShowcase.module.css";
 import { ConsultBoundary, ConsultFaq } from "@/components/platform/ConsultPageSections";
 import { consultationSteps } from "@/components/platform/consultPageContract";
-import { authorAvatarCropStyle } from "@/lib/lms/authorPhoto";
+import { AUTHOR_BANNER_CROP_DEFAULT, authorAvatarCropStyle } from "@/lib/lms/authorPhoto";
+import { cropBackgroundStyle } from "@/lib/media/imageCrop";
 
 function courseCountLabel(count: number) {
   const mod10 = count % 10;
@@ -21,11 +22,23 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
   return (
     <main>
       {author.background ? (
-        <div
-          className={styles.banner}
-          aria-hidden="true"
-          style={{ backgroundImage: `url("${author.background.src}")` }}
-        />
+        /* A FRAME AND A LAYER, not one div. The backdrop can be zoomed now, and
+           a zoom is a transform on the layer — which needs something to clip
+           it, or the picture grows past the band's own rounded edge and over
+           the page. The frame holds the size, the margin and the radius; the
+           layer holds the photograph and the crop. */
+        <div className={styles.bannerFrame} aria-hidden="true">
+          <div
+            className={styles.banner}
+            style={{
+              backgroundImage: `url("${author.background.src}")`,
+              ...cropBackgroundStyle(
+                { x: author.background.cropX, y: author.background.cropY, scale: author.background.cropScale },
+                AUTHOR_BANNER_CROP_DEFAULT
+              ),
+            }}
+          />
+        </div>
       ) : null}
       <header className={author.background ? `${styles.hero} ${styles.heroWithBanner}` : styles.hero}>
         <div className={styles.identity}>

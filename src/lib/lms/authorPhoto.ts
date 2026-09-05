@@ -12,6 +12,9 @@ import type { Author } from "@/lms-core";
 export const AUTHOR_CARD_CROP_DEFAULT = { x: 50, y: 22 };
 export const AUTHOR_AVATAR_CROP_DEFAULT = { x: 50, y: 50 };
 
+/** The backdrop band's default — dead centre, which is what it drew before it could be aimed. */
+export const AUTHOR_BANNER_CROP_DEFAULT = { x: 50, y: 50 };
+
 /** The card frame's crop, in the shape `cropStyle` reads. */
 export function authorCardCrop(photo: Author["photo"] | undefined): ImageCrop {
   return { x: photo?.cropX, y: photo?.cropY, scale: photo?.cropScale };

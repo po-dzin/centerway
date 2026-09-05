@@ -172,7 +172,12 @@ export function PlatformOfferCarousel({
             disabled={!edges.previous}
             onClick={() => page(-1)}
           >
-            <Icon name="arrow-left" size={20} />
+            {/* A chevron, not an arrow, and one glyph mirrored rather than two.
+                An arrow points at a destination — that is the `Увесь список`
+                link in this same footer. A rail step points at the next card,
+                which is what the landings' proof rails have always drawn here;
+                the two surfaces now draw the same mark. */}
+            <Icon className={styles.controlGlyphPrevious} name="chevron-right" size={20} />
           </button>
           <button
             className={styles.control}
@@ -181,7 +186,7 @@ export function PlatformOfferCarousel({
             disabled={!edges.next}
             onClick={() => page(1)}
           >
-            <Icon name="arrow-right" size={20} />
+            <Icon name="chevron-right" size={20} />
           </button>
         </div>
         <div

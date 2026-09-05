@@ -24,13 +24,12 @@
  */
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
 
 import { Icon } from "@/components/Icon";
 import type { CwIconName } from "@/components/iconNames";
 import { useOfferAccess } from "@/components/platform/OfferAccess";
 import { useSurfaceHref } from "@/components/platform/layout/SurfaceHost";
-import type { Course, CourseModule, LessonAvailability } from "@/lms-core";
+import type { Course, LessonAvailability } from "@/lms-core";
 import styles from "./PlatformOfferCommerce.module.css";
 import offerStyles from "./PlatformOfferStyles";
 
@@ -40,13 +39,6 @@ type LessonState = {
   /** Why this row is shut, when the reason is the schedule rather than the purchase. */
   note: string | null;
 };
-
-/* Identity for the open/closed set. Falls back to the index because `id` and
-   `slug` are both optional on a module coming out of the snapshot, and two
-   modules may legitimately share a title. */
-function moduleKey(module: CourseModule, index: number): string {
-  return module.id ?? module.slug ?? `${index}`;
-}
 
 /** Only reachable on a hard-gated course, where the schedule really does shut the door. */
 function scheduleNote(availability: LessonAvailability): string {
@@ -88,48 +80,6 @@ export function OfferCurriculum({
   const outline = owned ? access.outline : null;
   const currentSlug = owned ? access.shelf.currentLessonSlug : null;
 
-  /* WHICH MODULES START OPEN. The first one, always — an accordion where
-     everything is shut is a list of headings, and a reader deciding whether to
-     buy has to click before the page tells them anything.
-
-     For an owner, also the module they are actually in. Landing on this page
-     with your current lesson folded away is the page forgetting where you were.
-
-     Held in state rather than computed inline because a person's own clicks
-     have to survive a re-render: `access` changes twice on this page (ownership,
-     then the outline), and a derived `open` would slam every module back to its
-     default underneath the reader's hand. */
-  const [openModules, setOpenModules] = useState<Set<string>>(
-    () => new Set(course.modules.length > 0 ? [moduleKey(course.modules[0], 0)] : [])
-  );
-
-  function toggleModule(key: string, open: boolean) {
-    setOpenModules((current) => {
-      if (current.has(key) === open) return current;
-      const next = new Set(current);
-      if (open) next.add(key);
-      else next.delete(key);
-      return next;
-    });
-  }
-
-  /* Opened ONCE, when the shelf first says where the learner stopped. Not on
-     every render: after this fires, the module is in `openModules` like any
-     other, so closing it stays closed. */
-  const revealedFor = useRef<string | null>(null);
-  useEffect(() => {
-    if (!currentSlug || revealedFor.current === currentSlug) return;
-    const index = course.modules.findIndex((module) =>
-      module.lessons.some((lesson) => lesson.slug === currentSlug)
-    );
-    if (index < 0) return;
-    revealedFor.current = currentSlug;
-    toggleModule(moduleKey(course.modules[index], index), true);
-    // `course.modules` is the authored structure and does not change between
-    // renders of one page; the lesson slug is what this reacts to.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentSlug]);
-
   /* The map is keyed by slug because that is the only identifier the authored
      course and the learner API are guaranteed to agree on — ids are stable in
      the database, and the snapshot fallback is a different row set. */
@@ -169,22 +119,24 @@ export function OfferCurriculum({
         <h2 className={offerStyles.title}>Програма курсу</h2>
         <p className={offerStyles.lead}>{course.summary ? inlineToText(course.summary) : null}</p>
         <ul className={styles.outline}>
-          {course.modules.map((module, index) => (
+          {course.modules.map((module) => (
             <li key={module.id ?? module.title}>
-              {/* NATIVE `<details>`, not a div with a click handler. It is
-                  keyboard-operable, exposed to assistive tech, findable by the
-                  browser's own in-page search, and it opens with JavaScript
-                  off — four things a hand-rolled accordion has to reimplement
-                  and usually gets wrong. */}
-              <details
-                className={styles.outlineModule}
-                open={openModules.has(moduleKey(module, index))}
-                onToggle={(event) => toggleModule(moduleKey(module, index), event.currentTarget.open)}
-              >
-                <summary className={styles.outlineModuleHead}>
+              {/* NOT AN ACCORDION ANY MORE (2026-09-05). It was a `<details>`
+                  per module, and the collapsing was answering a question
+                  nobody asks: this outline is three cards and a dozen rows on
+                  the longest course in the product, so there was never enough
+                  of it to be worth hiding. What the chevrons did instead was
+                  put a control on the one block whose whole job is to be read
+                  at a glance — and, for an owner, a chance to fold away the
+                  lesson they are in the middle of.
+
+                  The whole `openModules` machine went with them: the state,
+                  the first-module default, and the effect that had to reopen
+                  the current lesson's module because the default had shut it. */}
+              <div className={styles.outlineModule}>
+                <div className={styles.outlineModuleHead}>
                   <h3 className={styles.outlineModuleTitle}>{module.title}</h3>
-                  <Icon className={styles.outlineChevron} name="chevron-down" size={20} />
-                </summary>
+                </div>
                 <ul className={styles.outlineLessons}>
                 {module.lessons.map((lesson) => {
                   const state = stateFor(lesson.slug);
@@ -210,14 +162,19 @@ export function OfferCurriculum({
                   );
                 })}
                 </ul>
-              </details>
+              </div>
             </li>
           ))}
         </ul>
-        {/* NOT FOR AN OWNER. Somebody who has bought this has no use for the
-            page that sells it, and offering them a sales funnel where the next
-            lesson should be is the platform forgetting who it is talking to. */}
-        {landingHref && !owned ? (
+        {/* FOR AN OWNER TOO, since 2026-09-05. It used to be hidden from them,
+            reasoning that somebody who has bought this has no use for the page
+            that sells it. That reads the landing as a sales funnel and nothing
+            else — it is also the only long-form description this product has of
+            what the course actually is: the stages, the formats, the participant
+            accounts, the questions. An owner mid-course has more use for that
+            than a stranger does, and the note under the button says plainly
+            where it goes. */}
+        {landingHref ? (
           <div className={styles.outlineMore}>
             {/* A plain anchor, not `Link`: this is a different origin, and the
                 router has nothing to prefetch there. */}

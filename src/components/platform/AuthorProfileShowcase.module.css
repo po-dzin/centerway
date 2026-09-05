@@ -5,11 +5,23 @@
   padding-block: calc(var(--platform-topbar-clearance, 5.8rem) + var(--cw-space-xl)) var(--cw-space-2xl);
 }
 
-.banner {
+/* The band itself: size, place and edge. It clips, because the photograph
+   inside it may be zoomed and a transform does not respect a sibling's
+   boundary — see `cropBackgroundStyle`. */
+.bannerFrame {
+  position: relative;
   width: min(100% - 2 * var(--cw-page-gutter), var(--cw-max-width));
   height: clamp(9rem, 19vw, 14rem);
   margin: var(--platform-topbar-clearance, 5.8rem) auto 0;
+  overflow: hidden;
   border-radius: var(--cw-radius-xl);
+}
+
+/* The photograph inside it. `cover` stays `cover`; the author's crop moves the
+   focus and, when they asked for one, scales about it. */
+.banner {
+  position: absolute;
+  inset: 0;
   background-position: center;
   background-size: cover;
 }

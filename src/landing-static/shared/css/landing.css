@@ -793,20 +793,90 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 .review .who b{font-size:.92rem;color:var(--ink)}
 .review .who small{display:block;font-size:.78rem;color:var(--text-soft);font-family:var(--f-mono)}
 
+/* ============ THE RAIL CONTROL — one arrow for every carousel ============
+   docs/design-system.md → "The rail control".
+
+   There were three of these and they agreed on nothing. The proof rails ran a
+   44px plate at rgba(255,255,255,.94) that VANISHED at the end of the track;
+   the testimonial strip ran a 46px plate on `--surface` that stayed put and
+   went to .38 opacity instead; the platform's offer rail ran the 48px button
+   contract and dimmed to .45. Three sizes, three grounds, three answers to
+   "what does the end of the track look like", and no hover at all on one of
+   them. All three are the same object: a step control that sits on the middle
+   of a rail and says which way there is more.
+
+   The four decisions, now made once:
+
+   OPAQUE. The plate is `--surface`, not a white at 94%. A translucent disc
+   over a photograph picks up whatever is behind it, so the same control read
+   warm on one card and grey on the next — and on the before/after rail it took
+   on the participant's skin tone. A control is an object in front of the
+   picture, not a fog on top of it.
+
+   HOVER IS OBVIOUS, because the plate no longer earns attention by being
+   see-through. Ink stroke, deeper shadow, and the disc grows a step. The
+   testimonial arrows had NO hover state — the one control on the page that did
+   not answer the pointer.
+
+   GONE AT THE EDGE, not dimmed. A 38%-opacity arrow is a control that is still
+   there, still round, still asking to be clicked, and does nothing. The rail
+   already says "no more this way" by having no more cards; the arrow's job is
+   to leave. It shrinks as it goes so the exit is read as an exit.
+
+   OVERHANGING. `--rail-out` of the plate hangs past the rail's own edge, into
+   the page gutter. Sitting fully inside, the arrow covered the first card's
+   face — which on the before/after rail is a person. The overhang is a third
+   of the plate and never more than the gutter's floor (20px), so it has room
+   on the narrowest phone the arrows are drawn on at all.
+
+   Below 561px there is no arrow: a phone swipes, and the dots under the rail
+   carry the position. Same breakpoint as the platform's offer rail. */
+.car-nav,
+.testimonial-carousel__nav{position:absolute;top:50%;z-index:2;
+  display:grid;place-items:center;width:var(--rail-h);height:var(--rail-h);padding:0;
+  border:1px solid var(--line-strong);border-radius:50%;
+  background:var(--surface);color:var(--ink);box-shadow:var(--shadow-soft);cursor:pointer;
+  transform:translateY(-50%);
+  transition:background-color .2s ease,border-color .2s ease,color .2s ease,
+    box-shadow .2s ease,opacity .18s ease,transform .2s ease}
+.car-nav svg,
+.testimonial-carousel__nav svg{width:var(--rail-ico);height:var(--rail-ico)}
+.car-nav:hover,
+.testimonial-carousel__nav:hover:not(:disabled){background:var(--chip);border-color:var(--ink);
+  box-shadow:var(--shadow-med);transform:translateY(-50%) scale(1.07)}
+.car-nav:active,
+.testimonial-carousel__nav:active:not(:disabled){transform:translateY(-50%) scale(.95);
+  box-shadow:var(--shadow-soft)}
+.car-nav:focus-visible,
+.testimonial-carousel__nav:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+/* The end of the track: the control leaves, it does not sit there greyed. */
+.car-nav[disabled],
+.testimonial-carousel__nav:disabled{opacity:0;pointer-events:none;
+  transform:translateY(-50%) scale(.88)}
+.car-nav.prev,
+.testimonial-carousel__nav--prev{left:calc(var(--rail-out) * -1)}
+.car-nav.next,
+.testimonial-carousel__nav--next{right:calc(var(--rail-out) * -1)}
+@media(max-width:560px){.car-nav,.testimonial-carousel__nav{display:none}}
+@media(prefers-reduced-motion:reduce){
+  .car-nav,.testimonial-carousel__nav{transition:opacity .18s ease}
+  .car-nav:hover,.testimonial-carousel__nav:hover:not(:disabled),
+  .car-nav:active,.testimonial-carousel__nav:active:not(:disabled),
+  .car-nav[disabled],.testimonial-carousel__nav:disabled{transform:translateY(-50%)}
+}
+
 /* Real-message proof: the frame matches the prepared message screenshots, so
    their full content stays readable without empty side gutters or cropping. */
 .testimonial-carousel{display:grid;gap:1.2rem}
 .testimonial-carousel__intro{max-width:58ch}
 .testimonial-carousel__stage{position:relative}
-.testimonial-carousel__track{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 2rem) / 3);gap:1rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.2rem 2.7rem .4rem;scrollbar-width:none}
+/* No inline lane for the arrows any more: they hang OUTSIDE the stage now
+   (see "The rail control" above), so the padding that used to hold them
+   off the first slide was 2.7rem of empty rail on both ends. */
+.testimonial-carousel__track{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 2rem) / 3);gap:1rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.2rem .2rem .4rem;scrollbar-width:none}
 .testimonial-carousel__track::-webkit-scrollbar{display:none}
 .testimonial-slide{scroll-snap-align:start;margin:0;aspect-ratio:323 / 700;overflow:hidden;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow-soft)}
 .testimonial-slide img{display:block;width:100%;height:100%;object-fit:contain;background:var(--chip)}
-.testimonial-carousel__nav{position:absolute;top:50%;z-index:2;display:grid;place-items:center;width:2.875rem;height:2.875rem;padding:0;border:1px solid var(--line);border-radius:50%;background:var(--surface);color:var(--ink);box-shadow:var(--shadow-soft);cursor:pointer;transform:translateY(-50%)}
-.testimonial-carousel__nav:disabled{opacity:.38;cursor:default}
-.testimonial-carousel__nav svg{width:1.125rem;height:1.125rem}
-.testimonial-carousel__nav--prev{left:0}
-.testimonial-carousel__nav--next{right:0}
 /* Ten dots, and the rest slide under the window. See the same recipe on
    `.car-dots` further down — this strip and the proof rails' one are the same
    control, and a landing with ten or fewer testimonials is unaffected. */
@@ -820,7 +890,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 @media(prefers-reduced-motion:reduce){.testimonial-carousel__dots-row{transition:none}}
 .proof-grid[hidden],.car[hidden],.proof-note[hidden]{display:none!important}
 @media(max-width:1080px){.testimonial-carousel__track{grid-auto-columns:calc((100% - 1rem) / 2)}}
-@media(max-width:640px){.testimonial-carousel__track{grid-auto-columns:84%;padding-inline:2.4rem}.testimonial-carousel__nav{width:2.75rem;height:2.75rem}}
+@media(max-width:640px){.testimonial-carousel__track{grid-auto-columns:84%}}
 
 /* ============ OFFER ============ */
 .offer{background:var(--irem-grad-dark);color:#fff;border-radius:var(--r-lg);
@@ -977,19 +1047,20 @@ body:has(.lead-modal__input:focus) .sticky-cta{transform:translateY(110%)}
 /* Generic scroll-snap carousel. Works without JS (native swipe/scroll);
    shared/js/proof.js adds arrow nav + screenshot lightbox on top. */
 .car{position:relative}
+/* NO SCROLLBAR. The rail already reports its position twice — the dots under
+   it, and the arrows at its ends — and a third readout in the browser's own
+   graphic was the one nobody drew: a grey 1rem trench under the photographs on
+   every platform that renders a persistent bar. The bottom padding it needed
+   goes with it. Position stays available to a keyboard and to a screen reader
+   through the dots, which are real buttons. */
 .car-track{display:flex;gap:.9rem;overflow-x:auto;scroll-snap-type:x proximity;
-  padding:.3rem .2rem 1rem;-webkit-overflow-scrolling:touch;scrollbar-width:thin;
-  scrollbar-color:var(--line-strong) transparent}
+  padding:.3rem .2rem .35rem;-webkit-overflow-scrolling:touch;
+  overscroll-behavior-x:contain;scrollbar-width:none}
+.car-track::-webkit-scrollbar{display:none}
 .car-track>*{scroll-snap-align:start;flex:0 0 auto}
-.car-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:2;
-  width:44px;height:44px;border-radius:50%;border:1px solid var(--line-strong);
-  background:rgba(255,255,255,.94);color:var(--indigo);display:grid;place-items:center;
-  cursor:pointer;box-shadow:var(--shadow-soft);transition:background .25s,color .25s,opacity .25s}
-.car-nav:hover{background:var(--chip);color:var(--ink)}
-.car-nav[disabled]{opacity:0;pointer-events:none}
-.car-nav.prev{left:-8px}
-.car-nav.next{right:-8px}
-@media(max-width:760px){.car-nav{display:none}}
+/* .car-nav geometry, colour, hover and edge behaviour: "THE RAIL CONTROL"
+   near the top of this file. It is the same object as the testimonial strip's
+   arrow and the platform's offer-rail arrow, and it is written once. */
 
 /* real-screenshot testimonial card */
 .shot-card{width:min(74vw,264px);border:1px solid var(--line);border-radius:var(--r-md);
@@ -1060,8 +1131,7 @@ body:has(.lead-modal__input:focus) .sticky-cta{transform:translateY(110%)}
 
 /* A pair somebody already glued into one JPEG.
    The card is the same card — the difference is that the two halves live
-   inside the picture, so drawing the grid and the до/після tags again would
-   put our labels on top of someone else's composition. One cell.
+   inside the picture, so the grid is not drawn again. One cell.
    The card stays exactly the size of every other card — a glued 1:1 photo
    given its own proportions made one card twice as tall as its neighbours,
    which is the carousel losing its rhythm. So the frame is the box the
@@ -1070,6 +1140,31 @@ body:has(.lead-modal__input:focus) .sticky-cta{transform:translateY(110%)}
    off a composition somebody else already framed. */
 .ba-pair--single{grid-template-columns:1fr}
 .ba-pair--single .ba-shot img{aspect-ratio:1/1;object-fit:contain;background:var(--chip)}
+
+/* THE GLUED PAIR IS STILL A PAIR, AND IT IS STILL LABELLED.
+   The tags used to be withheld here on the argument that they would sit on
+   someone else's composition. What that actually produced was one card in the
+   rail with no до/після on it — the FIRST one, the one that teaches the reader
+   how to read the two beside it. A rail whose opening card omits the labelling
+   the rest depends on has not been tactful, it has been unclear.
+
+   So the same two pills go on, at the same corner of each half. The seam is
+   the frame's midpoint because the source is a symmetric two-up; nothing is
+   drawn ON the picture beyond the pills the other cards already carry.
+
+   The layer is its own 1:1 box rather than the cell, and that is load-bearing:
+   `contain` letterboxes the square picture inside the 4:5 cell on a phone, so
+   a pill anchored to the CELL's bottom would float in the empty band under the
+   photograph. Anchored to a box the same shape as the picture, and centred the
+   way `contain` centres it, the pill lands on the image at every width. */
+.ba-pair--single .ba-shot{display:grid}
+.ba-pair--single .ba-shot > img{grid-area:1/1}
+.ba-halves{grid-area:1/1;position:relative;align-self:center;
+  width:100%;aspect-ratio:1/1;pointer-events:none}
+/* Each pill sits at the bottom-left of its own half — the same corner the
+   two-cell pair puts it in, so the two kinds of card read identically. */
+.ba-halves .ba-tag--before{left:.5rem}
+.ba-halves .ba-tag--after{left:calc(50% + .5rem)}
 /* On a phone the pair has no width to spend — 92vw is two 172px cells — so the
    cells get TALLER instead: 2:5 rather than 1:2, which crops a fifth off the
    sides of a centred standing figure and buys back the height. The single card

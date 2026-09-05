@@ -131,7 +131,7 @@ than the page — see the colour-seam note in the DS docs).
 | card | files | note |
 | --- | --- | --- |
 | glued pair | `ba-2026-06-back.webp` | already one JPEG, side by side. Renders through `.ba-pair--single`: one cell, no `до`/`після` tags drawn over somebody else's composition, and the picture is CONTAINED in the same 4:3 frame the two-cell pair adds up to. Every card is the same size — 420×377 desktop, 330×329 phone — because a glued 1:1 photo given its own proportions made one card twice as tall as its neighbours and the rail lost its rhythm. |
-| Люба | `ba-lyuba-2021-before/after.webp` | two photographs, both full-body. Which one is «до» was inferred from the pictures, not from the filenames — confirm. |
+| 2021 pair | `ba-2021-before/after.webp` | two photographs, both full-body. Which one is «до» was inferred from the pictures, not from the filenames — confirm. Renamed 2026-09-05: the files used to carry the participant's first name, which a filename publishes in the network tab no matter what the picture itself has been through. |
 | studio | `ba-2026-06-studio-before/after.webp` | **the weak one.** «До» is a seated close-up at 296px wide, «після» is a full-body shot across a dance studio. Different distance, different framing, and the source is too small to fix by cropping. |
 
 `.ba-shot img` is 2:3, not 3:4: every real photograph in this set is a standing

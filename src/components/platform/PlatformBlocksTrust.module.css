@@ -348,11 +348,21 @@
 }
 
 @media (max-width: 900px) {
+  /* Same rule as `.consultantRail` above and as the landings' proof rails: a
+     rail reports its position with its cut edge and its dots, never with the
+     browser's scrollbar. This one kept a persistent grey trench under the
+     author cards on every platform that draws one. */
   .guideRail {
     display: flex;
     overflow-x: auto;
+    overscroll-behavior-x: contain;
     scroll-snap-type: x proximity;
-    padding-bottom: var(--cw-space-sm);
+    padding-bottom: var(--cw-space-2xs);
+    scrollbar-width: none;
+  }
+
+  .guideRail::-webkit-scrollbar {
+    display: none;
   }
 
   .guideCard {

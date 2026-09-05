@@ -122,61 +122,23 @@
   box-shadow: var(--cw-mat-shadow-soft);
 }
 
-/* The accordion's handle. Padding is generous rather than tidy: on a phone this
-   is the row a thumb aims at, and a heading with a chevron beside it is a much
-   smaller target than it looks. The negative margin lets the tap area reach the
-   card's edges without the text moving off its own margin. */
+/* A HEADING, NOT A HANDLE (2026-09-05). This was a `<summary>`: a thumb target
+   with a chevron, negative margins so the tap area reached the card's edges,
+   its own focus ring, and a Safari marker to suppress. All of that was the cost
+   of collapsing three cards' worth of outline — which is not enough of it to be
+   worth hiding, and which for an owner meant a control that folds away the
+   lesson they are in.
+
+   What remains is what it always was underneath: the module's name over its
+   lessons. The gap is now unconditional, because there is no shut state left
+   for a bottom margin to hang under. */
 .outlineModuleHead {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: var(--cw-space-sm);
-  margin: calc(var(--cw-space-md) * -1);
-  padding: var(--cw-space-md);
-  cursor: pointer;
-  list-style: none;
 }
 
-/* Safari still draws its own disclosure triangle through `list-style: none`. */
-.outlineModuleHead::-webkit-details-marker {
-  display: none;
-}
 
-.outlineModuleHead:focus-visible {
-  outline: 2px solid var(--cw-platform-text);
-  outline-offset: -2px;
-  border-radius: var(--cw-radius-sm);
-}
-
-/* Space between the handle and the lessons appears only when the module is
-   open — a shut module is a single row, and a bottom margin under nothing is
-   what makes a closed accordion look broken. */
-.outlineModule[open] .outlineModuleHead {
-  margin-block-end: 0;
-}
-
-.outlineChevron {
-  flex: none;
-  color: var(--cw-platform-muted);
-  transition: transform 180ms ease;
-}
-
-.outlineModule[open] .outlineChevron {
-  transform: rotate(180deg);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .outlineChevron {
-    transition: none;
-  }
-}
-
-/* The lessons need a little of their own top gap, since the handle's margin is
-   negative and eats the card's grid gap. Small: the handle is already 53px
-   tall, and a wide channel under it reads as two separate cards. */
-.outlineModule[open] .outlineLessons {
-  margin-top: 0.5rem;
-}
 
 .outlineModuleTitle {
   margin: 0;
@@ -190,7 +152,7 @@
 .outlineLessons {
   display: grid;
   gap: 0.3rem;
-  margin: 0;
+  margin: 0.25rem 0 0;
   padding: 0;
   list-style: none;
   color: var(--cw-platform-muted);

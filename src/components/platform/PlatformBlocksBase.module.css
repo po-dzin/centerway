@@ -100,7 +100,19 @@
 .mediaPanel :where(.title, .sectionTitle) {
   max-width: min(24ch, 100%);
   text-wrap: balance;
-  overflow-wrap: normal;
+  /* A WORD WIDER THAN ITS OWN PANEL HAS TO BREAK SOMEWHERE (2026-09-05).
+     This said `overflow-wrap: normal`, and on a 390px phone «Розвантажувальний»
+     set at the title size — `clamp(2.25rem, …)`, so 36px of display serif — is
+     wider than the card it is in. `normal` forbids the break, so the word ran
+     off the plate's right edge and the page scrolled sideways.
+
+     `hyphens: auto` first, because the document is `lang="uk"` and the browser
+     hyphenates at a real syllable boundary and prints the hyphen. `break-word`
+     is the last resort under it, for an engine with no dictionary for the
+     language at hand: it never breaks a word that fits, so every title that
+     wraps correctly today wraps identically. */
+  hyphens: auto;
+  overflow-wrap: break-word;
 }
 
 .lead {

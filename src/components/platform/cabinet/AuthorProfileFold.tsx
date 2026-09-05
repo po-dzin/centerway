@@ -24,9 +24,10 @@ import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
 import type { Author, AuthorProfileBlock } from "@/lms-core";
 import type { ProfileLang } from "@/components/platform/profile/types";
-import { AUTHOR_AVATAR_CROP_DEFAULT, AUTHOR_CARD_CROP_DEFAULT } from "@/lib/lms/authorPhoto";
+import { AUTHOR_AVATAR_CROP_DEFAULT, AUTHOR_BANNER_CROP_DEFAULT, AUTHOR_CARD_CROP_DEFAULT } from "@/lib/lms/authorPhoto";
 import { CropZoom, cropKeyZoom, cropWheelZoom } from "@/components/media/CropZoom";
 import { CROP_SCALE_MIN, cropStyle } from "@/lib/media/imageCrop";
+import { shrinkForUpload } from "@/lib/media/shrinkForUpload";
 import type { AuthorProfileInput } from "./useCabinet";
 import styles from "./Cabinet.module.css";
 import { matte } from "./CourseCard";
@@ -42,19 +43,33 @@ type Draft = {
   experienceBadge: string;
   consultation: { enabled: boolean; title: string; summary: string; points: string[]; contactUrl: string };
   photo: NonNullable<Author["photo"]> | null;
-  background: { src: string } | null;
+  background: NonNullable<Author["background"]> | null;
   listed: boolean;
   slug: string;
 };
 
-type PhotoCropShape = "card" | "avatar";
+type PhotoCropShape = "card" | "avatar" | "banner";
 
-const PHOTO_CROP_FRAME: Record<PhotoCropShape, { className: "photoCropCard" | "photoCropAvatar" }> = {
+const PHOTO_CROP_FRAME: Record<PhotoCropShape, { className: "photoCropCard" | "photoCropAvatar" | "photoCropBanner" }> = {
   card: { className: "photoCropCard" },
   avatar: { className: "photoCropAvatar" },
+  /* The backdrop band on the author's own page — a 6:1 letterbox, which is why
+     it needs aiming more than either of the other two: a portrait handed to it
+     loses about five sixths of its height to `cover`. */
+  banner: { className: "photoCropBanner" },
 };
 
 const clampCrop = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
+
+/**
+ * HEIC AND HEIF ARE ON THE LIST NOW, and the upload route still does not take
+ * them. That is not a contradiction: an iPhone left on "keep originals" hands
+ * over `image/heic`, `shrinkForUpload` re-encodes anything the browser can
+ * decode into JPEG, and JPEG is what the route sees. Leaving them off the list
+ * did not protect anything — it made the picker grey out the photograph the
+ * author was pointing at.
+ */
+const PHOTO_ACCEPT = "image/jpeg,image/png,image/webp,image/gif,image/avif,image/heic,image/heif";
 
 /**
  * One focal point, dragged or nudged with the keyboard — the same interaction
@@ -81,6 +96,7 @@ function PhotoCropPreview({
   label,
   zoomLabel,
   position,
+  busy,
 }: {
   src: string;
   alt: string;
@@ -94,6 +110,8 @@ function PhotoCropPreview({
   label: string;
   zoomLabel: string;
   position: string;
+  /** An upload is in flight for THIS frame's image. */
+  busy?: boolean;
 }) {
   const activePointer = useRef<number | null>(null);
   const [dragging, setDragging] = useState(false);
@@ -150,6 +168,12 @@ function PhotoCropPreview({
     <div className={styles.photoCropStack}>
       <div
         className={styles[frameClass]}
+        /* ON THE PICTURE, BECAUSE THAT IS WHERE THE EYE IS. The only sign an
+           upload was running used to be a line of text below the crop grid and
+           the alt field — on a phone, a screen and a half under the thumb that
+           just picked the file. Silence there is indistinguishable from
+           nothing happening, which is exactly how it was reported. */
+        data-busy={busy || undefined}
         data-dragging={dragging || undefined}
         tabIndex={0}
         role="group"
@@ -256,7 +280,7 @@ function AuthorMediaSlot({
             className={styles.visuallyHidden}
             type="file"
             aria-label={uploadLabel}
-            accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+            accept={PHOTO_ACCEPT}
             disabled={uploading}
             onChange={pick}
           />
@@ -271,7 +295,7 @@ function AuthorMediaSlot({
               className={styles.visuallyHidden}
               type="file"
               aria-label={replaceLabel}
-              accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+              accept={PHOTO_ACCEPT}
               disabled={uploading}
               onChange={pick}
             />
@@ -404,6 +428,14 @@ const STRINGS = {
     photoReplace: "Замінити фото",
     photoRemove: "Прибрати фото",
     photoUploading: "Завантаження…",
+    /* ONE MESSAGE PER REASON. The upload used to answer every failure with the
+       form's generic «Не вдалося зберегти» — which on a phone, where the file
+       is large and the connection is not, read as "it silently did nothing".
+       The route already distinguishes these; the form now repeats it. */
+    uploadTooLarge: "Файл завеликий — до 20 МБ.",
+    uploadBadType: "Такий формат не підтримується. JPEG, PNG, WebP, AVIF або GIF.",
+    uploadTooOften: "Забагато завантажень поспіль. Спробуйте за хвилину.",
+    uploadFailed: "Не вдалося завантажити фото. Спробуйте ще раз.",
     sectionYou: "Ви",
     sectionYouNote: "Фото, ім'я і роль — друкуються під кожним вашим курсом, навіть поки сторінка прихована.",
     sectionAbout: "Про себе",
@@ -482,6 +514,10 @@ const STRINGS = {
     photoReplace: "Replace photo",
     photoRemove: "Remove photo",
     photoUploading: "Uploading…",
+    uploadTooLarge: "File is too large — 20 MB maximum.",
+    uploadBadType: "That format is not supported. JPEG, PNG, WebP, AVIF or GIF.",
+    uploadTooOften: "Too many uploads in a row. Try again in a minute.",
+    uploadFailed: "Could not upload the photo. Try again.",
     sectionYou: "You",
     sectionYouNote: "Photo, name and role — printed under every course you write, even while your page is hidden.",
     sectionAbout: "About you",
@@ -560,54 +596,60 @@ export function AuthorProfileFold({
     return () => window.removeEventListener("hashchange", openFromHash);
   }, []);
 
-  async function handlePhoto(file: File) {
+  /* The two upload fields were the same fifteen lines twice, and they had
+     already drifted once. The shape of a failure belongs to the endpoint, not
+     to the field calling it. */
+  function uploadErrorFor(status: number): string {
+    if (status === 413) return t.uploadTooLarge;
+    if (status === 415) return t.uploadBadType;
+    if (status === 429) return t.uploadTooOften;
+    return t.uploadFailed;
+  }
+
+  async function upload(target: "photo" | "background", file: File): Promise<string | null> {
     setUploading(true);
     setUploadError(null);
-    setUploadTarget("photo");
+    setUploadTarget(target);
     try {
+      /* Before the bytes leave the device — see shrinkForUpload. This is why
+         the same replacement that used to sit silent for most of a minute on a
+         phone now finishes in a few seconds. */
+      const prepared = await shrinkForUpload(file);
       const form = new FormData();
-      form.append("file", file);
-      const res = await fetch("/api/lms/authors/me/photo", {
+      form.append("file", prepared);
+      const res = await fetch(`/api/lms/authors/me/${target}`, {
         method: "POST",
         headers: { Authorization: `Bearer ${session.access_token}` },
         body: form,
       });
       if (!res.ok) {
-        setUploadError(t.error);
-        return;
+        setUploadError(uploadErrorFor(res.status));
+        return null;
       }
       const body = (await res.json()) as { src: string };
-      setDraft((prev) => ({ ...prev, photo: { src: body.src, alt: prev.photo?.alt ?? prev.name } }));
+      return body.src;
     } catch {
-      setUploadError(t.error);
+      setUploadError(t.uploadFailed);
+      return null;
     } finally {
       setUploading(false);
     }
   }
 
+  async function handlePhoto(file: File) {
+    const src = await upload("photo", file);
+    if (!src) return;
+    /* A NEW PICTURE, THE SAME AIM — as for the backdrop below. An author
+       swapping one portrait for another has not said anything about where the
+       card should look; the recentre button beside each frame is one click
+       away when they have. */
+    setDraft((prev) => ({ ...prev, photo: { ...prev.photo, src, alt: prev.photo?.alt ?? prev.name } }));
+  }
+
   async function handleBackground(file: File) {
-    setUploading(true);
-    setUploadError(null);
-    setUploadTarget("background");
-    try {
-      const form = new FormData();
-      form.append("file", file);
-      const res = await fetch("/api/lms/authors/me/background", {
-        method: "POST",
-        headers: { Authorization: `Bearer ${session.access_token}` },
-        body: form,
-      });
-      if (!res.ok) {
-        setUploadError(t.error);
-        return;
-      }
-      const body = (await res.json()) as { src: string };
-      setDraft((prev) => ({ ...prev, background: { src: body.src } }));
-    } catch {
-      setUploadError(t.error);
-    } finally {
-      setUploading(false);
-    }
+    const src = await upload("background", file);
+    if (!src) return;
+    setDraft((prev) => ({ ...prev, background: { ...prev.background, src } }));
   }
 
   async function handleSubmit(event: FormEvent) {
@@ -661,7 +703,7 @@ export function AuthorProfileFold({
         contactUrl: draft.consultation.contactUrl.trim() || undefined,
       },
       photo,
-      background: draft.background?.src ? { src: draft.background.src } : undefined,
+      background: draft.background?.src ? draft.background : undefined,
       listed: draft.listed,
       slug: draft.slug.trim() || undefined,
     });
@@ -756,6 +798,7 @@ export function AuthorProfileFold({
                                 x={draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x}
                                 y={draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y}
                                 scale={draft.photo.cropScale ?? CROP_SCALE_MIN}
+                                busy={uploading && uploadTarget === "photo"}
                                 zoomLabel={`${t.cropZoom} — ${t.photoCropCardTitle}`}
                                 onChange={(x, y) =>
                                   setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, cropX: x, cropY: y } } : prev))
@@ -770,7 +813,7 @@ export function AuthorProfileFold({
                                     className={styles.visuallyHidden}
                                     type="file"
                                     aria-label={t.photoReplace}
-                                    accept="image/jpeg,image/png,image/webp,image/gif,image/avif"
+                                    accept={PHOTO_ACCEPT}
                                     disabled={uploading}
                                     onChange={(e) => {
                                       const file = e.target.files?.[0];
@@ -836,6 +879,7 @@ export function AuthorProfileFold({
                               x={draft.photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x}
                               y={draft.photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y}
                               scale={draft.photo.avatarCropScale ?? CROP_SCALE_MIN}
+                              busy={uploading && uploadTarget === "photo"}
                               zoomLabel={`${t.cropZoom} — ${t.photoCropAvatarTitle}`}
                               onChange={(x, y) =>
                                 setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, avatarCropX: x, avatarCropY: y } } : prev))
@@ -920,18 +964,104 @@ export function AuthorProfileFold({
                 <div className={`${styles.authorField} ${styles.authorBackgroundField}`}>
                   <span>{t.background}</span>
                   <p className={styles.authorNotice}>{t.backgroundHint}</p>
-                  <AuthorMediaSlot
-                    src={draft.background?.src}
-                    uploading={uploading}
-                    uploadLabel={t.backgroundUpload}
-                    replaceLabel={t.backgroundReplace}
-                    removeLabel={t.backgroundRemove}
-                    dropLabel={t.mediaDrop}
-                    previewClassName={styles.authorBackgroundPreview}
-                    emptyClassName={styles.authorBackgroundEmpty}
-                    onFile={(file) => void handleBackground(file)}
-                    onRemove={() => setDraft((prev) => ({ ...prev, background: null }))}
-                  />
+                  {/* THE SAME TWO GESTURES THE PORTRAIT HAS. This was the one
+                      image in the profile a author could only upload and not
+                      aim, and it is the one with the most to lose: a 6:1 band
+                      keeps about a sixth of a photograph's height. Drag to
+                      choose the sixth, zoom to choose how much of the width. */}
+                  {draft.background?.src ? (
+                    <div className={styles.photoCropAside}>
+                      <div className={styles.photoCropFrame}>
+                        <PhotoCropPreview
+                          src={draft.background.src}
+                          alt=""
+                          shape="banner"
+                          label={t.cropFocus}
+                          zoomLabel={`${t.cropZoom} — ${t.background}`}
+                          position={cropPosition(
+                            draft.background.cropX ?? AUTHOR_BANNER_CROP_DEFAULT.x,
+                            draft.background.cropY ?? AUTHOR_BANNER_CROP_DEFAULT.y
+                          )}
+                          x={draft.background.cropX ?? AUTHOR_BANNER_CROP_DEFAULT.x}
+                          y={draft.background.cropY ?? AUTHOR_BANNER_CROP_DEFAULT.y}
+                          scale={draft.background.cropScale ?? CROP_SCALE_MIN}
+                          busy={uploading && uploadTarget === "background"}
+                          onChange={(x, y) =>
+                            setDraft((prev) =>
+                              prev.background ? { ...prev, background: { ...prev.background, cropX: x, cropY: y } } : prev
+                            )
+                          }
+                          onScaleChange={(scale) =>
+                            setDraft((prev) =>
+                              prev.background ? { ...prev, background: { ...prev.background, cropScale: scale } } : prev
+                            )
+                          }
+                        />
+                        <div className={styles.authorMediaActions}>
+                          <label className={styles.authorPhotoToolbarAction} aria-label={t.backgroundReplace} title={t.backgroundReplace}>
+                            <input
+                              className={styles.visuallyHidden}
+                              type="file"
+                              aria-label={t.backgroundReplace}
+                              accept={PHOTO_ACCEPT}
+                              disabled={uploading}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                e.target.value = "";
+                                if (file) void handleBackground(file);
+                              }}
+                            />
+                            <Icon name="edit" size={18} />
+                          </label>
+                          <button
+                            type="button"
+                            className={styles.authorPhotoToolbarAction}
+                            aria-label={t.backgroundRemove}
+                            title={t.backgroundRemove}
+                            onClick={() => setDraft((prev) => ({ ...prev, background: null }))}
+                          >
+                            <Icon name="close" size={18} />
+                          </button>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className={styles.authorIconAction}
+                        aria-label={`${t.photoCropCenter} — ${t.background}`}
+                        title={t.photoCropCenter}
+                        onClick={() =>
+                          setDraft((prev) =>
+                            prev.background
+                              ? {
+                                  ...prev,
+                                  background: {
+                                    ...prev.background,
+                                    cropX: AUTHOR_BANNER_CROP_DEFAULT.x,
+                                    cropY: AUTHOR_BANNER_CROP_DEFAULT.y,
+                                    cropScale: CROP_SCALE_MIN,
+                                  },
+                                }
+                              : prev
+                          )
+                        }
+                      >
+                        <Icon name="undo" size={20} />
+                      </button>
+                    </div>
+                  ) : (
+                    <AuthorMediaSlot
+                      src={undefined}
+                      uploading={uploading}
+                      uploadLabel={t.backgroundUpload}
+                      replaceLabel={t.backgroundReplace}
+                      removeLabel={t.backgroundRemove}
+                      dropLabel={t.mediaDrop}
+                      previewClassName={styles.authorBackgroundPreview}
+                      emptyClassName={styles.authorBackgroundEmpty}
+                      onFile={(file) => void handleBackground(file)}
+                      onRemove={() => setDraft((prev) => ({ ...prev, background: null }))}
+                    />
+                  )}
                   {uploading && uploadTarget === "background" ? <span className={styles.authorNotice} role="status">{t.photoUploading}</span> : null}
                   {uploadError && uploadTarget === "background" ? <span className={styles.authorNoticeError} role="alert">{uploadError}</span> : null}
                 </div>

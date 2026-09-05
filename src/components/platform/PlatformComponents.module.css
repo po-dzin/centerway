@@ -560,8 +560,29 @@
    same ambiguity. It belongs to the footer, not to the first column — so it
    gets the footer's full width, the system's own fading rule above it, and a
    caption's size, which is what a note about imperfection should be set in. */
+/* THE GAP ABOVE THE RULE WAS NEVER DRAWN. This note carries `.container`
+   alongside its own class — `<p className={`${container} ${footerBugNote}`}>`
+   — and `.container` sets `margin: 0 auto`. Two single-class selectors, so the
+   cascade decides on order, and PlatformShell's `.container` is emitted after
+   this file: the shorthand reset the whole margin box every time. What looked
+   like a small gap was the `md` padding under the border alone.
+
+   The class is doubled to outweigh it. Not `!important`, which would win
+   against anything and say nothing about what it is winning against; this
+   specificity is exactly one step, aimed at exactly one rule.
+
+   It cannot become padding instead: the rule IS this element's top border, and
+   padding falls under a border rather than above it.
+
+   And the gap above the rule is now a step wider than the gap below it, on
+   purpose — the rule separates the footer's three columns from a footnote
+   about the whole product, and an even gap read as a fourth row of the same
+   block. */
+.footerBugNote.footerBugNote {
+  margin-block: var(--cw-space-xl) 0;
+}
+
 .footerBugNote {
-  margin-block: var(--cw-space-lg) 0;
   padding-block-start: var(--cw-space-md);
   border-top: 1px solid transparent;
   border-image: var(--cw-rule-fade-x);
