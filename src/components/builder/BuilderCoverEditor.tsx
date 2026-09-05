@@ -3,6 +3,8 @@
 import { useRef, useState, type KeyboardEvent, type PointerEvent } from "react";
 
 import { Icon } from "@/components/Icon";
+import { CropZoom, cropKeyZoom, cropWheelZoom } from "@/components/media/CropZoom";
+import { CROP_SCALE_MIN, cropStyle } from "@/lib/media/imageCrop";
 import type { Course } from "@/lms-core";
 import { BuilderImageField, type ImageSpec } from "./BuilderImageField";
 import styles from "./Builder.module.css";
@@ -13,7 +15,10 @@ type CropPreviewProps = {
   format: CropFormat;
   x: number;
   y: number;
+  /** 1–4. The frame's own magnification — see src/lib/media/imageCrop.ts. */
+  scale: number;
   onChange: (x: number, y: number) => void;
+  onScaleChange: (scale: number) => void;
 };
 
 /**
@@ -58,7 +63,7 @@ const PORTRAIT_SPEC: ImageSpec = { minWidth: 1080, ratio: 9 / 16, recommended: "
 
 const clamp = (value: number) => Math.max(0, Math.min(100, Math.round(value)));
 
-function CropPreview({ src, alt, format, x, y, onChange, reset }: CropPreviewProps & { reset?: { label: string; onReset: () => void } }) {
+function CropPreview({ src, alt, format, x, y, scale, onChange, onScaleChange, reset }: CropPreviewProps & { reset?: { label: string; onReset: () => void } }) {
   const activePointer = useRef<number | null>(null);
   const [dragging, setDragging] = useState(false);
   const frame = FRAME[format];
@@ -66,6 +71,10 @@ function CropPreview({ src, alt, format, x, y, onChange, reset }: CropPreviewPro
 
   const moveByKey = (event: KeyboardEvent<HTMLDivElement>) => {
     const step = event.shiftKey ? 5 : 2;
+    if (cropKeyZoom(scale, event.key, onScaleChange)) {
+      event.preventDefault();
+      return;
+    }
     if (event.key === "ArrowLeft" && horizontal) onChange(clamp(x - step), y);
     else if (event.key === "ArrowRight" && horizontal) onChange(clamp(x + step), y);
     else if (event.key === "ArrowUp") onChange(x, clamp(y - step));
@@ -108,15 +117,16 @@ function CropPreview({ src, alt, format, x, y, onChange, reset }: CropPreviewPro
         className={styles[frame.className]}
         data-dragging={dragging || undefined}
         tabIndex={0}
-        aria-label={`${frame.label} кадр. Перетягуйте точку фокуса або використовуйте стрілки.`}
+        aria-label={`${frame.label} кадр. Перетягуйте точку фокуса або використовуйте стрілки. Ctrl і колесо — масштаб.`}
         onKeyDown={moveByKey}
+        onWheel={(event) => cropWheelZoom(scale, event, onScaleChange)}
         onPointerDown={beginDrag}
         onPointerMove={drag}
         onPointerUp={endDrag}
         onPointerCancel={endDrag}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- authored cover may use any public host */}
-        <img src={src} alt={alt} style={{ objectPosition: `${x}% ${y}%` }} draggable={false} />
+        <img src={src} alt={alt} style={cropStyle({ x, y, scale }, { x: 50, y: 50 })} draggable={false} />
         <span
           className={styles.coverFocusHandle}
           style={{ left: horizontal ? `${x}%` : "50%", top: `${y}%` }}
@@ -125,12 +135,30 @@ function CropPreview({ src, alt, format, x, y, onChange, reset }: CropPreviewPro
           <Icon name="grip" size={20} />
         </span>
       </div>
+      {/* THE ZOOM SITS UNDER ITS OWN FRAME, not once for the editor. A course
+          reads through three shapes and an author zooms for a reason that
+          belongs to one of them — pulling the wide hero in on a face does not
+          mean pulling the card in on the same face. One slider governing all
+          three would be a fourth answer none of the three asked for. */}
+      <CropZoom
+        value={scale}
+        onChange={onScaleChange}
+        label={`Масштаб — ${frame.label.toLowerCase()} кадр`}
+        classes={{ row: styles.coverZoomRow, input: styles.coverZoomInput, value: styles.coverZoomValue }}
+      />
       <div className={styles.coverPreviewTools}>
         <span>{frame.note}</span>
         <button
           className={styles.coverResetAction}
           type="button"
-          onClick={reset ? reset.onReset : () => onChange(50, 50)}
+          onClick={
+            reset
+              ? reset.onReset
+              : () => {
+                  onChange(50, 50);
+                  onScaleChange(CROP_SCALE_MIN);
+                }
+          }
         >
           {reset ? reset.label : "По центру"}
         </button>
@@ -152,7 +180,10 @@ export function BuilderCoverEditor({
   const portraitX = cover?.mobileCropX ?? landscapeX;
   const portraitY = cover?.mobileCropY ?? landscapeY;
   const wideY = cover?.wideCropY ?? landscapeY;
-  const wideIsOwn = cover?.wideCropY !== undefined;
+  const landscapeScale = cover?.cropScale ?? CROP_SCALE_MIN;
+  const portraitScale = cover?.mobileCropScale ?? landscapeScale;
+  const wideScale = cover?.wideCropScale ?? landscapeScale;
+  const wideIsOwn = cover?.wideCropY !== undefined || cover?.wideCropScale !== undefined;
 
   const writeLandscapeCrop = (x: number, y: number) => {
     onChange(["cover", "cropX"], x);
@@ -163,12 +194,22 @@ export function BuilderCoverEditor({
      writing the number instead would freeze today's value into the file and stop
      following it the next time the author moves the main focus. */
   const writeWideCrop = (_x: number, y: number) => onChange(["cover", "wideCropY"], y);
-  const clearWideCrop = () => onChange(["cover", "wideCropY"], undefined);
+  const clearWideCrop = () => {
+    onChange(["cover", "wideCropY"], undefined);
+    onChange(["cover", "wideCropScale"], undefined);
+  };
 
   const writePortraitCrop = (x: number, y: number) => {
     onChange(["cover", "mobileCropX"], x);
     onChange(["cover", "mobileCropY"], y);
   };
+
+  /* `undefined` at 1× rather than the number 1, for the reason `writeWideCrop`
+     gives above and one more: a cover whose scale is stored as 1 is a cover
+     that has opted out of ever following a changed default. Absent is the only
+     value that keeps meaning "no zoom" instead of "this much zoom, forever". */
+  const writeScale = (key: "cropScale" | "wideCropScale" | "mobileCropScale") => (scale: number) =>
+    onChange(["cover", key], scale > CROP_SCALE_MIN ? scale : undefined);
 
   return (
     <div className={styles.coverEditor}>
@@ -200,7 +241,9 @@ export function BuilderCoverEditor({
               format="landscape"
               x={landscapeX}
               y={landscapeY}
+              scale={landscapeScale}
               onChange={writeLandscapeCrop}
+              onScaleChange={writeScale("cropScale")}
             />
             <div className={styles.coverWideBlock}>
               <div className={styles.coverFormatHead}>
@@ -216,7 +259,9 @@ export function BuilderCoverEditor({
                 format="wide"
                 x={landscapeX}
                 y={wideY}
+                scale={wideScale}
                 onChange={writeWideCrop}
+                onScaleChange={writeScale("wideCropScale")}
                 reset={{ label: "Як основний", onReset: clearWideCrop }}
               />
             </div>
@@ -236,7 +281,9 @@ export function BuilderCoverEditor({
               format="portrait"
               x={portraitX}
               y={portraitY}
+              scale={portraitScale}
               onChange={writePortraitCrop}
+              onScaleChange={writeScale("mobileCropScale")}
             />
             <BuilderImageField
               label="Окреме вертикальне фото — необовʼязково"

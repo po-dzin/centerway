@@ -1055,13 +1055,47 @@
    35rem is `68ch` of the UI face stated as a length. It is a length because a
    `ch` differs per element's own font, and a form aligned in `ch` drifts the
    first time one control is set in another face. */
+/* THE MEASURE IS FOR PROSE, NOT FOR THE CARD (2026-09-05).
+
+   The settlement above capped the CARD at the measure, which made one right
+   edge out of three — and turned the whole profile into a 39rem ribbon down
+   the left of a 1440 screen, with the two crop frames sharing 35rem between
+   them and the backdrop below them at thumbnail size. A measure is a rule
+   about how far the eye travels along A LINE OF TEXT. Applying it to a
+   photograph is applying a typographic law to something that is not type.
+
+   So the measure moves off the card and onto the controls that are actually
+   read as lines: every input, every textarea, every label. They all still end
+   on one edge — the thing the settlement was for — and it is still `68ch` of
+   the UI face. What changes is that the card is now as wide as the cabinet
+   gives it, and the bands that hold pictures (`.authorIdentity`,
+   `.authorProfileBlocksField`) are free to use that width. Two zones, and the
+   line between them is not a compromise: text has a measure, media has a
+   frame, and neither has ever wanted the other's. */
 .authorForm {
   composes: card;
-  --cw-author-measure: 35rem;
+  /* A LOCAL, AND NOT `--cw-`-PREFIXED. The `--cw-` namespace is the token
+     file's (data/design-tokens/cw.tokens.json) and `canon:guard` rejects a
+     component that mints one — this measure is one form's own arithmetic, not
+     a platform token, so it takes a local name like `--builder-rule` does. */
+  --author-measure: 35rem;
   display: grid;
   gap: var(--cw-space-lg);
   width: 100%;
-  max-width: calc(var(--cw-author-measure) + 2 * var(--cw-space-lg));
+}
+
+/* The measure, applied where a measure means something. `.authorField` is the
+   label-plus-control unit every text field in this form is built from, so one
+   rule caps all of them and their labels and hints with them. A field that
+   holds media opts out by name below — there are two, and they say so. */
+.authorField {
+  max-width: var(--author-measure);
+}
+
+.authorIdentity > .authorField,
+.authorBackgroundField,
+.authorProfileBlocksField {
+  max-width: none;
 }
 
 /* A BAND YOU CAN CLOSE, AND A LINE THAT SAYS WHERE IT STARTS. Five sections
@@ -1173,10 +1207,36 @@
 /* The byline's own row: the photo's two frames, then the name and role that
    print beside them. Stacked below 901px, where a phone has no width to put
    a 26rem pair of crop frames next to a text column. */
+/* THE PORTRAIT AND THE GROUND IT PRINTS ON, SIDE BY SIDE. The two crop frames
+   and the backdrop are one decision — the portrait is read against that
+   backdrop on the author's own page — so on any width that can hold them they
+   sit in one band. Below the tablet line they stack, in the order the page
+   itself reads them: the person, then what is behind them. */
 .authorIdentity {
   display: grid;
   gap: var(--cw-space-md);
   min-width: 0;
+}
+
+@media (min-width: 901px) {
+  .authorIdentity {
+    grid-template-columns: minmax(0, 1.6fr) minmax(15rem, 0.9fr);
+    align-items: start;
+  }
+
+  /* The name and role are text, so they take the measure back and drop below
+     the pictures rather than sitting in a column beside them — a two-line
+     column of inputs beside a tall photograph is the pairing the old
+     two-column grid was removed for. */
+  .authorIdentityFields {
+    grid-column: 1 / -1;
+  }
+}
+
+/* The backdrop is a wide, shallow plate; at the top of its column it reads as
+   a caption to the portrait beside it rather than as a field of its own. */
+.authorBackgroundField {
+  align-content: start;
 }
 
 .authorIdentityFields {
@@ -1530,15 +1590,26 @@
   gap: var(--cw-space-xs);
 }
 
+/* ── An organ that sits ON a photograph takes the photograph's material,
+   not the theme's (2026-09-05) ────────────────────────────────────────────────
+   These controls stand on an image the author uploaded, and the theme knows
+   nothing about that image. Dressed in theme ink they invert exactly wrong
+   half the time: the light theme put dark glyphs on a near-black portrait, the
+   dark theme put light glyphs on a bright one, and in both cases the control
+   vanished into the picture it was there to command.
+
+   `--cw-mat-surface-night` is the answer the platform already had — a fixed
+   dark ground with `accent-contrast` on it, the same recipe `.onMedia` gives
+   the replace/remove pair on the background slot. It does not follow the
+   theme, because the thing under it does not either. */
 .authorPhotoToolbarAction {
-  composes: base chromeBare square from "../PlatformButtons.module.css";
-  color: var(--cw-platform-muted);
+  composes: onMedia square from "../PlatformButtons.module.css";
   flex: none;
   cursor: pointer;
 }
 
 .authorPhotoToolbarAction:hover {
-  color: var(--cw-platform-text);
+  background-color: color-mix(in srgb, var(--cw-mat-surface-night) 88%, transparent);
 }
 
 .authorPhotoToolbarAction:has(.visuallyHidden:focus-visible) {
@@ -1552,10 +1623,17 @@
    input (`AuthorMediaSlot`), not a blank rectangle with a corner pencil icon
    nobody would find. Dashed, not filled, so it reads as "nothing here yet"
    rather than as a loaded plate. */
+/* ONE LOCKUP, NOT TWO THINGS IN ONE BOX. `place-items: center` centres each
+   child inside ITS OWN implicit row, and a grid with no row sizing splits the
+   free height between them — so in a 13rem slot the arrow floated a hundred
+   pixels above its own label and the two stopped reading as one control.
+   `align-content: center` centres the PAIR and lets the rows hug their
+   content, which is what the `2xs` gap was always meant to be measuring. */
 .authorPhotoEmpty,
 .authorBackgroundEmpty {
   display: grid;
-  place-items: center;
+  align-content: center;
+  justify-items: center;
   gap: var(--cw-space-2xs);
   padding: var(--cw-space-sm);
   border: var(--cw-contour-width) var(--cw-contour-style) var(--cw-contour-empty);
@@ -1658,8 +1736,13 @@
 /* Shrinkable, not fixed. `flex: none` on a 10rem circle beside a 3rem button
    needs 212px that the tablet band's half-column does not always have — at
    200% zoom (WCAG 1.4.4) it overflowed sideways. The card frame next to it
-   was already `1 1 auto`; this is the asymmetry, not a second rule. */
-.photoCropAside .photoCropAvatar {
+   was already `1 1 auto`; this is the asymmetry, not a second rule.
+
+   It is the STACK that is sized, not the circle: since the zoom joined the
+   crop, the flex item here is the frame-plus-slider box and the circle is a
+   grid child inside it. Sizing the circle alone would leave the box to claim
+   the whole row and hang the slider off the far side of the avatar. */
+.photoCropAside > .photoCropStack {
   flex: 0 1 auto;
   max-width: 100%;
 }
@@ -1741,6 +1824,50 @@
   pointer-events: none;
 }
 
+/* The focus grip, on the same footing as the toolbar pair above it: it is the
+   one mark on the picture that says where the crop is aimed, and it has to
+   read against whatever the picture happens to be there. */
+/* The frame and its zoom are one control in two parts, so they share a box:
+   the slider belongs to the picture above it, not to the panel around them. */
+.photoCropStack {
+  display: grid;
+  gap: var(--cw-space-2xs);
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+/* A LINE, NOT A PLATE — the same reasoning as the builder's own zoom row
+   (Builder.module.css): a bordered control directly under a picture reads as
+   a second frame arguing with the first. `tabular-nums` keeps the multiplier
+   from changing width mid-drag. */
+.photoZoomRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+}
+
+.photoZoomValue {
+  min-width: 2.6rem;
+  color: var(--cw-platform-muted);
+  font-size: var(--ds-type-label-size);
+  font-variant-numeric: tabular-nums;
+}
+
+.photoZoomInput {
+  flex: 1;
+  min-width: 0;
+  height: 1.25rem;
+  margin: 0;
+  accent-color: var(--cw-platform-accent);
+  cursor: ew-resize;
+}
+
+.photoZoomInput:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+  border-radius: var(--cw-radius-sm);
+}
+
 .photoCropHandle {
   position: absolute;
   width: 2.25rem;
@@ -1748,11 +1875,13 @@
   display: grid;
   place-items: center;
   translate: -50% -50%;
-  border: 1px solid var(--cw-platform-border);
+  border: 1px solid color-mix(in srgb, var(--cw-platform-accent-contrast) 28%, transparent);
   border-radius: var(--cw-radius-pill);
-  background: var(--cw-mat-tint-media, var(--cw-mat-surface));
-  color: var(--cw-platform-text);
-  box-shadow: var(--cw-mat-shadow-soft);
+  background-color: color-mix(in srgb, var(--cw-mat-surface-night) var(--cw-mat-tint-chrome-floor), transparent);
+  background-image: var(--cw-mat-grain-image);
+  color: var(--cw-platform-accent-contrast);
+  box-shadow: var(--cw-mat-shadow-raised);
+  backdrop-filter: var(--cw-mat-filter);
   pointer-events: none;
 }
 

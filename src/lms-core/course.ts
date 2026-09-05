@@ -212,6 +212,18 @@ export type Course = {
     /** 0–100 focal point for the 9:16 mobile hero crop. */
     mobileCropX?: number;
     mobileCropY?: number;
+    /**
+     * Magnification per frame, 1–4, where 1 is the whole plate as `cover`
+     * fills that shape. Absent means 1, so every cover authored before the
+     * zoom existed keeps the framing it was saved with.
+     *
+     * ONE PER FRAME, following the focal points exactly. `wideCropScale` is
+     * there for the same reason `wideCropY` is: past 16:9 the hero crops hard
+     * enough that the answer stops being the landscape card's answer.
+     */
+    cropScale?: number;
+    wideCropScale?: number;
+    mobileCropScale?: number;
   };
   /**
    * Where this course sits in the author's own grid. Authors order their shelf
@@ -389,6 +401,17 @@ export function validateCourse(
       assert(
         typeof value === "number" && Number.isInteger(value) && value >= 0 && value <= 100,
         `lms_course_invalid_cover_crop:${path}.${cropKey}`
+      );
+    }
+    // Not `Number.isInteger` like the focal points above: a zoom worth having
+    // moves in steps finer than one whole multiple, so the scale is stored as
+    // the fraction the slider produces.
+    for (const scaleKey of ["cropScale", "wideCropScale", "mobileCropScale"] as const) {
+      const value = input.cover[scaleKey];
+      if (value === undefined) continue;
+      assert(
+        typeof value === "number" && Number.isFinite(value) && value >= 1 && value <= 4,
+        `lms_course_invalid_cover_crop:${path}.${scaleKey}`
       );
     }
   }

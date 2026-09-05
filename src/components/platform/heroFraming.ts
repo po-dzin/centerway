@@ -17,9 +17,11 @@ export type HeroFramingOptions = {
   wideY?: string;
   /** Vertical focus once the viewport is wider than 21:9. Defaults to wideY. */
   ultrawideY?: string;
-  /** Zoom over `cover` on the portrait master. Only a phone plate may ask for one. */
+  /** Zoom over `cover` on the portrait master, for a hand-written hero. A course
+      cover carries its own in `artwork.mobileScale`; this option wins over it. */
   mobileZoom?: string;
-  /** Origin for that zoom. */
+  /** Origin override for that zoom. Absent means the mobile focus itself, which
+      is the origin that holds the subject still — see the contract's own note. */
   mobileOrigin?: string;
 };
 
@@ -35,7 +37,10 @@ function resolveFocus(position?: string) {
 }
 
 export function heroFraming(
-  artwork?: Pick<PlatformOfferArtwork, "desktopPosition" | "mobilePosition" | "widePosition">,
+  artwork?: Pick<
+    PlatformOfferArtwork,
+    "desktopPosition" | "mobilePosition" | "widePosition" | "desktopScale" | "mobileScale" | "wideScale"
+  >,
   options: HeroFramingOptions = {},
 ): CSSProperties {
   const desktop = resolveFocus(artwork?.desktopPosition);
@@ -44,6 +49,14 @@ export function heroFraming(
      passes it as an option. Same variable either way. */
   const wideY = options.wideY ?? (artwork?.widePosition ? resolveFocus(artwork.widePosition).y : undefined);
 
+  /* Only a zoom worth having is declared. `scale(1)` is the default the
+     contract already carries, and writing it inline would cost every hero a
+     compositing layer for a transform that changes nothing. */
+  const zoom = (value: number | undefined) => (typeof value === "number" && value > 1 ? String(value) : undefined);
+  const desktopZoom = zoom(artwork?.desktopScale);
+  const wideZoom = zoom(artwork?.wideScale);
+  const mobileZoom = options.mobileZoom ?? zoom(artwork?.mobileScale);
+
   return {
     "--hero-photo-x-desktop": desktop.x,
     "--hero-photo-y-desktop": desktop.y,
@@ -51,7 +64,9 @@ export function heroFraming(
     "--hero-photo-y-mobile": mobile.y,
     ...(wideY ? { "--hero-photo-y-wide": wideY } : {}),
     ...(options.ultrawideY ? { "--hero-photo-y-ultrawide": options.ultrawideY } : {}),
-    ...(options.mobileZoom ? { "--hero-photo-zoom-mobile": options.mobileZoom } : {}),
+    ...(desktopZoom ? { "--hero-photo-zoom-desktop": desktopZoom } : {}),
+    ...(wideZoom ? { "--hero-photo-zoom-wide": wideZoom } : {}),
+    ...(mobileZoom ? { "--hero-photo-zoom-mobile": mobileZoom } : {}),
     ...(options.mobileOrigin ? { "--hero-photo-origin-mobile": options.mobileOrigin } : {}),
   } as CSSProperties;
 }

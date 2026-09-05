@@ -1,5 +1,6 @@
 "use client";
 
+import { coverCardStyle } from "@/lib/lms/courseCover";
 import { useToast } from "@/components/ToastProvider";
 
 import Link from "next/link";
@@ -904,7 +905,7 @@ function CourseCard(props: EntryProps) {
               alt={course.cover.alt}
               loading="lazy"
               decoding="async"
-              style={{ objectPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%` }}
+              style={coverCardStyle(course.cover)}
             />
           ) : (
             // Not a grey box: a course with no cover still has a palette, and the

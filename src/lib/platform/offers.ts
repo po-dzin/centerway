@@ -20,6 +20,7 @@
  * cannot collide and no existing purchase changes shape.
  */
 
+import { coverArtworkFraming } from "@/lib/lms/courseCover";
 import { unstable_cache } from "next/cache";
 
 import { COURSE_LIST_TAG, courseTag, getLiveCourse, listLiveCourses } from "@/lib/lms/liveCatalog";
@@ -306,7 +307,7 @@ export async function listStorefrontCourses(): Promise<StorefrontCard[]> {
                 // from the repository instead has no such sibling to promise,
                 // so the card falls back to the full plate as it always did.
                 ...(card ? { card } : {}),
-                desktopPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%`,
+                ...coverArtworkFraming(course.cover),
               },
             }
           : {}),

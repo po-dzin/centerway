@@ -11,7 +11,7 @@ import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
 import type { CwIconName } from "@/components/iconNames";
-import { authorAvatarCropPosition } from "@/lib/lms/authorPhoto";
+import { authorAvatarCropStyle } from "@/lib/lms/authorPhoto";
 import type { Author } from "@/lms-core";
 import styles from "./PlatformOfferCommerce.module.css";
 import offerStyles from "./PlatformOfferStyles";
@@ -118,7 +118,7 @@ export function OfferAuthor({ author, note }: { author: Author | null; note?: st
               alt={author.photo.alt}
               width={88}
               height={88}
-              style={{ objectPosition: authorAvatarCropPosition(author.photo) }}
+              style={authorAvatarCropStyle(author.photo)}
             />
           ) : null}
           <div className={styles.authorBody}>

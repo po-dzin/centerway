@@ -3520,6 +3520,9 @@
   pointer-events: none;
 }
 
+/* The same material the cabinet's crop grip takes, and for the same reason —
+   see the note over `.photoCropHandle` in Cabinet.module.css. A cover is an
+   uploaded photograph; the theme has no opinion about what is under this grip. */
 .coverFocusHandle {
   position: absolute;
   width: 2.25rem;
@@ -3527,11 +3530,13 @@
   display: grid;
   place-items: center;
   translate: -50% -50%;
-  border: 1px solid var(--builder-rule);
+  border: 1px solid color-mix(in srgb, var(--cw-platform-accent-contrast) 28%, transparent);
   border-radius: var(--cw-radius-pill);
-  background: var(--cw-mat-tint-media);
-  color: var(--cw-platform-text);
-  box-shadow: var(--cw-mat-shadow-soft);
+  background-color: color-mix(in srgb, var(--cw-mat-surface-night) var(--cw-mat-tint-chrome-floor), transparent);
+  background-image: var(--cw-mat-grain-image);
+  color: var(--cw-platform-accent-contrast);
+  box-shadow: var(--cw-mat-shadow-raised);
+  backdrop-filter: var(--cw-mat-filter);
   pointer-events: none;
 }
 
@@ -3559,6 +3564,45 @@
 
 .coverResetAction:hover {
   color: var(--cw-platform-text);
+}
+
+/* ── The zoom, under its frame ───────────────────────────────────────────────
+   A LINE, NOT A PLATE. This sits directly under a picture, and a bordered
+   control box there reads as a second frame competing with the one above it.
+   The track is the same drawn line the rest of the builder uses for rules, and
+   `accent-color` hands the thumb to the browser's own control — which is the
+   only way to get a native range that stays legible in both themes without
+   rebuilding the thumb per engine.
+
+   The multiplier is `tabular-nums` so the row does not twitch on every step of
+   the drag: 1.05 and 1.10 are the same width, and a readout that changes width
+   while you drag makes the slider feel like it is fighting you. */
+.coverZoomRow {
+  display: flex;
+  align-items: center;
+  gap: var(--cw-space-2xs);
+}
+
+.coverZoomValue {
+  min-width: 2.6rem;
+  color: var(--cw-platform-muted);
+  font-size: 0.76rem;
+  font-variant-numeric: tabular-nums;
+}
+
+.coverZoomInput {
+  flex: 1;
+  min-width: 0;
+  height: 1.25rem;
+  margin: 0;
+  accent-color: var(--cw-platform-accent);
+  cursor: ew-resize;
+}
+
+.coverZoomInput:focus-visible {
+  outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
+  outline-offset: var(--ds-focus-ring-offset);
+  border-radius: var(--cw-radius-sm);
 }
 
 @media (min-width: 901px) {

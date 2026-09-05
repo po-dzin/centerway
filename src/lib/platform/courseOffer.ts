@@ -15,6 +15,7 @@
  * it is, not "Tagline".
  */
 
+import { coverArtworkFraming } from "@/lib/lms/courseCover";
 import type { OfferSurface } from "@/components/platform/ProgramDetailPage";
 import { plural } from "@/lib/plural";
 import { offerName, offerSubtitle } from "@/lib/platform/offerPreview";
@@ -135,11 +136,7 @@ export function toOfferSurface(course: Course): OfferSurface {
           artwork: {
             desktop: course.cover.src,
             ...(course.cover.mobileSrc ? { mobile: course.cover.mobileSrc } : {}),
-            desktopPosition: `${course.cover.cropX ?? 50}% ${course.cover.cropY ?? 50}%`,
-            mobilePosition: `${course.cover.mobileCropX ?? course.cover.cropX ?? 50}% ${course.cover.mobileCropY ?? course.cover.cropY ?? 50}%`,
-            ...(course.cover.wideCropY !== undefined
-              ? { widePosition: `${course.cover.cropX ?? 50}% ${course.cover.wideCropY}%` }
-              : {}),
+            ...coverArtworkFraming(course.cover),
           },
         }
       : {}),

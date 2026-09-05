@@ -25,6 +25,8 @@ import { useToast } from "@/components/ToastProvider";
 import type { Author, AuthorProfileBlock } from "@/lms-core";
 import type { ProfileLang } from "@/components/platform/profile/types";
 import { AUTHOR_AVATAR_CROP_DEFAULT, AUTHOR_CARD_CROP_DEFAULT } from "@/lib/lms/authorPhoto";
+import { CropZoom, cropKeyZoom, cropWheelZoom } from "@/components/media/CropZoom";
+import { CROP_SCALE_MIN, cropStyle } from "@/lib/media/imageCrop";
 import type { AuthorProfileInput } from "./useCabinet";
 import styles from "./Cabinet.module.css";
 import { matte } from "./CourseCard";
@@ -73,8 +75,11 @@ function PhotoCropPreview({
   shape,
   x,
   y,
+  scale,
   onChange,
+  onScaleChange,
   label,
+  zoomLabel,
   position,
 }: {
   src: string;
@@ -82,8 +87,12 @@ function PhotoCropPreview({
   shape: PhotoCropShape;
   x: number;
   y: number;
+  /** 1–4, the frame's magnification about its own focus point. */
+  scale: number;
   onChange: (x: number, y: number) => void;
+  onScaleChange: (scale: number) => void;
   label: string;
+  zoomLabel: string;
   position: string;
 }) {
   const activePointer = useRef<number | null>(null);
@@ -118,6 +127,10 @@ function PhotoCropPreview({
 
   const moveByKey = (event: KeyboardEvent<HTMLDivElement>) => {
     const step = event.shiftKey ? 5 : 2;
+    if (cropKeyZoom(scale, event.key, onScaleChange)) {
+      event.preventDefault();
+      return;
+    }
     if (event.key === "ArrowLeft") onChange(clampCrop(x - step), y);
     else if (event.key === "ArrowRight") onChange(clampCrop(x + step), y);
     else if (event.key === "ArrowUp") onChange(x, clampCrop(y - step));
@@ -134,27 +147,40 @@ function PhotoCropPreview({
        component whose file carries a full `en` table. The live region reports
        where the focus point moved to, which arrow keys otherwise change in
        complete silence. */
-    <div
-      className={styles[frameClass]}
-      data-dragging={dragging || undefined}
-      tabIndex={0}
-      role="group"
-      aria-label={label}
-      aria-describedby={`${frameClass}-position`}
-      onKeyDown={moveByKey}
-      onPointerDown={beginDrag}
-      onPointerMove={drag}
-      onPointerUp={endDrag}
-      onPointerCancel={endDrag}
-    >
-      {/* eslint-disable-next-line @next/next/no-img-element -- the cabinet's own upload, any public host */}
-      <img src={src} alt={alt} style={{ objectPosition: `${x}% ${y}%` }} draggable={false} />
-      <span className={styles.photoCropHandle} style={{ left: `${x}%`, top: `${y}%` }} aria-hidden="true">
-        <Icon name="grip" size={20} />
-      </span>
-      <span className={styles.visuallyHidden} id={`${frameClass}-position`} role="status">
-        {position}
-      </span>
+    <div className={styles.photoCropStack}>
+      <div
+        className={styles[frameClass]}
+        data-dragging={dragging || undefined}
+        tabIndex={0}
+        role="group"
+        aria-label={label}
+        aria-describedby={`${frameClass}-position`}
+        onKeyDown={moveByKey}
+        onWheel={(event) => cropWheelZoom(scale, event, onScaleChange)}
+        onPointerDown={beginDrag}
+        onPointerMove={drag}
+        onPointerUp={endDrag}
+        onPointerCancel={endDrag}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- the cabinet's own upload, any public host */}
+        <img src={src} alt={alt} style={cropStyle({ x, y, scale }, { x: 50, y: 50 })} draggable={false} />
+        <span className={styles.photoCropHandle} style={{ left: `${x}%`, top: `${y}%` }} aria-hidden="true">
+          <Icon name="grip" size={20} />
+        </span>
+        <span className={styles.visuallyHidden} id={`${frameClass}-position`} role="status">
+          {position}
+        </span>
+      </div>
+      {/* ONE SLIDER PER FRAME. The card is a plate a whole person stands in and
+          the avatar is a circle that usually wants a face — an author zooming
+          the circle onto the face is not asking the card to do the same. Same
+          reason the two already keep separate focal points. */}
+      <CropZoom
+        value={scale}
+        onChange={onScaleChange}
+        label={zoomLabel}
+        classes={{ row: styles.photoZoomRow, input: styles.photoZoomInput, value: styles.photoZoomValue }}
+      />
     </div>
   );
 }
@@ -389,7 +415,8 @@ const STRINGS = {
     consultationSummaryLabel: "Кому і з чим допомагаю",
     consultationContactLabel: "Посилання для домовленості",
     consultationRequired: "Потрібно, поки консультації увімкнено",
-    cropFocus: "Точка фокуса. Перетягуйте або використовуйте стрілки.",
+    cropFocus: "Точка фокуса. Перетягуйте або використовуйте стрілки. Ctrl і колесо — масштаб.",
+    cropZoom: "Масштаб",
     cropFocusAt: "Фокус: {x}% по горизонталі, {y}% по вертикалі",
     nameRequired: "Ім'я потрібне завжди — воно стоїть під кожним курсом",
     blockNumber: "Блок",
@@ -401,6 +428,7 @@ const STRINGS = {
     photoCropAvatarNote: "Сторінка автора · автор курсу",
     photoCropCenter: "По центру",
     background: "Фон публічної сторінки",
+    backgroundHint: "Друкується тільки на вашій сторінці, під портретом.",
     backgroundUpload: "Завантажити фон",
     backgroundReplace: "Замінити фон",
     backgroundRemove: "Прибрати фон",
@@ -465,7 +493,8 @@ const STRINGS = {
     consultationSummaryLabel: "Who you help, and with what",
     consultationContactLabel: "Link for arranging it",
     consultationRequired: "Needed while consultations are on",
-    cropFocus: "Focal point. Drag, or use the arrow keys.",
+    cropFocus: "Focal point. Drag, or use the arrow keys. Ctrl and the wheel zoom.",
+    cropZoom: "Zoom",
     cropFocusAt: "Focus: {x}% across, {y}% down",
     nameRequired: "Always needed — it prints under every course",
     blockNumber: "Block",
@@ -477,6 +506,7 @@ const STRINGS = {
     photoCropAvatarNote: "Author's own page · course byline",
     photoCropCenter: "Centre",
     background: "Public page background",
+    backgroundHint: "Prints on your own page only, behind the portrait.",
     backgroundUpload: "Upload background",
     backgroundReplace: "Replace background",
     backgroundRemove: "Remove background",
@@ -725,8 +755,13 @@ export function AuthorProfileFold({
                                 position={cropPosition(draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x, draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y)}
                                 x={draft.photo.cropX ?? AUTHOR_CARD_CROP_DEFAULT.x}
                                 y={draft.photo.cropY ?? AUTHOR_CARD_CROP_DEFAULT.y}
+                                scale={draft.photo.cropScale ?? CROP_SCALE_MIN}
+                                zoomLabel={`${t.cropZoom} — ${t.photoCropCardTitle}`}
                                 onChange={(x, y) =>
                                   setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, cropX: x, cropY: y } } : prev))
+                                }
+                                onScaleChange={(scale) =>
+                                  setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, cropScale: scale } } : prev))
                                 }
                               />
                               <div className={styles.authorMediaActions}>
@@ -764,7 +799,19 @@ export function AuthorProfileFold({
                                 onClick={() =>
                                   setDraft((prev) =>
                                     prev.photo
-                                      ? { ...prev, photo: { ...prev.photo, cropX: AUTHOR_CARD_CROP_DEFAULT.x, cropY: AUTHOR_CARD_CROP_DEFAULT.y } }
+                                      ? {
+                                          ...prev,
+                                          photo: {
+                                            ...prev.photo,
+                                            cropX: AUTHOR_CARD_CROP_DEFAULT.x,
+                                            cropY: AUTHOR_CARD_CROP_DEFAULT.y,
+                                            /* Recentring undoes the whole crop, zoom
+                                               included — a frame recentred but still
+                                               at 2.4× is not the frame the button's
+                                               icon promises to give back. */
+                                            cropScale: CROP_SCALE_MIN,
+                                          },
+                                        }
                                       : prev
                                   )
                                 }
@@ -788,8 +835,13 @@ export function AuthorProfileFold({
                               position={cropPosition(draft.photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x, draft.photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y)}
                               x={draft.photo.avatarCropX ?? AUTHOR_AVATAR_CROP_DEFAULT.x}
                               y={draft.photo.avatarCropY ?? AUTHOR_AVATAR_CROP_DEFAULT.y}
+                              scale={draft.photo.avatarCropScale ?? CROP_SCALE_MIN}
+                              zoomLabel={`${t.cropZoom} — ${t.photoCropAvatarTitle}`}
                               onChange={(x, y) =>
                                 setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, avatarCropX: x, avatarCropY: y } } : prev))
+                              }
+                              onScaleChange={(scale) =>
+                                setDraft((prev) => (prev.photo ? { ...prev, photo: { ...prev.photo, avatarCropScale: scale } } : prev))
                               }
                             />
                             <button
@@ -800,7 +852,15 @@ export function AuthorProfileFold({
                                 onClick={() =>
                                   setDraft((prev) =>
                                     prev.photo
-                                      ? { ...prev, photo: { ...prev.photo, avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x, avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y } }
+                                      ? {
+                                          ...prev,
+                                          photo: {
+                                            ...prev.photo,
+                                            avatarCropX: AUTHOR_AVATAR_CROP_DEFAULT.x,
+                                            avatarCropY: AUTHOR_AVATAR_CROP_DEFAULT.y,
+                                            avatarCropScale: CROP_SCALE_MIN,
+                                          },
+                                        }
                                       : prev
                                   )
                                 }
@@ -848,6 +908,32 @@ export function AuthorProfileFold({
                   )}
                   {uploading && uploadTarget === "photo" ? <span className={styles.authorNotice} role="status">{t.photoUploading}</span> : null}
                 {uploadError && uploadTarget === "photo" ? <span className={styles.authorNoticeError} role="alert">{uploadError}</span> : null}
+                </div>
+                {/* THE BACKGROUND STANDS WITH THE PHOTO (2026-09-05). It was
+                    two sections down, under «Сторінка», grouped by where it
+                    prints. That is true of the data and wrong for the eye: the
+                    two images are read together on the author's page — the
+                    portrait sits ON this backdrop — and choosing them a screen
+                    apart is choosing them blind. Where it prints is still said
+                    in its own hint, which is where someone filling it in is
+                    already looking. */}
+                <div className={`${styles.authorField} ${styles.authorBackgroundField}`}>
+                  <span>{t.background}</span>
+                  <p className={styles.authorNotice}>{t.backgroundHint}</p>
+                  <AuthorMediaSlot
+                    src={draft.background?.src}
+                    uploading={uploading}
+                    uploadLabel={t.backgroundUpload}
+                    replaceLabel={t.backgroundReplace}
+                    removeLabel={t.backgroundRemove}
+                    dropLabel={t.mediaDrop}
+                    previewClassName={styles.authorBackgroundPreview}
+                    emptyClassName={styles.authorBackgroundEmpty}
+                    onFile={(file) => void handleBackground(file)}
+                    onRemove={() => setDraft((prev) => ({ ...prev, background: null }))}
+                  />
+                  {uploading && uploadTarget === "background" ? <span className={styles.authorNotice} role="status">{t.photoUploading}</span> : null}
+                  {uploadError && uploadTarget === "background" ? <span className={styles.authorNoticeError} role="alert">{uploadError}</span> : null}
                 </div>
                 <div className={styles.authorIdentityFields}>
                   <label className={styles.authorField}>
@@ -1039,23 +1125,6 @@ export function AuthorProfileFold({
                   onChange={(e) => setDraft((prev) => ({ ...prev, slug: e.target.value }))}
                 />
               </label>
-              <div className={styles.authorField}>
-                <span>{t.background}</span>
-                <AuthorMediaSlot
-                  src={draft.background?.src}
-                  uploading={uploading}
-                  uploadLabel={t.backgroundUpload}
-                  replaceLabel={t.backgroundReplace}
-                  removeLabel={t.backgroundRemove}
-                  dropLabel={t.mediaDrop}
-                  previewClassName={styles.authorBackgroundPreview}
-                  emptyClassName={styles.authorBackgroundEmpty}
-                  onFile={(file) => void handleBackground(file)}
-                  onRemove={() => setDraft((prev) => ({ ...prev, background: null }))}
-                />
-                {uploading && uploadTarget === "background" ? <span className={styles.authorNotice} role="status">{t.photoUploading}</span> : null}
-                {uploadError && uploadTarget === "background" ? <span className={styles.authorNoticeError} role="alert">{uploadError}</span> : null}
-              </div>
               <div className={`${styles.authorField} ${styles.authorProfileBlocksField}`}>
                 <span>{t.profileBlocks}</span>
                 {draft.profileBlocks.map((block, index) => (

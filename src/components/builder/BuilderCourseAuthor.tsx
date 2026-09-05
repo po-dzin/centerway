@@ -24,7 +24,7 @@ import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
-import { authorAvatarCropPosition } from "@/lib/lms/authorPhoto";
+import { authorAvatarCropStyle } from "@/lib/lms/authorPhoto";
 import { authorProfileCompletion, type Course } from "@/lms-core";
 import { loadCourseAuthorLink, setCourseAuthorLink, type CourseAuthorLinkDto } from "./builderClient";
 import { FieldInput } from "./BuilderFields";
@@ -125,7 +125,7 @@ export function BuilderCourseAuthor({
                 className={styles.authorPreviewPhoto}
                 src={linked.photo.src}
                 alt={linked.photo.alt}
-                style={{ objectPosition: authorAvatarCropPosition(linked.photo) }}
+                style={authorAvatarCropStyle(linked.photo)}
               />
             ) : (
               <span className={`${styles.authorPreviewPhoto} ${styles.authorPreviewPhotoEmpty}`} aria-hidden="true">

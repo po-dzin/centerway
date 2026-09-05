@@ -67,8 +67,8 @@
   --hero-photo-x: var(--hero-photo-x-desktop, 50%);
   --hero-photo-y: var(--hero-photo-y-desktop, 50%);
   --hero-photo-shift-y: 0%;
-  --hero-photo-scale: 1;
-  --hero-photo-origin: center center;
+  --hero-photo-scale: var(--hero-photo-zoom-desktop, 1);
+  --hero-photo-origin: var(--hero-photo-x) var(--hero-photo-y);
 }
 
 /* ── The hero framing contract ───────────────────────────────────────────────
@@ -88,8 +88,10 @@
      --hero-photo-x-mobile  / -y-mobile    focus on the portrait master
      --hero-photo-y-wide                   vertical focus past 16:9  (optional)
      --hero-photo-y-ultrawide              vertical focus past 21:9  (optional)
+     --hero-photo-zoom-desktop             zoom on the landscape plate (optional)
+     --hero-photo-zoom-wide                zoom past 16:9              (optional)
      --hero-photo-zoom-mobile              zoom on the portrait master (optional)
-     --hero-photo-origin-mobile            origin for that zoom       (optional)
+     --hero-photo-origin-mobile            origin override for the phone zoom
 
    Two lines decide which of them applies, and they are different kinds of line:
 
@@ -104,17 +106,29 @@
       and the wider it gets the more a mid-range y eats *both* edges — hence the
       two optional relief steps, for the heroes whose composition needs them.
 
-   Above `cover` there is no zoom: the plate is already the frame an author
-   chose, and scaling past it only throws away the edges they kept. The one
-   exception is a portrait master read on a phone, where a hero may opt into a
-   zoom explicitly. */
+   ZOOM, AT EVERY STEP (2026-09-05). This contract used to allow a zoom on the
+   phone alone, reasoning that the plate is already the frame its author chose
+   and scaling past it only throws away the edges they kept. That was true of a
+   plate cropped in an image editor before upload and false of one uploaded
+   whole: an author who shoots a room and wants the card to hold the face has
+   no editor in this product but this one, and telling them to go and re-export
+   the file is the platform declining to do its own job. So the zoom is a
+   frame-by-frame control now, authored beside the focus it magnifies about.
+
+   The origin follows the focus and is not authored separately. Under `cover`,
+   `object-position: X% Y%` seats the point at X%,Y% OF THE IMAGE at X%,Y% OF
+   THE BOX — so scaling about that same point of the box holds the focus still
+   and grows the picture around it. Any other origin slides the subject out of
+   the frame the moment the zoom moves. `--hero-photo-origin-mobile` survives
+   as an override for the one hero that authored one (`hub`), not as the way
+   this is meant to be written. */
 @media (min-width: 561px) {
   .heroFeature {
     --hero-photo-x: var(--hero-photo-x-desktop, 50%);
     --hero-photo-y: var(--hero-photo-y-desktop, 50%);
     --hero-photo-shift-y: 0%;
-    --hero-photo-scale: 1;
-    --hero-photo-origin: center center;
+    --hero-photo-scale: var(--hero-photo-zoom-desktop, 1);
+    --hero-photo-origin: var(--hero-photo-x) var(--hero-photo-y);
   }
 }
 
@@ -124,6 +138,7 @@
 @media (min-width: 561px) and (min-aspect-ratio: 16 / 9) {
   .heroFeature {
     --hero-photo-y: var(--hero-photo-y-wide, var(--hero-photo-y-desktop, 50%));
+    --hero-photo-scale: var(--hero-photo-zoom-wide, var(--hero-photo-zoom-desktop, 1));
   }
 }
 
@@ -143,7 +158,7 @@
     --hero-photo-y: var(--hero-photo-y-mobile, var(--hero-photo-y-desktop, 50%));
     --hero-photo-shift-y: 0%;
     --hero-photo-scale: var(--hero-photo-zoom-mobile, 1);
-    --hero-photo-origin: var(--hero-photo-origin-mobile, center center);
+    --hero-photo-origin: var(--hero-photo-origin-mobile, var(--hero-photo-x) var(--hero-photo-y));
   }
 }
 
