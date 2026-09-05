@@ -58,10 +58,25 @@ describe("reader / author preview chrome contract", () => {
     for (const name of ["sizeMenu", "markToolbar"]) {
       expect(rule(css, name)).toContain("box-shadow: var(--cw-mat-shadow-raised)");
     }
-    const chrome = rule(css, "readerChrome");
-    expect(chrome).toContain("env(safe-area-inset-top)");
-    expect(chrome).toContain("max-inline-size: 46rem");
-    expect(chrome).toContain("margin-inline: auto");
+    /* The reader's row, island and cluster moved to `ChromeOrgans.module.css`
+       on 2026-09-05, where the library and every future bar-less surface read
+       the same recipe. The contract did not move with them — it followed one
+       hop: this asserts that the reader still COMPOSES that row, and that the
+       row still carries the geometry it was written to protect. Asserting only
+       the `composes` line would let the numbers drift; asserting only the
+       shared module would let the reader quietly stop using it. */
+    const organs = read("src/components/platform/layout/ChromeOrgans.module.css");
+    expect(rule(css, "readerChrome")).toContain('composes: row from "../platform/layout/ChromeOrgans.module.css"');
+    expect(rule(css, "readerBack")).toContain('composes: organ from "../platform/layout/ChromeOrgans.module.css"');
+    expect(rule(css, "readerTools")).toContain('composes: cluster from "../platform/layout/ChromeOrgans.module.css"');
+    const row = rule(organs, "row");
+    expect(row).toContain("env(safe-area-inset-top)");
+    expect(row).toContain("max-inline-size: 46rem");
+    expect(row).toContain("margin-inline: auto");
+    /* The islands take the touch target, not their glyph — the one number a
+       redraw of this material is most likely to lose. */
+    expect(rule(organs, "organ")).toContain("var(--ds-touch-target-min)");
+    expect(rule(organs, "cluster")).toContain("min-height: var(--ds-touch-target-min)");
     expect(rule(css, "readerPreviewBack")).toContain("base chrome hug");
   });
 
