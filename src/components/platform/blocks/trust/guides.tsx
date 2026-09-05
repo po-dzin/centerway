@@ -54,11 +54,21 @@ export async function HubGuides() {
   return (
     <PlatformBlock
       id="author"
-      label="Провідники"
-      /* The heading follows the data rather than the intention: calling one
-         person «Провідники» is a promise the page cannot keep yet. */
-      title={single ? "Про автора" : "Провідники CenterWay"}
-      lead="Хто веде цей процес і як відбувається супровід?"
+      /* «АВТОРИ», THE WORD THE REST OF THE PRODUCT USES. This block and
+         `/consult` said «Провідники», `/experts` said «Автори», the course
+         page says «Автор» and the routes are `/expert`, `/experts` — four
+         names for one object, and a reader who meets the same person on two
+         of those surfaces had to work out they were the same kind of thing.
+
+         AND A TITLE THAT IS NOT THE LABEL AGAIN. Every other block on this
+         page reads noun then sentence — «Продукти / Природна підтримка
+         процесу», «Програми / Глибші формати…» — and this one read
+         «Провідники / Провідники CenterWay». With the title carrying the
+         sentence, the count no longer changes the heading either: one author
+         or four, the question the block answers is the same. */
+      label="Автори"
+      title="Хто веде цей процес"
+      lead="Досвід, підхід і курси — у профілі кожного автора."
       /* The block introduces people; the consultation is what a reader does
          with that introduction, and until now the home page never said so. */
       headActions={<PlatformBlockLink href="/consult" label="Консультації" />}

@@ -45,11 +45,13 @@ export function PlatformHomePage() {
  * IS the consultation, and the credentials and the path are the evidence for it
  * rather than a separate destination. `/expert` redirects here.
  *
- * The author blocks keep their own components — `ExpertProof` is the fact grid
- * and `ExpertPath` the route through the work — so nothing about them had to be
- * rewritten to move. They land in `beforeSupport`, between "what happens" and
- * the request form: after the reader knows what is on offer, before they are
- * asked to commit to it.
+ * The authors arrive as `ConsultantDirectory` — the same `AuthorCard` the home
+ * page and `/experts` render, reading `lms_authors` — and not as the hand-built
+ * founder panel this page used to carry. That panel outlived its own data: it
+ * printed «12 років практики» from a constant while the profile in the database
+ * said twenty. It has been deleted along with the biography written beside it.
+ * The directory lands in `beforeSupport`, between "what happens" and the request
+ * form: after the reader knows what is on offer, before they are asked to commit.
  */
 export function PlatformConsultPage({ authors = [] }: { authors?: Author[] }) {
   return (

@@ -40,6 +40,9 @@ describe("ConsultantDirectory", () => {
     /* Every card carries the way through to the author's own page. */
     expect(html).toContain('href="/expert/author"');
     expect(html).toContain("Більше про автора");
-    expect(html).toContain("Автори CenterWay");
+    /* The block's own header: the noun labels it, the heading is a sentence —
+       the same shape every block on the hub uses. */
+    expect(html).toContain("Автори");
+    expect(html).toContain("З ким можна продовжити розмову");
   });
 });

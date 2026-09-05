@@ -27,7 +27,16 @@ export default async function ExpertsIndexPage() {
   return (
     <PlatformShell>
       <>
-        <PlatformBlock id="authors" label="Автори" title="Автори CenterWay" lead="Хто веде курси й програми на платформі.">
+        {/* The label is the noun, the title is the sentence — the idiom every
+            block on the hub follows. This one used to read «Автори / Автори
+            CenterWay» over a lead that was the sentence the title should have
+            been. */}
+        <PlatformBlock
+          id="authors"
+          label="Автори"
+          title="Хто веде курси й програми"
+          lead="У профілі — досвід, напрям і курси, які веде автор."
+        >
           <div className={trustStyles.guideRail} data-layout={authors.length === 1 ? "single" : undefined}>
             {/* One card everywhere an author is previewed — the home block,
                 /consult and this index render the same component, and the

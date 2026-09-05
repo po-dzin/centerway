@@ -123,7 +123,9 @@ export function AuthorProfileShowcase({ author, courses }: { author: Author; cou
         <ol className={styles.steps}>{consultationSteps.map((step) => <li key={step.id}><strong>{step.title}</strong><span>{step.text}</span></li>)}</ol>
         {author.consultation.contactUrl ? <a className={styles.consultationAction} href={author.consultation.contactUrl} target="_blank" rel="noopener noreferrer">Домовитися про консультацію</a> : null}
       </section> : null}
-      {author.consultation?.enabled ? <><ConsultBoundary /><ConsultFaq /></> : null}
+      {/* The author's route, not the consultation page's — these two sections
+          render on both, and they used to declare `/consult` here. */}
+      {author.consultation?.enabled ? <><ConsultBoundary route="platform:/expert/[slug]" /><ConsultFaq route="platform:/expert/[slug]" /></> : null}
 
       <section className={styles.courses}>
         <div className={styles.courseHeader}>
