@@ -33,8 +33,47 @@ import type { NextConfig } from "next";
  */
 const isDev = process.env.NODE_ENV === "development";
 
+/**
+ * WHERE AN AUTHOR'S OWN UPLOAD LIVES, so `next/image` will serve it.
+ *
+ * THE BUG THIS FIXES. Every author photograph uploaded through the cabinet is a
+ * public Supabase Storage URL, and `next/image` refuses any remote host that is
+ * not listed here — with a 400 `INVALID_IMAGE_OPTIMIZE_REQUEST`, not a
+ * fallback. No host was ever listed. So the course page's author avatar
+ * (`OfferFacets`, the one author surface drawing through `next/image` rather
+ * than a plain `img`) was broken for every author who had ever replaced their
+ * photo, and only for them: a profile still pointing at a repo-local
+ * `/shared/img/...` file went on working, which is why this looked like
+ * "uploading a new photo breaks the avatar".
+ *
+ * DERIVED FROM THE ENV, NOT WRITTEN OUT. The project ref is in the hostname,
+ * and a hardcoded one is a silent 400 on the day a project is restored,
+ * branched or moved — the same failure again, with a new cause. `pathname`
+ * is narrowed to the public object route: this permission is "serve what the
+ * bucket already serves to anyone", nothing wider.
+ */
+const supabaseImageHost = (() => {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  if (!url) return [];
+  try {
+    return [
+      {
+        protocol: "https" as const,
+        hostname: new URL(url).hostname,
+        pathname: "/storage/v1/object/public/**",
+      },
+    ];
+  } catch {
+    return [];
+  }
+})();
+
 const nextConfig: NextConfig = {
   reactCompiler: true,
+
+  images: {
+    remotePatterns: supabaseImageHost,
+  },
 
   /**
    * `app/global-not-found.tsx` — the 404 for an address that matched no route.
