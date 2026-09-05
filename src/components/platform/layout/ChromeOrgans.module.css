@@ -1,0 +1,131 @@
+/* THE FLOATING CHROME, IN ONE PLACE.
+
+   A surface without a topbar answers its two questions with two islands over
+   the page instead of a band above it: one at the leading edge, one at the
+   trailing edge, both on the chrome material. The lesson has worked this way
+   since 2026-08-29 and the rest of the personal surfaces follow — see
+   docs/design-system.md → "Two chrome modes, and the reader is the second one"
+   for WHICH pair of questions each surface is answering.
+
+   This module owns the GEOMETRY AND MATERIAL only, never the content: what
+   goes in the islands is the surface's own business, and it differs by mode.
+   It lives here rather than in `Lms.module.css` because two modules drawing
+   the same island is how the topbar ended up with two different glasses on
+   2026-08-29 — one recipe, composed, or the difference reappears the first
+   time one side is tuned.
+
+   Nothing here `composes`: consumers compose FROM it, and a chain of
+   `composes` does not resolve — see "composes does not chain" in the DS doc. */
+
+/* The row is empty hit space. It spans the reading measure rather than the
+   viewport corners, so the islands belong to the column they float over, and
+   only the islands themselves take pointer events. */
+.row {
+  position: fixed;
+  top: max(var(--cw-space-sm), env(safe-area-inset-top));
+  inset-inline-start: max(var(--cw-page-gutter), env(safe-area-inset-left));
+  inset-inline-end: max(var(--cw-page-gutter), env(safe-area-inset-right));
+  z-index: 4;
+  inline-size: auto;
+  max-inline-size: 46rem;
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cw-space-sm);
+  pointer-events: none;
+  /* Transform only: nothing here reflows, and the column's top padding does
+     not move when the chrome does. */
+  transition:
+    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+    opacity 180ms ease;
+}
+
+.row > * {
+  pointer-events: auto;
+}
+
+/* Where the bar and the islands both exist, only one of them is the chrome.
+   901px is the same seam the workspace topbar already uses for its compact
+   band — see "Responsive topbar depth" in the DS doc — so a surface does not
+   acquire a second breakpoint of its own for the same question. */
+@media (min-width: 901px) {
+  .row[data-cw-organs-scope="mobile"] {
+    display: none;
+  }
+}
+
+.row[data-hidden="true"] {
+  transform: translateY(calc(-100% - max(var(--cw-space-sm), env(safe-area-inset-top))));
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .row {
+    transition: none;
+  }
+}
+
+/* One control, one island. Sized by the touch target rather than by its glyph:
+   the glyph is 18px and the target is not negotiable. */
+.organ {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--ds-touch-target-min);
+  height: var(--ds-touch-target-min);
+  border: 0;
+  border-radius: var(--cw-radius-pill);
+  color: var(--cw-platform-text);
+  background-color: var(--cw-mat-tint-chrome);
+  backdrop-filter: var(--cw-mat-filter);
+  box-shadow: var(--cw-mat-shadow-chrome);
+  text-decoration: none;
+}
+
+/* Several controls travelling as one object, so they read as a set rather than
+   as loose discs over the text.
+
+   STRETCH, NOT CENTER, and it is the tap target that depends on it: members are
+   sized by their glyph and take their height from this row. Centred, the pill
+   was 48px tall with an 18px-high button in the middle of it — a control that
+   looks like a target and is not one. */
+.cluster {
+  display: flex;
+  align-items: stretch;
+  gap: 0.1rem;
+  flex: 0 0 auto;
+  min-height: var(--ds-touch-target-min);
+  padding-inline: 0.25rem;
+  border-radius: var(--cw-radius-pill);
+  background-color: var(--cw-mat-tint-chrome);
+  backdrop-filter: var(--cw-mat-filter);
+  box-shadow: var(--cw-mat-shadow-chrome);
+}
+
+/* An absent side still has to hold its corner: `space-between` with one child
+   puts that child at the leading edge. */
+.absent {
+  flex: none;
+  inline-size: var(--ds-touch-target-min);
+  block-size: 1px;
+}
+
+/* THE MARK INSIDE AN ISLAND. The same baked shape the bar masks, and masked for
+   the same reason: a raster can only ever be the colour it was saved as, while
+   a mask takes a real token.
+
+   It cannot read `--platform-header-symbol-color`, which exists only inside
+   `.header` and tracks a dark hero the bar may be floating over. An island has
+   no such problem — it is on chrome material at all times — so the island's own
+   ink is the honest source. */
+.mark {
+  display: block;
+  flex: 0 0 auto;
+  width: var(--cw-brand-size-symbol-header);
+  height: var(--cw-brand-size-symbol-header);
+  background-color: var(--cw-platform-text);
+  -webkit-mask: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
+  mask: var(--cw-brand-asset-logo-symbol-header) center / contain no-repeat;
+}

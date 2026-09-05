@@ -186,6 +186,36 @@
     border-bottom: 0;
   }
 
+  /* A BAR THAT ONLY EXISTS WHERE THERE IS WIDTH FOR IT (2026-09-05).
+
+     Below this seam `learn` is carried by two floating islands instead
+     (`PlatformOrgans`), because here the bar holds a mark, an avatar and a
+     band of nothing between them — its route map is deliberately empty. Both
+     are in the DOM and this query picks; `display: none` takes the hidden one
+     out of the accessibility tree as well as off the screen, so a screen
+     reader is offered one chrome and not two.
+
+     IT LIVES HERE, DIRECTLY UNDER `.header.header`, and not in the shell's own
+     stylesheet, where it was written first and silently lost: both modules
+     define `.header`, `mergeStyleModules` puts them on the same element, and at
+     equal specificity the later file wins. The doubled class is not decoration
+     — it is what that rule needs to outrank the base `.header`, and this rule
+     needs the same weight plus its own attribute to outrank it in turn. */
+  .header.header[data-cw-header-scope="desktop"] {
+    display: none;
+  }
+
+  /* THE BAR WAS HOLDING THE ROOM OPEN. It is `position: sticky`, which still
+     occupies flow, so hiding it hands its height back to the page and the first
+     line rides up under the islands — which are `fixed` and take no space at
+     all. The room is re-stated in the same terms the reader already uses for
+     the same two islands: the safe area, one touch target, and air under it. */
+  .shell[data-cw-organs="mobile"] > main {
+    padding-block-start: calc(
+      max(var(--cw-space-sm), env(safe-area-inset-top)) + var(--ds-touch-target-min) + var(--cw-space-md)
+    );
+  }
+
   .header.header[data-cw-header-mode="workspace"] {
     top: 0;
     width: 100%;
