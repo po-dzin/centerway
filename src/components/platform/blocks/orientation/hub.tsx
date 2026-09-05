@@ -118,7 +118,7 @@ export function HubIntro() {
                 catalogue — the panel names the rest rather than leaving the
                 topbar as the only route to it. */}
             <Link className={styles.videoDecisionMore} href="/tests" data-cw-ink-control>
-              <InteractionInkLabel variant="link">Усі тести</InteractionInkLabel>
+              <InteractionInkLabel>Усі тести</InteractionInkLabel>
               <Icon className={styles.videoDecisionMoreArrow} name="arrow-right" size={18} />
             </Link>
           </div>

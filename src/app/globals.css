@@ -1835,6 +1835,13 @@ body {
   :where(input:not([type="checkbox"]):not([type="radio"]), textarea, [contenteditable="true"]) {
     -webkit-user-select: text;
     user-select: text;
+    /* iOS reads `-webkit-user-select: none` on ANY ancestor as "no selection
+       UI here", and a form field is usually inside a <label> — which is on the
+       suppression list above. The field could still be typed into, so the loss
+       was invisible until someone tried to copy, cut or paste inside it and
+       got no callout at all. Restoring the callout explicitly is what makes
+       the field behave like a field again. */
+    -webkit-touch-callout: default;
   }
 
   .cw-pagination {
