@@ -1035,12 +1035,33 @@
    one, `2xs` from a label to its control (`.authorField`). Same on phone,
    tablet and desktop — `.card`'s `sm` used to apply below 901px while the
    desktop rule restated `row-gap: md` above it. */
+/* ONE MEASURE, ONE RIGHT EDGE (2026-09-05).
+
+   Measured on a 1440 screen this form had THREE right edges — 787, 797 and
+   1275 — and every one of them was individually defensible. Single-line inputs
+   reached the card's edge because that is the straight edge field alignment is
+   for. Textareas stopped at `68ch` because prose is not legible at 140
+   characters to the line. The byline's name and role stopped earlier still,
+   because they were the second column of a two-column row whose first column
+   is a pair of crop frames. Three right answers to three separate questions,
+   and stacked down one card they read as a form that cannot hold a line.
+
+   The measure is the settlement: the prose cap was already the narrowest of
+   the three and the only one derived from how reading works rather than from
+   what happened to be beside it, so it becomes the measure of the whole form.
+   Every control now ends on it, the card is that measure plus its own padding,
+   and there is nothing left for a field to be ragged against.
+
+   35rem is `68ch` of the UI face stated as a length. It is a length because a
+   `ch` differs per element's own font, and a form aligned in `ch` drifts the
+   first time one control is set in another face. */
 .authorForm {
   composes: card;
+  --cw-author-measure: 35rem;
   display: grid;
   gap: var(--cw-space-lg);
   width: 100%;
-  max-width: none;
+  max-width: calc(var(--cw-author-measure) + 2 * var(--cw-space-lg));
 }
 
 /* A BAND YOU CAN CLOSE, AND A LINE THAT SAYS WHERE IT STARTS. Five sections
@@ -1319,13 +1340,11 @@
   font-family: var(--cw-font-ui);
 }
 
-/* A MEASURE FOR PROSE. Single-line inputs deliberately reach the card's own
-   right edge — that is the straight edge the field alignment above is for —
-   but the bio, the quote and a block's body are read as text, and at the
-   card's full width they set ~140 characters to the line against the 60–75
-   that prose is legible at. */
+/* The prose measure is now the form's measure — see `.authorForm` — so a
+   textarea takes the column like every other control and needs no cap of its
+   own. It keeps the vertical grip: a bio is the one field whose right length
+   is the author's to decide. */
 .authorTextarea {
-  max-width: 68ch;
   resize: vertical;
 }
 
@@ -1846,16 +1865,13 @@
    and writing the profile they read. On desktop those tasks deserve their own
    columns; on compact screens the source order remains the one-column form. */
 @media (min-width: 901px) {
-  /* The byline's photo frames and its name/role side by side — the only
-     place in this form that wants two columns, and it wants them because the
-     three belong to one another, not because one of them is tall. The photo
-     side is sized by its content (a 16rem card frame beside a 10rem avatar);
-     the fields take what is left and never go below 16rem. */
-  .authorIdentity {
-    grid-template-columns: minmax(0, auto) minmax(16rem, 1fr);
-    column-gap: var(--cw-space-xl);
-    align-items: start;
-  }
+  /* THE BYLINE STOPPED BEING TWO COLUMNS (2026-09-05). Photo frames beside
+     name and role was the right instinct — the three do belong to one another
+     — but it bought that adjacency by giving the fields "whatever is left",
+     which is a width no other row in the form has. Under one measure they are
+     still one another's neighbours, now vertically, and the section they share
+     is what says they belong together. The frames sit side by side on their
+     own row from 561px up, so the pairing that mattered visually is intact. */
 
   .authorPhotoPreview,
   .authorPhotoEmpty {
@@ -1864,6 +1880,13 @@
     aspect-ratio: auto;
   }
 
+  /* A REAL LENGTH, AND IT HAS TO STAY ONE. This was briefly `width: 100%` on
+     the argument that every other control had just been put on one measure —
+     but these sit inside `.authorMediaFrame`, which is `width: fit-content`,
+     so a percentage here resolves against a parent sized by this child and
+     collapses it to its own label (measured: 126px against the intended
+     320px). The frames are media objects rather than fields: the measure is
+     what a field's right edge answers to, and an image slot is not one. */
   .authorBackgroundPreview,
   .authorBackgroundEmpty {
     width: 20rem;
