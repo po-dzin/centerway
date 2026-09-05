@@ -18,6 +18,7 @@
     "img:grade": "node scripts/img/grade.mjs",
     "img:webp": "node scripts/img/webp.mjs",
     "img:landing-webp": "node scripts/img/landing-webp.mjs",
+    "img:face-mosaic": "node scripts/img/face-mosaic.mjs",
     "canon:guard": "node scripts/guard-platform-canon.mjs",
     "guard:ds-contract": "node scripts/guard-ds-contract.mjs",
     "semantic:audit": "node scripts/semantic-audit.mjs",
