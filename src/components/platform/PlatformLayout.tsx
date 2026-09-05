@@ -4,6 +4,8 @@ import type { ReactNode } from "react";
 import styles from "./PlatformShellStyles";
 import { PlatformFooter } from "./layout/PlatformFooter";
 import { PlatformHeader } from "./layout/PlatformHeader";
+import { PlatformAccountMenu } from "./layout/PlatformAccountMenu";
+import { PlatformMarkOrgan, PlatformOrgans } from "./layout/PlatformOrgans";
 import { PwaRuntime } from "./pwa/PwaRuntime";
 import { useSurfaceHost } from "./layout/SurfaceHost";
 import { isPersonalHost } from "@/lib/platform/surfaceHref";
@@ -63,8 +65,36 @@ export function PlatformShell({
   const bare = headerMode === "reading";
 
   return (
-    <div className={`${styles.shell} ${floats ? styles.shellOverlay : ""}`} data-cw-chrome={bare ? "none" : undefined}>
+    <div className={`${styles.shell} ${floats ? styles.shellOverlay : ""}`} data-cw-chrome={bare ? "none" : undefined}
+      /* Read by the shell's own stylesheet to re-state the room the hidden bar
+         used to hold open below 901px. */
+      data-cw-organs={headerMode === "learn" ? "mobile" : undefined}>
+      {/* THE PHONE'S CHROME ON THE LEARNER SURFACES (2026-09-05).
+
+          `learn` is where the bar has the least to say: its route map is
+          deliberately empty, so below 901px it is a mark, an avatar and a
+          band of nothing between them over a page whose subject is the shelf.
+          Two islands answer the same two questions and give the band back.
+
+          Only `learn`. `overlay` looks like the same case and is not — it is
+          also the storefront's catalogue mode, where the bar carries five
+          public destinations that are the product's map and not its chrome.
+
+          The mark is a plain link here: a shelf has no sections to open, and a
+          sheet holding one row is a menu apologising for existing. See
+          docs/design-system.md → "Two chrome modes, and the reader is the
+          second one". */}
+      {headerMode === "learn" ? (
+        <PlatformOrgans
+          scope="mobile"
+          reveal="gesture"
+          label="Навігація"
+          left={<PlatformMarkOrgan />}
+          right={<PlatformAccountMenu compact />}
+        />
+      ) : null}
       {bare ? null : <PlatformHeader
+        scope={headerMode === "learn" ? "desktop" : "all"}
         initialTone={headerMode === "overlay" ? "dark" : "light"}
         mode={headerMode === "learn" ? "workspace" : headerMode}
         surface={surface}

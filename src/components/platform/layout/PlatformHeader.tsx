@@ -27,6 +27,7 @@ export function PlatformHeader({
   surface = "auto",
   workspaceContent,
   autoHide = false,
+  scope = "all",
 }: {
   initialTone?: "light" | "dark";
   mode?: "default" | "overlay" | "learn" | "workspace";
@@ -40,6 +41,14 @@ export function PlatformHeader({
    * controls in use.
    */
   autoHide?: boolean;
+  /**
+   * `desktop` — this bar is the chrome only where there is width for it, and
+   * `PlatformOrgans` carries the same surface below 901px. Both render; CSS
+   * chooses. Mounting one or the other from a media query read in JS answers
+   * differently on the server and in the browser, and that difference is a
+   * hydration mismatch.
+   */
+  scope?: "all" | "desktop";
 }) {
   const focusedMode = mode === "learn" || mode === "workspace";
   const [openMenuPath, setOpenMenuPath] = useState<string | null>(null);
@@ -232,6 +241,7 @@ export function PlatformHeader({
       data-cw-glass="shell"
       data-cw-header-tone={headerTone}
       data-cw-header-mode={mode}
+      data-cw-header-scope={scope === "desktop" ? "desktop" : undefined}
       /* Two attributes, not one. The first says this bar is allowed to move —
          it carries the transition, so a bar that never yields also never pays
          for one. The second is the state. */

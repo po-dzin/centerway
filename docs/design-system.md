@@ -1458,6 +1458,46 @@ its labels fade and translate with the width transition instead of being
 conditionally removed. Rail edges and the footer rule use the system's
 `--cw-rule-fade-y` / `--cw-rule-fade-x` contours.
 
+### Two chrome modes, and the reader is the second one (2026-09-05)
+
+Chrome answers a **pair** of questions, and which pair depends on what the
+surface is for. There are two pairs and no third.
+
+**Where you navigate — the platform, the library, Builder, the Control Panel.**
+Left: *what is in this place* — sections, contents, structure. Right: *who am I
+and where else can I go* — `PlatformAccountMenu`, unchanged on every surface.
+Applications live only on the right; sections live only on the left. The moment
+one repeats the other, one of the two has stopped answering its own question.
+
+**Where you read — the lesson, and nothing else today.** Left: *out, one level
+up* — `ReaderChrome`'s `arrow-left` to the course, not the platform root; a
+reader leaving a lesson is going to the course, and routing them home instead
+walks the whole hierarchy for them. Right: *how to read* — bookmark, text size,
+contents. `Зміст` is a reading tool, not a route map, so it sits with the tools
+and opens as a bottom sheet already scrolled to the current lesson. There is no
+account control on a lesson: nobody checks whose session it is while reading.
+
+This was written down because the first attempt at the two-organ chrome
+proposed the opposite — mark-with-contents on the left, avatar on the right,
+uniformly — which would have removed three working controls to satisfy a rule
+the reading surface was never in. **The lesson is not an exception to be tidied
+away later.** It is the second mode, it is exactly one surface wide today, and
+any future surface whose job is reading rather than navigating joins it rather
+than the first mode.
+
+Consequences that are easy to get wrong:
+
+- A surface with **no** inner structure (the shelf, the cabinet, a landing) has
+  no sheet at all: the left control stays a plain link. A sheet holding one row
+  is a menu apologising for existing.
+- The Control Panel is the single place where the left sheet also carries the
+  wordmark and the way out, because there the sheet **is** the desktop rail
+  folded up, and that rail carries the brand at its head on desktop too. The
+  logo belongs to the rail, not to the sheet.
+- Floating organs and `ReaderChrome` must share geometry and material from one
+  place. Two circles of different sizes on adjacent screens is the same failure
+  as the two glasses of 2026-08-29 — see "One internal workspace frame".
+
 ### One nav-state contract (2026-08-23)
 
 Three surfaces answered "you are here" three ways: the topbar drew an ink underline, the cabinet's tab strip drew a gold one, and the account popover underlined its current row in gold via `text-decoration`. Two of them were on screen at once, so the reader had to learn that a black rule and a gold rule mean the same thing.
@@ -1655,7 +1695,9 @@ Every showcase block on the home page is a sample of a fuller page — three pro
 
 ### `/expert` merged into `/consult` (2026-08-23)
 
-Two pages, one question between them: who runs this, and how do I work with him. Split, each half had to sell the other — a reader who arrived wanting a consultation met a biography, and one who arrived at the biography was sold the consultation a second time. `/consult` survives and `/expert` 308s to it; the credentials (`ExpertProof`) and the route through the work (`ExpertPath`) are now evidence inside the consultation, in `beforeSupport` — after the reader knows what is on offer, before they are asked to commit.
+Two pages, one question between them: who runs this, and how do I work with him. Split, each half had to sell the other — a reader who arrived wanting a consultation met a biography, and one who arrived at the biography was sold the consultation a second time. `/consult` survives and `/expert` 308s to it; the credentials and the route through the work moved inside the consultation, in `beforeSupport` — after the reader knows what is on offer, before they are asked to commit.
+
+**Superseded, 2026-09-05.** `ExpertProof` and `ExpertPath` are gone. They were a founder written into markup, with his facts and biography kept as constants beside them, and `lms_authors` had already become the place that answers who an author is — the constants drifted to the point of claiming twelve years of practice against a profile that said twenty, and by then nothing rendered them anyway. `/consult` shows `ConsultantDirectory`, which is the same `AuthorCard` the hub and `/experts` render. The singular `/expert` still redirects; `/expert/[slug]` is a different route and a real page, one per author.
 
 Three things moved with the content and are easy to forget: the `ProfilePage` node (without it the address an answer engine cites for the founder is a redirect), `BRAND.founder.path` (`personLd` builds the Person's `url` from it, so every page's graph would otherwise cite a 308), and `/consult` joining the `platformEscape` / `requestBrand` prefixes. `/expert` **stays** in `platformEscape` — it has to reach the platform for the platform to serve its redirect — and leaves the sitemap, because listing a redirect spends a crawler's fetch on discovering one.
 

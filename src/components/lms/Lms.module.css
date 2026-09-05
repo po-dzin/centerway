@@ -343,43 +343,13 @@
 
    The row this lives in is the LAYOUT ONLY. The material is on the two
    children, so the gap between them is page, not chrome. */
+/* The row, the islands and their material are the platform's, not the reader's:
+   the same two floating controls now carry the library, Builder and the Control
+   Panel, and two modules drawing the same island is how the topbar acquired two
+   different glasses on 2026-08-29. What stays reader-specific is WHAT is in
+   them — a route out on the left, reading tools on the right. */
 .readerChrome {
-  position: fixed;
-  top: max(var(--cw-space-sm), env(safe-area-inset-top));
-  inset-inline-start: max(var(--cw-page-gutter), env(safe-area-inset-left));
-  inset-inline-end: max(var(--cw-page-gutter), env(safe-area-inset-right));
-  z-index: 4;
-  inline-size: auto;
-  max-inline-size: 46rem;
-  margin-inline: auto;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--cw-space-sm);
-  /* Same measure as `.wrap`: the controls belong to the reading column,
-     rather than to distant viewport corners. The row itself remains empty hit
-     space, so only the two islands receive pointer events. */
-  pointer-events: none;
-  /* Same reveal the bar had — see useChromeReveal. Transform only: nothing
-     here reflows, and the column's top padding does not move with it. */
-  transition:
-    transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
-    opacity 180ms ease;
-}
-
-.readerChrome > * {
-  pointer-events: auto;
-}
-
-.readerChrome[data-hidden="true"] {
-  transform: translateY(calc(-100% - max(var(--cw-space-sm), env(safe-area-inset-top))));
-  opacity: 0;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .readerChrome {
-    transition: none;
-  }
+  composes: row from "../platform/layout/ChromeOrgans.module.css";
 }
 
 /* ONE ARROW. It held the course title for a revision and the title is exactly
@@ -388,38 +358,13 @@
    the reading screen. The name is one tap away, written in full on the page
    this returns to; here it is the `aria-label` and nothing else. */
 .readerBack {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  flex: none;
-  width: var(--ds-touch-target-min);
-  height: var(--ds-touch-target-min);
-  border: 0;
-  border-radius: var(--cw-radius-pill);
-  color: var(--cw-platform-text);
-  background-color: var(--cw-mat-tint-chrome);
-  backdrop-filter: var(--cw-mat-filter);
-  box-shadow: var(--cw-mat-shadow-chrome);
-  text-decoration: none;
+  composes: organ from "../platform/layout/ChromeOrgans.module.css";
 }
 
 /* The three tools travel as one object, so they read as a set rather than as
    three loose discs over the text. */
 .readerTools {
-  display: flex;
-  /* STRETCH, NOT CENTER, and it is the tap target that depends on it: the
-     controls inside are sized by their glyph (18px) and take their height from
-     this row. Centred, the pill was 48px tall with an 18px-high button in the
-     middle of it — a control that looks like a target and is not one. */
-  align-items: stretch;
-  gap: 0.1rem;
-  flex: 0 0 auto;
-  min-height: var(--ds-touch-target-min);
-  padding-inline: 0.25rem;
-  border-radius: var(--cw-radius-pill);
-  background-color: var(--cw-mat-tint-chrome);
-  backdrop-filter: var(--cw-mat-filter);
-  box-shadow: var(--cw-mat-shadow-chrome);
+  composes: cluster from "../platform/layout/ChromeOrgans.module.css";
 }
 
 .readerPreviewBack {
