@@ -105,6 +105,19 @@
   }
 }
 
+/* `isolation: isolate` SEALS THE RAIL'S OWN STACKING CONTEXT.
+   Without it, a card's `z-index` (the kind badge, the link overlay) does not
+   stack against its own card — it escapes all the way up to `.stage`, because
+   nothing between the card and `.stage` ever creates a context of its own.
+   There it started COMPETING with `.controls`, sibling of `.viewport` and
+   also `z-index: 1`: on that tie the later element in the DOM wins, and
+   `.viewport` is written after `.controls` — so a card's badge painted over
+   the arrow that overhangs it, on every rail, as soon as a card used
+   `z-index: 1` for anything. The fix is not to out-number whatever a future
+   card declares; it is that nothing inside `.viewport` should be able to
+   reach `.stage`'s stacking context at all. Everything in here now stacks
+   against ITSELF, and the rail control — the one thing outside this box —
+   is unconditionally above it. */
 .viewport {
   min-width: 0;
   overflow-x: auto;
@@ -113,6 +126,7 @@
   scroll-snap-type: x mandatory;
   scroll-behavior: smooth;
   scrollbar-width: none;
+  isolation: isolate;
 }
 
 .viewport::-webkit-scrollbar {
