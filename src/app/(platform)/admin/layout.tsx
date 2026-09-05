@@ -242,10 +242,23 @@ function AdminShell({ children }: { children: ReactNode }) {
 
             <div className="flex flex-1 min-h-0">
             {/* Sidebar — the same chrome material, now a rail below the shared
-                bar rather than a competing top panel. */}
+                bar rather than a competing top panel.
+
+                THE MARKUP USED TO SAY `hidden md:grid`, WHICH WAS NEVER TRUE.
+                `.rail[data-cw-material="chrome"]` sets `display: grid` at
+                specificity 0,2,0 and Tailwind's `.hidden` is 0,1,0, so the rail
+                has been on screen at 375px for as long as it has existed — the
+                markup claimed one thing and the cascade did another, and the
+                next reader would have believed the markup. The rail is kept,
+                because it is the only route to the seven sections and it marks
+                the current one; folding it into a sheet would mean a second
+                route to the same seven. So the class is dropped and the module
+                owns `display` alone: what the CSS does is now what the markup
+                says. The phone form of the rail is pinned compact in
+                `AdminLayout.module.css` — 68px, not 244. */}
             <aside
                 data-cw-material="chrome"
-                className={`${styles.rail} ${expanded ? "" : styles.railCompact} hidden md:grid shrink-0 h-full`}
+                className={`${styles.rail} ${expanded ? "" : styles.railCompact} shrink-0 h-full`}
             >
                 {/* Nav */}
                 <nav className={`${styles.railNav} flex flex-col gap-0.5`} aria-label={t("sidebar_title")}>

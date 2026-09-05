@@ -39,12 +39,25 @@
   background: transparent;
 }
 
+/* THE BAR KEEPS THE PANEL GUTTER, NOT ONE OF ITS OWN.
+
+   Inside the product the workspace bar sits directly above the rail, and the
+   two were measured from different rulers: the bar carried `--cw-space-2xl`
+   (48px) while every panel below it — the admin rail, the Builder sidebar, the
+   library shelf — is inset by `--cw-workspace-panel-pad-inline` (24px). So the
+   mark started 48px in and the nav under it started 24px in, and the eye reads
+   that as one of the two being wrong rather than as two deliberate measures.
+   The bar now reads the panel token, which is the whole point of having one:
+   the wordmark on the left and the account on the right stand on the same
+   vertical as the rail's own content, and a change to the gutter moves all of
+   them at once. Storefront modes are untouched — a page that floats its bar in
+   a measure is not the same object as the top of an application frame. */
 .header[data-cw-header-mode="workspace"] .headerInner {
   width: 100% !important;
   max-width: none !important;
   box-sizing: border-box;
   margin: 0;
-  padding-inline: var(--cw-space-2xl);
+  padding-inline: var(--cw-workspace-panel-pad-inline);
 }
 
 @media (max-width: 1100px) and (min-width: 901px) {
