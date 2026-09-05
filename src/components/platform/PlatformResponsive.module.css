@@ -1501,9 +1501,14 @@
     line-height: 1.42;
   }
 
+  /* NO PADDING OF ITS OWN. `.footerGrid` carries `.container` alongside it,
+     and `.container` already places the page gutter — so this half-rem was a
+     second gutter inside the first, and only for this one block. On a phone it
+     put the mark, the lead, the links and the social row at 28px while the
+     note under the rule (same `.container`, no extra padding) sat at 20px: one
+     footer with two left edges, eight pixels apart. */
   .footerGrid {
     gap: 1.1rem;
-    padding-inline: 0.5rem;
   }
 
   .footer {
