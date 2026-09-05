@@ -88,10 +88,12 @@ export function PlatformBlockLink({ href, label }: { href: string; label: string
   return (
     /* `data-cw-ink-control` is the opt-in, and it does two things at once: it
        turns off the `.text` role's browser underline and it is what the ink
-       rules key on. The stroke under the words is the block's only mark; the
-       arrow is not a second one and gets no ring of its own. */
+       rules key on. The stroke is a HOVER mark here, not a resting one: the
+       arrow already says this is a way out, so a permanent line under the words
+       would be a second announcement of the same thing. A resting stroke is for
+       a link with nothing else to mark it — one inside a sentence. */
     <Link className={styles.blockAction} href={href} data-cw-ink-control>
-      <InteractionInkLabel variant="link">{label}</InteractionInkLabel>
+      <InteractionInkLabel>{label}</InteractionInkLabel>
       <Icon className={styles.blockActionArrow} name="arrow-right" size={18} />
     </Link>
   );

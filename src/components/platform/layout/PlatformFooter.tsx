@@ -11,10 +11,16 @@ import { useSurfaceHref } from "./SurfaceHost";
  * TWO FOOTERS, ONE PER APPLICATION — not one per page.
  *
  * `full` is the storefront's close: brand promise, phone number, four social
- * networks, legal. `personal` is the same SHAPE — the same three-column grid,
- * the same brand block, the same link rhythm — carrying what somebody inside
- * their own environment can use: their courses, their profile, support, legal,
- * and the install offer.
+ * networks, legal. `personal` is ONE ROW — the signature on the left, the two
+ * or three ways out on the right. It used to copy the storefront's three-column
+ * grid with three links to fill it, which left most of the width empty and made
+ * the shelf end on a layout that read as unfinished rather than quiet.
+ *
+ * THE LINKS DO NOT UNDERLINE THEMSELVES. A resting stroke is the affordance a
+ * link needs when it sits inside a sentence with nothing else to mark it out; a
+ * row or column of ways out is already marked out by being one, and a permanent
+ * line under each of them reads as decoration nobody chose. The only
+ * `variant="link"` left in this file is the one inside running copy.
  *
  * IT USED TO BE A NAKED ROW. The learning footer was one wrapping line of plain
  * links with no brand at all, which meant `my` ended two ways depending on the
@@ -56,39 +62,26 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
 
   if (variant === "personal") {
     return (
-      <footer className={styles.footer} data-platform-footer="personal">
-        <div className={`${styles.container} ${styles.footerGrid} ${styles.footerGridPersonal}`}>
-          <div className={styles.footerBrandBlock}>
-            {/* The root of THIS application, like the header's mark. Pointing
-                the personal footer at the storefront would make the one control
-                that never changes the one that leaves. */}
-            <Link className={styles.brand} href={shelfHref} aria-label="CenterWay" data-surface="footer">
-              <span className={styles.brandSymbol} aria-hidden="true" />
-              <span className={styles.footerBrandText}>CENTERWAY</span>
-            </Link>
-            {/* `.footerLead` is a grid, so each sentence is its own row. A
-                `<br>` inside a grid container is a grid item, not a break. */}
-          </div>
-          {/* TWO LINK COLUMNS, SPLIT BY WHAT THEY ARE. The first is this
-              application's own pages — the places a reader goes to keep working.
-              The second is everything that leaves it or changes the device:
-              support opens a chat elsewhere, and install is an OS affordance,
-              not a page. Four rows in one column read as one undifferentiated
-              stack where the storefront footer beside it has three tracks, so
-              the two footers disagreed about their own shape. */}
-          <div className={`${styles.footerLinks} ${styles.footerLegal}`}>
+      <footer className={styles.footerPersonal} data-platform-footer="personal">
+        <div className={`${styles.container} ${styles.footerRowPersonal}`}>
+          {/* The root of THIS application, like the header's mark. Pointing
+              the personal footer at the storefront would make the one control
+              that never changes the one that leaves. */}
+          <Link className={styles.brand} href={shelfHref} aria-label="CenterWay" data-surface="footer">
+            <span className={styles.brandSymbol} aria-hidden="true" />
+            <span className={styles.footerBrandText}>CENTERWAY</span>
+          </Link>
+          <nav className={styles.footerRowLinks} aria-label="Кінець сторінки">
             <Link className={styles.footerTextLink} href={shelfHref} data-cw-ink-control>
-              <InteractionInkLabel variant="link">Мої матеріали</InteractionInkLabel>
+              <InteractionInkLabel>Мої матеріали</InteractionInkLabel>
             </Link>
             <Link className={styles.footerTextLink} href={profileHref} data-cw-ink-control>
-              <InteractionInkLabel variant="link">Кабінет</InteractionInkLabel>
+              <InteractionInkLabel>Кабінет</InteractionInkLabel>
             </Link>
-          </div>
-          <div className={`${styles.footerLinks} ${styles.footerSocials}`}>
             <a className={styles.footerTextLink} href={SUPPORT_BOT_URL} target="_blank" rel="noopener noreferrer" data-cw-ink-control>
-              <InteractionInkLabel variant="link">Підтримка</InteractionInkLabel>
+              <InteractionInkLabel>Підтримка</InteractionInkLabel>
             </a>
-          </div>
+          </nav>
         </div>
       </footer>
     );
@@ -110,15 +103,15 @@ export function PlatformFooter({ variant = "full" }: { variant?: "full" | "perso
         </div>
         <div className={`${styles.footerLinks} ${styles.footerLegal}`}>
           <Link className={styles.footerTextLink} href={publicOfferHref} data-cw-ink-control>
-            <InteractionInkLabel variant="link">Публічний договір</InteractionInkLabel>
+            <InteractionInkLabel>Публічний договір</InteractionInkLabel>
           </Link>
           <Link className={styles.footerTextLink} href={privacyHref} data-cw-ink-control>
-            <InteractionInkLabel variant="link">Політика конфіденційності</InteractionInkLabel>
+            <InteractionInkLabel>Політика конфіденційності</InteractionInkLabel>
           </Link>
         </div>
         <div className={`${styles.footerLinks} ${styles.footerSocials}`}>
           <a className={styles.footerTextLink} href={`tel:${contact.phone.replace(/\s+/g, "")}`} data-cw-ink-control>
-            <InteractionInkLabel variant="link">{contact.phone}</InteractionInkLabel>
+            <InteractionInkLabel>{contact.phone}</InteractionInkLabel>
           </a>
           <div className={styles.footerSocialsRow}>
             {socialLinks.map((item) => (

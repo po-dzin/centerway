@@ -522,11 +522,30 @@
   gap: 0.7rem;
 }
 
-/* Personal and storefront endings carry different links, not different
-   geometry. Both use the same container and the same three-track composition;
-   the shared responsive rules collapse both at the same breakpoints. */
-.footerGridPersonal {
-  composes: footerGrid;
+/* THE PERSONAL ENDING IS A LINE, NOT A GRID.
+   It borrowed the storefront's three tracks and had three things to put in
+   them, so two thirds of the width was air and the shelf ended on an empty
+   layout pretending to be a full one. What `my` needs at the bottom is a
+   signature and a way out — that is one row, and one row is honest about
+   holding three links. */
+.footerPersonal {
+  composes: footer;
+  padding: clamp(1.9rem, 4vw, 2.6rem) 0 1.9rem;
+}
+
+.footerRowPersonal {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.9rem clamp(1.2rem, 3vw, 2rem);
+}
+
+.footerRowLinks {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem clamp(1.1rem, 2.6vw, 1.75rem);
 }
 
 .footerLead,

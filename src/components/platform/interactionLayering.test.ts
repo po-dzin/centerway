@@ -39,6 +39,34 @@ describe("platform interaction layers", () => {
     expect(css).toContain("user-select: text");
   });
 
+  it("keeps the resting stroke for links in running copy, and only for those", () => {
+    /* The `link` variant draws its stroke before anyone touches it, which is
+       the affordance a link needs when it sits inside a sentence with nothing
+       else marking it out. A row of ways out — a footer, a block's link to its
+       own aggregate, a carousel's "see all" — is already marked out by being a
+       row, and a permanent line under each item read as decoration nobody
+       chose. Those consumers take the navigation strength: invisible at rest,
+       ink on hover. */
+    expect(css).toContain('.cw-ink-label[data-cw-ink-variant="link"] .cw-ink-label-mark');
+
+    for (const rel of [
+      "src/components/platform/layout/PlatformFooter.tsx",
+      "src/components/platform/PlatformBlock.tsx",
+      "src/components/platform/PlatformOfferCarousel.tsx",
+      "src/components/platform/blocks/orientation/hub.tsx",
+    ]) {
+      const source = read(rel);
+      const restingLinks = source.match(/InteractionInkLabel variant="link"/g) ?? [];
+      // The one survivor is inside a sentence: «якщо ви знайшли помилку — …».
+      const allowed = rel.endsWith("PlatformFooter.tsx") ? 1 : 0;
+      expect(restingLinks.length, `${rel} uses the resting stroke ${restingLinks.length} time(s)`).toBe(allowed);
+    }
+
+    // And no consumer draws a browser underline under the hand-drawn one.
+    const carousel = read("src/components/platform/PlatformOfferCarousel.module.css");
+    expect(carousel).not.toMatch(/\.queueLink\s*\{[^}]*text-decoration:\s*underline/);
+  });
+
   it("moves every shared admin navigation consumer onto the ink primitives", () => {
     const tabs = read("src/components/admin/AdminTabs.tsx");
     const layout = read("src/app/(platform)/admin/layout.tsx");

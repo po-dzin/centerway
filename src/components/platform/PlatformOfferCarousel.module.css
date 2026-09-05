@@ -177,9 +177,10 @@
   min-height: var(--ds-touch-target-min);
   gap: var(--cw-space-xs);
   color: var(--cw-platform-text);
-  text-decoration: underline;
-  text-decoration-color: currentColor;
-  text-underline-offset: 0.22em;
+  /* No `text-decoration` here: this link carries `data-cw-ink-control` and the
+     ink stroke is its mark. The two were drawn at once — a browser underline
+     under a hand-drawn one — which is how the same affordance came to be
+     announced twice in slightly different geometry. */
 }
 
 .queueLink:hover,

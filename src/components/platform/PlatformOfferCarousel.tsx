@@ -228,7 +228,7 @@ export function PlatformOfferCarousel({
             <div className={styles.queueActions}>
               {viewAllHref ? (
                 <Link className={styles.queueLink} href={viewAllHref} data-cw-ink-control>
-                  <InteractionInkLabel variant="link">{viewAllLabel}</InteractionInkLabel>
+                  <InteractionInkLabel>{viewAllLabel}</InteractionInkLabel>
                   <Icon name="arrow-right" size={18} />
                 </Link>
               ) : null}
