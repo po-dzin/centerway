@@ -67,10 +67,20 @@ function readPhoto(value: unknown): AuthorProfileInput["photo"] {
   };
 }
 
-function readBackground(value: unknown): { src: string } | undefined {
+function readBackground(value: unknown): AuthorProfileInput["background"] {
   if (!value || typeof value !== "object") return undefined;
-  const src = (value as Record<string, unknown>).src;
-  return typeof src === "string" && src ? { src } : undefined;
+  const item = value as Record<string, unknown>;
+  const src = item.src;
+  if (typeof src !== "string" || !src) return undefined;
+  const cropX = readCrop(item.cropX);
+  const cropY = readCrop(item.cropY);
+  const cropScale = readCropScale(item.cropScale);
+  return {
+    src,
+    ...(cropX !== undefined ? { cropX } : {}),
+    ...(cropY !== undefined ? { cropY } : {}),
+    ...(cropScale !== undefined ? { cropScale } : {}),
+  };
 }
 
 function readConsultation(value: unknown): AuthorProfileInput["consultation"] {

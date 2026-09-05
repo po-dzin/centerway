@@ -1771,7 +1771,8 @@
 }
 
 .photoCropCard,
-.photoCropAvatar {
+.photoCropAvatar,
+.photoCropBanner {
   position: relative;
   width: 100%;
   overflow: hidden;
@@ -1803,19 +1804,66 @@
   border-radius: var(--cw-radius-pill);
 }
 
+/* THE BAND AT ITS OWN PROPORTION, not at a comfortable editing size. The
+   backdrop renders at `min(100% - gutters, --cw-max-width)` by
+   `clamp(9rem, 19vw, 14rem)` — about 6:1 on a laptop. Showing the author a
+   squarer frame here would be showing them a crop the page never draws, which
+   is the whole failure a crop editor exists to prevent. */
+.photoCropBanner {
+  aspect-ratio: 6 / 1;
+  border-radius: var(--cw-radius-md);
+}
+
 .photoCropCard[data-dragging],
-.photoCropAvatar[data-dragging] {
+.photoCropAvatar[data-dragging],
+.photoCropBanner[data-dragging] {
   cursor: crosshair;
 }
 
+/* AN UPLOAD, SAID ON THE PICTURE. A dim plus a slow breath — no spinner glyph,
+   because the frame already has a grip and a pair of corner controls on it and
+   a fourth mark would be crowding. The frame stops taking the drag while it
+   runs: aiming a crop at a photograph that is about to be replaced is aiming
+   at nothing.
+
+   `prefers-reduced-motion` keeps the dim and drops the breathing — the state
+   still reads, it just stops moving. */
+.photoCropCard[data-busy],
+.photoCropAvatar[data-busy],
+.photoCropBanner[data-busy] {
+  cursor: progress;
+  pointer-events: none;
+}
+
+.photoCropCard[data-busy] img,
+.photoCropAvatar[data-busy] img,
+.photoCropBanner[data-busy] img {
+  opacity: 0.45;
+  animation: photoCropBusy 1.4s ease-in-out infinite;
+}
+
+@keyframes photoCropBusy {
+  50% { opacity: 0.7; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .photoCropCard[data-busy] img,
+  .photoCropAvatar[data-busy] img,
+  .photoCropBanner[data-busy] img {
+    animation: none;
+  }
+}
+
 .photoCropCard:focus-visible,
-.photoCropAvatar:focus-visible {
+.photoCropAvatar:focus-visible,
+.photoCropBanner:focus-visible {
   outline: var(--ds-focus-ring-width) solid var(--ds-focus-ring-color);
   outline-offset: var(--ds-focus-ring-offset);
 }
 
 .photoCropCard img,
-.photoCropAvatar img {
+.photoCropAvatar img,
+.photoCropBanner img {
   width: 100%;
   height: 100%;
   max-width: none;

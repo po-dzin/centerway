@@ -277,7 +277,7 @@ export type AuthorProfileInput = {
      that excess-property checking does not see — the shape was wrong and
      nothing said so. */
   photo?: Author["photo"];
-  background?: { src: string };
+  background?: Author["background"];
   listed?: boolean;
   slug?: string;
 };

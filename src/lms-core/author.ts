@@ -88,8 +88,17 @@ export type Author = {
     cropScale?: number;
     avatarCropScale?: number;
   };
-  /** Decorative backdrop for the public author showcase. */
-  background?: { src: string };
+  /**
+   * Decorative backdrop for the public author showcase — the band the portrait
+   * is read against.
+   *
+   * IT CROPS LIKE EVERYTHING ELSE. The banner is a 6:1 letterbox and a photo
+   * handed to it is not, so `cover` throws away most of its height; where that
+   * loss falls is the author's to say, exactly as it is for the card and the
+   * avatar. One focal point and one scale, absent meaning centre at 1×, which
+   * is what the band drew before this field could be aimed.
+   */
+  background?: { src: string; cropX?: number; cropY?: number; cropScale?: number };
   /**
    * Whether strangers may reach the profile page. Absent means no.
    *
@@ -204,6 +213,23 @@ export function validateAuthor(input: unknown, path = "author"): asserts input i
   if (input.background !== undefined) {
     assert(isRecord(input.background), `lms_author_invalid_background:${path}`);
     assert(isNonEmptyString(input.background.src), `lms_author_background_missing_src:${path}`);
+    for (const cropKey of ["cropX", "cropY"] as const) {
+      const value = input.background[cropKey];
+      if (value === undefined) continue;
+      assert(
+        typeof value === "number" && Number.isFinite(value) && value >= 0 && value <= 100,
+        `lms_author_invalid_background_${cropKey}:${path}`
+      );
+    }
+    if (input.background.cropScale !== undefined) {
+      assert(
+        typeof input.background.cropScale === "number" &&
+          Number.isFinite(input.background.cropScale) &&
+          input.background.cropScale >= 1 &&
+          input.background.cropScale <= 4,
+        `lms_author_invalid_background_cropScale:${path}`
+      );
+    }
   }
 
   if (input.listed !== undefined) {
