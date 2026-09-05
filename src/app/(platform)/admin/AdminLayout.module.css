@@ -73,3 +73,43 @@
   padding-block-end: max(var(--cw-space-md), env(safe-area-inset-bottom));
   color: var(--cw-platform-muted);
 }
+
+/* THE PHONE FORM OF THE RAIL IS THE COMPACT ONE, ALWAYS.
+
+   The rail is on screen at 375px — it always has been, whatever the markup
+   used to claim (see the note in `layout.tsx`). That is the deliberate answer:
+   seven sections, one route to them, the current one marked. What was not
+   deliberate is the expander. On a 375pt screen `--cw-workspace-side-panel-width`
+   resolves to 244px, so one tap on the toggle left 131px for the content — a
+   control that can eat two thirds of a phone screen is not a control, it is a
+   trap. Below the rail's own breakpoint the width is pinned to the icon form
+   and the toggle is removed, so 68px is a promise rather than a starting
+   position. The compact rules are restated here rather than reached for
+   through `.railCompact`, because the React state that applies that class is
+   a desktop decision and must not decide the phone. */
+@media (max-width: 767.98px) {
+  .rail[data-cw-material="chrome"] {
+    width: var(--cw-workspace-mode-rail-width);
+  }
+
+  .rail .railNav {
+    padding-inline: 0;
+  }
+
+  .rail .railLink {
+    width: 100%;
+    padding-inline: 0;
+    justify-content: center;
+  }
+
+  .rail .railLabel {
+    flex: 0 1 0;
+    max-width: 0;
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .rail .railFoot {
+    display: none;
+  }
+}

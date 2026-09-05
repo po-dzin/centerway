@@ -973,19 +973,46 @@ export default function OrdersPage() {
                         const customerLabel = customer?.display_name ?? customer?.email ?? customer?.phone ?? null;
 
                         return (
+                            /* THE ROW STACKS; THE REFERENCE IS NOT TRUNCATED.
+
+                               At 375pt the content column is 283px wide and
+                               `order_ref` is a 30-character mono string. The
+                               row read this as four side-by-side zones at every
+                               width, so the reference broke at its one hyphen,
+                               ran past the `flex-1` box it was sitting in — an
+                               unbreakable word overflows a `min-w-0` parent
+                               rather than shrinking it — and printed straight
+                               through `4 100 UAH`. Every row, not the long ones.
+
+                               The reference is the row's identity and the thing
+                               an operator copies into a payment provider, so it
+                               is not the part to shorten: an ellipsis eats the
+                               tail hash, which is exactly what separates two
+                               orders of the same course on the same day. Amount
+                               and time are the secondary read, so they take
+                               their own line below the identifier until `sm`,
+                               where the four zones fit again. `break-words`
+                               backs it up: even on its own line the reference
+                               needs a break opportunity a hyphen does not give
+                               it. The dot moves from the row's vertical centre
+                               to the first line, because a status mark belongs
+                               beside the identifier it qualifies, not beside
+                               whatever happens to be the middle of a row whose
+                               height now changes with the viewport. */
                             <div
                                 key={order.id}
-                                className="cw-list-item flex items-center gap-4 p-4 group"
+                                className="cw-list-item flex items-start gap-4 p-4 group"
                             >
                                 {/* Status dot */}
-                                <div className={`shrink-0 w-2 h-2 rounded-full mt-0.5 ${order.status === "paid" ? "cw-status-success-dot" :
+                                <div className={`shrink-0 w-2 h-2 rounded-full mt-1.5 ${order.status === "paid" ? "cw-status-success-dot" :
                                     order.status === "refunded" ? "cw-status-failed-dot" : "cw-status-pending-dot"
                                     }`} />
 
+                                <div className="flex-1 min-w-0 flex flex-col sm:flex-row sm:items-center gap-x-4 gap-y-2">
                                 {/* Main info */}
                                 <div className="flex-1 min-w-0">
                                     <div className="flex items-center gap-2 flex-wrap">
-                                        <span className="text-sm font-mono font-medium cw-text">
+                                        <span className="text-sm font-mono font-medium cw-text break-words min-w-0">
                                             {order.order_ref}
                                         </span>
                                         <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${ORDER_STATUS_BADGE_CLASS[order.status] ?? "cw-surface-2 cw-muted"}`}>
@@ -1011,7 +1038,7 @@ export default function OrdersPage() {
                                 </div>
 
                                 {/* Amount */}
-                                <div className="text-right shrink-0">
+                                <div className="shrink-0 sm:text-right">
                                     {order.amount != null && (
                                         <p className="text-sm font-semibold cw-text">
                                             {order.amount.toLocaleString(locale)} <span className="text-xs font-normal cw-muted">{order.currency}</span>
@@ -1020,6 +1047,7 @@ export default function OrdersPage() {
                                     <p className="text-[10px] cw-muted mt-0.5">
                                         {new Date(order.created_at).toLocaleDateString(locale, { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}
                                     </p>
+                                </div>
                                 </div>
 
                                 {/* Actions */}
