@@ -34,7 +34,21 @@
   right: 0;
   left: 0;
   z-index: 60;
-  width: min(100% - 2 * var(--cw-bar-inset), calc(var(--maxw, 1160px) + 2 * var(--cw-bar-pad)));
+  /* THE BAR IS MEASURED FROM THE PAGE'S INK COLUMN, NOT FROM `--maxw`.
+     This formula was lifted from the platform shell, where the content column
+     IS `min(100% - 2 * gutter, max-width)` with no padding of its own, so the
+     bar and the page below it landed on the same two edges. A landing's `.wrap`
+     is built the other way round: `--maxw` is its BORDER box and the gutter is
+     padding INSIDE it, so the same formula put the bar's labels a whole gutter
+     (20–40px per side) outside the text they sit above — a top bar visibly
+     wider than the page. The column is therefore derived the way `.wrap`
+     derives it, then pulled back out by the pill's own optical inset so that
+     the first label, not the pill's edge, sits on the page's left margin. */
+  width: calc(
+    min(100%, var(--maxw, 1160px))
+    - 2 * max(var(--cw-page-gutter), env(safe-area-inset-left), env(safe-area-inset-right))
+    + 2 * var(--cw-bar-pad)
+  );
   margin-inline: auto;
   border-radius: var(--cw-nav-radius);
   /* No CSS border here. An absolutely positioned pseudo insets against the

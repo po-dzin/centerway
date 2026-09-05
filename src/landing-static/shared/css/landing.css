@@ -550,7 +550,9 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
   .triad .phase:has(.rail-node){padding-left:3.2rem}
   .triad .rail-node{position:absolute;top:0;bottom:0;left:1.55rem;width:16px;height:auto;margin:0}
   .triad .rail-node::before{top:-2.5rem;bottom:-2.5rem;left:50%;right:auto;
-    border-top:0;border-left:1.5px dashed color-mix(in srgb, var(--indigo) 42%, transparent)}
+    width:12px;height:auto;transform:translateX(-50%);
+    -webkit-mask:var(--rail-dash-v) center calc(var(--rail-phase, var(--i, .5)) * -117px) / 12px auto repeat-y;
+    mask:var(--rail-dash-v) center calc(var(--rail-phase, var(--i, .5)) * -117px) / 12px auto repeat-y}
   .triad .rail-node::after{top:2.5rem;left:50%}
 }
 
@@ -569,14 +571,60 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
    stretching its dots. The line bleeds to the card edges, so only the grid gap
    interrupts it and the eye completes the run — --rail-bleed is the host card's
    own inline padding. */
-.rail-node{position:relative;height:16px;flex:0 0 auto;--rail-bleed:1rem}
+/* THE DASHES ARE DRAWN, NOT STRUCK (2026-09-05).
+   `border-top: dashed` is the one line a hand cannot make: every dash the same
+   length, the same gap, dead level. The design doc has said for a while that
+   the platform's `ProgressRail` speaks "the same dash language the landing
+   rails already speak" — and beside a rail whose every dash carries its own
+   tilt, this one was the printed half of that claim. Same fix the progress ring
+   took: the marks get a hand.
+   A repeating mask of a six-dash tile, not one element per dash. The row
+   reflows 7 → 2 → 1 columns and the run has to bleed past each card's padding
+   into the grid gap, so the number of dashes is a function of the viewport, not
+   of the markup; and the colour has to stay a token, which a data-URI cannot
+   carry — hence a mask over a `color-mix` ground rather than a background
+   image. The tile's dash lengths (11.5–14.5) and pitch (18–20.5) vary and its
+   width is 117, chosen so the wrap gap matches the gaps inside it: at repeat
+   the seam is the seventh gap, not a visible edge. */
+.rail-node{position:relative;height:16px;flex:0 0 auto;--rail-bleed:1rem;
+  --rail-ink:color-mix(in srgb, var(--indigo) 42%, transparent);
+  --rail-dash-h:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='117' height='12' viewBox='0 0 117 12'%3E%3Cg fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M3 6.8 16.5 5.6'/%3E%3Cpath d='M22.5 5.5 35 6.5'/%3E%3Cpath d='M41.5 6.6 56 5.8'/%3E%3Cpath d='M62 5.5 73.5 6.7'/%3E%3Cpath d='M80 6.6 94 5.5'/%3E%3Cpath d='M100 5.7 113.5 6.5'/%3E%3C/g%3E%3C/svg%3E");
+  --rail-dash-v:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='117' viewBox='0 0 12 117'%3E%3Cg fill='none' stroke='%23000' stroke-width='2.4' stroke-linecap='round'%3E%3Cpath d='M6.8 3 5.6 16.5'/%3E%3Cpath d='M5.5 22.5 6.5 35'/%3E%3Cpath d='M6.6 41.5 5.8 56'/%3E%3Cpath d='M5.5 62 6.7 73.5'/%3E%3Cpath d='M6.6 80 5.5 94'/%3E%3Cpath d='M5.7 100 6.5 113.5'/%3E%3C/g%3E%3C/svg%3E")}
+/* EVERY CARD STARTS THE TILE SOMEWHERE ELSE. Each card draws its own segment,
+   the cards are equal width, and a repeating mask starts at the element's own
+   left edge — so seven cards printed the same six dashes seven times, which is
+   the mechanical look the tile was authored to avoid. The phase comes off the
+   node's own `--i` (the intensity the row already encodes, and already varied
+   per card in the markup), so no two segments of the run show the same dashes.
+   Hosts that do not vary `--i` can set `--rail-phase` directly. */
 .rail-node::before{content:"";position:absolute;top:50%;left:calc(-1 * var(--rail-bleed));right:calc(-1 * var(--rail-bleed));
-  border-top:1.5px dashed color-mix(in srgb, var(--indigo) 42%, transparent)}
+  height:12px;transform:translateY(-50%);background-color:var(--rail-ink);
+  -webkit-mask:var(--rail-dash-h) calc(var(--rail-phase, var(--i, .5)) * -117px) center / auto 12px repeat-x;
+  mask:var(--rail-dash-h) calc(var(--rail-phase, var(--i, .5)) * -117px) center / auto 12px repeat-x}
 .rail-node::after{content:"";position:absolute;top:50%;left:50%;
   width:calc(7px + var(--i,.5) * 7px);aspect-ratio:1;border-radius:50%;
   background:var(--cta);transform:translate(-50%,-50%)}
+
+/* A FIGURE AT THE HEAD OF THE RUN.
+   The dashes say there is a path and how many stops it has; they do not say
+   that a person walks it. `ProgressRail` answers that on the platform with a
+   walker standing on the rail — the reader, mid-stride, at the point actually
+   reached — and this is the same mark on the landing's own rail: the day is a
+   route, and it starts at the first stop rather than nowhere.
+   In ink, not in the gold the nodes take: the stops are what the programme
+   does, and the figure is not one of them. He stands ON the line — feet on the
+   dashes, not beside them — and inside the card's own padding rather than out
+   at the bleed, so he never breaks the page's left margin. */
+.rail-walker{position:absolute;left:0;bottom:calc(50% - 1px);
+  width:1.42rem;height:1.55rem;color:var(--ink);opacity:.8;pointer-events:none}
 /* .phase cards carry more inline padding than .day cards. */
 .phase .rail-node{--rail-bleed:1.7rem;margin-bottom:1rem}
+/* A triad encodes no intensity — all three nodes ship `--i:.5` — so the tile
+   phase has to come from somewhere other than the row's own data, or three
+   equal cards print the same six dashes three times. See the note on
+   `--rail-phase` above. */
+.triad .phase:nth-child(2) .rail-node{--rail-phase:.29}
+.triad .phase:nth-child(3) .rail-node{--rail-phase:.73}
 @media(prefers-reduced-motion:no-preference){
   .day:hover .rail-node::after,.phase:hover .rail-node::after{transform:translate(-50%,-50%) scale(1.15);transition:transform .3s}}
 .week-note{margin-top:1.6rem;display:flex;gap:.8rem;align-items:flex-start;background:var(--chip-soft);
@@ -595,8 +643,19 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
   .week .day{position:relative;overflow:hidden;padding-left:3rem}
   .week .rail-node{position:absolute;top:0;bottom:0;left:1.4rem;width:16px;height:auto;margin:0}
   .week .rail-node::before{top:-1.4rem;bottom:-1.4rem;left:50%;right:auto;
-    border-top:0;border-left:1.5px dashed color-mix(in srgb, var(--indigo) 42%, transparent)}
+    width:12px;height:auto;transform:translateX(-50%);
+    -webkit-mask:var(--rail-dash-v) center calc(var(--rail-phase, var(--i, .5)) * -117px) / 12px auto repeat-y;
+    mask:var(--rail-dash-v) center calc(var(--rail-phase, var(--i, .5)) * -117px) / 12px auto repeat-y}
   .week .rail-node::after{top:50%;left:50%}
+  /* The run turned ninety degrees, and the walker did not: a figure rotated
+     onto its side is a figure lying down. He stands at the head of the descent
+     instead — the card that carries him starts its line 1.5rem down and he
+     stands on that head, which is the same sentence the row version makes,
+     read downwards. He cannot bleed above the card the way the line does: the
+     stacked card clips, because that clip is what stops the run at the card
+     edges and lets the eye complete it across the gap. */
+  .week .day:has(.rail-walker) .rail-node::before{top:1.9rem}
+  .week .rail-walker{left:50%;bottom:auto;top:.35rem;transform:translateX(-50%)}
 }
 
 /* ============ SCIENCE ============ */

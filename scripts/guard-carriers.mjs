@@ -110,7 +110,12 @@ function carriersOf(section) {
 
   // Inline SVG that is not a brand mark still counts as an icon: the migration
   // to the sprite must not be side-steppable by pasting a path back in.
-  const inline = section.match(/<svg(?![^>]*class="(?:ico|gfx)\b)[^>]*>/g) || [];
+  // `rail-walker` is the exception, and it is not a side-step: it is the figure
+  // that stands ON the rail graphic — one carrier, drawn in two parts — and it
+  // stays inline for the reason ProgressRail gives for keeping the same pose
+  // out of the sprite (the sprite holds the STILL body; a walking pose is a
+  // pose, not an icon).
+  const inline = section.match(/<svg(?![^>]*class="(?:ico|gfx|rail-walker)\b)[^>]*>/g) || [];
   const brandMarks = (section.match(/class="soc[^"]*"/g) || []).length;
   if (inline.length > brandMarks) add("icon", `${inline.length - brandMarks} inline <svg>`);
 
