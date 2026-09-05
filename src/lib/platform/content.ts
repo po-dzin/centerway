@@ -257,25 +257,6 @@ export const platformEntryCards = [
   },
 ];
 
-/* Glyph names from the baked set (scripts/lib/icon-glyphs.mjs). They used to be
-   four hand-written Material-style paths inlined as CSS mask data-URIs — a
-   second icon set, in a second hand, on the one block that is meant to read as
-   the person behind the platform. */
-/* Six, not four: on the home page's compact card (`support.tsx`,
-   `.factGrid`'s two columns) four facts filled two rows next to a portrait
-   that ran taller — text and photo ended at different heights in the same
-   panel. The last two are shortened from `educationTimeline` below, not
-   invented for the count: 2016 Kerala and the 2017 title are both already on
-   the record at /consult, just condensed to this list's badge length. */
-export const expertFacts = [
-  { label: "12 років практики", icon: "clock" as const },
-  { label: "Магістр комплементарної медицини та інтегративної психології", icon: "shield-check" as const },
-  { label: "Інструктор з йоги та практикуючий йогін", icon: "body" as const },
-  { label: "Засновник центру Centerway", icon: "support" as const },
-  { label: "Аюрведична дієтологія — Керала, Індія", icon: "leaf" as const },
-  { label: "Заслужений натуропат Європи", icon: "star" as const },
-];
-
 /* ── The guides ───────────────────────────────────────
 
    ONE AUTHOR, WRITTEN AS A LIST, on purpose. The platform is moving to more
@@ -324,34 +305,8 @@ export const platformGuides = [
   },
 ] satisfies PlatformGuide[];
 
-export const educationTimeline = [
-  "Київський політехнічний інститут, інформатика і обчислювальна техніка.",
-  "2009 р. - базовий курс класичного, антицелюлітного і дитячого масажу; повний курс тайського масажу.",
-  "2010-2011 рр. - Інститут натуральної медицини, Ганновер, спеціальність «бакалавр натуральної медицини».",
-  "2010-2013 рр. - оздоровчий центр Healsyjoy: китайські масажні техніки, гуа-ша, хіромасаж живота, моделювання і лімфодренаж обличчя.",
-  "2012 р. - Чакрапані аюрведа-клініка, напрям «аюрведична марма-терапія».",
-  "2012-2013 рр. - Інститут міждисциплінарних досліджень і освіти, Ганновер: магістр комплементарної медицини і інтегративної психології.",
-  "Магістерська робота: «Способи корекції ваги і очищення організму з допомогою засобів аюрведи».",
-  "2014 р. - засновано центр Centerway.",
-  "2016 р. - Сіббі Керала Аюрведа-центр, Індія: аюрведична дієтологія, стиль життя і йога-терапія.",
-  "2017 р. - орден «Заслужений натуропат Європи».",
-];
 
-export const expertStory = [
-  "Привіт! Давайте знайомитись: я - Євгеній Корякін, дослідник і практик аюрведи, магістр комплементарної медицини і засновник центру Centerway.",
-  "У дитинстві я хотів бути лікарем, а питання здоров'я і розвитку фізичної форми людини цікавили мене завжди. Любов до фізкультури і філософських наук підштовхнула мене до вивчення тіла людини як предмета вищого творіння.",
-  "Технічна освіта не задовольняла сутність мого внутрішнього світу. Я почав цікавитись йогою і масажем, а практики і філософія показали мені шлях. Масаж став провідником у світ тонкого устрою реальності - у світ без слів і концепцій.",
-];
 
-export const personalFacts = [
-  "Я вегетаріанець, але їм яйця.",
-  "Йога - невід'ємний аспект мого життя.",
-  "Люблю подорожувати і роблю це багато років підряд.",
-  "Мені близька філософія аскетизму.",
-  "Люблю філософію і релігію, але не відношу себе до жодної конкретної релігії.",
-  "Тричі проходив десятиденний віпасана-ретрит.",
-  "Мрію про утопічний ретрит-центр для відновлення після міської метушні.",
-];
 
 export const doshas = [
   {

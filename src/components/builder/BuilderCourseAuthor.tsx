@@ -24,6 +24,7 @@ import Link from "next/link";
 
 import { Icon } from "@/components/Icon";
 import { useToast } from "@/components/ToastProvider";
+import { authorAvatarCropPosition } from "@/lib/lms/authorPhoto";
 import { authorProfileCompletion, type Course } from "@/lms-core";
 import { loadCourseAuthorLink, setCourseAuthorLink, type CourseAuthorLinkDto } from "./builderClient";
 import { FieldInput } from "./BuilderFields";
@@ -113,8 +114,19 @@ export function BuilderCourseAuthor({
         ) : linked ? (
           <div className={styles.authorPreviewCard}>
             {linked?.photo ? (
+              /* THE CROP THE AUTHOR SET, like every other frame that draws
+                 this photograph. This preview answers "who is on the page",
+                 and it was the one place in the product rendering the picture
+                 at its raw centre — so an author who had dragged their avatar
+                 frame in the cabinet saw it applied on their own page and on
+                 every course page, and undone here. */
               // eslint-disable-next-line @next/next/no-img-element
-              <img className={styles.authorPreviewPhoto} src={linked.photo.src} alt={linked.photo.alt} />
+              <img
+                className={styles.authorPreviewPhoto}
+                src={linked.photo.src}
+                alt={linked.photo.alt}
+                style={{ objectPosition: authorAvatarCropPosition(linked.photo) }}
+              />
             ) : (
               <span className={`${styles.authorPreviewPhoto} ${styles.authorPreviewPhotoEmpty}`} aria-hidden="true">
                 <Icon name="user" size={20} />

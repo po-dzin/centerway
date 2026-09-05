@@ -2,7 +2,14 @@ import { Icon } from "@/components/Icon";
 import styles from "@/components/platform/PlatformTrustStyles";
 import { consultationBoundary, consultationFaq } from "@/components/platform/consultPageContract";
 
-export function ConsultBoundary() {
+/**
+ * Both sections render on two routes — `/consult` and an author's own page,
+ * where the consultation block invites them — so the route boundary they
+ * declare cannot be written into the markup. It was, and it said
+ * `platform:/consult` on `/expert/[slug]`: a block telling the canon it
+ * belongs to a route it is not on.
+ */
+export function ConsultBoundary({ route = "platform:/consult" }: { route?: string }) {
   return (
     <section
       className={`${styles.container} ${styles.section}`}
@@ -10,7 +17,7 @@ export function ConsultBoundary() {
       data-cw-semantic-family="trust-boundary"
       data-cw-token-source="global-app-ds"
       data-cw-user-question="Чим консультація не є і коли потрібен лікар?"
-      data-cw-route-boundary="platform:/consult"
+      data-cw-route-boundary={route}
       id="consult-boundary"
     >
       <article className={styles.panel}>
@@ -22,7 +29,7 @@ export function ConsultBoundary() {
   );
 }
 
-export function ConsultFaq() {
+export function ConsultFaq({ route = "platform:/consult" }: { route?: string }) {
   return (
     <section
       className={`${styles.container} ${styles.section}`}
@@ -30,7 +37,7 @@ export function ConsultFaq() {
       data-cw-semantic-family="trust-support"
       data-cw-token-source="global-app-ds"
       data-cw-user-question="Що варто знати перед запитом?"
-      data-cw-route-boundary="platform:/consult"
+      data-cw-route-boundary={route}
       id="consult-faq"
     >
       <div className={styles.sectionHeader}>
