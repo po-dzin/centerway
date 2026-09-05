@@ -932,7 +932,7 @@ h2.sec-title{font-size:clamp(2.1rem,4.6vw,3.4rem);max-width:24ch}
 /* No inline lane for the arrows any more: they hang OUTSIDE the stage now
    (see "The rail control" above), so the padding that used to hold them
    off the first slide was 2.7rem of empty rail on both ends. */
-.testimonial-carousel__track{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 2rem) / 3);gap:1rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.2rem .2rem .4rem;scrollbar-width:none}
+.testimonial-carousel__track{display:grid;grid-auto-flow:column;grid-auto-columns:calc((100% - 2rem) / 3);gap:1rem;overflow-x:auto;scroll-snap-type:x mandatory;padding:.2rem .2rem .4rem;scrollbar-width:none;isolation:isolate}
 .testimonial-carousel__track::-webkit-scrollbar{display:none}
 .testimonial-slide{scroll-snap-align:start;margin:0;aspect-ratio:323 / 700;overflow:hidden;border:1px solid var(--line);border-radius:var(--r-lg);background:var(--surface);box-shadow:var(--shadow-soft)}
 .testimonial-slide img{display:block;width:100%;height:100%;object-fit:contain;background:var(--chip)}
@@ -1112,9 +1112,16 @@ body:has(.lead-modal__input:focus) .sticky-cta{transform:translateY(110%)}
    every platform that renders a persistent bar. The bottom padding it needed
    goes with it. Position stays available to a keyboard and to a screen reader
    through the dots, which are real buttons. */
+/* `isolation: isolate` — every card's own z-index (a .ba-tag, a .vid-card
+   overlay) stacks against the TRACK, never against .car-nav. Without it a
+   card's z-index escapes past .car-track and .car (neither creates a
+   stacking context of its own) straight into whatever context holds them,
+   and there it could tie or beat the arrow's. This is the same fix as the
+   platform's rail — see .viewport in PlatformOfferCarousel.module.css — kept
+   here because the two are the same object: "THE RAIL CONTROL", below. */
 .car-track{display:flex;gap:.9rem;overflow-x:auto;scroll-snap-type:x proximity;
   padding:.3rem .2rem .35rem;-webkit-overflow-scrolling:touch;
-  overscroll-behavior-x:contain;scrollbar-width:none}
+  overscroll-behavior-x:contain;scrollbar-width:none;isolation:isolate}
 .car-track::-webkit-scrollbar{display:none}
 .car-track>*{scroll-snap-align:start;flex:0 0 auto}
 /* .car-nav geometry, colour, hover and edge behaviour: "THE RAIL CONTROL"
